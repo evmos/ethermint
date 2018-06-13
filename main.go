@@ -9,18 +9,20 @@ import (
 	eth_trie "github.com/ethereum/go-ethereum/trie"
 
 	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/iavl"
+	"github.com/cosmos/cosmos-sdk/store"
 )
 
 // Implementation of eth_state.Database
 type OurDatabase struct {
-	tree *iavl.Tree
+	st store.CommitStore
 }
 
-func OurNewDatabase(db dbm.DB, cacheSize int) *OurDatabase {
-	od := &OurDatabase{}
-	od.tree = iavl.NewTree(db, cacheSize)
-	return od
+func OurNewDatabase(db dbm.DB, id store.CommitID) (od *OurDatabase, err error) {
+	od = &OurDatabase{}
+	if od.st, err = store.LoadIAVLStore(db, id); err != nil {
+		return nil, err
+	}
+	return
 }
 
 func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
@@ -87,6 +89,9 @@ func main() {
 	fmt.Printf("Instantiating state.Database\n")
 	db := dbm.NewDB("test" /* name */, dbm.MemDBBackend, "" /* dir */)
 	var d eth_state.Database
-	d = OurNewDatabase(db, 1024)
+	var err error
+	if d, err = OurNewDatabase(db, store.CommitID{}); err != nil {
+		panic(err)
+	}
 	d.OpenTrie(eth_common.Hash{})
 }

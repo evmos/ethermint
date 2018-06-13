@@ -24,9 +24,18 @@
 #   go-tests = true
 #   unused-packages = true
 
-[[constraint]]
+[[override]]
   name = "github.com/tendermint/iavl"
   version = "0.8.0-rc0"
+
+[[override]]
+  name = "google.golang.org/genproto"
+  revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
+
+#[[constraint]]
+#  name = "github.com/cosmos/cosmos-sdk"
+#  version = "0.18.0"
+
 
 [prune]
   go-tests = true

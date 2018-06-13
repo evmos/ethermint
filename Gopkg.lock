@@ -8,6 +8,16 @@
   revision = "86fed781132ac890ee03e906e4ecd5d6fa180c64"
 
 [[projects]]
+  name = "github.com/cosmos/cosmos-sdk"
+  packages = [
+    "store",
+    "types",
+    "wire"
+  ]
+  revision = "cf46be225b7f3853e36af0feac04e29188cd4c95"
+  version = "v0.17.5"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -60,10 +70,25 @@
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
+    "jsonpb",
     "proto",
-    "protoc-gen-gogo/descriptor"
+    "protoc-gen-gogo/descriptor",
+    "sortkeys",
+    "types"
   ]
   revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/golang/protobuf"
+  packages = [
+    "proto",
+    "ptypes",
+    "ptypes/any",
+    "ptypes/duration",
+    "ptypes/timestamp"
+  ]
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
   version = "v1.0.0"
 
 [[projects]]
@@ -119,10 +144,32 @@
   revision = "e2150783cd35f5b607daca48afd8c57ec54cc995"
 
 [[projects]]
+  name = "github.com/tendermint/abci"
+  packages = ["types"]
+  revision = "78a8905690ef54f9d57e3b2b0ee7ad3a04ef3f1f"
+  version = "v0.10.3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/tendermint/ed25519"
+  packages = [
+    ".",
+    "edwards25519",
+    "extra25519"
+  ]
+  revision = "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
+
+[[projects]]
   name = "github.com/tendermint/go-amino"
   packages = ["."]
-  revision = "3c22a7a539411f89a96738fcfa14c1027e24e5ec"
-  version = "0.9.10"
+  revision = "ed62928576cfcaf887209dc96142cd79cdfff389"
+  version = "0.9.9"
+
+[[projects]]
+  name = "github.com/tendermint/go-crypto"
+  packages = ["."]
+  revision = "915416979bf70efa4bcbf1c6cd5d64c5fff9fc19"
+  version = "v0.6.2"
 
 [[projects]]
   name = "github.com/tendermint/iavl"
@@ -138,10 +185,88 @@
   packages = [
     "common",
     "db",
-    "log"
+    "log",
+    "merkle"
   ]
   revision = "692f1d86a6e2c0efa698fd1e4541b68c74ffaf38"
   version = "v0.8.4"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = [
+    "nacl/secretbox",
+    "openpgp/armor",
+    "openpgp/errors",
+    "poly1305",
+    "ripemd160",
+    "salsa20/salsa"
+  ]
+  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = [
+    "context",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
+    "internal/timeseries",
+    "trace"
+  ]
+  revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
+
+[[projects]]
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
+[[projects]]
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
+
+[[projects]]
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "codes",
+    "connectivity",
+    "credentials",
+    "grpclb/grpc_lb_v1/messages",
+    "grpclog",
+    "internal",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "stats",
+    "status",
+    "tap",
+    "transport"
+  ]
+  revision = "5b3c4e850e90a4cf6a20ebd46c8b32a0a3afcb9e"
+  version = "v1.7.5"
 
 [[projects]]
   branch = "v2"
@@ -152,6 +277,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e53d8700b947bc1e65c0d9def7f322670a1163625680b49568ac801a54fe2158"
+  inputs-digest = "405903b5cdec5fe831757bd4289ad96436109112bb3ef41be36992969312e8f1"
   solver-name = "gps-cdcl"
   solver-version = 1
