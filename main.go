@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	eth_common "github.com/ethereum/go-ethereum/common"
@@ -9,6 +10,7 @@ import (
 	eth_trie "github.com/ethereum/go-ethereum/trie"
 
 	dbm "github.com/tendermint/tmlibs/db"
+	"github.com/tendermint/go-amino"
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/types"
 )
@@ -20,6 +22,12 @@ var (
 	StorageKey = types.NewKVStoreKey("storage")
 )
 
+// This is what stored in the lookupDb
+type LookupValue struct {
+	VersionId int64
+	Address   []byte
+}
+
 // Implementation of eth_state.Database
 type OurDatabase struct {
 	stateStore        store.CommitMultiStore // For the history of accounts <balance, nonce, storage root hash, code hash>
@@ -28,6 +36,7 @@ type OurDatabase struct {
 	                         // This mapping exists so that we can implement OpenTrie function of the state.Database interface
                              // Also mapping [storage_trie_root_hash] => <contract_address, version_id>
 	                         // This mapping exists so that we can implement OpenStorageTrie function of the state.Database interface
+	cdc               *amino.Codec // Amino codec to encode the values forthe lookupDb
 }
 
 func OurNewDatabase(stateDb, lookupDb dbm.DB) *OurDatabase {
@@ -36,16 +45,33 @@ func OurNewDatabase(stateDb, lookupDb dbm.DB) *OurDatabase {
 	od.stateStore.MountStoreWithDB(AccountsKey, types.StoreTypeIAVL, nil)
 	od.stateStore.MountStoreWithDB(StorageKey, types.StoreTypeIAVL, nil)
 	od.lookupDb = lookupDb
+	od.cdc = amino.NewCodec()
 	return od
 }
 
 func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
-	// Need to map root hash to the CommitID to be able to load the trie
-	return &OurTrie{}, nil
+	// Look up version id to use
+	val := od.lookupDb.Get(root[:])
+	var lv LookupValue
+	_, err := od.cdc.UnmarshalBinaryReader(bytes.NewBuffer(val), &lv, 0)
+	if err != nil {
+		return nil, err
+	}
+	od.stateStore.LoadVersion(lv.VersionId)
+	st := od.stateStore.GetCommitKVStore(AccountsKey)
+	return &OurTrie{st: st, prefix: nil}, nil
 }
 
 func (od *OurDatabase) OpenStorageTrie(addrHash, root eth_common.Hash) (eth_state.Trie, error) {
-	return nil, nil
+	val := od.lookupDb.Get(root[:])
+	var lv LookupValue
+	_, err := od.cdc.UnmarshalBinaryReader(bytes.NewBuffer(val), &lv, 0)
+	if err != nil {
+		return nil, err
+	}
+	od.stateStore.LoadVersion(lv.VersionId)
+	st := od.stateStore.GetCommitKVStore(StorageKey)
+	return &OurTrie{st: st, prefix: lv.Address}, nil
 }
 
 func (od *OurDatabase) CopyTrie(eth_state.Trie) eth_state.Trie {
