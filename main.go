@@ -93,23 +93,44 @@ func (od *OurDatabase) TrieDB() *eth_trie.Database {
 // Implementation of eth_state.Trie
 type OurTrie struct {
 	// This is essentially part of the KVStore for a specific prefix
-	st store.KVStore
+	st store.CommitKVStore
 	prefix []byte
 }
 
+func (ot *OurTrie) makePrefix(key []byte) []byte {
+	kk := make([]byte, len(ot.prefix)+len(key))
+	copy(kk, ot.prefix)
+	copy(kk[len(ot.prefix):], key)
+	return kk
+}
+
 func (ot *OurTrie) TryGet(key []byte) ([]byte, error) {
-	return nil, nil
+	if ot.prefix == nil {
+		return ot.st.Get(key), nil
+	}
+	return ot.st.Get(ot.makePrefix(key)), nil
 }
 
 func (ot *OurTrie) TryUpdate(key, value []byte) error {
+	if ot.prefix == nil {
+		ot.st.Set(key, value)
+		return nil
+	}
+	ot.st.Set(ot.makePrefix(key), value)
 	return nil
 }
 
 func (ot *OurTrie) TryDelete(key []byte) error {
+	if ot.prefix == nil {
+		ot.st.Delete(key)
+		return nil
+	}
+	ot.st.Delete(ot.makePrefix(key))
 	return nil
 }
 
 func (ot *OurTrie) Commit(onleaf eth_trie.LeafCallback) (eth_common.Hash, error) {
+	ot.st.Commit() // TODO save commitID
 	return eth_common.Hash{}, nil
 }
 
