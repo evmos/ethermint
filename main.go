@@ -10,22 +10,37 @@ import (
 
 	dbm "github.com/tendermint/tmlibs/db"
 	"github.com/cosmos/cosmos-sdk/store"
+	"github.com/cosmos/cosmos-sdk/types"
+)
+
+var (
+	// Key for the sub-store with Ethereum accounts
+	AccountsKey= types.NewKVStoreKey("account")
+	// Key for the sub-store with storage data of Ethereum contracts
+	StorageKey = types.NewKVStoreKey("storage")
 )
 
 // Implementation of eth_state.Database
 type OurDatabase struct {
-	st store.CommitStore
+	stateStore        store.CommitMultiStore // For the history of accounts <balance, nonce, storage root hash, code hash>
+										     // Also, for the history of contract data (effects of SSTORE instruction)
+	lookupDb          dbm.DB // Maping [accounts_trie_root_hash] => <version_id>.
+	                         // This mapping exists so that we can implement OpenTrie function of the state.Database interface
+                             // Also mapping [storage_trie_root_hash] => <contract_address, version_id>
+	                         // This mapping exists so that we can implement OpenStorageTrie function of the state.Database interface
 }
 
-func OurNewDatabase(db dbm.DB, id store.CommitID) (od *OurDatabase, err error) {
-	od = &OurDatabase{}
-	if od.st, err = store.LoadIAVLStore(db, id); err != nil {
-		return nil, err
-	}
-	return
+func OurNewDatabase(stateDb, lookupDb dbm.DB) *OurDatabase {
+	od := &OurDatabase{}
+	od.stateStore = store.NewCommitMultiStore(stateDb)
+	od.stateStore.MountStoreWithDB(AccountsKey, types.StoreTypeIAVL, nil)
+	od.stateStore.MountStoreWithDB(StorageKey, types.StoreTypeIAVL, nil)
+	od.lookupDb = lookupDb
+	return od
 }
 
 func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
+	// Need to map root hash to the CommitID to be able to load the trie
 	return &OurTrie{}, nil
 }
 
@@ -51,6 +66,9 @@ func (od *OurDatabase) TrieDB() *eth_trie.Database {
 
 // Implementation of eth_state.Trie
 type OurTrie struct {
+	// This is essentially part of the KVStore for a specific prefix
+	st store.KVStore
+	prefix []byte
 }
 
 func (ot *OurTrie) TryGet(key []byte) ([]byte, error) {
@@ -87,11 +105,9 @@ func (ot *OurTrie) Prove(key []byte, fromLevel uint, proofDb eth_ethdb.Putter) e
 
 func main() {
 	fmt.Printf("Instantiating state.Database\n")
-	db := dbm.NewDB("test" /* name */, dbm.MemDBBackend, "" /* dir */)
+	stateDb := dbm.NewDB("state" /* name */, dbm.MemDBBackend, "" /* dir */)
+	lookupDb := dbm.NewDB("lookup" /* name */, dbm.MemDBBackend, "" /* dir */)
 	var d eth_state.Database
-	var err error
-	if d, err = OurNewDatabase(db, store.CommitID{}); err != nil {
-		panic(err)
-	}
+	d = OurNewDatabase(stateDb, lookupDb)
 	d.OpenTrie(eth_common.Hash{})
 }
