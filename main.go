@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	eth_common "github.com/ethereum/go-ethereum/common"
+	eth_core "github.com/ethereum/go-ethereum/core"
 	eth_state "github.com/ethereum/go-ethereum/core/state"
 	eth_ethdb "github.com/ethereum/go-ethereum/ethdb"
 	eth_trie "github.com/ethereum/go-ethereum/trie"
@@ -184,9 +185,7 @@ func main() {
 	lookupDb := dbm.NewDB("lookup" /* name */, dbm.MemDBBackend, "" /* dir */)
 	addrPreimageDb := dbm.NewDB("addrPreimage" /* name */, dbm.MemDBBackend, "" /* dir */)
 	codeDb := dbm.NewDB("code" /* name */, dbm.MemDBBackend, "" /* dir */)
-	var d eth_state.Database
-	var err error
-	d, err = OurNewDatabase(stateDb, lookupDb, addrPreimageDb, codeDb)
+	d, err := OurNewDatabase(stateDb, lookupDb, addrPreimageDb, codeDb)
 	if err != nil {
 		panic(err)
 	}
@@ -196,7 +195,29 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// Try something
-	b := statedb.GetBalance(eth_common.HexToAddress("0x829BD824B016326A401d083B33D092293333A830"))
+	g := eth_core.DefaultGenesisBlock()
+	for addr, account := range g.Alloc {
+		statedb.AddBalance(addr, account.Balance)
+		statedb.SetCode(addr, account.Code)
+		statedb.SetNonce(addr, account.Nonce)
+		for key, value := range account.Storage {
+			statedb.SetState(addr, key, value)
+		}
+	}
+
+	// One of the genesis account having 200 ETH
+	b := statedb.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0"))
 	fmt.Printf("Balance: %s\n", b)
+	root, err := statedb.Commit(false /* deleteEmptyObjects */)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Genesis state root hash: %x\n", root[:])
+	// Try to create a new statedb from genesis hash
+	genesis_state, err := eth_state.New(root, d)
+	if err != nil {
+		panic(err)
+	}
+	b1 := genesis_state.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0"))
+	fmt.Printf("Balance reloaded: %s\n", b1)
 }

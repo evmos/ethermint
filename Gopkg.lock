@@ -3,6 +3,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/aristanetworks/goarista"
+  packages = ["monotime"]
+  revision = "59944ff78bc1de686b0aba1444dfd380f48f03d4"
+
+[[projects]]
+  branch = "master"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
   revision = "86fed781132ac890ee03e906e4ecd5d6fa180c64"
@@ -29,16 +35,28 @@
     "common",
     "common/hexutil",
     "common/math",
+    "common/mclock",
+    "consensus",
+    "consensus/misc",
+    "core",
+    "core/rawdb",
     "core/state",
     "core/types",
+    "core/vm",
     "crypto",
+    "crypto/bn256",
+    "crypto/bn256/cloudflare",
+    "crypto/bn256/google",
     "crypto/secp256k1",
     "crypto/sha3",
     "ethdb",
+    "event",
     "log",
     "metrics",
+    "p2p/netutil",
     "params",
     "rlp",
+    "rpc",
     "trie"
   ]
   revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
@@ -123,6 +141,12 @@
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
+
+[[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -214,7 +238,8 @@
     "http2/hpack",
     "idna",
     "internal/timeseries",
-    "trace"
+    "trace",
+    "websocket"
   ]
   revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
 
@@ -269,14 +294,26 @@
   version = "v1.7.5"
 
 [[projects]]
+  name = "gopkg.in/fatih/set.v0"
+  packages = ["."]
+  revision = "57907de300222151a123d29255ed17f5ed43fad3"
+  version = "v0.1.0"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/karalabe/cookiejar.v2"
   packages = ["collections/prque"]
   revision = "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57"
 
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/natefinch/npipe.v2"
+  packages = ["."]
+  revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "405903b5cdec5fe831757bd4289ad96436109112bb3ef41be36992969312e8f1"
+  inputs-digest = "471d91e2c0a3b0b799ddfd79266deb2f4e6e46a1721f9c00680c370f1eb5662f"
   solver-name = "gps-cdcl"
   solver-version = 1
