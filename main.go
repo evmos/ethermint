@@ -3,11 +3,16 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"os"
 
 	eth_common "github.com/ethereum/go-ethereum/common"
 	eth_core "github.com/ethereum/go-ethereum/core"
 	eth_state "github.com/ethereum/go-ethereum/core/state"
+	eth_types "github.com/ethereum/go-ethereum/core/types"
+	eth_rlp "github.com/ethereum/go-ethereum/rlp"
 	eth_ethdb "github.com/ethereum/go-ethereum/ethdb"
+	eth_params "github.com/ethereum/go-ethereum/params"
 	eth_trie "github.com/ethereum/go-ethereum/trie"
 
 	dbm "github.com/tendermint/tmlibs/db"
@@ -208,16 +213,69 @@ func main() {
 	// One of the genesis account having 200 ETH
 	b := statedb.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0"))
 	fmt.Printf("Balance: %s\n", b)
-	root, err := statedb.Commit(false /* deleteEmptyObjects */)
+	genesis_root, err := statedb.Commit(false /* deleteEmptyObjects */)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Genesis state root hash: %x\n", root[:])
-	// Try to create a new statedb from genesis hash
-	genesis_state, err := eth_state.New(root, d)
+	fmt.Printf("Genesis state root hash: %x\n", genesis_root[:])
+	// File with blockchain data exported from geth by using "geth expordb" command
+	input, err := os.Open("/Users/alexeyakhunov/mygit/blockchain")
 	if err != nil {
 		panic(err)
 	}
-	b1 := genesis_state.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0"))
-	fmt.Printf("Balance reloaded: %s\n", b1)
+	defer input.Close()
+	// Ethereum mainnet config
+	chainConfig := eth_params.MainnetChainConfig
+	stream := eth_rlp.NewStream(input, 0)
+	var block eth_types.Block
+	n := 0
+	var root500 eth_common.Hash // Root hash after block 500
+	var root501 eth_common.Hash // Root hash after block 501
+	for {
+		if err = stream.Decode(&block); err == io.EOF {
+			err = nil // Clear it
+			break
+		} else if err != nil {
+			panic(fmt.Errorf("at block %d: %v", n, err))
+		}
+		// don't import first block
+		if block.NumberU64() == 0 {
+			continue
+		}
+		header := block.Header()
+		// Apply mining rewards to the statedb
+		accumulateRewards(chainConfig, statedb, header, block.Uncles())
+		// Commit block
+		root, err := statedb.Commit(chainConfig.IsEIP158(block.Number()) /* deleteEmptyObjects */)
+		if err != nil {
+			panic(err)
+		}
+		switch n {
+		case 500:
+			root500 = root
+		case 501:
+			root501 = root
+		}
+		n++
+		if n >= 1000 {
+			break
+		}
+	}
+	fmt.Printf("Processed %d blocks\n", n)
+	genesis_state, err := eth_state.New(genesis_root, d)
+	fmt.Printf("Balance of one of the genesis investors: %s\n", genesis_state.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")))
+	miner501 := eth_common.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D") // Miner of the block 501
+	// Try to create a new statedb from root of the block 500
+	state500, err := eth_state.New(root500, d)
+	if err != nil {
+		panic(err)
+	}
+	miner501_balance_at_500 := state500.GetBalance(miner501)
+	state501, err := eth_state.New(root501, d)
+	if err != nil {
+		panic(err)
+	}
+	miner501_balance_at_501 := state501.GetBalance(miner501)
+	fmt.Printf("Miner of block 501's balance after block 500: %d\n", miner501_balance_at_500)
+	fmt.Printf("Miner of block 501's balance after block 501: %d\n", miner501_balance_at_501)
 }

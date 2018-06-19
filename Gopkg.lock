@@ -30,13 +30,21 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/edsrzf/mmap-go"
+  packages = ["."]
+  revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
+
+[[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = [
     "common",
+    "common/bitutil",
     "common/hexutil",
     "common/math",
     "common/mclock",
     "consensus",
+    "consensus/ethash",
     "consensus/misc",
     "core",
     "core/rawdb",
@@ -314,6 +322,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "471d91e2c0a3b0b799ddfd79266deb2f4e6e46a1721f9c00680c370f1eb5662f"
+  inputs-digest = "b5f54632217e0d318d469bb6cd3a30d971c918e4d4bb0165d16603cbab9ba165"
   solver-name = "gps-cdcl"
   solver-version = 1
