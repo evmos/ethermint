@@ -45,6 +45,7 @@ type OurDatabase struct {
 	codeDb            dbm.DB // Mapping [codeHash] -> <code>
 	addrPreimageDb    dbm.DB // Mapping [contract_address_hash] -> <contract_address>
 	cdc               *amino.Codec // Amino codec to encode the values forthe lookupDb
+	tracing           bool
 }
 
 func OurNewDatabase(stateDb, lookupDb, addrPreimageDb, codeDb dbm.DB) (*OurDatabase, error) {
@@ -64,7 +65,8 @@ func OurNewDatabase(stateDb, lookupDb, addrPreimageDb, codeDb dbm.DB) (*OurDatab
 
 func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
 	// Look up version id to use
-	if root != (eth_common.Hash{}) {
+	hasData := root != (eth_common.Hash{})
+	if hasData {
 		val := od.lookupDb.Get(root[:])
 		if val == nil {
 			return nil, fmt.Errorf("Could not find version with root hash %x", root[:])
@@ -74,14 +76,20 @@ func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
 		if err != nil {
 			return nil, err
 		}
-		od.stateStore.LoadVersion(versionId)
+		if od.tracing {
+			fmt.Printf("Loading version %d\n", versionId)
+		}
+		if err := od.stateStore.LoadVersion(versionId); err != nil {
+			return nil, err
+		}
 	}
 	st := od.stateStore.GetCommitKVStore(AccountsKey)
-	return &OurTrie{od: od, st: st, prefix: nil}, nil
+	return &OurTrie{od: od, st: st, prefix: nil, hasData: hasData}, nil
 }
 
 func (od *OurDatabase) OpenStorageTrie(addrHash, root eth_common.Hash) (eth_state.Trie, error) {
-	if root != (eth_common.Hash{}) {
+	hasData := root != (eth_common.Hash{})
+	if hasData {
 		val := od.lookupDb.Get(root[:])
 		if val == nil {
 			return nil, fmt.Errorf("Could not find version with root hash %x", root[:])
@@ -91,11 +99,14 @@ func (od *OurDatabase) OpenStorageTrie(addrHash, root eth_common.Hash) (eth_stat
 		if err != nil {
 			return nil, err
 		}
-		od.stateStore.LoadVersion(versionId)     // This might not be required,
-		                                        // we just need to check that accounts and storage are consistent
+		// This might not be required,
+		// we just need to check that accounts and storage are consistent
+		if err := od.stateStore.LoadVersion(versionId); err != nil {
+			return nil, err
+		}
 	}
 	st := od.stateStore.GetCommitKVStore(StorageKey)
-	return &OurTrie{od:od, st: st, prefix: addrHash[:]}, nil
+	return &OurTrie{od:od, st: st, prefix: addrHash[:], hasData: hasData}, nil
 }
 
 func (od *OurDatabase) CopyTrie(eth_state.Trie) eth_state.Trie {
@@ -122,6 +133,7 @@ type OurTrie struct {
 	// This is essentially part of the KVStore for a specific prefix
 	st store.CommitKVStore
 	prefix []byte
+	hasData bool
 }
 
 func (ot *OurTrie) makePrefix(key []byte) []byte {
@@ -139,6 +151,7 @@ func (ot *OurTrie) TryGet(key []byte) ([]byte, error) {
 }
 
 func (ot *OurTrie) TryUpdate(key, value []byte) error {
+	ot.hasData = true
 	if ot.prefix == nil {
 		ot.st.Set(key, value)
 		return nil
@@ -157,7 +170,11 @@ func (ot *OurTrie) TryDelete(key []byte) error {
 }
 
 func (ot *OurTrie) Commit(onleaf eth_trie.LeafCallback) (eth_common.Hash, error) {
+	if !ot.hasData {
+		return eth_common.Hash{}, nil
+	}
 	commitId := ot.st.Commit()
+	fmt.Printf("Committed version %d\n", commitId.Version)
 	var hash eth_common.Hash
 	copy(hash[:], commitId.Hash)
 	b, err := ot.od.cdc.MarshalBinary(commitId.Version)
@@ -231,6 +248,8 @@ func main() {
 	n := 0
 	var root500 eth_common.Hash // Root hash after block 500
 	var root501 eth_common.Hash // Root hash after block 501
+	prev_root := genesis_root
+	d.tracing = true
 	for {
 		if err = stream.Decode(&block); err == io.EOF {
 			err = nil // Clear it
@@ -243,18 +262,22 @@ func main() {
 			continue
 		}
 		header := block.Header()
+		statedb, err = eth_state.New(prev_root, d)
+		if err != nil {
+			panic(fmt.Errorf("at block %d: %v", n, err))
+		}
 		// Apply mining rewards to the statedb
 		accumulateRewards(chainConfig, statedb, header, block.Uncles())
 		// Commit block
-		root, err := statedb.Commit(chainConfig.IsEIP158(block.Number()) /* deleteEmptyObjects */)
+		prev_root, err := statedb.Commit(chainConfig.IsEIP158(block.Number()) /* deleteEmptyObjects */)
 		if err != nil {
-			panic(err)
+			panic(fmt.Errorf("at block %d: %v", n, err))
 		}
-		switch n {
-		case 500:
-			root500 = root
-		case 501:
-			root501 = root
+		switch block.NumberU64() {
+		case 1:
+			root500 = prev_root
+		case 502:
+			root501 = prev_root
 		}
 		n++
 		if n >= 1000 {
@@ -262,6 +285,7 @@ func main() {
 		}
 	}
 	fmt.Printf("Processed %d blocks\n", n)
+	d.tracing = true
 	genesis_state, err := eth_state.New(genesis_root, d)
 	fmt.Printf("Balance of one of the genesis investors: %s\n", genesis_state.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")))
 	miner501 := eth_common.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D") // Miner of the block 501
