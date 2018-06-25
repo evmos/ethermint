@@ -16,7 +16,6 @@ import (
 	eth_trie "github.com/ethereum/go-ethereum/trie"
 
 	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/tendermint/go-amino"
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/types"
 )
@@ -35,6 +34,8 @@ type CommitHashPreimage struct {
 	Prefix []byte
 }
 
+var miner501 = eth_common.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D")
+
 // Implementation of eth_state.Database
 type OurDatabase struct {
 	stateStore        store.CommitMultiStore // For the history of accounts <balance, nonce, storage root hash, code hash>
@@ -42,7 +43,6 @@ type OurDatabase struct {
 	accountsCache     store.CacheKVStore
 	storageCache      store.CacheKVStore
 	codeDb            dbm.DB // Mapping [codeHash] -> <code>
-	cdc               *amino.Codec // Amino codec to encode the values forthe lookupDb
 	tracing           bool
 }
 
@@ -55,7 +55,6 @@ func OurNewDatabase(stateDb, codeDb dbm.DB) (*OurDatabase, error) {
 		return nil, err
 	}
 	od.codeDb = codeDb
-	od.cdc = amino.NewCodec()
 	return od, nil
 }
 
@@ -67,8 +66,11 @@ func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
 	if hasData {
 		// First 8 bytes encode version
 		versionId = int64(binary.BigEndian.Uint64(root[:8]))
-		if err := od.stateStore.LoadVersion(versionId); err != nil {
-			return nil, err
+		if od.stateStore.LastCommitID().Version != versionId {
+			if err := od.stateStore.LoadVersion(versionId); err != nil {
+				return nil, err
+			}
+			od.accountsCache = nil
 		}
 	}
 	if od.accountsCache == nil {
@@ -83,10 +85,11 @@ func (od *OurDatabase) OpenStorageTrie(addrHash, root eth_common.Hash) (eth_stat
 	if hasData {
 		// First 8 bytes encode version
 		versionId = int64(binary.BigEndian.Uint64(root[:8]))
-		// This might not be required,
-		// we just need to check that accounts and storage are consistent
-		if err := od.stateStore.LoadVersion(versionId); err != nil {
-			return nil, err
+		if od.stateStore.LastCommitID().Version != versionId {
+			if err := od.stateStore.LoadVersion(versionId); err != nil {
+				return nil, err
+			}
+			od.storageCache = nil
 		}
 	}
 	if od.storageCache == nil {
@@ -163,13 +166,15 @@ func (ot *OurTrie) Commit(onleaf eth_trie.LeafCallback) (eth_common.Hash, error)
 	var commitHash eth_common.Hash
 	// We assume here that the next committed version will be ot.versionId+1
 	binary.BigEndian.PutUint64(commitHash[:8], uint64(ot.versionId+1))
-	if ot.od.accountsCache != nil {
-		ot.od.accountsCache.Write()
-		ot.od.accountsCache = nil
-	}
-	if ot.od.storageCache != nil {
-		ot.od.storageCache.Write()
-		ot.od.storageCache = nil
+	if ot.prefix == nil {
+		if ot.od.accountsCache != nil {
+			ot.od.accountsCache.Write()
+			ot.od.accountsCache = nil
+		}
+		if ot.od.storageCache != nil {
+			ot.od.storageCache.Write()
+			ot.od.storageCache = nil
+		}
 	}
 	return commitHash, nil
 }
@@ -251,7 +256,11 @@ func main() {
 			continue
 		}
 		header := block.Header()
-		statedb, err = eth_state.New(prev_root, d)
+		d, err := OurNewDatabase(stateDb, codeDb)
+		if err != nil {
+			panic(err)
+		}
+		statedb, err := eth_state.New(prev_root, d)
 		if err != nil {
 			panic(fmt.Errorf("at block %d: %v", n, err))
 		}
@@ -280,7 +289,7 @@ func main() {
 	d.tracing = true
 	genesis_state, err := eth_state.New(genesis_root, d)
 	fmt.Printf("Balance of one of the genesis investors: %s\n", genesis_state.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")))
-	miner501 := eth_common.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D") // Miner of the block 501
+	//miner501 := eth_common.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D") // Miner of the block 501
 	// Try to create a new statedb from root of the block 500
 	fmt.Printf("root500: %x\n", root500[:])
 	state500, err := eth_state.New(root500, d)
@@ -293,6 +302,7 @@ func main() {
 		panic(err)
 	}
 	miner501_balance_at_501 := state501.GetBalance(miner501)
+	fmt.Printf("Investor's balance after block 500: %d\n", state500.GetBalance(eth_common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")))
 	fmt.Printf("Miner of block 501's balance after block 500: %d\n", miner501_balance_at_500)
 	fmt.Printf("Miner of block 501's balance after block 501: %d\n", miner501_balance_at_501)
 }
