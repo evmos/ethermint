@@ -4,16 +4,21 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 
 	eth_common "github.com/ethereum/go-ethereum/common"
 	eth_core "github.com/ethereum/go-ethereum/core"
 	eth_state "github.com/ethereum/go-ethereum/core/state"
 	eth_types "github.com/ethereum/go-ethereum/core/types"
+	eth_vm "github.com/ethereum/go-ethereum/core/vm"
 	eth_rlp "github.com/ethereum/go-ethereum/rlp"
 	eth_ethdb "github.com/ethereum/go-ethereum/ethdb"
 	eth_params "github.com/ethereum/go-ethereum/params"
+	eth_rpc "github.com/ethereum/go-ethereum/rpc"
 	eth_trie "github.com/ethereum/go-ethereum/trie"
+	eth_consensus "github.com/ethereum/go-ethereum/consensus"
+	eth_misc "github.com/ethereum/go-ethereum/consensus/misc"
 
 	dbm "github.com/tendermint/tmlibs/db"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -44,6 +49,7 @@ type OurDatabase struct {
 	storageCache      store.CacheKVStore
 	codeDb            dbm.DB // Mapping [codeHash] -> <code>
 	tracing           bool
+	trieDbDummy       *eth_trie.Database
 }
 
 func OurNewDatabase(stateDb, codeDb dbm.DB) (*OurDatabase, error) {
@@ -55,6 +61,7 @@ func OurNewDatabase(stateDb, codeDb dbm.DB) (*OurDatabase, error) {
 		return nil, err
 	}
 	od.codeDb = codeDb
+	od.trieDbDummy = eth_trie.NewDatabase(nil)
 	return od, nil
 }
 
@@ -113,7 +120,7 @@ func (od *OurDatabase) ContractCodeSize(addrHash, codeHash eth_common.Hash) (int
 }
 
 func (od *OurDatabase) TrieDB() *eth_trie.Database {
-	return nil
+	return od.trieDbDummy
 }
 
 // Implementation of eth_state.Trie
@@ -195,6 +202,61 @@ func (ot *OurTrie) Prove(key []byte, fromLevel uint, proofDb eth_ethdb.Putter) e
 	return nil
 }
 
+type OurChainContext struct {
+}
+
+func (occ *OurChainContext) Engine() eth_consensus.Engine {
+	return &OurEngine{}
+}
+
+func (occ *OurChainContext) GetHeader(eth_common.Hash, uint64) *eth_types.Header {
+	return nil
+}
+
+type OurEngine struct {
+}
+
+func (oe *OurEngine) Author(header *eth_types.Header) (eth_common.Address, error) {
+	return eth_common.Address{}, nil
+}
+
+func (oe *OurEngine) APIs(chain eth_consensus.ChainReader) []eth_rpc.API {
+	return nil
+}
+
+func (oe *OurEngine) CalcDifficulty(chain eth_consensus.ChainReader, time uint64, parent *eth_types.Header) *big.Int {
+	return nil
+}
+
+func (oe *OurEngine) Finalize(chain eth_consensus.ChainReader, header *eth_types.Header, state *eth_state.StateDB, txs []*eth_types.Transaction,
+		uncles []*eth_types.Header, receipts []*eth_types.Receipt) (*eth_types.Block, error) {
+	return nil, nil
+}
+
+func (oe *OurEngine) Prepare(chain eth_consensus.ChainReader, header *eth_types.Header) error {
+	return nil
+}
+
+func (oe *OurEngine) Seal(chain eth_consensus.ChainReader, block *eth_types.Block, stop <-chan struct{}) (*eth_types.Block, error) {
+	return nil, nil
+}
+
+func (oe *OurEngine) VerifyHeader(chain eth_consensus.ChainReader, header *eth_types.Header, seal bool) error {
+	return nil
+}
+
+func (oe *OurEngine) VerifyHeaders(chain eth_consensus.ChainReader, headers []*eth_types.Header, seals []bool) (chan<- struct{}, <-chan error) {
+	return nil, nil
+}
+
+func (oe *OurEngine) VerifySeal(chain eth_consensus.ChainReader, header *eth_types.Header) error {
+	return nil
+}
+
+func (oe *OurEngine) VerifyUncles(chain eth_consensus.ChainReader, block *eth_types.Block) error {
+	return nil
+}
+
 func main() {
 	fmt.Printf("Instantiating state.Database\n")
 	stateDb := dbm.NewDB("state" /* name */, dbm.MemDBBackend, "" /* dir */)
@@ -256,13 +318,27 @@ func main() {
 			continue
 		}
 		header := block.Header()
-		d, err := OurNewDatabase(stateDb, codeDb)
-		if err != nil {
-			panic(err)
-		}
 		statedb, err := eth_state.New(prev_root, d)
 		if err != nil {
 			panic(fmt.Errorf("at block %d: %v", n, err))
+		}
+		var (
+			receipts eth_types.Receipts
+			usedGas  = new(uint64)
+			allLogs  []*eth_types.Log
+			gp       = new(eth_core.GasPool).AddGas(block.GasLimit())
+		)
+		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
+			eth_misc.ApplyDAOHardFork(statedb)
+		}
+		for i, tx := range block.Transactions() {
+			statedb.Prepare(tx.Hash(), block.Hash(), i)
+			receipt, _, err := eth_core.ApplyTransaction(chainConfig, &OurChainContext{}, nil, gp, statedb, header, tx, usedGas, eth_vm.Config{})
+			if err != nil {
+				panic(fmt.Errorf("at block %d, tx %x: %v", n, tx.Hash(), err))
+			}
+			receipts = append(receipts, receipt)
+			allLogs = append(allLogs, receipt.Logs...)
 		}
 		// Apply mining rewards to the statedb
 		accumulateRewards(chainConfig, statedb, header, block.Uncles())
@@ -281,7 +357,10 @@ func main() {
 			root501 = prev_root
 		}
 		n++
-		if n >= 1000 {
+		if n % 10000 == 0 {
+			fmt.Printf("Processed %d blocks\n", n)
+		}
+		if n >= 100000 {
 			break
 		}
 	}
