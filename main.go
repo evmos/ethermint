@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/big"
@@ -69,7 +71,7 @@ func OurNewDatabase(stateDb, codeDb dbm.DB) (*OurDatabase, error) {
 func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
 	// Look up version id to use
 	hasData := root != (eth_common.Hash{})
-	var versionId int64
+	versionId := od.stateStore.LastCommitID().Version
 	if hasData {
 		// First 8 bytes encode version
 		versionId = int64(binary.BigEndian.Uint64(root[:8]))
@@ -83,25 +85,27 @@ func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
 	if od.accountsCache == nil {
 		od.accountsCache = store.NewCacheKVStore(od.stateStore.GetCommitKVStore(AccountsKey))
 	}
+	fmt.Printf("OpenTrie version %d\n", versionId)
 	return &OurTrie{od: od, versionId: versionId, st: od.accountsCache, prefix: nil, hasData: hasData}, nil
 }
 
 func (od *OurDatabase) OpenStorageTrie(addrHash, root eth_common.Hash) (eth_state.Trie, error) {
 	hasData := root != (eth_common.Hash{})
-	var versionId int64
+	versionId := od.stateStore.LastCommitID().Version
 	if hasData {
 		// First 8 bytes encode version
 		versionId = int64(binary.BigEndian.Uint64(root[:8]))
 		if od.stateStore.LastCommitID().Version != versionId {
-			if err := od.stateStore.LoadVersion(versionId); err != nil {
-				return nil, err
-			}
+			//if err := od.stateStore.LoadVersion(versionId); err != nil {
+			//	return nil, err
+			//}
 			od.storageCache = nil
 		}
 	}
 	if od.storageCache == nil {
 		od.storageCache = store.NewCacheKVStore(od.stateStore.GetCommitKVStore(StorageKey))
 	}
+	fmt.Printf("OpenStorageTrie version %d\n", versionId)
 	return &OurTrie{od:od, versionId: versionId, st: od.storageCache, prefix: addrHash[:], hasData: hasData}, nil
 }
 
@@ -171,8 +175,8 @@ func (ot *OurTrie) Commit(onleaf eth_trie.LeafCallback) (eth_common.Hash, error)
 		return eth_common.Hash{}, nil
 	}
 	var commitHash eth_common.Hash
-	// We assume here that the next committed version will be ot.versionId+1
-	binary.BigEndian.PutUint64(commitHash[:8], uint64(ot.versionId+1))
+	// We assume here that the next committed version will be od.stateStore.LastCommitID().Version+1
+	binary.BigEndian.PutUint64(commitHash[:8], uint64(ot.od.stateStore.LastCommitID().Version+1))
 	if ot.prefix == nil {
 		if ot.od.accountsCache != nil {
 			ot.od.accountsCache.Write()
@@ -351,6 +355,7 @@ func main() {
 	prev_root := genesis_root
 	d.tracing = true
 	chainContext := &OurChainContext{}
+	vmConfig := eth_vm.Config{}
 	for {
 		if err = stream.Decode(&block); err == io.EOF {
 			err = nil // Clear it
@@ -379,7 +384,28 @@ func main() {
 		}
 		for i, tx := range block.Transactions() {
 			statedb.Prepare(tx.Hash(), block.Hash(), i)
-			receipt, _, err := eth_core.ApplyTransaction(chainConfig, chainContext, nil, gp, statedb, header, tx, usedGas, eth_vm.Config{})
+			var h eth_common.Hash = tx.Hash()
+			if bytes.Equal(h[:], eth_common.FromHex("0xc438cfcc3b74a28741bda361032f1c6362c34aa0e1cedff693f31ec7d6a12717")) {
+				vmConfig.Tracer = eth_vm.NewStructLogger(&eth_vm.LogConfig{})
+				vmConfig.Debug = true
+			}
+			receipt, _, err := eth_core.ApplyTransaction(chainConfig, chainContext, nil, gp, statedb, header, tx, usedGas, vmConfig)
+			if vmConfig.Tracer != nil {
+				w, err := os.Create("structlogs.txt")
+				if err != nil {
+					panic(err)
+				}
+				encoder := json.NewEncoder(w)
+				logs := FormatLogs(vmConfig.Tracer.(*eth_vm.StructLogger).StructLogs())
+				if err := encoder.Encode(logs); err != nil {
+					panic(err)
+				}
+				if err := w.Close(); err != nil {
+					panic(err)
+				}
+				vmConfig.Debug = false
+				vmConfig.Tracer = nil
+			}
 			if err != nil {
 				panic(fmt.Errorf("at block %d, tx %x: %v", block.NumberU64(), tx.Hash(), err))
 			}
@@ -393,7 +419,7 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("at block %d: %v", block.NumberU64(), err))
 		}
-		//fmt.Printf("State root after block %d: %x\n", block.NumberU64(), prev_root)
+		fmt.Printf("State root after block %d: %x\n", block.NumberU64(), prev_root)
 		d.stateStore.Commit()
 		//fmt.Printf("CommitID after block %d: %v\n", block.NumberU64(), commitID)
 		switch block.NumberU64() {
