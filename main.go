@@ -84,29 +84,14 @@ func (od *OurDatabase) OpenTrie(root eth_common.Hash) (eth_state.Trie, error) {
 	}
 	if od.accountsCache == nil {
 		od.accountsCache = store.NewCacheKVStore(od.stateStore.GetCommitKVStore(AccountsKey))
+		od.storageCache = store.NewCacheKVStore(od.stateStore.GetCommitKVStore(StorageKey))
 	}
-	fmt.Printf("OpenTrie version %d\n", versionId)
-	return &OurTrie{od: od, versionId: versionId, st: od.accountsCache, prefix: nil, hasData: hasData}, nil
+	return &OurTrie{od: od, st: od.accountsCache, prefix: nil, hasData: hasData}, nil
 }
 
 func (od *OurDatabase) OpenStorageTrie(addrHash, root eth_common.Hash) (eth_state.Trie, error) {
 	hasData := root != (eth_common.Hash{})
-	versionId := od.stateStore.LastCommitID().Version
-	if hasData {
-		// First 8 bytes encode version
-		versionId = int64(binary.BigEndian.Uint64(root[:8]))
-		if od.stateStore.LastCommitID().Version != versionId {
-			//if err := od.stateStore.LoadVersion(versionId); err != nil {
-			//	return nil, err
-			//}
-			od.storageCache = nil
-		}
-	}
-	if od.storageCache == nil {
-		od.storageCache = store.NewCacheKVStore(od.stateStore.GetCommitKVStore(StorageKey))
-	}
-	fmt.Printf("OpenStorageTrie version %d\n", versionId)
-	return &OurTrie{od:od, versionId: versionId, st: od.storageCache, prefix: addrHash[:], hasData: hasData}, nil
+	return &OurTrie{od:od, st: od.storageCache, prefix: addrHash[:], hasData: hasData}, nil
 }
 
 func (od *OurDatabase) CopyTrie(eth_state.Trie) eth_state.Trie {
@@ -130,7 +115,6 @@ func (od *OurDatabase) TrieDB() *eth_trie.Database {
 // Implementation of state.Trie from go-ethereum
 type OurTrie struct {
 	od *OurDatabase
-	versionId int64
 	// This is essentially part of the KVStore for a specific prefix
 	st store.KVStore
 	prefix []byte
@@ -419,7 +403,7 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("at block %d: %v", block.NumberU64(), err))
 		}
-		fmt.Printf("State root after block %d: %x\n", block.NumberU64(), prev_root)
+		//fmt.Printf("State root after block %d: %x\n", block.NumberU64(), prev_root)
 		d.stateStore.Commit()
 		//fmt.Printf("CommitID after block %d: %v\n", block.NumberU64(), commitID)
 		switch block.NumberU64() {
