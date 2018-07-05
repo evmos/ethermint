@@ -106,8 +106,6 @@ func (db *Database) OpenTrie(root ethcommon.Hash) (ethstate.Trie, error) {
 		db.storageCache = store.NewCacheKVStore(db.stateStore.GetCommitKVStore(StorageKey))
 	}
 
-	// binary.BigEndian.PutUint64(commitHash[:8], uint64(t.od.stateStore.LastCommitID().Version+1))
-
 	return &Trie{
 		store:         db.accountsCache,
 		accountsCache: db.accountsCache,
