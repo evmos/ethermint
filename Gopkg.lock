@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
-  revision = "59944ff78bc1de686b0aba1444dfd380f48f03d4"
+  revision = "2c5933638c5ef1bc320b01486100788c81d57b99"
 
 [[projects]]
   branch = "master"
@@ -14,14 +14,20 @@
   revision = "86fed781132ac890ee03e906e4ecd5d6fa180c64"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/btcutil"
+  packages = ["bech32"]
+  revision = "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4"
+
+[[projects]]
+  branch = "develop"
   name = "github.com/cosmos/cosmos-sdk"
   packages = [
     "store",
     "types",
     "wire"
   ]
-  revision = "cf46be225b7f3853e36af0feac04e29188cd4c95"
-  version = "v0.17.5"
+  revision = "08625633c62555cbd4ddc61238d35da520d942cb"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -173,13 +179,7 @@
     "leveldb/table",
     "leveldb/util"
   ]
-  revision = "e2150783cd35f5b607daca48afd8c57ec54cc995"
-
-[[projects]]
-  name = "github.com/tendermint/abci"
-  packages = ["types"]
-  revision = "78a8905690ef54f9d57e3b2b0ee7ad3a04ef3f1f"
-  version = "v0.10.3"
+  revision = "0d5a0ceb10cf9ab89fdd744cc8c50a83134f6697"
 
 [[projects]]
   branch = "master"
@@ -194,39 +194,38 @@
 [[projects]]
   name = "github.com/tendermint/go-amino"
   packages = ["."]
-  revision = "ed62928576cfcaf887209dc96142cd79cdfff389"
-  version = "0.9.9"
-
-[[projects]]
-  name = "github.com/tendermint/go-crypto"
-  packages = ["."]
-  revision = "915416979bf70efa4bcbf1c6cd5d64c5fff9fc19"
-  version = "v0.6.2"
+  revision = "2106ca61d91029c931fd54968c2bb02dc96b1412"
+  version = "0.10.1"
 
 [[projects]]
   name = "github.com/tendermint/iavl"
-  packages = [
-    ".",
-    "sha256truncated"
-  ]
-  revision = "c9206995e8f948e99927f5084a88a7e94ca256da"
-  version = "v0.8.0-rc0"
+  packages = ["."]
+  revision = "9e5dc3e61f70b285bb25414452d47aca1ff34c1d"
+  version = "v0.8.2-rc0"
 
 [[projects]]
-  name = "github.com/tendermint/tmlibs"
+  name = "github.com/tendermint/tendermint"
   packages = [
-    "common",
-    "db",
-    "log",
-    "merkle"
+    "abci/types",
+    "crypto",
+    "crypto/merkle",
+    "crypto/tmhash",
+    "libs/bech32",
+    "libs/common",
+    "libs/db",
+    "libs/log",
+    "libs/pubsub",
+    "libs/pubsub/query",
+    "types"
   ]
-  revision = "692f1d86a6e2c0efa698fd1e4541b68c74ffaf38"
-  version = "v0.8.4"
+  revision = "5923b6288fe8ce9581936ee97c2bf9cf9c02c2f4"
+  version = "v0.22.0-rc2"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
+    "internal/subtle",
     "nacl/secretbox",
     "openpgp/armor",
     "openpgp/errors",
@@ -234,7 +233,7 @@
     "ripemd160",
     "salsa20/salsa"
   ]
-  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
@@ -249,7 +248,7 @@
     "trace",
     "websocket"
   ]
-  revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
+  revision = "ed29d75add3d7c4bf7ca65aac0c6df3d1420216f"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -282,9 +281,13 @@
   packages = [
     ".",
     "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
     "codes",
     "connectivity",
     "credentials",
+    "encoding",
+    "encoding/proto",
     "grpclb/grpc_lb_v1/messages",
     "grpclog",
     "internal",
@@ -293,13 +296,15 @@
     "naming",
     "peer",
     "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
     "stats",
     "status",
     "tap",
     "transport"
   ]
-  revision = "5b3c4e850e90a4cf6a20ebd46c8b32a0a3afcb9e"
-  version = "v1.7.5"
+  revision = "d11072e7ca9811b1100b80ca0269ac831f06d024"
+  version = "v1.11.3"
 
 [[projects]]
   name = "gopkg.in/fatih/set.v0"
@@ -322,6 +327,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c70e98edb879cb6bb6dbea237d8b58d872aea54a8217f895afdcf8efdd962601"
+  inputs-digest = "d2bdf0662ff705902bb01ca73dc55e89a4eb0b7f323b96d1ce84afa5d1253c0a"
   solver-name = "gps-cdcl"
   solver-version = 1
