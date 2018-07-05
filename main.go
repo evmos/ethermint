@@ -40,8 +40,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("instantiating new geth state.StateDB")
-
 	// start with empty root hash (i.e. empty state)
 	gethStateDB, err := ethstate.New(ethcommon.Hash{}, ethermintDB)
 	if err != nil {
@@ -78,7 +76,7 @@ func main() {
 	// command.
 	//
 	// TODO: Allow this to be configurable
-	input, err := os.Open("/Users/alexeyakhunov/mygit/blockchain")
+	input, err := os.Open("blockchain")
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +97,7 @@ func main() {
 
 	prevRoot := genRoot
 	ethermintDB.Tracing = true
-	chainContext := &core.ChainContext{}
+	chainContext := core.NewChainContext()
 	vmConfig := ethvm.Config{}
 
 	n := 0
@@ -118,6 +116,7 @@ func main() {
 
 		header := block.Header()
 		chainContext.Coinbase = header.Coinbase
+		chainContext.SetHeader(block.NumberU64(), header)
 
 		gethStateDB, err := ethstate.New(prevRoot, ethermintDB)
 		if err != nil {
@@ -186,6 +185,7 @@ func main() {
 
 		// commit block in Ethermint
 		ethermintDB.Commit()
+		//fmt.Printf("commitID after block %d: %v\n", block.NumberU64(), commitID)
 
 		switch block.NumberU64() {
 		case 500:
@@ -195,10 +195,10 @@ func main() {
 		}
 
 		n++
-		if n%10000 == 0 {
+		if (n%100) == 0 {
 			fmt.Printf("processed %d blocks\n", n)
 		}
-		if n >= 100000 {
+		if n >= 1000 {
 			break
 		}
 	}

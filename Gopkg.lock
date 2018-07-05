@@ -222,6 +222,15 @@
   version = "v0.22.0-rc2"
 
 [[projects]]
+  name = "github.com/tendermint/tmlibs"
+  packages = [
+    "common",
+    "db",
+    "log"
+  ]
+  revision = "692f1d86a6e2c0efa698fd1e4541b68c74ffaf38"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -327,6 +336,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d2bdf0662ff705902bb01ca73dc55e89a4eb0b7f323b96d1ce84afa5d1253c0a"
+  inputs-digest = "58fcc52223aba442a24118b546ef53abff5352bbdf306e652dee3106822bba50"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -21,6 +21,13 @@ import (
 // and functionality of this is a WIP and subject to change.
 type ChainContext struct {
 	Coinbase ethcommon.Address
+	headersByNumber map[uint64]*ethtypes.Header
+}
+
+func NewChainContext() *ChainContext {
+	return &ChainContext{
+		headersByNumber: make(map[uint64]*ethtypes.Header),
+	}
 }
 
 // Engine implements Ethereum's core.ChainContext interface. As a ChainContext
@@ -29,12 +36,19 @@ func (cc *ChainContext) Engine() ethconsensus.Engine {
 	return cc
 }
 
+func (cc *ChainContext) SetHeader(number uint64, header *ethtypes.Header) {
+	cc.headersByNumber[number] = header
+}
+
 // GetHeader implements Ethereum's core.ChainContext interface. It currently
 // performs a no-op.
 //
 // TODO: The Cosmos SDK supports retreiving such information in contexts and
 // multi-store, so this will be need to be integrated.
-func (cc *ChainContext) GetHeader(ethcommon.Hash, uint64) *ethtypes.Header {
+func (cc *ChainContext) GetHeader(parentHash ethcommon.Hash, number uint64) *ethtypes.Header {
+	if header, ok := cc.headersByNumber[number]; ok {
+		return header
+	}
 	return nil
 }
 
