@@ -1,6 +1,7 @@
 [[constraint]]
   name = "github.com/cosmos/cosmos-sdk"
-  version = "0.19.0"
+  # TODO: Replace with a stable tagged version
+  branch = "develop"
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
@@ -8,15 +9,15 @@
 
 [[constraint]]
   name = "github.com/tendermint/tendermint"
-  version = "0.22.0-rc2"
-
-[[constraint]]
-  name = "github.com/golang/protobuf"
-  version = "~1.0.0"
+  version = "=0.22.0-rc2"
 
 [[override]]
   name = "google.golang.org/genproto"
   revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
+
+[[override]]
+  name = "github.com/tendermint/go-wire"
+  version = "0.7.3"
 
 [prune]
   go-tests = true
