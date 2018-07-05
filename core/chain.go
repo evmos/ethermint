@@ -20,7 +20,7 @@ import (
 // NOTE: Ethermint will distribute the fees out to validators, so the structure
 // and functionality of this is a WIP and subject to change.
 type ChainContext struct {
-	coinbase ethcommon.Address
+	Coinbase ethcommon.Address
 }
 
 // Engine implements Ethereum's core.ChainContext interface. As a ChainContext
@@ -45,7 +45,7 @@ func (cc *ChainContext) GetHeader(ethcommon.Hash, uint64) *ethtypes.Header {
 // NOTE: Ethermint will distribute the fees out to validators, so the structure
 // and functionality of this is a WIP and subject to change.
 func (cc *ChainContext) Author(_ *ethtypes.Header) (ethcommon.Address, error) {
-	return cc.coinbase, nil
+	return cc.Coinbase, nil
 }
 
 // APIs implements Ethereum's core.ChainContext interface. It currently
