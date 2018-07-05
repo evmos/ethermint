@@ -87,7 +87,6 @@ func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
 // CONTRACT: The root parameter is not interpreted as a state root hash, but as
 // an encoding of an Cosmos SDK IAVL tree version.
 func (db *Database) OpenTrie(root ethcommon.Hash) (ethstate.Trie, error) {
-	var loadedState bool
 	version := db.stateStore.LastCommitID().Version
 
 	if !isRootEmpty(root) {
@@ -98,12 +97,11 @@ func (db *Database) OpenTrie(root ethcommon.Hash) (ethstate.Trie, error) {
 				return nil, err
 			}
 
-			loadedState = true
+			db.accountsCache = nil
 		}
 	}
 
-	// reset the cache if the state was loaded for an older version
-	if loadedState {
+	if db.accountsCache == nil {
 		db.accountsCache = store.NewCacheKVStore(db.stateStore.GetCommitKVStore(AccountsKey))
 		db.storageCache = store.NewCacheKVStore(db.stateStore.GetCommitKVStore(StorageKey))
 	}
