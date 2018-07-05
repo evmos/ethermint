@@ -43,8 +43,8 @@ type Database struct {
 	codeDB    dbm.DB
 	ethTrieDB *ethtrie.Database
 
-	// TODO: Do we need this?
-	tracing bool
+	// TODO: Do we need this/document?
+	Tracing bool
 }
 
 // NewDatabase returns a reference to an initialized Database type which
@@ -163,6 +163,12 @@ func (db *Database) ContractCode(addrHash, codeHash ethcommon.Hash) ([]byte, err
 // an error.
 func (db *Database) ContractCodeSize(addrHash, codeHash ethcommon.Hash) (int, error) {
 	return len(db.codeDB.Get(codeHash[:])), nil
+}
+
+// Commit commits the underlying Cosmos SDK multi-store returning the commit
+// ID.
+func (db *Database) Commit() types.CommitID {
+	return db.stateStore.Commit()
 }
 
 // TrieDB implements Ethereum's state.Database interface. It returns Ethereum's
