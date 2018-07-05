@@ -8,39 +8,39 @@ import (
 // EthereumDB implements Ethereum's ethdb.Database and ethdb.Batch interfaces.
 // It will be used to facilitate persistence of codeHash => code mappings.
 type EthereumDB struct {
-	codeDB dbm.DB
+	CodeDB dbm.DB
 }
 
 // Put implements Ethereum's ethdb.Putter interface. It wraps the database
 // write operation supported by both batches and regular databases.
 func (edb *EthereumDB) Put(key []byte, value []byte) error {
-	edb.codeDB.Set(key, value)
+	edb.CodeDB.Set(key, value)
 	return nil
 }
 
 // Get implements Ethereum's ethdb.Database interface. It returns a value for a
 // given key.
 func (edb *EthereumDB) Get(key []byte) ([]byte, error) {
-	return edb.codeDB.Get(key), nil
+	return edb.CodeDB.Get(key), nil
 }
 
 // Has implements Ethereum's ethdb.Database interface. It returns a boolean
 // determining if the underlying database has the given key or not.
 func (edb *EthereumDB) Has(key []byte) (bool, error) {
-	return edb.codeDB.Has(key), nil
+	return edb.CodeDB.Has(key), nil
 }
 
 // Delete implements Ethereum's ethdb.Database interface. It removes a given
 // key from the underlying database.
 func (edb *EthereumDB) Delete(key []byte) error {
-	edb.codeDB.Delete(key)
+	edb.CodeDB.Delete(key)
 	return nil
 }
 
 // Close implements Ethereum's ethdb.Database interface. It closes the
 // underlying database.
 func (edb *EthereumDB) Close() {
-	edb.codeDB.Close()
+	edb.CodeDB.Close()
 }
 
 // NewBatch implements Ethereum's ethdb.Database interface. It returns a new

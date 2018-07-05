@@ -9,15 +9,24 @@ import (
 	ethtrie "github.com/ethereum/go-ethereum/trie"
 )
 
+const (
+	versionLen = 8
+)
+
 // Trie implements the Ethereum state.Trie interface.
 type Trie struct {
-	// // db is an implementation of Ethereum's state.Database. It will provide a
-	// // means to persist accounts and contract storage to a persistent
-	// // multi-store.
-	// db *Database
+	// accountsCache contains all the accounts in memory to persit when
+	// committing the trie. A CacheKVStore is used to provide deterministic
+	// ordering.
+	accountsCache store.CacheKVStore
+	// storageCache contains all the contract storage in memory to persit when
+	// committing the trie. A CacheKVStore is used to provide deterministic
+	// ordering.
+	storageCache store.CacheKVStore
 
 	// Store is an IAVL KV store that is part of a larger store except it used
-	// for a specific prefix.
+	// for a specific prefix. It will either be an accountsCache or a
+	// storageCache.
 	store store.KVStore
 
 	// prefix is a static prefix used for persistence operations where the
@@ -30,6 +39,8 @@ type Trie struct {
 
 	// root is the encoding of an IAVL tree root (version)
 	root ethcommon.Hash
+
+	ethTrieDB *ethtrie.Database
 }
 
 // prefixKey returns a composite key composed of a static prefix and a given
@@ -82,45 +93,52 @@ func (t *Trie) TryUpdate(key, value []byte) error {
 // will be sorted giving us a deterministic ordering.
 func (t *Trie) TryDelete(key []byte) error {
 	if t.prefix != nil {
-		key = t.makePrefix(key)
+		key = t.prefixKey(key)
 	}
 
 	t.store.Delete(key)
 	return nil
 }
 
-// Commit implements the Ethereum state.Trie interface. TODO: ...
+// Commit implements the Ethereum state.Trie interface. It persists transient
+// state. State is held by a merkelized multi-store IAVL tree. Commitment will
+// only occur through an account trie, in other words, when the prefix of the
+// trie is nil. In such a case, if either the accountCache or the storageCache
+// are not nil, they are persisted. In addition, all the mappings of
+// codeHash => code are also persisted. All these operations are performed in a
+// deterministic order. Transient state is built up in a CacheKVStore. Finally,
+// a root hash is returned or an error if any operation fails.
 //
-// CONTRACT: The root is an encoded IAVL tree version.
+// CONTRACT: The root is an encoded IAVL tree version and each new commitment
+// increments the version by one.
 func (t *Trie) Commit(_ ethtrie.LeafCallback) (ethcommon.Hash, error) {
 	if t.empty {
 		return ethcommon.Hash{}, nil
 	}
 
-	var root ethcommon.Hash
-
-	// We assume that the next committed version will be the  od.stateStore.LastCommitID().Version+1
-	binary.BigEndian.PutUint64(commitHash[:8], uint64(t.od.stateStore.LastCommitID().Version+1))
+	newRoot := rootHashFromVersion(versionFromRootHash(t.root) + 1)
 
 	if t.prefix == nil {
-		if t.od.accountsCache != nil {
-			t.od.accountsCache.Write()
-			t.od.accountsCache = nil
+		if t.accountsCache != nil {
+			t.accountsCache.Write()
+			t.accountsCache = nil
 		}
-		if t.od.storageCache != nil {
-			t.od.storageCache.Write()
-			t.od.storageCache = nil
+
+		if t.storageCache != nil {
+			t.storageCache.Write()
+			t.storageCache = nil
 		}
-		// Enumerate cached nodes from trie.Database
-		for _, n := range t.od.trieDbDummy.Nodes() {
-			if err := t.od.trieDbDummy.Commit(n, false); err != nil {
-				return eth_common.Hash{}, err
+
+		// persist the mappings of codeHash => code
+		for _, n := range t.ethTrieDB.Nodes() {
+			if err := t.ethTrieDB.Commit(n, false); err != nil {
+				return ethcommon.Hash{}, err
 			}
 		}
 	}
 
-	t.root = root
-	return root, nil
+	t.root = newRoot
+	return newRoot, nil
 }
 
 // Hash implements the Ethereum state.Trie interface. It returns the state root
@@ -138,11 +156,11 @@ func (t *Trie) Hash() ethcommon.Hash {
 // TODO: Determine if we need to implement such functionality for an IAVL tree.
 // This will ultimately be related to if we want to support web3.
 func (t *Trie) NodeIterator(startKey []byte) ethtrie.NodeIterator {
-	return nil, fffsadf
+	return nil
 }
 
 // GetKey implements the Ethereum state.Trie interface. Since the IAVL does not
-// need to store preimages of keys, a simply identity can be returned.
+// need to store preimages of keys, a simple identity can be returned.
 func (t *Trie) GetKey(key []byte) []byte {
 	return key
 }
@@ -150,7 +168,23 @@ func (t *Trie) GetKey(key []byte) []byte {
 // Prove implements the Ethereum state.Trie interface. It writes a Merkle proof
 // to a ethdb.Putter, proofDB, for a given key starting at fromLevel.
 //
-// TODO: Determine how to use the Cosmos SDK to provide such proof.
+// TODO: Determine how to integrate this with Cosmos SDK to provide such
+// proofs.
 func (t *Trie) Prove(key []byte, fromLevel uint, proofDB ethdb.Putter) error {
 	return nil
+}
+
+// versionFromRootHash returns a Cosmos SDK IAVL version from an Ethereum state
+// root hash.
+//
+// CONTRACT: The encoded version is the eight MSB bytes of the root hash.
+func versionFromRootHash(root ethcommon.Hash) int64 {
+	return int64(binary.BigEndian.Uint64(root[:versionLen]))
+}
+
+// rootHashFromVersion returns a state root hash from a Cosmos SDK IAVL
+// version.
+func rootHashFromVersion(version int64) (root ethcommon.Hash) {
+	binary.BigEndian.PutUint64(root[:versionLen], uint64(version))
+	return
 }
