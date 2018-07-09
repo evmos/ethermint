@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/cosmos/ethermint/core"
+	"github.com/cosmos/ethermint/state"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethmisc "github.com/ethereum/go-ethereum/consensus/misc"
 	ethcore "github.com/ethereum/go-ethereum/core"
@@ -19,8 +21,6 @@ import (
 	ethvm "github.com/ethereum/go-ethereum/core/vm"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	ethrlp "github.com/ethereum/go-ethereum/rlp"
-	"github.com/ledgerwatch/ethermint/core"
-	"github.com/ledgerwatch/ethermint/state"
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
@@ -195,7 +195,7 @@ func main() {
 		}
 
 		n++
-		if (n%100) == 0 {
+		if (n % 100) == 0 {
 			fmt.Printf("processed %d blocks\n", n)
 		}
 		if n >= 1000 {

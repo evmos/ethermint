@@ -3,10 +3,10 @@ package state
 import (
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/ethermint/core"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtrie "github.com/ethereum/go-ethereum/trie"
-	"github.com/ledgerwatch/ethermint/core"
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
