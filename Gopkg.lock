@@ -11,23 +11,22 @@
   branch = "master"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
-  revision = "86fed781132ac890ee03e906e4ecd5d6fa180c64"
+  revision = "fdfc19097e7ac6b57035062056f5b7b4638b8898"
 
 [[projects]]
   branch = "master"
   name = "github.com/btcsuite/btcutil"
   packages = ["bech32"]
-  revision = "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4"
+  revision = "ab6388e0c60ae4834a1f57511e20c17b5f78be4b"
 
 [[projects]]
-  branch = "develop"
   name = "github.com/cosmos/cosmos-sdk"
   packages = [
     "store",
     "types",
     "wire"
   ]
-  revision = "08625633c62555cbd4ddc61238d35da520d942cb"
+  revision = "0d6f99d6d514916974a7cc1a7e4577c650e987e1"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -73,8 +72,8 @@
     "rpc",
     "trie"
   ]
-  revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
-  version = "v1.8.11"
+  revision = "37685930d953bcbe023f9bc65b135a8d8b8f1488"
+  version = "v1.8.12"
 
 [[projects]]
   name = "github.com/go-kit/kit"
@@ -179,7 +178,7 @@
     "leveldb/table",
     "leveldb/util"
   ]
-  revision = "0d5a0ceb10cf9ab89fdd744cc8c50a83134f6697"
+  revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
 
 [[projects]]
   branch = "master"
@@ -222,15 +221,6 @@
   version = "v0.22.0-rc2"
 
 [[projects]]
-  name = "github.com/tendermint/tmlibs"
-  packages = [
-    "common",
-    "db",
-    "log"
-  ]
-  revision = "692f1d86a6e2c0efa698fd1e4541b68c74ffaf38"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -257,7 +247,7 @@
     "trace",
     "websocket"
   ]
-  revision = "ed29d75add3d7c4bf7ca65aac0c6df3d1420216f"
+  revision = "c21de06aaf072cea07f3a65d6970e5c7d8b6cd6d"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -336,6 +326,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "58fcc52223aba442a24118b546ef53abff5352bbdf306e652dee3106822bba50"
+  inputs-digest = "6bd7ad37cf8a53408eeb32265fbc699bf2cc4e7a15b0b98182bcebb5c887cea1"
   solver-name = "gps-cdcl"
   solver-version = 1

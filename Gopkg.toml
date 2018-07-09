@@ -1,15 +1,15 @@
 [[constraint]]
   name = "github.com/cosmos/cosmos-sdk"
-  # TODO: Replace with a stable tagged version
-  branch = "develop"
+  # TODO: Replace with a stable tagged version (issue: #3)
+  revision = "0d6f99d6d514916974a7cc1a7e4577c650e987e1"
 
 [[override]]
   name = "google.golang.org/genproto"
   revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
 
 [[constraint]]
-  version = "=0.22.0-rc2"
   name = "github.com/tendermint/tendermint"
+  version = "=0.22.0-rc2"
 
 [prune]
   go-tests = true
