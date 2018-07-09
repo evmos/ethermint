@@ -7,9 +7,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
+	"runtime/pprof"
 
 	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/state"
@@ -24,6 +26,8 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
+
 var (
 	// TODO: Document...
 	miner501    = ethcommon.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D")
@@ -32,7 +36,21 @@ var (
 
 // TODO: Document...
 func main() {
-	stateDB := dbm.NewDB("state", dbm.MemDBBackend, "")
+	flag.Parse()
+    if *cpuprofile != "" {
+        f, err := os.Create(*cpuprofile)
+        if err != nil {
+            fmt.Printf("could not create CPU profile: %v\n", err)
+            return
+        }
+        if err := pprof.StartCPUProfile(f); err != nil {
+            fmt.Printf("could not start CPU profile: %v\n", err)
+            return
+        }
+        defer pprof.StopCPUProfile()
+    }
+
+    stateDB := dbm.NewDB("state", dbm.MemDBBackend, "")
 	codeDB := dbm.NewDB("code", dbm.MemDBBackend, "")
 
 	ethermintDB, err := state.NewDatabase(stateDB, codeDB)
@@ -195,10 +213,10 @@ func main() {
 		}
 
 		n++
-		if (n % 100) == 0 {
+		if (n % 1000) == 0 {
 			fmt.Printf("processed %d blocks\n", n)
 		}
-		if n >= 1000 {
+		if n >= 20000 {
 			break
 		}
 	}
