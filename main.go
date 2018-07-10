@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"runtime/pprof"
+	"time"
 
 	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/state"
@@ -27,6 +28,7 @@ import (
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
+var blockchain = flag.String("blockchain", "blockchain", "file containing blocks to load")
 
 var (
 	// TODO: Document...
@@ -50,8 +52,8 @@ func main() {
         defer pprof.StopCPUProfile()
     }
 
-    stateDB := dbm.NewDB("state", dbm.MemDBBackend, "")
-	codeDB := dbm.NewDB("code", dbm.MemDBBackend, "")
+    stateDB := dbm.NewDB("state", dbm.LevelDBBackend, "")
+	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, "")
 
 	ethermintDB, err := state.NewDatabase(stateDB, codeDB)
 	if err != nil {
@@ -94,7 +96,7 @@ func main() {
 	// command.
 	//
 	// TODO: Allow this to be configurable
-	input, err := os.Open("blockchain")
+	input, err := os.Open(*blockchain)
 	if err != nil {
 		panic(err)
 	}
@@ -119,6 +121,7 @@ func main() {
 	vmConfig := ethvm.Config{}
 
 	n := 0
+	startTime := time.Now()
 	for {
 		if err = stream.Decode(&block); err == io.EOF {
 			err = nil
@@ -213,12 +216,12 @@ func main() {
 		}
 
 		n++
-		if (n % 1000) == 0 {
-			fmt.Printf("processed %d blocks\n", n)
+		if (n % 10000) == 0 {
+			fmt.Printf("processed %d blocks, time so far: %v\n", n, time.Since(startTime))
 		}
-		if n >= 20000 {
-			break
-		}
+		//if n >= 20000 {
+		//	break
+		//}
 	}
 
 	fmt.Printf("processed %d blocks\n", n)
