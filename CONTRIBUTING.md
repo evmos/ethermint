@@ -23,8 +23,8 @@ For instance, to create a fork and work on a branch of it, One would:
   * `git remote rename origin upstream`
   * `git remote add origin git@github.com:<username>/ethermint.git`
 
-Now `origin` refers to my fork and `upstream` refers to the Cosmos-SDK version.
-So I can `git push -u origin <branch>` to update my fork, and make pull requests to Cosmos-SDK from there.
+Now `origin` refers to my fork and `upstream` refers to the Ethermint version.
+So I can `git push -u origin <branch>` to update my fork, and make pull requests to Ethermint from there.
 Of course, replace `<username>` with your git handle.
 
 To pull in updates from the origin repo, run
@@ -45,7 +45,7 @@ software.
 
 Since some dependencies are not under our control, a third party may break our
 build, in which case we can fall back on `dep ensure` (or `make
-get_vendor_deps`). Even for dependencies under our control, `dep` helps us to
+get-vendor-deps`). Even for dependencies under our control, `dep` helps us to
 keep multiple repos in sync as they evolve. Anything with an executable, such
 as apps, tools, and the core, should use `dep`.
 
@@ -68,19 +68,21 @@ That is, these repos should be well versioned, and any merge to master requires 
 
 Libraries need not follow the model strictly, but would be wise to.
 
-The SDK utilizes [semantic versioning](https://semver.org/).
+Ethermint utilizes [semantic versioning](https://semver.org/).
 
 ### Development Procedure:
 - the latest state of development is on `develop`
 - `develop` must never fail `make test`
-- `develop` should not fail `make test_lint`
+- `develop` should not fail `make test-lint`
 - no --force onto `develop` (except when reverting a broken commit, which should seldom happen)
-- create a development branch either on github.com/cosmos/cosmos-sdk, or your fork (using `git remote add origin`)
+- create a development branch either on github.com/cosmos/ethermint, or your fork (using `git remote add origin`)
+- [squash your commits](https://github.com/todotxt/todo.txt-android/wiki/Squash-All-Commits-Related-to-a-Single-Issue-into-a-Single-Commit) into an individual commit
 - before submitting a pull request, begin `git rebase` on top of `develop`
 
 ### Pull Merge Procedure:
 - ensure pull branch is rebased on develop
-- run `make test` and `make test_cli` to ensure that all tests pass
+- [squash your commits](https://github.com/todotxt/todo.txt-android/wiki/Squash-All-Commits-Related-to-a-Single-Issue-into-a-Single-Commit) into an individual commit
+- run `make test` and `make test-cli` to ensure that all tests pass
 - merge pull request
 - push master may request that pull requests be rebased on top of `unstable`
 
