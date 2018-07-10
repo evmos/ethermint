@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"runtime/pprof"
+	"time"
 
 	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/state"
@@ -120,6 +121,7 @@ func main() {
 	vmConfig := ethvm.Config{}
 
 	n := 0
+	startTime := time.Now()
 	for {
 		if err = stream.Decode(&block); err == io.EOF {
 			err = nil
@@ -215,7 +217,7 @@ func main() {
 
 		n++
 		if (n % 10000) == 0 {
-			fmt.Printf("processed %d blocks\n", n)
+			fmt.Printf("processed %d blocks, time so far: %v\n", n, time.Since(startTime))
 		}
 		//if n >= 20000 {
 		//	break
