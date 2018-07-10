@@ -84,7 +84,6 @@ Ethermint utilizes [semantic versioning](https://semver.org/).
 - [squash your commits](https://github.com/todotxt/todo.txt-android/wiki/Squash-All-Commits-Related-to-a-Single-Issue-into-a-Single-Commit) into an individual commit
 - run `make test` and `make test-cli` to ensure that all tests pass
 - merge pull request
-- push master may request that pull requests be rebased on top of `unstable`
 
 ### Release Procedure:
 - start on `develop`
