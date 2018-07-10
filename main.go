@@ -27,6 +27,7 @@ import (
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
+var blockchain = flag.String("blockchain", "blockchain", "file containing blocks to load")
 
 var (
 	// TODO: Document...
@@ -50,8 +51,8 @@ func main() {
         defer pprof.StopCPUProfile()
     }
 
-    stateDB := dbm.NewDB("state", dbm.MemDBBackend, "")
-	codeDB := dbm.NewDB("code", dbm.MemDBBackend, "")
+    stateDB := dbm.NewDB("state", dbm.LevelDBBackend, "")
+	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, "")
 
 	ethermintDB, err := state.NewDatabase(stateDB, codeDB)
 	if err != nil {
@@ -94,7 +95,7 @@ func main() {
 	// command.
 	//
 	// TODO: Allow this to be configurable
-	input, err := os.Open("blockchain")
+	input, err := os.Open(*blockchain)
 	if err != nil {
 		panic(err)
 	}
@@ -213,12 +214,12 @@ func main() {
 		}
 
 		n++
-		if (n % 1000) == 0 {
+		if (n % 10000) == 0 {
 			fmt.Printf("processed %d blocks\n", n)
 		}
-		if n >= 20000 {
-			break
-		}
+		//if n >= 20000 {
+		//	break
+		//}
 	}
 
 	fmt.Printf("processed %d blocks\n", n)
