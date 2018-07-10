@@ -20,7 +20,7 @@ import (
 // NOTE: Ethermint will distribute the fees out to validators, so the structure
 // and functionality of this is a WIP and subject to change.
 type ChainContext struct {
-	Coinbase ethcommon.Address
+	Coinbase        ethcommon.Address
 	headersByNumber map[uint64]*ethtypes.Header
 }
 
