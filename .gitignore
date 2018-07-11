@@ -13,3 +13,4 @@
 # Vendor deps
 .glide/
 vendor/
+build/
