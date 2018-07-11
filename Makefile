@@ -1,5 +1,4 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
-PACKAGES_NOCLITEST=$(shell go list ./... | grep -v '/vendor/' | grep -v github.com/cosmos/ethermint/cmd/gaia/cli_test)
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_FLAGS = -tags netgo -ldflags "-X github.com/cosmos/ethermint/version.GitCommit=${COMMIT_HASH}"
 
@@ -25,15 +24,8 @@ GOCYCLO_CHECK := $(shell command -v gocyclo 2> /dev/null)
 
 all: get-tools get-vendor-deps install
 
-########################################
-### CI
-
 ci: get-tools get-vendor-deps install
 
-########################################
-### Build
-
-# This can be unified later, here for easy demos
 build:
 ifeq ($(OS),Windows_NT)
 	go build $(BUILD_FLAGS) -o build/ethermint.exe ./*.go
@@ -44,8 +36,8 @@ endif
 install:
 	go install $(BUILD_FLAGS) ./*.go
 
-########################################
-### Tools & dependencies
+clean:
+	rm -rf ./build ./vendor
 
 update-tools:
 	@echo "Updating golang dependencies"
@@ -112,42 +104,8 @@ get-vendor-deps:
 	@echo "--> Running dep ensure"
 	@dep ensure -v
 
-
-########################################
-### Documentation
-
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
 	godoc -http=:6060
-
-########################################
-### Testing
-
-# # TODO: FILL IN THE TESTING THINGS
-# test: test_unit
-#
-# test_cli:
-# 	@go test -count 1 -p 1 `go list github.com/cosmos/ethermint/cmd/gaia/cli_test`
-#
-# test_unit:
-# 	@go test $(PACKAGES_NOCLITEST)
-#
-# test_race:
-# 	@go test -race $(PACKAGES_NOCLITEST)
-#
-# test_cover:
-# 	@bash tests/test_cover.sh
-#
-# test_lint:
-# 	gometalinter.v2 --config=tools/gometalinter.json ./...
-# 	!(gometalinter.v2 --disable-all --enable='errcheck' --vendor ./... | grep -v "client/")
-# 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -d -s
-#
-# format:
-# 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -w -s
-# 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
-#
-# benchmark:
-# 	@go test -bench=. $(PACKAGES_NOCLITEST)
 
 .PHONY: build install update-tools get-tools get-vendor-deps godocs
