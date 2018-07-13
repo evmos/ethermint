@@ -2,7 +2,7 @@
 
 # Ethermint
 
-__**WARNING:**__ Ethermint is under VERY ACTIVE DEVELOPMENT and should be treated as pre-alpha software. This means it is not meant to be run in production, its APIs are subject to change without warning and should not be relied upon, and should it be used to hold any value. We will remove this warning when we have a release that is stable, secure, and properly tested.
+__**WARNING:**__ Ethermint is under VERY ACTIVE DEVELOPMENT and should be treated as pre-alpha software. This means it is not meant to be run in production, its APIs are subject to change without warning and should not be relied upon, and it should not be used to hold any value. We will remove this warning when we have a release that is stable, secure, and properly tested.
 
 ### What is it?
 
