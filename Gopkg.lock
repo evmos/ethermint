@@ -31,7 +31,7 @@
   packages = [
     "store",
     "types",
-    "wire"
+    "wire",
   ]
   pruneopts = "T"
   revision = "0d6f99d6d514916974a7cc1a7e4577c650e987e1"
@@ -83,7 +83,7 @@
     "params",
     "rlp",
     "rpc",
-    "trie"
+    "trie",
   ]
   pruneopts = "T"
   revision = "37685930d953bcbe023f9bc65b135a8d8b8f1488"
@@ -95,7 +95,7 @@
   packages = [
     "log",
     "log/level",
-    "log/term"
+    "log/term",
   ]
   pruneopts = "T"
   revision = "4dc7be5d2d12881735283bcab7352178e190fc71"
@@ -126,7 +126,7 @@
     "proto",
     "protoc-gen-gogo/descriptor",
     "sortkeys",
-    "types"
+    "types",
   ]
   pruneopts = "T"
   revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
@@ -140,7 +140,7 @@
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
-    "ptypes/timestamp"
+    "ptypes/timestamp",
   ]
   pruneopts = "T"
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
@@ -160,7 +160,7 @@
   name = "github.com/hashicorp/golang-lru"
   packages = [
     ".",
-    "simplelru"
+    "simplelru",
   ]
   pruneopts = "T"
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
@@ -213,7 +213,7 @@
     "leveldb/opt",
     "leveldb/storage",
     "leveldb/table",
-    "leveldb/util"
+    "leveldb/util",
   ]
   pruneopts = "T"
   revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
@@ -225,7 +225,7 @@
   packages = [
     ".",
     "edwards25519",
-    "extra25519"
+    "extra25519",
   ]
   pruneopts = "T"
   revision = "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
@@ -260,7 +260,7 @@
     "libs/log",
     "libs/pubsub",
     "libs/pubsub/query",
-    "types"
+    "types",
   ]
   pruneopts = "T"
   revision = "5923b6288fe8ce9581936ee97c2bf9cf9c02c2f4"
@@ -277,7 +277,7 @@
     "openpgp/errors",
     "poly1305",
     "ripemd160",
-    "salsa20/salsa"
+    "salsa20/salsa",
   ]
   pruneopts = "T"
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
@@ -294,7 +294,7 @@
     "idna",
     "internal/timeseries",
     "trace",
-    "websocket"
+    "websocket",
   ]
   pruneopts = "T"
   revision = "c21de06aaf072cea07f3a65d6970e5c7d8b6cd6d"
@@ -316,7 +316,7 @@
     "unicode/bidi",
     "unicode/cldr",
     "unicode/norm",
-    "unicode/rangetable"
+    "unicode/rangetable",
   ]
   pruneopts = "T"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
@@ -355,7 +355,7 @@
     "stats",
     "status",
     "tap",
-    "transport"
+    "transport",
   ]
   pruneopts = "T"
   revision = "d11072e7ca9811b1100b80ca0269ac831f06d024"
@@ -405,7 +405,7 @@
     "github.com/ethereum/go-ethereum/rlp",
     "github.com/ethereum/go-ethereum/rpc",
     "github.com/ethereum/go-ethereum/trie",
-    "github.com/tendermint/tendermint/libs/db"
+    "github.com/tendermint/tendermint/libs/db",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

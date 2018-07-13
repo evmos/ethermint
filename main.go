@@ -28,7 +28,7 @@ import (
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
-var blockchain = flag.String("blockchain", "blockchain", "file containing blocks to load")
+var blockchain = flag.String("blockchain", "data/blockchain", "file containing blocks to load")
 
 var (
 	// TODO: Document...
@@ -39,20 +39,20 @@ var (
 // TODO: Document...
 func main() {
 	flag.Parse()
-    if *cpuprofile != "" {
-        f, err := os.Create(*cpuprofile)
-        if err != nil {
-            fmt.Printf("could not create CPU profile: %v\n", err)
-            return
-        }
-        if err := pprof.StartCPUProfile(f); err != nil {
-            fmt.Printf("could not start CPU profile: %v\n", err)
-            return
-        }
-        defer pprof.StopCPUProfile()
-    }
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			fmt.Printf("could not create CPU profile: %v\n", err)
+			return
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			fmt.Printf("could not start CPU profile: %v\n", err)
+			return
+		}
+		defer pprof.StopCPUProfile()
+	}
 
-    stateDB := dbm.NewDB("state", dbm.LevelDBBackend, "")
+	stateDB := dbm.NewDB("state", dbm.LevelDBBackend, "")
 	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, "")
 
 	ethermintDB, err := state.NewDatabase(stateDB, codeDB)
