@@ -1,6 +1,8 @@
 PACKAGES=$(shell go list ./... | grep -v '/vendor/')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_FLAGS = -tags netgo -ldflags "-X github.com/cosmos/ethermint/version.GitCommit=${COMMIT_HASH}"
+DOCKER_TAG = unstable
+DOCKER_IMAGE = tendermint/ethermint
 
 DEP = github.com/golang/dep/cmd/dep
 GOLINT = github.com/tendermint/lint/golint
@@ -107,5 +109,10 @@ get-vendor-deps:
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
 	godoc -http=:6060
+
+docker:
+	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
 
 .PHONY: build install update-tools get-tools get-vendor-deps godocs
