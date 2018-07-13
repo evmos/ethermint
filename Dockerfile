@@ -13,7 +13,7 @@ RUN apk add --update $PACKAGES
 COPY . .
 
 # Make the binary
-RUN make update-tools get-vendor-deps build
+RUN make update-tools deps build
 
 # Final image
 FROM alpine:edge

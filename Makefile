@@ -24,9 +24,9 @@ ERRCHECK_CHECK := $(shell command -v errcheck 2> /dev/null)
 UNPARAM_CHECK := $(shell command -v unparam 2> /dev/null)
 GOCYCLO_CHECK := $(shell command -v gocyclo 2> /dev/null)
 
-all: get-tools get-vendor-deps install
+all: tools deps install
 
-ci: get-tools get-vendor-deps install
+ci: tools deps install
 
 build:
 ifeq ($(OS),Windows_NT)
@@ -45,7 +45,7 @@ update-tools:
 	@echo "Updating golang dependencies"
 	go get -u -v $(DEP) $(GOLINT) $(GOMETALINTER) $(UNCONVERT) $(INEFFASSIGN) $(MISSPELL) $(ERRCHECK) $(UNPARAM) $(GOCYCLO)
 
-get-tools:
+tools:
 	ifdef DEP_CHECK
 		@echo "Dep is already installed.  Run 'make update-tools' to update."
 	else
@@ -101,7 +101,7 @@ get-tools:
 		go get -v $(GOCYCLO)
 	endif
 
-get-vendor-deps:
+deps:
 	@rm -rf vendor/
 	@echo "--> Running dep ensure"
 	@dep ensure -v
@@ -115,4 +115,4 @@ docker:
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
 
-.PHONY: build install update-tools get-tools get-vendor-deps godocs
+.PHONY: build install update-tools tools deps godocs
