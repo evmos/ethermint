@@ -46,60 +46,60 @@ update-tools:
 	go get -u -v $(DEP) $(GOLINT) $(GOMETALINTER) $(UNCONVERT) $(INEFFASSIGN) $(MISSPELL) $(ERRCHECK) $(UNPARAM) $(GOCYCLO)
 
 tools:
-	ifdef DEP_CHECK
-		@echo "Dep is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing dep"
-		go get -v $(DEP)
-	endif
-	ifdef GOLINT_CHECK
-		@echo "Golint is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing golint"
-		go get -v $(GOLINT)
-	endif
-	ifdef GOMETALINTER_CHECK
-		@echo "Gometalinter.v2 is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing gometalinter.v2"
-		go get -v $(GOMETALINTER)
-	endif
-	ifdef UNCONVERT_CHECK
-		@echo "Unconvert is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing unconvert"
-		go get -v $(UNCONVERT)
-	endif
-	ifdef INEFFASSIGN_CHECK
-		@echo "Ineffassign is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing ineffassign"
-		go get -v $(INEFFASSIGN)
-	endif
-	ifdef MISSPELL_CHECK
-		@echo "misspell is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing misspell"
-		go get -v $(MISSPELL)
-	endif
-	ifdef ERRCHECK_CHECK
-		@echo "errcheck is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing errcheck"
-		go get -v $(ERRCHECK)
-	endif
-	ifdef UNPARAM_CHECK
-		@echo "unparam is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing unparam"
-		go get -v $(UNPARAM)
-	endif
-	ifdef GOYCLO_CHECK
-		@echo "goyclo is already installed.  Run 'make update-tools' to update."
-	else
-		@echo "Installing goyclo"
-		go get -v $(GOCYCLO)
-	endif
+ifdef DEP_CHECK
+	@echo "Dep is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing dep"
+	go get -v $(DEP)
+endif
+ifdef GOLINT_CHECK
+	@echo "Golint is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing golint"
+	go get -v $(GOLINT)
+endif
+ifdef GOMETALINTER_CHECK
+	@echo "Gometalinter.v2 is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing gometalinter.v2"
+	go get -v $(GOMETALINTER)
+endif
+ifdef UNCONVERT_CHECK
+	@echo "Unconvert is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing unconvert"
+	go get -v $(UNCONVERT)
+endif
+ifdef INEFFASSIGN_CHECK
+	@echo "Ineffassign is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing ineffassign"
+	go get -v $(INEFFASSIGN)
+endif
+ifdef MISSPELL_CHECK
+	@echo "misspell is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing misspell"
+	go get -v $(MISSPELL)
+endif
+ifdef ERRCHECK_CHECK
+	@echo "errcheck is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing errcheck"
+	go get -v $(ERRCHECK)
+endif
+ifdef UNPARAM_CHECK
+	@echo "unparam is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing unparam"
+	go get -v $(UNPARAM)
+endif
+ifdef GOCYCLO_CHECK
+	@echo "goyclo is already installed.  Run 'make update-tools' to update."
+else
+	@echo "Installing goyclo"
+	go get -v $(GOCYCLO)
+endif
 
 deps:
 	@rm -rf vendor/
