@@ -1,0 +1,7 @@
+version: '3'
+services:
+  ethermint:
+    build: .
+    volumes:
+      - ./data/:/data/
+    command: ["ethermint", "-blockchain", "/data/blockchain"]

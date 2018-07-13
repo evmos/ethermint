@@ -31,6 +31,14 @@ $ make tools deps build
 $ make tools deps install
 ```
 
+### Using Ethermint to parse Mainnet Ethereum blocks
+
+There is an included `docker-compose.yaml` file and a `data/blockchain` file that provide an easy way to run the demo of parsing Mainnet ethereum blocks. The dump in `data/` only includes up to block `97638`. To run this have [`docker-compose.yaml` installed](https://docs.docker.com/compose/install/) and run the following:
+
+```
+$ docker-compose up
+```
+
 ### Community
 
 The following chat channels and forums are a great spot to ask questions about Ethermint:
