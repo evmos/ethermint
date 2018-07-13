@@ -25,10 +25,10 @@ To build, execute the following commands:
 
 ```bash
 # To build the binary and put the results in ./build
-$ make get-tools get-vendor-deps build
+$ make tools deps build
 
 # To build the project and install it in $GOBIN
-$ make get-tools get-vendor-deps install
+$ make tools deps install
 ```
 
 ### Community

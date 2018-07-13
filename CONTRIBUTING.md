@@ -45,7 +45,7 @@ software.
 
 Since some dependencies are not under our control, a third party may break our
 build, in which case we can fall back on `dep ensure` (or `make
-get-vendor-deps`). Even for dependencies under our control, `dep` helps us to
+deps`). Even for dependencies under our control, `dep` helps us to
 keep multiple repos in sync as they evolve. Anything with an executable, such
 as apps, tools, and the core, should use `dep`.
 
