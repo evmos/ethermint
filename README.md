@@ -11,7 +11,7 @@ __**WARNING:**__ Ethermint is under VERY ACTIVE DEVELOPMENT and should be treate
 - [Hard Spoon](https://blog.cosmos.network/introducing-the-hard-spoon-4a9288d3f0df) enablement: This is the ability to take a token from the Ethereum mainnet and "spoon" (shift) the balances over to another network. This feature is intended to make it easy for applications that require more transactions than the Ethereum main chain can provide to move their code over to a compatible chain with much more capacity.
 -  Web3 Compatibility: In order enable applications to be moved over to an ethermint chain existing tooling (i.e. web3 compatable clients) need to be able to interact with `ethermint`.
 
-### Implementation Steps
+### Implementation
 
 - [x] Have a working implementation that can parse and validate the existing ETH Chain and persist it in a Tendermint store
 - [ ] Benchmark this implementation to ensure performance
@@ -33,10 +33,28 @@ $ make tools deps install
 
 ### Using Ethermint to parse Mainnet Ethereum blocks
 
-There is an included `docker-compose.yaml` file and a `data/blockchain` file that provide an easy way to run the demo of parsing Mainnet ethereum blocks. The dump in `data/` only includes up to block `97638`. To run this have [`docker-compose.yaml` installed](https://docs.docker.com/compose/install/) and run the following:
+There is an included Ethereum Mainnet blockchain file in `data/blockchain` that provides an easy way to run the demo of parsing Mainnet Ethereum blocks. The dump in `data/` only includes up to block `97638`. To run this, type the following command:
 
-```
-$ docker-compose up
+```bash
+$ go run main.go copied.go
+balance of 0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0: 200000000000000000000
+commitID after genesis: CommitID{[235 78 80 238 156 235 50 19 95 118 247 9 106 207 72 45 127 238 223 177]:1}
+genesis state root hash: 0000000000000001000000000000000000000000000000000000000000000000
+processed 10000 blocks, time so far: 3.076565301s
+processed 20000 blocks, time so far: 6.437135359s
+processed 30000 blocks, time so far: 10.145579892s
+processed 40000 blocks, time so far: 14.538473343s
+processed 50000 blocks, time so far: 20.924373963s
+processed 60000 blocks, time so far: 28.486701074s
+processed 70000 blocks, time so far: 40.029318946s
+processed 80000 blocks, time so far: 48.056637508s
+processed 90000 blocks, time so far: 57.049310537s
+processed 97638 blocks
+balance of one of the genesis investors: 200000000000000000000
+root500: 00000000000001f5000000000000000000000000000000000000000000000000
+investor's balance after block 500: 200000000000000000000
+miner of block 501's balance after block 500: 0
+miner of block 501's balance after block 501: 5000000000000000000
 ```
 
 ### Community
