@@ -37,24 +37,6 @@ There is an included Ethereum Mainnet blockchain file in `data/blockchain` that 
 
 ```bash
 $ go run main.go copied.go
-balance of 0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0: 200000000000000000000
-commitID after genesis: CommitID{[235 78 80 238 156 235 50 19 95 118 247 9 106 207 72 45 127 238 223 177]:1}
-genesis state root hash: 0000000000000001000000000000000000000000000000000000000000000000
-processed 10000 blocks, time so far: 3.076565301s
-processed 20000 blocks, time so far: 6.437135359s
-processed 30000 blocks, time so far: 10.145579892s
-processed 40000 blocks, time so far: 14.538473343s
-processed 50000 blocks, time so far: 20.924373963s
-processed 60000 blocks, time so far: 28.486701074s
-processed 70000 blocks, time so far: 40.029318946s
-processed 80000 blocks, time so far: 48.056637508s
-processed 90000 blocks, time so far: 57.049310537s
-processed 97638 blocks
-balance of one of the genesis investors: 200000000000000000000
-root500: 00000000000001f5000000000000000000000000000000000000000000000000
-investor's balance after block 500: 200000000000000000000
-miner of block 501's balance after block 500: 0
-miner of block 501's balance after block 501: 5000000000000000000
 ```
 
 ### Community
