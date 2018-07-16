@@ -28,7 +28,7 @@ import (
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
-var blockchain = flag.String("blockchain", "blockchain", "file containing blocks to load")
+var blockchain = flag.String("blockchain", "data/blockchain", "file containing blocks to load")
 
 var (
 	// TODO: Document...

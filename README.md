@@ -11,7 +11,7 @@ __**WARNING:**__ Ethermint is under VERY ACTIVE DEVELOPMENT and should be treate
 - [Hard Spoon](https://blog.cosmos.network/introducing-the-hard-spoon-4a9288d3f0df) enablement: This is the ability to take a token from the Ethereum mainnet and "spoon" (shift) the balances over to another network. This feature is intended to make it easy for applications that require more transactions than the Ethereum main chain can provide to move their code over to a compatible chain with much more capacity.
 -  Web3 Compatibility: In order enable applications to be moved over to an ethermint chain existing tooling (i.e. web3 compatable clients) need to be able to interact with `ethermint`.
 
-### Implementation Steps
+### Implementation
 
 - [x] Have a working implementation that can parse and validate the existing ETH Chain and persist it in a Tendermint store
 - [ ] Benchmark this implementation to ensure performance
@@ -29,6 +29,14 @@ $ make tools deps build
 
 # To build the project and install it in $GOBIN
 $ make tools deps install
+```
+
+### Using Ethermint to parse Mainnet Ethereum blocks
+
+There is an included Ethereum Mainnet blockchain file in `data/blockchain` that provides an easy way to run the demo of parsing Mainnet Ethereum blocks. The dump in `data/` only includes up to block `97638`. To run this, type the following command:
+
+```bash
+$ go run main.go copied.go
 ```
 
 ### Community
