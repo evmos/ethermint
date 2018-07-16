@@ -14,5 +14,3 @@
 .glide/
 vendor/
 build/
-*.db
-*.txt
