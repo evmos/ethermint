@@ -166,7 +166,7 @@ func (db *Database) CopyTrie(ethstate.Trie) ethstate.Trie {
 func (db *Database) ContractCode(addrHash, codeHash ethcommon.Hash) ([]byte, error) {
 	code := db.codeDB.Get(codeHash[:])
 
-	db.codeSizeCache.Add(codeHash, code)
+	db.codeSizeCache.Add(codeHash, len(code))
 	return code, nil
 }
 
