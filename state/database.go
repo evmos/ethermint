@@ -7,6 +7,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtrie "github.com/ethereum/go-ethereum/trie"
+	lru "github.com/hashicorp/golang-lru"
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
@@ -22,6 +23,13 @@ var (
 	// CodeKey is the key used for storing Ethereum contract code in the Cosmos
 	// SDK multi-store.
 	CodeKey = types.NewKVStoreKey("code")
+)
+
+const (
+	// codeSizeCacheSize is the number of codehash to size associations to
+	// keep in cached memory. This is to address any DoS attempts on
+	// EXTCODESIZE calls.
+	codeSizeCacheSize = 100000
 )
 
 // Database implements the Ethereum state.Database interface.
@@ -43,7 +51,10 @@ type Database struct {
 	codeDB    dbm.DB
 	ethTrieDB *ethtrie.Database
 
-	// TODO: Do we need this/document?
+	// codeSizeCache contains an LRU cache of a specified capacity to cache
+	// EXTCODESIZE calls.
+	codeSizeCache *lru.Cache
+
 	Tracing bool
 }
 
@@ -74,6 +85,8 @@ func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
 	// of contract byte code when committing state.
 	db.codeDB = codeDB
 	db.ethTrieDB = ethtrie.NewDatabase(&core.EthereumDB{CodeDB: codeDB})
+
+	db.codeSizeCache, _ = lru.New(codeSizeCacheSize)
 
 	return db, nil
 }
@@ -151,13 +164,20 @@ func (db *Database) CopyTrie(ethstate.Trie) ethstate.Trie {
 // ContractCode implements Ethereum's state.Database interface. It will return
 // the contract byte code for a given code hash. It will not return an error.
 func (db *Database) ContractCode(addrHash, codeHash ethcommon.Hash) ([]byte, error) {
-	return db.codeDB.Get(codeHash[:]), nil
+	code := db.codeDB.Get(codeHash[:])
+
+	db.codeSizeCache.Add(codeHash, code)
+	return code, nil
 }
 
 // ContractCodeSize implements Ethereum's state.Database interface. It will
 // return the contract byte code size for a given code hash. It will not return
 // an error.
 func (db *Database) ContractCodeSize(addrHash, codeHash ethcommon.Hash) (int, error) {
+	if cached, ok := db.codeSizeCache.Get(codeHash); ok {
+		return cached.(int), nil
+	}
+
 	return len(db.codeDB.Get(codeHash[:])), nil
 }
 

@@ -29,6 +29,7 @@ import (
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
 var blockchain = flag.String("blockchain", "data/blockchain", "file containing blocks to load")
+var datadir = flag.String("datadir", "", "directory for ethermint data")
 
 var (
 	// TODO: Document...
@@ -52,8 +53,8 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	stateDB := dbm.NewDB("state", dbm.LevelDBBackend, "")
-	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, "")
+	stateDB := dbm.NewDB("state", dbm.LevelDBBackend, *datadir)
+	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, *datadir)
 
 	ethermintDB, err := state.NewDatabase(stateDB, codeDB)
 	if err != nil {
