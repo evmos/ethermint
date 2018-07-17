@@ -178,7 +178,8 @@ func (db *Database) ContractCodeSize(addrHash, codeHash ethcommon.Hash) (int, er
 		return cached.(int), nil
 	}
 
-	return len(db.codeDB.Get(codeHash[:])), nil
+	code, err := db.ContractCode(addrHash, codeHash)
+	return len(code), err
 }
 
 // Commit commits the underlying Cosmos SDK multi-store returning the commit
