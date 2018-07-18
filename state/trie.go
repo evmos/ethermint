@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 
 	"github.com/cosmos/cosmos-sdk/store"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethdb "github.com/ethereum/go-ethereum/ethdb"
 	ethtrie "github.com/ethereum/go-ethereum/trie"

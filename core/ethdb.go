@@ -2,6 +2,7 @@ package core
 
 import (
 	ethdb "github.com/ethereum/go-ethereum/ethdb"
+
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 

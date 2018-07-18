@@ -2,28 +2,31 @@ package state
 
 import (
 	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/cosmos/ethermint/core"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtrie "github.com/ethereum/go-ethereum/trie"
+
 	lru "github.com/hashicorp/golang-lru"
+
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
 var (
 	// AccountsKey is the key used for storing Ethereum accounts in the Cosmos
 	// SDK multi-store.
-	AccountsKey = types.NewKVStoreKey("account")
+	AccountsKey = sdk.NewKVStoreKey("account")
 
 	// StorageKey is the key used for storing Ethereum contract storage in the
 	// Cosmos SDK multi-store.
-	StorageKey = types.NewKVStoreKey("storage")
+	StorageKey = sdk.NewKVStoreKey("storage")
 
 	// CodeKey is the key used for storing Ethereum contract code in the Cosmos
 	// SDK multi-store.
-	CodeKey = types.NewKVStoreKey("code")
+	CodeKey = sdk.NewKVStoreKey("code")
 )
 
 const (
@@ -75,8 +78,8 @@ func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
 
 	// Create the underlying multi-store stores that will persist account and
 	// account storage data.
-	db.stateStore.MountStoreWithDB(AccountsKey, types.StoreTypeIAVL, nil)
-	db.stateStore.MountStoreWithDB(StorageKey, types.StoreTypeIAVL, nil)
+	db.stateStore.MountStoreWithDB(AccountsKey, sdk.StoreTypeIAVL, nil)
+	db.stateStore.MountStoreWithDB(StorageKey, sdk.StoreTypeIAVL, nil)
 
 	// Load the latest account state from the Cosmos SDK multi-store.
 	if err := db.stateStore.LoadLatestVersion(); err != nil {
@@ -95,6 +98,7 @@ func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
 	return db, nil
 }
 
+// LatestVersion returns the latest version of the underlying mult-store.
 func (db *Database) LatestVersion() int64 {
 	return db.stateStore.LastCommitID().Version
 }
@@ -192,7 +196,7 @@ func (db *Database) ContractCodeSize(addrHash, codeHash ethcommon.Hash) (int, er
 
 // Commit commits the underlying Cosmos SDK multi-store returning the commit
 // ID.
-func (db *Database) Commit() types.CommitID {
+func (db *Database) Commit() sdk.CommitID {
 	return db.stateStore.Commit()
 }
 
