@@ -95,6 +95,10 @@ func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
 	return db, nil
 }
 
+func (db *Database) LatestVersion() int64 {
+	return db.stateStore.LastCommitID().Version
+}
+
 // OpenTrie implements Ethereum's state.Database interface. It returns a Trie
 // type which implements the Ethereum state.Trie interface. It us used for
 // storage of accounts. An error is returned if state cannot load for a
