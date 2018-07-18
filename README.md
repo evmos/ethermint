@@ -36,8 +36,10 @@ $ make tools deps install
 There is an included Ethereum Mainnet blockchain file in `data/blockchain` that provides an easy way to run the demo of parsing Mainnet Ethereum blocks. The dump in `data/` only includes up to block `97638`. To run this, type the following command:
 
 ```bash
-$ go run main.go copied.go
+$ go run test/run.go
 ```
+
+By default, state will be dumped into `$HOME/.ethermint`. See `--help` for further usage.
 
 ### Community
 

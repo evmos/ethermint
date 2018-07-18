@@ -1,24 +1,18 @@
-// The implementation below is to be considered highly unstable and a continual
-// WIP. It is a means to replicate and test replaying Ethereum transactions
-// using the Cosmos SDK and the EVM. The ultimate result will be what is known
-// as Ethermint.
-package main
+package importer
 
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
-	"runtime/pprof"
-	"syscall"
+	"path"
 	"time"
 
 	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/state"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethmisc "github.com/ethereum/go-ethereum/consensus/misc"
 	ethcore "github.com/ethereum/go-ethereum/core"
@@ -27,60 +21,32 @@ import (
 	ethvm "github.com/ethereum/go-ethereum/core/vm"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	ethrlp "github.com/ethereum/go-ethereum/rlp"
-	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
-var cpuprofile = flag.String("cpu-profile", "", "write cpu profile `file`")
-var blockchain = flag.String("blockchain", "data/blockchain", "file containing blocks to load")
-var datadir = flag.String("datadir", "", "directory for ethermint data")
-
 var (
-	// TODO: Document...
 	miner501    = ethcommon.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D")
 	genInvestor = ethcommon.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")
 )
 
-// TODO: Document...
-func main() {
-	flag.Parse()
+// Importer implements a structure to facilitate testing of importing mainnet
+// Ethereum blocks and transactions using the Cosmos SDK components and the
+// EVM.
+type Importer struct {
+	EthermintDB    *state.Database
+	BlockchainFile string
+	Datadir        string
+	InterruptCh    <-chan bool
+}
 
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			fmt.Printf("could not create CPU profile: %v\n", err)
-			return
-		}
-
-		if err := pprof.StartCPUProfile(f); err != nil {
-			fmt.Printf("could not start CPU profile: %v\n", err)
-			return
-		}
-
-		defer pprof.StopCPUProfile()
-	}
-
-	sigs := make(chan os.Signal, 1)
-	interruptCh := make(chan bool, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-        <-sigs
-        interruptCh <- true
-    }()
-
-	stateDB := dbm.NewDB("state", dbm.LevelDBBackend, *datadir)
-	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, *datadir)
-
-	ethermintDB, err := state.NewDatabase(stateDB, codeDB)
-	if err != nil {
-		panic(err)
-	}
-
-	// Only create genesis if it is a brand new database
-	if ethermintDB.LatestVersion() == 0 {
+// Import performs an import given an Importer that has a Geth stateDB
+// implementation and a blockchain exported file.
+func (imp *Importer) Import() {
+	// only create genesis if it is a brand new database
+	if imp.EthermintDB.LatestVersion() == 0 {
 		// start with empty root hash (i.e. empty state)
-		gethStateDB, err := ethstate.New(ethcommon.Hash{}, ethermintDB)
+		gethStateDB, err := ethstate.New(ethcommon.Hash{}, imp.EthermintDB)
 		if err != nil {
-			panic(err)
+			panic(fmt.Sprintf("failed to instantiate geth state.StateDB: %v", err))
 		}
 
 		genBlock := ethcore.DefaultGenesisBlock()
@@ -104,7 +70,7 @@ func main() {
 			panic(err)
 		}
 
-		commitID := ethermintDB.Commit()
+		commitID := imp.EthermintDB.Commit()
 
 		fmt.Printf("commitID after genesis: %v\n", commitID)
 		fmt.Printf("genesis state root hash: %x\n", genRoot[:])
@@ -112,9 +78,7 @@ func main() {
 
 	// file with blockchain data exported from geth by using "geth exportdb"
 	// command.
-	//
-	// TODO: Allow this to be configurable
-	input, err := os.Open(*blockchain)
+	input, err := os.Open(imp.BlockchainFile)
 	if err != nil {
 		panic(err)
 	}
@@ -133,16 +97,17 @@ func main() {
 		root501 ethcommon.Hash // root hash after block 501
 	)
 
-	var prevRoot ethcommon.Hash 
-	binary.BigEndian.PutUint64(prevRoot[:8], uint64(ethermintDB.LatestVersion()))
+	var prevRoot ethcommon.Hash
+	binary.BigEndian.PutUint64(prevRoot[:8], uint64(imp.EthermintDB.LatestVersion()))
 
-	ethermintDB.Tracing = true
+	imp.EthermintDB.Tracing = true
 	chainContext := core.NewChainContext()
 	vmConfig := ethvm.Config{}
 
 	n := 0
 	startTime := time.Now()
 	interrupt := false
+
 	var lastSkipped uint64
 	for !interrupt {
 		if err = stream.Decode(&block); err == io.EOF {
@@ -153,12 +118,13 @@ func main() {
 		}
 
 		// don't import blocks already imported
-		if block.NumberU64() < uint64(ethermintDB.LatestVersion()) {
+		if block.NumberU64() < uint64(imp.EthermintDB.LatestVersion()) {
 			lastSkipped = block.NumberU64()
 			continue
 		}
+
 		if lastSkipped > 0 {
-			fmt.Printf("Skipped blocks up to %d\n", lastSkipped)
+			fmt.Printf("skipped blocks up to %d\n", lastSkipped)
 			lastSkipped = 0
 		}
 
@@ -166,7 +132,7 @@ func main() {
 		chainContext.Coinbase = header.Coinbase
 		chainContext.SetHeader(block.NumberU64(), header)
 
-		gethStateDB, err := ethstate.New(prevRoot, ethermintDB)
+		gethStateDB, err := ethstate.New(prevRoot, imp.EthermintDB)
 		if err != nil {
 			panic(fmt.Errorf("failed to instantiate geth state.StateDB at block %d: %v", block.NumberU64(), err))
 		}
@@ -186,7 +152,6 @@ func main() {
 			gethStateDB.Prepare(tx.Hash(), block.Hash(), i)
 
 			txHash := tx.Hash()
-			// TODO: Why this address?
 			if bytes.Equal(txHash[:], ethcommon.FromHex("0xc438cfcc3b74a28741bda361032f1c6362c34aa0e1cedff693f31ec7d6a12717")) {
 				vmConfig.Tracer = ethvm.NewStructLogger(&ethvm.LogConfig{})
 				vmConfig.Debug = true
@@ -194,9 +159,9 @@ func main() {
 
 			receipt, _, err := ethcore.ApplyTransaction(chainConfig, chainContext, nil, gp, gethStateDB, header, tx, usedGas, vmConfig)
 			if vmConfig.Tracer != nil {
-				w, err := os.Create("structlogs.txt")
+				w, err := os.Create(path.Join(imp.Datadir, "structlogs.txt"))
 				if err != nil {
-					panic(err)
+					panic(fmt.Sprintf("failed to create file for VM tracing: %v", err))
 				}
 
 				encoder := json.NewEncoder(w)
@@ -232,8 +197,7 @@ func main() {
 		}
 
 		// commit block in Ethermint
-		ethermintDB.Commit()
-		//fmt.Printf("commitID after block %d: %v\n", block.NumberU64(), commitID)
+		imp.EthermintDB.Commit()
 
 		switch block.NumberU64() {
 		case 500:
@@ -249,26 +213,27 @@ func main() {
 
 		// Check for interrupts
 		select {
-		case interrupt = <-interruptCh:
-			fmt.Printf("Interrupted, please wait for cleanup...\n")
+		case interrupt = <-imp.InterruptCh:
+			fmt.Println("interrupted, please wait for cleanup...")
 		default:
 		}
 	}
 
 	fmt.Printf("processed %d blocks\n", n)
 
-	ethermintDB.Tracing = true
+	imp.EthermintDB.Tracing = true
 
 	// try to create a new geth stateDB from root of the block 500
-	fmt.Printf("root500: %x\n", root500[:])
+	fmt.Printf("root at block 500: %x\n", root500[:])
 
-	state500, err := ethstate.New(root500, ethermintDB)
+	state500, err := ethstate.New(root500, imp.EthermintDB)
 	if err != nil {
 		panic(err)
 	}
+
 	miner501BalanceAt500 := state500.GetBalance(miner501)
 
-	state501, err := ethstate.New(root501, ethermintDB)
+	state501, err := ethstate.New(root501, imp.EthermintDB)
 	if err != nil {
 		panic(err)
 	}
