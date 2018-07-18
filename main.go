@@ -6,12 +6,15 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"runtime/pprof"
+	"syscall"
 	"time"
 
 	"github.com/cosmos/ethermint/core"
@@ -30,7 +33,6 @@ import (
 var cpuprofile = flag.String("cpu-profile", "", "write cpu profile `file`")
 var blockchain = flag.String("blockchain", "data/blockchain", "file containing blocks to load")
 var datadir = flag.String("datadir", "", "directory for ethermint data")
-var blockStop = flag.Int("stop-block", 10000, "stop prematurely after processing a certain number of blocks")
 
 var (
 	// TODO: Document...
@@ -57,6 +59,14 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	sigs := make(chan os.Signal, 1)
+	interruptCh := make(chan bool, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+        <-sigs
+        interruptCh <- true
+    }()
+
 	stateDB := dbm.NewDB("state", dbm.LevelDBBackend, *datadir)
 	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, *datadir)
 
@@ -65,37 +75,40 @@ func main() {
 		panic(err)
 	}
 
-	// start with empty root hash (i.e. empty state)
-	gethStateDB, err := ethstate.New(ethcommon.Hash{}, ethermintDB)
-	if err != nil {
-		panic(err)
-	}
-
-	genBlock := ethcore.DefaultGenesisBlock()
-	for addr, account := range genBlock.Alloc {
-		gethStateDB.AddBalance(addr, account.Balance)
-		gethStateDB.SetCode(addr, account.Code)
-		gethStateDB.SetNonce(addr, account.Nonce)
-
-		for key, value := range account.Storage {
-			gethStateDB.SetState(addr, key, value)
+	// Only create genesis if it is a brand new database
+	if ethermintDB.LatestVersion() == 0 {
+		// start with empty root hash (i.e. empty state)
+		gethStateDB, err := ethstate.New(ethcommon.Hash{}, ethermintDB)
+		if err != nil {
+			panic(err)
 		}
+
+		genBlock := ethcore.DefaultGenesisBlock()
+		for addr, account := range genBlock.Alloc {
+			gethStateDB.AddBalance(addr, account.Balance)
+			gethStateDB.SetCode(addr, account.Code)
+			gethStateDB.SetNonce(addr, account.Nonce)
+
+			for key, value := range account.Storage {
+				gethStateDB.SetState(addr, key, value)
+			}
+		}
+
+		// get balance of one of the genesis account having 200 ETH
+		b := gethStateDB.GetBalance(genInvestor)
+		fmt.Printf("balance of %s: %s\n", genInvestor.String(), b)
+
+		// commit the geth stateDB with 'false' to delete empty objects
+		genRoot, err := gethStateDB.Commit(false)
+		if err != nil {
+			panic(err)
+		}
+
+		commitID := ethermintDB.Commit()
+
+		fmt.Printf("commitID after genesis: %v\n", commitID)
+		fmt.Printf("genesis state root hash: %x\n", genRoot[:])
 	}
-
-	// get balance of one of the genesis account having 200 ETH
-	b := gethStateDB.GetBalance(genInvestor)
-	fmt.Printf("balance of %s: %s\n", genInvestor.String(), b)
-
-	// commit the geth stateDB with 'false' to delete empty objects
-	genRoot, err := gethStateDB.Commit(false)
-	if err != nil {
-		panic(err)
-	}
-
-	commitID := ethermintDB.Commit()
-
-	fmt.Printf("commitID after genesis: %v\n", commitID)
-	fmt.Printf("genesis state root hash: %x\n", genRoot[:])
 
 	// file with blockchain data exported from geth by using "geth exportdb"
 	// command.
@@ -120,14 +133,18 @@ func main() {
 		root501 ethcommon.Hash // root hash after block 501
 	)
 
-	prevRoot := genRoot
+	var prevRoot ethcommon.Hash 
+	binary.BigEndian.PutUint64(prevRoot[:8], uint64(ethermintDB.LatestVersion()))
+
 	ethermintDB.Tracing = true
 	chainContext := core.NewChainContext()
 	vmConfig := ethvm.Config{}
 
 	n := 0
 	startTime := time.Now()
-	for {
+	interrupt := false
+	var lastSkipped uint64
+	for !interrupt {
 		if err = stream.Decode(&block); err == io.EOF {
 			err = nil
 			break
@@ -135,9 +152,14 @@ func main() {
 			panic(fmt.Errorf("failed to decode at block %d: %s", block.NumberU64(), err))
 		}
 
-		// don't import first block
-		if block.NumberU64() == 0 {
+		// don't import blocks already imported
+		if block.NumberU64() < uint64(ethermintDB.LatestVersion()) {
+			lastSkipped = block.NumberU64()
 			continue
+		}
+		if lastSkipped > 0 {
+			fmt.Printf("Skipped blocks up to %d\n", lastSkipped)
+			lastSkipped = 0
 		}
 
 		header := block.Header()
@@ -225,22 +247,17 @@ func main() {
 			fmt.Printf("processed %d blocks, time so far: %v\n", n, time.Since(startTime))
 		}
 
-		if *blockStop == n {
-			fmt.Println("haulting process prematurely")
-			break
+		// Check for interrupts
+		select {
+		case interrupt = <-interruptCh:
+			fmt.Printf("Interrupted, please wait for cleanup...\n")
+		default:
 		}
 	}
 
 	fmt.Printf("processed %d blocks\n", n)
 
 	ethermintDB.Tracing = true
-
-	genState, err := ethstate.New(genRoot, ethermintDB)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("balance of one of the genesis investors: %s\n", genState.GetBalance(genInvestor))
 
 	// try to create a new geth stateDB from root of the block 500
 	fmt.Printf("root500: %x\n", root500[:])
