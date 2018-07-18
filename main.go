@@ -27,9 +27,10 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile `file`")
+var cpuprofile = flag.String("cpu-profile", "", "write cpu profile `file`")
 var blockchain = flag.String("blockchain", "data/blockchain", "file containing blocks to load")
 var datadir = flag.String("datadir", "", "directory for ethermint data")
+var blockStop = flag.Int("stop-block", 10000, "stop prematurely after processing a certain number of blocks")
 
 var (
 	// TODO: Document...
@@ -40,16 +41,19 @@ var (
 // TODO: Document...
 func main() {
 	flag.Parse()
+
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			fmt.Printf("could not create CPU profile: %v\n", err)
 			return
 		}
+
 		if err := pprof.StartCPUProfile(f); err != nil {
 			fmt.Printf("could not start CPU profile: %v\n", err)
 			return
 		}
+
 		defer pprof.StopCPUProfile()
 	}
 
@@ -220,9 +224,11 @@ func main() {
 		if (n % 10000) == 0 {
 			fmt.Printf("processed %d blocks, time so far: %v\n", n, time.Since(startTime))
 		}
-		//if n >= 20000 {
-		//	break
-		//}
+
+		if *blockStop == n {
+			fmt.Println("haulting process prematurely")
+			break
+		}
 	}
 
 	fmt.Printf("processed %d blocks\n", n)
@@ -249,6 +255,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	miner501BalanceAt501 := state501.GetBalance(miner501)
 
 	fmt.Printf("investor's balance after block 500: %d\n", state500.GetBalance(genInvestor))

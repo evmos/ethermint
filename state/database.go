@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/core"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
@@ -68,6 +69,9 @@ func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
 	db := &Database{
 		stateStore: store.NewCommitMultiStore(stateDB),
 	}
+
+	// currently do not prune any historical state
+	db.stateStore.SetPruning(sdk.PruneNothing)
 
 	// Create the underlying multi-store stores that will persist account and
 	// account storage data.
