@@ -22,9 +22,12 @@
 [[projects]]
   name = "github.com/cosmos/cosmos-sdk"
   packages = [
+    "baseapp",
     "store",
     "types",
-    "wire"
+    "version",
+    "wire",
+    "x/auth"
   ]
   revision = "1a1373cc220e402397ad536aee6b8f5b068914c6"
   version = "v0.21.0"
@@ -139,6 +142,12 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/jmhodges/levigo"
   packages = ["."]
@@ -161,6 +170,18 @@
   packages = ["."]
   revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
   version = "v1.4.0"
+
+[[projects]]
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
+
+[[projects]]
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -206,6 +227,7 @@
 [[projects]]
   name = "github.com/tendermint/tendermint"
   packages = [
+    "abci/server",
     "abci/types",
     "crypto",
     "crypto/merkle",
@@ -327,6 +349,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "df6cfdfe013b00b662a5b9ebd45319d0c114859e865b3034b0e984f15e698b45"
+  inputs-digest = "6c999da3cbcf5eac93468232147f2d8e372236a297ddd09275edb065f1bc23ae"
   solver-name = "gps-cdcl"
   solver-version = 1
