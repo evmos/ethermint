@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethdb "github.com/ethereum/go-ethereum/ethdb"
 	ethtrie "github.com/ethereum/go-ethereum/trie"
 )
@@ -39,7 +39,7 @@ type Trie struct {
 	empty bool
 
 	// root is the encoding of an IAVL tree root (version)
-	root ethcommon.Hash
+	root ethcmn.Hash
 
 	ethTrieDB *ethtrie.Database
 }
@@ -61,7 +61,7 @@ func (t *Trie) prefixKey(key []byte) []byte {
 // for key stored in the trie. The value bytes must not be modified by the
 // caller.
 func (t *Trie) TryGet(key []byte) ([]byte, error) {
-	if t.prefix != nil {
+	if t.IsStorageTrie() {
 		key = t.prefixKey(key)
 	}
 
@@ -78,7 +78,7 @@ func (t *Trie) TryGet(key []byte) ([]byte, error) {
 func (t *Trie) TryUpdate(key, value []byte) error {
 	t.empty = false
 
-	if t.prefix != nil {
+	if t.IsStorageTrie() {
 		key = t.prefixKey(key)
 	}
 
@@ -93,7 +93,7 @@ func (t *Trie) TryUpdate(key, value []byte) error {
 // the IAVL tree. Since a CacheKVStore is used as the storage type, the keys
 // will be sorted giving us a deterministic ordering.
 func (t *Trie) TryDelete(key []byte) error {
-	if t.prefix != nil {
+	if t.IsStorageTrie() {
 		key = t.prefixKey(key)
 	}
 
@@ -112,14 +112,14 @@ func (t *Trie) TryDelete(key []byte) error {
 //
 // CONTRACT: The root is an encoded IAVL tree version and each new commitment
 // increments the version by one.
-func (t *Trie) Commit(_ ethtrie.LeafCallback) (ethcommon.Hash, error) {
+func (t *Trie) Commit(_ ethtrie.LeafCallback) (ethcmn.Hash, error) {
 	if t.empty {
-		return ethcommon.Hash{}, nil
+		return ethcmn.Hash{}, nil
 	}
 
 	newRoot := rootHashFromVersion(versionFromRootHash(t.root) + 1)
 
-	if t.prefix == nil {
+	if !t.IsStorageTrie() {
 		if t.accountsCache != nil {
 			t.accountsCache.Write()
 			t.accountsCache = nil
@@ -133,7 +133,7 @@ func (t *Trie) Commit(_ ethtrie.LeafCallback) (ethcommon.Hash, error) {
 		// persist the mappings of codeHash => code
 		for _, n := range t.ethTrieDB.Nodes() {
 			if err := t.ethTrieDB.Commit(n, false); err != nil {
-				return ethcommon.Hash{}, err
+				return ethcmn.Hash{}, err
 			}
 		}
 	}
@@ -146,7 +146,7 @@ func (t *Trie) Commit(_ ethtrie.LeafCallback) (ethcommon.Hash, error) {
 // of the Trie which is an encoding of the underlying IAVL tree.
 //
 // CONTRACT: The root is an encoded IAVL tree version.
-func (t *Trie) Hash() ethcommon.Hash {
+func (t *Trie) Hash() ethcmn.Hash {
 	return t.root
 }
 
@@ -175,17 +175,23 @@ func (t *Trie) Prove(key []byte, fromLevel uint, proofDB ethdb.Putter) error {
 	return nil
 }
 
+// IsStorageTrie returns a boolean reflecting if the Trie is created for
+// contract storage.
+func (t *Trie) IsStorageTrie() bool {
+	return t.prefix != nil
+}
+
 // versionFromRootHash returns a Cosmos SDK IAVL version from an Ethereum state
 // root hash.
 //
 // CONTRACT: The encoded version is the eight MSB bytes of the root hash.
-func versionFromRootHash(root ethcommon.Hash) int64 {
+func versionFromRootHash(root ethcmn.Hash) int64 {
 	return int64(binary.BigEndian.Uint64(root[:versionLen]))
 }
 
 // rootHashFromVersion returns a state root hash from a Cosmos SDK IAVL
 // version.
-func rootHashFromVersion(version int64) (root ethcommon.Hash) {
+func rootHashFromVersion(version int64) (root ethcmn.Hash) {
 	binary.BigEndian.PutUint64(root[:versionLen], uint64(version))
 	return
 }

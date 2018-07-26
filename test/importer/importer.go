@@ -40,6 +40,7 @@ type Importer struct {
 
 // Import performs an import given an Importer that has a Geth stateDB
 // implementation and a blockchain exported file.
+// nolint
 func (imp *Importer) Import() {
 	// only create genesis if it is a brand new database
 	if imp.EthermintDB.LatestVersion() == 0 {

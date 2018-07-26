@@ -6,7 +6,7 @@ import (
 
 	"github.com/cosmos/ethermint/core"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtrie "github.com/ethereum/go-ethereum/trie"
 
@@ -111,11 +111,9 @@ func (db *Database) LatestVersion() int64 {
 //
 // CONTRACT: The root parameter is not interpreted as a state root hash, but as
 // an encoding of an Cosmos SDK IAVL tree version.
-func (db *Database) OpenTrie(root ethcommon.Hash) (ethstate.Trie, error) {
-	version := db.stateStore.LastCommitID().Version
-
+func (db *Database) OpenTrie(root ethcmn.Hash) (ethstate.Trie, error) {
 	if !isRootEmpty(root) {
-		version = versionFromRootHash(root)
+		version := versionFromRootHash(root)
 
 		if db.stateStore.LastCommitID().Version != version {
 			if err := db.stateStore.LoadVersion(version); err != nil {
@@ -152,7 +150,7 @@ func (db *Database) OpenTrie(root ethcommon.Hash) (ethstate.Trie, error) {
 //
 // CONTRACT: The root parameter is not interpreted as a state root hash, but as
 // an encoding of an IAVL tree version.
-func (db *Database) OpenStorageTrie(addrHash, root ethcommon.Hash) (ethstate.Trie, error) {
+func (db *Database) OpenStorageTrie(addrHash, root ethcmn.Hash) (ethstate.Trie, error) {
 	// a contract storage trie does not need an accountCache, storageCache or
 	// an Ethereum trie because it will not be used upon commitment.
 	return &Trie{
@@ -175,17 +173,20 @@ func (db *Database) CopyTrie(ethstate.Trie) ethstate.Trie {
 
 // ContractCode implements Ethereum's state.Database interface. It will return
 // the contract byte code for a given code hash. It will not return an error.
-func (db *Database) ContractCode(addrHash, codeHash ethcommon.Hash) ([]byte, error) {
+func (db *Database) ContractCode(addrHash, codeHash ethcmn.Hash) ([]byte, error) {
 	code := db.codeDB.Get(codeHash[:])
 
-	db.codeSizeCache.Add(codeHash, len(code))
+	if codeLen := len(code); codeLen != 0 {
+		db.codeSizeCache.Add(codeHash, codeLen)
+	}
+
 	return code, nil
 }
 
 // ContractCodeSize implements Ethereum's state.Database interface. It will
 // return the contract byte code size for a given code hash. It will not return
 // an error.
-func (db *Database) ContractCodeSize(addrHash, codeHash ethcommon.Hash) (int, error) {
+func (db *Database) ContractCodeSize(addrHash, codeHash ethcmn.Hash) (int, error) {
 	if cached, ok := db.codeSizeCache.Get(codeHash); ok {
 		return cached.(int), nil
 	}
@@ -209,6 +210,6 @@ func (db *Database) TrieDB() *ethtrie.Database {
 }
 
 // isRootEmpty returns true if a given root hash is empty or false otherwise.
-func isRootEmpty(root ethcommon.Hash) bool {
-	return root == ethcommon.Hash{}
+func isRootEmpty(root ethcmn.Hash) bool {
+	return root == ethcmn.Hash{}
 }
