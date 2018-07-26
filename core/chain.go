@@ -3,8 +3,8 @@ package core
 import (
 	"math/big"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
-	ethconsensus "github.com/ethereum/go-ethereum/consensus"
+	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethcons "github.com/ethereum/go-ethereum/consensus"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
@@ -20,7 +20,7 @@ import (
 // NOTE: Ethermint will distribute the fees out to validators, so the structure
 // and functionality of this is a WIP and subject to change.
 type ChainContext struct {
-	Coinbase        ethcommon.Address
+	Coinbase        ethcmn.Address
 	headersByNumber map[uint64]*ethtypes.Header
 }
 
@@ -32,23 +32,25 @@ func NewChainContext() *ChainContext {
 
 // Engine implements Ethereum's core.ChainContext interface. As a ChainContext
 // implements the consensus.Engine interface, it is simply returned.
-func (cc *ChainContext) Engine() ethconsensus.Engine {
+func (cc *ChainContext) Engine() ethcons.Engine {
 	return cc
 }
 
+// SetHeader implements Ethereum's core.ChainContext interface. It sets the
+// header for the given block number.
 func (cc *ChainContext) SetHeader(number uint64, header *ethtypes.Header) {
 	cc.headersByNumber[number] = header
 }
 
-// GetHeader implements Ethereum's core.ChainContext interface. It currently
-// performs a no-op.
+// GetHeader implements Ethereum's core.ChainContext interface.
 //
 // TODO: The Cosmos SDK supports retreiving such information in contexts and
 // multi-store, so this will be need to be integrated.
-func (cc *ChainContext) GetHeader(parentHash ethcommon.Hash, number uint64) *ethtypes.Header {
+func (cc *ChainContext) GetHeader(_ ethcmn.Hash, number uint64) *ethtypes.Header {
 	if header, ok := cc.headersByNumber[number]; ok {
 		return header
 	}
+
 	return nil
 }
 
@@ -58,7 +60,7 @@ func (cc *ChainContext) GetHeader(parentHash ethcommon.Hash, number uint64) *eth
 //
 // NOTE: Ethermint will distribute the fees out to validators, so the structure
 // and functionality of this is a WIP and subject to change.
-func (cc *ChainContext) Author(_ *ethtypes.Header) (ethcommon.Address, error) {
+func (cc *ChainContext) Author(_ *ethtypes.Header) (ethcmn.Address, error) {
 	return cc.Coinbase, nil
 }
 
@@ -67,13 +69,13 @@ func (cc *ChainContext) Author(_ *ethtypes.Header) (ethcommon.Address, error) {
 //
 // TODO: Do we need to support such RPC APIs? This will tie into a bigger
 // discussion on if we want to support web3.
-func (cc *ChainContext) APIs(_ ethconsensus.ChainReader) []ethrpc.API {
+func (cc *ChainContext) APIs(_ ethcons.ChainReader) []ethrpc.API {
 	return nil
 }
 
 // CalcDifficulty implements Ethereum's core.ChainContext interface. It
 // currently performs a no-op.
-func (cc *ChainContext) CalcDifficulty(_ ethconsensus.ChainReader, _ uint64, _ *ethtypes.Header) *big.Int {
+func (cc *ChainContext) CalcDifficulty(_ ethcons.ChainReader, _ uint64, _ *ethtypes.Header) *big.Int {
 	return nil
 }
 
@@ -82,7 +84,7 @@ func (cc *ChainContext) CalcDifficulty(_ ethconsensus.ChainReader, _ uint64, _ *
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
 func (cc *ChainContext) Finalize(
-	_ ethconsensus.ChainReader, _ *ethtypes.Header, _ *ethstate.StateDB,
+	_ ethcons.ChainReader, _ *ethtypes.Header, _ *ethstate.StateDB,
 	_ []*ethtypes.Transaction, _ []*ethtypes.Header, _ []*ethtypes.Receipt,
 ) (*ethtypes.Block, error) {
 	return nil, nil
@@ -92,7 +94,7 @@ func (cc *ChainContext) Finalize(
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
-func (cc *ChainContext) Prepare(_ ethconsensus.ChainReader, _ *ethtypes.Header) error {
+func (cc *ChainContext) Prepare(_ ethcons.ChainReader, _ *ethtypes.Header) error {
 	return nil
 }
 
@@ -100,7 +102,7 @@ func (cc *ChainContext) Prepare(_ ethconsensus.ChainReader, _ *ethtypes.Header) 
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
-func (cc *ChainContext) Seal(_ ethconsensus.ChainReader, _ *ethtypes.Block, _ <-chan struct{}) (*ethtypes.Block, error) {
+func (cc *ChainContext) Seal(_ ethcons.ChainReader, _ *ethtypes.Block, _ <-chan struct{}) (*ethtypes.Block, error) {
 	return nil, nil
 }
 
@@ -109,7 +111,7 @@ func (cc *ChainContext) Seal(_ ethconsensus.ChainReader, _ *ethtypes.Block, _ <-
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
 // handlers?
-func (cc *ChainContext) VerifyHeader(_ ethconsensus.ChainReader, _ *ethtypes.Header, _ bool) error {
+func (cc *ChainContext) VerifyHeader(_ ethcons.ChainReader, _ *ethtypes.Header, _ bool) error {
 	return nil
 }
 
@@ -118,7 +120,7 @@ func (cc *ChainContext) VerifyHeader(_ ethconsensus.ChainReader, _ *ethtypes.Hea
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
 // handlers?
-func (cc *ChainContext) VerifyHeaders(_ ethconsensus.ChainReader, _ []*ethtypes.Header, _ []bool) (chan<- struct{}, <-chan error) {
+func (cc *ChainContext) VerifyHeaders(_ ethcons.ChainReader, _ []*ethtypes.Header, _ []bool) (chan<- struct{}, <-chan error) {
 	return nil, nil
 }
 
@@ -127,12 +129,12 @@ func (cc *ChainContext) VerifyHeaders(_ ethconsensus.ChainReader, _ []*ethtypes.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
 // handlers?
-func (cc *ChainContext) VerifySeal(_ ethconsensus.ChainReader, _ *ethtypes.Header) error {
+func (cc *ChainContext) VerifySeal(_ ethcons.ChainReader, _ *ethtypes.Header) error {
 	return nil
 }
 
 // VerifyUncles implements Ethereum's core.ChainContext interface. It currently
 // performs a no-op.
-func (cc *ChainContext) VerifyUncles(_ ethconsensus.ChainReader, _ *ethtypes.Block) error {
+func (cc *ChainContext) VerifyUncles(_ ethcons.ChainReader, _ *ethtypes.Block) error {
 	return nil
 }
