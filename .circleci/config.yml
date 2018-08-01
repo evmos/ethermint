@@ -1,0 +1,18 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.10
+
+    working_directory: /go/src/github.com/cosmos/ethermint
+
+    steps:
+      - checkout
+
+      - run:
+          name: "Install tools and dependancies"
+          command: make tools deps
+
+      - run:
+          name: "Run tests"
+          command: make test-lint test-unit
