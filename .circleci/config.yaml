@@ -8,5 +8,11 @@ jobs:
 
     steps:
       - checkout
-      - run: make tools deps
-      - run: make test-lint test-unit
+
+      - run:
+          name: "Install tools and dependancies"
+          command: make tools deps
+
+      - run:
+          name: "Run tests"
+          command: make test-lint test-unit
