@@ -19,6 +19,7 @@ var (
 	cpuprofile = flag.String("cpu-profile", "", "write cpu profile `file`")
 	blockchain = flag.String("blockchain", "data/blockchain", "file containing blocks to load")
 	datadir    = flag.String("datadir", path.Join(os.Getenv("HOME"), ".ethermint"), "directory for ethermint data")
+	cachesize  = flag.Int("cachesize", 1024*1024, "number of key-value pairs for the state stored in memory")
 )
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 	stateDB := dbm.NewDB("state", dbm.LevelDBBackend, *datadir)
 	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, *datadir)
 
-	ethermintDB, err := state.NewDatabase(stateDB, codeDB)
+	ethermintDB, err := state.NewDatabase(stateDB, codeDB, *cachesize)
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize geth Database: %v", err))
 	}
