@@ -2,9 +2,9 @@ package rpc
 
 import (
 	"context"
+	"github.com/cosmos/ethermint/version"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/cosmos/ethermint/version"
 	"testing"
 )
 
@@ -35,6 +35,16 @@ func (s *apisTestSuite) TestPublicWeb3APISha3() {
 	res, err := rpcCall(s.Port, "web3_sha3", []string{"0x67656c6c6f20776f726c64"})
 	require.Nil(s.T(), err, "unexpected error")
 	require.Equal(s.T(), "0x1b84adea42d5b7d192fd8a61a85b25abe0757e9a65cab1da470258914053823f", res)
+}
+
+func (s *apisTestSuite) TestMiningAPIs() {
+	res, err := rpcCall(s.Port, "eth_mining", nil)
+	require.Nil(s.T(), err, "unexpected error")
+	require.Equal(s.T(), false, res)
+
+	res, err = rpcCall(s.Port, "eth_hashrate", nil)
+	require.Nil(s.T(), err, "unexpected error")
+	require.Equal(s.T(), "0x0", res)
 }
 
 func TestAPIsTestSuite(t *testing.T) {

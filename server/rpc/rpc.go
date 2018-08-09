@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/rpc"
-	)
+)
 
 // StartHTTPEndpoint starts the Tendermint Web3-compatible RPC layer. Consumes a Context for cancellation, a config
 // struct, and a list of rpc.API interfaces that will be automatically wired into a JSON-RPC webserver.

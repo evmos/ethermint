@@ -69,6 +69,12 @@
   digest = "1:3238a0c355a81640974751f7d3bab21bf91035165f75c2c457959425c0422a4b"
   name = "github.com/ethereum/go-ethereum"
   packages = [
+    ".",
+    "accounts",
+    "accounts/abi",
+    "accounts/keystore",
+    "accounts/usbwallet",
+    "accounts/usbwallet/internal/trezor",
     "common",
     "common/bitutil",
     "common/hexutil",
@@ -86,16 +92,25 @@
     "crypto/bn256",
     "crypto/bn256/cloudflare",
     "crypto/bn256/google",
+    "crypto/ecies",
+    "crypto/randentropy",
     "crypto/secp256k1",
     "crypto/sha3",
+    "eth/downloader",
     "ethdb",
     "event",
+    "internal/ethapi",
     "log",
     "metrics",
+    "p2p",
+    "p2p/discover",
+    "p2p/discv5",
+    "p2p/nat",
     "p2p/netutil",
     "params",
     "rlp",
     "rpc",
+    "signer/core",
     "trie",
   ]
   pruneopts = "T"
@@ -150,6 +165,7 @@
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
+    "protoc-gen-go/descriptor",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
@@ -178,12 +194,36 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
+  branch = "master"
+  digest = "1:202e4a1a283dd740ca9d131787e73bb9d69611a01ef86e82ed262e035b0dd792"
+  name = "github.com/huin/goupnp"
+  packages = [
+    ".",
+    "dcps/internetgateway1",
+    "dcps/internetgateway2",
+    "httpu",
+    "scpd",
+    "soap",
+    "ssdp",
+  ]
+  pruneopts = "T"
+  revision = "1395d1447324cbea88d249fbfcfd70ea878fdfca"
+
+[[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   pruneopts = "T"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  digest = "1:32b82e71cf24f8b78323e0d7903c4b90278486283965aa2a19b1ea13763b8f34"
+  name = "github.com/jackpal/go-nat-pmp"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "c9cfead9f2a36ddf3daa40ba269aa7f4bbba6b62"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -195,11 +235,27 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:01f1325bf6f105bb633029a2d8b63f1a2357181e60af8dadabf14ad2e84398c5"
+  name = "github.com/karalabe/hid"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "2b4488a37358b7283de4f9622553e85ebbe73125"
+
+[[projects]]
+  branch = "master"
   digest = "1:a64e323dc06b73892e5bb5d040ced475c4645d456038333883f58934abbf6f72"
   name = "github.com/kr/logfmt"
   packages = ["."]
   pruneopts = "T"
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
+
+[[projects]]
+  digest = "1:361de06aa7ae272616cbe71c3994a654cc6316324e30998e650f7765b20c5b33"
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
+  version = "v1.1"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
@@ -216,6 +272,14 @@
   pruneopts = "T"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:6afc433cbb471b1d32de92131245fb1f76000c9d88940265df4a512572a51b51"
+  name = "github.com/rjeczalik/notify"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "52ae50d8490436622a8941bd70c3dbe0acdd4bbf"
+  version = "v0.9.0"
 
 [[projects]]
   digest = "1:6cae6970d70fc5fe75bf83c48ee33e9c4c561a62d0b033254bee8dd5942b815a"
@@ -330,7 +394,12 @@
   branch = "master"
   digest = "1:da29cbeb9d244918393b37243c008ab7128688fb017c966aaf876587c010bcdd"
   name = "golang.org/x/crypto"
-  packages = ["ripemd160"]
+  packages = [
+    "pbkdf2",
+    "ripemd160",
+    "scrypt",
+    "ssh/terminal",
+  ]
   pruneopts = "T"
   revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
 
@@ -339,6 +408,9 @@
   name = "golang.org/x/net"
   packages = [
     "context",
+    "html",
+    "html/atom",
+    "html/charset",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -351,17 +423,40 @@
   revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7560b3b54e7e9d901c46cd919d77da3c4373652ee2b0a13b15b80ea02ad94a56"
+  name = "golang.org/x/sys"
+  packages = [
+    "unix",
+    "windows",
+  ]
+  pruneopts = "T"
+  revision = "d99a578cf41bfccdeaf48b0845c823a4b8b0ad5e"
+
+[[projects]]
   digest = "1:6164911cb5e94e8d8d5131d646613ff82c14f5a8ce869de2f6d80d9889df8c5a"
   name = "golang.org/x/text"
   packages = [
     "collate",
     "collate/build",
+    "encoding",
+    "encoding/charmap",
+    "encoding/htmlindex",
+    "encoding/internal",
+    "encoding/internal/identifier",
+    "encoding/japanese",
+    "encoding/korean",
+    "encoding/simplifiedchinese",
+    "encoding/traditionalchinese",
+    "encoding/unicode",
     "internal/colltab",
     "internal/gen",
     "internal/tag",
     "internal/triegen",
     "internal/ucd",
+    "internal/utf8internal",
     "language",
+    "runes",
     "secure/bidirule",
     "transform",
     "unicode/bidi",
@@ -469,6 +564,7 @@
     "github.com/ethereum/go-ethereum/params",
     "github.com/ethereum/go-ethereum/rlp",
     "github.com/ethereum/go-ethereum/rpc",
+    "github.com/ethereum/go-ethereum/signer/core",
     "github.com/ethereum/go-ethereum/trie",
     "github.com/hashicorp/golang-lru",
     "github.com/pkg/errors",

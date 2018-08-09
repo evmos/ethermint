@@ -3,10 +3,10 @@
 package rpc
 
 import (
+	"github.com/cosmos/ethermint/version"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/cosmos/ethermint/version"
 )
 
 // returns the master list of public APIs for use with StartHTTPEndpoint
@@ -17,13 +17,19 @@ func GetRPCAPIs() []rpc.API {
 			Version:   "1.0",
 			Service:   NewPublicWeb3API(),
 		},
+		{
+			Namespace: "eth",
+			Version:   "1.0",
+			Service:   NewPublicEthAPI(),
+		},
 	}
 }
 
-// PublicWeb3API is the web3_ prefixed set of APIs in the WEB3 JSON-RPC spec.
+// PublicWeb3API is the web3_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicWeb3API struct {
 }
 
+// NewPublicWeb3API creates an instance of the Web3 API.
 func NewPublicWeb3API() *PublicWeb3API {
 	return &PublicWeb3API{}
 }
