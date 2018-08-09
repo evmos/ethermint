@@ -28,16 +28,16 @@ all: tools deps install
 
 build:
 ifeq ($(OS),Windows_NT)
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY).exe ./cmd/ethermintd
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY).exe ./cmd/ethermintcli
+	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY).exe ./cmd/emintd
+	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY).exe ./cmd/emintcli
 else
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY) ./cmd/ethermintd/
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY) ./cmd/ethermintcli/
+	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY) ./cmd/emintd/
+	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY) ./cmd/emintcli/
 endif
 
 install:
-	go install $(BUILD_FLAGS) ./cmd/ethermintd
-	go install $(BUILD_FLAGS) ./cmd/ethermintcli
+	go install $(BUILD_FLAGS) ./cmd/emintd
+	go install $(BUILD_FLAGS) ./cmd/emintcli
 
 clean:
 	@rm -rf ./build ./vendor

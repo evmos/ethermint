@@ -237,6 +237,7 @@
   packages = [
     "assert",
     "require",
+    "suite",
   ]
   pruneopts = "T"
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
@@ -274,6 +275,14 @@
   ]
   pruneopts = "T"
   revision = "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
+
+[[projects]]
+  branch = "master"
+  digest = "1:3a6bdd02e7f2585c860e368467c5989310740af6206a1ada85cfa19c712e5afd"
+  name = "github.com/tendermint/ethermint"
+  packages = ["version"]
+  pruneopts = "T"
+  revision = "c1e6ebf80a6cc9119bc178faee18ef13490d707a"
 
 [[projects]]
   digest = "1:0e2addab3f64ece97ca434b2bf2d4e8cb54a4509904a03be8c81da3fc2ddb245"
@@ -437,6 +446,7 @@
     "github.com/cosmos/cosmos-sdk/wire",
     "github.com/cosmos/cosmos-sdk/x/auth",
     "github.com/ethereum/go-ethereum/common",
+    "github.com/ethereum/go-ethereum/common/hexutil",
     "github.com/ethereum/go-ethereum/common/math",
     "github.com/ethereum/go-ethereum/consensus",
     "github.com/ethereum/go-ethereum/consensus/ethash",
@@ -455,6 +465,8 @@
     "github.com/hashicorp/golang-lru",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/require",
+    "github.com/stretchr/testify/suite",
+    "github.com/tendermint/ethermint/version",
     "github.com/tendermint/tendermint/libs/common",
     "github.com/tendermint/tendermint/libs/db",
     "github.com/tendermint/tendermint/libs/log",
