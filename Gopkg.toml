@@ -4,10 +4,11 @@
 
 [[constraint]]
   name = "github.com/cosmos/cosmos-sdk"
-  version = "=0.21.0"
+  version = "=0.23.1"
 
 [[constraint]]
   name = "github.com/hashicorp/golang-lru"
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[constraint]]
   name = "github.com/spf13/cobra"
@@ -19,11 +20,19 @@
 
 [[override]]
   name = "github.com/tendermint/tendermint"
-  version = "=0.22.2"
+  version = "=v0.22.8"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
   version = "=1.2.2"
+
+[[constraint]] 
+  name = "github.com/pkg/errors"
+  version = "=0.8.0"
+
+[[override]]
+  name = "gopkg.in/fatih/set.v0"
+  version = "=0.1.0"
 
 [prune]
   go-tests = true
