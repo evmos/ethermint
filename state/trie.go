@@ -27,7 +27,7 @@ type Trie struct {
 	// ordering.
 	storageCache store.CacheKVStore
 
-	dataCache *lru.Cache
+	storeCache *lru.Cache
 
 	// Store is an IAVL KV store that is part of a larger store except it used
 	// for a specific prefix. It will either be an accountsCache or a
@@ -69,11 +69,11 @@ func (t *Trie) TryGet(key []byte) ([]byte, error) {
 		key = t.prefixKey(key)
 	}
 	keyStr := string(key)
-	if cached, ok := t.dataCache.Get(keyStr); ok {
+	if cached, ok := t.storeCache.Get(keyStr); ok {
 		return cached.([]byte), nil
 	}
 	value := t.store.Get(key)
-	t.dataCache.Add(keyStr, value)
+	t.storeCache.Add(keyStr, value)
 	return value, nil
 }
 
@@ -92,7 +92,7 @@ func (t *Trie) TryUpdate(key, value []byte) error {
 	}
 
 	t.store.Set(key, value)
-	t.dataCache.Add(string(key), value)
+	t.storeCache.Add(string(key), value)
 	return nil
 }
 
@@ -108,7 +108,7 @@ func (t *Trie) TryDelete(key []byte) error {
 	}
 
 	t.store.Delete(key)
-	t.dataCache.Remove(string(key))
+	t.storeCache.Remove(string(key))
 	return nil
 }
 
