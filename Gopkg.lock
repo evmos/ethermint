@@ -3,29 +3,22 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:fcdf62d2d7e43c2565d6f8707ab4eae54dac702ed4bafb194b85139f0508929f"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
-  pruneopts = "T"
   revision = "b2d71c282dc706f4b4f6c15b65810e1202ecd53f"
 
 [[projects]]
   branch = "master"
-  digest = "1:d4d66abd43dbb9b5f5e6a176c5ed279c289f8db734904c047d95113a04aa2e60"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
-  pruneopts = "T"
   revision = "cf05f92c3f815bbd5091ed6c73eff51f7b1945e8"
 
 [[projects]]
-  digest = "1:d0d998526cfb68788229a31c16a557fdf1fbbb510654be6b3732c2758e06b533"
   name = "github.com/btcsuite/btcutil"
   packages = ["bech32"]
-  pruneopts = "T"
   revision = "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4"
 
 [[projects]]
-  digest = "1:36773b598dec105de46a87978ae14e64c8d2c45aa556b8e0ddfc62d6abc7c47e"
   name = "github.com/cosmos/cosmos-sdk"
   packages = [
     "baseapp",
@@ -33,30 +26,24 @@
     "types",
     "version",
     "wire",
-    "x/auth",
+    "x/auth"
   ]
-  pruneopts = "T"
   revision = "23e3d5ac12145c02fcb4b4767d7dfccad782aee5"
   version = "v0.23.1"
 
 [[projects]]
-  digest = "1:52f195ad0e20a92d8604c1ba3cd246c61644c03eaa454b5acd41be89841e0d10"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  pruneopts = "T"
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:67d0b50be0549e610017cb91e0b0b745ec0cad7c613bc8e18ff2d1c1fc8825a7"
   name = "github.com/edsrzf/mmap-go"
   packages = ["."]
-  pruneopts = "T"
   revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
 
 [[projects]]
-  digest = "1:3238a0c355a81640974751f7d3bab21bf91035165f75c2c457959425c0422a4b"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     "common",
@@ -86,42 +73,34 @@
     "params",
     "rlp",
     "rpc",
-    "trie",
+    "trie"
   ]
-  pruneopts = "T"
   revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
   version = "v1.8.11"
 
 [[projects]]
-  digest = "1:0b9c3ad6c948d57a379da9c4e1cdd989b1c73ddc5ec8673f52a9539ce60a109b"
   name = "github.com/go-kit/kit"
   packages = [
     "log",
     "log/level",
-    "log/term",
+    "log/term"
   ]
-  pruneopts = "T"
   revision = "4dc7be5d2d12881735283bcab7352178e190fc71"
   version = "v0.6.0"
 
 [[projects]]
-  digest = "1:31a18dae27a29aa074515e43a443abfd2ba6deb6d69309d8d7ce789c45f34659"
   name = "github.com/go-logfmt/logfmt"
   packages = ["."]
-  pruneopts = "T"
   revision = "390ab7935ee28ec6b286364bba9b4dd6410cb3d5"
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:c4a2528ccbcabf90f9f3c464a5fc9e302d592861bbfd0b7135a7de8a943d0406"
   name = "github.com/go-stack/stack"
   packages = ["."]
-  pruneopts = "T"
   revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:da39f4a22829ca95e63566208e0ea42d6f055f41dff1b14fdab88d88f62df653"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -129,122 +108,96 @@
     "proto",
     "protoc-gen-gogo/descriptor",
     "sortkeys",
-    "types",
+    "types"
   ]
-  pruneopts = "T"
   revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:832e17df5ff8bbe0e0693d2fb46c5e53f96c662ee804049ce3ab6557df74e3ab"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
-    "ptypes/timestamp",
+    "ptypes/timestamp"
   ]
-  pruneopts = "T"
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:6027b20c168728321bd99ad01f35118eded457b01c03e647a84833ab331f2f5b"
   name = "github.com/golang/snappy"
   packages = ["."]
-  pruneopts = "T"
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
 
 [[projects]]
-  digest = "1:cf296baa185baae04a9a7004efee8511d08e2f5f51d4cbe5375da89722d681db"
   name = "github.com/hashicorp/golang-lru"
   packages = [
     ".",
-    "simplelru",
+    "simplelru"
   ]
-  pruneopts = "T"
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
-  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
-  pruneopts = "T"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:dc6b1a6801b3055e9bd3da4cd1e568606eb48118cc6f28e947783aa5d998ad74"
   name = "github.com/jmhodges/levigo"
   packages = ["."]
-  pruneopts = "T"
   revision = "c42d9e0ca023e2198120196f842701bb4c55d7b9"
 
 [[projects]]
   branch = "master"
-  digest = "1:a64e323dc06b73892e5bb5d040ced475c4645d456038333883f58934abbf6f72"
   name = "github.com/kr/logfmt"
   packages = ["."]
-  pruneopts = "T"
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
-  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
   name = "github.com/pkg/errors"
   packages = ["."]
-  pruneopts = "T"
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
-  digest = "1:22aa691fe0213cb5c07d103f9effebcb7ad04bee45a0ce5fe5369d0ca2ec3a1f"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
-  pruneopts = "T"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:6cae6970d70fc5fe75bf83c48ee33e9c4c561a62d0b033254bee8dd5942b815a"
   name = "github.com/rs/cors"
   packages = ["."]
-  pruneopts = "T"
   revision = "3fb1b69b103a84de38a19c3c6ec073dd6caa4d3f"
   version = "v1.5.0"
 
 [[projects]]
-  digest = "1:8be8b3743fc9795ec21bbd3e0fc28ff6234018e1a269b0a7064184be95ac13e0"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  pruneopts = "T"
   revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:6de2f73eb31e80d74f84ce1c861e4c0c8f00ca5fb41a25901f987e63a0647c28"
   name = "github.com/spf13/pflag"
   packages = ["."]
-  pruneopts = "T"
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:e95496462101745805bd4e041a5b841e108c7cf761264d53648246308de2761e"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
-    "require",
+    "require"
   ]
-  pruneopts = "T"
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
   version = "v1.2.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:7d44c4d11eb65cfdc78c76040f37ef305b16474c019c98a8a7cf188fece2d574"
   name = "github.com/syndtr/goleveldb"
   packages = [
     "leveldb",
@@ -258,41 +211,33 @@
     "leveldb/opt",
     "leveldb/storage",
     "leveldb/table",
-    "leveldb/util",
+    "leveldb/util"
   ]
-  pruneopts = "T"
   revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
 
 [[projects]]
   branch = "master"
-  digest = "1:2b15c0442dc80b581ce7028b2e43029d2f3f985da43cb1d55f7bcdeca785bda0"
   name = "github.com/tendermint/ed25519"
   packages = [
     ".",
     "edwards25519",
-    "extra25519",
+    "extra25519"
   ]
-  pruneopts = "T"
   revision = "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
 
 [[projects]]
-  digest = "1:0e2addab3f64ece97ca434b2bf2d4e8cb54a4509904a03be8c81da3fc2ddb245"
   name = "github.com/tendermint/go-amino"
   packages = ["."]
-  pruneopts = "T"
   revision = "2106ca61d91029c931fd54968c2bb02dc96b1412"
   version = "0.10.1"
 
 [[projects]]
-  digest = "1:bf042d2f7d1252b9dcae8e694e2f0a9b5294cb357c086fd86dc540d2f32c9fdf"
   name = "github.com/tendermint/iavl"
   packages = ["."]
-  pruneopts = "T"
   revision = "35f66e53d9b01e83b30de68b931f54b2477a94c9"
   version = "v0.9.2"
 
 [[projects]]
-  digest = "1:9f6704ae2aedbadf616e5850375c504909d46b6ea57d4679de2b7cbc715f08e1"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/server",
@@ -309,22 +254,18 @@
     "libs/log",
     "libs/pubsub",
     "libs/pubsub/query",
-    "types",
+    "types"
   ]
-  pruneopts = "T"
   revision = "d542d2c3945116697f60451e6a407082c41c3cc9"
   version = "v0.22.8"
 
 [[projects]]
   branch = "master"
-  digest = "1:2cbe8758697d867fcebf73bcc69dff8e8abaa7fd65e5704e0744e522ccff4e6a"
   name = "golang.org/x/crypto"
   packages = ["ripemd160"]
-  pruneopts = "T"
   revision = "f027049dab0ad238e394a753dba2d14753473a04"
 
 [[projects]]
-  digest = "1:5fdc7adede42f80d6201258355d478d856778e21d735f14972abd8ff793fdbf7"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -334,13 +275,11 @@
     "idna",
     "internal/timeseries",
     "trace",
-    "websocket",
+    "websocket"
   ]
-  pruneopts = "T"
   revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
 
 [[projects]]
-  digest = "1:6164911cb5e94e8d8d5131d646613ff82c14f5a8ce869de2f6d80d9889df8c5a"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -356,21 +295,17 @@
     "unicode/bidi",
     "unicode/cldr",
     "unicode/norm",
-    "unicode/rangetable",
+    "unicode/rangetable"
   ]
-  pruneopts = "T"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:8cfa91d1b7f6b66fa9b1a738a4bc1325837b861e63fb9a2919931d68871bb770"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
-  pruneopts = "T"
   revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
 
 [[projects]]
-  digest = "1:adafc60b1d4688759f3fc8f9089e71dd17abd123f4729de6b913bf08c9143770"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -397,67 +332,32 @@
     "stats",
     "status",
     "tap",
-    "transport",
+    "transport"
   ]
-  pruneopts = "T"
   revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
   version = "v1.13.0"
 
 [[projects]]
-  digest = "1:3ccd10c863188cfe0d936fcfe6a055c95362e43af8e7039e33baade846928e74"
   name = "gopkg.in/fatih/set.v0"
   packages = ["."]
-  pruneopts = "T"
   revision = "57907de300222151a123d29255ed17f5ed43fad3"
   version = "v0.1.0"
 
 [[projects]]
   branch = "v2"
-  digest = "1:dae137be246befa42ce4b48c0feff2c5796b8a5027139a283f31a21173744410"
   name = "gopkg.in/karalabe/cookiejar.v2"
   packages = ["collections/prque"]
-  pruneopts = "T"
   revision = "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57"
 
 [[projects]]
   branch = "v2"
-  digest = "1:3d3f9391ab615be8655ae0d686a1564f3fec413979bb1aaf018bac1ec1bb1cc7"
   name = "gopkg.in/natefinch/npipe.v2"
   packages = ["."]
-  pruneopts = "T"
   revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/cosmos/cosmos-sdk/baseapp",
-    "github.com/cosmos/cosmos-sdk/store",
-    "github.com/cosmos/cosmos-sdk/types",
-    "github.com/cosmos/cosmos-sdk/wire",
-    "github.com/cosmos/cosmos-sdk/x/auth",
-    "github.com/ethereum/go-ethereum/common",
-    "github.com/ethereum/go-ethereum/common/math",
-    "github.com/ethereum/go-ethereum/consensus",
-    "github.com/ethereum/go-ethereum/consensus/ethash",
-    "github.com/ethereum/go-ethereum/consensus/misc",
-    "github.com/ethereum/go-ethereum/core",
-    "github.com/ethereum/go-ethereum/core/state",
-    "github.com/ethereum/go-ethereum/core/types",
-    "github.com/ethereum/go-ethereum/core/vm",
-    "github.com/ethereum/go-ethereum/crypto",
-    "github.com/ethereum/go-ethereum/crypto/sha3",
-    "github.com/ethereum/go-ethereum/ethdb",
-    "github.com/ethereum/go-ethereum/params",
-    "github.com/ethereum/go-ethereum/rlp",
-    "github.com/ethereum/go-ethereum/rpc",
-    "github.com/ethereum/go-ethereum/trie",
-    "github.com/hashicorp/golang-lru",
-    "github.com/pkg/errors",
-    "github.com/stretchr/testify/require",
-    "github.com/tendermint/tendermint/libs/common",
-    "github.com/tendermint/tendermint/libs/db",
-    "github.com/tendermint/tendermint/libs/log",
-  ]
+  inputs-digest = "560c44b5e8f495ae409bc13b0e32cf36e3281f0d02b68b15e987faa2cda1e91c"
   solver-name = "gps-cdcl"
   solver-version = 1

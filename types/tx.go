@@ -68,6 +68,13 @@ type (
 	EthSignature struct {
 		v, r, s *big.Int
 	}
+
+	// sigCache is used to cache the derived sender and contains
+	// the signer used to derive it.
+	sigCache struct {
+		signer ethtypes.Signer
+		from   ethcmn.Address
+	}
 )
 
 // NewEthSignature returns a new instantiated Ethereum signature.
@@ -164,6 +171,56 @@ func (tx *Transaction) Sign(chainID sdk.Int, priv *ecdsa.PrivateKey) {
 	tx.Data.Signature.s = s
 }
 
+func (tx Transaction) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
+	if sc := tx.from.Load(); sc != nil {
+		sigCache := sc.(sigCache)
+		// If the signer used to derive from in a previous
+		// call is not the same as used current, invalidate
+		// the cache.
+		if sigCache.signer.Equal(ethtypes.NewEIP155Signer(chainID)) {
+			return sigCache.from, nil
+		}
+	}
+
+	var signBytes ethcmn.Hash
+	if tx.Data.Signature.v.BitLen() < 8 {
+		v := tx.Data.Signature.v.Uint64()
+		if v == 27 || v == 28 {
+			// Unprotected tx has no cross-chain replay protection
+			signBytes = rlpHash([]interface{}{
+				tx.Data.AccountNonce,
+				tx.Data.Price,
+				tx.Data.GasLimit,
+				tx.Data.Recipient,
+				tx.Data.Amount,
+				tx.Data.Payload,
+			})
+		}
+	} else {
+		signBytes = rlpHash([]interface{}{
+			tx.Data.AccountNonce,
+			tx.Data.Price,
+			tx.Data.GasLimit,
+			tx.Data.Recipient,
+			tx.Data.Amount,
+			tx.Data.Payload,
+			chainID, uint(0), uint(0),
+	})
+	}
+
+	sig := recoverEthSig(tx.Data.Signature, chainID)
+
+	pub, err := ethcrypto.Ecrecover(signBytes[:], sig)
+	if err != nil {
+		return ethcmn.Address{}, err
+	}
+
+
+	var addr ethcmn.Address
+	copy(addr[:], ethcrypto.Keccak256(pub[1:])[12:])
+	return addr, nil
+}
+
 // Type implements the sdk.Msg interface. It returns the type of the
 // Transaction.
 func (tx Transaction) Type() string {
@@ -198,27 +255,6 @@ func (tx Transaction) GetSigners() (signers []sdk.AccAddress) { return }
 // implements the Cosmos sdk.Tx interface.
 func (tx Transaction) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{tx}
-}
-
-// ConvertTx attempts to converts a Transaction to a new Ethereum transaction
-// with the signature set. The signature if first recovered and then a new
-// Transaction is created with that signature. If setting the signature fails,
-// a panic will be triggered.
-func (tx Transaction) ConvertTx(chainID *big.Int) ethtypes.Transaction {
-	gethTx := ethtypes.NewTransaction(
-		tx.Data.AccountNonce, *tx.Data.Recipient, tx.Data.Amount.BigInt(),
-		tx.Data.GasLimit, tx.Data.Price.BigInt(), tx.Data.Payload,
-	)
-
-	sig := recoverEthSig(tx.Data.Signature, chainID)
-	signer := ethtypes.NewEIP155Signer(chainID)
-
-	gethTx, err := gethTx.WithSignature(signer, sig)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to convert transaction with a given signature"))
-	}
-
-	return *gethTx
 }
 
 // HasEmbeddedTx returns a boolean reflecting if the transaction contains an

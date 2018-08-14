@@ -9,8 +9,6 @@ import (
 
 	"github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
-
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 const (
@@ -93,10 +91,9 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Cont
 	}
 
 	// validate signature
-	gethTx := ethTx.ConvertTx(chainID)
-	signer := ethtypes.NewEIP155Signer(chainID)
+	sdkCtx.GasMeter().ConsumeGas(verifySigCost, "ante verify")
+	_, err := ethTx.VerifySig(chainID)
 
-	_, err := signer.Sender(&gethTx)
 	if err != nil {
 		return sdkCtx, sdk.ErrUnauthorized("signature verification failed").Result(), true
 	}
@@ -125,7 +122,7 @@ func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk
 
 		signerAcc, err := validateSignature(sdkCtx, etx, signer, sig, am)
 		if err.Code() != sdk.CodeOK {
-			return sdkCtx, err.Result(), false
+			return sdkCtx, err.Result(), true
 		}
 
 		// TODO: Fees!
