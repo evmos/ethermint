@@ -7,24 +7,16 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/tendermint/tendermint/libs/db"
 )
-
-func newDatabase() *Database {
-	memDB := dbm.NewMemDB()
-	db, _ := NewDatabase(memDB, memDB)
-
-	return db
-}
 
 func TestDatabaseInterface(t *testing.T) {
 	require.Implements(t, (*ethstate.Database)(nil), new(Database))
 }
 
 func TestDatabaseLatestVersion(t *testing.T) {
-	testDB := newDatabase()
-
 	var version int64
+
+	testDB := newTestDatabase()
 
 	version = testDB.LatestVersion()
 	require.Equal(t, int64(0), version)
@@ -34,27 +26,13 @@ func TestDatabaseLatestVersion(t *testing.T) {
 	require.Equal(t, int64(1), version)
 }
 
-// func TestDatabaseOpenTrie(t *testing.T) {
-// 	testDB := newDatabase()
-
-// 	testTrie, err := testDB.OpenTrie(rootHashFromVersion(0))
-// 	require.Nil(t, err)
-// 	require.IsType(t, &Trie{}, testTrie)
-// 	require.NotNil(t, testTrie.(*Trie).store)
-// 	require.NotNil(t, testTrie.(*Trie).accountsCache)
-// 	require.NotNil(t, testTrie.(*Trie).storageCache)
-// 	require.NotNil(t, testTrie.(*Trie).ethTrieDB)
-// 	require.False(t, testTrie.(*Trie).empty)
-
-// }
-
 func TestDatabaseCopyTrie(t *testing.T) {
 	// TODO: Implement once CopyTrie is implemented
 	t.SkipNow()
 }
 
 func TestDatabaseContractCode(t *testing.T) {
-	testDB := newDatabase()
+	testDB := newTestDatabase()
 
 	testCases := []struct {
 		db           *Database
@@ -87,7 +65,7 @@ func TestDatabaseContractCode(t *testing.T) {
 }
 
 func TestDatabaseContractCodeSize(t *testing.T) {
-	testDB := newDatabase()
+	testDB := newTestDatabase()
 
 	testCases := []struct {
 		db              *Database
@@ -125,7 +103,7 @@ func TestDatabaseContractCodeSize(t *testing.T) {
 }
 
 func TestDatabaseTrieDB(t *testing.T) {
-	testDB := newDatabase()
+	testDB := newTestDatabase()
 
 	db := testDB.TrieDB()
 	require.Equal(t, testDB.ethTrieDB, db)
