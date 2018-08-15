@@ -59,7 +59,7 @@ type Database struct {
 	// EXTCODESIZE calls.
 	codeSizeCache *lru.Cache
 
-	storeCache     *lru.Cache
+	storeCache *lru.Cache
 
 	Tracing bool
 }
@@ -96,9 +96,11 @@ func NewDatabase(stateDB, codeDB dbm.DB, storeCacheSize int) (*Database, error) 
 	db.ethTrieDB = ethtrie.NewDatabase(&core.EthereumDB{CodeDB: codeDB})
 
 	var err error
+
 	if db.codeSizeCache, err = lru.New(codeSizeCacheSize); err != nil {
 		return nil, err
 	}
+
 	if db.storeCache, err = lru.New(storeCacheSize); err != nil {
 		return nil, err
 	}

@@ -8,20 +8,17 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
 func newTestTrie() *Trie {
-	memDB := dbm.NewMemDB()
-	testDB, _ := NewDatabase(memDB, memDB)
+	testDB := newTestDatabase()
 	testTrie, _ := testDB.OpenTrie(rootHashFromVersion(0))
 
 	return testTrie.(*Trie)
 }
 
 func newTestPrefixTrie() *Trie {
-	memDB := dbm.NewMemDB()
-	testDB, _ := NewDatabase(memDB, memDB)
+	testDB := newTestDatabase()
 
 	prefix := make([]byte, ethcmn.HashLength)
 	rand.Read(prefix)
