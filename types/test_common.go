@@ -42,7 +42,7 @@ func NewStdFee() auth.StdFee {
 	return auth.NewStdFee(5000, sdk.NewCoin("photon", 150))
 }
 
-func newTestEmbeddedTx(
+func NewTestEmbeddedTx(
 	chainID sdk.Int, msgs []sdk.Msg, pKeys []*ecdsa.PrivateKey,
 	accNums []int64, seqs []int64, fee auth.StdFee,
 ) sdk.Tx {
@@ -107,13 +107,13 @@ func NewTestSDKTxs(
 ) []Transaction {
 
 	txs := make([]Transaction, len(pKeys))
-	etx := newTestEmbeddedTx(chainID, msgs, pKeys, accNums, seqs, fee)
+	etx := NewTestEmbeddedTx(chainID, msgs, pKeys, accNums, seqs, fee)
 
 	for i, priv := range pKeys {
 		payload := codec.MustMarshalBinary(etx)
 
 		emintTx := NewTransaction(
-			uint64(i), TestSDKAddress, sdk.NewInt(10), 100,
+			uint64(i), TestSDKAddress, sdk.NewInt(10), 1000,
 			sdk.NewInt(100), payload,
 		)
 

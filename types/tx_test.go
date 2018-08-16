@@ -100,7 +100,7 @@ func TestTransactionGetMsgs(t *testing.T) {
 	require.Equal(t, ethTxs[0], msgs[0])
 
 	expectedMsgs := []sdk.Msg{sdk.NewTestMsg(sdk.AccAddress(TestAddr1.Bytes()))}
-	etx := newTestEmbeddedTx(
+	etx := NewTestEmbeddedTx(
 		TestChainID, expectedMsgs, []*ecdsa.PrivateKey{TestPrivKey1},
 		[]int64{0}, []int64{0}, NewStdFee(),
 	)
@@ -112,7 +112,7 @@ func TestTransactionGetMsgs(t *testing.T) {
 
 func TestGetRequiredSigners(t *testing.T) {
 	msgs := []sdk.Msg{sdk.NewTestMsg(sdk.AccAddress(TestAddr1.Bytes()))}
-	etx := newTestEmbeddedTx(
+	etx := NewTestEmbeddedTx(
 		TestChainID, msgs, []*ecdsa.PrivateKey{TestPrivKey1},
 		[]int64{0}, []int64{0}, NewStdFee(),
 	)
@@ -152,7 +152,7 @@ func TestTxDecoder(t *testing.T) {
 	require.Equal(t, emintTx, tx)
 
 	// create embedded transaction and encode
-	etx := newTestEmbeddedTx(
+	etx := NewTestEmbeddedTx(
 		TestChainID, msgs, []*ecdsa.PrivateKey{TestPrivKey1},
 		[]int64{0}, []int64{0}, NewStdFee(),
 	)

@@ -47,14 +47,7 @@ func AnteHandler(am auth.AccountMapper) sdk.AnteHandler {
 			return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid transaction: %T", tx)).Result(), true
 		}
 
-		/*
-		fmt.Println("handler begin")
-		fmt.Println(am.GetAccount(sdkCtx, tx.))
-		fmt.Println("handler end")*/
-
 		newCtx = sdkCtx.WithGasMeter(sdk.NewGasMeter(gasLimit))
-
-
 
 		// AnteHandlers must have their own defer/recover in order for the
 		// BaseApp to know how much gas was used! This is because the GasMeter
@@ -101,9 +94,6 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Cont
 	sdkCtx.GasMeter().ConsumeGas(verifySigCost, "ante verify")
 	addr, err := ethTx.VerifySig(chainID)
 
-	fmt.Println(addr)
-	fmt.Println(chainID)
-
 	if err != nil {
 		return sdkCtx, sdk.ErrUnauthorized("signature verification failed").Result(), true
 	}
@@ -143,7 +133,7 @@ func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk
 		signer := ethcmn.BytesToAddress(signerAddrs[i].Bytes())
 
 		signerAcc, err := validateSignature(sdkCtx, etx, signer, sig, am)
-		if err.Code() != sdk.CodeOK {
+		if err != nil {
 			return sdkCtx, err.Result(), true
 		}
 

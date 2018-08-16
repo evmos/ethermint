@@ -172,23 +172,28 @@ func (tx *Transaction) Sign(chainID sdk.Int, priv *ecdsa.PrivateKey) {
 }
 
 func (tx Transaction) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
+	signer := ethtypes.NewEIP155Signer(chainID)
 	if sc := tx.from.Load(); sc != nil {
 		sigCache := sc.(sigCache)
 		// If the signer used to derive from in a previous
 		// call is not the same as used current, invalidate
 		// the cache.
-		if sigCache.signer.Equal(ethtypes.NewEIP155Signer(chainID)) {
+		if sigCache.signer.Equal(signer) {
 			return sigCache.from, nil
 		}
 	}
 
+	// Do not allow unprotected chainID
+	if chainID.Sign() == 0 {
+		return ethcmn.Address{}, errors.New("Cannot have 0 as ChainID")
+	}
 	
 	signBytes := rlpHash([]interface{}{
 		tx.Data.AccountNonce,
-		tx.Data.Price,
+		tx.Data.Price.BigInt(),
 		tx.Data.GasLimit,
 		tx.Data.Recipient,
-		tx.Data.Amount,
+		tx.Data.Amount.BigInt(),
 		tx.Data.Payload,
 		chainID, uint(0), uint(0),
 	})
@@ -200,9 +205,10 @@ func (tx Transaction) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
 		return ethcmn.Address{}, err
 	}
 
-
 	var addr ethcmn.Address
 	copy(addr[:], ethcrypto.Keccak256(pub[1:])[12:])
+
+	tx.from.Store(sigCache{signer: signer, from: addr})
 	return addr, nil
 }
 
