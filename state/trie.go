@@ -8,6 +8,8 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethdb "github.com/ethereum/go-ethereum/ethdb"
 	ethtrie "github.com/ethereum/go-ethereum/trie"
+
+	lru "github.com/hashicorp/golang-lru"
 )
 
 const (
@@ -24,6 +26,8 @@ type Trie struct {
 	// committing the trie. A CacheKVStore is used to provide deterministic
 	// ordering.
 	storageCache store.CacheKVStore
+
+	storeCache *lru.Cache
 
 	// Store is an IAVL KV store that is part of a larger store except it used
 	// for a specific prefix. It will either be an accountsCache or a
@@ -64,8 +68,13 @@ func (t *Trie) TryGet(key []byte) ([]byte, error) {
 	if t.IsStorageTrie() {
 		key = t.prefixKey(key)
 	}
-
-	return t.store.Get(key), nil
+	keyStr := string(key)
+	if cached, ok := t.storeCache.Get(keyStr); ok {
+		return cached.([]byte), nil
+	}
+	value := t.store.Get(key)
+	t.storeCache.Add(keyStr, value)
+	return value, nil
 }
 
 // TryUpdate implements the Ethereum state.Trie interface. It associates a
@@ -83,6 +92,7 @@ func (t *Trie) TryUpdate(key, value []byte) error {
 	}
 
 	t.store.Set(key, value)
+	t.storeCache.Add(string(key), value)
 	return nil
 }
 
@@ -98,6 +108,7 @@ func (t *Trie) TryDelete(key []byte) error {
 	}
 
 	t.store.Delete(key)
+	t.storeCache.Remove(string(key))
 	return nil
 }
 

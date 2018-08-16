@@ -59,6 +59,8 @@ type Database struct {
 	// EXTCODESIZE calls.
 	codeSizeCache *lru.Cache
 
+	storeCache *lru.Cache
+
 	Tracing bool
 }
 
@@ -66,7 +68,7 @@ type Database struct {
 // implements Ethereum's state.Database interface. An error is returned if the
 // latest state failed to load. The underlying storage structure is defined by
 // the Cosmos SDK IAVL tree.
-func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
+func NewDatabase(stateDB, codeDB dbm.DB, storeCacheSize int) (*Database, error) {
 	// Initialize an implementation of Ethereum state.Database and create a
 	// Cosmos SDK multi-store.
 	db := &Database{
@@ -93,7 +95,15 @@ func NewDatabase(stateDB, codeDB dbm.DB) (*Database, error) {
 	db.codeDB = codeDB
 	db.ethTrieDB = ethtrie.NewDatabase(&core.EthereumDB{CodeDB: codeDB})
 
-	db.codeSizeCache, _ = lru.New(codeSizeCacheSize)
+	var err error
+
+	if db.codeSizeCache, err = lru.New(codeSizeCacheSize); err != nil {
+		return nil, err
+	}
+
+	if db.storeCache, err = lru.New(storeCacheSize); err != nil {
+		return nil, err
+	}
 
 	return db, nil
 }
@@ -133,6 +143,7 @@ func (db *Database) OpenTrie(root ethcmn.Hash) (ethstate.Trie, error) {
 		store:         db.accountsCache,
 		accountsCache: db.accountsCache,
 		storageCache:  db.storageCache,
+		storeCache:    db.storeCache,
 		ethTrieDB:     db.ethTrieDB,
 		empty:         isRootEmpty(root),
 		root:          rootHashFromVersion(db.stateStore.LastCommitID().Version),
@@ -154,10 +165,11 @@ func (db *Database) OpenStorageTrie(addrHash, root ethcmn.Hash) (ethstate.Trie, 
 	// a contract storage trie does not need an accountCache, storageCache or
 	// an Ethereum trie because it will not be used upon commitment.
 	return &Trie{
-		store:  db.storageCache,
-		prefix: addrHash.Bytes(),
-		empty:  isRootEmpty(root),
-		root:   rootHashFromVersion(db.stateStore.LastCommitID().Version),
+		store:      db.storageCache,
+		storeCache: db.storeCache,
+		prefix:     addrHash.Bytes(),
+		empty:      isRootEmpty(root),
+		root:       rootHashFromVersion(db.stateStore.LastCommitID().Version),
 	}, nil
 }
 
