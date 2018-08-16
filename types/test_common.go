@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	stake "github.com/cosmos/cosmos-sdk/x/stake/types"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -31,10 +32,13 @@ func NewTestCodec() *wire.Codec {
 	RegisterWire(codec)
 	codec.RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)
 
+	// Register any desired SDK msgs to be embedded
+	stake.RegisterWire(codec)
+
 	return codec
 }
 
-func newStdFee() auth.StdFee {
+func NewStdFee() auth.StdFee {
 	return auth.NewStdFee(5000, sdk.NewCoin("photon", 150))
 }
 
@@ -46,7 +50,7 @@ func newTestEmbeddedTx(
 	sigs := make([][]byte, len(pKeys))
 
 	for i, priv := range pKeys {
-		signEtx := EmbeddedTxSign{chainID.String(), accNums[i], seqs[i], msgs, newStdFee()}
+		signEtx := EmbeddedTxSign{chainID.String(), accNums[i], seqs[i], msgs, fee}
 
 		signBytes, err := signEtx.Bytes()
 		if err != nil {
@@ -86,7 +90,7 @@ func NewTestEthTxs(chainID sdk.Int, pKeys []*ecdsa.PrivateKey, addrs []ethcmn.Ad
 
 	for i, priv := range pKeys {
 		emintTx := NewTransaction(
-			uint64(i), addrs[i], sdk.NewInt(10), 100, sdk.NewInt(100), nil,
+			uint64(i), addrs[i], sdk.NewInt(10), 1000, sdk.NewInt(100), nil,
 		)
 
 		emintTx.Sign(chainID, priv)

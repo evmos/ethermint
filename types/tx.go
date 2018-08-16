@@ -182,31 +182,16 @@ func (tx Transaction) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
 		}
 	}
 
-	var signBytes ethcmn.Hash
-	if tx.Data.Signature.v.BitLen() < 8 {
-		v := tx.Data.Signature.v.Uint64()
-		if v == 27 || v == 28 {
-			// Unprotected tx has no cross-chain replay protection
-			signBytes = rlpHash([]interface{}{
-				tx.Data.AccountNonce,
-				tx.Data.Price,
-				tx.Data.GasLimit,
-				tx.Data.Recipient,
-				tx.Data.Amount,
-				tx.Data.Payload,
-			})
-		}
-	} else {
-		signBytes = rlpHash([]interface{}{
-			tx.Data.AccountNonce,
-			tx.Data.Price,
-			tx.Data.GasLimit,
-			tx.Data.Recipient,
-			tx.Data.Amount,
-			tx.Data.Payload,
-			chainID, uint(0), uint(0),
+	
+	signBytes := rlpHash([]interface{}{
+		tx.Data.AccountNonce,
+		tx.Data.Price,
+		tx.Data.GasLimit,
+		tx.Data.Recipient,
+		tx.Data.Amount,
+		tx.Data.Payload,
+		chainID, uint(0), uint(0),
 	})
-	}
 
 	sig := recoverEthSig(tx.Data.Signature, chainID)
 
@@ -277,6 +262,15 @@ func (tx Transaction) GetEmbeddedTx(codec *wire.Codec) (EmbeddedTx, sdk.Error) {
 	}
 
 	return etx, nil
+}
+
+// Copies Ethereum tx's Protected function
+func (tx Transaction) protected() bool {
+	if tx.Data.Signature.v.BitLen() <= 8 {
+		v := tx.Data.Signature.v.Uint64()
+		return v != 27 && v != 28
+	}
+	return true
 }
 
 // ----------------------------------------------------------------------------

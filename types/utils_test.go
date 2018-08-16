@@ -13,7 +13,7 @@ func TestValidateSigner(t *testing.T) {
 	msgs := []sdk.Msg{sdk.NewTestMsg(sdk.AccAddress(TestAddr1.Bytes()))}
 
 	// create message signing structure
-	signEtx := EmbeddedTxSign{TestChainID.String(), 0, 0, msgs, newStdFee()}
+	signEtx := EmbeddedTxSign{TestChainID.String(), 0, 0, msgs, NewStdFee()}
 
 	// create signing bytes and sign
 	signBytes, err := signEtx.Bytes()

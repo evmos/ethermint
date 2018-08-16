@@ -32,9 +32,9 @@ type internalAnteHandler func(
 func AnteHandler(am auth.AccountMapper) sdk.AnteHandler {
 	return func(sdkCtx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		var (
-			gasLimit int64
 			handler  internalAnteHandler
-		)
+			gasLimit int64
+		) 
 
 		switch tx := tx.(type) {
 		case types.Transaction:
@@ -47,7 +47,14 @@ func AnteHandler(am auth.AccountMapper) sdk.AnteHandler {
 			return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid transaction: %T", tx)).Result(), true
 		}
 
+		/*
+		fmt.Println("handler begin")
+		fmt.Println(am.GetAccount(sdkCtx, tx.))
+		fmt.Println("handler end")*/
+
 		newCtx = sdkCtx.WithGasMeter(sdk.NewGasMeter(gasLimit))
+
+
 
 		// AnteHandlers must have their own defer/recover in order for the
 		// BaseApp to know how much gas was used! This is because the GasMeter
@@ -92,11 +99,26 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Cont
 
 	// validate signature
 	sdkCtx.GasMeter().ConsumeGas(verifySigCost, "ante verify")
-	_, err := ethTx.VerifySig(chainID)
+	addr, err := ethTx.VerifySig(chainID)
+
+	fmt.Println(addr)
+	fmt.Println(chainID)
 
 	if err != nil {
 		return sdkCtx, sdk.ErrUnauthorized("signature verification failed").Result(), true
 	}
+
+	// validate AccountNonce (called Sequence in AccountMapper)
+	acc := am.GetAccount(sdkCtx, addr[:])
+	seq := acc.GetSequence()
+	if ethTx.Data.AccountNonce != uint64(seq) {
+		return sdkCtx, sdk.ErrInvalidSequence(fmt.Sprintf("Wrong AccountNonce: expected %d", seq)).Result(), true
+	}
+	err = acc.SetSequence(seq + 1)
+	if err != nil {
+		panic(err)
+	}
+	am.SetAccount(sdkCtx, acc)
 
 	return sdkCtx, sdk.Result{GasWanted: int64(ethTx.Data.GasLimit)}, false
 }

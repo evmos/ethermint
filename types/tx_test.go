@@ -53,7 +53,7 @@ func TestHasEmbeddedTx(t *testing.T) {
 
 	sdkTxs := NewTestSDKTxs(
 		testCodec, TestChainID, msgs, []*ecdsa.PrivateKey{TestPrivKey1},
-		[]int64{0}, []int64{0}, newStdFee(),
+		[]int64{0}, []int64{0}, NewStdFee(),
 	)
 	require.True(t, sdkTxs[0].HasEmbeddedTx(TestSDKAddress))
 
@@ -76,7 +76,7 @@ func TestGetEmbeddedTx(t *testing.T) {
 	)
 	sdkTxs := NewTestSDKTxs(
 		testCodec, TestChainID, msgs, []*ecdsa.PrivateKey{TestPrivKey1},
-		[]int64{0}, []int64{0}, newStdFee(),
+		[]int64{0}, []int64{0}, NewStdFee(),
 	)
 
 	etx, err := sdkTxs[0].GetEmbeddedTx(testCodec)
@@ -102,7 +102,7 @@ func TestTransactionGetMsgs(t *testing.T) {
 	expectedMsgs := []sdk.Msg{sdk.NewTestMsg(sdk.AccAddress(TestAddr1.Bytes()))}
 	etx := newTestEmbeddedTx(
 		TestChainID, expectedMsgs, []*ecdsa.PrivateKey{TestPrivKey1},
-		[]int64{0}, []int64{0}, newStdFee(),
+		[]int64{0}, []int64{0}, NewStdFee(),
 	)
 
 	msgs = etx.GetMsgs()
@@ -114,11 +114,24 @@ func TestGetRequiredSigners(t *testing.T) {
 	msgs := []sdk.Msg{sdk.NewTestMsg(sdk.AccAddress(TestAddr1.Bytes()))}
 	etx := newTestEmbeddedTx(
 		TestChainID, msgs, []*ecdsa.PrivateKey{TestPrivKey1},
-		[]int64{0}, []int64{0}, newStdFee(),
+		[]int64{0}, []int64{0}, NewStdFee(),
 	)
 
 	signers := etx.(EmbeddedTx).GetRequiredSigners()
 	require.Equal(t, []sdk.AccAddress{sdk.AccAddress(TestAddr1.Bytes())}, signers)
+}
+
+func TestVerifySig(t *testing.T) {
+	ethTx := NewTestEthTxs(
+		TestChainID,
+		[]*ecdsa.PrivateKey{TestPrivKey1},
+		[]ethcmn.Address{TestAddr1},
+	)[0]
+
+	addr, err := ethTx.VerifySig(TestChainID.BigInt())
+	
+	require.Nil(t, err, "Sig verification failed")
+	require.Equal(t, TestAddr1, addr, "Address is not the same")
 }
 
 func TestTxDecoder(t *testing.T) {
@@ -141,7 +154,7 @@ func TestTxDecoder(t *testing.T) {
 	// create embedded transaction and encode
 	etx := newTestEmbeddedTx(
 		TestChainID, msgs, []*ecdsa.PrivateKey{TestPrivKey1},
-		[]int64{0}, []int64{0}, newStdFee(),
+		[]int64{0}, []int64{0}, NewStdFee(),
 	)
 
 	payload := testCodec.MustMarshalBinary(etx)
