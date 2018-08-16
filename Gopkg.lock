@@ -26,7 +26,8 @@
     "types",
     "version",
     "wire",
-    "x/auth"
+    "x/auth",
+    "x/stake/types"
   ]
   revision = "23e3d5ac12145c02fcb4b4767d7dfccad782aee5"
   version = "v0.23.1"
@@ -193,8 +194,8 @@
     "assert",
     "require"
   ]
-  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
-  version = "v1.2.2"
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
@@ -358,6 +359,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "560c44b5e8f495ae409bc13b0e32cf36e3281f0d02b68b15e987faa2cda1e91c"
+  inputs-digest = "353f6762943df5f67c2fba13bc530c800977ed507155bb9edc3b44947f0abc6e"
   solver-name = "gps-cdcl"
   solver-version = 1
