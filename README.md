@@ -1,5 +1,5 @@
-[![](https://godoc.org/github.com/cosmos/ethermint?status.svg)](http://godoc.org/github.com/cosmos/ethermint)  [![Go Report Card](https://goreportcard.com/badge/github.com/cosmos/ethermint)](https://goreportcard.com/report/github.com/cosmos/ethermint) [![CircleCI](https://circleci.com/gh/cosmos/ethermint.svg?style=svg)](https://circleci.com/gh/cosmos/ethermint)
-
+[![CircleCI](https://circleci.com/gh/cosmos/ethermint.svg?style=svg)](https://circleci.com/gh/cosmos/ethermint)
+[![](https://godoc.org/github.com/cosmos/ethermint?status.svg)](http://godoc.org/github.com/cosmos/ethermint) [![Go Report Card](https://goreportcard.com/badge/github.com/cosmos/ethermint)](https://goreportcard.com/report/github.com/cosmos/ethermint)
 # Ethermint
 
 __**WARNING:**__ Ethermint is under VERY ACTIVE DEVELOPMENT and should be treated as pre-alpha software. This means it is not meant to be run in production, its APIs are subject to change without warning and should not be relied upon, and it should not be used to hold any value. We will remove this warning when we have a release that is stable, secure, and properly tested.
@@ -13,18 +13,26 @@ __**WARNING:**__ Ethermint is under VERY ACTIVE DEVELOPMENT and should be treate
 
 ### Implementation
 
-- [x] Have a working implementation that can parse and validate the existing ETH Chain and persist it in a Tendermint store
-- [ ] Benchmark this implementation to ensure performance
-- [ ] Allow the Ethermint EVM to interact with other [Cosmos SDK modules](https://github.com/cosmos/cosmos-sdk/blob/master/docs/core/app3.md)
-- [ ] Implement the Web3 APIs as a Cosmos Light Client for Ethermint
-- [ ] Ethermint is a full Cosmos SDK application and can be deployed as it's own zone
+#### Completed
+- Have a working implementation that can parse and validate the existing ETH Chain and persist it in a Tendermint store
+- Implement Ethereum transactions in the CosmosSDK
+
+#### Current Work
+- Implement web3 compatible API layer
+- Implement the EVM as a CosmosSDK module
+- Allow the Ethermint EVM to interact with other [Cosmos SDK modules](https://github.com/cosmos/cosmos-sdk/blob/master/docs/core/app3.md)
+
+#### Next Steps
+- Hard spoon enablement: The ability to export state from `geth` and import token balances into Ethermint
+- Ethermint is a functioning Cosmos SDK application and can be deployed as its own zone
+- Full web3 compatibility will enable existing Ethereum applications to use Ethermint
 
 ### Building Ethermint
 
 To build, execute the following commands:
 
 ```bash
-# To build the binary and put the results in ./build
+# To build the binary and put the resulting binary in ./build
 $ make tools deps build
 
 # To build the project and install it in $GOBIN
