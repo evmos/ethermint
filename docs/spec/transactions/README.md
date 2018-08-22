@@ -48,19 +48,19 @@ Cosmos SDK `sdk.Tx` interface.
 ## Signatures
 
 Ethermint supports [EIP-155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md)
-signatures. However, just as in Cosmos, Ethermint will support multiple signers.
-A client is expected to sign the `Transaction` just as in Ethereum, however, the
-`EmbeddedTx` contains a canonical signature structure that itself contains the
-signature and other information such as an account's sequence number. The sequence
-number is expected to increment every time a message is signed by a given account.
-This prevents "replay attacks", where the same message could be executed over and
-over again.
+signatures. A `Transaction` is expected to have a single signature for Ethereum
+routed transactions. However, just as in Cosmos, Ethermint will support multiple
+signers for `EmbeddedTx` Cosmos routed transactions. Signatures over the
+`Transaction` type are identical to Ethereum. However, the `EmbeddedTx` contains
+a canonical signature structure that contains the signature itself and other
+information such as an account's sequence number. The sequence number is expected
+to increment every time a message is signed by a given account. This, in addition
+to the chain ID, prevents "replay attacks", where the same message could be
+executed over and over again.
 
-An `EmbeddedTx` list of signatures must much the unique list of addresses returned by
-each message's `GetSigners` call. In addition, the address of first signer of the
-`EmbeddedTx` is responsible for paying the fees and must also match the address of
-the signer of the embedding `Transaction`. As such, there will be one duplicate
-signature.
+An `EmbeddedTx` list of signatures must much the unique list of addresses returned
+by each message's `GetSigners` call. In addition, the address of first signer of
+the `EmbeddedTx` is responsible for paying the fees.
 
 ## Gas & Fees
 
