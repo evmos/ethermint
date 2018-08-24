@@ -12,12 +12,8 @@ import (
 func TestValidateSigner(t *testing.T) {
 	msgs := []sdk.Msg{sdk.NewTestMsg(sdk.AccAddress(testAddr1.Bytes()))}
 
-	// create message signing structure
-	signEtx := EmbeddedTxSign{testChainID.String(), 0, 0, msgs, newStdFee()}
-
-	// create signing bytes and sign
-	signBytes, err := signEtx.Bytes()
-	require.NoError(t, err)
+	// create message signing structure and bytes
+	signBytes := GetStdTxSignBytes(testChainID.String(), 0, 0, newStdFee(), msgs, "")
 
 	// require signing not to fail
 	sig, err := ethcrypto.Sign(signBytes, testPrivKey1)

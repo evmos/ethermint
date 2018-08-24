@@ -2,8 +2,11 @@ package types
 
 import (
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
@@ -38,4 +41,12 @@ func ValidateSigner(signBytes, sig []byte, signer ethcmn.Address) error {
 	}
 
 	return nil
+}
+
+// GetStdTxSignBytes returns the signature bytes for an auth.StdTx transaction
+// that is compatible with Ethereum's signature mechanism.
+func GetStdTxSignBytes(chainID string, accNum int64, seq int64, fee auth.StdFee, msgs []sdk.Msg, memo string) []byte {
+	signBytes := auth.StdSignBytes(chainID, accNum, seq, fee, msgs, "")
+	hash := sha256.Sum256(signBytes)
+	return hash[:]
 }

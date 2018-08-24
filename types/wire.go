@@ -18,5 +18,4 @@ func RegisterWire(codec *wire.Codec) {
 	codec.RegisterConcrete(&EthSignature{}, "types/EthSignature", nil)
 	codec.RegisterConcrete(TxData{}, "types/TxData", nil)
 	codec.RegisterConcrete(Transaction{}, "types/Transaction", nil)
-	codec.RegisterConcrete(EmbeddedTx{}, "types/EmbeddedTx", nil)
 }

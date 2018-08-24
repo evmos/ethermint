@@ -1,17 +1,13 @@
 package types
 
 import (
-	"bytes"
 	"crypto/ecdsa"
-	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"sync/atomic"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -26,13 +22,9 @@ const (
 	TypeTxEthereum = "Ethereum"
 )
 
-// ----------------------------------------------------------------------------
-// Ethereum transaction
-// ----------------------------------------------------------------------------
-
 type (
 	// Transaction implements the Ethereum transaction structure as an exact
-	// copy. It implements the Cosmos sdk.Tx interface. Due to the private
+	// replica. It implements the Cosmos sdk.Tx interface. Due to the private
 	// fields, it must be replicated here and cannot be embedded or used
 	// directly.
 	//
@@ -47,9 +39,7 @@ type (
 		from atomic.Value
 	}
 
-	// TxData implements the Ethereum transaction data structure as an exact
-	// copy. It is used solely as intended in Ethereum abiding by the protocol
-	// except for the payload field which may embed a Cosmos SDK transaction.
+	// TxData defines internal Ethereum transaction information
 	TxData struct {
 		AccountNonce uint64          `json:"nonce"`
 		Price        sdk.Int         `json:"gasPrice"`
@@ -204,6 +194,8 @@ func (tx Transaction) GetMsgs() []sdk.Msg {
 // with the signature set. The signature if first recovered and then a new
 // Transaction is created with that signature. If setting the signature fails,
 // a panic will be triggered.
+//
+// TODO: To be removed in #470
 func (tx Transaction) ConvertTx(chainID *big.Int) ethtypes.Transaction {
 	gethTx := ethtypes.NewTransaction(
 		tx.Data.AccountNonce, *tx.Data.Recipient, tx.Data.Amount.BigInt(),
@@ -221,155 +213,21 @@ func (tx Transaction) ConvertTx(chainID *big.Int) ethtypes.Transaction {
 	return *gethTx
 }
 
-// HasEmbeddedTx returns a boolean reflecting if the transaction contains an
-// SDK transaction or not based on the recipient address.
-func (tx Transaction) HasEmbeddedTx(addr ethcmn.Address) bool {
-	return bytes.Equal(tx.Data.Recipient.Bytes(), addr.Bytes())
-}
-
-// GetEmbeddedTx returns the embedded SDK transaction from an Ethereum
-// transaction. It returns an error if decoding the inner transaction fails.
-//
-// CONTRACT: The payload field of an Ethereum transaction must contain a valid
-// encoded SDK transaction.
-func (tx Transaction) GetEmbeddedTx(codec *wire.Codec) (EmbeddedTx, sdk.Error) {
-	etx := EmbeddedTx{}
-
-	err := codec.UnmarshalBinary(tx.Data.Payload, &etx)
-	if err != nil {
-		return EmbeddedTx{}, sdk.ErrTxDecode("failed to encode embedded tx")
-	}
-
-	return etx, nil
-}
-
-// ----------------------------------------------------------------------------
-// embedded SDK transaction
-// ----------------------------------------------------------------------------
-
-type (
-	// EmbeddedTx implements an SDK transaction. It is to be encoded into the
-	// payload field of an Ethereum transaction in order to route and handle SDK
-	// transactions.
-	EmbeddedTx struct {
-		Messages   []sdk.Msg   `json:"messages"`
-		Fee        auth.StdFee `json:"fee"`
-		Signatures [][]byte    `json:"signatures"`
-	}
-
-	// embeddedSignDoc implements a simple SignDoc for a EmbeddedTx signer to
-	// sign over.
-	embeddedSignDoc struct {
-		ChainID       string            `json:"chainID"`
-		AccountNumber int64             `json:"accountNumber"`
-		Sequence      int64             `json:"sequence"`
-		Messages      []json.RawMessage `json:"messages"`
-		Fee           json.RawMessage   `json:"fee"`
-	}
-
-	// EmbeddedTxSign implements a structure for containing the information
-	// necessary for building and signing an EmbeddedTx.
-	EmbeddedTxSign struct {
-		ChainID       string
-		AccountNumber int64
-		Sequence      int64
-		Messages      []sdk.Msg
-		Fee           auth.StdFee
-	}
-)
-
-// GetMsgs implements the sdk.Tx interface. It returns all the SDK transaction
-// messages.
-func (etx EmbeddedTx) GetMsgs() []sdk.Msg {
-	return etx.Messages
-}
-
-// GetRequiredSigners returns all the required signers of an SDK transaction
-// accumulated from messages. It returns them in a deterministic fashion given
-// a list of messages.
-func (etx EmbeddedTx) GetRequiredSigners() []sdk.AccAddress {
-	seen := map[string]bool{}
-
-	var signers []sdk.AccAddress
-	for _, msg := range etx.GetMsgs() {
-		for _, addr := range msg.GetSigners() {
-			if !seen[addr.String()] {
-				signers = append(signers, sdk.AccAddress(addr))
-				seen[addr.String()] = true
-			}
-		}
-	}
-
-	return signers
-}
-
-// Bytes returns the EmbeddedTxSign signature bytes for a signer to sign over.
-func (ets EmbeddedTxSign) Bytes() ([]byte, error) {
-	sigBytes, err := EmbeddedSignBytes(ets.ChainID, ets.AccountNumber, ets.Sequence, ets.Messages, ets.Fee)
-	if err != nil {
-		return nil, err
-	}
-
-	hash := sha256.Sum256(sigBytes)
-	return hash[:], nil
-}
-
-// EmbeddedSignBytes creates signature bytes for a signer to sign an embedded
-// transaction. The signature bytes require a chainID and an account number.
-// The signature bytes are JSON encoded.
-func EmbeddedSignBytes(chainID string, accnum, sequence int64, msgs []sdk.Msg, fee auth.StdFee) ([]byte, error) {
-	var msgsBytes []json.RawMessage
-	for _, msg := range msgs {
-		msgsBytes = append(msgsBytes, json.RawMessage(msg.GetSignBytes()))
-	}
-
-	signDoc := embeddedSignDoc{
-		ChainID:       chainID,
-		AccountNumber: accnum,
-		Sequence:      sequence,
-		Messages:      msgsBytes,
-		Fee:           json.RawMessage(fee.Bytes()),
-	}
-
-	bz, err := typesCodec.MarshalJSON(signDoc)
-	if err != nil {
-		errors.Wrap(err, "failed to JSON encode EmbeddedSignDoc")
-	}
-
-	return bz, nil
-}
-
-// ----------------------------------------------------------------------------
-// Utilities
-// ----------------------------------------------------------------------------
-
 // TxDecoder returns an sdk.TxDecoder that given raw transaction bytes,
-// attempts to decode them into a Transaction or an EmbeddedTx or returning an
-// error if decoding fails.
-func TxDecoder(codec *wire.Codec, sdkAddress ethcmn.Address) sdk.TxDecoder {
+// attempts to decode them into a valid sdk.Tx.
+func TxDecoder(codec *wire.Codec) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, sdk.Error) {
-		var tx = Transaction{}
-
 		if len(txBytes) == 0 {
 			return nil, sdk.ErrTxDecode("txBytes are empty")
 		}
+
+		var tx sdk.Tx
 
 		// The given codec should have all the appropriate message types
 		// registered.
 		err := codec.UnmarshalBinary(txBytes, &tx)
 		if err != nil {
 			return nil, sdk.ErrTxDecode("failed to decode tx").TraceSDK(err.Error())
-		}
-
-		// If the transaction is routed as an SDK transaction, decode and
-		// return the embedded transaction.
-		if tx.HasEmbeddedTx(sdkAddress) {
-			etx, err := tx.GetEmbeddedTx(codec)
-			if err != nil {
-				return nil, err
-			}
-
-			return etx, nil
 		}
 
 		return tx, nil

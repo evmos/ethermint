@@ -26,11 +26,10 @@ type internalAnteHandler func(
 	sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper,
 ) (newCtx sdk.Context, res sdk.Result, abort bool)
 
-// AnteHandler handles Ethereum transactions and passes SDK transactions to the
-// embeddedAnteHandler if it's an Ethermint transaction. The ante handler gets
-// invoked after the BaseApp performs the runTx. At this point, the transaction
-// should be properly decoded via the TxDecoder and should be of a proper type,
-// Transaction or EmbeddedTx.
+// AnteHandler is responsible for attempting to route an Ethereum or SDK
+// transaction to an internal ante handler for performing transaction-level
+// processing (e.g. fee payment, signature verification) before being passed
+// onto it's respective handler.
 func AnteHandler(am auth.AccountMapper) sdk.AnteHandler {
 	return func(sdkCtx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		var (
@@ -42,7 +41,7 @@ func AnteHandler(am auth.AccountMapper) sdk.AnteHandler {
 		case types.Transaction:
 			gasLimit = int64(tx.Data.GasLimit)
 			handler = handleEthTx
-		case types.EmbeddedTx:
+		case auth.StdTx:
 			gasLimit = tx.Fee.Gas
 			handler = handleEmbeddedTx
 		default:
@@ -107,23 +106,23 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Cont
 // handleEmbeddedTx implements an ante handler for an SDK transaction. It
 // validates the signature and if valid returns an OK result.
 func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
-	etx, ok := tx.(types.EmbeddedTx)
+	stdTx, ok := tx.(auth.StdTx)
 	if !ok {
 		return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid transaction: %T", tx)).Result(), true
 	}
 
-	if err := validateEmbeddedTxBasic(etx); err != nil {
+	if err := validateStdTxBasic(stdTx); err != nil {
 		return sdkCtx, err.Result(), true
 	}
 
-	signerAddrs := etx.GetRequiredSigners()
+	signerAddrs := stdTx.GetSigners()
 	signerAccs := make([]auth.Account, len(signerAddrs))
 
 	// validate signatures
-	for i, sig := range etx.Signatures {
+	for i, sig := range stdTx.Signatures {
 		signer := ethcmn.BytesToAddress(signerAddrs[i].Bytes())
 
-		signerAcc, err := validateSignature(sdkCtx, etx, signer, sig, am)
+		signerAcc, err := validateSignature(sdkCtx, stdTx, signer, sig, am)
 		if err.Code() != sdk.CodeOK {
 			return sdkCtx, err.Result(), false
 		}
@@ -136,18 +135,18 @@ func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk
 
 	newCtx := auth.WithSigners(sdkCtx, signerAccs)
 
-	return newCtx, sdk.Result{GasWanted: etx.Fee.Gas}, false
+	return newCtx, sdk.Result{GasWanted: stdTx.Fee.Gas}, false
 }
 
-// validateEmbeddedTxBasic validates an EmbeddedTx based on things that don't
+// validateStdTxBasic validates an auth.StdTx based on parameters that do not
 // depend on the context.
-func validateEmbeddedTxBasic(etx types.EmbeddedTx) (err sdk.Error) {
-	sigs := etx.Signatures
+func validateStdTxBasic(stdTx auth.StdTx) (err sdk.Error) {
+	sigs := stdTx.Signatures
 	if len(sigs) == 0 {
 		return sdk.ErrUnauthorized("transaction missing signatures")
 	}
 
-	signerAddrs := etx.GetRequiredSigners()
+	signerAddrs := stdTx.GetSigners()
 	if len(sigs) != len(signerAddrs) {
 		return sdk.ErrUnauthorized("invalid number of transaction signers")
 	}
@@ -156,8 +155,8 @@ func validateEmbeddedTxBasic(etx types.EmbeddedTx) (err sdk.Error) {
 }
 
 func validateSignature(
-	sdkCtx sdk.Context, etx types.EmbeddedTx, signer ethcmn.Address,
-	sig []byte, am auth.AccountMapper,
+	sdkCtx sdk.Context, stdTx auth.StdTx, signer ethcmn.Address,
+	sig auth.StdSignature, am auth.AccountMapper,
 ) (acc auth.Account, sdkErr sdk.Error) {
 
 	chainID := sdkCtx.ChainID()
@@ -167,28 +166,29 @@ func validateSignature(
 		return nil, sdk.ErrUnknownAddress(fmt.Sprintf("no account with address %s found", signer))
 	}
 
-	signEtx := types.EmbeddedTxSign{
-		ChainID:       chainID,
-		AccountNumber: acc.GetAccountNumber(),
-		Sequence:      acc.GetSequence(),
-		Messages:      etx.Messages,
-		Fee:           etx.Fee,
+	accNum := acc.GetAccountNumber()
+	if accNum != sig.AccountNumber {
+		return nil, sdk.ErrInvalidSequence(
+			fmt.Sprintf("invalid account number; got %d, expected %d", sig.AccountNumber, accNum))
 	}
 
-	err := acc.SetSequence(signEtx.Sequence + 1)
+	accSeq := acc.GetSequence()
+	if accSeq != sig.Sequence {
+		return nil, sdk.ErrInvalidSequence(
+			fmt.Sprintf("invalid account sequence; got %d, expected %d", sig.Sequence, accSeq))
+	}
+
+	err := acc.SetSequence(accSeq + 1)
 	if err != nil {
 		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	signBytes, err := signEtx.Bytes()
-	if err != nil {
-		return nil, sdk.ErrInternal(err.Error())
-	}
+	signBytes := types.GetStdTxSignBytes(chainID, accNum, accSeq, stdTx.Fee, stdTx.GetMsgs(), stdTx.Memo)
 
 	// consume gas for signature verification
-	sdkCtx.GasMeter().ConsumeGas(verifySigCost, "ante verify")
+	sdkCtx.GasMeter().ConsumeGas(verifySigCost, "ante signature verification")
 
-	if err := types.ValidateSigner(signBytes, sig, signer); err != nil {
+	if err := types.ValidateSigner(signBytes, sig.Signature, signer); err != nil {
 		return nil, sdk.ErrUnauthorized(err.Error())
 	}
 
