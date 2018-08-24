@@ -17,6 +17,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var _ sdk.Tx = (*Transaction)(nil)
+
 const (
 	// TypeTxEthereum reflects an Ethereum Transaction type.
 	TypeTxEthereum = "Ethereum"
