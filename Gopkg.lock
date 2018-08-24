@@ -11,11 +11,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8ad24ea05e770b745b5c286b4f94cf73d5be87005680e36b2d0dd1de0a2f9fbf"
+  digest = "1:b9f5e0f033febe59a62d01e78486c0dd9e4afc9ac5d240aee6ce78a927142e8b"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
   pruneopts = "T"
-  revision = "d81d8877b8f327112e94e814937143a71d1692a7"
+  revision = "79e00513b1011888b1e675157ab89f527f901cae"
 
 [[projects]]
   digest = "1:d0d998526cfb68788229a31c16a557fdf1fbbb510654be6b3732c2758e06b533"
@@ -34,6 +34,16 @@
     "version",
     "wire",
     "x/auth",
+    "x/bank",
+    "x/gov",
+    "x/gov/tags",
+    "x/mock",
+    "x/params",
+    "x/slashing",
+    "x/stake",
+    "x/stake/keeper",
+    "x/stake/tags",
+    "x/stake/types",
   ]
   pruneopts = "T"
   revision = "1c38c70468ec721e3a555ba2f3bf5f9da31f0cc9"
@@ -232,7 +242,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:e95496462101745805bd4e041a5b841e108c7cf761264d53648246308de2761e"
+  digest = "1:8f39978e4fb2a11d43cc954f2ab458cb38995d4c1557b6d3a7c8cafe0ec2277c"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
@@ -240,8 +250,8 @@
     "suite",
   ]
   pruneopts = "T"
-  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
-  version = "v1.2.2"
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
@@ -438,6 +448,11 @@
     "github.com/cosmos/cosmos-sdk/types",
     "github.com/cosmos/cosmos-sdk/wire",
     "github.com/cosmos/cosmos-sdk/x/auth",
+    "github.com/cosmos/cosmos-sdk/x/bank",
+    "github.com/cosmos/cosmos-sdk/x/gov",
+    "github.com/cosmos/cosmos-sdk/x/params",
+    "github.com/cosmos/cosmos-sdk/x/slashing",
+    "github.com/cosmos/cosmos-sdk/x/stake",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/hexutil",
     "github.com/ethereum/go-ethereum/common/math",
@@ -459,6 +474,7 @@
     "github.com/pkg/errors",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
+    "github.com/tendermint/tendermint/abci/types",
     "github.com/tendermint/tendermint/libs/common",
     "github.com/tendermint/tendermint/libs/db",
     "github.com/tendermint/tendermint/libs/log",
