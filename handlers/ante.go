@@ -30,7 +30,7 @@ type internalAnteHandler func(
 // transaction to an internal ante handler for performing transaction-level
 // processing (e.g. fee payment, signature verification) before being passed
 // onto it's respective handler.
-func AnteHandler(am auth.AccountMapper) sdk.AnteHandler {
+func AnteHandler(am auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.AnteHandler {
 	return func(sdkCtx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		var (
 			gasLimit int64

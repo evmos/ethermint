@@ -15,6 +15,7 @@ func init() {
 // codec.
 func RegisterWire(codec *wire.Codec) {
 	sdk.RegisterWire(codec)
+	codec.RegisterConcrete(&Account{}, "types/Account", nil)
 	codec.RegisterConcrete(&EthSignature{}, "types/EthSignature", nil)
 	codec.RegisterConcrete(TxData{}, "types/TxData", nil)
 	codec.RegisterConcrete(Transaction{}, "types/Transaction", nil)
