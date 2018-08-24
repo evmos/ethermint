@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/ethermint/handlers"
 	"github.com/cosmos/ethermint/types"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethparams "github.com/ethereum/go-ethereum/params"
 
 	tmcmn "github.com/tendermint/tendermint/libs/common"
@@ -43,20 +42,17 @@ type (
 
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
-func NewEthermintApp(
-	logger tmlog.Logger, db dbm.DB, ethChainCfg *ethparams.ChainConfig,
-	sdkAddr ethcmn.Address, opts ...Options,
+func NewEthermintApp(logger tmlog.Logger, db dbm.DB, ethChainCfg *ethparams.ChainConfig, opts ...Options,
 ) *EthermintApp {
 
 	codec := CreateCodec()
 	app := &EthermintApp{
-		BaseApp:    bam.NewBaseApp(appName, codec, logger, db),
+		BaseApp:    bam.NewBaseApp(appName, logger, db, types.TxDecoder(codec)),
 		codec:      codec,
 		accountKey: sdk.NewKVStoreKey("accounts"),
 	}
 	app.accountMapper = auth.NewAccountMapper(codec, app.accountKey, auth.ProtoBaseAccount)
 
-	app.SetTxDecoder(types.TxDecoder(codec, sdkAddr))
 	app.SetAnteHandler(handlers.AnteHandler(app.accountMapper))
 	app.MountStoresIAVL(app.accountKey)
 
