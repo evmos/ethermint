@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/ethermint/handlers"
 	"github.com/cosmos/ethermint/types"
 
+	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethparams "github.com/ethereum/go-ethereum/params"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -58,12 +59,13 @@ type (
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
 func NewEthermintApp(
-	logger tmlog.Logger, db dbm.DB, ethChainCfg *ethparams.ChainConfig, baseAppOptions ...func(*bam.BaseApp),
+	logger tmlog.Logger, db dbm.DB, ethChainCfg *ethparams.ChainConfig,
+	sdkAddr ethcmn.Address, baseAppOpts ...func(*bam.BaseApp),
 ) *EthermintApp {
 
 	codec := CreateCodec()
 	app := &EthermintApp{
-		BaseApp:     bam.NewBaseApp(appName, logger, db, types.TxDecoder(codec), baseAppOptions...),
+		BaseApp:     bam.NewBaseApp(appName, logger, db, types.TxDecoder(codec, sdkAddr), baseAppOpts...),
 		codec:       codec,
 		accountKey:  sdk.NewKVStoreKey("acc"),
 		mainKey:     sdk.NewKVStoreKey("main"),
@@ -177,7 +179,7 @@ func (app *EthermintApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 }
 
 // CreateCodec creates a new amino wire codec and registers all the necessary
-// structures and interfaces needed for the application.
+// concrete types and interfaces needed for the application.
 func CreateCodec() *wire.Codec {
 	codec := wire.NewCodec()
 
