@@ -35,7 +35,7 @@ func ValidateSigner(signBytes, sig []byte, signer ethcmn.Address) error {
 	pk, err := ethcrypto.SigToPub(signBytes, sig)
 
 	if err != nil {
-		return errors.Wrap(err, "signature verification failed")
+		return errors.Wrap(err, "failed to derive public key from signature")
 	} else if ethcrypto.PubkeyToAddress(*pk) != signer {
 		return fmt.Errorf("invalid signature for signer: %s", signer)
 	}
