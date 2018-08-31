@@ -1,3 +1,4 @@
+// nolint
 package types
 
 import (
@@ -7,119 +8,113 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	stake "github.com/cosmos/cosmos-sdk/x/stake/types"
-
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
-	TestChainID = sdk.NewInt(3)
+	TestSDKAddr = GenerateEthAddress()
+	TestChainID = big.NewInt(3)
 
 	TestPrivKey1, _ = ethcrypto.GenerateKey()
 	TestPrivKey2, _ = ethcrypto.GenerateKey()
 
 	TestAddr1 = PrivKeyToEthAddress(TestPrivKey1)
 	TestAddr2 = PrivKeyToEthAddress(TestPrivKey2)
-
-	TestSDKAddress = GenerateEthAddress()
 )
 
 func NewTestCodec() *wire.Codec {
 	codec := wire.NewCodec()
 
 	RegisterWire(codec)
+	auth.RegisterWire(codec)
+	wire.RegisterCrypto(codec)
 	codec.RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)
-
-	// Register any desired SDK msgs to be embedded
-	stake.RegisterWire(codec)
 
 	return codec
 }
 
-func NewStdFee() auth.StdFee {
-	return auth.NewStdFee(5000, sdk.NewCoin("photon", 150))
+func NewTestStdFee() auth.StdFee {
+	return auth.NewStdFee(5000, sdk.NewCoin("photon", sdk.NewInt(150)))
 }
 
-func NewTestEmbeddedTx(
-	chainID sdk.Int, msgs []sdk.Msg, pKeys []*ecdsa.PrivateKey,
-	accNums []int64, seqs []int64, fee auth.StdFee,
+func NewTestStdTx(
+	chainID *big.Int, msgs []sdk.Msg, accNums []int64, seqs []int64, pKeys []*ecdsa.PrivateKey, fee auth.StdFee,
 ) sdk.Tx {
 
-	sigs := make([][]byte, len(pKeys))
+	sigs := make([]auth.StdSignature, len(pKeys))
 
 	for i, priv := range pKeys {
-		signEtx := EmbeddedTxSign{chainID.String(), accNums[i], seqs[i], msgs, fee}
-
-		signBytes, err := signEtx.Bytes()
-		if err != nil {
-			panic(err)
-		}
+		signBytes := GetStdTxSignBytes(chainID.String(), accNums[i], seqs[i], NewTestStdFee(), msgs, "")
 
 		sig, err := ethcrypto.Sign(signBytes, priv)
 		if err != nil {
 			panic(err)
 		}
 
-		sigs[i] = sig
+		sigs[i] = auth.StdSignature{Signature: sig, AccountNumber: accNums[i], Sequence: seqs[i]}
 	}
 
-	return EmbeddedTx{msgs, fee, sigs}
+	return auth.NewStdTx(msgs, fee, sigs, "")
 }
 
-func NewTestGethTxs(chainID sdk.Int, pKeys []*ecdsa.PrivateKey, addrs []ethcmn.Address) []ethtypes.Transaction {
-	txs := make([]ethtypes.Transaction, len(pKeys))
+func NewTestGethTxs(
+	chainID *big.Int, seqs []int64, addrs []ethcmn.Address, pKeys []*ecdsa.PrivateKey,
+) []*ethtypes.Transaction {
 
-	for i, priv := range pKeys {
+	txs := make([]*ethtypes.Transaction, len(pKeys))
+
+	for i, privKey := range pKeys {
 		ethTx := ethtypes.NewTransaction(
-			uint64(i), addrs[i], big.NewInt(10), 100, big.NewInt(100), nil,
+			uint64(seqs[i]), addrs[i], big.NewInt(10), 1000, big.NewInt(100), []byte{},
 		)
 
-		signer := ethtypes.NewEIP155Signer(chainID.BigInt())
-		ethTx, _ = ethtypes.SignTx(ethTx, signer, priv)
+		signer := ethtypes.NewEIP155Signer(chainID)
 
-		txs[i] = *ethTx
+		ethTx, err := ethtypes.SignTx(ethTx, signer, privKey)
+		if err != nil {
+			panic(err)
+		}
+
+		txs[i] = ethTx
 	}
 
 	return txs
 }
 
-func NewTestEthTxs(chainID sdk.Int, pKeys []*ecdsa.PrivateKey, addrs []ethcmn.Address) []Transaction {
-	txs := make([]Transaction, len(pKeys))
+func NewTestEthTxs(
+	chainID *big.Int, seqs []int64, addrs []ethcmn.Address, pKeys []*ecdsa.PrivateKey,
+) []*Transaction {
 
-	for i, priv := range pKeys {
-		emintTx := NewTransaction(
-			uint64(i), addrs[i], sdk.NewInt(10), 1000, sdk.NewInt(100), nil,
+	txs := make([]*Transaction, len(pKeys))
+
+	for i, privKey := range pKeys {
+		ethTx := NewTransaction(
+			uint64(seqs[i]), addrs[i], big.NewInt(10), 1000, big.NewInt(100), []byte{},
 		)
 
-		emintTx.Sign(chainID, priv)
-
-		txs[i] = emintTx
+		ethTx.Sign(chainID, privKey)
+		txs[i] = ethTx
 	}
 
 	return txs
 }
 
 func NewTestSDKTxs(
-	codec *wire.Codec, chainID sdk.Int, msgs []sdk.Msg, pKeys []*ecdsa.PrivateKey,
-	accNums []int64, seqs []int64, fee auth.StdFee,
-) []Transaction {
+	codec *wire.Codec, chainID *big.Int, to ethcmn.Address, msgs []sdk.Msg,
+	accNums []int64, seqs []int64, pKeys []*ecdsa.PrivateKey, fee auth.StdFee,
+) []*Transaction {
 
-	txs := make([]Transaction, len(pKeys))
-	etx := NewTestEmbeddedTx(chainID, msgs, pKeys, accNums, seqs, fee)
+	txs := make([]*Transaction, len(pKeys))
+	stdTx := NewTestStdTx(chainID, msgs, accNums, seqs, pKeys, fee)
+	payload := codec.MustMarshalBinary(stdTx)
 
-	for i, priv := range pKeys {
-		payload := codec.MustMarshalBinary(etx)
+	for i, privKey := range pKeys {
+		ethTx := NewTransaction(uint64(seqs[i]), to, big.NewInt(10), 1000, big.NewInt(100), payload)
 
-		emintTx := NewTransaction(
-			uint64(i), TestSDKAddress, sdk.NewInt(10), 1000,
-			sdk.NewInt(100), payload,
-		)
-
-		emintTx.Sign(TestChainID, priv)
-
-		txs[i] = emintTx
+		ethTx.Sign(chainID, privKey)
+		txs[i] = ethTx
 	}
 
 	return txs
