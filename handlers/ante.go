@@ -21,14 +21,14 @@ const (
 // must implementing. Internal ante handlers will be dependant upon the
 // transaction type.
 type internalAnteHandler func(
-	sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper,
+	sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper,
 ) (newCtx sdk.Context, res sdk.Result, abort bool)
 
 // AnteHandler is responsible for attempting to route an Ethereum or SDK
 // transaction to an internal ante handler for performing transaction-level
 // processing (e.g. fee payment, signature verification) before being passed
 // onto it's respective handler.
-func AnteHandler(am auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.AnteHandler {
+func AnteHandler(accMapper auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.AnteHandler {
 	return func(sdkCtx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		var (
 			handler  internalAnteHandler
@@ -67,7 +67,7 @@ func AnteHandler(am auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.AnteHand
 			}
 		}()
 
-		return handler(newCtx, tx, am)
+		return handler(newCtx, tx, accMapper)
 	}
 }
 
@@ -76,7 +76,7 @@ func AnteHandler(am auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.AnteHand
 //
 // TODO: Do we need to do any further validation or account manipulation
 // (e.g. increment nonce)?
-func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
+func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
 	ethTx, ok := tx.(types.Transaction)
 	if !ok {
 		return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid transaction: %T", tx)).Result(), true
@@ -96,7 +96,7 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Cont
 		return sdkCtx, sdk.ErrUnauthorized("signature verification failed").Result(), true
 	}
 
-	acc := am.GetAccount(sdkCtx, addr.Bytes())
+	acc := accMapper.GetAccount(sdkCtx, addr.Bytes())
 
 	// validate the account nonce (referred to as sequence in the AccountMapper)
 	seq := acc.GetSequence()
@@ -109,13 +109,13 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Cont
 		return sdkCtx, sdk.ErrInternal(err.Error()).Result(), true
 	}
 
-	am.SetAccount(sdkCtx, acc)
+	accMapper.SetAccount(sdkCtx, acc)
 	return sdkCtx, sdk.Result{GasWanted: int64(ethTx.Data().GasLimit)}, false
 }
 
 // handleEmbeddedTx implements an ante handler for an SDK transaction. It
 // validates the signature and if valid returns an OK result.
-func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
+func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
 	stdTx, ok := tx.(auth.StdTx)
 	if !ok {
 		return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid transaction: %T", tx)).Result(), true
@@ -132,7 +132,7 @@ func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk
 	for i, sig := range stdTx.Signatures {
 		signer := ethcmn.BytesToAddress(signerAddrs[i].Bytes())
 
-		acc, err := validateSignature(sdkCtx, stdTx, signer, sig, am)
+		acc, err := validateSignature(sdkCtx, stdTx, signer, sig, accMapper)
 		// err.Code() != sdk.CodeOK
 		if err != nil {
 			return sdkCtx, err.Result(), true
@@ -140,7 +140,7 @@ func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, am auth.AccountMapper) (sdk
 
 		// TODO: Fees!
 
-		am.SetAccount(sdkCtx, acc)
+		accMapper.SetAccount(sdkCtx, acc)
 		signerAccs[i] = acc
 	}
 
@@ -167,12 +167,12 @@ func validateStdTxBasic(stdTx auth.StdTx) (err sdk.Error) {
 
 func validateSignature(
 	sdkCtx sdk.Context, stdTx auth.StdTx, signer ethcmn.Address,
-	sig auth.StdSignature, am auth.AccountMapper,
+	sig auth.StdSignature, accMapper auth.AccountMapper,
 ) (acc auth.Account, sdkErr sdk.Error) {
 
 	chainID := sdkCtx.ChainID()
 
-	acc = am.GetAccount(sdkCtx, signer.Bytes())
+	acc = accMapper.GetAccount(sdkCtx, signer.Bytes())
 	if acc == nil {
 		return nil, sdk.ErrUnknownAddress(fmt.Sprintf("no account with address %s found", signer))
 	}
