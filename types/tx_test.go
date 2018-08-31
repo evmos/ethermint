@@ -3,83 +3,57 @@ package types
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	testChainID = sdk.NewInt(3)
+func TestTransactionRLPEncode(t *testing.T) {
+	txs := NewTestEthTxs(TestChainID, []int64{0}, []ethcmn.Address{TestAddr1}, []*ecdsa.PrivateKey{TestPrivKey1})
+	gtxs := NewTestGethTxs(TestChainID, []int64{0}, []ethcmn.Address{TestAddr1}, []*ecdsa.PrivateKey{TestPrivKey1})
 
-	testPrivKey1, _ = ethcrypto.GenerateKey()
-	testPrivKey2, _ = ethcrypto.GenerateKey()
+	txRLP, err := rlp.EncodeToBytes(txs[0])
+	require.NoError(t, err)
 
-	testAddr1 = PrivKeyToEthAddress(testPrivKey1)
-	testAddr2 = PrivKeyToEthAddress(testPrivKey2)
-)
+	gtxRLP, err := rlp.EncodeToBytes(gtxs[0])
+	require.NoError(t, err)
 
-func newTestCodec() *wire.Codec {
-	codec := wire.NewCodec()
-
-	RegisterWire(codec)
-	codec.RegisterConcrete(auth.StdTx{}, "test/StdTx", nil)
-	codec.RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)
-	wire.RegisterCrypto(codec)
-
-	return codec
+	require.Equal(t, gtxRLP, txRLP)
 }
 
-func newStdFee() auth.StdFee {
-	return auth.NewStdFee(5000, sdk.NewCoin("photon", sdk.NewInt(150)))
-}
+func TestTransactionRLPDecode(t *testing.T) {
+	txs := NewTestEthTxs(TestChainID, []int64{0}, []ethcmn.Address{TestAddr1}, []*ecdsa.PrivateKey{TestPrivKey1})
+	gtxs := NewTestGethTxs(TestChainID, []int64{0}, []ethcmn.Address{TestAddr1}, []*ecdsa.PrivateKey{TestPrivKey1})
 
-func newTestStdTx(
-	chainID sdk.Int, msgs []sdk.Msg, pKeys []*ecdsa.PrivateKey,
-	accNums []int64, seqs []int64, fee auth.StdFee,
-) sdk.Tx {
+	txRLP, err := rlp.EncodeToBytes(txs[0])
+	require.NoError(t, err)
 
-	sigs := make([]auth.StdSignature, len(pKeys))
+	gtxRLP, err := rlp.EncodeToBytes(gtxs[0])
+	require.NoError(t, err)
 
-	for i, priv := range pKeys {
-		signBytes := GetStdTxSignBytes(chainID.String(), accNums[i], seqs[i], newStdFee(), msgs, "")
+	var (
+		decodedTx  Transaction
+		decodedGtx ethtypes.Transaction
+	)
 
-		sig, err := ethcrypto.Sign(signBytes, priv)
-		if err != nil {
-			panic(err)
-		}
+	err = rlp.DecodeBytes(txRLP, &decodedTx)
+	require.NoError(t, err)
 
-		sigs[i] = auth.StdSignature{Signature: sig, AccountNumber: accNums[i], Sequence: seqs[i]}
-	}
+	err = rlp.DecodeBytes(gtxRLP, &decodedGtx)
+	require.NoError(t, err)
 
-	return auth.NewStdTx(msgs, fee, sigs, "")
-}
-
-func newTestEthTxs(chainID sdk.Int, pKeys []*ecdsa.PrivateKey, addrs []ethcmn.Address) []Transaction {
-	txs := make([]Transaction, len(pKeys))
-
-	for i, priv := range pKeys {
-		emintTx := NewTransaction(
-			uint64(i), addrs[i], sdk.NewInt(10), 100, sdk.NewInt(100), nil,
-		)
-
-		emintTx.Sign(chainID, priv)
-
-		txs[i] = emintTx
-	}
-
-	return txs
+	require.Equal(t, decodedGtx.Hash(), decodedTx.Hash())
 }
 
 func TestValidation(t *testing.T) {
-	ethTxs := newTestEthTxs(
-		testChainID,
-		[]*ecdsa.PrivateKey{testPrivKey1},
-		[]ethcmn.Address{testAddr1},
+	ethTxs := NewTestEthTxs(
+		TestChainID, []int64{0}, []ethcmn.Address{TestAddr1}, []*ecdsa.PrivateKey{TestPrivKey1},
 	)
 
 	testCases := []struct {
@@ -89,13 +63,13 @@ func TestValidation(t *testing.T) {
 	}{
 		{ethTxs[0], func(msg sdk.Msg) sdk.Msg { return msg }, false},
 		{ethTxs[0], func(msg sdk.Msg) sdk.Msg {
-			tx := msg.(Transaction)
-			tx.Data.Price = sdk.NewInt(-1)
+			tx := msg.(*Transaction)
+			tx.data.Price = big.NewInt(-1)
 			return tx
 		}, true},
 		{ethTxs[0], func(msg sdk.Msg) sdk.Msg {
-			tx := msg.(Transaction)
-			tx.Data.Amount = sdk.NewInt(-1)
+			tx := msg.(*Transaction)
+			tx.data.Amount = big.NewInt(-1)
 			return tx
 		}, true},
 	}
@@ -112,59 +86,57 @@ func TestValidation(t *testing.T) {
 	}
 }
 
-func TestTransactionGetMsgs(t *testing.T) {
-	ethTxs := newTestEthTxs(
-		testChainID,
-		[]*ecdsa.PrivateKey{testPrivKey1},
-		[]ethcmn.Address{testAddr1},
+func TestTransactionVerifySig(t *testing.T) {
+	txs := NewTestEthTxs(
+		TestChainID, []int64{0}, []ethcmn.Address{TestAddr1}, []*ecdsa.PrivateKey{TestPrivKey1},
 	)
 
-	msgs := ethTxs[0].GetMsgs()
-	require.Len(t, msgs, 1)
-	require.Equal(t, ethTxs[0], msgs[0])
+	addr, err := txs[0].VerifySig(TestChainID)
+	require.NoError(t, err)
+	require.Equal(t, TestAddr1, addr)
 
-	expectedMsgs := []sdk.Msg{sdk.NewTestMsg(sdk.AccAddress(testAddr1.Bytes()))}
-	etx := newTestStdTx(
-		testChainID, expectedMsgs, []*ecdsa.PrivateKey{testPrivKey1},
-		[]int64{0}, []int64{0}, newStdFee(),
-	)
-
-	msgs = etx.GetMsgs()
-	require.Len(t, msgs, len(expectedMsgs))
-	require.Equal(t, expectedMsgs, msgs)
+	addr, err = txs[0].VerifySig(big.NewInt(100))
+	require.Error(t, err)
+	require.NotEqual(t, TestAddr1, addr)
 }
 
 func TestTxDecoder(t *testing.T) {
-	testCodec := newTestCodec()
-	txDecoder := TxDecoder(testCodec)
+	testCodec := NewTestCodec()
+	txDecoder := TxDecoder(testCodec, TestSDKAddr)
 	msgs := []sdk.Msg{sdk.NewTestMsg()}
 
 	// create a non-SDK Ethereum transaction
-	emintTx := NewTransaction(
-		uint64(0), testAddr1, sdk.NewInt(10), 100, sdk.NewInt(100), nil,
+	txs := NewTestEthTxs(
+		TestChainID, []int64{0}, []ethcmn.Address{TestAddr1}, []*ecdsa.PrivateKey{TestPrivKey1},
 	)
-	emintTx.Sign(testChainID, testPrivKey1)
+
+	txBytes, err := rlp.EncodeToBytes(txs[0])
+	require.NoError(t, err)
 
 	// require the transaction to properly decode into a Transaction
-	txBytes := testCodec.MustMarshalBinary(emintTx)
-	tx, err := txDecoder(txBytes)
+	decodedTx, err := txDecoder(txBytes)
 	require.NoError(t, err)
-	require.Equal(t, emintTx, tx)
+	require.IsType(t, Transaction{}, decodedTx)
+	require.Equal(t, txs[0].data, (decodedTx.(Transaction)).data)
 
 	// create a SDK (auth.StdTx) transaction and encode
-	stdTx := newTestStdTx(
-		testChainID, msgs, []*ecdsa.PrivateKey{testPrivKey1},
-		[]int64{0}, []int64{0}, newStdFee(),
+	txs = NewTestSDKTxs(
+		testCodec, TestChainID, TestSDKAddr, msgs, []int64{0}, []int64{0},
+		[]*ecdsa.PrivateKey{TestPrivKey1}, NewTestStdFee(),
 	)
 
-	// require the transaction to properly decode into a Transaction
-	txBytes = testCodec.MustMarshalBinary(stdTx)
-	tx, err = txDecoder(txBytes)
+	txBytes, err = rlp.EncodeToBytes(txs[0])
 	require.NoError(t, err)
-	require.Equal(t, stdTx, tx)
+
+	// require the transaction to properly decode into a Transaction
+	stdTx := NewTestStdTx(TestChainID, msgs, []int64{0}, []int64{0}, []*ecdsa.PrivateKey{TestPrivKey1}, NewTestStdFee())
+	decodedTx, err = txDecoder(txBytes)
+	require.NoError(t, err)
+	require.IsType(t, auth.StdTx{}, decodedTx)
+	require.Equal(t, stdTx, decodedTx)
 
 	// require the decoding to fail when no transaction bytes are given
-	tx, err = txDecoder([]byte{})
+	decodedTx, err = txDecoder([]byte{})
 	require.Error(t, err)
-	require.Nil(t, tx)
+	require.Nil(t, decodedTx)
 }
