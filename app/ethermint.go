@@ -16,7 +16,6 @@ import (
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethparams "github.com/ethereum/go-ethereum/params"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmcmn "github.com/tendermint/tendermint/libs/common"
@@ -59,8 +58,7 @@ type (
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
 func NewEthermintApp(
-	logger tmlog.Logger, db dbm.DB, ethChainCfg *ethparams.ChainConfig,
-	sdkAddr ethcmn.Address, baseAppOpts ...func(*bam.BaseApp),
+	logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address, baseAppOpts ...func(*bam.BaseApp),
 ) *EthermintApp {
 
 	codec := CreateCodec()
