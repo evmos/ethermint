@@ -120,16 +120,14 @@ func TestTxDecoder(t *testing.T) {
 	require.Equal(t, txs[0].data, (decodedTx.(Transaction)).data)
 
 	// create a SDK (auth.StdTx) transaction and encode
-	txs = NewTestSDKTxs(
-		testCodec, TestChainID, TestSDKAddr, msgs, []int64{0}, []int64{0},
-		[]*ecdsa.PrivateKey{TestPrivKey1}, NewTestStdFee(),
-	)
+	stdTx := NewTestStdTx(TestChainID, msgs, []int64{0}, []int64{0}, []*ecdsa.PrivateKey{TestPrivKey1}, NewTestStdFee())
+	payload := testCodec.MustMarshalBinary(stdTx)
+	tx := NewTransaction(0, TestSDKAddr, big.NewInt(10), 1000, big.NewInt(100), payload)
 
-	txBytes, err = rlp.EncodeToBytes(txs[0])
+	txBytes, err = rlp.EncodeToBytes(tx)
 	require.NoError(t, err)
 
 	// require the transaction to properly decode into a Transaction
-	stdTx := NewTestStdTx(TestChainID, msgs, []int64{0}, []int64{0}, []*ecdsa.PrivateKey{TestPrivKey1}, NewTestStdFee())
 	decodedTx, err = txDecoder(txBytes)
 	require.NoError(t, err)
 	require.IsType(t, auth.StdTx{}, decodedTx)

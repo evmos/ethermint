@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:79b02529d2120af44eaad5f7fee9ff7e003739d469e2c2767008b797d290e9fd"
+  digest = "1:60d3b49df18861c92ac49cce49e49f61b3ec927e5b7f39c5ae1128ec5c197b98"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
   pruneopts = "T"
-  revision = "18b896026201d8e1758468d9c5d5a558c69c5e9b"
+  revision = "fb622b9b46608fdb39d36447f4d8ef52fe37fc3d"
 
 [[projects]]
   branch = "master"
@@ -138,12 +138,12 @@
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:c4a2528ccbcabf90f9f3c464a5fc9e302d592861bbfd0b7135a7de8a943d0406"
+  digest = "1:586ea76dbd0374d6fb649a91d70d652b7fe0ccffb8910a77468e7702e7901f3d"
   name = "github.com/go-stack/stack"
   packages = ["."]
   pruneopts = "T"
-  revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
-  version = "v1.7.0"
+  revision = "2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a"
+  version = "v1.8.0"
 
 [[projects]]
   digest = "1:da39f4a22829ca95e63566208e0ea42d6f055f41dff1b14fdab88d88f62df653"
@@ -274,12 +274,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:6afc433cbb471b1d32de92131245fb1f76000c9d88940265df4a512572a51b51"
+  digest = "1:602081d2a289d1f76ea90b806b0c61c19038d76504e9005ccb969864dbaee339"
   name = "github.com/rjeczalik/notify"
   packages = ["."]
   pruneopts = "T"
-  revision = "52ae50d8490436622a8941bd70c3dbe0acdd4bbf"
-  version = "v0.9.0"
+  revision = "0f065fa99b48b842c3fd3e2c8b194c6f2b69f6b8"
+  version = "v0.9.1"
 
 [[projects]]
   digest = "1:6cae6970d70fc5fe75bf83c48ee33e9c4c561a62d0b033254bee8dd5942b815a"
@@ -401,7 +401,7 @@
     "ssh/terminal",
   ]
   pruneopts = "T"
-  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
+  revision = "182538f80094b6a8efaade63a8fd8e0d9d5843dd"
 
 [[projects]]
   digest = "1:5fdc7adede42f80d6201258355d478d856778e21d735f14972abd8ff793fdbf7"
@@ -424,14 +424,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7560b3b54e7e9d901c46cd919d77da3c4373652ee2b0a13b15b80ea02ad94a56"
+  digest = "1:bfa444982d49ce4ca1360599270a94de12a573ccd3bf04493c79bee09da3170b"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "T"
-  revision = "d99a578cf41bfccdeaf48b0845c823a4b8b0ad5e"
+  revision = "fa5fdf94c78965f1aa8423f0cc50b8b8d728b05a"
 
 [[projects]]
   digest = "1:6164911cb5e94e8d8d5131d646613ff82c14f5a8ce869de2f6d80d9889df8c5a"
@@ -470,11 +470,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:960f1fa3f12667fe595c15c12523718ed8b1b5428c83d70da54bb014da9a4c1a"
+  digest = "1:e43f1cb3f488a0c2be85939c2a594636f60b442a12a196c778bd2d6c9aca3df7"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "T"
-  revision = "c66870c02cf823ceb633bcd05be3c7cda29976f4"
+  revision = "11092d34479b07829b72e10713b159248caf5dad"
 
 [[projects]]
   digest = "1:adafc60b1d4688759f3fc8f9089e71dd17abd123f4729de6b913bf08c9143770"
@@ -548,6 +548,7 @@
     "github.com/cosmos/cosmos-sdk/x/params",
     "github.com/cosmos/cosmos-sdk/x/slashing",
     "github.com/cosmos/cosmos-sdk/x/stake",
+    "github.com/cosmos/cosmos-sdk/x/stake/types",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/hexutil",
     "github.com/ethereum/go-ethereum/common/math",
@@ -568,6 +569,7 @@
     "github.com/ethereum/go-ethereum/trie",
     "github.com/hashicorp/golang-lru",
     "github.com/pkg/errors",
+    "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
     "github.com/tendermint/tendermint/abci/types",

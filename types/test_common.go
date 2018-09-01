@@ -40,7 +40,7 @@ func NewTestStdFee() auth.StdFee {
 }
 
 func NewTestStdTx(
-	chainID *big.Int, msgs []sdk.Msg, accNums []int64, seqs []int64, pKeys []*ecdsa.PrivateKey, fee auth.StdFee,
+	chainID *big.Int, msgs []sdk.Msg, accNums, seqs []int64, pKeys []*ecdsa.PrivateKey, fee auth.StdFee,
 ) sdk.Tx {
 
 	sigs := make([]auth.StdSignature, len(pKeys))
@@ -93,25 +93,6 @@ func NewTestEthTxs(
 		ethTx := NewTransaction(
 			uint64(seqs[i]), addrs[i], big.NewInt(10), 1000, big.NewInt(100), []byte{},
 		)
-
-		ethTx.Sign(chainID, privKey)
-		txs[i] = ethTx
-	}
-
-	return txs
-}
-
-func NewTestSDKTxs(
-	codec *wire.Codec, chainID *big.Int, to ethcmn.Address, msgs []sdk.Msg,
-	accNums []int64, seqs []int64, pKeys []*ecdsa.PrivateKey, fee auth.StdFee,
-) []*Transaction {
-
-	txs := make([]*Transaction, len(pKeys))
-	stdTx := NewTestStdTx(chainID, msgs, accNums, seqs, pKeys, fee)
-	payload := codec.MustMarshalBinary(stdTx)
-
-	for i, privKey := range pKeys {
-		ethTx := NewTransaction(uint64(seqs[i]), to, big.NewInt(10), 1000, big.NewInt(100), payload)
 
 		ethTx.Sign(chainID, privKey)
 		txs[i] = ethTx
