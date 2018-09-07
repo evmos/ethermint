@@ -5,6 +5,9 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/store"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -28,10 +31,17 @@ func init() {
 func newTestDatabase() *Database {
 	memDB := dbm.NewMemDB()
 
-	testDB, err := NewDatabase(memDB, memDB, 100)
+	cms := store.NewCommitMultiStore(memDB)
+	cms.SetPruning(sdk.PruneNothing)
+	cms.MountStoreWithDB(types.StoreKeyAccount, sdk.StoreTypeIAVL, nil)
+	cms.MountStoreWithDB(types.StoreKeyStorage, sdk.StoreTypeIAVL, nil)
+
+	testDB, err := NewDatabase(cms, memDB, 100)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create database: %v", err))
 	}
+
+	testDB.stateStore.LoadLatestVersion()
 
 	return testDB
 }

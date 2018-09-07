@@ -2,6 +2,7 @@ package app
 
 import (
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -13,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/cosmos/ethermint/handlers"
+	"github.com/cosmos/ethermint/state"
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -35,8 +37,10 @@ type (
 		*bam.BaseApp
 
 		codec *wire.Codec
+		ethDB *state.Database
 
 		accountKey  *sdk.KVStoreKey
+		storageKey  *sdk.KVStoreKey
 		mainKey     *sdk.KVStoreKey
 		stakeKey    *sdk.KVStoreKey
 		slashingKey *sdk.KVStoreKey
@@ -57,23 +61,36 @@ type (
 
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
-func NewEthermintApp(
-	logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address, baseAppOpts ...func(*bam.BaseApp),
-) *EthermintApp {
-
+func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *EthermintApp {
 	codec := CreateCodec()
-	app := &EthermintApp{
-		BaseApp:     bam.NewBaseApp(appName, logger, db, types.TxDecoder(codec, sdkAddr), baseAppOpts...),
-		codec:       codec,
-		accountKey:  sdk.NewKVStoreKey("acc"),
-		mainKey:     sdk.NewKVStoreKey("main"),
-		stakeKey:    sdk.NewKVStoreKey("stake"),
-		slashingKey: sdk.NewKVStoreKey("slashing"),
-		govKey:      sdk.NewKVStoreKey("gov"),
-		feeCollKey:  sdk.NewKVStoreKey("fee"),
-		paramsKey:   sdk.NewKVStoreKey("params"),
-		tParamsKey:  sdk.NewTransientStoreKey("transient_params"),
+	cms := store.NewCommitMultiStore(db)
+
+	baseAppOpts := []func(*bam.BaseApp){
+		func(bApp *bam.BaseApp) { bApp.SetCMS(cms) },
 	}
+	baseApp := bam.NewBaseApp(appName, logger, db, types.TxDecoder(codec, sdkAddr), baseAppOpts...)
+
+	app := &EthermintApp{
+		BaseApp:     baseApp,
+		codec:       codec,
+		accountKey:  types.StoreKeyAccount,
+		storageKey:  types.StoreKeyStorage,
+		mainKey:     types.StoreKeyMain,
+		stakeKey:    types.StoreKeyStake,
+		slashingKey: types.StoreKeySlashing,
+		govKey:      types.StoreKeyGov,
+		feeCollKey:  types.StoreKeyFeeColl,
+		paramsKey:   types.StoreKeyParams,
+		tParamsKey:  types.StoreKeyTransParams,
+	}
+
+	// create Ethereum state database
+	ethDB, err := state.NewDatabase(cms, db, state.DefaultStoreCacheSize)
+	if err != nil {
+		tmcmn.Exit(err.Error())
+	}
+
+	app.ethDB = ethDB
 
 	// set application keepers and mappers
 	app.accountMapper = auth.NewAccountMapper(codec, app.accountKey, auth.ProtoBaseAccount)
@@ -108,7 +125,7 @@ func NewEthermintApp(
 
 	app.MountStoresIAVL(
 		app.mainKey, app.accountKey, app.stakeKey, app.slashingKey,
-		app.govKey, app.feeCollKey, app.paramsKey,
+		app.govKey, app.feeCollKey, app.paramsKey, app.storageKey,
 	)
 	app.MountStore(app.tParamsKey, sdk.StoreTypeTransient)
 

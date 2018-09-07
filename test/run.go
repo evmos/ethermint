@@ -9,8 +9,12 @@ import (
 	"runtime/pprof"
 	"syscall"
 
+	"github.com/cosmos/cosmos-sdk/store"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/cosmos/ethermint/state"
 	"github.com/cosmos/ethermint/test/importer"
+	"github.com/cosmos/ethermint/types"
 
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
@@ -52,7 +56,16 @@ func main() {
 	stateDB := dbm.NewDB("state", dbm.LevelDBBackend, *datadir)
 	codeDB := dbm.NewDB("code", dbm.LevelDBBackend, *datadir)
 
-	ethermintDB, err := state.NewDatabase(stateDB, codeDB, *cachesize)
+	cms := store.NewCommitMultiStore(stateDB)
+	cms.SetPruning(sdk.PruneNothing)
+	cms.MountStoreWithDB(types.StoreKeyAccount, sdk.StoreTypeIAVL, nil)
+	cms.MountStoreWithDB(types.StoreKeyStorage, sdk.StoreTypeIAVL, nil)
+
+	if err := cms.LoadLatestVersion(); err != nil {
+		panic(fmt.Sprintf("failed to load state store: %v", err))
+	}
+
+	ethermintDB, err := state.NewDatabase(cms, codeDB, *cachesize)
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize geth Database: %v", err))
 	}
