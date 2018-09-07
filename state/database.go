@@ -5,6 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/ethermint/core"
+	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
@@ -16,20 +17,16 @@ import (
 )
 
 var (
-	// AccountsKey is the key used for storing Ethereum accounts in the Cosmos
-	// SDK multi-store.
-	AccountsKey = sdk.NewKVStoreKey("account")
-
-	// StorageKey is the key used for storing Ethereum contract storage in the
-	// Cosmos SDK multi-store.
-	StorageKey = sdk.NewKVStoreKey("storage")
-
 	// CodeKey is the key used for storing Ethereum contract code in the Cosmos
 	// SDK multi-store.
 	CodeKey = sdk.NewKVStoreKey("code")
 )
 
 const (
+	// DefaultStoreCacheSize defines the default number of key/value pairs for
+	// the state stored in memory.
+	DefaultStoreCacheSize = 1024 * 1024
+
 	// codeSizeCacheSize is the number of codehash to size associations to
 	// keep in cached memory. This is to address any DoS attempts on
 	// EXTCODESIZE calls.
@@ -68,25 +65,8 @@ type Database struct {
 // implements Ethereum's state.Database interface. An error is returned if the
 // latest state failed to load. The underlying storage structure is defined by
 // the Cosmos SDK IAVL tree.
-func NewDatabase(stateDB, codeDB dbm.DB, storeCacheSize int) (*Database, error) {
-	// Initialize an implementation of Ethereum state.Database and create a
-	// Cosmos SDK multi-store.
-	db := &Database{
-		stateStore: store.NewCommitMultiStore(stateDB),
-	}
-
-	// currently do not prune any historical state
-	db.stateStore.SetPruning(sdk.PruneNothing)
-
-	// Create the underlying multi-store stores that will persist account and
-	// account storage data.
-	db.stateStore.MountStoreWithDB(AccountsKey, sdk.StoreTypeIAVL, nil)
-	db.stateStore.MountStoreWithDB(StorageKey, sdk.StoreTypeIAVL, nil)
-
-	// Load the latest account state from the Cosmos SDK multi-store.
-	if err := db.stateStore.LoadLatestVersion(); err != nil {
-		return nil, err
-	}
+func NewDatabase(stateStore store.CommitMultiStore, codeDB dbm.DB, storeCacheSize int) (*Database, error) {
+	db := &Database{stateStore: stateStore}
 
 	// Set the persistent Cosmos SDK Database and initialize an Ethereum
 	// trie.Database using an EthereumDB as the underlying implementation of
@@ -135,8 +115,8 @@ func (db *Database) OpenTrie(root ethcmn.Hash) (ethstate.Trie, error) {
 	}
 
 	if db.accountsCache == nil {
-		db.accountsCache = store.NewCacheKVStore(db.stateStore.GetCommitKVStore(AccountsKey))
-		db.storageCache = store.NewCacheKVStore(db.stateStore.GetCommitKVStore(StorageKey))
+		db.accountsCache = store.NewCacheKVStore(db.stateStore.GetCommitKVStore(types.StoreKeyAccount))
+		db.storageCache = store.NewCacheKVStore(db.stateStore.GetCommitKVStore(types.StoreKeyStorage))
 	}
 
 	return &Trie{
