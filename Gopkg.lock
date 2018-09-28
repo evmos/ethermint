@@ -74,6 +74,7 @@
   revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
 
 [[projects]]
+  branch = "ethermint-statedb"
   digest = "1:c24d17ef5d37ae7215811cf1cade45822faa232d6bcfbadff30bbeba52225a98"
   name = "github.com/ethereum/go-ethereum"
   packages = [
@@ -123,7 +124,7 @@
   ]
   pruneopts = "T"
   revision = "477eb0933b9529f7deeccc233cc815fe34a8ea56"
-  version = "v1.8.16"
+  source = "github.com/alexanderbez/go-ethereum"
 
 [[projects]]
   digest = "1:0b9c3ad6c948d57a379da9c4e1cdd989b1c73ddc5ec8673f52a9539ce60a109b"

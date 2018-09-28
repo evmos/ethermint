@@ -1,6 +1,8 @@
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  version = "=1.8.16"
+  # TODO: Remove this forked source and branch
+  source = "github.com/alexanderbez/go-ethereum"
+  branch = "ethermint-statedb"
 
 [[constraint]]
   name = "github.com/cosmos/cosmos-sdk"
