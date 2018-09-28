@@ -182,7 +182,7 @@ func TestTrieCommit(t *testing.T) {
 			tc.trie.TryUpdate(tc.data.key, tc.data.value)
 		}
 		if tc.code != nil {
-			tc.trie.ethTrieDB.Insert(tc.code.hash, tc.code.blob)
+			tc.trie.ethTrieDB.InsertBlob(tc.code.hash, tc.code.blob)
 		}
 
 		root, err := tc.trie.Commit(nil)

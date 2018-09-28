@@ -86,9 +86,8 @@ func TestChainContextPrepare(t *testing.T) {
 func TestChainContextSeal(t *testing.T) {
 	cc := NewChainContext()
 
-	block, err := cc.Seal(nil, nil, nil)
+	err := cc.Seal(nil, nil, nil, nil)
 	require.Nil(t, err)
-	require.Nil(t, block)
 }
 
 func TestChainContextVerifyHeader(t *testing.T) {
