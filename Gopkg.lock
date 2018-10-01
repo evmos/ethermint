@@ -58,6 +58,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:e47d51dab652d26c3fba6f8cba403f922d02757a82abdc77e90df7948daf296e"
+  name = "github.com/deckarep/golang-set"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "cbaa98ba5575e67703b32b4b19f73c91f3c4159e"
+  version = "v1.7.1"
+
+[[projects]]
   branch = "master"
   digest = "1:67d0b50be0549e610017cb91e0b0b745ec0cad7c613bc8e18ff2d1c1fc8825a7"
   name = "github.com/edsrzf/mmap-go"
@@ -66,7 +74,7 @@
   revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
 
 [[projects]]
-  digest = "1:3238a0c355a81640974751f7d3bab21bf91035165f75c2c457959425c0422a4b"
+  digest = "1:c24d17ef5d37ae7215811cf1cade45822faa232d6bcfbadff30bbeba52225a98"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -80,6 +88,7 @@
     "common/hexutil",
     "common/math",
     "common/mclock",
+    "common/prque",
     "consensus",
     "consensus/ethash",
     "consensus/misc",
@@ -93,7 +102,6 @@
     "crypto/bn256/cloudflare",
     "crypto/bn256/google",
     "crypto/ecies",
-    "crypto/randentropy",
     "crypto/secp256k1",
     "crypto/sha3",
     "eth/downloader",
@@ -114,8 +122,8 @@
     "trie",
   ]
   pruneopts = "T"
-  revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
-  version = "v1.8.11"
+  revision = "477eb0933b9529f7deeccc233cc815fe34a8ea56"
+  version = "v1.8.16"
 
 [[projects]]
   digest = "1:0b9c3ad6c948d57a379da9c4e1cdd989b1c73ddc5ec8673f52a9539ce60a109b"
@@ -427,6 +435,7 @@
   digest = "1:bfa444982d49ce4ca1360599270a94de12a573ccd3bf04493c79bee09da3170b"
   name = "golang.org/x/sys"
   packages = [
+    "cpu",
     "unix",
     "windows",
   ]
@@ -511,22 +520,6 @@
   version = "v1.13.0"
 
 [[projects]]
-  digest = "1:3ccd10c863188cfe0d936fcfe6a055c95362e43af8e7039e33baade846928e74"
-  name = "gopkg.in/fatih/set.v0"
-  packages = ["."]
-  pruneopts = "T"
-  revision = "57907de300222151a123d29255ed17f5ed43fad3"
-  version = "v0.1.0"
-
-[[projects]]
-  branch = "v2"
-  digest = "1:dae137be246befa42ce4b48c0feff2c5796b8a5027139a283f31a21173744410"
-  name = "gopkg.in/karalabe/cookiejar.v2"
-  packages = ["collections/prque"]
-  pruneopts = "T"
-  revision = "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57"
-
-[[projects]]
   branch = "v2"
   digest = "1:3d3f9391ab615be8655ae0d686a1564f3fec413979bb1aaf018bac1ec1bb1cc7"
   name = "gopkg.in/natefinch/npipe.v2"
@@ -548,7 +541,6 @@
     "github.com/cosmos/cosmos-sdk/x/params",
     "github.com/cosmos/cosmos-sdk/x/slashing",
     "github.com/cosmos/cosmos-sdk/x/stake",
-    "github.com/cosmos/cosmos-sdk/x/stake/types",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/hexutil",
     "github.com/ethereum/go-ethereum/common/math",
@@ -569,7 +561,6 @@
     "github.com/ethereum/go-ethereum/trie",
     "github.com/hashicorp/golang-lru",
     "github.com/pkg/errors",
-    "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
     "github.com/tendermint/tendermint/abci/types",

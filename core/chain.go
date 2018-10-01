@@ -64,8 +64,8 @@ func (cc *ChainContext) Author(_ *ethtypes.Header) (ethcmn.Address, error) {
 	return cc.Coinbase, nil
 }
 
-// APIs implements Ethereum's core.ChainContext interface. It currently
-// performs a no-op.
+// APIs implements Ethereum's consensus.Engine interface. It currently performs
+// a no-op.
 //
 // TODO: Do we need to support such RPC APIs? This will tie into a bigger
 // discussion on if we want to support web3.
@@ -73,13 +73,13 @@ func (cc *ChainContext) APIs(_ ethcons.ChainReader) []ethrpc.API {
 	return nil
 }
 
-// CalcDifficulty implements Ethereum's core.ChainContext interface. It
-// currently performs a no-op.
+// CalcDifficulty implements Ethereum's consensus.Engine interface. It currently
+// performs a no-op.
 func (cc *ChainContext) CalcDifficulty(_ ethcons.ChainReader, _ uint64, _ *ethtypes.Header) *big.Int {
 	return nil
 }
 
-// Finalize implements Ethereum's core.ChainContext interface. It currently
+// Finalize implements Ethereum's consensus.Engine interface. It currently
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
@@ -90,7 +90,7 @@ func (cc *ChainContext) Finalize(
 	return nil, nil
 }
 
-// Prepare implements Ethereum's core.ChainContext interface. It currently
+// Prepare implements Ethereum's consensus.Engine interface. It currently
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
@@ -98,15 +98,21 @@ func (cc *ChainContext) Prepare(_ ethcons.ChainReader, _ *ethtypes.Header) error
 	return nil
 }
 
-// Seal implements Ethereum's core.ChainContext interface. It currently
+// Seal implements Ethereum's consensus.Engine interface. It currently
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
-func (cc *ChainContext) Seal(_ ethcons.ChainReader, _ *ethtypes.Block, _ <-chan struct{}) (*ethtypes.Block, error) {
-	return nil, nil
+func (cc *ChainContext) Seal(_ ethcons.ChainReader, _ *ethtypes.Block, _ chan<- *ethtypes.Block, _ <-chan struct{}) error {
+	return nil
 }
 
-// VerifyHeader implements Ethereum's core.ChainContext interface. It currently
+// SealHash implements Ethereum's consensus.Engine interface. It returns the
+// hash of a block prior to it being sealed.
+func (cc *ChainContext) SealHash(header *ethtypes.Header) ethcmn.Hash {
+	return ethcmn.Hash{}
+}
+
+// VerifyHeader implements Ethereum's consensus.Engine interface. It currently
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
@@ -115,7 +121,7 @@ func (cc *ChainContext) VerifyHeader(_ ethcons.ChainReader, _ *ethtypes.Header, 
 	return nil
 }
 
-// VerifyHeaders implements Ethereum's core.ChainContext interface. It
+// VerifyHeaders implements Ethereum's consensus.Engine interface. It
 // currently performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
@@ -124,7 +130,7 @@ func (cc *ChainContext) VerifyHeaders(_ ethcons.ChainReader, _ []*ethtypes.Heade
 	return nil, nil
 }
 
-// VerifySeal implements Ethereum's core.ChainContext interface. It currently
+// VerifySeal implements Ethereum's consensus.Engine interface. It currently
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
@@ -133,8 +139,15 @@ func (cc *ChainContext) VerifySeal(_ ethcons.ChainReader, _ *ethtypes.Header) er
 	return nil
 }
 
-// VerifyUncles implements Ethereum's core.ChainContext interface. It currently
+// VerifyUncles implements Ethereum's consensus.Engine interface. It currently
 // performs a no-op.
 func (cc *ChainContext) VerifyUncles(_ ethcons.ChainReader, _ *ethtypes.Block) error {
+	return nil
+}
+
+// Close implements Ethereum's consensus.Engine interface. It terminates any
+// background threads maintained by the consensus engine. It currently performs
+// a no-op.
+func (cc *ChainContext) Close() error {
 	return nil
 }

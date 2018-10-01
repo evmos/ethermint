@@ -2,10 +2,13 @@ package rpc
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/cosmos/ethermint/version"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type apisTestSuite struct {
@@ -56,10 +59,18 @@ func startAPIServer() (context.CancelFunc, int, error) {
 		RPCAddr: "127.0.0.1",
 		RPCPort: randomPort(),
 	}
+	timeouts := rpc.HTTPTimeouts{
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		IdleTimeout:  5 * time.Second,
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
-	_, err := StartHTTPEndpoint(ctx, config, GetRPCAPIs())
+
+	_, err := StartHTTPEndpoint(ctx, config, GetRPCAPIs(), timeouts)
 	if err != nil {
 		return cancel, 0, err
 	}
+
 	return cancel, config.RPCPort, nil
 }

@@ -9,7 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-// returns the master list of public APIs for use with StartHTTPEndpoint
+// GetRPCAPIs returns the master list of public APIs for use with
+// StartHTTPEndpoint.
 func GetRPCAPIs() []rpc.API {
 	return []rpc.API{
 		{

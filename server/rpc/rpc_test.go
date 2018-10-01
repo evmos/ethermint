@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/stretchr/testify/require"
 )
 
 type TestService struct{}
@@ -24,21 +26,34 @@ func TestStartHTTPEndpointStartStop(t *testing.T) {
 		RPCAddr: "127.0.0.1",
 		RPCPort: randomPort(),
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
-	_, err := StartHTTPEndpoint(ctx, config, []rpc.API{
-		{
-			Namespace: "test",
-			Version:   "1.0",
-			Service:   &TestService{},
-			Public:    true,
+
+	_, err := StartHTTPEndpoint(
+		ctx, config, []rpc.API{
+			{
+				Namespace: "test",
+				Version:   "1.0",
+				Service:   &TestService{},
+				Public:    true,
+			},
 		},
-	})
+		rpc.HTTPTimeouts{
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 5 * time.Second,
+			IdleTimeout:  5 * time.Second,
+		},
+	)
 	require.Nil(t, err, "unexpected error")
+
 	res, err := rpcCall(config.RPCPort, "test_foo", []string{"baz"})
 	require.Nil(t, err, "unexpected error")
+
 	resStr := res.(string)
 	require.Equal(t, "baz", resStr)
+
 	cancel()
+
 	_, err = rpcCall(config.RPCPort, "test_foo", []string{"baz"})
 	require.NotNil(t, err)
 }
@@ -48,12 +63,17 @@ func rpcCall(port int, method string, params []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	fullBody := fmt.Sprintf(`{ "id": 1, "jsonrpc": "2.0", "method": "%s", "params": %s }`,
-		method, string(parsedParams))
+
+	fullBody := fmt.Sprintf(
+		`{ "id": 1, "jsonrpc": "2.0", "method": "%s", "params": %s }`,
+		method, string(parsedParams),
+	)
+
 	res, err := http.Post(fmt.Sprintf("http://127.0.0.1:%d", port), "application/json", strings.NewReader(fullBody))
 	if err != nil {
 		return nil, err
 	}
+
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
