@@ -4,7 +4,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -73,7 +72,7 @@ func NewDatabase(stateStore store.CommitMultiStore, codeDB dbm.DB, storeCacheSiz
 	// the ethdb.Database interface. It will be used to facilitate persistence
 	// of contract byte code when committing state.
 	db.codeDB = codeDB
-	db.ethTrieDB = ethtrie.NewDatabase(&core.EthereumDB{CodeDB: codeDB})
+	db.ethTrieDB = ethtrie.NewDatabase(&EthereumDB{CodeDB: codeDB})
 
 	var err error
 

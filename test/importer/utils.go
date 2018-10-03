@@ -18,7 +18,7 @@ var (
 // accumulateRewards credits the coinbase of the given block with the mining
 // reward. The total reward consists of the static block reward and rewards for
 // included uncles. The coinbase of each uncle block is also rewarded.
-func accumulateRewards(config *ethparams.ChainConfig, state *ethstate.StateDB, header *ethtypes.Header, uncles []*ethtypes.Header) {
+func accumulateRewards(config *ethparams.ChainConfig, state ethstate.StateDB, header *ethtypes.Header, uncles []*ethtypes.Header) {
 	// select the correct block reward based on chain progression
 	blockReward := ethash.FrontierBlockReward
 	if config.IsByzantium(header.Number) {

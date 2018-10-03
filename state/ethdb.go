@@ -1,4 +1,4 @@
-package core
+package state
 
 import (
 	ethdb "github.com/ethereum/go-ethereum/ethdb"

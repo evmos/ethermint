@@ -1,4 +1,4 @@
-package core
+package state
 
 // NOTE: A bulk of these unit tests will change and evolve as the context and
 // implementation of ChainConext evolves.
