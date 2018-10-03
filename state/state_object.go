@@ -73,39 +73,9 @@ func newObject(db *CommitStateDB, accProto auth.Account) *stateObject {
 	}
 }
 
-// GetState retrieves a value from the account storage trie. Note, the key must
-// be prefixed with the address.
-func (so *stateObject) GetState(_ ethstate.Database, key ethcmn.Hash) ethcmn.Hash {
-	// if we have a dirty value for this state entry, return it
-	value, dirty := so.dirtyStorage[key]
-	if dirty {
-		return value
-	}
-
-	// otherwise return the entry's original value
-	return so.getCommittedState(so.stateDB.ctx, key)
-}
-
-// GetCommittedState retrieves a value from the committed account storage trie.
-// Note, the must be prefixed with the address.
-func (so *stateObject) getCommittedState(ctx sdk.Context, key ethcmn.Hash) ethcmn.Hash {
-	// if we have the original value cached, return that
-	value, cached := so.originStorage[key]
-	if cached {
-		return value
-	}
-
-	// otherwise load the value from the KVStore
-	store := ctx.KVStore(so.stateDB.storageKey)
-	rawValue := store.Get(key.Bytes())
-
-	if len(rawValue) > 0 {
-		value.SetBytes(rawValue)
-	}
-
-	so.originStorage[key] = value
-	return value
-}
+// ----------------------------------------------------------------------------
+// Setters
+// ----------------------------------------------------------------------------
 
 // SetState updates a value in account storage. Note, the key must be prefixed
 // with the address.
@@ -128,27 +98,6 @@ func (so *stateObject) SetState(db ethstate.Database, key, value ethcmn.Hash) {
 
 func (so *stateObject) setState(key, value ethcmn.Hash) {
 	so.dirtyStorage[key] = value
-}
-
-// Code returns the contract code associated with this object, if any.
-func (so *stateObject) Code(_ ethstate.Database) []byte {
-	if so.code != nil {
-		return so.code
-	}
-
-	if bytes.Equal(so.CodeHash(), emptyCodeHash) {
-		return nil
-	}
-
-	store := so.stateDB.ctx.KVStore(so.stateDB.codeKey)
-	code := store.Get(so.CodeHash())
-
-	if len(code) == 0 {
-		so.setError(fmt.Errorf("failed to get code hash %x for address: %x", so.CodeHash(), so.Address()))
-	}
-
-	so.code = code
-	return code
 }
 
 // SetCode sets the state object's code.
@@ -218,30 +167,6 @@ func (so *stateObject) setBalance(amount sdk.Int) {
 	so.account.SetBalance(amount)
 }
 
-// Balance returns the state object's current balance.
-func (so *stateObject) Balance() *big.Int {
-	return so.account.Balance().BigInt()
-}
-
-// ReturnGas returns the gas back to the origin. Used by the Virtual machine or
-// Closures. It performs a no-op.
-func (so *stateObject) ReturnGas(gas *big.Int) {}
-
-// Address returns the address of the state object.
-func (so stateObject) Address() ethcmn.Address {
-	return so.address
-}
-
-// CodeHash returns the state object's code hash.
-func (so *stateObject) CodeHash() []byte {
-	return so.account.CodeHash
-}
-
-// Nonce returns the state object's current nonce (sequence number).
-func (so *stateObject) Nonce() uint64 {
-	return uint64(so.account.Sequence)
-}
-
 // SetNonce sets the state object's nonce (sequence number).
 func (so *stateObject) SetNonce(nonce uint64) {
 	so.stateDB.journal.append(nonceChange{
@@ -262,6 +187,93 @@ func (so *stateObject) setError(err error) {
 		so.dbErr = err
 	}
 }
+
+// ----------------------------------------------------------------------------
+// Getters
+// ----------------------------------------------------------------------------
+
+// Address returns the address of the state object.
+func (so stateObject) Address() ethcmn.Address {
+	return so.address
+}
+
+// Balance returns the state object's current balance.
+func (so *stateObject) Balance() *big.Int {
+	return so.account.Balance().BigInt()
+}
+
+// CodeHash returns the state object's code hash.
+func (so *stateObject) CodeHash() []byte {
+	return so.account.CodeHash
+}
+
+// Nonce returns the state object's current nonce (sequence number).
+func (so *stateObject) Nonce() uint64 {
+	return uint64(so.account.Sequence)
+}
+
+// Code returns the contract code associated with this object, if any.
+func (so *stateObject) Code(_ ethstate.Database) []byte {
+	if so.code != nil {
+		return so.code
+	}
+
+	if bytes.Equal(so.CodeHash(), emptyCodeHash) {
+		return nil
+	}
+
+	store := so.stateDB.ctx.KVStore(so.stateDB.codeKey)
+	code := store.Get(so.CodeHash())
+
+	if len(code) == 0 {
+		so.setError(fmt.Errorf("failed to get code hash %x for address: %x", so.CodeHash(), so.Address()))
+	}
+
+	so.code = code
+	return code
+}
+
+// GetState retrieves a value from the account storage trie. Note, the key must
+// be prefixed with the address.
+func (so *stateObject) GetState(_ ethstate.Database, key ethcmn.Hash) ethcmn.Hash {
+	// if we have a dirty value for this state entry, return it
+	value, dirty := so.dirtyStorage[key]
+	if dirty {
+		return value
+	}
+
+	// otherwise return the entry's original value
+	return so.getCommittedState(so.stateDB.ctx, key)
+}
+
+// GetCommittedState retrieves a value from the committed account storage trie.
+// Note, the must be prefixed with the address.
+func (so *stateObject) getCommittedState(ctx sdk.Context, key ethcmn.Hash) ethcmn.Hash {
+	// if we have the original value cached, return that
+	value, cached := so.originStorage[key]
+	if cached {
+		return value
+	}
+
+	// otherwise load the value from the KVStore
+	store := ctx.KVStore(so.stateDB.storageKey)
+	rawValue := store.Get(key.Bytes())
+
+	if len(rawValue) > 0 {
+		value.SetBytes(rawValue)
+	}
+
+	so.originStorage[key] = value
+	return value
+}
+
+// ----------------------------------------------------------------------------
+// Auxiliary
+// ----------------------------------------------------------------------------
+
+// ReturnGas returns the gas back to the origin. Used by the Virtual machine or
+// Closures. It performs a no-op.
+func (so *stateObject) ReturnGas(gas *big.Int) {}
 
 // empty returns whether the account is considered empty.
 func (so *stateObject) empty() bool {

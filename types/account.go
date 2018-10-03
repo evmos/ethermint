@@ -12,6 +12,10 @@ import (
 
 var _ auth.Account = (*Account)(nil)
 
+// ----------------------------------------------------------------------------
+// Main Ethermint account
+// ----------------------------------------------------------------------------
+
 // BaseAccount implements the auth.Account interface and embeds an
 // auth.BaseAccount type. It is compatible with the auth.AccountMapper.
 type Account struct {
@@ -37,33 +41,9 @@ func (acc Account) SetBalance(amt sdk.Int) {
 	acc.SetCoins(sdk.Coins{sdk.NewCoin(bank.DenomEthereum, amt)})
 }
 
-// // NewAccount returns a reference to a new initialized account.
-// func NewAccount(base auth.BaseAccount, code []byte) *Account {
-// 	return &Account{
-// 		BaseAccount: base,
-// 		Code:        code,
-// 		Storage:     storage,
-// 	}
-// }
-
-// GetAccountDecoder returns the auth.AccountDecoder function for the custom
-// Account type.
-// func GetAccountDecoder(cdc *wire.Codec) auth.AccountDecoder {
-// 	return func(accBytes []byte) (auth.Account, error) {
-// 		if len(accBytes) == 0 {
-// 			return nil, sdk.ErrTxDecode("account bytes are empty")
-// 		}
-
-// 		acc := new(Account)
-
-// 		err := cdc.UnmarshalBinaryBare(accBytes, &acc)
-// 		if err != nil {
-// 			return nil, sdk.ErrTxDecode("failed to decode account bytes")
-// 		}
-
-// 		return acc, err
-// 	}
-// }
+// ----------------------------------------------------------------------------
+// Code & Storage
+// ----------------------------------------------------------------------------
 
 // Account code and storage type aliases.
 type (
