@@ -92,7 +92,7 @@ type (
 
 	nonceChange struct {
 		account *common.Address
-		prev    uint64
+		prev    int64
 	}
 
 	storageChange struct {
