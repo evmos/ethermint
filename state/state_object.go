@@ -275,6 +275,19 @@ func (so *stateObject) getCommittedState(ctx sdk.Context, key ethcmn.Hash) ethcm
 // Closures. It performs a no-op.
 func (so *stateObject) ReturnGas(gas *big.Int) {}
 
+func (so *stateObject) deepCopy(db *CommitStateDB) *stateObject {
+	newStateObj := newObject(db, so.account)
+
+	newStateObj.code = so.code
+	newStateObj.dirtyStorage = so.dirtyStorage.Copy()
+	newStateObj.originStorage = so.originStorage.Copy()
+	newStateObj.suicided = so.suicided
+	newStateObj.dirtyCode = so.dirtyCode
+	newStateObj.deleted = so.deleted
+
+	return newStateObj
+}
+
 // empty returns whether the account is considered empty.
 func (so *stateObject) empty() bool {
 	return so.account.Sequence == 0 &&
