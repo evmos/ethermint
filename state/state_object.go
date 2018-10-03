@@ -77,8 +77,8 @@ func newObject(db *CommitStateDB, accProto auth.Account) *stateObject {
 // Setters
 // ----------------------------------------------------------------------------
 
-// SetState updates a value in account storage. Note, the key must be prefixed
-// with the address.
+// SetState updates a value in account storage. Note, the key will be prefixed
+// with the address of the state object.
 func (so *stateObject) SetState(db ethstate.Database, key, value ethcmn.Hash) {
 	// if the new value is the same as old, don't set
 	prev := so.GetState(db, key)
@@ -86,14 +86,16 @@ func (so *stateObject) SetState(db ethstate.Database, key, value ethcmn.Hash) {
 		return
 	}
 
+	prefixKey := so.GetStorageByAddressKey(key.Bytes())
+
 	// since the new value is different, update and journal the change
 	so.stateDB.journal.append(storageChange{
 		account:  &so.address,
-		key:      key,
+		key:      prefixKey,
 		prevalue: prev,
 	})
 
-	so.setState(key, value)
+	so.setState(prefixKey, value)
 }
 
 func (so *stateObject) setState(key, value ethcmn.Hash) {
@@ -234,11 +236,13 @@ func (so *stateObject) Code(_ ethstate.Database) []byte {
 	return code
 }
 
-// GetState retrieves a value from the account storage trie. Note, the key must
-// be prefixed with the address.
+// GetState retrieves a value from the account storage trie. Note, the key will
+// be prefixed with the address of the state object.
 func (so *stateObject) GetState(db ethstate.Database, key ethcmn.Hash) ethcmn.Hash {
+	prefixKey := so.GetStorageByAddressKey(key.Bytes())
+
 	// if we have a dirty value for this state entry, return it
-	value, dirty := so.dirtyStorage[key]
+	value, dirty := so.dirtyStorage[prefixKey]
 	if dirty {
 		return value
 	}
@@ -248,10 +252,12 @@ func (so *stateObject) GetState(db ethstate.Database, key ethcmn.Hash) ethcmn.Ha
 }
 
 // GetCommittedState retrieves a value from the committed account storage trie.
-// Note, the must be prefixed with the address.
+// Note, the key will be prefixed with the address of the state object.
 func (so *stateObject) GetCommittedState(_ ethstate.Database, key ethcmn.Hash) ethcmn.Hash {
+	prefixKey := so.GetStorageByAddressKey(key.Bytes())
+
 	// if we have the original value cached, return that
-	value, cached := so.originStorage[key]
+	value, cached := so.originStorage[prefixKey]
 	if cached {
 		return value
 	}
@@ -259,13 +265,13 @@ func (so *stateObject) GetCommittedState(_ ethstate.Database, key ethcmn.Hash) e
 	// otherwise load the value from the KVStore
 	ctx := so.stateDB.ctx
 	store := ctx.KVStore(so.stateDB.storageKey)
-	rawValue := store.Get(key.Bytes())
+	rawValue := store.Get(prefixKey.Bytes())
 
 	if len(rawValue) > 0 {
 		value.SetBytes(rawValue)
 	}
 
-	so.originStorage[key] = value
+	so.originStorage[prefixKey] = value
 	return value
 }
 
@@ -309,14 +315,14 @@ func (so *stateObject) touch() {
 	}
 }
 
-// GetStorageByAddressKey returns a composite key for a state object's storage
-// prefixed with it's address.
-func (so stateObject) GetStorageByAddressKey(key []byte) []byte {
+// GetStorageByAddressKey returns a hash of the composite key for a state
+// object's storage prefixed with it's address.
+func (so stateObject) GetStorageByAddressKey(key []byte) ethcmn.Hash {
 	prefix := so.Address().Bytes()
 	compositeKey := make([]byte, len(prefix)+len(key))
 
 	copy(compositeKey, prefix)
 	copy(compositeKey[len(prefix):], key)
 
-	return compositeKey
+	return crypto.Keccak256Hash(compositeKey)
 }
