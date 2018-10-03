@@ -222,7 +222,8 @@ func (so *stateObject) Code(_ ethstate.Database) []byte {
 		return nil
 	}
 
-	store := so.stateDB.ctx.KVStore(so.stateDB.codeKey)
+	ctx := so.stateDB.ctx
+	store := ctx.KVStore(so.stateDB.codeKey)
 	code := store.Get(so.CodeHash())
 
 	if len(code) == 0 {
@@ -235,7 +236,7 @@ func (so *stateObject) Code(_ ethstate.Database) []byte {
 
 // GetState retrieves a value from the account storage trie. Note, the key must
 // be prefixed with the address.
-func (so *stateObject) GetState(_ ethstate.Database, key ethcmn.Hash) ethcmn.Hash {
+func (so *stateObject) GetState(db ethstate.Database, key ethcmn.Hash) ethcmn.Hash {
 	// if we have a dirty value for this state entry, return it
 	value, dirty := so.dirtyStorage[key]
 	if dirty {
@@ -243,12 +244,12 @@ func (so *stateObject) GetState(_ ethstate.Database, key ethcmn.Hash) ethcmn.Has
 	}
 
 	// otherwise return the entry's original value
-	return so.getCommittedState(so.stateDB.ctx, key)
+	return so.GetCommittedState(db, key)
 }
 
 // GetCommittedState retrieves a value from the committed account storage trie.
 // Note, the must be prefixed with the address.
-func (so *stateObject) getCommittedState(ctx sdk.Context, key ethcmn.Hash) ethcmn.Hash {
+func (so *stateObject) GetCommittedState(_ ethstate.Database, key ethcmn.Hash) ethcmn.Hash {
 	// if we have the original value cached, return that
 	value, cached := so.originStorage[key]
 	if cached {
@@ -256,6 +257,7 @@ func (so *stateObject) getCommittedState(ctx sdk.Context, key ethcmn.Hash) ethcm
 	}
 
 	// otherwise load the value from the KVStore
+	ctx := so.stateDB.ctx
 	store := ctx.KVStore(so.stateDB.storageKey)
 	rawValue := store.Get(key.Bytes())
 
@@ -307,8 +309,9 @@ func (so *stateObject) touch() {
 	}
 }
 
-// prefixStorageKey prefixes a storage key with the state object's address.
-func (so stateObject) prefixStorageKey(key []byte) []byte {
+// GetStorageByAddressKey returns a composite key for a state object's storage
+// prefixed with it's address.
+func (so stateObject) GetStorageByAddressKey(key []byte) []byte {
 	prefix := so.Address().Bytes()
 	compositeKey := make([]byte, len(prefix)+len(key))
 
