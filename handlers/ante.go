@@ -73,9 +73,6 @@ func AnteHandler(accMapper auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.A
 
 // handleEthTx implements an ante handler for an Ethereum transaction. It
 // validates the signature and if valid returns an OK result.
-//
-// TODO: Do we need to do any further validation or account manipulation
-// (e.g. increment nonce)?
 func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
 	ethTx, ok := tx.(types.Transaction)
 	if !ok {
@@ -85,7 +82,6 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (s
 	// the SDK chainID is a string representation of integer
 	chainID, ok := new(big.Int).SetString(sdkCtx.ChainID(), 10)
 	if !ok {
-		// TODO: ErrInternal may not be correct error to throw here?
 		return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid chainID: %s", sdkCtx.ChainID())).Result(), true
 	}
 
@@ -104,10 +100,16 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (s
 		return sdkCtx, sdk.ErrInvalidSequence(fmt.Sprintf("invalid account nonce; expected: %d", seq)).Result(), true
 	}
 
-	err = acc.SetSequence(seq + 1)
-	if err != nil {
-		return sdkCtx, sdk.ErrInternal(err.Error()).Result(), true
-	}
+	// TODO: The EVM will handle incrementing the nonce (sequence number)
+	//
+	// TODO: Investigate gas consumption models as the EVM instruction set has its
+	// own and we should probably not charge for additional gas where we don't have
+	// to.
+	//
+	// err = acc.SetSequence(seq + 1)
+	// if err != nil {
+	// 	return sdkCtx, sdk.ErrInternal(err.Error()).Result(), true
+	// }
 
 	accMapper.SetAccount(sdkCtx, acc)
 	return sdkCtx, sdk.Result{GasWanted: int64(ethTx.Data().GasLimit)}, false
