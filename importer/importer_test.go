@@ -1,7 +1,6 @@
 package importer
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -220,12 +219,6 @@ func TestImportBlocks(t *testing.T) {
 			require.NoError(t, err, "failed to create a StateDB instance")
 
 			stateDB.Prepare(tx.Hash(), block.Hash(), i)
-
-			txHash := tx.Hash()
-			if bytes.Equal(txHash[:], ethcmn.FromHex("0xc438cfcc3b74a28741bda361032f1c6362c34aa0e1cedff693f31ec7d6a12717")) {
-				vmConfig.Tracer = ethvm.NewStructLogger(&ethvm.LogConfig{})
-				vmConfig.Debug = true
-			}
 
 			_, _, err = ethcore.ApplyTransaction(
 				chainConfig, chainContext, nil, gp, stateDB, header, tx, usedGas, vmConfig,
