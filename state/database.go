@@ -15,6 +15,8 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
+// TODO: This functionality and implementation may be deprecated
+
 var (
 	// CodeKey is the key used for storing Ethereum contract code in the Cosmos
 	// SDK multi-store.

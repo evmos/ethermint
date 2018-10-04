@@ -1,5 +1,7 @@
 package core
 
+// TODO: This functionality and implementation may be deprecated
+
 import (
 	"math/big"
 

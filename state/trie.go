@@ -12,6 +12,8 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
+// TODO: This functionality and implementation may be deprecated
+
 const (
 	versionLen = 8
 )
