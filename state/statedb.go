@@ -9,10 +9,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
+	tmcrypto "github.com/tendermint/tendermint/crypto"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -126,7 +127,8 @@ func (csdb *CommitStateDB) SetState(addr ethcmn.Address, key, value ethcmn.Hash)
 func (csdb *CommitStateDB) SetCode(addr ethcmn.Address, code []byte) {
 	so := csdb.GetOrNewStateObject(addr)
 	if so != nil {
-		so.SetCode(crypto.Keccak256Hash(code), code)
+		key := ethcmn.BytesToHash(tmcrypto.Sha256(code))
+		so.SetCode(key, code)
 	}
 }
 
@@ -299,22 +301,94 @@ func (csdb *CommitStateDB) StorageTrie(addr ethcmn.Address) ethstate.Trie {
 
 // TODO: Commit writes the state ...
 func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, err error) {
-	// TODO: ...
+	defer csdb.clearJournalAndRefund()
+
+	// remove dirty state object entries based on the journal
+	for addr := range csdb.journal.dirties {
+		csdb.stateObjectsDirty[addr] = struct{}{}
+	}
+
+	// set the state objects
+	for addr, so := range csdb.stateObjects {
+		_, isDirty := csdb.stateObjectsDirty[addr]
+		switch {
+		case so.suicided || (isDirty && deleteEmptyObjects && so.empty()):
+			// If the state object has been removed, don't bother syncing it and just
+			// remove it from the store.
+			csdb.deleteStateObject(so)
+
+		case isDirty:
+			// write any contract code associated with the state object
+			if so.code != nil && so.dirtyCode {
+				csdb.SetCode(so.Address(), so.code)
+				so.dirtyCode = false
+			}
+
+			// update the object in the KVStore
+			csdb.updateStateObject(so)
+		}
+
+		delete(csdb.stateObjectsDirty, addr)
+	}
+
+	// TODO: Get and return the commit/root from the context
 	return
 }
 
-// TODO: ...
+// Finalize finalizes the state objects (accounts) state by setting their state,
+// removing the csdb destructed objects and clearing the journal as well as the
+// refunds.
 func (csdb *CommitStateDB) Finalize(deleteEmptyObjects bool) {
-	// TODO: ...
+	for addr := range csdb.journal.dirties {
+		so, exist := csdb.stateObjects[addr]
+		if !exist {
+			// ripeMD is 'touched' at block 1714175, in tx:
+			// 0x1237f737031e40bcde4a8b7e717b2d15e3ecadfe49bb1bbc71ee9deb09c6fcf2
+			//
+			// That tx goes out of gas, and although the notion of 'touched' does not
+			// exist there, the touch-event will still be recorded in the journal.
+			// Since ripeMD is a special snowflake, it will persist in the journal even
+			// though the journal is reverted. In this special circumstance, it may
+			// exist in journal.dirties but not in stateObjects. Thus, we can safely
+			// ignore it here.
+			continue
+		}
+
+		if so.suicided || (deleteEmptyObjects && so.empty()) {
+			csdb.deleteStateObject(so)
+		} else {
+			// Set all the dirty state storage items for the state object in the
+			// KVStore and finally set the account in the account mapper.
+			so.commitState()
+			csdb.updateStateObject(so)
+		}
+
+		csdb.stateObjectsDirty[addr] = struct{}{}
+	}
+
+	// invalidate journal because reverting across transactions is not allowed
+	csdb.clearJournalAndRefund()
 }
 
-// IntermediateRoot computes the current root hash of the state trie.
-// It is called in between transactions to get the root hash that
-// goes into transaction receipts.
+// IntermediateRoot returns the current root hash of the state. It is called in
+// between transactions to get the root hash that goes into transaction
+// receipts.
 func (csdb *CommitStateDB) IntermediateRoot(deleteEmptyObjects bool) ethcmn.Hash {
-	// TODO: ...
-	// csdb.Finalize(deleteEmptyObjects)
-	// return csdb.trie.Hash()
+	csdb.Finalize(deleteEmptyObjects)
+
+	// TODO: Get and return the commit/root from the context
+	return ethcmn.Hash{}
+}
+
+// updateStateObject writes the given state object to the store.
+func (csdb *CommitStateDB) updateStateObject(so *stateObject) {
+	csdb.am.SetAccount(csdb.ctx, so.account)
+}
+
+// deleteStateObject removes the given state object from the state store.
+func (csdb *CommitStateDB) deleteStateObject(so *stateObject) {
+	so.deleted = true
+	csdb.am.RemoveAccount(csdb.ctx, so.account)
 }
 
 // ----------------------------------------------------------------------------
@@ -350,6 +424,30 @@ func (csdb *CommitStateDB) RevertToSnapshot(revID int) {
 // ----------------------------------------------------------------------------
 // Auxiliary
 // ----------------------------------------------------------------------------
+
+// Database retrieves the low level database supporting the lower level trie
+// ops. It is not used in Ethermint, so it returns nil.
+func (csdb *CommitStateDB) Database() ethstate.Database {
+	return nil
+}
+
+// Empty returns whether the state object is either non-existent or empty
+// according to the EIP161 specification (balance = nonce = code = 0).
+func (csdb *CommitStateDB) Empty(addr ethcmn.Address) bool {
+	so := csdb.getStateObject(addr)
+	return so == nil || so.empty()
+}
+
+// Exist reports whether the given account address exists in the state. Notably,
+// this also returns true for suicided accounts.
+func (csdb *CommitStateDB) Exist(addr ethcmn.Address) bool {
+	return csdb.getStateObject(addr) != nil
+}
+
+// Error returns the first non-nil error the StateDB encountered.
+func (csdb *CommitStateDB) Error() error {
+	return csdb.dbErr
+}
 
 // Suicide marks the given account as suicided and clears the account balance.
 //
@@ -540,24 +638,6 @@ func (csdb *CommitStateDB) createObject(addr ethcmn.Address) (newObj, prevObj *s
 	return newObj, prevObj
 }
 
-// Empty returns whether the state object is either non-existent or empty
-// according to the EIP161 specification (balance = nonce = code = 0).
-func (csdb *CommitStateDB) Empty(addr ethcmn.Address) bool {
-	so := csdb.getStateObject(addr)
-	return so == nil || so.empty()
-}
-
-// Exist reports whether the given account address exists in the state. Notably,
-// this also returns true for suicided accounts.
-func (csdb *CommitStateDB) Exist(addr ethcmn.Address) bool {
-	return csdb.getStateObject(addr) != nil
-}
-
-// Error returns the first non-nil error the StateDB encountered.
-func (csdb *CommitStateDB) Error() error {
-	return csdb.dbErr
-}
-
 // setError remembers the first non-nil error it is called with.
 func (csdb *CommitStateDB) setError(err error) {
 	if csdb.dbErr == nil {
@@ -592,10 +672,4 @@ func (csdb *CommitStateDB) getStateObject(addr ethcmn.Address) (stateObject *sta
 
 func (csdb *CommitStateDB) setStateObject(object *stateObject) {
 	csdb.stateObjects[object.Address()] = object
-}
-
-// Database retrieves the low level database supporting the lower level trie
-// ops. It is not used in Ethermint, so it returns nil.
-func (csdb *CommitStateDB) Database() ethstate.Database {
-	return nil
 }

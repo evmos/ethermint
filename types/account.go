@@ -21,7 +21,11 @@ var _ auth.Account = (*Account)(nil)
 type Account struct {
 	*auth.BaseAccount
 
-	Root     ethcmn.Hash // merkle root of the storage trie
+	// merkle root of the storage trie
+	//
+	// TODO: good chance we may not need this
+	Root ethcmn.Hash
+
 	CodeHash []byte
 }
 

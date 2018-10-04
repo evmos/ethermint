@@ -8,16 +8,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth"
 
+	tmcrypto "github.com/tendermint/tendermint/crypto"
+
 	"github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
 	_ ethstate.StateObject = (*stateObject)(nil)
 
-	emptyCodeHash = crypto.Keccak256(nil)
+	emptyCodeHash = tmcrypto.Sha256(nil)
 )
 
 type (
@@ -194,6 +195,33 @@ func (so *stateObject) markSuicided() {
 	so.suicided = true
 }
 
+// commitState commits all dirty storage to a KVStore.
+func (so *stateObject) commitState() {
+	ctx := so.stateDB.ctx
+	store := ctx.KVStore(so.stateDB.storageKey)
+
+	for key, value := range so.dirtyStorage {
+		delete(so.dirtyStorage, key)
+
+		// skip no-op changes, persist actual changes
+		if value == so.originStorage[key] {
+			continue
+		}
+
+		so.originStorage[key] = value
+
+		// delete empty values
+		if (value == ethcmn.Hash{}) {
+			store.Delete(key.Bytes())
+			continue
+		}
+
+		store.Set(key.Bytes(), value.Bytes())
+	}
+
+	// TODO: Set the account (storage) root (but we probably don't need this)
+}
+
 // ----------------------------------------------------------------------------
 // Getters
 // ----------------------------------------------------------------------------
@@ -271,6 +299,8 @@ func (so *stateObject) GetCommittedState(_ ethstate.Database, key ethcmn.Hash) e
 	store := ctx.KVStore(so.stateDB.storageKey)
 	rawValue := store.Get(prefixKey.Bytes())
 
+	// TODO: Do we need to RLP split/decode?
+
 	if len(rawValue) > 0 {
 		value.SetBytes(rawValue)
 	}
@@ -328,5 +358,5 @@ func (so stateObject) GetStorageByAddressKey(key []byte) ethcmn.Hash {
 	copy(compositeKey, prefix)
 	copy(compositeKey[len(prefix):], key)
 
-	return crypto.Keccak256Hash(compositeKey)
+	return ethcmn.BytesToHash(tmcrypto.Sha256(compositeKey))
 }
