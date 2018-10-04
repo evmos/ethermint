@@ -90,9 +90,9 @@ func (so *stateObject) SetState(db ethstate.Database, key, value ethcmn.Hash) {
 
 	// since the new value is different, update and journal the change
 	so.stateDB.journal.append(storageChange{
-		account:  &so.address,
-		key:      prefixKey,
-		prevalue: prev,
+		account:   &so.address,
+		key:       prefixKey,
+		prevValue: prev,
 	})
 
 	so.setState(prefixKey, value)
@@ -104,12 +104,12 @@ func (so *stateObject) setState(key, value ethcmn.Hash) {
 
 // SetCode sets the state object's code.
 func (so *stateObject) SetCode(codeHash ethcmn.Hash, code []byte) {
-	prevcode := so.Code(nil)
+	prevCode := so.Code(nil)
 
 	so.stateDB.journal.append(codeChange{
 		account:  &so.address,
-		prevhash: so.CodeHash(),
-		prevcode: prevcode,
+		prevHash: so.CodeHash(),
+		prevCode: prevCode,
 	})
 
 	so.setCode(codeHash, code)
@@ -188,6 +188,10 @@ func (so *stateObject) setError(err error) {
 	if so.dbErr == nil {
 		so.dbErr = err
 	}
+}
+
+func (so *stateObject) markSuicided() {
+	so.suicided = true
 }
 
 // ----------------------------------------------------------------------------
