@@ -72,10 +72,12 @@ type CommitStateDB struct {
 
 // NewCommitStateDB returns a reference to a newly initialized CommitStateDB
 // which implements Geth's state.StateDB interface.
-func NewCommitStateDB(ctx sdk.Context, am auth.AccountMapper) (*CommitStateDB, error) {
+func NewCommitStateDB(ctx sdk.Context, am auth.AccountMapper, storageKey, codeKey sdk.StoreKey) (*CommitStateDB, error) {
 	return &CommitStateDB{
 		ctx:               ctx,
 		am:                am,
+		storageKey:        storageKey,
+		codeKey:           codeKey,
 		stateObjects:      make(map[ethcmn.Address]*stateObject),
 		stateObjectsDirty: make(map[ethcmn.Address]struct{}),
 		logs:              make(map[ethcmn.Hash][]*ethtypes.Log),
