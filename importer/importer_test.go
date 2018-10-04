@@ -1,34 +1,46 @@
 package importer
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"os/signal"
+	"runtime/pprof"
 	"sort"
+	"syscall"
 	"testing"
-
-	"github.com/stretchr/testify/require"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
+	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/state"
 	"github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/bank"
 
+	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethcore "github.com/ethereum/go-ethereum/core"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethvm "github.com/ethereum/go-ethereum/core/vm"
+	ethparams "github.com/ethereum/go-ethereum/params"
+	ethrlp "github.com/ethereum/go-ethereum/rlp"
+
+	"github.com/stretchr/testify/require"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmlog "github.com/tendermint/tendermint/libs/log"
-
-	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethcore "github.com/ethereum/go-ethereum/core"
 )
 
 var (
-	datadir    string
-	blockchain string
+	flagDataDir    string
+	flagBlockchain string
+	flagCPUProfile string
 
 	miner501    = ethcmn.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D")
 	genInvestor = ethcmn.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")
@@ -41,8 +53,9 @@ var (
 )
 
 func init() {
-	flag.StringVar(&datadir, "datadir", "", "test data directory for state storage")
-	flag.StringVar(&blockchain, "blockchain", "data/blockchain", "ethereum block export file (blocks to import)")
+	flag.StringVar(&flagCPUProfile, "cpu-profile", "", "write CPU profile")
+	flag.StringVar(&flagDataDir, "datadir", "", "test data directory for state storage")
+	flag.StringVar(&flagBlockchain, "blockchain", "data/blockchain", "ethereum block export file (blocks to import)")
 	flag.Parse()
 }
 
@@ -110,20 +123,29 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, am auth.Accoun
 }
 
 func TestImportBlocks(t *testing.T) {
-	if datadir == "" {
-		datadir = os.TempDir()
+	if flagDataDir == "" {
+		flagDataDir = os.TempDir()
 	}
 
-	db := dbm.NewDB("state", dbm.LevelDBBackend, datadir)
+	if flagCPUProfile != "" {
+		f, err := os.Create(flagCPUProfile)
+		require.NoError(t, err, "failed to create CPU profile")
 
-	defer func() {
-		db.Close()
-		os.RemoveAll(datadir)
-	}()
+		err = pprof.StartCPUProfile(f)
+		require.NoError(t, err, "failed to start CPU profile")
+	}
+
+	db := dbm.NewDB("state", dbm.LevelDBBackend, flagDataDir)
+	cb := func() {
+		fmt.Println("cleaning up")
+		os.RemoveAll(flagDataDir)
+		pprof.StopCPUProfile()
+	}
+
+	trapSignal(cb)
 
 	// create logger, codec and root multi-store
 	cdc := newTestCodec()
-
 	cms := store.NewCommitMultiStore(db)
 
 	// create account mapper
@@ -146,30 +168,97 @@ func TestImportBlocks(t *testing.T) {
 	// set and test genesis block
 	createAndTestGenesis(t, cms, am)
 
-	// // process blocks
-	// for block := range blocks {
-	// 	// Create a cached-wrapped multi-store based on the commit multi-store and
-	// 	// create a new context based off of that.
-	// 	ms := cms.CacheMultiStore()
-	// 	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
+	// open blockchain export file
+	blockchainInput, err := os.Open(flagBlockchain)
+	require.Nil(t, err)
 
-	// 	// For each transaction, create a new cache-wrapped multi-store based off of
-	// 	// the existing cache-wrapped multi-store in to create a transient store in
-	// 	// case processing the tx fails.
-	// 	for tx := range block.txs {
-	// 		msCache := ms.CacheMultiStore()
-	// 		ctx = ctx.WithMultiStore(msCache)
+	defer blockchainInput.Close()
 
-	// 		// apply tx
+	// ethereum mainnet config
+	chainContext := core.NewChainContext()
+	vmConfig := ethvm.Config{}
+	chainConfig := ethparams.MainnetChainConfig
 
-	// 		// check error
-	// 		if err != nil {
-	// 			msCache.Write()
-	// 		}
-	// 	}
+	// create RLP stream for exported blocks
+	stream := ethrlp.NewStream(blockchainInput, 0)
+	startTime := time.Now()
 
-	// 	// commit
-	// 	ms.Write()
-	// 	cms.Commit()
-	// }
+	var block ethtypes.Block
+	for {
+		err = stream.Decode(&block)
+		if err == io.EOF {
+			break
+		}
+
+		require.NoError(t, err, "failed to decode block")
+
+		var (
+			usedGas = new(uint64)
+			gp      = new(ethcore.GasPool).AddGas(block.GasLimit())
+		)
+
+		header := block.Header()
+		chainContext.Coinbase = header.Coinbase
+
+		chainContext.SetHeader(block.NumberU64(), header)
+
+		// Create a cached-wrapped multi-store based on the commit multi-store and
+		// create a new context based off of that.
+		ms := cms.CacheMultiStore()
+		ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
+
+		// stateDB, err := state.NewCommitStateDB(ctx, am, storageKey, codeKey)
+		// require.NoError(t, err, "failed to create a StateDB instance")
+
+		// if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
+		// 	ethmisc.ApplyDAOHardFork(stateDB)
+		// }
+
+		for i, tx := range block.Transactions() {
+			msCache := ms.CacheMultiStore()
+			ctx = ctx.WithMultiStore(msCache)
+
+			stateDB, err := state.NewCommitStateDB(ctx, am, storageKey, codeKey)
+			require.NoError(t, err, "failed to create a StateDB instance")
+
+			stateDB.Prepare(tx.Hash(), block.Hash(), i)
+
+			txHash := tx.Hash()
+			if bytes.Equal(txHash[:], ethcmn.FromHex("0xc438cfcc3b74a28741bda361032f1c6362c34aa0e1cedff693f31ec7d6a12717")) {
+				vmConfig.Tracer = ethvm.NewStructLogger(&ethvm.LogConfig{})
+				vmConfig.Debug = true
+			}
+
+			_, _, err = ethcore.ApplyTransaction(
+				chainConfig, chainContext, nil, gp, stateDB, header, tx, usedGas, vmConfig,
+			)
+			require.NoError(t, err, "failed to apply tx at block %d; tx: %d", block.NumberU64(), tx.Hash())
+
+			msCache.Write()
+		}
+
+		// commit
+		ms.Write()
+		cms.Commit()
+
+		if block.NumberU64() > 0 && block.NumberU64()%1000 == 0 {
+			fmt.Printf("processed block: %d (time so far: %v)\n", block.NumberU64(), time.Since(startTime))
+		}
+	}
+}
+
+func trapSignal(cb func()) {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		recv := <-c
+		fmt.Printf("existing; signal: %s\n", recv)
+
+		if cb != nil {
+			cb()
+		}
+
+		os.Exit(0)
+	}()
 }
