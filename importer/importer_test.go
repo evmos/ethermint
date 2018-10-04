@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"runtime/pprof"
 	"sort"
-	"syscall"
 	"testing"
 	"time"
 
@@ -136,13 +134,11 @@ func TestImportBlocks(t *testing.T) {
 	}
 
 	db := dbm.NewDB("state", dbm.LevelDBBackend, flagDataDir)
-	cb := func() {
+	defer func() {
 		fmt.Println("cleaning up")
 		os.RemoveAll(flagDataDir)
 		pprof.StopCPUProfile()
-	}
-
-	trapSignal(cb)
+	}()
 
 	// create logger, codec and root multi-store
 	cdc := newTestCodec()
@@ -160,6 +156,8 @@ func TestImportBlocks(t *testing.T) {
 	for _, key := range keys {
 		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
 	}
+
+	cms.SetPruning(sdk.PruneNothing)
 
 	// load latest version (root)
 	err := cms.LoadLatestVersion()
@@ -232,7 +230,7 @@ func TestImportBlocks(t *testing.T) {
 			_, _, err = ethcore.ApplyTransaction(
 				chainConfig, chainContext, nil, gp, stateDB, header, tx, usedGas, vmConfig,
 			)
-			require.NoError(t, err, "failed to apply tx at block %d; tx: %d", block.NumberU64(), tx.Hash())
+			require.NoError(t, err, "failed to apply tx at block %d; tx: %X", block.NumberU64(), tx.Hash())
 
 			msCache.Write()
 		}
@@ -245,20 +243,4 @@ func TestImportBlocks(t *testing.T) {
 			fmt.Printf("processed block: %d (time so far: %v)\n", block.NumberU64(), time.Since(startTime))
 		}
 	}
-}
-
-func trapSignal(cb func()) {
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-
-	go func() {
-		recv := <-c
-		fmt.Printf("existing; signal: %s\n", recv)
-
-		if cb != nil {
-			cb()
-		}
-
-		os.Exit(0)
-	}()
 }
