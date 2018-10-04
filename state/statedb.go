@@ -72,6 +72,12 @@ type CommitStateDB struct {
 
 // NewCommitStateDB returns a reference to a newly initialized CommitStateDB
 // which implements Geth's state.StateDB interface.
+//
+// CONTRACT: Stores used for state must be cache-wrapped as the ordering of the
+// key/value space matters in determining the merkle root.
+//
+// TODO: Eventually we'll have an EVM module that'll implement a keeper that we
+// can pass into this constructor.
 func NewCommitStateDB(ctx sdk.Context, am auth.AccountMapper, storageKey, codeKey sdk.StoreKey) (*CommitStateDB, error) {
 	return &CommitStateDB{
 		ctx:               ctx,
