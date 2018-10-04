@@ -49,6 +49,8 @@ type CommitStateDB struct {
 	logs         map[ethcmn.Hash][]*ethtypes.Log
 	logSize      uint
 
+	// TODO: Determine if we actually need this as we do not need preimages in
+	// the SDK, but it seems to be used elsewhere in Geth.
 	preimages map[ethcmn.Hash][]byte
 
 	// DB error.
@@ -68,13 +70,16 @@ type CommitStateDB struct {
 	lock sync.Mutex
 }
 
-// TODO: Make sure storage is prefixed with address!!!
-
-func NewCommitStateDB(ctx sdk.Context) (*CommitStateDB, error) {
+// NewCommitStateDB returns a reference to a newly initialized CommitStateDB
+// which implements Geth's state.StateDB interface.
+func NewCommitStateDB(ctx sdk.Context, am auth.AccountMapper) (*CommitStateDB, error) {
 	return &CommitStateDB{
+		ctx:               ctx,
+		am:                am,
 		stateObjects:      make(map[ethcmn.Address]*stateObject),
 		stateObjectsDirty: make(map[ethcmn.Address]struct{}),
 		logs:              make(map[ethcmn.Hash][]*ethtypes.Log),
+		preimages:         make(map[ethcmn.Hash][]byte),
 		journal:           newJournal(),
 	}, nil
 }
