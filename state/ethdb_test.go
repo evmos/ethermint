@@ -12,12 +12,6 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 )
 
-type (
-	kvPair struct {
-		key, value []byte
-	}
-)
-
 func newEthereumDB() *EthereumDB {
 	memDB := dbm.NewMemDB()
 	return &EthereumDB{CodeDB: memDB}
