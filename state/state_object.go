@@ -222,6 +222,13 @@ func (so *stateObject) commitState() {
 	// TODO: Set the account (storage) root (but we probably don't need this)
 }
 
+// commitCode persists the state object's code to the KVStore.
+func (so *stateObject) commitCode() {
+	ctx := so.stateDB.ctx
+	store := ctx.KVStore(so.stateDB.codeKey)
+	store.Set(so.CodeHash(), so.code)
+}
+
 // ----------------------------------------------------------------------------
 // Getters
 // ----------------------------------------------------------------------------
@@ -298,8 +305,6 @@ func (so *stateObject) GetCommittedState(_ ethstate.Database, key ethcmn.Hash) e
 	ctx := so.stateDB.ctx
 	store := ctx.KVStore(so.stateDB.storageKey)
 	rawValue := store.Get(prefixKey.Bytes())
-
-	// TODO: Do we need to RLP split/decode?
 
 	if len(rawValue) > 0 {
 		value.SetBytes(rawValue)

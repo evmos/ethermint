@@ -327,6 +327,7 @@ func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, er
 	// set the state objects
 	for addr, so := range csdb.stateObjects {
 		_, isDirty := csdb.stateObjectsDirty[addr]
+
 		switch {
 		case so.suicided || (isDirty && deleteEmptyObjects && so.empty()):
 			// If the state object has been removed, don't bother syncing it and just
@@ -336,7 +337,7 @@ func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, er
 		case isDirty:
 			// write any contract code associated with the state object
 			if so.code != nil && so.dirtyCode {
-				csdb.SetCode(so.Address(), so.code)
+				so.commitCode()
 				so.dirtyCode = false
 			}
 
@@ -415,7 +416,15 @@ func (csdb *CommitStateDB) deleteStateObject(so *stateObject) {
 func (csdb *CommitStateDB) Snapshot() int {
 	id := csdb.nextRevisionID
 	csdb.nextRevisionID++
-	csdb.validRevisions = append(csdb.validRevisions, ethstate.Revision{id, csdb.journal.length()})
+
+	csdb.validRevisions = append(
+		csdb.validRevisions,
+		ethstate.Revision{
+			ID:           id,
+			JournalIndex: csdb.journal.length(),
+		},
+	)
+
 	return id
 }
 
@@ -665,12 +674,12 @@ func (csdb *CommitStateDB) setError(err error) {
 // Returns nil and sets an error if not found.
 func (csdb *CommitStateDB) getStateObject(addr ethcmn.Address) (stateObject *stateObject) {
 	// prefer 'live' (cached) objects
-	if obj := csdb.stateObjects[addr]; obj != nil {
-		if obj.deleted {
+	if so := csdb.stateObjects[addr]; so != nil {
+		if so.deleted {
 			return nil
 		}
 
-		return obj
+		return so
 	}
 
 	// otherwise, attempt to fetch the account from the account mapper
@@ -681,11 +690,12 @@ func (csdb *CommitStateDB) getStateObject(addr ethcmn.Address) (stateObject *sta
 	}
 
 	// insert the state object into the live set
-	obj := newObject(csdb, acc)
-	csdb.setStateObject(obj)
-	return obj
+	so := newObject(csdb, acc)
+	csdb.setStateObject(so)
+
+	return so
 }
 
-func (csdb *CommitStateDB) setStateObject(object *stateObject) {
-	csdb.stateObjects[object.Address()] = object
+func (csdb *CommitStateDB) setStateObject(so *stateObject) {
+	csdb.stateObjects[so.Address()] = so
 }
