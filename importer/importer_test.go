@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"runtime/pprof"
 	"sort"
@@ -21,6 +22,8 @@ import (
 	"github.com/cosmos/ethermint/x/bank"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	ethmisc "github.com/ethereum/go-ethereum/consensus/misc"
 	ethcore "github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethvm "github.com/ethereum/go-ethereum/core/vm"
@@ -47,6 +50,9 @@ var (
 	codeKey    = sdk.NewKVStoreKey("code")
 
 	logger = tmlog.NewNopLogger()
+
+	rewardBig8  = big.NewInt(8)
+	rewardBig32 = big.NewInt(32)
 )
 
 func init() {
@@ -203,37 +209,75 @@ func TestImportBlocks(t *testing.T) {
 		// create a new context based off of that.
 		ms := cms.CacheMultiStore()
 		ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
+		ctx = ctx.WithBlockHeight(int64(block.NumberU64()))
 
-		// stateDB, err := state.NewCommitStateDB(ctx, am, storageKey, codeKey)
-		// require.NoError(t, err, "failed to create a StateDB instance")
+		stateDB := createStateDB(t, ctx, am)
 
-		// if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
-		// 	ethmisc.ApplyDAOHardFork(stateDB)
-		// }
+		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
+			ethmisc.ApplyDAOHardFork(stateDB)
+		}
 
 		for i, tx := range block.Transactions() {
-			msCache := ms.CacheMultiStore()
-			ctx = ctx.WithMultiStore(msCache)
-
-			stateDB, err := state.NewCommitStateDB(ctx, am, storageKey, codeKey)
-			require.NoError(t, err, "failed to create a StateDB instance")
-
 			stateDB.Prepare(tx.Hash(), block.Hash(), i)
 
 			_, _, err = ethcore.ApplyTransaction(
 				chainConfig, chainContext, nil, gp, stateDB, header, tx, usedGas, vmConfig,
 			)
 			require.NoError(t, err, "failed to apply tx at block %d; tx: %X", block.NumberU64(), tx.Hash())
-
-			msCache.Write()
 		}
 
-		// commit
+		// apply mining rewards
+		accumulateRewards(chainConfig, stateDB, header, block.Uncles())
+
+		// commit stateDB
+		_, err := stateDB.Commit(chainConfig.IsEIP158(block.Number()))
+		require.NoError(t, err, "failed to commit StateDB")
+
+		// simulate BaseApp EndBlocker commitment
 		ms.Write()
 		cms.Commit()
 
+		// block debugging output
 		if block.NumberU64() > 0 && block.NumberU64()%1000 == 0 {
 			fmt.Printf("processed block: %d (time so far: %v)\n", block.NumberU64(), time.Since(startTime))
 		}
 	}
+}
+
+func createStateDB(t *testing.T, ctx sdk.Context, am auth.AccountMapper) *state.CommitStateDB {
+	stateDB, err := state.NewCommitStateDB(ctx, am, storageKey, codeKey)
+	require.NoError(t, err, "failed to create a StateDB instance")
+
+	return stateDB
+}
+
+// accumulateRewards credits the coinbase of the given block with the mining
+// reward. The total reward consists of the static block reward and rewards for
+// included uncles. The coinbase of each uncle block is also rewarded.
+func accumulateRewards(
+	config *ethparams.ChainConfig, stateDB *state.CommitStateDB,
+	header *ethtypes.Header, uncles []*ethtypes.Header,
+) {
+
+	// select the correct block reward based on chain progression
+	blockReward := ethash.FrontierBlockReward
+	if config.IsByzantium(header.Number) {
+		blockReward = ethash.ByzantiumBlockReward
+	}
+
+	// accumulate the rewards for the miner and any included uncles
+	reward := new(big.Int).Set(blockReward)
+	r := new(big.Int)
+
+	for _, uncle := range uncles {
+		r.Add(uncle.Number, rewardBig8)
+		r.Sub(r, header.Number)
+		r.Mul(r, blockReward)
+		r.Div(r, rewardBig8)
+		stateDB.AddBalance(uncle.Coinbase, r)
+		r.Div(blockReward, rewardBig32)
+		reward.Add(reward, r)
+	}
+
+	stateDB.AddBalance(header.Coinbase, reward)
 }
