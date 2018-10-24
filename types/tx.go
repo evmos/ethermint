@@ -241,7 +241,10 @@ func (tx Transaction) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
 
 // Type implements the sdk.Msg interface. It returns the type of the
 // Transaction.
-func (tx Transaction) Type() string  { return TypeTxEthereum }
+func (tx Transaction) Type() string { return TypeTxEthereum }
+
+// Route implements the sdk.Msg interface. It returns the route of the
+// Transaction.
 func (tx Transaction) Route() string { return RouteTxEthereum }
 
 // ValidateBasic implements the sdk.Msg interface. It performs basic validation

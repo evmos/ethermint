@@ -306,7 +306,7 @@ func (csdb *CommitStateDB) StorageTrie(addr ethcmn.Address) ethstate.Trie {
 }
 
 // ----------------------------------------------------------------------------
-// Persistance
+// Persistence
 // ----------------------------------------------------------------------------
 
 // Commit writes the state to the appropriate KVStores. For each state object
