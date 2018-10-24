@@ -15,4 +15,4 @@ jobs:
 
       - run:
           name: "Run tests"
-          command: make test-lint test-unit
+          command: make test-lint test-unit test-import
