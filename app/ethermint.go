@@ -2,9 +2,9 @@ package app
 
 import (
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -35,7 +35,7 @@ type (
 	EthermintApp struct {
 		*bam.BaseApp
 
-		codec *wire.Codec
+		cdc *codec.Codec
 
 		accountKey  *sdk.KVStoreKey
 		storageKey  *sdk.KVStoreKey
@@ -47,7 +47,7 @@ type (
 		paramsKey   *sdk.KVStoreKey
 		tParamsKey  *sdk.TransientStoreKey
 
-		accountMapper  auth.AccountMapper
+		accountKeeper  auth.AccountKeeper
 		feeCollKeeper  auth.FeeCollectionKeeper
 		coinKeeper     bank.Keeper
 		stakeKeeper    stake.Keeper
@@ -60,17 +60,17 @@ type (
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
 func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *EthermintApp {
-	codec := CreateCodec()
+	cdc := CreateCodec()
 	cms := store.NewCommitMultiStore(db)
 
 	baseAppOpts := []func(*bam.BaseApp){
 		func(bApp *bam.BaseApp) { bApp.SetCMS(cms) },
 	}
-	baseApp := bam.NewBaseApp(appName, logger, db, types.TxDecoder(codec, sdkAddr), baseAppOpts...)
+	baseApp := bam.NewBaseApp(appName, logger, db, types.TxDecoder(cdc, sdkAddr), baseAppOpts...)
 
 	app := &EthermintApp{
 		BaseApp:     baseApp,
-		codec:       codec,
+		cdc:         cdc,
 		accountKey:  types.StoreKeyAccount,
 		storageKey:  types.StoreKeyStorage,
 		mainKey:     types.StoreKeyMain,
@@ -83,9 +83,9 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *Et
 	}
 
 	// set application keepers and mappers
-	app.accountMapper = auth.NewAccountMapper(codec, app.accountKey, auth.ProtoBaseAccount)
-	app.paramsKeeper = params.NewKeeper(app.codec, app.paramsKey)
-	app.feeCollKeeper = auth.NewFeeCollectionKeeper(app.codec, app.feeCollKey)
+	app.accountKeeper = auth.NewAccountKeeper(app.cdc, app.accountKey, auth.ProtoBaseAccount)
+	app.paramsKeeper = params.NewKeeper(app.cdc, app.paramsKey, app.tParamsKey)
+	app.feeCollKeeper = auth.NewFeeCollectionKeeper(app.cdc, app.feeCollKey)
 
 	// register message handlers
 	app.Router().
@@ -99,7 +99,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *Et
 	app.SetInitChainer(app.initChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
-	app.SetAnteHandler(handlers.AnteHandler(app.accountMapper, app.feeCollKeeper))
+	app.SetAnteHandler(handlers.AnteHandler(app.accountKeeper, app.feeCollKeeper))
 
 	app.MountStoresIAVL(
 		app.mainKey, app.accountKey, app.stakeKey, app.slashingKey,
@@ -133,7 +133,7 @@ func (app *EthermintApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 	var genesisState GenesisState
 	stateJSON := req.AppStateBytes
 
-	err := app.codec.UnmarshalJSON(stateJSON, &genesisState)
+	err := app.cdc.UnmarshalJSON(stateJSON, &genesisState)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to parse application genesis state"))
 	}
@@ -145,12 +145,12 @@ func (app *EthermintApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 
 // CreateCodec creates a new amino wire codec and registers all the necessary
 // concrete types and interfaces needed for the application.
-func CreateCodec() *wire.Codec {
-	codec := wire.NewCodec()
+func CreateCodec() *codec.Codec {
+	cdc := codec.New()
 
-	types.RegisterWire(codec)
-	auth.RegisterWire(codec)
-	wire.RegisterCrypto(codec)
+	types.RegisterCodec(cdc)
+	auth.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
 
-	return codec
+	return cdc
 }

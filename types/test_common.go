@@ -5,14 +5,15 @@ import (
 	"crypto/ecdsa"
 	"math/big"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
+// test variables
 var (
 	TestSDKAddr = GenerateEthAddress()
 	TestChainID = big.NewInt(3)
@@ -24,15 +25,15 @@ var (
 	TestAddr2 = PrivKeyToEthAddress(TestPrivKey2)
 )
 
-func NewTestCodec() *wire.Codec {
-	codec := wire.NewCodec()
+func NewTestCodec() *codec.Codec {
+	cdc := codec.New()
 
-	RegisterWire(codec)
-	auth.RegisterWire(codec)
-	wire.RegisterCrypto(codec)
-	codec.RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)
+	RegisterCodec(cdc)
+	auth.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
+	cdc.RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)
 
-	return codec
+	return cdc
 }
 
 func NewTestStdFee() auth.StdFee {

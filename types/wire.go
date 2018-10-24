@@ -1,20 +1,20 @@
 package types
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 )
 
-var typesCodec = wire.NewCodec()
+var typesCodec = codec.New()
 
 func init() {
-	RegisterWire(typesCodec)
+	RegisterCodec(typesCodec)
 }
 
-// RegisterWire registers all the necessary types with amino for the given
+// RegisterCodec registers all the necessary types with amino for the given
 // codec.
-func RegisterWire(codec *wire.Codec) {
-	sdk.RegisterWire(codec)
-	codec.RegisterConcrete(&Transaction{}, "types/Transaction", nil)
-	codec.RegisterConcrete(&Account{}, "types/Account", nil)
+func RegisterCodec(cdc *codec.Codec) {
+	sdk.RegisterCodec(cdc)
+	cdc.RegisterConcrete(&Transaction{}, "types/Transaction", nil)
+	cdc.RegisterConcrete(&Account{}, "types/Account", nil)
 }

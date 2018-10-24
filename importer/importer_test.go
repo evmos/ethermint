@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
 	"github.com/cosmos/ethermint/core"
@@ -63,14 +63,14 @@ func init() {
 	flag.Parse()
 }
 
-func newTestCodec() *wire.Codec {
-	codec := wire.NewCodec()
+func newTestCodec() *codec.Codec {
+	cdc := codec.New()
 
-	types.RegisterWire(codec)
-	auth.RegisterWire(codec)
-	wire.RegisterCrypto(codec)
+	types.RegisterCodec(cdc)
+	auth.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
 
-	return codec
+	return cdc
 }
 
 func cleanup() {
@@ -93,12 +93,12 @@ func trapSignals() {
 	}()
 }
 
-func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, am auth.AccountMapper) {
+func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.AccountKeeper) {
 	genBlock := ethcore.DefaultGenesisBlock()
 	ms := cms.CacheMultiStore()
 	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
 
-	stateDB, err := evmtypes.NewCommitStateDB(ctx, am, storageKey, codeKey)
+	stateDB, err := evmtypes.NewCommitStateDB(ctx, ak, storageKey, codeKey)
 	require.NoError(t, err, "failed to create a StateDB instance")
 
 	// sort the addresses and insertion of key/value pairs matters
@@ -142,7 +142,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, am auth.Accoun
 	require.Equal(t, "BF58E5FE5A725463C8FEB755F6A6940584E60F0D", fmt.Sprintf("%X", commitID.Hash))
 
 	// verify account mapper state
-	genAcc := am.GetAccount(ctx, sdk.AccAddress(genInvestor.Bytes()))
+	genAcc := ak.GetAccount(ctx, sdk.AccAddress(genInvestor.Bytes()))
 	require.NotNil(t, genAcc)
 	require.Equal(t, sdk.NewIntFromBigInt(b), genAcc.GetCoins().AmountOf(types.DenomDefault))
 }
@@ -169,7 +169,7 @@ func TestImportBlocks(t *testing.T) {
 	cms := store.NewCommitMultiStore(db)
 
 	// create account mapper
-	am := auth.NewAccountMapper(
+	am := auth.NewAccountKeeper(
 		cdc,
 		accKey,
 		types.ProtoBaseAccount,
@@ -263,8 +263,8 @@ func TestImportBlocks(t *testing.T) {
 	}
 }
 
-func createStateDB(t *testing.T, ctx sdk.Context, am auth.AccountMapper) *evmtypes.CommitStateDB {
-	stateDB, err := evmtypes.NewCommitStateDB(ctx, am, storageKey, codeKey)
+func createStateDB(t *testing.T, ctx sdk.Context, ak auth.AccountKeeper) *evmtypes.CommitStateDB {
+	stateDB, err := evmtypes.NewCommitStateDB(ctx, ak, storageKey, codeKey)
 	require.NoError(t, err, "failed to create a StateDB instance")
 
 	return stateDB
