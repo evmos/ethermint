@@ -19,9 +19,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
 	"github.com/cosmos/ethermint/core"
-	"github.com/cosmos/ethermint/state"
 	"github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/bank"
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
@@ -98,7 +97,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, am auth.Accoun
 	ms := cms.CacheMultiStore()
 	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
 
-	stateDB, err := state.NewCommitStateDB(ctx, am, storageKey, codeKey)
+	stateDB, err := evmtypes.NewCommitStateDB(ctx, am, storageKey, codeKey)
 	require.NoError(t, err, "failed to create a StateDB instance")
 
 	// sort the addresses and insertion of key/value pairs matters
@@ -139,12 +138,12 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, am auth.Accoun
 
 	// persist multi-store root state
 	commitID := cms.Commit()
-	require.Equal(t, "9871F7F6A9901BFA9BDFF2269A3351CDD901B3AD", fmt.Sprintf("%X", commitID.Hash))
+	require.Equal(t, "BF58E5FE5A725463C8FEB755F6A6940584E60F0D", fmt.Sprintf("%X", commitID.Hash))
 
 	// verify account mapper state
 	genAcc := am.GetAccount(ctx, sdk.AccAddress(genInvestor.Bytes()))
 	require.NotNil(t, genAcc)
-	require.Equal(t, sdk.NewIntFromBigInt(b), genAcc.GetCoins().AmountOf(bank.DenomEthereum))
+	require.Equal(t, sdk.NewIntFromBigInt(b), genAcc.GetCoins().AmountOf(types.DenomDefault))
 }
 
 func TestImportBlocks(t *testing.T) {
@@ -263,8 +262,8 @@ func TestImportBlocks(t *testing.T) {
 	}
 }
 
-func createStateDB(t *testing.T, ctx sdk.Context, am auth.AccountMapper) *state.CommitStateDB {
-	stateDB, err := state.NewCommitStateDB(ctx, am, storageKey, codeKey)
+func createStateDB(t *testing.T, ctx sdk.Context, am auth.AccountMapper) *evmtypes.CommitStateDB {
+	stateDB, err := evmtypes.NewCommitStateDB(ctx, am, storageKey, codeKey)
 	require.NoError(t, err, "failed to create a StateDB instance")
 
 	return stateDB
@@ -274,7 +273,7 @@ func createStateDB(t *testing.T, ctx sdk.Context, am auth.AccountMapper) *state.
 // reward. The total reward consists of the static block reward and rewards for
 // included uncles. The coinbase of each uncle block is also rewarded.
 func accumulateRewards(
-	config *ethparams.ChainConfig, stateDB *state.CommitStateDB,
+	config *ethparams.ChainConfig, stateDB *evmtypes.CommitStateDB,
 	header *ethtypes.Header, uncles []*ethtypes.Header,
 ) {
 
