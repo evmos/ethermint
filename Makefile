@@ -147,6 +147,10 @@ test-lint:
 	@echo "--> Running gometalinter..."
 	@gometalinter.v2 --config=gometalinter.json --exclude=vendor ./...
 
+test-import:
+	@go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
+	--blockchain blockchain --timeout=5m
+
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
 	godoc -http=:6060
@@ -162,4 +166,4 @@ format:
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
 
 .PHONY: build install update-tools tools deps godocs clean format test-lint \
-test-cli test-race test-unit test
+test-cli test-race test-unit test test-import
