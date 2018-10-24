@@ -1,4 +1,4 @@
-package state
+package types
 
 import (
 	"fmt"
@@ -22,11 +22,15 @@ var (
 )
 
 // CommitStateDB implements the Geth state.StateDB interface. Instead of using
-// a trie and database for querying and persistence, KVStores and an account
-// mapper is used to facilitate state transitions.
+// a trie and database for querying and persistence, the Keeper uses KVStores
+// and an account mapper is used to facilitate state transitions.
+//
+// TODO: This implementation is subject to change in regards to its statefull
+// manner. In otherwords, how this relates to the keeper in this module.
 type CommitStateDB struct {
-	// TODO: Figure out a way to not need to store a context as part of the
-	// structure
+	// TODO: We need to store the context as part of the structure itself opposed
+	// to being passed as a parameter (as it should be) in order to implement the
+	// StateDB interface. Perhaps there is a better way.
 	ctx sdk.Context
 
 	am         auth.AccountMapper
@@ -35,8 +39,6 @@ type CommitStateDB struct {
 
 	// maps that hold 'live' objects, which will get modified while processing a
 	// state transition
-	//
-	// TODO: Determine if we need this cache as the KVStore is cache-wrapped
 	stateObjects      map[ethcmn.Address]*stateObject
 	stateObjectsDirty map[ethcmn.Address]struct{}
 
@@ -55,7 +57,7 @@ type CommitStateDB struct {
 	// DB error.
 	// State objects are used by the consensus core and VM which are
 	// unable to deal with database-level errors. Any error that occurs
-	// during a database read is memoized here and will eventually be returned
+	// during a database read is memo-ized here and will eventually be returned
 	// by StateDB.Commit.
 	dbErr error
 
@@ -74,9 +76,6 @@ type CommitStateDB struct {
 //
 // CONTRACT: Stores used for state must be cache-wrapped as the ordering of the
 // key/value space matters in determining the merkle root.
-//
-// TODO: Eventually we'll have an EVM module that'll implement a keeper that we
-// can pass into this constructor.
 func NewCommitStateDB(ctx sdk.Context, am auth.AccountMapper, storageKey, codeKey sdk.StoreKey) (*CommitStateDB, error) {
 	return &CommitStateDB{
 		ctx:               ctx,
@@ -346,7 +345,9 @@ func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, er
 		delete(csdb.stateObjectsDirty, addr)
 	}
 
-	// TODO: Get and return the commit/root from the context
+	// NOTE: Ethereum returns the trie merkle root here, but as commitment
+	// actually happens in the BaseApp at EndBlocker, we do not know the root at
+	// this time.
 	return
 }
 
@@ -388,10 +389,13 @@ func (csdb *CommitStateDB) Finalize(deleteEmptyObjects bool) {
 // IntermediateRoot returns the current root hash of the state. It is called in
 // between transactions to get the root hash that goes into transaction
 // receipts.
+//
+// NOTE: The SDK has not concept or method of getting any intermediate merkle
+// root as commitment of the merkle-ized tree doesn't happen until the
+// BaseApps' EndBlocker.
 func (csdb *CommitStateDB) IntermediateRoot(deleteEmptyObjects bool) ethcmn.Hash {
 	csdb.Finalize(deleteEmptyObjects)
 
-	// TODO: Get and return the commit/root from the context
 	return ethcmn.Hash{}
 }
 
