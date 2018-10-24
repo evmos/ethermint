@@ -91,7 +91,7 @@
 
 [[projects]]
   branch = "ethermint-statedb"
-  digest = "1:6fcf36394c3b062f05dcaac00658a3bc49451de7bd289a4c10274c61d6256243"
+  digest = "1:00d8053ec8370727a6ecb12cdbfc0b3ce08bce2f8ac2aa34d57402ff09243517"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -139,7 +139,7 @@
     "trie",
   ]
   pruneopts = "T"
-  revision = "411404c27389331f96b2e77bf8bdbbee2f0151f9"
+  revision = "0a57b29f0c8e6dc27901fae1c91d3758723b81eb"
   source = "github.com/alexanderbez/go-ethereum"
 
 [[projects]]
@@ -674,7 +674,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8671b7bf5d02bdeb389f8023184c7f92d12fcf0dec9426e055f3433f5fd706b7"
+  digest = "1:d6d9bf31934efd450aeb0a07061dce8a0e84bc80e4aae05841dd588325832a40"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -682,7 +682,7 @@
     "windows",
   ]
   pruneopts = "T"
-  revision = "44b849a8bc13eb42e95e6c6c5e360481b73ec710"
+  revision = "5cd93ef61a7c8f0f858690154eb6de2e69415fa1"
 
 [[projects]]
   digest = "1:6164911cb5e94e8d8d5131d646613ff82c14f5a8ce869de2f6d80d9889df8c5a"
