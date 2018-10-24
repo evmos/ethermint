@@ -1,6 +1,7 @@
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  # TODO: Remove this forked source and branch
+  # TODO: Remove this forked source and branch once Turbo-Geth is ready as a
+  # client.
   source = "github.com/alexanderbez/go-ethereum"
   branch = "ethermint-statedb"
 
