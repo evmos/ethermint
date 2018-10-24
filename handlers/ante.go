@@ -29,7 +29,7 @@ type internalAnteHandler func(
 // processing (e.g. fee payment, signature verification) before being passed
 // onto it's respective handler.
 func AnteHandler(ak auth.AccountKeeper, _ auth.FeeCollectionKeeper) sdk.AnteHandler {
-	return func(sdkCtx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, res sdk.Result, abort bool) {
+	return func(sdkCtx sdk.Context, tx sdk.Tx, _ bool) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		var (
 			handler  internalAnteHandler
 			gasLimit int64

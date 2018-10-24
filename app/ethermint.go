@@ -129,7 +129,7 @@ func (app *EthermintApp) EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock) abc
 
 // initChainer initializes the application blockchain with validators and other
 // state data from TendermintCore.
-func (app *EthermintApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *EthermintApp) initChainer(_ sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 	stateJSON := req.AppStateBytes
 
