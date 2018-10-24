@@ -16,6 +16,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
+// TODO: These tests will radically change as the ante handler develops
+
 func TestEthTxBadSig(t *testing.T) {
 	tx := types.NewTransaction(uint64(0), types.TestAddr1, big.NewInt(10), 1000, big.NewInt(100), []byte{})
 
@@ -66,29 +68,6 @@ func TestEthTxIncorrectNonce(t *testing.T) {
 
 	require.True(t, abort, "expected ante handler to abort")
 	require.Equal(t, sdk.ABCICodeType(0x10003), res.Code, fmt.Sprintf("invalid code returned on bad tx: %s", res.Log))
-}
-
-func TestEthTxValidTx(t *testing.T) {
-	tx := types.NewTransaction(0, types.TestAddr1, big.NewInt(50), 1000, big.NewInt(1000), []byte{})
-	tx.Sign(types.TestChainID, types.TestPrivKey1)
-
-	ms, key := createTestMultiStore()
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: types.TestChainID.String()}, false, nil)
-	accMapper := auth.NewAccountMapper(types.NewTestCodec(), key, auth.ProtoBaseAccount)
-
-	// set account in accountMapper
-	acc := accMapper.NewAccountWithAddress(ctx, types.TestAddr1.Bytes())
-	accMapper.SetAccount(ctx, acc)
-
-	handler := AnteHandler(accMapper, auth.FeeCollectionKeeper{})
-	_, res, abort := handler(ctx, *tx)
-
-	require.False(t, abort, "expected ante handler to not abort")
-	require.True(t, res.IsOK(), fmt.Sprintf("result not OK on valid Tx: %s", res.Log))
-
-	// ensure account state updated correctly
-	seq, _ := accMapper.GetSequence(ctx, types.TestAddr1[:])
-	require.Equal(t, int64(1), seq, "account nonce did not increment correctly")
 }
 
 func TestEmbeddedTxBadSig(t *testing.T) {

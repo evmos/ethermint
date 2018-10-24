@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PACKAGES=$(shell go list ./... | grep -v '/vendor/')
+PACKAGES=$(shell go list ./... | grep -Ev 'vendor|importer')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_FLAGS = -tags netgo -ldflags "-X github.com/cosmos/ethermint/version.GitCommit=${COMMIT_HASH}"
 DOCKER_TAG = unstable

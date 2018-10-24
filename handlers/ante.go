@@ -105,11 +105,6 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (s
 	// TODO: Investigate gas consumption models as the EVM instruction set has its
 	// own and we should probably not charge for additional gas where we don't have
 	// to.
-	//
-	// err = acc.SetSequence(seq + 1)
-	// if err != nil {
-	// 	return sdkCtx, sdk.ErrInternal(err.Error()).Result(), true
-	// }
 
 	accMapper.SetAccount(sdkCtx, acc)
 	return sdkCtx, sdk.Result{GasWanted: int64(ethTx.Data().GasLimit)}, false
@@ -135,7 +130,6 @@ func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMappe
 		signer := ethcmn.BytesToAddress(signerAddrs[i].Bytes())
 
 		acc, err := validateSignature(sdkCtx, stdTx, signer, sig, accMapper)
-		// err.Code() != sdk.CodeOK
 		if err != nil {
 			return sdkCtx, err.Result(), true
 		}

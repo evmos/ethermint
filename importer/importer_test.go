@@ -67,6 +67,7 @@ func newTestCodec() *wire.Codec {
 	codec := wire.NewCodec()
 
 	types.RegisterWire(codec)
+	auth.RegisterWire(codec)
 	wire.RegisterCrypto(codec)
 
 	return codec
