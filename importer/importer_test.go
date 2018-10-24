@@ -6,8 +6,10 @@ import (
 	"io"
 	"math/big"
 	"os"
+	"os/signal"
 	"runtime/pprof"
 	"sort"
+	"syscall"
 	"testing"
 	"time"
 
@@ -71,6 +73,26 @@ func newTestCodec() *wire.Codec {
 	return codec
 }
 
+func cleanup() {
+	fmt.Println("cleaning up test execution...")
+	os.RemoveAll(flagDataDir)
+
+	if flagCPUProfile != "" {
+		pprof.StopCPUProfile()
+	}
+}
+
+func trapSignals() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		cleanup()
+		os.Exit(1)
+	}()
+}
+
 func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, am auth.AccountMapper) {
 	genBlock := ethcore.DefaultGenesisBlock()
 	ms := cms.CacheMultiStore()
@@ -117,7 +139,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, am auth.Accoun
 
 	// persist multi-store root state
 	commitID := cms.Commit()
-	require.Equal(t, "F162678AD57BBE352BE0CFCFCD90E394C4781D31", fmt.Sprintf("%X", commitID.Hash))
+	require.Equal(t, "9871F7F6A9901BFA9BDFF2269A3351CDD901B3AD", fmt.Sprintf("%X", commitID.Hash))
 
 	// verify account mapper state
 	genAcc := am.GetAccount(ctx, sdk.AccAddress(genInvestor.Bytes()))
@@ -139,11 +161,8 @@ func TestImportBlocks(t *testing.T) {
 	}
 
 	db := dbm.NewDB("state", dbm.LevelDBBackend, flagDataDir)
-	defer func() {
-		fmt.Println("cleaning up")
-		os.RemoveAll(flagDataDir)
-		pprof.StopCPUProfile()
-	}()
+	defer cleanup()
+	trapSignals()
 
 	// create logger, codec and root multi-store
 	cdc := newTestCodec()
