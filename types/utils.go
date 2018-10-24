@@ -25,7 +25,7 @@ func GenerateEthAddress() ethcmn.Address {
 
 // PrivKeyToEthAddress generates an Ethereum address given an ECDSA private key.
 func PrivKeyToEthAddress(p *ecdsa.PrivateKey) ethcmn.Address {
-	return ethcrypto.PubkeyToAddress(ecdsa.PublicKey(p.PublicKey))
+	return ethcrypto.PubkeyToAddress(p.PublicKey)
 }
 
 // ValidateSigner attempts to validate a signer for a given slice of bytes over

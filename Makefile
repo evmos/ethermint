@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PACKAGES=$(shell go list ./... | grep -v '/vendor/')
+PACKAGES=$(shell go list ./... | grep -Ev 'vendor|importer')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_FLAGS = -tags netgo -ldflags "-X github.com/cosmos/ethermint/version.GitCommit=${COMMIT_HASH}"
 DOCKER_TAG = unstable
@@ -147,6 +147,10 @@ test-lint:
 	@echo "--> Running gometalinter..."
 	@gometalinter.v2 --config=gometalinter.json --exclude=vendor ./...
 
+test-import:
+	@go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
+	--blockchain blockchain --timeout=5m
+
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
 	godoc -http=:6060
@@ -162,4 +166,4 @@ format:
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
 
 .PHONY: build install update-tools tools deps godocs clean format test-lint \
-test-cli test-race test-unit test
+test-cli test-race test-unit test test-import

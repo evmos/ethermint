@@ -8,8 +8,8 @@ import (
 	"math/big"
 	"sync/atomic"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -18,9 +18,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: Move to the EVM module
+
+// message constants
 const (
-	// TypeTxEthereum reflects an Ethereum Transaction type.
-	TypeTxEthereum = "Ethereum"
+	TypeTxEthereum  = "Ethereum"
+	RouteTxEthereum = "evm"
 )
 
 // ----------------------------------------------------------------------------
@@ -238,9 +241,11 @@ func (tx Transaction) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
 
 // Type implements the sdk.Msg interface. It returns the type of the
 // Transaction.
-func (tx Transaction) Type() string {
-	return TypeTxEthereum
-}
+func (tx Transaction) Type() string { return TypeTxEthereum }
+
+// Route implements the sdk.Msg interface. It returns the route of the
+// Transaction.
+func (tx Transaction) Route() string { return RouteTxEthereum }
 
 // ValidateBasic implements the sdk.Msg interface. It performs basic validation
 // checks of a Transaction. If returns an sdk.Error if validation fails.
@@ -283,7 +288,7 @@ func (tx Transaction) hasEmbeddedTx(addr ethcmn.Address) bool {
 //
 // CONTRACT: The payload field of an Ethereum transaction must contain a valid
 // encoded SDK transaction.
-func (tx Transaction) GetEmbeddedTx(codec *wire.Codec) (sdk.Tx, sdk.Error) {
+func (tx Transaction) GetEmbeddedTx(codec *codec.Codec) (sdk.Tx, sdk.Error) {
 	var etx sdk.Tx
 
 	err := codec.UnmarshalBinary(tx.data.Payload, &etx)
@@ -301,7 +306,7 @@ func (tx Transaction) GetEmbeddedTx(codec *wire.Codec) (sdk.Tx, sdk.Error) {
 // TxDecoder returns an sdk.TxDecoder that given raw transaction bytes and an
 // SDK address, attempts to decode them into a Transaction or an EmbeddedTx or
 // returning an error if decoding fails.
-func TxDecoder(codec *wire.Codec, sdkAddress ethcmn.Address) sdk.TxDecoder {
+func TxDecoder(codec *codec.Codec, sdkAddress ethcmn.Address) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, sdk.Error) {
 		var tx = Transaction{}
 

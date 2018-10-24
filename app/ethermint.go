@@ -2,9 +2,9 @@ package app
 
 import (
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/cosmos/ethermint/handlers"
-	"github.com/cosmos/ethermint/state"
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -36,8 +35,7 @@ type (
 	EthermintApp struct {
 		*bam.BaseApp
 
-		codec *wire.Codec
-		ethDB *state.Database
+		cdc *codec.Codec
 
 		accountKey  *sdk.KVStoreKey
 		storageKey  *sdk.KVStoreKey
@@ -49,7 +47,7 @@ type (
 		paramsKey   *sdk.KVStoreKey
 		tParamsKey  *sdk.TransientStoreKey
 
-		accountMapper  auth.AccountMapper
+		accountKeeper  auth.AccountKeeper
 		feeCollKeeper  auth.FeeCollectionKeeper
 		coinKeeper     bank.Keeper
 		stakeKeeper    stake.Keeper
@@ -62,17 +60,17 @@ type (
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
 func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *EthermintApp {
-	codec := CreateCodec()
+	cdc := CreateCodec()
 	cms := store.NewCommitMultiStore(db)
 
 	baseAppOpts := []func(*bam.BaseApp){
 		func(bApp *bam.BaseApp) { bApp.SetCMS(cms) },
 	}
-	baseApp := bam.NewBaseApp(appName, logger, db, types.TxDecoder(codec, sdkAddr), baseAppOpts...)
+	baseApp := bam.NewBaseApp(appName, logger, db, types.TxDecoder(cdc, sdkAddr), baseAppOpts...)
 
 	app := &EthermintApp{
 		BaseApp:     baseApp,
-		codec:       codec,
+		cdc:         cdc,
 		accountKey:  types.StoreKeyAccount,
 		storageKey:  types.StoreKeyStorage,
 		mainKey:     types.StoreKeyMain,
@@ -84,30 +82,10 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *Et
 		tParamsKey:  types.StoreKeyTransParams,
 	}
 
-	// create Ethereum state database
-	ethDB, err := state.NewDatabase(cms, db, state.DefaultStoreCacheSize)
-	if err != nil {
-		tmcmn.Exit(err.Error())
-	}
-
-	app.ethDB = ethDB
-
 	// set application keepers and mappers
-	app.accountMapper = auth.NewAccountMapper(codec, app.accountKey, auth.ProtoBaseAccount)
-	app.coinKeeper = bank.NewKeeper(app.accountMapper)
-	app.paramsKeeper = params.NewKeeper(app.codec, app.paramsKey)
-	app.feeCollKeeper = auth.NewFeeCollectionKeeper(app.codec, app.feeCollKey)
-	app.stakeKeeper = stake.NewKeeper(
-		app.codec, app.stakeKey, app.coinKeeper, app.RegisterCodespace(stake.DefaultCodespace),
-	)
-	app.govKeeper = gov.NewKeeper(
-		app.codec, app.govKey, app.paramsKeeper.Setter(), app.coinKeeper,
-		app.stakeKeeper, app.RegisterCodespace(gov.DefaultCodespace),
-	)
-	app.slashingKeeper = slashing.NewKeeper(
-		app.codec, app.slashingKey, app.stakeKeeper,
-		app.paramsKeeper.Getter(), app.RegisterCodespace(slashing.DefaultCodespace),
-	)
+	app.accountKeeper = auth.NewAccountKeeper(app.cdc, app.accountKey, auth.ProtoBaseAccount)
+	app.paramsKeeper = params.NewKeeper(app.cdc, app.paramsKey, app.tParamsKey)
+	app.feeCollKeeper = auth.NewFeeCollectionKeeper(app.cdc, app.feeCollKey)
 
 	// register message handlers
 	app.Router().
@@ -121,7 +99,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *Et
 	app.SetInitChainer(app.initChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
-	app.SetAnteHandler(handlers.AnteHandler(app.accountMapper, app.feeCollKeeper))
+	app.SetAnteHandler(handlers.AnteHandler(app.accountKeeper, app.feeCollKeeper))
 
 	app.MountStoresIAVL(
 		app.mainKey, app.accountKey, app.stakeKey, app.slashingKey,
@@ -140,70 +118,39 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *Et
 // BeginBlocker signals the beginning of a block. It performs application
 // updates on the start of every block.
 func (app *EthermintApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	tags := slashing.BeginBlocker(ctx, req, app.slashingKeeper)
-
-	return abci.ResponseBeginBlock{
-		Tags: tags.ToKVPairs(),
-	}
+	return abci.ResponseBeginBlock{}
 }
 
 // EndBlocker signals the end of a block. It performs application updates on
 // the end of every block.
 func (app *EthermintApp) EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock) abci.ResponseEndBlock {
-	tags := gov.EndBlocker(ctx, app.govKeeper)
-	validatorUpdates := stake.EndBlocker(ctx, app.stakeKeeper)
-
-	app.slashingKeeper.AddValidators(ctx, validatorUpdates)
-
-	return abci.ResponseEndBlock{
-		ValidatorUpdates: validatorUpdates,
-		Tags:             tags,
-	}
+	return abci.ResponseEndBlock{}
 }
 
 // initChainer initializes the application blockchain with validators and other
 // state data from TendermintCore.
-func (app *EthermintApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *EthermintApp) initChainer(_ sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 	stateJSON := req.AppStateBytes
 
-	err := app.codec.UnmarshalJSON(stateJSON, &genesisState)
+	err := app.cdc.UnmarshalJSON(stateJSON, &genesisState)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to parse application genesis state"))
 	}
 
-	// load the genesis accounts
-	for _, genAcc := range genesisState.Accounts {
-		acc := genAcc.ToAccount()
-		acc.AccountNumber = app.accountMapper.GetNextAccountNumber(ctx)
-		app.accountMapper.SetAccount(ctx, acc)
-	}
+	// TODO: load the genesis accounts
 
-	// load the genesis stake information
-	validators, err := stake.InitGenesis(ctx, app.stakeKeeper, genesisState.StakeData)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to initialize genesis validators"))
-	}
-
-	slashing.InitGenesis(ctx, app.slashingKeeper, genesisState.StakeData)
-	gov.InitGenesis(ctx, app.govKeeper, genesisState.GovData)
-
-	return abci.ResponseInitChain{
-		Validators: validators,
-	}
+	return abci.ResponseInitChain{}
 }
 
 // CreateCodec creates a new amino wire codec and registers all the necessary
 // concrete types and interfaces needed for the application.
-func CreateCodec() *wire.Codec {
-	codec := wire.NewCodec()
+func CreateCodec() *codec.Codec {
+	cdc := codec.New()
 
-	types.RegisterWire(codec)
-	auth.RegisterWire(codec)
-	gov.RegisterWire(codec)
-	slashing.RegisterWire(codec)
-	stake.RegisterWire(codec)
-	wire.RegisterCrypto(codec)
+	types.RegisterCodec(cdc)
+	auth.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
 
-	return codec
+	return cdc
 }

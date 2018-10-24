@@ -1,5 +1,7 @@
 package core
 
+// TODO: This functionality and implementation may be deprecated
+
 import (
 	"math/big"
 
@@ -84,7 +86,7 @@ func (cc *ChainContext) CalcDifficulty(_ ethcons.ChainReader, _ uint64, _ *ethty
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
 func (cc *ChainContext) Finalize(
-	_ ethcons.ChainReader, _ *ethtypes.Header, _ *ethstate.StateDB,
+	_ ethcons.ChainReader, _ *ethtypes.Header, _ ethstate.StateDB,
 	_ []*ethtypes.Transaction, _ []*ethtypes.Header, _ []*ethtypes.Receipt,
 ) (*ethtypes.Block, error) {
 	return nil, nil

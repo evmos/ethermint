@@ -21,15 +21,15 @@ const (
 // must implementing. Internal ante handlers will be dependant upon the
 // transaction type.
 type internalAnteHandler func(
-	sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper,
+	sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountKeeper,
 ) (newCtx sdk.Context, res sdk.Result, abort bool)
 
 // AnteHandler is responsible for attempting to route an Ethereum or SDK
 // transaction to an internal ante handler for performing transaction-level
 // processing (e.g. fee payment, signature verification) before being passed
 // onto it's respective handler.
-func AnteHandler(accMapper auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.AnteHandler {
-	return func(sdkCtx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
+func AnteHandler(ak auth.AccountKeeper, _ auth.FeeCollectionKeeper) sdk.AnteHandler {
+	return func(sdkCtx sdk.Context, tx sdk.Tx, _ bool) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		var (
 			handler  internalAnteHandler
 			gasLimit int64
@@ -67,16 +67,13 @@ func AnteHandler(accMapper auth.AccountMapper, _ auth.FeeCollectionKeeper) sdk.A
 			}
 		}()
 
-		return handler(newCtx, tx, accMapper)
+		return handler(newCtx, tx, ak)
 	}
 }
 
 // handleEthTx implements an ante handler for an Ethereum transaction. It
 // validates the signature and if valid returns an OK result.
-//
-// TODO: Do we need to do any further validation or account manipulation
-// (e.g. increment nonce)?
-func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
+func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, ak auth.AccountKeeper) (sdk.Context, sdk.Result, bool) {
 	ethTx, ok := tx.(types.Transaction)
 	if !ok {
 		return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid transaction: %T", tx)).Result(), true
@@ -85,7 +82,6 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (s
 	// the SDK chainID is a string representation of integer
 	chainID, ok := new(big.Int).SetString(sdkCtx.ChainID(), 10)
 	if !ok {
-		// TODO: ErrInternal may not be correct error to throw here?
 		return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid chainID: %s", sdkCtx.ChainID())).Result(), true
 	}
 
@@ -96,7 +92,7 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (s
 		return sdkCtx, sdk.ErrUnauthorized("signature verification failed").Result(), true
 	}
 
-	acc := accMapper.GetAccount(sdkCtx, addr.Bytes())
+	acc := ak.GetAccount(sdkCtx, addr.Bytes())
 
 	// validate the account nonce (referred to as sequence in the AccountMapper)
 	seq := acc.GetSequence()
@@ -104,18 +100,19 @@ func handleEthTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (s
 		return sdkCtx, sdk.ErrInvalidSequence(fmt.Sprintf("invalid account nonce; expected: %d", seq)).Result(), true
 	}
 
-	err = acc.SetSequence(seq + 1)
-	if err != nil {
-		return sdkCtx, sdk.ErrInternal(err.Error()).Result(), true
-	}
+	// TODO: The EVM will handle incrementing the nonce (sequence number)
+	//
+	// TODO: Investigate gas consumption models as the EVM instruction set has its
+	// own and we should probably not charge for additional gas where we don't have
+	// to.
 
-	accMapper.SetAccount(sdkCtx, acc)
+	ak.SetAccount(sdkCtx, acc)
 	return sdkCtx, sdk.Result{GasWanted: int64(ethTx.Data().GasLimit)}, false
 }
 
 // handleEmbeddedTx implements an ante handler for an SDK transaction. It
 // validates the signature and if valid returns an OK result.
-func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMapper) (sdk.Context, sdk.Result, bool) {
+func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, ak auth.AccountKeeper) (sdk.Context, sdk.Result, bool) {
 	stdTx, ok := tx.(auth.StdTx)
 	if !ok {
 		return sdkCtx, sdk.ErrInternal(fmt.Sprintf("invalid transaction: %T", tx)).Result(), true
@@ -132,15 +129,14 @@ func handleEmbeddedTx(sdkCtx sdk.Context, tx sdk.Tx, accMapper auth.AccountMappe
 	for i, sig := range stdTx.Signatures {
 		signer := ethcmn.BytesToAddress(signerAddrs[i].Bytes())
 
-		acc, err := validateSignature(sdkCtx, stdTx, signer, sig, accMapper)
-		// err.Code() != sdk.CodeOK
+		acc, err := validateSignature(sdkCtx, stdTx, signer, sig, ak)
 		if err != nil {
 			return sdkCtx, err.Result(), true
 		}
 
 		// TODO: Fees!
 
-		accMapper.SetAccount(sdkCtx, acc)
+		ak.SetAccount(sdkCtx, acc)
 		signerAccs[i] = acc
 	}
 
@@ -167,12 +163,12 @@ func validateStdTxBasic(stdTx auth.StdTx) (err sdk.Error) {
 
 func validateSignature(
 	sdkCtx sdk.Context, stdTx auth.StdTx, signer ethcmn.Address,
-	sig auth.StdSignature, accMapper auth.AccountMapper,
+	sig auth.StdSignature, ak auth.AccountKeeper,
 ) (acc auth.Account, sdkErr sdk.Error) {
 
 	chainID := sdkCtx.ChainID()
 
-	acc = accMapper.GetAccount(sdkCtx, signer.Bytes())
+	acc = ak.GetAccount(sdkCtx, signer.Bytes())
 	if acc == nil {
 		return nil, sdk.ErrUnknownAddress(fmt.Sprintf("no account with address %s found", signer))
 	}
