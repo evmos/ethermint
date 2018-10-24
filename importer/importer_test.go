@@ -139,7 +139,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.Accoun
 
 	// persist multi-store root state
 	commitID := cms.Commit()
-	require.Equal(t, "BF58E5FE5A725463C8FEB755F6A6940584E60F0D", fmt.Sprintf("%X", commitID.Hash))
+	require.Equal(t, "12D4DB63083D5B01824A35BB70BF671686D60532", fmt.Sprintf("%X", commitID.Hash))
 
 	// verify account mapper state
 	genAcc := ak.GetAccount(ctx, sdk.AccAddress(genInvestor.Bytes()))
