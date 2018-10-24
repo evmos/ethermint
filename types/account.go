@@ -5,12 +5,17 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/ethermint/x/bank"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 var _ auth.Account = (*Account)(nil)
+
+const (
+	// DenomDefault defines the single coin type/denomination supported in
+	// Ethermint.
+	DenomDefault = "Photon"
+)
 
 // ----------------------------------------------------------------------------
 // Main Ethermint account
@@ -37,12 +42,12 @@ func ProtoBaseAccount() auth.Account {
 
 // Balance returns the balance of an account.
 func (acc Account) Balance() sdk.Int {
-	return acc.GetCoins().AmountOf(bank.DenomEthereum)
+	return acc.GetCoins().AmountOf(DenomDefault)
 }
 
 // SetBalance sets an account's balance.
 func (acc Account) SetBalance(amt sdk.Int) {
-	acc.SetCoins(sdk.Coins{sdk.NewCoin(bank.DenomEthereum, amt)})
+	acc.SetCoins(sdk.Coins{sdk.NewCoin(DenomDefault, amt)})
 }
 
 // ----------------------------------------------------------------------------
