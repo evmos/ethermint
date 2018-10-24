@@ -9,11 +9,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
-	tmcrypto "github.com/tendermint/tendermint/crypto"
-
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -140,8 +139,7 @@ func (csdb *CommitStateDB) SetState(addr ethcmn.Address, key, value ethcmn.Hash)
 func (csdb *CommitStateDB) SetCode(addr ethcmn.Address, code []byte) {
 	so := csdb.GetOrNewStateObject(addr)
 	if so != nil {
-		key := ethcmn.BytesToHash(tmcrypto.Sha256(code))
-		so.SetCode(key, code)
+		so.SetCode(ethcrypto.Keccak256Hash(code), code)
 	}
 }
 

@@ -8,17 +8,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth"
 
-	tmcrypto "github.com/tendermint/tendermint/crypto"
-
 	"github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
 	_ ethstate.StateObject = (*stateObject)(nil)
 
-	emptyCodeHash = tmcrypto.Sha256(nil)
+	emptyCodeHash = ethcrypto.Keccak256(nil)
 )
 
 type (
@@ -363,5 +362,5 @@ func (so stateObject) GetStorageByAddressKey(key []byte) ethcmn.Hash {
 	copy(compositeKey, prefix)
 	copy(compositeKey[len(prefix):], key)
 
-	return ethcmn.BytesToHash(tmcrypto.Sha256(compositeKey))
+	return ethcrypto.Keccak256Hash(compositeKey)
 }
