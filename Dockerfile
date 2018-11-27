@@ -16,14 +16,14 @@ COPY . .
 RUN make tools deps build
 
 # Final image
-FROM alpine:edge
+FROM alpine
 
 # Install ca-certificates
 RUN apk add --update ca-certificates
 WORKDIR /root
 
 # Copy over binaries from the build-env
-COPY --from=build-env /go/src/github.com/cosmos/ethermint/build/ethermint /usr/bin/ethermint
+COPY --from=build-env /go/src/github.com/cosmos/ethermint/build/emintd /usr/bin/emintd
 
-# Run ethermint by default
-CMD ["ethermint"]
+# Run emintd by default
+CMD ["emintd"]
