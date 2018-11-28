@@ -3,7 +3,6 @@ package app
 import (
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -11,12 +10,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/stake"
+
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+
 	"github.com/pkg/errors"
-
-	"github.com/cosmos/ethermint/handlers"
-	"github.com/cosmos/ethermint/types"
-
-	ethcmn "github.com/ethereum/go-ethereum/common"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmcmn "github.com/tendermint/tendermint/libs/common"
@@ -24,8 +21,19 @@ import (
 	tmlog "github.com/tendermint/tendermint/libs/log"
 )
 
-const (
-	appName = "Ethermint"
+const appName = "Ethermint"
+
+// application multi-store keys
+var (
+	storeKeyAccount     = sdk.NewKVStoreKey("acc")
+	storeKeyStorage     = sdk.NewKVStoreKey("contract_storage")
+	storeKeyMain        = sdk.NewKVStoreKey("main")
+	storeKeyStake       = sdk.NewKVStoreKey("stake")
+	storeKeySlashing    = sdk.NewKVStoreKey("slashing")
+	storeKeyGov         = sdk.NewKVStoreKey("gov")
+	storeKeyFeeColl     = sdk.NewKVStoreKey("fee")
+	storeKeyParams      = sdk.NewKVStoreKey("params")
+	storeKeyTransParams = sdk.NewTransientStoreKey("transient_params")
 )
 
 type (
@@ -59,38 +67,35 @@ type (
 
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
-func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *EthermintApp {
+//
+// TODO: Ethermint needs to support being bootstrapped as an application running
+// in a sovereign zone and as an application running with a shared security model.
+// For now, it will support only running as a sovereign application.
+func NewEthermintApp(logger tmlog.Logger, db dbm.DB, baseAppOpts ...func(*bam.BaseApp)) *EthermintApp {
 	cdc := CreateCodec()
-	cms := store.NewCommitMultiStore(db)
 
-	baseAppOpts := []func(*bam.BaseApp){
-		func(bApp *bam.BaseApp) { bApp.SetCMS(cms) },
-	}
-	baseApp := bam.NewBaseApp(appName, logger, db, types.TxDecoder(cdc, sdkAddr), baseAppOpts...)
-
+	baseApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOpts...)
 	app := &EthermintApp{
 		BaseApp:     baseApp,
 		cdc:         cdc,
-		accountKey:  types.StoreKeyAccount,
-		storageKey:  types.StoreKeyStorage,
-		mainKey:     types.StoreKeyMain,
-		stakeKey:    types.StoreKeyStake,
-		slashingKey: types.StoreKeySlashing,
-		govKey:      types.StoreKeyGov,
-		feeCollKey:  types.StoreKeyFeeColl,
-		paramsKey:   types.StoreKeyParams,
-		tParamsKey:  types.StoreKeyTransParams,
+		accountKey:  storeKeyAccount,
+		storageKey:  storeKeyStorage,
+		mainKey:     storeKeyMain,
+		stakeKey:    storeKeyStake,
+		slashingKey: storeKeySlashing,
+		govKey:      storeKeyGov,
+		feeCollKey:  storeKeyFeeColl,
+		paramsKey:   storeKeyParams,
+		tParamsKey:  storeKeyTransParams,
 	}
 
-	// set application keepers and mappers
 	app.accountKeeper = auth.NewAccountKeeper(app.cdc, app.accountKey, auth.ProtoBaseAccount)
 	app.paramsKeeper = params.NewKeeper(app.cdc, app.paramsKey, app.tParamsKey)
 	app.feeCollKeeper = auth.NewFeeCollectionKeeper(app.cdc, app.feeCollKey)
 
 	// register message handlers
 	app.Router().
-		// TODO: Do we need to mount bank and IBC handlers? Should be handled
-		// directly in the EVM.
+		// TODO: add remaining routes
 		AddRoute("stake", stake.NewHandler(app.stakeKeeper)).
 		AddRoute("slashing", slashing.NewHandler(app.slashingKeeper)).
 		AddRoute("gov", gov.NewHandler(app.govKeeper))
@@ -99,7 +104,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *Et
 	app.SetInitChainer(app.initChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
-	app.SetAnteHandler(handlers.AnteHandler(app.accountKeeper, app.feeCollKeeper))
+	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.feeCollKeeper))
 
 	app.MountStoresIAVL(
 		app.mainKey, app.accountKey, app.stakeKey, app.slashingKey,
@@ -117,19 +122,28 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, sdkAddr ethcmn.Address) *Et
 
 // BeginBlocker signals the beginning of a block. It performs application
 // updates on the start of every block.
-func (app *EthermintApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *EthermintApp) BeginBlocker(
+	_ sdk.Context, _ abci.RequestBeginBlock,
+) abci.ResponseBeginBlock {
+
 	return abci.ResponseBeginBlock{}
 }
 
 // EndBlocker signals the end of a block. It performs application updates on
 // the end of every block.
-func (app *EthermintApp) EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *EthermintApp) EndBlocker(
+	_ sdk.Context, _ abci.RequestEndBlock,
+) abci.ResponseEndBlock {
+
 	return abci.ResponseEndBlock{}
 }
 
 // initChainer initializes the application blockchain with validators and other
 // state data from TendermintCore.
-func (app *EthermintApp) initChainer(_ sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *EthermintApp) initChainer(
+	_ sdk.Context, req abci.RequestInitChain,
+) abci.ResponseInitChain {
+
 	var genesisState GenesisState
 	stateJSON := req.AppStateBytes
 
@@ -148,8 +162,12 @@ func (app *EthermintApp) initChainer(_ sdk.Context, req abci.RequestInitChain) a
 func CreateCodec() *codec.Codec {
 	cdc := codec.New()
 
-	types.RegisterCodec(cdc)
+	// TODO: Add remaining codec registrations:
+	// bank, staking, distribution, slashing, and gov
+
+	evmtypes.RegisterCodec(cdc)
 	auth.RegisterCodec(cdc)
+	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
 	return cdc

@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:495c7006c2f48b705f0d89fd8449a2ae70622bb748788d9d17caafa65a6769f9"
+  digest = "1:8038f3159385d2017d12ce7d8ccf25e59554a265d76d8c31f8c80acb589da6c6"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
   pruneopts = "T"
-  revision = "33151c4543a79b013e8e6799ef45b2ba88c3cd1c"
+  revision = "5bb443fba8e05f4a819301a63af91fe3cbadcc17"
 
 [[projects]]
   branch = "master"
@@ -33,7 +33,7 @@
   revision = "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4"
 
 [[projects]]
-  digest = "1:912c494215c339688331953ba09cb9698a4797fe647d93a4e0a117c9c7b960a2"
+  digest = "1:e70ff0ca07fdc5dfe6cf280917ae4434f069f164a0bf18681e37cb19b01ee151"
   name = "github.com/cosmos/cosmos-sdk"
   packages = [
     "baseapp",
@@ -56,7 +56,7 @@
     "x/stake/types",
   ]
   pruneopts = "T"
-  revision = "075ddce79acb77fe88f849f93fb3036e48ffb555"
+  revision = "1ea0e4c457fc105b48131a60e3d28c6c1bb32cc0"
 
 [[projects]]
   digest = "1:9f42202ac457c462ad8bb9642806d275af9ab4850cf0b1960b9c6f083d4a309a"
@@ -73,13 +73,6 @@
   pruneopts = "T"
   revision = "cbaa98ba5575e67703b32b4b19f73c91f3c4159e"
   version = "v1.7.1"
-
-[[projects]]
-  digest = "1:c7644c73a3d23741fdba8a99b1464e021a224b7e205be497271a8003a15ca41b"
-  name = "github.com/ebuchman/fail-test"
-  packages = ["."]
-  pruneopts = "T"
-  revision = "95f809107225be108efcf10a3509e4ea6ceef3c4"
 
 [[projects]]
   branch = "master"
@@ -378,14 +371,16 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:f4f3858737fd9db5cf3ef8019c918a798a987d4d11f7e531c54dfe70d4708642"
+  digest = "1:98aa8bc119587e8bddd558bf2921a645ea6c0ff3195760142113d4dc7cab509f"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
+    "prometheus/internal",
     "prometheus/promhttp",
   ]
   pruneopts = "T"
-  revision = "ae27198cdd90bf12cd134ad79d1366a6cf49f632"
+  revision = "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
+  version = "v0.9.1"
 
 [[projects]]
   branch = "master"
@@ -397,7 +392,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2d9b03513fadf4adf193b3570f5ef65ee57b658d9f11e901a06d17baf2bdc88b"
+  digest = "1:95442856f5c1df4ff0be91b5a320ee717dd539d4091a3574aeb96bfbd407aa41"
   name = "github.com/prometheus/common"
   packages = [
     "expfmt",
@@ -405,7 +400,7 @@
     "model",
   ]
   pruneopts = "T"
-  revision = "7e9e6cabbd393fc208072eedef99188d0ce788b6"
+  revision = "0b1957f9d949dfa3084171a6ec5642b38055276a"
 
 [[projects]]
   branch = "master"
@@ -455,12 +450,12 @@
   version = "v1.1.2"
 
 [[projects]]
-  digest = "1:516e71bed754268937f57d4ecb190e01958452336fa73dbac880894164e91c1f"
+  digest = "1:08d65904057412fc0270fc4812a1c90c594186819243160dc779a402d4b6d0bc"
   name = "github.com/spf13/cast"
   packages = ["."]
   pruneopts = "T"
-  revision = "8965335b8c7107321228e3e3702cab9832751bac"
-  version = "v1.2.0"
+  revision = "8c9545af88b134710ab1cd196795e7f2388358d7"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:52565bd966162d1f4579757f66ce6a7ca9054e7f6b662f0c7c96e4dd228fd017"
@@ -508,7 +503,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ea4a45f31f55c7a42ba3063baa646ac94eb7ee9afe60c1fd2c8b396930222620"
+  digest = "1:fa0605d74039818b662892c950cfd9938ab81ebb5f8e2479ceb4734cdae21df3"
   name = "github.com/syndtr/goleveldb"
   packages = [
     "leveldb",
@@ -525,7 +520,7 @@
     "leveldb/util",
   ]
   pruneopts = "T"
-  revision = "6b91fda63f2e36186f1c9d0e48578defb69c5d43"
+  revision = "f9080354173f192dfc8821931eacf9cfd6819253"
 
 [[projects]]
   digest = "1:71ffd1fca92b4972ecd588cf13d9929d4f444659788e9128d055a9126498d41d"
@@ -535,35 +530,23 @@
   revision = "e5840949ff4fff0c56f9b6a541e22b63581ea9df"
 
 [[projects]]
-  branch = "master"
-  digest = "1:2b15c0442dc80b581ce7028b2e43029d2f3f985da43cb1d55f7bcdeca785bda0"
-  name = "github.com/tendermint/ed25519"
-  packages = [
-    ".",
-    "edwards25519",
-    "extra25519",
-  ]
-  pruneopts = "T"
-  revision = "d8387025d2b9d158cf4efb07e7ebf814bcce2057"
-
-[[projects]]
-  digest = "1:25c97d29878b5f821bb17a379469f0f923426188241bf2aa81c18728cdc6927c"
+  digest = "1:bcaa26e82b7707fbdfa6d0506ff1f30158eeb23126f761ac65881ed51339bf9e"
   name = "github.com/tendermint/go-amino"
   packages = ["."]
   pruneopts = "T"
-  revision = "faa6e731944e2b7b6a46ad202902851e8ce85bee"
-  version = "v0.12.0"
+  revision = "6dcc6ddc143e116455c94b25c1004c99e0d0ca12"
+  version = "v0.14.0"
 
 [[projects]]
-  digest = "1:2ecd824e1615a8becefea26637fe24576f3800260f5dc91ffe44b37bdbd27878"
+  digest = "1:1e4b8f8f8c428af22d0cc68b1478bef4e144edefc4bb967d4d09aaddbc8cd71e"
   name = "github.com/tendermint/iavl"
   packages = ["."]
   pruneopts = "T"
-  revision = "3acc91fb8811db2c5409a855ae1f8e441fe98e2d"
-  version = "v0.11.0"
+  revision = "fa74114f764f9827c4ad5573f990ed25bf8c4bac"
+  version = "v0.11.1"
 
 [[projects]]
-  digest = "1:b8bd45120cbea639592420b1d5363f102d819ea89d6239f4dae2a0814c76a6d2"
+  digest = "1:ea9b485e28ee25ef860451187afdec9c38630932e1f999114eb7cab7f8c89966"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/client",
@@ -592,8 +575,8 @@
     "libs/clist",
     "libs/common",
     "libs/db",
-    "libs/errors",
     "libs/events",
+    "libs/fail",
     "libs/flowrate",
     "libs/log",
     "libs/pubsub",
@@ -614,7 +597,6 @@
     "rpc/core",
     "rpc/core/types",
     "rpc/grpc",
-    "rpc/lib",
     "rpc/lib/client",
     "rpc/lib/server",
     "rpc/lib/types",
@@ -627,16 +609,17 @@
     "version",
   ]
   pruneopts = "T"
-  revision = "90eda9bfb6e6daeed1c8015df41cb36772d91778"
-  version = "v0.25.1-rc0"
+  revision = "22dcc92232cd04ce7381043e09d85dd536ae3b96"
+  version = "v0.26.3"
 
 [[projects]]
-  branch = "master"
-  digest = "1:56a43b9f51e5c5ea734e866b82d57c842b022c795a0611ff5f57f3d7c47de45d"
+  digest = "1:d738326441b0b732070d727891855573dcb579e74d82fcf9a9459d3257f2eb0c"
   name = "golang.org/x/crypto"
   packages = [
     "chacha20poly1305",
     "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
     "hkdf",
     "internal/chacha20",
     "internal/subtle",
@@ -650,7 +633,8 @@
     "ssh/terminal",
   ]
   pruneopts = "T"
-  revision = "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+  revision = "3764759f34a542a3aef74d6b02e35be7ab893bba"
+  source = "https://github.com/tendermint/crypto"
 
 [[projects]]
   digest = "1:5fdc7adede42f80d6201258355d478d856778e21d735f14972abd8ff793fdbf7"
@@ -673,8 +657,7 @@
   revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
 
 [[projects]]
-  branch = "master"
-  digest = "1:d6d9bf31934efd450aeb0a07061dce8a0e84bc80e4aae05841dd588325832a40"
+  digest = "1:96672c90ede3a9cd379151c13c436c93efe845c4a3fdd2ce2a94e9c96f233a2c"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -682,7 +665,7 @@
     "windows",
   ]
   pruneopts = "T"
-  revision = "5cd93ef61a7c8f0f858690154eb6de2e69415fa1"
+  revision = "4e1fef5609515ec7a2cee7b5de30ba6d9b438cbf"
 
 [[projects]]
   digest = "1:6164911cb5e94e8d8d5131d646613ff82c14f5a8ce869de2f6d80d9889df8c5a"
@@ -721,11 +704,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:849525811c9f6ae1f5bd9b866adb4c9436f4a12d767f48e33bf343596d4aafd7"
+  digest = "1:2460b53d2a66eb9897a17c59ce16c82eeec9affaa31a3ce5814d254abc80fbbd"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "T"
-  revision = "94acd270e44e65579b9ee3cdab25034d33fed608"
+  revision = "5fc9ac5403620be16bcdb0c8e7644b1178472c3b"
 
 [[projects]]
   digest = "1:adafc60b1d4688759f3fc8f9089e71dd17abd123f4729de6b913bf08c9143770"
@@ -809,7 +792,11 @@
     "github.com/pkg/errors",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
+    "github.com/tendermint/btcd/btcec",
     "github.com/tendermint/tendermint/abci/types",
+    "github.com/tendermint/tendermint/crypto",
+    "github.com/tendermint/tendermint/crypto/ed25519",
+    "github.com/tendermint/tendermint/crypto/secp256k1",
     "github.com/tendermint/tendermint/libs/common",
     "github.com/tendermint/tendermint/libs/db",
     "github.com/tendermint/tendermint/libs/log",

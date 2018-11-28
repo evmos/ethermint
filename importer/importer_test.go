@@ -66,8 +66,10 @@ func init() {
 func newTestCodec() *codec.Codec {
 	cdc := codec.New()
 
+	evmtypes.RegisterCodec(cdc)
 	types.RegisterCodec(cdc)
 	auth.RegisterCodec(cdc)
+	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
 	return cdc
@@ -139,7 +141,10 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.Accoun
 
 	// persist multi-store root state
 	commitID := cms.Commit()
-	require.Equal(t, "12D4DB63083D5B01824A35BB70BF671686D60532", fmt.Sprintf("%X", commitID.Hash))
+	require.Equal(
+		t, "29EF84DF8CC4648FD15341F15585A434279A9514445FC9F9E884D687185C1012",
+		fmt.Sprintf("%X", commitID.Hash),
+	)
 
 	// verify account mapper state
 	genAcc := ak.GetAccount(ctx, sdk.AccAddress(genInvestor.Bytes()))
@@ -168,8 +173,7 @@ func TestImportBlocks(t *testing.T) {
 	cdc := newTestCodec()
 	cms := store.NewCommitMultiStore(db)
 
-	// create account mapper
-	am := auth.NewAccountKeeper(
+	ak := auth.NewAccountKeeper(
 		cdc,
 		accKey,
 		types.ProtoBaseAccount,
@@ -188,7 +192,7 @@ func TestImportBlocks(t *testing.T) {
 	require.NoError(t, err)
 
 	// set and test genesis block
-	createAndTestGenesis(t, cms, am)
+	createAndTestGenesis(t, cms, ak)
 
 	// open blockchain export file
 	blockchainInput, err := os.Open(flagBlockchain)
@@ -230,7 +234,7 @@ func TestImportBlocks(t *testing.T) {
 		ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
 		ctx = ctx.WithBlockHeight(int64(block.NumberU64()))
 
-		stateDB := createStateDB(t, ctx, am)
+		stateDB := createStateDB(t, ctx, ak)
 
 		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
 			ethmisc.ApplyDAOHardFork(stateDB)

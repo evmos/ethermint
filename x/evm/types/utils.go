@@ -2,16 +2,20 @@ package types
 
 import (
 	"crypto/ecdsa"
-	"crypto/sha256"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	ethsha "github.com/ethereum/go-ethereum/crypto/sha3"
+	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/pkg/errors"
 )
+
+// PrivKeyToEthAddress generates an Ethereum address given an ECDSA private key.
+func PrivKeyToEthAddress(p *ecdsa.PrivateKey) ethcmn.Address {
+	return ethcrypto.PubkeyToAddress(p.PublicKey)
+}
 
 // GenerateAddress generates an Ethereum address.
 func GenerateEthAddress() ethcmn.Address {
@@ -21,11 +25,6 @@ func GenerateEthAddress() ethcmn.Address {
 	}
 
 	return PrivKeyToEthAddress(priv)
-}
-
-// PrivKeyToEthAddress generates an Ethereum address given an ECDSA private key.
-func PrivKeyToEthAddress(p *ecdsa.PrivateKey) ethcmn.Address {
-	return ethcrypto.PubkeyToAddress(p.PublicKey)
 }
 
 // ValidateSigner attempts to validate a signer for a given slice of bytes over
@@ -43,10 +42,11 @@ func ValidateSigner(signBytes, sig []byte, signer ethcmn.Address) error {
 	return nil
 }
 
-// GetStdTxSignBytes returns the signature bytes for an auth.StdTx transaction
-// that is compatible with Ethereum's signature mechanism.
-func GetStdTxSignBytes(chainID string, accNum int64, seq int64, fee auth.StdFee, msgs []sdk.Msg, memo string) []byte {
-	signBytes := auth.StdSignBytes(chainID, accNum, seq, fee, msgs, "")
-	hash := sha256.Sum256(signBytes)
-	return hash[:]
+func rlpHash(x interface{}) (hash ethcmn.Hash) {
+	hasher := ethsha.NewKeccak256()
+
+	rlp.Encode(hasher, x)
+	hasher.Sum(hash[:0])
+
+	return
 }
