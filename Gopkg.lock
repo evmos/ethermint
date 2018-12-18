@@ -33,7 +33,8 @@
   revision = "d4cc87b860166d00d6b5b9e0d3b3d71d6088d4d4"
 
 [[projects]]
-  digest = "1:e70ff0ca07fdc5dfe6cf280917ae4434f069f164a0bf18681e37cb19b01ee151"
+  branch = "develop"
+  digest = "1:83eccb94de6a2aadff1bddb7020e3850131645ff45e9ce9093d1604e407130e7"
   name = "github.com/cosmos/cosmos-sdk"
   packages = [
     "baseapp",
@@ -56,7 +57,7 @@
     "x/stake/types",
   ]
   pruneopts = "T"
-  revision = "1ea0e4c457fc105b48131a60e3d28c6c1bb32cc0"
+  revision = "ec9c4ea543b5d0f558cf6ad9f1386d26cfe87f28"
 
 [[projects]]
   digest = "1:9f42202ac457c462ad8bb9642806d275af9ab4850cf0b1960b9c6f083d4a309a"
@@ -530,23 +531,23 @@
   revision = "e5840949ff4fff0c56f9b6a541e22b63581ea9df"
 
 [[projects]]
-  digest = "1:bcaa26e82b7707fbdfa6d0506ff1f30158eeb23126f761ac65881ed51339bf9e"
+  digest = "1:02462ad4cc9b135c4ebfb9edccb53e8c705bbebdbf8664799ea641440188387e"
   name = "github.com/tendermint/go-amino"
   packages = ["."]
   pruneopts = "T"
-  revision = "6dcc6ddc143e116455c94b25c1004c99e0d0ca12"
-  version = "v0.14.0"
+  revision = "dc14acf9ef15f85828bfbc561ed9dd9d2a284885"
+  version = "v0.14.1"
 
 [[projects]]
-  digest = "1:1e4b8f8f8c428af22d0cc68b1478bef4e144edefc4bb967d4d09aaddbc8cd71e"
+  digest = "1:8a1dc8fc625c867614b48327112718c51c0ca83453c8a043f2f23721e19b353f"
   name = "github.com/tendermint/iavl"
   packages = ["."]
   pruneopts = "T"
-  revision = "fa74114f764f9827c4ad5573f990ed25bf8c4bac"
-  version = "v0.11.1"
+  revision = "de0740903a67b624d887f9055d4c60175dcfa758"
+  version = "v0.12.0"
 
 [[projects]]
-  digest = "1:ea9b485e28ee25ef860451187afdec9c38630932e1f999114eb7cab7f8c89966"
+  digest = "1:844c7ba6332e1e6f073d7ac69768fd19f761bdf5964b559bd4b47103a0629144"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/client",
@@ -609,8 +610,7 @@
     "version",
   ]
   pruneopts = "T"
-  revision = "22dcc92232cd04ce7381043e09d85dd536ae3b96"
-  version = "v0.26.3"
+  revision = "v0.27.0"
 
 [[projects]]
   digest = "1:d738326441b0b732070d727891855573dcb579e74d82fcf9a9459d3257f2eb0c"
@@ -784,6 +784,7 @@
     "github.com/ethereum/go-ethereum/core/types",
     "github.com/ethereum/go-ethereum/core/vm",
     "github.com/ethereum/go-ethereum/crypto",
+    "github.com/ethereum/go-ethereum/crypto/secp256k1",
     "github.com/ethereum/go-ethereum/crypto/sha3",
     "github.com/ethereum/go-ethereum/params",
     "github.com/ethereum/go-ethereum/rlp",
@@ -792,11 +793,8 @@
     "github.com/pkg/errors",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
-    "github.com/tendermint/btcd/btcec",
     "github.com/tendermint/tendermint/abci/types",
     "github.com/tendermint/tendermint/crypto",
-    "github.com/tendermint/tendermint/crypto/ed25519",
-    "github.com/tendermint/tendermint/crypto/secp256k1",
     "github.com/tendermint/tendermint/libs/common",
     "github.com/tendermint/tendermint/libs/db",
     "github.com/tendermint/tendermint/libs/log",

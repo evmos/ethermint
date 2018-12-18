@@ -94,7 +94,7 @@ type (
 
 	nonceChange struct {
 		account *ethcmn.Address
-		prev    int64
+		prev    uint64
 	}
 
 	storageChange struct {

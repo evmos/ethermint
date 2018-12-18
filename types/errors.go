@@ -9,16 +9,16 @@ const (
 	// DefaultCodespace reserves a Codespace for Ethermint.
 	DefaultCodespace sdk.CodespaceType = "ethermint"
 
-	CodeInvalidValue         sdk.CodeType = 1
-	CodeInvalidAccountNumber sdk.CodeType = 2
+	CodeInvalidValue   sdk.CodeType = 1
+	CodeInvalidChainID sdk.CodeType = 2
 )
 
 func codeToDefaultMsg(code sdk.CodeType) string {
 	switch code {
 	case CodeInvalidValue:
 		return "invalid value"
-	case CodeInvalidAccountNumber:
-		return "invalid account number"
+	case CodeInvalidChainID:
+		return "invalid chain ID"
 	default:
 		return sdk.CodeToDefaultMsg(code)
 	}
@@ -30,8 +30,8 @@ func ErrInvalidValue(msg string) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeInvalidValue, msg)
 }
 
-// ErrInvalidAccountNumber returns a standardized SDK error resulting from an
-// invalid account number.
-func ErrInvalidAccountNumber(msg string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeInvalidAccountNumber, msg)
+// ErrInvalidChainID returns a standardized SDK error resulting from an invalid
+// chain ID.
+func ErrInvalidChainID(msg string) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeInvalidChainID, msg)
 }

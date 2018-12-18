@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/stake"
 
+	"github.com/cosmos/ethermint/crypto"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ type (
 func NewEthermintApp(logger tmlog.Logger, db dbm.DB, baseAppOpts ...func(*bam.BaseApp)) *EthermintApp {
 	cdc := CreateCodec()
 
-	baseApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOpts...)
+	baseApp := bam.NewBaseApp(appName, logger, db, evmtypes.TxDecoder(cdc), baseAppOpts...)
 	app := &EthermintApp{
 		BaseApp:     baseApp,
 		cdc:         cdc,
@@ -89,8 +90,8 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, baseAppOpts ...func(*bam.Ba
 		tParamsKey:  storeKeyTransParams,
 	}
 
-	app.accountKeeper = auth.NewAccountKeeper(app.cdc, app.accountKey, auth.ProtoBaseAccount)
 	app.paramsKeeper = params.NewKeeper(app.cdc, app.paramsKey, app.tParamsKey)
+	app.accountKeeper = auth.NewAccountKeeper(app.cdc, app.accountKey, auth.ProtoBaseAccount)
 	app.feeCollKeeper = auth.NewFeeCollectionKeeper(app.cdc, app.feeCollKey)
 
 	// register message handlers
@@ -106,7 +107,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, baseAppOpts ...func(*bam.Ba
 	app.SetEndBlocker(app.EndBlocker)
 	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.feeCollKeeper))
 
-	app.MountStoresIAVL(
+	app.MountStores(
 		app.mainKey, app.accountKey, app.stakeKey, app.slashingKey,
 		app.govKey, app.feeCollKey, app.paramsKey, app.storageKey,
 	)
@@ -165,6 +166,7 @@ func CreateCodec() *codec.Codec {
 	// TODO: Add remaining codec registrations:
 	// bank, staking, distribution, slashing, and gov
 
+	crypto.RegisterCodec(cdc)
 	evmtypes.RegisterCodec(cdc)
 	auth.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)

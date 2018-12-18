@@ -15,5 +15,5 @@ func init() {
 
 // Register concrete types and interfaces on the given codec.
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgEthereumTx{}, "ethermint/MsgEthereumTx", nil)
+	cdc.RegisterConcrete(&EthereumTxMsg{}, "ethermint/MsgEthereumTx", nil)
 }

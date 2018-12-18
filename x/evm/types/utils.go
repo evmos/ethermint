@@ -1,9 +1,9 @@
 package types
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 
+	"github.com/cosmos/ethermint/crypto"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	ethsha "github.com/ethereum/go-ethereum/crypto/sha3"
@@ -12,19 +12,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-// PrivKeyToEthAddress generates an Ethereum address given an ECDSA private key.
-func PrivKeyToEthAddress(p *ecdsa.PrivateKey) ethcmn.Address {
-	return ethcrypto.PubkeyToAddress(p.PublicKey)
-}
-
 // GenerateAddress generates an Ethereum address.
 func GenerateEthAddress() ethcmn.Address {
-	priv, err := ethcrypto.GenerateKey()
+	priv, err := crypto.GenerateKey()
 	if err != nil {
 		panic(err)
 	}
 
-	return PrivKeyToEthAddress(priv)
+	return ethcrypto.PubkeyToAddress(priv.PublicKey)
 }
 
 // ValidateSigner attempts to validate a signer for a given slice of bytes over
