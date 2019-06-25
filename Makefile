@@ -19,8 +19,9 @@ DOCKER_TAG = unstable
 DOCKER_IMAGE = cosmos/ethermint
 ETHERMINT_DAEMON_BINARY = emintd
 ETHERMINT_CLI_BINARY = emintcli
+GO_MOD=GO111MODULE=on
 
-all: tools deps install
+all: tools verify install
 
 #######################
 ### Build / Install ###
@@ -28,23 +29,27 @@ all: tools deps install
 
 build:
 ifeq ($(OS),Windows_NT)
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY).exe ./cmd/emintd
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY).exe ./cmd/emintcli
+	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY).exe ./cmd/emintd
+	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY).exe ./cmd/emintcli
 else
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY) ./cmd/emintd/
-	go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY) ./cmd/emintcli/
+	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY) ./cmd/emintd/
+	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY) ./cmd/emintcli/
 endif
 
 install:
-	go install $(BUILD_FLAGS) ./cmd/emintd
-	go install $(BUILD_FLAGS) ./cmd/emintcli
+	${GO_MOD} go install $(BUILD_FLAGS) ./cmd/emintd
+	${GO_MOD} go install $(BUILD_FLAGS) ./cmd/emintcli
 
 clean:
 	@rm -rf ./build ./vendor
 
 update-tools:
 	@echo "--> Updating vendor dependencies"
-	go get -u -v $(DEP) $(GOLINT) $(GOMETALINTER) $(UNCONVERT) $(INEFFASSIGN) $(MISSPELL) $(ERRCHECK) $(UNPARAM)
+	${GO_MOD} go get -u -v $(GOLINT) $(GOMETALINTER) $(UNCONVERT) $(INEFFASSIGN) $(MISSPELL) $(ERRCHECK) $(UNPARAM)
+
+verify:
+	@echo "--> Verifying dependencies have not been modified"
+	${GO_MOD} go mod verify
 
 
 ############################
@@ -55,7 +60,6 @@ update-tools:
 ### TODO: Move tool depedencies to a separate makefile ###
 ##########################################################
 
-DEP = github.com/golang/dep/cmd/dep
 GOLINT = github.com/tendermint/lint/golint
 GOMETALINTER = gopkg.in/alecthomas/gometalinter.v2
 UNCONVERT = github.com/mdempsky/unconvert
@@ -64,7 +68,6 @@ MISSPELL = github.com/client9/misspell/cmd/misspell
 ERRCHECK = github.com/kisielk/errcheck
 UNPARAM = mvdan.cc/unparam
 
-DEP_CHECK := $(shell command -v dep 2> /dev/null)
 GOLINT_CHECK := $(shell command -v golint 2> /dev/null)
 GOMETALINTER_CHECK := $(shell command -v gometalinter.v2 2> /dev/null)
 UNCONVERT_CHECK := $(shell command -v unconvert 2> /dev/null)
@@ -74,59 +77,49 @@ ERRCHECK_CHECK := $(shell command -v errcheck 2> /dev/null)
 UNPARAM_CHECK := $(shell command -v unparam 2> /dev/null)
 
 tools:
-ifdef DEP_CHECK
-	@echo "Dep is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing dep"
-	go get -v $(DEP)
-endif
 ifdef GOLINT_CHECK
 	@echo "Golint is already installed. Run 'make update-tools' to update."
 else
 	@echo "--> Installing golint"
-	go get -v $(GOLINT)
+	${GO_MOD} go get -v $(GOLINT)
 endif
 ifdef GOMETALINTER_CHECK
 	@echo "Gometalinter.v2 is already installed. Run 'make update-tools' to update."
 else
 	@echo "--> Installing gometalinter.v2"
-	go get -v $(GOMETALINTER)
+	${GO_MOD} go get -v $(GOMETALINTER)
 endif
 ifdef UNCONVERT_CHECK
 	@echo "Unconvert is already installed. Run 'make update-tools' to update."
 else
 	@echo "--> Installing unconvert"
-	go get -v $(UNCONVERT)
+	${GO_MOD} go get -v $(UNCONVERT)
 endif
 ifdef INEFFASSIGN_CHECK
 	@echo "Ineffassign is already installed. Run 'make update-tools' to update."
 else
 	@echo "--> Installing ineffassign"
-	go get -v $(INEFFASSIGN)
+	${GO_MOD} go get -v $(INEFFASSIGN)
 endif
 ifdef MISSPELL_CHECK
 	@echo "misspell is already installed. Run 'make update-tools' to update."
 else
 	@echo "--> Installing misspell"
-	go get -v $(MISSPELL)
+	${GO_MOD} go get -v $(MISSPELL)
 endif
 ifdef ERRCHECK_CHECK
 	@echo "errcheck is already installed. Run 'make update-tools' to update."
 else
 	@echo "--> Installing errcheck"
-	go get -v $(ERRCHECK)
+	${GO_MOD} go get -v $(ERRCHECK)
 endif
 ifdef UNPARAM_CHECK
 	@echo "unparam is already installed. Run 'make update-tools' to update."
 else
 	@echo "--> Installing unparam"
-	go get -v $(UNPARAM)
+	${GO_MOD} go get -v $(UNPARAM)
 endif
 
-deps:
-	@rm -rf vendor/
-	@echo "--> Running dep ensure"
-	@dep ensure -v
 
 #######################
 ### Testing / Misc. ###
@@ -135,10 +128,10 @@ deps:
 test: test-unit
 
 test-unit:
-	@go test -v --vet=off $(PACKAGES)
+	@${GO_MOD} go test -v --vet=off $(PACKAGES)
 
 test-race:
-	@go test -v --vet=off -race $(PACKAGES)
+	@${GO_MOD} go test -v --vet=off -race $(PACKAGES)
 
 test-cli:
 	@echo "NO CLI TESTS"
@@ -148,8 +141,9 @@ test-lint:
 	@gometalinter.v2 --config=gometalinter.json --exclude=vendor ./...
 
 test-import:
-	@go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
+	@${GO_MOD} go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
 	--blockchain blockchain --timeout=5m
+	# TODO: remove tmp directory after test run to avoid subsequent errors
 
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
@@ -165,5 +159,5 @@ format:
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -w -s
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
 
-.PHONY: build install update-tools tools deps godocs clean format test-lint \
+.PHONY: build install update-tools tools godocs clean format test-lint \
 test-cli test-race test-unit test test-import

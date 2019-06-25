@@ -37,10 +37,10 @@ To build, execute the following commands:
 
 ```bash
 # To build the binary and put the resulting binary in ./build
-$ make tools deps build
+$ make tools verify build
 
 # To build the project and install it in $GOBIN
-$ make tools deps install
+$ make tools verify install
 ```
 
 ### Tests
