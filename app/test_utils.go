@@ -42,6 +42,7 @@ func newTestSetup() testSetup {
 	ms.MountStoreWithDB(feeCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeIAVL, db)
+	// nolint:errcheck
 	ms.LoadLatestVersion()
 
 	cdc := CreateCodec()

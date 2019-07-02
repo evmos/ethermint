@@ -19,7 +19,7 @@ import (
 
 const (
 	memoCostPerByte     sdk.Gas = 3
-	secp256k1VerifyCost         = 21000
+	secp256k1VerifyCost uint64  = 21000
 )
 
 // NewAnteHandler returns an ante handler responsible for attempting to route an

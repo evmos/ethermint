@@ -26,6 +26,8 @@ type ChainContext struct {
 	headersByNumber map[uint64]*ethtypes.Header
 }
 
+// NewChainContext generates new ChainContext based on Ethereum's core.ChainContext and
+// consensus.Engine interfaces in order to process Ethereum transactions.
 func NewChainContext() *ChainContext {
 	return &ChainContext{
 		headersByNumber: make(map[uint64]*ethtypes.Header),

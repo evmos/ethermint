@@ -5,7 +5,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
@@ -56,9 +55,9 @@ type (
 		paramsKey   *sdk.KVStoreKey
 		tParamsKey  *sdk.TransientStoreKey
 
-		accountKeeper  auth.AccountKeeper
-		feeCollKeeper  auth.FeeCollectionKeeper
-		coinKeeper     bank.Keeper
+		accountKeeper auth.AccountKeeper
+		feeCollKeeper auth.FeeCollectionKeeper
+		// coinKeeper     bank.Keeper
 		stakeKeeper    stake.Keeper
 		slashingKeeper slashing.Keeper
 		govKeeper      gov.Keeper

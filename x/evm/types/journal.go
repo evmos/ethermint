@@ -121,9 +121,9 @@ type (
 	}
 
 	touchChange struct {
-		account   *ethcmn.Address
-		prev      bool
-		prevDirty bool
+		account *ethcmn.Address
+		// prev      bool
+		// prevDirty bool
 	}
 )
 

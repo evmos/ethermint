@@ -13,7 +13,8 @@ const (
 	CodeInvalidChainID sdk.CodeType = 2
 )
 
-func codeToDefaultMsg(code sdk.CodeType) string {
+// CodeToDefaultMsg takes the CodeType variable and returns the error string
+func CodeToDefaultMsg(code sdk.CodeType) string {
 	switch code {
 	case CodeInvalidValue:
 		return "invalid value"

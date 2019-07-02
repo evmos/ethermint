@@ -21,7 +21,7 @@ const (
 // Main Ethermint account
 // ----------------------------------------------------------------------------
 
-// BaseAccount implements the auth.Account interface and embeds an
+// Account implements the auth.Account interface and embeds an
 // auth.BaseAccount type. It is compatible with the auth.AccountMapper.
 type Account struct {
 	*auth.BaseAccount
@@ -47,6 +47,7 @@ func (acc Account) Balance() sdk.Int {
 
 // SetBalance sets an account's balance.
 func (acc Account) SetBalance(amt sdk.Int) {
+	// nolint:errcheck
 	acc.SetCoins(sdk.Coins{sdk.NewCoin(DenomDefault, amt)})
 }
 
@@ -54,9 +55,10 @@ func (acc Account) SetBalance(amt sdk.Int) {
 // Code & Storage
 // ----------------------------------------------------------------------------
 
-// Account code and storage type aliases.
 type (
-	Code    []byte
+	// Code is account Code type alias
+	Code []byte
+	// Storage is account storage type alias
 	Storage map[ethcmn.Hash]ethcmn.Hash
 )
 

@@ -43,11 +43,11 @@ var (
 	flagBlockchain string
 	flagCPUProfile string
 
-	miner501    = ethcmn.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D")
+	// miner501    = ethcmn.HexToAddress("0x35e8e5dC5FBd97c5b421A80B596C030a2Be2A04D")
 	genInvestor = ethcmn.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")
 
-	paramsKey  = sdk.NewKVStoreKey("params")
-	tParamsKey = sdk.NewTransientStoreKey("transient_params")
+	// paramsKey  = sdk.NewKVStoreKey("params")
+	// tParamsKey = sdk.NewTransientStoreKey("transient_params")
 	accKey     = sdk.NewKVStoreKey("acc")
 	storageKey = sdk.NewKVStoreKey("storage")
 	codeKey    = sdk.NewKVStoreKey("code")

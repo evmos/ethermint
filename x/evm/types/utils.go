@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GenerateAddress generates an Ethereum address.
+// GenerateEthAddress generates an Ethereum address.
 func GenerateEthAddress() ethcmn.Address {
 	priv, err := crypto.GenerateKey()
 	if err != nil {
@@ -40,6 +40,7 @@ func ValidateSigner(signBytes, sig []byte, signer ethcmn.Address) error {
 func rlpHash(x interface{}) (hash ethcmn.Hash) {
 	hasher := ethsha.NewKeccak256()
 
+	// nolint:errcheck
 	rlp.Encode(hasher, x)
 	hasher.Sum(hash[:0])
 

@@ -55,10 +55,12 @@ func TestValidEthTx(t *testing.T) {
 	addr2, _ := newTestAddrKey()
 
 	acc1 := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc1.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc1)
 
 	acc2 := input.accKeeper.NewAccountWithAddress(input.ctx, addr2)
+	// nolint:errcheck
 	acc2.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc2)
 
@@ -80,10 +82,12 @@ func TestValidTx(t *testing.T) {
 	addr2, priv2 := newTestAddrKey()
 
 	acc1 := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc1.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc1)
 
 	acc2 := input.accKeeper.NewAccountWithAddress(input.ctx, addr2)
+	// nolint:errcheck
 	acc2.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc2)
 
@@ -115,10 +119,12 @@ func TestSDKInvalidSigs(t *testing.T) {
 	addr3, priv3 := newTestAddrKey()
 
 	acc1 := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc1.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc1)
 
 	acc2 := input.accKeeper.NewAccountWithAddress(input.ctx, addr2)
+	// nolint:errcheck
 	acc2.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc2)
 
@@ -164,6 +170,7 @@ func TestSDKInvalidAcc(t *testing.T) {
 	addr1, priv1 := newTestAddrKey()
 
 	acc1 := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc1.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc1)
 
@@ -211,7 +218,9 @@ func TestEthInvalidNonce(t *testing.T) {
 	addr2, _ := newTestAddrKey()
 
 	acc := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc.SetCoins(newTestCoins())
+	// nolint:errcheck
 	acc.SetSequence(10)
 	input.accKeeper.SetAccount(input.ctx, acc)
 
@@ -253,6 +262,7 @@ func TestEthInvalidIntrinsicGas(t *testing.T) {
 	addr2, _ := newTestAddrKey()
 
 	acc := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc)
 
@@ -276,6 +286,7 @@ func TestEthInvalidMempoolFees(t *testing.T) {
 	addr2, _ := newTestAddrKey()
 
 	acc := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc)
 
@@ -297,6 +308,7 @@ func TestEthInvalidChainID(t *testing.T) {
 	addr2, _ := newTestAddrKey()
 
 	acc := input.accKeeper.NewAccountWithAddress(input.ctx, addr1)
+	// nolint:errcheck
 	acc.SetCoins(newTestCoins())
 	input.accKeeper.SetAccount(input.ctx, acc)
 

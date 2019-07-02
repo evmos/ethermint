@@ -45,7 +45,8 @@ clean:
 
 update-tools:
 	@echo "--> Updating vendor dependencies"
-	${GO_MOD} go get -u -v $(GOLINT) $(GOMETALINTER) $(UNCONVERT) $(INEFFASSIGN) $(MISSPELL) $(ERRCHECK) $(UNPARAM)
+	${GO_MOD} go get -u -v $(GOLINT) $(UNCONVERT) $(INEFFASSIGN) $(MISSPELL) $(ERRCHECK) $(UNPARAM)
+	${GO_MOD} go get -v $(GOCILINT)
 
 verify:
 	@echo "--> Verifying dependencies have not been modified"
@@ -61,7 +62,7 @@ verify:
 ##########################################################
 
 GOLINT = github.com/tendermint/lint/golint
-GOMETALINTER = gopkg.in/alecthomas/gometalinter.v2
+GOCILINT = github.com/golangci/golangci-lint/cmd/golangci-lint@v1.17.1
 UNCONVERT = github.com/mdempsky/unconvert
 INEFFASSIGN = github.com/gordonklaus/ineffassign
 MISSPELL = github.com/client9/misspell/cmd/misspell
@@ -69,7 +70,7 @@ ERRCHECK = github.com/kisielk/errcheck
 UNPARAM = mvdan.cc/unparam
 
 GOLINT_CHECK := $(shell command -v golint 2> /dev/null)
-GOMETALINTER_CHECK := $(shell command -v gometalinter.v2 2> /dev/null)
+GOCILINT_CHECK := $(shell command -v golangci-lint 2> /dev/null)
 UNCONVERT_CHECK := $(shell command -v unconvert 2> /dev/null)
 INEFFASSIGN_CHECK := $(shell command -v ineffassign 2> /dev/null)
 MISSPELL_CHECK := $(shell command -v misspell 2> /dev/null)
@@ -83,11 +84,11 @@ else
 	@echo "--> Installing golint"
 	${GO_MOD} go get -v $(GOLINT)
 endif
-ifdef GOMETALINTER_CHECK
-	@echo "Gometalinter.v2 is already installed. Run 'make update-tools' to update."
+ifdef GOCILINT_CHECK
+	@echo "golangci-lint is already installed. Run 'make update-tools' to update."
 else
-	@echo "--> Installing gometalinter.v2"
-	${GO_MOD} go get -v $(GOMETALINTER)
+	@echo "--> Installing golangci-lint"
+	${GO_MOD} go get -v $(GOCILINT)
 endif
 ifdef UNCONVERT_CHECK
 	@echo "Unconvert is already installed. Run 'make update-tools' to update."
@@ -137,8 +138,8 @@ test-cli:
 	@echo "NO CLI TESTS"
 
 test-lint:
-	@echo "--> Running gometalinter..."
-	@gometalinter.v2 --config=gometalinter.json --exclude=vendor ./...
+	@echo "--> Running golangci-lint..."
+	@${GO_MOD} golangci-lint run --deadline=5m ./...
 
 test-import:
 	@${GO_MOD} go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
