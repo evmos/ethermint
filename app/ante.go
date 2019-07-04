@@ -6,9 +6,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/cosmos/ethermint/crypto"
-	"github.com/cosmos/ethermint/types"
+	emint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -29,14 +31,14 @@ const (
 //
 // NOTE: The EVM will already consume (intrinsic) gas for signature verification
 // and covering input size as well as handling nonce incrementing.
-func NewAnteHandler(ak auth.AccountKeeper, fck auth.FeeCollectionKeeper) sdk.AnteHandler {
+func NewAnteHandler(ak auth.AccountKeeper, sk types.SupplyKeeper) sdk.AnteHandler {
 	return func(
 		ctx sdk.Context, tx sdk.Tx, sim bool,
 	) (newCtx sdk.Context, res sdk.Result, abort bool) {
 
 		switch castTx := tx.(type) {
 		case auth.StdTx:
-			return sdkAnteHandler(ctx, ak, fck, castTx, sim)
+			return sdkAnteHandler(ctx, ak, sk, castTx, sim)
 
 		case *evmtypes.EthereumTxMsg:
 			return ethAnteHandler(ctx, castTx, ak)
@@ -51,20 +53,19 @@ func NewAnteHandler(ak auth.AccountKeeper, fck auth.FeeCollectionKeeper) sdk.Ant
 // SDK Ante Handler
 
 func sdkAnteHandler(
-	ctx sdk.Context, ak auth.AccountKeeper, fck auth.FeeCollectionKeeper, stdTx auth.StdTx, sim bool,
+	ctx sdk.Context, ak auth.AccountKeeper, sk types.SupplyKeeper, stdTx auth.StdTx, sim bool,
 ) (newCtx sdk.Context, res sdk.Result, abort bool) {
-
 	// Ensure that the provided fees meet a minimum threshold for the validator,
 	// if this is a CheckTx. This is only for local mempool purposes, and thus
 	// is only ran on check tx.
 	if ctx.IsCheckTx() && !sim {
-		res := auth.EnsureSufficientMempoolFees(ctx, stdTx)
+		res := auth.EnsureSufficientMempoolFees(ctx, stdTx.Fee)
 		if !res.IsOK() {
 			return newCtx, res, true
 		}
 	}
 
-	newCtx = auth.SetGasMeter(sim, ctx, stdTx)
+	newCtx = auth.SetGasMeter(sim, ctx, stdTx.Fee.Gas)
 
 	// AnteHandlers must have their own defer/recover in order for the BaseApp
 	// to know how much gas was used! This is because the GasMeter is created in
@@ -91,28 +92,44 @@ func sdkAnteHandler(
 
 	newCtx.GasMeter().ConsumeGas(memoCostPerByte*sdk.Gas(len(stdTx.GetMemo())), "memo")
 
-	signerAccs, res := auth.GetSignerAccs(newCtx, ak, stdTx.GetSigners())
+	// stdSigs contains the sequence number, account number, and signatures.
+	// When simulating, this would just be a 0-length slice.
+	signerAddrs := stdTx.GetSigners()
+	signerAccs := make([]exported.Account, len(signerAddrs))
+	isGenesis := ctx.BlockHeight() == 0
+
+	// fetch first signer, who's going to pay the fees
+	signerAccs[0], res = auth.GetSignerAcc(newCtx, ak, signerAddrs[0])
 	if !res.IsOK() {
 		return newCtx, res, true
 	}
 
 	// the first signer pays the transaction fees
 	if !stdTx.Fee.Amount.IsZero() {
-		signerAccs[0], res = auth.DeductFees(signerAccs[0], stdTx.Fee)
+		// Testing error is in DeductFees
+		res = auth.DeductFees(sk, newCtx, signerAccs[0], stdTx.Fee.Amount)
 		if !res.IsOK() {
 			return newCtx, res, true
 		}
 
-		fck.AddCollectedFees(newCtx, stdTx.Fee.Amount)
+		// Reload account after fees deducted
+		signerAccs[0] = ak.GetAccount(newCtx, signerAccs[0].GetAddress())
 	}
 
-	isGenesis := ctx.BlockHeight() == 0
-	signBytesList := auth.GetSignBytesList(newCtx.ChainID(), stdTx, signerAccs, isGenesis)
 	stdSigs := stdTx.GetSignatures()
 
 	for i := 0; i < len(stdSigs); i++ {
+		// skip the fee payer, account is cached and fees were deducted already
+		if i != 0 {
+			signerAccs[i], res = auth.GetSignerAcc(newCtx, ak, signerAddrs[i])
+			if !res.IsOK() {
+				return newCtx, res, true
+			}
+		}
+
 		// check signature, return account with incremented nonce
-		signerAccs[i], res = processSig(newCtx, signerAccs[i], stdSigs[i], signBytesList[i], sim)
+		signBytes := auth.GetSignBytes(newCtx.ChainID(), stdTx, signerAccs[i], isGenesis)
+		signerAccs[i], res = processSig(newCtx, signerAccs[i], stdSigs[i], signBytes, sim)
 		if !res.IsOK() {
 			return newCtx, res, true
 		}
@@ -193,7 +210,7 @@ func validateEthTxCheckTx(
 	// parse the chainID from a string to a base-10 integer
 	chainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
 	if !ok {
-		return types.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
+		return emint.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
 	}
 
 	// Validate sufficient fees have been provided that meet a minimum threshold
@@ -266,7 +283,7 @@ func validateAccount(
 	}
 
 	// validate sender has enough funds
-	balance := acc.GetCoins().AmountOf(types.DenomDefault)
+	balance := acc.GetCoins().AmountOf(emint.DenomDefault)
 	if balance.BigInt().Cmp(ethTxMsg.Cost()) < 0 {
 		return sdk.ErrInsufficientFunds(
 			fmt.Sprintf("insufficient funds: %s < %s", balance, ethTxMsg.Cost()),
@@ -283,13 +300,21 @@ func validateAccount(
 // NOTE: This should only be ran during a CheckTx mode.
 func ensureSufficientMempoolFees(ctx sdk.Context, ethTxMsg *evmtypes.EthereumTxMsg) sdk.Result {
 	// fee = GP * GL
-	fee := sdk.Coins{sdk.NewInt64Coin(types.DenomDefault, ethTxMsg.Fee().Int64())}
+	fee := sdk.NewDecCoinFromCoin(sdk.NewInt64Coin(emint.DenomDefault, ethTxMsg.Fee().Int64()))
+
+	minGasPrices := ctx.MinGasPrices()
+	allGTE := true
+	for _, v := range minGasPrices {
+		if !fee.IsGTE(v) {
+			allGTE = false
+		}
+	}
 
 	// it is assumed that the minimum fees will only include the single valid denom
-	if !ctx.MinimumFees().IsZero() && !fee.IsAllGTE(ctx.MinimumFees()) {
+	if !ctx.MinGasPrices().IsZero() && !allGTE {
 		// reject the transaction that does not meet the minimum fee
 		return sdk.ErrInsufficientFee(
-			fmt.Sprintf("insufficient fee, got: %q required: %q", fee, ctx.MinimumFees()),
+			fmt.Sprintf("insufficient fee, got: %q required: %q", fee, ctx.MinGasPrices()),
 		).Result()
 	}
 

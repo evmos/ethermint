@@ -15,8 +15,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
+	sdkstore "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/types"
@@ -30,7 +32,6 @@ import (
 	ethvm "github.com/ethereum/go-ethereum/core/vm"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	ethrlp "github.com/ethereum/go-ethereum/rlp"
-
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -163,14 +164,21 @@ func TestImportBlocks(t *testing.T) {
 		require.NoError(t, err, "failed to start CPU profile")
 	}
 
-	db := dbm.NewDB("state", dbm.LevelDBBackend, flagDataDir)
+	db := dbm.NewDB("state", dbm.GoLevelDBBackend, flagDataDir)
 	defer cleanup()
 	trapSignals()
 
 	// create logger, codec and root multi-store
 	cdc := newTestCodec()
 	cms := store.NewCommitMultiStore(db)
-	ak := auth.NewAccountKeeper(cdc, accKey, types.ProtoBaseAccount)
+
+	// The ParamsKeeper handles parameter storage for the application
+	keyParams := sdk.NewKVStoreKey(params.StoreKey)
+	tkeyParams := sdk.NewTransientStoreKey(params.TStoreKey)
+	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
+	// Set specific supspaces
+	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
+	ak := auth.NewAccountKeeper(cdc, accKey, authSubspace, types.ProtoBaseAccount)
 
 	// mount stores
 	keys := []*sdk.KVStoreKey{accKey, storageKey, codeKey}
@@ -178,7 +186,7 @@ func TestImportBlocks(t *testing.T) {
 		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
 	}
 
-	cms.SetPruning(sdk.PruneNothing)
+	cms.SetPruning(sdkstore.PruneNothing)
 
 	// load latest version (root)
 	err := cms.LoadLatestVersion()

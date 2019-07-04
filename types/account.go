@@ -14,7 +14,7 @@ var _ auth.Account = (*Account)(nil)
 const (
 	// DenomDefault defines the single coin type/denomination supported in
 	// Ethermint.
-	DenomDefault = "Photon"
+	DenomDefault = "photon"
 )
 
 // ----------------------------------------------------------------------------
