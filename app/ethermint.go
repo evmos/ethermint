@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,6 +31,9 @@ const appName = "Ethermint"
 
 // application multi-store keys
 var (
+	// default home directories for the application CLI
+	DefaultCLIHome = os.ExpandEnv("$HOME/.emintcli")
+
 	storeKeyAccount     = sdk.NewKVStoreKey("acc")
 	storeKeyStorage     = sdk.NewKVStoreKey("contract_storage")
 	storeKeyMain        = sdk.NewKVStoreKey("main")
