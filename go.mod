@@ -14,6 +14,7 @@ require (
 	github.com/golangci/golangci-lint v1.17.1 // indirect
 	github.com/google/uuid v1.0.0 // indirect
 	github.com/gordonklaus/ineffassign v0.0.0-20190601041439-ed7b1b5ee0f8 // indirect
+	github.com/gorilla/mux v1.7.0
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.7.7 // indirect

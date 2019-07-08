@@ -1,15 +1,19 @@
 package app
 
 import (
-	"github.com/cosmos/ethermint/x/evm"
 	"os"
+
+	"github.com/cosmos/ethermint/x/evm"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -35,6 +39,22 @@ var (
 	// default home directories for the application CLI
 	DefaultCLIHome = os.ExpandEnv("$HOME/.emintcli")
 
+	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
+	DefaultNodeHome = os.ExpandEnv("$HOME/.emintd")
+
+	// ModuleBasics is in charge of setting up basic module elements
+	ModuleBasics = module.NewBasicManager(
+		genaccounts.AppModuleBasic{},
+		genutil.AppModuleBasic{},
+		auth.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		params.AppModuleBasic{},
+		evm.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		distr.AppModuleBasic{},
+		slashing.AppModuleBasic{},
+	)
+
 	storeKeyAccount     = sdk.NewKVStoreKey("acc")
 	storeKeyStorage     = sdk.NewKVStoreKey("contract_storage")
 	storeKeyMain        = sdk.NewKVStoreKey("main")
@@ -46,34 +66,41 @@ var (
 	storeKeyTransParams = sdk.NewTransientStoreKey("transient_params")
 )
 
-type (
-	// EthermintApp implements an extended ABCI application. It is an application
-	// that may process transactions through Ethereum's EVM running atop of
-	// Tendermint consensus.
-	EthermintApp struct {
-		*bam.BaseApp
+// MakeCodec generates the necessary codecs for Amino
+func MakeCodec() *codec.Codec {
+	var cdc = codec.New()
+	ModuleBasics.RegisterCodec(cdc)
+	sdk.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
+	return cdc
+}
 
-		cdc *codec.Codec
+// EthermintApp implements an extended ABCI application. It is an application
+// that may process transactions through Ethereum's EVM running atop of
+// Tendermint consensus.
+type EthermintApp struct {
+	*bam.BaseApp
 
-		accountKey  *sdk.KVStoreKey
-		storageKey  *sdk.KVStoreKey
-		mainKey     *sdk.KVStoreKey
-		stakeKey    *sdk.KVStoreKey
-		slashingKey *sdk.KVStoreKey
-		govKey      *sdk.KVStoreKey
-		supplyKey   *sdk.KVStoreKey
-		paramsKey   *sdk.KVStoreKey
-		tParamsKey  *sdk.TransientStoreKey
+	cdc *codec.Codec
 
-		accountKeeper  auth.AccountKeeper
-		supplyKeeper   supply.Keeper
-		bankKeeper     bank.Keeper
-		stakeKeeper    staking.Keeper
-		slashingKeeper slashing.Keeper
-		govKeeper      gov.Keeper
-		paramsKeeper   params.Keeper
-	}
-)
+	accountKey  *sdk.KVStoreKey
+	storageKey  *sdk.KVStoreKey
+	mainKey     *sdk.KVStoreKey
+	stakeKey    *sdk.KVStoreKey
+	slashingKey *sdk.KVStoreKey
+	govKey      *sdk.KVStoreKey
+	supplyKey   *sdk.KVStoreKey
+	paramsKey   *sdk.KVStoreKey
+	tParamsKey  *sdk.TransientStoreKey
+
+	accountKeeper  auth.AccountKeeper
+	supplyKeeper   supply.Keeper
+	bankKeeper     bank.Keeper
+	stakeKeeper    staking.Keeper
+	slashingKeeper slashing.Keeper
+	govKeeper      gov.Keeper
+	paramsKeeper   params.Keeper
+}
 
 // NewEthermintApp returns a reference to a new initialized Ethermint
 // application.
