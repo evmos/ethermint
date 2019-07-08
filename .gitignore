@@ -14,3 +14,6 @@
 .glide/
 vendor/
 build/
+
+# Goland
+.idea/

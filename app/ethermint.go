@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/cosmos/ethermint/x/evm"
 	"os"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -164,7 +165,7 @@ func (app *EthermintApp) initChainer(
 	_ sdk.Context, req abci.RequestInitChain,
 ) abci.ResponseInitChain {
 
-	var genesisState GenesisState
+	var genesisState evm.GenesisState
 	stateJSON := req.AppStateBytes
 
 	err := app.cdc.UnmarshalJSON(stateJSON, &genesisState)

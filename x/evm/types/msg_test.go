@@ -124,12 +124,12 @@ func TestMsgEthereumTxAmino(t *testing.T) {
 	addr := GenerateEthAddress()
 	msg := NewEthereumTxMsg(0, addr, nil, 100000, nil, []byte("test"))
 
-	raw, err := msgCodec.MarshalBinaryBare(msg)
+	raw, err := ModuleCdc.MarshalBinaryBare(msg)
 	require.NoError(t, err)
 
 	var msg2 EthereumTxMsg
 
-	err = msgCodec.UnmarshalBinaryBare(raw, &msg2)
+	err = ModuleCdc.UnmarshalBinaryBare(raw, &msg2)
 	require.NoError(t, err)
 	require.Equal(t, msg.Data, msg2.Data)
 }

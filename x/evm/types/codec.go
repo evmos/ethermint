@@ -2,7 +2,7 @@ package types
 
 import "github.com/cosmos/cosmos-sdk/codec"
 
-var msgCodec = codec.New()
+var ModuleCdc = codec.New()
 
 func init() {
 	cdc := codec.New()
@@ -10,7 +10,7 @@ func init() {
 	RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 
-	msgCodec = cdc.Seal()
+	ModuleCdc = cdc.Seal()
 }
 
 // RegisterCodec registers concrete types and interfaces on the given codec.
