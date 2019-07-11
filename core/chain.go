@@ -88,9 +88,18 @@ func (cc *ChainContext) CalcDifficulty(_ ethcons.ChainReader, _ uint64, _ *ethty
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
 func (cc *ChainContext) Finalize(
-	_ ethcons.ChainReader, _ *ethtypes.Header, _ ethstate.StateDB,
-	_ []*ethtypes.Transaction, _ []*ethtypes.Header, _ []*ethtypes.Receipt,
-) (*ethtypes.Block, error) {
+	_ ethcons.ChainReader, _ *ethtypes.Header, _ *ethstate.StateDB,
+	_ []*ethtypes.Transaction, _ []*ethtypes.Header) {
+}
+
+// FinalizeAndAssemble runs any post-transaction state modifications (e.g. block
+// rewards) and assembles the final block.
+//
+// Note: The block header and state database might be updated to reflect any
+// consensus rules that happen at finalization (e.g. block rewards).
+// TODO: Figure out if this needs to be hooked up to any part of the ABCI?
+func (cc *ChainContext) FinalizeAndAssemble(_ ethcons.ChainReader, _ *ethtypes.Header, _ *ethstate.StateDB, _ []*ethtypes.Transaction,
+	_ []*ethtypes.Header, _ []*ethtypes.Receipt) (*ethtypes.Block, error) {
 	return nil, nil
 }
 

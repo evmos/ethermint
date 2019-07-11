@@ -6,10 +6,10 @@ import (
 	"github.com/cosmos/ethermint/crypto"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-	ethsha "github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/sha3"
 )
 
 // GenerateEthAddress generates an Ethereum address.
@@ -38,11 +38,11 @@ func ValidateSigner(signBytes, sig []byte, signer ethcmn.Address) error {
 }
 
 func rlpHash(x interface{}) (hash ethcmn.Hash) {
-	hasher := ethsha.NewKeccak256()
+	hasher := sha3.NewLegacyKeccak256()
 
 	// nolint:errcheck
 	rlp.Encode(hasher, x)
 	hasher.Sum(hash[:0])
 
-	return
+	return hash
 }

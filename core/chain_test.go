@@ -71,9 +71,7 @@ func TestChainContextCalcDifficulty(t *testing.T) {
 func TestChainContextFinalize(t *testing.T) {
 	cc := NewChainContext()
 
-	block, err := cc.Finalize(nil, nil, nil, nil, nil, nil)
-	require.Nil(t, err)
-	require.Nil(t, block)
+	cc.Finalize(nil, nil, nil, nil, nil)
 }
 
 func TestChainContextPrepare(t *testing.T) {

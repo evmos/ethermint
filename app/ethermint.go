@@ -132,14 +132,19 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, baseAppOpts ...func(*bam.Ba
 	bankSubspace := app.paramsKeeper.Subspace(bank.DefaultParamspace)
 
 	// account permissions
-	basicModuleAccs := []string{auth.FeeCollectorName, distr.ModuleName}
-	minterModuleAccs := []string{mint.ModuleName}
-	burnerModuleAccs := []string{staking.BondedPoolName, staking.NotBondedPoolName, gov.ModuleName}
+	maccPerms := map[string][]string{
+		auth.FeeCollectorName:     []string{supply.Basic},
+		distr.ModuleName:          []string{supply.Basic},
+		mint.ModuleName:           []string{supply.Minter},
+		staking.BondedPoolName:    []string{supply.Burner, supply.Staking},
+		staking.NotBondedPoolName: []string{supply.Burner, supply.Staking},
+		gov.ModuleName:            []string{supply.Burner},
+	}
 
 	// Add keepers
 	app.accountKeeper = auth.NewAccountKeeper(app.cdc, app.accountKey, authSubspace, auth.ProtoBaseAccount)
 	app.bankKeeper = bank.NewBaseKeeper(app.accountKeeper, bankSubspace, bank.DefaultCodespace)
-	app.supplyKeeper = supply.NewKeeper(cdc, app.supplyKey, app.accountKeeper, app.bankKeeper, supply.DefaultCodespace, basicModuleAccs, minterModuleAccs, burnerModuleAccs)
+	app.supplyKeeper = supply.NewKeeper(cdc, app.supplyKey, app.accountKeeper, app.bankKeeper, supply.DefaultCodespace, maccPerms)
 
 	// register message handlers
 	app.Router().

@@ -12,14 +12,20 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethvm "github.com/ethereum/go-ethereum/core/vm"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
-	_ ethstate.StateDB = (*CommitStateDB)(nil)
+	_ ethvm.StateDB = (*CommitStateDB)(nil)
 
 	zeroBalance = sdk.ZeroInt().BigInt()
 )
+
+type revision struct {
+	id           int
+	journalIndex int
+}
 
 // CommitStateDB implements the Geth state.StateDB interface. Instead of using
 // a trie and database for querying and persistence, the Keeper uses KVStores
@@ -64,7 +70,7 @@ type CommitStateDB struct {
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
 	journal        *journal
-	validRevisions []ethstate.Revision
+	validRevisions []revision
 	nextRevisionID int
 
 	// mutex for state deep copying
@@ -205,6 +211,16 @@ func (csdb *CommitStateDB) GetNonce(addr ethcmn.Address) uint64 {
 	}
 
 	return 0
+}
+
+// TxIndex returns the current transaction index set by Prepare.
+func (csdb *CommitStateDB) TxIndex() int {
+	return csdb.txIndex
+}
+
+// BlockHash returns the current block hash set by Prepare.
+func (csdb *CommitStateDB) BlockHash() ethcmn.Hash {
+	return csdb.bhash
 }
 
 // GetCode returns the code for a given account.
@@ -354,7 +370,7 @@ func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, er
 // Finalize finalizes the state objects (accounts) state by setting their state,
 // removing the csdb destructed objects and clearing the journal as well as the
 // refunds.
-func (csdb *CommitStateDB) Finalize(deleteEmptyObjects bool) {
+func (csdb *CommitStateDB) Finalise(deleteEmptyObjects bool) {
 	for addr := range csdb.journal.dirties {
 		so, exist := csdb.stateObjects[addr]
 		if !exist {
@@ -394,7 +410,7 @@ func (csdb *CommitStateDB) Finalize(deleteEmptyObjects bool) {
 // root as commitment of the merkle-ized tree doesn't happen until the
 // BaseApps' EndBlocker.
 func (csdb *CommitStateDB) IntermediateRoot(deleteEmptyObjects bool) ethcmn.Hash {
-	csdb.Finalize(deleteEmptyObjects)
+	csdb.Finalise(deleteEmptyObjects)
 
 	return ethcmn.Hash{}
 }
@@ -421,9 +437,9 @@ func (csdb *CommitStateDB) Snapshot() int {
 
 	csdb.validRevisions = append(
 		csdb.validRevisions,
-		ethstate.Revision{
-			ID:           id,
-			JournalIndex: csdb.journal.length(),
+		revision{
+			id:           id,
+			journalIndex: csdb.journal.length(),
 		},
 	)
 
@@ -434,14 +450,14 @@ func (csdb *CommitStateDB) Snapshot() int {
 func (csdb *CommitStateDB) RevertToSnapshot(revID int) {
 	// find the snapshot in the stack of valid snapshots
 	idx := sort.Search(len(csdb.validRevisions), func(i int) bool {
-		return csdb.validRevisions[i].ID >= revID
+		return csdb.validRevisions[i].id >= revID
 	})
 
-	if idx == len(csdb.validRevisions) || csdb.validRevisions[idx].ID != revID {
+	if idx == len(csdb.validRevisions) || csdb.validRevisions[idx].id != revID {
 		panic(fmt.Errorf("revision ID %v cannot be reverted", revID))
 	}
 
-	snapshot := csdb.validRevisions[idx].JournalIndex
+	snapshot := csdb.validRevisions[idx].journalIndex
 
 	// replay the journal to undo changes and remove invalidated snapshots
 	csdb.journal.revert(csdb, snapshot)
@@ -549,7 +565,7 @@ func (csdb *CommitStateDB) CreateAccount(addr ethcmn.Address) {
 // Copy creates a deep, independent copy of the state.
 //
 // NOTE: Snapshots of the copied state cannot be applied to the copy.
-func (csdb *CommitStateDB) Copy() ethstate.StateDB {
+func (csdb *CommitStateDB) Copy() ethvm.StateDB {
 	csdb.lock.Lock()
 	defer csdb.lock.Unlock()
 
@@ -611,10 +627,10 @@ func (csdb *CommitStateDB) Copy() ethstate.StateDB {
 
 // ForEachStorage iterates over each storage items, all invokes the provided
 // callback on each key, value pair .
-func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, value ethcmn.Hash) bool) {
+func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, value ethcmn.Hash) bool) error {
 	so := csdb.getStateObject(addr)
 	if so == nil {
-		return
+		return nil
 	}
 
 	store := csdb.ctx.KVStore(csdb.storageKey)
@@ -633,11 +649,12 @@ func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, valu
 	}
 
 	iter.Close()
+	return nil
 }
 
 // GetOrNewStateObject retrieves a state object or create a new state object if
 // nil.
-func (csdb *CommitStateDB) GetOrNewStateObject(addr ethcmn.Address) ethstate.StateObject {
+func (csdb *CommitStateDB) GetOrNewStateObject(addr ethcmn.Address) StateObject {
 	so := csdb.getStateObject(addr)
 	if so == nil || so.deleted {
 		so, _ = csdb.createObject(addr)

@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,15 +13,37 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
-	_ ethstate.StateObject = (*stateObject)(nil)
+	_ StateObject = (*stateObject)(nil)
 
 	emptyCodeHash = ethcrypto.Keccak256(nil)
 )
 
 type (
+	// StateObject interface for interacting with state object
+	StateObject interface {
+		GetCommittedState(db ethstate.Database, key ethcmn.Hash) ethcmn.Hash
+		GetState(db ethstate.Database, key ethcmn.Hash) ethcmn.Hash
+		SetState(db ethstate.Database, key, value ethcmn.Hash)
+
+		Code(db ethstate.Database) []byte
+		SetCode(codeHash ethcmn.Hash, code []byte)
+		CodeHash() []byte
+
+		AddBalance(amount *big.Int)
+		SubBalance(amount *big.Int)
+		SetBalance(amount *big.Int)
+
+		Balance() *big.Int
+		ReturnGas(gas *big.Int)
+		Address() ethcmn.Address
+
+		SetNonce(nonce uint64)
+		Nonce() uint64
+	}
 	// stateObject represents an Ethereum account which is being modified.
 	//
 	// The usage pattern is as follows:
@@ -339,6 +362,11 @@ func (so *stateObject) empty() bool {
 	return so.account.Sequence == 0 &&
 		so.account.Balance().Sign() == 0 &&
 		bytes.Equal(so.account.CodeHash, emptyCodeHash)
+}
+
+// EncodeRLP implements rlp.Encoder.
+func (so *stateObject) EncodeRLP(w io.Writer) error {
+	return rlp.Encode(w, so.account)
 }
 
 func (so *stateObject) touch() {

@@ -26,10 +26,10 @@ import (
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
-	ethmisc "github.com/ethereum/go-ethereum/consensus/misc"
 	ethcore "github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethvm "github.com/ethereum/go-ethereum/core/vm"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	ethrlp "github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
@@ -238,13 +238,13 @@ func TestImportBlocks(t *testing.T) {
 		stateDB := createStateDB(t, ctx, ak)
 
 		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
-			ethmisc.ApplyDAOHardFork(stateDB)
+			applyDAOHardFork(stateDB)
 		}
 
 		for i, tx := range block.Transactions() {
 			stateDB.Prepare(tx.Hash(), block.Hash(), i)
 
-			_, _, err = ethcore.ApplyTransaction(
+			_, _, err = applyTransaction(
 				chainConfig, chainContext, nil, gp, stateDB, header, tx, usedGas, vmConfig,
 			)
 			require.NoError(t, err, "failed to apply tx at block %d; tx: %X", block.NumberU64(), tx.Hash())
@@ -304,4 +304,72 @@ func accumulateRewards(
 	}
 
 	stateDB.AddBalance(header.Coinbase, reward)
+}
+
+// ApplyDAOHardFork modifies the state database according to the DAO hard-fork
+// rules, transferring all balances of a set of DAO accounts to a single refund
+// contract.
+// Code is pulled from go-ethereum 1.9 because the StateDB interface does not include the 
+// SetBalance function implementation
+// Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/consensus/misc/dao.go#L74
+func applyDAOHardFork(statedb *evmtypes.CommitStateDB) {
+	// Retrieve the contract to refund balances into
+	if !statedb.Exist(ethparams.DAORefundContract) {
+		statedb.CreateAccount(ethparams.DAORefundContract)
+	}
+
+	// Move every DAO account and extra-balance account funds into the refund contract
+	for _, addr := range ethparams.DAODrainList() {
+		statedb.AddBalance(ethparams.DAORefundContract, statedb.GetBalance(addr))
+		statedb.SetBalance(addr, new(big.Int))
+	}
+}
+
+// ApplyTransaction attempts to apply a transaction to the given state database
+// and uses the input parameters for its environment. It returns the receipt
+// for the transaction, gas used and an error if the transaction failed,
+// indicating the block was invalid.
+// Function is also pulled from go-ethereum 1.9 because of the imcompatible usage
+// Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/core/state_processor.go#L88
+func applyTransaction(config *ethparams.ChainConfig, bc ethcore.ChainContext, author *ethcmn.Address, gp *ethcore.GasPool, statedb *evmtypes.CommitStateDB, header *ethtypes.Header, tx *ethtypes.Transaction, usedGas *uint64, cfg ethvm.Config) (*ethtypes.Receipt, uint64, error) {
+	msg, err := tx.AsMessage(ethtypes.MakeSigner(config, header.Number))
+	if err != nil {
+		return nil, 0, err
+	}
+	// Create a new context to be used in the EVM environment
+	context := ethcore.NewEVMContext(msg, header, bc, author)
+	// Create a new environment which holds all relevant information
+	// about the transaction and calling mechanisms.
+	vmenv := ethvm.NewEVM(context, statedb, config, cfg)
+	// Apply the transaction to the current state (included in the env)
+	_, gas, failed, err := ethcore.ApplyMessage(vmenv, msg, gp)
+	if err != nil {
+		return nil, 0, err
+	}
+	// Update the state with pending changes
+	var root []byte
+	if config.IsByzantium(header.Number) {
+		statedb.Finalise(true)
+	} else {
+		root = statedb.IntermediateRoot(config.IsEIP158(header.Number)).Bytes()
+	}
+	*usedGas += gas
+
+	// Create a new receipt for the transaction, storing the intermediate root and gas used by the tx
+	// based on the eip phase, we're passing whether the root touch-delete accounts.
+	receipt := ethtypes.NewReceipt(root, failed, *usedGas)
+	receipt.TxHash = tx.Hash()
+	receipt.GasUsed = gas
+	// if the transaction created a contract, store the creation address in the receipt.
+	if msg.To() == nil {
+		receipt.ContractAddress = ethcrypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
+	}
+	// Set the receipt logs and create a bloom for filtering
+	receipt.Logs = statedb.GetLogs(tx.Hash())
+	receipt.Bloom = ethtypes.CreateBloom(ethtypes.Receipts{receipt})
+	receipt.BlockHash = statedb.BlockHash()
+	receipt.BlockNumber = header.Number
+	receipt.TransactionIndex = uint(statedb.TxIndex())
+
+	return receipt, gas, err
 }
