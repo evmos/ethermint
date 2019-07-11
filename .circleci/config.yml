@@ -12,14 +12,30 @@ jobs:
           keys:
             - go-mod-v0-{{ checksum "go.sum" }}
       - run:
-          name: Get tools and verify dependencies
-          command: make tools verify
+          name: Verify Dependencies and compile binaries for daemon and cli
+          command: make verify build
+      - save_cache:
+          key: go-mod-v0-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+
+  lint:
+    docker:
+      - image: circleci/golang:1.12.5
+
+    working_directory: /go/src/github.com/cosmos/ethermint
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - go-mod-v0-{{ checksum "go.sum" }}
+      - run:
+          name: Get tools
+          command: make tools
       - run:
           name: Run linter
           command: make test-lint
-      - run:
-          name: Compile binaries for daemon and cli
-          command: make build
       - save_cache:
           key: go-mod-v0-{{ checksum "go.sum" }}
           paths:
@@ -49,4 +65,5 @@ workflows:
   build-workflow:
     jobs:
       - build
+      - lint
       - test
