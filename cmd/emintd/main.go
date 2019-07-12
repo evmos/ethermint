@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
+
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	genaccscli "github.com/cosmos/cosmos-sdk/x/genaccounts/client/cli"
@@ -12,6 +15,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	emintapp "github.com/cosmos/ethermint/app"
+
+	abci "github.com/tendermint/tendermint/abci/types"
+	dbm "github.com/tendermint/tendermint/libs/db"
+	tmlog "github.com/tendermint/tendermint/libs/log"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 func main() {
@@ -43,8 +51,8 @@ func main() {
 		genaccscli.AddGenesisAccountCmd(ctx, cdc, emintapp.DefaultNodeHome, emintapp.DefaultCLIHome),
 	)
 
-	// TODO: Add export app state and TM validators commands
-	// server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
+	// Tendermint node base commands
+	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "EM", emintapp.DefaultNodeHome)
@@ -54,26 +62,24 @@ func main() {
 	}
 }
 
-// func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
-// 	return emintapp.NewEthermintApp(logger, db)
-// }
+func newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
+	return emintapp.NewEthermintApp(logger, db, true, 0)
+}
 
-// func exportAppStateAndTMValidators(
-// 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
-// ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
+func exportAppStateAndTMValidators(
+	logger tmlog.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
+) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
-// 	// if height != -1 {
-// 	// 	emintApp := emintapp.NewEthermintApp(logger, db)
-// 	// 	err := emintApp.LoadHeight(height)
-// 	// 	if err != nil {
-// 	// 		return nil, nil, err
-// 	// 	}
-// 	// 	return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
-// 	// }
+	if height != -1 {
+		emintApp := emintapp.NewEthermintApp(logger, db, true, 0)
+		err := emintApp.LoadHeight(height)
+		if err != nil {
+			return nil, nil, err
+		}
+		return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+	}
 
-// 	// emintApp := emintapp.NewEthermintApp(logger, db)
+	emintApp := emintapp.NewEthermintApp(logger, db, true, 0)
 
-// 	// return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
-// 	// TODO: Unstub method
-// 	return json.RawMessage{}, []tmtypes.GenesisValidator{}, nil
-// }
+	return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+}

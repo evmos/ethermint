@@ -47,7 +47,7 @@ func newTestSetup() testSetup {
 	// nolint:errcheck
 	ms.LoadLatestVersion()
 
-	cdc := CreateCodec()
+	cdc := MakeCodec()
 	cdc.RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)
 
 	// Set params keeper and subspaces
