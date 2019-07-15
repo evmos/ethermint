@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/ethermint/version"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -10,11 +11,15 @@ import (
 )
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
-type PublicEthAPI struct{}
+type PublicEthAPI struct{
+	cliCtx context.CLIContext
+}
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
-func NewPublicEthAPI() *PublicEthAPI {
-	return &PublicEthAPI{}
+func NewPublicEthAPI(cliCtx context.CLIContext) *PublicEthAPI {
+	return &PublicEthAPI{
+		cliCtx: cliCtx,
+	}
 }
 
 // ProtocolVersion returns the supported Ethereum protocol version.

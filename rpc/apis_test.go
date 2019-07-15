@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	sdkcontext"github.com/cosmos/cosmos-sdk/client/context"
 	"testing"
 	"time"
 
@@ -67,7 +68,7 @@ func startAPIServer() (context.CancelFunc, int, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	_, err := StartHTTPEndpoint(ctx, config, GetRPCAPIs(), timeouts)
+	_, err := StartHTTPEndpoint(ctx, config, GetRPCAPIs(sdkcontext.NewCLIContext()), timeouts)
 	if err != nil {
 		return cancel, 0, err
 	}

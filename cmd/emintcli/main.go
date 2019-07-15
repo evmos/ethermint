@@ -6,10 +6,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
+	sdkrpc "github.com/cosmos/cosmos-sdk/client/rpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	emintapp "github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/rpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -18,7 +19,7 @@ import (
 func main() {
 	cobra.EnableCommandSorting = false
 
-	// TODO: Set up codec
+	cdc := emintapp.MakeCodec()
 
 	// Read in the configuration file for the sdk
 	config := sdk.GetConfig()
@@ -40,12 +41,12 @@ func main() {
 
 	// Construct Root Command
 	rootCmd.AddCommand(
-		rpc.StatusCommand(),
+		sdkrpc.StatusCommand(),
 		client.ConfigCmd(emintapp.DefaultCLIHome),
 		// TODO: Set up query command
 		// TODO: Set up tx command
 		// TODO: Set up rest routes (if included, different from web3 api)
-		// TODO: Set up web3 API setup command?
+		rpc.Web3RpcCmd(cdc),
 		client.LineBreak,
 		keys.Commands(),
 		client.LineBreak,
