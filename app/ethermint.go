@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/cosmos/ethermint/x/evm"
 	"os"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
@@ -58,6 +59,8 @@ var (
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
+		// TODO: Enable EVM AppModuleBasic
+		//evm.AppModuleBasic{},
 	)
 )
 
@@ -96,7 +99,8 @@ type EthermintApp struct {
 	keyGov      *sdk.KVStoreKey
 	keyParams   *sdk.KVStoreKey
 	tkeyParams  *sdk.TransientStoreKey
-	// TODO: Add evm module key
+	evmStoreKey *sdk.KVStoreKey
+	evmCodeKey  *sdk.KVStoreKey
 
 	// keepers
 	accountKeeper  auth.AccountKeeper
@@ -109,7 +113,7 @@ type EthermintApp struct {
 	govKeeper      gov.Keeper
 	crisisKeeper   crisis.Keeper
 	paramsKeeper   params.Keeper
-	// TODO: Include evm Keeper
+	evmKeeper      evm.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -144,7 +148,8 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 		keyGov:         sdk.NewKVStoreKey(gov.StoreKey),
 		keyParams:      sdk.NewKVStoreKey(params.StoreKey),
 		tkeyParams:     sdk.NewTransientStoreKey(params.TStoreKey),
-		// TODO: Initialize evm module key
+		evmStoreKey:    sdk.NewKVStoreKey(evmtypes.EvmStoreKey),
+		evmCodeKey:     sdk.NewKVStoreKey(evmtypes.EvmCodeKey),
 	}
 
 	// init params keeper and subspaces
@@ -180,7 +185,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	app.slashingKeeper = slashing.NewKeeper(app.cdc, app.keySlashing, &stakingKeeper,
 		slashingSubspace, slashing.DefaultCodespace)
 	app.crisisKeeper = crisis.NewKeeper(crisisSubspace, invCheckPeriod, app.supplyKeeper, auth.FeeCollectorName)
-	// TODO: Instantiate evm Keeper
+	app.evmKeeper = evm.NewKeeper(app.accountKeeper, app.evmStoreKey, app.evmCodeKey)
 
 	// register the proposal types
 	govRouter := gov.NewRouter()
@@ -220,7 +225,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	// initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(genaccounts.ModuleName, supply.ModuleName, distr.ModuleName,
 		staking.ModuleName, auth.ModuleName, bank.ModuleName, slashing.ModuleName,
-		gov.ModuleName, mint.ModuleName, crisis.ModuleName, genutil.ModuleName)
+		gov.ModuleName, mint.ModuleName, crisis.ModuleName, genutil.ModuleName, evmtypes.ModuleName)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
@@ -228,7 +233,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	// initialize stores
 	app.MountStores(app.keyMain, app.keyAccount, app.keySupply, app.keyStaking,
 		app.keyMint, app.keyDistr, app.keySlashing, app.keyGov, app.keyParams,
-		app.tkeyParams, app.tkeyStaking, app.tkeyDistr)
+		app.tkeyParams, app.tkeyStaking, app.tkeyDistr, app.evmStoreKey, app.evmCodeKey)
 
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)

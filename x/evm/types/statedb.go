@@ -82,7 +82,7 @@ type CommitStateDB struct {
 //
 // CONTRACT: Stores used for state must be cache-wrapped as the ordering of the
 // key/value space matters in determining the merkle root.
-func NewCommitStateDB(ctx sdk.Context, ak auth.AccountKeeper, storageKey, codeKey sdk.StoreKey) (*CommitStateDB, error) {
+func NewCommitStateDB(ctx sdk.Context, ak auth.AccountKeeper, storageKey, codeKey sdk.StoreKey) *CommitStateDB {
 	return &CommitStateDB{
 		ctx:               ctx,
 		ak:                ak,
@@ -93,7 +93,12 @@ func NewCommitStateDB(ctx sdk.Context, ak auth.AccountKeeper, storageKey, codeKe
 		logs:              make(map[ethcmn.Hash][]*ethtypes.Log),
 		preimages:         make(map[ethcmn.Hash][]byte),
 		journal:           newJournal(),
-	}, nil
+	}
+}
+
+func (csdb *CommitStateDB) WithContext(ctx sdk.Context) *CommitStateDB {
+	csdb.ctx = ctx
+	return csdb
 }
 
 // ----------------------------------------------------------------------------

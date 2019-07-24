@@ -50,8 +50,8 @@ var (
 	// paramsKey  = sdk.NewKVStoreKey("params")
 	// tParamsKey = sdk.NewTransientStoreKey("transient_params")
 	accKey     = sdk.NewKVStoreKey("acc")
-	storageKey = sdk.NewKVStoreKey("storage")
-	codeKey    = sdk.NewKVStoreKey("code")
+	storageKey = sdk.NewKVStoreKey(evmtypes.EvmStoreKey)
+	codeKey    = sdk.NewKVStoreKey(evmtypes.EvmCodeKey)
 
 	logger = tmlog.NewNopLogger()
 
@@ -103,8 +103,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.Accoun
 	ms := cms.CacheMultiStore()
 	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
 
-	stateDB, err := evmtypes.NewCommitStateDB(ctx, ak, storageKey, codeKey)
-	require.NoError(t, err, "failed to create a StateDB instance")
+	stateDB := evmtypes.NewCommitStateDB(ctx, ak, storageKey, codeKey)
 
 	// sort the addresses and insertion of key/value pairs matters
 	genAddrs := make([]string, len(genBlock.Alloc))
@@ -136,7 +135,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.Accoun
 	// commit the stateDB with 'false' to delete empty objects
 	//
 	// NOTE: Commit does not yet return the intra merkle root (version)
-	_, err = stateDB.Commit(false)
+	_, err := stateDB.Commit(false)
 	require.NoError(t, err)
 
 	// persist multi-store cache state
@@ -269,9 +268,7 @@ func TestImportBlocks(t *testing.T) {
 }
 
 func createStateDB(t *testing.T, ctx sdk.Context, ak auth.AccountKeeper) *evmtypes.CommitStateDB {
-	stateDB, err := evmtypes.NewCommitStateDB(ctx, ak, storageKey, codeKey)
-	require.NoError(t, err, "failed to create a StateDB instance")
-
+	stateDB := evmtypes.NewCommitStateDB(ctx, ak, storageKey, codeKey)
 	return stateDB
 }
 
@@ -309,7 +306,7 @@ func accumulateRewards(
 // ApplyDAOHardFork modifies the state database according to the DAO hard-fork
 // rules, transferring all balances of a set of DAO accounts to a single refund
 // contract.
-// Code is pulled from go-ethereum 1.9 because the StateDB interface does not include the 
+// Code is pulled from go-ethereum 1.9 because the StateDB interface does not include the
 // SetBalance function implementation
 // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/consensus/misc/dao.go#L74
 func applyDAOHardFork(statedb *evmtypes.CommitStateDB) {
