@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/cosmos/ethermint/rpc"
+	"github.com/tendermint/go-amino"
 	"os"
 	"path"
 
@@ -10,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	emintapp "github.com/cosmos/ethermint/app"
-	"github.com/cosmos/ethermint/rpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -43,7 +44,7 @@ func main() {
 	rootCmd.AddCommand(
 		sdkrpc.StatusCommand(),
 		client.ConfigCmd(emintapp.DefaultCLIHome),
-		// TODO: Set up query command
+		queryCmd(cdc),
 		// TODO: Set up tx command
 		// TODO: Set up rest routes (if included, different from web3 api)
 		rpc.Web3RpcCmd(cdc),
@@ -57,6 +58,24 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func queryCmd(cdc *amino.Codec) *cobra.Command {
+	queryCmd := &cobra.Command{
+		Use:     "query",
+		Aliases: []string{"q"},
+		Short:   "Querying subcommands",
+	}
+
+	// TODO: Possibly add these query commands from other modules
+	//queryCmd.AddCommand(
+	// ...
+	//)
+
+	// add modules' query commands
+	emintapp.ModuleBasics.AddQueryCommands(queryCmd, cdc)
+
+	return queryCmd
 }
 
 func initConfig(cmd *cobra.Command) error {

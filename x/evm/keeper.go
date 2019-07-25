@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethvm "github.com/ethereum/go-ethereum/core/vm"
 
@@ -17,12 +18,29 @@ import (
 // to the StateDB interface
 type Keeper struct {
 	csdb *types.CommitStateDB
+	cdc  *codec.Codec
 }
 
-func NewKeeper(ak auth.AccountKeeper, storageKey, codeKey sdk.StoreKey) Keeper {
+func NewKeeper(ak auth.AccountKeeper, storageKey, codeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
 	return Keeper{
 		csdb: types.NewCommitStateDB(sdk.Context{}, ak, storageKey, codeKey),
+		cdc:  cdc,
 	}
+}
+
+// ----------------------------------------------------------------------------
+// Genesis
+// ----------------------------------------------------------------------------
+
+// CreateGenesisAccount initializes an account and its balance, code, and storage
+func (k *Keeper) CreateGenesisAccount(ctx sdk.Context, account GenesisAccount) {
+	csdb := k.csdb.WithContext(ctx)
+	csdb.SetBalance(account.Address, account.Balance)
+	csdb.SetCode(account.Address, account.Code)
+	for _, key := range account.Storage {
+		csdb.SetState(account.Address, key, account.Storage[key])
+	}
+
 }
 
 // ----------------------------------------------------------------------------

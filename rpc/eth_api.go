@@ -1,8 +1,10 @@
 package rpc
 
 import (
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/ethermint/version"
+	"github.com/cosmos/ethermint/x/evm/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -11,7 +13,7 @@ import (
 )
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
-type PublicEthAPI struct{
+type PublicEthAPI struct {
 	cliCtx context.CLIContext
 }
 
@@ -61,18 +63,41 @@ func (e *PublicEthAPI) Accounts() []common.Address {
 
 // BlockNumber returns the current block number.
 func (e *PublicEthAPI) BlockNumber() *big.Int {
-	return big.NewInt(0)
+	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/blockNumber", types.ModuleName), nil)
+	if err != nil {
+		fmt.Printf("could not resolve: %s\n", err)
+		return nil
+	}
+
+	var out types.QueryResBlockNumber
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	return out.Number
 }
 
 // GetBalance returns the provided account's balance up to the provided block number.
 func (e *PublicEthAPI) GetBalance(address common.Address, blockNum rpc.BlockNumber) *hexutil.Big {
-	out := big.NewInt(0)
-	return (*hexutil.Big)(out)
+	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/balance/%s", types.ModuleName, address), nil)
+	if err != nil {
+		fmt.Printf("could not resolve: %s\n", err)
+		return nil
+	}
+
+	var out types.QueryResBalance
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	return (*hexutil.Big)(out.Balance)
 }
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
 func (e *PublicEthAPI) GetStorageAt(address common.Address, key string, blockNum rpc.BlockNumber) hexutil.Bytes {
-	return nil
+	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/storage/%s/%s", types.ModuleName, address, key), nil)
+	if err != nil {
+		fmt.Printf("could not resolve: %s\n", err)
+		return nil
+	}
+
+	var out types.QueryResStorage
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	return out.Value[:]
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
@@ -102,7 +127,15 @@ func (e *PublicEthAPI) GetUncleCountByBlockNumber(blockNum rpc.BlockNumber) hexu
 
 // GetCode returns the contract code at the given address and block number.
 func (e *PublicEthAPI) GetCode(address common.Address, blockNumber rpc.BlockNumber) hexutil.Bytes {
-	return nil
+	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/code/%s", types.ModuleName, address), nil)
+	if err != nil {
+		fmt.Printf("could not resolve: %s\n", err)
+		return nil
+	}
+
+	var out types.QueryResCode
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	return out.Code
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.

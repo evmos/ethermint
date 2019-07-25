@@ -6,4 +6,6 @@ const (
 
 	EvmStoreKey = "evmstore"
 	EvmCodeKey  = "evmcode"
+
+	RouterKey = ModuleName
 )

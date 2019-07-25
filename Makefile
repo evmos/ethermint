@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PACKAGES=$(shell go list ./... | grep -Ev 'vendor|importer')
+PACKAGES=$(shell go list ./... | grep -Ev 'vendor|importer|rpc/tester')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_FLAGS = -tags netgo -ldflags "-X github.com/cosmos/ethermint/version.GitCommit=${COMMIT_HASH}"
 DOCKER_TAG = unstable
@@ -145,6 +145,9 @@ test-import:
 	@${GO_MOD} go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
 	--blockchain blockchain --timeout=5m
 	# TODO: remove tmp directory after test run to avoid subsequent errors
+
+test-rpc:
+	@${GO_MOD} go test -v --vet=off ./rpc/tester
 
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"

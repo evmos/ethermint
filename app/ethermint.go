@@ -59,8 +59,7 @@ var (
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
-		// TODO: Enable EVM AppModuleBasic
-		//evm.AppModuleBasic{},
+		evm.AppModuleBasic{},
 	)
 )
 
@@ -185,7 +184,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	app.slashingKeeper = slashing.NewKeeper(app.cdc, app.keySlashing, &stakingKeeper,
 		slashingSubspace, slashing.DefaultCodespace)
 	app.crisisKeeper = crisis.NewKeeper(crisisSubspace, invCheckPeriod, app.supplyKeeper, auth.FeeCollectorName)
-	app.evmKeeper = evm.NewKeeper(app.accountKeeper, app.evmStoreKey, app.evmCodeKey)
+	app.evmKeeper = evm.NewKeeper(app.accountKeeper, app.evmStoreKey, app.evmCodeKey, cdc)
 
 	// register the proposal types
 	govRouter := gov.NewRouter()
@@ -212,6 +211,7 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 		mint.NewAppModule(app.mintKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
+		evm.NewAppModule(app.evmKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
