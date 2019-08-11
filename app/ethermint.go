@@ -2,8 +2,9 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/cosmos/ethermint/x/evm"
 	"os"
+
+	"github.com/cosmos/ethermint/x/evm"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -25,7 +26,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/cosmos/ethermint/crypto"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -66,9 +66,6 @@ var (
 // MakeCodec generates the necessary codecs for Amino
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
-
-	// TODO: Move this codec to module (Issue #12 https://github.com/ChainSafe/ethermint/issues/12)
-	crypto.RegisterCodec(cdc)
 
 	ModuleBasics.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
