@@ -1,15 +1,17 @@
 package main
 
 import (
-	"github.com/cosmos/ethermint/rpc"
-	"github.com/tendermint/go-amino"
 	"os"
 	"path"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/ethermint/rpc"
+	"github.com/tendermint/go-amino"
+
+	"github.com/cosmos/cosmos-sdk/client"
 	sdkrpc "github.com/cosmos/cosmos-sdk/client/rpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	emintkeys "github.com/cosmos/ethermint/keys"
 
 	emintapp "github.com/cosmos/ethermint/app"
 	"github.com/spf13/cobra"
@@ -24,6 +26,7 @@ func main() {
 
 	// Read in the configuration file for the sdk
 	config := sdk.GetConfig()
+	// TODO: Remove or change prefix if usable to generate Ethereum address
 	config.SetBech32PrefixForAccount(sdk.Bech32PrefixAccAddr, sdk.Bech32PrefixAccPub)
 	config.SetBech32PrefixForValidator(sdk.Bech32PrefixValAddr, sdk.Bech32PrefixValPub)
 	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
@@ -49,7 +52,9 @@ func main() {
 		// TODO: Set up rest routes (if included, different from web3 api)
 		rpc.Web3RpcCmd(cdc),
 		client.LineBreak,
+		// TODO: Remove these commands once ethermint keys and genesis set up
 		keys.Commands(),
+		emintkeys.Commands(),
 		client.LineBreak,
 	)
 

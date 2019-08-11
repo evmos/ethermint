@@ -24,7 +24,7 @@ func TestPrivKeySecp256k1PrivKey(t *testing.T) {
 
 	// validate Ethereum address equality
 	addr := privKey.PubKey().Address()
-	expectedAddr := ethcrypto.PubkeyToAddress(privKey.PublicKey)
+	expectedAddr := ethcrypto.PubkeyToAddress(privKey.ToECDSA().PublicKey)
 	require.Equal(t, expectedAddr.Bytes(), addr.Bytes())
 
 	// validate we can sign some bytes

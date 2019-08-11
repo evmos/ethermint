@@ -19,7 +19,7 @@ func GenerateEthAddress() ethcmn.Address {
 		panic(err)
 	}
 
-	return ethcrypto.PubkeyToAddress(priv.PublicKey)
+	return ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
 }
 
 // ValidateSigner attempts to validate a signer for a given slice of bytes over

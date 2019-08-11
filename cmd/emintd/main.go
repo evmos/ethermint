@@ -28,6 +28,7 @@ func main() {
 	cdc := emintapp.MakeCodec()
 
 	config := sdk.GetConfig()
+	// TODO: Remove or change prefix if usable to generate Ethereum address
 	config.SetBech32PrefixForAccount(sdk.Bech32PrefixAccAddr, sdk.Bech32PrefixAccPub)
 	config.SetBech32PrefixForValidator(sdk.Bech32PrefixValAddr, sdk.Bech32PrefixValPub)
 	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)

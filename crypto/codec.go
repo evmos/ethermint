@@ -1,6 +1,8 @@
 package crypto
 
-import "github.com/cosmos/cosmos-sdk/codec"
+import (
+	"github.com/cosmos/cosmos-sdk/codec"
+)
 
 var cryptoCodec = codec.New()
 

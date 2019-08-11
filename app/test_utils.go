@@ -90,7 +90,7 @@ func newTestStdFee() auth.StdFee {
 // GenerateAddress generates an Ethereum address.
 func newTestAddrKey() (sdk.AccAddress, tmcrypto.PrivKey) {
 	privkey, _ := crypto.GenerateKey()
-	addr := ethcrypto.PubkeyToAddress(privkey.PublicKey)
+	addr := ethcrypto.PubkeyToAddress(privkey.ToECDSA().PublicKey)
 
 	return sdk.AccAddress(addr.Bytes()), privkey
 }
