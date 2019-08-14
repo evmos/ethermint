@@ -2,6 +2,7 @@ package evm
 
 import (
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -81,7 +82,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return nil // NewHandler(am.keeper)
+	return NewHandler(am.keeper)
 }
 func (am AppModule) QuerierRoute() string {
 	return types.ModuleName
