@@ -20,7 +20,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
-	dbm "github.com/tendermint/tendermint/libs/db"
+	dbm "github.com/tendermint/tm-db"
 	"github.com/tendermint/tendermint/libs/log"
 )
 

@@ -15,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -29,9 +28,9 @@ import (
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
+	cmn "github.com/tendermint/tendermint/libs/common"
 	tmlog "github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 )
 
 const appName = "Ethermint"
@@ -54,13 +53,23 @@ var (
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
-		gov.NewAppModuleBasic(paramsclient.ProposalHandler, distrclient.ProposalHandler),
+		gov.NewAppModuleBasic(paramsclient.ProposalHandler, distr.ProposalHandler),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		evm.AppModuleBasic{},
 	)
+
+	// module account permissions
+	maccPerms = map[string][]string{
+		auth.FeeCollectorName:     nil,
+		distr.ModuleName:          nil,
+		mint.ModuleName:           {supply.Minter},
+		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		gov.ModuleName:            {supply.Burner},
+	}
 )
 
 // MakeCodec generates the necessary codecs for Amino
@@ -83,20 +92,8 @@ type EthermintApp struct {
 	invCheckPeriod uint
 
 	// keys to access the substores
-	keyMain     *sdk.KVStoreKey
-	keyAccount  *sdk.KVStoreKey
-	keySupply   *sdk.KVStoreKey
-	keyStaking  *sdk.KVStoreKey
-	tkeyStaking *sdk.TransientStoreKey
-	keySlashing *sdk.KVStoreKey
-	keyMint     *sdk.KVStoreKey
-	keyDistr    *sdk.KVStoreKey
-	tkeyDistr   *sdk.TransientStoreKey
-	keyGov      *sdk.KVStoreKey
-	keyParams   *sdk.KVStoreKey
-	tkeyParams  *sdk.TransientStoreKey
-	evmStoreKey *sdk.KVStoreKey
-	evmCodeKey  *sdk.KVStoreKey
+	keys  map[string]*sdk.KVStoreKey
+	tkeys map[string]*sdk.TransientStoreKey
 
 	// keepers
 	accountKeeper  auth.AccountKeeper
@@ -121,35 +118,29 @@ type EthermintApp struct {
 // TODO: Ethermint needs to support being bootstrapped as an application running
 // in a sovereign zone and as an application running with a shared security model.
 // For now, it will support only running as a sovereign application.
-func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
+func NewEthermintApp(
+	logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp)) *EthermintApp {
 	cdc := MakeCodec()
 
-	baseApp := bam.NewBaseApp(appName, logger, db, evmtypes.TxDecoder(cdc), baseAppOptions...)
-	baseApp.SetAppVersion(version.Version)
+	bApp := bam.NewBaseApp(appName, logger, db, evmtypes.TxDecoder(cdc), baseAppOptions...)
+	bApp.SetAppVersion(version.Version)
 
-	var app = &EthermintApp{
-		BaseApp:        baseApp,
+	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
+		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
+		gov.StoreKey, params.StoreKey)
+	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
+
+	app := &EthermintApp{
+		BaseApp:        bApp,
 		cdc:            cdc,
 		invCheckPeriod: invCheckPeriod,
-		keyMain:        sdk.NewKVStoreKey(bam.MainStoreKey),
-		keyAccount:     sdk.NewKVStoreKey(auth.StoreKey),
-		keyStaking:     sdk.NewKVStoreKey(staking.StoreKey),
-		keySupply:      sdk.NewKVStoreKey(supply.StoreKey),
-		tkeyStaking:    sdk.NewTransientStoreKey(staking.TStoreKey),
-		keyMint:        sdk.NewKVStoreKey(mint.StoreKey),
-		keyDistr:       sdk.NewKVStoreKey(distr.StoreKey),
-		tkeyDistr:      sdk.NewTransientStoreKey(distr.TStoreKey),
-		keySlashing:    sdk.NewKVStoreKey(slashing.StoreKey),
-		keyGov:         sdk.NewKVStoreKey(gov.StoreKey),
-		keyParams:      sdk.NewKVStoreKey(params.StoreKey),
-		tkeyParams:     sdk.NewTransientStoreKey(params.TStoreKey),
-		evmStoreKey:    sdk.NewKVStoreKey(evmtypes.EvmStoreKey),
-		evmCodeKey:     sdk.NewKVStoreKey(evmtypes.EvmCodeKey),
+		keys:           keys,
+		tkeys:          tkeys,
 	}
 
 	// init params keeper and subspaces
-	app.paramsKeeper = params.NewKeeper(app.cdc, app.keyParams, app.tkeyParams, params.DefaultCodespace)
+	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
 	authSubspace := app.paramsKeeper.Subspace(auth.DefaultParamspace)
 	bankSubspace := app.paramsKeeper.Subspace(bank.DefaultParamspace)
 	stakingSubspace := app.paramsKeeper.Subspace(staking.DefaultParamspace)
@@ -159,49 +150,39 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	govSubspace := app.paramsKeeper.Subspace(gov.DefaultParamspace)
 	crisisSubspace := app.paramsKeeper.Subspace(crisis.DefaultParamspace)
 
-	// account permissions
-	maccPerms := map[string][]string{
-		auth.FeeCollectorName:     []string{supply.Basic},
-		distr.ModuleName:          []string{supply.Basic},
-		mint.ModuleName:           []string{supply.Minter},
-		staking.BondedPoolName:    []string{supply.Burner, supply.Staking},
-		staking.NotBondedPoolName: []string{supply.Burner, supply.Staking},
-		gov.ModuleName:            []string{supply.Burner},
-	}
-
 	// add keepers
-	app.accountKeeper = auth.NewAccountKeeper(app.cdc, app.keyAccount, authSubspace, auth.ProtoBaseAccount)
-	app.bankKeeper = bank.NewBaseKeeper(app.accountKeeper, bankSubspace, bank.DefaultCodespace)
-	app.supplyKeeper = supply.NewKeeper(app.cdc, app.keySupply, app.accountKeeper, app.bankKeeper, supply.DefaultCodespace, maccPerms)
-	stakingKeeper := staking.NewKeeper(app.cdc, app.keyStaking, app.tkeyStaking,
+	app.accountKeeper = auth.NewAccountKeeper(app.cdc, keys[auth.StoreKey], authSubspace, auth.ProtoBaseAccount)
+	app.bankKeeper = bank.NewBaseKeeper(app.accountKeeper, bankSubspace, bank.DefaultCodespace, app.ModuleAccountAddrs())
+	app.supplyKeeper = supply.NewKeeper(app.cdc, keys[supply.StoreKey], app.accountKeeper, app.bankKeeper, maccPerms)
+	stakingKeeper := staking.NewKeeper(app.cdc, keys[staking.StoreKey], tkeys[staking.TStoreKey],
 		app.supplyKeeper, stakingSubspace, staking.DefaultCodespace)
-	app.mintKeeper = mint.NewKeeper(app.cdc, app.keyMint, mintSubspace, &stakingKeeper, app.supplyKeeper, auth.FeeCollectorName)
-	app.distrKeeper = distr.NewKeeper(app.cdc, app.keyDistr, distrSubspace, &stakingKeeper,
-		app.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName)
-	app.slashingKeeper = slashing.NewKeeper(app.cdc, app.keySlashing, &stakingKeeper,
+	app.mintKeeper = mint.NewKeeper(app.cdc, keys[mint.StoreKey], mintSubspace, &stakingKeeper, app.supplyKeeper, auth.FeeCollectorName)
+	app.distrKeeper = distr.NewKeeper(app.cdc, keys[distr.StoreKey], distrSubspace, &stakingKeeper,
+		app.supplyKeeper, distr.DefaultCodespace, auth.FeeCollectorName, app.ModuleAccountAddrs())
+	app.slashingKeeper = slashing.NewKeeper(app.cdc, keys[slashing.StoreKey], &stakingKeeper,
 		slashingSubspace, slashing.DefaultCodespace)
 	app.crisisKeeper = crisis.NewKeeper(crisisSubspace, invCheckPeriod, app.supplyKeeper, auth.FeeCollectorName)
-	app.evmKeeper = evm.NewKeeper(app.accountKeeper, app.evmStoreKey, app.evmCodeKey, cdc)
 
 	// register the proposal types
 	govRouter := gov.NewRouter()
 	govRouter.AddRoute(gov.RouterKey, gov.ProposalHandler).
 		AddRoute(params.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
 		AddRoute(distr.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper))
-	app.govKeeper = gov.NewKeeper(app.cdc, app.keyGov, app.paramsKeeper, govSubspace,
+	app.govKeeper = gov.NewKeeper(app.cdc, keys[gov.StoreKey], app.paramsKeeper, govSubspace,
 		app.supplyKeeper, &stakingKeeper, gov.DefaultCodespace, govRouter)
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.stakingKeeper = *stakingKeeper.SetHooks(
-		staking.NewMultiStakingHooks(app.distrKeeper.Hooks(), app.slashingKeeper.Hooks()))
+		staking.NewMultiStakingHooks(app.distrKeeper.Hooks(), app.slashingKeeper.Hooks()),
+	)
 
 	app.mm = module.NewManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
-		crisis.NewAppModule(app.crisisKeeper),
+		crisis.NewAppModule(&app.crisisKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.supplyKeeper),
 		gov.NewAppModule(app.govKeeper, app.supplyKeeper),
@@ -216,21 +197,22 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	// CanWithdrawInvariant invariant.
 	app.mm.SetOrderBeginBlockers(mint.ModuleName, distr.ModuleName, slashing.ModuleName)
 
-	app.mm.SetOrderEndBlockers(gov.ModuleName, staking.ModuleName)
+	app.mm.SetOrderEndBlockers(crisis.ModuleName, gov.ModuleName, staking.ModuleName)
 
-	// genutils must occur after staking so that pools are properly
-	// initialized with tokens from genesis accounts.
-	app.mm.SetOrderInitGenesis(genaccounts.ModuleName, supply.ModuleName, distr.ModuleName,
-		staking.ModuleName, auth.ModuleName, bank.ModuleName, slashing.ModuleName,
-		gov.ModuleName, mint.ModuleName, crisis.ModuleName, genutil.ModuleName, evmtypes.ModuleName)
+	// NOTE: The genutils module must occur after staking so that pools are
+	// properly initialized with tokens from genesis accounts.
+	app.mm.SetOrderInitGenesis(
+		genaccounts.ModuleName, distr.ModuleName, staking.ModuleName,
+		auth.ModuleName, bank.ModuleName, slashing.ModuleName, gov.ModuleName,
+		mint.ModuleName, supply.ModuleName, crisis.ModuleName, genutil.ModuleName,
+	)
 
 	app.mm.RegisterInvariants(&app.crisisKeeper)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
 
 	// initialize stores
-	app.MountStores(app.keyMain, app.keyAccount, app.keySupply, app.keyStaking,
-		app.keyMint, app.keyDistr, app.keySlashing, app.keyGov, app.keyParams,
-		app.tkeyParams, app.tkeyStaking, app.tkeyDistr, app.evmStoreKey, app.evmCodeKey)
+	app.MountKVStores(keys)
+	app.MountTransientStores(tkeys)
 
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
@@ -239,13 +221,12 @@ func NewEthermintApp(logger tmlog.Logger, db dbm.DB, loadLatest bool,
 	app.SetEndBlocker(app.EndBlocker)
 
 	if loadLatest {
-		err := app.LoadLatestVersion(app.keyMain)
+		err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
 		if err != nil {
-			panic(err)
+			cmn.Exit(err.Error())
 		}
 	}
 	return app
-
 }
 
 // The genesis state of the blockchain is represented here as a map of raw json
@@ -271,26 +252,15 @@ func (app *EthermintApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 
 // load a particular height
 func (app *EthermintApp) LoadHeight(height int64) error {
-	return app.LoadVersion(height, app.keyMain)
+	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }
 
-// ExportAppStateAndValidators exports the state of the application for a genesis
-// file.
-func (app *EthermintApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
-) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
-
-	// Creates context with current height and checks txs for ctx to be usable by start of next block
-	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
-
-	// Export genesis to be used by SDK modules
-	genState := app.mm.ExportGenesis(ctx)
-	appState, err = codec.MarshalJSONIndent(app.cdc, genState)
-	if err != nil {
-		return nil, nil, err
+// ModuleAccountAddrs returns all the app's module account addresses.
+func (app *EthermintApp) ModuleAccountAddrs() map[string]bool {
+	modAccAddrs := make(map[string]bool)
+	for acc := range maccPerms {
+		modAccAddrs[app.supplyKeeper.GetModuleAddress(acc).String()] = true
 	}
 
-	// Write validators to staking module to be used by TM node
-	validators = staking.WriteValidators(ctx, app.stakingKeeper)
-
-	return appState, validators, nil
+	return modAccAddrs
 }

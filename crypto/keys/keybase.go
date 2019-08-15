@@ -21,7 +21,7 @@ import (
 	emintCrypto "github.com/cosmos/ethermint/crypto"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
-	dbm "github.com/tendermint/tendermint/libs/db"
+	dbm "github.com/tendermint/tm-db"
 )
 
 var _ cosmosKeys.Keybase = dbKeybase{}
