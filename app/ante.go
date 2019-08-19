@@ -173,6 +173,10 @@ func consumeSigGas(meter sdk.GasMeter, pubkey tmcrypto.PubKey) {
 	switch pubkey.(type) {
 	case crypto.PubKeySecp256k1:
 		meter.ConsumeGas(secp256k1VerifyCost, "ante verify: secp256k1")
+	// TODO: Remove allowing tm Pub key to sign transactions (if intended in final release)
+	// or until genesis utils are built into the evm or as their own module
+	case tmcrypto.PubKey:
+		meter.ConsumeGas(secp256k1VerifyCost, "ante verify: tendermint secp256k1")
 	default:
 		panic("Unrecognized signature type")
 	}
