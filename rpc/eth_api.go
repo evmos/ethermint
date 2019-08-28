@@ -2,6 +2,8 @@ package rpc
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/ethermint/version"
 	"github.com/cosmos/ethermint/x/evm/types"
@@ -9,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/signer/core"
-	"math/big"
 )
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
@@ -76,7 +77,8 @@ func (e *PublicEthAPI) BlockNumber() *big.Int {
 
 // GetBalance returns the provided account's balance up to the provided block number.
 func (e *PublicEthAPI) GetBalance(address common.Address, blockNum rpc.BlockNumber) *hexutil.Big {
-	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/balance/%s", types.ModuleName, address), nil)
+	ctx := e.cliCtx.WithHeight(blockNum.Int64())
+	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/balance/%s", types.ModuleName, address), nil)
 	if err != nil {
 		fmt.Printf("could not resolve: %s\n", err)
 		return nil
@@ -89,7 +91,8 @@ func (e *PublicEthAPI) GetBalance(address common.Address, blockNum rpc.BlockNumb
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
 func (e *PublicEthAPI) GetStorageAt(address common.Address, key string, blockNum rpc.BlockNumber) hexutil.Bytes {
-	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/storage/%s/%s", types.ModuleName, address, key), nil)
+	ctx := e.cliCtx.WithHeight(blockNum.Int64())
+	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/storage/%s/%s", types.ModuleName, address, key), nil)
 	if err != nil {
 		fmt.Printf("could not resolve: %s\n", err)
 		return nil
@@ -127,7 +130,8 @@ func (e *PublicEthAPI) GetUncleCountByBlockNumber(blockNum rpc.BlockNumber) hexu
 
 // GetCode returns the contract code at the given address and block number.
 func (e *PublicEthAPI) GetCode(address common.Address, blockNumber rpc.BlockNumber) hexutil.Bytes {
-	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/code/%s", types.ModuleName, address), nil)
+	ctx := e.cliCtx.WithHeight(blockNumber.Int64())
+	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/code/%s", types.ModuleName, address), nil)
 	if err != nil {
 		fmt.Printf("could not resolve: %s\n", err)
 		return nil
