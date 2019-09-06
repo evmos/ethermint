@@ -1,6 +1,8 @@
 package evm
 
 import (
+	"math/big"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/version"
@@ -8,7 +10,6 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"math/big"
 )
 
 // Supported endpoints
@@ -18,6 +19,7 @@ const (
 	QueryBlockNumber     = "blockNumber"
 	QueryStorage         = "storage"
 	QueryCode            = "code"
+	QueryNonce           = "nonce"
 )
 
 // NewQuerier is the module level router for state queries
@@ -34,6 +36,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryStorage(ctx, path, keeper)
 		case QueryCode:
 			return queryCode(ctx, path, keeper)
+		case QueryNonce:
+			return queryNonce(ctx, path, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query endpoint")
 		}
@@ -97,6 +101,18 @@ func queryCode(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error
 	code := keeper.GetCode(ctx, addr)
 	cRes := types.QueryResCode{Code: code}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, cRes)
+	if err != nil {
+		panic("could not marshal result to JSON")
+	}
+
+	return res, nil
+}
+
+func queryNonce(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
+	addr := ethcmn.BytesToAddress([]byte(path[1]))
+	nonce := keeper.GetNonce(ctx, addr)
+	nRes := types.QueryResNonce{Nonce: nonce}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, nRes)
 	if err != nil {
 		panic("could not marshal result to JSON")
 	}

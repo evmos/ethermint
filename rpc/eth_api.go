@@ -102,8 +102,16 @@ func (e *PublicEthAPI) GetStorageAt(address common.Address, key string, blockNum
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
-func (e *PublicEthAPI) GetTransactionCount(address common.Address, blockNum rpc.BlockNumber) hexutil.Uint64 {
-	return 0
+func (e *PublicEthAPI) GetTransactionCount(address common.Address, blockNum rpc.BlockNumber) (hexutil.Uint64, error) {
+	ctx := e.cliCtx.WithHeight(blockNum.Int64())
+	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/nonce/%s", types.ModuleName, address), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var out types.QueryResNonce
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	return hexutil.Uint64(out.Nonce), nil
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions in the block identified by hash.
