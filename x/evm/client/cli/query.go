@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -9,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// GetQueryCmd defines evm module queries through the cli
 func GetQueryCmd(moduleName string, cdc *codec.Codec) *cobra.Command {
 	evmQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
@@ -21,6 +23,7 @@ func GetQueryCmd(moduleName string, cdc *codec.Codec) *cobra.Command {
 		GetCmdGetBlockNumber(moduleName, cdc),
 		GetCmdGetStorageAt(moduleName, cdc),
 		GetCmdGetCode(moduleName, cdc),
+		GetCmdGetNonce(moduleName, cdc),
 	)...)
 	return evmQueryCmd
 }
@@ -89,6 +92,30 @@ func GetCmdGetCode(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 			var out types.QueryResCode
+			cdc.MustUnmarshalJSON(res, &out)
+			return cliCtx.PrintOutput(out)
+		},
+	}
+}
+
+// GetCmdGetCode queries the nonce field of a given address
+func GetCmdGetNonce(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "nonce [account]",
+		Short: "Gets nonce from an account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			// TODO: Validate args
+			account := args[0]
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/nonce/%s", queryRoute, account), nil)
+			if err != nil {
+				fmt.Printf("could not resolve: %s\n", err)
+				return nil
+			}
+			var out types.QueryResNonce
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
