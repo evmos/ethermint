@@ -38,7 +38,7 @@ func (privkey PrivKeySecp256k1) PubKey() tmcrypto.PubKey {
 
 // Bytes returns the raw ECDSA private key bytes.
 func (privkey PrivKeySecp256k1) Bytes() []byte {
-	return privkey
+	return cryptoCodec.MustMarshalBinaryBare(privkey)
 }
 
 // Sign creates a recoverable ECDSA signature on the secp256k1 curve over the
@@ -59,7 +59,7 @@ func (privkey PrivKeySecp256k1) Equals(other tmcrypto.PrivKey) bool {
 
 // ToECDSA returns the ECDSA private key as a reference to ecdsa.PrivateKey type.
 func (privkey PrivKeySecp256k1) ToECDSA() *ecdsa.PrivateKey {
-	key, _ := ethcrypto.ToECDSA(privkey.Bytes())
+	key, _ := ethcrypto.ToECDSA(privkey)
 	return key
 }
 
@@ -80,7 +80,11 @@ func (key PubKeySecp256k1) Address() tmcrypto.Address {
 
 // Bytes returns the raw bytes of the ECDSA public key.
 func (key PubKeySecp256k1) Bytes() []byte {
-	return key
+	bz, err := cryptoCodec.MarshalBinaryBare(key)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 // VerifyBytes verifies that the ECDSA public key created a given signature over
@@ -93,7 +97,7 @@ func (key PubKeySecp256k1) VerifyBytes(msg []byte, sig []byte) bool {
 	}
 
 	// the signature needs to be in [R || S] format when provided to VerifySignature
-	return ethsecp256k1.VerifySignature(key.Bytes(), ethcrypto.Keccak256Hash(msg).Bytes(), sig)
+	return ethsecp256k1.VerifySignature(key, ethcrypto.Keccak256Hash(msg).Bytes(), sig)
 }
 
 // Equals returns true if two ECDSA public keys are equal and false otherwise.

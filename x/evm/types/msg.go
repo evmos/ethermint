@@ -28,7 +28,7 @@ var big8 = big.NewInt(8)
 // message type and route constants
 const (
 	TypeEthereumTxMsg  = "ethereum_tx"
-	RouteEthereumTxMsg = "evm"
+	RouteEthereumTxMsg = RouterKey
 )
 
 // EthereumTxMsg encapsulates an Ethereum transaction as an SDK message.
@@ -128,11 +128,11 @@ func (msg EthereumTxMsg) Type() string { return TypeEthereumTxMsg }
 // checks of a Transaction. If returns an sdk.Error if validation fails.
 func (msg EthereumTxMsg) ValidateBasic() sdk.Error {
 	if msg.Data.Price.Sign() != 1 {
-		return types.ErrInvalidValue("price must be positive")
+		return types.ErrInvalidValue(fmt.Sprintf("Price must be positive: %x", msg.Data.Price))
 	}
 
 	if msg.Data.Amount.Sign() != 1 {
-		return types.ErrInvalidValue("amount must be positive")
+		return types.ErrInvalidValue(fmt.Sprintf("amount must be positive: %x", msg.Data.Amount))
 	}
 
 	return nil

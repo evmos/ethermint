@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/tests"
 )
 
@@ -32,7 +31,7 @@ func TestRunShowCmd(t *testing.T) {
 
 	fakeKeyName1 := "runShowCmd_Key1"
 	fakeKeyName2 := "runShowCmd_Key2"
-	kb, err := clientkeys.NewKeyBaseFromHomeFlag()
+	kb, err := NewKeyBaseFromHomeFlag()
 	assert.NoError(t, err)
 	_, err = kb.CreateAccount(fakeKeyName1, tests.TestMnemonic, "", "", 0, 0)
 	assert.NoError(t, err)

@@ -231,7 +231,7 @@ func validateEthTxCheckTx(
 	// validate sender/signature
 	signer, err := ethTxMsg.VerifySig(chainID)
 	if err != nil {
-		return sdk.ErrUnauthorized("signature verification failed").Result()
+		return sdk.ErrUnauthorized(fmt.Sprintf("signature verification failed: %s", err)).Result()
 	}
 
 	// validate account (nonce and balance checks)

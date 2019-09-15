@@ -90,7 +90,7 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 	interactive := viper.GetBool(flagInteractive)
 	showMnemonic := !viper.GetBool(flagNoBackup)
 
-	kb, err = clientkeys.NewKeyBaseFromHomeFlag()
+	kb, err = NewKeyBaseFromHomeFlag()
 	if err != nil {
 		return err
 	}

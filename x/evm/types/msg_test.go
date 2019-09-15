@@ -122,7 +122,11 @@ func TestMsgEthereumTxSig(t *testing.T) {
 
 func TestMsgEthereumTxAmino(t *testing.T) {
 	addr := GenerateEthAddress()
-	msg := NewEthereumTxMsg(0, addr, nil, 100000, nil, []byte("test"))
+	msg := NewEthereumTxMsg(5, addr, big.NewInt(1), 100000, big.NewInt(3), []byte("test"))
+
+	msg.Data.V = big.NewInt(1)
+	msg.Data.R = big.NewInt(2)
+	msg.Data.S = big.NewInt(3)
 
 	raw, err := ModuleCdc.MarshalBinaryBare(msg)
 	require.NoError(t, err)
@@ -132,4 +136,40 @@ func TestMsgEthereumTxAmino(t *testing.T) {
 	err = ModuleCdc.UnmarshalBinaryBare(raw, &msg2)
 	require.NoError(t, err)
 	require.Equal(t, msg.Data, msg2.Data)
+}
+
+func TestMarshalAndUnmarshalInt(t *testing.T) {
+	i := big.NewInt(3)
+	m := marshalBigInt(i)
+	i2, err := unmarshalBigInt(m)
+	require.NoError(t, err)
+
+	require.Equal(t, i, i2)
+}
+
+func TestMarshalAndUnmarshalData(t *testing.T) {
+	addr := GenerateEthAddress()
+	hash := ethcmn.BigToHash(big.NewInt(2))
+	e := EncodableTxData{
+		AccountNonce: 2,
+		Price:        marshalBigInt(big.NewInt(3)),
+		GasLimit:     1,
+		Recipient:    &addr,
+		Amount:       marshalBigInt(big.NewInt(4)),
+		Payload:      []byte("test"),
+
+		V: marshalBigInt(big.NewInt(5)),
+		R: marshalBigInt(big.NewInt(6)),
+		S: marshalBigInt(big.NewInt(7)),
+
+		Hash: &hash,
+	}
+	str, err := marshalAmino(e)
+	require.NoError(t, err)
+
+	e2 := new(EncodableTxData)
+
+	err = unmarshalAmino(e2, str)
+	require.NoError(t, err)
+	require.Equal(t, e, *e2)
 }

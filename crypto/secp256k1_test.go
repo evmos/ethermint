@@ -30,7 +30,7 @@ func TestPrivKeySecp256k1PrivKey(t *testing.T) {
 	// validate we can sign some bytes
 	msg := []byte("hello world")
 	sigHash := ethcrypto.Keccak256Hash(msg)
-	expectedSig, _ := ethsecp256k1.Sign(sigHash.Bytes(), privKey.Bytes())
+	expectedSig, _ := ethsecp256k1.Sign(sigHash.Bytes(), privKey)
 
 	sig, err := privKey.Sign(msg)
 	require.NoError(t, err)
