@@ -3,6 +3,7 @@ package rpc
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
@@ -35,8 +36,8 @@ type Config struct {
 // Web3RpcCmd creates a CLI command to start RPC server
 func Web3RpcCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := lcd.ServeCommand(cdc, registerRoutes)
-	// Attach flag to cmd output to be handled in registerRoutes
 	cmd.Flags().String(flagUnlockKey, "", "Select a key to unlock on the RPC server")
+	cmd.Flags().StringP(flags.FlagBroadcastMode, "b", flags.BroadcastSync, "Transaction broadcasting mode (sync|async|block)")
 	return cmd
 }
 

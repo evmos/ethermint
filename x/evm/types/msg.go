@@ -131,7 +131,8 @@ func (msg EthereumTxMsg) ValidateBasic() sdk.Error {
 		return types.ErrInvalidValue(fmt.Sprintf("Price must be positive: %x", msg.Data.Price))
 	}
 
-	if msg.Data.Amount.Sign() != 1 {
+	// Amount can be 0
+	if msg.Data.Amount.Sign() == -1 {
 		return types.ErrInvalidValue(fmt.Sprintf("amount must be positive: %x", msg.Data.Amount))
 	}
 
