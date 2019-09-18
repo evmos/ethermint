@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	emintkeys "github.com/cosmos/ethermint/keys"
 	"github.com/cosmos/ethermint/version"
 	"github.com/cosmos/ethermint/x/evm/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -58,8 +59,24 @@ func (e *PublicEthAPI) GasPrice() *hexutil.Big {
 }
 
 // Accounts returns the list of accounts available to this node.
-func (e *PublicEthAPI) Accounts() []common.Address {
-	return nil
+func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
+	addresses := make([]common.Address, 0) // return [] instead of nil if empty
+	keybase, err := emintkeys.NewKeyBaseFromHomeFlag()
+	if err != nil {
+		return addresses, err
+	}
+
+	infos, err := keybase.List()
+	if err != nil {
+		return addresses, err
+	}
+
+	for _, info := range infos {
+		addressBytes := info.GetPubKey().Address().Bytes()
+		addresses = append(addresses, common.BytesToAddress(addressBytes))
+	}
+
+	return addresses, nil
 }
 
 // BlockNumber returns the current block number.
