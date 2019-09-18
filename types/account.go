@@ -28,8 +28,8 @@ type Account struct {
 
 	// merkle root of the storage trie
 	//
-	// TODO: good chance we may not need this
-	Root ethcmn.Hash
+	// TODO: add back root if needed (marshalling is broken if not initializing)
+	// Root ethcmn.Hash
 
 	CodeHash []byte
 }

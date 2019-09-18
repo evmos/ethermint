@@ -94,7 +94,8 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
-func (am AppModule) EndBlock(sdk.Context, abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	// TODO: Commit database here ?
 	return []abci.ValidatorUpdate{}
 }
 
