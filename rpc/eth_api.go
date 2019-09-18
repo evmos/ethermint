@@ -1,13 +1,17 @@
 package rpc
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	emintcrypto "github.com/cosmos/ethermint/crypto"
 	emintkeys "github.com/cosmos/ethermint/keys"
 	"github.com/cosmos/ethermint/version"
 	"github.com/cosmos/ethermint/x/evm/types"
+
+	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -17,12 +21,14 @@ import (
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicEthAPI struct {
 	cliCtx context.CLIContext
+	key    emintcrypto.PrivKeySecp256k1
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
-func NewPublicEthAPI(cliCtx context.CLIContext) *PublicEthAPI {
+func NewPublicEthAPI(cliCtx context.CLIContext, key emintcrypto.PrivKeySecp256k1) *PublicEthAPI {
 	return &PublicEthAPI{
 		cliCtx: cliCtx,
+		key:    key,
 	}
 }
 
@@ -176,8 +182,19 @@ func (e *PublicEthAPI) GetCode(address common.Address, blockNumber rpc.BlockNumb
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
-func (e *PublicEthAPI) Sign(address common.Address, data hexutil.Bytes) hexutil.Bytes {
-	return nil
+func (e *PublicEthAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
+	// TODO: Change this functionality to find an unlocked account by address
+	if e.key == nil || !bytes.Equal(e.key.PubKey().Address().Bytes(), address.Bytes()) {
+		return nil, keystore.ErrLocked
+	}
+
+	// Sign the requested hash with the wallet
+	signature, err := e.key.Sign(data)
+	if err == nil {
+		signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	}
+
+	return signature, err
 }
 
 // SendTransaction sends an Ethereum transaction.
