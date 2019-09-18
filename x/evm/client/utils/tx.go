@@ -342,34 +342,3 @@ func getFromFields(from string, genOnly bool) (sdk.AccAddress, string, error) {
 
 	return info.GetAddress(), info.GetName(), nil
 }
-
-// * Overriden function from cosmos-sdk/auth/client/utils/tx.go
-// PrepareTxBuilder populates a TxBuilder in preparation for the build of a Tx.
-func PrepareTxBuilder(txBldr authtypes.TxBuilder, cliCtx context.CLIContext) (authtypes.TxBuilder, error) {
-	from := cliCtx.GetFromAddress()
-
-	// * Function is needed to override to use different account getter (to not use static codec)
-	accGetter := emint.NewAccountRetriever(cliCtx, cliCtx.Codec)
-	if err := accGetter.EnsureExists(from); err != nil {
-		return txBldr, err
-	}
-
-	txbldrAccNum, txbldrAccSeq := txBldr.AccountNumber(), txBldr.Sequence()
-	// TODO: (ref #1903) Allow for user supplied account number without
-	// automatically doing a manual lookup.
-	if txbldrAccNum == 0 || txbldrAccSeq == 0 {
-		num, seq, err := accGetter.GetAccountNumberSequence(from)
-		if err != nil {
-			return txBldr, err
-		}
-
-		if txbldrAccNum == 0 {
-			txBldr = txBldr.WithAccountNumber(num)
-		}
-		if txbldrAccSeq == 0 {
-			txBldr = txBldr.WithSequence(seq)
-		}
-	}
-
-	return txBldr, nil
-}

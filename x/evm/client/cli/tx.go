@@ -118,7 +118,7 @@ func GetCmdGenETHTx(cdc *codec.Codec) *cobra.Command {
 
 			payload := args[3]
 
-			txBldr, err = emintUtils.PrepareTxBuilder(txBldr, cliCtx)
+			txBldr, err = utils.PrepareTxBuilder(txBldr, cliCtx)
 			if err != nil {
 				return err
 			}
