@@ -10,13 +10,15 @@ import (
 
 // PersonalEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PersonalEthAPI struct {
-	cliCtx sdkcontext.CLIContext
+	cliCtx    sdkcontext.CLIContext
+	nonceLock *AddrLocker
 }
 
 // NewPersonalEthAPI creates an instance of the public ETH Web3 API.
-func NewPersonalEthAPI(cliCtx sdkcontext.CLIContext) *PersonalEthAPI {
+func NewPersonalEthAPI(cliCtx sdkcontext.CLIContext, nonceLock *AddrLocker) *PersonalEthAPI {
 	return &PersonalEthAPI{
-		cliCtx: cliCtx,
+		cliCtx:    cliCtx,
+		nonceLock: nonceLock,
 	}
 }
 

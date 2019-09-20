@@ -19,6 +19,8 @@ import (
 const (
 	// FlagAddress is the flag for the user's address on the command line.
 	FlagAddress = "address"
+	// FlagAddress is the flag for the user's address on the command line.
+	FlagETHAddress = "ethwallet"
 	// FlagPublicKey represents the user's public key on the command line.
 	FlagPublicKey = "pubkey"
 	// FlagBechPrefix defines a desired Bech32 prefix encoding for a key.
@@ -38,6 +40,7 @@ func showKeysCmd() *cobra.Command {
 
 	cmd.Flags().String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
 	cmd.Flags().BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
+	cmd.Flags().BoolP(FlagETHAddress, "w", false, "Output the Ethereum address only (overrides --output)")
 	cmd.Flags().BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
 	cmd.Flags().BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
 	cmd.Flags().Bool(flags.FlagIndentResponse, false, "Add indent to JSON response")
@@ -58,6 +61,7 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	isShowAddr := viper.GetBool(FlagAddress)
+	isShowEthAddr := viper.GetBool(FlagETHAddress)
 	isShowPubKey := viper.GetBool(FlagPublicKey)
 	isShowDevice := viper.GetBool(FlagDevice)
 
@@ -67,11 +71,13 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 		isOutputSet = tmp.Changed
 	}
 
-	if isShowAddr && isShowPubKey {
-		return errors.New("cannot use both --address and --pubkey at once")
+	isShowEitherAddr := isShowAddr || isShowEthAddr
+
+	if isShowEitherAddr && isShowPubKey {
+		return errors.New("cannot get address, with --address or --ethwallet, and --pubkey at once")
 	}
 
-	if isOutputSet && (isShowAddr || isShowPubKey) {
+	if isOutputSet && (isShowEitherAddr || isShowPubKey) {
 		return errors.New("cannot use --output with --address or --pubkey")
 	}
 
@@ -80,6 +86,8 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 	switch {
 	case isShowAddr:
 		printKeyAddress(info, keyOutputFunction)
+	case isShowEthAddr:
+		printKeyEthAddress(info, keyOutputFunction)
 	case isShowPubKey:
 		printPubKey(info, keyOutputFunction)
 	default:

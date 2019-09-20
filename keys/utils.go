@@ -148,6 +148,15 @@ func printKeyAddress(info cosmosKeys.Info, bechKeyOut bechKeyOutFn) {
 	fmt.Println(ko.Address)
 }
 
+func printKeyEthAddress(info cosmosKeys.Info, bechKeyOut bechKeyOutFn) {
+	ko, err := bechKeyOut(info)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(ko.ETHAddress)
+}
+
 func printPubKey(info cosmosKeys.Info, bechKeyOut bechKeyOutFn) {
 	ko, err := bechKeyOut(info)
 	if err != nil {
