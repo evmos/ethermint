@@ -259,8 +259,8 @@ func (e *PublicEthAPI) SendTransaction(args args.SendTxArgs) (common.Hash, error
 		return common.Hash{}, err
 	}
 
-	// Return RLP encoded bytes
-	return tx.Hash(), nil
+	// Return transaction hash
+	return common.HexToHash(res.TxHash), nil
 }
 
 // SendRawTransaction send a raw Ethereum transaction.
@@ -289,8 +289,8 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 		return common.Hash{}, err
 	}
 
-	// Return RLP encoded bytes
-	return tx.Hash(), nil
+	// Return transaction hash
+	return common.HexToHash(res.TxHash), nil
 }
 
 // CallArgs represents arguments to a smart contract call as provided by RPC clients.
