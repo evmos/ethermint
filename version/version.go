@@ -15,7 +15,7 @@ const AppName = "Ethermint"
 const Version = "0.0.0"
 
 // ProtocolVersion is the supported Ethereum protocol version (e.g., Homestead, Olympic, etc.)
-const ProtocolVersion = "63"
+const ProtocolVersion uint = 63
 
 // GitCommit contains the git SHA1 short hash set by build flags.
 var GitCommit = ""

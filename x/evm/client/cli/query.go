@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/ethermint/x/evm/types"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +43,7 @@ func GetCmdGetBlockNumber(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out types.QueryResBlockNumber
+			var out *hexutil.Big
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
@@ -67,7 +68,7 @@ func GetCmdGetStorageAt(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not resolve: %s\n", err)
 				return nil
 			}
-			var out types.QueryResStorage
+			var out hexutil.Bytes
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
@@ -91,9 +92,9 @@ func GetCmdGetCode(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not resolve: %s\n", err)
 				return nil
 			}
-			var out types.QueryResCode
+			var out []byte
 			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
+			return cliCtx.PrintOutput(hexutil.Bytes(out))
 		},
 	}
 }
@@ -115,7 +116,7 @@ func GetCmdGetNonce(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not resolve: %s\n", err)
 				return nil
 			}
-			var out types.QueryResNonce
+			var out hexutil.Uint64
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},

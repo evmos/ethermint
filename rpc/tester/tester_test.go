@@ -10,18 +10,19 @@ package tester
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/cosmos/ethermint/version"
-	"github.com/cosmos/ethermint/x/evm/types"
-	"io/ioutil"
 	"math/big"
 	"net/http"
 	"testing"
+
+	"github.com/cosmos/ethermint/version"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 const (
-	host          = "127.0.0.1"
-	port          = 1317
+	host          = "localhost"
+	port          = 8545
 	addrA         = "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
 	addrAStoreKey = 0
 )
@@ -35,6 +36,18 @@ type Request struct {
 	Id      int      `json:"id"`
 }
 
+type RPCError struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+type Response struct {
+	Error  *RPCError       `json:"error"`
+	Id     int             `json:"id"`
+	Result json.RawMessage `json:"result,omitempty"`
+}
+
 func createRequest(method string, params []string) Request {
 	return Request{
 		Version: "2.0",
@@ -44,86 +57,133 @@ func createRequest(method string, params []string) Request {
 	}
 }
 
-func call(t *testing.T, method string, params []string, resp interface{}) {
+func call(method string, params []string) (*Response, error) {
 	req, err := json.Marshal(createRequest(method, params))
 	if err != nil {
-		t.Error(err)
+		return nil, err
 	}
 
 	res, err := http.Post(addr, "application/json", bytes.NewBuffer(req))
 	if err != nil {
-		t.Error(err)
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Error(err)
+		return nil, err
 	}
 
-	err = json.Unmarshal(body, resp)
+	decoder := json.NewDecoder(res.Body)
+	var rpcRes *Response
+	err = decoder.Decode(&rpcRes)
 	if err != nil {
-		t.Error(err)
+		return nil, err
 	}
+
+	if rpcRes.Error != nil {
+		return nil, errors.New(rpcRes.Error.Message)
+	}
+
+	err = res.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return rpcRes, nil
 }
 
 func TestEth_protocolVersion(t *testing.T) {
-	expectedRes := version.ProtocolVersion
+	expectedRes := hexutil.Uint(version.ProtocolVersion)
 
-	res := &types.QueryResProtocolVersion{}
-	call(t, "eth_protocolVersion", []string{}, res)
+	rpcRes, err := call("eth_protocolVersion", []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	t.Logf("Got protocol version: %s\n", res.Version)
+	var res hexutil.Uint
+	err = res.UnmarshalJSON(rpcRes.Result)
 
-	if res.Version != expectedRes {
-		t.Errorf("expected: %s got: %s\n", expectedRes, res)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Got protocol version: %s\n", res.String())
+
+	if res != expectedRes {
+		t.Fatalf("expected: %s got: %s\n", expectedRes.String(), rpcRes.Result)
 	}
 }
 
 func TestEth_blockNumber(t *testing.T) {
-	res := &types.QueryResBlockNumber{}
-	call(t, "eth_blockNumber", []string{}, res)
-
-	t.Logf("Got block number: %s\n", res.Number.String())
-
-	// -1 if x <  y, 0 if x == y; where x is res, y is 0
-	if res.Number.Cmp(big.NewInt(0)) < 1 {
-		t.Errorf("Invalid block number got: %v", res)
+	rpcRes, err := call("eth_blockNumber", []string{})
+	if err != nil {
+		t.Fatal(err)
 	}
+	var res hexutil.Uint64
+	err = res.UnmarshalJSON(rpcRes.Result)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Got block number: %s\n", res.String())
+
 }
 
 func TestEth_GetBalance(t *testing.T) {
-	//expectedRes := types.QueryResBalance{Balance:}
-	res := &types.QueryResBalance{}
-	call(t, "eth_getBalance", []string{addrA, "latest"}, res)
+	rpcRes, err := call("eth_getBalance", []string{addrA, "0x0"})
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
 
-	t.Logf("Got balance %s for %s\n", res.Balance.String(), addrA)
+	var res hexutil.Big
+	err = res.UnmarshalJSON(rpcRes.Result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Got balance %s for %s\n", res.String(), addrA)
 
 	// 0 if x == y; where x is res, y is 0
-	if res.Balance.ToInt().Cmp(big.NewInt(0)) != 0 {
-		t.Errorf("expected balance: %d, got: %s", 0, res.Balance.String())
+	if res.ToInt().Cmp(big.NewInt(0)) != 0 {
+		t.Errorf("expected balance: %d, got: %s", 0, res.String())
 	}
+
 }
 
 func TestEth_GetStorageAt(t *testing.T) {
-	expectedRes := types.QueryResStorage{Value: []byte{}}
-	res := &types.QueryResStorage{}
-	call(t, "eth_getStorageAt", []string{addrA, string(addrAStoreKey), "latest"}, res)
+	expectedRes := hexutil.Bytes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	rpcRes, err := call("eth_getStorageAt", []string{addrA, string(addrAStoreKey), "0x0"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	t.Logf("Got value [%X] for %s with key %X\n", res.Value, addrA, addrAStoreKey)
+	var storage hexutil.Bytes
+	err = storage.UnmarshalJSON(rpcRes.Result)
 
-	if !bytes.Equal(res.Value, expectedRes.Value) {
-		t.Errorf("expected: %X got: %X", expectedRes.Value, res.Value)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Got value [%X] for %s with key %X\n", storage, addrA, addrAStoreKey)
+
+	if !bytes.Equal(storage, expectedRes) {
+		t.Errorf("expected: %d (%d bytes) got: %d (%d bytes)", expectedRes, len(expectedRes), storage, len(storage))
 	}
 }
 
 func TestEth_GetCode(t *testing.T) {
-	expectedRes := types.QueryResCode{Code: []byte{}}
-	res := &types.QueryResCode{}
-	call(t, "eth_getCode", []string{addrA, "latest"}, res)
+	expectedRes := hexutil.Bytes{}
+	rpcRes, err := call("eth_getCode", []string{addrA, "0x0"})
+	if err != nil {
+		t.Error(err)
+	}
 
-	t.Logf("Got code [%X] for %s\n", res.Code, addrA)
-	if !bytes.Equal(expectedRes.Code, res.Code) {
-		t.Errorf("expected: %X got: %X", expectedRes.Code, res.Code)
+	var code hexutil.Bytes
+	err = code.UnmarshalJSON(rpcRes.Result)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Got code [%X] for %s\n", code, addrA)
+	if !bytes.Equal(expectedRes, code) {
+		t.Errorf("expected: %X got: %X", expectedRes, code)
 	}
 }

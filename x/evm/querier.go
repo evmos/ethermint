@@ -1,12 +1,9 @@
 package evm
 
 import (
-	"math/big"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/version"
-	"github.com/cosmos/ethermint/x/evm/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -47,7 +44,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 func queryProtocolVersion(keeper Keeper) ([]byte, sdk.Error) {
 	vers := version.ProtocolVersion
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, vers)
+	bigRes := hexutil.Uint(vers)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, bigRes)
 	if err != nil {
 		panic("could not marshal result to JSON")
 	}
@@ -58,16 +56,9 @@ func queryProtocolVersion(keeper Keeper) ([]byte, sdk.Error) {
 func queryBalance(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.BytesToAddress([]byte(path[1]))
 	balance := keeper.GetBalance(ctx, addr)
-	hBalance := &hexutil.Big{}
-	err := hBalance.UnmarshalText(balance.Bytes())
+	res, err := codec.MarshalJSONIndent(keeper.cdc, balance)
 	if err != nil {
-		panic("could not marshal big.Int to hexutil.Big")
-	}
-
-	bRes := types.QueryResBalance{Balance: hBalance}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
-	if err != nil {
-		panic("could not marshal result to JSON")
+		panic("could not marshal result to JSON: ")
 	}
 
 	return res, nil
@@ -75,10 +66,12 @@ func queryBalance(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Er
 
 func queryBlockNumber(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	num := ctx.BlockHeight()
-	bnRes := types.QueryResBlockNumber{Number: big.NewInt(num)}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bnRes)
+	hexUint := hexutil.Uint64(num)
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, hexUint)
+
 	if err != nil {
-		panic("could not marshal result to JSON")
+		panic("could not marshal result to JSON: " + err.Error())
 	}
 
 	return res, nil
@@ -88,10 +81,10 @@ func queryStorage(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Er
 	addr := ethcmn.BytesToAddress([]byte(path[1]))
 	key := ethcmn.BytesToHash([]byte(path[2]))
 	val := keeper.GetState(ctx, addr, key)
-	bRes := types.QueryResStorage{Value: val.Bytes()}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	bRes := hexutil.Bytes(val.Bytes())
+	res, err := codec.MarshalJSONIndent(keeper.cdc, &bRes)
 	if err != nil {
-		panic("could not marshal result to JSON")
+		panic("could not marshal result to JSON: " + err.Error())
 	}
 	return res, nil
 }
@@ -99,10 +92,9 @@ func queryStorage(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Er
 func queryCode(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.BytesToAddress([]byte(path[1]))
 	code := keeper.GetCode(ctx, addr)
-	cRes := types.QueryResCode{Code: code}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, cRes)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, code)
 	if err != nil {
-		panic("could not marshal result to JSON")
+		panic("could not marshal result to JSON: " + err.Error())
 	}
 
 	return res, nil
@@ -111,10 +103,10 @@ func queryCode(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error
 func queryNonce(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.BytesToAddress([]byte(path[1]))
 	nonce := keeper.GetNonce(ctx, addr)
-	nRes := types.QueryResNonce{Nonce: nonce}
+	nRes := hexutil.Uint64(nonce)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, nRes)
 	if err != nil {
-		panic("could not marshal result to JSON")
+		panic("could not marshal result to JSON: " + err.Error())
 	}
 
 	return res, nil

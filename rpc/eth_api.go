@@ -42,8 +42,8 @@ func NewPublicEthAPI(cliCtx context.CLIContext, nonceLock *AddrLocker,
 }
 
 // ProtocolVersion returns the supported Ethereum protocol version.
-func (e *PublicEthAPI) ProtocolVersion() string {
-	return version.ProtocolVersion
+func (e *PublicEthAPI) ProtocolVersion() hexutil.Uint {
+	return hexutil.Uint(version.ProtocolVersion)
 }
 
 // Syncing returns whether or not the current node is syncing with other peers. Returns false if not, or a struct
@@ -95,16 +95,16 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 }
 
 // BlockNumber returns the current block number.
-func (e *PublicEthAPI) BlockNumber() *big.Int {
+func (e *PublicEthAPI) BlockNumber() (hexutil.Uint64, error) {
 	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/blockNumber", types.ModuleName), nil)
 	if err != nil {
-		fmt.Printf("could not resolve: %s\n", err)
-		return nil
+		return hexutil.Uint64(0), err
 	}
 
-	var out types.QueryResBlockNumber
-	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-	return out.Number
+	var qRes uint64
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &qRes)
+
+	return hexutil.Uint64(qRes), nil
 }
 
 // GetBalance returns the provided account's balance up to the provided block number.
@@ -115,9 +115,10 @@ func (e *PublicEthAPI) GetBalance(address common.Address, blockNum rpc.BlockNumb
 		return nil, err
 	}
 
-	var out types.QueryResBalance
+	var out *big.Int
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-	return (*hexutil.Big)(out.Balance), nil
+
+	return (*hexutil.Big)(out), nil
 }
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
@@ -128,22 +129,22 @@ func (e *PublicEthAPI) GetStorageAt(address common.Address, key string, blockNum
 		return nil, err
 	}
 
-	var out types.QueryResStorage
+	var out []byte
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-	return out.Value[:], nil
+	return out, nil
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
-func (e *PublicEthAPI) GetTransactionCount(address common.Address, blockNum rpc.BlockNumber) (hexutil.Uint64, error) {
+func (e *PublicEthAPI) GetTransactionCount(address common.Address, blockNum rpc.BlockNumber) (*hexutil.Uint64, error) {
 	ctx := e.cliCtx.WithHeight(blockNum.Int64())
 	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/nonce/%s", types.ModuleName, address), nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	var out types.QueryResNonce
-	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-	return hexutil.Uint64(out.Nonce), nil
+	var out *hexutil.Uint64
+	e.cliCtx.Codec.MustUnmarshalJSON(res, out)
+	return out, nil
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions in the block identified by hash.
@@ -185,9 +186,9 @@ func (e *PublicEthAPI) GetCode(address common.Address, blockNumber rpc.BlockNumb
 		return nil, err
 	}
 
-	var out types.QueryResCode
+	var out []byte
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-	return out.Code, nil
+	return out, nil
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
