@@ -299,6 +299,24 @@ func (msg EthereumTxMsg) Fee() *big.Int {
 	return new(big.Int).Mul(msg.Data.Price, new(big.Int).SetUint64(msg.Data.GasLimit))
 }
 
+// ChainID returns which chain id this transaction was signed for (if at all)
+func (msg *EthereumTxMsg) ChainID() *big.Int {
+	return deriveChainID(msg.Data.V)
+}
+
+// deriveChainID derives the chain id from the given v parameter
+func deriveChainID(v *big.Int) *big.Int {
+	if v.BitLen() <= 64 {
+		v := v.Uint64()
+		if v == 27 || v == 28 {
+			return new(big.Int)
+		}
+		return new(big.Int).SetUint64((v - 35) / 2)
+	}
+	v = new(big.Int).Sub(v, big.NewInt(35))
+	return v.Div(v, big.NewInt(2))
+}
+
 // ----------------------------------------------------------------------------
 // Auxiliary
 
@@ -360,7 +378,7 @@ func recoverEthSig(R, S, Vb *big.Int, sigHash ethcmn.Hash) (ethcmn.Address, erro
 	return addr, nil
 }
 
-// PopulateFromArgs populates tx message with args (used in RPC API)
+// GenerateFromArgs populates tx message with args (used in RPC API)
 func GenerateFromArgs(args args.SendTxArgs, ctx context.CLIContext) (msg *EthereumTxMsg, err error) {
 	var nonce uint64
 

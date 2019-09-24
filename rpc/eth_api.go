@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	authutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	emintkeys "github.com/cosmos/ethermint/keys"
 	"github.com/cosmos/ethermint/rpc/args"
 	"github.com/cosmos/ethermint/version"
 	"github.com/cosmos/ethermint/x/evm/types"
+
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,7 +19,11 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+
 	"github.com/spf13/viper"
 )
 
@@ -28,6 +32,7 @@ type PublicEthAPI struct {
 	cliCtx    context.CLIContext
 	key       emintcrypto.PrivKeySecp256k1
 	nonceLock *AddrLocker
+	gasLimit  *int64
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
@@ -314,13 +319,84 @@ func (e *PublicEthAPI) GetBlockByHash(hash common.Hash, fullTx bool) map[string]
 }
 
 // GetBlockByNumber returns the block identified by number.
-func (e *PublicEthAPI) GetBlockByNumber(blockNum rpc.BlockNumber, fullTx bool) map[string]interface{} {
-	return nil
+func (e *PublicEthAPI) GetBlockByNumber(blockNum rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
+	value := blockNum.Int64()
+	block, err := e.cliCtx.Client.Block(&value)
+	if err != nil {
+		return nil, err
+	}
+	header := block.BlockMeta.Header
+
+	gasLimit, err := e.getGasLimit()
+	if err != nil {
+		return nil, err
+	}
+
+	var gasUsed *big.Int
+	var transactions []interface{}
+
+	if fullTx {
+		// Populate full transaction data
+		transactions, gasUsed = convertTransactionsToRPC(e.cliCtx, block.Block.Txs,
+			common.BytesToHash(header.ConsensusHash.Bytes()), uint64(header.Height))
+	} else {
+		// TODO: Gas used not saved and cannot be calculated by hashes
+		// Return slice of transaction hashes
+		transactions = make([]interface{}, len(block.Block.Txs))
+		for i, tx := range block.Block.Txs {
+			transactions[i] = common.BytesToHash(tx.Hash())
+		}
+	}
+
+	return formatBlock(header, block.Block.Size(), gasLimit, gasUsed, transactions), nil
+}
+
+func formatBlock(
+	header tmtypes.Header, size int, gasLimit int64,
+	gasUsed *big.Int, transactions []interface{},
+) map[string]interface{} {
+	return map[string]interface{}{
+		"number":           hexutil.Uint64(header.Height),
+		"hash":             hexutil.Bytes(header.ConsensusHash),
+		"parentHash":       hexutil.Bytes(header.LastBlockID.Hash),
+		"nonce":            nil, // PoW specific
+		"sha3Uncles":       nil, // No uncles in Tendermint
+		"logsBloom":        "",  // TODO: Complete with #55
+		"transactionsRoot": hexutil.Bytes(header.DataHash),
+		"stateRoot":        hexutil.Bytes(header.AppHash),
+		"miner":            hexutil.Bytes(header.ValidatorsHash),
+		"difficulty":       nil,
+		"totalDifficulty":  nil,
+		"extraData":        nil,
+		"size":             hexutil.Uint64(size),
+		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
+		"gasUsed":          (*hexutil.Big)(gasUsed),
+		"timestamp":        hexutil.Uint64(header.Time.Unix()),
+		"transactions":     transactions,
+		"uncles":           nil,
+	}
+}
+
+func convertTransactionsToRPC(cliCtx context.CLIContext, txs []tmtypes.Tx, blockHash common.Hash, height uint64) ([]interface{}, *big.Int) {
+	transactions := make([]interface{}, len(txs))
+	gasUsed := big.NewInt(0)
+	for i, tx := range txs {
+		var stdTx sdk.Tx
+		err := cliCtx.Codec.UnmarshalBinaryLengthPrefixed(tx, &stdTx)
+		ethTx, ok := stdTx.(*types.EthereumTxMsg)
+		if !ok || err != nil {
+			continue
+		}
+		// TODO: Remove gas usage calculation if saving gasUsed per block
+		gasUsed.Add(gasUsed, ethTx.Fee())
+		transactions[i] = newRPCTransaction(ethTx, blockHash, height, uint64(i))
+	}
+	return transactions, gasUsed
 }
 
 // Transaction represents a transaction returned to RPC clients.
 type Transaction struct {
-	BlockHash        common.Hash     `json:"blockHash"`
+	BlockHash        *common.Hash    `json:"blockHash"`
 	BlockNumber      *hexutil.Big    `json:"blockNumber"`
 	From             common.Address  `json:"from"`
 	Gas              hexutil.Uint64  `json:"gas"`
@@ -329,11 +405,38 @@ type Transaction struct {
 	Input            hexutil.Bytes   `json:"input"`
 	Nonce            hexutil.Uint64  `json:"nonce"`
 	To               *common.Address `json:"to"`
-	TransactionIndex hexutil.Uint    `json:"transactionIndex"`
+	TransactionIndex *hexutil.Uint64 `json:"transactionIndex"`
 	Value            *hexutil.Big    `json:"value"`
 	V                *hexutil.Big    `json:"v"`
 	R                *hexutil.Big    `json:"r"`
 	S                *hexutil.Big    `json:"s"`
+}
+
+// newRPCTransaction returns a transaction that will serialize to the RPC
+// representation, with the given location metadata set (if available).
+func newRPCTransaction(tx *types.EthereumTxMsg, blockHash common.Hash, blockNumber uint64, index uint64) *Transaction {
+	// Verify signature and retrieve sender address
+	from, _ := tx.VerifySig(tx.ChainID())
+
+	result := &Transaction{
+		From:     from,
+		Gas:      hexutil.Uint64(tx.Data.GasLimit),
+		GasPrice: (*hexutil.Big)(tx.Data.Price),
+		Hash:     tx.Hash(),
+		Input:    hexutil.Bytes(tx.Data.Payload),
+		Nonce:    hexutil.Uint64(tx.Data.AccountNonce),
+		To:       tx.To(),
+		Value:    (*hexutil.Big)(tx.Data.Amount),
+		V:        (*hexutil.Big)(tx.Data.V),
+		R:        (*hexutil.Big)(tx.Data.R),
+		S:        (*hexutil.Big)(tx.Data.S),
+	}
+	if blockHash != (common.Hash{}) {
+		result.BlockHash = &blockHash
+		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		result.TransactionIndex = (*hexutil.Uint64)(&index)
+	}
+	return result
 }
 
 // GetTransactionByHash returns the transaction identified by hash.
@@ -364,4 +467,23 @@ func (e *PublicEthAPI) GetUncleByBlockHashAndIndex(hash common.Hash, idx hexutil
 // GetUncleByBlockNumberAndIndex returns the uncle identified by number and index. Always returns nil.
 func (e *PublicEthAPI) GetUncleByBlockNumberAndIndex(number hexutil.Uint, idx hexutil.Uint) map[string]interface{} {
 	return nil
+}
+
+// getGasLimit returns the gas limit per block set in genesis
+func (e *PublicEthAPI) getGasLimit() (int64, error) {
+	// Retrieve from gasLimit variable cache
+	if e.gasLimit != nil {
+		return *e.gasLimit, nil
+	}
+
+	// Query genesis block if hasn't been retrieved yet
+	genesis, err := e.cliCtx.Client.Genesis()
+	if err != nil {
+		return 0, err
+	}
+
+	// Save value to gasLimit cached value
+	gasLimit := genesis.Genesis.ConsensusParams.Block.MaxGas
+	e.gasLimit = &gasLimit
+	return gasLimit, nil
 }
