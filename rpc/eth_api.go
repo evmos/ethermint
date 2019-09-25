@@ -504,8 +504,56 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum BlockNumber,
 }
 
 // GetTransactionReceipt returns the transaction receipt identified by hash.
-func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) map[string]interface{} {
-	return nil
+func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
+	tx, err := e.cliCtx.Client.Tx(hash.Bytes(), false)
+	if err != nil {
+		// Return nil for transaction when not found
+		return nil, nil
+	}
+
+	// Query block for consensus hash
+	block, err := e.cliCtx.Client.Block(&tx.Height)
+	if err != nil {
+		return nil, err
+	}
+	blockHash := common.BytesToHash(block.BlockMeta.Header.ConsensusHash)
+
+	// Convert tx bytes to eth transaction
+	ethTx, err := bytesToEthTx(e.cliCtx, tx.Tx)
+	if err != nil {
+		return nil, err
+	}
+
+	from, _ := ethTx.VerifySig(ethTx.ChainID())
+
+	// Set status codes based on tx result
+	var status hexutil.Uint
+	if tx.TxResult.IsOK() {
+		status = hexutil.Uint(1)
+	} else {
+		status = hexutil.Uint(0)
+	}
+
+	fields := map[string]interface{}{
+		"blockHash":         blockHash,
+		"blockNumber":       hexutil.Uint64(tx.Height),
+		"transactionHash":   hash,
+		"transactionIndex":  hexutil.Uint64(tx.Index),
+		"from":              from,
+		"to":                ethTx.To(),
+		"gasUsed":           hexutil.Uint64(tx.TxResult.GasUsed),
+		"cumulativeGasUsed": nil, // ignore until needed
+		"contractAddress":   nil,
+		"logs":              nil, // TODO: Do with #55 (eth_getLogs output)
+		"logsBloom":         nil,
+		"status":            status,
+	}
+
+	if common.BytesToAddress(tx.TxResult.GetData()) != (common.Address{}) {
+		fields["contractAddress"] = hexutil.Bytes(tx.TxResult.GetData())
+	}
+
+	return fields, nil
 }
 
 // GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.

@@ -106,7 +106,7 @@ func handleETHTxMsg(ctx sdk.Context, keeper Keeper, msg types.EthereumTxMsg) sdk
 
 	// TODO: Consume gas from sender
 
-	return sdk.Result{Log: addr.Hex(), GasUsed: msg.Data.GasLimit - leftOverGas}
+	return sdk.Result{Data: addr.Bytes(), GasUsed: msg.Data.GasLimit - leftOverGas}
 }
 
 func refundGas(
