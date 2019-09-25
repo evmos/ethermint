@@ -387,10 +387,8 @@ func convertTransactionsToRPC(cliCtx context.CLIContext, txs []tmtypes.Tx, block
 	transactions := make([]interface{}, len(txs))
 	gasUsed := big.NewInt(0)
 	for i, tx := range txs {
-		var stdTx sdk.Tx
-		err := cliCtx.Codec.UnmarshalBinaryLengthPrefixed(tx, &stdTx)
-		ethTx, ok := stdTx.(*types.EthereumTxMsg)
-		if !ok || err != nil {
+		ethTx, err := bytesToEthTx(cliCtx, tx)
+		if err != nil {
 			continue
 		}
 		// TODO: Remove gas usage calculation if saving gasUsed per block
@@ -416,6 +414,16 @@ type Transaction struct {
 	V                *hexutil.Big    `json:"v"`
 	R                *hexutil.Big    `json:"r"`
 	S                *hexutil.Big    `json:"s"`
+}
+
+func bytesToEthTx(cliCtx context.CLIContext, bz []byte) (*types.EthereumTxMsg, error) {
+	var stdTx sdk.Tx
+	err := cliCtx.Codec.UnmarshalBinaryLengthPrefixed(bz, &stdTx)
+	ethTx, ok := stdTx.(*types.EthereumTxMsg)
+	if !ok || err != nil {
+		return nil, fmt.Errorf("Invalid transaction type, must be an amino encoded Ethereum transaction")
+	}
+	return ethTx, nil
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -446,8 +454,26 @@ func newRPCTransaction(tx *types.EthereumTxMsg, blockHash common.Hash, blockNumb
 }
 
 // GetTransactionByHash returns the transaction identified by hash.
-func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) *Transaction {
-	return nil
+func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*Transaction, error) {
+	tx, err := e.cliCtx.Client.Tx(hash.Bytes(), false)
+	if err != nil {
+		// Return nil for transaction when not found
+		return nil, nil
+	}
+
+	// Can either cache or just leave this out if not necessary
+	block, err := e.cliCtx.Client.Block(&tx.Height)
+	if err != nil {
+		return nil, err
+	}
+	blockHash := common.BytesToHash(block.BlockMeta.Header.ConsensusHash)
+
+	ethTx, err := bytesToEthTx(e.cliCtx, tx.Tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return newRPCTransaction(ethTx, blockHash, uint64(tx.Height), uint64(tx.Index)), nil
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
