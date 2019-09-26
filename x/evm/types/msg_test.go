@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/utils"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
@@ -140,8 +141,8 @@ func TestMsgEthereumTxAmino(t *testing.T) {
 
 func TestMarshalAndUnmarshalInt(t *testing.T) {
 	i := big.NewInt(3)
-	m := marshalBigInt(i)
-	i2, err := unmarshalBigInt(m)
+	m := utils.MarshalBigInt(i)
+	i2, err := utils.UnmarshalBigInt(m)
 	require.NoError(t, err)
 
 	require.Equal(t, i, i2)
@@ -152,15 +153,15 @@ func TestMarshalAndUnmarshalData(t *testing.T) {
 	hash := ethcmn.BigToHash(big.NewInt(2))
 	e := EncodableTxData{
 		AccountNonce: 2,
-		Price:        marshalBigInt(big.NewInt(3)),
+		Price:        utils.MarshalBigInt(big.NewInt(3)),
 		GasLimit:     1,
 		Recipient:    &addr,
-		Amount:       marshalBigInt(big.NewInt(4)),
+		Amount:       utils.MarshalBigInt(big.NewInt(4)),
 		Payload:      []byte("test"),
 
-		V: marshalBigInt(big.NewInt(5)),
-		R: marshalBigInt(big.NewInt(6)),
-		S: marshalBigInt(big.NewInt(7)),
+		V: utils.MarshalBigInt(big.NewInt(5)),
+		R: utils.MarshalBigInt(big.NewInt(6)),
+		S: utils.MarshalBigInt(big.NewInt(7)),
 
 		Hash: &hash,
 	}
