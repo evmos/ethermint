@@ -52,8 +52,23 @@ func (e *PublicEthAPI) ProtocolVersion() hexutil.Uint {
 
 // Syncing returns whether or not the current node is syncing with other peers. Returns false if not, or a struct
 // outlining the state of the sync if it is.
-func (e *PublicEthAPI) Syncing() interface{} {
-	return false
+func (e *PublicEthAPI) Syncing() (interface{}, error) {
+	status, err := e.cliCtx.Client.Status()
+	if err != nil {
+		return false, err
+	}
+
+	if !status.SyncInfo.CatchingUp {
+		return false, nil
+	}
+
+	return map[string]interface{}{
+		// "startingBlock": nil, // NA
+		"currentBlock": hexutil.Uint64(status.SyncInfo.LatestBlockHeight),
+		// "highestBlock":  nil, // NA
+		// "pulledStates":  nil, // NA
+		// "knownStates":   nil, // NA
+	}, nil
 }
 
 // Coinbase returns this node's coinbase address. Not used in Ethermint.
