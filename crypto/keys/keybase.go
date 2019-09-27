@@ -13,8 +13,8 @@ import (
 	cosmosKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/keyerror"
-	"github.com/cosmos/ethermint/crypto/keys/mintkey"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/ethermint/crypto/keys/mintkey"
 
 	bip39 "github.com/cosmos/go-bip39"
 

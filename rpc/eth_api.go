@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/ethermint/rpc/args"
 	"github.com/cosmos/ethermint/utils"
 	"github.com/cosmos/ethermint/version"
+	"github.com/cosmos/ethermint/x/evm"
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -332,14 +333,24 @@ func (e *PublicEthAPI) EstimateGas(args CallArgs, blockNum BlockNumber) hexutil.
 }
 
 // GetBlockByHash returns the block identified by hash.
-func (e *PublicEthAPI) GetBlockByHash(hash common.Hash, fullTx bool) map[string]interface{} {
-	return nil
+func (e *PublicEthAPI) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
+	res, _, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryHashToHeight, hash.Hex()))
+	if err != nil {
+		return nil, err
+	}
+
+	var out types.QueryResBlockNumber
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	return e.getEthBlockByNumber(out.Number, fullTx)
 }
 
 // GetBlockByNumber returns the block identified by number.
 func (e *PublicEthAPI) GetBlockByNumber(blockNum BlockNumber, fullTx bool) (map[string]interface{}, error) {
 	value := blockNum.Int64()
+	return e.getEthBlockByNumber(value, fullTx)
+}
 
+func (e *PublicEthAPI) getEthBlockByNumber(value int64, fullTx bool) (map[string]interface{}, error) {
 	// Remove this check when 0 query is fixed ref: (https://github.com/tendermint/tendermint/issues/4014)
 	var blkNumPtr *int64
 	if value != 0 {
@@ -363,7 +374,7 @@ func (e *PublicEthAPI) GetBlockByNumber(blockNum BlockNumber, fullTx bool) (map[
 	if fullTx {
 		// Populate full transaction data
 		transactions, gasUsed = convertTransactionsToRPC(e.cliCtx, block.Block.Txs,
-			common.BytesToHash(header.ConsensusHash.Bytes()), uint64(header.Height))
+			common.BytesToHash(header.Hash()), uint64(header.Height))
 	} else {
 		// TODO: Gas used not saved and cannot be calculated by hashes
 		// Return slice of transaction hashes
@@ -382,7 +393,7 @@ func formatBlock(
 ) map[string]interface{} {
 	return map[string]interface{}{
 		"number":           hexutil.Uint64(header.Height),
-		"hash":             hexutil.Bytes(header.ConsensusHash),
+		"hash":             hexutil.Bytes(header.Hash()),
 		"parentHash":       hexutil.Bytes(header.LastBlockID.Hash),
 		"nonce":            nil, // PoW specific
 		"sha3Uncles":       nil, // No uncles in Tendermint
@@ -485,7 +496,7 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*Transaction, err
 	if err != nil {
 		return nil, err
 	}
-	blockHash := common.BytesToHash(block.BlockMeta.Header.ConsensusHash)
+	blockHash := common.BytesToHash(block.BlockMeta.Header.Hash())
 
 	ethTx, err := bytesToEthTx(e.cliCtx, tx.Tx)
 	if err != nil {
@@ -518,7 +529,7 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum BlockNumber,
 		return nil, err
 	}
 
-	transaction := newRPCTransaction(ethTx, common.BytesToHash(header.ConsensusHash.Bytes()), uint64(header.Height), uint64(idx))
+	transaction := newRPCTransaction(ethTx, common.BytesToHash(header.Hash()), uint64(header.Height), uint64(idx))
 	return transaction, nil
 }
 
@@ -535,7 +546,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	if err != nil {
 		return nil, err
 	}
-	blockHash := common.BytesToHash(block.BlockMeta.Header.ConsensusHash)
+	blockHash := common.BytesToHash(block.BlockMeta.Header.Hash())
 
 	// Convert tx bytes to eth transaction
 	ethTx, err := bytesToEthTx(e.cliCtx, tx.Tx)

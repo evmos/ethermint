@@ -1,11 +1,16 @@
 package types
 
 const (
-	// module name
+	// ModuleName string name of module
 	ModuleName = "ethermint"
 
+	// EvmStoreKey key for ethereum storage data
 	EvmStoreKey = "evmstore"
-	EvmCodeKey  = "evmcode"
+	// EvmCodeKey key for ethereum code data
+	EvmCodeKey = "evmcode"
+	// EvmBlockKey key for ethereum block data
+	EvmBlockKey = "evmblock"
 
+	// RouterKey uses module name for routing
 	RouterKey = ModuleName
 )

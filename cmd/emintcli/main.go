@@ -11,8 +11,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkrpc "github.com/cosmos/cosmos-sdk/client/rpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	emintkeys "github.com/cosmos/ethermint/keys"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	emintkeys "github.com/cosmos/ethermint/keys"
 
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"

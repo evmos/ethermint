@@ -2,11 +2,12 @@ package evm
 
 import (
 	"fmt"
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"math/big"
 )
 
 type (
@@ -25,6 +26,7 @@ type (
 	}
 )
 
+// ValidateGenesis validates evm genesis config
 func ValidateGenesis(data GenesisState) error {
 	for _, acct := range data.Accounts {
 		if len(acct.Address.Bytes()) == 0 {
@@ -37,12 +39,14 @@ func ValidateGenesis(data GenesisState) error {
 	return nil
 }
 
+// DefaultGenesisState sets default evm genesis config
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Accounts: []GenesisAccount{},
 	}
 }
 
+// InitGenesis initializes genesis state based on exported genesis
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, record := range data.Accounts {
 		keeper.SetCode(ctx, record.Address, record.Code)
@@ -51,7 +55,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	return []abci.ValidatorUpdate{}
 }
 
-// TODO: Implement
+// ExportGenesis exports genesis state
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	return GenesisState{Accounts: nil}
 }

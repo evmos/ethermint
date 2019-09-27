@@ -127,7 +127,7 @@ func completeAndBroadcastETHTxCLI(txBldr authtypes.TxBuilder, cliCtx context.CLI
 		}
 	}
 
-	// * This function is overriden to change the keybase reference here
+	// * This function is overridden to change the keybase reference here
 	passphrase, err := emintkeys.GetPassphrase(fromName)
 	if err != nil {
 		return err
@@ -151,7 +151,7 @@ func completeAndBroadcastETHTxCLI(txBldr authtypes.TxBuilder, cliCtx context.CLI
 
 // BuildAndSign builds a single message to be signed, and signs a transaction
 // with the built message given a name, passphrase, and a set of messages.
-// * overriden from github.com/cosmos/cosmos-sdk/x/auth/types/txbuilder.go
+// * overridden from github.com/cosmos/cosmos-sdk/x/auth/types/txbuilder.go
 // * This is just modified to change the functionality in makeSignature, through sign
 func buildAndSign(bldr authtypes.TxBuilder, name, passphrase string, msgs []sdk.Msg) ([]byte, error) {
 	msg, err := bldr.BuildSignMsg(msgs)
@@ -179,7 +179,7 @@ func sign(bldr authtypes.TxBuilder, name, passphrase string, msg authtypes.StdSi
 func makeSignature(keybase crkeys.Keybase, name, passphrase string,
 	msg authtypes.StdSignMsg) (sig authtypes.StdSignature, err error) {
 	if keybase == nil {
-		// * This is overriden to allow ethermint keys, but not used because keybase is set
+		// * This is overridden to allow ethermint keys, but not used because keybase is set
 		keybase, err = emintkeys.NewKeyBaseFromHomeFlag()
 		if err != nil {
 			return
@@ -212,7 +212,7 @@ func makeSignature(keybase crkeys.Keybase, name, passphrase string,
 
 	ethTx.Sign(chainID, emintKey.ToECDSA())
 
-	// * This is needed to be overriden to get bytes to sign (RLPSignBytes) with the chainID
+	// * This is needed to be overridden to get bytes to sign (RLPSignBytes) with the chainID
 	sigBytes, pubkey, err := keybase.Sign(name, passphrase, ethTx.RLPSignBytes(chainID).Bytes())
 	if err != nil {
 		return
@@ -321,7 +321,7 @@ func getFromFields(from string, genOnly bool) (sdk.AccAddress, string, error) {
 		return addr, "", nil
 	}
 
-	// * This is the line that needed to be overriden, change could be to pass in optional keybase?
+	// * This is the line that needed to be overridden, change could be to pass in optional keybase?
 	keybase, err := emintkeys.NewKeyBaseFromHomeFlag()
 	if err != nil {
 		return nil, "", err

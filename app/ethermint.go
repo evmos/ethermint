@@ -37,13 +37,13 @@ import (
 const appName = "Ethermint"
 
 var (
-	// default home directories for the application CLI
+	// DefaultCLIHome sets the default home directories for the application CLI
 	DefaultCLIHome = os.ExpandEnv("$HOME/.emintcli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
 	DefaultNodeHome = os.ExpandEnv("$HOME/.emintd")
 
-	// The module BasicManager is in charge of setting up basic,
+	// ModuleBasics is the module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration
 	// and genesis verification.
 	ModuleBasics = module.NewBasicManager(
@@ -131,7 +131,7 @@ func NewEthermintApp(
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
-		gov.StoreKey, params.StoreKey, evmtypes.EvmStoreKey, evmtypes.EvmCodeKey)
+		gov.StoreKey, params.StoreKey, evmtypes.EvmStoreKey, evmtypes.EvmCodeKey, evmtypes.EvmBlockKey)
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	app := &EthermintApp{
@@ -165,7 +165,7 @@ func NewEthermintApp(
 	app.slashingKeeper = slashing.NewKeeper(app.cdc, keys[slashing.StoreKey], &stakingKeeper,
 		slashingSubspace, slashing.DefaultCodespace)
 	app.crisisKeeper = crisis.NewKeeper(crisisSubspace, invCheckPeriod, app.supplyKeeper, auth.FeeCollectorName)
-	app.evmKeeper = evm.NewKeeper(app.accountKeeper, keys[evmtypes.EvmStoreKey], keys[evmtypes.EvmCodeKey], cdc)
+	app.evmKeeper = evm.NewKeeper(app.accountKeeper, keys[evmtypes.EvmStoreKey], keys[evmtypes.EvmCodeKey], keys[evmtypes.EvmBlockKey], cdc)
 
 	// register the proposal types
 	govRouter := gov.NewRouter()
@@ -199,9 +199,9 @@ func NewEthermintApp(
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
-	app.mm.SetOrderBeginBlockers(mint.ModuleName, distr.ModuleName, slashing.ModuleName)
+	app.mm.SetOrderBeginBlockers(mint.ModuleName, distr.ModuleName, slashing.ModuleName, evmtypes.ModuleName)
 
-	app.mm.SetOrderEndBlockers(crisis.ModuleName, gov.ModuleName, staking.ModuleName)
+	app.mm.SetOrderEndBlockers(crisis.ModuleName, gov.ModuleName, staking.ModuleName, evmtypes.ModuleName)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -233,28 +233,28 @@ func NewEthermintApp(
 	return app
 }
 
-// The genesis state of the blockchain is represented here as a map of raw json
+// GenesisState is the state of the blockchain is represented here as a map of raw json
 // messages key'd by a identifier string.
 type GenesisState map[string]json.RawMessage
 
-// application updates every begin block
+// BeginBlocker updates every begin block
 func (app *EthermintApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
 
-// application updates every end block
+// EndBlocker updates every end block
 func (app *EthermintApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
 
-// application update at chain initialization
+// InitChainer updates at chain initialization
 func (app *EthermintApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 	app.cdc.MustUnmarshalJSON(req.AppStateBytes, &genesisState)
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
-// load a particular height
+// LoadHeight loads state at a particular height
 func (app *EthermintApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }

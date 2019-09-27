@@ -104,7 +104,10 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 // BeginBlock function for module at start of each block
-func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx sdk.Context, bl abci.RequestBeginBlock) {
+	// Consider removing this when using evm as module without web3 API
+	am.keeper.SetBlockHashMapping(ctx, bl.Header.LastBlockId.GetHash(), bl.Header.GetHeight()-1)
+}
 
 // EndBlock function for module at end of block
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {

@@ -35,8 +35,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tm-db"
 	tmlog "github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 )
 
 var (
@@ -326,7 +326,7 @@ func applyDAOHardFork(statedb *evmtypes.CommitStateDB) {
 // and uses the input parameters for its environment. It returns the receipt
 // for the transaction, gas used and an error if the transaction failed,
 // indicating the block was invalid.
-// Function is also pulled from go-ethereum 1.9 because of the imcompatible usage
+// Function is also pulled from go-ethereum 1.9 because of the incompatible usage
 // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/core/state_processor.go#L88
 func applyTransaction(config *ethparams.ChainConfig, bc ethcore.ChainContext, author *ethcmn.Address, gp *ethcore.GasPool, statedb *evmtypes.CommitStateDB, header *ethtypes.Header, tx *ethtypes.Transaction, usedGas *uint64, cfg ethvm.Config) (*ethtypes.Receipt, uint64, error) {
 	msg, err := tx.AsMessage(ethtypes.MakeSigner(config, header.Number))

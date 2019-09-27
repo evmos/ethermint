@@ -4,9 +4,9 @@ import (
 	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	cosmosKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/hd"
 	emintCrypto "github.com/cosmos/ethermint/crypto"
-	cosmosKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 )
 
 var cdc *codec.Codec
