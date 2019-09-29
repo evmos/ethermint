@@ -516,14 +516,25 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*Transaction, err
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
-func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) *Transaction {
-	return nil
+func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*Transaction, error) {
+	res, _, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryHashToHeight, hash.Hex()))
+	if err != nil {
+		return nil, err
+	}
+
+	var out types.QueryResBlockNumber
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	return e.getTransactionByBlockNumberAndIndex(out.Number, idx)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
 func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum BlockNumber, idx hexutil.Uint) (*Transaction, error) {
 	value := blockNum.Int64()
-	block, err := e.cliCtx.Client.Block(&value)
+	return e.getTransactionByBlockNumberAndIndex(value, idx)
+}
+
+func (e *PublicEthAPI) getTransactionByBlockNumberAndIndex(number int64, idx hexutil.Uint) (*Transaction, error) {
+	block, err := e.cliCtx.Client.Block(&number)
 	if err != nil {
 		return nil, err
 	}
