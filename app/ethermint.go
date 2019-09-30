@@ -131,7 +131,8 @@ func NewEthermintApp(
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
-		gov.StoreKey, params.StoreKey, evmtypes.EvmStoreKey, evmtypes.EvmCodeKey, evmtypes.EvmBlockKey)
+		gov.StoreKey, params.StoreKey, evmtypes.EvmStoreKey, evmtypes.EvmCodeKey)
+	blockKey := sdk.NewKVStoreKey(evmtypes.EvmBlockKey)
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	app := &EthermintApp{
@@ -165,7 +166,7 @@ func NewEthermintApp(
 	app.slashingKeeper = slashing.NewKeeper(app.cdc, keys[slashing.StoreKey], &stakingKeeper,
 		slashingSubspace, slashing.DefaultCodespace)
 	app.crisisKeeper = crisis.NewKeeper(crisisSubspace, invCheckPeriod, app.supplyKeeper, auth.FeeCollectorName)
-	app.evmKeeper = evm.NewKeeper(app.accountKeeper, keys[evmtypes.EvmStoreKey], keys[evmtypes.EvmCodeKey], keys[evmtypes.EvmBlockKey], cdc)
+	app.evmKeeper = evm.NewKeeper(app.accountKeeper, keys[evmtypes.EvmStoreKey], keys[evmtypes.EvmCodeKey], blockKey, cdc)
 
 	// register the proposal types
 	govRouter := gov.NewRouter()
@@ -217,6 +218,8 @@ func NewEthermintApp(
 	// initialize stores
 	app.MountKVStores(keys)
 	app.MountTransientStores(tkeys)
+	// Mount block hash mapping key as DB (no need for historical queries)
+	app.MountStore(blockKey, sdk.StoreTypeDB)
 
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
