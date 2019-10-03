@@ -107,6 +107,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 func (am AppModule) BeginBlock(ctx sdk.Context, bl abci.RequestBeginBlock) {
 	// Consider removing this when using evm as module without web3 API
 	am.keeper.SetBlockHashMapping(ctx, bl.Header.LastBlockId.GetHash(), bl.Header.GetHeight()-1)
+	am.keeper.txCount.reset()
 }
 
 // EndBlock function for module at end of block

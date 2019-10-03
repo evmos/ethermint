@@ -3,15 +3,15 @@ package evm
 import (
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/vm"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
+
+	tm "github.com/tendermint/tendermint/types"
 )
 
 // NewHandler returns a handler for Ethermint type messages.
@@ -20,6 +20,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case types.EthereumTxMsg:
 			return handleETHTxMsg(ctx, keeper, msg)
+		case types.EmintMsg:
+			return handleEmintMsg(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized ethermint Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -44,82 +46,64 @@ func handleETHTxMsg(ctx sdk.Context, keeper Keeper, msg types.EthereumTxMsg) sdk
 	if err != nil {
 		return emint.ErrInvalidSender(err.Error()).Result()
 	}
-	contractCreation := msg.To() == nil
 
-	// Pay intrinsic gas
-	// TODO: Check config for homestead enabled
-	cost, err := core.IntrinsicGas(msg.Data.Payload, contractCreation, true)
+	st := types.StateTransition{
+		Sender:       sender,
+		AccountNonce: msg.Data.AccountNonce,
+		Price:        msg.Data.Price,
+		GasLimit:     msg.Data.GasLimit,
+		Recipient:    msg.Data.Recipient,
+		Amount:       msg.Data.Amount,
+		Payload:      msg.Data.Payload,
+		Csdb:         keeper.csdb,
+		ChainID:      intChainID,
+	}
+
+	// Encode transaction by default Tx encoder
+	txEncoder := authutils.GetTxEncoder(types.ModuleCdc)
+	txBytes, err := txEncoder(msg)
 	if err != nil {
-		return emint.ErrInvalidIntrinsicGas(err.Error()).Result()
+		return sdk.ErrInternal(err.Error()).Result()
 	}
+	txHash := tm.Tx(txBytes).Hash()
 
-	usableGas := msg.Data.GasLimit - cost
+	// Prepare db for logs
+	keeper.csdb.Prepare(common.BytesToHash(txHash), common.Hash{}, keeper.txCount.get())
+	keeper.txCount.increment()
 
-	// Create context for evm
-	context := vm.Context{
-		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
-		Origin:      sender,
-		Coinbase:    common.Address{},
-		BlockNumber: big.NewInt(ctx.BlockHeight()),
-		Time:        big.NewInt(time.Now().Unix()),
-		Difficulty:  big.NewInt(0x30000), // unused
-		GasLimit:    ctx.GasMeter().Limit(),
-		GasPrice:    ctx.MinGasPrices().AmountOf(emint.DenomDefault).Int,
-	}
-
-	vmenv := vm.NewEVM(context, keeper.csdb.WithContext(ctx), types.GenerateChainConfig(intChainID), vm.Config{})
-
-	var (
-		leftOverGas uint64
-		addr        common.Address
-		vmerr       error
-		senderRef   = vm.AccountRef(sender)
-	)
-
-	if contractCreation {
-		_, addr, leftOverGas, vmerr = vmenv.Create(senderRef, msg.Data.Payload, usableGas, msg.Data.Amount)
-	} else {
-		// Increment the nonce for the next transaction
-		keeper.csdb.SetNonce(sender, keeper.csdb.GetNonce(sender)+1)
-		_, leftOverGas, vmerr = vmenv.Call(senderRef, *msg.To(), msg.Data.Payload, usableGas, msg.Data.Amount)
-	}
-
-	// handle errors
-	if vmerr != nil {
-		return emint.ErrVMExecution(vmerr.Error()).Result()
-	}
-
-	// Refund remaining gas from tx (Check these values and ensure gas is being consumed correctly)
-	refundGas(keeper.csdb, &leftOverGas, msg.Data.GasLimit, context.GasPrice, sender)
-
-	// add balance for the processor of the tx (determine who rewards are being processed to)
-	// TODO: Double check nothing needs to be done here
-
-	keeper.csdb.Finalise(true) // Change to depend on config
-
-	// TODO: Consume gas from sender
-
-	return sdk.Result{Data: addr.Bytes(), GasUsed: msg.Data.GasLimit - leftOverGas}
+	return st.TransitionCSDB(ctx)
 }
 
-func refundGas(
-	st vm.StateDB, gasRemaining *uint64, initialGas uint64, gasPrice *big.Int,
-	from common.Address,
-) {
-	// Apply refund counter, capped to half of the used gas.
-	refund := (initialGas - *gasRemaining) / 2
-	if refund > st.GetRefund() {
-		refund = st.GetRefund()
+func handleEmintMsg(ctx sdk.Context, keeper Keeper, msg types.EmintMsg) sdk.Result {
+	if err := msg.ValidateBasic(); err != nil {
+		return err.Result()
 	}
-	*gasRemaining += refund
 
-	// Return ETH for remaining gas, exchanged at the original rate.
-	remaining := new(big.Int).Mul(new(big.Int).SetUint64(*gasRemaining), gasPrice)
-	st.AddBalance(from, remaining)
+	// parse the chainID from a string to a base-10 integer
+	intChainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
+	if !ok {
+		return emint.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
+	}
 
-	// // Also return remaining gas to the block gas counter so it is
-	// // available for the next transaction.
-	// TODO: Return gas to block gas meter?
-	// st.gp.AddGas(st.gas)
+	st := types.StateTransition{
+		Sender:       common.BytesToAddress(msg.From.Bytes()),
+		AccountNonce: msg.AccountNonce,
+		Price:        msg.Price.BigInt(),
+		GasLimit:     msg.GasLimit,
+		Amount:       msg.Amount.BigInt(),
+		Payload:      msg.Payload,
+		Csdb:         keeper.csdb,
+		ChainID:      intChainID,
+	}
+
+	if msg.Recipient != nil {
+		to := common.BytesToAddress(msg.Recipient.Bytes())
+		st.Recipient = &to
+	}
+
+	// Prepare db for logs
+	keeper.csdb.Prepare(common.Hash{}, common.Hash{}, keeper.txCount.get()) // Cannot provide tx hash
+	keeper.txCount.increment()
+
+	return st.TransitionCSDB(ctx)
 }

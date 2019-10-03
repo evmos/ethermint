@@ -96,6 +96,7 @@ func NewCommitStateDB(ctx sdk.Context, ak auth.AccountKeeper, storageKey, codeKe
 	}
 }
 
+// WithContext returns a Database with an updated sdk context
 func (csdb *CommitStateDB) WithContext(ctx sdk.Context) *CommitStateDB {
 	csdb.ctx = ctx
 	return csdb
@@ -372,7 +373,7 @@ func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, er
 	return
 }
 
-// Finalize finalizes the state objects (accounts) state by setting their state,
+// Finalise finalizes the state objects (accounts) state by setting their state,
 // removing the csdb destructed objects and clearing the journal as well as the
 // refunds.
 func (csdb *CommitStateDB) Finalise(deleteEmptyObjects bool) {
