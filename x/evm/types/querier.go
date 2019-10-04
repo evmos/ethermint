@@ -1,5 +1,11 @@
 package types
 
+import (
+	"fmt"
+
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+)
+
 // QueryResProtocolVersion is response type for protocol version query
 type QueryResProtocolVersion struct {
 	Version string `json:"version"`
@@ -52,4 +58,22 @@ type QueryResNonce struct {
 
 func (q QueryResNonce) String() string {
 	return string(q.Nonce)
+}
+
+// QueryTxLogs is response type for tx logs query
+type QueryTxLogs struct {
+	Logs []*ethtypes.Log `json:"logs"`
+}
+
+func (q QueryTxLogs) String() string {
+	return string(fmt.Sprintf("%+v", q.Logs))
+}
+
+// QueryBloomFilter is response type for tx logs query
+type QueryBloomFilter struct {
+	Bloom ethtypes.Bloom `json:"bloom"`
+}
+
+func (q QueryBloomFilter) String() string {
+	return string(q.Bloom.Bytes())
 }

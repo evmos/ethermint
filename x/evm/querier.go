@@ -1,6 +1,8 @@
 package evm
 
 import (
+	"strconv"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/utils"
@@ -20,6 +22,8 @@ const (
 	QueryCode            = "code"
 	QueryNonce           = "nonce"
 	QueryHashToHeight    = "hashToHeight"
+	QueryTxLogs          = "txLogs"
+	QueryLogsBloom       = "logsBloom"
 )
 
 // NewQuerier is the module level router for state queries
@@ -40,6 +44,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryNonce(ctx, path, keeper)
 		case QueryHashToHeight:
 			return queryHashToHeight(ctx, path, keeper)
+		case QueryTxLogs:
+			return queryTxLogs(ctx, path, keeper)
+		case QueryLogsBloom:
+			return queryBlockLogsBloom(ctx, path, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query endpoint")
 		}
@@ -122,6 +130,36 @@ func queryHashToHeight(ctx sdk.Context, path []string, keeper Keeper) ([]byte, s
 	blockNumber := keeper.GetBlockHashMapping(ctx, blockHash)
 
 	bRes := types.QueryResBlockNumber{Number: blockNumber}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	if err != nil {
+		panic("could not marshal result to JSON: " + err.Error())
+	}
+
+	return res, nil
+}
+
+func queryBlockLogsBloom(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
+	num, err := strconv.ParseInt(path[1], 10, 64)
+	if err != nil {
+		panic("could not unmarshall block number: " + err.Error())
+	}
+
+	bloom := keeper.GetBlockBloomMapping(ctx, num)
+
+	bRes := types.QueryBloomFilter{Bloom: bloom}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	if err != nil {
+		panic("could not marshal result to JSON: " + err.Error())
+	}
+
+	return res, nil
+}
+
+func queryTxLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
+	txHash := ethcmn.HexToHash(path[1])
+	logs := keeper.GetLogs(ctx, txHash)
+
+	bRes := types.QueryTxLogs{Logs: logs}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
 	if err != nil {
 		panic("could not marshal result to JSON: " + err.Error())

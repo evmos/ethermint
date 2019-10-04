@@ -24,6 +24,7 @@ type Keeper struct {
 	cdc      *codec.Codec
 	blockKey sdk.StoreKey
 	txCount  *count
+	bloom    *big.Int
 }
 
 type count int
@@ -48,6 +49,7 @@ func NewKeeper(ak auth.AccountKeeper, storageKey, codeKey sdk.StoreKey,
 		cdc:      cdc,
 		blockKey: blockKey,
 		txCount:  new(count),
+		bloom:    big.NewInt(0),
 	}
 }
 
@@ -73,6 +75,31 @@ func (k *Keeper) GetBlockHashMapping(ctx sdk.Context, hash []byte) (height int64
 	}
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &height)
 	return
+}
+
+// ----------------------------------------------------------------------------
+// Block bloom bits mapping functions
+// May be removed when using only as module (only required by rpc api)
+// ----------------------------------------------------------------------------
+
+// SetBlockBloomMapping sets the mapping from block height to bloom bits
+func (k *Keeper) SetBlockBloomMapping(ctx sdk.Context, bloom ethtypes.Bloom, height int64) {
+	store := ctx.KVStore(k.blockKey)
+	heightHash := k.cdc.MustMarshalBinaryLengthPrefixed(height)
+	if !bytes.Equal(heightHash, []byte{}) {
+		store.Set(heightHash, bloom.Bytes())
+	}
+}
+
+// GetBlockBloomMapping gets bloombits from block height
+func (k *Keeper) GetBlockBloomMapping(ctx sdk.Context, height int64) ethtypes.Bloom {
+	store := ctx.KVStore(k.blockKey)
+	heightHash := k.cdc.MustMarshalBinaryLengthPrefixed(height)
+	bloom := store.Get(heightHash)
+	if bytes.Equal(heightHash, []byte{}) {
+		panic(fmt.Errorf("block with bloombits %s not found", bloom))
+	}
+	return ethtypes.BytesToBloom(bloom)
 }
 
 // ----------------------------------------------------------------------------

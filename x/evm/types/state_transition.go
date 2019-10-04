@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,10 +24,11 @@ type StateTransition struct {
 	Payload      []byte
 	Csdb         *CommitStateDB
 	ChainID      *big.Int
+	THash        *common.Hash
 }
 
 // TransitionCSDB performs an evm state transition from a transaction
-func (st StateTransition) TransitionCSDB(ctx sdk.Context) sdk.Result {
+func (st StateTransition) TransitionCSDB(ctx sdk.Context) (sdk.Result, *big.Int) {
 	contractCreation := st.Recipient == nil
 
 	// Create context for evm
@@ -61,7 +63,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) sdk.Result {
 
 	// handle errors
 	if vmerr != nil {
-		return emint.ErrVMExecution(vmerr.Error()).Result()
+		return emint.ErrVMExecution(vmerr.Error()).Result(), nil
 	}
 
 	// Refund remaining gas from tx (Check these values and ensure gas is being consumed correctly)
@@ -74,7 +76,19 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) sdk.Result {
 
 	// TODO: Consume gas from sender
 
-	return sdk.Result{Data: addr.Bytes(), GasUsed: st.GasLimit - leftOverGas}
+	// Generate bloom filter to be saved in tx receipt data
+	bloomInt := big.NewInt(0)
+	var bloomFilter ethtypes.Bloom
+	if st.THash != nil {
+		logs := st.Csdb.GetLogs(*st.THash)
+		bloomInt = ethtypes.LogsBloom(logs)
+		bloomFilter = ethtypes.BytesToBloom(bloomInt.Bytes())
+	}
+
+	// TODO: coniditionally add either/ both of these to return data
+	returnData := append(addr.Bytes(), bloomFilter.Bytes()...)
+
+	return sdk.Result{Data: returnData, GasUsed: st.GasLimit - leftOverGas}, bloomInt
 }
 
 func refundGas(

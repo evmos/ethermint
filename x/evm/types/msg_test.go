@@ -6,9 +6,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/ethermint/crypto"
 	"github.com/cosmos/ethermint/utils"
+	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 )
@@ -173,4 +176,39 @@ func TestMarshalAndUnmarshalData(t *testing.T) {
 	err = unmarshalAmino(e2, str)
 	require.NoError(t, err)
 	require.Equal(t, e, *e2)
+}
+
+func TestMarshalAndUnmarshalLogs(t *testing.T) {
+	var cdc = codec.New()
+
+	logs := []*ethtypes.Log{
+		{
+			Address: common.BytesToAddress([]byte{0x11}),
+			TxHash:  common.HexToHash("0x01"),
+			// May need to find workaround since Topics is required to unmarshal from JSON
+			Topics:  []common.Hash{},
+			Removed: true,
+		},
+		{Address: common.BytesToAddress([]byte{0x01, 0x11}), Topics: []common.Hash{}},
+	}
+
+	raw, err := codec.MarshalJSONIndent(cdc, logs)
+	require.NoError(t, err)
+
+	var logs2 []*ethtypes.Log
+	err = cdc.UnmarshalJSON(raw, &logs2)
+	require.NoError(t, err)
+
+	require.Len(t, logs2, 2)
+	require.Equal(t, logs[0].Address, logs2[0].Address)
+	require.Equal(t, logs[0].TxHash, logs2[0].TxHash)
+	require.True(t, logs[0].Removed)
+
+	emptyLogs := []*ethtypes.Log{}
+
+	raw, err = codec.MarshalJSONIndent(cdc, emptyLogs)
+	require.NoError(t, err)
+
+	err = cdc.UnmarshalJSON(raw, &logs2)
+	require.NoError(t, err)
 }

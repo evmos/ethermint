@@ -2,6 +2,7 @@ package evm
 
 import (
 	"encoding/json"
+	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -9,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/ethermint/x/evm/client/cli"
 	"github.com/cosmos/ethermint/x/evm/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -106,7 +108,10 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 // BeginBlock function for module at start of each block
 func (am AppModule) BeginBlock(ctx sdk.Context, bl abci.RequestBeginBlock) {
 	// Consider removing this when using evm as module without web3 API
+	bloom := ethtypes.BytesToBloom(am.keeper.bloom.Bytes())
+	am.keeper.SetBlockBloomMapping(ctx, bloom, bl.Header.GetHeight()-1)
 	am.keeper.SetBlockHashMapping(ctx, bl.Header.LastBlockId.GetHash(), bl.Header.GetHeight()-1)
+	am.keeper.bloom = big.NewInt(0)
 	am.keeper.txCount.reset()
 }
 

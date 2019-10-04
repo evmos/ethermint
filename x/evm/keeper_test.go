@@ -14,6 +14,7 @@ import (
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -84,6 +85,10 @@ func TestDBStorage(t *testing.T) {
 	ek.SetBlockHashMapping(ctx, ethcmn.FromHex("0x0d87a3a5f73140f46aac1bf419263e4e94e87c292f25007700ab7f2060e2af68"), 7)
 	ek.SetBlockHashMapping(ctx, []byte{0x43, 0x32}, 8)
 
+	// Test block height mapping functionality
+	testBloom := ethtypes.BytesToBloom([]byte{0x1, 0x3})
+	ek.SetBlockBloomMapping(ctx, testBloom, 4)
+
 	// Get those state transitions
 	require.Equal(t, ek.GetBalance(ctx, address).Cmp(big.NewInt(5)), 0)
 	require.Equal(t, ek.GetNonce(ctx, address), uint64(4))
@@ -92,6 +97,8 @@ func TestDBStorage(t *testing.T) {
 
 	require.Equal(t, ek.GetBlockHashMapping(ctx, ethcmn.FromHex("0x0d87a3a5f73140f46aac1bf419263e4e94e87c292f25007700ab7f2060e2af68")), int64(7))
 	require.Equal(t, ek.GetBlockHashMapping(ctx, []byte{0x43, 0x32}), int64(8))
+
+	require.Equal(t, ek.GetBlockBloomMapping(ctx, 4), testBloom)
 
 	// commit stateDB
 	_, err = ek.Commit(ctx, false)

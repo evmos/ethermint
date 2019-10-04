@@ -47,6 +47,15 @@ func handleETHTxMsg(ctx sdk.Context, keeper Keeper, msg types.EthereumTxMsg) sdk
 		return emint.ErrInvalidSender(err.Error()).Result()
 	}
 
+	// Encode transaction by default Tx encoder
+	txEncoder := authutils.GetTxEncoder(types.ModuleCdc)
+	txBytes, err := txEncoder(msg)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+	txHash := tm.Tx(txBytes).Hash()
+	ethHash := common.BytesToHash(txHash)
+
 	st := types.StateTransition{
 		Sender:       sender,
 		AccountNonce: msg.Data.AccountNonce,
@@ -57,21 +66,15 @@ func handleETHTxMsg(ctx sdk.Context, keeper Keeper, msg types.EthereumTxMsg) sdk
 		Payload:      msg.Data.Payload,
 		Csdb:         keeper.csdb,
 		ChainID:      intChainID,
+		THash:        &ethHash,
 	}
-
-	// Encode transaction by default Tx encoder
-	txEncoder := authutils.GetTxEncoder(types.ModuleCdc)
-	txBytes, err := txEncoder(msg)
-	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-	txHash := tm.Tx(txBytes).Hash()
-
 	// Prepare db for logs
-	keeper.csdb.Prepare(common.BytesToHash(txHash), common.Hash{}, keeper.txCount.get())
+	keeper.csdb.Prepare(ethHash, common.Hash{}, keeper.txCount.get())
 	keeper.txCount.increment()
 
-	return st.TransitionCSDB(ctx)
+	res, bloom := st.TransitionCSDB(ctx)
+	keeper.bloom.Or(keeper.bloom, bloom)
+	return res
 }
 
 func handleEmintMsg(ctx sdk.Context, keeper Keeper, msg types.EmintMsg) sdk.Result {
@@ -105,5 +108,6 @@ func handleEmintMsg(ctx sdk.Context, keeper Keeper, msg types.EmintMsg) sdk.Resu
 	keeper.csdb.Prepare(common.Hash{}, common.Hash{}, keeper.txCount.get()) // Cannot provide tx hash
 	keeper.txCount.increment()
 
-	return st.TransitionCSDB(ctx)
+	res, _ := st.TransitionCSDB(ctx)
+	return res
 }
