@@ -24,6 +24,7 @@ const (
 	QueryHashToHeight    = "hashToHeight"
 	QueryTxLogs          = "txLogs"
 	QueryLogsBloom       = "logsBloom"
+	QueryLogs            = "logs"
 )
 
 // NewQuerier is the module level router for state queries
@@ -48,6 +49,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryTxLogs(ctx, path, keeper)
 		case QueryLogsBloom:
 			return queryBlockLogsBloom(ctx, path, keeper)
+		case QueryLogs:
+			return queryLogs(ctx, path, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query endpoint")
 		}
@@ -166,4 +169,14 @@ func queryTxLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Err
 	}
 
 	return res, nil
+}
+
+func queryLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
+	logs := keeper.Logs(ctx)
+
+	l, err := codec.MarshalJSONIndent(keeper.cdc, logs)
+	if err != nil {
+		panic("could not marshal result to JSON: " + err.Error())
+	}
+	return l, nil
 }
