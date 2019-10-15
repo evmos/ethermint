@@ -36,5 +36,11 @@ func GetRPCAPIs(cliCtx context.CLIContext, key emintcrypto.PrivKeySecp256k1) []r
 			Service:   NewPublicFilterAPI(cliCtx),
 			Public:    true,
 		},
+		{
+			Namespace: "net",
+			Version:   "1.0",
+			Service:   NewPublicNetAPI(cliCtx),
+			Public:    true,
+		},
 	}
 }

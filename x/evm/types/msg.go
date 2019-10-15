@@ -427,7 +427,7 @@ func GenerateFromArgs(args args.SendTxArgs, ctx context.CLIContext) (msg *Ethere
 	if args.Gas == nil {
 		// Estimate the gas usage if necessary.
 		// TODO: Set gas based on estimate when simulating txs are setup
-		gasLimit = 22000
+		gasLimit = 60000
 	} else {
 		gasLimit = (uint64)(*args.Gas)
 	}
