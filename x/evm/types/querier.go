@@ -60,12 +60,12 @@ func (q QueryResNonce) String() string {
 	return string(q.Nonce)
 }
 
-// QueryTxLogs is response type for tx logs query
-type QueryTxLogs struct {
+// QueryETHLogs is response type for tx logs query
+type QueryETHLogs struct {
 	Logs []*ethtypes.Log `json:"logs"`
 }
 
-func (q QueryTxLogs) String() string {
+func (q QueryETHLogs) String() string {
 	return string(fmt.Sprintf("%+v", q.Logs))
 }
 
@@ -76,4 +76,11 @@ type QueryBloomFilter struct {
 
 func (q QueryBloomFilter) String() string {
 	return string(q.Bloom.Bytes())
+}
+
+// QueryAccount is response type for querying Ethereum state objects
+type QueryAccount struct {
+	Balance  string `json:"balance"`
+	CodeHash []byte `json:"codeHash"`
+	Nonce    uint64 `json:"nonce"`
 }

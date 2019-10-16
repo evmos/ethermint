@@ -17,3 +17,13 @@ func UnmarshalBigInt(s string) (*big.Int, error) {
 	err := ret.UnmarshalText([]byte(s))
 	return ret, err
 }
+
+// MustUnmarshalBigInt unmarshalls string from *big.Int
+func MustUnmarshalBigInt(s string) *big.Int {
+	ret := new(big.Int)
+	err := ret.UnmarshalText([]byte(s))
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}

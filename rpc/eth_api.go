@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/ethermint/x/evm"
 	"github.com/cosmos/ethermint/x/evm/types"
 
+	"github.com/tendermint/tendermint/rpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -599,7 +600,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		return nil, err
 	}
 
-	var logs types.QueryTxLogs
+	var logs types.QueryETHLogs
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &logs)
 
 	// TODO: change hard coded indexing of bytes
@@ -637,6 +638,68 @@ func (e *PublicEthAPI) GetUncleByBlockHashAndIndex(hash common.Hash, idx hexutil
 // GetUncleByBlockNumberAndIndex returns the uncle identified by number and index. Always returns nil.
 func (e *PublicEthAPI) GetUncleByBlockNumberAndIndex(number hexutil.Uint, idx hexutil.Uint) map[string]interface{} {
 	return nil
+}
+
+// AccountResult struct for account proof
+type AccountResult struct {
+	Address      common.Address  `json:"address"`
+	AccountProof []string        `json:"accountProof"`
+	Balance      *hexutil.Big    `json:"balance"`
+	CodeHash     common.Hash     `json:"codeHash"`
+	Nonce        hexutil.Uint64  `json:"nonce"`
+	StorageHash  common.Hash     `json:"storageHash"`
+	StorageProof []StorageResult `json:"storageProof"`
+}
+
+// StorageResult defines the format for storage proof return
+type StorageResult struct {
+	Key   string       `json:"key"`
+	Value *hexutil.Big `json:"value"`
+	Proof []string     `json:"proof"`
+}
+
+// GetProof returns an account object with proof and any storage proofs
+func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, block BlockNumber) (*AccountResult, error) {
+	opts := client.ABCIQueryOptions{Height: int64(block), Prove: true}
+	path := fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryAccount, address.Hex())
+	pRes, err := e.cliCtx.Client.ABCIQueryWithOptions(path, nil, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: convert TM merkle proof to []string if needed in future
+	// proof := pRes.Response.GetProof()
+
+	account := new(types.QueryAccount)
+	e.cliCtx.Codec.MustUnmarshalJSON(pRes.Response.GetValue(), &account)
+
+	storageProofs := make([]StorageResult, len(storageKeys))
+	for i, k := range storageKeys {
+		// Get value for key
+		vPath := fmt.Sprintf("custom/%s/%s/%s/%s", types.ModuleName, evm.QueryStorage, address, k)
+		vRes, err := e.cliCtx.Client.ABCIQueryWithOptions(vPath, nil, opts)
+		if err != nil {
+			return nil, err
+		}
+		value := new(types.QueryResStorage)
+		e.cliCtx.Codec.MustUnmarshalJSON(vRes.Response.GetValue(), &value)
+
+		storageProofs[i] = StorageResult{
+			Key:   k,
+			Value: (*hexutil.Big)(common.BytesToHash(value.Value).Big()),
+			Proof: []string{""},
+		}
+	}
+
+	return &AccountResult{
+		Address:      address,
+		AccountProof: []string{""}, // This shouldn't be necessary (different proof formats)
+		Balance:      (*hexutil.Big)(utils.MustUnmarshalBigInt(account.Balance)),
+		CodeHash:     common.BytesToHash(account.CodeHash),
+		Nonce:        hexutil.Uint64(account.Nonce),
+		StorageHash:  common.Hash{}, // Ethermint doesn't have a storage hash
+		StorageProof: storageProofs,
+	}, nil
 }
 
 // getGasLimit returns the gas limit per block set in genesis

@@ -25,6 +25,7 @@ const (
 	QueryTxLogs          = "txLogs"
 	QueryLogsBloom       = "logsBloom"
 	QueryLogs            = "logs"
+	QueryAccount         = "account"
 )
 
 // NewQuerier is the module level router for state queries
@@ -50,7 +51,9 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		case QueryLogsBloom:
 			return queryBlockLogsBloom(ctx, path, keeper)
 		case QueryLogs:
-			return queryLogs(ctx, path, keeper)
+			return queryLogs(ctx, keeper)
+		case QueryAccount:
+			return queryAccount(ctx, path, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query endpoint")
 		}
@@ -162,7 +165,7 @@ func queryTxLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Err
 	txHash := ethcmn.HexToHash(path[1])
 	logs := keeper.GetLogs(ctx, txHash)
 
-	bRes := types.QueryTxLogs{Logs: logs}
+	bRes := types.QueryETHLogs{Logs: logs}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
 	if err != nil {
 		panic("could not marshal result to JSON: " + err.Error())
@@ -171,10 +174,27 @@ func queryTxLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Err
 	return res, nil
 }
 
-func queryLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
+func queryLogs(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	logs := keeper.Logs(ctx)
 
-	l, err := codec.MarshalJSONIndent(keeper.cdc, logs)
+	lRes := types.QueryETHLogs{Logs: logs}
+	l, err := codec.MarshalJSONIndent(keeper.cdc, lRes)
+	if err != nil {
+		panic("could not marshal result to JSON: " + err.Error())
+	}
+	return l, nil
+}
+
+func queryAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
+	addr := ethcmn.HexToAddress(path[1])
+	so := keeper.GetOrNewStateObject(ctx, addr)
+
+	lRes := types.QueryAccount{
+		Balance:  utils.MarshalBigInt(so.Balance()),
+		CodeHash: so.CodeHash(),
+		Nonce:    so.Nonce(),
+	}
+	l, err := codec.MarshalJSONIndent(keeper.cdc, lRes)
 	if err != nil {
 		panic("could not marshal result to JSON: " + err.Error())
 	}
