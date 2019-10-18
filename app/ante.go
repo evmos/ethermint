@@ -13,7 +13,6 @@ import (
 	emint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcore "github.com/ethereum/go-ethereum/core"
 
 	tmcrypto "github.com/tendermint/tendermint/crypto"
@@ -41,7 +40,7 @@ func NewAnteHandler(ak auth.AccountKeeper, sk types.SupplyKeeper) sdk.AnteHandle
 			return sdkAnteHandler(ctx, ak, sk, castTx, sim)
 
 		case *evmtypes.EthereumTxMsg:
-			return ethAnteHandler(ctx, castTx, ak)
+			return ethAnteHandler(ctx, ak, sk, castTx, sim)
 
 		default:
 			return ctx, sdk.ErrInternal(fmt.Sprintf("transaction type invalid: %T", tx)).Result(), true
@@ -106,7 +105,6 @@ func sdkAnteHandler(
 
 	// the first signer pays the transaction fees
 	if !stdTx.Fee.Amount.IsZero() {
-		// Testing error is in DeductFees
 		res = auth.DeductFees(sk, newCtx, signerAccs[0], stdTx.Fee.Amount)
 		if !res.IsOK() {
 			return newCtx, res, true
@@ -193,53 +191,120 @@ func consumeSigGas(meter sdk.GasMeter, pubkey tmcrypto.PubKey) {
 // perform the same series of checks. The distinction is made in CheckTx to
 // prevent spam and DoS attacks.
 func ethAnteHandler(
-	ctx sdk.Context, ethTxMsg *evmtypes.EthereumTxMsg, ak auth.AccountKeeper,
+	ctx sdk.Context, ak auth.AccountKeeper, sk types.SupplyKeeper,
+	ethTxMsg *evmtypes.EthereumTxMsg, sim bool,
 ) (newCtx sdk.Context, res sdk.Result, abort bool) {
+
+	var senderAddr sdk.AccAddress
+
+	// This is done to ignore costs in Ante handler checks
+	ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
 
 	if ctx.IsCheckTx() {
 		// Only perform pre-message (Ethereum transaction) execution validation
 		// during CheckTx. Otherwise, during DeliverTx the EVM will handle them.
-		if res := validateEthTxCheckTx(ctx, ak, ethTxMsg); !res.IsOK() {
-			return newCtx, res, true
+		if senderAddr, res = validateEthTxCheckTx(ctx, ak, ethTxMsg); !res.IsOK() {
+			return ctx, res, true
+		}
+	} else {
+		// This is still currently needed to retrieve the sender address
+		if senderAddr, res = validateSignature(ctx, ethTxMsg); !res.IsOK() {
+			return ctx, res, true
+		}
+
+		// Explicit nonce check is also needed in case of multiple txs with same nonce not being handled
+		if res := checkNonce(ctx, ak, ethTxMsg, senderAddr); !res.IsOK() {
+			return ctx, res, true
 		}
 	}
 
-	return ctx, sdk.Result{}, false
+	// Recover and catch out of gas error
+	defer func() {
+		if r := recover(); r != nil {
+			switch rType := r.(type) {
+			case sdk.ErrorOutOfGas:
+				log := fmt.Sprintf("out of gas in location: %v", rType.Descriptor)
+				res = sdk.ErrOutOfGas(log).Result()
+				res.GasWanted = ethTxMsg.Data.GasLimit
+				res.GasUsed = ctx.GasMeter().GasConsumed()
+				abort = true
+			default:
+				panic(r)
+			}
+		}
+	}()
+
+	// Fetch sender account from signature
+	senderAcc, res := auth.GetSignerAcc(ctx, ak, senderAddr)
+	if !res.IsOK() {
+		return ctx, res, true
+	}
+
+	// Charge sender for gas up to limit
+	if ethTxMsg.Data.GasLimit != 0 {
+		// Cost calculates the fees paid to validators based on gas limit and price
+		cost := new(big.Int).Mul(ethTxMsg.Data.Price, new(big.Int).SetUint64(ethTxMsg.Data.GasLimit))
+
+		res = auth.DeductFees(sk, ctx, senderAcc, sdk.Coins{
+			sdk.NewCoin(emint.DenomDefault, sdk.NewIntFromBigInt(cost)),
+		})
+
+		if !res.IsOK() {
+			return ctx, res, true
+		}
+	}
+
+	// Set gas meter after ante handler to ignore gaskv costs
+	newCtx = auth.SetGasMeter(sim, ctx, ethTxMsg.Data.GasLimit)
+
+	gas, _ := ethcore.IntrinsicGas(ethTxMsg.Data.Payload, ethTxMsg.To() == nil, false)
+	newCtx.GasMeter().ConsumeGas(gas, "eth intrinsic gas")
+
+	return newCtx, sdk.Result{}, false
 }
 
 func validateEthTxCheckTx(
 	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.EthereumTxMsg,
-) sdk.Result {
-
-	// parse the chainID from a string to a base-10 integer
-	chainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
-	if !ok {
-		return emint.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
-	}
-
+) (sdk.AccAddress, sdk.Result) {
 	// Validate sufficient fees have been provided that meet a minimum threshold
 	// defined by the proposer (for mempool purposes during CheckTx).
 	if res := ensureSufficientMempoolFees(ctx, ethTxMsg); !res.IsOK() {
-		return res
+		return nil, res
 	}
 
 	// validate enough intrinsic gas
 	if res := validateIntrinsicGas(ethTxMsg); !res.IsOK() {
-		return res
+		return nil, res
+	}
+
+	signer, res := validateSignature(ctx, ethTxMsg)
+	if !res.IsOK() {
+		return nil, res
+	}
+
+	// validate account (nonce and balance checks)
+	if res := validateAccount(ctx, ak, ethTxMsg, signer); !res.IsOK() {
+		return nil, res
+	}
+
+	return sdk.AccAddress(signer.Bytes()), sdk.Result{}
+}
+
+// Validates signature and returns sender address
+func validateSignature(ctx sdk.Context, ethTxMsg *evmtypes.EthereumTxMsg) (sdk.AccAddress, sdk.Result) {
+	// parse the chainID from a string to a base-10 integer
+	chainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
+	if !ok {
+		return nil, emint.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
 	}
 
 	// validate sender/signature
 	signer, err := ethTxMsg.VerifySig(chainID)
 	if err != nil {
-		return sdk.ErrUnauthorized(fmt.Sprintf("signature verification failed: %s", err)).Result()
+		return nil, sdk.ErrUnauthorized(fmt.Sprintf("signature verification failed: %s", err)).Result()
 	}
 
-	// validate account (nonce and balance checks)
-	if res := validateAccount(ctx, ak, ethTxMsg, signer); !res.IsOK() {
-		return res
-	}
-
-	return sdk.Result{}
+	return sdk.AccAddress(signer.Bytes()), sdk.Result{}
 }
 
 // validateIntrinsicGas validates that the Ethereum tx message has enough to
@@ -265,10 +330,10 @@ func validateIntrinsicGas(ethTxMsg *evmtypes.EthereumTxMsg) sdk.Result {
 // validateAccount validates the account nonce and that the account has enough
 // funds to cover the tx cost.
 func validateAccount(
-	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.EthereumTxMsg, signer ethcmn.Address,
+	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.EthereumTxMsg, signer sdk.AccAddress,
 ) sdk.Result {
 
-	acc := ak.GetAccount(ctx, sdk.AccAddress(signer.Bytes()))
+	acc := ak.GetAccount(ctx, signer)
 
 	// on InitChain make sure account number == 0
 	if ctx.BlockHeight() == 0 && acc.GetAccountNumber() != 0 {
@@ -278,12 +343,9 @@ func validateAccount(
 			)).Result()
 	}
 
-	// Validate the transaction nonce is valid (equivalent to the sender account’s
-	// current nonce).
-	seq := acc.GetSequence()
-	if ethTxMsg.Data.AccountNonce != seq {
-		return sdk.ErrInvalidSequence(
-			fmt.Sprintf("nonce too low; got %d, expected %d", ethTxMsg.Data.AccountNonce, seq)).Result()
+	// Validate nonce is correct
+	if res := checkNonce(ctx, ak, ethTxMsg, signer); !res.IsOK() {
+		return res
 	}
 
 	// validate sender has enough funds
@@ -292,6 +354,21 @@ func validateAccount(
 		return sdk.ErrInsufficientFunds(
 			fmt.Sprintf("insufficient funds: %s < %s", balance, ethTxMsg.Cost()),
 		).Result()
+	}
+
+	return sdk.Result{}
+}
+
+func checkNonce(
+	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.EthereumTxMsg, signer sdk.AccAddress,
+) sdk.Result {
+	acc := ak.GetAccount(ctx, signer)
+	// Validate the transaction nonce is valid (equivalent to the sender account’s
+	// current nonce).
+	seq := acc.GetSequence()
+	if ethTxMsg.Data.AccountNonce != seq {
+		return sdk.ErrInvalidSequence(
+			fmt.Sprintf("invalid nonce; got %d, expected %d", ethTxMsg.Data.AccountNonce, seq)).Result()
 	}
 
 	return sdk.Result{}

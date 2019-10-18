@@ -117,7 +117,11 @@ func (am AppModule) BeginBlock(ctx sdk.Context, bl abci.RequestBeginBlock) {
 
 // EndBlock function for module at end of block
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	_, err := am.keeper.csdb.Commit(true)
+	// Gas costs are handled within msg handler so costs should be ignored
+	ebCtx := ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
+
+	// Commit state objects to KV store
+	_, err := am.keeper.csdb.WithContext(ebCtx).Commit(true)
 	if err != nil {
 		panic(err)
 	}
