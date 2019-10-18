@@ -63,6 +63,7 @@ func init() {
 	flag.StringVar(&flagCPUProfile, "cpu-profile", "", "write CPU profile")
 	flag.StringVar(&flagDataDir, "datadir", "", "test data directory for state storage")
 	flag.StringVar(&flagBlockchain, "blockchain", "blockchain", "ethereum block export file (blocks to import)")
+	testing.Init()
 	flag.Parse()
 }
 

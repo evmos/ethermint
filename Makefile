@@ -46,7 +46,7 @@ clean:
 update-tools:
 	@echo "--> Updating vendor dependencies"
 	${GO_MOD} go get -u -v $(GOLINT) $(UNCONVERT) $(INEFFASSIGN) $(MISSPELL) $(ERRCHECK) $(UNPARAM)
-	${GO_MOD} go get -v $(GOCILINT)
+	${GO_MOD} go get -u -v $(GOCILINT)
 
 verify:
 	@echo "--> Verifying dependencies have not been modified"
@@ -62,7 +62,7 @@ verify:
 ##########################################################
 
 GOLINT = github.com/tendermint/lint/golint
-GOCILINT = github.com/golangci/golangci-lint/cmd/golangci-lint@v1.17.1
+GOCILINT = github.com/golangci/golangci-lint/cmd/golangci-lint
 UNCONVERT = github.com/mdempsky/unconvert
 INEFFASSIGN = github.com/gordonklaus/ineffassign
 MISSPELL = github.com/client9/misspell/cmd/misspell
@@ -137,7 +137,7 @@ test-race:
 test-cli:
 	@echo "NO CLI TESTS"
 
-test-lint:
+lint:
 	@echo "--> Running golangci-lint..."
 	@${GO_MOD} golangci-lint run --deadline=5m ./...
 
@@ -163,5 +163,5 @@ format:
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -w -s
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
 
-.PHONY: build install update-tools tools godocs clean format test-lint \
+.PHONY: build install update-tools tools godocs clean format lint \
 test-cli test-race test-unit test test-import

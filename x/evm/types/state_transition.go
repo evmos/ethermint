@@ -31,6 +31,10 @@ type StateTransition struct {
 func (st StateTransition) TransitionCSDB(ctx sdk.Context) (sdk.Result, *big.Int) {
 	contractCreation := st.Recipient == nil
 
+	if res := st.checkNonce(); !res.IsOK() {
+		return res, nil
+	}
+
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
 	gasLimit := ctx.GasMeter().Limit()
 
@@ -96,4 +100,16 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (sdk.Result, *big.Int)
 	returnData := append(addr.Bytes(), bloomFilter.Bytes()...)
 
 	return sdk.Result{Data: returnData, GasUsed: st.GasLimit - leftOverGas}, bloomInt
+}
+
+func (st *StateTransition) checkNonce() sdk.Result {
+	// Make sure this transaction's nonce is correct.
+	nonce := st.Csdb.GetNonce(st.Sender)
+	if nonce < st.AccountNonce {
+		return emint.ErrInvalidNonce("nonce too high").Result()
+	} else if nonce > st.AccountNonce {
+		return emint.ErrInvalidNonce("nonce too low").Result()
+	}
+
+	return sdk.Result{}
 }

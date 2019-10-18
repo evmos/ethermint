@@ -73,7 +73,7 @@ Ethermint utilizes [semantic versioning](https://semver.org/).
 ### Development Procedure:
 - the latest state of development is on `develop`
 - `develop` must never fail `make test`
-- `develop` should not fail `make test-lint`
+- `develop` should not fail `make lint`
 - no --force onto `develop` (except when reverting a broken commit, which should seldom happen)
 - create a development branch either on github.com/cosmos/ethermint, or your fork (using `git remote add origin`)
 - [squash your commits](https://github.com/todotxt/todo.txt-android/wiki/Squash-All-Commits-Related-to-a-Single-Issue-into-a-Single-Commit) into an individual commit

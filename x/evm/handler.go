@@ -64,7 +64,7 @@ func handleETHTxMsg(ctx sdk.Context, keeper Keeper, msg types.EthereumTxMsg) sdk
 		Recipient:    msg.Data.Recipient,
 		Amount:       msg.Data.Amount,
 		Payload:      msg.Data.Payload,
-		Csdb:         keeper.csdb,
+		Csdb:         keeper.csdb.WithContext(ctx),
 		ChainID:      intChainID,
 		THash:        &ethHash,
 	}
@@ -95,7 +95,7 @@ func handleEmintMsg(ctx sdk.Context, keeper Keeper, msg types.EmintMsg) sdk.Resu
 		GasLimit:     msg.GasLimit,
 		Amount:       msg.Amount.BigInt(),
 		Payload:      msg.Payload,
-		Csdb:         keeper.csdb,
+		Csdb:         keeper.csdb.WithContext(ctx),
 		ChainID:      intChainID,
 	}
 

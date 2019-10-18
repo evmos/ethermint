@@ -236,22 +236,20 @@ func (kb dbKeybase) Sign(name, passphrase string, msg []byte) (sig []byte, pub t
 
 	var priv tmcrypto.PrivKey
 
-	switch info.(type) {
+	switch info := info.(type) {
 	case localInfo:
-		linfo := info.(localInfo)
-		if linfo.PrivKeyArmor == "" {
+		if info.PrivKeyArmor == "" {
 			err = fmt.Errorf("private key not available")
 			return
 		}
 
-		priv, err = mintkey.UnarmorDecryptPrivKey(linfo.PrivKeyArmor, passphrase)
+		priv, err = mintkey.UnarmorDecryptPrivKey(info.PrivKeyArmor, passphrase)
 		if err != nil {
 			return nil, nil, err
 		}
 
 	case ledgerInfo:
-		linfo := info.(ledgerInfo)
-		priv, err = crypto.NewPrivKeyLedgerSecp256k1Unsafe(linfo.Path)
+		priv, err = crypto.NewPrivKeyLedgerSecp256k1Unsafe(info.Path)
 		if err != nil {
 			return
 		}
@@ -299,14 +297,13 @@ func (kb dbKeybase) ExportPrivateKeyObject(name string, passphrase string) (tmcr
 
 	var priv tmcrypto.PrivKey
 
-	switch info.(type) {
+	switch info := info.(type) {
 	case localInfo:
-		linfo := info.(localInfo)
-		if linfo.PrivKeyArmor == "" {
+		if info.PrivKeyArmor == "" {
 			err = fmt.Errorf("private key not available")
 			return nil, err
 		}
-		priv, err = mintkey.UnarmorDecryptPrivKey(linfo.PrivKeyArmor, passphrase)
+		priv, err = mintkey.UnarmorDecryptPrivKey(info.PrivKeyArmor, passphrase)
 		if err != nil {
 			return nil, err
 		}
@@ -437,10 +434,9 @@ func (kb dbKeybase) Update(name, oldpass string, getNewpass func() (string, erro
 	if err != nil {
 		return err
 	}
-	switch info.(type) {
+	switch info := info.(type) {
 	case localInfo:
-		linfo := info.(localInfo)
-		key, err := mintkey.UnarmorDecryptPrivKey(linfo.PrivKeyArmor, oldpass)
+		key, err := mintkey.UnarmorDecryptPrivKey(info.PrivKeyArmor, oldpass)
 		if err != nil {
 			return err
 		}

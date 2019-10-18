@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.12.5
+      - image: circleci/golang:1.13
 
     working_directory: /go/src/github.com/cosmos/ethermint
 
@@ -10,18 +10,18 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-v0-{{ checksum "go.sum" }}
+            - go-mod-v1-{{ checksum "go.sum" }}
       - run:
           name: Verify Dependencies and compile binaries for daemon and cli
           command: make verify build
       - save_cache:
-          key: go-mod-v0-{{ checksum "go.sum" }}
+          key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
 
   lint:
     docker:
-      - image: circleci/golang:1.12.5
+      - image: circleci/golang:1.13
 
     working_directory: /go/src/github.com/cosmos/ethermint
 
@@ -29,21 +29,21 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-v0-{{ checksum "go.sum" }}
+            - go-mod-v1-{{ checksum "go.sum" }}
       - run:
           name: Get tools
           command: make tools
       - run:
           name: Run linter
-          command: make test-lint
+          command: make lint
       - save_cache:
-          key: go-mod-v0-{{ checksum "go.sum" }}
+          key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
 
   test:
     docker:
-      - image: circleci/golang:1.12.5
+      - image: circleci/golang:1.13
 
     working_directory: /go/src/github.com/cosmos/ethermint
 
@@ -51,12 +51,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-v0-{{ checksum "go.sum" }}
+            - go-mod-v1-{{ checksum "go.sum" }}
       - run:
           name: Run all tests
           command: make test-unit test-import
       - save_cache:
-          key: go-mod-v0-{{ checksum "go.sum" }}
+          key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
 

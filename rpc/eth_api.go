@@ -443,7 +443,7 @@ func convertTransactionsToRPC(cliCtx context.CLIContext, txs []tmtypes.Tx, block
 		}
 		// TODO: Remove gas usage calculation if saving gasUsed per block
 		gasUsed.Add(gasUsed, ethTx.Fee())
-		transactions[i] = newRPCTransaction(ethTx, blockHash, height, uint64(i))
+		transactions[i] = newRPCTransaction(ethTx, blockHash, &height, uint64(i))
 	}
 	return transactions, gasUsed
 }
@@ -478,7 +478,7 @@ func bytesToEthTx(cliCtx context.CLIContext, bz []byte) (*types.EthereumTxMsg, e
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func newRPCTransaction(tx *types.EthereumTxMsg, blockHash common.Hash, blockNumber uint64, index uint64) *Transaction {
+func newRPCTransaction(tx *types.EthereumTxMsg, blockHash common.Hash, blockNumber *uint64, index uint64) *Transaction {
 	// Verify signature and retrieve sender address
 	from, _ := tx.VerifySig(tx.ChainID())
 
@@ -497,7 +497,7 @@ func newRPCTransaction(tx *types.EthereumTxMsg, blockHash common.Hash, blockNumb
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
-		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(*blockNumber))
 		result.TransactionIndex = (*hexutil.Uint64)(&index)
 	}
 	return result
@@ -523,7 +523,8 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*Transaction, err
 		return nil, err
 	}
 
-	return newRPCTransaction(ethTx, blockHash, uint64(tx.Height), uint64(tx.Index)), nil
+	height := uint64(tx.Height)
+	return newRPCTransaction(ethTx, blockHash, &height, uint64(tx.Index)), nil
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
@@ -560,7 +561,8 @@ func (e *PublicEthAPI) getTransactionByBlockNumberAndIndex(number int64, idx hex
 		return nil, err
 	}
 
-	transaction := newRPCTransaction(ethTx, common.BytesToHash(header.Hash()), uint64(header.Height), uint64(idx))
+	height := uint64(header.Height)
+	transaction := newRPCTransaction(ethTx, common.BytesToHash(header.Hash()), &height, uint64(idx))
 	return transaction, nil
 }
 
@@ -628,6 +630,29 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	}
 
 	return fields, nil
+}
+
+// PendingTransactions returns the transactions that are in the transaction pool
+// and have a from address that is one of the accounts this node manages.
+func (e *PublicEthAPI) PendingTransactions() ([]*Transaction, error) {
+	pendingTxs, err := e.cliCtx.Client.UnconfirmedTxs(100)
+	if err != nil {
+		return nil, err
+	}
+
+	transactions := make([]*Transaction, 0, 100)
+	for _, tx := range pendingTxs.Txs {
+		ethTx, err := bytesToEthTx(e.cliCtx, tx)
+		if err != nil {
+			return nil, err
+		}
+
+		// * Should check signer and reference against accounts the node manages in future
+		rpcTx := newRPCTransaction(ethTx, common.Hash{}, nil, 0)
+		transactions = append(transactions, rpcTx)
+	}
+
+	return transactions, nil
 }
 
 // GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.
