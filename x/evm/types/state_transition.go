@@ -74,19 +74,6 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (sdk.Result, *big.Int)
 		_, leftOverGas, vmerr = vmenv.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
 	}
 
-	// handle errors
-	if vmerr != nil {
-		return emint.ErrVMExecution(vmerr.Error()).Result(), nil
-	}
-
-	// Refunds would happen here, if intended in future
-
-	st.Csdb.Finalise(true) // Change to depend on config
-
-	// Consume gas from evm execution
-	// Out of gas check does not need to be done here since it is done within the EVM execution
-	ctx.GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
-
 	// Generate bloom filter to be saved in tx receipt data
 	bloomInt := big.NewInt(0)
 	var bloomFilter ethtypes.Bloom
@@ -98,6 +85,21 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (sdk.Result, *big.Int)
 
 	// TODO: coniditionally add either/ both of these to return data
 	returnData := append(addr.Bytes(), bloomFilter.Bytes()...)
+
+	// handle errors
+	if vmerr != nil {
+		res := emint.ErrVMExecution(vmerr.Error()).Result()
+		res.Data = returnData
+		return res, nil
+	}
+
+	// TODO: Refund unused gas here, if intended in future
+
+	st.Csdb.Finalise(true) // Change to depend on config
+
+	// Consume gas from evm execution
+	// Out of gas check does not need to be done here since it is done within the EVM execution
+	ctx.GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
 
 	return sdk.Result{Data: returnData, GasUsed: st.GasLimit - leftOverGas}, bloomInt
 }

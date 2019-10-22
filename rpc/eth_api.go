@@ -605,8 +605,14 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	var logs types.QueryETHLogs
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &logs)
 
-	// TODO: change hard coded indexing of bytes
-	bloomFilter := ethtypes.BytesToBloom(tx.TxResult.GetData()[20:])
+	txData := tx.TxResult.GetData()
+	var bloomFilter ethtypes.Bloom
+	var contractAddress common.Address
+	if len(txData) >= 20 {
+		// TODO: change hard coded indexing of bytes
+		bloomFilter = ethtypes.BytesToBloom(txData[20:])
+		contractAddress = common.BytesToAddress(txData[:20])
+	}
 
 	fields := map[string]interface{}{
 		"blockHash":         blockHash,
@@ -623,7 +629,6 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		"status":            status,
 	}
 
-	contractAddress := common.BytesToAddress(tx.TxResult.GetData()[:20])
 	if contractAddress != (common.Address{}) {
 		// TODO: change hard coded indexing of first 20 bytes
 		fields["contractAddress"] = contractAddress
