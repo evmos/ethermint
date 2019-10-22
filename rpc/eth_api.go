@@ -3,12 +3,14 @@ package rpc
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"math/big"
 	"strconv"
 
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	emintkeys "github.com/cosmos/ethermint/keys"
 	"github.com/cosmos/ethermint/rpc/args"
+	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/utils"
 	"github.com/cosmos/ethermint/version"
 	"github.com/cosmos/ethermint/x/evm"
@@ -21,12 +23,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/spf13/viper"
 )
@@ -324,19 +329,115 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 	return common.HexToHash(res.TxHash), nil
 }
 
-// CallArgs represents arguments to a smart contract call as provided by RPC clients.
+// CallArgs represents the arguments for a call.
 type CallArgs struct {
-	From     common.Address `json:"from"`
-	To       common.Address `json:"to"`
-	Gas      hexutil.Uint64 `json:"gas"`
-	GasPrice hexutil.Big    `json:"gasPrice"`
-	Value    hexutil.Big    `json:"value"`
-	Data     hexutil.Bytes  `json:"data"`
+	From     *common.Address `json:"from"`
+	To       *common.Address `json:"to"`
+	Gas      *hexutil.Uint64 `json:"gas"`
+	GasPrice *hexutil.Big    `json:"gasPrice"`
+	Value    *hexutil.Big    `json:"value"`
+	Data     *hexutil.Bytes  `json:"data"`
 }
 
 // Call performs a raw contract call.
-func (e *PublicEthAPI) Call(args CallArgs, blockNum BlockNumber) hexutil.Bytes {
-	return nil
+func (e *PublicEthAPI) Call(args CallArgs, blockNr rpc.BlockNumber, overrides *map[common.Address]account) (hexutil.Bytes, error) {
+	result, err := e.doCall(args, blockNr, vm.Config{}, big.NewInt(emint.DefaultRPCGasLimit))
+	return (hexutil.Bytes)(result), err
+}
+
+// account indicates the overriding fields of account during the execution of
+// a message call.
+// Note, state and stateDiff can't be specified at the same time. If state is
+// set, message execution will only use the data in the given state. Otherwise
+// if statDiff is set, all diff will be applied first and then execute the call
+// message.
+type account struct {
+	Nonce     *hexutil.Uint64              `json:"nonce"`
+	Code      *hexutil.Bytes               `json:"code"`
+	Balance   **hexutil.Big                `json:"balance"`
+	State     *map[common.Hash]common.Hash `json:"state"`
+	StateDiff *map[common.Hash]common.Hash `json:"stateDiff"`
+}
+
+// DoCall performs a simulated call operation through the evm
+func (e *PublicEthAPI) doCall(args CallArgs, blockNr rpc.BlockNumber, vmCfg vm.Config, globalGasCap *big.Int) ([]byte, error) {
+	// Set height for historical queries
+	ctx := e.cliCtx.WithHeight(blockNr.Int64())
+
+	// Set sender address or use a default if none specified
+	var addr common.Address
+	if args.From == nil {
+		if e.key != nil {
+			addr = common.BytesToAddress(e.key.PubKey().Address().Bytes())
+		}
+		// No error handled here intentionally to match geth behaviour
+	} else {
+		addr = *args.From
+	}
+
+	// Set default gas & gas price if none were set
+	// Change this to uint64(math.MaxUint64 / 2) if gas cap can be configured
+	gas := uint64(emint.DefaultRPCGasLimit)
+	if args.Gas != nil {
+		gas = uint64(*args.Gas)
+	}
+	if globalGasCap != nil && globalGasCap.Uint64() < gas {
+		log.Println("Caller gas above allowance, capping", "requested", gas, "cap", globalGasCap)
+		gas = globalGasCap.Uint64()
+	}
+
+	// Set gas price using default or parameter if passed in
+	gasPrice := new(big.Int).SetUint64(emint.DefaultGasPrice)
+	if args.GasPrice != nil {
+		gasPrice = args.GasPrice.ToInt()
+	}
+
+	// Set value for transaction
+	value := new(big.Int)
+	if args.Value != nil {
+		value = args.Value.ToInt()
+	}
+
+	// Set Data if provided
+	var data []byte
+	if args.Data != nil {
+		data = []byte(*args.Data)
+	}
+
+	// Set destination address for call
+	var toAddr sdk.AccAddress
+	if args.To != nil {
+		toAddr = sdk.AccAddress(args.To.Bytes())
+	}
+
+	// Create new call message
+	msg := types.NewEmintMsg(0, &toAddr, sdk.NewIntFromBigInt(value), gas,
+		sdk.NewIntFromBigInt(gasPrice), data, sdk.AccAddress(addr.Bytes()))
+
+	// Generate tx to be used to simulate (signature isn't needed)
+	tx := authtypes.NewStdTx([]sdk.Msg{msg}, authtypes.StdFee{}, []authtypes.StdSignature{authtypes.StdSignature{}}, "")
+
+	// Encode transaction by default Tx encoder
+	txEncoder := authutils.GetTxEncoder(ctx.Codec)
+	txBytes, err := txEncoder(tx)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	// Transaction simulation through query
+	res, _, err := ctx.QueryWithData("app/simulate", txBytes)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	var simResult sdk.Result
+	if err = ctx.Codec.UnmarshalBinaryLengthPrefixed(res, &simResult); err != nil {
+		return nil, err
+	}
+
+	_, _, ret, err := types.DecodeReturnData(simResult.Data)
+
+	return ret, err
 }
 
 // EstimateGas estimates gas usage for the given smart contract call.
@@ -606,13 +707,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &logs)
 
 	txData := tx.TxResult.GetData()
-	var bloomFilter ethtypes.Bloom
-	var contractAddress common.Address
-	if len(txData) >= 20 {
-		// TODO: change hard coded indexing of bytes
-		bloomFilter = ethtypes.BytesToBloom(txData[20:])
-		contractAddress = common.BytesToAddress(txData[:20])
-	}
+	contractAddress, bloomFilter, _, _ := types.DecodeReturnData(txData)
 
 	fields := map[string]interface{}{
 		"blockHash":         blockHash,
@@ -630,7 +725,6 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	}
 
 	if contractAddress != (common.Address{}) {
-		// TODO: change hard coded indexing of first 20 bytes
 		fields["contractAddress"] = contractAddress
 	}
 

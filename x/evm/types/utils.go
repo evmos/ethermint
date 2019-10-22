@@ -5,11 +5,17 @@ import (
 
 	"github.com/cosmos/ethermint/crypto"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/sha3"
+)
+
+const (
+	bloomIdx  = ethcmn.AddressLength
+	returnIdx = bloomIdx + ethtypes.BloomByteLength
 )
 
 // GenerateEthAddress generates an Ethereum address.
@@ -45,4 +51,25 @@ func rlpHash(x interface{}) (hash ethcmn.Hash) {
 	hasher.Sum(hash[:0])
 
 	return hash
+}
+
+// EncodeReturnData takes all of the necessary data from the EVM execution
+// and returns the data as a byte slice
+func EncodeReturnData(addr ethcmn.Address, bloom ethtypes.Bloom, evmRet []byte) []byte {
+	// Append address, bloom, evm return bytes in that order
+	returnData := append(addr.Bytes(), bloom.Bytes()...)
+	return append(returnData, evmRet...)
+}
+
+// DecodeReturnData decodes the byte slice of values to their respective types
+func DecodeReturnData(bytes []byte) (addr ethcmn.Address, bloom ethtypes.Bloom, ret []byte, err error) {
+	if len(bytes) >= returnIdx {
+		addr = ethcmn.BytesToAddress(bytes[:bloomIdx])
+		bloom = ethtypes.BytesToBloom(bytes[bloomIdx:returnIdx])
+		ret = bytes[returnIdx:]
+	} else {
+		err = fmt.Errorf("Invalid format for encoded data, message must be an EVM state transition")
+	}
+
+	return
 }

@@ -391,7 +391,7 @@ func GenerateFromArgs(args args.SendTxArgs, ctx context.CLIContext) (msg *Ethere
 	if args.GasPrice == nil {
 		// Set default gas price
 		// TODO: Change to min gas price from context once available through server/daemon
-		gasPrice = big.NewInt(20)
+		gasPrice = big.NewInt(types.DefaultGasPrice)
 	}
 
 	if args.Nonce == nil {
