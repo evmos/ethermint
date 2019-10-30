@@ -74,7 +74,9 @@ func handleETHTxMsg(ctx sdk.Context, keeper Keeper, msg types.EthereumTxMsg) sdk
 	keeper.txCount.increment()
 
 	bloom, res := st.TransitionCSDB(ctx)
-	keeper.bloom.Or(keeper.bloom, bloom)
+	if res.IsOK() {
+		keeper.bloom.Or(keeper.bloom, bloom)
+	}
 	return res
 }
 

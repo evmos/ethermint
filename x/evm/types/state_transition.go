@@ -36,7 +36,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		return nil, res
 	}
 
-	cost, err := core.IntrinsicGas(st.Payload, st.Recipient == nil, true)
+	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true)
 	if err != nil {
 		return nil, sdk.ErrOutOfGas("invalid intrinsic gas for transaction").Result()
 	}
@@ -105,7 +105,12 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	// handle errors
 	if vmerr != nil {
 		res := emint.ErrVMExecution(vmerr.Error()).Result()
+		if vmerr == vm.ErrOutOfGas || vmerr == vm.ErrCodeStoreOutOfGas {
+			res = sdk.ErrOutOfGas("EVM execution went out of gas").Result()
+		}
 		res.Data = returnData
+		// Consume gas before returning
+		ctx.GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
 		return nil, res
 	}
 
