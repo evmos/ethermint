@@ -44,10 +44,13 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
 	gasLimit := st.GasLimit - ctx.GasMeter().GasConsumed()
 
+	var snapshot int
 	if st.Simulate {
 		// gasLimit is set here because stdTxs incur gaskv charges in the ante handler, but for eth_call
 		// the cost needs to be the same as an Ethereum transaction sent through the web3 API
 		gasLimit = st.GasLimit - cost
+
+		snapshot = st.Csdb.Snapshot()
 	}
 
 	// Create context for evm
@@ -104,6 +107,10 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		res := emint.ErrVMExecution(vmerr.Error()).Result()
 		res.Data = returnData
 		return nil, res
+	}
+
+	if st.Simulate {
+		st.Csdb.RevertToSnapshot(snapshot)
 	}
 
 	// TODO: Refund unused gas here, if intended in future
