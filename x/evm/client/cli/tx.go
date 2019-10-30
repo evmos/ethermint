@@ -71,9 +71,9 @@ func GetCmdGenTx(cdc *codec.Codec) *cobra.Command {
 			}
 
 			payload := args[4]
-
+			addr := ethcmn.HexToAddress(args[0])
 			// TODO: Remove explicit photon check and check variables
-			msg := types.NewEthereumTxMsg(0, ethcmn.HexToAddress(args[0]), big.NewInt(coins.AmountOf(emintTypes.DenomDefault).Int64()), gasLimit, new(big.Int).SetUint64(gasPrice), []byte(payload))
+			msg := types.NewEthereumTxMsg(0, &addr, big.NewInt(coins.AmountOf(emintTypes.DenomDefault).Int64()), gasLimit, new(big.Int).SetUint64(gasPrice), []byte(payload))
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -125,7 +125,8 @@ func GetCmdGenETHTx(cdc *codec.Codec) *cobra.Command {
 
 			var tx *types.EthereumTxMsg
 			if len(args) == 5 {
-				tx = types.NewEthereumTxMsg(txBldr.Sequence(), ethcmn.HexToAddress(args[4]), big.NewInt(coins.AmountOf(emintTypes.DenomDefault).Int64()), gasLimit, new(big.Int).SetUint64(gasPrice), []byte(payload))
+				addr := ethcmn.HexToAddress(args[4])
+				tx = types.NewEthereumTxMsg(txBldr.Sequence(), &addr, big.NewInt(coins.AmountOf(emintTypes.DenomDefault).Int64()), gasLimit, new(big.Int).SetUint64(gasPrice), []byte(payload))
 			} else {
 				tx = types.NewEthereumTxMsgContract(txBldr.Sequence(), big.NewInt(coins.AmountOf(emintTypes.DenomDefault).Int64()), gasLimit, new(big.Int).SetUint64(gasPrice), []byte(payload))
 			}
