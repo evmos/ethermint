@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/big"
 	"strconv"
+	"sync"
 
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	emintkeys "github.com/cosmos/ethermint/keys"
@@ -37,10 +38,11 @@ import (
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicEthAPI struct {
-	cliCtx    context.CLIContext
-	key       emintcrypto.PrivKeySecp256k1
-	nonceLock *AddrLocker
-	gasLimit  *int64
+	cliCtx      context.CLIContext
+	key         emintcrypto.PrivKeySecp256k1
+	nonceLock   *AddrLocker
+	keybaseLock sync.Mutex
+	gasLimit    *int64
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
@@ -103,6 +105,8 @@ func (e *PublicEthAPI) GasPrice() *hexutil.Big {
 
 // Accounts returns the list of accounts available to this node.
 func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
+	e.keybaseLock.Lock()
+
 	addresses := make([]common.Address, 0) // return [] instead of nil if empty
 	keybase, err := emintkeys.NewKeyBaseFromHomeFlag()
 	if err != nil {
@@ -113,6 +117,9 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 	if err != nil {
 		return addresses, err
 	}
+
+	keybase.CloseDB()
+	e.keybaseLock.Unlock()
 
 	for _, info := range infos {
 		addressBytes := info.GetPubKey().Address().Bytes()

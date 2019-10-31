@@ -17,7 +17,7 @@ type Filter struct {
 	addresses []common.Address
 	topics    [][]common.Hash
 
-	block      common.Hash // Block hash if filtering a single block
+	block common.Hash // Block hash if filtering a single block
 }
 
 // NewBlockFilter creates a new filter which directly inspects the contents of

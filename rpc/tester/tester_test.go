@@ -27,7 +27,7 @@ const (
 	addrAStoreKey = 0
 )
 
-var addr = fmt.Sprintf("http://%s:%d/rpc", host, port)
+var addr = fmt.Sprintf("http://%s:%d", host, port)
 
 type Request struct {
 	Version string   `json:"jsonrpc"`

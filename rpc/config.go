@@ -74,7 +74,7 @@ func registerRoutes(rs *lcd.RestServer) {
 		}
 	}
 
-	rs.Mux.HandleFunc("/rpc", s.ServeHTTP).Methods("POST")
+	rs.Mux.HandleFunc("/", s.ServeHTTP).Methods("POST", "OPTIONS")
 }
 
 func unlockKeyFromNameAndPassphrase(accountName, passphrase string) (emintKey emintcrypto.PrivKeySecp256k1, err error) {
