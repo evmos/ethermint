@@ -47,7 +47,7 @@ func (acc Account) Balance() sdk.Int {
 
 // SetBalance sets an account's balance.
 func (acc Account) SetBalance(amt sdk.Int) {
-	// nolint:errcheck
+	//nolint:gosec,errcheck
 	acc.SetCoins(sdk.Coins{sdk.NewCoin(DenomDefault, amt)})
 }
 

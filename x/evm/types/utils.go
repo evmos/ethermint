@@ -45,8 +45,7 @@ func ValidateSigner(signBytes, sig []byte, signer ethcmn.Address) error {
 
 func rlpHash(x interface{}) (hash ethcmn.Hash) {
 	hasher := sha3.NewLegacyKeccak256()
-
-	// nolint:errcheck
+	//nolint:gosec,errcheck
 	rlp.Encode(hasher, x)
 	hasher.Sum(hash[:0])
 

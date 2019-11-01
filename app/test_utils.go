@@ -17,9 +17,9 @@ import (
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
+	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -44,8 +44,10 @@ func newTestSetup() testSetup {
 	ms.MountStoreWithDB(keySupply, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeIAVL, db)
-	// nolint:errcheck
-	ms.LoadLatestVersion()
+
+	if err := ms.LoadLatestVersion(); err != nil {
+		cmn.Exit(err.Error())
+	}
 
 	cdc := MakeCodec()
 	cdc.RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)

@@ -427,7 +427,8 @@ func (e *PublicEthAPI) doCall(args CallArgs, blockNr rpc.BlockNumber, globalGasC
 		sdk.NewIntFromBigInt(gasPrice), data, sdk.AccAddress(addr.Bytes()))
 
 	// Generate tx to be used to simulate (signature isn't needed)
-	tx := authtypes.NewStdTx([]sdk.Msg{msg}, authtypes.StdFee{}, []authtypes.StdSignature{authtypes.StdSignature{}}, "")
+	var stdSig authtypes.StdSignature
+	tx := authtypes.NewStdTx([]sdk.Msg{msg}, authtypes.StdFee{}, []authtypes.StdSignature{stdSig}, "")
 
 	// Encode transaction by default Tx encoder
 	txEncoder := authutils.GetTxEncoder(ctx.Codec)

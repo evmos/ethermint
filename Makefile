@@ -139,7 +139,7 @@ test-cli:
 
 lint:
 	@echo "--> Running golangci-lint..."
-	@${GO_MOD} golangci-lint run --deadline=5m ./...
+	@${GO_MOD} golangci-lint run ./... -c .golangci.yml --deadline=5m
 
 test-import:
 	@${GO_MOD} go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
