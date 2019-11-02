@@ -2,9 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -46,7 +49,7 @@ func main() {
 	}
 	// CLI commands to initialize the chain
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(ctx, cdc, emintapp.ModuleBasics, emintapp.DefaultNodeHome),
+		withChainIDValidation(genutilcli.InitCmd(ctx, cdc, emintapp.ModuleBasics, emintapp.DefaultNodeHome)),
 		genutilcli.CollectGenTxsCmd(ctx, cdc, genaccounts.AppModuleBasic{}, emintapp.DefaultNodeHome),
 		genutilcli.GenTxCmd(ctx, cdc, emintapp.ModuleBasics, staking.AppModuleBasic{}, genaccounts.AppModuleBasic{}, emintapp.DefaultNodeHome, emintapp.DefaultCLIHome),
 		genutilcli.ValidateGenesisCmd(ctx, cdc, emintapp.ModuleBasics),
@@ -87,4 +90,27 @@ func exportAppStateAndTMValidators(
 	emintApp := emintapp.NewEthermintApp(logger, db, true, 0)
 
 	return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+}
+
+// Wraps cobra command with a RunE function with integer chain-id verification
+func withChainIDValidation(baseCmd *cobra.Command) *cobra.Command {
+	// Copy base run command to be used after chain verification
+	baseRunE := baseCmd.RunE
+
+	// Function to replace command's RunE function
+	chainIDVerify := func(cmd *cobra.Command, args []string) error {
+		chainIDFlag := viper.GetString(client.FlagChainID)
+
+		// Verify that the chain-id entered is a base 10 integer
+		_, ok := new(big.Int).SetString(chainIDFlag, 10)
+		if !ok {
+			return fmt.Errorf(
+				fmt.Sprintf("Invalid chainID: %s, must be base-10 integer format", chainIDFlag))
+		}
+
+		return baseRunE(cmd, args)
+	}
+
+	baseCmd.RunE = chainIDVerify
+	return baseCmd
 }
