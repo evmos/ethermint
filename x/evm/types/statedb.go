@@ -571,7 +571,7 @@ func (csdb *CommitStateDB) CreateAccount(addr ethcmn.Address) {
 // Copy creates a deep, independent copy of the state.
 //
 // NOTE: Snapshots of the copied state cannot be applied to the copy.
-func (csdb *CommitStateDB) Copy() ethvm.StateDB {
+func (csdb *CommitStateDB) Copy() *CommitStateDB {
 	csdb.lock.Lock()
 	defer csdb.lock.Unlock()
 

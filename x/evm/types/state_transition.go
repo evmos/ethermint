@@ -44,13 +44,19 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
 	gasLimit := st.GasLimit - ctx.GasMeter().GasConsumed()
 
-	var snapshot int
+	csdb := st.Csdb
 	if st.Simulate {
 		// gasLimit is set here because stdTxs incur gaskv charges in the ante handler, but for eth_call
 		// the cost needs to be the same as an Ethereum transaction sent through the web3 API
+		consumedGas := ctx.GasMeter().GasConsumed()
 		gasLimit = st.GasLimit - cost
+		if consumedGas < cost {
+			// If Cosmos standard tx ante handler cost is less than EVM intrinsic cost
+			// gas must be consumed to match to accurately simulate an Ethereum transaction
+			ctx.GasMeter().ConsumeGas(cost-consumedGas, "Intrinsic gas match")
+		}
 
-		snapshot = st.Csdb.Snapshot()
+		csdb = st.Csdb.Copy()
 	}
 
 	// Create context for evm
@@ -70,7 +76,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	evmGasMeter := sdk.NewInfiniteGasMeter()
 
 	vmenv := vm.NewEVM(
-		context, st.Csdb.WithContext(ctx.WithGasMeter(evmGasMeter)),
+		context, csdb.WithContext(ctx.WithGasMeter(evmGasMeter)),
 		GenerateChainConfig(st.ChainID), vm.Config{},
 	)
 
@@ -86,15 +92,15 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		ret, addr, leftOverGas, vmerr = vmenv.Create(senderRef, st.Payload, gasLimit, st.Amount)
 	} else {
 		// Increment the nonce for the next transaction
-		st.Csdb.SetNonce(st.Sender, st.Csdb.GetNonce(st.Sender)+1)
+		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
 		ret, leftOverGas, vmerr = vmenv.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
 	}
 
 	// Generate bloom filter to be saved in tx receipt data
 	bloomInt := big.NewInt(0)
 	var bloomFilter ethtypes.Bloom
-	if st.THash != nil {
-		logs := st.Csdb.GetLogs(*st.THash)
+	if st.THash != nil && !st.Simulate {
+		logs := csdb.GetLogs(*st.THash)
 		bloomInt = ethtypes.LogsBloom(logs)
 		bloomFilter = ethtypes.BytesToBloom(bloomInt.Bytes())
 	}
@@ -114,13 +120,11 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		return nil, res
 	}
 
-	if st.Simulate {
-		st.Csdb.RevertToSnapshot(snapshot)
-	}
-
 	// TODO: Refund unused gas here, if intended in future
-
-	st.Csdb.Finalise(true) // Change to depend on config
+	if !st.Simulate {
+		// Finalise state if not a simulated transaction
+		st.Csdb.Finalise(true) // Change to depend on config
+	}
 
 	// Consume gas from evm execution
 	// Out of gas check does not need to be done here since it is done within the EVM execution

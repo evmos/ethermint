@@ -374,7 +374,10 @@ type account struct {
 // DoCall performs a simulated call operation through the evm
 func (e *PublicEthAPI) doCall(args CallArgs, blockNr rpc.BlockNumber, globalGasCap *big.Int) (sdk.Result, error) {
 	// Set height for historical queries
-	ctx := e.cliCtx.WithHeight(blockNr.Int64())
+	ctx := e.cliCtx
+	if blockNr.Int64() != 0 {
+		ctx = e.cliCtx.WithHeight(blockNr.Int64())
+	}
 
 	// Set sender address or use a default if none specified
 	var addr common.Address
@@ -452,13 +455,14 @@ func (e *PublicEthAPI) doCall(args CallArgs, blockNr rpc.BlockNumber, globalGasC
 }
 
 // EstimateGas estimates gas usage for the given smart contract call.
-func (e *PublicEthAPI) EstimateGas(args CallArgs, blockNr rpc.BlockNumber) (hexutil.Uint64, error) {
-	result, err := e.doCall(args, blockNr, big.NewInt(emint.DefaultRPCGasLimit))
+func (e *PublicEthAPI) EstimateGas(args CallArgs) (hexutil.Uint64, error) {
+	result, err := e.doCall(args, 0, big.NewInt(emint.DefaultRPCGasLimit))
 	if err != nil {
 		return 0, err
 	}
 
-	return hexutil.Uint64(result.GasUsed), nil
+	// TODO: change 1000 buffer for more accurate buffer (must be at least 1 to not run OOG)
+	return hexutil.Uint64(result.GasUsed + 1000), nil
 }
 
 // GetBlockByHash returns the block identified by hash.
@@ -916,7 +920,7 @@ func (e *PublicEthAPI) GenerateFromArgs(args params.SendTxArgs) (msg *types.Ethe
 			Value:    args.Value,
 			Data:     args.Data,
 		}
-		g, _ := e.EstimateGas(callArgs, rpc.BlockNumber(e.cliCtx.Height))
+		g, _ := e.EstimateGas(callArgs)
 		gasLimit = uint64(g)
 	} else {
 		gasLimit = (uint64)(*args.Gas)
