@@ -5,11 +5,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
-var _ auth.Account = (*Account)(nil)
+var _ exported.Account = (*Account)(nil)
+var _ exported.GenesisAccount = (*Account)(nil)
 
 const (
 	// DenomDefault defines the single coin type/denomination supported in
@@ -36,7 +38,7 @@ type Account struct {
 
 // ProtoBaseAccount defines the prototype function for BaseAccount used for an
 // account mapper.
-func ProtoBaseAccount() auth.Account {
+func ProtoBaseAccount() exported.Account {
 	return &Account{BaseAccount: &auth.BaseAccount{}}
 }
 

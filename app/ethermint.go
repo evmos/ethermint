@@ -15,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
@@ -47,7 +46,6 @@ var (
 	// non-dependant module elements, such as codec registration
 	// and genesis verification.
 	ModuleBasics = module.NewBasicManager(
-		genaccounts.AppModuleBasic{},
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
@@ -151,14 +149,14 @@ func NewEthermintApp(
 	mintSubspace := app.paramsKeeper.Subspace(mint.DefaultParamspace)
 	distrSubspace := app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	slashingSubspace := app.paramsKeeper.Subspace(slashing.DefaultParamspace)
-	govSubspace := app.paramsKeeper.Subspace(gov.DefaultParamspace)
+	govSubspace := app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
 	crisisSubspace := app.paramsKeeper.Subspace(crisis.DefaultParamspace)
 
 	// add keepers
 	app.accountKeeper = auth.NewAccountKeeper(app.cdc, keys[auth.StoreKey], authSubspace, eminttypes.ProtoBaseAccount)
 	app.bankKeeper = bank.NewBaseKeeper(app.accountKeeper, bankSubspace, bank.DefaultCodespace, app.ModuleAccountAddrs())
 	app.supplyKeeper = supply.NewKeeper(app.cdc, keys[supply.StoreKey], app.accountKeeper, app.bankKeeper, maccPerms)
-	stakingKeeper := staking.NewKeeper(app.cdc, keys[staking.StoreKey], tkeys[staking.TStoreKey],
+	stakingKeeper := staking.NewKeeper(app.cdc, keys[staking.StoreKey],
 		app.supplyKeeper, stakingSubspace, staking.DefaultCodespace)
 	app.mintKeeper = mint.NewKeeper(app.cdc, keys[mint.StoreKey], mintSubspace, &stakingKeeper, app.supplyKeeper, auth.FeeCollectorName)
 	app.distrKeeper = distr.NewKeeper(app.cdc, keys[distr.StoreKey], distrSubspace, &stakingKeeper,
@@ -173,7 +171,7 @@ func NewEthermintApp(
 	govRouter.AddRoute(gov.RouterKey, gov.ProposalHandler).
 		AddRoute(params.RouterKey, params.NewParamChangeProposalHandler(app.paramsKeeper)).
 		AddRoute(distr.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.distrKeeper))
-	app.govKeeper = gov.NewKeeper(app.cdc, keys[gov.StoreKey], app.paramsKeeper, govSubspace,
+	app.govKeeper = gov.NewKeeper(app.cdc, keys[gov.StoreKey], govSubspace,
 		app.supplyKeeper, &stakingKeeper, gov.DefaultCodespace, govRouter)
 
 	// register the staking hooks
@@ -183,7 +181,6 @@ func NewEthermintApp(
 	)
 
 	app.mm = module.NewManager(
-		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
@@ -193,7 +190,7 @@ func NewEthermintApp(
 		gov.NewAppModule(app.govKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
-		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
+		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		evm.NewAppModule(app.evmKeeper),
 	)
 
@@ -207,7 +204,7 @@ func NewEthermintApp(
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
-		genaccounts.ModuleName, distr.ModuleName, staking.ModuleName,
+		distr.ModuleName, staking.ModuleName,
 		auth.ModuleName, bank.ModuleName, slashing.ModuleName, gov.ModuleName,
 		mint.ModuleName, supply.ModuleName, crisis.ModuleName, genutil.ModuleName, evmtypes.ModuleName,
 	)

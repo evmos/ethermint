@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/mock"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/cosmos/ethermint/crypto"
@@ -56,17 +57,18 @@ func newTestSetup() testSetup {
 	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
 	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
 
-	// Add keepers
-	accKeeper := auth.NewAccountKeeper(cdc, authCapKey, authSubspace, auth.ProtoBaseAccount)
-	supplyKeeper := auth.NewDummySupplyKeeper(accKeeper)
-	anteHandler := NewAnteHandler(accKeeper, supplyKeeper)
-
 	ctx := sdk.NewContext(
 		ms,
 		abci.Header{ChainID: "3", Time: time.Now().UTC()},
 		true,
 		log.NewNopLogger(),
 	)
+
+	// Add keepers
+	accKeeper := auth.NewAccountKeeper(cdc, authCapKey, authSubspace, auth.ProtoBaseAccount)
+	accKeeper.SetParams(ctx, types.DefaultParams())
+	supplyKeeper := mock.NewDummySupplyKeeper(accKeeper)
+	anteHandler := NewAnteHandler(accKeeper, supplyKeeper)
 
 	return testSetup{
 		ctx:          ctx,

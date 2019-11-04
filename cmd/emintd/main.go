@@ -11,14 +11,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
-	genaccscli "github.com/cosmos/cosmos-sdk/x/genaccounts/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	genutil "github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/cosmos/ethermint/app"
 	emintapp "github.com/cosmos/ethermint/app"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -32,6 +34,9 @@ func main() {
 	cobra.EnableCommandSorting = false
 
 	cdc := emintapp.MakeCodec()
+
+	genutil.ModuleCdc = cdc
+	authtypes.ModuleCdc = cdc
 
 	config := sdk.GetConfig()
 	// TODO: Remove or change prefix if usable to generate Ethereum address
@@ -50,12 +55,14 @@ func main() {
 	// CLI commands to initialize the chain
 	rootCmd.AddCommand(
 		withChainIDValidation(genutilcli.InitCmd(ctx, cdc, emintapp.ModuleBasics, emintapp.DefaultNodeHome)),
-		genutilcli.CollectGenTxsCmd(ctx, cdc, genaccounts.AppModuleBasic{}, emintapp.DefaultNodeHome),
-		genutilcli.GenTxCmd(ctx, cdc, emintapp.ModuleBasics, staking.AppModuleBasic{}, genaccounts.AppModuleBasic{}, emintapp.DefaultNodeHome, emintapp.DefaultCLIHome),
+		genutilcli.CollectGenTxsCmd(ctx, cdc, auth.GenesisAccountIterator{}, emintapp.DefaultNodeHome),
+		genutilcli.GenTxCmd(
+			ctx, cdc, emintapp.ModuleBasics, staking.AppModuleBasic{}, auth.GenesisAccountIterator{}, emintapp.DefaultNodeHome, emintapp.DefaultCLIHome,
+		),
 		genutilcli.ValidateGenesisCmd(ctx, cdc, emintapp.ModuleBasics),
 
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
-		genaccscli.AddGenesisAccountCmd(ctx, cdc, emintapp.DefaultNodeHome, emintapp.DefaultCLIHome),
+		AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 	)
 
 	// Tendermint node base commands
