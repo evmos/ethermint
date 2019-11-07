@@ -541,7 +541,7 @@ func formatBlock(
 		"logsBloom":        bloom,
 		"transactionsRoot": hexutil.Bytes(header.DataHash),
 		"stateRoot":        hexutil.Bytes(header.AppHash),
-		"miner":            hexutil.Bytes(header.ValidatorsHash),
+		"miner":            common.Address{},
 		"difficulty":       nil,
 		"totalDifficulty":  nil,
 		"extraData":        nil,
@@ -861,6 +861,12 @@ func (e *PublicEthAPI) getGasLimit() (int64, error) {
 
 	// Save value to gasLimit cached value
 	gasLimit := genesis.Genesis.ConsensusParams.Block.MaxGas
+	if gasLimit == -1 {
+		// Sets gas limit to max uint32 to not error with javascript dev tooling
+		// This -1 value indicating no block gas limit is set to max uint64 with geth hexutils
+		// which errors certain javascript dev tooling which only supports up to 53 bits
+		gasLimit = int64(^uint32(0))
+	}
 	e.gasLimit = &gasLimit
 	return gasLimit, nil
 }
