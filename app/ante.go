@@ -139,10 +139,11 @@ func ethAnteHandler(
 		// Cost calculates the fees paid to validators based on gas limit and price
 		cost := new(big.Int).Mul(ethTxMsg.Data.Price, new(big.Int).SetUint64(ethTxMsg.Data.GasLimit))
 
-		err = auth.DeductFees(sk, ctx, senderAcc, sdk.Coins{
+		feeAmt := sdk.Coins{
 			sdk.NewCoin(emint.DenomDefault, sdk.NewIntFromBigInt(cost)),
-		})
+		}
 
+		err = auth.DeductFees(sk, ctx, senderAcc, feeAmt)
 		if err != nil {
 			return ctx, err
 		}

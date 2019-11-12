@@ -47,10 +47,22 @@ func (acc Account) Balance() sdk.Int {
 	return acc.GetCoins().AmountOf(DenomDefault)
 }
 
-// SetBalance sets an account's balance.
+// SetBalance sets an account's balance of photons
 func (acc Account) SetBalance(amt sdk.Int) {
-	//nolint:gosec,errcheck
-	acc.SetCoins(sdk.Coins{sdk.NewCoin(DenomDefault, amt)})
+	coins := acc.GetCoins()
+	diff := amt.Sub(coins.AmountOf(DenomDefault))
+	if diff.IsZero() {
+		return
+	} else if diff.IsPositive() {
+		// Increase coins to amount
+		coins = coins.Add(sdk.Coins{sdk.NewCoin(DenomDefault, diff)})
+	} else {
+		// Decrease coins to amount
+		coins = coins.Sub(sdk.Coins{sdk.NewCoin(DenomDefault, diff.Neg())})
+	}
+	if err := acc.SetCoins(coins); err != nil {
+		panic(fmt.Sprintf("Could not set coins for address %s", acc.GetAddress()))
+	}
 }
 
 // ----------------------------------------------------------------------------
