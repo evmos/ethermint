@@ -8,7 +8,7 @@ require (
 	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8 // indirect
 	github.com/cespare/cp v1.1.1 // indirect
 	github.com/cosmos/cosmos-sdk v0.34.4-0.20191031200835-02c6c9fafd58
-	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d
+	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712 // indirect
 	github.com/elastic/gosigar v0.10.3 // indirect
@@ -35,8 +35,7 @@ require (
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.5
-	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.4.0
+	github.com/spf13/viper v1.5.0
 	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48 // indirect
 	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570 // indirect
 	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
@@ -54,8 +53,10 @@ require (
 	google.golang.org/genproto v0.0.0-20190708153700-3bdd9d9f5532 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	gopkg.in/urfave/cli.v1 v1.0.0-00010101000000-000000000000 // indirect
-	gopkg.in/yaml.v2 v2.2.4
+	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 )
 
-replace gopkg.in/urfave/cli.v1 => github.com/urfave/cli v1.21.0
+replace (
+	github.com/cosmos/cosmos-sdk v0.34.4-0.20191031200835-02c6c9fafd58 => github.com/chainsafe/cosmos-sdk v0.34.4-0.20191105182341-b5e2a1dfdcf6
+	github.com/tendermint/tendermint v0.32.7 => github.com/chainsafe/tendermint v0.32.2-0.20191105211315-bd56da568e15
+)

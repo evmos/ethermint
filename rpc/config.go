@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	emintkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
-	emintkeys "github.com/cosmos/ethermint/keys"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/spf13/cobra"

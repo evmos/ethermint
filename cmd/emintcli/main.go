@@ -4,19 +4,20 @@ import (
 	"os"
 	"path"
 
+	emintapp "github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/rpc"
+
 	"github.com/tendermint/go-amino"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	sdkrpc "github.com/cosmos/cosmos-sdk/client/rpc"
+	cryptokeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	emintkeys "github.com/cosmos/ethermint/keys"
 
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 
-	emintapp "github.com/cosmos/ethermint/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -27,7 +28,8 @@ func main() {
 
 	cdc := emintapp.MakeCodec()
 
-	authtypes.ModuleCdc = cdc
+	cryptokeys.CryptoCdc = cdc
+	clientkeys.KeysCdc = cdc
 
 	// Read in the configuration file for the sdk
 	config := sdk.GetConfig()
@@ -56,7 +58,7 @@ func main() {
 		// TODO: Set up rest routes (if included, different from web3 api)
 		rpc.Web3RpcCmd(cdc),
 		client.LineBreak,
-		emintkeys.Commands(),
+		keyCommands(),
 		client.LineBreak,
 	)
 

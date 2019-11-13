@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
@@ -22,6 +23,10 @@ const (
 // ----------------------------------------------------------------------------
 // Main Ethermint account
 // ----------------------------------------------------------------------------
+
+func init() {
+	authtypes.RegisterAccountTypeCodec(Account{}, EthermintAccountName)
+}
 
 // Account implements the auth.Account interface and embeds an
 // auth.BaseAccount type. It is compatible with the auth.AccountMapper.

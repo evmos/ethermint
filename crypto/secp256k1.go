@@ -7,8 +7,18 @@ import (
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	ethsecp256k1 "github.com/ethereum/go-ethereum/crypto/secp256k1"
 
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
 	tmcrypto "github.com/tendermint/tendermint/crypto"
+	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
 )
+
+func init() {
+	tmamino.RegisterKeyType(PubKeySecp256k1{}, PubKeyAminoName)
+	tmamino.RegisterKeyType(PrivKeySecp256k1{}, PrivKeyAminoName)
+	authtypes.RegisterAccountTypeCodec(PubKeySecp256k1{}, PubKeyAminoName)
+	authtypes.RegisterAccountTypeCodec(PrivKeySecp256k1{}, PrivKeyAminoName)
+}
 
 // ----------------------------------------------------------------------------
 // secp256k1 Private Key

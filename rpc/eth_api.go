@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/client/keys"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
-	emintkeys "github.com/cosmos/ethermint/keys"
 	params "github.com/cosmos/ethermint/rpc/args"
 	emint "github.com/cosmos/ethermint/types"
 	etypes "github.com/cosmos/ethermint/types"
@@ -108,7 +108,7 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 	e.keybaseLock.Lock()
 
 	addresses := make([]common.Address, 0) // return [] instead of nil if empty
-	keybase, err := emintkeys.NewKeyBaseFromHomeFlag()
+	keybase, err := keys.NewKeyBaseFromHomeFlag()
 	if err != nil {
 		return addresses, err
 	}
