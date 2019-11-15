@@ -1,22 +1,25 @@
 package cli
 
 import (
-	"math/big"
+	"fmt"
 	"strconv"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	emintTypes "github.com/cosmos/ethermint/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
-
-	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 // GetTxCmd defines the CLI commands regarding evm module transactions
@@ -30,56 +33,126 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	evmTxCmd.AddCommand(client.PostCommands(
-	// TODO: Add back generating cosmos tx for Ethereum tx message
-	// GetCmdGenTx(cdc),
+		GetCmdGenTx(cdc),
+		GetCmdGenCreateTx(cdc),
 	)...)
 
 	return evmTxCmd
 }
 
-// GetCmdGenTx generates an ethereum transaction wrapped in a Cosmos standard transaction
+// GetCmdGenTx generates an Emint transaction (excludes create operations)
 func GetCmdGenTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "generate-tx [ethaddress] [amount] [gaslimit] [gasprice] [payload]",
-		Short: "generate eth tx wrapped in a Cosmos Standard tx",
-		Args:  cobra.ExactArgs(5),
+		Use:   "send [to_address] [amount (in photons)] [<data>]",
+		Short: "send transaction to address (call operations included)",
+		Args:  cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: remove inputs and infer based on StdTx
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			kb, err := keys.NewKeyBaseFromHomeFlag()
+			toAddr, err := cosmosAddressFromArg(args[0])
 			if err != nil {
-				panic(err)
+				return errors.Wrap(err, "must provide a valid Bech32 address for to_address")
 			}
 
-			coins, err := sdk.ParseCoins(args[1])
-			if err != nil {
-				return err
-			}
-
-			gasLimit, err := strconv.ParseUint(args[2], 0, 64)
+			// Ambiguously decode amount from any base
+			amount, err := strconv.ParseInt(args[1], 0, 64)
 			if err != nil {
 				return err
 			}
 
-			gasPrice, err := strconv.ParseUint(args[3], 0, 64)
-			if err != nil {
-				return err
+			var data []byte
+			if len(args) > 2 {
+				payload := args[2]
+				if !strings.HasPrefix(payload, "0x") {
+					payload = "0x" + payload
+				}
+
+				data, err = hexutil.Decode(payload)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 
-			payload := args[4]
-			addr := ethcmn.HexToAddress(args[0])
-			// TODO: Remove explicit photon check and check variables
-			msg := types.NewEthereumTxMsg(0, &addr, big.NewInt(coins.AmountOf(emintTypes.DenomDefault).Int64()), gasLimit, new(big.Int).SetUint64(gasPrice), []byte(payload))
+			from := cliCtx.GetFromAddress()
+
+			_, seq, err := authtypes.NewAccountRetriever(cliCtx).GetAccountNumberSequence(from)
+			if err != nil {
+				return errors.Wrap(err, "Could not retrieve account sequence")
+			}
+
+			// TODO: Potentially allow overriding of gas price and gas limit
+			msg := types.NewEmintMsg(seq, &toAddr, sdk.NewInt(amount), txBldr.Gas(),
+				sdk.NewInt(emint.DefaultGasPrice), data, from)
+
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
 
-			// TODO: possibly overwrite gas values in txBldr
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr.WithKeybase(kb), []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdGenTx generates an Emint transaction (excludes create operations)
+func GetCmdGenCreateTx(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "create [contract bytecode] [<amount (in photons)>]",
+		Short: "create contract through the evm using compiled bytecode",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			payload := args[0]
+			if !strings.HasPrefix(payload, "0x") {
+				payload = "0x" + payload
+			}
+
+			data, err := hexutil.Decode(payload)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			var amount int64
+			if len(args) > 1 {
+				// Ambiguously decode amount from any base
+				amount, err = strconv.ParseInt(args[1], 0, 64)
+				if err != nil {
+					return errors.Wrap(err, "invalid amount")
+				}
+			}
+
+			from := cliCtx.GetFromAddress()
+
+			_, seq, err := authtypes.NewAccountRetriever(cliCtx).GetAccountNumberSequence(from)
+			if err != nil {
+				return errors.Wrap(err, "Could not retrieve account sequence")
+			}
+
+			// TODO: Potentially allow overriding of gas price and gas limit
+			msg := types.NewEmintMsg(seq, nil, sdk.NewInt(amount), txBldr.Gas(),
+				sdk.NewInt(emint.DefaultGasPrice), data, from)
+
+			err = msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+
+			if err = utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}); err != nil {
+				return err
+			}
+
+			contractAddr := ethcrypto.CreateAddress(common.BytesToAddress(from.Bytes()), seq)
+			fmt.Printf(
+				"Contract will be deployed to: \nHex: %s\nCosmos Address: %s\n",
+				contractAddr.Hex(),
+				sdk.AccAddress(contractAddr.Bytes()),
+			)
+			return nil
 		},
 	}
 }

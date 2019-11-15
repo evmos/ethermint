@@ -30,11 +30,8 @@ type StateTransition struct {
 
 // TransitionCSDB performs an evm state transition from a transaction
 func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result) {
-	contractCreation := st.Recipient == nil
 
-	if res := st.checkNonce(); !res.IsOK() {
-		return nil, res
-	}
+	contractCreation := st.Recipient == nil
 
 	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true)
 	if err != nil {
@@ -44,7 +41,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
 	gasLimit := st.GasLimit - ctx.GasMeter().GasConsumed()
 
-	csdb := st.Csdb
+	csdb := st.Csdb.WithContext(ctx)
 	if st.Simulate {
 		// gasLimit is set here because stdTxs incur gaskv charges in the ante handler, but for eth_call
 		// the cost needs to be the same as an Ethereum transaction sent through the web3 API
@@ -58,6 +55,9 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 
 		csdb = st.Csdb.Copy()
 	}
+
+	// Clear cache of accounts to handle changes outside of the EVM
+	csdb.UpdateAccounts()
 
 	// Create context for evm
 	context := vm.Context{
@@ -88,13 +88,22 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		senderRef   = vm.AccountRef(st.Sender)
 	)
 
+	// Get nonce of account outside of the EVM
+	currentNonce := st.Csdb.GetNonce(st.Sender)
+	// Set nonce of sender account before evm state transition for usage in generating Create address
+	st.Csdb.SetNonce(st.Sender, st.AccountNonce)
+
 	if contractCreation {
 		ret, addr, leftOverGas, vmerr = vmenv.Create(senderRef, st.Payload, gasLimit, st.Amount)
 	} else {
-		// Increment the nonce for the next transaction
+		// Increment the nonce for the next transaction	(just for evm state transition)
 		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
+
 		ret, leftOverGas, vmerr = vmenv.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
 	}
+
+	// Resets nonce to value pre state transition
+	st.Csdb.SetNonce(st.Sender, currentNonce)
 
 	// Generate bloom filter to be saved in tx receipt data
 	bloomInt := big.NewInt(0)
@@ -131,19 +140,4 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	ctx.GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
 
 	return bloomInt, sdk.Result{Data: returnData, GasUsed: st.GasLimit - leftOverGas}
-}
-
-func (st *StateTransition) checkNonce() sdk.Result {
-	// If simulated transaction, don't verify nonce
-	if !st.Simulate {
-		// Make sure this transaction's nonce is correct.
-		nonce := st.Csdb.GetNonce(st.Sender)
-		if nonce < st.AccountNonce {
-			return emint.ErrInvalidNonce("nonce too high").Result()
-		} else if nonce > st.AccountNonce {
-			return emint.ErrInvalidNonce("nonce too low").Result()
-		}
-	}
-
-	return sdk.Result{}
 }

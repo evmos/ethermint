@@ -2,7 +2,7 @@ package types
 
 const (
 	// ModuleName string name of module
-	ModuleName = "ethermint"
+	ModuleName = "evm"
 
 	// EvmStoreKey key for ethereum storage data
 	EvmStoreKey = "evmstore"

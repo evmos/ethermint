@@ -24,8 +24,11 @@ import (
 
 	"github.com/cosmos/ethermint/app"
 	emintapp "github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/client/genaccounts"
+	emintcrypto "github.com/cosmos/ethermint/crypto"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/tendermint/tendermint/libs/cli"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -36,6 +39,9 @@ func main() {
 	cobra.EnableCommandSorting = false
 
 	cdc := emintapp.MakeCodec()
+
+	tmamino.RegisterKeyType(emintcrypto.PubKeySecp256k1{}, emintcrypto.PubKeyAminoName)
+	tmamino.RegisterKeyType(emintcrypto.PrivKeySecp256k1{}, emintcrypto.PrivKeyAminoName)
 
 	cryptokeys.CryptoCdc = cdc
 	genutil.ModuleCdc = cdc
@@ -65,7 +71,7 @@ func main() {
 		genutilcli.ValidateGenesisCmd(ctx, cdc, emintapp.ModuleBasics),
 
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
-		AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		genaccounts.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 	)
 
 	// Tendermint node base commands

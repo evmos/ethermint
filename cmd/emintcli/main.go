@@ -5,6 +5,7 @@ import (
 	"path"
 
 	emintapp "github.com/cosmos/ethermint/app"
+	emintcrypto "github.com/cosmos/ethermint/crypto"
 	"github.com/cosmos/ethermint/rpc"
 
 	"github.com/tendermint/go-amino"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
@@ -27,6 +29,9 @@ func main() {
 	cobra.EnableCommandSorting = false
 
 	cdc := emintapp.MakeCodec()
+
+	tmamino.RegisterKeyType(emintcrypto.PubKeySecp256k1{}, emintcrypto.PubKeyAminoName)
+	tmamino.RegisterKeyType(emintcrypto.PrivKeySecp256k1{}, emintcrypto.PrivKeyAminoName)
 
 	cryptokeys.CryptoCdc = cdc
 	clientkeys.KeysCdc = cdc
