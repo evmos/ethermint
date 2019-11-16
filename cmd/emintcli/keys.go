@@ -42,6 +42,8 @@ func keyCommands() *cobra.Command {
 		clientkeys.UpdateKeyCommand(),
 		clientkeys.ParseKeyStringCommand(),
 		clientkeys.MigrateCommand(),
+		flags.LineBreak,
+		exportEthKeyCommand(),
 	)
 	return cmd
 }
