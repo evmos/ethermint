@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bufio"
+	"io"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -48,21 +51,22 @@ func keyCommands() *cobra.Command {
 	return cmd
 }
 
-func getKeybase(dryrun bool) (keys.Keybase, error) {
+func getKeybase(cmd *cobra.Command, dryrun bool, buf io.Reader) (keys.Keybase, error) {
 	if dryrun {
 		return keys.NewInMemory(keys.WithKeygenFunc(ethermintKeygenFunc)), nil
 	}
 
-	return clientkeys.NewKeyBaseFromHomeFlag(keys.WithKeygenFunc(ethermintKeygenFunc))
+	return clientkeys.NewKeyringFromHomeFlag(buf, keys.WithKeygenFunc(ethermintKeygenFunc))
 }
 
 func runAddCmd(cmd *cobra.Command, args []string) error {
-	kb, err := getKeybase(viper.GetBool(flagDryRun))
+	inBuf := bufio.NewReader(cmd.InOrStdin())
+	kb, err := getKeybase(cmd, viper.GetBool(flagDryRun), inBuf)
 	if err != nil {
 		return err
 	}
 
-	return clientkeys.RunAddCmd(cmd, args, kb)
+	return clientkeys.RunAddCmd(cmd, args, kb, inBuf)
 }
 
 func ethermintKeygenFunc(bz [32]byte) tmcrypto.PrivKey {

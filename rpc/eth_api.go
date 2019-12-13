@@ -108,7 +108,7 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 	e.keybaseLock.Lock()
 
 	addresses := make([]common.Address, 0) // return [] instead of nil if empty
-	keybase, err := keys.NewKeyBaseFromHomeFlag()
+	keybase, err := keys.NewKeyringFromHomeFlag(e.cliCtx.Input)
 	if err != nil {
 		return addresses, err
 	}

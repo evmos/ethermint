@@ -1,9 +1,12 @@
 package rpc
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/input"
 	emintkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -49,9 +52,18 @@ func registerRoutes(rs *lcd.RestServer) {
 
 	var emintKey emintcrypto.PrivKeySecp256k1
 	if len(accountName) > 0 {
-		passphrase, err := emintkeys.GetPassphrase(accountName)
-		if err != nil {
-			panic(err)
+		var err error
+		buf := bufio.NewReader(os.Stdin)
+		keyringBackend := viper.GetString(flags.FlagKeyringBackend)
+		passphrase := ""
+		switch keyringBackend {
+		case flags.KeyringBackendOS:
+			break
+		case flags.KeyringBackendFile:
+			passphrase, err = input.GetPassword("Enter password to unlock key for RPC API: ", buf)
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		emintKey, err = unlockKeyFromNameAndPassphrase(accountName, passphrase)
@@ -78,11 +90,12 @@ func registerRoutes(rs *lcd.RestServer) {
 }
 
 func unlockKeyFromNameAndPassphrase(accountName, passphrase string) (emintKey emintcrypto.PrivKeySecp256k1, err error) {
-	keybase, err := emintkeys.NewKeyBaseFromHomeFlag()
+	keybase, err := emintkeys.NewKeyringFromHomeFlag(os.Stdin)
 	if err != nil {
 		return
 	}
 
+	// With keyring keybase, password is not required as it is pulled from the OS prompt
 	privKey, err := keybase.ExportPrivateKeyObject(accountName, passphrase)
 	if err != nil {
 		return

@@ -18,29 +18,114 @@ __**WARNING:**__ Ethermint is under VERY ACTIVE DEVELOPMENT and should be treate
 
 - Have a working implementation that can parse and validate the existing ETH Chain and persist it in a Tendermint store
 - Implement Ethereum transactions in the CosmosSDK
+- Implement web3 compatible API layer
+- Implement the EVM as a CosmosSDK module
+- Allow the Ethermint EVM to interact with other Cosmos SDK modules
 
 #### Current Work
 
-- Implement web3 compatible API layer
-- Implement the EVM as a CosmosSDK module
-- Allow the Ethermint EVM to interact with other [Cosmos SDK modules](https://github.com/cosmos/cosmos-sdk/blob/master/docs/core/app3.md)
+- Ethermint is a functioning Cosmos SDK application and can be deployed as its own zone
+- Full web3 compatibility to enable existing Ethereum applications to use Ethermint
 
 #### Next Steps
 
 - Hard spoon enablement: The ability to export state from `geth` and import token balances into Ethermint
-- Ethermint is a functioning Cosmos SDK application and can be deployed as its own zone
-- Full web3 compatibility will enable existing Ethereum applications to use Ethermint
 
 ### Building Ethermint
 
 To build, execute the following commands:
 
 ```bash
-# To build the binary and put the resulting binary in ./build
-$ make tools verify build
-
 # To build the project and install it in $GOBIN
-$ make tools verify install
+$ make install
+
+# To build the binary and put the resulting binary in ./build
+$ make build
+```
+
+### Starting a Ethermint daemon (node)
+
+First, create a key to use in signing the genesis transaction:
+
+```bash
+emintcli keys add mykey
+```
+> replace mykey with whatever you want to name the key
+
+Then, run these commands to start up a node
+```bash
+# Set moniker and chain-id for Ethermint (Moniker can be anything, chain-id must be an integer)
+emintd init mymoniker --chain-id 8
+
+# Set up config for CLI
+emintcli config chain-id 8
+emintcli config output json
+emintcli config indent true
+emintcli config trust-node true
+
+# Allocate genesis accounts (cosmos formatted addresses)
+emintd add-genesis-account $(emintcli keys show mykey -a) 1000000000000000000photon,1000000000000000000stake
+
+# Sign genesis transaction
+emintd gentx --name mykey
+
+# Collect genesis tx
+emintd collect-gentxs
+
+# Run this to ensure everything worked and that the genesis file is setup correctly
+emintd validate-genesis
+
+# Start the node (remove the --pruning=nothing flag if historical queries are not needed)
+emintd start --pruning=nothing
+```
+> Note: If you used `make build` instead of make install, and replace all `emintcli` and `emintd` references to `./build/emintcli` and `./build/emintd` respectively
+
+### Starting Ethermint Web3 RPC API
+
+After the daemon is started, run (in another process):
+
+```bash
+emintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey
+```
+
+and to make sure the server has started correctly, try querying the current block number:
+
+```
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+```
+
+or point any dev tooling at `http://localhost:8545` or whatever port is chosen just as you would with an Ethereum node
+
+#### Clearing data from chain
+
+Data for the CLI and Daemon should be stored at `~/.emintd` and `~/.emintcli` by default, to start the node with a fresh state, run:
+
+```bash
+rm -rf ~/.emint*
+```
+
+To clear all data except key storage (if keyring backend chosen) and then you can rerun the commands to start the node again.
+
+#### Keyring backend options
+
+Ethermint supports using a file or OS keyring backend for key storage. To create and use a file stored key instead of defaulting to the OS keyring, add the flag `--keyring-backend file` to any relevant command and the password prompt will occur through the command line. This can also be saved as a CLI config option with:
+
+```bash
+emintcli config keyring-backend file
+```
+
+### Exporting Ethereum private key from Ethermint
+
+To export the private key from Ethermint to something like Metamask, run:
+
+```bash
+emintcli keys export-eth-key mykey
+```
+
+Import account through private key, and to verify that the Ethereum address is correct with:
+
+```bash
+emintcli keys parse $(emintcli keys show mykey -a)
 ```
 
 ### Tests

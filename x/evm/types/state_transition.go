@@ -56,6 +56,11 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		csdb = st.Csdb.Copy()
 	}
 
+	// This gas meter is set up to consume gas from gaskv during evm execution and be ignored
+	currentGasMeter := ctx.GasMeter()
+	evmGasMeter := sdk.NewInfiniteGasMeter()
+	csdb.WithContext(ctx.WithGasMeter(evmGasMeter))
+
 	// Clear cache of accounts to handle changes outside of the EVM
 	csdb.UpdateAccounts()
 
@@ -72,13 +77,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		GasPrice:    ctx.MinGasPrices().AmountOf(emint.DenomDefault).Int,
 	}
 
-	// This gas meter is set up to consume gas from gaskv during evm execution and be ignored
-	evmGasMeter := sdk.NewInfiniteGasMeter()
-
-	vmenv := vm.NewEVM(
-		context, csdb.WithContext(ctx.WithGasMeter(evmGasMeter)),
-		GenerateChainConfig(st.ChainID), vm.Config{},
-	)
+	vmenv := vm.NewEVM(context, csdb, GenerateChainConfig(st.ChainID), vm.Config{})
 
 	var (
 		ret         []byte
@@ -130,6 +129,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	}
 
 	// TODO: Refund unused gas here, if intended in future
+
 	if !st.Simulate {
 		// Finalise state if not a simulated transaction
 		st.Csdb.Finalise(true) // Change to depend on config
@@ -137,7 +137,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 
 	// Consume gas from evm execution
 	// Out of gas check does not need to be done here since it is done within the EVM execution
-	ctx.GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
+	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
 
 	return bloomInt, sdk.Result{Data: returnData, GasUsed: st.GasLimit - leftOverGas}
 }
