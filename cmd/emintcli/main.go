@@ -60,8 +60,7 @@ func main() {
 		client.ConfigCmd(emintapp.DefaultCLIHome),
 		queryCmd(cdc),
 		txCmd(cdc),
-		// TODO: Set up rest routes (if included, different from web3 api)
-		rpc.Web3RpcCmd(cdc),
+		rpc.EmintServeCmd(cdc),
 		client.LineBreak,
 		keyCommands(),
 		client.LineBreak,

@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
 	emintkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
+	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+	"github.com/cosmos/ethermint/app"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 
@@ -36,8 +39,9 @@ type Config struct {
 	RPCVHosts []string
 }
 
-// Web3RpcCmd creates a CLI command to start RPC server
-func Web3RpcCmd(cdc *codec.Codec) *cobra.Command {
+// EmintServeCmd creates a CLI command to start Cosmos LCD server with web3 RPC API and
+// Cosmos rest-server endpoints
+func EmintServeCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := lcd.ServeCommand(cdc, registerRoutes)
 	cmd.Flags().String(flagUnlockKey, "", "Select a key to unlock on the RPC server")
 	cmd.Flags().StringP(flags.FlagBroadcastMode, "b", flags.BroadcastSync, "Transaction broadcasting mode (sync|async|block)")
@@ -86,7 +90,13 @@ func registerRoutes(rs *lcd.RestServer) {
 		}
 	}
 
+	// Web3 RPC API route
 	rs.Mux.HandleFunc("/", s.ServeHTTP).Methods("POST", "OPTIONS")
+
+	// Register all other Cosmos routes
+	client.RegisterRoutes(rs.CliCtx, rs.Mux)
+	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
 
 func unlockKeyFromNameAndPassphrase(accountName, passphrase string) (emintKey emintcrypto.PrivKeySecp256k1, err error) {
