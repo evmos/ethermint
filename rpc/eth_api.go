@@ -279,7 +279,7 @@ func (e *PublicEthAPI) SendTransaction(args params.SendTxArgs) (common.Hash, err
 	intChainID, ok := new(big.Int).SetString(chainID, 10)
 	if !ok {
 		return common.Hash{}, fmt.Errorf(
-			fmt.Sprintf("Invalid chainID: %s, must be integer format", chainID))
+			fmt.Sprintf("invalid chainID: %s, must be integer format", chainID))
 	}
 
 	// Sign transaction
@@ -592,7 +592,7 @@ func bytesToEthTx(cliCtx context.CLIContext, bz []byte) (*types.EthereumTxMsg, e
 	err := cliCtx.Codec.UnmarshalBinaryLengthPrefixed(bz, &stdTx)
 	ethTx, ok := stdTx.(*types.EthereumTxMsg)
 	if !ok || err != nil {
-		return nil, fmt.Errorf("Invalid transaction type, must be an amino encoded Ethereum transaction")
+		return nil, fmt.Errorf("invalid transaction type, must be an amino encoded Ethereum transaction")
 	}
 	return ethTx, nil
 }

@@ -235,7 +235,7 @@ func TestImportBlocks(t *testing.T) {
 		ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
 		ctx = ctx.WithBlockHeight(int64(block.NumberU64()))
 
-		stateDB := createStateDB(t, ctx, ak)
+		stateDB := createStateDB(ctx, ak)
 
 		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
 			applyDAOHardFork(stateDB)
@@ -268,7 +268,7 @@ func TestImportBlocks(t *testing.T) {
 	}
 }
 
-func createStateDB(t *testing.T, ctx sdk.Context, ak auth.AccountKeeper) *evmtypes.CommitStateDB {
+func createStateDB(ctx sdk.Context, ak auth.AccountKeeper) *evmtypes.CommitStateDB {
 	stateDB := evmtypes.NewCommitStateDB(ctx, ak, storageKey, codeKey)
 	return stateDB
 }

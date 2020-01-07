@@ -33,7 +33,6 @@ const (
 func AddGenesisAccountCmd(
 	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
 ) *cobra.Command {
-
 	cmd := &cobra.Command{
 		Use:   "add-genesis-account [address_or_key_name] [coin][,[coin]]",
 		Short: "Add a genesis account to genesis.json",

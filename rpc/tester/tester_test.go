@@ -63,6 +63,7 @@ func call(method string, params []string) (*Response, error) {
 		return nil, err
 	}
 
+	/* #nosec */
 	res, err := http.Post(addr, "application/json", bytes.NewBuffer(req))
 	if err != nil {
 		return nil, err
@@ -122,7 +123,6 @@ func TestEth_blockNumber(t *testing.T) {
 	}
 
 	t.Logf("Got block number: %s\n", res.String())
-
 }
 
 func TestEth_GetBalance(t *testing.T) {
@@ -144,7 +144,6 @@ func TestEth_GetBalance(t *testing.T) {
 	if res.ToInt().Cmp(big.NewInt(0)) != 0 {
 		t.Errorf("expected balance: %d, got: %s", 0, res.String())
 	}
-
 }
 
 func TestEth_GetStorageAt(t *testing.T) {

@@ -34,7 +34,7 @@ func (c *count) get() int {
 }
 
 func (c *count) increment() {
-	*c = *c + 1
+	*c++
 }
 
 func (c *count) reset() {

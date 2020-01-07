@@ -39,23 +39,22 @@ func (e *PublicFilterAPI) GetLogs(criteria filters.FilterCriteria) ([]*ethtypes.
 		results := e.getLogs()
 		logs := filterLogs(results, nil, nil, filter.addresses, filter.topics)
 		return logs, nil
-	} else {
-		// Convert the RPC block numbers into internal representations
-		begin := rpc.LatestBlockNumber.Int64()
-		if criteria.FromBlock != nil {
-			begin = criteria.FromBlock.Int64()
-		}
-		from := big.NewInt(begin)
-		end := rpc.LatestBlockNumber.Int64()
-		if criteria.ToBlock != nil {
-			end = criteria.ToBlock.Int64()
-		}
-		to := big.NewInt(end)
-		results := e.getLogs()
-		logs := filterLogs(results, from, to, criteria.Addresses, criteria.Topics)
-
-		return returnLogs(logs), nil
 	}
+	// Convert the RPC block numbers into internal representations
+	begin := rpc.LatestBlockNumber.Int64()
+	if criteria.FromBlock != nil {
+		begin = criteria.FromBlock.Int64()
+	}
+	from := big.NewInt(begin)
+	end := rpc.LatestBlockNumber.Int64()
+	if criteria.ToBlock != nil {
+		end = criteria.ToBlock.Int64()
+	}
+	to := big.NewInt(end)
+	results := e.getLogs()
+	logs := filterLogs(results, from, to, criteria.Addresses, criteria.Topics)
+
+	return returnLogs(logs), nil
 }
 
 func (e *PublicFilterAPI) getLogs() (results []*ethtypes.Log) {

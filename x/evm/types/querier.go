@@ -66,7 +66,7 @@ type QueryETHLogs struct {
 }
 
 func (q QueryETHLogs) String() string {
-	return string(fmt.Sprintf("%+v", q.Logs))
+	return fmt.Sprintf("%+v", q.Logs)
 }
 
 // QueryBloomFilter is response type for tx logs query
