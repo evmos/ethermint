@@ -2,7 +2,6 @@ package types
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -71,7 +70,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		Origin:      st.Sender,
 		Coinbase:    common.Address{},
 		BlockNumber: big.NewInt(ctx.BlockHeight()),
-		Time:        big.NewInt(time.Now().Unix()),
+		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0x30000), // unused
 		GasLimit:    gasLimit,
 		GasPrice:    ctx.MinGasPrices().AmountOf(emint.DenomDefault).Int,
