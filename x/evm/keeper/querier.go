@@ -1,4 +1,4 @@
-package evm
+package keeper
 
 import (
 	"strconv"
@@ -13,46 +13,31 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-// Supported endpoints
-const (
-	QueryProtocolVersion = "protocolVersion"
-	QueryBalance         = "balance"
-	QueryBlockNumber     = "blockNumber"
-	QueryStorage         = "storage"
-	QueryCode            = "code"
-	QueryNonce           = "nonce"
-	QueryHashToHeight    = "hashToHeight"
-	QueryTxLogs          = "txLogs"
-	QueryLogsBloom       = "logsBloom"
-	QueryLogs            = "logs"
-	QueryAccount         = "account"
-)
-
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		switch path[0] {
-		case QueryProtocolVersion:
+		case types.QueryProtocolVersion:
 			return queryProtocolVersion(keeper)
-		case QueryBalance:
+		case types.QueryBalance:
 			return queryBalance(ctx, path, keeper)
-		case QueryBlockNumber:
+		case types.QueryBlockNumber:
 			return queryBlockNumber(ctx, keeper)
-		case QueryStorage:
+		case types.QueryStorage:
 			return queryStorage(ctx, path, keeper)
-		case QueryCode:
+		case types.QueryCode:
 			return queryCode(ctx, path, keeper)
-		case QueryNonce:
+		case types.QueryNonce:
 			return queryNonce(ctx, path, keeper)
-		case QueryHashToHeight:
+		case types.QueryHashToHeight:
 			return queryHashToHeight(ctx, path, keeper)
-		case QueryTxLogs:
+		case types.QueryTxLogs:
 			return queryTxLogs(ctx, path, keeper)
-		case QueryLogsBloom:
+		case types.QueryLogsBloom:
 			return queryBlockLogsBloom(ctx, path, keeper)
-		case QueryLogs:
+		case types.QueryLogs:
 			return queryLogs(ctx, keeper)
-		case QueryAccount:
+		case types.QueryAccount:
 			return queryAccount(ctx, path, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query endpoint")
@@ -189,7 +174,7 @@ func queryAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Er
 	addr := ethcmn.HexToAddress(path[1])
 	so := keeper.GetOrNewStateObject(ctx, addr)
 
-	lRes := types.QueryAccount{
+	lRes := types.QueryResAccount{
 		Balance:  utils.MarshalBigInt(so.Balance()),
 		CodeHash: so.CodeHash(),
 		Nonce:    so.Nonce(),

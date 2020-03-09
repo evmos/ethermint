@@ -814,7 +814,7 @@ func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, bl
 	// TODO: convert TM merkle proof to []string if needed in future
 	// proof := pRes.Response.GetProof()
 
-	account := new(types.QueryAccount)
+	var account types.QueryResAccount
 	e.cliCtx.Codec.MustUnmarshalJSON(pRes.Response.GetValue(), &account)
 
 	storageProofs := make([]StorageResult, len(storageKeys))
@@ -825,7 +825,7 @@ func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, bl
 		if err != nil {
 			return nil, err
 		}
-		value := new(types.QueryResStorage)
+		var value types.QueryResStorage
 		e.cliCtx.Codec.MustUnmarshalJSON(vRes.Response.GetValue(), &value)
 
 		storageProofs[i] = StorageResult{

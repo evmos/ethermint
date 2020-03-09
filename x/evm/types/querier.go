@@ -6,6 +6,21 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
+// Supported endpoints
+const (
+	QueryProtocolVersion = "protocolVersion"
+	QueryBalance         = "balance"
+	QueryBlockNumber     = "blockNumber"
+	QueryStorage         = "storage"
+	QueryCode            = "code"
+	QueryNonce           = "nonce"
+	QueryHashToHeight    = "hashToHeight"
+	QueryTxLogs          = "txLogs"
+	QueryLogsBloom       = "logsBloom"
+	QueryLogs            = "logs"
+	QueryAccount         = "account"
+)
+
 // QueryResProtocolVersion is response type for protocol version query
 type QueryResProtocolVersion struct {
 	Version string `json:"version"`
@@ -79,7 +94,7 @@ func (q QueryBloomFilter) String() string {
 }
 
 // QueryAccount is response type for querying Ethereum state objects
-type QueryAccount struct {
+type QueryResAccount struct {
 	Balance  string `json:"balance"`
 	CodeHash []byte `json:"codeHash"`
 	Nonce    uint64 `json:"nonce"`
