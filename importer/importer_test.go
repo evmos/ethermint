@@ -199,6 +199,7 @@ func TestImportBlocks(t *testing.T) {
 	blockchainInput, err := os.Open(flagBlockchain)
 	require.Nil(t, err)
 
+	// nolint: gosec
 	defer blockchainInput.Close()
 
 	// ethereum mainnet config

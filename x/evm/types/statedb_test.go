@@ -12,7 +12,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -79,7 +78,7 @@ func TestBloomFilter(t *testing.T) {
 
 	// Prepare db for logs
 	tHash := ethcmn.BytesToHash([]byte{0x1})
-	stateDB.Prepare(tHash, common.Hash{}, 0)
+	stateDB.Prepare(tHash, ethcmn.Hash{}, 0)
 
 	contractAddress := ethcmn.BigToAddress(big.NewInt(1))
 

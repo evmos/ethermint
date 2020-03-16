@@ -67,7 +67,7 @@ func DecodeReturnData(bytes []byte) (addr ethcmn.Address, bloom ethtypes.Bloom, 
 		bloom = ethtypes.BytesToBloom(bytes[bloomIdx:returnIdx])
 		ret = bytes[returnIdx:]
 	} else {
-		err = fmt.Errorf("Invalid format for encoded data, message must be an EVM state transition")
+		err = fmt.Errorf("invalid format for encoded data, message must be an EVM state transition")
 	}
 
 	return

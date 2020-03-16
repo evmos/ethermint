@@ -294,6 +294,7 @@ func (csdb *CommitStateDB) GetLogs(hash ethcmn.Hash) []*ethtypes.Log {
 
 // Logs returns all the current logs in the state.
 func (csdb *CommitStateDB) Logs() []*ethtypes.Log {
+	// nolint: prealloc
 	var logs []*ethtypes.Log
 	for _, lgs := range csdb.logs {
 		logs = append(logs, lgs...)
@@ -337,7 +338,7 @@ func (csdb *CommitStateDB) StorageTrie(addr ethcmn.Address) ethstate.Trie {
 // in the cache, it will either be removed, or have it's code set and/or it's
 // state (storage) updated. In addition, the state object (account) itself will
 // be written. Finally, the root hash (version) will be returned.
-func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, err error) {
+func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (ethcmn.Hash, error) {
 	defer csdb.clearJournalAndRefund()
 
 	// remove dirty state object entries based on the journal
@@ -372,7 +373,7 @@ func (csdb *CommitStateDB) Commit(deleteEmptyObjects bool) (root ethcmn.Hash, er
 	// NOTE: Ethereum returns the trie merkle root here, but as commitment
 	// actually happens in the BaseApp at EndBlocker, we do not know the root at
 	// this time.
-	return
+	return ethcmn.Hash{}, nil
 }
 
 // Finalise finalizes the state objects (accounts) state by setting their state,

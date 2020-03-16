@@ -28,10 +28,10 @@ type (
 func ValidateGenesis(data GenesisState) error {
 	for _, acct := range data.Accounts {
 		if len(acct.Address.Bytes()) == 0 {
-			return fmt.Errorf("Invalid GenesisAccount Error: Missing Address")
+			return fmt.Errorf("invalid GenesisAccount Error: Missing Address")
 		}
 		if acct.Balance == nil {
-			return fmt.Errorf("Invalid GenesisAccount Error: Missing Balance")
+			return fmt.Errorf("invalid GenesisAccount Error: Missing Balance")
 		}
 	}
 	return nil

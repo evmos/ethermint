@@ -51,22 +51,18 @@ type (
 	// Account values can be accessed and modified through the object.
 	// Finally, call CommitTrie to write the modified storage trie into a database.
 	stateObject struct {
-		address ethcmn.Address
-		stateDB *CommitStateDB
-		account *types.Account
-
+		code types.Code // contract bytecode, which gets set when code is loaded
 		// DB error.
 		// State objects are used by the consensus core and VM which are
 		// unable to deal with database-level errors. Any error that occurs
 		// during a database read is memoized here and will eventually be returned
 		// by StateDB.Commit.
-		dbErr error
-
-		code types.Code // contract bytecode, which gets set when code is loaded
-
+		dbErr         error
+		stateDB       *CommitStateDB
+		account       *types.Account
 		originStorage types.Storage // Storage cache of original entries to dedup rewrites
 		dirtyStorage  types.Storage // Storage entries that need to be flushed to disk
-
+		address       ethcmn.Address
 		// cache flags
 		//
 		// When an object is marked suicided it will be delete from the trie during

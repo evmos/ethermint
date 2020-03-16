@@ -59,6 +59,27 @@ jobs:
           key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
+    
+  upload-coverage:
+    docker: # run the steps with Docker
+      # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
+      - image: circleci/golang:1.13 #
+    working_directory: /go/src/github.com/cosmos/ethermint
+    steps:
+      - checkout
+      - run:
+          name: gather
+          command: |
+            for d in $(go list ./... | grep -v vendor); do
+                go test -race -coverprofile=profile.out -covermode=atomic "$d"
+                if [ -f profile.out ]; then
+                    cat profile.out >> coverage.txt
+                    rm profile.out
+                fi
+            done
+      - run:
+          name: upload
+          command: bash <(curl -s https://codecov.io/bash) -f coverage.txt
 
 workflows:
   version: 2

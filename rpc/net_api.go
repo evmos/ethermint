@@ -20,7 +20,7 @@ func NewPublicNetAPI(cliCtx context.CLIContext) *PublicNetAPI {
 	// parse the chainID from a integer string
 	intChainID, err := strconv.ParseUint(chainID, 0, 64)
 	if err != nil {
-		panic(fmt.Sprintf("Invalid chainID: %s, must be integer format", chainID))
+		panic(fmt.Sprintf("invalid chainID: %s, must be integer format", chainID))
 	}
 
 	return &PublicNetAPI{

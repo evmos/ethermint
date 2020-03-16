@@ -23,7 +23,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/cosmos/ethermint/app"
-	emintapp "github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/client/genaccounts"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 
@@ -38,7 +37,7 @@ import (
 func main() {
 	cobra.EnableCommandSorting = false
 
-	cdc := emintapp.MakeCodec()
+	cdc := app.MakeCodec()
 
 	tmamino.RegisterKeyType(emintcrypto.PubKeySecp256k1{}, emintcrypto.PubKeyAminoName)
 	tmamino.RegisterKeyType(emintcrypto.PrivKeySecp256k1{}, emintcrypto.PrivKeyAminoName)
@@ -63,12 +62,12 @@ func main() {
 	}
 	// CLI commands to initialize the chain
 	rootCmd.AddCommand(
-		withChainIDValidation(genutilcli.InitCmd(ctx, cdc, emintapp.ModuleBasics, emintapp.DefaultNodeHome)),
-		genutilcli.CollectGenTxsCmd(ctx, cdc, auth.GenesisAccountIterator{}, emintapp.DefaultNodeHome),
+		withChainIDValidation(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome)),
+		genutilcli.CollectGenTxsCmd(ctx, cdc, auth.GenesisAccountIterator{}, app.DefaultNodeHome),
 		genutilcli.GenTxCmd(
-			ctx, cdc, emintapp.ModuleBasics, staking.AppModuleBasic{}, auth.GenesisAccountIterator{}, emintapp.DefaultNodeHome, emintapp.DefaultCLIHome,
+			ctx, cdc, app.ModuleBasics, staking.AppModuleBasic{}, auth.GenesisAccountIterator{}, app.DefaultNodeHome, app.DefaultCLIHome,
 		),
-		genutilcli.ValidateGenesisCmd(ctx, cdc, emintapp.ModuleBasics),
+		genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
 
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
 		genaccounts.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
@@ -78,7 +77,7 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(rootCmd, "EM", emintapp.DefaultNodeHome)
+	executor := cli.PrepareBaseCmd(rootCmd, "EM", app.DefaultNodeHome)
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
@@ -86,7 +85,7 @@ func main() {
 }
 
 func newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
-	return emintapp.NewEthermintApp(logger, db, true, 0,
+	return app.NewEthermintApp(logger, db, true, 0,
 		baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))))
 }
 
@@ -95,7 +94,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		emintApp := emintapp.NewEthermintApp(logger, db, true, 0)
+		emintApp := app.NewEthermintApp(logger, db, true, 0)
 		err := emintApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -103,7 +102,7 @@ func exportAppStateAndTMValidators(
 		return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	emintApp := emintapp.NewEthermintApp(logger, db, true, 0)
+	emintApp := app.NewEthermintApp(logger, db, true, 0)
 
 	return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
@@ -121,7 +120,7 @@ func withChainIDValidation(baseCmd *cobra.Command) *cobra.Command {
 		_, ok := new(big.Int).SetString(chainIDFlag, 10)
 		if !ok {
 			return fmt.Errorf(
-				fmt.Sprintf("Invalid chainID: %s, must be base-10 integer format", chainIDFlag))
+				fmt.Sprintf("invalid chainID: %s, must be base-10 integer format", chainIDFlag))
 		}
 
 		return baseRunE(cmd, args)
