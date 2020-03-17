@@ -51,5 +51,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
-	gopkg.in/yaml.v2 v2.2.7
+	gopkg.in/yaml.v2 v2.2.8
 )
