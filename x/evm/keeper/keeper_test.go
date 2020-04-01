@@ -1,110 +1,78 @@
-package keeper
+package keeper_test
 
 import (
 	"math/big"
 	"testing"
+	"time"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store"
+	"github.com/stretchr/testify/suite"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/cosmos/ethermint/types"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	"github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/x/evm/keeper"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	tmlog "github.com/tendermint/tendermint/libs/log"
-	dbm "github.com/tendermint/tm-db"
 )
 
-var (
-	address = ethcmn.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b4c1")
+var address = ethcmn.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b4c1")
 
-	accKey     = sdk.NewKVStoreKey("acc")
-	storageKey = sdk.NewKVStoreKey(evmtypes.EvmStoreKey)
-	codeKey    = sdk.NewKVStoreKey(evmtypes.EvmCodeKey)
-	blockKey   = sdk.NewKVStoreKey(evmtypes.EvmBlockKey)
+type KeeperTestSuite struct {
+	suite.Suite
 
-	logger = tmlog.NewNopLogger()
-)
-
-func newTestCodec() *codec.Codec {
-	cdc := codec.New()
-
-	evmtypes.RegisterCodec(cdc)
-	types.RegisterCodec(cdc)
-	auth.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-
-	return cdc
+	ctx     sdk.Context
+	querier sdk.Querier
+	app     *app.EthermintApp
 }
 
-func TestDBStorage(t *testing.T) {
-	// create logger, codec and root multi-store
-	cdc := newTestCodec()
+func (suite *KeeperTestSuite) SetupTest() {
+	checkTx := false
 
-	// The ParamsKeeper handles parameter storage for the application
-	keyParams := sdk.NewKVStoreKey(params.StoreKey)
-	tkeyParams := sdk.NewTransientStoreKey(params.TStoreKey)
-	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
-	// Set specific supspaces
-	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
-	ak := auth.NewAccountKeeper(cdc, accKey, authSubspace, types.ProtoBaseAccount)
-	ek := NewKeeper(ak, storageKey, codeKey, blockKey, cdc)
+	suite.app = app.Setup(checkTx)
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "3", Time: time.Now().UTC()})
+	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
+}
 
-	db := dbm.NewMemDB()
-	cms := store.NewCommitMultiStore(db)
-	// mount stores
-	keys := []*sdk.KVStoreKey{accKey, storageKey, codeKey, blockKey}
-	for _, key := range keys {
-		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
-	}
+func TestKeeperTestSuite(t *testing.T) {
+	suite.Run(t, new(KeeperTestSuite))
+}
 
-	// load latest version (root)
-	err := cms.LoadLatestVersion()
-	require.NoError(t, err)
-
-	// First execution
-	ms := cms.CacheMultiStore()
-	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
-	ctx = ctx.WithBlockHeight(1)
-
+func (suite *KeeperTestSuite) TestDBStorage() {
 	// Perform state transitions
-	ek.SetBalance(ctx, address, big.NewInt(5))
-	ek.SetNonce(ctx, address, 4)
-	ek.SetState(ctx, address, ethcmn.HexToHash("0x2"), ethcmn.HexToHash("0x3"))
-	ek.SetCode(ctx, address, []byte{0x1})
+	suite.app.EvmKeeper.CreateAccount(suite.ctx, address)
+	suite.app.EvmKeeper.SetBalance(suite.ctx, address, big.NewInt(5))
+	suite.app.EvmKeeper.SetNonce(suite.ctx, address, 4)
+	suite.app.EvmKeeper.SetState(suite.ctx, address, ethcmn.HexToHash("0x2"), ethcmn.HexToHash("0x3"))
+	suite.app.EvmKeeper.SetCode(suite.ctx, address, []byte{0x1})
 
 	// Test block hash mapping functionality
-	ek.SetBlockHashMapping(ctx, ethcmn.FromHex("0x0d87a3a5f73140f46aac1bf419263e4e94e87c292f25007700ab7f2060e2af68"), 7)
-	ek.SetBlockHashMapping(ctx, []byte{0x43, 0x32}, 8)
+	suite.app.EvmKeeper.SetBlockHashMapping(suite.ctx, ethcmn.FromHex("0x0d87a3a5f73140f46aac1bf419263e4e94e87c292f25007700ab7f2060e2af68"), 7)
+	suite.app.EvmKeeper.SetBlockHashMapping(suite.ctx, []byte{0x43, 0x32}, 8)
 
 	// Test block height mapping functionality
 	testBloom := ethtypes.BytesToBloom([]byte{0x1, 0x3})
-	ek.SetBlockBloomMapping(ctx, testBloom, 4)
+	err := suite.app.EvmKeeper.SetBlockBloomMapping(suite.ctx, testBloom, 4)
+	suite.Require().NoError(err, "failed to set block bloom mapping")
 
 	// Get those state transitions
-	require.Equal(t, ek.GetBalance(ctx, address).Cmp(big.NewInt(5)), 0)
-	require.Equal(t, ek.GetNonce(ctx, address), uint64(4))
-	require.Equal(t, ek.GetState(ctx, address, ethcmn.HexToHash("0x2")), ethcmn.HexToHash("0x3"))
-	require.Equal(t, ek.GetCode(ctx, address), []byte{0x1})
+	suite.Require().Equal(suite.app.EvmKeeper.GetBalance(suite.ctx, address).Cmp(big.NewInt(5)), 0)
+	suite.Require().Equal(suite.app.EvmKeeper.GetNonce(suite.ctx, address), uint64(4))
+	suite.Require().Equal(suite.app.EvmKeeper.GetState(suite.ctx, address, ethcmn.HexToHash("0x2")), ethcmn.HexToHash("0x3"))
+	suite.Require().Equal(suite.app.EvmKeeper.GetCode(suite.ctx, address), []byte{0x1})
 
-	require.Equal(t, ek.GetBlockHashMapping(ctx, ethcmn.FromHex("0x0d87a3a5f73140f46aac1bf419263e4e94e87c292f25007700ab7f2060e2af68")), int64(7))
-	require.Equal(t, ek.GetBlockHashMapping(ctx, []byte{0x43, 0x32}), int64(8))
-
-	require.Equal(t, ek.GetBlockBloomMapping(ctx, 4), testBloom)
+	suite.Require().Equal(suite.app.EvmKeeper.GetBlockHashMapping(suite.ctx, ethcmn.FromHex("0x0d87a3a5f73140f46aac1bf419263e4e94e87c292f25007700ab7f2060e2af68")), int64(7))
+	suite.Require().Equal(suite.app.EvmKeeper.GetBlockHashMapping(suite.ctx, []byte{0x43, 0x32}), int64(8))
+	bloom, err := suite.app.EvmKeeper.GetBlockBloomMapping(suite.ctx, 4)
+	suite.Require().NoError(err)
+	suite.Require().Equal(bloom, testBloom)
 
 	// commit stateDB
-	_, err = ek.Commit(ctx, false)
-	require.NoError(t, err, "failed to commit StateDB")
+	_, err = suite.app.EvmKeeper.Commit(suite.ctx, false)
+	suite.Require().NoError(err, "failed to commit StateDB")
 
 	// simulate BaseApp EndBlocker commitment
-	ms.Write()
-	cms.Commit()
+	suite.app.Commit()
 }

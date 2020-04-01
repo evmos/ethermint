@@ -1,80 +1,40 @@
-package types
+package types_test
 
 import (
 	"math/big"
-	"testing"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store"
-	sdkstore "github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/stretchr/testify/suite"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/stretchr/testify/require"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/cosmos/ethermint/types"
+	"github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/x/evm/keeper"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	tmlog "github.com/tendermint/tendermint/libs/log"
-	dbm "github.com/tendermint/tm-db"
 )
 
-func newTestCodec() *codec.Codec {
-	cdc := codec.New()
+// nolint: unused
+type StateDBTestSuite struct {
+	suite.Suite
 
-	RegisterCodec(cdc)
-	types.RegisterCodec(cdc)
-	auth.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-
-	return cdc
+	ctx     sdk.Context
+	querier sdk.Querier
+	app     *app.EthermintApp
 }
 
-func setupStateDB() (*CommitStateDB, error) {
-	accKey := sdk.NewKVStoreKey("acc")
-	storageKey := sdk.NewKVStoreKey(EvmStoreKey)
-	codeKey := sdk.NewKVStoreKey(EvmCodeKey)
-	logger := tmlog.NewNopLogger()
+func (suite *StateDBTestSuite) SetupTest() {
+	checkTx := false
 
-	db := dbm.NewMemDB()
-
-	// create logger, codec and root multi-store
-	cdc := newTestCodec()
-	cms := store.NewCommitMultiStore(db)
-
-	// The ParamsKeeper handles parameter storage for the application
-	keyParams := sdk.NewKVStoreKey(params.StoreKey)
-	tkeyParams := sdk.NewTransientStoreKey(params.TStoreKey)
-	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
-	// Set specific supspaces
-	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
-	ak := auth.NewAccountKeeper(cdc, accKey, authSubspace, types.ProtoBaseAccount)
-
-	// mount stores
-	keys := []*sdk.KVStoreKey{accKey, storageKey, codeKey}
-	for _, key := range keys {
-		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
-	}
-
-	cms.SetPruning(sdkstore.PruneNothing)
-
-	// load latest version (root)
-	if err := cms.LoadLatestVersion(); err != nil {
-		return nil, err
-	}
-
-	ms := cms.CacheMultiStore()
-	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
-	return NewCommitStateDB(ctx, ak, storageKey, codeKey), nil
+	suite.app = app.Setup(checkTx)
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1})
+	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
 }
 
-func TestBloomFilter(t *testing.T) {
-	stateDB, err := setupStateDB()
-	require.NoError(t, err)
+func (suite *StateDBTestSuite) TestBloomFilter() {
+	stateDB := suite.app.EvmKeeper.CommitStateDB
 
 	// Prepare db for logs
 	tHash := ethcmn.BytesToHash([]byte{0x1})
@@ -87,14 +47,15 @@ func TestBloomFilter(t *testing.T) {
 	stateDB.AddLog(&log)
 
 	// Get log from db
-	logs := stateDB.GetLogs(tHash)
-	require.Equal(t, len(logs), 1)
+	logs, err := stateDB.GetLogs(tHash)
+	suite.Require().NoError(err)
+	suite.Require().Equal(len(logs), 1)
 
 	// get logs bloom from the log
 	bloomInt := ethtypes.LogsBloom(logs)
 	bloomFilter := ethtypes.BytesToBloom(bloomInt.Bytes())
 
 	// Check to make sure bloom filter will succeed on
-	require.True(t, ethtypes.BloomLookup(bloomFilter, contractAddress))
-	require.False(t, ethtypes.BloomLookup(bloomFilter, ethcmn.BigToAddress(big.NewInt(2))))
+	suite.Require().True(ethtypes.BloomLookup(bloomFilter, contractAddress))
+	suite.Require().False(ethtypes.BloomLookup(bloomFilter, ethcmn.BigToAddress(big.NewInt(2))))
 }

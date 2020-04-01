@@ -1,4 +1,4 @@
-package app
+package ante
 
 import (
 	"fmt"
@@ -46,15 +46,15 @@ func NewAnteHandler(ak auth.AccountKeeper, sk types.SupplyKeeper) sdk.AnteHandle
 				ante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
 				ante.NewValidateSigCountDecorator(ak),
 				ante.NewDeductFeeDecorator(ak, sk),
-				ante.NewSigGasConsumeDecorator(ak, consumeSigGas),
+				ante.NewSigGasConsumeDecorator(ak, sigGasConsumer),
 				ante.NewSigVerificationDecorator(ak),
 				ante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
 			)
 
 			return stdAnte(ctx, tx, sim)
 
-		case *evmtypes.EthereumTxMsg:
-			return ethAnteHandler(ctx, ak, sk, castTx, sim)
+		case evmtypes.MsgEthereumTx:
+			return ethAnteHandler(ctx, ak, sk, &castTx, sim)
 
 		default:
 			return ctx, sdk.ErrInternal(fmt.Sprintf("transaction type invalid: %T", tx))
@@ -62,7 +62,9 @@ func NewAnteHandler(ak auth.AccountKeeper, sk types.SupplyKeeper) sdk.AnteHandle
 	}
 }
 
-func consumeSigGas(
+// sigGasConsumer overrides the DefaultSigVerificationGasConsumer from the x/auth
+// module on the SDK. It doesn't allow ed25519 nor multisig thresholds.
+func sigGasConsumer(
 	meter sdk.GasMeter, sig []byte, pubkey tmcrypto.PubKey, params types.Params,
 ) error {
 	switch pubkey.(type) {
@@ -89,7 +91,7 @@ func consumeSigGas(
 // prevent spam and DoS attacks.
 func ethAnteHandler(
 	ctx sdk.Context, ak auth.AccountKeeper, sk types.SupplyKeeper,
-	ethTxMsg *evmtypes.EthereumTxMsg, sim bool,
+	ethTxMsg *evmtypes.MsgEthereumTx, sim bool,
 ) (newCtx sdk.Context, err error) {
 
 	var senderAddr sdk.AccAddress
@@ -120,7 +122,9 @@ func ethAnteHandler(
 		if r := recover(); r != nil {
 			switch rType := r.(type) {
 			case sdk.ErrorOutOfGas:
-				log := fmt.Sprintf("out of gas in location: %v", rType.Descriptor)
+				log := fmt.Sprintf("out of gas in location: %v; gasUsed: %d",
+					rType.Descriptor, ctx.GasMeter().GasConsumed(),
+				)
 				err = sdk.ErrOutOfGas(log)
 			default:
 				panic(r)
@@ -139,9 +143,9 @@ func ethAnteHandler(
 		// Cost calculates the fees paid to validators based on gas limit and price
 		cost := new(big.Int).Mul(ethTxMsg.Data.Price, new(big.Int).SetUint64(ethTxMsg.Data.GasLimit))
 
-		feeAmt := sdk.Coins{
+		feeAmt := sdk.NewCoins(
 			sdk.NewCoin(emint.DenomDefault, sdk.NewIntFromBigInt(cost)),
-		}
+		)
 
 		err = auth.DeductFees(sk, ctx, senderAcc, feeAmt)
 		if err != nil {
@@ -166,7 +170,7 @@ func ethAnteHandler(
 }
 
 func validateEthTxCheckTx(
-	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.EthereumTxMsg,
+	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.MsgEthereumTx,
 ) (sdk.AccAddress, error) {
 	// Validate sufficient fees have been provided that meet a minimum threshold
 	// defined by the proposer (for mempool purposes during CheckTx).
@@ -193,7 +197,7 @@ func validateEthTxCheckTx(
 }
 
 // Validates signature and returns sender address
-func validateSignature(ctx sdk.Context, ethTxMsg *evmtypes.EthereumTxMsg) (sdk.AccAddress, error) {
+func validateSignature(ctx sdk.Context, ethTxMsg *evmtypes.MsgEthereumTx) (sdk.AccAddress, error) {
 	// parse the chainID from a string to a base-10 integer
 	chainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
 	if !ok {
@@ -214,7 +218,7 @@ func validateSignature(ctx sdk.Context, ethTxMsg *evmtypes.EthereumTxMsg) (sdk.A
 // that the transaction uses before the transaction is executed. The gas is a
 // constant value of 21000 plus any cost inccured by additional bytes of data
 // supplied with the transaction.
-func validateIntrinsicGas(ethTxMsg *evmtypes.EthereumTxMsg) error {
+func validateIntrinsicGas(ethTxMsg *evmtypes.MsgEthereumTx) error {
 	gas, err := ethcore.IntrinsicGas(ethTxMsg.Data.Payload, ethTxMsg.To() == nil, true)
 	if err != nil {
 		return sdk.ErrInternal(fmt.Sprintf("failed to compute intrinsic gas cost: %s", err))
@@ -222,7 +226,7 @@ func validateIntrinsicGas(ethTxMsg *evmtypes.EthereumTxMsg) error {
 
 	if ethTxMsg.Data.GasLimit < gas {
 		return sdk.ErrInternal(
-			fmt.Sprintf("intrinsic gas too low; %d < %d", ethTxMsg.Data.GasLimit, gas),
+			fmt.Sprintf("intrinsic gas too low: %d < %d", ethTxMsg.Data.GasLimit, gas),
 		)
 	}
 
@@ -232,7 +236,7 @@ func validateIntrinsicGas(ethTxMsg *evmtypes.EthereumTxMsg) error {
 // validateAccount validates the account nonce and that the account has enough
 // funds to cover the tx cost.
 func validateAccount(
-	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.EthereumTxMsg, signer sdk.AccAddress,
+	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.MsgEthereumTx, signer sdk.AccAddress,
 ) error {
 
 	acc := ak.GetAccount(ctx, signer)
@@ -241,8 +245,9 @@ func validateAccount(
 	if ctx.BlockHeight() == 0 && acc.GetAccountNumber() != 0 {
 		return sdk.ErrInternal(
 			fmt.Sprintf(
-				"invalid account number for height zero; got %d, expected 0", acc.GetAccountNumber(),
-			))
+				"invalid account number for height zero (got %d)", acc.GetAccountNumber(),
+			),
+		)
 	}
 
 	// Validate nonce is correct
@@ -262,7 +267,7 @@ func validateAccount(
 }
 
 func checkNonce(
-	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.EthereumTxMsg, signer sdk.AccAddress,
+	ctx sdk.Context, ak auth.AccountKeeper, ethTxMsg *evmtypes.MsgEthereumTx, signer sdk.AccAddress,
 ) error {
 	acc := ak.GetAccount(ctx, signer)
 	// Validate the transaction nonce is valid (equivalent to the sender account’s
@@ -270,7 +275,8 @@ func checkNonce(
 	seq := acc.GetSequence()
 	if ethTxMsg.Data.AccountNonce != seq {
 		return sdk.ErrInvalidSequence(
-			fmt.Sprintf("invalid nonce; got %d, expected %d", ethTxMsg.Data.AccountNonce, seq))
+			fmt.Sprintf("invalid nonce; got %d, expected %d", ethTxMsg.Data.AccountNonce, seq),
+		)
 	}
 
 	return nil
@@ -281,7 +287,7 @@ func checkNonce(
 // proposer.
 //
 // NOTE: This should only be ran during a CheckTx mode.
-func ensureSufficientMempoolFees(ctx sdk.Context, ethTxMsg *evmtypes.EthereumTxMsg) error {
+func ensureSufficientMempoolFees(ctx sdk.Context, ethTxMsg *evmtypes.MsgEthereumTx) error {
 	// fee = GP * GL
 	fee := sdk.NewDecCoinFromCoin(sdk.NewInt64Coin(emint.DenomDefault, ethTxMsg.Fee().Int64()))
 
@@ -297,7 +303,9 @@ func ensureSufficientMempoolFees(ctx sdk.Context, ethTxMsg *evmtypes.EthereumTxM
 	if !ctx.MinGasPrices().IsZero() && !allGTE {
 		// reject the transaction that does not meet the minimum fee
 		return sdk.ErrInsufficientFee(
-			fmt.Sprintf("insufficient fee, got: %q required: %q", fee, ctx.MinGasPrices()),
+			fmt.Sprintf(
+				"insufficient fee, got: %q required: %q", fee, ctx.MinGasPrices(),
+			),
 		)
 	}
 

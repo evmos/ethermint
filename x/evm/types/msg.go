@@ -19,21 +19,20 @@ import (
 )
 
 var (
-	_ sdk.Msg = EthereumTxMsg{}
-	_ sdk.Tx  = EthereumTxMsg{}
+	_ sdk.Msg = MsgEthereumTx{}
+	_ sdk.Tx  = MsgEthereumTx{}
 )
 
 var big8 = big.NewInt(8)
 
 // message type and route constants
 const (
-	TypeEthereumTxMsg  = "ethereum_tx"
-	RouteEthereumTxMsg = RouterKey
+	TypeMsgEthereumTx = "ethereum"
 )
 
-// EthereumTxMsg encapsulates an Ethereum transaction as an SDK message.
+// MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
 type (
-	EthereumTxMsg struct {
+	MsgEthereumTx struct {
 		Data TxData
 
 		// caches
@@ -69,28 +68,28 @@ type (
 	}
 )
 
-// NewEthereumTxMsg returns a reference to a new Ethereum transaction message.
-func NewEthereumTxMsg(
+// NewMsgEthereumTx returns a reference to a new Ethereum transaction message.
+func NewMsgEthereumTx(
 	nonce uint64, to *ethcmn.Address, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, payload []byte,
-) *EthereumTxMsg {
+) MsgEthereumTx {
 
-	return newEthereumTxMsg(nonce, to, amount, gasLimit, gasPrice, payload)
+	return newMsgEthereumTx(nonce, to, amount, gasLimit, gasPrice, payload)
 }
 
-// NewEthereumTxMsgContract returns a reference to a new Ethereum transaction
+// NewMsgEthereumTxContract returns a reference to a new Ethereum transaction
 // message designated for contract creation.
-func NewEthereumTxMsgContract(
+func NewMsgEthereumTxContract(
 	nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, payload []byte,
-) *EthereumTxMsg {
+) MsgEthereumTx {
 
-	return newEthereumTxMsg(nonce, nil, amount, gasLimit, gasPrice, payload)
+	return newMsgEthereumTx(nonce, nil, amount, gasLimit, gasPrice, payload)
 }
 
-func newEthereumTxMsg(
+func newMsgEthereumTx(
 	nonce uint64, to *ethcmn.Address, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, payload []byte,
-) *EthereumTxMsg {
+) MsgEthereumTx {
 
 	if len(payload) > 0 {
 		payload = ethcmn.CopyBytes(payload)
@@ -115,20 +114,20 @@ func newEthereumTxMsg(
 		txData.Price.Set(gasPrice)
 	}
 
-	return &EthereumTxMsg{Data: txData}
+	return MsgEthereumTx{Data: txData}
 }
 
-// Route returns the route value of an EthereumTxMsg.
-func (msg EthereumTxMsg) Route() string { return RouteEthereumTxMsg }
+// Route returns the route value of an MsgEthereumTx.
+func (msg MsgEthereumTx) Route() string { return RouterKey }
 
-// Type returns the type value of an EthereumTxMsg.
-func (msg EthereumTxMsg) Type() string { return TypeEthereumTxMsg }
+// Type returns the type value of an MsgEthereumTx.
+func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 
 // ValidateBasic implements the sdk.Msg interface. It performs basic validation
-// checks of a Transaction. If returns an sdk.Error if validation fails.
-func (msg EthereumTxMsg) ValidateBasic() sdk.Error {
+// checks of a Transaction. If returns an error if validation fails.
+func (msg MsgEthereumTx) ValidateBasic() sdk.Error {
 	if msg.Data.Price.Sign() != 1 {
-		return types.ErrInvalidValue(fmt.Sprintf("Price must be positive: %x", msg.Data.Price))
+		return types.ErrInvalidValue(fmt.Sprintf("price must be positive: %x", msg.Data.Price))
 	}
 
 	// Amount can be 0
@@ -141,16 +140,12 @@ func (msg EthereumTxMsg) ValidateBasic() sdk.Error {
 
 // To returns the recipient address of the transaction. It returns nil if the
 // transaction is a contract creation.
-func (msg EthereumTxMsg) To() *ethcmn.Address {
-	if msg.Data.Recipient == nil {
-		return nil
-	}
-
+func (msg MsgEthereumTx) To() *ethcmn.Address {
 	return msg.Data.Recipient
 }
 
-// GetMsgs returns a single EthereumTxMsg as an sdk.Msg.
-func (msg EthereumTxMsg) GetMsgs() []sdk.Msg {
+// GetMsgs returns a single MsgEthereumTx as an sdk.Msg.
+func (msg MsgEthereumTx) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
@@ -159,7 +154,7 @@ func (msg EthereumTxMsg) GetMsgs() []sdk.Msg {
 //
 // NOTE: This method cannot be used as a chain ID is needed to recover the signer
 // from the signature. Use 'VerifySig' instead.
-func (msg EthereumTxMsg) GetSigners() []sdk.AccAddress {
+func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
 	panic("must use 'VerifySig' with a chain ID to get the signer")
 }
 
@@ -168,13 +163,13 @@ func (msg EthereumTxMsg) GetSigners() []sdk.AccAddress {
 //
 // NOTE: This method cannot be used as a chain ID is needed to create valid bytes
 // to sign over. Use 'RLPSignBytes' instead.
-func (msg EthereumTxMsg) GetSignBytes() []byte {
+func (msg MsgEthereumTx) GetSignBytes() []byte {
 	panic("must use 'RLPSignBytes' with a chain ID to get the valid bytes to sign")
 }
 
 // RLPSignBytes returns the RLP hash of an Ethereum transaction message with a
 // given chainID used for signing.
-func (msg EthereumTxMsg) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
+func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
 	return rlpHash([]interface{}{
 		msg.Data.AccountNonce,
 		msg.Data.Price,
@@ -187,12 +182,12 @@ func (msg EthereumTxMsg) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
 }
 
 // EncodeRLP implements the rlp.Encoder interface.
-func (msg *EthereumTxMsg) EncodeRLP(w io.Writer) error {
+func (msg *MsgEthereumTx) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, &msg.Data)
 }
 
 // DecodeRLP implements the rlp.Decoder interface.
-func (msg *EthereumTxMsg) DecodeRLP(s *rlp.Stream) error {
+func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 	_, size, _ := s.Kind()
 
 	err := s.Decode(&msg.Data)
@@ -204,7 +199,7 @@ func (msg *EthereumTxMsg) DecodeRLP(s *rlp.Stream) error {
 }
 
 // Hash hashes the RLP encoding of a transaction.
-func (msg *EthereumTxMsg) Hash() ethcmn.Hash {
+func (msg *MsgEthereumTx) Hash() ethcmn.Hash {
 	if hash := msg.hash.Load(); hash != nil {
 		return hash.(ethcmn.Hash)
 	}
@@ -219,7 +214,7 @@ func (msg *EthereumTxMsg) Hash() ethcmn.Hash {
 // takes a private key and chainID to sign an Ethereum transaction according to
 // EIP155 standard. It mutates the transaction as it populates the V, R, S
 // fields of the Transaction's Signature.
-func (msg *EthereumTxMsg) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) {
+func (msg *MsgEthereumTx) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) {
 	txHash := msg.RLPSignBytes(chainID)
 
 	sig, err := ethcrypto.Sign(txHash[:], priv)
@@ -252,7 +247,7 @@ func (msg *EthereumTxMsg) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) {
 
 // VerifySig attempts to verify a Transaction's signature for a given chainID.
 // A derived address is returned upon success or an error if recovery fails.
-func (msg *EthereumTxMsg) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
+func (msg *MsgEthereumTx) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
 	signer := ethtypes.NewEIP155Signer(chainID)
 
 	if sc := msg.from.Load(); sc != nil {
@@ -284,19 +279,19 @@ func (msg *EthereumTxMsg) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
 }
 
 // Cost returns amount + gasprice * gaslimit.
-func (msg EthereumTxMsg) Cost() *big.Int {
+func (msg MsgEthereumTx) Cost() *big.Int {
 	total := msg.Fee()
 	total.Add(total, msg.Data.Amount)
 	return total
 }
 
 // Fee returns gasprice * gaslimit.
-func (msg EthereumTxMsg) Fee() *big.Int {
+func (msg MsgEthereumTx) Fee() *big.Int {
 	return new(big.Int).Mul(msg.Data.Price, new(big.Int).SetUint64(msg.Data.GasLimit))
 }
 
 // ChainID returns which chain id this transaction was signed for (if at all)
-func (msg *EthereumTxMsg) ChainID() *big.Int {
+func (msg *MsgEthereumTx) ChainID() *big.Int {
 	return deriveChainID(msg.Data.V)
 }
 
@@ -317,7 +312,7 @@ func deriveChainID(v *big.Int) *big.Int {
 // Auxiliary
 
 // TxDecoder returns an sdk.TxDecoder that can decode both auth.StdTx and
-// EthereumTxMsg transactions.
+// MsgEthereumTx transactions.
 func TxDecoder(cdc *codec.Codec) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, sdk.Error) {
 		var tx sdk.Tx
@@ -328,7 +323,6 @@ func TxDecoder(cdc *codec.Codec) sdk.TxDecoder {
 
 		err := cdc.UnmarshalBinaryLengthPrefixed(txBytes, &tx)
 		if err != nil {
-			fmt.Println(err.Error())
 			return nil, sdk.ErrTxDecode("failed to decode tx").TraceSDK(err.Error())
 		}
 

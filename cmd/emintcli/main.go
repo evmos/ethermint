@@ -1,34 +1,38 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path"
 
-	emintapp "github.com/cosmos/ethermint/app"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	"github.com/cosmos/ethermint/app"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	"github.com/cosmos/ethermint/rpc"
 
 	"github.com/tendermint/go-amino"
+	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
+	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
-	sdkrpc "github.com/cosmos/cosmos-sdk/client/rpc"
+	clientrpc "github.com/cosmos/cosmos-sdk/client/rpc"
 	cryptokeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
-	"github.com/tendermint/tendermint/libs/cli"
 )
 
 func main() {
+	// Configure cobra to sort commands
 	cobra.EnableCommandSorting = false
 
-	cdc := emintapp.MakeCodec()
+	cdc := app.MakeCodec()
 
 	tmamino.RegisterKeyType(emintcrypto.PubKeySecp256k1{}, emintcrypto.PubKeyAminoName)
 	tmamino.RegisterKeyType(emintcrypto.PrivKeySecp256k1{}, emintcrypto.PrivKeyAminoName)
@@ -45,7 +49,7 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:   "emintcli",
-		Short: "Ethermint Client",
+		Short: "Command line interface for interacting with emintd",
 	}
 
 	// Add --chain-id to persistent flags and mark it required
@@ -56,20 +60,24 @@ func main() {
 
 	// Construct Root Command
 	rootCmd.AddCommand(
-		sdkrpc.StatusCommand(),
-		client.ConfigCmd(emintapp.DefaultCLIHome),
+		clientrpc.StatusCommand(),
+		client.ConfigCmd(app.DefaultCLIHome),
 		queryCmd(cdc),
 		txCmd(cdc),
 		rpc.EmintServeCmd(cdc),
 		client.LineBreak,
 		keyCommands(),
 		client.LineBreak,
+		version.Cmd,
+		client.NewCompletionCmd(rootCmd, true),
 	)
 
-	executor := cli.PrepareMainCmd(rootCmd, "EM", emintapp.DefaultCLIHome)
+	// Add flags and prefix all env exposed with EM
+	executor := cli.PrepareMainCmd(rootCmd, "EM", app.DefaultCLIHome)
+
 	err := executor.Execute()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed executing CLI command: %w", err))
 	}
 }
 
@@ -89,7 +97,7 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 	)
 
 	// add modules' query commands
-	emintapp.ModuleBasics.AddQueryCommands(queryCmd, cdc)
+	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
 
 	return queryCmd
 }
@@ -104,14 +112,27 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 		bankcmd.SendTxCmd(cdc),
 		client.LineBreak,
 		authcmd.GetSignCommand(cdc),
+		authcmd.GetMultiSignCommand(cdc),
 		client.LineBreak,
 		authcmd.GetBroadcastCommand(cdc),
 		authcmd.GetEncodeCommand(cdc),
+		authcmd.GetDecodeCommand(cdc),
 		client.LineBreak,
 	)
 
 	// add modules' tx commands
-	emintapp.ModuleBasics.AddTxCommands(txCmd, cdc)
+	app.ModuleBasics.AddTxCommands(txCmd, cdc)
+
+	// remove auth and bank commands as they're mounted under the root tx command
+	var cmdsToRemove []*cobra.Command
+
+	for _, cmd := range txCmd.Commands() {
+		if cmd.Use == auth.ModuleName || cmd.Use == bank.ModuleName {
+			cmdsToRemove = append(cmdsToRemove, cmd)
+		}
+	}
+
+	txCmd.RemoveCommand(cmdsToRemove...)
 
 	return txCmd
 }

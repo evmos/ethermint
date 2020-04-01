@@ -8,19 +8,19 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
-func TestEmintMsg(t *testing.T) {
+func TestMsgEthermint(t *testing.T) {
 	addr := newSdkAddress()
 	fromAddr := newSdkAddress()
 
-	msg := NewEmintMsg(0, &addr, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), fromAddr)
+	msg := NewMsgEthermint(0, &addr, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), fromAddr)
 	require.NotNil(t, msg)
 	require.Equal(t, msg.Recipient, &addr)
 
 	require.Equal(t, msg.Route(), RouterKey)
-	require.Equal(t, msg.Type(), TypeEmintMsg)
+	require.Equal(t, msg.Type(), TypeMsgEthermint)
 }
 
-func TestEmintMsgValidation(t *testing.T) {
+func TestMsgEthermintValidation(t *testing.T) {
 	testCases := []struct {
 		nonce      uint64
 		to         *sdk.AccAddress
@@ -38,7 +38,7 @@ func TestEmintMsgValidation(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		msg := NewEmintMsg(tc.nonce, tc.to, tc.amount, tc.gasLimit, tc.gasPrice, tc.payload, tc.from)
+		msg := NewMsgEthermint(tc.nonce, tc.to, tc.amount, tc.gasLimit, tc.gasPrice, tc.payload, tc.from)
 
 		if tc.expectPass {
 			require.Nil(t, msg.ValidateBasic(), "test: %v", i)
@@ -52,13 +52,13 @@ func TestEmintEncodingAndDecoding(t *testing.T) {
 	addr := newSdkAddress()
 	fromAddr := newSdkAddress()
 
-	msg := NewEmintMsg(0, &addr, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), fromAddr)
+	msg := NewMsgEthermint(0, &addr, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), fromAddr)
 
-	raw, err := cdc.MarshalBinaryBare(msg)
+	raw, err := ModuleCdc.MarshalBinaryBare(msg)
 	require.NoError(t, err)
 
-	var msg2 EmintMsg
-	err = cdc.UnmarshalBinaryBare(raw, &msg2)
+	var msg2 MsgEthermint
+	err = ModuleCdc.UnmarshalBinaryBare(raw, &msg2)
 	require.NoError(t, err)
 
 	require.Equal(t, msg.AccountNonce, msg2.AccountNonce)

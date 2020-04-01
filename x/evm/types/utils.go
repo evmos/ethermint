@@ -13,11 +13,6 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-const (
-	bloomIdx  = ethcmn.AddressLength
-	returnIdx = bloomIdx + ethtypes.BloomByteLength
-)
-
 // GenerateEthAddress generates an Ethereum address.
 func GenerateEthAddress() ethcmn.Address {
 	priv, err := crypto.GenerateKey()
@@ -52,23 +47,41 @@ func rlpHash(x interface{}) (hash ethcmn.Hash) {
 	return hash
 }
 
-// EncodeReturnData takes all of the necessary data from the EVM execution
-// and returns the data as a byte slice
-func EncodeReturnData(addr ethcmn.Address, bloom ethtypes.Bloom, evmRet []byte) []byte {
-	// Append address, bloom, evm return bytes in that order
-	returnData := append(addr.Bytes(), bloom.Bytes()...)
-	return append(returnData, evmRet...)
+// ResultData represents the data returned in an sdk.Result
+type ResultData struct {
+	Address ethcmn.Address
+	Bloom   ethtypes.Bloom
+	Logs    []*ethtypes.Log
+	Ret     []byte
 }
 
-// DecodeReturnData decodes the byte slice of values to their respective types
-func DecodeReturnData(bytes []byte) (addr ethcmn.Address, bloom ethtypes.Bloom, ret []byte, err error) {
-	if len(bytes) >= returnIdx {
-		addr = ethcmn.BytesToAddress(bytes[:bloomIdx])
-		bloom = ethtypes.BytesToBloom(bytes[bloomIdx:returnIdx])
-		ret = bytes[returnIdx:]
-	} else {
-		err = fmt.Errorf("invalid format for encoded data, message must be an EVM state transition")
-	}
+// EncodeReturnData takes all of the necessary data from the EVM execution
+// and returns the data as a byte slice encoded with amino
+func EncodeResultData(data *ResultData) ([]byte, error) {
+	return ModuleCdc.MarshalBinaryLengthPrefixed(data)
+}
 
-	return
+// DecodeResultData decodes an amino-encoded byte slice into ReturnData
+func DecodeResultData(in []byte) (ResultData, error) {
+	data := new(ResultData)
+	err := ModuleCdc.UnmarshalBinaryLengthPrefixed(in, data)
+	if err != nil {
+		return ResultData{}, err
+	}
+	return *data, nil
+}
+
+// EncodeLogs encodes an array of logs using amino
+func EncodeLogs(logs []*ethtypes.Log) ([]byte, error) {
+	return ModuleCdc.MarshalBinaryLengthPrefixed(logs)
+}
+
+// DecodeLogs decodes an amino-encoded byte array into an array of logs
+func DecodeLogs(in []byte) ([]*ethtypes.Log, error) {
+	logs := []*ethtypes.Log{}
+	err := ModuleCdc.UnmarshalBinaryLengthPrefixed(in, &logs)
+	if err != nil {
+		return nil, err
+	}
+	return logs, nil
 }

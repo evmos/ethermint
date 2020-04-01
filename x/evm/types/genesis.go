@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 	"math/big"
 
 	"github.com/cosmos/ethermint/types"
@@ -28,10 +28,10 @@ type (
 func ValidateGenesis(data GenesisState) error {
 	for _, acct := range data.Accounts {
 		if len(acct.Address.Bytes()) == 0 {
-			return fmt.Errorf("invalid GenesisAccount Error: Missing Address")
+			return errors.New("invalid GenesisAccount: address cannot be empty")
 		}
 		if acct.Balance == nil {
-			return fmt.Errorf("invalid GenesisAccount Error: Missing Balance")
+			return errors.New("invalid GenesisAccount: balance cannot be empty")
 		}
 	}
 	return nil

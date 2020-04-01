@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,14 +28,24 @@ type StateTransition struct {
 	Simulate     bool
 }
 
+// ReturnData represents what's returned from a transition
+type ReturnData struct {
+	Logs   []*ethtypes.Log
+	Bloom  *big.Int
+	Result *sdk.Result
+}
+
+// TODO: move to keeper
 // TransitionCSDB performs an evm state transition from a transaction
-func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result) {
+// TODO: update godoc, it doesn't explain what it does in depth.
+func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
+	returnData := new(ReturnData)
 
 	contractCreation := st.Recipient == nil
 
 	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true)
 	if err != nil {
-		return nil, sdk.ErrOutOfGas("invalid intrinsic gas for transaction").Result()
+		return nil, fmt.Errorf("invalid intrinsic gas for transaction: %s", err.Error())
 	}
 
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
@@ -68,21 +79,20 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		Origin:      st.Sender,
-		Coinbase:    common.Address{},
+		Coinbase:    common.Address{}, // TODO: explain why this is empty
 		BlockNumber: big.NewInt(ctx.BlockHeight()),
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
-		Difficulty:  big.NewInt(0x30000), // unused
+		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
 		GasLimit:    gasLimit,
 		GasPrice:    ctx.MinGasPrices().AmountOf(emint.DenomDefault).Int,
 	}
 
-	vmenv := vm.NewEVM(context, csdb, GenerateChainConfig(st.ChainID), vm.Config{})
+	evm := vm.NewEVM(context, csdb, GenerateChainConfig(st.ChainID), vm.Config{})
 
 	var (
 		ret         []byte
 		leftOverGas uint64
 		addr        common.Address
-		vmerr       error
 		senderRef   = vm.AccountRef(st.Sender)
 	)
 
@@ -91,14 +101,20 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	// Set nonce of sender account before evm state transition for usage in generating Create address
 	st.Csdb.SetNonce(st.Sender, st.AccountNonce)
 
-	if contractCreation {
-		ret, addr, leftOverGas, vmerr = vmenv.Create(senderRef, st.Payload, gasLimit, st.Amount)
-	} else {
+	switch contractCreation {
+	case true:
+		ret, addr, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
+	default:
 		// Increment the nonce for the next transaction	(just for evm state transition)
 		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
-
-		ret, leftOverGas, vmerr = vmenv.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
+		ret, leftOverGas, err = evm.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	gasConsumed := gasLimit - leftOverGas
 
 	// Resets nonce to value pre state transition
 	st.Csdb.SetNonce(st.Sender, currentNonce)
@@ -106,37 +122,56 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*big.Int, sdk.Result)
 	// Generate bloom filter to be saved in tx receipt data
 	bloomInt := big.NewInt(0)
 	var bloomFilter ethtypes.Bloom
+	var logs []*ethtypes.Log
 	if st.THash != nil && !st.Simulate {
-		logs := csdb.GetLogs(*st.THash)
+		logs, err = csdb.GetLogs(*st.THash)
+		if err != nil {
+			return nil, err
+		}
 		bloomInt = ethtypes.LogsBloom(logs)
 		bloomFilter = ethtypes.BytesToBloom(bloomInt.Bytes())
 	}
 
 	// Encode all necessary data into slice of bytes to return in sdk result
-	returnData := EncodeReturnData(addr, bloomFilter, ret)
+	res := &ResultData{
+		Address: addr,
+		Bloom:   bloomFilter,
+		Logs:    logs,
+		Ret:     ret,
+	}
+
+	resultData, err := EncodeResultData(res)
+	if err != nil {
+		return nil, err
+	}
 
 	// handle errors
-	if vmerr != nil {
-		res := emint.ErrVMExecution(vmerr.Error()).Result()
-		if vmerr == vm.ErrOutOfGas || vmerr == vm.ErrCodeStoreOutOfGas {
-			res = sdk.ErrOutOfGas("EVM execution went out of gas").Result()
+	if err != nil {
+		if err == vm.ErrOutOfGas || err == vm.ErrCodeStoreOutOfGas {
+			return nil, fmt.Errorf("evm execution went out of gas: %s", err.Error())
 		}
-		res.Data = returnData
+
 		// Consume gas before returning
-		ctx.GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
-		return nil, res
+		ctx.GasMeter().ConsumeGas(gasConsumed, "EVM execution consumption")
+		return nil, err
 	}
 
 	// TODO: Refund unused gas here, if intended in future
 
 	if !st.Simulate {
 		// Finalise state if not a simulated transaction
-		st.Csdb.Finalise(true) // Change to depend on config
+		// TODO: change to depend on config
+		if err := st.Csdb.Finalise(true); err != nil {
+			return nil, err
+		}
 	}
 
 	// Consume gas from evm execution
 	// Out of gas check does not need to be done here since it is done within the EVM execution
-	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasLimit-leftOverGas, "EVM execution consumption")
+	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasConsumed, "EVM execution consumption")
 
-	return bloomInt, sdk.Result{Data: returnData, GasUsed: st.GasLimit - leftOverGas}
+	returnData.Logs = logs
+	returnData.Bloom = bloomInt
+	returnData.Result = &sdk.Result{Data: resultData, GasUsed: gasConsumed}
+	return returnData, nil
 }

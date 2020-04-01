@@ -5,7 +5,13 @@ import (
 	"github.com/cosmos/ethermint/x/evm/types"
 )
 
+// nolint
 const (
+	ModuleName           = types.ModuleName
+	StoreKey             = types.StoreKey
+	CodeKey              = types.StoreKey
+	BlockKey             = types.BlockKey
+	RouterKey            = types.RouterKey
 	QueryProtocolVersion = types.QueryProtocolVersion
 	QueryBalance         = types.QueryBalance
 	QueryBlockNumber     = types.QueryBlockNumber
@@ -19,10 +25,13 @@ const (
 	QueryAccount         = types.QueryAccount
 )
 
+// nolint
 var (
 	NewKeeper = keeper.NewKeeper
+	TxDecoder = types.TxDecoder
 )
 
+//nolint
 type (
 	Keeper          = keeper.Keeper
 	QueryResAccount = types.QueryResAccount

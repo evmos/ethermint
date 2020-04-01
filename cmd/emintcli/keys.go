@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"io"
 
+	tmcrypto "github.com/tendermint/tendermint/crypto"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 
 	emintCrypto "github.com/cosmos/ethermint/crypto"
-	tmcrypto "github.com/tendermint/tendermint/crypto"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -46,7 +47,7 @@ func keyCommands() *cobra.Command {
 		clientkeys.ParseKeyStringCommand(),
 		clientkeys.MigrateCommand(),
 		flags.LineBreak,
-		exportEthKeyCommand(),
+		unsafeExportEthKeyCommand(),
 	)
 	return cmd
 }

@@ -18,23 +18,20 @@ import (
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
-		case types.EthereumTxMsg:
-			return handleETHTxMsg(ctx, k, msg)
-		case *types.EmintMsg:
-			return handleEmintMsg(ctx, k, *msg)
+		case types.MsgEthereumTx:
+			return HandleMsgEthereumTx(ctx, k, msg)
+		case types.MsgEthermint:
+			return HandleMsgEthermint(ctx, k, msg)
 		default:
-			errMsg := fmt.Sprintf("Unrecognized ethermint Msg type: %v", msg.Type())
+			errMsg := fmt.Sprintf("unrecognized ethermint msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
 }
 
-// Handle an Ethereum specific tx
-func handleETHTxMsg(ctx sdk.Context, k Keeper, msg types.EthereumTxMsg) sdk.Result {
-	if err := msg.ValidateBasic(); err != nil {
-		return err.Result()
-	}
-
+// HandleMsgEthereumTx handles an Ethereum specific tx
+func HandleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) sdk.Result {
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	// parse the chainID from a string to a base-10 integer
 	intChainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
 	if !ok {
@@ -44,14 +41,14 @@ func handleETHTxMsg(ctx sdk.Context, k Keeper, msg types.EthereumTxMsg) sdk.Resu
 	// Verify signature and retrieve sender address
 	sender, err := msg.VerifySig(intChainID)
 	if err != nil {
-		return emint.ErrInvalidSender(err.Error()).Result()
+		return sdk.ResultFromError(err)
 	}
 
 	// Encode transaction by default Tx encoder
 	txEncoder := authutils.GetTxEncoder(types.ModuleCdc)
 	txBytes, err := txEncoder(msg)
 	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
+		return sdk.ResultFromError(err)
 	}
 	txHash := tmtypes.Tx(txBytes).Hash()
 	ethHash := common.BytesToHash(txHash)
@@ -70,21 +67,53 @@ func handleETHTxMsg(ctx sdk.Context, k Keeper, msg types.EthereumTxMsg) sdk.Resu
 		Simulate:     ctx.IsCheckTx(),
 	}
 	// Prepare db for logs
-	k.CommitStateDB.Prepare(ethHash, common.Hash{}, k.TxCount.Get())
-	k.TxCount.Increment()
+	k.CommitStateDB.Prepare(ethHash, common.Hash{}, k.TxCount)
+	k.TxCount++
 
-	bloom, res := st.TransitionCSDB(ctx)
-	if res.IsOK() {
-		k.Bloom.Or(k.Bloom, bloom)
+	// TODO: move to keeper
+	returnData, err := st.TransitionCSDB(ctx)
+	if err != nil {
+		return sdk.ResultFromError(err)
 	}
-	return res
+
+	// update block bloom filter
+	k.Bloom.Or(k.Bloom, returnData.Bloom)
+
+	// update transaction logs in KVStore
+	err = k.SetTransactionLogs(ctx, returnData.Logs, txHash)
+	if err != nil {
+		return sdk.ResultFromError(err)
+	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeEthereumTx,
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Data.Amount.String()),
+		),
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
+		),
+	})
+
+	if msg.Data.Recipient != nil {
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeEthereumTx,
+				sdk.NewAttribute(types.AttributeKeyRecipient, msg.Data.Recipient.String()),
+			),
+		)
+	}
+
+	// set the events to the result
+	returnData.Result.Events = ctx.EventManager().Events()
+	return *returnData.Result
 }
 
-func handleEmintMsg(ctx sdk.Context, k Keeper, msg types.EmintMsg) sdk.Result {
-	if err := msg.ValidateBasic(); err != nil {
-		return err.Result()
-	}
-
+// HandleMsgEthermint handles a MsgEthermint
+func HandleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) sdk.Result {
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	// parse the chainID from a string to a base-10 integer
 	intChainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
 	if !ok {
@@ -109,9 +138,36 @@ func handleEmintMsg(ctx sdk.Context, k Keeper, msg types.EmintMsg) sdk.Result {
 	}
 
 	// Prepare db for logs
-	k.CommitStateDB.Prepare(common.Hash{}, common.Hash{}, k.TxCount.Get()) // Cannot provide tx hash
-	k.TxCount.Increment()
+	k.CommitStateDB.Prepare(common.Hash{}, common.Hash{}, k.TxCount) // Cannot provide tx hash
+	k.TxCount++
 
-	_, res := st.TransitionCSDB(ctx)
-	return res
+	returnData, err := st.TransitionCSDB(ctx)
+	if err != nil {
+		return sdk.ResultFromError(err)
+	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeEthermint,
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+		),
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.From.String()),
+		),
+	})
+
+	if msg.Recipient != nil {
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeEthermint,
+				sdk.NewAttribute(types.AttributeKeyRecipient, msg.Recipient.String()),
+			),
+		)
+	}
+
+	// set the events to the result
+	returnData.Result.Events = ctx.EventManager().Events()
+	return *returnData.Result
 }

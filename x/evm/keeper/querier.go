@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -15,7 +16,7 @@ import (
 
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
 		switch path[0] {
 		case types.QueryProtocolVersion:
 			return queryProtocolVersion(keeper)
@@ -48,140 +49,146 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 func queryProtocolVersion(keeper Keeper) ([]byte, sdk.Error) {
 	vers := version.ProtocolVersion
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, hexutil.Uint(vers))
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, hexutil.Uint(vers))
 	if err != nil {
-		panic("could not marshal result to JSON")
+		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	return res, nil
+	return bz, nil
 }
 
 func queryBalance(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.HexToAddress(path[1])
 	balance := keeper.GetBalance(ctx, addr)
 
-	bRes := types.QueryResBalance{Balance: utils.MarshalBigInt(balance)}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	res := types.QueryResBalance{Balance: utils.MarshalBigInt(balance)}
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	return res, nil
+	return bz, nil
 }
 
 func queryBlockNumber(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	num := ctx.BlockHeight()
 	bnRes := types.QueryResBlockNumber{Number: num}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bnRes)
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, bnRes)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	return res, nil
+	return bz, nil
 }
 
 func queryStorage(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.HexToAddress(path[1])
 	key := ethcmn.HexToHash(path[2])
 	val := keeper.GetState(ctx, addr, key)
-	bRes := types.QueryResStorage{Value: val.Bytes()}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	res := types.QueryResStorage{Value: val.Bytes()}
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
-	return res, nil
+	return bz, nil
 }
 
 func queryCode(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.HexToAddress(path[1])
 	code := keeper.GetCode(ctx, addr)
-	cRes := types.QueryResCode{Code: code}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, cRes)
+	res := types.QueryResCode{Code: code}
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	return res, nil
+	return bz, nil
 }
 
 func queryNonce(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.HexToAddress(path[1])
 	nonce := keeper.GetNonce(ctx, addr)
 	nRes := types.QueryResNonce{Nonce: nonce}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, nRes)
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, nRes)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	return res, nil
+	return bz, nil
 }
 
 func queryHashToHeight(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	blockHash := ethcmn.FromHex(path[1])
 	blockNumber := keeper.GetBlockHashMapping(ctx, blockHash)
 
-	bRes := types.QueryResBlockNumber{Number: blockNumber}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	res := types.QueryResBlockNumber{Number: blockNumber}
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	return res, nil
+	return bz, nil
 }
 
 func queryBlockLogsBloom(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	num, err := strconv.ParseInt(path[1], 10, 64)
 	if err != nil {
-		panic("could not unmarshall block number: " + err.Error())
+		return nil, sdk.ErrInternal(fmt.Sprintf("could not unmarshall block number: %s", err.Error()))
 	}
 
-	bloom := keeper.GetBlockBloomMapping(ctx, num)
-
-	bRes := types.QueryBloomFilter{Bloom: bloom}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	bloom, err := keeper.GetBlockBloomMapping(ctx, num)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(fmt.Sprintf("failed to get block bloom mapping: %s", err.Error()))
 	}
 
-	return res, nil
+	res := types.QueryBloomFilter{Bloom: bloom}
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
+	if err != nil {
+		return nil, sdk.ErrInternal(err.Error())
+	}
+
+	return bz, nil
 }
 
 func queryTxLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	txHash := ethcmn.HexToHash(path[1])
-	logs := keeper.GetLogs(ctx, txHash)
-
-	bRes := types.QueryETHLogs{Logs: logs}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, bRes)
+	logs, err := keeper.GetLogs(ctx, txHash)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
 
-	return res, nil
+	res := types.QueryETHLogs{Logs: logs}
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
+	if err != nil {
+		return nil, sdk.ErrInternal(err.Error())
+	}
+
+	return bz, nil
 }
 
 func queryLogs(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
-	logs := keeper.Logs(ctx)
+	logs := keeper.AllLogs(ctx)
 
-	lRes := types.QueryETHLogs{Logs: logs}
-	l, err := codec.MarshalJSONIndent(keeper.cdc, lRes)
+	res := types.QueryETHLogs{Logs: logs}
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
-	return l, nil
+	return bz, nil
 }
 
 func queryAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, sdk.Error) {
 	addr := ethcmn.HexToAddress(path[1])
 	so := keeper.GetOrNewStateObject(ctx, addr)
 
-	lRes := types.QueryResAccount{
+	res := types.QueryResAccount{
 		Balance:  utils.MarshalBigInt(so.Balance()),
 		CodeHash: so.CodeHash(),
 		Nonce:    so.Nonce(),
 	}
-	l, err := codec.MarshalJSONIndent(keeper.cdc, lRes)
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
 	if err != nil {
-		panic("could not marshal result to JSON: " + err.Error())
+		return nil, sdk.ErrInternal(err.Error())
 	}
-	return l, nil
+	return bz, nil
 }

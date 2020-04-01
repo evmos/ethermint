@@ -18,6 +18,7 @@ import (
 
 	"github.com/cosmos/ethermint/version"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -92,51 +93,34 @@ func TestEth_protocolVersion(t *testing.T) {
 	expectedRes := hexutil.Uint(version.ProtocolVersion)
 
 	rpcRes, err := call("eth_protocolVersion", []string{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	var res hexutil.Uint
 	err = res.UnmarshalJSON(rpcRes.Result)
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	t.Logf("Got protocol version: %s\n", res.String())
-
-	if res != expectedRes {
-		t.Fatalf("expected: %s got: %s\n", expectedRes.String(), rpcRes.Result)
-	}
+	require.Equal(t, expectedRes, res, "expected: %s got: %s\n", expectedRes.String(), rpcRes.Result)
 }
 
 func TestEth_blockNumber(t *testing.T) {
 	rpcRes, err := call("eth_blockNumber", []string{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	var res hexutil.Uint64
 	err = res.UnmarshalJSON(rpcRes.Result)
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	t.Logf("Got block number: %s\n", res.String())
 }
 
 func TestEth_GetBalance(t *testing.T) {
 	rpcRes, err := call("eth_getBalance", []string{addrA, "0x0"})
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
 	var res hexutil.Big
 	err = res.UnmarshalJSON(rpcRes.Result)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	t.Logf("Got balance %s for %s\n", res.String(), addrA)
 
@@ -149,40 +133,27 @@ func TestEth_GetBalance(t *testing.T) {
 func TestEth_GetStorageAt(t *testing.T) {
 	expectedRes := hexutil.Bytes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	rpcRes, err := call("eth_getStorageAt", []string{addrA, string(addrAStoreKey), "0x0"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	var storage hexutil.Bytes
 	err = storage.UnmarshalJSON(rpcRes.Result)
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	t.Logf("Got value [%X] for %s with key %X\n", storage, addrA, addrAStoreKey)
 
-	if !bytes.Equal(storage, expectedRes) {
-		t.Errorf("expected: %d (%d bytes) got: %d (%d bytes)", expectedRes, len(expectedRes), storage, len(storage))
-	}
+	require.True(t, bytes.Equal(storage, expectedRes), "expected: %d (%d bytes) got: %d (%d bytes)", expectedRes, len(expectedRes), storage, len(storage))
 }
 
 func TestEth_GetCode(t *testing.T) {
 	expectedRes := hexutil.Bytes{}
 	rpcRes, err := call("eth_getCode", []string{addrA, "0x0"})
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	var code hexutil.Bytes
 	err = code.UnmarshalJSON(rpcRes.Result)
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	t.Logf("Got code [%X] for %s\n", code, addrA)
-	if !bytes.Equal(expectedRes, code) {
-		t.Errorf("expected: %X got: %X", expectedRes, code)
-	}
+	require.True(t, bytes.Equal(expectedRes, code), "expected: %X got: %X", expectedRes, code)
 }

@@ -2,19 +2,20 @@ package evm
 
 import (
 	"encoding/json"
-	"math/big"
+
+	"github.com/gorilla/mux"
+	"github.com/spf13/cobra"
+
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
 	"github.com/cosmos/ethermint/x/evm/client/cli"
 	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/gorilla/mux"
-	"github.com/spf13/cobra"
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 var _ module.AppModuleBasic = AppModuleBasic{}
@@ -107,33 +108,13 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 // BeginBlock function for module at start of each block
-func (am AppModule) BeginBlock(ctx sdk.Context, bl abci.RequestBeginBlock) {
-	// Consider removing this when using evm as module without web3 API
-	bloom := ethtypes.BytesToBloom(am.keeper.Bloom.Bytes())
-	am.keeper.SetBlockBloomMapping(ctx, bloom, bl.Header.GetHeight()-1)
-	am.keeper.SetBlockHashMapping(ctx, bl.Header.LastBlockId.GetHash(), bl.Header.GetHeight()-1)
-	am.keeper.Bloom = big.NewInt(0)
-	am.keeper.TxCount.Reset()
+func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	BeginBlock(am.keeper, ctx, req)
 }
 
 // EndBlock function for module at end of block
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	// Gas costs are handled within msg handler so costs should be ignored
-	ebCtx := ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
-
-	// Update account balances before committing other parts of state
-	am.keeper.CommitStateDB.UpdateAccounts()
-
-	// Commit state objects to KV store
-	_, err := am.keeper.CommitStateDB.WithContext(ebCtx).Commit(true)
-	if err != nil {
-		panic(err)
-	}
-
-	// Clear accounts cache after account data has been committed
-	am.keeper.CommitStateDB.ClearStateObjects()
-
-	return []abci.ValidatorUpdate{}
+func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return EndBlock(am.keeper, ctx, req)
 }
 
 // InitGenesis instantiates the genesis state

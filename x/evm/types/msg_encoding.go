@@ -1,22 +1,10 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/ethermint/utils"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
-
-var cdc = codec.New()
-
-func init() {
-	RegisterAmino(cdc)
-}
-
-// RegisterAmino registers all crypto related types in the given (amino) codec.
-func RegisterAmino(cdc *codec.Codec) {
-	cdc.RegisterConcrete(EncodableTxData{}, "ethermint/EncodedMessage", nil)
-}
 
 // EncodableTxData implements the Ethereum transaction data structure. It is used
 // solely as intended in Ethereum abiding by the protocol.
@@ -38,12 +26,12 @@ type EncodableTxData struct {
 }
 
 func marshalAmino(td EncodableTxData) (string, error) {
-	bz, err := cdc.MarshalBinaryBare(td)
+	bz, err := ModuleCdc.MarshalBinaryBare(td)
 	return string(bz), err
 }
 
 func unmarshalAmino(td *EncodableTxData, text string) error {
-	return cdc.UnmarshalBinaryBare([]byte(text), td)
+	return ModuleCdc.UnmarshalBinaryBare([]byte(text), td)
 }
 
 // MarshalAmino defines custom encoding scheme for TxData

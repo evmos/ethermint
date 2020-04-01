@@ -13,12 +13,23 @@ func TestEvmDataEncoding(t *testing.T) {
 	bloom := ethtypes.BytesToBloom([]byte{0x1, 0x3})
 	ret := []byte{0x5, 0x8}
 
-	encoded := EncodeReturnData(addr, bloom, ret)
+	data := &ResultData{
+		Address: addr,
+		Bloom:   bloom,
+		Logs: []*ethtypes.Log{{
+			Data:        []byte{1, 2, 3, 4},
+			BlockNumber: 17,
+		}},
+		Ret: ret,
+	}
 
-	decAddr, decBloom, decRet, err := DecodeReturnData(encoded)
-
+	enc, err := EncodeResultData(data)
 	require.NoError(t, err)
-	require.Equal(t, addr, decAddr)
-	require.Equal(t, bloom, decBloom)
-	require.Equal(t, ret, decRet)
+
+	res, err := DecodeResultData(enc)
+	require.NoError(t, err)
+	require.Equal(t, addr, res.Address)
+	require.Equal(t, bloom, res.Bloom)
+	require.Equal(t, data.Logs, res.Logs)
+	require.Equal(t, ret, res.Ret)
 }

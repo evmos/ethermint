@@ -1,4 +1,4 @@
-package genaccounts
+package main
 
 import (
 	"bufio"
@@ -18,6 +18,8 @@ import (
 	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	authvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	ethermint "github.com/cosmos/ethermint/types"
 )
@@ -96,7 +98,10 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 					return errors.New("invalid vesting parameters; must supply start and end time or end time")
 				}
 			} else {
-				genAccount = ethermint.Account{BaseAccount: baseAccount}
+				genAccount = ethermint.Account{
+					BaseAccount: baseAccount,
+					CodeHash:    ethcrypto.Keccak256(nil),
+				}
 			}
 
 			if err := genAccount.Validate(); err != nil {

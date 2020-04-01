@@ -40,3 +40,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (x/evm) [\#181](https://github.com/ChainSafe/ethermint/issues/181) Updated EVM module to the recommended module structure. [@fedekunze](https://github.com/fedekunze)
+* (app) [\#188](https://github.com/ChainSafe/ethermint/issues/186)  Misc cleanup [@fedekunze](https://github.com/fedekunze):
+  * (`x/evm`) Rename `EthereumTxMsg` --> `MsgEthereumTx` and `EmintMsg` --> `MsgEthermint` for consistency with SDK standards
+  * Updated integration and unit tests to use `EthermintApp` as testing suite
+  * Use expected keeper interface for `AccountKeeper`
+  * Replaced `count` type in keeper with `int`
+  * Add SDK events for transactions
+* [\#236](https://github.com/ChainSafe/ethermint/pull/236) Changes from upgrade [@fedekunze](https://github.com/fedekunze)
+  * (app/ante) Moved `AnteHandler` implementation to `app/ante`
+  * (keys) Marked `ExportEthKeyCommand` as **UNSAFE**
+  * (x/evm) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
