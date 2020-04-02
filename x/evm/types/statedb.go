@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	emint "github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -302,7 +303,7 @@ func (csdb *CommitStateDB) GetLogs(hash ethcmn.Hash) ([]*ethtypes.Log, error) {
 
 	logs, err := DecodeLogs(encLogs)
 	if err != nil {
-		return []*ethtypes.Log{}, err
+		return nil, err
 	}
 
 	return logs, nil

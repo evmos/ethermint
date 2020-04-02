@@ -53,6 +53,7 @@ type ResultData struct {
 	Bloom   ethtypes.Bloom
 	Logs    []*ethtypes.Log
 	Ret     []byte
+	TxHash  ethcmn.Hash
 }
 
 // EncodeReturnData takes all of the necessary data from the EVM execution

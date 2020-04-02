@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"strconv"
 	"sync"
 
 	"github.com/spf13/viper"
@@ -40,18 +39,19 @@ import (
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicEthAPI struct {
 	cliCtx      context.CLIContext
+	backend     Backend
 	key         emintcrypto.PrivKeySecp256k1
 	nonceLock   *AddrLocker
 	keybaseLock sync.Mutex
-	gasLimit    *int64
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
-func NewPublicEthAPI(cliCtx context.CLIContext, nonceLock *AddrLocker,
+func NewPublicEthAPI(cliCtx context.CLIContext, backend Backend, nonceLock *AddrLocker,
 	key emintcrypto.PrivKeySecp256k1) *PublicEthAPI {
 
 	return &PublicEthAPI{
 		cliCtx:    cliCtx,
+		backend:   backend,
 		key:       key,
 		nonceLock: nonceLock,
 	}
@@ -132,14 +132,7 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 
 // BlockNumber returns the current block number.
 func (e *PublicEthAPI) BlockNumber() (hexutil.Uint64, error) {
-	res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/blockNumber", types.ModuleName), nil)
-	if err != nil {
-		return hexutil.Uint64(0), err
-	}
-
-	var out types.QueryResBlockNumber
-	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-	return hexutil.Uint64(out.Number), nil
+	return e.backend.BlockNumber()
 }
 
 // GetBalance returns the provided account's balance up to the provided block number.
@@ -229,7 +222,7 @@ func (e *PublicEthAPI) GetUncleCountByBlockNumber(blockNum BlockNumber) hexutil.
 // GetCode returns the contract code at the given address and block number.
 func (e *PublicEthAPI) GetCode(address common.Address, blockNumber BlockNumber) (hexutil.Bytes, error) {
 	ctx := e.cliCtx.WithHeight(blockNumber.Int64())
-	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/code/%s", types.ModuleName, address.Hex()), nil)
+	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryCode, address.Hex()), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -237,6 +230,11 @@ func (e *PublicEthAPI) GetCode(address common.Address, blockNumber BlockNumber) 
 	var out types.QueryResCode
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
 	return out.Code, nil
+}
+
+// GetTxLogs returns the logs given a transaction hash.
+func (e *PublicEthAPI) GetTxLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
+	return e.backend.GetTxLogs(txHash)
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
@@ -480,64 +478,12 @@ func (e *PublicEthAPI) GetBlockByHash(hash common.Hash, fullTx bool) (map[string
 
 	var out types.QueryResBlockNumber
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-	return e.getEthBlockByNumber(out.Number, fullTx)
+	return e.backend.getEthBlockByNumber(out.Number, fullTx)
 }
 
 // GetBlockByNumber returns the block identified by number.
 func (e *PublicEthAPI) GetBlockByNumber(blockNum BlockNumber, fullTx bool) (map[string]interface{}, error) {
-	value := blockNum.Int64()
-	return e.getEthBlockByNumber(value, fullTx)
-}
-
-func (e *PublicEthAPI) getEthBlockByNumber(height int64, fullTx bool) (map[string]interface{}, error) {
-	// Remove this check when 0 query is fixed ref: (https://github.com/tendermint/tendermint/issues/4014)
-	var blkNumPtr *int64
-	if height != 0 {
-		blkNumPtr = &height
-	}
-
-	block, err := e.cliCtx.Client.Block(blkNumPtr)
-	if err != nil {
-		return nil, err
-	}
-	header := block.Block.Header
-
-	gasLimit, err := e.getGasLimit()
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		gasUsed      *big.Int
-		transactions []interface{}
-	)
-
-	if fullTx {
-		// Populate full transaction data
-		transactions, gasUsed, err = convertTransactionsToRPC(
-			e.cliCtx, block.Block.Txs, common.BytesToHash(header.Hash()), uint64(header.Height),
-		)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// TODO: Gas used not saved and cannot be calculated by hashes
-		// Return slice of transaction hashes
-		transactions = make([]interface{}, len(block.Block.Txs))
-		for i, tx := range block.Block.Txs {
-			transactions[i] = common.BytesToHash(tx.Hash())
-		}
-	}
-
-	res, _, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryLogsBloom, strconv.FormatInt(block.Block.Height, 10)))
-	if err != nil {
-		return nil, err
-	}
-
-	var out types.QueryBloomFilter
-	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-
-	return formatBlock(header, block.Block.Size(), gasLimit, gasUsed, transactions, out.Bloom), nil
+	return e.backend.GetBlockByNumber(blockNum, fullTx)
 }
 
 func formatBlock(
@@ -782,28 +728,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
 func (e *PublicEthAPI) PendingTransactions() ([]*Transaction, error) {
-	pendingTxs, err := e.cliCtx.Client.UnconfirmedTxs(100)
-	if err != nil {
-		return nil, err
-	}
-
-	transactions := make([]*Transaction, 0, 100)
-	for _, tx := range pendingTxs.Txs {
-		ethTx, err := bytesToEthTx(e.cliCtx, tx)
-		if err != nil {
-			return nil, err
-		}
-
-		// * Should check signer and reference against accounts the node manages in future
-		rpcTx, err := newRPCTransaction(*ethTx, common.Hash{}, nil, 0)
-		if err != nil {
-			return nil, err
-		}
-
-		transactions = append(transactions, rpcTx)
-	}
-
-	return transactions, nil
+	return e.backend.PendingTransactions()
 }
 
 // GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.
@@ -876,31 +801,6 @@ func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, bl
 		StorageHash:  common.Hash{}, // Ethermint doesn't have a storage hash
 		StorageProof: storageProofs,
 	}, nil
-}
-
-// getGasLimit returns the gas limit per block set in genesis
-func (e *PublicEthAPI) getGasLimit() (int64, error) {
-	// Retrieve from gasLimit variable cache
-	if e.gasLimit != nil {
-		return *e.gasLimit, nil
-	}
-
-	// Query genesis block if hasn't been retrieved yet
-	genesis, err := e.cliCtx.Client.Genesis()
-	if err != nil {
-		return 0, err
-	}
-
-	// Save value to gasLimit cached value
-	gasLimit := genesis.Genesis.ConsensusParams.Block.MaxGas
-	if gasLimit == -1 {
-		// Sets gas limit to max uint32 to not error with javascript dev tooling
-		// This -1 value indicating no block gas limit is set to max uint64 with geth hexutils
-		// which errors certain javascript dev tooling which only supports up to 53 bits
-		gasLimit = int64(^uint32(0))
-	}
-	e.gasLimit = &gasLimit
-	return gasLimit, nil
 }
 
 // generateFromArgs populates tx message with args (used in RPC API)

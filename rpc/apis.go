@@ -8,36 +8,42 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+const Web3Namespace = "web3"
+const EthNamespace = "eth"
+const PersonalNamespace = "personal"
+const NetNamespace = "net"
+
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(cliCtx context.CLIContext, key emintcrypto.PrivKeySecp256k1) []rpc.API {
 	nonceLock := new(AddrLocker)
+	backend := NewEthermintBackend(cliCtx)
 	return []rpc.API{
 		{
-			Namespace: "web3",
+			Namespace: Web3Namespace,
 			Version:   "1.0",
 			Service:   NewPublicWeb3API(),
 			Public:    true,
 		},
 		{
-			Namespace: "eth",
+			Namespace: EthNamespace,
 			Version:   "1.0",
-			Service:   NewPublicEthAPI(cliCtx, nonceLock, key),
+			Service:   NewPublicEthAPI(cliCtx, backend, nonceLock, key),
 			Public:    true,
 		},
 		{
-			Namespace: "personal",
+			Namespace: PersonalNamespace,
 			Version:   "1.0",
 			Service:   NewPersonalEthAPI(cliCtx, nonceLock),
 			Public:    false,
 		},
 		{
-			Namespace: "eth",
+			Namespace: EthNamespace,
 			Version:   "1.0",
-			Service:   NewPublicFilterAPI(cliCtx),
+			Service:   NewPublicFilterAPI(cliCtx, backend),
 			Public:    true,
 		},
 		{
-			Namespace: "net",
+			Namespace: NetNamespace,
 			Version:   "1.0",
 			Service:   NewPublicNetAPI(cliCtx),
 			Public:    true,

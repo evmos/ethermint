@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/filters"
 )
 
 /*
@@ -14,28 +15,65 @@ import (
 
 // Filter can be used to retrieve and filter logs.
 type Filter struct {
-	addresses []common.Address
-	topics    [][]common.Hash
-
-	block common.Hash // Block hash if filtering a single block
+	backend            Backend
+	fromBlock, toBlock *big.Int         // start and end block numbers
+	addresses          []common.Address // contract addresses to watch
+	topics             [][]common.Hash  // log topics to watch for
+	blockHash          *common.Hash     // Block hash if filtering a single block
 }
 
-// NewBlockFilter creates a new filter which directly inspects the contents of
-// a block to figure out whether it is interesting or not.
-func NewBlockFilter(block common.Hash, addresses []common.Address, topics [][]common.Hash) *Filter {
-	// Create a generic filter and convert it into a block filter
-	filter := newFilter(addresses, topics)
-	filter.block = block
+// NewFilter returns a new Filter
+func NewFilter(backend Backend, criteria *filters.FilterCriteria) *Filter {
+	return &Filter{
+		backend:   backend,
+		fromBlock: criteria.FromBlock,
+		toBlock:   criteria.ToBlock,
+		addresses: criteria.Addresses,
+		topics:    criteria.Topics,
+	}
+}
+
+// NewFilterWithBlockHash returns a new Filter with a blockHash.
+func NewFilterWithBlockHash(backend Backend, criteria *filters.FilterCriteria) *Filter {
+	return &Filter{
+		backend:   backend,
+		fromBlock: criteria.FromBlock,
+		toBlock:   criteria.ToBlock,
+		addresses: criteria.Addresses,
+		topics:    criteria.Topics,
+		blockHash: criteria.BlockHash,
+	}
+}
+
+// NewBlockFilter creates a new filter that notifies when a block arrives.
+func NewBlockFilter(backend Backend) *Filter {
+	// TODO: finish
+	filter := NewFilter(backend, nil)
 	return filter
 }
 
-// newFilter creates a generic filter that can either filter based on a block hash,
-// or based on range queries. The search criteria needs to be explicitly set.
-func newFilter(addresses []common.Address, topics [][]common.Hash) *Filter {
-	return &Filter{
-		addresses: addresses,
-		topics:    topics,
-	}
+// NewPendingTransactionFilter creates a new filter that notifies when a pending transaction arrives.
+func NewPendingTransactionFilter(backend Backend) *Filter {
+	// TODO: finish
+	filter := NewFilter(backend, nil)
+	return filter
+}
+
+func (f *Filter) uninstallFilter() {
+	// TODO
+}
+
+func (f *Filter) getFilterChanges() interface{} {
+	// TODO
+	// we might want to use an interface for Filters themselves because of this function, it may return an array of logs
+	// or an array of hashes, depending of whether Filter is a log filter or a block/transaction filter.
+	// or, we can add a type field to Filter.
+	return nil
+}
+
+func (f *Filter) getFilterLogs() []*ethtypes.Log {
+	// TODO
+	return nil
 }
 
 func includes(addresses []common.Address, a common.Address) bool {

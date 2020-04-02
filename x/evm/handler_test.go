@@ -1,12 +1,14 @@
 package evm_test
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/x/evm"
+	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -24,7 +27,9 @@ type EvmTestSuite struct {
 
 	ctx     sdk.Context
 	handler sdk.Handler
+	querier sdk.Querier
 	app     *app.EthermintApp
+	codec   *codec.Codec
 }
 
 func (suite *EvmTestSuite) SetupTest() {
@@ -33,6 +38,8 @@ func (suite *EvmTestSuite) SetupTest() {
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "3", Time: time.Now().UTC()})
 	suite.handler = evm.NewHandler(suite.app.EvmKeeper)
+	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
+	suite.codec = codec.New()
 }
 
 func TestEvmTestSuite(t *testing.T) {
@@ -86,4 +93,49 @@ func (suite *EvmTestSuite) TestHandler_Logs() {
 	suite.Require().NoError(err, "failed to get logs")
 
 	suite.Require().Equal(logs, resultData.Logs)
+}
+
+func (suite *EvmTestSuite) TestQueryTxLogs() {
+	gasLimit := uint64(100000)
+	gasPrice := big.NewInt(1000000)
+
+	priv, err := crypto.GenerateKey()
+	suite.Require().NoError(err, "failed to create key")
+
+	// send contract deployment transaction with an event in the constructor
+	bytecode := common.FromHex("0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029")
+	tx := types.NewMsgEthereumTx(1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode)
+	tx.Sign(big.NewInt(3), priv)
+
+	// result, err := evm.HandleEthTxMsg(suite.ctx, suite.app.EvmKeeper, tx)
+	// suite.Require().NoError(err, "failed to handle eth tx msg")
+
+	result := suite.handler(suite.ctx, tx)
+	suite.Require().True(result.IsOK())
+
+	resultData, err := types.DecodeResultData(result.Data)
+	suite.Require().NoError(err, "failed to decode result data")
+
+	suite.Require().Equal(len(resultData.Logs), 1)
+	suite.Require().Equal(len(resultData.Logs[0].Topics), 2)
+
+	// get logs by tx hash
+	hash := resultData.TxHash.Bytes()
+
+	logs, err := suite.app.EvmKeeper.GetTransactionLogs(suite.ctx, hash)
+	suite.Require().NoError(err, "failed to get logs")
+
+	suite.Require().Equal(logs, resultData.Logs)
+
+	// query tx logs
+	path := []string{"txLogs", fmt.Sprintf("0x%x", hash)}
+	res, err := suite.querier(suite.ctx, path, abci.RequestQuery{})
+	suite.Require().NoError(err, "failed to query txLogs")
+
+	var txLogs types.QueryETHLogs
+	suite.codec.MustUnmarshalJSON(res, &txLogs)
+
+	// amino decodes an empty byte array as nil, whereas JSON decodes it as []byte{} causing a discrepancy
+	resultData.Logs[0].Data = []byte{}
+	suite.Require().Equal(txLogs.Logs[0], resultData.Logs[0])
 }
