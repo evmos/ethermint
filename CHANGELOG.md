@@ -50,3 +50,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * (app/ante) Moved `AnteHandler` implementation to `app/ante`
   * (keys) Marked `ExportEthKeyCommand` as **UNSAFE**
   * (x/evm) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
+
+## Features
+
+* (rpc) [\#231](https://github.com/ChainSafe/ethermint/issues/231) Implement NewBlockFilter in rpc/filters.go which instantiates a polling block filter
+	* Polls for new blocks via BlockNumber rpc call; if block number changes, it requests the new block via GetBlockByNumber rpc call and adds it to its internal list of blocks
+	* Update uninstallFilter and getFilterChanges accordingly
+	* uninstallFilter stops the polling goroutine
+	* getFilterChanges returns the filter's internal list of block hashes and resets it

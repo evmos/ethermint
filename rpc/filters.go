@@ -1,9 +1,11 @@
 package rpc
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
 )
@@ -13,13 +15,24 @@ import (
 	Used to set the criteria passed in from RPC params
 */
 
-// Filter can be used to retrieve and filter logs.
+const blockFilter = "block"
+const pendingTxFilter = "pending"
+const logFilter = "log"
+
+// Filter can be used to retrieve and filter logs, blocks, or pending transactions.
 type Filter struct {
 	backend            Backend
 	fromBlock, toBlock *big.Int         // start and end block numbers
 	addresses          []common.Address // contract addresses to watch
 	topics             [][]common.Hash  // log topics to watch for
 	blockHash          *common.Hash     // Block hash if filtering a single block
+
+	typ     string
+	hashes  []common.Hash   // filtered block or transaction hashes
+	logs    []*ethtypes.Log //nolint // filtered logs
+	stopped bool            // set to true once filter in uninstalled
+
+	err error
 }
 
 // NewFilter returns a new Filter
@@ -30,6 +43,8 @@ func NewFilter(backend Backend, criteria *filters.FilterCriteria) *Filter {
 		toBlock:   criteria.ToBlock,
 		addresses: criteria.Addresses,
 		topics:    criteria.Topics,
+		typ:       logFilter,
+		stopped:   false,
 	}
 }
 
@@ -42,33 +57,92 @@ func NewFilterWithBlockHash(backend Backend, criteria *filters.FilterCriteria) *
 		addresses: criteria.Addresses,
 		topics:    criteria.Topics,
 		blockHash: criteria.BlockHash,
+		typ:       logFilter,
 	}
 }
 
 // NewBlockFilter creates a new filter that notifies when a block arrives.
 func NewBlockFilter(backend Backend) *Filter {
-	// TODO: finish
-	filter := NewFilter(backend, nil)
+	filter := NewFilter(backend, &filters.FilterCriteria{})
+	filter.typ = blockFilter
+
+	go func() {
+		err := filter.pollForBlocks()
+		if err != nil {
+			filter.err = err
+		}
+	}()
+
 	return filter
+}
+
+func (f *Filter) pollForBlocks() error {
+	prev := hexutil.Uint64(0)
+
+	for {
+		if f.stopped {
+			return nil
+		}
+
+		num, err := f.backend.BlockNumber()
+		if err != nil {
+			return err
+		}
+
+		if num == prev {
+			continue
+		}
+
+		block, err := f.backend.GetBlockByNumber(BlockNumber(num), false)
+		if err != nil {
+			return err
+		}
+
+		hashBytes, ok := block["hash"].(hexutil.Bytes)
+		if !ok {
+			return errors.New("could not convert block hash to hexutil.Bytes")
+		}
+
+		hash := common.BytesToHash([]byte(hashBytes))
+		f.hashes = append(f.hashes, hash)
+
+		prev = num
+
+		// TODO: should we add a delay?
+	}
 }
 
 // NewPendingTransactionFilter creates a new filter that notifies when a pending transaction arrives.
 func NewPendingTransactionFilter(backend Backend) *Filter {
 	// TODO: finish
 	filter := NewFilter(backend, nil)
+	filter.typ = pendingTxFilter
 	return filter
 }
 
 func (f *Filter) uninstallFilter() {
-	// TODO
+	f.stopped = true
 }
 
-func (f *Filter) getFilterChanges() interface{} {
-	// TODO
-	// we might want to use an interface for Filters themselves because of this function, it may return an array of logs
-	// or an array of hashes, depending of whether Filter is a log filter or a block/transaction filter.
-	// or, we can add a type field to Filter.
-	return nil
+func (f *Filter) getFilterChanges() (interface{}, error) {
+	switch f.typ {
+	case blockFilter:
+		if f.err != nil {
+			return nil, f.err
+		}
+
+		blocks := make([]common.Hash, len(f.hashes))
+		copy(blocks, f.hashes)
+		f.hashes = []common.Hash{}
+
+		return blocks, nil
+	case pendingTxFilter:
+		// TODO
+	case logFilter:
+		// TODO
+	}
+
+	return nil, nil
 }
 
 func (f *Filter) getFilterLogs() []*ethtypes.Log {

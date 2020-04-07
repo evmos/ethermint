@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/cosmos/ethermint/x/evm/types"
@@ -22,7 +23,7 @@ func GetQueryCmd(moduleName string, cdc *codec.Codec) *cobra.Command {
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
-	evmQueryCmd.AddCommand(client.GetCommands(
+	evmQueryCmd.AddCommand(flags.GetCommands(
 		GetCmdGetStorageAt(moduleName, cdc),
 		GetCmdGetCode(moduleName, cdc),
 	)...)

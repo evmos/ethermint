@@ -97,10 +97,6 @@ func (k *Keeper) GetBlockBloomMapping(ctx sdk.Context, height int64) (ethtypes.B
 	}
 
 	bloom := store.Get(types.BloomKey(bz))
-	if len(bloom) == 0 {
-		return ethtypes.BytesToBloom([]byte{}), fmt.Errorf("block with bloombits %v not found", bloom)
-	}
-
 	return ethtypes.BytesToBloom(bloom), nil
 }
 
