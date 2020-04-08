@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KEY="ethermintkey"
+KEY="mykey"
 CHAINID=8
 MONIKER="mymoniker"
 
