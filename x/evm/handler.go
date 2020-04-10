@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 
@@ -44,13 +43,7 @@ func HandleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) sdk
 		return sdk.ResultFromError(err)
 	}
 
-	// Encode transaction by default Tx encoder
-	txEncoder := authutils.GetTxEncoder(types.ModuleCdc)
-	txBytes, err := txEncoder(msg)
-	if err != nil {
-		return sdk.ResultFromError(err)
-	}
-	txHash := tmtypes.Tx(txBytes).Hash()
+	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
 	ethHash := common.BytesToHash(txHash)
 
 	st := types.StateTransition{
@@ -120,6 +113,9 @@ func HandleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) sdk.R
 		return emint.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
 	}
 
+	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
+	ethHash := common.BytesToHash(txHash)
+
 	st := types.StateTransition{
 		Sender:       common.BytesToAddress(msg.From.Bytes()),
 		AccountNonce: msg.AccountNonce,
@@ -129,6 +125,7 @@ func HandleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) sdk.R
 		Payload:      msg.Payload,
 		Csdb:         k.CommitStateDB.WithContext(ctx),
 		ChainID:      intChainID,
+		THash:        &ethHash,
 		Simulate:     ctx.IsCheckTx(),
 	}
 
@@ -138,7 +135,7 @@ func HandleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) sdk.R
 	}
 
 	// Prepare db for logs
-	k.CommitStateDB.Prepare(common.Hash{}, common.Hash{}, k.TxCount) // Cannot provide tx hash
+	k.CommitStateDB.Prepare(ethHash, common.Hash{}, k.TxCount)
 	k.TxCount++
 
 	returnData, err := st.TransitionCSDB(ctx)
