@@ -198,18 +198,6 @@ func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 	return err
 }
 
-// Hash hashes the RLP encoding of a transaction.
-func (msg *MsgEthereumTx) Hash() ethcmn.Hash {
-	if hash := msg.hash.Load(); hash != nil {
-		return hash.(ethcmn.Hash)
-	}
-
-	v := rlpHash(msg)
-	msg.hash.Store(v)
-
-	return v
-}
-
 // Sign calculates a secp256k1 ECDSA signature and signs the transaction. It
 // takes a private key and chainID to sign an Ethereum transaction according to
 // EIP155 standard. It mutates the transaction as it populates the V, R, S

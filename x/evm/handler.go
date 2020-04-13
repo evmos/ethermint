@@ -43,7 +43,8 @@ func HandleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) sdk
 		return sdk.ResultFromError(err)
 	}
 
-	txHash := msg.Hash()
+	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
+	ethHash := common.BytesToHash(txHash)
 
 	st := types.StateTransition{
 		Sender:       sender,
@@ -55,12 +56,13 @@ func HandleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) sdk
 		Payload:      msg.Data.Payload,
 		Csdb:         k.CommitStateDB.WithContext(ctx),
 		ChainID:      intChainID,
-		THash:        &txHash,
+		THash:        &ethHash,
 		Simulate:     ctx.IsCheckTx(),
 	}
+
 	// Prepare db for logs
 	// TODO: block hash
-	k.CommitStateDB.Prepare(txHash, txHash, k.TxCount)
+	k.CommitStateDB.Prepare(ethHash, common.Hash{}, k.TxCount)
 	k.TxCount++
 
 	// TODO: move to keeper

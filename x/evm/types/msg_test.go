@@ -89,14 +89,6 @@ func TestMsgEthereumTxRLPDecode(t *testing.T) {
 	require.Equal(t, expectedMsg.Data, msg.Data)
 }
 
-func TestMsgEthereumTxHash(t *testing.T) {
-	addr := ethcmn.BytesToAddress([]byte("test_address"))
-	msg := NewMsgEthereumTx(0, &addr, nil, 100000, nil, []byte("test"))
-
-	hash := msg.Hash()
-	require.Equal(t, "E2AA2E68E7586AE9700F1D3D643330866B6AC2B6CA4C804F7C85ECB11D0B0B29", fmt.Sprintf("%X", hash))
-}
-
 func TestMsgEthereumTxSig(t *testing.T) {
 	chainID := big.NewInt(3)
 

@@ -51,7 +51,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * (keys) Marked `ExportEthKeyCommand` as **UNSAFE**
   * (x/evm) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
 
-## Features
+### Features
 
 * (rpc) [\#231](https://github.com/ChainSafe/ethermint/issues/231) Implement NewBlockFilter in rpc/filters.go which instantiates a polling block filter
 	* Polls for new blocks via BlockNumber rpc call; if block number changes, it requests the new block via GetBlockByNumber rpc call and adds it to its internal list of blocks
@@ -64,3 +64,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * for a given filter, look through each block for transactions. If there are transactions in the block, get the logs from it, and filter using the filterLogs method
   * eth_getLogs and eth_getFilterChanges for log filters use the same underlying method as eth_getFilterLogs
   * update HandleMsgEthereumTx to store logs using the ethereum hash
+
+### Bug Fixes
+
+* (x/evm) [\#176](https://github.com/ChainSafe/ethermint/issues/176) Updated Web3 transaction hash from using RLP hash. Now all transaction hashes exposed are amino hashes.
+  * Removes `Hash()` (RLP) function from `MsgEthereumTx` to avoid confusion or misuse in future.

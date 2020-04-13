@@ -188,7 +188,7 @@ func (e *EthermintBackend) PendingTransactions() ([]*Transaction, error) {
 		}
 
 		// * Should check signer and reference against accounts the node manages in future
-		rpcTx, err := newRPCTransaction(*ethTx, common.Hash{}, nil, 0)
+		rpcTx, err := newRPCTransaction(*ethTx, common.BytesToHash(tx.Hash()), common.Hash{}, nil, 0)
 		if err != nil {
 			return nil, err
 		}
