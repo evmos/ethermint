@@ -40,7 +40,6 @@ type ReturnData struct {
 // TODO: update godoc, it doesn't explain what it does in depth.
 func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 	returnData := new(ReturnData)
-
 	contractCreation := st.Recipient == nil
 
 	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true)
@@ -123,11 +122,13 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 	bloomInt := big.NewInt(0)
 	var bloomFilter ethtypes.Bloom
 	var logs []*ethtypes.Log
+
 	if st.THash != nil && !st.Simulate {
 		logs, err = csdb.GetLogs(*st.THash)
 		if err != nil {
 			return nil, err
 		}
+
 		bloomInt = ethtypes.LogsBloom(logs)
 		bloomFilter = ethtypes.BytesToBloom(bloomInt.Bytes())
 	}
@@ -170,6 +171,11 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 	// Consume gas from evm execution
 	// Out of gas check does not need to be done here since it is done within the EVM execution
 	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasConsumed, "EVM execution consumption")
+
+	err = st.Csdb.SetLogs(*st.THash, logs)
+	if err != nil {
+		return nil, err
+	}
 
 	returnData.Logs = logs
 	returnData.Bloom = bloomInt

@@ -3,6 +3,7 @@ package rpc
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -18,6 +19,10 @@ const (
 	// EarliestBlockNumber mapping from "earliest" to 1 for tm query (earliest query not supported)
 	EarliestBlockNumber = BlockNumber(1)
 )
+
+func NewBlockNumber(n *big.Int) BlockNumber {
+	return BlockNumber(n.Int64())
+}
 
 // UnmarshalJSON parses the given JSON fragment into a BlockNumber. It supports:
 // - "latest", "earliest" or "pending" as string arguments

@@ -20,6 +20,7 @@ type Backend interface {
 	// Used by block filter; also used for polling
 	BlockNumber() (hexutil.Uint64, error)
 	GetBlockByNumber(blockNum BlockNumber, fullTx bool) (map[string]interface{}, error)
+	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	getEthBlockByNumber(height int64, fullTx bool) (map[string]interface{}, error)
 	getGasLimit() (int64, error)
 
@@ -62,6 +63,21 @@ func (e *EthermintBackend) GetBlockByNumber(blockNum BlockNumber, fullTx bool) (
 	return e.getEthBlockByNumber(value, fullTx)
 }
 
+// GetBlockByHash returns the block identified by hash.
+func (e *EthermintBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
+	res, _, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryHashToHeight, hash.Hex()))
+	if err != nil {
+		return nil, err
+	}
+
+	var out types.QueryResBlockNumber
+	if err := e.cliCtx.Codec.UnmarshalJSON(res, &out); err != nil {
+		return nil, err
+	}
+
+	return e.getEthBlockByNumber(out.Number, fullTx)
+}
+
 func (e *EthermintBackend) getEthBlockByNumber(height int64, fullTx bool) (map[string]interface{}, error) {
 	// Remove this check when 0 query is fixed ref: (https://github.com/tendermint/tendermint/issues/4014)
 	var blkNumPtr *int64
@@ -82,7 +98,7 @@ func (e *EthermintBackend) getEthBlockByNumber(height int64, fullTx bool) (map[s
 
 	var (
 		gasUsed      *big.Int
-		transactions []interface{}
+		transactions []common.Hash
 	)
 
 	if fullTx {
@@ -96,7 +112,7 @@ func (e *EthermintBackend) getEthBlockByNumber(height int64, fullTx bool) (map[s
 	} else {
 		// TODO: Gas used not saved and cannot be calculated by hashes
 		// Return slice of transaction hashes
-		transactions = make([]interface{}, len(block.Block.Txs))
+		transactions = make([]common.Hash, len(block.Block.Txs))
 		for i, tx := range block.Block.Txs {
 			transactions[i] = common.BytesToHash(tx.Hash())
 		}
@@ -142,13 +158,17 @@ func (e *EthermintBackend) getGasLimit() (int64, error) {
 func (e *EthermintBackend) GetTxLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
 	// do we need to use the block height somewhere?
 	ctx := e.cliCtx
+
 	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryTxLogs, txHash.Hex()), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var out types.QueryETHLogs
-	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
+	out := new(types.QueryETHLogs)
+	if err := e.cliCtx.Codec.UnmarshalJSON(res, &out); err != nil {
+		return nil, err
+	}
+
 	return out.Logs, nil
 }
 

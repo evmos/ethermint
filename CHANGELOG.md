@@ -58,3 +58,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 	* Update uninstallFilter and getFilterChanges accordingly
 	* uninstallFilter stops the polling goroutine
 	* getFilterChanges returns the filter's internal list of block hashes and resets it
+
+* (rpc) [\#54](https://github.com/ChainSafe/ethermint/issues/54) [\#55](https://github.com/ChainSafe/ethermint/issues/55) 
+  Implement eth_getFilterLogs and eth_getLogs
+  * for a given filter, look through each block for transactions. If there are transactions in the block, get the logs from it, and filter using the filterLogs method
+  * eth_getLogs and eth_getFilterChanges for log filters use the same underlying method as eth_getFilterLogs
+  * update HandleMsgEthereumTx to store logs using the ethereum hash

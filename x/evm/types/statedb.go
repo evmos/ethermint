@@ -157,6 +157,18 @@ func (csdb *CommitStateDB) SetCode(addr ethcmn.Address, code []byte) {
 	}
 }
 
+// SetLogs sets the logs for a transaction in the KVStore.
+func (csdb *CommitStateDB) SetLogs(hash ethcmn.Hash, logs []*ethtypes.Log) error {
+	store := csdb.ctx.KVStore(csdb.storeKey)
+	enc, err := EncodeLogs(logs)
+	if err != nil {
+		return err
+	}
+
+	store.Set(LogsKey(hash[:]), enc)
+	return nil
+}
+
 // AddLog adds a new log to the state and sets the log metadata from the state.
 func (csdb *CommitStateDB) AddLog(log *ethtypes.Log) {
 	csdb.journal.append(addLogChange{txhash: csdb.thash})
@@ -288,7 +300,7 @@ func (csdb *CommitStateDB) GetCommittedState(addr ethcmn.Address, hash ethcmn.Ha
 	return ethcmn.Hash{}
 }
 
-// GetLogs returns the current logs for a given hash in the state.
+// GetLogs returns the current logs for a given transaction hash from the KVStore.
 func (csdb *CommitStateDB) GetLogs(hash ethcmn.Hash) ([]*ethtypes.Log, error) {
 	if csdb.logs[hash] != nil {
 		return csdb.logs[hash], nil
