@@ -65,7 +65,9 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetTxCmd(types.ModuleName, cdc)
 }
 
-// AppModule is struct that defines variables used within module
+//____________________________________________________________________________
+
+// AppModule implements an application module for the evm module.
 type AppModule struct {
 	AppModuleBasic
 	keeper Keeper

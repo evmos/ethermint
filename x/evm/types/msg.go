@@ -10,6 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -127,12 +128,16 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 // checks of a Transaction. If returns an error if validation fails.
 func (msg MsgEthereumTx) ValidateBasic() sdk.Error {
 	if msg.Data.Price.Sign() != 1 {
-		return types.ErrInvalidValue(fmt.Sprintf("price must be positive: %x", msg.Data.Price))
+		return sdk.ConvertError(
+			sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Data.Price),
+		)
 	}
 
 	// Amount can be 0
 	if msg.Data.Amount.Sign() == -1 {
-		return types.ErrInvalidValue(fmt.Sprintf("amount must be positive: %x", msg.Data.Amount))
+		return sdk.ConvertError(
+			sdkerrors.Wrapf(types.ErrInvalidValue, "amount cannot be negative %s", msg.Data.Amount),
+		)
 	}
 
 	return nil
@@ -306,12 +311,18 @@ func TxDecoder(cdc *codec.Codec) sdk.TxDecoder {
 		var tx sdk.Tx
 
 		if len(txBytes) == 0 {
-			return nil, sdk.ErrTxDecode("txBytes are empty")
+			return nil, sdk.ConvertError(
+				sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx bytes are empty"),
+			)
 		}
 
+		// sdk.Tx is an interface. The concrete message types
+		// are registered by MakeTxCodec
 		err := cdc.UnmarshalBinaryLengthPrefixed(txBytes, &tx)
 		if err != nil {
-			return nil, sdk.ErrTxDecode("failed to decode tx").TraceSDK(err.Error())
+			return nil, sdk.ConvertError(
+				sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error()),
+			)
 		}
 
 		return tx, nil

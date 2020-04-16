@@ -165,6 +165,10 @@ func (csdb *CommitStateDB) SetLogs(hash ethcmn.Hash, logs []*ethtypes.Log) error
 		return err
 	}
 
+	if len(enc) == 0 {
+		return nil
+	}
+
 	store.Set(LogsKey(hash[:]), enc)
 	return nil
 }
@@ -310,18 +314,14 @@ func (csdb *CommitStateDB) GetLogs(hash ethcmn.Hash) ([]*ethtypes.Log, error) {
 
 	encLogs := store.Get(LogsKey(hash[:]))
 	if len(encLogs) == 0 {
+		// return nil if logs are not found
 		return []*ethtypes.Log{}, nil
 	}
 
-	logs, err := DecodeLogs(encLogs)
-	if err != nil {
-		return nil, err
-	}
-
-	return logs, nil
+	return DecodeLogs(encLogs)
 }
 
-// Logs returns all the current logs in the state.
+// AllLogs returns all the current logs in the state.
 func (csdb *CommitStateDB) AllLogs() []*ethtypes.Log {
 	// nolint: prealloc
 	var logs []*ethtypes.Log

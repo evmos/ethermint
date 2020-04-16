@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	emint "github.com/cosmos/ethermint/types"
 )
 
@@ -39,12 +40,11 @@ type ReturnData struct {
 // TransitionCSDB performs an evm state transition from a transaction
 // TODO: update godoc, it doesn't explain what it does in depth.
 func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
-	returnData := new(ReturnData)
 	contractCreation := st.Recipient == nil
 
 	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true)
 	if err != nil {
-		return nil, fmt.Errorf("invalid intrinsic gas for transaction: %s", err.Error())
+		return nil, sdkerrors.Wrap(err, "invalid intrinsic gas for transaction")
 	}
 
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
@@ -73,6 +73,11 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 	// Clear cache of accounts to handle changes outside of the EVM
 	csdb.UpdateAccounts()
 
+	gasPrice := ctx.MinGasPrices().AmountOf(emint.DenomDefault)
+	if gasPrice.IsNil() {
+		return nil, errors.New("gas price cannot be nil")
+	}
+
 	// Create context for evm
 	context := vm.Context{
 		CanTransfer: core.CanTransfer,
@@ -83,7 +88,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
 		GasLimit:    gasLimit,
-		GasPrice:    ctx.MinGasPrices().AmountOf(emint.DenomDefault).Int,
+		GasPrice:    gasPrice.Int,
 	}
 
 	evm := vm.NewEVM(context, csdb, GenerateChainConfig(st.ChainID), vm.Config{})
@@ -150,7 +155,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 	// handle errors
 	if err != nil {
 		if err == vm.ErrOutOfGas || err == vm.ErrCodeStoreOutOfGas {
-			return nil, fmt.Errorf("evm execution went out of gas: %s", err.Error())
+			return nil, sdkerrors.Wrap(err, "evm execution went out of gas")
 		}
 
 		// Consume gas before returning
@@ -177,8 +182,11 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 		return nil, err
 	}
 
-	returnData.Logs = logs
-	returnData.Bloom = bloomInt
-	returnData.Result = &sdk.Result{Data: resultData, GasUsed: gasConsumed}
+	returnData := &ReturnData{
+		Logs:   logs,
+		Bloom:  bloomInt,
+		Result: &sdk.Result{Data: resultData},
+	}
+
 	return returnData, nil
 }

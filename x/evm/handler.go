@@ -1,12 +1,12 @@
 package evm
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 
@@ -16,25 +16,26 @@ import (
 // NewHandler returns a handler for Ethermint type messages.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case types.MsgEthereumTx:
 			return HandleMsgEthereumTx(ctx, k, msg)
 		case types.MsgEthermint:
 			return HandleMsgEthermint(ctx, k, msg)
 		default:
-			errMsg := fmt.Sprintf("unrecognized ethermint msg type: %v", msg.Type())
-			return sdk.ErrUnknownRequest(errMsg).Result()
+			return sdk.ResultFromError(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", ModuleName, msg),
+			)
 		}
 	}
 }
 
 // HandleMsgEthereumTx handles an Ethereum specific tx
 func HandleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) sdk.Result {
-	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	// parse the chainID from a string to a base-10 integer
 	intChainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
 	if !ok {
-		return emint.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
+		return sdk.ResultFromError(sdkerrors.Wrap(emint.ErrInvalidChainID, ctx.ChainID()))
 	}
 
 	// Verify signature and retrieve sender address
@@ -108,11 +109,10 @@ func HandleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) sdk
 
 // HandleMsgEthermint handles a MsgEthermint
 func HandleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) sdk.Result {
-	ctx = ctx.WithEventManager(sdk.NewEventManager())
 	// parse the chainID from a string to a base-10 integer
 	intChainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
 	if !ok {
-		return emint.ErrInvalidChainID(fmt.Sprintf("invalid chainID: %s", ctx.ChainID())).Result()
+		return sdk.ResultFromError(sdkerrors.Wrap(emint.ErrInvalidChainID, ctx.ChainID()))
 	}
 
 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
