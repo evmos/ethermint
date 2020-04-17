@@ -6,16 +6,16 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/simapp"
 )
 
 // Setup initializes a new EthermintApp. A Nop logger is set in EthermintApp.
 func Setup(isCheckTx bool) *EthermintApp {
 	db := dbm.NewMemDB()
 	app := NewEthermintApp(log.NewNopLogger(), db, nil, true, 0)
+
 	if !isCheckTx {
 		// init chain must be called to stop deliverState from being nil
-		genesisState := simapp.NewDefaultGenesisState()
+		genesisState := NewDefaultGenesisState()
 		stateBytes, err := codec.MarshalJSONIndent(app.Codec(), genesisState)
 		if err != nil {
 			panic(err)

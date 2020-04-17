@@ -157,10 +157,13 @@ func (msg MsgEthereumTx) GetMsgs() []sdk.Msg {
 // GetSigners returns the expected signers for an Ethereum transaction message.
 // For such a message, there should exist only a single 'signer'.
 //
-// NOTE: This method cannot be used as a chain ID is needed to recover the signer
-// from the signature. Use 'VerifySig' instead.
+// NOTE: This method panics if 'VerifySig' hasn't been called first.
 func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
-	panic("must use 'VerifySig' with a chain ID to get the signer")
+	sender := msg.From()
+	if sender.Empty() {
+		panic("must use 'VerifySig' with a chain ID to get the signer")
+	}
+	return []sdk.AccAddress{sender}
 }
 
 // GetSignBytes returns the Amino bytes of an Ethereum transaction message used
@@ -271,11 +274,9 @@ func (msg *MsgEthereumTx) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
 	return sender, nil
 }
 
-// Cost returns amount + gasprice * gaslimit.
-func (msg MsgEthereumTx) Cost() *big.Int {
-	total := msg.Fee()
-	total.Add(total, msg.Data.Amount)
-	return total
+// GetGas implements the GasTx interface. It returns the GasLimit of the transaction.
+func (msg MsgEthereumTx) GetGas() uint64 {
+	return msg.Data.GasLimit
 }
 
 // Fee returns gasprice * gaslimit.
@@ -286,6 +287,30 @@ func (msg MsgEthereumTx) Fee() *big.Int {
 // ChainID returns which chain id this transaction was signed for (if at all)
 func (msg *MsgEthereumTx) ChainID() *big.Int {
 	return deriveChainID(msg.Data.V)
+}
+
+// Cost returns amount + gasprice * gaslimit.
+func (msg MsgEthereumTx) Cost() *big.Int {
+	total := msg.Fee()
+	total.Add(total, msg.Data.Amount)
+	return total
+}
+
+// From loads the ethereum sender address from the sigcache and returns an
+// sdk.AccAddress from its bytes
+func (msg *MsgEthereumTx) From() sdk.AccAddress {
+	sc := msg.from.Load()
+	if sc == nil {
+		return nil
+	}
+
+	sigCache := sc.(sigCache)
+
+	if len(sigCache.from.Bytes()) == 0 {
+		return nil
+	}
+
+	return sdk.AccAddress(sigCache.from.Bytes())
 }
 
 // deriveChainID derives the chain id from the given v parameter
