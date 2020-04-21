@@ -149,6 +149,9 @@ test-import:
 test-rpc:
 	@${GO_MOD} go test -v --vet=off ./rpc/tester
 
+it-tests:
+	./scripts/integration-test-all.sh -q 1 -z 1 -s 10
+
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
 	godoc -http=:6060
@@ -162,6 +165,7 @@ format:
 	@echo "--> Formatting go files"
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -w -s
 	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
+
 
 .PHONY: build install update-tools tools godocs clean format lint \
 test-cli test-race test-unit test test-import

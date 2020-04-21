@@ -3,9 +3,11 @@
 // To run these tests please first ensure you have the emintd running
 // and have started the RPC service with `emintcli rest-server`.
 //
-// You can configure the desired port (or host) below.
+// You can configure the desired ETHERMINT_NODE_HOST and ETHERMINT_INTEGRATION_TEST_MODE
+//
+// to have it running
 
-package tester
+package tests
 
 import (
 	"bytes"
@@ -14,6 +16,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -24,14 +27,16 @@ import (
 )
 
 const (
-	host          = "localhost"
-	port          = 8545
 	addrA         = "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
 	addrAStoreKey = 0
 )
 
-var addr = fmt.Sprintf("http://%s:%d", host, port)
-var zeroString = "0x0"
+var (
+	ETHERMINT_INTEGRATION_TEST_MODE = os.Getenv("ETHERMINT_INTEGRATION_TEST_MODE")
+	ETHERMINT_NODE_HOST             = os.Getenv("ETHERMINT_NODE_HOST")
+
+	zeroString = "0x0"
+)
 
 type Request struct {
 	Version string      `json:"jsonrpc"`
@@ -52,6 +57,22 @@ type Response struct {
 	Result json.RawMessage `json:"result,omitempty"`
 }
 
+func TestMain(m *testing.M) {
+	if ETHERMINT_INTEGRATION_TEST_MODE != "stable" {
+		_, _ = fmt.Fprintln(os.Stdout, "Going to skip stable test")
+		return
+	}
+
+	if ETHERMINT_NODE_HOST == "" {
+		_, _ = fmt.Fprintln(os.Stdout, "Going to skip stable test, ETHERMINT_NODE_HOST is not defined")
+		return
+	}
+
+	// Start all tests
+	code := m.Run()
+	os.Exit(code)
+}
+
 func createRequest(method string, params interface{}) Request {
 	return Request{
 		Version: "2.0",
@@ -67,29 +88,36 @@ func call(t *testing.T, method string, params interface{}) (*Response, error) {
 		return nil, err
 	}
 
+	var rpcRes *Response
+	time.Sleep(1 * time.Second)
 	/* #nosec */
-	res, err := http.Post(addr, "application/json", bytes.NewBuffer(req))
+	res, err := http.Post(ETHERMINT_NODE_HOST, "application/json", bytes.NewBuffer(req))
 	if err != nil {
-		t.Fatal(err)
+		t.Log("could not http.Post, ", "err", err)
+		return nil, err
 	}
 
 	decoder := json.NewDecoder(res.Body)
-	var rpcRes *Response
+	rpcRes = new(Response)
 	err = decoder.Decode(&rpcRes)
 	if err != nil {
-		t.Fatal(err)
-	}
-
-	if rpcRes.Error != nil {
-		return nil, errors.New(rpcRes.Error.Message)
+		t.Log("could not decoder.Decode, ", "err", err)
+		return nil, err
 	}
 
 	err = res.Body.Close()
 	if err != nil {
-		t.Fatal(err)
+		t.Log("could not Body.Close, ", "err", err)
+		return nil, err
+	}
+
+	if rpcRes.Error != nil {
+		t.Log("could not rpcRes.Error, ", "err", err)
+		return nil, errors.New(rpcRes.Error.Message)
 	}
 
 	return rpcRes, nil
+
 }
 
 func TestEth_protocolVersion(t *testing.T) {
