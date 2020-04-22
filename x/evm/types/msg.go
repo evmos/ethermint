@@ -125,18 +125,14 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 
 // ValidateBasic implements the sdk.Msg interface. It performs basic validation
 // checks of a Transaction. If returns an error if validation fails.
-func (msg MsgEthereumTx) ValidateBasic() sdk.Error {
+func (msg MsgEthereumTx) ValidateBasic() error {
 	if msg.Data.Price.Sign() != 1 {
-		return sdk.ConvertError(
-			sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Data.Price),
-		)
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Data.Price)
 	}
 
 	// Amount can be 0
 	if msg.Data.Amount.Sign() == -1 {
-		return sdk.ConvertError(
-			sdkerrors.Wrapf(types.ErrInvalidValue, "amount cannot be negative %s", msg.Data.Amount),
-		)
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "amount cannot be negative %s", msg.Data.Amount)
 	}
 
 	return nil
@@ -331,22 +327,18 @@ func deriveChainID(v *big.Int) *big.Int {
 // TxDecoder returns an sdk.TxDecoder that can decode both auth.StdTx and
 // MsgEthereumTx transactions.
 func TxDecoder(cdc *codec.Codec) sdk.TxDecoder {
-	return func(txBytes []byte) (sdk.Tx, sdk.Error) {
+	return func(txBytes []byte) (sdk.Tx, error) {
 		var tx sdk.Tx
 
 		if len(txBytes) == 0 {
-			return nil, sdk.ConvertError(
-				sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx bytes are empty"),
-			)
+			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx bytes are empty")
 		}
 
 		// sdk.Tx is an interface. The concrete message types
 		// are registered by MakeTxCodec
-		err := cdc.UnmarshalBinaryLengthPrefixed(txBytes, &tx)
+		err := cdc.UnmarshalBinaryBare(txBytes, &tx)
 		if err != nil {
-			return nil, sdk.ConvertError(
-				sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error()),
-			)
+			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
 		}
 
 		return tx, nil

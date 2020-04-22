@@ -8,10 +8,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
-	emintkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+
 	"github.com/cosmos/ethermint/app"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -39,7 +41,7 @@ type Config struct {
 	RPCVHosts []string
 }
 
-// EmintServeCmd creates a CLI command to start Cosmos LCD server with web3 RPC API and
+// EmintServeCmd creates a CLI command to start Cosmos REST server with web3 RPC API and
 // Cosmos rest-server endpoints
 func EmintServeCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := lcd.ServeCommand(cdc, registerRoutes)
@@ -57,14 +59,17 @@ func registerRoutes(rs *lcd.RestServer) {
 	var emintKey emintcrypto.PrivKeySecp256k1
 	if len(accountName) > 0 {
 		var err error
-		buf := bufio.NewReader(os.Stdin)
+		inBuf := bufio.NewReader(os.Stdin)
+
 		keyringBackend := viper.GetString(flags.FlagKeyringBackend)
 		passphrase := ""
 		switch keyringBackend {
-		case flags.KeyringBackendOS:
+		case keyring.BackendOS:
 			break
-		case flags.KeyringBackendFile:
-			passphrase, err = input.GetPassword("Enter password to unlock key for RPC API: ", buf)
+		case keyring.BackendFile:
+			passphrase, err = input.GetPassword(
+				"Enter password to unlock key for RPC API: ",
+				inBuf)
 			if err != nil {
 				panic(err)
 			}
@@ -100,7 +105,12 @@ func registerRoutes(rs *lcd.RestServer) {
 }
 
 func unlockKeyFromNameAndPassphrase(accountName, passphrase string) (emintKey emintcrypto.PrivKeySecp256k1, err error) {
-	keybase, err := emintkeys.NewKeyringFromHomeFlag(os.Stdin)
+	keybase, err := keyring.NewKeyring(
+		sdk.KeyringServiceName(),
+		viper.GetString(flags.FlagKeyringBackend),
+		viper.GetString(flags.FlagHome),
+		os.Stdin,
+	)
 	if err != nil {
 		return
 	}

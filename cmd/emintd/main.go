@@ -7,13 +7,13 @@ import (
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
-	cryptokeys "github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/codec"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -40,12 +41,13 @@ var invCheckPeriod uint
 func main() {
 	cobra.EnableCommandSorting = false
 
-	cdc := app.MakeCodec()
+	cdc := codec.MakeCodec(app.ModuleBasics)
+	appCodec := codec.NewAppCodec(cdc)
 
 	tmamino.RegisterKeyType(emintcrypto.PubKeySecp256k1{}, emintcrypto.PubKeyAminoName)
 	tmamino.RegisterKeyType(emintcrypto.PrivKeySecp256k1{}, emintcrypto.PrivKeyAminoName)
 
-	cryptokeys.CryptoCdc = cdc
+	keyring.CryptoCdc = cdc
 	genutil.ModuleCdc = cdc
 	genutiltypes.ModuleCdc = cdc
 	clientkeys.KeysCdc = cdc
@@ -66,16 +68,16 @@ func main() {
 	// CLI commands to initialize the chain
 	rootCmd.AddCommand(
 		withChainIDValidation(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome)),
-		genutilcli.CollectGenTxsCmd(ctx, cdc, auth.GenesisAccountIterator{}, app.DefaultNodeHome),
+		genutilcli.CollectGenTxsCmd(ctx, cdc, bank.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.GenTxCmd(
-			ctx, cdc, app.ModuleBasics, staking.AppModuleBasic{}, auth.GenesisAccountIterator{},
+			ctx, cdc, app.ModuleBasics, staking.AppModuleBasic{}, bank.GenesisBalancesIterator{},
 			app.DefaultNodeHome, app.DefaultCLIHome,
 		),
 		genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
 
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
-		AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
-		client.NewCompletionCmd(rootCmd, true),
+		AddGenesisAccountCmd(ctx, cdc, appCodec, app.DefaultNodeHome, app.DefaultCLIHome),
+		flags.NewCompletionCmd(rootCmd, true),
 	)
 
 	// Tendermint node base commands
@@ -121,7 +123,7 @@ func withChainIDValidation(baseCmd *cobra.Command) *cobra.Command {
 
 	// Function to replace command's RunE function
 	chainIDVerify := func(cmd *cobra.Command, args []string) error {
-		chainIDFlag := viper.GetString(client.FlagChainID)
+		chainIDFlag := viper.GetString(flags.FlagChainID)
 
 		// Verify that the chain-id entered is a base 10 integer
 		_, ok := new(big.Int).SetString(chainIDFlag, 10)

@@ -294,9 +294,6 @@ func TestEth_GetTransactionReceipt(t *testing.T) {
 }
 
 func TestEth_GetTxLogs(t *testing.T) {
-	// currently fails due to eth_sendTransaction returning the tendermint hash,
-	// while the logs are stored in the db using the ethereum hash
-	t.Skip()
 	hash := deployTestContract(t)
 
 	time.Sleep(time.Second * 5)

@@ -13,8 +13,8 @@ import (
 )
 
 func init() {
-	authtypes.RegisterAccountTypeCodec(PubKeySecp256k1{}, PubKeyAminoName)
-	authtypes.RegisterAccountTypeCodec(PrivKeySecp256k1{}, PrivKeyAminoName)
+	authtypes.RegisterKeyTypeCodec(PubKeySecp256k1{}, PubKeyAminoName)
+	authtypes.RegisterKeyTypeCodec(PrivKeySecp256k1{}, PrivKeyAminoName)
 }
 
 // ----------------------------------------------------------------------------

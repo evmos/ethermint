@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strings"
 	"sync"
 
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/spf13/viper"
 
+	"github.com/cosmos/ethermint/codec"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	params "github.com/cosmos/ethermint/rpc/args"
 	emint "github.com/cosmos/ethermint/types"
@@ -30,9 +33,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
@@ -109,7 +113,13 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 	e.keybaseLock.Lock()
 
 	addresses := make([]common.Address, 0) // return [] instead of nil if empty
-	keybase, err := keys.NewKeyringFromHomeFlag(e.cliCtx.Input)
+
+	keybase, err := keyring.NewKeyring(
+		sdk.KeyringServiceName(),
+		viper.GetString(flags.FlagKeyringBackend),
+		viper.GetString(flags.FlagHome),
+		e.cliCtx.Input,
+	)
 	if err != nil {
 		return addresses, err
 	}
@@ -119,7 +129,6 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 		return addresses, err
 	}
 
-	keybase.CloseDB()
 	e.keybaseLock.Unlock()
 
 	for _, info := range infos {
@@ -284,7 +293,7 @@ func (e *PublicEthAPI) SendTransaction(args params.SendTxArgs) (common.Hash, err
 	tx.Sign(intChainID, e.key.ToECDSA())
 
 	// Encode transaction by default Tx encoder
-	txEncoder := authutils.GetTxEncoder(e.cliCtx.Codec)
+	txEncoder := authclient.GetTxEncoder(e.cliCtx.Codec)
 	txBytes, err := txEncoder(tx)
 	if err != nil {
 		return common.Hash{}, err
@@ -312,17 +321,15 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 	}
 
 	// Encode transaction by default Tx encoder
-	txEncoder := authutils.GetTxEncoder(e.cliCtx.Codec)
+	txEncoder := authclient.GetTxEncoder(e.cliCtx.Codec)
 	txBytes, err := txEncoder(tx)
 	if err != nil {
 		return common.Hash{}, err
 	}
 
 	// TODO: Possibly log the contract creation address (if recipient address is nil) or tx data
-	res, err := e.cliCtx.BroadcastTx(txBytes)
 	// If error is encountered on the node, the broadcast will not return an error
-	// TODO: Remove res log
-	fmt.Println(res.RawLog)
+	res, err := e.cliCtx.BroadcastTx(txBytes)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -343,12 +350,12 @@ type CallArgs struct {
 
 // Call performs a raw contract call.
 func (e *PublicEthAPI) Call(args CallArgs, blockNr rpc.BlockNumber, overrides *map[common.Address]account) (hexutil.Bytes, error) {
-	result, err := e.doCall(args, blockNr, big.NewInt(emint.DefaultRPCGasLimit))
+	simRes, err := e.doCall(args, blockNr, big.NewInt(emint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
 	}
 
-	data, err := types.DecodeResultData(result.Data)
+	data, err := types.DecodeResultData(simRes.Result.Data)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -372,9 +379,13 @@ type account struct {
 
 // DoCall performs a simulated call operation through the evm. It returns the
 // estimated gas used on the operation or an error if fails.
-func (e *PublicEthAPI) doCall(args CallArgs, blockNr rpc.BlockNumber, globalGasCap *big.Int) (*sdk.Result, error) {
+func (e *PublicEthAPI) doCall(
+	args CallArgs, blockNr rpc.BlockNumber, globalGasCap *big.Int,
+) (*sdk.SimulationResponse, error) {
+
 	// Set height for historical queries
 	ctx := e.cliCtx
+
 	if blockNr.Int64() != 0 {
 		ctx = e.cliCtx.WithHeight(blockNr.Int64())
 	}
@@ -433,8 +444,7 @@ func (e *PublicEthAPI) doCall(args CallArgs, blockNr rpc.BlockNumber, globalGasC
 	var stdSig authtypes.StdSignature
 	tx := authtypes.NewStdTx([]sdk.Msg{msg}, authtypes.StdFee{}, []authtypes.StdSignature{stdSig}, "")
 
-	// Encode transaction by default Tx encoder
-	txEncoder := authutils.GetTxEncoder(ctx.Codec)
+	txEncoder := authclient.GetTxEncoder(ctx.Codec)
 	txBytes, err := txEncoder(tx)
 	if err != nil {
 		return nil, err
@@ -446,25 +456,27 @@ func (e *PublicEthAPI) doCall(args CallArgs, blockNr rpc.BlockNumber, globalGasC
 		return nil, err
 	}
 
-	var simResult sdk.Result
-	if err = e.cliCtx.Codec.UnmarshalBinaryLengthPrefixed(res, &simResult); err != nil {
+	var simResponse sdk.SimulationResponse
+	if err := jsonpb.Unmarshal(strings.NewReader(string(res)), &simResponse); err != nil {
 		return nil, err
 	}
 
-	return &simResult, nil
+	return &simResponse, nil
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
 // It adds 1,000 gas to the returned value instead of using the gas adjustment
 // param from the SDK.
-func (e *PublicEthAPI) EstimateGas(args CallArgs) (hexutil.Uint64, error) {
-	result, err := e.doCall(args, 0, big.NewInt(emint.DefaultRPCGasLimit))
+func (e *PublicEthAPI) EstimateGas(args CallArgs) (uint64, error) {
+	simResponse, err := e.doCall(args, 0, big.NewInt(emint.DefaultRPCGasLimit))
 	if err != nil {
 		return 0, err
 	}
 
-	// TODO: change 1000 buffer for more accurate buffer (must be at least 1 to not run OOG)
-	return hexutil.Uint64(result.GasUsed + 1000), nil
+	// TODO: change 1000 buffer for more accurate buffer (eg: SDK's gasAdjusted)
+	estimatedGas := simResponse.GasInfo.GasUsed
+	gas := estimatedGas + 1000
+	return gas, nil
 }
 
 // GetBlockByHash returns the block identified by hash.
@@ -544,9 +556,9 @@ type Transaction struct {
 
 func bytesToEthTx(cliCtx context.CLIContext, bz []byte) (*types.MsgEthereumTx, error) {
 	var stdTx sdk.Tx
-	err := cliCtx.Codec.UnmarshalBinaryLengthPrefixed(bz, &stdTx)
+	err := cliCtx.Codec.UnmarshalBinaryBare(bz, &stdTx)
 	if err != nil {
-		return nil, err
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
 	ethTx, ok := stdTx.(types.MsgEthereumTx)
@@ -671,7 +683,10 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		return nil, err
 	}
 
-	from, _ := ethTx.VerifySig(ethTx.ChainID())
+	from, err := ethTx.VerifySig(ethTx.ChainID())
+	if err != nil {
+		return nil, err
+	}
 
 	// Set status codes based on tx result
 	var status hexutil.Uint
@@ -816,7 +831,10 @@ func (e *PublicEthAPI) generateFromArgs(args params.SendTxArgs) (*types.MsgEther
 	if args.Nonce == nil {
 		// Get nonce (sequence) from account
 		from := sdk.AccAddress(args.From.Bytes())
-		_, nonce, err = authtypes.NewAccountRetriever(e.cliCtx).GetAccountNumberSequence(from)
+		authclient.Codec = codec.NewAppCodec(e.cliCtx.Codec)
+		accRet := authtypes.NewAccountRetriever(authclient.Codec, e.cliCtx)
+
+		_, nonce, err = accRet.GetAccountNumberSequence(from)
 		if err != nil {
 			return nil, err
 		}
@@ -836,11 +854,9 @@ func (e *PublicEthAPI) generateFromArgs(args params.SendTxArgs) (*types.MsgEther
 		input = *args.Data
 	}
 
-	if args.To == nil {
+	if args.To == nil && len(input) == 0 {
 		// Contract creation
-		if len(input) == 0 {
-			return nil, fmt.Errorf("contract creation without any data provided")
-		}
+		return nil, fmt.Errorf("contract creation without any data provided")
 	}
 
 	if args.Gas == nil {
@@ -852,11 +868,10 @@ func (e *PublicEthAPI) generateFromArgs(args params.SendTxArgs) (*types.MsgEther
 			Value:    args.Value,
 			Data:     args.Data,
 		}
-		g, err := e.EstimateGas(callArgs)
+		gasLimit, err = e.EstimateGas(callArgs)
 		if err != nil {
 			return nil, err
 		}
-		gasLimit = uint64(g)
 	} else {
 		gasLimit = (uint64)(*args.Gas)
 	}

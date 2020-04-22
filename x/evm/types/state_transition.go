@@ -88,7 +88,7 @@ func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
 		GasLimit:    gasLimit,
-		GasPrice:    gasPrice.Int,
+		GasPrice:    gasPrice.BigInt(),
 	}
 
 	evm := vm.NewEVM(context, csdb, GenerateChainConfig(st.ChainID), vm.Config{})

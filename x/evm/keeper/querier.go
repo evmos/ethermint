@@ -17,39 +17,33 @@ import (
 
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
-		var (
-			bz  []byte
-			err error
-		)
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryProtocolVersion:
-			bz, err = queryProtocolVersion(keeper)
+			return queryProtocolVersion(keeper)
 		case types.QueryBalance:
-			bz, err = queryBalance(ctx, path, keeper)
+			return queryBalance(ctx, path, keeper)
 		case types.QueryBlockNumber:
-			bz, err = queryBlockNumber(ctx, keeper)
+			return queryBlockNumber(ctx, keeper)
 		case types.QueryStorage:
-			bz, err = queryStorage(ctx, path, keeper)
+			return queryStorage(ctx, path, keeper)
 		case types.QueryCode:
-			bz, err = queryCode(ctx, path, keeper)
+			return queryCode(ctx, path, keeper)
 		case types.QueryNonce:
-			bz, err = queryNonce(ctx, path, keeper)
+			return queryNonce(ctx, path, keeper)
 		case types.QueryHashToHeight:
-			bz, err = queryHashToHeight(ctx, path, keeper)
+			return queryHashToHeight(ctx, path, keeper)
 		case types.QueryTxLogs:
-			bz, err = queryTxLogs(ctx, path, keeper)
+			return queryTxLogs(ctx, path, keeper)
 		case types.QueryLogsBloom:
-			bz, err = queryBlockLogsBloom(ctx, path, keeper)
+			return queryBlockLogsBloom(ctx, path, keeper)
 		case types.QueryLogs:
-			bz, err = queryLogs(ctx, keeper)
+			return queryLogs(ctx, keeper)
 		case types.QueryAccount:
-			bz, err = queryAccount(ctx, path, keeper)
+			return queryAccount(ctx, path, keeper)
 		default:
-			bz, err = nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown query endpoint")
+			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown query endpoint")
 		}
-
-		return bz, sdk.ConvertError(err)
 	}
 }
 

@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"fmt"
 	"testing"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -55,7 +54,6 @@ func TestPrivKeySecp256k1PubKey(t *testing.T) {
 	sig, err := privKey.Sign(msg)
 	require.NoError(t, err)
 
-	fmt.Println("SIG LENGTH:", len(sig))
 	res := pubKey.VerifyBytes(msg, sig)
 	require.True(t, res)
 }

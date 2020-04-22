@@ -58,18 +58,14 @@ func (msg MsgEthermint) GetSignBytes() []byte {
 }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgEthermint) ValidateBasic() sdk.Error {
+func (msg MsgEthermint) ValidateBasic() error {
 	if msg.Price.Sign() != 1 {
-		return sdk.ConvertError(
-			sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Price),
-		)
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Price)
 	}
 
 	// Amount can be 0
 	if msg.Amount.Sign() == -1 {
-		return sdk.ConvertError(
-			sdkerrors.Wrapf(types.ErrInvalidValue, "amount cannot be negative %s", msg.Amount),
-		)
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "amount cannot be negative %s", msg.Amount)
 	}
 
 	return nil

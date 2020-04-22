@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	emint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -146,12 +147,14 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 // AccountVerificationDecorator validates an account balance checks
 type AccountVerificationDecorator struct {
 	ak auth.AccountKeeper
+	bk bank.Keeper
 }
 
 // NewAccountVerificationDecorator creates a new AccountVerificationDecorator
-func NewAccountVerificationDecorator(ak auth.AccountKeeper) AccountVerificationDecorator {
+func NewAccountVerificationDecorator(ak auth.AccountKeeper, bk bank.Keeper) AccountVerificationDecorator {
 	return AccountVerificationDecorator{
 		ak: ak,
+		bk: bk,
 	}
 }
 
@@ -186,8 +189,8 @@ func (avd AccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	}
 
 	// validate sender has enough funds
-	balance := acc.GetCoins().AmountOf(emint.DenomDefault)
-	if balance.BigInt().Cmp(msgEthTx.Cost()) < 0 {
+	balance := avd.bk.GetBalance(ctx, acc.GetAddress(), emint.DenomDefault)
+	if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
 		return ctx, sdkerrors.Wrapf(
 			sdkerrors.ErrInsufficientFunds,
 			"%s < %s%s", balance.String(), msgEthTx.Cost().String(), emint.DenomDefault,

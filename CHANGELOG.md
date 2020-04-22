@@ -39,7 +39,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
-* (x/evm) [\#181](https://github.com/ChainSafe/ethermint/issues/181) Updated EVM module to the recommended module structure. [@fedekunze](https://github.com/fedekunze)
+* (sdk) [\#171](https://github.com/ChainSafe/ethermint/issues/177) Bump Cosmos SDK version to [v0.38.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.38.1) [@fedekunze](https://github.com/fedekunze):
+  * Add `x/evidence` module to ethermint app
+  * Bump Go requirement to 1.14+
+* (`x/evm`) [\#181](https://github.com/ChainSafe/ethermint/issues/181) Updated EVM module to the recommended module structure. [@fedekunze](https://github.com/fedekunze)
 * (app) [\#188](https://github.com/ChainSafe/ethermint/issues/186)  Misc cleanup [@fedekunze](https://github.com/fedekunze):
   * (`x/evm`) Rename `EthereumTxMsg` --> `MsgEthereumTx` and `EmintMsg` --> `MsgEthermint` for consistency with SDK standards
   * Updated integration and unit tests to use `EthermintApp` as testing suite
@@ -47,19 +50,19 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * Replaced `count` type in keeper with `int`
   * Add SDK events for transactions
 * [\#236](https://github.com/ChainSafe/ethermint/pull/236) Changes from upgrade [@fedekunze](https://github.com/fedekunze)
-  * (app/ante) Moved `AnteHandler` implementation to `app/ante`
+  * (`app/ante`) Moved `AnteHandler` implementation to `app/ante`
   * (keys) Marked `ExportEthKeyCommand` as **UNSAFE**
-  * (x/evm) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
+  * (`x/evm`) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
 
 ### Features
 
 * (rpc) [\#231](https://github.com/ChainSafe/ethermint/issues/231) Implement NewBlockFilter in rpc/filters.go which instantiates a polling block filter
-	* Polls for new blocks via BlockNumber rpc call; if block number changes, it requests the new block via GetBlockByNumber rpc call and adds it to its internal list of blocks
-	* Update uninstallFilter and getFilterChanges accordingly
-	* uninstallFilter stops the polling goroutine
-	* getFilterChanges returns the filter's internal list of block hashes and resets it
+  * Polls for new blocks via BlockNumber rpc call; if block number changes, it requests the new block via GetBlockByNumber rpc call and adds it to its internal list of blocks
+  * Update uninstallFilter and getFilterChanges accordingly
+  * uninstallFilter stops the polling goroutine
+  * getFilterChanges returns the filter's internal list of block hashes and resets it
 
-* (rpc) [\#54](https://github.com/ChainSafe/ethermint/issues/54) [\#55](https://github.com/ChainSafe/ethermint/issues/55) 
+* (rpc) [\#54](https://github.com/ChainSafe/ethermint/issues/54) [\#55](https://github.com/ChainSafe/ethermint/issues/55)
   Implement eth_getFilterLogs and eth_getLogs
   * for a given filter, look through each block for transactions. If there are transactions in the block, get the logs from it, and filter using the filterLogs method
   * eth_getLogs and eth_getFilterChanges for log filters use the same underlying method as eth_getFilterLogs

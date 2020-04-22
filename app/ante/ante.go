@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	"github.com/cosmos/ethermint/crypto"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -24,7 +25,7 @@ const (
 // Ethereum or SDK transaction to an internal ante handler for performing
 // transaction-level processing (e.g. fee payment, signature verification) before
 // being passed onto it's respective handler.
-func NewAnteHandler(ak auth.AccountKeeper, sk types.SupplyKeeper) sdk.AnteHandler {
+func NewAnteHandler(ak auth.AccountKeeper, bk bank.Keeper, sk types.SupplyKeeper) sdk.AnteHandler {
 	return func(
 		ctx sdk.Context, tx sdk.Tx, sim bool,
 	) (newCtx sdk.Context, err error) {
@@ -50,7 +51,7 @@ func NewAnteHandler(ak auth.AccountKeeper, sk types.SupplyKeeper) sdk.AnteHandle
 				NewEthSetupContextDecorator(), // outermost AnteDecorator. EthSetUpContext must be called first
 				NewEthMempoolFeeDecorator(),
 				NewEthSigVerificationDecorator(),
-				NewAccountVerificationDecorator(ak),
+				NewAccountVerificationDecorator(ak, bk),
 				NewNonceVerificationDecorator(ak),
 				NewEthGasConsumeDecorator(ak, sk),
 				NewIncrementSenderSequenceDecorator(ak), // innermost AnteDecorator.

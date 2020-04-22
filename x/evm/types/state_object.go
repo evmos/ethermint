@@ -59,7 +59,8 @@ type (
 		// by StateDB.Commit.
 		dbErr         error
 		stateDB       *CommitStateDB
-		account       *types.Account
+		account       *types.EthAccount
+		balance       sdk.Int
 		originStorage types.Storage // Storage cache of original entries to dedup rewrites
 		dirtyStorage  types.Storage // Storage entries that need to be flushed to disk
 		address       ethcmn.Address
@@ -73,8 +74,8 @@ type (
 	}
 )
 
-func newStateObject(db *CommitStateDB, accProto authexported.Account) *stateObject {
-	ethermintAccount, ok := accProto.(*types.Account)
+func newStateObject(db *CommitStateDB, accProto authexported.Account, balance sdk.Int) *stateObject {
+	ethermintAccount, ok := accProto.(*types.EthAccount)
 	if !ok {
 		panic(fmt.Sprintf("invalid account type for state object: %T", accProto))
 	}
@@ -87,6 +88,7 @@ func newStateObject(db *CommitStateDB, accProto authexported.Account) *stateObje
 	return &stateObject{
 		stateDB:       db,
 		account:       ethermintAccount,
+		balance:       balance,
 		address:       ethcmn.BytesToAddress(ethermintAccount.GetAddress().Bytes()),
 		originStorage: make(types.Storage),
 		dirtyStorage:  make(types.Storage),
@@ -145,18 +147,18 @@ func (so *stateObject) setCode(codeHash ethcmn.Hash, code []byte) {
 // funds to the destination account of a transfer.
 func (so *stateObject) AddBalance(amount *big.Int) {
 	amt := sdk.NewIntFromBigInt(amount)
-
 	// EIP158: We must check emptiness for the objects such that the account
 	// clearing (0,0,0 objects) can take effect.
-	if amt.Sign() == 0 {
+
+	// NOTE: this will panic if amount is nil
+	if amt.IsZero() {
 		if so.empty() {
 			so.touch()
 		}
-
 		return
 	}
 
-	newBalance := so.account.Balance().Add(amt)
+	newBalance := so.balance.Add(amt)
 	so.SetBalance(newBalance.BigInt())
 }
 
@@ -164,12 +166,10 @@ func (so *stateObject) AddBalance(amount *big.Int) {
 // remove funds from the origin account of a transfer.
 func (so *stateObject) SubBalance(amount *big.Int) {
 	amt := sdk.NewIntFromBigInt(amount)
-
-	if amt.Sign() == 0 {
+	if amt.IsZero() {
 		return
 	}
-
-	newBalance := so.account.Balance().Sub(amt)
+	newBalance := so.balance.Sub(amt)
 	so.SetBalance(newBalance.BigInt())
 }
 
@@ -179,14 +179,14 @@ func (so *stateObject) SetBalance(amount *big.Int) {
 
 	so.stateDB.journal.append(balanceChange{
 		account: &so.address,
-		prev:    so.account.Balance(),
+		prev:    so.balance,
 	})
 
 	so.setBalance(amt)
 }
 
 func (so *stateObject) setBalance(amount sdk.Int) {
-	so.account.SetBalance(amount)
+	so.balance = amount
 }
 
 // SetNonce sets the state object's nonce (i.e sequence number of the account).
@@ -262,7 +262,7 @@ func (so stateObject) Address() ethcmn.Address {
 
 // Balance returns the state object's current balance.
 func (so *stateObject) Balance() *big.Int {
-	balance := so.account.Balance().BigInt()
+	balance := so.balance.BigInt()
 	if balance == nil {
 		return zeroBalance
 	}
@@ -354,7 +354,7 @@ func (so *stateObject) GetCommittedState(_ ethstate.Database, key ethcmn.Hash) e
 func (so *stateObject) ReturnGas(gas *big.Int) {}
 
 func (so *stateObject) deepCopy(db *CommitStateDB) *stateObject {
-	newStateObj := newStateObject(db, so.account)
+	newStateObj := newStateObject(db, so.account, so.balance)
 
 	newStateObj.code = so.code
 	newStateObj.dirtyStorage = so.dirtyStorage.Copy()
@@ -371,7 +371,7 @@ func (so *stateObject) empty() bool {
 	return so.account == nil ||
 		(so.account != nil &&
 			so.account.Sequence == 0 &&
-			so.account.Balance().Sign() == 0 &&
+			(so.balance.BigInt() == nil || so.balance.IsZero()) &&
 			bytes.Equal(so.account.CodeHash, emptyCodeHash))
 }
 

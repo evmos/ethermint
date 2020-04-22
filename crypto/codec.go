@@ -20,6 +20,5 @@ func init() {
 // codec.
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(PubKeySecp256k1{}, PubKeyAminoName, nil)
-
 	cdc.RegisterConcrete(PrivKeySecp256k1{}, PrivKeyAminoName, nil)
 }

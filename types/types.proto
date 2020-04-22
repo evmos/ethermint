@@ -1,0 +1,23 @@
+syntax = "proto3";
+package ethermint.v1;
+
+import "third_party/proto/gogoproto/gogo.proto";
+import "third_party/proto/cosmos-sdk/x/auth/types/types.proto";
+
+option go_package = "github.com/cosmos/ethermint/types";
+
+
+// EthAccount implements the auth.Account interface and embeds an
+// auth.BaseAccount type. It is compatible with the auth.AccountKeeper.
+message EthAccount {
+  option (gogoproto.goproto_getters)  = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  cosmos_sdk.x.auth.v1.BaseAccount base_account = 1 [
+    (gogoproto.embed) = true,
+    (gogoproto.moretags) = "yaml:\"base_account\""
+  ];
+  bytes code_hash = 2 [
+    (gogoproto.moretags) = "yaml:\"code_hash\""
+  ];
+}

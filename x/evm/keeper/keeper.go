@@ -34,12 +34,12 @@ type Keeper struct {
 // NewKeeper generates new evm module keeper
 func NewKeeper(
 	cdc *codec.Codec, blockKey, codeKey, storeKey sdk.StoreKey,
-	ak types.AccountKeeper,
+	ak types.AccountKeeper, bk types.BankKeeper,
 ) Keeper {
 	return Keeper{
 		cdc:           cdc,
 		blockKey:      blockKey,
-		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, codeKey, storeKey, ak),
+		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, codeKey, storeKey, ak, bk),
 		TxCount:       0,
 		Bloom:         big.NewInt(0),
 	}
