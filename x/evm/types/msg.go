@@ -37,7 +37,6 @@ type (
 		Data TxData
 
 		// caches
-		hash atomic.Value
 		size atomic.Value
 		from atomic.Value
 	}

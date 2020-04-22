@@ -137,7 +137,7 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	// NOTE: signer is retrieved from the transaction on the next AnteDecorator
 	_, err = msgEthTx.VerifySig(chainID)
 	if err != nil {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, fmt.Sprintf("signature verification failed"))
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "signature verification failed")
 	}
 
 	return next(ctx, msgEthTx, simulate)

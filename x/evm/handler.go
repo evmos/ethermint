@@ -76,7 +76,7 @@ func HandleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) sdk
 	k.Bloom.Or(k.Bloom, returnData.Bloom)
 
 	// update transaction logs in KVStore
-	err = k.SetTransactionLogs(ctx, returnData.Logs, txHash[:])
+	err = k.SetTransactionLogs(ctx, returnData.Logs, txHash)
 	if err != nil {
 		return sdk.ResultFromError(err)
 	}
