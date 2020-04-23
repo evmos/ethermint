@@ -12,7 +12,7 @@ var ModuleCdc = codec.New()
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgEthereumTx{}, "ethermint/MsgEthereumTx", nil)
 	cdc.RegisterConcrete(MsgEthermint{}, "ethermint/MsgEthermint", nil)
-	cdc.RegisterConcrete(EncodableTxData{}, "ethermint/EncodableTxData", nil)
+	cdc.RegisterConcrete(TxData{}, "ethermint/TxData", nil)
 }
 
 func init() {

@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/ethermint/types"
@@ -20,6 +19,7 @@ import (
 )
 
 var (
+	_ sdk.Msg = MsgEthermint{}
 	_ sdk.Msg = MsgEthereumTx{}
 	_ sdk.Tx  = MsgEthereumTx{}
 )
@@ -28,52 +28,104 @@ var big8 = big.NewInt(8)
 
 // message type and route constants
 const (
+	// TypeMsgEthereumTx defines the type string of an Ethereum tranasction
 	TypeMsgEthereumTx = "ethereum"
+	// TypeMsgEthermint defines the type string of Ethermint message
+	TypeMsgEthermint = "ethermint"
 )
+
+// MsgEthermint implements a cosmos equivalent structure for Ethereum transactions
+type MsgEthermint struct {
+	AccountNonce uint64          `json:"nonce"`
+	Price        sdk.Int         `json:"gasPrice"`
+	GasLimit     uint64          `json:"gas"`
+	Recipient    *sdk.AccAddress `json:"to" rlp:"nil"` // nil means contract creation
+	Amount       sdk.Int         `json:"value"`
+	Payload      []byte          `json:"input"`
+
+	// From address (formerly derived from signature)
+	From sdk.AccAddress `json:"from"`
+}
+
+// NewMsgEthermint returns a reference to a new Ethermint transaction
+func NewMsgEthermint(
+	nonce uint64, to *sdk.AccAddress, amount sdk.Int,
+	gasLimit uint64, gasPrice sdk.Int, payload []byte, from sdk.AccAddress,
+) MsgEthermint {
+	return MsgEthermint{
+		AccountNonce: nonce,
+		Price:        gasPrice,
+		GasLimit:     gasLimit,
+		Recipient:    to,
+		Amount:       amount,
+		Payload:      payload,
+		From:         from,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgEthermint) Route() string { return RouterKey }
+
+// Type returns the action of the message
+func (msg MsgEthermint) Type() string { return TypeMsgEthermint }
+
+// GetSignBytes encodes the message for signing
+func (msg MsgEthermint) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgEthermint) ValidateBasic() error {
+	if msg.Price.Sign() != 1 {
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Price)
+	}
+
+	// Amount can be 0
+	if msg.Amount.Sign() == -1 {
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "amount cannot be negative %s", msg.Amount)
+	}
+
+	return nil
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgEthermint) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.From}
+}
+
+// To returns the recipient address of the transaction. It returns nil if the
+// transaction is a contract creation.
+func (msg MsgEthermint) To() *ethcmn.Address {
+	if msg.Recipient == nil {
+		return nil
+	}
+
+	addr := ethcmn.BytesToAddress(msg.Recipient.Bytes())
+	return &addr
+}
 
 // MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
-type (
-	MsgEthereumTx struct {
-		Data TxData
+type MsgEthereumTx struct {
+	Data TxData
 
-		// caches
-		size atomic.Value
-		from atomic.Value
-	}
+	// caches
+	hash atomic.Value
+	size atomic.Value
+	from atomic.Value
+}
 
-	// TxData implements the Ethereum transaction data structure. It is used
-	// solely as intended in Ethereum abiding by the protocol.
-	TxData struct {
-		AccountNonce uint64          `json:"nonce"`
-		Price        *big.Int        `json:"gasPrice"`
-		GasLimit     uint64          `json:"gas"`
-		Recipient    *ethcmn.Address `json:"to" rlp:"nil"` // nil means contract creation
-		Amount       *big.Int        `json:"value"`
-		Payload      []byte          `json:"input"`
-
-		// signature values
-		V *big.Int `json:"v"`
-		R *big.Int `json:"r"`
-		S *big.Int `json:"s"`
-
-		// hash is only used when marshaling to JSON
-		Hash *ethcmn.Hash `json:"hash" rlp:"-"`
-	}
-
-	// sigCache is used to cache the derived sender and contains the signer used
-	// to derive it.
-	sigCache struct {
-		signer ethtypes.Signer
-		from   ethcmn.Address
-	}
-)
+// sigCache is used to cache the derived sender and contains the signer used
+// to derive it.
+type sigCache struct {
+	signer ethtypes.Signer
+	from   ethcmn.Address
+}
 
 // NewMsgEthereumTx returns a reference to a new Ethereum transaction message.
 func NewMsgEthereumTx(
 	nonce uint64, to *ethcmn.Address, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, payload []byte,
 ) MsgEthereumTx {
-
 	return newMsgEthereumTx(nonce, to, amount, gasLimit, gasPrice, payload)
 }
 
@@ -82,7 +134,6 @@ func NewMsgEthereumTx(
 func NewMsgEthereumTxContract(
 	nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, payload []byte,
 ) MsgEthereumTx {
-
 	return newMsgEthereumTx(nonce, nil, amount, gasLimit, gasPrice, payload)
 }
 
@@ -90,7 +141,6 @@ func newMsgEthereumTx(
 	nonce uint64, to *ethcmn.Address, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, payload []byte,
 ) MsgEthereumTx {
-
 	if len(payload) > 0 {
 		payload = ethcmn.CopyBytes(payload)
 	}
@@ -191,30 +241,34 @@ func (msg *MsgEthereumTx) EncodeRLP(w io.Writer) error {
 
 // DecodeRLP implements the rlp.Decoder interface.
 func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
-	_, size, _ := s.Kind()
-
-	err := s.Decode(&msg.Data)
-	if err == nil {
-		msg.size.Store(ethcmn.StorageSize(rlp.ListSize(size)))
+	_, size, err := s.Kind()
+	if err != nil {
+		// return error if stream is too large
+		return err
 	}
 
-	return err
+	if err := s.Decode(&msg.Data); err != nil {
+		return err
+	}
+
+	msg.size.Store(ethcmn.StorageSize(rlp.ListSize(size)))
+	return nil
 }
 
 // Sign calculates a secp256k1 ECDSA signature and signs the transaction. It
 // takes a private key and chainID to sign an Ethereum transaction according to
 // EIP155 standard. It mutates the transaction as it populates the V, R, S
 // fields of the Transaction's Signature.
-func (msg *MsgEthereumTx) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) {
+func (msg *MsgEthereumTx) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) error {
 	txHash := msg.RLPSignBytes(chainID)
 
 	sig, err := ethcrypto.Sign(txHash[:], priv)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if len(sig) != 65 {
-		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
+		return fmt.Errorf("wrong size for signature: got %d, want 65", len(sig))
 	}
 
 	r := new(big.Int).SetBytes(sig[:32])
@@ -234,6 +288,7 @@ func (msg *MsgEthereumTx) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) {
 	msg.Data.V = v
 	msg.Data.R = r
 	msg.Data.S = s
+	return nil
 }
 
 // VerifySig attempts to verify a Transaction's signature for a given chainID.
@@ -291,6 +346,12 @@ func (msg MsgEthereumTx) Cost() *big.Int {
 	return total
 }
 
+// RawSignatureValues returns the V, R, S signature values of the transaction.
+// The return values should not be modified by the caller.
+func (msg MsgEthereumTx) RawSignatureValues() (v, r, s *big.Int) {
+	return msg.Data.V, msg.Data.R, msg.Data.S
+}
+
 // From loads the ethereum sender address from the sigcache and returns an
 // sdk.AccAddress from its bytes
 func (msg *MsgEthereumTx) From() sdk.AccAddress {
@@ -319,67 +380,4 @@ func deriveChainID(v *big.Int) *big.Int {
 	}
 	v = new(big.Int).Sub(v, big.NewInt(35))
 	return v.Div(v, big.NewInt(2))
-}
-
-// ----------------------------------------------------------------------------
-// Auxiliary
-
-// TxDecoder returns an sdk.TxDecoder that can decode both auth.StdTx and
-// MsgEthereumTx transactions.
-func TxDecoder(cdc *codec.Codec) sdk.TxDecoder {
-	return func(txBytes []byte) (sdk.Tx, error) {
-		var tx sdk.Tx
-
-		if len(txBytes) == 0 {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx bytes are empty")
-		}
-
-		// sdk.Tx is an interface. The concrete message types
-		// are registered by MakeTxCodec
-		err := cdc.UnmarshalBinaryBare(txBytes, &tx)
-		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
-		}
-
-		return tx, nil
-	}
-}
-
-// recoverEthSig recovers a signature according to the Ethereum specification and
-// returns the sender or an error.
-//
-// Ref: Ethereum Yellow Paper (BYZANTIUM VERSION 69351d5) Appendix F
-// nolint: gocritic
-func recoverEthSig(R, S, Vb *big.Int, sigHash ethcmn.Hash) (ethcmn.Address, error) {
-	if Vb.BitLen() > 8 {
-		return ethcmn.Address{}, errors.New("invalid signature")
-	}
-
-	V := byte(Vb.Uint64() - 27)
-	if !ethcrypto.ValidateSignatureValues(V, R, S, true) {
-		return ethcmn.Address{}, errors.New("invalid signature")
-	}
-
-	// encode the signature in uncompressed format
-	r, s := R.Bytes(), S.Bytes()
-	sig := make([]byte, 65)
-
-	copy(sig[32-len(r):32], r)
-	copy(sig[64-len(s):64], s)
-	sig[64] = V
-
-	// recover the public key from the signature
-	pub, err := ethcrypto.Ecrecover(sigHash[:], sig)
-	if err != nil {
-		return ethcmn.Address{}, err
-	}
-
-	if len(pub) == 0 || pub[0] != 4 {
-		return ethcmn.Address{}, errors.New("invalid public key")
-	}
-
-	var addr ethcmn.Address
-	copy(addr[:], ethcrypto.Keccak256(pub[1:])[12:])
-
-	return addr, nil
 }

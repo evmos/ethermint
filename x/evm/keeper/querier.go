@@ -7,11 +7,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/cosmos/ethermint/utils"
 	"github.com/cosmos/ethermint/version"
 	"github.com/cosmos/ethermint/x/evm/types"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -61,8 +64,12 @@ func queryProtocolVersion(keeper Keeper) ([]byte, error) {
 func queryBalance(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 	addr := ethcmn.HexToAddress(path[1])
 	balance := keeper.GetBalance(ctx, addr)
+	balanceStr, err := utils.MarshalBigInt(balance)
+	if err != nil {
+		return nil, err
+	}
 
-	res := types.QueryResBalance{Balance: utils.MarshalBigInt(balance)}
+	res := types.QueryResBalance{Balance: balanceStr}
 	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
@@ -120,7 +127,10 @@ func queryNonce(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 
 func queryHashToHeight(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 	blockHash := ethcmn.FromHex(path[1])
-	blockNumber := keeper.GetBlockHashMapping(ctx, blockHash)
+	blockNumber, err := keeper.GetBlockHashMapping(ctx, blockHash)
+	if err != nil {
+		return []byte{}, err
+	}
 
 	res := types.QueryResBlockNumber{Number: blockNumber}
 	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
@@ -182,8 +192,13 @@ func queryAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error)
 	addr := ethcmn.HexToAddress(path[1])
 	so := keeper.GetOrNewStateObject(ctx, addr)
 
+	balance, err := utils.MarshalBigInt(so.Balance())
+	if err != nil {
+		return nil, err
+	}
+
 	res := types.QueryResAccount{
-		Balance:  utils.MarshalBigInt(so.Balance()),
+		Balance:  balance,
 		CodeHash: so.CodeHash(),
 		Nonce:    so.Nonce(),
 	}

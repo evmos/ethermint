@@ -8,18 +8,20 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ethereum/go-ethereum/common"
+	ethcmn "github.com/ethereum/go-ethereum/common"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-
 	"github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/crypto"
 	"github.com/cosmos/ethermint/x/evm"
 	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
 type EvmTestSuite struct {
@@ -46,7 +48,150 @@ func TestEvmTestSuite(t *testing.T) {
 	suite.Run(t, new(EvmTestSuite))
 }
 
-func (suite *EvmTestSuite) TestHandler_Logs() {
+func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
+	privkey, err := crypto.GenerateKey()
+	suite.Require().NoError(err)
+	sender := ethcmn.HexToAddress(privkey.PubKey().Address().String())
+
+	var (
+		tx      types.MsgEthereumTx
+		chainID *big.Int
+	)
+
+	testCases := []struct {
+		msg      string
+		malleate func()
+		expPass  bool
+	}{
+		{
+			"passed",
+			func() {
+				suite.app.EvmKeeper.SetBalance(suite.ctx, sender, big.NewInt(100))
+				tx = types.NewMsgEthereumTx(0, &sender, big.NewInt(100), 0, big.NewInt(10000), nil)
+
+				// parse context chain ID to big.Int
+				var ok bool
+				chainID, ok = new(big.Int).SetString(suite.ctx.ChainID(), 10)
+				suite.Require().True(ok)
+
+				// sign transaction
+				err = tx.Sign(chainID, privkey.ToECDSA())
+				suite.Require().NoError(err)
+			},
+			true,
+		},
+		{
+			"insufficient balance",
+			func() {
+				tx = types.NewMsgEthereumTxContract(0, big.NewInt(100), 0, big.NewInt(10000), nil)
+
+				// parse context chain ID to big.Int
+				var ok bool
+				chainID, ok = new(big.Int).SetString(suite.ctx.ChainID(), 10)
+				suite.Require().True(ok)
+
+				// sign transaction
+				err = tx.Sign(chainID, privkey.ToECDSA())
+				suite.Require().NoError(err)
+			},
+			false,
+		},
+		{
+			"tx encoding failed",
+			func() {
+				tx = types.NewMsgEthereumTxContract(0, big.NewInt(100), 0, big.NewInt(10000), nil)
+			},
+			false,
+		},
+		{
+			"invalid chain ID",
+			func() {
+				suite.ctx = suite.ctx.WithChainID("chainID")
+			},
+			false,
+		},
+		{
+			"VerifySig failed",
+			func() {
+				tx = types.NewMsgEthereumTxContract(0, big.NewInt(100), 0, big.NewInt(10000), nil)
+			},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run("", func() {
+			suite.SetupTest() // reset
+			tc.malleate()
+
+			res, err := suite.handler(suite.ctx, tx)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().NotNil(res)
+			} else {
+				suite.Require().Error(err)
+				suite.Require().Nil(res)
+			}
+		})
+	}
+}
+
+func (suite *EvmTestSuite) TestMsgEthermint() {
+	var (
+		tx   types.MsgEthermint
+		from = sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+		to   = sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	)
+
+	testCases := []struct {
+		msg      string
+		malleate func()
+		expPass  bool
+	}{
+		{
+			"passed",
+			func() {
+				tx = types.NewMsgEthermint(0, &to, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), from)
+				suite.app.EvmKeeper.SetBalance(suite.ctx, ethcmn.BytesToAddress(from.Bytes()), big.NewInt(100))
+			},
+			true,
+		},
+		{
+			"invalid state transition",
+			func() {
+				tx = types.NewMsgEthermint(0, &to, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), from)
+			},
+			false,
+		},
+		{
+			"invalid chain ID",
+			func() {
+				suite.ctx = suite.ctx.WithChainID("chainID")
+			},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run("", func() {
+			suite.SetupTest() // reset
+			tc.malleate()
+
+			res, err := suite.handler(suite.ctx, tx)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().NotNil(res)
+			} else {
+				suite.Require().Error(err)
+				suite.Require().Nil(res)
+			}
+		})
+	}
+}
+
+func (suite *EvmTestSuite) TestHandlerLogs() {
 	// Test contract:
 
 	// pragma solidity ^0.5.1;
@@ -74,7 +219,8 @@ func (suite *EvmTestSuite) TestHandler_Logs() {
 
 	bytecode := common.FromHex("0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029")
 	tx := types.NewMsgEthereumTx(1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode)
-	tx.Sign(big.NewInt(3), priv)
+	err = tx.Sign(big.NewInt(3), priv.ToECDSA())
+	suite.Require().NoError(err)
 
 	result, err := suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err, "failed to handle eth tx msg")
@@ -105,7 +251,8 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	// send contract deployment transaction with an event in the constructor
 	bytecode := common.FromHex("0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029")
 	tx := types.NewMsgEthereumTx(1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode)
-	tx.Sign(big.NewInt(3), priv)
+	err = tx.Sign(big.NewInt(3), priv.ToECDSA())
+	suite.Require().NoError(err)
 
 	// result, err := evm.HandleEthTxMsg(suite.ctx, suite.app.EvmKeeper, tx)
 	// suite.Require().NoError(err, "failed to handle eth tx msg")

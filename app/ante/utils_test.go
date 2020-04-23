@@ -88,17 +88,21 @@ func newTestSDKTx(
 	return auth.NewStdTx(msgs, fee, sigs, "")
 }
 
-func newTestEthTx(ctx sdk.Context, msg evmtypes.MsgEthereumTx, priv tmcrypto.PrivKey) sdk.Tx {
+func newTestEthTx(ctx sdk.Context, msg evmtypes.MsgEthereumTx, priv tmcrypto.PrivKey) (sdk.Tx, error) {
 	chainID, ok := new(big.Int).SetString(ctx.ChainID(), 10)
 	if !ok {
-		panic(fmt.Sprintf("invalid chainID: %s", ctx.ChainID()))
+		return nil, fmt.Errorf("invalid chainID: %s", ctx.ChainID())
 	}
 
 	privkey, ok := priv.(crypto.PrivKeySecp256k1)
 	if !ok {
-		panic(fmt.Sprintf("invalid private key type: %T", priv))
+		return nil, fmt.Errorf("invalid private key type: %T", priv)
 	}
 
-	msg.Sign(chainID, privkey.ToECDSA())
-	return msg
+	err := msg.Sign(chainID, privkey.ToECDSA())
+	if err != nil {
+		return nil, err
+	}
+
+	return msg, nil
 }
