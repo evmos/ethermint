@@ -42,7 +42,7 @@ type ReturnData struct {
 func (st StateTransition) TransitionCSDB(ctx sdk.Context) (*ReturnData, error) {
 	contractCreation := st.Recipient == nil
 
-	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true)
+	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true, false)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid intrinsic gas for transaction")
 	}
