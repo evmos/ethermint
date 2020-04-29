@@ -1,0 +1,27 @@
+language: go
+
+go:
+  - 1.14.x
+
+cache:
+  directories:
+    - "$HOME/.cache/go-build"
+    - "$GOPATH/pkg/mod"
+
+matrix:
+  include:
+    - name: Verify deps & Lint
+      script:
+        - rm -rf $HOME/.cache/golangci-lint || true
+        - make verify build
+        - make lint
+    - name: Unit Tests
+      script:
+        - make test-import
+        - make test-unit
+    - name: Race Tests
+      script:
+        - make test-race
+    - name: Integration Tests
+      script:
+        - make it-tests || true

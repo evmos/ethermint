@@ -35,16 +35,21 @@ func (suite *KeeperTestSuite) TestQuerier() {
 
 	for i, tc := range testCases {
 		suite.Run("", func() {
+			//nolint
 			tc := tc
 			suite.SetupTest() // reset
+			//nolint
 			tc.malleate()
 
 			bz, err := suite.querier(suite.ctx, tc.path, abci.RequestQuery{})
 
+			//nolint
 			if tc.expPass {
+				//nolint
 				suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 				suite.Require().NotZero(len(bz))
 			} else {
+				//nolint
 				suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
 			}
 		})

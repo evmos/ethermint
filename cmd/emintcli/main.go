@@ -31,8 +31,7 @@ import (
 )
 
 var (
-	cdc      = codec.MakeCodec(app.ModuleBasics)
-	appCodec = codec.NewAppCodec(cdc)
+	cdc = codec.MakeCodec(app.ModuleBasics)
 )
 
 func main() {

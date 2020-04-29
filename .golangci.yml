@@ -53,7 +53,9 @@ issues:
     - text: "ST1016:"
       linters:
         - stylecheck
-
+    - linters:
+        - golint
+      text: "don't use ALL_CAPS in Go names;"
 linters-settings:
   dogsled:
     max-blank-identifiers: 3

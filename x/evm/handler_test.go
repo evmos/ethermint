@@ -122,10 +122,12 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 	for _, tc := range testCases {
 		suite.Run("", func() {
 			suite.SetupTest() // reset
+			//nolint
 			tc.malleate()
 
 			res, err := suite.handler(suite.ctx, tx)
 
+			//nolint
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().NotNil(res)
@@ -176,10 +178,12 @@ func (suite *EvmTestSuite) TestMsgEthermint() {
 	for _, tc := range testCases {
 		suite.Run("", func() {
 			suite.SetupTest() // reset
+			//nolint
 			tc.malleate()
 
 			res, err := suite.handler(suite.ctx, tx)
 
+			//nolint
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().NotNil(res)

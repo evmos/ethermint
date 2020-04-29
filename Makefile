@@ -151,12 +151,12 @@ test-cli:
 	@echo "NO CLI TESTS"
 
 lint:
-	@echo "--> Running golangci-lint..."
-	@${GO_MOD} golangci-lint run ./... -c .golangci.yml --deadline=5m
+	@echo "--> Running ci lint..."
+	GOBIN=$(PWD)/bin go run scripts/ci.go lint
 
 test-import:
 	@${GO_MOD} go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
-	--blockchain blockchain --timeout=5m
+	--blockchain blockchain --timeout=10m
 	# TODO: remove tmp directory after test run to avoid subsequent errors
 
 test-rpc:

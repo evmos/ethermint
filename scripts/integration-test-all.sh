@@ -84,7 +84,7 @@ init_func() {
   "$PWD"/build/emintcli config trust-node true --home "$DATA_CLI_DIR$i"
   echo "prepare genesis: Allocate genesis accounts"
   "$PWD"/build/emintd add-genesis-account \
-  "$(emintcli keys show "$KEY$i" -a --home "$DATA_CLI_DIR$i" )" 1000000000000000000photon,1000000000000000000stake \
+  "$("$PWD"/build/emintcli keys show "$KEY$i" -a --home "$DATA_CLI_DIR$i" )" 1000000000000000000photon,1000000000000000000stake \
   --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"
   echo "prepare genesis: Sign genesis transaction"
   "$PWD"/build/emintd gentx --name $KEY"$i" --keyring-backend test --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"
