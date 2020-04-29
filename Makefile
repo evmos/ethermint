@@ -20,6 +20,9 @@ DOCKER_IMAGE = cosmos/ethermint
 ETHERMINT_DAEMON_BINARY = emintd
 ETHERMINT_CLI_BINARY = emintcli
 GO_MOD=GO111MODULE=on
+BINDIR ?= $(GOPATH)/bin
+SIMAPP = github.com/cosmos/ethermint/app
+RUNSIM = $(BINDIR)/runsim
 
 all: tools verify install
 
@@ -77,7 +80,17 @@ MISSPELL_CHECK := $(shell command -v misspell 2> /dev/null)
 ERRCHECK_CHECK := $(shell command -v errcheck 2> /dev/null)
 UNPARAM_CHECK := $(shell command -v unparam 2> /dev/null)
 
-tools:
+
+# Install the runsim binary with a temporary workaround of entering an outside
+# directory as the "go get" command ignores the -mod option and will polute the
+# go.{mod, sum} files.
+#
+# ref: https://github.com/golang/go/issues/30515
+$(RUNSIM):
+	@echo "Installing runsim..."
+	@(cd /tmp && go get github.com/cosmos/tools/cmd/runsim@v1.0.0)
+
+tools: $(RUNSIM)
 ifdef GOLINT_CHECK
 	@echo "Golint is already installed. Run 'make update-tools' to update."
 else
@@ -239,3 +252,42 @@ proto-update-deps:
 
 
 .PHONY: proto-all proto-gen proto-lint proto-check-breaking proto-update-deps
+
+#######################
+### Simulations     ###
+#######################
+
+test-sim-nondeterminism:
+	@echo "Running non-determinism test..."
+	@go test -mod=readonly $(SIMAPP) -run TestAppStateDeterminism -Enabled=true \
+		-NumBlocks=100 -BlockSize=200 -Commit=true -Period=0 -v -timeout 24h
+
+test-sim-custom-genesis-fast:
+	@echo "Running custom genesis simulation..."
+	@echo "By default, ${HOME}/.emintd/config/genesis.json will be used."
+	@go test -mod=readonly $(SIMAPP) -run TestFullAppSimulation -Genesis=${HOME}/.emintd/config/genesis.json \
+		-Enabled=true -NumBlocks=100 -BlockSize=200 -Commit=true -Seed=99 -Period=5 -v -timeout 24h
+
+test-sim-import-export: runsim
+	@echo "Running Ethermint import/export simulation. This may take several minutes..."
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppImportExport
+
+test-sim-after-import: runsim
+	@echo "Running Ethermint simulation-after-import. This may take several minutes..."
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppSimulationAfterImport
+
+test-sim-custom-genesis-multi-seed: runsim
+	@echo "Running multi-seed custom genesis simulation..."
+	@echo "By default, ${HOME}/.emintd/config/genesis.json will be used."
+	@$(BINDIR)/runsim -Jobs=4 -Genesis=${HOME}/.emintd/config/genesis.json 400 5 TestFullAppSimulation
+
+test-sim-multi-seed-long: runsim
+	@echo "Running multi-seed application simulation. This may take awhile!"
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 500 50 TestFullAppSimulation
+
+test-sim-multi-seed-short: runsim
+	@echo "Running multi-seed application simulation. This may take awhile!"
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 50 10 TestFullAppSimulation
+
+.PHONY: runsim test-sim-nondeterminism test-sim-custom-genesis-fast test-sim-fast sim-import-export \
+	test-sim-simulation-after-import test-sim-custom-genesis-multi-seed test-sim-multi-seed \
