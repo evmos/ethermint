@@ -53,6 +53,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * (`app/ante`) Moved `AnteHandler` implementation to `app/ante`
   * (keys) Marked `ExportEthKeyCommand` as **UNSAFE**
   * (`x/evm`) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
+* [\#272](https://github.com/ChainSafe/ethermint/pull/272) Add `Logger` for evm module.
 
 ### Features
 

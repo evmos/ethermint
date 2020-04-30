@@ -46,7 +46,6 @@ func handleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) (*s
 	ethHash := common.BytesToHash(txHash)
 
 	st := types.StateTransition{
-		Sender:       sender,
 		AccountNonce: msg.Data.AccountNonce,
 		Price:        msg.Data.Price,
 		GasLimit:     msg.Data.GasLimit,
@@ -55,7 +54,8 @@ func handleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) (*s
 		Payload:      msg.Data.Payload,
 		Csdb:         k.CommitStateDB.WithContext(ctx),
 		ChainID:      intChainID,
-		THash:        &ethHash,
+		TxHash:       &ethHash,
+		Sender:       sender,
 		Simulate:     ctx.IsCheckTx(),
 	}
 
@@ -65,19 +65,22 @@ func handleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) (*s
 	k.TxCount++
 
 	// TODO: move to keeper
-	returnData, err := st.TransitionCSDB(ctx)
+	executionResult, err := st.TransitionDb(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// update block bloom filter
-	k.Bloom.Or(k.Bloom, returnData.Bloom)
+	k.Bloom.Or(k.Bloom, executionResult.Bloom)
 
 	// update transaction logs in KVStore
-	err = k.SetTransactionLogs(ctx, returnData.Logs, txHash)
+	err = k.SetTransactionLogs(ctx, executionResult.Logs, txHash)
 	if err != nil {
 		return nil, err
 	}
+
+	// log successful execution
+	k.Logger(ctx).Info(executionResult.Result.Log)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
@@ -101,8 +104,8 @@ func handleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) (*s
 	}
 
 	// set the events to the result
-	returnData.Result.Events = ctx.EventManager().Events().ToABCIEvents()
-	return returnData.Result, nil
+	executionResult.Result.Events = ctx.EventManager().Events().ToABCIEvents()
+	return executionResult.Result, nil
 }
 
 // handleMsgEthermint handles an sdk.StdTx for an Ethereum state transition
@@ -125,7 +128,7 @@ func handleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) (*sdk
 		Payload:      msg.Payload,
 		Csdb:         k.CommitStateDB.WithContext(ctx),
 		ChainID:      intChainID,
-		THash:        &ethHash,
+		TxHash:       &ethHash,
 		Simulate:     ctx.IsCheckTx(),
 	}
 
@@ -138,10 +141,22 @@ func handleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) (*sdk
 	k.CommitStateDB.Prepare(ethHash, common.Hash{}, k.TxCount)
 	k.TxCount++
 
-	returnData, err := st.TransitionCSDB(ctx)
+	executionResult, err := st.TransitionDb(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// update block bloom filter
+	k.Bloom.Or(k.Bloom, executionResult.Bloom)
+
+	// update transaction logs in KVStore
+	err = k.SetTransactionLogs(ctx, executionResult.Logs, txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	// log successful execution
+	k.Logger(ctx).Info(executionResult.Result.Log)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
@@ -165,6 +180,6 @@ func handleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) (*sdk
 	}
 
 	// set the events to the result
-	returnData.Result.Events = ctx.EventManager().Events().ToABCIEvents()
-	return returnData.Result, nil
+	executionResult.Result.Events = ctx.EventManager().Events().ToABCIEvents()
+	return executionResult.Result, nil
 }

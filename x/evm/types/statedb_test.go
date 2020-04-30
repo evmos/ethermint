@@ -49,7 +49,8 @@ func (suite *StateDBTestSuite) TestBloomFilter() {
 	// Get log from db
 	logs, err := stateDB.GetLogs(tHash)
 	suite.Require().NoError(err)
-	suite.Require().Equal(len(logs), 1)
+	suite.Require().Len(logs, 1)
+	suite.Require().Equal(log, logs[0])
 
 	// get logs bloom from the log
 	bloomInt := ethtypes.LogsBloom(logs)

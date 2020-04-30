@@ -66,7 +66,7 @@ func EncodeResultData(data *ResultData) ([]byte, error) {
 	return ModuleCdc.MarshalBinaryLengthPrefixed(data)
 }
 
-// DecodeResultData decodes an amino-encoded byte slice into ReturnData
+// DecodeResultData decodes an amino-encoded byte slice into ResultData
 func DecodeResultData(in []byte) (ResultData, error) {
 	data := new(ResultData)
 	err := ModuleCdc.UnmarshalBinaryLengthPrefixed(in, data)
