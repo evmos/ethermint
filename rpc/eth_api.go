@@ -707,12 +707,13 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &logs)
 
 	txData := tx.TxResult.GetData()
+
 	data, err := types.DecodeResultData(txData)
 	if err != nil {
-		return nil, err
+		status = 0 // transaction failed
 	}
 
-	fields := map[string]interface{}{
+	receipt := map[string]interface{}{
 		"blockHash":         blockHash,
 		"blockNumber":       hexutil.Uint64(tx.Height),
 		"transactionHash":   hash,
@@ -728,10 +729,10 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	}
 
 	if data.Address != (common.Address{}) {
-		fields["contractAddress"] = data.Address
+		receipt["contractAddress"] = data.Address
 	}
 
-	return fields, nil
+	return receipt, nil
 }
 
 // PendingTransactions returns the transactions that are in the transaction pool
