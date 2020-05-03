@@ -110,11 +110,11 @@ func (st StateTransition) TransitionDb(ctx sdk.Context) (*ExecutionResult, error
 	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt())
 
 	var (
-		ret          []byte
-		leftOverGas  uint64
-		addr         common.Address
-		recipientLog string
-		senderRef    = vm.AccountRef(st.Sender)
+		ret             []byte
+		leftOverGas     uint64
+		contractAddress common.Address
+		recipientLog    string
+		senderRef       = vm.AccountRef(st.Sender)
 	)
 
 	// Get nonce of account outside of the EVM
@@ -125,13 +125,13 @@ func (st StateTransition) TransitionDb(ctx sdk.Context) (*ExecutionResult, error
 	// create contract or execute call
 	switch contractCreation {
 	case true:
-		ret, addr, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
-		recipientLog = fmt.Sprintf("contract address %s", addr)
+		ret, contractAddress, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
+		recipientLog = fmt.Sprintf("contract address %s", contractAddress.String())
 	default:
 		// Increment the nonce for the next transaction	(just for evm state transition)
 		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
 		ret, leftOverGas, err = evm.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
-		recipientLog = fmt.Sprintf("recipient address %s", st.Recipient)
+		recipientLog = fmt.Sprintf("recipient address %s", st.Recipient.String())
 	}
 
 	gasConsumed := gasLimit - leftOverGas
@@ -172,12 +172,15 @@ func (st StateTransition) TransitionDb(ctx sdk.Context) (*ExecutionResult, error
 	}
 
 	// Encode all necessary data into slice of bytes to return in sdk result
-	resultData := &ResultData{
-		Address: addr,
-		Bloom:   bloomFilter,
-		Logs:    logs,
-		Ret:     ret,
-		TxHash:  *st.TxHash,
+	resultData := ResultData{
+		Bloom:  bloomFilter,
+		Logs:   logs,
+		Ret:    ret,
+		TxHash: *st.TxHash,
+	}
+
+	if contractCreation {
+		resultData.ContractAddress = contractAddress
 	}
 
 	resBz, err := EncodeResultData(resultData)
@@ -186,7 +189,7 @@ func (st StateTransition) TransitionDb(ctx sdk.Context) (*ExecutionResult, error
 	}
 
 	resultLog := fmt.Sprintf(
-		"executed EVM state transition; sender address %s; %s", st.Sender, recipientLog,
+		"executed EVM state transition; sender address %s; %s", st.Sender.String(), recipientLog,
 	)
 
 	executionResult := &ExecutionResult{

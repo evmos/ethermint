@@ -13,6 +13,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.13
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 // indirect
 	github.com/gogo/protobuf v1.3.1
+	github.com/golangci/golangci-lint v1.23.8 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect

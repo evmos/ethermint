@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -53,27 +54,38 @@ func rlpHash(x interface{}) (hash ethcmn.Hash) {
 
 // ResultData represents the data returned in an sdk.Result
 type ResultData struct {
-	Address ethcmn.Address  `json:"address"`
-	Bloom   ethtypes.Bloom  `json:"bloom"`
-	Logs    []*ethtypes.Log `json:"logs"`
-	Ret     []byte          `json:"ret"`
-	TxHash  ethcmn.Hash     `json:"tx_hash"`
+	ContractAddress ethcmn.Address  `json:"contract_address"`
+	Bloom           ethtypes.Bloom  `json:"bloom"`
+	Logs            []*ethtypes.Log `json:"logs"`
+	Ret             []byte          `json:"ret"`
+	TxHash          ethcmn.Hash     `json:"tx_hash"`
+}
+
+// String implements fmt.Stringer interface.
+func (rd ResultData) String() string {
+	return strings.TrimSpace(fmt.Sprintf(`ResultData:
+	ContractAddress: %s
+	Bloom: %s
+	Logs: %v
+	Ret: %v
+	TxHash: %s
+`, rd.ContractAddress.String(), rd.Bloom.Big().String(), rd.Logs, rd.Ret, rd.TxHash.String()))
 }
 
 // EncodeResultData takes all of the necessary data from the EVM execution
 // and returns the data as a byte slice encoded with amino
-func EncodeResultData(data *ResultData) ([]byte, error) {
+func EncodeResultData(data ResultData) ([]byte, error) {
 	return ModuleCdc.MarshalBinaryLengthPrefixed(data)
 }
 
 // DecodeResultData decodes an amino-encoded byte slice into ResultData
 func DecodeResultData(in []byte) (ResultData, error) {
-	data := new(ResultData)
-	err := ModuleCdc.UnmarshalBinaryLengthPrefixed(in, data)
+	var data ResultData
+	err := ModuleCdc.UnmarshalBinaryLengthPrefixed(in, &data)
 	if err != nil {
 		return ResultData{}, err
 	}
-	return *data, nil
+	return data, nil
 }
 
 // EncodeLogs encodes an array of logs using amino
