@@ -55,7 +55,7 @@ func (suite *AnteTestSuite) TestValidEthTx() {
 	to := ethcmn.BytesToAddress(addr2.Bytes())
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 34910, gas, []byte("test"))
+	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 22000, gas, []byte("test"))
 
 	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
 	suite.Require().NoError(err)
