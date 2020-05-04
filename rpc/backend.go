@@ -28,7 +28,7 @@ type Backend interface {
 	PendingTransactions() ([]*Transaction, error)
 
 	// Used by log filter
-	GetTxLogs(txHash common.Hash) ([]*ethtypes.Log, error)
+	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	// TODO: Bloom methods
 }
 
@@ -154,12 +154,12 @@ func (e *EthermintBackend) getGasLimit() (int64, error) {
 	return gasLimit, nil
 }
 
-// GetTxLogs returns the logs given a transaction hash.
-func (e *EthermintBackend) GetTxLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
+// GetTransactionLogs returns the logs given a transaction hash.
+func (e *EthermintBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
 	// do we need to use the block height somewhere?
 	ctx := e.cliCtx
 
-	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryTxLogs, txHash.Hex()), nil)
+	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryTransactionLogs, txHash.Hex()), nil)
 	if err != nil {
 		return nil, err
 	}

@@ -36,8 +36,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryNonce(ctx, path, keeper)
 		case types.QueryHashToHeight:
 			return queryHashToHeight(ctx, path, keeper)
-		case types.QueryTxLogs:
-			return queryTxLogs(ctx, path, keeper)
+		case types.QueryTransactionLogs:
+			return queryTransactionLogs(ctx, path, keeper)
 		case types.QueryLogsBloom:
 			return queryBlockLogsBloom(ctx, path, keeper)
 		case types.QueryLogs:
@@ -161,8 +161,9 @@ func queryBlockLogsBloom(ctx sdk.Context, path []string, keeper Keeper) ([]byte,
 	return bz, nil
 }
 
-func queryTxLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
+func queryTransactionLogs(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 	txHash := ethcmn.HexToHash(path[1])
+
 	logs, err := keeper.GetLogs(ctx, txHash)
 	if err != nil {
 		return nil, err

@@ -12,7 +12,6 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -83,52 +82,35 @@ func createRequest(method string, params interface{}) Request {
 	}
 }
 
-func call(t *testing.T, method string, params interface{}) (*Response, error) {
+func call(t *testing.T, method string, params interface{}) *Response {
 	req, err := json.Marshal(createRequest(method, params))
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	var rpcRes *Response
 	time.Sleep(1 * time.Second)
 	/* #nosec */
 	res, err := http.Post(ETHERMINT_NODE_HOST, "application/json", bytes.NewBuffer(req))
-	if err != nil {
-		t.Log("could not http.Post, ", "err", err)
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	decoder := json.NewDecoder(res.Body)
 	rpcRes = new(Response)
 	err = decoder.Decode(&rpcRes)
-	if err != nil {
-		t.Log("could not decoder.Decode, ", "err", err)
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	err = res.Body.Close()
-	if err != nil {
-		t.Log("could not Body.Close, ", "err", err)
-		return nil, err
-	}
+	require.NoError(t, err)
+	require.Nil(t, rpcRes.Error)
 
-	if rpcRes.Error != nil {
-		t.Log("could not rpcRes.Error, ", "err", err)
-		return nil, errors.New(rpcRes.Error.Message)
-	}
-
-	return rpcRes, nil
-
+	return rpcRes
 }
 
 func TestEth_protocolVersion(t *testing.T) {
 	expectedRes := hexutil.Uint(version.ProtocolVersion)
 
-	rpcRes, err := call(t, "eth_protocolVersion", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_protocolVersion", []string{})
 
 	var res hexutil.Uint
-	err = res.UnmarshalJSON(rpcRes.Result)
+	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	t.Logf("Got protocol version: %s\n", res.String())
@@ -136,22 +118,20 @@ func TestEth_protocolVersion(t *testing.T) {
 }
 
 func TestEth_blockNumber(t *testing.T) {
-	rpcRes, err := call(t, "eth_blockNumber", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
-	err = res.UnmarshalJSON(rpcRes.Result)
+	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	t.Logf("Got block number: %s\n", res.String())
 }
 
 func TestEth_GetBalance(t *testing.T) {
-	rpcRes, err := call(t, "eth_getBalance", []string{addrA, zeroString})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_getBalance", []string{addrA, zeroString})
 
 	var res hexutil.Big
-	err = res.UnmarshalJSON(rpcRes.Result)
+	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	t.Logf("Got balance %s for %s\n", res.String(), addrA)
@@ -164,11 +144,10 @@ func TestEth_GetBalance(t *testing.T) {
 
 func TestEth_GetStorageAt(t *testing.T) {
 	expectedRes := hexutil.Bytes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	rpcRes, err := call(t, "eth_getStorageAt", []string{addrA, string(addrAStoreKey), zeroString})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_getStorageAt", []string{addrA, string(addrAStoreKey), zeroString})
 
 	var storage hexutil.Bytes
-	err = storage.UnmarshalJSON(rpcRes.Result)
+	err := storage.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	t.Logf("Got value [%X] for %s with key %X\n", storage, addrA, addrAStoreKey)
@@ -178,11 +157,10 @@ func TestEth_GetStorageAt(t *testing.T) {
 
 func TestEth_GetCode(t *testing.T) {
 	expectedRes := hexutil.Bytes{}
-	rpcRes, err := call(t, "eth_getCode", []string{addrA, zeroString})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_getCode", []string{addrA, zeroString})
 
 	var code hexutil.Bytes
-	err = code.UnmarshalJSON(rpcRes.Result)
+	err := code.UnmarshalJSON(rpcRes.Result)
 
 	require.NoError(t, err)
 
@@ -191,11 +169,10 @@ func TestEth_GetCode(t *testing.T) {
 }
 
 func getAddress(t *testing.T) []byte {
-	rpcRes, err := call(t, "eth_accounts", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_accounts", []string{})
 
 	var res []hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &res)
+	err := json.Unmarshal(rpcRes.Result, &res)
 	require.NoError(t, err)
 
 	return res[0]
@@ -209,11 +186,10 @@ func TestEth_SendTransaction(t *testing.T) {
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
 
-	rpcRes, err := call(t, "eth_sendTransaction", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_sendTransaction", param)
 
 	var hash hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &hash)
+	err := json.Unmarshal(rpcRes.Result, &hash)
 	require.NoError(t, err)
 }
 
@@ -221,20 +197,18 @@ func TestEth_NewFilter(t *testing.T) {
 	param := make([]map[string][]string, 1)
 	param[0] = make(map[string][]string)
 	param[0]["topics"] = []string{"0x0000000000000000000000000000000000000000000000000000000012341234"}
-	rpcRes, err := call(t, "eth_newFilter", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_newFilter", param)
 
 	var ID hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &ID)
+	err := json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 }
 
 func TestEth_NewBlockFilter(t *testing.T) {
-	rpcRes, err := call(t, "eth_newBlockFilter", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_newBlockFilter", []string{})
 
 	var ID hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &ID)
+	err := json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 }
 
@@ -242,15 +216,13 @@ func TestEth_GetFilterChanges_NoLogs(t *testing.T) {
 	param := make([]map[string][]string, 1)
 	param[0] = make(map[string][]string)
 	param[0]["topics"] = []string{}
-	rpcRes, err := call(t, "eth_newFilter", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_newFilter", param)
 
 	var ID hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &ID)
+	err := json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 
-	changesRes, err := call(t, "eth_getFilterChanges", []string{ID.String()})
-	require.NoError(t, err)
+	changesRes := call(t, "eth_getFilterChanges", []string{ID.String()})
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(changesRes.Result, &logs)
@@ -258,8 +230,23 @@ func TestEth_GetFilterChanges_NoLogs(t *testing.T) {
 }
 
 func TestEth_GetFilterChanges_WrongID(t *testing.T) {
-	_, err := call(t, "eth_getFilterChanges", []string{"0x1122334400000077"})
-	require.NotNil(t, err)
+	req, err := json.Marshal(createRequest("eth_getFilterChanges", []string{"0x1122334400000077"}))
+	require.NoError(t, err)
+
+	var rpcRes *Response
+	time.Sleep(1 * time.Second)
+	/* #nosec */
+	res, err := http.Post(ETHERMINT_NODE_HOST, "application/json", bytes.NewBuffer(req))
+	require.NoError(t, err)
+
+	decoder := json.NewDecoder(res.Body)
+	rpcRes = new(Response)
+	err = decoder.Decode(&rpcRes)
+	require.NoError(t, err)
+
+	err = res.Body.Close()
+	require.NoError(t, err)
+	require.NotNil(t, "invalid filter ID", rpcRes.Error.Message)
 }
 
 // sendTestTransaction sends a dummy transaction
@@ -269,10 +256,10 @@ func sendTestTransaction(t *testing.T) hexutil.Bytes {
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
-	rpcRes, err := call(t, "eth_sendTransaction", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_sendTransaction", param)
+
 	var hash hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &hash)
+	err := json.Unmarshal(rpcRes.Result, &hash)
 	require.NoError(t, err)
 	return hash
 }
@@ -283,77 +270,96 @@ func TestEth_GetTransactionReceipt(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	param := []string{hash.String()}
-	rpcRes, err := call(t, "eth_getTransactionReceipt", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_getTransactionReceipt", param)
 
 	receipt := make(map[string]interface{})
-	err = json.Unmarshal(rpcRes.Result, &receipt)
+	err := json.Unmarshal(rpcRes.Result, &receipt)
 	require.NoError(t, err)
 	require.Equal(t, "0x1", receipt["status"].(string))
 }
 
 // deployTestContract deploys a contract that emits an event in the constructor
-func deployTestContract(t *testing.T) hexutil.Bytes {
+func deployTestContract(t *testing.T) (hexutil.Bytes, map[string]interface{}) {
 	from := getAddress(t)
 
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
-	param[0]["data"] = "0x60806040526000805534801561001457600080fd5b5060d2806100236000396000f3fe6080604052348015600f57600080fd5b5060043610603c5760003560e01c80634f2be91f1460415780636deebae31460495780638ada066e146051575b600080fd5b6047606d565b005b604f6080565b005b60576094565b6040518082815260200191505060405180910390f35b6000808154809291906001019190505550565b600080815480929190600190039190505550565b6000805490509056fea265627a7a723158207b1aaa18c3100d8aa67f26a53f3cb83d2c69342d17327bd11e1b17c248957bfa64736f6c634300050c0032"
+	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
 	param[0]["gas"] = "0x200000"
 
-	rpcRes, err := call(t, "eth_sendTransaction", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_sendTransaction", param)
 
 	var hash hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &hash)
+	err := json.Unmarshal(rpcRes.Result, &hash)
 	require.NoError(t, err)
 
-	return hash
+	receipt := waitForReceipt(t, hash)
+	require.NotNil(t, receipt, "transaction failed")
+	require.Equal(t, "0x1", receipt["status"].(string))
+
+	return hash, receipt
 }
 
 func TestEth_GetTransactionReceipt_ContractDeployment(t *testing.T) {
-	hash := deployTestContract(t)
+	hash, _ := deployTestContract(t)
 
 	time.Sleep(time.Second * 5)
 
 	param := []string{hash.String()}
-	rpcRes, err := call(t, "eth_getTransactionReceipt", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_getTransactionReceipt", param)
 
 	receipt := make(map[string]interface{})
-	err = json.Unmarshal(rpcRes.Result, &receipt)
+	err := json.Unmarshal(rpcRes.Result, &receipt)
 	require.NoError(t, err)
 	require.Equal(t, "0x1", receipt["status"].(string))
 
 	require.NotEqual(t, ethcmn.Address{}.String(), receipt["contractAddress"].(string))
-	// TODO: assert logs exist
+	require.NotNil(t, receipt["logs"])
+
 }
 
-func TestEth_GetTxLogs(t *testing.T) {
-	hash := deployTestContract(t)
-
-	time.Sleep(time.Second * 5)
-
+func getTransactionReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
 	param := []string{hash.String()}
-	rpcRes, err := call(t, "eth_getTxLogs", param)
+	rpcRes := call(t, "eth_getTransactionReceipt", param)
+
+	receipt := make(map[string]interface{})
+	err := json.Unmarshal(rpcRes.Result, &receipt)
 	require.NoError(t, err)
 
+	return receipt
+}
+
+func waitForReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
+	for i := 0; i < 12; i++ {
+		receipt := getTransactionReceipt(t, hash)
+		if receipt != nil {
+			return receipt
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return nil
+}
+func TestEth_GetTransactionLogs(t *testing.T) {
+	hash, _ := deployTestContract(t)
+
+	param := []string{hash.String()}
+	rpcRes := call(t, "eth_getTransactionLogs", param)
+
 	logs := new([]*ethtypes.Log)
-	err = json.Unmarshal(rpcRes.Result, logs)
+	err := json.Unmarshal(rpcRes.Result, logs)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(*logs))
-	t.Log((*logs)[0])
-	time.Sleep(time.Second)
 }
 
 func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
-	rpcRes, err := call(t, "eth_blockNumber", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
-	err = res.UnmarshalJSON(rpcRes.Result)
+	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	param := make([]map[string]interface{}, 1)
@@ -362,39 +368,31 @@ func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
 	param[0]["fromBlock"] = res.String()
 	param[0]["toBlock"] = zeroString // latest
 
-	// deploy contract, emitting some event
-	deployTestContract(t)
-
-	rpcRes, err = call(t, "eth_newFilter", param)
-	require.NoError(t, err)
-
+	// instantiate new filter
+	rpcRes = call(t, "eth_newFilter", param)
 	var ID hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Second)
+	// deploy contract, emitting some event
+	deployTestContract(t)
 
 	// get filter changes
-	changesRes, err := call(t, "eth_getFilterChanges", []string{ID.String()})
-	require.NoError(t, err)
+	changesRes := call(t, "eth_getFilterChanges", []string{ID.String()})
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(changesRes.Result, &logs)
 	require.NoError(t, err)
-
 	require.Equal(t, 1, len(logs))
-	time.Sleep(time.Second)
-
-	//t.Log(logs[0])
-	// TODO: why is the tx hash in the log not the same as the tx hash of the transaction?
-	//require.Equal(t, logs[0].TxHash, common.BytesToHash(hash))
 }
 
 func TestEth_GetFilterChanges_Addresses(t *testing.T) {
+	t.Skip()
 	// TODO: need transaction receipts to determine contract deployment address
 }
 
 func TestEth_GetFilterChanges_BlockHash(t *testing.T) {
+	t.Skip()
 	// TODO: need transaction receipts to determine tx block
 }
 
@@ -428,13 +426,17 @@ func deployTestContractWithFunction(t *testing.T) hexutil.Bytes {
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = bytecode
+	param[0]["gas"] = "0x200000"
 
-	rpcRes, err := call(t, "eth_sendTransaction", param)
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_sendTransaction", param)
 
 	var hash hexutil.Bytes
-	err = json.Unmarshal(rpcRes.Result, &hash)
+	err := json.Unmarshal(rpcRes.Result, &hash)
 	require.NoError(t, err)
+
+	receipt := waitForReceipt(t, hash)
+	require.NotNil(t, receipt, "transaction failed")
+	require.Equal(t, "0x1", receipt["status"].(string))
 
 	return hash
 }
@@ -443,11 +445,10 @@ func deployTestContractWithFunction(t *testing.T) hexutil.Bytes {
 func TestEth_GetFilterChanges_Topics_AB(t *testing.T) {
 	time.Sleep(time.Second)
 
-	rpcRes, err := call(t, "eth_blockNumber", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
-	err = res.UnmarshalJSON(rpcRes.Result)
+	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	param := make([]map[string]interface{}, 1)
@@ -456,35 +457,29 @@ func TestEth_GetFilterChanges_Topics_AB(t *testing.T) {
 	param[0]["fromBlock"] = res.String()
 	param[0]["toBlock"] = zeroString // latest
 
-	deployTestContractWithFunction(t)
-
-	rpcRes, err = call(t, "eth_newFilter", param)
-	require.NoError(t, err)
-
+	// instantiate new filter
+	rpcRes = call(t, "eth_newFilter", param)
 	var ID hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Second * 2)
+	deployTestContractWithFunction(t)
 
 	// get filter changes
-	changesRes, err := call(t, "eth_getFilterChanges", []string{ID.String()})
-	require.NoError(t, err)
+	changesRes := call(t, "eth_getFilterChanges", []string{ID.String()})
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(changesRes.Result, &logs)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(logs))
-	time.Sleep(time.Second * 2)
 }
 
 func TestEth_GetFilterChanges_Topics_XB(t *testing.T) {
-	rpcRes, err := call(t, "eth_blockNumber", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
-	err = res.UnmarshalJSON(rpcRes.Result)
+	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	param := make([]map[string]interface{}, 1)
@@ -493,30 +488,26 @@ func TestEth_GetFilterChanges_Topics_XB(t *testing.T) {
 	param[0]["fromBlock"] = res.String()
 	param[0]["toBlock"] = "0x0" // latest
 
-	deployTestContractWithFunction(t)
-
-	rpcRes, err = call(t, "eth_newFilter", param)
-	require.NoError(t, err)
-
+	// instantiate new filter
+	rpcRes = call(t, "eth_newFilter", param)
 	var ID hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Second * 2)
+	deployTestContractWithFunction(t)
 
 	// get filter changes
-	changesRes, err := call(t, "eth_getFilterChanges", []string{ID.String()})
-	require.NoError(t, err)
+	changesRes := call(t, "eth_getFilterChanges", []string{ID.String()})
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(changesRes.Result, &logs)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(logs))
-	time.Sleep(time.Second)
 }
 
 func TestEth_GetFilterChanges_Topics_XXC(t *testing.T) {
+	t.Skip()
 	// TODO: call test function, need tx receipts to determine contract address
 }
 
@@ -524,16 +515,14 @@ func TestEth_GetLogs_NoLogs(t *testing.T) {
 	param := make([]map[string][]string, 1)
 	param[0] = make(map[string][]string)
 	param[0]["topics"] = []string{}
-	_, err := call(t, "eth_getLogs", param)
-	require.NoError(t, err)
+	call(t, "eth_getLogs", param)
 }
 
 func TestEth_GetLogs_Topics_AB(t *testing.T) {
-	rpcRes, err := call(t, "eth_blockNumber", []string{})
-	require.NoError(t, err)
+	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
-	err = res.UnmarshalJSON(rpcRes.Result)
+	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 
 	param := make([]map[string]interface{}, 1)
@@ -542,10 +531,10 @@ func TestEth_GetLogs_Topics_AB(t *testing.T) {
 	param[0]["fromBlock"] = res.String()
 	param[0]["toBlock"] = zeroString // latest
 
-	deployTestContractWithFunction(t)
+	hash := deployTestContractWithFunction(t)
+	waitForReceipt(t, hash)
 
-	rpcRes, err = call(t, "eth_getLogs", param)
-	require.NoError(t, err)
+	rpcRes = call(t, "eth_getLogs", param)
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(rpcRes.Result, &logs)
@@ -554,12 +543,11 @@ func TestEth_GetLogs_Topics_AB(t *testing.T) {
 	require.Equal(t, 1, len(logs))
 }
 
-func TestEth_NewPendingTransactionFilter(t *testing.T) {
-	rpcRes, err := call(t, "eth_newPendingTransactionFilter", []string{})
-	require.NoError(t, err)
+func TestEth_PendingTransactionFilter(t *testing.T) {
+	rpcRes := call(t, "eth_newPendingTransactionFilter", []string{})
 
 	var code hexutil.Bytes
-	err = code.UnmarshalJSON(rpcRes.Result)
+	err := code.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 	require.NotNil(t, code)
 
@@ -570,8 +558,7 @@ func TestEth_NewPendingTransactionFilter(t *testing.T) {
 	time.Sleep(10 * time.Second)
 
 	// get filter changes
-	changesRes, err := call(t, "eth_getFilterChanges", []string{code.String()})
-	require.NoError(t, err)
+	changesRes := call(t, "eth_getFilterChanges", []string{code.String()})
 	require.NotNil(t, changesRes)
 
 	var txs []*hexutil.Bytes

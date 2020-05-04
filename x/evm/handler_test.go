@@ -280,7 +280,7 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	suite.Require().Equal(logs, resultData.Logs)
 
 	// query tx logs
-	path := []string{"txLogs", fmt.Sprintf("0x%x", hash)}
+	path := []string{"transactionLogs", fmt.Sprintf("0x%x", hash)}
 	res, err := suite.querier(suite.ctx, path, abci.RequestQuery{})
 	suite.Require().NoError(err, "failed to query txLogs")
 

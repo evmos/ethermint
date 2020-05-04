@@ -19,7 +19,7 @@ const (
 	QueryCode            = types.QueryCode
 	QueryNonce           = types.QueryNonce
 	QueryHashToHeight    = types.QueryHashToHeight
-	QueryTxLogs          = types.QueryTxLogs
+	QueryTransactionLogs = types.QueryTransactionLogs
 	QueryLogsBloom       = types.QueryLogsBloom
 	QueryLogs            = types.QueryLogs
 	QueryAccount         = types.QueryAccount

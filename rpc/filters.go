@@ -273,7 +273,7 @@ func (f *Filter) checkMatches(block map[string]interface{}) ([]*ethtypes.Log, er
 	unfiltered := []*ethtypes.Log{}
 
 	for _, tx := range transactions {
-		logs, err := f.backend.GetTxLogs(common.BytesToHash(tx[:]))
+		logs, err := f.backend.GetTransactionLogs(common.BytesToHash(tx[:]))
 		if err != nil {
 			return nil, err
 		}

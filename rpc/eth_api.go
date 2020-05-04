@@ -241,9 +241,9 @@ func (e *PublicEthAPI) GetCode(address common.Address, blockNumber BlockNumber) 
 	return out.Code, nil
 }
 
-// GetTxLogs returns the logs given a transaction hash.
-func (e *PublicEthAPI) GetTxLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
-	return e.backend.GetTxLogs(txHash)
+// GetTransactionLogs returns the logs given a transaction hash.
+func (e *PublicEthAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
+	return e.backend.GetTransactionLogs(txHash)
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
