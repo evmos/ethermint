@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 
@@ -67,7 +68,6 @@ func (c *Codec) UnmarshalAccountJSON(bz []byte) (authexported.Account, error) {
 	return acc.GetAccount(), nil
 }
 
-// ----------------------------------------------------------------------------
 // MakeCodec registers the necessary types and interfaces for an sdk.App. This
 // codec is provided to all the modules the application depends on.
 //
@@ -83,6 +83,10 @@ func MakeCodec(bm module.BasicManager) *codec.Codec {
 	codec.RegisterCrypto(cdc)
 	eminttypes.RegisterCodec(cdc)
 	keyring.RegisterCodec(cdc) // temporary. Used to register keyring.Info
+
+	// since auth client doesn't use the ethermint account type, we need to set
+	// our codec instead.
+	authclient.Codec = NewAppCodec(cdc)
 
 	return cdc
 }
