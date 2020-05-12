@@ -160,7 +160,7 @@ test-import:
 	# TODO: remove tmp directory after test run to avoid subsequent errors
 
 test-rpc:
-	@${GO_MOD} go test -v --vet=off ./rpc/tester
+	@${GO_MOD} go test -v --vet=off ./tests/rpc_test
 
 it-tests:
 	./scripts/integration-test-all.sh -q 1 -z 1 -s 10

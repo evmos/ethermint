@@ -21,6 +21,8 @@ import (
 	"github.com/cosmos/ethermint/x/evm"
 	"github.com/cosmos/ethermint/x/evm/types"
 
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/merkle"
 	"github.com/tendermint/tendermint/rpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -36,6 +38,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
@@ -748,6 +751,9 @@ func (e *PublicEthAPI) GetUncleByBlockNumberAndIndex(number hexutil.Uint, idx he
 	return nil
 }
 
+// Copied the Account and StorageResult types since they are registered under an
+// internal pkg on geth.
+
 // AccountResult struct for account proof
 type AccountResult struct {
 	Address      common.Address  `json:"address"`
@@ -768,20 +774,20 @@ type StorageResult struct {
 
 // GetProof returns an account object with proof and any storage proofs
 func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, block BlockNumber) (*AccountResult, error) {
-	opts := client.ABCIQueryOptions{Height: int64(block), Prove: true}
+	e.cliCtx = e.cliCtx.WithHeight(int64(block))
 	path := fmt.Sprintf("custom/%s/%s/%s", types.ModuleName, evm.QueryAccount, address.Hex())
-	pRes, err := e.cliCtx.Client.ABCIQueryWithOptions(path, nil, opts)
+
+	// query eth account at block height
+	resBz, _, err := e.cliCtx.Query(path)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: convert TM merkle proof to []string if needed in future
-	// proof := pRes.Response.GetProof()
-
 	var account types.QueryResAccount
-	e.cliCtx.Codec.MustUnmarshalJSON(pRes.Response.GetValue(), &account)
+	e.cliCtx.Codec.MustUnmarshalJSON(resBz, &account)
 
 	storageProofs := make([]StorageResult, len(storageKeys))
+	opts := client.ABCIQueryOptions{Height: int64(block), Prove: true}
 	for i, k := range storageKeys {
 		// Get value for key
 		vPath := fmt.Sprintf("custom/%s/%s/%s/%s", types.ModuleName, evm.QueryStorage, address, k)
@@ -789,19 +795,46 @@ func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, bl
 		if err != nil {
 			return nil, err
 		}
+
 		var value types.QueryResStorage
 		e.cliCtx.Codec.MustUnmarshalJSON(vRes.Response.GetValue(), &value)
+
+		// check for proof
+		proof := vRes.Response.GetProof()
+		proofStr := new(merkle.Proof).String()
+		if proof != nil {
+			proofStr = proof.String()
+		}
 
 		storageProofs[i] = StorageResult{
 			Key:   k,
 			Value: (*hexutil.Big)(common.BytesToHash(value.Value).Big()),
-			Proof: []string{""},
+			Proof: []string{proofStr},
 		}
+	}
+
+	req := abci.RequestQuery{
+		Path:   fmt.Sprintf("store/%s/key", auth.StoreKey),
+		Data:   auth.AddressStoreKey(sdk.AccAddress(address.Bytes())),
+		Height: int64(block),
+		Prove:  true,
+	}
+
+	res, err := e.cliCtx.QueryABCI(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// check for proof
+	accountProof := res.GetProof()
+	accProofStr := new(merkle.Proof).String()
+	if accountProof != nil {
+		accProofStr = accountProof.String()
 	}
 
 	return &AccountResult{
 		Address:      address,
-		AccountProof: []string{""}, // This shouldn't be necessary (different proof formats)
+		AccountProof: []string{accProofStr},
 		Balance:      (*hexutil.Big)(utils.MustUnmarshalBigInt(account.Balance)),
 		CodeHash:     common.BytesToHash(account.CodeHash),
 		Nonce:        hexutil.Uint64(account.Nonce),

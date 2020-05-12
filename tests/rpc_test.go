@@ -19,11 +19,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cosmos/ethermint/version"
+	"github.com/stretchr/testify/require"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/require"
+
+	"github.com/cosmos/ethermint/rpc"
+	"github.com/cosmos/ethermint/version"
 )
 
 const (
@@ -153,6 +156,23 @@ func TestEth_GetStorageAt(t *testing.T) {
 	t.Logf("Got value [%X] for %s with key %X\n", storage, addrA, addrAStoreKey)
 
 	require.True(t, bytes.Equal(storage, expectedRes), "expected: %d (%d bytes) got: %d (%d bytes)", expectedRes, len(expectedRes), storage, len(storage))
+}
+
+func TestEth_GetProof(t *testing.T) {
+	params := make([]interface{}, 3)
+	params[0] = addrA
+	params[1] = []string{string(addrAStoreKey)}
+	params[2] = "latest"
+	rpcRes := call(t, "eth_getProof", params)
+	require.NotNil(t, rpcRes)
+
+	var accRes rpc.AccountResult
+	err := json.Unmarshal(rpcRes.Result, &accRes)
+	require.NoError(t, err)
+	require.NotEmpty(t, accRes.AccountProof)
+	require.NotEmpty(t, accRes.StorageProof)
+
+	t.Logf("Got AccountResult %s", rpcRes.Result)
 }
 
 func TestEth_GetCode(t *testing.T) {
