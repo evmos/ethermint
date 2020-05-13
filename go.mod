@@ -16,9 +16,6 @@ require (
 	github.com/golangci/golangci-lint v1.23.8 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/huin/goupnp v1.0.0 // indirect
-	github.com/mattn/go-colorable v0.1.4 // indirect
-	github.com/onsi/ginkgo v1.11.0 // indirect
-	github.com/onsi/gomega v1.8.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/tsdb v0.9.1 // indirect
 	github.com/regen-network/cosmos-proto v0.1.1-0.20200213154359-02baa11ea7c2
@@ -32,5 +29,5 @@ require (
 	github.com/tendermint/tendermint v0.33.3
 	github.com/tendermint/tm-db v0.5.1
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.3.0
 )
