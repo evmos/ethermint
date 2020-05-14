@@ -276,6 +276,7 @@ func sendTestTransaction(t *testing.T) hexutil.Bytes {
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
+	param[0]["value"] = "0x1"
 	rpcRes := call(t, "eth_sendTransaction", param)
 
 	var hash hexutil.Bytes
@@ -296,6 +297,7 @@ func TestEth_GetTransactionReceipt(t *testing.T) {
 	err := json.Unmarshal(rpcRes.Result, &receipt)
 	require.NoError(t, err)
 	require.Equal(t, "0x1", receipt["status"].(string))
+	require.Equal(t, []interface{}{}, receipt["logs"].([]interface{}))
 }
 
 // deployTestContract deploys a contract that emits an event in the constructor

@@ -708,6 +708,10 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		status = 0 // transaction failed
 	}
 
+	if data.Logs == nil {
+		data.Logs = []*ethtypes.Log{}
+	}
+
 	receipt := map[string]interface{}{
 		// Consensus fields: These fields are defined by the Yellow Paper
 		"status":            status,
