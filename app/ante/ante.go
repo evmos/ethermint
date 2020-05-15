@@ -43,7 +43,9 @@ func NewAnteHandler(ak auth.AccountKeeper, bk bank.Keeper, sk types.SupplyKeeper
 				authante.NewDeductFeeDecorator(ak, sk),
 				authante.NewSigGasConsumeDecorator(ak, sigGasConsumer),
 				authante.NewSigVerificationDecorator(ak),
-				authante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
+				// TODO: remove once SDK is updated to v0.39.
+				// This fixes an issue that account sequence wasn't being updated on CheckTx.
+				NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
 			)
 
 		case evmtypes.MsgEthereumTx:
@@ -79,4 +81,47 @@ func sigGasConsumer(
 	default:
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidPubKey, "unrecognized public key type: %T", pubkey)
 	}
+}
+
+// IncrementSequenceDecorator handles incrementing sequences of all signers.
+// Use the IncrementSequenceDecorator decorator to prevent replay attacks. Note,
+// there is no need to execute IncrementSequenceDecorator on RecheckTX since
+// CheckTx would already bump the sequence number.
+//
+// NOTE: Since CheckTx and DeliverTx state are managed separately, subsequent and
+// sequential txs orginating from the same account cannot be handled correctly in
+// a reliable way unless sequence numbers are managed and tracked manually by a
+// client. It is recommended to instead use multiple messages in a tx.
+type IncrementSequenceDecorator struct {
+	ak auth.AccountKeeper
+}
+
+func NewIncrementSequenceDecorator(ak auth.AccountKeeper) IncrementSequenceDecorator {
+	return IncrementSequenceDecorator{
+		ak: ak,
+	}
+}
+
+func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	// no need to increment sequence on RecheckTx
+	if ctx.IsReCheckTx() && !simulate {
+		return next(ctx, tx, simulate)
+	}
+
+	sigTx, ok := tx.(authante.SigVerifiableTx)
+	if !ok {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "invalid transaction type")
+	}
+
+	// increment sequence of all signers
+	for _, addr := range sigTx.GetSigners() {
+		acc := isd.ak.GetAccount(ctx, addr)
+		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
+			panic(err)
+		}
+
+		isd.ak.SetAccount(ctx, acc)
+	}
+
+	return next(ctx, tx, simulate)
 }

@@ -76,8 +76,8 @@ func (msg MsgEthermint) GetSignBytes() []byte {
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgEthermint) ValidateBasic() error {
-	if msg.Price.Sign() != 1 {
-		return sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Price)
+	if msg.Price.Sign() == -1 {
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "price cannot be negative %s", msg.Price)
 	}
 
 	// Amount can be 0
@@ -175,8 +175,8 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 // ValidateBasic implements the sdk.Msg interface. It performs basic validation
 // checks of a Transaction. If returns an error if validation fails.
 func (msg MsgEthereumTx) ValidateBasic() error {
-	if msg.Data.Price.Sign() != 1 {
-		return sdkerrors.Wrapf(types.ErrInvalidValue, "price must be positive %s", msg.Data.Price)
+	if msg.Data.Price.Sign() == -1 {
+		return sdkerrors.Wrapf(types.ErrInvalidValue, "price cannot be negative %s", msg.Data.Price)
 	}
 
 	// Amount can be 0

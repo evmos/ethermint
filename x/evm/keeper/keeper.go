@@ -61,7 +61,7 @@ func (k Keeper) GetBlockHashMapping(ctx sdk.Context, hash []byte) (int64, error)
 	store := ctx.KVStore(k.blockKey)
 	bz := store.Get(hash)
 	if len(bz) == 0 {
-		return 0, fmt.Errorf("block with hash '%s' not found", ethcmn.BytesToHash(hash))
+		return 0, fmt.Errorf("block with hash '%s' not found", ethcmn.BytesToHash(hash).Hex())
 	}
 
 	height := binary.BigEndian.Uint64(bz)
