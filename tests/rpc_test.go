@@ -637,3 +637,21 @@ func TestBlockBloom_Hash(t *testing.T) {
 	lb := hexToBigInt(t, block["logsBloom"].(string))
 	require.NotEqual(t, big.NewInt(0), lb)
 }
+
+func getNonce(t *testing.T) hexutil.Uint64 {
+	from := getAddress(t)
+	param := []interface{}{hexutil.Bytes(from), "latest"}
+	rpcRes := call(t, "eth_getTransactionCount", param)
+
+	var nonce hexutil.Uint64
+	err := json.Unmarshal(rpcRes.Result, &nonce)
+	require.NoError(t, err)
+	return nonce
+}
+
+func TestEth_GetTransactionCount(t *testing.T) {
+	prev := getNonce(t)
+	sendTestTransaction(t)
+	post := getNonce(t)
+	require.Equal(t, prev, post-1)
+}

@@ -24,7 +24,6 @@ func (suite *KeeperTestSuite) TestQuerier() {
 		{"block number", []string{types.QueryBlockNumber, "0x0"}, func() {}, true},
 		{"storage", []string{types.QueryStorage, "0x0", "0x0"}, func() {}, true},
 		{"code", []string{types.QueryCode, "0x0"}, func() {}, true},
-		{"nonce", []string{types.QueryNonce, "0x0"}, func() {}, true},
 		// {"hash to height", []string{types.QueryHashToHeight, "0x0"}, func() {}, true},
 		{"tx logs", []string{types.QueryTransactionLogs, "0x0"}, func() {}, true},
 		// {"logs bloom", []string{types.QueryLogsBloom, "0x0"}, func() {}, true},

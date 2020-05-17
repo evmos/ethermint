@@ -32,8 +32,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryStorage(ctx, path, keeper)
 		case types.QueryCode:
 			return queryCode(ctx, path, keeper)
-		case types.QueryNonce:
-			return queryNonce(ctx, path, keeper)
 		case types.QueryHashToHeight:
 			return queryHashToHeight(ctx, path, keeper)
 		case types.QueryTransactionLogs:
@@ -106,18 +104,6 @@ func queryCode(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 	code := keeper.GetCode(ctx, addr)
 	res := types.QueryResCode{Code: code}
 	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-
-	return bz, nil
-}
-
-func queryNonce(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
-	addr := ethcmn.HexToAddress(path[1])
-	nonce := keeper.GetNonce(ctx, addr)
-	nRes := types.QueryResNonce{Nonce: nonce}
-	bz, err := codec.MarshalJSONIndent(keeper.cdc, nRes)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
