@@ -52,7 +52,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * [\#236](https://github.com/ChainSafe/ethermint/pull/236) Changes from upgrade [@fedekunze](https://github.com/fedekunze)
   * (`app/ante`) Moved `AnteHandler` implementation to `app/ante`
   * (keys) Marked `ExportEthKeyCommand` as **UNSAFE**
-  * (`x/evm`) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
+  * (x/evm) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
+* (`x/evm`) [\#255](https://github.com/ChainSafe/ethermint/pull/255) Add missing `GenesisState` fields and support `ExportGenesis` functionality.
 * [\#272](https://github.com/ChainSafe/ethermint/pull/272) Add `Logger` for evm module.
 
 ### Features

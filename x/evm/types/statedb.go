@@ -722,11 +722,18 @@ func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, valu
 		value := iter.Value()
 
 		if value, dirty := so.dirtyStorage[key]; dirty {
-			cb(key, value)
+			// check if iteration stops
+			if cb(key, value) {
+				break
+			}
+
 			continue
 		}
 
-		cb(key, ethcmn.BytesToHash(value))
+		// check if iteration stops
+		if cb(key, ethcmn.BytesToHash(value)) {
+			break
+		}
 	}
 
 	return nil

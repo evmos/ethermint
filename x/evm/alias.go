@@ -27,8 +27,9 @@ const (
 
 // nolint
 var (
-	NewKeeper = keeper.NewKeeper
-	TxDecoder = types.TxDecoder
+	NewKeeper         = keeper.NewKeeper
+	TxDecoder         = types.TxDecoder
+	NewGenesisStorage = types.NewGenesisStorage
 )
 
 //nolint
@@ -36,4 +37,6 @@ type (
 	Keeper          = keeper.Keeper
 	QueryResAccount = types.QueryResAccount
 	GenesisState    = types.GenesisState
+	GenesisAccount  = types.GenesisAccount
+	GenesisStorage  = types.GenesisStorage
 )

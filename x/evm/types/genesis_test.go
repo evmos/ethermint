@@ -1,45 +1,59 @@
 package types
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 func TestValidateGenesis(t *testing.T) {
+
 	testCases := []struct {
-		msg      string
-		genstate GenesisState
+		name     string
+		genState GenesisState
 		expPass  bool
 	}{
 		{
-			msg:      "pass with defaultState ",
-			genstate: DefaultGenesisState(),
+			name:     "default",
+			genState: DefaultGenesisState(),
 			expPass:  true,
 		},
 		{
-			msg: "empty address",
-			genstate: GenesisState{
-				Accounts: []GenesisAccount{{}},
+			name: "empty account address bytes",
+			genState: GenesisState{
+				Accounts: []GenesisAccount{
+					{
+						Address: ethcmn.Address{},
+						Balance: big.NewInt(1),
+					},
+				},
 			},
 			expPass: false,
 		},
 		{
-			msg: "empty balance",
-			genstate: GenesisState{
-				Accounts: []GenesisAccount{{Balance: nil}},
+			name: "nil account balance",
+			genState: GenesisState{
+				Accounts: []GenesisAccount{
+					{
+						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
+						Balance: nil,
+					},
+				},
 			},
 			expPass: false,
 		},
 	}
-	for i, tc := range testCases {
 
-		err := ValidateGenesis(tc.genstate)
+	for _, tc := range testCases {
+		tc := tc
+		err := tc.genState.Validate()
 		if tc.expPass {
-			require.NoError(t, err, "test (%d) %s", i, tc.msg)
+			require.NoError(t, err, tc.name)
 		} else {
-			require.Error(t, err, "test (%d): %s", i, tc.msg)
+			require.Error(t, err, tc.name)
 		}
 	}
-
 }

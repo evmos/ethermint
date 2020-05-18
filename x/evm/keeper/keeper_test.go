@@ -53,8 +53,7 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 	}
 	expLogs := []*ethtypes.Log{log}
 
-	err := suite.app.EvmKeeper.SetTransactionLogs(suite.ctx, expLogs, hash)
-	suite.Require().NoError(err)
+	suite.app.EvmKeeper.SetTransactionLogs(suite.ctx, hash, expLogs)
 	suite.app.EvmKeeper.AddLog(suite.ctx, expLogs[0])
 
 	logs, err := suite.app.EvmKeeper.GetTransactionLogs(suite.ctx, hash)

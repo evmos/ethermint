@@ -41,13 +41,13 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONMarshaler) json.RawMessage {
 
 // ValidateGenesis is the validation check of the Genesis
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, bz json.RawMessage) error {
-	var data types.GenesisState
-	err := cdc.UnmarshalJSON(bz, &data)
+	var genesisState types.GenesisState
+	err := cdc.UnmarshalJSON(bz, &genesisState)
 	if err != nil {
 		return err
 	}
-	// Once json successfully marshalled, passes along to genesis.go
-	return types.ValidateGenesis(data)
+
+	return genesisState.Validate()
 }
 
 // RegisterRESTRoutes Registers rest routes
@@ -71,13 +71,15 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	keeper Keeper
+	ak     types.AccountKeeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper) AppModule {
+func NewAppModule(k Keeper, ak types.AccountKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		ak:             ak,
 	}
 }
 
@@ -128,6 +130,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data j
 
 // ExportGenesis exports the genesis state to be used by daemon
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json.RawMessage {
-	gs := ExportGenesis(ctx, am.keeper)
+	gs := ExportGenesis(ctx, am.keeper, am.ak)
 	return cdc.MustMarshalJSON(gs)
 }
