@@ -16,20 +16,20 @@ import (
 
 // RegisterRoutes register REST endpoints for the faucet module
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/%s/fund", types.ModuleName), fundHandlerFn(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/%s/request", types.ModuleName), requestHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/funded", types.ModuleName), fundedHandlerFn(cliCtx)).Methods("GET")
 }
 
-// PostFundRequest defines fund request's body.
-type PostFundRequest struct {
+// PostRequestBody defines fund request's body.
+type PostRequestBody struct {
 	BaseReq   rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Amount    sdk.Coins    `json:"amount" yaml:"amount"`
 	Recipient string       `json:"receipient" yaml:"receipient"`
 }
 
-func fundHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func requestHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req PostFundRequest
+		var req PostRequestBody
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
