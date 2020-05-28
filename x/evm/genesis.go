@@ -14,12 +14,14 @@ import (
 func InitGenesis(ctx sdk.Context, k Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, account := range data.Accounts {
 		csdb := k.CommitStateDB.WithContext(ctx)
+		// FIXME: this will override bank InitGenesis balance!
 		csdb.SetBalance(account.Address, account.Balance)
 		csdb.SetCode(account.Address, account.Code)
 		for _, storage := range account.Storage {
 			csdb.SetState(account.Address, storage.Key, storage.Value)
 		}
 	}
+	// TODO: Commit?
 	return []abci.ValidatorUpdate{}
 }
 

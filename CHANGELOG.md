@@ -55,6 +55,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * (x/evm) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
 * (`x/evm`) [\#255](https://github.com/ChainSafe/ethermint/pull/255) Add missing `GenesisState` fields and support `ExportGenesis` functionality.
 * [\#272](https://github.com/ChainSafe/ethermint/pull/272) Add `Logger` for evm module.
+* [\#317](https://github.com/ChainSafe/ethermint/pull/317) `GenesisAccount` validation.
 
 ### Features
 
