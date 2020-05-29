@@ -63,6 +63,11 @@ func NewMsgEthermint(
 	}
 }
 
+func (msg MsgEthermint) String() string {
+	return fmt.Sprintf("nonce=%d gasPrice=%d gasLimit=%d recipient=%s amount=%d data=0x%x from=%s",
+		msg.AccountNonce, msg.Price, msg.GasLimit, msg.Recipient, msg.Amount, msg.Payload, msg.From)
+}
+
 // Route should return the name of the module
 func (msg MsgEthermint) Route() string { return RouterKey }
 
@@ -164,6 +169,10 @@ func newMsgEthereumTx(
 	}
 
 	return MsgEthereumTx{Data: txData}
+}
+
+func (msg MsgEthereumTx) String() string {
+	return msg.Data.String()
 }
 
 // Route returns the route value of an MsgEthereumTx.

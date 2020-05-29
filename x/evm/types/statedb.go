@@ -590,7 +590,7 @@ func (csdb *CommitStateDB) UpdateAccounts() {
 		currAcc := csdb.accountKeeper.GetAccount(csdb.ctx, sdk.AccAddress(addr.Bytes()))
 		emintAcc, ok := currAcc.(*emint.EthAccount)
 		if !ok {
-			return
+			continue
 		}
 
 		balance := csdb.bankKeeper.GetBalance(csdb.ctx, emintAcc.GetAddress(), emint.DenomDefault)

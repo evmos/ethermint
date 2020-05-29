@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type (
@@ -29,7 +30,7 @@ type (
 	GenesisAccount struct {
 		Address ethcmn.Address   `json:"address"`
 		Balance *big.Int         `json:"balance"`
-		Code    []byte           `json:"code,omitempty"`
+		Code    hexutil.Bytes    `json:"code,omitempty"`
 		Storage []GenesisStorage `json:"storage,omitempty"`
 	}
 )
