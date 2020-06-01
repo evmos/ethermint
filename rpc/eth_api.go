@@ -477,7 +477,7 @@ func (e *PublicEthAPI) doCall(
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
 // It adds 1,000 gas to the returned value instead of using the gas adjustment
 // param from the SDK.
-func (e *PublicEthAPI) EstimateGas(args CallArgs) (uint64, error) {
+func (e *PublicEthAPI) EstimateGas(args CallArgs) (hexutil.Uint64, error) {
 	simResponse, err := e.doCall(args, 0, big.NewInt(emint.DefaultRPCGasLimit))
 	if err != nil {
 		return 0, err
@@ -486,7 +486,8 @@ func (e *PublicEthAPI) EstimateGas(args CallArgs) (uint64, error) {
 	// TODO: change 1000 buffer for more accurate buffer (eg: SDK's gasAdjusted)
 	estimatedGas := simResponse.GasInfo.GasUsed
 	gas := estimatedGas + 1000
-	return gas, nil
+
+	return hexutil.Uint64(gas), nil
 }
 
 // GetBlockByHash returns the block identified by hash.
@@ -910,10 +911,11 @@ func (e *PublicEthAPI) generateFromArgs(args params.SendTxArgs) (*types.MsgEther
 			Value:    args.Value,
 			Data:     args.Data,
 		}
-		gasLimit, err = e.EstimateGas(callArgs)
+		gl, err := e.EstimateGas(callArgs)
 		if err != nil {
 			return nil, err
 		}
+		gasLimit = uint64(gl)
 	} else {
 		gasLimit = (uint64)(*args.Gas)
 	}
