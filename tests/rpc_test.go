@@ -301,10 +301,12 @@ func TestEth_GetTransactionReceipt(t *testing.T) {
 
 	param := []string{hash.String()}
 	rpcRes := call(t, "eth_getTransactionReceipt", param)
+	require.Nil(t, rpcRes.Error)
 
 	receipt := make(map[string]interface{})
 	err := json.Unmarshal(rpcRes.Result, &receipt)
 	require.NoError(t, err)
+	require.NotEmpty(t, receipt)
 	require.Equal(t, "0x1", receipt["status"].(string))
 	require.Equal(t, []interface{}{}, receipt["logs"].([]interface{}))
 }

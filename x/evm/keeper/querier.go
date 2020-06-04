@@ -36,8 +36,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryHashToHeight(ctx, path, keeper)
 		case types.QueryTransactionLogs:
 			return queryTransactionLogs(ctx, path, keeper)
-		case types.QueryLogsBloom:
-			return queryBlockLogsBloom(ctx, path, keeper)
+		case types.QueryBloom:
+			return queryBlockBloom(ctx, path, keeper)
 		case types.QueryLogs:
 			return queryLogs(ctx, keeper)
 		case types.QueryAccount:
@@ -113,9 +113,9 @@ func queryCode(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 
 func queryHashToHeight(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 	blockHash := ethcmn.FromHex(path[1])
-	blockNumber, err := keeper.GetBlockHashMapping(ctx, blockHash)
-	if err != nil {
-		return []byte{}, err
+	blockNumber, found := keeper.GetBlockHash(ctx, blockHash)
+	if !found {
+		return []byte{}, fmt.Errorf("block height not found for hash %s", path[1])
 	}
 
 	res := types.QueryResBlockNumber{Number: blockNumber}
@@ -127,15 +127,15 @@ func queryHashToHeight(ctx sdk.Context, path []string, keeper Keeper) ([]byte, e
 	return bz, nil
 }
 
-func queryBlockLogsBloom(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
+func queryBlockBloom(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 	num, err := strconv.ParseInt(path[1], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal block number: %w", err)
+		return nil, fmt.Errorf("could not unmarshal block height: %w", err)
 	}
 
-	bloom, err := keeper.GetBlockBloomMapping(ctx, num)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get block bloom mapping: %w", err)
+	bloom, found := keeper.GetBlockBloom(ctx, num)
+	if !found {
+		return nil, fmt.Errorf("block bloom not found for height %d", num)
 	}
 
 	res := types.QueryBloomFilter{Bloom: bloom}

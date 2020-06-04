@@ -163,7 +163,7 @@ test-rpc:
 	@${GO_MOD} go test -v --vet=off ./tests/rpc_test
 
 it-tests:
-	./scripts/integration-test-all.sh -q 1 -z 1 -s 10
+	./scripts/integration-test-all.sh -q 1 -z 1 -s 2
 
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"

@@ -46,22 +46,49 @@ func TestKeeperTestSuite(t *testing.T) {
 }
 
 func (suite *KeeperTestSuite) TestTransactionLogs() {
+	ethHash := ethcmn.BytesToHash(hash)
 	log := &ethtypes.Log{
 		Address:     address,
 		Data:        []byte("log"),
 		BlockNumber: 10,
 	}
+	log2 := &ethtypes.Log{
+		Address:     address,
+		Data:        []byte("log2"),
+		BlockNumber: 11,
+	}
 	expLogs := []*ethtypes.Log{log}
 
-	suite.app.EvmKeeper.SetTransactionLogs(suite.ctx, hash, expLogs)
-	suite.app.EvmKeeper.AddLog(suite.ctx, expLogs[0])
+	err := suite.app.EvmKeeper.SetLogs(suite.ctx, ethHash, expLogs)
+	suite.Require().NoError(err)
 
-	logs, err := suite.app.EvmKeeper.GetTransactionLogs(suite.ctx, hash)
+	logs, err := suite.app.EvmKeeper.GetLogs(suite.ctx, ethHash)
 	suite.Require().NoError(err)
 	suite.Require().Equal(expLogs, logs)
 
+	expLogs = []*ethtypes.Log{log2, log}
+
+	// add another log under the zero hash
+	suite.app.EvmKeeper.AddLog(suite.ctx, log2)
 	logs = suite.app.EvmKeeper.AllLogs(suite.ctx)
 	suite.Require().Equal(expLogs, logs)
+
+	// add another log under the zero hash
+	log3 := &ethtypes.Log{
+		Address:     address,
+		Data:        []byte("log3"),
+		BlockNumber: 10,
+	}
+	suite.app.EvmKeeper.AddLog(suite.ctx, log3)
+
+	txLogs := suite.app.EvmKeeper.GetAllTxLogs(suite.ctx)
+	suite.Require().Equal(2, len(txLogs))
+
+	suite.Require().Equal(ethcmn.Hash{}.String(), txLogs[0].Hash.String())
+	suite.Require().Equal([]*ethtypes.Log{log2, log3}, txLogs[0].Logs)
+
+	suite.Require().Equal(ethHash.String(), txLogs[1].Hash.String())
+	suite.Require().Equal([]*ethtypes.Log{log}, txLogs[1].Logs)
 }
 
 func (suite *KeeperTestSuite) TestDBStorage() {
@@ -73,16 +100,16 @@ func (suite *KeeperTestSuite) TestDBStorage() {
 	suite.app.EvmKeeper.SetCode(suite.ctx, address, []byte{0x1})
 
 	// Test block hash mapping functionality
-	suite.app.EvmKeeper.SetBlockHashMapping(suite.ctx, hash, 7)
-	height, err := suite.app.EvmKeeper.GetBlockHashMapping(suite.ctx, hash)
-	suite.Require().NoError(err)
+	suite.app.EvmKeeper.SetBlockHash(suite.ctx, hash, 7)
+	height, found := suite.app.EvmKeeper.GetBlockHash(suite.ctx, hash)
+	suite.Require().True(found)
 	suite.Require().Equal(int64(7), height)
 
-	suite.app.EvmKeeper.SetBlockHashMapping(suite.ctx, []byte{0x43, 0x32}, 8)
+	suite.app.EvmKeeper.SetBlockHash(suite.ctx, []byte{0x43, 0x32}, 8)
 
 	// Test block height mapping functionality
 	testBloom := ethtypes.BytesToBloom([]byte{0x1, 0x3})
-	suite.app.EvmKeeper.SetBlockBloomMapping(suite.ctx, testBloom, 4)
+	suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 4, testBloom)
 
 	// Get those state transitions
 	suite.Require().Equal(suite.app.EvmKeeper.GetBalance(suite.ctx, address).Cmp(big.NewInt(5)), 0)
@@ -90,19 +117,19 @@ func (suite *KeeperTestSuite) TestDBStorage() {
 	suite.Require().Equal(suite.app.EvmKeeper.GetState(suite.ctx, address, ethcmn.HexToHash("0x2")), ethcmn.HexToHash("0x3"))
 	suite.Require().Equal(suite.app.EvmKeeper.GetCode(suite.ctx, address), []byte{0x1})
 
-	height, err = suite.app.EvmKeeper.GetBlockHashMapping(suite.ctx, hash)
-	suite.Require().NoError(err)
+	height, found = suite.app.EvmKeeper.GetBlockHash(suite.ctx, hash)
+	suite.Require().True(found)
 	suite.Require().Equal(height, int64(7))
-	height, err = suite.app.EvmKeeper.GetBlockHashMapping(suite.ctx, []byte{0x43, 0x32})
-	suite.Require().NoError(err)
+	height, found = suite.app.EvmKeeper.GetBlockHash(suite.ctx, []byte{0x43, 0x32})
+	suite.Require().True(found)
 	suite.Require().Equal(height, int64(8))
 
-	bloom, err := suite.app.EvmKeeper.GetBlockBloomMapping(suite.ctx, 4)
-	suite.Require().NoError(err)
+	bloom, found := suite.app.EvmKeeper.GetBlockBloom(suite.ctx, 4)
+	suite.Require().True(found)
 	suite.Require().Equal(bloom, testBloom)
 
 	// commit stateDB
-	_, err = suite.app.EvmKeeper.Commit(suite.ctx, false)
+	_, err := suite.app.EvmKeeper.Commit(suite.ctx, false)
 	suite.Require().NoError(err, "failed to commit StateDB")
 
 	// simulate BaseApp EndBlocker commitment

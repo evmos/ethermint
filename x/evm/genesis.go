@@ -13,15 +13,33 @@ import (
 // InitGenesis initializes genesis state based on exported genesis
 func InitGenesis(ctx sdk.Context, k Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, account := range data.Accounts {
-		csdb := k.CommitStateDB.WithContext(ctx)
 		// FIXME: this will override bank InitGenesis balance!
-		csdb.SetBalance(account.Address, account.Balance)
-		csdb.SetCode(account.Address, account.Code)
+		k.SetBalance(ctx, account.Address, account.Balance)
+		k.SetCode(ctx, account.Address, account.Code)
 		for _, storage := range account.Storage {
-			csdb.SetState(account.Address, storage.Key, storage.Value)
+			k.SetState(ctx, account.Address, storage.Key, storage.Value)
 		}
 	}
-	// TODO: Commit?
+
+	var err error
+	for _, txLog := range data.TxsLogs {
+		err = k.SetLogs(ctx, txLog.Hash, txLog.Logs)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// set state objects and code to store
+	_, err = k.Commit(ctx, false)
+	if err != nil {
+		panic(err)
+	}
+
+	// set storage to store
+	err = k.Finalise(ctx, true)
+	if err != nil {
+		panic(err)
+	}
 	return []abci.ValidatorUpdate{}
 }
 
@@ -59,5 +77,8 @@ func ExportGenesis(ctx sdk.Context, k Keeper, ak types.AccountKeeper) GenesisSta
 		ethGenAccounts = append(ethGenAccounts, genAccount)
 	}
 
-	return GenesisState{Accounts: ethGenAccounts}
+	return GenesisState{
+		Accounts: ethGenAccounts,
+		TxsLogs:  k.GetAllTxLogs(ctx),
+	}
 }

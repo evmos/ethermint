@@ -6,6 +6,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	emint "github.com/cosmos/ethermint/types"
@@ -40,8 +41,7 @@ type CommitStateDB struct {
 	// StateDB interface. Perhaps there is a better way.
 	ctx sdk.Context
 
-	codeKey       sdk.StoreKey
-	storeKey      sdk.StoreKey // i.e storage key
+	storeKey      sdk.StoreKey
 	accountKeeper AccountKeeper
 	bankKeeper    BankKeeper
 
@@ -55,7 +55,6 @@ type CommitStateDB struct {
 
 	thash, bhash ethcmn.Hash
 	txIndex      int
-	logs         map[ethcmn.Hash][]*ethtypes.Log
 	logSize      uint
 
 	// TODO: Determine if we actually need this as we do not need preimages in
@@ -85,17 +84,15 @@ type CommitStateDB struct {
 // CONTRACT: Stores used for state must be cache-wrapped as the ordering of the
 // key/value space matters in determining the merkle root.
 func NewCommitStateDB(
-	ctx sdk.Context, codeKey, storeKey sdk.StoreKey, ak AccountKeeper, bk BankKeeper,
+	ctx sdk.Context, storeKey sdk.StoreKey, ak AccountKeeper, bk BankKeeper,
 ) *CommitStateDB {
 	return &CommitStateDB{
 		ctx:               ctx,
-		codeKey:           codeKey,
 		storeKey:          storeKey,
 		accountKeeper:     ak,
 		bankKeeper:        bk,
 		stateObjects:      make(map[ethcmn.Address]*stateObject),
 		stateObjectsDirty: make(map[ethcmn.Address]struct{}),
-		logs:              make(map[ethcmn.Hash][]*ethtypes.Log),
 		preimages:         make(map[ethcmn.Hash][]byte),
 		journal:           newJournal(),
 	}
@@ -159,20 +156,30 @@ func (csdb *CommitStateDB) SetCode(addr ethcmn.Address, code []byte) {
 	}
 }
 
+// ----------------------------------------------------------------------------
+// Transaction logs
+// Required for upgrade logic or ease of querying.
+// NOTE: we use BinaryLengthPrefixed since the tx logs are also included on Result data,
+// which can't use BinaryBare.
+// ----------------------------------------------------------------------------
+
 // SetLogs sets the logs for a transaction in the KVStore.
 func (csdb *CommitStateDB) SetLogs(hash ethcmn.Hash, logs []*ethtypes.Log) error {
-	store := csdb.ctx.KVStore(csdb.storeKey)
-	enc, err := EncodeLogs(logs)
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixLogs)
+	bz, err := MarshalLogs(logs)
 	if err != nil {
 		return err
 	}
 
-	if len(enc) == 0 {
-		return nil
-	}
-
-	store.Set(LogsKey(hash[:]), enc)
+	store.Set(hash.Bytes(), bz)
+	csdb.logSize = uint(len(logs))
 	return nil
+}
+
+// DeleteLogs removes the logs from the KVStore. It is used during journal.Revert.
+func (csdb *CommitStateDB) DeleteLogs(hash ethcmn.Hash) {
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixLogs)
+	store.Delete(hash.Bytes())
 }
 
 // AddLog adds a new log to the state and sets the log metadata from the state.
@@ -183,8 +190,17 @@ func (csdb *CommitStateDB) AddLog(log *ethtypes.Log) {
 	log.BlockHash = csdb.bhash
 	log.TxIndex = uint(csdb.txIndex)
 	log.Index = csdb.logSize
-	csdb.logs[csdb.thash] = append(csdb.logs[csdb.thash], log)
-	csdb.logSize++
+
+	logs, err := csdb.GetLogs(csdb.thash)
+	if err != nil {
+		// panic on unmarshal error
+		panic(err)
+	}
+
+	if err = csdb.SetLogs(csdb.thash, append(logs, log)); err != nil {
+		// panic on marshal error
+		panic(err)
+	}
 }
 
 // AddPreimage records a SHA3 preimage seen by the VM.
@@ -308,30 +324,30 @@ func (csdb *CommitStateDB) GetCommittedState(addr ethcmn.Address, hash ethcmn.Ha
 
 // GetLogs returns the current logs for a given transaction hash from the KVStore.
 func (csdb *CommitStateDB) GetLogs(hash ethcmn.Hash) ([]*ethtypes.Log, error) {
-	if csdb.logs[hash] != nil {
-		return csdb.logs[hash], nil
-	}
-
-	store := csdb.ctx.KVStore(csdb.storeKey)
-
-	encLogs := store.Get(LogsKey(hash[:]))
-	if len(encLogs) == 0 {
-		// return nil if logs are not found
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixLogs)
+	bz := store.Get(hash.Bytes())
+	if len(bz) == 0 {
+		// return nil error if logs are not found
 		return []*ethtypes.Log{}, nil
 	}
 
-	return DecodeLogs(encLogs)
+	return UnmarshalLogs(bz)
 }
 
 // AllLogs returns all the current logs in the state.
 func (csdb *CommitStateDB) AllLogs() []*ethtypes.Log {
-	// nolint: prealloc
-	var logs []*ethtypes.Log
-	for _, lgs := range csdb.logs {
-		logs = append(logs, lgs...)
+	store := csdb.ctx.KVStore(csdb.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, KeyPrefixLogs)
+	defer iterator.Close()
+
+	allLogs := []*ethtypes.Log{}
+	for ; iterator.Valid(); iterator.Next() {
+		var logs []*ethtypes.Log
+		ModuleCdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &logs)
+		allLogs = append(allLogs, logs...)
 	}
 
-	return logs
+	return allLogs
 }
 
 // GetRefund returns the current value of the refund counter.
@@ -576,7 +592,6 @@ func (csdb *CommitStateDB) Reset(_ ethcmn.Hash) error {
 	csdb.thash = ethcmn.Hash{}
 	csdb.bhash = ethcmn.Hash{}
 	csdb.txIndex = 0
-	csdb.logs = make(map[ethcmn.Hash][]*ethtypes.Log)
 	csdb.logSize = 0
 	csdb.preimages = make(map[ethcmn.Hash][]byte)
 
@@ -651,14 +666,12 @@ func (csdb *CommitStateDB) Copy() *CommitStateDB {
 	// copy all the basic fields, initialize the memory ones
 	state := &CommitStateDB{
 		ctx:               csdb.ctx,
-		codeKey:           csdb.codeKey,
 		storeKey:          csdb.storeKey,
 		accountKeeper:     csdb.accountKeeper,
 		bankKeeper:        csdb.bankKeeper,
 		stateObjects:      make(map[ethcmn.Address]*stateObject, len(csdb.journal.dirties)),
 		stateObjectsDirty: make(map[ethcmn.Address]struct{}, len(csdb.journal.dirties)),
 		refund:            csdb.refund,
-		logs:              make(map[ethcmn.Hash][]*ethtypes.Log, len(csdb.logs)),
 		logSize:           csdb.logSize,
 		preimages:         make(map[ethcmn.Hash][]byte),
 		journal:           newJournal(),
@@ -687,16 +700,6 @@ func (csdb *CommitStateDB) Copy() *CommitStateDB {
 		}
 	}
 
-	// copy logs
-	for hash, logs := range csdb.logs {
-		cpy := make([]*ethtypes.Log, len(logs))
-		for i, l := range logs {
-			cpy[i] = new(ethtypes.Log)
-			*cpy[i] = *l
-		}
-		state.logs[hash] = cpy
-	}
-
 	// copy pre-images
 	for hash, preimage := range csdb.preimages {
 		state.preimages[hash] = preimage
@@ -714,12 +717,12 @@ func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, valu
 	}
 
 	store := csdb.ctx.KVStore(csdb.storeKey)
-	iter := sdk.KVStorePrefixIterator(store, so.Address().Bytes())
-	defer iter.Close()
+	iterator := sdk.KVStorePrefixIterator(store, AddressStoragePrefix(so.Address()))
+	defer iterator.Close()
 
-	for ; iter.Valid(); iter.Next() {
-		key := ethcmn.BytesToHash(iter.Key())
-		value := iter.Value()
+	for ; iterator.Valid(); iterator.Next() {
+		key := ethcmn.BytesToHash(iterator.Key())
+		value := ethcmn.BytesToHash(iterator.Value())
 
 		if value, dirty := so.dirtyStorage[key]; dirty {
 			// check if iteration stops
@@ -731,7 +734,7 @@ func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, valu
 		}
 
 		// check if iteration stops
-		if cb(key, ethcmn.BytesToHash(value)) {
+		if cb(key, value) {
 			break
 		}
 	}

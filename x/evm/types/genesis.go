@@ -11,10 +11,10 @@ import (
 )
 
 type (
-	// GenesisState defines the application's genesis state. It contains all the
-	// information required and accounts to initialize the blockchain.
+	// GenesisState defines the evm module genesis state
 	GenesisState struct {
-		Accounts []GenesisAccount `json:"accounts"`
+		Accounts []GenesisAccount  `json:"accounts"`
+		TxsLogs  []TransactionLogs `json:"txs_logs"`
 	}
 
 	// GenesisStorage represents the GenesisAccount Storage map as single key value
@@ -76,6 +76,7 @@ func NewGenesisStorage(key, value ethcmn.Hash) GenesisStorage {
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Accounts: []GenesisAccount{},
+		TxsLogs:  []TransactionLogs{},
 	}
 }
 
@@ -83,6 +84,7 @@ func DefaultGenesisState() GenesisState {
 // failure.
 func (gs GenesisState) Validate() error {
 	seenAccounts := make(map[string]bool)
+	seenTxs := make(map[string]bool)
 	for _, acc := range gs.Accounts {
 		if seenAccounts[acc.Address.String()] {
 			return fmt.Errorf("duplicated genesis account %s", acc.Address.String())
@@ -92,5 +94,17 @@ func (gs GenesisState) Validate() error {
 		}
 		seenAccounts[acc.Address.String()] = true
 	}
+	for _, tx := range gs.TxsLogs {
+		if seenTxs[tx.Hash.String()] {
+			return fmt.Errorf("duplicated logs from transaction %s", tx.Hash.String())
+		}
+
+		if err := tx.Validate(); err != nil {
+			return fmt.Errorf("invalid logs from transaction %s: %w", tx.Hash.String(), err)
+		}
+
+		seenTxs[tx.Hash.String()] = true
+	}
+
 	return nil
 }

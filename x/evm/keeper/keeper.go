@@ -2,20 +2,19 @@ package keeper
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-
-	"math/big"
 )
 
 // Keeper wraps the CommitStateDB, allowing us to pass in SDK context while adhering
@@ -23,9 +22,13 @@ import (
 type Keeper struct {
 	// Amino codec
 	cdc *codec.Codec
-	// Store key required to update the block bloom filter mappings needed for the
-	// Web3 API
-	blockKey      sdk.StoreKey
+	// Store key required for the EVM Prefix KVStore. It is required by:
+	// - storing Account's Storage State
+	// - storing Account's Code
+	// - storing transaction Logs
+	// - storing block height -> bloom filter map. Needed for the Web3 API.
+	// - storing block hash -> block height map. Needed for the Web3 API.
+	storeKey      sdk.StoreKey
 	CommitStateDB *types.CommitStateDB
 	// Transaction counter in a block. Used on StateSB's Prepare function.
 	// It is reset to 0 every block on BeginBlock so there's no point in storing the counter
@@ -36,13 +39,12 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc *codec.Codec, blockKey, codeKey, storeKey sdk.StoreKey,
-	ak types.AccountKeeper, bk types.BankKeeper,
+	cdc *codec.Codec, storeKey sdk.StoreKey, ak types.AccountKeeper, bk types.BankKeeper,
 ) Keeper {
 	return Keeper{
 		cdc:           cdc,
-		blockKey:      blockKey,
-		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, codeKey, storeKey, ak, bk),
+		storeKey:      storeKey,
+		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, ak, bk),
 		TxCount:       0,
 		Bloom:         big.NewInt(0),
 	}
@@ -55,68 +57,66 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // ----------------------------------------------------------------------------
 // Block hash mapping functions
-// May be removed when using only as module (only required by rpc api)
+// Required by Web3 API.
+//  TODO: remove once tendermint support block queries by hash.
 // ----------------------------------------------------------------------------
 
-// GetBlockHashMapping gets block height from block consensus hash
-func (k Keeper) GetBlockHashMapping(ctx sdk.Context, hash []byte) (int64, error) {
-	store := ctx.KVStore(k.blockKey)
+// GetBlockHash gets block height from block consensus hash
+func (k Keeper) GetBlockHash(ctx sdk.Context, hash []byte) (int64, bool) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixBlockHash)
 	bz := store.Get(hash)
 	if len(bz) == 0 {
-		return 0, fmt.Errorf("block with hash '%s' not found", ethcmn.BytesToHash(hash).Hex())
+		return 0, false
 	}
 
 	height := binary.BigEndian.Uint64(bz)
-	return int64(height), nil
+	return int64(height), true
 }
 
-// SetBlockHashMapping sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHashMapping(ctx sdk.Context, hash []byte, height int64) {
-	store := ctx.KVStore(k.blockKey)
+// SetBlockHash sets the mapping from block consensus hash to block height
+func (k Keeper) SetBlockHash(ctx sdk.Context, hash []byte, height int64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixBlockHash)
 	bz := sdk.Uint64ToBigEndian(uint64(height))
 	store.Set(hash, bz)
 }
 
 // ----------------------------------------------------------------------------
 // Block bloom bits mapping functions
-// May be removed when using only as module (only required by rpc api)
+// Required by Web3 API.
 // ----------------------------------------------------------------------------
 
-// GetBlockBloomMapping gets bloombits from block height
-func (k Keeper) GetBlockBloomMapping(ctx sdk.Context, height int64) (ethtypes.Bloom, error) {
-	store := ctx.KVStore(k.blockKey)
-	heightBz := sdk.Uint64ToBigEndian(uint64(height))
-	bz := store.Get(types.BloomKey(heightBz))
+// GetBlockBloom gets bloombits from block height
+func (k Keeper) GetBlockBloom(ctx sdk.Context, height int64) (ethtypes.Bloom, bool) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixBloom)
+	bz := store.Get(types.BloomKey(height))
 	if len(bz) == 0 {
-		return ethtypes.Bloom{}, fmt.Errorf("block at height %d not found", height)
+		return ethtypes.Bloom{}, false
 	}
 
-	return ethtypes.BytesToBloom(bz), nil
+	return ethtypes.BytesToBloom(bz), true
 }
 
-// SetBlockBloomMapping sets the mapping from block height to bloom bits
-func (k Keeper) SetBlockBloomMapping(ctx sdk.Context, bloom ethtypes.Bloom, height int64) {
-	store := ctx.KVStore(k.blockKey)
-	heightBz := sdk.Uint64ToBigEndian(uint64(height))
-	store.Set(types.BloomKey(heightBz), bloom.Bytes())
+// SetBlockBloom sets the mapping from block height to bloom bits
+func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloom) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixBloom)
+	store.Set(types.BloomKey(height), bloom.Bytes())
 }
 
-// SetTransactionLogs sets the transaction's logs in the KVStore
-func (k *Keeper) SetTransactionLogs(ctx sdk.Context, hash []byte, logs []*ethtypes.Log) {
-	store := ctx.KVStore(k.blockKey)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(logs)
-	store.Set(types.LogsKey(hash), bz)
-}
+// GetAllTxLogs return all the transaction logs from the store.
+func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, types.KeyPrefixLogs)
+	defer iterator.Close()
 
-// GetTransactionLogs gets the logs for a transaction from the KVStore
-func (k *Keeper) GetTransactionLogs(ctx sdk.Context, hash []byte) ([]*ethtypes.Log, error) {
-	store := ctx.KVStore(k.blockKey)
-	bz := store.Get(types.LogsKey(hash))
-	if len(bz) == 0 {
-		return nil, errors.New("cannot get transaction logs")
+	txsLogs := []types.TransactionLogs{}
+	for ; iterator.Valid(); iterator.Next() {
+		hash := ethcmn.BytesToHash(iterator.Key())
+		var logs []*ethtypes.Log
+		k.cdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &logs)
+
+		// add a new entry
+		txLog := types.NewTransactionLogs(hash, logs)
+		txsLogs = append(txsLogs, txLog)
 	}
-
-	var logs []*ethtypes.Log
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &logs)
-	return logs, nil
+	return txsLogs
 }

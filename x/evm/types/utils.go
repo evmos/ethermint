@@ -88,21 +88,6 @@ func DecodeResultData(in []byte) (ResultData, error) {
 	return data, nil
 }
 
-// EncodeLogs encodes an array of logs using amino
-func EncodeLogs(logs []*ethtypes.Log) ([]byte, error) {
-	return ModuleCdc.MarshalBinaryLengthPrefixed(logs)
-}
-
-// DecodeLogs decodes an amino-encoded byte array into an array of logs
-func DecodeLogs(in []byte) ([]*ethtypes.Log, error) {
-	logs := []*ethtypes.Log{}
-	err := ModuleCdc.UnmarshalBinaryLengthPrefixed(in, &logs)
-	if err != nil {
-		return nil, err
-	}
-	return logs, nil
-}
-
 // ----------------------------------------------------------------------------
 // Auxiliary
 

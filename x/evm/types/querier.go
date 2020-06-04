@@ -16,7 +16,7 @@ const (
 	QueryNonce           = "nonce"
 	QueryHashToHeight    = "hashToHeight"
 	QueryTransactionLogs = "transactionLogs"
-	QueryLogsBloom       = "logsBloom"
+	QueryBloom           = "bloom"
 	QueryLogs            = "logs"
 	QueryAccount         = "account"
 )

@@ -56,6 +56,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (`x/evm`) [\#255](https://github.com/ChainSafe/ethermint/pull/255) Add missing `GenesisState` fields and support `ExportGenesis` functionality.
 * [\#272](https://github.com/ChainSafe/ethermint/pull/272) Add `Logger` for evm module.
 * [\#317](https://github.com/ChainSafe/ethermint/pull/317) `GenesisAccount` validation.
+* (`x/evm`) [\#319](https://github.com/ChainSafe/ethermint/pull/319) Verious evm improvements:
+  * Add transaction `[]*ethtypes.Logs` to evm's `GenesisState` to persist logs after an upgrade.
+  * Remove evm `CodeKey` and `BlockKey`in favor of a prefix `Store`.
+  * Set `BlockBloom` during `EndBlock` instead of `BeginBlock`.
+  * `Commit` state object and `Finalize` storage after `InitGenesis` setup.
 
 ### Features
 
@@ -73,5 +78,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (`x/evm`) [\#319](https://github.com/ChainSafe/ethermint/pull/319) Fix `SetBlockHash` that was setting the incorrect height during `BeginBlock`.
 * (x/evm) [\#176](https://github.com/ChainSafe/ethermint/issues/176) Updated Web3 transaction hash from using RLP hash. Now all transaction hashes exposed are amino hashes.
   * Removes `Hash()` (RLP) function from `MsgEthereumTx` to avoid confusion or misuse in future.
