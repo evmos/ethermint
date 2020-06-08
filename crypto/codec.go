@@ -1,28 +1,19 @@
 package crypto
 
 import (
-	cryptoamino "github.com/tendermint/tendermint/crypto/encoding/amino"
-
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 )
 
-// CryptoCodec defines the Ethermint crypto codec for amino encoding
-var CryptoCodec = codec.New()
+var cryptoCodec = codec.New()
 
-// Amino encoding names
 const (
+	// Amino encoding names
 	PrivKeyAminoName = "crypto/PrivKeySecp256k1"
 	PubKeyAminoName  = "crypto/PubKeySecp256k1"
 )
 
 func init() {
-	// replace the keyring codec with the ethermint crypto codec to prevent
-	// amino panics because of unregistered Priv/PubKey
-	keyring.CryptoCdc = CryptoCodec
-	keyring.RegisterCodec(CryptoCodec)
-	cryptoamino.RegisterAmino(CryptoCodec)
-	RegisterCodec(CryptoCodec)
+	RegisterCodec(cryptoCodec)
 }
 
 // RegisterCodec registers all the necessary types with amino for the given

@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"io"
 
+	"github.com/tendermint/tendermint/crypto"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethermintcrypto "github.com/cosmos/ethermint/crypto"
+	emintCrypto "github.com/cosmos/ethermint/crypto"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -50,26 +52,29 @@ func keyCommands() *cobra.Command {
 	return cmd
 }
 
-func getKeyring(transient bool, buf io.Reader) (keyring.Keyring, error) {
+func getKeybase(transient bool, buf io.Reader) (keyring.Keybase, error) {
 	if transient {
-		return keyring.NewInMemory(ethermintcrypto.EthSeckp256k1Option), nil
+		return keyring.NewInMemory(keyring.WithKeygenFunc(ethermintKeygenFunc)), nil
 	}
 
-	return keyring.New(
+	return keyring.NewKeyring(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),
 		buf,
-		keyring.Option(ethermintcrypto.EthSeckp256k1Option),
-	)
+		keyring.WithKeygenFunc(ethermintKeygenFunc))
 }
 
 func runAddCmd(cmd *cobra.Command, args []string) error {
 	inBuf := bufio.NewReader(cmd.InOrStdin())
-	keystore, err := getKeyring(viper.GetBool(flagDryRun), inBuf)
+	kb, err := getKeybase(viper.GetBool(flagDryRun), inBuf)
 	if err != nil {
 		return err
 	}
 
-	return clientkeys.RunAddCmd(cmd, args, keystore, inBuf)
+	return clientkeys.RunAddCmd(cmd, args, kb, inBuf)
+}
+
+func ethermintKeygenFunc(bz []byte, algo keyring.SigningAlgo) (crypto.PrivKey, error) {
+	return emintCrypto.PrivKeySecp256k1(bz), nil
 }
