@@ -61,6 +61,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * Remove evm `CodeKey` and `BlockKey`in favor of a prefix `Store`.
   * Set `BlockBloom` during `EndBlock` instead of `BeginBlock`.
   * `Commit` state object and `Finalize` storage after `InitGenesis` setup.
+* (rpc) [\#325](https://github.com/ChainSafe/ethermint/pull/325) `eth_coinbase` JSON-RPC query now returns the node's validator address.
 
 ### Features
 

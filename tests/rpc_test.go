@@ -139,6 +139,18 @@ func TestEth_blockNumber(t *testing.T) {
 	t.Logf("Got block number: %s\n", res.String())
 }
 
+func TestEth_coinbase(t *testing.T) {
+	zeroAddress := hexutil.Bytes(ethcmn.Address{}.Bytes())
+	rpcRes := call(t, "eth_coinbase", []string{})
+
+	var res hexutil.Bytes
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	t.Logf("Got coinbase block proposer: %s\n", res.String())
+	require.NotEqual(t, zeroAddress.String(), res.String(), "expected: %s got: %s\n", zeroAddress.String(), res.String())
+}
+
 func TestEth_GetBalance(t *testing.T) {
 	rpcRes := call(t, "eth_getBalance", []string{addrA, zeroString})
 

@@ -90,9 +90,19 @@ func (e *PublicEthAPI) Syncing() (interface{}, error) {
 	}, nil
 }
 
-// Coinbase returns this node's coinbase address. Not used in Ethermint.
-func (e *PublicEthAPI) Coinbase() (addr common.Address) {
-	return
+// Coinbase is the address that staking rewards will be send to (alias for Etherbase).
+func (e *PublicEthAPI) Coinbase() (common.Address, error) {
+	node, err := e.cliCtx.GetNode()
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	status, err := node.Status()
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	return common.BytesToAddress(status.ValidatorInfo.Address.Bytes()), nil
 }
 
 // Mining returns whether or not this node is currently mining. Always false.
