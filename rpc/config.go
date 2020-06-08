@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
@@ -105,20 +106,26 @@ func registerRoutes(rs *lcd.RestServer) {
 }
 
 func unlockKeyFromNameAndPassphrase(accountName, passphrase string) (emintKey emintcrypto.PrivKeySecp256k1, err error) {
-	keybase, err := keyring.NewKeyring(
+	keystore, err := keyring.New(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),
 		os.Stdin,
 	)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	// With keyring keybase, password is not required as it is pulled from the OS prompt
-	privKey, err := keybase.ExportPrivateKeyObject(accountName, passphrase)
+	// With keyring key store, password is not required as it is pulled from the OS prompt
+	// Exports private key from keyring using password
+	armored, err := keystore.ExportPrivKeyArmor(accountName, passphrase)
 	if err != nil {
-		return
+		return nil, err
+	}
+
+	privKey, _, err := crypto.UnarmorDecryptPrivKey(armored, passphrase)
+	if err != nil {
+		return nil, err
 	}
 
 	var ok bool

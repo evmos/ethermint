@@ -13,6 +13,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
+	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -33,7 +34,7 @@ func unsafeExportEthKeyCommand() *cobra.Command {
 func runExportCmd(cmd *cobra.Command, args []string) error {
 	inBuf := bufio.NewReader(cmd.InOrStdin())
 
-	kb, err := keyring.NewKeyring(
+	keystore, err := keyring.New(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),
@@ -54,14 +55,19 @@ func runExportCmd(cmd *cobra.Command, args []string) error {
 	case keyring.BackendOS:
 		conf, err = input.GetConfirmation(
 			"**WARNING** this is an unsafe way to export your unencrypted private key, are you sure?",
-			inBuf)
+			inBuf, cmd.ErrOrStderr())
 	}
 	if err != nil || !conf {
 		return err
 	}
 
-	// Exports private key from keybase using password
-	privKey, err := kb.ExportPrivateKeyObject(args[0], decryptPassword)
+	// Exports private key from keyring using password
+	armored, err := keystore.ExportPrivKeyArmor(args[0], decryptPassword)
+	if err != nil {
+		return err
+	}
+
+	privKey, _, err := crypto.UnarmorDecryptPrivKey(armored, decryptPassword)
 	if err != nil {
 		return err
 	}
@@ -69,7 +75,7 @@ func runExportCmd(cmd *cobra.Command, args []string) error {
 	// Converts key to Ethermint secp256 implementation
 	emintKey, ok := privKey.(emintcrypto.PrivKeySecp256k1)
 	if !ok {
-		return fmt.Errorf("invalid private key type, must be Ethereum key: %T", privKey)
+		return fmt.Errorf("invalid private key type %T, must be Ethereum key PrivKeySecp256k1", privKey)
 	}
 
 	// Formats key for output

@@ -45,11 +45,11 @@ import (
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicEthAPI struct {
-	cliCtx      context.CLIContext
-	backend     Backend
-	key         emintcrypto.PrivKeySecp256k1
-	nonceLock   *AddrLocker
-	keybaseLock sync.Mutex
+	cliCtx       context.CLIContext
+	backend      Backend
+	key          emintcrypto.PrivKeySecp256k1
+	nonceLock    *AddrLocker
+	keystoreLock sync.Mutex
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
@@ -113,11 +113,11 @@ func (e *PublicEthAPI) GasPrice() *hexutil.Big {
 
 // Accounts returns the list of accounts available to this node.
 func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
-	e.keybaseLock.Lock()
+	e.keystoreLock.Lock()
 
 	addresses := make([]common.Address, 0) // return [] instead of nil if empty
 
-	keybase, err := keyring.NewKeyring(
+	keystore, err := keyring.New(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),
@@ -127,12 +127,12 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 		return addresses, err
 	}
 
-	infos, err := keybase.List()
+	infos, err := keystore.List()
 	if err != nil {
 		return addresses, err
 	}
 
-	e.keybaseLock.Unlock()
+	e.keystoreLock.Unlock()
 
 	for _, info := range infos {
 		addressBytes := info.GetPubKey().Address().Bytes()
