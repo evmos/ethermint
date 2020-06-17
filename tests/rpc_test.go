@@ -634,10 +634,10 @@ func TestBlockBloom(t *testing.T) {
 }
 
 func TestBlockBloom_Hash(t *testing.T) {
-	t.Skip()
-	// TODO: get this to work
 	hash := deployTestContractWithFunction(t)
 	receipt := waitForReceipt(t, hash)
+
+	time.Sleep(time.Second * 3)
 
 	blockHash := receipt["blockHash"].(string)
 
@@ -684,4 +684,14 @@ func TestEth_EstimateGas(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, hexutil.Bytes{0xf7, 0xa6}, gas)
+}
+
+func TestEth_GetBlockByNumber(t *testing.T) {
+	param := []interface{}{"0x1", false}
+	rpcRes := call(t, "eth_getBlockByNumber", param)
+
+	block := make(map[string]interface{})
+	err := json.Unmarshal(rpcRes.Result, &block)
+	require.NoError(t, err)
+	require.Equal(t, "0x0", block["extraData"].(string))
 }
