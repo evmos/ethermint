@@ -42,6 +42,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryLogs(ctx, keeper)
 		case types.QueryAccount:
 			return queryAccount(ctx, path, keeper)
+		case types.QueryExportAccount:
+			return queryExportAccount(ctx, path, keeper)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown query endpoint")
 		}
@@ -193,5 +195,32 @@ func queryAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
+	return bz, nil
+}
+
+func queryExportAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
+	addr := ethcmn.HexToAddress(path[1])
+
+	var storage []types.GenesisStorage
+	err := keeper.CommitStateDB.ForEachStorage(addr, func(key, value ethcmn.Hash) bool {
+		storage = append(storage, types.NewGenesisStorage(key, value))
+		return false
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := types.GenesisAccount{
+		Address: addr,
+		Balance: keeper.GetBalance(ctx, addr),
+		Code:    keeper.GetCode(ctx, addr),
+		Storage: storage,
+	}
+
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
 	return bz, nil
 }

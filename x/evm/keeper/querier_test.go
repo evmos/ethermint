@@ -29,6 +29,7 @@ func (suite *KeeperTestSuite) TestQuerier() {
 		// {"logs bloom", []string{types.QueryLogsBloom, "0x0"}, func() {}, true},
 		{"logs", []string{types.QueryLogs, "0x0"}, func() {}, true},
 		{"account", []string{types.QueryAccount, "0x0"}, func() {}, true},
+		{"exportAccount", []string{types.QueryExportAccount, "0x0"}, func() {}, true},
 		{"unknown request", []string{"other"}, func() {}, false},
 	}
 

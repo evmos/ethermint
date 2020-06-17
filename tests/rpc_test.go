@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 
 	"github.com/cosmos/ethermint/rpc"
 	"github.com/cosmos/ethermint/version"
+	"github.com/cosmos/ethermint/x/evm/types"
 )
 
 const (
@@ -452,18 +454,21 @@ func deployTestContractWithFunction(t *testing.T) hexutil.Bytes {
 
 	// contract Test {
 	//     event Hello(uint256 indexed world);
-	//     event Test(uint256 indexed a, uint256 indexed b);
+	//     event TestEvent(uint256 indexed a, uint256 indexed b);
+
+	//     uint256 myStorage;
 
 	//     constructor() public {
 	//         emit Hello(17);
 	//     }
 
 	//     function test(uint256 a, uint256 b) public {
-	//         emit Test(a, b);
+	//         myStorage = a;
+	//         emit TestEvent(a, b);
 	//     }
 	// }
 
-	bytecode := "0x608060405234801561001057600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a260c98061004d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b80827f91916a5e2c96453ddf6b585497262675140eb9f7a774095fb003d93e6dc6921660405160405180910390a3505056fea265627a7a72315820ef746422e676b3ed22147cd771a6f689e7c33ef17bf5cd91921793b5dd01e3e064736f6c63430005110032"
+	bytecode := "0x608060405234801561001057600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a260d08061004d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032"
 
 	from := getAddress(t)
 
@@ -684,6 +689,70 @@ func TestEth_EstimateGas(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, hexutil.Bytes{0xf7, 0xa6}, gas)
+}
+
+func TestEth_ExportAccount(t *testing.T) {
+	param := []string{}
+	param = append(param, "0x1122334455667788990011223344556677889900")
+	param = append(param, "latest")
+	rpcRes := call(t, "eth_exportAccount", param)
+
+	var res string
+	err := json.Unmarshal(rpcRes.Result, &res)
+	require.NoError(t, err)
+
+	var account types.GenesisAccount
+	err = json.Unmarshal([]byte(res), &account)
+	require.NoError(t, err)
+
+	require.Equal(t, "0x1122334455667788990011223344556677889900", account.Address.Hex())
+	require.Equal(t, big.NewInt(0), account.Balance)
+	require.Equal(t, hexutil.Bytes(nil), account.Code)
+	require.Equal(t, []types.GenesisStorage(nil), account.Storage)
+}
+
+func TestEth_ExportAccount_WithStorage(t *testing.T) {
+	hash := deployTestContractWithFunction(t)
+	receipt := waitForReceipt(t, hash)
+	addr := receipt["contractAddress"].(string)
+
+	// call function to set storage
+	calldata := "0xeb8ac92100000000000000000000000000000000000000000000000000000000000000630000000000000000000000000000000000000000000000000000000000000000"
+
+	from := getAddress(t)
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["to"] = addr
+	//param[0]["value"] = "0x1"
+	param[0]["data"] = calldata
+	rpcRes := call(t, "eth_sendTransaction", param)
+
+	var txhash hexutil.Bytes
+	err := json.Unmarshal(rpcRes.Result, &txhash)
+	require.NoError(t, err)
+	waitForReceipt(t, txhash)
+
+	// get exported account
+	eap := []string{}
+	eap = append(eap, addr)
+	eap = append(eap, "latest")
+	rpcRes = call(t, "eth_exportAccount", eap)
+
+	var res string
+	err = json.Unmarshal(rpcRes.Result, &res)
+	require.NoError(t, err)
+
+	var account types.GenesisAccount
+	err = json.Unmarshal([]byte(res), &account)
+	require.NoError(t, err)
+
+	// deployed bytecode
+	bytecode := ethcmn.FromHex("0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032")
+	require.Equal(t, addr, strings.ToLower(account.Address.Hex()))
+	require.Equal(t, big.NewInt(0), account.Balance)
+	require.Equal(t, hexutil.Bytes(bytecode), account.Code)
+	require.NotEqual(t, []types.GenesisStorage(nil), account.Storage)
 }
 
 func TestEth_GetBlockByNumber(t *testing.T) {

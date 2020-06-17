@@ -21,6 +21,7 @@ const (
 	QueryBloom           = types.QueryBloom
 	QueryLogs            = types.QueryLogs
 	QueryAccount         = types.QueryAccount
+	QueryExportAccount   = types.QueryExportAccount
 )
 
 // nolint

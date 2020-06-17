@@ -717,7 +717,8 @@ func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, valu
 	}
 
 	store := csdb.ctx.KVStore(csdb.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, AddressStoragePrefix(so.Address()))
+	prefix := AddressStoragePrefix(so.Address())
+	iterator := sdk.KVStorePrefixIterator(store, prefix)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
