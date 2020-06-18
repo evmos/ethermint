@@ -545,7 +545,7 @@ func formatBlock(
 		"gasUsed":          (*hexutil.Big)(gasUsed),
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
 		"transactions":     transactions.([]common.Hash),
-		"uncles":           nil,
+		"uncles":           []string{},
 	}
 }
 

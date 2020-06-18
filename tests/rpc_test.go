@@ -763,4 +763,5 @@ func TestEth_GetBlockByNumber(t *testing.T) {
 	err := json.Unmarshal(rpcRes.Result, &block)
 	require.NoError(t, err)
 	require.Equal(t, "0x0", block["extraData"].(string))
+	require.Equal(t, []interface{}{}, block["uncles"].([]interface{}))
 }
