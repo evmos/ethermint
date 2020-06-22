@@ -14,6 +14,7 @@ import (
 	emint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcore "github.com/ethereum/go-ethereum/core"
 )
 
@@ -180,7 +181,7 @@ func (avd AccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 
 	acc := avd.ak.GetAccount(ctx, address)
 	if acc == nil {
-		return ctx, fmt.Errorf("account %s is nil", address)
+		return ctx, fmt.Errorf("account %s (%s) is nil", common.BytesToAddress(address.Bytes()), address)
 	}
 
 	// on InitChain make sure account number == 0
@@ -232,7 +233,7 @@ func (nvd NonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 
 	acc := nvd.ak.GetAccount(ctx, address)
 	if acc == nil {
-		return ctx, fmt.Errorf("account %s is nil", address)
+		return ctx, fmt.Errorf("account %s (%s) is nil", common.BytesToAddress(address.Bytes()), address)
 	}
 
 	seq := acc.GetSequence()
@@ -287,7 +288,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	if senderAcc == nil {
-		return ctx, fmt.Errorf("sender account %s is nil", address)
+		return ctx, fmt.Errorf("sender account %s (%s) is nil", common.BytesToAddress(address.Bytes()), address)
 	}
 
 	gasLimit := msgEthTx.GetGas()

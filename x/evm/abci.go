@@ -31,16 +31,16 @@ func EndBlock(k Keeper, ctx sdk.Context, req abci.RequestEndBlock) []abci.Valida
 	ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
 
 	// Update account balances before committing other parts of state
-	k.CommitStateDB.UpdateAccounts()
+	k.UpdateAccounts(ctx)
 
 	// Commit state objects to KV store
-	_, err := k.CommitStateDB.WithContext(ctx).Commit(true)
+	_, err := k.Commit(ctx, true)
 	if err != nil {
 		panic(err)
 	}
 
 	// Clear accounts cache after account data has been committed
-	k.CommitStateDB.ClearStateObjects()
+	k.ClearStateObjects(ctx)
 
 	bloom := ethtypes.BytesToBloom(k.Bloom.Bytes())
 	k.SetBlockBloom(ctx, ctx.BlockHeight(), bloom)

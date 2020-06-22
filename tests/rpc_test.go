@@ -221,7 +221,29 @@ func getAddress(t *testing.T) []byte {
 	return res[0]
 }
 
-func TestEth_SendTransaction(t *testing.T) {
+func TestEth_SendTransaction_Transfer(t *testing.T) {
+	from := getAddress(t)
+
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["to"] = "0x0000000000000000000000000000000012341234"
+	param[0]["value"] = "0x16345785d8a0000"
+	param[0]["gasLimit"] = "0x5208"
+	param[0]["gasPrice"] = "0x55ae82600"
+
+	rpcRes := call(t, "eth_sendTransaction", param)
+
+	var hash hexutil.Bytes
+	err := json.Unmarshal(rpcRes.Result, &hash)
+	require.NoError(t, err)
+
+	receipt := waitForReceipt(t, hash)
+	require.NotNil(t, receipt)
+	require.Equal(t, "0x1", receipt["status"].(string))
+}
+
+func TestEth_SendTransaction_ContractDeploy(t *testing.T) {
 	from := getAddress(t)
 
 	param := make([]map[string]string, 1)

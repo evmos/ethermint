@@ -228,6 +228,16 @@ func (k *Keeper) CreateAccount(ctx sdk.Context, addr ethcmn.Address) {
 	k.CommitStateDB.WithContext(ctx).CreateAccount(addr)
 }
 
+// UpdateAccounts calls CommitStateDB.UpdateAccounts using the passed in context
+func (k *Keeper) UpdateAccounts(ctx sdk.Context) {
+	k.CommitStateDB.WithContext(ctx).UpdateAccounts()
+}
+
+// ClearStateObjects calls CommitStateDB.ClearStateObjects using the passed in context
+func (k *Keeper) ClearStateObjects(ctx sdk.Context) {
+	k.CommitStateDB.WithContext(ctx).ClearStateObjects()
+}
+
 // Copy calls CommitStateDB.Copy using the passed in context
 func (k *Keeper) Copy(ctx sdk.Context) ethvm.StateDB {
 	return k.CommitStateDB.WithContext(ctx).Copy()

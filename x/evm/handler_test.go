@@ -1,6 +1,7 @@
 package evm_test
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"testing"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -258,9 +260,6 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	err = tx.Sign(big.NewInt(3), priv.ToECDSA())
 	suite.Require().NoError(err)
 
-	// result, err := evm.HandleEthTxMsg(suite.ctx, suite.app.EvmKeeper, tx)
-	// suite.Require().NoError(err, "failed to handle eth tx msg")
-
 	result, err := suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(result)
@@ -290,4 +289,24 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	// amino decodes an empty byte array as nil, whereas JSON decodes it as []byte{} causing a discrepancy
 	resultData.Logs[0].Data = []byte{}
 	suite.Require().Equal(txLogs.Logs[0], resultData.Logs[0])
+}
+
+func (suite *EvmTestSuite) TestSendTransaction() {
+	gasLimit := uint64(21000)
+	gasPrice := big.NewInt(1)
+
+	priv, err := crypto.GenerateKey()
+	suite.Require().NoError(err, "failed to create key")
+	pub := priv.ToECDSA().Public().(*ecdsa.PublicKey)
+
+	suite.app.EvmKeeper.SetBalance(suite.ctx, ethcrypto.PubkeyToAddress(*pub), big.NewInt(100))
+
+	// send simple value transfer with gasLimit=21000
+	tx := types.NewMsgEthereumTx(1, &ethcmn.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil)
+	err = tx.Sign(big.NewInt(3), priv.ToECDSA())
+	suite.Require().NoError(err)
+
+	result, err := suite.handler(suite.ctx, tx)
+	suite.Require().NoError(err)
+	suite.Require().NotNil(result)
 }
