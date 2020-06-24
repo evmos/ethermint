@@ -293,7 +293,7 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 
 func (suite *EvmTestSuite) TestSendTransaction() {
 	gasLimit := uint64(21000)
-	gasPrice := big.NewInt(1)
+	gasPrice := big.NewInt(0x55ae82600)
 
 	priv, err := crypto.GenerateKey()
 	suite.Require().NoError(err, "failed to create key")

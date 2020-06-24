@@ -794,9 +794,9 @@ func (csdb *CommitStateDB) getStateObject(addr ethcmn.Address) (stateObject *sta
 	}
 
 	// otherwise, attempt to fetch the account from the account mapper
-	acc := csdb.accountKeeper.GetAccount(csdb.ctx, addr.Bytes())
+	acc := csdb.accountKeeper.GetAccount(csdb.ctx, sdk.AccAddress(addr.Bytes()))
 	if acc == nil {
-		csdb.setError(fmt.Errorf("no account found for address: %X", addr.Bytes()))
+		csdb.setError(fmt.Errorf("no account found for address: %s", addr.String()))
 		return nil
 	}
 

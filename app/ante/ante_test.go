@@ -256,7 +256,7 @@ func (suite *AnteTestSuite) TestEthInvalidIntrinsicGas() {
 
 	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
 	suite.Require().NoError(err)
-	requireInvalidTx(suite.T(), suite.anteHandler, suite.ctx, tx, false)
+	requireInvalidTx(suite.T(), suite.anteHandler, suite.ctx.WithIsCheckTx(true), tx, false)
 }
 
 func (suite *AnteTestSuite) TestEthInvalidMempoolFees() {
