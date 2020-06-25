@@ -38,8 +38,8 @@ const (
 )
 
 var (
-	ETHERMINT_INTEGRATION_TEST_MODE = os.Getenv("ETHERMINT_INTEGRATION_TEST_MODE")
-	ETHERMINT_NODE_HOST             = os.Getenv("ETHERMINT_NODE_HOST")
+	MODE = os.Getenv("MODE")
+	HOST = os.Getenv("HOST")
 
 	zeroString = "0x0"
 )
@@ -64,14 +64,13 @@ type Response struct {
 }
 
 func TestMain(m *testing.M) {
-	if ETHERMINT_INTEGRATION_TEST_MODE != "stable" {
-		_, _ = fmt.Fprintln(os.Stdout, "Going to skip stable test")
+	if MODE != "rpc" {
+		_, _ = fmt.Fprintln(os.Stdout, "Skipping RPC test")
 		return
 	}
 
-	if ETHERMINT_NODE_HOST == "" {
-		_, _ = fmt.Fprintln(os.Stdout, "Going to skip stable test, ETHERMINT_NODE_HOST is not defined")
-		return
+	if HOST == "" {
+		HOST = "http://localhost:8545"
 	}
 
 	// Start all tests
@@ -95,7 +94,7 @@ func call(t *testing.T, method string, params interface{}) *Response {
 	var rpcRes *Response
 	time.Sleep(1 * time.Second)
 	/* #nosec */
-	res, err := http.Post(ETHERMINT_NODE_HOST, "application/json", bytes.NewBuffer(req))
+	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req))
 	require.NoError(t, err)
 
 	decoder := json.NewDecoder(res.Body)
@@ -301,7 +300,7 @@ func TestEth_GetFilterChanges_WrongID(t *testing.T) {
 	var rpcRes *Response
 	time.Sleep(1 * time.Second)
 	/* #nosec */
-	res, err := http.Post(ETHERMINT_NODE_HOST, "application/json", bytes.NewBuffer(req))
+	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req))
 	require.NoError(t, err)
 
 	decoder := json.NewDecoder(res.Body)
@@ -711,6 +710,24 @@ func TestEth_EstimateGas(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, hexutil.Bytes{0xf7, 0xa6}, gas)
+}
+
+func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
+	from := getAddress(t)
+	bytecode := "0x608060405234801561001057600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a260d08061004d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032"
+
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["data"] = bytecode
+
+	rpcRes := call(t, "eth_estimateGas", param)
+
+	var gas hexutil.Uint64
+	err := json.Unmarshal(rpcRes.Result, &gas)
+	require.NoError(t, err)
+
+	require.Equal(t, hexutil.Uint64(0x1d46e), gas)
 }
 
 func TestEth_ExportAccount(t *testing.T) {
