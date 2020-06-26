@@ -197,6 +197,13 @@ func (e *PublicEthAPI) GetTransactionCount(address common.Address, blockNum Bloc
 	authclient.Codec = codec.NewAppCodec(ctx.Codec)
 	accRet := authtypes.NewAccountRetriever(authclient.Codec, ctx)
 
+	err := accRet.EnsureExists(from)
+	if err != nil {
+		// account doesn't exist yet, return 0
+		n := hexutil.Uint64(0)
+		return &n, nil
+	}
+
 	_, nonce, err := accRet.GetAccountNumberSequence(from)
 	if err != nil {
 		return nil, err
@@ -415,7 +422,6 @@ type account struct {
 func (e *PublicEthAPI) doCall(
 	args CallArgs, blockNr rpc.BlockNumber, globalGasCap *big.Int,
 ) (*sdk.SimulationResponse, error) {
-
 	// Set height for historical queries
 	ctx := e.cliCtx
 
@@ -899,6 +905,12 @@ func (e *PublicEthAPI) generateFromArgs(args params.SendTxArgs) (*types.MsgEther
 		from := sdk.AccAddress(args.From.Bytes())
 		authclient.Codec = codec.NewAppCodec(e.cliCtx.Codec)
 		accRet := authtypes.NewAccountRetriever(authclient.Codec, e.cliCtx)
+
+		err = accRet.EnsureExists(from)
+		if err != nil {
+			// account doesn't exist
+			return nil, fmt.Errorf("nonexistent account %s: %s", args.From.Hex(), err)
+		}
 
 		_, nonce, err = accRet.GetAccountNumberSequence(from)
 		if err != nil {
