@@ -142,27 +142,16 @@ endif
 test: test-unit
 
 test-unit:
-	@${GO_MOD} go test -v --vet=off $(PACKAGES)
+	@go test -v ./... $(PACKAGES)
 
 test-race:
-	@${GO_MOD} go test -v --vet=off -race $(PACKAGES)
-
-test-cli:
-	@echo "NO CLI TESTS"
-
-lint:
-	@echo "--> Running ci lint..."
-	GOBIN=$(PWD)/bin go run scripts/ci.go lint
+	@go test -v --vet=off -race ./... $(PACKAGES)
 
 test-import:
-	@${GO_MOD} go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
+	@go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
 	--blockchain blockchain --timeout=10m
-	# TODO: remove tmp directory after test run to avoid subsequent errors
 
 test-rpc:
-	@${GO_MOD} go test -v --vet=off ./tests/rpc_test
-
-it-tests:
 	./scripts/integration-test-all.sh -q 1 -z 1 -s 2
 
 godocs:
@@ -174,14 +163,27 @@ docker:
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
 
-format:
-	@echo "--> Formatting go files"
-	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -w -s
-	@find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs misspell -w
-
 
 .PHONY: build install update-tools tools godocs clean format lint \
 test-cli test-race test-unit test test-import
+
+###############################################################################
+###                                Linting                                  ###
+###############################################################################
+
+lint:
+	golangci-lint run --out-format=tab --issues-exit-code=0
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -d -s
+
+format:
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs gofmt -w -s
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs misspell -w
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/tendermint
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/ethereum/go-ethereum
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/cosmos/cosmos-sdk
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/cosmos/ethermint
+
+.PHONY: lint format
 
 ###############################################################################
 ###                                Protobuf                                 ###

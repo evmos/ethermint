@@ -131,7 +131,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.Accoun
 		}
 	}
 
-	// get balance of one of the genesis account having 200 ETH
+	// get balance of one of the genesis account having 400 ETH
 	b := stateDB.GetBalance(genInvestor)
 	require.Equal(t, "200000000000000000000", b.String())
 
@@ -206,8 +206,7 @@ func TestImportBlocks(t *testing.T) {
 	blockchainInput, err := os.Open(flagBlockchain)
 	require.Nil(t, err)
 
-	// nolint: gosec
-	defer blockchainInput.Close()
+	defer require.NoError(t, blockchainInput.Close())
 
 	// ethereum mainnet config
 	chainContext := core.NewChainContext()

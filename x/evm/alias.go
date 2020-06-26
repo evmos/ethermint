@@ -7,35 +7,19 @@ import (
 
 // nolint
 const (
-	ModuleName           = types.ModuleName
-	StoreKey             = types.StoreKey
-	RouterKey            = types.RouterKey
-	QueryProtocolVersion = types.QueryProtocolVersion
-	QueryBalance         = types.QueryBalance
-	QueryBlockNumber     = types.QueryBlockNumber
-	QueryStorage         = types.QueryStorage
-	QueryCode            = types.QueryCode
-	QueryNonce           = types.QueryNonce
-	QueryHashToHeight    = types.QueryHashToHeight
-	QueryTransactionLogs = types.QueryTransactionLogs
-	QueryBloom           = types.QueryBloom
-	QueryLogs            = types.QueryLogs
-	QueryAccount         = types.QueryAccount
-	QueryExportAccount   = types.QueryExportAccount
+	ModuleName = types.ModuleName
+	StoreKey   = types.StoreKey
+	RouterKey  = types.RouterKey
 )
 
 // nolint
 var (
-	NewKeeper         = keeper.NewKeeper
-	TxDecoder         = types.TxDecoder
-	NewGenesisStorage = types.NewGenesisStorage
+	NewKeeper = keeper.NewKeeper
+	TxDecoder = types.TxDecoder
 )
 
 //nolint
 type (
-	Keeper          = keeper.Keeper
-	QueryResAccount = types.QueryResAccount
-	GenesisState    = types.GenesisState
-	GenesisAccount  = types.GenesisAccount
-	GenesisStorage  = types.GenesisStorage
+	Keeper       = keeper.Keeper
+	GenesisState = types.GenesisState
 )
