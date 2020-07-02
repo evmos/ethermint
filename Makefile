@@ -293,3 +293,21 @@ test-sim-multi-seed-short: runsim
 
 .PHONY: runsim test-sim-nondeterminism test-sim-custom-genesis-fast test-sim-fast sim-import-export \
 	test-sim-simulation-after-import test-sim-custom-genesis-multi-seed test-sim-multi-seed \
+
+
+
+#######################
+###  Documentation  ###
+#######################
+
+# Start docs site at localhost:8080
+docs-serve:
+	@cd docs && \
+	npm install && \
+	npm run serve
+
+# Build the site into docs/.vuepress/dist
+docs-build:
+	@cd docs && \
+	npm install && \
+	npm run build
