@@ -10,8 +10,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/x/faucet/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // GetQueryCmd defines evm module queries through the cli

@@ -3,8 +3,9 @@ package keeper
 import (
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/x/evm/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"

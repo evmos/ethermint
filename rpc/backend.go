@@ -5,8 +5,9 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+
+	"github.com/cosmos/cosmos-sdk/client/context"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"

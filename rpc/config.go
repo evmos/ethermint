@@ -16,6 +16,7 @@ import (
 
 	"github.com/cosmos/ethermint/app"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
+
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/spf13/cobra"

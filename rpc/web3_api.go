@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"github.com/cosmos/ethermint/version"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )

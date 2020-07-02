@@ -7,11 +7,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcons "github.com/ethereum/go-ethereum/consensus"
 	ethcore "github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestChainContextInterface(t *testing.T) {

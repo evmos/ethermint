@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdkcontext "github.com/cosmos/cosmos-sdk/client/context"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )

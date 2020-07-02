@@ -10,9 +10,10 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 
+	emint "github.com/cosmos/ethermint/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	emint "github.com/cosmos/ethermint/types"
 )
 
 // StateTransition defines data to transitionDB in evm

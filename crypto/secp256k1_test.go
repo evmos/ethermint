@@ -3,9 +3,11 @@ package crypto
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	ethsecp256k1 "github.com/ethereum/go-ethereum/crypto/secp256k1"
-	"github.com/stretchr/testify/require"
+
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 )
 

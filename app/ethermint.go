@@ -24,9 +24,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	ethermintcodec "github.com/cosmos/ethermint/codec"
 
 	"github.com/cosmos/ethermint/app/ante"
+	ethermintcodec "github.com/cosmos/ethermint/codec"
 	eminttypes "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm"
 	"github.com/cosmos/ethermint/x/faucet"

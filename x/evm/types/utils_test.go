@@ -3,9 +3,10 @@ package types
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestEvmDataEncoding(t *testing.T) {

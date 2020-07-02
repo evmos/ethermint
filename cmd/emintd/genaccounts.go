@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdkcodec "github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,6 +23,7 @@ import (
 
 	"github.com/cosmos/ethermint/codec"
 	ethermint "github.com/cosmos/ethermint/types"
+
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -35,7 +36,7 @@ const (
 
 // AddGenesisAccountCmd returns add-genesis-account cobra Command.
 func AddGenesisAccountCmd(
-	ctx *server.Context, depCdc *amino.Codec, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
+	ctx *server.Context, depCdc *sdkcodec.Codec, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
 ) *cobra.Command {
 
 	cmd := &cobra.Command{

@@ -7,6 +7,7 @@ import (
 
 	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
