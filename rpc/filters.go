@@ -1,287 +1,168 @@
 package rpc
 
 import (
-	"errors"
+	"context"
+	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/bloombits"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/log"
 )
 
-/*
-	- Filter functions derived from go-ethereum
-	Used to set the criteria passed in from RPC params
-*/
-
-const blockFilter = "block"
-const pendingTxFilter = "pending"
-const logFilter = "log"
-
-// Filter can be used to retrieve and filter logs, blocks, or pending transactions.
+// Filter can be used to retrieve and filter logs.
 type Filter struct {
-	backend            Backend
-	fromBlock, toBlock *big.Int         // start and end block numbers
-	addresses          []common.Address // contract addresses to watch
-	topics             [][]common.Hash  // log topics to watch for
-	blockHash          *common.Hash     // Block hash if filtering a single block
-
-	typ     string
-	hashes  []common.Hash   // filtered block or transaction hashes
-	logs    []*ethtypes.Log //nolint // filtered logs
-	stopped bool            // set to true once filter in uninstalled
-
-	err error
+	backend  FiltersBackend
+	criteria filters.FilterCriteria
+	matcher  *bloombits.Matcher
 }
 
-// NewFilter returns a new Filter
-func NewFilter(backend Backend, criteria *filters.FilterCriteria) *Filter {
-	filter := &Filter{
-		backend:   backend,
-		fromBlock: criteria.FromBlock,
-		toBlock:   criteria.ToBlock,
-		addresses: criteria.Addresses,
-		topics:    criteria.Topics,
-		typ:       logFilter,
-		stopped:   false,
+// NewBlockFilter creates a new filter which directly inspects the contents of
+// a block to figure out whether it is interesting or not.
+func NewBlockFilter(backend FiltersBackend, criteria filters.FilterCriteria) *Filter {
+	// Create a generic filter and convert it into a block filter
+	return newFilter(backend, criteria, nil)
+}
+
+// NewRangeFilter creates a new filter which uses a bloom filter on blocks to
+// figure out whether a particular block is interesting or not.
+func NewRangeFilter(backend FiltersBackend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
+	// Flatten the address and topic filter clauses into a single bloombits filter
+	// system. Since the bloombits are not positional, nil topics are permitted,
+	// which get flattened into a nil byte slice.
+	var filtersBz [][][]byte // nolint: prealloc
+	if len(addresses) > 0 {
+		filter := make([][]byte, len(addresses))
+		for i, address := range addresses {
+			filter[i] = address.Bytes()
+		}
+		filtersBz = append(filtersBz, filter)
 	}
 
-	return filter
+	for _, topicList := range topics {
+		filter := make([][]byte, len(topicList))
+		for i, topic := range topicList {
+			filter[i] = topic.Bytes()
+		}
+		filtersBz = append(filtersBz, filter)
+	}
+
+	size, _ := backend.BloomStatus()
+
+	// Create a generic filter and convert it into a range filter
+	criteria := filters.FilterCriteria{
+		FromBlock: big.NewInt(begin),
+		ToBlock:   big.NewInt(end),
+		Addresses: addresses,
+		Topics:    topics,
+	}
+
+	return newFilter(backend, criteria, bloombits.NewMatcher(size, filtersBz))
 }
 
-// NewFilterWithBlockHash returns a new Filter with a blockHash.
-func NewFilterWithBlockHash(backend Backend, criteria *filters.FilterCriteria) *Filter {
+// newFilter returns a new Filter
+func newFilter(backend FiltersBackend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
 	return &Filter{
-		backend:   backend,
-		fromBlock: criteria.FromBlock,
-		toBlock:   criteria.ToBlock,
-		addresses: criteria.Addresses,
-		topics:    criteria.Topics,
-		blockHash: criteria.BlockHash,
-		typ:       logFilter,
+		backend:  backend,
+		criteria: criteria,
+		matcher:  matcher,
 	}
 }
 
-// NewBlockFilter creates a new filter that notifies when a block arrives.
-func NewBlockFilter(backend Backend) *Filter {
-	filter := NewFilter(backend, &filters.FilterCriteria{})
-	filter.typ = blockFilter
+// Logs searches the blockchain for matching log entries, returning all from the
+// first block that contains matches, updating the start of the filter accordingly.
+func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
+	logs := []*ethtypes.Log{}
+	var err error
 
-	go func() {
-		err := filter.pollForBlocks()
-		if err != nil {
-			filter.err = err
-		}
-	}()
-
-	return filter
-}
-
-func (f *Filter) pollForBlocks() error {
-	prev := hexutil.Uint64(0)
-
-	for {
-		if f.stopped {
-			return nil
-		}
-
-		num, err := f.backend.BlockNumber()
-		if err != nil {
-			return err
-		}
-
-		if num == prev {
-			continue
-		}
-
-		block, err := f.backend.GetBlockByNumber(BlockNumber(num), false)
-		if err != nil {
-			return err
-		}
-
-		hashBytes, ok := block["hash"].(hexutil.Bytes)
-		if !ok {
-			return errors.New("could not convert block hash to hexutil.Bytes")
-		}
-
-		hash := common.BytesToHash(hashBytes)
-		f.hashes = append(f.hashes, hash)
-
-		prev = num
-
-		// TODO: should we add a delay?
-	}
-}
-
-func (f *Filter) pollForTransactions() error {
-	for {
-		if f.stopped {
-			return nil
-		}
-
-		txs, err := f.backend.PendingTransactions()
-		if err != nil {
-			return err
-		}
-
-		for _, tx := range txs {
-			if !contains(f.hashes, tx.Hash) {
-				f.hashes = append(f.hashes, tx.Hash)
-			}
-		}
-
-		<-time.After(1 * time.Second)
-
-	}
-}
-
-func contains(slice []common.Hash, item common.Hash) bool {
-	set := make(map[common.Hash]struct{}, len(slice))
-	for _, s := range slice {
-		set[s] = struct{}{}
-	}
-
-	_, ok := set[item]
-	return ok
-}
-
-// NewPendingTransactionFilter creates a new filter that notifies when a pending transaction arrives.
-func NewPendingTransactionFilter(backend Backend) *Filter {
-	filter := NewFilter(backend, &filters.FilterCriteria{})
-	filter.typ = pendingTxFilter
-
-	go func() {
-		err := filter.pollForTransactions()
-		if err != nil {
-			filter.err = err
-		}
-	}()
-
-	return filter
-}
-
-func (f *Filter) uninstallFilter() {
-	f.stopped = true
-}
-
-func (f *Filter) getFilterChanges() (interface{}, error) {
-	switch f.typ {
-	case blockFilter:
-		if f.err != nil {
-			return nil, f.err
-		}
-
-		blocks := make([]common.Hash, len(f.hashes))
-		copy(blocks, f.hashes)
-		f.hashes = []common.Hash{}
-
-		return blocks, nil
-	case pendingTxFilter:
-		if f.err != nil {
-			return nil, f.err
-		}
-
-		txs := make([]common.Hash, len(f.hashes))
-		copy(txs, f.hashes)
-		f.hashes = []common.Hash{}
-		return txs, nil
-	case logFilter:
-		return f.getFilterLogs()
-	}
-
-	return nil, errors.New("unsupported filter")
-}
-
-func (f *Filter) getFilterLogs() ([]*ethtypes.Log, error) {
-	ret := []*ethtypes.Log{}
-
-	// filter specific block only
-	if f.blockHash != nil {
-		block, err := f.backend.GetBlockByHash(*f.blockHash, true)
+	// If we're doing singleton block filtering, execute and return
+	if f.criteria.BlockHash != nil && f.criteria.BlockHash != (&common.Hash{}) {
+		header, err := f.backend.HeaderByHash(*f.criteria.BlockHash)
 		if err != nil {
 			return nil, err
 		}
-
-		// if the logsBloom == 0, there are no logs in that block
-		if txs, ok := block["transactions"].([]common.Hash); !ok {
-			return ret, nil
-		} else if len(txs) != 0 {
-			return f.checkMatches(block)
+		if header == nil {
+			return nil, fmt.Errorf("unknown block header %s", f.criteria.BlockHash.String())
 		}
+		return f.blockLogs(header)
 	}
 
-	// filter range of blocks
-	num, err := f.backend.BlockNumber()
+	// Figure out the limits of the filter range
+	header, err := f.backend.HeaderByNumber(LatestBlockNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	// if f.fromBlock is set to 0, set it to the latest block number
-	if f.fromBlock == nil || f.fromBlock.Cmp(big.NewInt(0)) == 0 {
-		f.fromBlock = big.NewInt(int64(num))
+	if header == nil || header.Number == nil {
+		return nil, nil
 	}
 
-	// if f.toBlock is set to 0, set it to the latest block number
-	if f.toBlock == nil || f.toBlock.Cmp(big.NewInt(0)) == 0 {
-		f.toBlock = big.NewInt(int64(num))
+	head := header.Number.Int64()
+	if f.criteria.FromBlock.Int64() == -1 {
+		f.criteria.FromBlock = big.NewInt(head)
+	}
+	if f.criteria.ToBlock.Int64() == -1 {
+		f.criteria.ToBlock = big.NewInt(head)
 	}
 
-	log.Debug("[ethAPI] Retrieving filter logs", "fromBlock", f.fromBlock, "toBlock", f.toBlock,
-		"topics", f.topics, "addresses", f.addresses)
-
-	from := f.fromBlock.Int64()
-	to := f.toBlock.Int64()
-
-	for i := from; i <= to; i++ {
-		block, err := f.backend.GetBlockByNumber(NewBlockNumber(big.NewInt(i)), true)
+	for i := f.criteria.FromBlock.Int64(); i <= f.criteria.ToBlock.Int64(); i++ {
+		block, err := f.backend.GetBlockByNumber(BlockNumber(i), true)
 		if err != nil {
-			f.err = err
-			log.Debug("[ethAPI] Cannot get block", "block", block["number"], "error", err)
-			break
+			return logs, err
 		}
 
-		log.Debug("[ethAPI] filtering", "block", block)
-
-		// TODO: block logsBloom is often set in the wrong block
-		// if the logsBloom == 0, there are no logs in that block
-
-		if txs, ok := block["transactions"].([]common.Hash); !ok {
+		txs, ok := block["transactions"].([]common.Hash)
+		if !ok || len(txs) == 0 {
 			continue
-		} else if len(txs) != 0 {
-			logs, err := f.checkMatches(block)
-			if err != nil {
-				f.err = err
-				break
-			}
-
-			ret = append(ret, logs...)
 		}
+
+		logsMatched := f.checkMatches(txs)
+		logs = append(logs, logsMatched...)
 	}
 
-	return ret, nil
+	return logs, nil
 }
 
-func (f *Filter) checkMatches(block map[string]interface{}) ([]*ethtypes.Log, error) {
-	transactions, ok := block["transactions"].([]common.Hash)
-	if !ok {
-		return nil, errors.New("invalid block transactions")
+// blockLogs returns the logs matching the filter criteria within a single block.
+func (f *Filter) blockLogs(header *ethtypes.Header) ([]*ethtypes.Log, error) {
+	if !bloomFilter(header.Bloom, f.criteria.Addresses, f.criteria.Topics) {
+		return []*ethtypes.Log{}, nil
 	}
 
-	unfiltered := []*ethtypes.Log{}
+	logsList, err := f.backend.GetLogs(header.Hash())
+	if err != nil {
+		return []*ethtypes.Log{}, err
+	}
 
+	var unfiltered []*ethtypes.Log // nolint: prealloc
+	for _, logs := range logsList {
+		unfiltered = append(unfiltered, logs...)
+	}
+	logs := filterLogs(unfiltered, nil, nil, f.criteria.Addresses, f.criteria.Topics)
+	if len(logs) == 0 {
+		return []*ethtypes.Log{}, nil
+	}
+	return logs, nil
+}
+
+// checkMatches checks if the logs from the a list of transactions transaction
+// contain any log events that  match the filter criteria. This function is
+// called when the bloom filter signals a potential match.
+func (f *Filter) checkMatches(transactions []common.Hash) []*ethtypes.Log {
+	unfiltered := []*ethtypes.Log{}
 	for _, tx := range transactions {
-		logs, err := f.backend.GetTransactionLogs(common.BytesToHash(tx[:]))
+		logs, err := f.backend.GetTransactionLogs(tx)
 		if err != nil {
-			return nil, err
+			// ignore error if transaction didn't set any logs (eg: when tx type is not
+			// MsgEthereumTx or MsgEthermint)
+			continue
 		}
 
 		unfiltered = append(unfiltered, logs...)
 	}
 
-	return filterLogs(unfiltered, f.fromBlock, f.toBlock, f.addresses, f.topics), nil
+	return filterLogs(unfiltered, f.criteria.FromBlock, f.criteria.ToBlock, f.criteria.Addresses, f.criteria.Topics)
 }
 
 // filterLogs creates a slice of logs matching the given criteria.
@@ -305,7 +186,7 @@ Logs:
 		}
 		// If the to filtered topics is greater than the amount of topics in logs, skip.
 		if len(topics) > len(log.Topics) {
-			continue Logs
+			continue
 		}
 		for i, sub := range topics {
 			match := len(sub) == 0 // empty rule set == wildcard
@@ -332,4 +213,30 @@ func includes(addresses []common.Address, a common.Address) bool {
 	}
 
 	return false
+}
+
+func bloomFilter(bloom ethtypes.Bloom, addresses []common.Address, topics [][]common.Hash) bool {
+	var included bool
+	if len(addresses) > 0 {
+		for _, addr := range addresses {
+			if ethtypes.BloomLookup(bloom, addr) {
+				included = true
+				break
+			}
+		}
+		if !included {
+			return false
+		}
+	}
+
+	for _, sub := range topics {
+		included = len(sub) == 0 // empty rule set == wildcard
+		for _, topic := range sub {
+			if ethtypes.BloomLookup(bloom, topic) {
+				included = true
+				break
+			}
+		}
+	}
+	return included
 }

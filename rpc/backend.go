@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"strconv"
 
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -19,20 +21,26 @@ import (
 type Backend interface {
 	// Used by block filter; also used for polling
 	BlockNumber() (hexutil.Uint64, error)
+	HeaderByNumber(blockNum BlockNumber) (*ethtypes.Header, error)
+	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	GetBlockByNumber(blockNum BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	getEthBlockByNumber(height int64, fullTx bool) (map[string]interface{}, error)
 	getGasLimit() (int64, error)
+	// returns the logs of a given block
+	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 
 	// Used by pending transaction filter
 	PendingTransactions() ([]*Transaction, error)
 
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
-	// TODO: Bloom methods
+	BloomStatus() (uint64, uint64)
 }
 
-// EthermintBackend implements Backend
+var _ Backend = (*EthermintBackend)(nil)
+
+// EthermintBackend implements the Backend interface
 type EthermintBackend struct {
 	cliCtx   context.CLIContext
 	gasLimit int64
@@ -68,7 +76,7 @@ func (e *EthermintBackend) GetBlockByNumber(blockNum BlockNumber, fullTx bool) (
 
 // GetBlockByHash returns the block identified by hash.
 func (e *EthermintBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
-	res, _, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryHashToHeight, hash.Hex()))
+	res, height, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryHashToHeight, hash.Hex()))
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +86,58 @@ func (e *EthermintBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[st
 		return nil, err
 	}
 
+	e.cliCtx = e.cliCtx.WithHeight(height)
 	return e.getEthBlockByNumber(out.Number, fullTx)
+}
+
+// HeaderByNumber returns the block header identified by height.
+func (e *EthermintBackend) HeaderByNumber(blockNum BlockNumber) (*ethtypes.Header, error) {
+	return e.getBlockHeader(blockNum.Int64())
+}
+
+// HeaderByHash returns the block header identified by hash.
+func (e *EthermintBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error) {
+	res, height, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryHashToHeight, blockHash.Hex()))
+	if err != nil {
+		return nil, err
+	}
+	var out evmtypes.QueryResBlockNumber
+	if err := e.cliCtx.Codec.UnmarshalJSON(res, &out); err != nil {
+		return nil, err
+	}
+
+	e.cliCtx = e.cliCtx.WithHeight(height)
+	return e.getBlockHeader(out.Number)
+}
+
+func (e *EthermintBackend) getBlockHeader(height int64) (*ethtypes.Header, error) {
+	if height <= 0 {
+		// get latest block height
+		num, err := e.BlockNumber()
+		if err != nil {
+			return nil, err
+		}
+
+		height = int64(num)
+	}
+
+	block, err := e.cliCtx.Client.Block(&height)
+	if err != nil {
+		return nil, err
+	}
+
+	res, _, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryBloom, strconv.FormatInt(height, 10)))
+	if err != nil {
+		return nil, err
+	}
+
+	var bloomRes evmtypes.QueryBloomFilter
+	e.cliCtx.Codec.MustUnmarshalJSON(res, &bloomRes)
+
+	ethHeader := EthHeaderFromTendermint(block.Block.Header)
+	ethHeader.Bloom = bloomRes.Bloom
+
+	return ethHeader, nil
 }
 
 func (e *EthermintBackend) getEthBlockByNumber(height int64, fullTx bool) (map[string]interface{}, error) {
@@ -128,7 +187,6 @@ func (e *EthermintBackend) getEthBlockByNumber(height int64, fullTx bool) (map[s
 
 	var out evmtypes.QueryBloomFilter
 	e.cliCtx.Codec.MustUnmarshalJSON(res, &out)
-
 	return formatBlock(header, block.Block.Size(), gasLimit, gasUsed, transactions, out.Bloom), nil
 }
 
@@ -158,11 +216,12 @@ func (e *EthermintBackend) getGasLimit() (int64, error) {
 }
 
 // GetTransactionLogs returns the logs given a transaction hash.
+// It returns an error if there's an encoding error.
+// If no logs are found for the tx hash, the error is nil.
 func (e *EthermintBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
-	// do we need to use the block height somewhere?
 	ctx := e.cliCtx
 
-	res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryTransactionLogs, txHash.Hex()), nil)
+	res, height, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryTransactionLogs, txHash.Hex()), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +231,7 @@ func (e *EthermintBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.L
 		return nil, err
 	}
 
+	e.cliCtx = e.cliCtx.WithHeight(height)
 	return out.Logs, nil
 }
 
@@ -183,7 +243,7 @@ func (e *EthermintBackend) PendingTransactions() ([]*Transaction, error) {
 		return nil, err
 	}
 
-	transactions := make([]*Transaction, 0, 100)
+	transactions := make([]*Transaction, pendingTxs.Count)
 	for _, tx := range pendingTxs.Txs {
 		ethTx, err := bytesToEthTx(e.cliCtx, tx)
 		if err != nil {
@@ -200,4 +260,65 @@ func (e *EthermintBackend) PendingTransactions() ([]*Transaction, error) {
 	}
 
 	return transactions, nil
+}
+
+// GetLogs returns all the logs from all the ethreum transactions in a block.
+func (e *EthermintBackend) GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error) {
+	res, _, err := e.cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryHashToHeight, blockHash.Hex()))
+	if err != nil {
+		return nil, err
+	}
+
+	var out evmtypes.QueryResBlockNumber
+	if err := e.cliCtx.Codec.UnmarshalJSON(res, &out); err != nil {
+		return nil, err
+	}
+
+	block, err := e.cliCtx.Client.Block(&out.Number)
+	if err != nil {
+		return nil, err
+	}
+
+	var blockLogs = [][]*ethtypes.Log{}
+	for _, tx := range block.Block.Txs {
+		// NOTE: we query the state in case the tx result logs are not persisted after an upgrade.
+		res, _, err := e.cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", evmtypes.ModuleName, evmtypes.QueryTransactionLogs, common.BytesToHash(tx.Hash()).Hex()), nil)
+		if err != nil {
+			continue
+		}
+
+		out := new(evmtypes.QueryETHLogs)
+		if err := e.cliCtx.Codec.UnmarshalJSON(res, &out); err != nil {
+			return nil, err
+		}
+
+		blockLogs = append(blockLogs, out.Logs)
+	}
+
+	return blockLogs, nil
+}
+
+// BloomStatus returns the BloomBitsBlocks and the number of processed sections maintained
+// by the chain indexer.
+func (e *EthermintBackend) BloomStatus() (uint64, uint64) {
+	return 4096, 0
+}
+
+// EthHeaderFromTendermint is an util function that returns an Ethereum Header
+// from a tendermint Header.
+func EthHeaderFromTendermint(header tmtypes.Header) *ethtypes.Header {
+	return &ethtypes.Header{
+		ParentHash:  common.BytesToHash(header.LastBlockID.Hash.Bytes()),
+		UncleHash:   common.Hash{},
+		Coinbase:    common.Address{},
+		Root:        common.BytesToHash(header.AppHash),
+		TxHash:      common.BytesToHash(header.DataHash),
+		ReceiptHash: common.Hash{},
+		Difficulty:  nil,
+		Number:      big.NewInt(header.Height),
+		Time:        uint64(header.Time.Unix()),
+		Extra:       nil,
+		MixDigest:   common.Hash{},
+		Nonce:       ethtypes.BlockNonce{},
+	}
 }

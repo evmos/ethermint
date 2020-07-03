@@ -30,7 +30,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -388,7 +387,7 @@ type CallArgs struct {
 }
 
 // Call performs a raw contract call.
-func (e *PublicEthAPI) Call(args CallArgs, blockNr rpc.BlockNumber, overrides *map[common.Address]account) (hexutil.Bytes, error) {
+func (e *PublicEthAPI) Call(args CallArgs, blockNr BlockNumber, overrides *map[common.Address]account) (hexutil.Bytes, error) {
 	simRes, err := e.doCall(args, blockNr, big.NewInt(emint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
@@ -419,7 +418,7 @@ type account struct {
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
 func (e *PublicEthAPI) doCall(
-	args CallArgs, blockNr rpc.BlockNumber, globalGasCap *big.Int,
+	args CallArgs, blockNr BlockNumber, globalGasCap *big.Int,
 ) (*sdk.SimulationResponse, error) {
 	// Set height for historical queries
 	ctx := e.cliCtx
@@ -561,7 +560,8 @@ func convertTransactionsToRPC(cliCtx context.CLIContext, txs []tmtypes.Tx, block
 	for i, tx := range txs {
 		ethTx, err := bytesToEthTx(cliCtx, tx)
 		if err != nil {
-			return nil, nil, err
+			// continue to next transaction in case it's not a MsgEthereumTx
+			continue
 		}
 		// TODO: Remove gas usage calculation if saving gasUsed per block
 		gasUsed.Add(gasUsed, ethTx.Fee())
@@ -602,7 +602,7 @@ func bytesToEthTx(cliCtx context.CLIContext, bz []byte) (*evmtypes.MsgEthereumTx
 
 	ethTx, ok := stdTx.(evmtypes.MsgEthereumTx)
 	if !ok {
-		return nil, fmt.Errorf("invalid transaction type, must be an amino encoded Ethereum transaction")
+		return nil, fmt.Errorf("invalid transaction type %T, expected MsgEthereumTx", stdTx)
 	}
 	return &ethTx, nil
 }

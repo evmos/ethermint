@@ -20,6 +20,7 @@ const (
 	EarliestBlockNumber = BlockNumber(1)
 )
 
+// NewBlockNumber creates a new BlockNumber instance.
 func NewBlockNumber(n *big.Int) BlockNumber {
 	return BlockNumber(n.Int64())
 }
