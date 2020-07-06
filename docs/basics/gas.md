@@ -26,4 +26,4 @@ The `AnteHandler` is a special `handler` that is run for every transaction durin
 
 ## Next {hide}
 
-Learn more about the [Lifecycle of a transaction](./tx-lifecycle.md) {hide}
+Learn about the [encoding](./../core/encoding.md) formats used on Ethermint {hide}

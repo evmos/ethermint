@@ -6,7 +6,7 @@ parent:
 
 # Quick Start
 
-This repository contains reference documentation on the basic concepts of Ethermint.
+This repository contains reference documentation on how to install and run an Etheremint full node.
 
 1. [Run a Node](./run_node.md)
 

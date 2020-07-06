@@ -8,7 +8,7 @@ The `codec` is used everywhere in the Cosmos SDK to encode and decode structs an
 
 ## Pre-requisite Readings
 
-- [Anatomy of an SDK application](../basics/app-anatomy.md) {prereq}
+- [Cosmos SDK Encoding](https://docs.cosmos.network/master/core/encoding.html) {prereq}
 
 ## Encoding Formats
 

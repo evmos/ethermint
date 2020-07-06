@@ -8,70 +8,12 @@ order: 2
 
 ## Pre-requisite Readings
 
-- [Anatomy of an SDK application](../basics/app-anatomy.md) {prereq}
-
-## Events
-
-Events are implemented in the Cosmos SDK as an alias of the ABCI `Event` type and
-take the form of: `{eventType}.{eventAttribute}={value}`.
-
-+++ https://github.com/tendermint/tendermint/blob/bc572217c07b90ad9cee851f193aaa8e9557cbc7/abci/types/types.pb.go#L2187-L2193
-
-Events contain:
-
-- A `type`, which is meant to categorize an event at a high-level (e.g. by module or action).
-- A list of `attributes`, which are key-value pairs that give more information about
-  the categorized `event`.
-  +++ https://github.com/cosmos/cosmos-sdk/blob/7d7821b9af132b0f6131640195326aa02b6751db/types/events.go#L51-L56
-
-Events are returned to the underlying consensus engine in the response of the following ABCI messages:
-
-- [`BeginBlock`](./baseapp.md#beginblock)
-- [`EndBlock`](./baseapp.md#endblock)
-- [`CheckTx`](./baseapp.md#checktx)
-- [`DeliverTx`](./baseapp.md#delivertx)
-
-Events, the `type` and `attributes`, are defined on a **per-module basis** in the module's
-`/types/events.go` file, and triggered from the module's [`handler`](../building-modules/handler.md)
-via the [`EventManager`](#eventmanager). In addition, each module documents its events under
-`spec/xx_events.md`.
-
-## EventManager
-
-In Cosmos SDK applications, events are managed by an abstraction called the `EventManager`.
-Internally, the `EventManager` tracks a list of `Events` for the entire execution flow of a
-transaction or `BeginBlock`/`EndBlock`.
-
-+++ https://github.com/cosmos/cosmos-sdk/blob/7d7821b9af132b0f6131640195326aa02b6751db/types/events.go#L16-L20
-
-The `EventManager` comes with a set of useful methods to manage events. Among them, the one that is
-used the most by module and application developers is the `EmitEvent` method, which tracks
-an `event` in the `EventManager`.
-
-+++ https://github.com/cosmos/cosmos-sdk/blob/7d7821b9af132b0f6131640195326aa02b6751db/types/events.go#L29-L31
-
-Module developers should handle event emission via the `EventManager#EmitEvent` in each message
-`Handler` and in each `BeginBlock`/`EndBlock` handler. The `EventManager` is accessed via
-the [`Context`](./context.md), where event emission generally follows this pattern:
-
-```go
-ctx.EventManager().EmitEvent(
-    sdk.NewEvent(eventType, sdk.NewAttribute(attributeKey, attributeValue)),
-)
-```
-
-Module's `handler` function should also set a new `EventManager` to the `context` to isolate emitted events per `message`:
-```go
-func NewHandler(keeper Keeper) sdk.Handler {
-    return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
-        ctx = ctx.WithEventManager(sdk.NewEventManager())
-        switch msg := msg.(type) {
-```
-
-See the [`Handler`](../building-modules/handler.md) concept doc for a more detailed
-view on how to typically implement `Events` and use the `EventManager` in modules.
+- [Cosmos SDK Events](https://docs.cosmos.network/master/core/events.html) {prereq}
+- [Ethereum's PubSub JSON-RPC API](https://geth.ethereum.org/docs/rpc/pubsub) {prereq}
 
 ## Subscribing to Events
+
+### SDK and Tendermint Events
 
 It is possible to subscribe to `Events` via Tendermint's [Websocket](https://tendermint.com/docs/app-dev/subscribing-to-events-via-websocket.html#subscribing-to-events-via-websocket).
 This is done by calling the `subscribe` RPC method via Websocket:
@@ -96,7 +38,7 @@ The main `eventCategory` you can subscribe to are:
 These events are triggered from the `state` package after a block is committed. You can get the
 full list of `event` categories [here](https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants).
 
-The `type` and `attribute` value of the `query` allow you to filter the specific `event` you are looking for. For example, a `transfer` transaction triggers an `event` of type `Transfer` and has `Recipient` and `Sender` as `attributes` (as defined in the [`events` file of the `bank` module](https://github.com/cosmos/cosmos-sdk/blob/master/x/bank/types/events.go)). Subscribing to this `event` would be done like so:
+The `type` and `attribute` value of the `query` allow you to filter the specific `event` you are looking for. For example, a `MsgEthereumTx` transaction triggers an `event` of type `ethermint` and has `sender` and `recipient` as `attributes`. Subscribing to this `event` would be done like so:
 
 ```json
 {
@@ -104,12 +46,57 @@ The `type` and `attribute` value of the `query` allow you to filter the specific
     "method": "subscribe",
     "id": "0",
     "params": {
-        "query": "tm.event='Tx' AND transfer.sender='senderAddress'"
+        "query": "tm.event='Tx' AND ethereum.recipient='hexAddress'"
     }
 }
 ```
 
-where `senderAddress` is an address following the [`AccAddress`](../basics/accounts.md#addresses) format. 
+where `hexAddress` is an Ethereum hex address (eg: `0x1122334455667788990011223344556677889900`).
+
+### Ethereum JSON-RPC Events
+
+<!-- TODO: PublicFiltersAPI -->
+
+## Websocket Connection
+
+### Tendermint Websocket
+
+To start a connection with the Tendermint websocket you need to define the address with the `--node` flag when initializing the REST server (default `tcp://localhost:26657`):
+
+```bash
+emintcli rest-server --laddr "tcp://localhost:8545" --node "tcp://localhost:8080" --unlock-key <my_key> --chain-id <chain_id>
+```
+
+Then, start a websocket subscription with [ws](https://github.com/hashrocket/ws)
+
+```bash
+# connect to tendermint websocet at port 8080 as defined above
+ws ws://localhost:8080/websocket
+
+# subscribe to new Tendermint block headers
+> { "jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='NewBlockHeader'"], "id": 1 }
+```
+
+### Ethereum Websocket
+
+Since Ethermint runs uses Tendermint Core as it's consensus Engine and it's built with the Cosmos SDK framework, it inherits the event format from them. However, in order to support the native Web3 compatibility for websockets of the [Ethereum's PubSubAPI](https://geth.ethereum.org/docs/rpc/pubsub), Ethermint needs to cast the Tendermint responses retreived into the Ethereum types.
+
+You can start a connection with the Ethereum websocket using the `--websocket-port` flag when initializing the REST server (default `7545`):
+
+```bash
+emintcli rest-server --laddr "tcp://localhost:8545" --websocket-port 8546 --unlock-key <my_key> --chain-id <chain_id>
+```
+
+Then, start a websocket subscription with [ws](https://github.com/hashrocket/ws)
+
+```bash
+# connect to tendermint websocet at port 8546 as defined above
+ws ws://localhost:8546/
+
+# subscribe to new Ethereum-formatted block Headers
+> {"id": 1, "method": "eth_subscribe", "params": ["newHeads", {}]}
+< {"jsonrpc":"2.0","result":"0x44e010cb2c3161e9c02207ff172166ef","id":1}
+```
 
 ## Next {hide}
 

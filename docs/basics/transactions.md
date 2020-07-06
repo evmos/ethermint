@@ -42,4 +42,4 @@ duplicated in the embedding
 
 ## Next {hide}
 
-Learn about the [encoding](./../core/encoding.md) formats used on Ethermint {hide}
+Learn about how [gas](./gas.md) is used on Ethermint {hide}

@@ -6,10 +6,6 @@ order: 1
 
 This document describes the in-built accounts system of Ethermint. {synopsis}
 
-## Pre-requisite Readings
-
-- [Anatomy of an SDK Application](./app-anatomy.md) {prereq}
-
 ## Cosmos SDK Accounts
 
 <!-- TODO: -->
