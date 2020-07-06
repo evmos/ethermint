@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/cosmos/ethermint/app"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
-
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/spf13/cobra"
@@ -56,8 +56,9 @@ func EmintServeCmd(cdc *codec.Codec) *cobra.Command {
 func registerRoutes(rs *lcd.RestServer) {
 	s := rpc.NewServer()
 	accountName := viper.GetString(flagUnlockKey)
+	accountNames := strings.Split(accountName, ",")
 
-	var emintKey emintcrypto.PrivKeySecp256k1
+	var emintKeys []emintcrypto.PrivKeySecp256k1
 	if len(accountName) > 0 {
 		var err error
 		inBuf := bufio.NewReader(os.Stdin)
@@ -76,13 +77,13 @@ func registerRoutes(rs *lcd.RestServer) {
 			}
 		}
 
-		emintKey, err = unlockKeyFromNameAndPassphrase(accountName, passphrase)
+		emintKeys, err = unlockKeyFromNameAndPassphrase(accountNames, passphrase)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	apis := GetRPCAPIs(rs.CliCtx, emintKey)
+	apis := GetRPCAPIs(rs.CliCtx, emintKeys)
 
 	// TODO: Allow cli to configure modules https://github.com/ChainSafe/ethermint/issues/74
 	whitelist := make(map[string]bool)
@@ -105,7 +106,7 @@ func registerRoutes(rs *lcd.RestServer) {
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
 
-func unlockKeyFromNameAndPassphrase(accountName, passphrase string) (emintKey emintcrypto.PrivKeySecp256k1, err error) {
+func unlockKeyFromNameAndPassphrase(accountNames []string, passphrase string) (emintKeys []emintcrypto.PrivKeySecp256k1, err error) {
 	keybase, err := keyring.NewKeyring(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
@@ -116,16 +117,21 @@ func unlockKeyFromNameAndPassphrase(accountName, passphrase string) (emintKey em
 		return
 	}
 
-	// With keyring keybase, password is not required as it is pulled from the OS prompt
-	privKey, err := keybase.ExportPrivateKeyObject(accountName, passphrase)
-	if err != nil {
-		return
-	}
+	// try the for loop with array []string accountNames
+	// run through the bottom code inside the for loop
+	for _, acc := range accountNames {
+		// With keyring keybase, password is not required as it is pulled from the OS prompt
+		privKey, err := keybase.ExportPrivateKeyObject(acc, passphrase)
+		if err != nil {
+			return nil, err
+		}
 
-	var ok bool
-	emintKey, ok = privKey.(emintcrypto.PrivKeySecp256k1)
-	if !ok {
-		panic(fmt.Sprintf("invalid private key type: %T", privKey))
+		var ok bool
+		emintKey, ok := privKey.(emintcrypto.PrivKeySecp256k1)
+		if !ok {
+			panic(fmt.Sprintf("invalid private key type: %T", privKey))
+		}
+		emintKeys = append(emintKeys, emintKey)
 	}
 
 	return
