@@ -3,8 +3,10 @@ package rpc
 import (
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 
+	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -43,6 +45,7 @@ var _ Backend = (*EthermintBackend)(nil)
 // EthermintBackend implements the Backend interface
 type EthermintBackend struct {
 	cliCtx   context.CLIContext
+	logger   log.Logger
 	gasLimit int64
 }
 
@@ -50,6 +53,7 @@ type EthermintBackend struct {
 func NewEthermintBackend(cliCtx context.CLIContext) *EthermintBackend {
 	return &EthermintBackend{
 		cliCtx:   cliCtx,
+		logger:   log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "json-rpc"),
 		gasLimit: int64(^uint32(0)),
 	}
 }

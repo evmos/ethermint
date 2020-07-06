@@ -25,28 +25,15 @@ import (
 
 const (
 	flagUnlockKey = "unlock-key"
+	flagWebsocket = "wsport"
 )
-
-// Config contains configuration fields that determine the behavior of the RPC HTTP server.
-// TODO: These may become irrelevant if HTTP config is handled by the SDK
-type Config struct {
-	// EnableRPC defines whether or not to enable the RPC server
-	EnableRPC bool
-	// RPCAddr defines the IP address to listen on
-	RPCAddr string
-	// RPCPort defines the port to listen on
-	RPCPort int
-	// RPCCORSDomains defines list of domains to enable CORS headers for (used by browsers)
-	RPCCORSDomains []string
-	// RPCVhosts defines list of domains to listen on (useful if Tendermint is addressable via DNS)
-	RPCVHosts []string
-}
 
 // EmintServeCmd creates a CLI command to start Cosmos REST server with web3 RPC API and
 // Cosmos rest-server endpoints
 func EmintServeCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := lcd.ServeCommand(cdc, registerRoutes)
 	cmd.Flags().String(flagUnlockKey, "", "Select a key to unlock on the RPC server")
+	cmd.Flags().String(flagWebsocket, "8546", "websocket port to listen to")
 	cmd.Flags().StringP(flags.FlagBroadcastMode, "b", flags.BroadcastSync, "Transaction broadcasting mode (sync|async|block)")
 	return cmd
 }
@@ -104,6 +91,11 @@ func registerRoutes(rs *lcd.RestServer) {
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
+
+	// start websockets server
+	websocketAddr := viper.GetString(flagWebsocket)
+	ws := newWebsocketsServer(rs.CliCtx, websocketAddr)
+	ws.start()
 }
 
 func unlockKeyFromNameAndPassphrase(accountNames []string, passphrase string) (emintKeys []emintcrypto.PrivKeySecp256k1, err error) {

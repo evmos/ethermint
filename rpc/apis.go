@@ -22,6 +22,7 @@ const (
 func GetRPCAPIs(cliCtx context.CLIContext, keys []emintcrypto.PrivKeySecp256k1) []rpc.API {
 	nonceLock := new(AddrLocker)
 	backend := NewEthermintBackend(cliCtx)
+
 	return []rpc.API{
 		{
 			Namespace: Web3Namespace,
