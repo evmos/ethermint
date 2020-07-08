@@ -130,6 +130,15 @@ func TestEth_protocolVersion(t *testing.T) {
 	require.Equal(t, expectedRes, res, "expected: %s got: %s\n", expectedRes.String(), rpcRes.Result)
 }
 
+func TestEth_chainId(t *testing.T) {
+	rpcRes := call(t, "eth_chainId", []string{})
+
+	var res hexutil.Uint
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+	require.NotEqual(t, "0x0", res.String())
+}
+
 func TestEth_blockNumber(t *testing.T) {
 	rpcRes := call(t, "eth_blockNumber", []string{})
 

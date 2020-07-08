@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -65,6 +66,17 @@ func NewPublicEthAPI(cliCtx context.CLIContext, backend Backend, nonceLock *Addr
 // ProtocolVersion returns the supported Ethereum protocol version.
 func (e *PublicEthAPI) ProtocolVersion() hexutil.Uint {
 	return hexutil.Uint(version.ProtocolVersion)
+}
+
+// ChainId returns the chain's identifier in hex format
+func (e *PublicEthAPI) ChainId() (hexutil.Uint, error) { // nolint
+	// parse the chainID from a integer string
+	intChainID, err := strconv.ParseUint(e.cliCtx.ChainID, 0, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid chainID: %s, must be integer format", e.cliCtx.ChainID)
+	}
+
+	return hexutil.Uint(intChainID), nil
 }
 
 // Syncing returns whether or not the current node is syncing with other peers. Returns false if not, or a struct
