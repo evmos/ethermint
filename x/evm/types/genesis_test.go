@@ -4,9 +4,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/cosmos/ethermint/crypto"
 	"github.com/stretchr/testify/require"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestValidateGenesisAccount(t *testing.T) {
@@ -99,6 +102,9 @@ func TestValidateGenesisAccount(t *testing.T) {
 }
 
 func TestValidateGenesis(t *testing.T) {
+	priv, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
 
 	testCases := []struct {
 		name     string
@@ -120,6 +126,24 @@ func TestValidateGenesis(t *testing.T) {
 						Code:    []byte{1, 2, 3},
 						Storage: []GenesisStorage{
 							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
+						},
+					},
+				},
+				TxsLogs: []TransactionLogs{
+					{
+						Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+						Logs: []*ethtypes.Log{
+							{
+								Address:     addr,
+								Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+								Data:        []byte("data"),
+								BlockNumber: 1,
+								TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+								TxIndex:     1,
+								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+								Index:       1,
+								Removed:     false,
+							},
 						},
 					},
 				},
@@ -158,6 +182,73 @@ func TestValidateGenesis(t *testing.T) {
 						},
 					},
 				},
+			},
+			expPass: false,
+		},
+		{
+			name: "duplicated tx log",
+			genState: GenesisState{
+				Accounts: []GenesisAccount{
+					{
+						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
+						Balance: big.NewInt(1),
+						Code:    []byte{1, 2, 3},
+						Storage: []GenesisStorage{
+							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
+						},
+					},
+				},
+				TxsLogs: []TransactionLogs{
+					{
+						Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+						Logs: []*ethtypes.Log{
+							{
+								Address:     addr,
+								Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+								Data:        []byte("data"),
+								BlockNumber: 1,
+								TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+								TxIndex:     1,
+								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+								Index:       1,
+								Removed:     false,
+							},
+						},
+					},
+					{
+						Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+						Logs: []*ethtypes.Log{
+							{
+								Address:     addr,
+								Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+								Data:        []byte("data"),
+								BlockNumber: 1,
+								TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+								TxIndex:     1,
+								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+								Index:       1,
+								Removed:     false,
+							},
+						},
+					},
+				},
+			},
+			expPass: false,
+		},
+		{
+			name: "invalid tx log",
+			genState: GenesisState{
+				Accounts: []GenesisAccount{
+					{
+						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
+						Balance: big.NewInt(1),
+						Code:    []byte{1, 2, 3},
+						Storage: []GenesisStorage{
+							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
+						},
+					},
+				},
+				TxsLogs: []TransactionLogs{NewTransactionLogs(ethcmn.Hash{}, nil)},
 			},
 			expPass: false,
 		},

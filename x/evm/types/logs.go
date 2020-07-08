@@ -47,7 +47,7 @@ func (tx TransactionLogs) Validate() error {
 		if err := ValidateLog(log); err != nil {
 			return fmt.Errorf("invalid log %d: %w", i, err)
 		}
-		if bytes.Equal(log.TxHash.Bytes(), tx.Hash.Bytes()) {
+		if !bytes.Equal(log.TxHash.Bytes(), tx.Hash.Bytes()) {
 			return fmt.Errorf("log tx hash mismatch (%s ≠ %s)", log.TxHash.String(), tx.Hash.String())
 		}
 	}
