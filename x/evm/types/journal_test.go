@@ -228,7 +228,8 @@ func (suite *JournalTestSuite) TestJournal_append_revert() {
 		suite.Require().Equal(suite.journal.length(), i+1, tc.name)
 		if tc.entry.dirtied() != nil {
 			dirtyCount++
-			suite.Require().Equal(dirtyCount, suite.journal.dirties[suite.address], tc.name)
+
+			suite.Require().Equal(dirtyCount, suite.journal.getDirty(suite.address), tc.name)
 		}
 	}
 
@@ -236,18 +237,18 @@ func (suite *JournalTestSuite) TestJournal_append_revert() {
 	suite.journal.revert(suite.stateDB, 0)
 
 	// verify the dirty entry has been deleted
-	count, ok := suite.journal.dirties[suite.address]
+	idx, ok := suite.journal.addressToJournalIndex[suite.address]
 	suite.Require().False(ok)
-	suite.Require().Zero(count)
+	suite.Require().Zero(idx)
 }
 
 func (suite *JournalTestSuite) TestJournal_dirty() {
 	// dirty entry hasn't been set
-	count, ok := suite.journal.dirties[suite.address]
+	idx, ok := suite.journal.addressToJournalIndex[suite.address]
 	suite.Require().False(ok)
-	suite.Require().Zero(count)
+	suite.Require().Zero(idx)
 
 	// update dirty count
 	suite.journal.dirty(suite.address)
-	suite.Require().Equal(1, suite.journal.dirties[suite.address])
+	suite.Require().Equal(1, suite.journal.getDirty(suite.address))
 }

@@ -44,10 +44,10 @@ func (suite *EvmTestSuite) TestContractExportImport() {
 	suite.T().Logf("contract addr 0x%x", address)
 
 	// clear keeper code and re-initialize
-	suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx).SetCode(address, nil)
+	suite.app.EvmKeeper.SetCode(suite.ctx, address, nil)
 	_ = evm.InitGenesis(suite.ctx, suite.app.EvmKeeper, genState)
 
-	resCode := suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx).GetCode(address)
+	resCode := suite.app.EvmKeeper.GetCode(suite.ctx, address)
 	suite.Require().Equal(deployedEnsFactoryCode, resCode)
 }
 

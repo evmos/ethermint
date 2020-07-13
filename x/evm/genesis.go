@@ -59,9 +59,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper, ak types.AccountKeeper) GenesisSta
 
 		addr := common.BytesToAddress(ethAccount.GetAddress().Bytes())
 
-		var storage []types.GenesisStorage
+		var storage types.Storage
 		err = k.CommitStateDB.ForEachStorage(addr, func(key, value common.Hash) bool {
-			storage = append(storage, types.NewGenesisStorage(key, value))
+			storage = append(storage, types.NewState(key, value))
 			return false
 		})
 		if err != nil {

@@ -405,6 +405,13 @@ func (suite *StateDBTestSuite) TestCommitStateDB_Finalize() {
 			false, true,
 		},
 		{
+			"finalize, dirty storage",
+			func() {
+				suite.stateDB.SetState(suite.address, ethcmn.BytesToHash([]byte("key")), ethcmn.BytesToHash([]byte("value")))
+			},
+			false, true,
+		},
+		{
 			"faled to update state object",
 			func() {
 				suite.stateDB.SubBalance(suite.address, big.NewInt(10))

@@ -35,6 +35,14 @@ func (suite *StateDBTestSuite) TestStateObject_State() {
 				suite.stateObject.SetState(nil, ethcmn.BytesToHash([]byte("key1")), ethcmn.BytesToHash([]byte("value1")))
 			},
 		},
+		{
+			"update value",
+			ethcmn.BytesToHash([]byte("key1")),
+			ethcmn.BytesToHash([]byte("value2")),
+			func() {
+				suite.stateObject.SetState(nil, ethcmn.BytesToHash([]byte("key1")), ethcmn.BytesToHash([]byte("value2")))
+			},
+		},
 	}
 
 	for _, tc := range testCase {

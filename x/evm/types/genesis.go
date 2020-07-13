@@ -17,21 +17,14 @@ type (
 		TxsLogs  []TransactionLogs `json:"txs_logs"`
 	}
 
-	// GenesisStorage represents the GenesisAccount Storage map as single key value
-	// pairs. This is to prevent non determinism at genesis initialization or export.
-	GenesisStorage struct {
-		Key   ethcmn.Hash `json:"key"`
-		Value ethcmn.Hash `json:"value"`
-	}
-
 	// GenesisAccount defines an account to be initialized in the genesis state.
 	// Its main difference between with Geth's GenesisAccount is that it uses a custom
 	// storage type and that it doesn't contain the private key field.
 	GenesisAccount struct {
-		Address ethcmn.Address   `json:"address"`
-		Balance *big.Int         `json:"balance"`
-		Code    hexutil.Bytes    `json:"code,omitempty"`
-		Storage []GenesisStorage `json:"storage,omitempty"`
+		Address ethcmn.Address `json:"address"`
+		Balance *big.Int       `json:"balance"`
+		Code    hexutil.Bytes  `json:"code,omitempty"`
+		Storage Storage        `json:"storage,omitempty"`
 	}
 )
 
@@ -50,26 +43,7 @@ func (ga GenesisAccount) Validate() error {
 		return errors.New("code bytes cannot be empty")
 	}
 
-	seenStorage := make(map[string]bool)
-	for i, state := range ga.Storage {
-		if seenStorage[state.Key.String()] {
-			return fmt.Errorf("duplicate state key %d", i)
-		}
-		if bytes.Equal(state.Key.Bytes(), ethcmn.Hash{}.Bytes()) {
-			return fmt.Errorf("state %d key hash cannot be empty", i)
-		}
-		// NOTE: state value can be empty
-		seenStorage[state.Key.String()] = true
-	}
-	return nil
-}
-
-// NewGenesisStorage creates a new GenesisStorage instance
-func NewGenesisStorage(key, value ethcmn.Hash) GenesisStorage {
-	return GenesisStorage{
-		Key:   key,
-		Value: value,
-	}
+	return ga.Storage.Validate()
 }
 
 // DefaultGenesisState sets default evm genesis state with empty accounts.

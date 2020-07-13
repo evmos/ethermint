@@ -24,8 +24,8 @@ func TestValidateGenesisAccount(t *testing.T) {
 				Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
 				Balance: big.NewInt(1),
 				Code:    []byte{1, 2, 3},
-				Storage: []GenesisStorage{
-					NewGenesisStorage(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+				Storage: Storage{
+					NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
 				},
 			},
 			true,
@@ -60,31 +60,6 @@ func TestValidateGenesisAccount(t *testing.T) {
 				Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
 				Balance: big.NewInt(1),
 				Code:    []byte{},
-			},
-			false,
-		},
-		{
-			"empty storage key bytes",
-			GenesisAccount{
-				Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
-				Balance: big.NewInt(1),
-				Code:    []byte{1, 2, 3},
-				Storage: []GenesisStorage{
-					{Key: ethcmn.Hash{}},
-				},
-			},
-			false,
-		},
-		{
-			"duplicated storage key",
-			GenesisAccount{
-				Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
-				Balance: big.NewInt(1),
-				Code:    []byte{1, 2, 3},
-				Storage: []GenesisStorage{
-					{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
-					{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
-				},
 			},
 			false,
 		},
@@ -124,7 +99,7 @@ func TestValidateGenesis(t *testing.T) {
 						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
 						Balance: big.NewInt(1),
 						Code:    []byte{1, 2, 3},
-						Storage: []GenesisStorage{
+						Storage: Storage{
 							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
 						},
 					},
@@ -169,16 +144,16 @@ func TestValidateGenesis(t *testing.T) {
 						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
 						Balance: big.NewInt(1),
 						Code:    []byte{1, 2, 3},
-						Storage: []GenesisStorage{
-							NewGenesisStorage(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+						Storage: Storage{
+							NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
 						},
 					},
 					{
 						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
 						Balance: big.NewInt(1),
 						Code:    []byte{1, 2, 3},
-						Storage: []GenesisStorage{
-							NewGenesisStorage(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+						Storage: Storage{
+							NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
 						},
 					},
 				},
@@ -193,7 +168,7 @@ func TestValidateGenesis(t *testing.T) {
 						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
 						Balance: big.NewInt(1),
 						Code:    []byte{1, 2, 3},
-						Storage: []GenesisStorage{
+						Storage: Storage{
 							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
 						},
 					},
@@ -243,7 +218,7 @@ func TestValidateGenesis(t *testing.T) {
 						Address: ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5}),
 						Balance: big.NewInt(1),
 						Code:    []byte{1, 2, 3},
-						Storage: []GenesisStorage{
+						Storage: Storage{
 							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
 						},
 					},

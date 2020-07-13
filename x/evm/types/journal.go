@@ -22,14 +22,24 @@ type journalEntry interface {
 // commit. These are tracked to be able to be reverted in case of an execution
 // exception or revertal request.
 type journal struct {
-	entries []journalEntry         // Current changes tracked by the journal
-	dirties map[ethcmn.Address]int // Dirty accounts and the number of changes
+	entries               []journalEntry         // Current changes tracked by the journal
+	dirties               []dirty                // Dirty accounts and the number of changes
+	addressToJournalIndex map[ethcmn.Address]int // map from address to the index of the dirties slice
+}
+
+// dirty represents a single key value pair of the journal dirties, where the
+// key correspons to the account address and the value to the number of
+// changes for that account.
+type dirty struct {
+	address ethcmn.Address
+	changes int
 }
 
 // newJournal create a new initialized journal.
 func newJournal() *journal {
 	return &journal{
-		dirties: make(map[ethcmn.Address]int),
+		dirties:               []dirty{},
+		addressToJournalIndex: make(map[ethcmn.Address]int),
 	}
 }
 
@@ -37,7 +47,7 @@ func newJournal() *journal {
 func (j *journal) append(entry journalEntry) {
 	j.entries = append(j.entries, entry)
 	if addr := entry.dirtied(); addr != nil {
-		j.dirties[*addr]++
+		j.addDirty(*addr)
 	}
 }
 
@@ -50,8 +60,9 @@ func (j *journal) revert(statedb *CommitStateDB, snapshot int) {
 
 		// Drop any dirty tracking induced by the change
 		if addr := j.entries[i].dirtied(); addr != nil {
-			if j.dirties[*addr]--; j.dirties[*addr] == 0 {
-				delete(j.dirties, *addr)
+			j.substractDirty(*addr)
+			if j.getDirty(*addr) == 0 {
+				j.deleteDirty(*addr)
 			}
 		}
 	}
@@ -62,12 +73,62 @@ func (j *journal) revert(statedb *CommitStateDB, snapshot int) {
 // otherwise suggest it as clean. This method is an ugly hack to handle the RIPEMD
 // precompile consensus exception.
 func (j *journal) dirty(addr ethcmn.Address) {
-	j.dirties[addr]++
+	j.addDirty(addr)
 }
 
 // length returns the current number of entries in the journal.
 func (j *journal) length() int {
 	return len(j.entries)
+}
+
+// getDirty returns the dirty count for a given address. If the address is not
+// found it returns 0.
+func (j *journal) getDirty(addr ethcmn.Address) int {
+	idx, found := j.addressToJournalIndex[addr]
+	if !found {
+		return 0
+	}
+
+	return j.dirties[idx].changes
+}
+
+// addDirty adds 1 to the dirty count of an address. If the dirty entry is not
+// found it creates it.
+func (j *journal) addDirty(addr ethcmn.Address) {
+	idx, found := j.addressToJournalIndex[addr]
+	if !found {
+		j.dirties = append(j.dirties, dirty{address: addr, changes: 0})
+		idx = len(j.dirties) - 1
+		j.addressToJournalIndex[addr] = idx
+	}
+
+	j.dirties[idx].changes++
+}
+
+// substractDirty subtracts 1 to the dirty count of an address. It performs a
+// no-op if the address is not found.
+func (j *journal) substractDirty(addr ethcmn.Address) {
+	idx, found := j.addressToJournalIndex[addr]
+	if !found {
+		return
+	}
+
+	if j.dirties[idx].changes == 0 {
+		return
+	}
+	j.dirties[idx].changes--
+}
+
+// deleteDirty deletes a dirty entry from the jounal's dirties slice. If the
+// entry is not found it performs a no-op.
+func (j *journal) deleteDirty(addr ethcmn.Address) {
+	idx, found := j.addressToJournalIndex[addr]
+	if !found {
+		return
+	}
+
+	j.dirties = append(j.dirties[:idx], j.dirties[idx+1:]...)
+	delete(j.addressToJournalIndex, addr)
 }
 
 type (
@@ -128,8 +189,14 @@ type (
 )
 
 func (ch createObjectChange) revert(s *CommitStateDB) {
-	delete(s.stateObjects, *ch.account)
 	delete(s.stateObjectsDirty, *ch.account)
+	idx, exists := s.addressToObjectIndex[*ch.account]
+	if !exists {
+		// perform no-op
+		return
+	}
+	// remove from the slice
+	s.stateObjects = append(s.stateObjects[:idx], s.stateObjects[idx+1:]...)
 }
 
 func (ch createObjectChange) dirtied() *ethcmn.Address {

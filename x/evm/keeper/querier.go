@@ -201,9 +201,9 @@ func queryAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error)
 func queryExportAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
 	addr := ethcmn.HexToAddress(path[1])
 
-	var storage []types.GenesisStorage
+	var storage types.Storage
 	err := keeper.CommitStateDB.ForEachStorage(addr, func(key, value ethcmn.Hash) bool {
-		storage = append(storage, types.NewGenesisStorage(key, value))
+		storage = append(storage, types.NewState(key, value))
 		return false
 	})
 	if err != nil {
