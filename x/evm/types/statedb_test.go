@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/crypto"
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
 
@@ -23,10 +25,12 @@ import (
 type StateDBTestSuite struct {
 	suite.Suite
 
-	ctx     sdk.Context
-	querier sdk.Querier
-	app     *app.EthermintApp
-	stateDB *types.CommitStateDB
+	ctx         sdk.Context
+	querier     sdk.Querier
+	app         *app.EthermintApp
+	stateDB     *types.CommitStateDB
+	address     ethcmn.Address
+	stateObject types.StateObject
 }
 
 func TestStateDBTestSuite(t *testing.T) {
@@ -40,6 +44,18 @@ func (suite *StateDBTestSuite) SetupTest() {
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1})
 	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
 	suite.stateDB = suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
+
+	privkey, err := crypto.GenerateKey()
+	suite.Require().NoError(err)
+
+	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
+	acc := &ethermint.EthAccount{
+		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
+		CodeHash:    ethcrypto.Keccak256(nil),
+	}
+
+	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+	suite.stateObject = suite.stateDB.GetOrNewStateObject(suite.address)
 }
 
 func (suite *StateDBTestSuite) TestBloomFilter() {
@@ -307,4 +323,114 @@ func (suite *StateDBTestSuite) TestSuiteDBSuicide() {
 	_, err = suite.stateDB.Commit(delete)
 	suite.Require().NoError(err)
 	suite.Require().False(suite.stateDB.Exist(addr))
+}
+
+func (suite *StateDBTestSuite) TestCommitStateDB_Commit() {
+	testCase := []struct {
+		name       string
+		malleate   func()
+		deleteObjs bool
+		expPass    bool
+	}{
+		{
+			"commit suicided",
+			func() {
+				ok := suite.stateDB.Suicide(suite.address)
+				suite.Require().True(ok)
+			},
+			true, true,
+		},
+		{
+			"commit with dirty value",
+			func() {
+				suite.stateDB.SetCode(suite.address, []byte("code"))
+			},
+			false, true,
+		},
+		{
+			"faled to update state object",
+			func() {
+				suite.stateDB.SubBalance(suite.address, big.NewInt(10))
+			},
+			false, false,
+		},
+	}
+
+	for _, tc := range testCase {
+		tc.malleate()
+
+		hash, err := suite.stateDB.Commit(tc.deleteObjs)
+		suite.Require().Equal(ethcmn.Hash{}, hash)
+
+		if !tc.expPass {
+			suite.Require().Error(err, tc.name)
+			continue
+		}
+
+		suite.Require().NoError(err, tc.name)
+		acc := suite.app.AccountKeeper.GetAccount(suite.ctx, sdk.AccAddress(suite.address.Bytes()))
+
+		if tc.deleteObjs {
+			suite.Require().Nil(acc, tc.name)
+			continue
+		}
+
+		suite.Require().NotNil(acc, tc.name)
+		ethAcc, ok := acc.(*ethermint.EthAccount)
+		suite.Require().True(ok)
+		suite.Require().Equal(ethcrypto.Keccak256([]byte("code")), ethAcc.CodeHash)
+	}
+}
+
+func (suite *StateDBTestSuite) TestCommitStateDB_Finalize() {
+	testCase := []struct {
+		name       string
+		malleate   func()
+		deleteObjs bool
+		expPass    bool
+	}{
+		{
+			"finalize suicided",
+			func() {
+				ok := suite.stateDB.Suicide(suite.address)
+				suite.Require().True(ok)
+			},
+			true, true,
+		},
+		{
+			"finalize, not suicided",
+			func() {
+				suite.stateDB.AddBalance(suite.address, big.NewInt(5))
+			},
+			false, true,
+		},
+		{
+			"faled to update state object",
+			func() {
+				suite.stateDB.SubBalance(suite.address, big.NewInt(10))
+			},
+			false, false,
+		},
+	}
+
+	for _, tc := range testCase {
+		tc.malleate()
+
+		err := suite.stateDB.Finalise(tc.deleteObjs)
+
+		if !tc.expPass {
+			suite.Require().Error(err, tc.name)
+			continue
+		}
+
+		suite.Require().NoError(err, tc.name)
+		acc := suite.app.AccountKeeper.GetAccount(suite.ctx, sdk.AccAddress(suite.address.Bytes()))
+
+		if tc.deleteObjs {
+			suite.Require().Nil(acc, tc.name)
+			continue
+		}
+
+		suite.Require().NotNil(acc, tc.name)
+	}
 }
