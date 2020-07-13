@@ -210,9 +210,11 @@ func (ch addLogChange) revert(s *CommitStateDB) {
 		panic(err)
 	}
 
-	if len(logs) == 1 {
+	// delete logs if entry is empty or has only one item
+	if len(logs) <= 1 {
 		s.DeleteLogs(ch.txhash)
 	} else if err := s.SetLogs(ch.txhash, logs[:len(logs)-1]); err != nil {
+		// panic on marshal error
 		panic(err)
 	}
 
