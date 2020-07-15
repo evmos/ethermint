@@ -23,7 +23,7 @@ require (
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
-	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48 // indirect
+	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.4
 	github.com/tendermint/tm-db v0.5.1
