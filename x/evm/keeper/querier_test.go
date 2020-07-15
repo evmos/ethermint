@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/cosmos/ethermint/x/evm/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -18,15 +19,20 @@ func (suite *KeeperTestSuite) TestQuerier() {
 	}{
 		{"protocol version", []string{types.QueryProtocolVersion}, func() {}, true},
 		{"balance", []string{types.QueryBalance, addrHex}, func() {
-			suite.app.EvmKeeper.SetBalance(suite.ctx, address, big.NewInt(5))
+			suite.app.EvmKeeper.SetBalance(suite.ctx, suite.address, big.NewInt(5))
 		}, true},
-		// {"balance", []string{types.QueryBalance, "0x01232"}, func() {}, false},
+		// {"balance fail", []string{types.QueryBalance, "0x01232"}, func() {}, false},
 		{"block number", []string{types.QueryBlockNumber, "0x0"}, func() {}, true},
 		{"storage", []string{types.QueryStorage, "0x0", "0x0"}, func() {}, true},
 		{"code", []string{types.QueryCode, "0x0"}, func() {}, true},
-		// {"hash to height", []string{types.QueryHashToHeight, "0x0"}, func() {}, true},
+		{"hash to height", []string{types.QueryHashToHeight, hex}, func() {
+			suite.app.EvmKeeper.SetBlockHash(suite.ctx, hash, 8)
+		}, true},
 		{"tx logs", []string{types.QueryTransactionLogs, "0x0"}, func() {}, true},
-		// {"logs bloom", []string{types.QueryLogsBloom, "0x0"}, func() {}, true},
+		{"bloom", []string{types.QueryBloom, "4"}, func() {
+			testBloom := ethtypes.BytesToBloom([]byte{0x1, 0x3})
+			suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 4, testBloom)
+		}, true},
 		{"logs", []string{types.QueryLogs, "0x0"}, func() {}, true},
 		{"account", []string{types.QueryAccount, "0x0"}, func() {}, true},
 		{"exportAccount", []string{types.QueryExportAccount, "0x0"}, func() {}, true},
