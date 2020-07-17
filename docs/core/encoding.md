@@ -70,4 +70,4 @@ will call this method for each necessary module.
 
 ## Next {hide}
 
-Learn about [events](./events.md) {hide}
+Learn how to connect Ethermint to [Metamask](./../guides/metamask.md) {hide}
