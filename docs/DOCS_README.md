@@ -11,7 +11,7 @@ If you want to open a PR on the Cosmos SDK to update the documentation, please f
 
 ## Docs Build Workflow
 
-The documentation for Ethermint is hosted at https://ethermint.cosmos.network/
+The documentation for Ethermint is hosted at https://docs.ethermint.zone/
 
 built from the files in this (`/docs`) directory for
 [master](https://github.com/cosmos/ethermint/tree/master/docs).

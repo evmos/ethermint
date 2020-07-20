@@ -57,5 +57,4 @@ aside: false
 
 ## Contribute
 
-See [this file](https://github.com/cosmos/ethermint/blob/master/docs/DOCS_README.md) for details of the build process and
-considerations when making changes.
+See [this file](https://github.com/ChainSafe/ethermint/blob/development/docs/DOCS_README.md) for details of the build process and considerations when making changes.

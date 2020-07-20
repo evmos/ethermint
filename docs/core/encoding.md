@@ -70,4 +70,4 @@ will call this method for each necessary module.
 
 ## Next {hide}
 
-Learn how to connect Ethermint to [Metamask](./../guides/metamask.md) {hide}
+Learn how to deploy a Solidity smart contract on Ethermint using [Truffle](./../guides/truffle.md) {hide}
