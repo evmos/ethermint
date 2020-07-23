@@ -292,7 +292,6 @@ func (csdb *CommitStateDB) GetCodeSize(addr ethcmn.Address) int {
 		return len(so.code)
 	}
 
-	// TODO: we may need to cache these lookups directly
 	return len(so.Code(nil))
 }
 
