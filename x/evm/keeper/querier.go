@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -135,7 +136,7 @@ func queryBlockBloom(ctx sdk.Context, path []string, keeper Keeper) ([]byte, err
 		return nil, fmt.Errorf("could not unmarshal block height: %w", err)
 	}
 
-	bloom, found := keeper.GetBlockBloom(ctx, num)
+	bloom, found := keeper.GetBlockBloom(ctx.WithBlockHeight(num), num)
 	if !found {
 		return nil, fmt.Errorf("block bloom not found for height %d", num)
 	}
@@ -217,7 +218,8 @@ func queryExportAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, 
 		Storage: storage,
 	}
 
-	bz, err := codec.MarshalJSONIndent(keeper.cdc, res)
+	// TODO: codec.MarshalJSONIndent doesn't call the String() method of types properly
+	bz, err := json.MarshalIndent(res, "", "\t")
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
