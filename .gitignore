@@ -33,6 +33,7 @@ golangci-lint
 coverage.txt
 *.out
 sim_log_file
+importer/tmp
 
 # Vagrant
 .vagrant/

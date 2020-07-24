@@ -150,6 +150,7 @@ test-race:
 test-import:
 	@go test ./importer -v --vet=off --run=TestImportBlocks --datadir tmp \
 	--blockchain blockchain --timeout=10m
+	rm -rf importer/tmp
 
 test-rpc:
 	./scripts/integration-test-all.sh -q 1 -z 1 -s 2

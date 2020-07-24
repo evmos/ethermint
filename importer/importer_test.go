@@ -207,7 +207,10 @@ func TestImportBlocks(t *testing.T) {
 	blockchainInput, err := os.Open(flagBlockchain)
 	require.Nil(t, err)
 
-	defer require.NoError(t, blockchainInput.Close())
+	defer func() {
+		err := blockchainInput.Close()
+		require.NoError(t, err)
+	}()
 
 	// ethereum mainnet config
 	chainContext := core.NewChainContext()

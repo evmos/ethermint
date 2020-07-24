@@ -193,20 +193,20 @@ jobs:
           file: ./coverage.txt
           fail_ci_if_error: true
         if: "env.GIT_DIFF != ''"
-  # TODO: remove tmp dir to fix this
-  # test-importer:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 10
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: technote-space/get-diff-action@v1
-  #       id: git_diff
-  #       with:
-  #         SUFFIX_FILTER: |
-  #           .go
-  #           .mod
-  #           .sum
-  #     - name: importer-test
-  #       run: |
-  #         make test-import
-  #       if: "env.GIT_DIFF != ''"
+
+  test-importer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - uses: technote-space/get-diff-action@v1
+        id: git_diff
+        with:
+          SUFFIX_FILTER: |
+            .go
+            .mod
+            .sum
+      - name: test-importer
+        run: |
+          make test-import
+        if: "env.GIT_DIFF != ''"
