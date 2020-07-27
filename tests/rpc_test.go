@@ -532,6 +532,7 @@ func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
 
 	// instantiate new filter
 	rpcRes = call(t, "eth_newFilter", param)
+	require.Nil(t, rpcRes.Error)
 	var ID hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)

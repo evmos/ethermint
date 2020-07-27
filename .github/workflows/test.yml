@@ -7,7 +7,7 @@ on:
     branches:
       - development
 jobs:
-  rpc-tests:
+  test-rpc:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -19,7 +19,7 @@ jobs:
             .go
             .mod
             .sum
-      - name: rpc-test
+      - name: test-rpc
         run: |
           make test-rpc
         if: "env.GIT_DIFF != ''"
