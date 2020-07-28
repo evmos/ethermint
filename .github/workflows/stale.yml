@@ -1,0 +1,22 @@
+name: "Close stale issues & pull requests"
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-pr-message: "This pull request has been automatically marked as stale because it has not had
+    recent activity. It will be closed in 7 days-before-close if no further activity occurs. Thank you
+    for your contributions."
+          stale-issue-message: "This issue is stale because it has been open 30 days with no activity. Remove `stale` label or comment or this will be closed in 7 days."
+          days-before-stale: 21
+          days-before-close: 7
+          exempt-issue-labels: "Status: On Ice, Status: Blocked, Type: Bug, Type: Security, Type: Meta-Issue, Type: Enhancement, Epic"
+          exempt-pr-labels: "Status: On Ice, Status: Blocked, Type: Bug, Type: Security, Type: Meta-Issue, Type: Enhancement, Epic"
+          stale-pr-label: "stale"
+          stale-issue-label: "stale"
