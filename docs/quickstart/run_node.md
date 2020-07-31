@@ -10,7 +10,7 @@ Run a local node and start the REST and JSON-RPC clients {synopsis}
 
 - [Installation](./installation.md) {prereq}
 
-## Script deployment
+## Automated deployment
 
 Run the local node with faucet enabled:
 
@@ -29,43 +29,10 @@ In another terminal window or tab, run the Ethereum JSON-RPC server as well as t
 emintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --chain-id 8
 ```
 
-## Manual setup
+## Manual deployment
 
-These instructions are for setting up a brand new full node from scratch.
-
-First, initialize the node and create the necessary config files:
-
-```bash
-emintd init <your_custom_moniker>
-```
-
-::: warning
-Monikers can contain only ASCII characters. Using Unicode characters will render your node unreachable.
-:::
-
-You can edit this `moniker` later, in the `$(HOME)/.emintd/config/config.toml` file:
-
-```toml
-# A custom human readable name for this node
-moniker = "<your_custom_moniker>"
-```
-
-You can edit the `$HOME/.emintd/config/app.toml` file in order to enable the anti spam mechanism and reject incoming transactions with less than the minimum gas prices:
-
-```toml
-# This is a TOML config file.
-# For more information, see https://github.com/toml-lang/toml
-
-##### main base config options #####
-
-# The minimum gas prices a validator is willing to accept for processing a
-# transaction. A transaction's fees must meet the minimum of any denomination
-# specified in this config (e.g. 10uatom).
-
-minimum-gas-prices = ""
-```
-
-Your full node is now initiallized.
+The instructions for setting up a brand new full node from scratch are the the same as running a
+[single node local testnet](./testnet.md#single-node-local-manual-testnet).
 
 ## Start node
 

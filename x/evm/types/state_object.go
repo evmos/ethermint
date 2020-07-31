@@ -54,7 +54,6 @@ type StateObject interface {
 // Finally, call CommitTrie to write the modified storage trie into a database.
 type stateObject struct {
 	code types.Code // contract bytecode, which gets set when code is loaded
-
 	// State objects are used by the consensus core and VM which are
 	// unable to deal with database-level errors. Any error that occurs
 	// during a database read is memoized here and will eventually be returned

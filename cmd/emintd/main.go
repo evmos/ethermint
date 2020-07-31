@@ -75,7 +75,7 @@ func main() {
 			app.DefaultNodeHome, app.DefaultCLIHome,
 		),
 		genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
-
+		testnetCmd(ctx, cdc, app.ModuleBasics, bank.GenesisBalancesIterator{}),
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
 		AddGenesisAccountCmd(ctx, cdc, appCodec, app.DefaultNodeHome, app.DefaultCLIHome),
 		flags.NewCompletionCmd(rootCmd, true),

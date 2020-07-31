@@ -20,8 +20,8 @@ parent:
   <a href="https://goreportcard.com/report/github.com/ChainSafe/ethermint">
     <img alt="Go report card" src="https://goreportcard.com/badge/github.com/ChainSafe/ethermint"/>
   </a>
-  <a href="https://codecov.io/gh/cosmos/ethermint">
-    <img alt="Code Coverage" src="https://codecov.io/gh/ChainSafe/ethermint/branch/development/graph/badge.svg"/>
+  <a href="https://codecov.io/gh/ChainSafe/ethermint">
+    <img alt="Code Coverage" src="https://codecov.io/gh/ChainSafe/ethermint/branch/development/graph/badge.svg" />
   </a>
 </div>
 <div align="center">

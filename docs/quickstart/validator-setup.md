@@ -56,7 +56,7 @@ When specifying commission parameters, the `commission-max-change-rate` is used 
 
 You can confirm that you are in the validator set by using a third party explorer.
 
-## Genesis transactions
+## Genesis Transactions
 
 A genesis transaction (aka `gentx`) is a JSON file carrying a self-delegation from a validator. All genesis transactions are collected by a genesis coordinator and validated against an initial `genesis.json` file.
 
@@ -106,7 +106,7 @@ encoded `address` in the `~/.emintd/config/priv_validator.json` file.
 To be in the validator set, you need to have more total voting power than the 100th validator.
 :::
 
-## Halting Your Validator
+## Halt Your Validator Node
 
 When attempting to perform routine maintenance or planning for an upcoming coordinated
 upgrade, it can be useful to have your validator systematically and gracefully halt the chain and shutdown the node.

@@ -21,9 +21,21 @@ emintd -h
 emintcli -h
 ```
 
-<!-- ## Docker -->
+## Docker
 
-<!-- TODO: -->
+You can build Ethermint using Docker by running:
+
+```bash
+make docker
+```
+
+This will install the binaries on the `./build` directory. Now, check that the binaries have been
+successfuly installed:
+
+```bash
+emintd -h
+emintcli -h
+```
 
 ## Releases
 

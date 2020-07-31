@@ -21,27 +21,32 @@ ETHERMINT_DAEMON_BINARY = emintd
 ETHERMINT_CLI_BINARY = emintcli
 GO_MOD=GO111MODULE=on
 BINDIR ?= $(GOPATH)/bin
+BUILDDIR ?= $(CURDIR)/build
 SIMAPP = github.com/cosmos/ethermint/app
 RUNSIM = $(BINDIR)/runsim
 
 all: tools verify install
 
-#######################
-### Build / Install ###
-#######################
+###############################################################################
+###                                  Build                                  ###
+###############################################################################
 
-build:
-ifeq ($(OS),Windows_NT)
-	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY).exe ./cmd/emintd
-	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY).exe ./cmd/emintcli
-else
-	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY) ./cmd/emintd/
-	${GO_MOD} go build $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY) ./cmd/emintcli/
-endif
+build: go.sum
+	go build -mod=readonly ./...
+
+build-ethermint: go.sum
+	mkdir -p $(BUILDDIR)
+	go build -mod=readonly $(BUILD_FLAGS) -o $(BUILDDIR) ./cmd/$(ETHERMINT_DAEMON_BINARY)
+	go build -mod=readonly $(BUILD_FLAGS) -o $(BUILDDIR) ./cmd/$(ETHERMINT_CLI_BINARY)
+
+build-ethermint-linux: go.sum
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=1 $(MAKE) build-ethermint
+
+.PHONY: build build-ethermint build-ethermint-linux
 
 install:
-	${GO_MOD} go install $(BUILD_FLAGS) ./cmd/emintd
-	${GO_MOD} go install $(BUILD_FLAGS) ./cmd/emintcli
+	${GO_MOD} go install $(BUILD_FLAGS) ./cmd/$(ETHERMINT_DAEMON_BINARY)
+	${GO_MOD} go install $(BUILD_FLAGS) ./cmd/$(ETHERMINT_CLI_BINARY)
 
 clean:
 	@rm -rf ./build ./vendor
@@ -55,31 +60,26 @@ verify:
 	@echo "--> Verifying dependencies have not been modified"
 	${GO_MOD} go mod verify
 
+docker:
+	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
+	# update old container
+	docker rm ethermint
+	# create a new container from the latest image
+	docker create --name ethermint -t -i cosmos/ethermint:latest ethermint
+	# move the binaries to the ./build directory
+	mkdir -p ./build/
+	docker cp ethermint:/usr/bin/emintd ./build/ ; \
+	docker cp ethermint:/usr/bin/emintcli ./build/
 
-############################
-### Tools / Dependencies ###
-############################
+docker-localnet:
+	# build the image
+	docker build -f ./networks/local/ethermintnode/Dockerfile . -t emintd/node
 
-##########################################################
-### TODO: Move tool depedencies to a separate makefile ###
-##########################################################
-
-GOLINT = github.com/tendermint/lint/golint
-GOCILINT = github.com/golangci/golangci-lint/cmd/golangci-lint
-UNCONVERT = github.com/mdempsky/unconvert
-INEFFASSIGN = github.com/gordonklaus/ineffassign
-MISSPELL = github.com/client9/misspell/cmd/misspell
-ERRCHECK = github.com/kisielk/errcheck
-UNPARAM = mvdan.cc/unparam
-
-GOLINT_CHECK := $(shell command -v golint 2> /dev/null)
-GOCILINT_CHECK := $(shell command -v golangci-lint 2> /dev/null)
-UNCONVERT_CHECK := $(shell command -v unconvert 2> /dev/null)
-INEFFASSIGN_CHECK := $(shell command -v ineffassign 2> /dev/null)
-MISSPELL_CHECK := $(shell command -v misspell 2> /dev/null)
-ERRCHECK_CHECK := $(shell command -v errcheck 2> /dev/null)
-UNPARAM_CHECK := $(shell command -v unparam 2> /dev/null)
-
+###############################################################################
+###                          Tools & Dependencies                           ###
+###############################################################################
 
 # Install the runsim binary with a temporary workaround of entering an outside
 # directory as the "go get" command ignores the -mod option and will polute the
@@ -91,53 +91,10 @@ $(RUNSIM):
 	@(cd /tmp && go get github.com/cosmos/tools/cmd/runsim@v1.0.0)
 
 tools: $(RUNSIM)
-ifdef GOLINT_CHECK
-	@echo "Golint is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing golint"
-	${GO_MOD} go get -v $(GOLINT)
-endif
-ifdef GOCILINT_CHECK
-	@echo "golangci-lint is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing golangci-lint"
-	${GO_MOD} go get -v $(GOCILINT)
-endif
-ifdef UNCONVERT_CHECK
-	@echo "Unconvert is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing unconvert"
-	${GO_MOD} go get -v $(UNCONVERT)
-endif
-ifdef INEFFASSIGN_CHECK
-	@echo "Ineffassign is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing ineffassign"
-	${GO_MOD} go get -v $(INEFFASSIGN)
-endif
-ifdef MISSPELL_CHECK
-	@echo "misspell is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing misspell"
-	${GO_MOD} go get -v $(MISSPELL)
-endif
-ifdef ERRCHECK_CHECK
-	@echo "errcheck is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing errcheck"
-	${GO_MOD} go get -v $(ERRCHECK)
-endif
-ifdef UNPARAM_CHECK
-	@echo "unparam is already installed. Run 'make update-tools' to update."
-else
-	@echo "--> Installing unparam"
-	${GO_MOD} go get -v $(UNPARAM)
-endif
 
-
-#######################
-### Testing / Misc. ###
-#######################
+###############################################################################
+###                           Tests & Simulation                            ###
+###############################################################################
 
 test: test-unit
 
@@ -155,15 +112,40 @@ test-import:
 test-rpc:
 	./scripts/integration-test-all.sh -q 1 -z 1 -s 2
 
-godocs:
-	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
-	godoc -http=:6060
+test-sim-nondeterminism:
+	@echo "Running non-determinism test..."
+	@go test -mod=readonly $(SIMAPP) -run TestAppStateDeterminism -Enabled=true \
+		-NumBlocks=100 -BlockSize=200 -Commit=true -Period=0 -v -timeout 24h
 
-docker:
-	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
-	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
-	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
+test-sim-custom-genesis-fast:
+	@echo "Running custom genesis simulation..."
+	@echo "By default, ${HOME}/.$(ETHERMINT_DAEMON_BINARY)/config/genesis.json will be used."
+	@go test -mod=readonly $(SIMAPP) -run TestFullAppSimulation -Genesis=${HOME}/.$(ETHERMINT_DAEMON_BINARY)/config/genesis.json \
+		-Enabled=true -NumBlocks=100 -BlockSize=200 -Commit=true -Seed=99 -Period=5 -v -timeout 24h
 
+test-sim-import-export: runsim
+	@echo "Running Ethermint import/export simulation. This may take several minutes..."
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppImportExport
+
+test-sim-after-import: runsim
+	@echo "Running Ethermint simulation-after-import. This may take several minutes..."
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppSimulationAfterImport
+
+test-sim-custom-genesis-multi-seed: runsim
+	@echo "Running multi-seed custom genesis simulation..."
+	@echo "By default, ${HOME}/.$(ETHERMINT_DAEMON_BINARY)/config/genesis.json will be used."
+	@$(BINDIR)/runsim -Jobs=4 -Genesis=${HOME}/.$(ETHERMINT_DAEMON_BINARY)/config/genesis.json 400 5 TestFullAppSimulation
+
+test-sim-multi-seed-long: runsim
+	@echo "Running multi-seed application simulation. This may take awhile!"
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 500 50 TestFullAppSimulation
+
+test-sim-multi-seed-short: runsim
+	@echo "Running multi-seed application simulation. This may take awhile!"
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 50 10 TestFullAppSimulation
+
+.PHONY: runsim test-sim-nondeterminism test-sim-custom-genesis-fast test-sim-fast sim-import-export \
+	test-sim-simulation-after-import test-sim-custom-genesis-multi-seed test-sim-multi-seed
 
 .PHONY: build install update-tools tools godocs clean format lint \
 test-cli test-race test-unit test test-import
@@ -256,50 +238,10 @@ proto-update-deps:
 
 .PHONY: proto-all proto-gen proto-lint proto-check-breaking proto-update-deps
 
-#######################
-### Simulations     ###
-#######################
 
-test-sim-nondeterminism:
-	@echo "Running non-determinism test..."
-	@go test -mod=readonly $(SIMAPP) -run TestAppStateDeterminism -Enabled=true \
-		-NumBlocks=100 -BlockSize=200 -Commit=true -Period=0 -v -timeout 24h
-
-test-sim-custom-genesis-fast:
-	@echo "Running custom genesis simulation..."
-	@echo "By default, ${HOME}/.emintd/config/genesis.json will be used."
-	@go test -mod=readonly $(SIMAPP) -run TestFullAppSimulation -Genesis=${HOME}/.emintd/config/genesis.json \
-		-Enabled=true -NumBlocks=100 -BlockSize=200 -Commit=true -Seed=99 -Period=5 -v -timeout 24h
-
-test-sim-import-export: runsim
-	@echo "Running Ethermint import/export simulation. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppImportExport
-
-test-sim-after-import: runsim
-	@echo "Running Ethermint simulation-after-import. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppSimulationAfterImport
-
-test-sim-custom-genesis-multi-seed: runsim
-	@echo "Running multi-seed custom genesis simulation..."
-	@echo "By default, ${HOME}/.emintd/config/genesis.json will be used."
-	@$(BINDIR)/runsim -Jobs=4 -Genesis=${HOME}/.emintd/config/genesis.json 400 5 TestFullAppSimulation
-
-test-sim-multi-seed-long: runsim
-	@echo "Running multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 500 50 TestFullAppSimulation
-
-test-sim-multi-seed-short: runsim
-	@echo "Running multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 50 10 TestFullAppSimulation
-
-.PHONY: runsim test-sim-nondeterminism test-sim-custom-genesis-fast test-sim-fast sim-import-export \
-	test-sim-simulation-after-import test-sim-custom-genesis-multi-seed test-sim-multi-seed \
-
-
-
-#######################
-###  Documentation  ###
-#######################
+###############################################################################
+###                              Documentation                              ###
+###############################################################################
 
 # Start docs site at localhost:8080
 docs-serve:
@@ -312,3 +254,27 @@ docs-build:
 	@cd docs && \
 	npm install && \
 	npm run build
+
+godocs:
+	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
+	godoc -http=:6060
+
+###############################################################################
+###                                Localnet                                 ###
+###############################################################################
+
+build-docker-local-ethermint:
+	@$(MAKE) -C networks/local
+
+# Run a 4-node testnet locally
+localnet-start: localnet-stop
+	mkdir -p ./build/
+	@$(MAKE) docker-localnet
+
+	if ! [ -f build/node0/$(ETHERMINT_DAEMON_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ethermint:Z emintd/node "emintd testnet --v 4 -o /ethermint --starting-ip-address 192.168.10.2 --keyring-backend=test"; fi
+	docker-compose up -d
+
+localnet-stop:
+	docker-compose down
+
+.PHONY: build-docker-local-ethermint localnet-start localnet-stop

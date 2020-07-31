@@ -65,6 +65,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Features
 
+* (build) [\#378](https://github.com/ChainSafe/ethermint/pull/378) Create multi-node, local, automated testnet setup with `make localnet-start`.
 * (rpc) [\#330](https://github.com/ChainSafe/ethermint/issues/330) Implement `PublicFilterAPI`'s `EventSystem` which subscribes to Tendermint events upon `Filter` creation.
 * (rpc) [\#231](https://github.com/ChainSafe/ethermint/issues/231) Implement `NewBlockFilter` in rpc/filters.go which instantiates a polling block filter
   * Polls for new blocks via `BlockNumber` rpc call; if block number changes, it requests the new block via `GetBlockByNumber` rpc call and adds it to its internal list of blocks

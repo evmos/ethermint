@@ -19,6 +19,7 @@
 .glide/
 vendor
 build
+bin
 tools/bin/*
 docs/_build
 docs/tutorial
@@ -28,6 +29,7 @@ dist
 tools-stamp
 proto-tools-stamp
 golangci-lint
+keyring_test_cosmos
 
 # Testing
 coverage.txt
