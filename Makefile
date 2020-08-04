@@ -74,7 +74,6 @@ docker:
 	docker cp ethermint:/usr/bin/emintcli ./build/
 
 docker-localnet:
-	# build the image
 	docker build -f ./networks/local/ethermintnode/Dockerfile . -t emintd/node
 
 ###############################################################################
@@ -268,11 +267,19 @@ build-docker-local-ethermint:
 
 # Run a 4-node testnet locally
 localnet-start: localnet-stop
+ifeq ($(OS),Windows_NT)
+	mkdir build &
+	@$(MAKE) docker-localnet
+
+	IF not exist "build/node0/$(ETHERMINT_DAEMON_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z emintd/node "emintd testnet --v 4 -o /ethermint --starting-ip-address 192.168.10.2 --keyring-backend=test"
+	docker-compose up -d
+else
 	mkdir -p ./build/
 	@$(MAKE) docker-localnet
 
 	if ! [ -f build/node0/$(ETHERMINT_DAEMON_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ethermint:Z emintd/node "emintd testnet --v 4 -o /ethermint --starting-ip-address 192.168.10.2 --keyring-backend=test"; fi
 	docker-compose up -d
+endif
 
 localnet-stop:
 	docker-compose down
