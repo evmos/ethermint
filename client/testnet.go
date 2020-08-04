@@ -1,4 +1,4 @@
-package main
+package client
 
 // DONTCOVER
 
@@ -52,11 +52,10 @@ var (
 
 const nodeDirPerm = 0755
 
-// get cmd to initialize all files for tendermint testnet and application
-func testnetCmd(ctx *server.Context, cdc *codec.Codec,
+// TestnetCmd initializes all files for tendermint testnet and application
+func TestnetCmd(ctx *server.Context, cdc *codec.Codec,
 	mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator,
 ) *cobra.Command {
-
 	cmd := &cobra.Command{
 		Use:   "testnet",
 		Short: "Initialize files for a Ethermint testnet",

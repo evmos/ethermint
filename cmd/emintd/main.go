@@ -2,9 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"math/big"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
+	"github.com/tendermint/tendermint/libs/cli"
+	"github.com/tendermint/tendermint/libs/log"
+	tmtypes "github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -19,19 +27,10 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/client"
 	"github.com/cosmos/ethermint/codec"
-	emintcrypto "github.com/cosmos/ethermint/crypto"
-
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
-	"github.com/tendermint/tendermint/libs/cli"
-	"github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
+	"github.com/cosmos/ethermint/crypto"
 )
 
 const flagInvCheckPeriod = "inv-check-period"
@@ -44,8 +43,8 @@ func main() {
 	cdc := codec.MakeCodec(app.ModuleBasics)
 	appCodec := codec.NewAppCodec(cdc)
 
-	tmamino.RegisterKeyType(emintcrypto.PubKeySecp256k1{}, emintcrypto.PubKeyAminoName)
-	tmamino.RegisterKeyType(emintcrypto.PrivKeySecp256k1{}, emintcrypto.PrivKeyAminoName)
+	tmamino.RegisterKeyType(crypto.PubKeySecp256k1{}, crypto.PubKeyAminoName)
+	tmamino.RegisterKeyType(crypto.PrivKeySecp256k1{}, crypto.PrivKeyAminoName)
 
 	keyring.CryptoCdc = cdc
 	genutil.ModuleCdc = cdc
@@ -67,7 +66,9 @@ func main() {
 	}
 	// CLI commands to initialize the chain
 	rootCmd.AddCommand(
-		withChainIDValidation(genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome)),
+		client.ValidateChainID(
+			genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome),
+		),
 		genutilcli.CollectGenTxsCmd(ctx, cdc, bank.GenesisBalancesIterator{}, app.DefaultNodeHome),
 		genutilcli.MigrateGenesisCmd(ctx, cdc),
 		genutilcli.GenTxCmd(
@@ -75,7 +76,7 @@ func main() {
 			app.DefaultNodeHome, app.DefaultCLIHome,
 		),
 		genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
-		testnetCmd(ctx, cdc, app.ModuleBasics, bank.GenesisBalancesIterator{}),
+		client.TestnetCmd(ctx, cdc, app.ModuleBasics, bank.GenesisBalancesIterator{}),
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
 		AddGenesisAccountCmd(ctx, cdc, appCodec, app.DefaultNodeHome, app.DefaultCLIHome),
 		flags.NewCompletionCmd(rootCmd, true),
@@ -115,26 +116,4 @@ func exportAppStateAndTMValidators(
 	emintApp := app.NewEthermintApp(logger, db, traceStore, true, 0)
 
 	return emintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
-}
-
-// Wraps cobra command with a RunE function with integer chain-id verification
-func withChainIDValidation(baseCmd *cobra.Command) *cobra.Command {
-	// Copy base run command to be used after chain verification
-	baseRunE := baseCmd.RunE
-
-	// Function to replace command's RunE function
-	chainIDVerify := func(cmd *cobra.Command, args []string) error {
-		chainIDFlag := viper.GetString(flags.FlagChainID)
-
-		// Verify that the chain-id entered is a base 10 integer
-		_, ok := new(big.Int).SetString(chainIDFlag, 10)
-		if !ok {
-			return fmt.Errorf("invalid chainID: %s, must be base-10 integer format", chainIDFlag)
-		}
-
-		return baseRunE(cmd, args)
-	}
-
-	baseCmd.RunE = chainIDVerify
-	return baseCmd
 }

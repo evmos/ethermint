@@ -2,21 +2,13 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	"github.com/cosmos/ethermint/app"
-	"github.com/cosmos/ethermint/codec"
-	emintcrypto "github.com/cosmos/ethermint/crypto"
-	"github.com/cosmos/ethermint/rpc"
 
 	tmamino "github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	"github.com/cosmos/cosmos-sdk/client"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clientkeys "github.com/cosmos/cosmos-sdk/client/keys"
 	clientrpc "github.com/cosmos/cosmos-sdk/client/rpc"
@@ -28,6 +20,12 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+
+	"github.com/cosmos/ethermint/app"
+	"github.com/cosmos/ethermint/client"
+	"github.com/cosmos/ethermint/codec"
+	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/rpc"
 )
 
 var (
@@ -38,8 +36,8 @@ func main() {
 	// Configure cobra to sort commands
 	cobra.EnableCommandSorting = false
 
-	tmamino.RegisterKeyType(emintcrypto.PubKeySecp256k1{}, emintcrypto.PubKeyAminoName)
-	tmamino.RegisterKeyType(emintcrypto.PrivKeySecp256k1{}, emintcrypto.PrivKeyAminoName)
+	tmamino.RegisterKeyType(crypto.PubKeySecp256k1{}, crypto.PubKeyAminoName)
+	tmamino.RegisterKeyType(crypto.PrivKeySecp256k1{}, crypto.PrivKeyAminoName)
 
 	keyring.CryptoCdc = cdc
 	clientkeys.KeysCdc = cdc
@@ -59,18 +57,18 @@ func main() {
 	// Add --chain-id to persistent flags and mark it required
 	rootCmd.PersistentFlags().String(flags.FlagChainID, "", "Chain ID of tendermint node")
 	rootCmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
-		return initConfig(rootCmd)
+		return client.InitConfig(rootCmd)
 	}
 
 	// Construct Root Command
 	rootCmd.AddCommand(
 		clientrpc.StatusCommand(),
-		client.ConfigCmd(app.DefaultCLIHome),
+		sdkclient.ConfigCmd(app.DefaultCLIHome),
 		queryCmd(cdc),
 		txCmd(cdc),
 		rpc.EmintServeCmd(cdc),
 		flags.LineBreak,
-		keyCommands(),
+		client.KeyCommands(),
 		flags.LineBreak,
 		version.Cmd,
 		flags.NewCompletionCmd(rootCmd, true),
@@ -139,27 +137,4 @@ func txCmd(cdc *sdkcodec.Codec) *cobra.Command {
 	txCmd.RemoveCommand(cmdsToRemove...)
 
 	return txCmd
-}
-
-func initConfig(cmd *cobra.Command) error {
-	home, err := cmd.PersistentFlags().GetString(cli.HomeFlag)
-	if err != nil {
-		return err
-	}
-
-	cfgFile := path.Join(home, "config", "config.toml")
-	if _, err := os.Stat(cfgFile); err == nil {
-		viper.SetConfigFile(cfgFile)
-
-		if err := viper.ReadInConfig(); err != nil {
-			return err
-		}
-	}
-	if err := viper.BindPFlag(flags.FlagChainID, cmd.PersistentFlags().Lookup(flags.FlagChainID)); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag(cli.EncodingFlag, cmd.PersistentFlags().Lookup(cli.EncodingFlag)); err != nil {
-		return err
-	}
-	return viper.BindPFlag(cli.OutputFlag, cmd.PersistentFlags().Lookup(cli.OutputFlag))
 }
