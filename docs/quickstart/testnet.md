@@ -233,6 +233,27 @@ example:
 docker logs -f emintdnode0
 ```
 
+### Interact With the Testnet
+
+#### Ethereum JSON RPC & Websocket Ports
+
+To interact with the testnet via WebSockets or RPC/API, you will send your request to the corresponding ports:
+
+| Eth JSON-RPC | Eth WS | 
+|--------------|--------|
+|    `8545`    | `8546` |
+
+You can send a curl command such as:
+
+```bash
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' -H "Content-Type: application/json" 192.162.10.1:8545
+```
+::: tip
+The IP address will be the public IP of the docker container.
+:::
+
+Additional instructions on how to interact with the WebSocket can be found on the [events documentation](./events.md#ethereum-websocket).
+
 ### Keys & Accounts
 
 To interact with `emintcli` and start querying state or creating txs, you use the
