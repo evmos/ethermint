@@ -1,7 +1,7 @@
 // This is a test utility for Ethermint's Web3 JSON-RPC services.
 //
-// To run these tests please first ensure you have the emintd running
-// and have started the RPC service with `emintcli rest-server`.
+// To run these tests please first ensure you have the ethermintd running
+// and have started the RPC service with `ethermintcli rest-server`.
 //
 // You can configure the desired ETHERMINT_NODE_HOST and ETHERMINT_INTEGRATION_TEST_MODE
 //

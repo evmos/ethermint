@@ -26,15 +26,15 @@ You may want to skip the next section if you have already set up a [full node](.
 Your `cosmosvalconspub` consensus public key fron tendermint can be used to create a new validator by staking tokens. You can find your validator pubkey by running:
 
 ```bash
-emintd tendermint show-validator
+ethermintd tendermint show-validator
 ```
 
 To create your validator, just use the following command:
 
 ```bash
-emintcli tx staking create-validator \
+ethermintcli tx staking create-validator \
   --amount=1000000photon \
-  --pubkey=$(emintd tendermint show-validator) \
+  --pubkey=$(ethermintd tendermint show-validator) \
   --moniker=<ethermint_validator> \
   --chain-id=<chain_id> \
   --commission-rate="0.10" \
@@ -64,31 +64,31 @@ A `gentx` does three things:
 
 1. Makes the `validator` account you created into a validator operator account (i.e. the account that controls the validator).
 2. Self-delegates the provided `amount` of staking tokens.
-3. Link the operator account with a Tendermint node pubkey that will be used for signing blocks. If no `--pubkey` flag is provided, it defaults to the local node pubkey created via the `emintd init` command above.
+3. Link the operator account with a Tendermint node pubkey that will be used for signing blocks. If no `--pubkey` flag is provided, it defaults to the local node pubkey created via the `ethermintd init` command above.
 
 If you want to participate in genesis as a validator, you need to justify that
 you have some stake at genesis, create one (or multiple) transactions to bond this stake to your validator address, and include this transaction in the genesis file.
 
 Your `cosmosvalconspub`, as shown on the section above, can be used to create a validator transaction on genesis as well.
 
-Next, craft your `emintd gentx` command:
+Next, craft your `ethermintd gentx` command:
 
 ::: tip
 When specifying commission parameters, the `commission-max-change-rate` is used to measure % _point_ change over the `commission-rate`. E.g. 1% to 2% is a 100% rate increase, but only 1 percentage point.
 :::
 
 ```bash
-emintd gentx \
+ethermintd gentx \
   --amount <amount_of_delegation_uatom> \
   --commission-rate <commission_rate> \
   --commission-max-rate <commission_max_rate> \
   --commission-max-change-rate <commission_max_change_rate> \
-  --pubkey $(emintd tendermint show-validator) \
+  --pubkey $(ethermintd tendermint show-validator) \
   --name $KEY
 ```
 
 ::: tip
-For more on `gentx`, use the help flag: `emintd gentx -h`
+For more on `gentx`, use the help flag: `ethermintd gentx -h`
 :::
 
 ## Confirm Your Validator is Running
@@ -96,11 +96,11 @@ For more on `gentx`, use the help flag: `emintd gentx -h`
 Your validator is active if the following command returns anything:
 
 ```bash
-emintcli query tendermint-validator-set | grep "$(emintd tendermint show-validator)"
+ethermintcli query tendermint-validator-set | grep "$(ethermintd tendermint show-validator)"
 ```
 
 You should now see your validator in one of the block explorers. You are looking for the `bech32`
-encoded `address` in the `~/.emintd/config/priv_validator.json` file.
+encoded `address` in the `~/.ethermintd/config/priv_validator.json` file.
 
 ::: tip
 To be in the validator set, you need to have more total voting power than the 100th validator.
@@ -111,7 +111,7 @@ To be in the validator set, you need to have more total voting power than the 10
 When attempting to perform routine maintenance or planning for an upcoming coordinated
 upgrade, it can be useful to have your validator systematically and gracefully halt the chain and shutdown the node.
 
-You can achieve this by setting one of the following flags during when using the `emintd start` command:
+You can achieve this by setting one of the following flags during when using the `ethermintd start` command:
 
 - `--halt-height`: to the block height at which to shutdown the node
 - `--halt-time`: to the minimum block time (in Unix seconds) at which to shutdown the node

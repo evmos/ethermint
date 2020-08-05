@@ -17,8 +17,8 @@ make install
 Check that the binaries have been successfuly installed:
 
 ```bash
-emintd -h
-emintcli -h
+ethermintd -h
+ethermintcli -h
 ```
 
 ## Docker
@@ -33,8 +33,8 @@ This will install the binaries on the `./build` directory. Now, check that the b
 successfuly installed:
 
 ```bash
-emintd -h
-emintcli -h
+ethermintd -h
+ethermintcli -h
 ```
 
 ## Releases

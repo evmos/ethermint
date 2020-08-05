@@ -26,7 +26,7 @@ to keep your binaries and configuration files.
 In another terminal window or tab, run the Ethereum JSON-RPC server as well as the SDK REST server:
 
 ```bash
-emintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --chain-id 8
+ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --chain-id 8
 ```
 
 ## Manual deployment
@@ -39,15 +39,15 @@ The instructions for setting up a brand new full node from scratch are the the s
 To start your node, just type:
 
 ```bash
-emintd start
+ethermintd start
 ```
 
 ## Key Management
 
-To run a node with the same key every time: replace `emintcli keys add $KEY` in `./init.sh` with:
+To run a node with the same key every time: replace `ethermintcli keys add $KEY` in `./init.sh` with:
 
 ```bash
-echo "your mnemonic here" | emintcli keys add $KEY --recover
+echo "your mnemonic here" | ethermintcli keys add $KEY --recover
 ```
 
 ::: tip Ethermint currently only supports 24 word mnemonics.
@@ -56,19 +56,19 @@ echo "your mnemonic here" | emintcli keys add $KEY --recover
 You can generate a new key/mnemonic with:
 
 ```bash
-emintcli keys add $KEY
+ethermintcli keys add $KEY
 ```
 
 To export your ethermint key as an ethereum private key (for use with Metamask for example):
 
 ```bash
-emintcli keys unsafe-export-eth-key $KEY
+ethermintcli keys unsafe-export-eth-key $KEY
 ```
 
 For more about the available key commands, use the `--help` flag
 
 ```bash
-emintcli keys -h
+ethermintcli keys -h
 ```
 
 ### Keyring backend options
@@ -81,7 +81,7 @@ relevant command and the password prompt will occur through the command line. Th
 as a CLI config option with:
 
 ```bash
-emintcli config keyring-backend file
+ethermintcli config keyring-backend file
 ```
 
 ## Clearing data from chain
@@ -91,7 +91,7 @@ emintcli config keyring-backend file
 Alternatively, you can **reset** the blockchain database, remove the node's address book files, and reset the `priv_validator.json` to the genesis state.
 
 ::: danger
-If you are running a **validator node**, always be careful when doing `emintd unsafe-reset-all`. You should never use this command if you are not switching `chain-id`.
+If you are running a **validator node**, always be careful when doing `ethermintd unsafe-reset-all`. You should never use this command if you are not switching `chain-id`.
 :::
 
 ::: danger
@@ -101,15 +101,15 @@ If you are running a **validator node**, always be careful when doing `emintd un
 First, remove the outdated files and reset the data.
 
 ```bash
-rm $HOME/.emintd/config/addrbook.json $HOME/.emintd/config/genesis.json
-emintd unsafe-reset-all
+rm $HOME/.ethermintd/config/addrbook.json $HOME/.ethermintd/config/genesis.json
+ethermintd unsafe-reset-all
 ```
 
 Your node is now in a pristine state while keeping the original `priv_validator.json` and `config.toml`. If you had any sentry nodes or full nodes setup before, your node will still try to connect to them, but may fail if they haven't also been upgraded.
 
 ### Delete Data
 
-Data for the Daemon and CLI binaries should be stored at `~/.emintd` and `~/.emintcli`, respectively by default. To **delete** the existing binaries and configuration, run:
+Data for the Daemon and CLI binaries should be stored at `~/.ethermintd` and `~/.ethermintcli`, respectively by default. To **delete** the existing binaries and configuration, run:
 
 ```bash
 rm -rf ~/.emint*

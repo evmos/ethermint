@@ -1,9 +1,9 @@
 version: "3"
 
 services:
-  emintdnode0:
-    container_name: emintdnode0
-    image: "emintd/node"
+  ethermintdnode0:
+    container_name: ethermintdnode0
+    image: "ethermintd/node"
     ports:
       - "26656-26657:26656-26657"
       - "1317:1317"
@@ -11,7 +11,7 @@ services:
       - "8546:8546"
     environment:
       - ID=0
-      - LOG=${LOG:-emintd.log}
+      - LOG=${LOG:-ethermintd.log}
     volumes:
       - ./build:/ethermint:Z
     networks:
@@ -19,9 +19,9 @@ services:
         ipv4_address: 192.168.10.2
     entrypoint: "bash start.sh"
 
-  emintdnode1:
-    container_name: emintdnode1
-    image: "emintd/node"
+  ethermintdnode1:
+    container_name: ethermintdnode1
+    image: "ethermintd/node"
     ports:
       - "26659-26660:26656-26657"
       - "1318:1317"
@@ -29,7 +29,7 @@ services:
       - "8546:8546"
     environment:
       - ID=1
-      - LOG=${LOG:-emintd.log}
+      - LOG=${LOG:-ethermintd.log}
     volumes:
       - ./build:/ethermint:Z
     networks:
@@ -37,12 +37,12 @@ services:
         ipv4_address: 192.168.10.3
     entrypoint: "bash start.sh"
 
-  emintdnode2:
-    container_name: emintdnode2
-    image: "emintd/node"
+  ethermintdnode2:
+    container_name: ethermintdnode2
+    image: "ethermintd/node"
     environment:
       - ID=2
-      - LOG=${LOG:-emintd.log}
+      - LOG=${LOG:-ethermintd.log}
     ports:
       - "26661-26662:26656-26657"
       - "1319:1317"
@@ -55,12 +55,12 @@ services:
         ipv4_address: 192.168.10.4
     entrypoint: "bash start.sh"
 
-  emintdnode3:
-    container_name: emintdnode3
-    image: "emintd/node"
+  ethermintdnode3:
+    container_name: ethermintdnode3
+    image: "ethermintd/node"
     environment:
       - ID=3
-      - LOG=${LOG:-emintd.log}
+      - LOG=${LOG:-ethermintd.log}
     ports:
       - "26663-26664:26656-26657"
       - "1320:1317"

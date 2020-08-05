@@ -23,8 +23,8 @@ RUN apk add --update ca-certificates
 WORKDIR /root
 
 # Copy over binaries from the build-env
-COPY --from=build-env /go/src/github.com/Chainsafe/ethermint/build/emintd /usr/bin/emintd
-COPY --from=build-env /go/src/github.com/Chainsafe/ethermint/build/emintcli /usr/bin/emintcli
+COPY --from=build-env /go/src/github.com/Chainsafe/ethermint/build/ethermintd /usr/bin/ethermintd
+COPY --from=build-env /go/src/github.com/Chainsafe/ethermint/build/ethermintcli /usr/bin/ethermintcli
 
-# Run emintd by default
-CMD ["emintd"]
+# Run ethermintd by default
+CMD ["ethermintd"]

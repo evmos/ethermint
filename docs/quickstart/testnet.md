@@ -24,21 +24,21 @@ $MONIKER=testing
 $KEY=mykey
 $CHAINID=8
 
-emintd init $MONIKER --chain-id=$CHAINID
+ethermintd init $MONIKER --chain-id=$CHAINID
 ```
 
 ::: warning
 Monikers can contain only ASCII characters. Using Unicode characters will render your node unreachable.
 :::
 
-You can edit this `moniker` later, in the `$(HOME)/.emintd/config/config.toml` file:
+You can edit this `moniker` later, in the `$(HOME)/.ethermintd/config/config.toml` file:
 
 ```toml
 # A custom human readable name for this node
 moniker = "<your_custom_moniker>"
 ```
 
-You can edit the `$HOME/.emintd/config/app.toml` file in order to enable the anti spam mechanism and reject incoming transactions with less than the minimum gas prices:
+You can edit the `$HOME/.ethermintd/config/app.toml` file in order to enable the anti spam mechanism and reject incoming transactions with less than the minimum gas prices:
 
 ```toml
 # This is a TOML config file.
@@ -57,21 +57,21 @@ minimum-gas-prices = ""
 
 ```bash
 # Create a key to hold your account
-emintcli keys add $KEY
+ethermintcli keys add $KEY
 
 # Add that key into the genesis.app_state.accounts array in the genesis file
 # NOTE: this command lets you set the number of coins. Make sure this account has some coins
 # with the genesis.app_state.staking.params.bond_denom denom, the default is staking
-emintd add-genesis-account $(emintcli keys show validator -a) 1000000000stake,10000000000photon
+ethermintd add-genesis-account $(ethermintcli keys show validator -a) 1000000000stake,10000000000photon
 
 # Generate the transaction that creates your validator
-emintd gentx --name $KEY
+ethermintd gentx --name $KEY
 
 # Add the generated bonding transaction to the genesis file
-emintd collect-gentxs
+ethermintd collect-gentxs
 
 # Finally, check the correctness of the genesis.json file
-emintd validate-genesis
+ethermintd validate-genesis
 ```
 
 ### Run Testnet
@@ -79,7 +79,7 @@ emintd validate-genesis
 Now its safe to start the daemon:
 
 ```bash
-emintd start
+ethermintd start
 ```
 
 You can then stop the node using Ctrl+C.
@@ -94,15 +94,15 @@ To build start a 4 node testnet run:
 make localnet-start
 ```
 
-This command creates a 4-node network using the `emintdnode` Docker image.
+This command creates a 4-node network using the `ethermintdnode` Docker image.
 The ports for each node are found in this table:
 
-| Node ID      | P2P Port | REST/RPC Port |
-|--------------|----------|---------------|
-| `emintnode0` | `26656`  | `26657`       |
-| `emintnode1` | `26659`  | `26660`       |
-| `emintnode2` | `26661`  | `26662`       |
-| `emintnode3` | `26663`  | `26664`       |
+| Node ID          | P2P Port | REST/RPC Port |
+|------------------|----------|---------------|
+| `ethermintnode0` | `26656`  | `26657`       |
+| `ethermintnode1` | `26659`  | `26660`       |
+| `ethermintnode2` | `26661`  | `26662`       |
+| `ethermintnode3` | `26663`  | `26664`       |
 
 To update the binary, just rebuild it and restart the nodes
 
@@ -115,10 +115,10 @@ The command above  command will run containers in the background using Docker co
 ```bash
 ...
 Creating network "chainsafe-ethermint_localnet" with driver "bridge"
-Creating emintdnode0 ... done
-Creating emintdnode2 ... done
-Creating emintdnode1 ... done
-Creating emintdnode3 ... done
+Creating ethermintdnode0 ... done
+Creating ethermintdnode2 ... done
+Creating ethermintdnode1 ... done
+Creating ethermintdnode3 ... done
 ```
 
 
@@ -133,55 +133,55 @@ make localnet-stop
 ### Configuration
 
 The `make localnet-start` creates files for a 4-node testnet in `./build` by
-calling the `emintd testnet` command. This outputs a handful of files in the
+calling the `ethermintd testnet` command. This outputs a handful of files in the
 `./build` directory:
 
 ```bash
 tree -L 3 build/
 
 build/
-├── emintcli
-├── emintd
+├── ethermintcli
+├── ethermintd
 ├── gentxs
 │   ├── node0.json
 │   ├── node1.json
 │   ├── node2.json
 │   └── node3.json
 ├── node0
-│   ├── emintcli
+│   ├── ethermintcli
 │   │   ├── key_seed.json
 │   │   └── keyring-test-cosmos
-│   └── emintd
+│   └── ethermintd
 │       ├── config
 │       ├── data
-│       └── emintd.log
+│       └── ethermintd.log
 ├── node1
-│   ├── emintcli
+│   ├── ethermintcli
 │   │   ├── key_seed.json
 │   │   └── keyring-test-cosmos
-│   └── emintd
+│   └── ethermintd
 │       ├── config
 │       ├── data
-│       └── emintd.log
+│       └── ethermintd.log
 ├── node2
-│   ├── emintcli
+│   ├── ethermintcli
 │   │   ├── key_seed.json
 │   │   └── keyring-test-cosmos
-│   └── emintd
+│   └── ethermintd
 │       ├── config
 │       ├── data
-│       └── emintd.log
+│       └── ethermintd.log
 └── node3
-    ├── emintcli
+    ├── ethermintcli
     │   ├── key_seed.json
     │   └── keyring-test-cosmos
-    └── emintd
+    └── ethermintd
         ├── config
         ├── data
-        └── emintd.log
+        └── ethermintd.log
 ```
 
-Each `./build/nodeN` directory is mounted to the `/emintd` directory in each container.
+Each `./build/nodeN` directory is mounted to the `/ethermintd` directory in each container.
 
 ### Logging
 
@@ -189,10 +189,10 @@ In order to see the logs of a particular node you can use the following command:
 
 ```bash
 # node 0: daemon logs
-docker exec emintdnode0 tail emintd.log
+docker exec ethermintdnode0 tail ethermintd.log
 
 # node 0: REST & RPC logs
-docker exec emintdnode0 tail emintcli.log
+docker exec ethermintdnode0 tail ethermintcli.log
 ```
 
 The logs for the daemon will look like:
@@ -230,7 +230,7 @@ You can also watch logs as they are produced via Docker with the `--follow` (`-f
 example:
 
 ```bash
-docker logs -f emintdnode0
+docker logs -f ethermintdnode0
 ```
 
 ### Interact With the Testnet
@@ -256,18 +256,18 @@ Additional instructions on how to interact with the WebSocket can be found on th
 
 ### Keys & Accounts
 
-To interact with `emintcli` and start querying state or creating txs, you use the
-`emintcli` directory of any given node as your `home`, for example:
+To interact with `ethermintcli` and start querying state or creating txs, you use the
+`ethermintcli` directory of any given node as your `home`, for example:
 
 ```bash
-emintcli keys list --home ./build/node0/emintcli
+ethermintcli keys list --home ./build/node0/ethermintcli
 ```
 
 Now that accounts exists, you may create new accounts and send those accounts
 funds!
 
 ::: tip
-**Note**: Each node's seed is located at `./build/nodeN/emintcli/key_seed.json` and can be restored to the CLI using the `emintcli keys add --restore` command
+**Note**: Each node's seed is located at `./build/nodeN/ethermintcli/key_seed.json` and can be restored to the CLI using the `ethermintcli keys add --restore` command
 :::
 
 ### Special Binaries
@@ -291,17 +291,17 @@ If you are looking to connect to a persistent public testnet. You will need to m
 If you want to start a network from scratch, you will need to start the [genesis procedure](#genesis-procedure) by creating a `genesis.json` and submit + collect the genesis transactions from the [validators](./validator-setup.md).
 :::
 
-If you want to connect to an existing testnet, fetch the testnet's `genesis.json` file and copy it into the `emintd`'s config directory (i.e `$HOME/.emintd/config/genesis.json`).
+If you want to connect to an existing testnet, fetch the testnet's `genesis.json` file and copy it into the `ethermintd`'s config directory (i.e `$HOME/.ethermintd/config/genesis.json`).
 
 Then verify the correctness of the genesis configuration file:
 
 ```bash
-emintd validate-genesis
+ethermintd validate-genesis
 ```
 
 #### Add Seed Nodes
 
-Your node needs to know how to find peers. You'll need to add healthy seed nodes to `$HOME/.emintd/config/config.toml`. If those seeds aren't working, you can find more seeds and persistent peers on an existing explorer.
+Your node needs to know how to find peers. You'll need to add healthy seed nodes to `$HOME/.ethermintd/config/config.toml`. If those seeds aren't working, you can find more seeds and persistent peers on an existing explorer.
 
 For more information on seeds and peers, you can the Tendermint [P2P documentation](https://docs.tendermint.com/master/spec/p2p/peer.html).
 
@@ -315,23 +315,23 @@ Once the ethermint daemon is up and running, you can request tokens to your addr
 
 ```bash
 # query your initial balance
-emintcli q bank balances $(emintcli keys show <mykey> -a)  
+ethermintcli q bank balances $(ethermintcli keys show <mykey> -a)  
 
 # send a tx to request tokens to your account address
-emintcli tx faucet request 100photon --from <mykey>
+ethermintcli tx faucet request 100photon --from <mykey>
 
 # query your balance after the request
-emintcli q bank balances $(emintcli keys show <mykey> -a)
+ethermintcli q bank balances $(ethermintcli keys show <mykey> -a)
 ```
 
 You can also check to total amount funded by the faucet and the total supply of the chain via:
 
 ```bash
 # total amount funded by the faucet
-emintcli q faucet funded
+ethermintcli q faucet funded
 
 # total supply
-emintcli q supply total
+ethermintcli q supply total
 ```
 
 ## Next {hide}

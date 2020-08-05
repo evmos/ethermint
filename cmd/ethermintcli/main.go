@@ -49,8 +49,8 @@ func main() {
 	config.Seal()
 
 	rootCmd := &cobra.Command{
-		Use:   "emintcli",
-		Short: "Command line interface for interacting with emintd",
+		Use:   "ethermintcli",
+		Short: "Command line interface for interacting with ethermintd",
 	}
 
 	// Add --chain-id to persistent flags and mark it required

@@ -119,7 +119,7 @@ For further information on how to run a node, please refer to [this](./../quicks
 In another Terminal wintdow/tab, start the [REST and JSON-RPC server](./../quickstart/clients.md#rest-and-tendermint-rpc.md):
 
 ```bash
-emintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey--chain-id 8 --trace
+ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey--chain-id 8 --trace
 ```
 
 ## Deploy contract

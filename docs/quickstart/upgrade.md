@@ -10,7 +10,7 @@ Learn how to upgrade your full node to the latest software version {synopsis}
 
 These instructions are for full nodes that have ran on previous versions of and would like to upgrade to the latest testnet.
 
-First, stop your instance of `emintd`. Next, upgrade the software:
+First, stop your instance of `ethermintd`. Next, upgrade the software:
 
 ```bash
 cd ethermint
@@ -30,7 +30,7 @@ You will need to ensure that the version installed matches the one needed for th
 If the new version you are upgrading to has breaking changes, you will have to restart your chain. If it is **not** breaking, you can skip to [Restart](#restart-node).
 :::
 
-To upgrade the genesis file, you can either fetch it from a trusted source or export it locally using the `emintd export` command.
+To upgrade the genesis file, you can either fetch it from a trusted source or export it locally using the `ethermintd export` command.
 
 ### Fetch from a Trusted Source
 
@@ -39,7 +39,7 @@ If you are joining an existing testnet, you can fetch the genesis from the appro
 Save the new genesis as `new_genesis.json`. Then, replace the old `genesis.json` with `new_genesis.json`.
 
 ```bash
-cd $HOME/.emintd/config
+cd $HOME/.ethermintd/config
 cp -f genesis.json new_genesis.json
 mv new_genesis.json genesis.json
 ```
@@ -54,19 +54,19 @@ useful for manual analysis of the state at a given height.
 Export state with:
 
 ```bash
-emintd export > new_genesis.json
+ethermintd export > new_genesis.json
 ```
 
 You can also export state from a particular height (at the end of processing the block of that height):
 
 ```bash
-emintd export --height [height] > new_genesis.json
+ethermintd export --height [height] > new_genesis.json
 ```
 
 If you plan to start a new network for 0 height (i.e genesis) from the exported state, export with the `--for-zero-height` flag:
 
 ```bash
-emintd export --height [height] --for-zero-height > new_genesis.json
+ethermintd export --height [height] --for-zero-height > new_genesis.json
 ```
 
 Then, replace the old `genesis.json` with `new_genesis.json`.
@@ -81,7 +81,7 @@ At this point, you might want to run a script to update the exported genesis int
 You can use the `migrate` command to migrate from a given version to the next one (eg: `v0.X.X` to `v1.X.X`):
 
 ```bash
-emintd migrate [target-version] [/path/to/genesis.json] --chain-id=<new_chain_id> --genesis-time=<yyyy-mm-ddThh:mm:ssZ>
+ethermintd migrate [target-version] [/path/to/genesis.json] --chain-id=<new_chain_id> --genesis-time=<yyyy-mm-ddThh:mm:ssZ>
 ```
 
 ## Restart Node
@@ -89,7 +89,7 @@ emintd migrate [target-version] [/path/to/genesis.json] --chain-id=<new_chain_id
 To restart your node once the new genesis has been updated, use the `start` command:
 
 ```bash
-emintd start
+ethermintd start
 ```
 
 ## Next {hide}
