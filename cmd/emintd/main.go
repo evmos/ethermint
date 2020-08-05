@@ -31,6 +31,7 @@ import (
 	"github.com/cosmos/ethermint/client"
 	"github.com/cosmos/ethermint/codec"
 	"github.com/cosmos/ethermint/crypto"
+	ethermint "github.com/cosmos/ethermint/types"
 )
 
 const flagInvCheckPeriod = "inv-check-period"
@@ -52,9 +53,7 @@ func main() {
 	clientkeys.KeysCdc = cdc
 
 	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(sdk.Bech32PrefixAccAddr, sdk.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(sdk.Bech32PrefixValAddr, sdk.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
+	ethermint.SetBech32Prefixes(config)
 	config.Seal()
 
 	ctx := server.NewDefaultContext()
