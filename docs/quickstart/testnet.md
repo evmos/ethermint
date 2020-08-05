@@ -97,12 +97,12 @@ make localnet-start
 This command creates a 4-node network using the `ethermintdnode` Docker image.
 The ports for each node are found in this table:
 
-| Node ID          | P2P Port | REST/RPC Port |
-|------------------|----------|---------------|
-| `ethermintnode0` | `26656`  | `26657`       |
-| `ethermintnode1` | `26659`  | `26660`       |
-| `ethermintnode2` | `26661`  | `26662`       |
-| `ethermintnode3` | `26663`  | `26664`       |
+| Node ID          | P2P Port | Tendermint RPC Port | REST/ Ethereum JSON-RPC Port | WebSocket Port |
+|------------------|----------|---------------------|------------------------------|----------------|
+| `ethermintnode0` | `26656`  | `26657`             | `8545`                       | `8546`         |
+| `ethermintnode1` | `26659`  | `26660`             | `8547`                       | `8548`         |
+| `ethermintnode2` | `26661`  | `26662`             | `8549`                       | `8550`         |
+| `ethermintnode3` | `26663`  | `26664`             | `8551`                       | `8552`         |
 
 To update the binary, just rebuild it and restart the nodes
 
@@ -239,15 +239,16 @@ docker logs -f ethermintdnode0
 
 To interact with the testnet via WebSockets or RPC/API, you will send your request to the corresponding ports:
 
-| Eth JSON-RPC | Eth WS | 
+| Eth JSON-RPC | Eth WS |
 |--------------|--------|
-|    `8545`    | `8546` |
+| `8545`       | `8546` |
 
 You can send a curl command such as:
 
 ```bash
 curl -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' -H "Content-Type: application/json" 192.162.10.1:8545
 ```
+
 ::: tip
 The IP address will be the public IP of the docker container.
 :::
