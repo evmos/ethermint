@@ -16,7 +16,7 @@ import (
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 
 	"github.com/cosmos/ethermint/app"
-	emintcrypto "github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/spf13/cobra"
@@ -45,7 +45,7 @@ func registerRoutes(rs *lcd.RestServer) {
 	accountName := viper.GetString(flagUnlockKey)
 	accountNames := strings.Split(accountName, ",")
 
-	var emintKeys []emintcrypto.PrivKeySecp256k1
+	var keys []crypto.PrivKeySecp256k1
 	if len(accountName) > 0 {
 		var err error
 		inBuf := bufio.NewReader(os.Stdin)
@@ -64,13 +64,13 @@ func registerRoutes(rs *lcd.RestServer) {
 			}
 		}
 
-		emintKeys, err = unlockKeyFromNameAndPassphrase(accountNames, passphrase)
+		keys, err = unlockKeyFromNameAndPassphrase(accountNames, passphrase)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	apis := GetRPCAPIs(rs.CliCtx, emintKeys)
+	apis := GetRPCAPIs(rs.CliCtx, keys)
 
 	// TODO: Allow cli to configure modules https://github.com/ChainSafe/ethermint/issues/74
 	whitelist := make(map[string]bool)
@@ -98,33 +98,35 @@ func registerRoutes(rs *lcd.RestServer) {
 	ws.start()
 }
 
-func unlockKeyFromNameAndPassphrase(accountNames []string, passphrase string) (emintKeys []emintcrypto.PrivKeySecp256k1, err error) {
+func unlockKeyFromNameAndPassphrase(accountNames []string, passphrase string) ([]crypto.PrivKeySecp256k1, error) {
 	keybase, err := keyring.NewKeyring(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),
 		os.Stdin,
+		crypto.EthSecp256k1Options()...,
 	)
 	if err != nil {
-		return
+		return []crypto.PrivKeySecp256k1{}, err
 	}
 
 	// try the for loop with array []string accountNames
 	// run through the bottom code inside the for loop
-	for _, acc := range accountNames {
+
+	keys := make([]crypto.PrivKeySecp256k1, len(accountNames))
+	for i, acc := range accountNames {
 		// With keyring keybase, password is not required as it is pulled from the OS prompt
 		privKey, err := keybase.ExportPrivateKeyObject(acc, passphrase)
 		if err != nil {
-			return nil, err
+			return []crypto.PrivKeySecp256k1{}, err
 		}
 
 		var ok bool
-		emintKey, ok := privKey.(emintcrypto.PrivKeySecp256k1)
+		keys[i], ok = privKey.(crypto.PrivKeySecp256k1)
 		if !ok {
-			panic(fmt.Sprintf("invalid private key type: %T", privKey))
+			panic(fmt.Sprintf("invalid private key type %T at index %d", privKey, i))
 		}
-		emintKeys = append(emintKeys, emintKey)
 	}
 
-	return
+	return keys, nil
 }

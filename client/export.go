@@ -16,7 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	emintcrypto "github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto"
 )
 
 // UnsafeExportEthKeyCommand exports a key with the given name as a private key in hex format.
@@ -34,6 +34,7 @@ func UnsafeExportEthKeyCommand() *cobra.Command {
 				viper.GetString(flags.FlagKeyringBackend),
 				viper.GetString(flags.FlagHome),
 				inBuf,
+				crypto.EthSecp256k1Options()...,
 			)
 			if err != nil {
 				return err
@@ -63,7 +64,7 @@ func UnsafeExportEthKeyCommand() *cobra.Command {
 			}
 
 			// Converts key to Ethermint secp256 implementation
-			emintKey, ok := privKey.(emintcrypto.PrivKeySecp256k1)
+			emintKey, ok := privKey.(crypto.PrivKeySecp256k1)
 			if !ok {
 				return fmt.Errorf("invalid private key type, must be Ethereum key: %T", privKey)
 			}

@@ -27,9 +27,10 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.4
 	github.com/tendermint/tm-db v0.5.1
+	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gopkg.in/yaml.v2 v2.3.0
 )
 
 // forked SDK to avoid breaking changes
-replace github.com/cosmos/cosmos-sdk => github.com/Chainsafe/cosmos-sdk v0.34.4-0.20200622114457-35ea97f29c5f
+replace github.com/cosmos/cosmos-sdk => github.com/Chainsafe/cosmos-sdk v0.34.4-0.20200811134358-723463e1daec

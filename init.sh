@@ -18,7 +18,7 @@ ethermintcli config indent true
 ethermintcli config trust-node true
 
 # if $KEY exists it should be deleted
-ethermintcli keys add $KEY
+ethermintcli keys add $KEY --algo "eth_secp256k1"
 
 # Set moniker and chain-id for Ethermint (Moniker can be anything, chain-id must be an integer)
 ethermintd init $MONIKER --chain-id $CHAINID
@@ -49,4 +49,3 @@ echo -e "ethermintcli rest-server --laddr \"tcp://localhost:8545\" --unlock-key 
 
 # Start the node (remove the --pruning=nothing flag if historical queries are not needed)
 ethermintd start --pruning=nothing --rpc.unsafe --log_level "main:info,state:info,mempool:info" --trace
-

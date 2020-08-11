@@ -47,7 +47,7 @@ ethermintd start
 To run a node with the same key every time: replace `ethermintcli keys add $KEY` in `./init.sh` with:
 
 ```bash
-echo "your mnemonic here" | ethermintcli keys add $KEY --recover
+echo "your mnemonic here" | ethermintcli keys add $KEY --recover --algo "eth_secp256k1"
 ```
 
 ::: tip Ethermint currently only supports 24 word mnemonics.
@@ -56,7 +56,7 @@ echo "your mnemonic here" | ethermintcli keys add $KEY --recover
 You can generate a new key/mnemonic with:
 
 ```bash
-ethermintcli keys add $KEY
+ethermintcli keys add $KEY --algo "eth_secp256k1"
 ```
 
 To export your ethermint key as an ethereum private key (for use with Metamask for example):

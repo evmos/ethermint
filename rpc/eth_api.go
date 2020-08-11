@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/cosmos/ethermint/codec"
-	emintcrypto "github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto"
 	params "github.com/cosmos/ethermint/rpc/args"
 	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/utils"
@@ -46,14 +46,14 @@ import (
 type PublicEthAPI struct {
 	cliCtx      context.CLIContext
 	backend     Backend
-	keys        []emintcrypto.PrivKeySecp256k1
+	keys        []crypto.PrivKeySecp256k1
 	nonceLock   *AddrLocker
 	keybaseLock sync.Mutex
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
 func NewPublicEthAPI(cliCtx context.CLIContext, backend Backend, nonceLock *AddrLocker,
-	key []emintcrypto.PrivKeySecp256k1) *PublicEthAPI {
+	key []crypto.PrivKeySecp256k1) *PublicEthAPI {
 
 	return &PublicEthAPI{
 		cliCtx:    cliCtx,
@@ -142,6 +142,7 @@ func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),
 		e.cliCtx.Input,
+		crypto.EthSecp256k1Options()...,
 	)
 	if err != nil {
 		return addresses, err
@@ -294,7 +295,7 @@ func (e *PublicEthAPI) ExportAccount(address common.Address, blockNumber BlockNu
 	return string(res), nil
 }
 
-func checkKeyInKeyring(keys []emintcrypto.PrivKeySecp256k1, address common.Address) (key emintcrypto.PrivKeySecp256k1, exist bool) {
+func checkKeyInKeyring(keys []crypto.PrivKeySecp256k1, address common.Address) (key crypto.PrivKeySecp256k1, exist bool) {
 	if len(keys) > 0 {
 		for _, key := range keys {
 			if bytes.Equal(key.PubKey().Address().Bytes(), address.Bytes()) {
