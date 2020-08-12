@@ -34,6 +34,10 @@ func KeyCommands() *cobra.Command {
 
 	// support adding Ethereum supported keys
 	addCmd := clientkeys.AddKeyCommand()
+
+	// update the default signing algorithm value to "eth_secp256k1"
+	algoFlag := addCmd.Flag("algo")
+	algoFlag.DefValue = string(crypto.EthSecp256k1)
 	addCmd.RunE = runAddCmd
 
 	cmd.AddCommand(
