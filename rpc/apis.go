@@ -22,6 +22,7 @@ const (
 func GetRPCAPIs(cliCtx context.CLIContext, keys []emintcrypto.PrivKeySecp256k1) []rpc.API {
 	nonceLock := new(AddrLocker)
 	backend := NewEthermintBackend(cliCtx)
+	ethAPI := NewPublicEthAPI(cliCtx, backend, nonceLock, keys)
 
 	return []rpc.API{
 		{
@@ -33,13 +34,13 @@ func GetRPCAPIs(cliCtx context.CLIContext, keys []emintcrypto.PrivKeySecp256k1) 
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicEthAPI(cliCtx, backend, nonceLock, keys),
+			Service:   ethAPI,
 			Public:    true,
 		},
 		{
 			Namespace: PersonalNamespace,
 			Version:   apiVersion,
-			Service:   NewPersonalEthAPI(cliCtx, nonceLock),
+			Service:   NewPersonalEthAPI(cliCtx, ethAPI, nonceLock, keys),
 			Public:    false,
 		},
 		{

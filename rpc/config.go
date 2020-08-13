@@ -81,6 +81,10 @@ func registerRoutes(rs *lcd.RestServer) {
 			if err := s.RegisterName(api.Namespace, api.Service); err != nil {
 				panic(err)
 			}
+		} else if !api.Public { // TODO: how to handle private apis? should only accept local calls
+			if err := s.RegisterName(api.Namespace, api.Service); err != nil {
+				panic(err)
+			}
 		}
 	}
 
