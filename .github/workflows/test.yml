@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v1
+      - uses: technote-space/get-diff-action@v3.0.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -56,7 +56,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v1
+      - uses: technote-space/get-diff-action@v3.0.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -92,7 +92,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v1
+      - uses: technote-space/get-diff-action@v3.0.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -128,7 +128,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v1
+      - uses: technote-space/get-diff-action@v3.0.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -164,7 +164,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v1
+      - uses: technote-space/get-diff-action@v3.0.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -199,7 +199,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v1
+      - uses: technote-space/get-diff-action@v3.0.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
