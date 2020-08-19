@@ -28,18 +28,17 @@ SIMAPP = github.com/cosmos/ethermint/app
 RUNSIM = $(BINDIR)/runsim
 LEDGER_ENABLED ?= true
 
-ifeq ($(DETECTED_OS),)
-  ifeq ($(OS),Windows_NT)
-	  DETECTED_OS := windows
+ifeq ($(OS),Windows_NT)
+  DETECTED_OS := windows
+else
+  UNAME_S = $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	DETECTED_OS := mac
   else
-	  UNAME_S = $(shell uname -s)
-    ifeq ($(UNAME_S),Darwin)
-	    DETECTED_OS := mac
-	  else
-	    DETECTED_OS := linux
-	  endif
+	DETECTED_OS := linux
   endif
 endif
+export DETECTED_OS
 export GO111MODULE = on
 
 # process build tags
@@ -352,5 +351,25 @@ endif
 
 localnet-stop:
 	docker-compose down
+
+# clean testnet
+localnet-clean:
+	docker-compose down
+	sudo rm -rf build/*
+
+ # reset testnet
+localnet-unsafe-reset:
+	docker-compose down
+ifeq ($(OS),Windows_NT)
+	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node0/ethermintd"
+	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node1/ethermintd"
+	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node2/ethermintd"
+	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node3/ethermintd"
+else
+	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node0/ethermintd"
+	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node1/ethermintd"
+	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node2/ethermintd"
+	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node3/ethermintd"
+endif
 
 .PHONY: build-docker-local-ethermint localnet-start localnet-stop
