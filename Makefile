@@ -22,10 +22,8 @@ DOCKER_IMAGE = cosmos/ethermint
 ETHERMINT_DAEMON_BINARY = ethermintd
 ETHERMINT_CLI_BINARY = ethermintcli
 GO_MOD=GO111MODULE=on
-BINDIR ?= $(GOPATH)/bin
 BUILDDIR ?= $(CURDIR)/build
-SIMAPP = github.com/cosmos/ethermint/app
-RUNSIM = $(BINDIR)/runsim
+SIMAPP = ./app
 LEDGER_ENABLED ?= true
 
 ifeq ($(OS),Windows_NT)
@@ -40,6 +38,29 @@ ifeq ($(UNAME_S),Darwin)
 endif
 export DETECTED_OS
 export GO111MODULE = on
+
+##########################################
+# Find OS and Go environment
+# GO contains the Go binary
+# FS contains the OS file separator
+##########################################
+
+ifeq ($(OS),Windows_NT)
+  GO := $(shell where go.exe 2> NUL)
+  FS := "\\"
+else
+  GO := $(shell command -v go 2> /dev/null)
+  FS := "/"
+endif
+
+ifeq ($(GO),)
+  $(error could not find go. Is it in PATH? $(GO))
+endif
+
+GOPATH ?= $(shell $(GO) env GOPATH)
+BINDIR ?= $(GOPATH)/bin
+RUNSIM = $(BINDIR)/runsim
+
 
 # process build tags
 
@@ -128,6 +149,8 @@ install:
 clean:
 	@rm -rf ./build ./vendor
 
+.PHONY: install clean
+
 docker-build:
 	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
@@ -148,16 +171,31 @@ docker-localnet:
 ###                          Tools & Dependencies                           ###
 ###############################################################################
 
+TOOLS_DESTDIR  ?= $(GOPATH)/bin
+RUNSIM         = $(TOOLS_DESTDIR)/runsim
+
 # Install the runsim binary with a temporary workaround of entering an outside
 # directory as the "go get" command ignores the -mod option and will polute the
 # go.{mod, sum} files.
 #
 # ref: https://github.com/golang/go/issues/30515
+runsim: $(RUNSIM)
 $(RUNSIM):
 	@echo "Installing runsim..."
 	@(cd /tmp && go get github.com/cosmos/tools/cmd/runsim@v1.0.0)
 
-tools: $(RUNSIM)
+tools: tools-stamp
+tools-stamp: runsim
+	# Create dummy file to satisfy dependency and avoid
+	# rebuilding when this Makefile target is hit twice
+	# in a row.
+	touch $@
+
+tools-clean:
+	rm -f $(RUNSIM)
+	rm -f tools-stamp
+
+.PHONY: runsim tools tools-stamp tools-clean
 
 ###############################################################################
 ###                           Tests & Simulation                            ###
@@ -191,31 +229,30 @@ test-sim-custom-genesis-fast:
 		-Enabled=true -NumBlocks=100 -BlockSize=200 -Commit=true -Seed=99 -Period=5 -v -timeout 24h
 
 test-sim-import-export: runsim
-	@echo "Running Ethermint import/export simulation. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppImportExport
+	@echo "Running application import/export simulation. This may take several minutes..."
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestAppImportExport
 
 test-sim-after-import: runsim
-	@echo "Running Ethermint simulation-after-import. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 25 5 TestAppSimulationAfterImport
+	@echo "Running application simulation-after-import. This may take several minutes..."
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestAppSimulationAfterImport
 
 test-sim-custom-genesis-multi-seed: runsim
 	@echo "Running multi-seed custom genesis simulation..."
 	@echo "By default, ${HOME}/.$(ETHERMINT_DAEMON_BINARY)/config/genesis.json will be used."
-	@$(BINDIR)/runsim -Jobs=4 -Genesis=${HOME}/.$(ETHERMINT_DAEMON_BINARY)/config/genesis.json 400 5 TestFullAppSimulation
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail -Genesis=${HOME}/.$(ETHERMINT_DAEMON_BINARY)/config/genesis.json 400 5 TestFullAppSimulation
 
 test-sim-multi-seed-long: runsim
 	@echo "Running multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 500 50 TestFullAppSimulation
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 500 50 TestFullAppSimulation
 
 test-sim-multi-seed-short: runsim
 	@echo "Running multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) 50 10 TestFullAppSimulation
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 10 TestFullAppSimulation
 
-.PHONY: runsim test-sim-nondeterminism test-sim-custom-genesis-fast test-sim-fast sim-import-export \
-	test-sim-simulation-after-import test-sim-custom-genesis-multi-seed test-sim-multi-seed
+.PHONY: test test-unit test-race test-import test-rpc
 
-.PHONY: build install update-tools tools godocs clean format lint \
-test-cli test-race test-unit test test-import
+.PHONY: test-sim-nondeterminism test-sim-custom-genesis-fast test-sim-import-export test-sim-after-import \
+	test-sim-custom-genesis-multi-seed test-sim-multi-seed-long test-sim-multi-seed-short
 
 ###############################################################################
 ###                                Linting                                  ###
