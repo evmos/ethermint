@@ -11,7 +11,7 @@ import (
 
 	sdkcontext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	emintcrypto "github.com/cosmos/ethermint/crypto"
 	params "github.com/cosmos/ethermint/rpc/args"
@@ -29,7 +29,7 @@ type PersonalEthAPI struct {
 	ethAPI      *PublicEthAPI
 	nonceLock   *AddrLocker
 	keys        []emintcrypto.PrivKeySecp256k1
-	keyInfos    []keyring.Info
+	keyInfos    []keys.Info
 	keybaseLock sync.Mutex
 }
 
@@ -51,12 +51,12 @@ func NewPersonalEthAPI(cliCtx sdkcontext.CLIContext, ethAPI *PublicEthAPI, nonce
 	return api
 }
 
-func (e *PersonalEthAPI) getKeybaseInfo() ([]keyring.Info, error) {
+func (e *PersonalEthAPI) getKeybaseInfo() ([]keys.Info, error) {
 	e.keybaseLock.Lock()
 	defer e.keybaseLock.Unlock()
 
 	if e.cliCtx.Keybase == nil {
-		keybase, err := keyring.NewKeyring(
+		keybase, err := keys.NewKeyring(
 			sdk.KeyringServiceName(),
 			viper.GetString(flags.FlagKeyringBackend),
 			viper.GetString(flags.FlagHome),
@@ -75,7 +75,7 @@ func (e *PersonalEthAPI) getKeybaseInfo() ([]keyring.Info, error) {
 
 // ImportRawKey stores the given hex encoded ECDSA key into the key directory,
 // encrypting it with the passphrase.
-// Currently, this is not implemented since the feature is not supported by the keyring.
+// Currently, this is not implemented since the feature is not supported by the keys.
 func (e *PersonalEthAPI) ImportRawKey(privkey, password string) (common.Address, error) {
 	_, err := crypto.HexToECDSA(privkey)
 	if err != nil {
@@ -122,7 +122,7 @@ func (e *PersonalEthAPI) NewAccount(password string) (common.Address, error) {
 	}
 
 	name := "key_" + time.Now().UTC().Format(time.RFC3339)
-	info, _, err := e.cliCtx.Keybase.CreateMnemonic(name, keyring.English, password, emintcrypto.EthSecp256k1)
+	info, _, err := e.cliCtx.Keybase.CreateMnemonic(name, keys.English, password, emintcrypto.EthSecp256k1)
 	if err != nil {
 		return common.Address{}, err
 	}

@@ -38,6 +38,6 @@ func handleMsgFund(ctx sdk.Context, keeper Keeper, msg types.MsgFund) (*sdk.Resu
 	)
 
 	return &sdk.Result{
-		Events: ctx.EventManager().ABCIEvents(),
+		Events: ctx.EventManager().Events(),
 	}, nil
 }

@@ -14,43 +14,43 @@ import (
 
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 )
 
 const (
 	// EthSecp256k1 defines the ECDSA secp256k1 used on Ethereum
-	EthSecp256k1 = keyring.SigningAlgo("eth_secp256k1")
+	EthSecp256k1 = keys.SigningAlgo("eth_secp256k1")
 )
 
 // SupportedAlgorithms defines the list of signing algorithms used on Ethermint:
 //  - eth_secp256k1 (Ethereum)
 //  - secp256k1 (Tendermint)
-var SupportedAlgorithms = []keyring.SigningAlgo{EthSecp256k1, keyring.Secp256k1}
+var SupportedAlgorithms = []keys.SigningAlgo{EthSecp256k1, keys.Secp256k1}
 
-// EthSecp256k1Options defines a keyring options for the ethereum Secp256k1 curve.
-func EthSecp256k1Options() []keyring.KeybaseOption {
-	return []keyring.KeybaseOption{
-		keyring.WithKeygenFunc(EthermintKeygenFunc),
-		keyring.WithDeriveFunc(DeriveKey),
-		keyring.WithSupportedAlgos(SupportedAlgorithms),
-		keyring.WithSupportedAlgosLedger(SupportedAlgorithms),
+// EthSecp256k1Options defines a keys options for the ethereum Secp256k1 curve.
+func EthSecp256k1Options() []keys.KeybaseOption {
+	return []keys.KeybaseOption{
+		keys.WithKeygenFunc(EthermintKeygenFunc),
+		keys.WithDeriveFunc(DeriveKey),
+		keys.WithSupportedAlgos(SupportedAlgorithms),
+		keys.WithSupportedAlgosLedger(SupportedAlgorithms),
 	}
 }
 
-func DeriveKey(mnemonic, bip39Passphrase, hdPath string, algo keyring.SigningAlgo) ([]byte, error) {
+func DeriveKey(mnemonic, bip39Passphrase, hdPath string, algo keys.SigningAlgo) ([]byte, error) {
 	switch algo {
-	case keyring.Secp256k1:
-		return keyring.StdDeriveKey(mnemonic, bip39Passphrase, hdPath, algo)
+	case keys.Secp256k1:
+		return keys.StdDeriveKey(mnemonic, bip39Passphrase, hdPath, algo)
 	case EthSecp256k1:
 		return DeriveSecp256k1(mnemonic, bip39Passphrase, hdPath)
 	default:
-		return nil, errors.Wrap(keyring.ErrUnsupportedSigningAlgo, string(algo))
+		return nil, errors.Wrap(keys.ErrUnsupportedSigningAlgo, string(algo))
 	}
 }
 
 // EthermintKeygenFunc is the key generation function to generate secp256k1 ToECDSA
 // from ethereum.
-func EthermintKeygenFunc(bz []byte, algo keyring.SigningAlgo) (tmcrypto.PrivKey, error) {
+func EthermintKeygenFunc(bz []byte, algo keys.SigningAlgo) (tmcrypto.PrivKey, error) {
 	if algo != EthSecp256k1 {
 		return nil, fmt.Errorf("signing algorithm must be %s, got %s", EthSecp256k1, algo)
 	}

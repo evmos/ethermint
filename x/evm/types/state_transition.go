@@ -108,7 +108,7 @@ func (st StateTransition) TransitionDb(ctx sdk.Context) (*ExecutionResult, error
 		return nil, errors.New("gas price cannot be nil")
 	}
 
-	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt())
+	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.Int)
 
 	var (
 		ret             []byte

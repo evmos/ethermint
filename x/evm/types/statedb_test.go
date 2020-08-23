@@ -17,7 +17,6 @@ import (
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/crypto"
 	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -27,7 +26,6 @@ type StateDBTestSuite struct {
 	suite.Suite
 
 	ctx         sdk.Context
-	querier     sdk.Querier
 	app         *app.EthermintApp
 	stateDB     *types.CommitStateDB
 	address     ethcmn.Address
@@ -43,15 +41,16 @@ func (suite *StateDBTestSuite) SetupTest() {
 
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1})
-	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
 	suite.stateDB = suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
 
 	privkey, err := crypto.GenerateKey()
 	suite.Require().NoError(err)
 
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
+
+	balance := sdk.NewCoins(sdk.NewCoin(ethermint.DenomDefault, sdk.NewInt(0)))
 	acc := &ethermint.EthAccount{
-		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
+		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),
 	}
 
@@ -138,13 +137,6 @@ func (suite *StateDBTestSuite) TestStateDB_Balance() {
 				suite.stateDB.AddBalance(suite.address, big.NewInt(200))
 			},
 			big.NewInt(200),
-		},
-		{
-			"sub more than balance",
-			func() {
-				suite.stateDB.SubBalance(suite.address, big.NewInt(300))
-			},
-			big.NewInt(-100),
 		},
 	}
 
@@ -528,13 +520,6 @@ func (suite *StateDBTestSuite) TestCommitStateDB_Commit() {
 			},
 			false, true,
 		},
-		{
-			"faled to update state object",
-			func() {
-				suite.stateDB.SubBalance(suite.address, big.NewInt(10))
-			},
-			false, false,
-		},
 	}
 
 	for _, tc := range testCase {
@@ -591,13 +576,6 @@ func (suite *StateDBTestSuite) TestCommitStateDB_Finalize() {
 				suite.stateDB.SetState(suite.address, ethcmn.BytesToHash([]byte("key")), ethcmn.BytesToHash([]byte("value")))
 			},
 			false, true,
-		},
-		{
-			"faled to update state object",
-			func() {
-				suite.stateDB.SubBalance(suite.address, big.NewInt(10))
-			},
-			false, false,
 		},
 	}
 

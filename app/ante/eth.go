@@ -193,7 +193,7 @@ func (avd AccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	}
 
 	// validate sender has enough funds to pay for gas cost
-	balance := avd.bk.GetBalance(ctx, acc.GetAddress(), emint.DenomDefault)
+	balance := sdk.Coin{Denom: emint.DenomDefault, Amount: acc.GetCoins().AmountOf(emint.DenomDefault)}
 	if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
 		return ctx, sdkerrors.Wrapf(
 			sdkerrors.ErrInsufficientFunds,
@@ -344,12 +344,6 @@ func (issd IncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.
 	// additional gas from being deducted.
 	gasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	// no need to increment sequence on RecheckTx mode
-	if ctx.IsReCheckTx() && !simulate {
-		ctx = ctx.WithGasMeter(gasMeter)
-		return next(ctx, tx, simulate)
-	}
 
 	msgEthTx, ok := tx.(evmtypes.MsgEthereumTx)
 	if !ok {

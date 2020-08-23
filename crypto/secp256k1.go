@@ -7,15 +7,8 @@ import (
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	ethsecp256k1 "github.com/ethereum/go-ethereum/crypto/secp256k1"
 
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 )
-
-func init() {
-	authtypes.RegisterKeyTypeCodec(PubKeySecp256k1{}, PubKeyAminoName)
-	authtypes.RegisterKeyTypeCodec(PrivKeySecp256k1{}, PrivKeyAminoName)
-}
 
 // ----------------------------------------------------------------------------
 // secp256k1 Private Key

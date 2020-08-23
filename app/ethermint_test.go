@@ -17,7 +17,7 @@ func TestEthermintAppExport(t *testing.T) {
 	db := dbm.NewMemDB()
 	app := NewEthermintApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, 0)
 
-	genesisState := ModuleBasics.DefaultGenesis(app.cdc)
+	genesisState := ModuleBasics.DefaultGenesis()
 	stateBytes, err := codec.MarshalJSONIndent(app.cdc, genesisState)
 	require.NoError(t, err)
 

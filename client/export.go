@@ -13,7 +13,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/ethermint/crypto"
@@ -29,7 +29,7 @@ func UnsafeExportEthKeyCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 
-			kb, err := keyring.NewKeyring(
+			kb, err := keys.NewKeyring(
 				sdk.KeyringServiceName(),
 				viper.GetString(flags.FlagKeyringBackend),
 				viper.GetString(flags.FlagHome),
@@ -44,11 +44,11 @@ func UnsafeExportEthKeyCommand() *cobra.Command {
 			conf := true
 			keyringBackend := viper.GetString(flags.FlagKeyringBackend)
 			switch keyringBackend {
-			case keyring.BackendFile:
+			case keys.BackendFile:
 				decryptPassword, err = input.GetPassword(
 					"**WARNING this is an unsafe way to export your unencrypted private key**\nEnter key password:",
 					inBuf)
-			case keyring.BackendOS:
+			case keys.BackendOS:
 				conf, err = input.GetConfirmation(
 					"**WARNING** this is an unsafe way to export your unencrypted private key, are you sure?",
 					inBuf)

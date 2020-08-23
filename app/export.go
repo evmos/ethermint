@@ -19,8 +19,8 @@ import (
 
 // NewDefaultGenesisState generates the default state for the application.
 func NewDefaultGenesisState() simapp.GenesisState {
-	cdc := ethcdc.MakeCodec(ModuleBasics)
-	return ModuleBasics.DefaultGenesis(cdc)
+	_ = ethcdc.MakeCodec(ModuleBasics)
+	return ModuleBasics.DefaultGenesis()
 }
 
 // ExportAppStateAndValidators exports the state of the application for a genesis
@@ -37,7 +37,7 @@ func (app *EthermintApp) ExportAppStateAndValidators(
 	}
 
 	// Export genesis to be used by SDK modules
-	genState := app.mm.ExportGenesis(ctx, app.cdc)
+	genState := app.mm.ExportGenesis(ctx)
 	appState, err = codec.MarshalJSONIndent(app.cdc, genState)
 	if err != nil {
 		return nil, nil, err

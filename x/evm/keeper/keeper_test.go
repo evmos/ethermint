@@ -8,12 +8,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 
 	"github.com/cosmos/ethermint/app"
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/keeper"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -41,6 +44,14 @@ func (suite *KeeperTestSuite) SetupTest() {
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "3", Time: time.Now().UTC()})
 	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
 	suite.address = ethcmn.HexToAddress(addrHex)
+
+	balance := sdk.NewCoins(sdk.NewCoin(ethermint.DenomDefault, sdk.NewInt(0)))
+	acc := &ethermint.EthAccount{
+		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
+		CodeHash:    ethcrypto.Keccak256(nil),
+	}
+
+	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 }
 
 func TestKeeperTestSuite(t *testing.T) {

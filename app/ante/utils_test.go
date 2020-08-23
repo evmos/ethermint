@@ -80,7 +80,7 @@ func newTestSDKTx(
 		}
 
 		sigs[i] = auth.StdSignature{
-			PubKey:    priv.PubKey().Bytes(),
+			PubKey:    priv.PubKey(),
 			Signature: sig,
 		}
 	}

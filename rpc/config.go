@@ -6,21 +6,21 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -45,7 +45,7 @@ func registerRoutes(rs *lcd.RestServer) {
 	accountName := viper.GetString(flagUnlockKey)
 	accountNames := strings.Split(accountName, ",")
 
-	var keys []crypto.PrivKeySecp256k1
+	var privkeys []crypto.PrivKeySecp256k1
 	if len(accountName) > 0 {
 		var err error
 		inBuf := bufio.NewReader(os.Stdin)
@@ -53,9 +53,9 @@ func registerRoutes(rs *lcd.RestServer) {
 		keyringBackend := viper.GetString(flags.FlagKeyringBackend)
 		passphrase := ""
 		switch keyringBackend {
-		case keyring.BackendOS:
+		case keys.BackendOS:
 			break
-		case keyring.BackendFile:
+		case keys.BackendFile:
 			passphrase, err = input.GetPassword(
 				"Enter password to unlock key for RPC API: ",
 				inBuf)
@@ -64,13 +64,13 @@ func registerRoutes(rs *lcd.RestServer) {
 			}
 		}
 
-		keys, err = unlockKeyFromNameAndPassphrase(accountNames, passphrase)
+		privkeys, err = unlockKeyFromNameAndPassphrase(accountNames, passphrase)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	apis := GetRPCAPIs(rs.CliCtx, keys)
+	apis := GetRPCAPIs(rs.CliCtx, privkeys)
 
 	// TODO: Allow cli to configure modules https://github.com/ChainSafe/ethermint/issues/74
 	whitelist := make(map[string]bool)
@@ -103,7 +103,7 @@ func registerRoutes(rs *lcd.RestServer) {
 }
 
 func unlockKeyFromNameAndPassphrase(accountNames []string, passphrase string) ([]crypto.PrivKeySecp256k1, error) {
-	keybase, err := keyring.NewKeyring(
+	keybase, err := keys.NewKeyring(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),

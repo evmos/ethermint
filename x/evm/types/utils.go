@@ -105,7 +105,8 @@ func TxDecoder(cdc *codec.Codec) sdk.TxDecoder {
 
 		// sdk.Tx is an interface. The concrete message types
 		// are registered by MakeTxCodec
-		err := cdc.UnmarshalBinaryBare(txBytes, &tx)
+		// TODO: switch to UnmarshalBinaryBare on SDK v0.40.0
+		err := cdc.UnmarshalBinaryLengthPrefixed(txBytes, &tx)
 		if err != nil {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
 		}

@@ -13,9 +13,3 @@ type AccountKeeper interface {
 	SetAccount(ctx sdk.Context, account authexported.Account)
 	RemoveAccount(ctx sdk.Context, account authexported.Account)
 }
-
-// BankKeeper defines the expected interface needed to retrieve account balances.
-type BankKeeper interface {
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-	SetBalance(ctx sdk.Context, addr sdk.AccAddress, balance sdk.Coin) error
-}

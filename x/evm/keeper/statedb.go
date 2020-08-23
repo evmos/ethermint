@@ -52,6 +52,11 @@ func (k *Keeper) SetLogs(ctx sdk.Context, hash ethcmn.Hash, logs []*ethtypes.Log
 	return k.CommitStateDB.WithContext(ctx).SetLogs(hash, logs)
 }
 
+// DeleteLogs calls CommitStateDB.DeleteLogs using the passed in context
+func (k *Keeper) DeleteLogs(ctx sdk.Context, hash ethcmn.Hash) {
+	k.CommitStateDB.WithContext(ctx).DeleteLogs(hash)
+}
+
 // AddLog calls CommitStateDB.AddLog using the passed in context
 func (k *Keeper) AddLog(ctx sdk.Context, log *ethtypes.Log) {
 	k.CommitStateDB.WithContext(ctx).AddLog(log)

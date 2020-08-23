@@ -19,16 +19,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	ethermintcodec "github.com/cosmos/ethermint/codec"
 	emint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
 
 // GetTxCmd defines the CLI commands regarding evm module transactions
-func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
+func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	evmTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      "EVM transaction subcommands",
@@ -83,8 +82,7 @@ func GetCmdSendTx(cdc *codec.Codec) *cobra.Command {
 
 			from := cliCtx.GetFromAddress()
 
-			authclient.Codec = ethermintcodec.NewAppCodec(cdc)
-			_, seq, err := authtypes.NewAccountRetriever(authclient.Codec, cliCtx).GetAccountNumberSequence(from)
+			_, seq, err := authtypes.NewAccountRetriever(cliCtx).GetAccountNumberSequence(from)
 			if err != nil {
 				return errors.Wrap(err, "Could not retrieve account sequence")
 			}
@@ -136,8 +134,7 @@ func GetCmdGenCreateTx(cdc *codec.Codec) *cobra.Command {
 
 			from := cliCtx.GetFromAddress()
 
-			authclient.Codec = ethermintcodec.NewAppCodec(cdc)
-			_, seq, err := authtypes.NewAccountRetriever(authclient.Codec, cliCtx).GetAccountNumberSequence(from)
+			_, seq, err := authtypes.NewAccountRetriever(cliCtx).GetAccountNumberSequence(from)
 			if err != nil {
 				return errors.Wrap(err, "Could not retrieve account sequence")
 			}

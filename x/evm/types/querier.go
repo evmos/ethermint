@@ -46,7 +46,7 @@ type QueryResBlockNumber struct {
 }
 
 func (q QueryResBlockNumber) String() string {
-	return string(q.Number)
+	return fmt.Sprint(q.Number)
 }
 
 // QueryResStorage is response type for storage query
@@ -73,7 +73,7 @@ type QueryResNonce struct {
 }
 
 func (q QueryResNonce) String() string {
-	return string(q.Nonce)
+	return fmt.Sprint(q.Nonce)
 }
 
 // QueryETHLogs is response type for tx logs query

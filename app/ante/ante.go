@@ -14,6 +14,10 @@ import (
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 )
 
+func init() {
+	crypto.RegisterCodec(types.ModuleCdc)
+}
+
 const (
 	// TODO: Use this cost per byte through parameter or overriding NewConsumeGasForTxSizeDecorator
 	// which currently defaults at 10, if intended
@@ -43,9 +47,7 @@ func NewAnteHandler(ak auth.AccountKeeper, bk bank.Keeper, sk types.SupplyKeeper
 				authante.NewDeductFeeDecorator(ak, sk),
 				authante.NewSigGasConsumeDecorator(ak, sigGasConsumer),
 				authante.NewSigVerificationDecorator(ak),
-				// TODO: remove once SDK is updated to v0.39.
-				// This fixes an issue that account sequence wasn't being updated on CheckTx.
-				NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
+				authante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
 			)
 
 		case evmtypes.MsgEthereumTx:

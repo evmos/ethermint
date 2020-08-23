@@ -14,14 +14,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/cosmos/ethermint/codec"
 	"github.com/cosmos/ethermint/crypto"
 	ethermint "github.com/cosmos/ethermint/types"
 )
@@ -35,18 +33,17 @@ type JournalTestSuite struct {
 	stateDB *CommitStateDB
 }
 
-func newTestCodec() *codec.Codec {
+func newTestCodec() *sdkcodec.Codec {
 	cdc := sdkcodec.New()
 
 	RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	crypto.RegisterCodec(cdc)
 	sdkcodec.RegisterCrypto(cdc)
+	auth.RegisterCodec(cdc)
 	ethermint.RegisterCodec(cdc)
 
-	appCodec := codec.NewAppCodec(cdc)
-
-	return appCodec
+	return cdc
 }
 
 func (suite *JournalTestSuite) SetupTest() {
@@ -58,13 +55,14 @@ func (suite *JournalTestSuite) SetupTest() {
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
 	suite.journal = newJournal()
 
+	balance := sdk.NewCoins(sdk.NewCoin(ethermint.DenomDefault, sdk.NewInt(100)))
 	acc := &ethermint.EthAccount{
-		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
+		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),
 	}
 
 	suite.stateDB.accountKeeper.SetAccount(suite.ctx, acc)
-	suite.stateDB.bankKeeper.SetBalance(suite.ctx, sdk.AccAddress(suite.address.Bytes()), sdk.NewCoin(ethermint.DenomDefault, sdk.NewInt(100)))
+	// suite.stateDB.bankKeeper.SetBalance(suite.ctx, sdk.AccAddress(suite.address.Bytes()), balance)
 	suite.stateDB.SetLogs(ethcmn.BytesToHash([]byte("txhash")), []*ethtypes.Log{
 		{
 			Address:     suite.address,
@@ -97,7 +95,7 @@ func (suite *JournalTestSuite) SetupTest() {
 // to maintain consistency with the Geth implementation.
 func (suite *JournalTestSuite) setup() {
 	authKey := sdk.NewKVStoreKey(auth.StoreKey)
-	bankKey := sdk.NewKVStoreKey(bank.StoreKey)
+	// bankKey := sdk.NewKVStoreKey(bank.StoreKey)
 	storeKey := sdk.NewKVStoreKey(StoreKey)
 
 	db := tmdb.NewDB("state", tmdb.GoLevelDBBackend, "temp")
@@ -107,26 +105,24 @@ func (suite *JournalTestSuite) setup() {
 
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
-	cms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
+	// cms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(storeKey, sdk.StoreTypeIAVL, db)
 
 	err := cms.LoadLatestVersion()
 	suite.Require().NoError(err)
 
-	appCodec := newTestCodec()
+	cdc := newTestCodec()
 
 	keyParams := sdk.NewKVStoreKey(params.StoreKey)
 	tkeyParams := sdk.NewTransientStoreKey(params.TStoreKey)
-	paramsKeeper := params.NewKeeper(appCodec, keyParams, tkeyParams)
+	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams)
 
 	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
-	bankSubspace := paramsKeeper.Subspace(bank.DefaultParamspace)
 
-	ak := auth.NewAccountKeeper(appCodec, authKey, authSubspace, ethermint.ProtoAccount)
-	bk := bank.NewBaseKeeper(appCodec, bankKey, ak, bankSubspace, nil)
+	ak := auth.NewAccountKeeper(cdc, authKey, authSubspace, ethermint.ProtoAccount)
 
 	suite.ctx = sdk.NewContext(cms, abci.Header{ChainID: "8"}, false, tmlog.NewNopLogger())
-	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, ak, bk).WithContext(suite.ctx)
+	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, ak).WithContext(suite.ctx)
 }
 
 func TestJournalTestSuite(t *testing.T) {
@@ -149,7 +145,6 @@ func (suite *JournalTestSuite) TestJournal_append_revert() {
 			resetObjectChange{
 				prev: &stateObject{
 					address: suite.address,
-					balance: sdk.OneInt(),
 				},
 			},
 		},

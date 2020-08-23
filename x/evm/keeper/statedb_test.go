@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/cosmos/ethermint/crypto"
 	ethermint "github.com/cosmos/ethermint/types"
+	"github.com/cosmos/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestBloomFilter() {
@@ -67,7 +69,7 @@ func (suite *KeeperTestSuite) TestBloomFilter() {
 	}
 }
 
-func (suite *KeeperTestSuite) TestStateDBBalance() {
+func (suite *KeeperTestSuite) TestStateDB_Balance() {
 	testCase := []struct {
 		name     string
 		malleate func()
@@ -94,19 +96,11 @@ func (suite *KeeperTestSuite) TestStateDBBalance() {
 			},
 			big.NewInt(200),
 		},
-		{
-			"sub more than balance",
-			func() {
-				suite.app.EvmKeeper.SubBalance(suite.ctx, suite.address, big.NewInt(300))
-			},
-			big.NewInt(-100),
-		},
 	}
 
 	for _, tc := range testCase {
 		tc.malleate()
 		suite.Require().Equal(tc.balance, suite.app.EvmKeeper.GetBalance(suite.ctx, suite.address), tc.name)
-
 	}
 }
 
@@ -116,26 +110,90 @@ func (suite *KeeperTestSuite) TestStateDBNonce() {
 	suite.Require().Equal(nonce, suite.app.EvmKeeper.GetNonce(suite.ctx, suite.address))
 }
 
-func (suite *KeeperTestSuite) TestStateDBState() {
+func (suite *KeeperTestSuite) TestStateDB_Error() {
+	nonce := suite.app.EvmKeeper.GetNonce(suite.ctx, ethcmn.Address{})
+	suite.Require().Equal(0, int(nonce))
+	suite.Require().Error(suite.app.EvmKeeper.Error(suite.ctx))
+}
+
+func (suite *KeeperTestSuite) TestStateDB_Database() {
+	suite.Require().Nil(suite.app.EvmKeeper.Database(suite.ctx))
+}
+
+func (suite *KeeperTestSuite) TestStateDB_State() {
 	key := ethcmn.BytesToHash([]byte("foo"))
 	val := ethcmn.BytesToHash([]byte("bar"))
-
 	suite.app.EvmKeeper.SetState(suite.ctx, suite.address, key, val)
-	suite.Require().Equal(val, suite.app.EvmKeeper.GetState(suite.ctx, suite.address, key))
+
+	testCase := []struct {
+		name    string
+		address ethcmn.Address
+		key     ethcmn.Hash
+		value   ethcmn.Hash
+	}{
+		{
+			"found state",
+			suite.address,
+			ethcmn.BytesToHash([]byte("foo")),
+			ethcmn.BytesToHash([]byte("bar")),
+		},
+		{
+			"state not found",
+			suite.address,
+			ethcmn.BytesToHash([]byte("key")),
+			ethcmn.Hash{},
+		},
+		{
+			"object not found",
+			ethcmn.Address{},
+			ethcmn.BytesToHash([]byte("foo")),
+			ethcmn.Hash{},
+		},
+	}
+	for _, tc := range testCase {
+		value := suite.app.EvmKeeper.GetState(suite.ctx, tc.address, tc.key)
+		suite.Require().Equal(tc.value, value, tc.name)
+	}
 }
 
-func (suite *KeeperTestSuite) TestStateDBCode() {
-	code := []byte("foobar")
+func (suite *KeeperTestSuite) TestStateDB_Code() {
+	testCase := []struct {
+		name     string
+		address  ethcmn.Address
+		code     []byte
+		malleate func()
+	}{
+		{
+			"no stored code for state object",
+			suite.address,
+			nil,
+			func() {},
+		},
+		{
+			"existing address",
+			suite.address,
+			[]byte("code"),
+			func() {
+				suite.app.EvmKeeper.SetCode(suite.ctx, suite.address, []byte("code"))
+			},
+		},
+		{
+			"state object not found",
+			ethcmn.Address{},
+			nil,
+			func() {},
+		},
+	}
 
-	suite.app.EvmKeeper.SetCode(suite.ctx, suite.address, code)
+	for _, tc := range testCase {
+		tc.malleate()
 
-	suite.Require().Equal(code, suite.app.EvmKeeper.GetCode(suite.ctx, suite.address))
-
-	codelen := len(code)
-	suite.Require().Equal(codelen, suite.app.EvmKeeper.GetCodeSize(suite.ctx, suite.address))
+		suite.Require().Equal(tc.code, suite.app.EvmKeeper.GetCode(suite.ctx, tc.address), tc.name)
+		suite.Require().Equal(len(tc.code), suite.app.EvmKeeper.GetCodeSize(suite.ctx, tc.address), tc.name)
+	}
 }
 
-func (suite *KeeperTestSuite) TestStateDBLogs() {
+func (suite *KeeperTestSuite) TestStateDB_Logs() {
 	testCase := []struct {
 		name string
 		log  ethtypes.Log
@@ -165,6 +223,13 @@ func (suite *KeeperTestSuite) TestStateDBLogs() {
 		dbLogs, err := suite.app.EvmKeeper.GetLogs(suite.ctx, hash)
 		suite.Require().NoError(err, tc.name)
 		suite.Require().Equal(logs, dbLogs, tc.name)
+
+		suite.app.EvmKeeper.DeleteLogs(suite.ctx, hash)
+		dbLogs, err = suite.app.EvmKeeper.GetLogs(suite.ctx, hash)
+		suite.Require().NoError(err, tc.name)
+		suite.Require().Empty(dbLogs, tc.name)
+
+		suite.app.EvmKeeper.AddLog(suite.ctx, &tc.log)
 		suite.Require().Equal(logs, suite.app.EvmKeeper.AllLogs(suite.ctx), tc.name)
 
 		//resets state but checking to see if storekey still persists.
@@ -174,72 +239,122 @@ func (suite *KeeperTestSuite) TestStateDBLogs() {
 	}
 }
 
-func (suite *KeeperTestSuite) TestStateDBPreimage() {
+func (suite *KeeperTestSuite) TestStateDB_Preimage() {
 	hash := ethcmn.BytesToHash([]byte("hash"))
 	preimage := []byte("preimage")
 
 	suite.app.EvmKeeper.AddPreimage(suite.ctx, hash, preimage)
-
 	suite.Require().Equal(preimage, suite.app.EvmKeeper.Preimages(suite.ctx)[hash])
 }
 
-func (suite *KeeperTestSuite) TestStateDBRefund() {
+func (suite *KeeperTestSuite) TestStateDB_Refund() {
 	testCase := []struct {
-		name   string
-		amount uint64
+		name      string
+		addAmount uint64
+		subAmount uint64
+		expRefund uint64
+		expPanic  bool
 	}{
 		{
-			"refund",
-			100,
+			"refund 0",
+			0, 0, 0,
+			false,
+		},
+		{
+			"refund positive amount",
+			100, 0, 100,
+			false,
+		},
+		{
+			"refund panic",
+			100, 200, 100,
+			true,
 		},
 	}
 
 	for _, tc := range testCase {
-		suite.app.EvmKeeper.AddRefund(suite.ctx, tc.amount)
-		suite.Require().Equal(tc.amount, suite.app.EvmKeeper.GetRefund(suite.ctx), tc.name)
+		suite.Run(tc.name, func() {
+			suite.SetupTest() // reset
 
-		suite.app.EvmKeeper.SubRefund(suite.ctx, tc.amount)
-		suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetRefund(suite.ctx), tc.name)
+			suite.app.EvmKeeper.AddRefund(suite.ctx, tc.addAmount)
+			suite.Require().Equal(tc.addAmount, suite.app.EvmKeeper.GetRefund(suite.ctx))
+
+			if tc.expPanic {
+				suite.Panics(func() {
+					suite.app.EvmKeeper.SubRefund(suite.ctx, tc.subAmount)
+				})
+			} else {
+				suite.app.EvmKeeper.SubRefund(suite.ctx, tc.subAmount)
+				suite.Require().Equal(tc.expRefund, suite.app.EvmKeeper.GetRefund(suite.ctx))
+			}
+		})
 	}
 }
 
-func (suite *KeeperTestSuite) TestStateDBCreateAcct() {
-	suite.app.EvmKeeper.CreateAccount(suite.ctx, suite.address)
-	suite.Require().True(suite.app.EvmKeeper.Exist(suite.ctx, suite.address))
+func (suite *KeeperTestSuite) TestStateDB_CreateAccount() {
+	prevBalance := big.NewInt(12)
 
-	value := big.NewInt(100)
-	suite.app.EvmKeeper.AddBalance(suite.ctx, suite.address, value)
+	testCase := []struct {
+		name     string
+		address  ethcmn.Address
+		malleate func()
+	}{
+		{
+			"existing account",
+			suite.address,
+			func() {
+				suite.app.EvmKeeper.AddBalance(suite.ctx, suite.address, prevBalance)
+			},
+		},
+		{
+			"new account",
+			ethcmn.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b4c1"),
+			func() {
+				prevBalance = big.NewInt(0)
+			},
+		},
+	}
 
-	suite.app.EvmKeeper.CreateAccount(suite.ctx, suite.address)
-	suite.Require().Equal(value, suite.app.EvmKeeper.GetBalance(suite.ctx, suite.address))
+	for _, tc := range testCase {
+		suite.Run(tc.name, func() {
+			suite.SetupTest() // reset
+			tc.malleate()
+
+			suite.app.EvmKeeper.CreateAccount(suite.ctx, tc.address)
+			suite.Require().True(suite.app.EvmKeeper.Exist(suite.ctx, tc.address))
+			suite.Require().Equal(prevBalance, suite.app.EvmKeeper.GetBalance(suite.ctx, tc.address))
+		})
+	}
 }
 
-func (suite *KeeperTestSuite) TestStateDBClearStateOjb() {
+func (suite *KeeperTestSuite) TestStateDB_ClearStateObj() {
+	priv, err := crypto.GenerateKey()
+	suite.Require().NoError(err)
 
-	suite.app.EvmKeeper.CreateAccount(suite.ctx, suite.address)
-	suite.Require().True(suite.app.EvmKeeper.Exist(suite.ctx, suite.address))
+	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
+
+	suite.app.EvmKeeper.CreateAccount(suite.ctx, addr)
+	suite.Require().True(suite.app.EvmKeeper.Exist(suite.ctx, addr))
 
 	suite.app.EvmKeeper.ClearStateObjects(suite.ctx)
-	suite.Require().False(suite.app.EvmKeeper.Exist(suite.ctx, suite.address))
+	suite.Require().False(suite.app.EvmKeeper.Exist(suite.ctx, addr))
 }
 
-func (suite *KeeperTestSuite) TestStateDBReset() {
-	hash := ethcmn.BytesToHash([]byte("hash"))
-
-	suite.app.EvmKeeper.CreateAccount(suite.ctx, suite.address)
-	suite.Require().True(suite.app.EvmKeeper.Exist(suite.ctx, suite.address))
-
-	err := suite.app.EvmKeeper.Reset(suite.ctx, hash)
+func (suite *KeeperTestSuite) TestStateDB_Reset() {
+	priv, err := crypto.GenerateKey()
 	suite.Require().NoError(err)
-	suite.Require().False(suite.app.EvmKeeper.Exist(suite.ctx, suite.address))
 
+	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
+
+	suite.app.EvmKeeper.CreateAccount(suite.ctx, addr)
+	suite.Require().True(suite.app.EvmKeeper.Exist(suite.ctx, addr))
+
+	err = suite.app.EvmKeeper.Reset(suite.ctx, ethcmn.BytesToHash(nil))
+	suite.Require().NoError(err)
+	suite.Require().False(suite.app.EvmKeeper.Exist(suite.ctx, addr))
 }
 
-func (suite *KeeperTestSuite) TestStateDBUpdateAcct() {
-
-}
-
-func (suite *KeeperTestSuite) TestSuiteDBPrepare() {
+func (suite *KeeperTestSuite) TestSuiteDB_Prepare() {
 	thash := ethcmn.BytesToHash([]byte("thash"))
 	bhash := ethcmn.BytesToHash([]byte("bhash"))
 	txi := 1
@@ -248,24 +363,49 @@ func (suite *KeeperTestSuite) TestSuiteDBPrepare() {
 
 	suite.Require().Equal(txi, suite.app.EvmKeeper.TxIndex(suite.ctx))
 	suite.Require().Equal(bhash, suite.app.EvmKeeper.BlockHash(suite.ctx))
-
 }
 
-func (suite *KeeperTestSuite) TestSuiteDBCopyState() {
-	copyDB := suite.app.EvmKeeper.Copy(suite.ctx)
-	suite.Require().Equal(suite.app.EvmKeeper.Exist(suite.ctx, suite.address), copyDB.Exist(suite.address))
+func (suite *KeeperTestSuite) TestSuiteDB_CopyState() {
+	testCase := []struct {
+		name string
+		log  ethtypes.Log
+	}{
+		{
+			"copy state",
+			ethtypes.Log{
+				Address:     suite.address,
+				Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+				Data:        []byte("data"),
+				BlockNumber: 1,
+				TxHash:      ethcmn.Hash{},
+				TxIndex:     1,
+				BlockHash:   ethcmn.Hash{},
+				Index:       1,
+				Removed:     false,
+			},
+		},
+	}
+
+	for _, tc := range testCase {
+		hash := ethcmn.BytesToHash([]byte("hash"))
+		logs := []*ethtypes.Log{&tc.log}
+
+		err := suite.app.EvmKeeper.SetLogs(suite.ctx, hash, logs)
+		suite.Require().NoError(err, tc.name)
+
+		copyDB := suite.app.EvmKeeper.Copy(suite.ctx)
+		suite.Require().Equal(suite.app.EvmKeeper.Exist(suite.ctx, suite.address), copyDB.Exist(suite.address), tc.name)
+	}
 }
 
-func (suite *KeeperTestSuite) TestSuiteDBEmpty() {
+func (suite *KeeperTestSuite) TestSuiteDB_Empty() {
 	suite.Require().True(suite.app.EvmKeeper.Empty(suite.ctx, suite.address))
 
 	suite.app.EvmKeeper.SetBalance(suite.ctx, suite.address, big.NewInt(100))
-
 	suite.Require().False(suite.app.EvmKeeper.Empty(suite.ctx, suite.address))
 }
 
-func (suite *KeeperTestSuite) TestSuiteDBSuicide() {
-
+func (suite *KeeperTestSuite) TestSuiteDB_Suicide() {
 	testCase := []struct {
 		name    string
 		amount  *big.Int
@@ -316,7 +456,6 @@ func (suite *KeeperTestSuite) TestSuiteDBSuicide() {
 }
 
 func (suite *KeeperTestSuite) TestCommitStateDB_Commit() {
-	suite.app.EvmKeeper.AddBalance(suite.ctx, suite.address, big.NewInt(100))
 	testCase := []struct {
 		name       string
 		malleate   func()
@@ -337,13 +476,6 @@ func (suite *KeeperTestSuite) TestCommitStateDB_Commit() {
 				suite.app.EvmKeeper.SetCode(suite.ctx, suite.address, []byte("code"))
 			},
 			false, true,
-		},
-		{
-			"faled to update state object",
-			func() {
-				suite.app.EvmKeeper.SubBalance(suite.ctx, suite.address, big.NewInt(10))
-			},
-			false, false,
 		},
 	}
 
@@ -374,7 +506,6 @@ func (suite *KeeperTestSuite) TestCommitStateDB_Commit() {
 }
 
 func (suite *KeeperTestSuite) TestCommitStateDB_Finalize() {
-	suite.app.EvmKeeper.AddBalance(suite.ctx, suite.address, big.NewInt(100))
 	testCase := []struct {
 		name       string
 		malleate   func()
@@ -403,13 +534,6 @@ func (suite *KeeperTestSuite) TestCommitStateDB_Finalize() {
 			},
 			false, true,
 		},
-		{
-			"faled to update state object",
-			func() {
-				suite.app.EvmKeeper.SubBalance(suite.ctx, suite.address, big.NewInt(10))
-			},
-			false, false,
-		},
 	}
 
 	for _, tc := range testCase {
@@ -419,6 +543,8 @@ func (suite *KeeperTestSuite) TestCommitStateDB_Finalize() {
 
 		if !tc.expPass {
 			suite.Require().Error(err, tc.name)
+			hash := suite.app.EvmKeeper.GetCommittedState(suite.ctx, suite.address, ethcmn.BytesToHash([]byte("key")))
+			suite.Require().NotEqual(ethcmn.Hash{}, hash, tc.name)
 			continue
 		}
 
@@ -431,5 +557,88 @@ func (suite *KeeperTestSuite) TestCommitStateDB_Finalize() {
 		}
 
 		suite.Require().NotNil(acc, tc.name)
+	}
+}
+func (suite *KeeperTestSuite) TestCommitStateDB_GetCommittedState() {
+	hash := suite.app.EvmKeeper.GetCommittedState(suite.ctx, ethcmn.Address{}, ethcmn.BytesToHash([]byte("key")))
+	suite.Require().Equal(ethcmn.Hash{}, hash)
+}
+
+func (suite *KeeperTestSuite) TestCommitStateDB_Snapshot() {
+	id := suite.app.EvmKeeper.Snapshot(suite.ctx)
+	suite.Require().NotPanics(func() {
+		suite.app.EvmKeeper.RevertToSnapshot(suite.ctx, id)
+	})
+
+	suite.Require().Panics(func() {
+		suite.app.EvmKeeper.RevertToSnapshot(suite.ctx, -1)
+	}, "invalid revision should panic")
+}
+
+func (suite *KeeperTestSuite) TestCommitStateDB_ForEachStorage() {
+	var storage types.Storage
+
+	testCase := []struct {
+		name      string
+		malleate  func()
+		callback  func(key, value ethcmn.Hash) (stop bool)
+		expValues []ethcmn.Hash
+	}{
+		{
+			"aggregate state",
+			func() {
+				for i := 0; i < 5; i++ {
+					suite.app.EvmKeeper.SetState(suite.ctx, suite.address, ethcmn.BytesToHash([]byte(fmt.Sprintf("key%d", i))), ethcmn.BytesToHash([]byte(fmt.Sprintf("value%d", i))))
+				}
+			},
+			func(key, value ethcmn.Hash) bool {
+				storage = append(storage, types.NewState(key, value))
+				return false
+			},
+			[]ethcmn.Hash{
+				ethcmn.BytesToHash([]byte("value0")),
+				ethcmn.BytesToHash([]byte("value1")),
+				ethcmn.BytesToHash([]byte("value2")),
+				ethcmn.BytesToHash([]byte("value3")),
+				ethcmn.BytesToHash([]byte("value4")),
+			},
+		},
+		{
+			"filter state",
+			func() {
+				suite.app.EvmKeeper.SetState(suite.ctx, suite.address, ethcmn.BytesToHash([]byte("key")), ethcmn.BytesToHash([]byte("value")))
+				suite.app.EvmKeeper.SetState(suite.ctx, suite.address, ethcmn.BytesToHash([]byte("filterkey")), ethcmn.BytesToHash([]byte("filtervalue")))
+			},
+			func(key, value ethcmn.Hash) bool {
+				if value == ethcmn.BytesToHash([]byte("filtervalue")) {
+					storage = append(storage, types.NewState(key, value))
+					return true
+				}
+				return false
+			},
+			[]ethcmn.Hash{
+				ethcmn.BytesToHash([]byte("filtervalue")),
+			},
+		},
+	}
+
+	for _, tc := range testCase {
+		suite.Run(tc.name, func() {
+			suite.SetupTest() // reset
+			tc.malleate()
+			suite.app.EvmKeeper.Finalise(suite.ctx, false)
+
+			err := suite.app.EvmKeeper.ForEachStorage(suite.ctx, suite.address, tc.callback)
+			suite.Require().NoError(err)
+			suite.Require().Equal(len(tc.expValues), len(storage), fmt.Sprintf("Expected values:\n%v\nStorage Values\n%v", tc.expValues, storage))
+
+			vals := make([]ethcmn.Hash, len(storage))
+			for i := range storage {
+				vals[i] = storage[i].Value
+			}
+
+			suite.Require().ElementsMatch(tc.expValues, vals)
+		})
+		storage = types.Storage{}
 	}
 }

@@ -26,7 +26,7 @@ func BeginBlock(k Keeper, ctx sdk.Context, req abci.RequestBeginBlock) {
 
 // EndBlock updates the accounts and commits states objects to the KV Store.
 //
-func EndBlock(k Keeper, ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+func EndBlock(k Keeper, ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithBlockGasMeter(sdk.NewInfiniteGasMeter())
 

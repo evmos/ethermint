@@ -8,7 +8,7 @@ import (
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/hd"
 	"github.com/cosmos/cosmos-sdk/tests"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +21,7 @@ func TestEthermintKeygenFunc(t *testing.T) {
 	testCases := []struct {
 		name    string
 		privKey []byte
-		algo    keyring.SigningAlgo
+		algo    keys.SigningAlgo
 		expPass bool
 	}{
 		{
@@ -45,7 +45,7 @@ func TestEthermintKeygenFunc(t *testing.T) {
 		{
 			"invalid algo",
 			nil,
-			keyring.MultiAlgo,
+			keys.MultiAlgo,
 			false,
 		},
 	}
@@ -66,7 +66,7 @@ func TestKeyring(t *testing.T) {
 	mockIn := strings.NewReader("")
 	t.Cleanup(cleanup)
 
-	kr, err := keyring.NewKeyring("ethermint", keyring.BackendTest, dir, mockIn, EthSecp256k1Options()...)
+	kr, err := keys.NewKeyring("ethermint", keys.BackendTest, dir, mockIn, EthSecp256k1Options()...)
 	require.NoError(t, err)
 
 	// fail in retrieving key
@@ -75,7 +75,7 @@ func TestKeyring(t *testing.T) {
 	require.Nil(t, info)
 
 	mockIn.Reset("password\npassword\n")
-	info, mnemonic, err := kr.CreateMnemonic("foo", keyring.English, sdk.FullFundraiserPath, EthSecp256k1)
+	info, mnemonic, err := kr.CreateMnemonic("foo", keys.English, sdk.FullFundraiserPath, EthSecp256k1)
 	require.NoError(t, err)
 	require.NotEmpty(t, mnemonic)
 	require.Equal(t, "foo", info.GetName())
@@ -85,15 +85,15 @@ func TestKeyring(t *testing.T) {
 	params := *hd.NewFundraiserParams(0, sdk.CoinType, 0)
 	hdPath := params.String()
 
-	bz, err := DeriveKey(mnemonic, keyring.DefaultBIP39Passphrase, hdPath, EthSecp256k1)
+	bz, err := DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, EthSecp256k1)
 	require.NoError(t, err)
 	require.NotEmpty(t, bz)
 
-	bz, err = DeriveKey(mnemonic, keyring.DefaultBIP39Passphrase, hdPath, keyring.Secp256k1)
+	bz, err = DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, keys.Secp256k1)
 	require.NoError(t, err)
 	require.NotEmpty(t, bz)
 
-	bz, err = DeriveKey(mnemonic, keyring.DefaultBIP39Passphrase, hdPath, keyring.SigningAlgo(""))
+	bz, err = DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, keys.SigningAlgo(""))
 	require.Error(t, err)
 	require.Empty(t, bz)
 }

@@ -25,7 +25,7 @@ var testJSON = `{
 func (suite *EvmTestSuite) TestInitGenesis() {
 	am := evm.NewAppModule(suite.app.EvmKeeper, suite.app.AccountKeeper)
 	in := json.RawMessage([]byte(testJSON))
-	_ = am.InitGenesis(suite.ctx, suite.codec, in)
+	_ = am.InitGenesis(suite.ctx, in)
 
 	testAddr := common.HexToAddress("0x2cc7fdf9fde6746731d7f11979609d455c2c197a")
 
