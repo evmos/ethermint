@@ -73,13 +73,13 @@ func (cc *ChainContext) Author(_ *ethtypes.Header) (ethcmn.Address, error) {
 //
 // TODO: Do we need to support such RPC APIs? This will tie into a bigger
 // discussion on if we want to support web3.
-func (cc *ChainContext) APIs(_ ethcons.ChainReader) []ethrpc.API {
+func (cc *ChainContext) APIs(_ ethcons.ChainHeaderReader) []ethrpc.API {
 	return nil
 }
 
 // CalcDifficulty implements Ethereum's consensus.Engine interface. It currently
 // performs a no-op.
-func (cc *ChainContext) CalcDifficulty(_ ethcons.ChainReader, _ uint64, _ *ethtypes.Header) *big.Int {
+func (cc *ChainContext) CalcDifficulty(_ ethcons.ChainHeaderReader, _ uint64, _ *ethtypes.Header) *big.Int {
 	return nil
 }
 
@@ -88,7 +88,7 @@ func (cc *ChainContext) CalcDifficulty(_ ethcons.ChainReader, _ uint64, _ *ethty
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
 func (cc *ChainContext) Finalize(
-	_ ethcons.ChainReader, _ *ethtypes.Header, _ *ethstate.StateDB,
+	_ ethcons.ChainHeaderReader, _ *ethtypes.Header, _ *ethstate.StateDB,
 	_ []*ethtypes.Transaction, _ []*ethtypes.Header) {
 }
 
@@ -98,7 +98,7 @@ func (cc *ChainContext) Finalize(
 // Note: The block header and state database might be updated to reflect any
 // consensus rules that happen at finalization (e.g. block rewards).
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
-func (cc *ChainContext) FinalizeAndAssemble(_ ethcons.ChainReader, _ *ethtypes.Header, _ *ethstate.StateDB, _ []*ethtypes.Transaction,
+func (cc *ChainContext) FinalizeAndAssemble(_ ethcons.ChainHeaderReader, _ *ethtypes.Header, _ *ethstate.StateDB, _ []*ethtypes.Transaction,
 	_ []*ethtypes.Header, _ []*ethtypes.Receipt) (*ethtypes.Block, error) {
 	return nil, nil
 }
@@ -107,7 +107,7 @@ func (cc *ChainContext) FinalizeAndAssemble(_ ethcons.ChainReader, _ *ethtypes.H
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
-func (cc *ChainContext) Prepare(_ ethcons.ChainReader, _ *ethtypes.Header) error {
+func (cc *ChainContext) Prepare(_ ethcons.ChainHeaderReader, _ *ethtypes.Header) error {
 	return nil
 }
 
@@ -115,7 +115,7 @@ func (cc *ChainContext) Prepare(_ ethcons.ChainReader, _ *ethtypes.Header) error
 // performs a no-op.
 //
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
-func (cc *ChainContext) Seal(_ ethcons.ChainReader, _ *ethtypes.Block, _ chan<- *ethtypes.Block, _ <-chan struct{}) error {
+func (cc *ChainContext) Seal(_ ethcons.ChainHeaderReader, _ *ethtypes.Block, _ chan<- *ethtypes.Block, _ <-chan struct{}) error {
 	return nil
 }
 
@@ -130,7 +130,7 @@ func (cc *ChainContext) SealHash(header *ethtypes.Header) ethcmn.Hash {
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
 // handlers?
-func (cc *ChainContext) VerifyHeader(_ ethcons.ChainReader, _ *ethtypes.Header, _ bool) error {
+func (cc *ChainContext) VerifyHeader(_ ethcons.ChainHeaderReader, _ *ethtypes.Header, _ bool) error {
 	return nil
 }
 
@@ -139,7 +139,7 @@ func (cc *ChainContext) VerifyHeader(_ ethcons.ChainReader, _ *ethtypes.Header, 
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
 // handlers?
-func (cc *ChainContext) VerifyHeaders(_ ethcons.ChainReader, _ []*ethtypes.Header, _ []bool) (chan<- struct{}, <-chan error) {
+func (cc *ChainContext) VerifyHeaders(_ ethcons.ChainHeaderReader, _ []*ethtypes.Header, _ []bool) (chan<- struct{}, <-chan error) {
 	return nil, nil
 }
 
@@ -148,7 +148,7 @@ func (cc *ChainContext) VerifyHeaders(_ ethcons.ChainReader, _ []*ethtypes.Heade
 //
 // TODO: Figure out if this needs to be hooked up to any part of the Cosmos SDK
 // handlers?
-func (cc *ChainContext) VerifySeal(_ ethcons.ChainReader, _ *ethtypes.Header) error {
+func (cc *ChainContext) VerifySeal(_ ethcons.ChainHeaderReader, _ *ethtypes.Header) error {
 	return nil
 }
 
