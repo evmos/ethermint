@@ -9,15 +9,26 @@
     "postserve": "./post.sh",
     "prebuild": "./pre.sh",
     "build": "trap 'exit 0' SIGINT; vuepress build --no-cache",
-    "postbuild": "./post.sh"
+    "postbuild": "./post.sh",
+    "preinstall": "npx npm-force-resolutions"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "ethermint",
+    "cosmos",
+    "ethereum",
+    "blockchain",
+    "cryptocurrency"
+  ],
+  "author": "ChainSafe Systems",
   "license": "ISC",
   "dependencies": {
+    "npm-force-resolutions": "0.0.3",
     "vuepress-theme-cosmos": "^1.0.168"
   },
   "devDependencies": {
     "watchpack": "^1.7.2"
+  },
+  "resolutions": {
+    "serialize-javascript": "^3.1.0"
   }
 }
