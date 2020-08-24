@@ -37,14 +37,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## [Unreleased]
 
+## [v0.1.0] - 2020-08-23
+
 ### Improvements
 
-* (sdk) [\#386](https://github.com/ChainSafe/ethermint/pull/386) Bump Cosmos SDK version to [v0.39.0](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.39.0)
+* (sdk) [\#386](https://github.com/ChainSafe/ethermint/pull/386) Bump Cosmos SDK version to [v0.39.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.39.1)
 * (`x/evm`) [\#181](https://github.com/ChainSafe/ethermint/issues/181) Updated EVM module to the recommended module structure.
 * (app) [\#188](https://github.com/ChainSafe/ethermint/issues/186)  Misc cleanup:
   * (`x/evm`) Rename `EthereumTxMsg` --> `MsgEthereumTx` and `EmintMsg` --> `MsgEthermint` for consistency with SDK standards
   * Updated integration and unit tests to use `EthermintApp` as testing suite
-  * Use expected keeper interface for `AccountKeeper`
+  * Use expected `Keeper` interface for `AccountKeeper`
   * Replaced `count` type in keeper with `int`
   * Add SDK events for transactions
 * [\#236](https://github.com/ChainSafe/ethermint/pull/236) Changes from upgrade:
@@ -54,7 +56,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (`x/evm`) [\#255](https://github.com/ChainSafe/ethermint/pull/255) Add missing `GenesisState` fields and support `ExportGenesis` functionality.
 * [\#272](https://github.com/ChainSafe/ethermint/pull/272) Add `Logger` for evm module.
 * [\#317](https://github.com/ChainSafe/ethermint/pull/317) `GenesisAccount` validation.
-* (`x/evm`) [\#319](https://github.com/ChainSafe/ethermint/pull/319) Verious evm improvements:
+* (`x/evm`) [\#319](https://github.com/ChainSafe/ethermint/pull/319) Various evm improvements:
   * Add transaction `[]*ethtypes.Logs` to evm's `GenesisState` to persist logs after an upgrade.
   * Remove evm `CodeKey` and `BlockKey`in favor of a prefix `Store`.
   * Set `BlockBloom` during `EndBlock` instead of `BeginBlock`.
@@ -67,9 +69,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [\#330](https://github.com/ChainSafe/ethermint/issues/330) Implement `PublicFilterAPI`'s `EventSystem` which subscribes to Tendermint events upon `Filter` creation.
 * (rpc) [\#231](https://github.com/ChainSafe/ethermint/issues/231) Implement `NewBlockFilter` in rpc/filters.go which instantiates a polling block filter
   * Polls for new blocks via `BlockNumber` rpc call; if block number changes, it requests the new block via `GetBlockByNumber` rpc call and adds it to its internal list of blocks
-  * Update uninstallFilter and getFilterChanges accordingly
-  * uninstallFilter stops the polling goroutine
-  * getFilterChanges returns the filter's internal list of block hashes and resets it
+  * Update `uninstallFilter` and `getFilterChanges` accordingly
+  * `uninstallFilter` stops the polling goroutine
+  * `getFilterChanges` returns the filter's internal list of block hashes and resets it
 * (rpc) [\#54](https://github.com/ChainSafe/ethermint/issues/54), [\#55](https://github.com/ChainSafe/ethermint/issues/55)
   Implement `eth_getFilterLogs` and `eth_getLogs`:
   * For a given filter, look through each block for transactions. If there are transactions in the block, get the logs from it, and filter using the filterLogs method
