@@ -35,7 +35,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.1.0] - 2020-08-23
+## Unreleased
+
+### Improvements
+
+* (app) [\#471](https://github.com/ChainSafe/ethermint/pull/471) Add `x/upgrade` module for managing software updates.
 
 ## [v0.1.0] - 2020-08-23
 

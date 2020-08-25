@@ -63,7 +63,7 @@ func TestFullAppSimulation(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewEthermintApp(logger, db, nil, true, simapp.FlagPeriodValue, fauxMerkleModeOpt)
+	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, simapp.FlagPeriodValue, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// run randomized simulation
@@ -95,7 +95,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewEthermintApp(logger, db, nil, true, simapp.FlagPeriodValue, fauxMerkleModeOpt)
+	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, simapp.FlagPeriodValue, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// Run randomized simulation
@@ -130,7 +130,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(newDir))
 	}()
 
-	newApp := NewEthermintApp(log.NewNopLogger(), newDB, nil, true, simapp.FlagPeriodValue, fauxMerkleModeOpt)
+	newApp := NewEthermintApp(log.NewNopLogger(), newDB, nil, true, map[int64]bool{}, simapp.FlagPeriodValue, fauxMerkleModeOpt)
 	require.Equal(t, appName, newApp.Name())
 
 	var genesisState map[string]json.RawMessage
@@ -183,7 +183,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewEthermintApp(logger, db, nil, true, simapp.FlagPeriodValue, fauxMerkleModeOpt)
+	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, simapp.FlagPeriodValue, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	// Run randomized simulation
@@ -223,7 +223,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(t, os.RemoveAll(newDir))
 	}()
 
-	newApp := NewEthermintApp(log.NewNopLogger(), newDB, nil, true, simapp.FlagPeriodValue, fauxMerkleModeOpt)
+	newApp := NewEthermintApp(log.NewNopLogger(), newDB, nil, true, map[int64]bool{}, simapp.FlagPeriodValue, fauxMerkleModeOpt)
 	require.Equal(t, appName, newApp.Name())
 
 	newApp.InitChain(abci.RequestInitChain{
@@ -265,7 +265,7 @@ func TestAppStateDeterminism(t *testing.T) {
 
 		db := dbm.NewMemDB()
 
-		app := NewEthermintApp(logger, db, nil, true, simapp.FlagPeriodValue, interBlockCacheOpt())
+		app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, simapp.FlagPeriodValue, interBlockCacheOpt())
 
 		fmt.Printf(
 			"running non-determinism simulation; seed %d: attempt: %d/%d\n",

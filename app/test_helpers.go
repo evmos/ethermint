@@ -11,7 +11,7 @@ import (
 // Setup initializes a new EthermintApp. A Nop logger is set in EthermintApp.
 func Setup(isCheckTx bool) *EthermintApp {
 	db := dbm.NewMemDB()
-	app := NewEthermintApp(log.NewNopLogger(), db, nil, true, 0)
+	app := NewEthermintApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, 0)
 
 	if !isCheckTx {
 		// init chain must be called to stop deliverState from being nil
