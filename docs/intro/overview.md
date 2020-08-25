@@ -7,7 +7,7 @@ order: 1
 ## What is Ethermint
 
 Ethermint is a scalable, high-throughput Proof-of-Stake blockchain that is fully compatible and
-interoperable with Ethereum. It s build using the the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk/) which runs on top of [Tendermint Core](https://github.com/tendermint/tendermint) consensus engine.
+interoperable with Ethereum. It's built using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk/) which runs on top of [Tendermint Core](https://github.com/tendermint/tendermint) consensus engine.
 
 Ethermint allows for running vanilla Ethereum as a [Cosmos](https://cosmos.network/) application-specific blockchain. This allows developers
 to have all the desired features of Ethereum, while at the same time, benefit
