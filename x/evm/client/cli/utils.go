@@ -12,7 +12,7 @@ import (
 )
 
 func accountToHex(addr string) (string, error) {
-	if strings.HasPrefix(addr, sdk.Bech32PrefixAccAddr) {
+	if strings.HasPrefix(addr, sdk.GetConfig().GetBech32AccountAddrPrefix()) {
 		// Check to see if address is Cosmos bech32 formatted
 		toAddr, err := sdk.AccAddressFromBech32(addr)
 		if err != nil {
@@ -47,7 +47,7 @@ func formatKeyToHash(key string) string {
 }
 
 func cosmosAddressFromArg(addr string) (sdk.AccAddress, error) {
-	if strings.HasPrefix(addr, sdk.Bech32PrefixAccAddr) {
+	if strings.HasPrefix(addr, sdk.GetConfig().GetBech32AccountAddrPrefix()) {
 		// Check to see if address is Cosmos bech32 formatted
 		toAddr, err := sdk.AccAddressFromBech32(addr)
 		if err != nil {
