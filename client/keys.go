@@ -38,6 +38,10 @@ func KeyCommands() *cobra.Command {
 	// update the default signing algorithm value to "eth_secp256k1"
 	algoFlag := addCmd.Flag("algo")
 	algoFlag.DefValue = string(crypto.EthSecp256k1)
+	err := algoFlag.Value.Set(string(crypto.EthSecp256k1))
+	if err != nil {
+		panic(err)
+	}
 	addCmd.RunE = runAddCmd
 
 	cmd.AddCommand(

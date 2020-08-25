@@ -18,7 +18,7 @@ ethermintcli config indent true
 ethermintcli config trust-node true
 
 # if $KEY exists it should be deleted
-ethermintcli keys add $KEY --algo "eth_secp256k1"
+ethermintcli keys add $KEY
 
 # Set moniker and chain-id for Ethermint (Moniker can be anything, chain-id must be an integer)
 ethermintd init $MONIKER --chain-id $CHAINID

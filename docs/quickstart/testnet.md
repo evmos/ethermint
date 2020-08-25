@@ -57,7 +57,7 @@ minimum-gas-prices = ""
 
 ```bash
 # Create a key to hold your account
-ethermintcli keys add $KEY --algo "eth_secp256k1"
+ethermintcli keys add $KEY
 
 # Add that key into the genesis.app_state.accounts array in the genesis file
 # NOTE: this command lets you set the number of coins. Make sure this account has some coins
@@ -268,7 +268,7 @@ Now that accounts exists, you may create new accounts and send those accounts
 funds!
 
 ::: tip
-**Note**: Each node's seed is located at `./build/nodeN/ethermintcli/key_seed.json` and can be restored to the CLI using the `ethermintcli keys add --restore --algo "eth_secp256k1"` command
+**Note**: Each node's seed is located at `./build/nodeN/ethermintcli/key_seed.json` and can be restored to the CLI using the `ethermintcli keys add --restore` command
 :::
 
 ### Special Binaries
