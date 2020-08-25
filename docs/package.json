@@ -23,7 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "npm-force-resolutions": "0.0.3",
-    "vuepress-theme-cosmos": "^1.0.168"
+    "vuepress-theme-cosmos": "^1.0.172"
   },
   "devDependencies": {
     "watchpack": "^1.7.2"

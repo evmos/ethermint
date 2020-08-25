@@ -6,7 +6,7 @@ sections:
   - title: Introduction
     desc: Read a high-level overview of Ethermint and its architecture.
     url: /intro
-    icon: specifications
+    icon: ethereum-intro
   - title: Basics
     desc: Start with the basic concepts of Ethermint, like accounts and transactions.
     url: /basics
@@ -18,7 +18,7 @@ sections:
 stack:
   - title: Cosmos SDK
     desc: The SDK is the world’s most popular framework for building application-specific blockchains.
-    color: "#BA3FD9"
+    color: "#5064FB"
     label: sdk
     url: http://docs.cosmos.network
   - title: Ethereum

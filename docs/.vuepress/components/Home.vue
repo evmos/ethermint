@@ -138,7 +138,7 @@
     box-shadow: 0px 2px 4px rgba(22, 25, 49, 0.05), 0px 0px 1px rgba(22, 25, 49, 0.2), 0px 0.5px 0px rgba(22, 25, 49, 0.05);
     position: relative;
     border-radius: 0.5rem;
-    background: linear-gradient(302.07deg, #FFFFFF 48.96%, #EBEDFF 100%);
+    background: linear-gradient(281.08deg, #FFFFFF 48.96%, #E8F3FF 100%);
     outline: none;
     transition: box-shadow 0.25s ease-out, transform 0.25s ease-out, opacity 0.4s ease-out;
 
@@ -268,7 +268,6 @@
 
     &__icon {
       position: absolute;
-      top: 1rem;
       left: 1.25rem;
       font-size: 1.5rem;
       display: flex;
@@ -347,9 +346,9 @@
 
     &__wrapper {
       display: grid;
-      grid-auto-flow: column;
-      grid-template-columns: 30% 1fr;
+      grid-auto-flow: row;
       gap: 1.25rem;
+      text-align: center;
     }
 
     &:before {
@@ -499,6 +498,7 @@
 
       &__wrapper {
         grid-template-columns: 3rem 1fr;
+        text-align: start;
       }
 
       &__h1 {

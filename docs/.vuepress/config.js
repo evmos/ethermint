@@ -12,16 +12,18 @@ module.exports = {
     docsRepo: 'ChainSafe/ethermint',
     docsDir: 'docs',
     editLinks: true,
-    // docs 1.0.168: custom true hides subpages searchbar
-    // docs 1.0.168: custom true hides hub, ibc, core sidebar footer logos
     custom: true,
     logo: {
       src: '/logo.svg',
     },
-    algolia: {
-      id: 'BH4D9OD16A',
-      key: 'ac317234e6a42074175369b2f42e9754',
-      index: 'ethermint'
+    // request id, key from https://docsearch.algolia.com
+    // algolia: {
+    //   id: 'BH4D9OD16A',
+    //   key: 'ac317234e6a42074175369b2f42e9754',
+    //   index: 'ethermint'
+    // },
+    topbar: {
+      banner: false
     },
     sidebar: {
       auto: false,
