@@ -20,6 +20,12 @@ const (
 	Bech32PrefixConsAddr = EthBech32Prefix + sdk.PrefixValidator + sdk.PrefixConsensus
 	// Bech32PrefixConsPub defines the Bech32 prefix of a consensus node public key
 	Bech32PrefixConsPub = EthBech32Prefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic
+
+	// Bip44CoinType satisfies EIP84. See https://github.com/ethereum/EIPs/issues/84 for more info.
+	Bip44CoinType = 60
+
+	// BIP44HDPath is the BIP44 HD path used on Ethereum.
+	BIP44HDPath = "44'/60'/0'/0/0"
 )
 
 // SetBech32Prefixes sets the global prefixes to be used when serializing addresses and public keys to Bech32 strings.
@@ -27,4 +33,10 @@ func SetBech32Prefixes(config *sdk.Config) {
 	config.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
 	config.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
 	config.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
+}
+
+// SetBip44CoinType sets the global coin type to be used in hierarchical deterministic wallets.
+func SetBip44CoinType(config *sdk.Config) {
+	config.SetCoinType(Bip44CoinType)
+	config.SetFullFundraiserPath(BIP44HDPath)
 }

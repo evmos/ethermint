@@ -42,6 +42,7 @@ func init() {
 	// set the address prefixes
 	config := sdk.GetConfig()
 	ethermint.SetBech32Prefixes(config)
+	ethermint.SetBip44CoinType(config)
 }
 
 const appName = "Ethermint"

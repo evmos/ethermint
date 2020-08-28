@@ -46,6 +46,7 @@ func main() {
 	// Read in the configuration file for the sdk
 	config := sdk.GetConfig()
 	ethermint.SetBech32Prefixes(config)
+	ethermint.SetBip44CoinType(config)
 	config.Seal()
 
 	rootCmd := &cobra.Command{

@@ -53,6 +53,7 @@ func main() {
 
 	config := sdk.GetConfig()
 	ethermint.SetBech32Prefixes(config)
+	ethermint.SetBip44CoinType(config)
 	config.Seal()
 
 	ctx := server.NewDefaultContext()
