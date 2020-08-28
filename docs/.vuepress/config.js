@@ -14,7 +14,7 @@ module.exports = {
     logo: {
       src: '/logo.svg',
     },
-    algolia: {id: 'BH4D9OD16A', key: '70ee930283c179ccd9a74d8a31afe300', index: 'ethermint'},
+    algolia: {id: 'BH4D9OD16A', key: 'c5da4dd3636828292e3c908a0db39688', index: 'ethermint'},
     topbar: {banner: false},
     sidebar: {
       auto: false,
