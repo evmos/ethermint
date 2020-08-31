@@ -47,7 +47,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // GetCmdSendTx generates an Ethermint transaction (excludes create operations)
 func GetCmdSendTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "send [to_address] [amount (in photons)] [<data>]",
+		Use:   "send [to_address] [amount (in aphotons)] [<data>]",
 		Short: "send transaction to address (call operations included)",
 		Args:  cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -104,7 +104,7 @@ func GetCmdSendTx(cdc *codec.Codec) *cobra.Command {
 // GetCmdGenCreateTx generates an Ethermint transaction (excludes create operations)
 func GetCmdGenCreateTx(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create [contract bytecode] [<amount (in photons)>]",
+		Use:   "create [contract bytecode] [<amount (in aphotons)>]",
 		Short: "create contract through the evm using compiled bytecode",
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {

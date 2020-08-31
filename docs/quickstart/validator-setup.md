@@ -33,7 +33,7 @@ To create your validator, just use the following command:
 
 ```bash
 ethermintcli tx staking create-validator \
-  --amount=1000000photon \
+  --amount=1000000aphoton \
   --pubkey=$(ethermintd tendermint show-validator) \
   --moniker=<ethermint_validator> \
   --chain-id=<chain_id> \
@@ -51,7 +51,7 @@ When specifying commission parameters, the `commission-max-change-rate` is used 
 :::
 
 ::: tip
-`Min-self-delegation` is a stritly positive integer that represents the minimum amount of self-delegated voting power your validator must always have. A `min-self-delegation` of 1 means your validator will never have a self-delegation lower than `1000000photon`
+`Min-self-delegation` is a stritly positive integer that represents the minimum amount of self-delegated voting power your validator must always have. A `min-self-delegation` of 1 means your validator will never have a self-delegation lower than `1000000aphoton`
 :::
 
 You can confirm that you are in the validator set by using a third party explorer.

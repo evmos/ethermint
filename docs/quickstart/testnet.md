@@ -48,7 +48,7 @@ You can edit the `$HOME/.ethermintd/config/app.toml` file in order to enable the
 
 # The minimum gas prices a validator is willing to accept for processing a
 # transaction. A transaction's fees must meet the minimum of any denomination
-# specified in this config (e.g. 10photon).
+# specified in this config (e.g. 10aphoton).
 
 minimum-gas-prices = ""
 ```
@@ -62,7 +62,7 @@ ethermintcli keys add $KEY
 # Add that key into the genesis.app_state.accounts array in the genesis file
 # NOTE: this command lets you set the number of coins. Make sure this account has some coins
 # with the genesis.app_state.staking.params.bond_denom denom, the default is staking
-ethermintd add-genesis-account $(ethermintcli keys show validator -a) 1000000000stake,10000000000photon
+ethermintd add-genesis-account $(ethermintcli keys show validator -a) 1000000000stake,10000000000aphoton
 
 # Generate the transaction that creates your validator
 ethermintd gentx --name $KEY
@@ -319,7 +319,7 @@ Once the ethermint daemon is up and running, you can request tokens to your addr
 ethermintcli q bank balances $(ethermintcli keys show <mykey> -a)  
 
 # send a tx to request tokens to your account address
-ethermintcli tx faucet request 100photon --from <mykey>
+ethermintcli tx faucet request 100aphoton --from <mykey>
 
 # query your balance after the request
 ethermintcli q bank balances $(ethermintcli keys show <mykey> -a)

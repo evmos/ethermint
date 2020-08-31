@@ -756,7 +756,7 @@ func TestEth_EstimateGas(t *testing.T) {
 	err := json.Unmarshal(rpcRes.Result, &gas)
 	require.NoError(t, err)
 
-	require.Equal(t, "0xffac", gas.String())
+	require.Equal(t, "0xffdf", gas.String())
 }
 
 func TestEth_EstimateGas_ContractDeployment(t *testing.T) {

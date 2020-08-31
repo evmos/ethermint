@@ -93,7 +93,7 @@ Note, strict routability for addresses is turned off in the config file.`,
 	cmd.Flags().String(flagNodeCLIHome, "ethermintcli", "Home directory of the node's cli configuration")
 	cmd.Flags().String(flagStartingIPAddress, "192.168.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", types.DenomDefault), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photon,0.001stake)")
+	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", types.DenomDefault), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01aphoton,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	cmd.Flags().String(flagKeyAlgo, string(crypto.EthSecp256k1), "Key signing algorithm to generate keys for")
 	return cmd

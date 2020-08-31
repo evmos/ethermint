@@ -84,7 +84,7 @@ init_func() {
   "$PWD"/build/ethermintcli config trust-node true --home "$DATA_CLI_DIR$i"
   echo "prepare genesis: Allocate genesis accounts"
   "$PWD"/build/ethermintd add-genesis-account \
-  "$("$PWD"/build/ethermintcli keys show "$KEY$i" -a --home "$DATA_CLI_DIR$i" )" 1000000000000000000photon,1000000000000000000stake \
+  "$("$PWD"/build/ethermintcli keys show "$KEY$i" -a --home "$DATA_CLI_DIR$i" )" 1000000000000000000aphoton,1000000000000000000stake \
   --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"
   echo "prepare genesis: Sign genesis transaction"
   "$PWD"/build/ethermintd gentx --name $KEY"$i" --keyring-backend test --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"

@@ -96,7 +96,7 @@ func (emfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	minGasPrices := ctx.MinGasPrices()
 
 	// check that fee provided is greater than the minimum
-	// NOTE: we only check if photons are present in min gas prices. It is up to the
+	// NOTE: we only check if aphotons are present in min gas prices. It is up to the
 	// sender if they want to send additional fees in other denominations.
 	var hasEnoughFees bool
 	if fee.Amount.GTE(minGasPrices.AmountOf(emint.DenomDefault)) {

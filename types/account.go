@@ -56,7 +56,7 @@ func (acc EthAccount) Balance() sdk.Int {
 	return acc.GetCoins().AmountOf(DenomDefault)
 }
 
-// SetBalance sets an account's balance of photons
+// SetBalance sets an account's balance of aphotons
 func (acc *EthAccount) SetBalance(amt sdk.Int) {
 	coins := acc.GetCoins()
 	diff := amt.Sub(coins.AmountOf(DenomDefault))

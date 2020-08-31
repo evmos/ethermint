@@ -50,7 +50,7 @@ ethermintcli keys unsafe-export-eth-key mykey
 Go back to the browser and select the `Private Key` option. Then paste the private key exported from
 the `unsafe-export-eth-key` command.
 
-Your account balance should show up as `1 PHOTON` and do transfers as usual.
+Your account balance should show up as `1 APHOTON` and do transfers as usual.
 
 ::: tip
 If it takes some time to load the balance of the account, change the network to `Main Ethereum
@@ -63,4 +63,4 @@ to see metamask logs, go to top right circle -> settings -> advanced -> download
 
 ## Known issues
 
-Currently, it's not possible to add custom tokens (even for Photons) unless you deploy a token contract (eg: ERC20).
+Currently, it's not possible to add custom tokens (even for APhotons) unless you deploy a token contract (eg: ERC20).
