@@ -695,14 +695,14 @@ func (csdb *CommitStateDB) Copy() *CommitStateDB {
 	}
 
 	// copy the dirty states, logs, and preimages
-	for _, dirty := range csdb.journal.dirties {
+	for i, dirty := range csdb.journal.dirties {
 		// There is a case where an object is in the journal but not in the
 		// stateObjects: OOG after touch on ripeMD prior to Byzantium. Thus, we
 		// need to check for nil.
 		//
 		// Ref: https://github.com/ethereum/go-ethereum/pull/16485#issuecomment-380438527
 		if idx, exist := csdb.addressToObjectIndex[dirty.address]; exist {
-			state.stateObjects[idx] = stateEntry{
+			state.stateObjects[i] = stateEntry{
 				address:     dirty.address,
 				stateObject: csdb.stateObjects[idx].stateObject.deepCopy(state),
 			}
