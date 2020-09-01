@@ -1,0 +1,14 @@
+{
+  "name": "basic",
+  "version": "1.0.0",
+  "author": "Aragon Association <contact@aragon.org>",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "test-ganache": "yarn truffle test",
+    "test-ethermint": "yarn truffle test --network ethermint"
+  },
+  "devDependencies": {
+    "truffle": "^5.1.42",
+    "web3": "^1.2.11"
+  }
+}

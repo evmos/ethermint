@@ -1,0 +1,15 @@
+{
+  "name": "tests-solidity",
+  "private": true,
+  "version": "1.0.0",
+  "author": "Aragon Association <contact@aragon.org>",
+  "license": "GPL-3.0-or-later",
+  "workspaces": {
+    "packages": [
+      "suites/*"
+    ],
+    "nohoist": [
+      "**/@aragon/contract-helpers-test"
+    ]
+  }
+}
