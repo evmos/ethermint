@@ -176,8 +176,8 @@ func (so *stateObject) AddBalance(amount *big.Int) {
 		return
 	}
 
-	// newBalance := so.balance.Add(amt)
-	newBalance := so.account.GetCoins().AmountOf(types.DenomDefault).Add(amt)
+	evmDenom := so.stateDB.GetParams().EvmDenom
+	newBalance := so.account.GetCoins().AmountOf(evmDenom).Add(amt)
 	so.SetBalance(newBalance.BigInt())
 }
 
@@ -188,7 +188,9 @@ func (so *stateObject) SubBalance(amount *big.Int) {
 	if amt.IsZero() {
 		return
 	}
-	newBalance := so.account.GetCoins().AmountOf(types.DenomDefault).Sub(amt)
+
+	evmDenom := so.stateDB.GetParams().EvmDenom
+	newBalance := so.account.GetCoins().AmountOf(evmDenom).Sub(amt)
 	so.SetBalance(newBalance.BigInt())
 }
 
@@ -196,9 +198,10 @@ func (so *stateObject) SubBalance(amount *big.Int) {
 func (so *stateObject) SetBalance(amount *big.Int) {
 	amt := sdk.NewIntFromBigInt(amount)
 
+	evmDenom := so.stateDB.GetParams().EvmDenom
 	so.stateDB.journal.append(balanceChange{
 		account: &so.address,
-		prev:    so.account.GetCoins().AmountOf(types.DenomDefault),
+		prev:    so.account.GetCoins().AmountOf(evmDenom),
 	})
 
 	so.setBalance(amt)

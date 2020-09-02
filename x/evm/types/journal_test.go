@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -119,11 +120,12 @@ func (suite *JournalTestSuite) setup() {
 	paramsKeeper := params.NewKeeper(cdc, keyParams, tkeyParams)
 
 	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
+	evmSubspace := paramsKeeper.Subspace(types.DefaultParamspace)
 
 	ak := auth.NewAccountKeeper(cdc, authKey, authSubspace, ethermint.ProtoAccount)
 
 	suite.ctx = sdk.NewContext(cms, abci.Header{ChainID: "8"}, false, tmlog.NewNopLogger())
-	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, ak).WithContext(suite.ctx)
+	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, evmSubspace, ak).WithContext(suite.ctx)
 }
 
 func TestJournalTestSuite(t *testing.T) {

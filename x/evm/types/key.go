@@ -21,11 +21,12 @@ const (
 
 // KVStore key prefixes
 var (
-	KeyPrefixBlockHash = []byte{0x01}
-	KeyPrefixBloom     = []byte{0x02}
-	KeyPrefixLogs      = []byte{0x03}
-	KeyPrefixCode      = []byte{0x04}
-	KeyPrefixStorage   = []byte{0x05}
+	KeyPrefixBlockHash   = []byte{0x01}
+	KeyPrefixBloom       = []byte{0x02}
+	KeyPrefixLogs        = []byte{0x03}
+	KeyPrefixCode        = []byte{0x04}
+	KeyPrefixStorage     = []byte{0x05}
+	KeyPrefixChainConfig = []byte{0x06}
 )
 
 // BloomKey defines the store key for a block Bloom

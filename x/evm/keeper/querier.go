@@ -21,7 +21,7 @@ import (
 
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
+	return func(ctx sdk.Context, path []string, _ abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryProtocolVersion:
 			return queryProtocolVersion(keeper)
@@ -203,7 +203,7 @@ func queryExportAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, 
 	addr := ethcmn.HexToAddress(path[1])
 
 	var storage types.Storage
-	err := keeper.CommitStateDB.ForEachStorage(addr, func(key, value ethcmn.Hash) bool {
+	err := keeper.ForEachStorage(ctx, addr, func(key, value ethcmn.Hash) bool {
 		storage = append(storage, types.NewState(key, value))
 		return false
 	})

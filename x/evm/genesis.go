@@ -28,6 +28,9 @@ func InitGenesis(ctx sdk.Context, k Keeper, data GenesisState) []abci.ValidatorU
 		}
 	}
 
+	k.SetChainConfig(ctx, data.ChainConfig)
+	k.SetParams(ctx, data.Params)
+
 	// set state objects and code to store
 	_, err = k.Commit(ctx, false)
 	if err != nil {
@@ -74,8 +77,12 @@ func ExportGenesis(ctx sdk.Context, k Keeper, ak types.AccountKeeper) GenesisSta
 		ethGenAccounts = append(ethGenAccounts, genAccount)
 	}
 
+	config, _ := k.GetChainConfig(ctx)
+
 	return GenesisState{
-		Accounts: ethGenAccounts,
-		TxsLogs:  k.GetAllTxLogs(ctx),
+		Accounts:    ethGenAccounts,
+		TxsLogs:     k.GetAllTxLogs(ctx),
+		ChainConfig: config,
+		Params:      k.GetParams(ctx),
 	}
 }

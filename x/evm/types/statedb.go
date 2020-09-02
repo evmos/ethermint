@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
 
 	emint "github.com/cosmos/ethermint/types"
 
@@ -42,6 +43,7 @@ type CommitStateDB struct {
 	ctx sdk.Context
 
 	storeKey      sdk.StoreKey
+	paramSpace    params.Subspace
 	accountKeeper AccountKeeper
 
 	// array that hold 'live' objects, which will get modified while processing a
@@ -85,11 +87,12 @@ type CommitStateDB struct {
 // CONTRACT: Stores used for state must be cache-wrapped as the ordering of the
 // key/value space matters in determining the merkle root.
 func NewCommitStateDB(
-	ctx sdk.Context, storeKey sdk.StoreKey, ak AccountKeeper,
+	ctx sdk.Context, storeKey sdk.StoreKey, paramSpace params.Subspace, ak AccountKeeper,
 ) *CommitStateDB {
 	return &CommitStateDB{
 		ctx:                  ctx,
 		storeKey:             storeKey,
+		paramSpace:           paramSpace,
 		accountKeeper:        ak,
 		stateObjects:         []stateEntry{},
 		addressToObjectIndex: make(map[ethcmn.Address]int),
@@ -109,6 +112,11 @@ func (csdb *CommitStateDB) WithContext(ctx sdk.Context) *CommitStateDB {
 // ----------------------------------------------------------------------------
 // Setters
 // ----------------------------------------------------------------------------
+
+// SetParams sets the evm parameters to the param space.
+func (csdb *CommitStateDB) SetParams(params Params) {
+	csdb.paramSpace.SetParamSet(csdb.ctx, &params)
+}
 
 // SetBalance sets the balance of an account.
 func (csdb *CommitStateDB) SetBalance(addr ethcmn.Address, amount *big.Int) {
@@ -238,6 +246,12 @@ func (csdb *CommitStateDB) SubRefund(gas uint64) {
 // ----------------------------------------------------------------------------
 // Getters
 // ----------------------------------------------------------------------------
+
+// GetParams returns the total set of evm parameters.
+func (csdb *CommitStateDB) GetParams() (params Params) {
+	csdb.paramSpace.GetParamSet(csdb.ctx, &params)
+	return params
+}
 
 // GetBalance retrieves the balance from the given address or 0 if object not
 // found.
@@ -489,8 +503,9 @@ func (csdb *CommitStateDB) IntermediateRoot(deleteEmptyObjects bool) (ethcmn.Has
 
 // updateStateObject writes the given state object to the store.
 func (csdb *CommitStateDB) updateStateObject(so *stateObject) error {
+	evmDenom := csdb.GetParams().EvmDenom
 	// NOTE: we don't use sdk.NewCoin here to avoid panic on test importer's genesis
-	newBalance := sdk.Coin{Denom: emint.DenomDefault, Amount: sdk.NewIntFromBigInt(so.Balance())}
+	newBalance := sdk.Coin{Denom: evmDenom, Amount: sdk.NewIntFromBigInt(so.Balance())}
 	if !newBalance.IsValid() {
 		return fmt.Errorf("invalid balance %s", newBalance)
 	}
@@ -631,9 +646,10 @@ func (csdb *CommitStateDB) UpdateAccounts() {
 			continue
 		}
 
+		evmDenom := csdb.GetParams().EvmDenom
 		balance := sdk.Coin{
-			Denom:  emint.DenomDefault,
-			Amount: emintAcc.GetCoins().AmountOf(emint.DenomDefault),
+			Denom:  evmDenom,
+			Amount: emintAcc.GetCoins().AmountOf(evmDenom),
 		}
 
 		if stateEntry.stateObject.Balance() != balance.Amount.BigInt() && balance.IsValid() ||
@@ -692,6 +708,7 @@ func (csdb *CommitStateDB) Copy() *CommitStateDB {
 	state := &CommitStateDB{
 		ctx:                  csdb.ctx,
 		storeKey:             csdb.storeKey,
+		paramSpace:           csdb.paramSpace,
 		accountKeeper:        csdb.accountKeeper,
 		stateObjects:         []stateEntry{},
 		addressToObjectIndex: make(map[ethcmn.Address]int),
@@ -815,8 +832,7 @@ func (csdb *CommitStateDB) setError(err error) {
 // getStateObject attempts to retrieve a state object given by the address.
 // Returns nil and sets an error if not found.
 func (csdb *CommitStateDB) getStateObject(addr ethcmn.Address) (stateObject *stateObject) {
-	idx, found := csdb.addressToObjectIndex[addr]
-	if found {
+	if idx, found := csdb.addressToObjectIndex[addr]; found {
 		// prefer 'live' (cached) objects
 		if so := csdb.stateObjects[idx].stateObject; so != nil {
 			if so.deleted {
@@ -842,8 +858,7 @@ func (csdb *CommitStateDB) getStateObject(addr ethcmn.Address) (stateObject *sta
 }
 
 func (csdb *CommitStateDB) setStateObject(so *stateObject) {
-	idx, found := csdb.addressToObjectIndex[so.Address()]
-	if found {
+	if idx, found := csdb.addressToObjectIndex[so.Address()]; found {
 		// update the existing object
 		csdb.stateObjects[idx].stateObject = so
 		return

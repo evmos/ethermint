@@ -18,8 +18,11 @@ var testJSON = `{
           "address": "0x2cc7fdf9fde6746731d7f11979609d455c2c197a",
           "balance": 0,
           "code": "0x60806040"
-        }
-      ]
+				}
+			],
+			"params": {
+				"evm_denom": "aphoton"
+			}
  	}`
 
 func (suite *EvmTestSuite) TestInitGenesis() {

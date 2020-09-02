@@ -13,8 +13,10 @@ import (
 type (
 	// GenesisState defines the evm module genesis state
 	GenesisState struct {
-		Accounts []GenesisAccount  `json:"accounts"`
-		TxsLogs  []TransactionLogs `json:"txs_logs"`
+		Accounts    []GenesisAccount  `json:"accounts"`
+		TxsLogs     []TransactionLogs `json:"txs_logs"`
+		ChainConfig ChainConfig       `json:"chain_config"`
+		Params      Params            `json:"params"`
 	}
 
 	// GenesisAccount defines an account to be initialized in the genesis state.
@@ -46,11 +48,14 @@ func (ga GenesisAccount) Validate() error {
 	return ga.Storage.Validate()
 }
 
-// DefaultGenesisState sets default evm genesis state with empty accounts.
+// DefaultGenesisState sets default evm genesis state with empty accounts and default params and
+// chain config values.
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Accounts: []GenesisAccount{},
-		TxsLogs:  []TransactionLogs{},
+		Accounts:    []GenesisAccount{},
+		TxsLogs:     []TransactionLogs{},
+		ChainConfig: DefaultChainConfig(),
+		Params:      DefaultParams(),
 	}
 }
 
@@ -80,5 +85,9 @@ func (gs GenesisState) Validate() error {
 		seenTxs[tx.Hash.String()] = true
 	}
 
-	return nil
+	if err := gs.ChainConfig.Validate(); err != nil {
+		return err
+	}
+
+	return gs.Params.Validate()
 }

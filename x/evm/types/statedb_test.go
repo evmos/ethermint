@@ -57,6 +57,16 @@ func (suite *StateDBTestSuite) SetupTest() {
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 	suite.stateObject = suite.stateDB.GetOrNewStateObject(suite.address)
 }
+
+func (suite *StateDBTestSuite) TestParams() {
+	params := suite.stateDB.GetParams()
+	suite.Require().Equal(types.DefaultParams(), params)
+	params.EvmDenom = "ara"
+	suite.stateDB.SetParams(params)
+	newParams := suite.stateDB.GetParams()
+	suite.Require().Equal(newParams, params)
+}
+
 func (suite *StateDBTestSuite) TestBloomFilter() {
 	// Prepare db for logs
 	tHash := ethcmn.BytesToHash([]byte{0x1})

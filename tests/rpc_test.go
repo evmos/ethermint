@@ -751,12 +751,14 @@ func TestEth_EstimateGas(t *testing.T) {
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
 	param[0]["value"] = "0x1"
 	rpcRes := call(t, "eth_estimateGas", param)
+	require.NotNil(t, rpcRes)
+	require.NotEmpty(t, rpcRes.Result)
 
-	var gas hexutil.Bytes
+	var gas string
 	err := json.Unmarshal(rpcRes.Result, &gas)
-	require.NoError(t, err)
+	require.NoError(t, err, string(rpcRes.Result))
 
-	require.Equal(t, "0xffdf", gas.String())
+	require.Equal(t, "0x1051d", gas)
 }
 
 func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
@@ -768,12 +770,14 @@ func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
 	param[0]["data"] = bytecode
 
 	rpcRes := call(t, "eth_estimateGas", param)
+	require.NotNil(t, rpcRes)
+	require.NotEmpty(t, rpcRes.Result)
 
 	var gas hexutil.Uint64
 	err := json.Unmarshal(rpcRes.Result, &gas)
-	require.NoError(t, err)
+	require.NoError(t, err, string(rpcRes.Result))
 
-	require.Equal(t, hexutil.Uint64(0x1cab2), gas)
+	require.Equal(t, "0x1cab2", gas.String())
 }
 
 func TestEth_ExportAccount(t *testing.T) {
@@ -831,10 +835,10 @@ func TestEth_ExportAccount_WithStorage(t *testing.T) {
 	require.NoError(t, err)
 
 	// deployed bytecode
-	bytecode := ethcmn.FromHex("0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032")
+	bytecode := "0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032"
 	require.Equal(t, addr, strings.ToLower(account.Address.Hex()))
 	require.Equal(t, big.NewInt(0), account.Balance)
-	require.Equal(t, hexutil.Bytes(bytecode), account.Code)
+	require.Equal(t, bytecode, account.Code.String())
 	require.NotEqual(t, types.Storage(nil), account.Storage)
 }
 

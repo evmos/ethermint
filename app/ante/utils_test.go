@@ -38,7 +38,9 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.app.Codec().RegisterConcrete(&sdk.TestMsg{}, "test/TestMsg", nil)
 
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "3", Time: time.Now().UTC()})
-	suite.anteHandler = ante.NewAnteHandler(suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.SupplyKeeper)
+	suite.app.EvmKeeper.SetParams(suite.ctx, evmtypes.DefaultParams())
+
+	suite.anteHandler = ante.NewAnteHandler(suite.app.AccountKeeper, suite.app.EvmKeeper, suite.app.SupplyKeeper)
 }
 
 func TestAnteTestSuite(t *testing.T) {
