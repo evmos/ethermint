@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -235,6 +236,88 @@ func (suite *JournalTestSuite) TestJournal_append_revert() {
 	idx, ok := suite.journal.addressToJournalIndex[suite.address]
 	suite.Require().False(ok)
 	suite.Require().Zero(idx)
+}
+
+func (suite *JournalTestSuite) TestJournal_preimage_revert() {
+	suite.stateDB.preimages = []preimageEntry{
+		{
+			hash:     ethcmn.BytesToHash([]byte("hash")),
+			preimage: []byte("preimage0"),
+		},
+		{
+			hash:     ethcmn.BytesToHash([]byte("hash1")),
+			preimage: []byte("preimage1"),
+		},
+		{
+			hash:     ethcmn.BytesToHash([]byte("hash2")),
+			preimage: []byte("preimage2"),
+		},
+	}
+
+	for i, preimage := range suite.stateDB.preimages {
+		suite.stateDB.hashToPreimageIndex[preimage.hash] = i
+	}
+
+	change := addPreimageChange{
+		hash: ethcmn.BytesToHash([]byte("hash")),
+	}
+
+	// delete first entry
+	change.revert(suite.stateDB)
+	suite.Require().Len(suite.stateDB.preimages, 2)
+	suite.Require().Equal(len(suite.stateDB.preimages), len(suite.stateDB.hashToPreimageIndex))
+
+	for i, entry := range suite.stateDB.preimages {
+		suite.Require().Equal(fmt.Sprintf("preimage%d", i+1), string(entry.preimage), entry.hash.String())
+		idx, found := suite.stateDB.hashToPreimageIndex[entry.hash]
+		suite.Require().True(found)
+		suite.Require().Equal(i, idx)
+	}
+}
+
+func (suite *JournalTestSuite) TestJournal_createObjectChange_revert() {
+	addr := ethcmn.BytesToAddress([]byte("addr"))
+
+	suite.stateDB.stateObjects = []stateEntry{
+		{
+			address: addr,
+			stateObject: &stateObject{
+				address: addr,
+			},
+		},
+		{
+			address: ethcmn.BytesToAddress([]byte("addr1")),
+			stateObject: &stateObject{
+				address: ethcmn.BytesToAddress([]byte("addr1")),
+			},
+		},
+		{
+			address: ethcmn.BytesToAddress([]byte("addr2")),
+			stateObject: &stateObject{
+				address: ethcmn.BytesToAddress([]byte("addr2")),
+			},
+		},
+	}
+
+	for i, so := range suite.stateDB.stateObjects {
+		suite.stateDB.addressToObjectIndex[so.address] = i
+	}
+
+	change := createObjectChange{
+		account: &addr,
+	}
+
+	// delete first entry
+	change.revert(suite.stateDB)
+	suite.Require().Len(suite.stateDB.stateObjects, 2)
+	suite.Require().Equal(len(suite.stateDB.stateObjects), len(suite.stateDB.addressToObjectIndex))
+
+	for i, entry := range suite.stateDB.stateObjects {
+		suite.Require().Equal(ethcmn.BytesToAddress([]byte(fmt.Sprintf("addr%d", i+1))).String(), entry.address.String())
+		idx, found := suite.stateDB.addressToObjectIndex[entry.address]
+		suite.Require().True(found)
+		suite.Require().Equal(i, idx)
+	}
 }
 
 func (suite *JournalTestSuite) TestJournal_dirty() {

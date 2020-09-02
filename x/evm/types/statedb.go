@@ -59,9 +59,8 @@ type CommitStateDB struct {
 
 	// TODO: Determine if we actually need this as we do not need preimages in
 	// the SDK, but it seems to be used elsewhere in Geth.
-	//
-	// NOTE: it is safe to use map here because it's only used for Copy
-	preimages map[ethcmn.Hash][]byte
+	preimages           []preimageEntry
+	hashToPreimageIndex map[ethcmn.Hash]int // map from hash to the index of the preimages slice
 
 	// DB error.
 	// State objects are used by the consensus core and VM which are
@@ -95,7 +94,8 @@ func NewCommitStateDB(
 		stateObjects:         []stateEntry{},
 		addressToObjectIndex: make(map[ethcmn.Address]int),
 		stateObjectsDirty:    make(map[ethcmn.Address]struct{}),
-		preimages:            make(map[ethcmn.Hash][]byte),
+		preimages:            []preimageEntry{},
+		hashToPreimageIndex:  make(map[ethcmn.Hash]int),
 		journal:              newJournal(),
 	}
 }
@@ -207,12 +207,14 @@ func (csdb *CommitStateDB) AddLog(log *ethtypes.Log) {
 
 // AddPreimage records a SHA3 preimage seen by the VM.
 func (csdb *CommitStateDB) AddPreimage(hash ethcmn.Hash, preimage []byte) {
-	if _, ok := csdb.preimages[hash]; !ok {
+	if _, ok := csdb.hashToPreimageIndex[hash]; !ok {
 		csdb.journal.append(addPreimageChange{hash: hash})
 
 		pi := make([]byte, len(preimage))
 		copy(pi, preimage)
-		csdb.preimages[hash] = pi
+
+		csdb.preimages = append(csdb.preimages, preimageEntry{hash: hash, preimage: pi})
+		csdb.hashToPreimageIndex[hash] = len(csdb.preimages) - 1
 	}
 }
 
@@ -358,7 +360,12 @@ func (csdb *CommitStateDB) GetRefund() uint64 {
 
 // Preimages returns a list of SHA3 preimages that have been submitted.
 func (csdb *CommitStateDB) Preimages() map[ethcmn.Hash][]byte {
-	return csdb.preimages
+	preimages := map[ethcmn.Hash][]byte{}
+
+	for _, pe := range csdb.preimages {
+		preimages[pe.hash] = pe.preimage
+	}
+	return preimages
 }
 
 // HasSuicided returns if the given account for the specified address has been
@@ -608,7 +615,8 @@ func (csdb *CommitStateDB) Reset(_ ethcmn.Hash) error {
 	csdb.bhash = ethcmn.Hash{}
 	csdb.txIndex = 0
 	csdb.logSize = 0
-	csdb.preimages = make(map[ethcmn.Hash][]byte)
+	csdb.preimages = []preimageEntry{}
+	csdb.hashToPreimageIndex = make(map[ethcmn.Hash]int)
 
 	csdb.clearJournalAndRefund()
 	return nil
@@ -685,27 +693,29 @@ func (csdb *CommitStateDB) Copy() *CommitStateDB {
 		ctx:                  csdb.ctx,
 		storeKey:             csdb.storeKey,
 		accountKeeper:        csdb.accountKeeper,
-		stateObjects:         make([]stateEntry, len(csdb.journal.dirties)),
-		addressToObjectIndex: make(map[ethcmn.Address]int, len(csdb.journal.dirties)),
-		stateObjectsDirty:    make(map[ethcmn.Address]struct{}, len(csdb.journal.dirties)),
+		stateObjects:         []stateEntry{},
+		addressToObjectIndex: make(map[ethcmn.Address]int),
+		stateObjectsDirty:    make(map[ethcmn.Address]struct{}),
 		refund:               csdb.refund,
 		logSize:              csdb.logSize,
-		preimages:            make(map[ethcmn.Hash][]byte),
+		preimages:            make([]preimageEntry, len(csdb.preimages)),
+		hashToPreimageIndex:  make(map[ethcmn.Hash]int, len(csdb.hashToPreimageIndex)),
 		journal:              newJournal(),
 	}
 
 	// copy the dirty states, logs, and preimages
-	for i, dirty := range csdb.journal.dirties {
+	for _, dirty := range csdb.journal.dirties {
 		// There is a case where an object is in the journal but not in the
 		// stateObjects: OOG after touch on ripeMD prior to Byzantium. Thus, we
 		// need to check for nil.
 		//
 		// Ref: https://github.com/ethereum/go-ethereum/pull/16485#issuecomment-380438527
 		if idx, exist := csdb.addressToObjectIndex[dirty.address]; exist {
-			state.stateObjects[i] = stateEntry{
+			state.stateObjects = append(state.stateObjects, stateEntry{
 				address:     dirty.address,
 				stateObject: csdb.stateObjects[idx].stateObject.deepCopy(state),
-			}
+			})
+			state.addressToObjectIndex[dirty.address] = len(state.stateObjects) - 1
 			state.stateObjectsDirty[dirty.address] = struct{}{}
 		}
 	}
@@ -721,8 +731,9 @@ func (csdb *CommitStateDB) Copy() *CommitStateDB {
 	}
 
 	// copy pre-images
-	for hash, preimage := range csdb.preimages {
-		state.preimages[hash] = preimage
+	for i, preimageEntry := range csdb.preimages {
+		state.preimages[i] = preimageEntry
+		state.hashToPreimageIndex[preimageEntry.hash] = i
 	}
 
 	return state
@@ -853,4 +864,10 @@ func (csdb *CommitStateDB) setStateObject(so *stateObject) {
 // TODO: Implement if we need it, especially for the RPC API.
 func (csdb *CommitStateDB) RawDump() ethstate.Dump {
 	return ethstate.Dump{}
+}
+
+type preimageEntry struct {
+	// hash key of the preimage entry
+	hash     ethcmn.Hash
+	preimage []byte
 }
