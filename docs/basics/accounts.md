@@ -43,7 +43,7 @@ Cosmos `sdk.AccAddress`.
 
 - Address (Bech32): `eth1crwhac03z2pcgu88jfnqnwu66xlthlz2rhljah`
 - Address (Hex): `0xc0dd7ee1f112838470e7926609bb9ad1bebbfc4a`
-- Public Key (Bech32): `ethpub1pfqnmk6pqnwwuw0h9hj58t2hyzwvqc3truhhp5tl5hfucezcfy2rs8470nkyzju2vmk645fzmw2wveaqcqek767kwa0es9rmxe9nmmjq84cpny3fvj6tpg`
+- Compressed Public Key (Bech32): `ethpub1pfqnmk6pqnwwuw0h9hj58t2hyzwvqc3truhhp5tl5hfucezcfy2rs8470nkyzju2vmk645fzmw2wveaqcqek767kwa0es9rmxe9nmmjq84cpny3fvj6tpg`
 
 ## Next {hide}
 

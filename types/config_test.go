@@ -10,6 +10,8 @@ import (
 
 func TestSetBech32Prefixes(t *testing.T) {
 	config := sdk.GetConfig()
+	config = sdk.NewConfig() // reset config values
+
 	require.Equal(t, sdk.Bech32PrefixAccAddr, config.GetBech32AccountAddrPrefix())
 	require.Equal(t, sdk.Bech32PrefixAccPub, config.GetBech32AccountPubPrefix())
 	require.Equal(t, sdk.Bech32PrefixValAddr, config.GetBech32ValidatorAddrPrefix())
@@ -36,8 +38,10 @@ func TestSetBech32Prefixes(t *testing.T) {
 func TestSetCoinType(t *testing.T) {
 	config := sdk.GetConfig()
 	require.Equal(t, sdk.CoinType, int(config.GetCoinType()))
+	require.Equal(t, sdk.FullFundraiserPath, config.GetFullFundraiserPath())
 
 	SetBip44CoinType(config)
 	require.Equal(t, Bip44CoinType, int(config.GetCoinType()))
 	require.Equal(t, sdk.GetConfig().GetCoinType(), config.GetCoinType())
+	require.Equal(t, sdk.GetConfig().GetFullFundraiserPath(), config.GetFullFundraiserPath())
 }

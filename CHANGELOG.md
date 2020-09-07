@@ -39,6 +39,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (types) [\#494](https://github.com/ChainSafe/ethermint/pull/494) Update `EthAccount` public key JSON type to `string`.
 * (app) [\#471](https://github.com/ChainSafe/ethermint/pull/471) Add `x/upgrade` module for managing software updates.
 * (`x/evm`) [\#458](https://github.com/ChainSafe/ethermint/pull/458) Define parameter for token denomination used for the EVM module.
 * (`x/evm`) [\#443](https://github.com/ChainSafe/ethermint/issues/443) Support custom Ethereum `ChainConfig` params.

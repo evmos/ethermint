@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,7 +36,7 @@ func TestEthermintAccountJSON(t *testing.T) {
 	require.Equal(t, string(bz1), string(bz))
 
 	var a EthAccount
-	require.NoError(t, json.Unmarshal(bz, &a))
+	require.NoError(t, a.UnmarshalJSON(bz))
 	require.Equal(t, ethAcc.String(), a.String())
 	require.Equal(t, ethAcc.PubKey, a.PubKey)
 }
@@ -57,4 +58,56 @@ func TestSecpPubKeyJSON(t *testing.T) {
 	pubk, err := tmamino.PubKeyFromBytes(bz)
 	require.NoError(t, err)
 	require.Equal(t, pubk, pubkey)
+}
+
+func TestEthermintAccount_String(t *testing.T) {
+	pubkey := secp256k1.GenPrivKey().PubKey()
+	addr := sdk.AccAddress(pubkey.Address())
+	balance := sdk.NewCoins(sdk.NewCoin(DenomDefault, sdk.OneInt()))
+	baseAcc := auth.NewBaseAccount(addr, balance, pubkey, 10, 50)
+	ethAcc := EthAccount{BaseAccount: baseAcc, CodeHash: []byte{1, 2}}
+
+	config := sdk.GetConfig()
+	SetBech32Prefixes(config)
+
+	bech32pubkey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, pubkey)
+	require.NoError(t, err)
+
+	accountStr := fmt.Sprintf(`|
+  address: %s
+  coins:
+  - denom: aphoton
+    amount: "1"
+  public_key: %s
+  account_number: 10
+  sequence: 50
+  code_hash: "0102"
+`, addr, bech32pubkey)
+
+	require.Equal(t, accountStr, ethAcc.String())
+
+	i, err := ethAcc.MarshalYAML()
+	require.NoError(t, err)
+
+	var ok bool
+	accountStr, ok = i.(string)
+	require.True(t, ok)
+	require.Contains(t, accountStr, addr.String())
+	require.Contains(t, accountStr, bech32pubkey)
+}
+
+func TestEthermintAccount_MarshalJSON(t *testing.T) {
+	pubkey := secp256k1.GenPrivKey().PubKey()
+	addr := sdk.AccAddress(pubkey.Address())
+	balance := sdk.NewCoins(sdk.NewCoin(DenomDefault, sdk.OneInt()))
+	baseAcc := auth.NewBaseAccount(addr, balance, pubkey, 10, 50)
+	ethAcc := &EthAccount{BaseAccount: baseAcc, CodeHash: []byte{1, 2}}
+
+	bz, err := ethAcc.MarshalJSON()
+	require.NoError(t, err)
+
+	res := new(EthAccount)
+	err = res.UnmarshalJSON(bz)
+	require.NoError(t, err)
+	require.Equal(t, ethAcc, res)
 }
