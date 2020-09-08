@@ -76,6 +76,7 @@ func (acc *EthAccount) SetBalance(amt sdk.Int) {
 
 type ethermintAccountPretty struct {
 	Address       sdk.AccAddress `json:"address" yaml:"address"`
+	EthAddress    string         `json:"eth_address" yaml:"eth_address"`
 	Coins         sdk.Coins      `json:"coins" yaml:"coins"`
 	PubKey        string         `json:"public_key" yaml:"public_key"`
 	AccountNumber uint64         `json:"account_number" yaml:"account_number"`
@@ -87,6 +88,7 @@ type ethermintAccountPretty struct {
 func (acc EthAccount) MarshalYAML() (interface{}, error) {
 	alias := ethermintAccountPretty{
 		Address:       acc.Address,
+		EthAddress:    acc.EthAddress().String(),
 		Coins:         acc.Coins,
 		AccountNumber: acc.AccountNumber,
 		Sequence:      acc.Sequence,
@@ -114,6 +116,7 @@ func (acc EthAccount) MarshalYAML() (interface{}, error) {
 func (acc EthAccount) MarshalJSON() ([]byte, error) {
 	alias := ethermintAccountPretty{
 		Address:       acc.Address,
+		EthAddress:    acc.EthAddress().String(),
 		Coins:         acc.Coins,
 		AccountNumber: acc.AccountNumber,
 		Sequence:      acc.Sequence,

@@ -39,6 +39,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (types) [\#502](https://github.com/ChainSafe/ethermint/pull/502) `EthAccount` now also exposes the Ethereum hex address in `string` format to clients.
 * (types) [\#494](https://github.com/ChainSafe/ethermint/pull/494) Update `EthAccount` public key JSON type to `string`.
 * (app) [\#471](https://github.com/ChainSafe/ethermint/pull/471) Add `x/upgrade` module for managing software updates.
 * (`x/evm`) [\#458](https://github.com/ChainSafe/ethermint/pull/458) Define parameter for token denomination used for the EVM module.

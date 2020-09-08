@@ -50,7 +50,8 @@ To run a node with the same key every time: replace `ethermintcli keys add $KEY`
 echo "your mnemonic here" | ethermintcli keys add $KEY --recover
 ```
 
-::: tip Ethermint currently only supports 24 word mnemonics.
+::: tip
+Ethermint currently only supports 24 word mnemonics.
 :::
 
 You can generate a new key/mnemonic with:

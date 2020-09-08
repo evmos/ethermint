@@ -75,6 +75,7 @@ func TestEthermintAccount_String(t *testing.T) {
 
 	accountStr := fmt.Sprintf(`|
   address: %s
+  eth_address: %s
   coins:
   - denom: aphoton
     amount: "1"
@@ -82,7 +83,7 @@ func TestEthermintAccount_String(t *testing.T) {
   account_number: 10
   sequence: 50
   code_hash: "0102"
-`, addr, bech32pubkey)
+`, addr, ethAcc.EthAddress().String(), bech32pubkey)
 
 	require.Equal(t, accountStr, ethAcc.String())
 

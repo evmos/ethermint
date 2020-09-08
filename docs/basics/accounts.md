@@ -42,8 +42,43 @@ clients. The hex format on the other hand, is the Ethereum `common.Address` repr
 Cosmos `sdk.AccAddress`.
 
 - Address (Bech32): `eth1crwhac03z2pcgu88jfnqnwu66xlthlz2rhljah`
-- Address (Hex): `0xc0dd7ee1f112838470e7926609bb9ad1bebbfc4a`
+- Address ([EIP55](https://eips.ethereum.org/EIPS/eip-55) Hex): `0xc0dd7ee1f112838470e7926609bb9ad1bebbfc4a`
 - Compressed Public Key (Bech32): `ethpub1pfqnmk6pqnwwuw0h9hj58t2hyzwvqc3truhhp5tl5hfucezcfy2rs8470nkyzju2vmk645fzmw2wveaqcqek767kwa0es9rmxe9nmmjq84cpny3fvj6tpg`
+
+You can query an account address using the Cosmos CLI or REST clients:
+
+```bash
+# NOTE: the --output (-o) flag will define the output format in JSON or YAML (text)
+ethermintcli q auth account $(ethermintcli keys show <MYKEY> -a) -o text
+|
+  address: eth1f8rqrfwut7ngkxwth0gt99h0lxnxsp09ngvzwl
+  eth_address: 0x49c601A5DC5FA68b19CBbbd0b296eFF9a66805e5
+  coins:
+  - denom: aphoton
+    amount: "1000000000000000000"
+  - denom: stake
+    amount: "999999999900000000"
+  public_key: ethpub1pfqnmkepqw45vpsn6dzvm7k22zrghx0nfewjdfacy7wyycv5evfk57kyhwr8cqj5r4x
+  account_number: 0
+  sequence: 1
+  code_hash: c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
+```
+
+``` bash
+# GET /auth/accounts/{address}
+curl -X GET "<NODE_IP>/auth/accounts/eth1f8rqrfwut7ngkxwth0gt99h0lxnxsp09ngvzwl" -H "accept: application/json"
+```
+
+::: tip
+The Cosmos SDK Keyring output (i.e `ethermintcli keys`) only supports addresses and public keys in Bech32 format.
+:::
+
+To retrieve the Ethereum hex address using Web3, use the JSON-RPC `eth_accounts` endpoint:
+
+```bash
+# query against a local node
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:26664
+```
 
 ## Next {hide}
 
