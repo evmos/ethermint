@@ -23,7 +23,7 @@ FROM alpine
 RUN apk add --update ca-certificates
 WORKDIR /root
 
-# Copy over binaries from the build-env 
+# Copy over binaries from the build-env
 COPY --from=build-env /go/src/github.com/Chainsafe/ethermint/build/ethermintd /usr/bin/ethermintd
 COPY --from=build-env /go/src/github.com/Chainsafe/ethermint/build/ethermintcli /usr/bin/ethermintcli
 
