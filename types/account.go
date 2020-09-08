@@ -1,12 +1,14 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
 	"gopkg.in/yaml.v2"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -114,9 +116,15 @@ func (acc EthAccount) MarshalYAML() (interface{}, error) {
 
 // MarshalJSON returns the JSON representation of an EthAccount.
 func (acc EthAccount) MarshalJSON() ([]byte, error) {
+	var ethAddress = ""
+
+	if acc.BaseAccount != nil && acc.Address != nil {
+		ethAddress = acc.EthAddress().String()
+	}
+
 	alias := ethermintAccountPretty{
 		Address:       acc.Address,
-		EthAddress:    acc.EthAddress().String(),
+		EthAddress:    ethAddress,
 		Coins:         acc.Coins,
 		AccountNumber: acc.AccountNumber,
 		Sequence:      acc.Sequence,
@@ -143,6 +151,37 @@ func (acc *EthAccount) UnmarshalJSON(bz []byte) error {
 	)
 
 	if err := json.Unmarshal(bz, &alias); err != nil {
+		return err
+	}
+
+	switch {
+	case !alias.Address.Empty() && alias.EthAddress != "":
+		// Both addresses provided. Verify correctness
+		ethAddress := ethcmn.HexToAddress(alias.EthAddress)
+		ethAddressFromAccAddress := ethcmn.BytesToAddress(alias.Address.Bytes())
+
+		if !bytes.Equal(ethAddress.Bytes(), alias.Address.Bytes()) {
+			err = sdkerrors.Wrapf(
+				sdkerrors.ErrInvalidAddress,
+				"expected %s, got %s",
+				ethAddressFromAccAddress.String(), ethAddress.String(),
+			)
+		}
+
+	case !alias.Address.Empty() && alias.EthAddress == "":
+		// unmarshal sdk.AccAddress only. Do nothing here
+	case alias.Address.Empty() && alias.EthAddress != "":
+		// retrieve sdk.AccAddress from ethereum address
+		ethAddress := ethcmn.HexToAddress(alias.EthAddress)
+		alias.Address = sdk.AccAddress(ethAddress.Bytes())
+	case alias.Address.Empty() && alias.EthAddress == "":
+		err = sdkerrors.Wrapf(
+			sdkerrors.ErrInvalidAddress,
+			"account must contain address in Ethereum Hex or Cosmos Bech32 format",
+		)
+	}
+
+	if err != nil {
 		return err
 	}
 
