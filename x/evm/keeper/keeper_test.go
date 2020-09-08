@@ -46,7 +46,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
 	suite.address = ethcmn.HexToAddress(addrHex)
 
-	balance := sdk.NewCoins(sdk.NewCoin(ethermint.DenomDefault, sdk.NewInt(0)))
+	balance := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.ZeroInt()))
 	acc := &ethermint.EthAccount{
 		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),

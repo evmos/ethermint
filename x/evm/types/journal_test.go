@@ -57,7 +57,7 @@ func (suite *JournalTestSuite) SetupTest() {
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
 	suite.journal = newJournal()
 
-	balance := sdk.NewCoins(sdk.NewCoin(ethermint.DenomDefault, sdk.NewInt(100)))
+	balance := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewInt(100)))
 	acc := &ethermint.EthAccount{
 		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),

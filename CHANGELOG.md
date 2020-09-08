@@ -37,8 +37,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### API Breaking
+
+* (types) [\#503](https://github.com/ChainSafe/ethermint/pull/503) The `types.DenomDefault` constant for `"aphoton"` has been renamed to `types.AttoPhoton`.
+
 ### Improvements
 
+* (types) [\#503](https://github.com/ChainSafe/ethermint/pull/503) Add `--coin-denom` flag to testnet command that sets the given coin denomination to SDK and Ethermint parameters.
 * (types) [\#502](https://github.com/ChainSafe/ethermint/pull/502) `EthAccount` now also exposes the Ethereum hex address in `string` format to clients.
 * (types) [\#494](https://github.com/ChainSafe/ethermint/pull/494) Update `EthAccount` public key JSON type to `string`.
 * (app) [\#471](https://github.com/ChainSafe/ethermint/pull/471) Add `x/upgrade` module for managing software updates.

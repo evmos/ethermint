@@ -17,7 +17,7 @@ func (suite *StateDBTestSuite) TestTransitionDb() {
 	suite.stateDB.SetNonce(suite.address, 123)
 
 	addr := sdk.AccAddress(suite.address.Bytes())
-	balance := sdk.NewCoin(ethermint.DenomDefault, sdk.NewInt(5000))
+	balance := ethermint.NewPhotonCoin(sdk.NewInt(5000))
 	acc := suite.app.AccountKeeper.GetAccount(suite.ctx, addr)
 	_ = acc.SetCoins(sdk.NewCoins(balance))
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
@@ -108,7 +108,7 @@ func (suite *StateDBTestSuite) TestTransitionDb() {
 			"nil gas price",
 			func() {
 				invalidGas := sdk.DecCoins{
-					{Denom: ethermint.DenomDefault},
+					{Denom: ethermint.AttoPhoton},
 				}
 				suite.ctx = suite.ctx.WithMinGasPrices(invalidGas)
 			},

@@ -38,6 +38,7 @@ import (
 
 	"github.com/cosmos/ethermint/crypto"
 	"github.com/cosmos/ethermint/types"
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
 var (
@@ -47,6 +48,7 @@ var (
 	flagNodeDaemonHome    = "node-daemon-home"
 	flagNodeCLIHome       = "node-cli-home"
 	flagStartingIPAddress = "starting-ip-address"
+	flagCoinDenom         = "coin-denom"
 	flagKeyAlgo           = "algo"
 )
 
@@ -77,10 +79,11 @@ Note, strict routability for addresses is turned off in the config file.`,
 			nodeCLIHome, _ := cmd.Flags().GetString(flagNodeCLIHome)
 			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
+			coinDenom, _ := cmd.Flags().GetString(flagCoinDenom)
 			algo, _ := cmd.Flags().GetString(flagKeyAlgo)
 
 			return InitTestnet(
-				cmd, config, cdc, mbm, genAccIterator, outputDir, chainID, minGasPrices,
+				cmd, config, cdc, mbm, genAccIterator, outputDir, chainID, coinDenom, minGasPrices,
 				nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, keyringBackend, algo, numValidators,
 			)
 		},
@@ -93,7 +96,8 @@ Note, strict routability for addresses is turned off in the config file.`,
 	cmd.Flags().String(flagNodeCLIHome, "ethermintcli", "Home directory of the node's cli configuration")
 	cmd.Flags().String(flagStartingIPAddress, "192.168.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", types.DenomDefault), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01aphoton,0.001stake)")
+	cmd.Flags().String(flagCoinDenom, types.AttoPhoton, "Coin denomination used for staking, governance, mint, crisis and evm parameters")
+	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", types.AttoPhoton), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01aphoton,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	cmd.Flags().String(flagKeyAlgo, string(crypto.EthSecp256k1), "Key signing algorithm to generate keys for")
 	return cmd
@@ -108,6 +112,7 @@ func InitTestnet(
 	genAccIterator authtypes.GenesisAccountIterator,
 	outputDir,
 	chainID,
+	coinDenom,
 	minGasPrices,
 	nodeDirPrefix,
 	nodeDaemonHome,
@@ -120,6 +125,10 @@ func InitTestnet(
 
 	if chainID == "" {
 		chainID = fmt.Sprintf("%d", tmrand.Int63())
+	}
+
+	if err := sdk.ValidateDenom(coinDenom); err != nil {
+		return err
 	}
 
 	nodeIDs := make([]string, numValidators)
@@ -205,11 +214,9 @@ func InitTestnet(
 			return err
 		}
 
-		accTokens := sdk.TokensFromConsensusPower(1000)
 		accStakingTokens := sdk.TokensFromConsensusPower(5000)
 		coins := sdk.NewCoins(
-			sdk.NewCoin(sdk.DefaultBondDenom, accTokens),
-			sdk.NewCoin(types.DenomDefault, accStakingTokens),
+			sdk.NewCoin(coinDenom, accStakingTokens),
 		)
 
 		genAccounts = append(genAccounts, types.EthAccount{
@@ -221,7 +228,7 @@ func InitTestnet(
 		msg := stakingtypes.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
-			sdk.NewCoin(types.DenomDefault, valTokens),
+			sdk.NewCoin(coinDenom, valTokens),
 			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
 			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 			sdk.OneInt(),
@@ -251,7 +258,7 @@ func InitTestnet(
 		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), simappConfig)
 	}
 
-	if err := initGenFiles(cdc, mbm, chainID, genAccounts, genFiles, numValidators); err != nil {
+	if err := initGenFiles(cdc, mbm, chainID, coinDenom, genAccounts, genFiles, numValidators); err != nil {
 		return err
 	}
 
@@ -268,7 +275,8 @@ func InitTestnet(
 }
 
 func initGenFiles(
-	cdc *codec.Codec, mbm module.BasicManager, chainID string,
+	cdc *codec.Codec, mbm module.BasicManager,
+	chainID, coinDenom string,
 	genAccounts []authexported.GenesisAccount,
 	genFiles []string, numValidators int,
 ) error {
@@ -285,26 +293,32 @@ func initGenFiles(
 	var stakingGenState stakingtypes.GenesisState
 	cdc.MustUnmarshalJSON(appGenState[stakingtypes.ModuleName], &stakingGenState)
 
-	stakingGenState.Params.BondDenom = types.DenomDefault
+	stakingGenState.Params.BondDenom = coinDenom
 	appGenState[stakingtypes.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
 	var govGenState govtypes.GenesisState
 	cdc.MustUnmarshalJSON(appGenState[govtypes.ModuleName], &govGenState)
 
-	govGenState.DepositParams.MinDeposit[0].Denom = types.DenomDefault
+	govGenState.DepositParams.MinDeposit[0].Denom = coinDenom
 	appGenState[govtypes.ModuleName] = cdc.MustMarshalJSON(govGenState)
 
 	var mintGenState mint.GenesisState
 	cdc.MustUnmarshalJSON(appGenState[mint.ModuleName], &mintGenState)
 
-	mintGenState.Params.MintDenom = types.DenomDefault
+	mintGenState.Params.MintDenom = coinDenom
 	appGenState[mint.ModuleName] = cdc.MustMarshalJSON(mintGenState)
 
 	var crisisGenState crisis.GenesisState
 	cdc.MustUnmarshalJSON(appGenState[crisis.ModuleName], &crisisGenState)
 
-	crisisGenState.ConstantFee.Denom = types.DenomDefault
+	crisisGenState.ConstantFee.Denom = coinDenom
 	appGenState[crisis.ModuleName] = cdc.MustMarshalJSON(crisisGenState)
+
+	var evmGenState evmtypes.GenesisState
+	cdc.MustUnmarshalJSON(appGenState[evmtypes.ModuleName], &evmGenState)
+
+	evmGenState.Params.EvmDenom = coinDenom
+	appGenState[evmtypes.ModuleName] = cdc.MustMarshalJSON(evmGenState)
 
 	appGenStateJSON, err := codec.MarshalJSONIndent(cdc, appGenState)
 	if err != nil {

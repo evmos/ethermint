@@ -24,7 +24,7 @@ func init() {
 func TestEthermintAccountJSON(t *testing.T) {
 	pubkey := secp256k1.GenPrivKey().PubKey()
 	addr := sdk.AccAddress(pubkey.Address())
-	balance := sdk.NewCoins(sdk.NewCoin(DenomDefault, sdk.OneInt()))
+	balance := sdk.NewCoins(NewPhotonCoin(sdk.OneInt()))
 	baseAcc := auth.NewBaseAccount(addr, balance, pubkey, 10, 50)
 	ethAcc := EthAccount{BaseAccount: baseAcc, CodeHash: []byte{1, 2}}
 
@@ -63,7 +63,7 @@ func TestSecpPubKeyJSON(t *testing.T) {
 func TestEthermintAccount_String(t *testing.T) {
 	pubkey := secp256k1.GenPrivKey().PubKey()
 	addr := sdk.AccAddress(pubkey.Address())
-	balance := sdk.NewCoins(sdk.NewCoin(DenomDefault, sdk.OneInt()))
+	balance := sdk.NewCoins(NewPhotonCoin(sdk.OneInt()))
 	baseAcc := auth.NewBaseAccount(addr, balance, pubkey, 10, 50)
 	ethAcc := EthAccount{BaseAccount: baseAcc, CodeHash: []byte{1, 2}}
 
@@ -100,7 +100,7 @@ func TestEthermintAccount_String(t *testing.T) {
 func TestEthermintAccount_MarshalJSON(t *testing.T) {
 	pubkey := secp256k1.GenPrivKey().PubKey()
 	addr := sdk.AccAddress(pubkey.Address())
-	balance := sdk.NewCoins(sdk.NewCoin(DenomDefault, sdk.OneInt()))
+	balance := sdk.NewCoins(NewPhotonCoin(sdk.OneInt()))
 	baseAcc := auth.NewBaseAccount(addr, balance, pubkey, 10, 50)
 	ethAcc := &EthAccount{BaseAccount: baseAcc, CodeHash: []byte{1, 2}}
 

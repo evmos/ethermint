@@ -51,20 +51,20 @@ func (acc EthAccount) EthAddress() ethcmn.Address {
 
 // Balance returns the balance of an account.
 func (acc EthAccount) Balance() sdk.Int {
-	return acc.GetCoins().AmountOf(DenomDefault)
+	return acc.GetCoins().AmountOf(AttoPhoton)
 }
 
 // SetBalance sets an account's balance of aphotons
 func (acc *EthAccount) SetBalance(amt sdk.Int) {
 	coins := acc.GetCoins()
-	diff := amt.Sub(coins.AmountOf(DenomDefault))
+	diff := amt.Sub(coins.AmountOf(AttoPhoton))
 	switch {
 	case diff.IsPositive():
 		// Increase coins to amount
-		coins = coins.Add(sdk.NewCoin(DenomDefault, diff))
+		coins = coins.Add(NewPhotonCoin(diff))
 	case diff.IsNegative():
 		// Decrease coins to amount
-		coins = coins.Sub(sdk.NewCoins(sdk.NewCoin(DenomDefault, diff.Neg())))
+		coins = coins.Sub(sdk.NewCoins(NewPhotonCoin(diff.Neg())))
 	default:
 		return
 	}

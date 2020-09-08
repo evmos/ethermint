@@ -150,7 +150,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.Accoun
 	genAcc := ak.GetAccount(ctx, sdk.AccAddress(genInvestor.Bytes()))
 	require.NotNil(t, genAcc)
 
-	balance := sdk.NewCoin(types.DenomDefault, genAcc.GetCoins().AmountOf(types.DenomDefault))
+	balance := types.NewPhotonCoin(genAcc.GetCoins().AmountOf(types.AttoPhoton))
 	require.Equal(t, sdk.NewIntFromBigInt(b), balance.Amount)
 }
 
