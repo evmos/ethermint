@@ -658,14 +658,14 @@ func TestEth_GetFilterChanges_Topics_AB(t *testing.T) {
 
 	// instantiate new filter
 	rpcRes = call(t, "eth_newFilter", param)
-	var ID hexutil.Bytes
+	var ID string
 	err = json.Unmarshal(rpcRes.Result, &ID)
-	require.NoError(t, err)
+	require.NoError(t, err, string(rpcRes.Result))
 
 	deployTestContractWithFunction(t)
 
 	// get filter changes
-	changesRes := call(t, "eth_getFilterChanges", []string{ID.String()})
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(changesRes.Result, &logs)
