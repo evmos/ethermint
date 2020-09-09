@@ -204,11 +204,11 @@ func (so *stateObject) SetBalance(amount *big.Int) {
 		prev:    so.account.GetCoins().AmountOf(evmDenom),
 	})
 
-	so.setBalance(amt)
+	so.setBalance(evmDenom, amt)
 }
 
-func (so *stateObject) setBalance(amount sdk.Int) {
-	so.account.SetBalance(amount)
+func (so *stateObject) setBalance(denom string, amount sdk.Int) {
+	so.account.SetBalance(denom, amount)
 }
 
 // SetNonce sets the state object's nonce (i.e sequence number of the account).
@@ -295,7 +295,8 @@ func (so stateObject) Address() ethcmn.Address {
 
 // Balance returns the state object's current balance.
 func (so *stateObject) Balance() *big.Int {
-	balance := so.account.Balance().BigInt()
+	evmDenom := so.stateDB.GetParams().EvmDenom
+	balance := so.account.Balance(evmDenom).BigInt()
 	if balance == nil {
 		return zeroBalance
 	}
@@ -406,7 +407,8 @@ func (so *stateObject) deepCopy(db *CommitStateDB) *stateObject {
 
 // empty returns whether the account is considered empty.
 func (so *stateObject) empty() bool {
-	balace := so.account.Balance()
+	evmDenom := so.stateDB.GetParams().EvmDenom
+	balace := so.account.Balance(evmDenom)
 	return so.account == nil ||
 		(so.account != nil &&
 			so.account.Sequence == 0 &&

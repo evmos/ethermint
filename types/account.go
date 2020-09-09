@@ -52,27 +52,29 @@ func (acc EthAccount) EthAddress() ethcmn.Address {
 // TODO: remove on SDK v0.40
 
 // Balance returns the balance of an account.
-func (acc EthAccount) Balance() sdk.Int {
-	return acc.GetCoins().AmountOf(AttoPhoton)
+func (acc EthAccount) Balance(denom string) sdk.Int {
+	return acc.GetCoins().AmountOf(denom)
 }
 
-// SetBalance sets an account's balance of aphotons
-func (acc *EthAccount) SetBalance(amt sdk.Int) {
+// SetBalance sets an account's balance of the given coin denomination.
+//
+// CONTRACT: assumes the denomination is valid.
+func (acc *EthAccount) SetBalance(denom string, amt sdk.Int) {
 	coins := acc.GetCoins()
-	diff := amt.Sub(coins.AmountOf(AttoPhoton))
+	diff := amt.Sub(coins.AmountOf(denom))
 	switch {
 	case diff.IsPositive():
 		// Increase coins to amount
-		coins = coins.Add(NewPhotonCoin(diff))
+		coins = coins.Add(sdk.NewCoin(denom, diff))
 	case diff.IsNegative():
 		// Decrease coins to amount
-		coins = coins.Sub(sdk.NewCoins(NewPhotonCoin(diff.Neg())))
+		coins = coins.Sub(sdk.NewCoins(sdk.NewCoin(denom, diff.Neg())))
 	default:
 		return
 	}
 
 	if err := acc.SetCoins(coins); err != nil {
-		panic(fmt.Errorf("could not set coins for address %s: %w", acc.EthAddress().String(), err))
+		panic(fmt.Errorf("could not set %s coins for address %s: %w", denom, acc.EthAddress().String(), err))
 	}
 }
 
