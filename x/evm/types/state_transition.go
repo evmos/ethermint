@@ -118,9 +118,9 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	)
 
 	// Get nonce of account outside of the EVM
-	currentNonce := st.Csdb.GetNonce(st.Sender)
+	currentNonce := csdb.GetNonce(st.Sender)
 	// Set nonce of sender account before evm state transition for usage in generating Create address
-	st.Csdb.SetNonce(st.Sender, st.AccountNonce)
+	csdb.SetNonce(st.Sender, st.AccountNonce)
 
 	// create contract or execute call
 	switch contractCreation {
@@ -143,7 +143,7 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	}
 
 	// Resets nonce to value pre state transition
-	st.Csdb.SetNonce(st.Sender, currentNonce)
+	csdb.SetNonce(st.Sender, currentNonce)
 
 	// Generate bloom filter to be saved in tx receipt data
 	bloomInt := big.NewInt(0)
@@ -166,7 +166,7 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	if !st.Simulate {
 		// Finalise state if not a simulated transaction
 		// TODO: change to depend on config
-		if err := st.Csdb.Finalise(true); err != nil {
+		if err := csdb.Finalise(true); err != nil {
 			return nil, err
 		}
 	}
