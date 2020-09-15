@@ -96,11 +96,12 @@ func (k Keeper) SetBlockHash(ctx sdk.Context, hash []byte, height int64) {
 // GetBlockBloom gets bloombits from block height
 func (k Keeper) GetBlockBloom(ctx sdk.Context, height int64) (ethtypes.Bloom, bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixBloom)
-	bz := store.Get(types.BloomKey(height))
-	if len(bz) == 0 {
-		return ethtypes.Bloom{}, false
+	has := store.Has(types.BloomKey(height))
+	if !has {
+		return ethtypes.Bloom{}, true // TODO: sometimes bloom cannot be found, fix this
 	}
 
+	bz := store.Get(types.BloomKey(height))
 	return ethtypes.BytesToBloom(bz), true
 }
 
