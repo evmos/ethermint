@@ -20,7 +20,7 @@ func TestPersonal_ListAccounts(t *testing.T) {
 }
 
 func TestPersonal_NewAccount(t *testing.T) {
-	rpcRes := call(t, "personal_newAccount", []string{""})
+	rpcRes := call(t, "personal_newAccount", []string{"password"})
 	var addr common.Address
 	err := json.Unmarshal(rpcRes.Result, &addr)
 	require.NoError(t, err)

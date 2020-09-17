@@ -54,13 +54,41 @@ type PublicEthAPI struct {
 func NewPublicEthAPI(cliCtx context.CLIContext, backend Backend, nonceLock *AddrLocker,
 	key []crypto.PrivKeySecp256k1) *PublicEthAPI {
 
-	return &PublicEthAPI{
+	api := &PublicEthAPI{
 		cliCtx:    cliCtx,
 		logger:    log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "json-rpc"),
 		backend:   backend,
 		keys:      key,
 		nonceLock: nonceLock,
 	}
+	err := api.getKeybaseInfo()
+	if err != nil {
+		api.logger.Error("failed to get keybase info", "error", err)
+	}
+
+	return api
+}
+
+func (e *PublicEthAPI) getKeybaseInfo() error {
+	e.keybaseLock.Lock()
+	defer e.keybaseLock.Unlock()
+
+	if e.cliCtx.Keybase == nil {
+		keybase, err := keys.NewKeyring(
+			sdk.KeyringServiceName(),
+			viper.GetString(flags.FlagKeyringBackend),
+			viper.GetString(flags.FlagHome),
+			e.cliCtx.Input,
+			crypto.EthSecp256k1Options()...,
+		)
+		if err != nil {
+			return err
+		}
+
+		e.cliCtx.Keybase = keybase
+	}
+
+	return nil
 }
 
 // ProtocolVersion returns the supported Ethereum protocol version.
@@ -349,8 +377,13 @@ func (e *PublicEthAPI) SendTransaction(args params.SendTxArgs) (common.Hash, err
 	e.logger.Debug("eth_sendTransaction", "args", args)
 	// TODO: Change this functionality to find an unlocked account by address
 
+	for _, key := range e.keys {
+		e.logger.Debug("eth_sendTransaction", "key", fmt.Sprintf("0x%x", key.PubKey().Address().Bytes()))
+	}
+
 	key, exist := checkKeyInKeyring(e.keys, args.From)
 	if !exist {
+		e.logger.Debug("failed to find key in keyring", "key", args.From)
 		return common.Hash{}, keystore.ErrLocked
 	}
 
@@ -363,6 +396,7 @@ func (e *PublicEthAPI) SendTransaction(args params.SendTxArgs) (common.Hash, err
 	// Assemble transaction from fields
 	tx, err := e.generateFromArgs(args)
 	if err != nil {
+		e.logger.Debug("failed to generate tx", "error", err)
 		return common.Hash{}, err
 	}
 
@@ -376,6 +410,7 @@ func (e *PublicEthAPI) SendTransaction(args params.SendTxArgs) (common.Hash, err
 
 	// Sign transaction
 	if err := tx.Sign(intChainID, key.ToECDSA()); err != nil {
+		e.logger.Debug("failed to sign tx", "error", err)
 		return common.Hash{}, err
 	}
 
@@ -966,6 +1001,10 @@ func (e *PublicEthAPI) generateFromArgs(args params.SendTxArgs) (*evmtypes.MsgEt
 		// Get nonce (sequence) from account
 		from := sdk.AccAddress(args.From.Bytes())
 		accRet := authtypes.NewAccountRetriever(e.cliCtx)
+
+		if e.cliCtx.Keybase == nil {
+			return nil, fmt.Errorf("cliCtx.Keybase is nil")
+		}
 
 		err = accRet.EnsureExists(from)
 		if err != nil {
