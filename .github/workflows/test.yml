@@ -210,3 +210,20 @@ jobs:
         run: |
           make test-import
         if: "env.GIT_DIFF != ''"
+
+  test-solidity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - uses: technote-space/get-diff-action@v3.1
+        id: git_diff
+        with:
+          SUFFIX_FILTER: |
+            .go
+            .mod
+            .sum
+      - name: test-solidity
+        run: |
+          make test-solidity
+        if: "env.GIT_DIFF != ''"
