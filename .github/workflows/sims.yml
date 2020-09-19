@@ -36,7 +36,7 @@ jobs:
     needs: install-runsim
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v3.1
+      - uses: technote-space/get-diff-action@v3.2
         with:
           SUFFIX_FILTER: |
             .go
@@ -59,7 +59,7 @@ jobs:
     needs: install-runsim
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v3.1
+      - uses: technote-space/get-diff-action@v3.2
         with:
           SUFFIX_FILTER: |
             .go
@@ -83,7 +83,7 @@ jobs:
     needs: install-runsim
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v3.1
+      - uses: technote-space/get-diff-action@v3.2
         with:
           SUFFIX_FILTER: |
             .go
@@ -107,7 +107,7 @@ jobs:
     needs: install-runsim
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v3.1
+      - uses: technote-space/get-diff-action@v3.2
         with:
           SUFFIX_FILTER: |
             .go
