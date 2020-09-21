@@ -517,11 +517,10 @@ func (e *PublicEthAPI) doCall(
 	var addr common.Address
 
 	if args.From == nil {
-		key, exist := checkKeyInKeyring(e.keys, *args.From)
-		if exist {
-			addr = common.BytesToAddress(key.PubKey().Address().Bytes())
+		addrs, err := e.Accounts()
+		if err == nil && len(addrs) > 0 {
+			addr = addrs[0]
 		}
-		// No error handled here intentionally to match geth behaviour
 	} else {
 		addr = *args.From
 	}
