@@ -75,18 +75,18 @@ rm -rf node_modules
 This command will remove old version of the visual theme and required packages. This step is optional.
 
 ```bash
-npm install
+yarn install
 ```
 
 Install the theme and all dependencies.
 
 ```bash
-npm run serve
+yarn run serve
 ```
 
 Run `pre` and `post` hooks and start a hot-reloading web-server. See output of this command for the URL (it is often [https://localhost:8080](https://localhost:8080)).
 
-To build documentation as a static website run `npm run build`. You will find the website in `.vuepress/dist` directory.
+To build documentation as a static website run `yarn run build`. You will find the website in `.vuepress/dist` directory.
 
 ## Search
 

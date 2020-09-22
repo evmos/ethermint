@@ -18,7 +18,7 @@ Set up a Truffle Ethermint local development environment. {synopsis}
 First, install the latest Truffle version on your machine globally.
 
 ```bash
-npm install truffle -g
+yarn install truffle -g
 ```
 
 You will also need to install Ethermint. Check this [document](./../quickstart/installation.md) for the full instructions.

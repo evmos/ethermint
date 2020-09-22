@@ -397,14 +397,14 @@ proto-update-deps:
 # Start docs site at localhost:8080
 docs-serve:
 	@cd docs && \
-	npm install && \
-	npm run serve
+	yarn install && \
+	yarn run serve
 
 # Build the site into docs/.vuepress/dist
 docs-build:
 	@cd docs && \
-	npm install && \
-	npm run build
+	yarn install && \
+	yarn run build
 
 godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
