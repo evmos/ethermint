@@ -226,7 +226,7 @@ func TestEth_GetLogs_Topics_AB(t *testing.T) {
 func TestEth_GetTransactionCount(t *testing.T) {
 	// TODO: this test passes on when run on its own, but fails when run with the other tests
 	if testing.Short() {
-		t.Skip("skipping TestEth_GetLogs_Topics_AB")
+		t.Skip("skipping TestEth_GetTransactionCount")
 	}
 
 	prev := getNonce(t)
@@ -238,7 +238,7 @@ func TestEth_GetTransactionCount(t *testing.T) {
 func TestEth_GetTransactionLogs(t *testing.T) {
 	// TODO: this test passes on when run on its own, but fails when run with the other tests
 	if testing.Short() {
-		t.Skip("skipping TestEth_GetLogs_Topics_AB")
+		t.Skip("skipping TestEth_GetTransactionLogs")
 	}
 
 	hash, _ := deployTestContract(t)
@@ -569,7 +569,7 @@ func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
 	// instantiate new filter
 	rpcRes = call(t, "eth_newFilter", param)
 	require.Nil(t, rpcRes.Error)
-	var ID hexutil.Bytes
+	var ID string
 	err = json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 
@@ -577,7 +577,7 @@ func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
 	deployTestContract(t)
 
 	// get filter changes
-	changesRes := call(t, "eth_getFilterChanges", []string{ID.String()})
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(changesRes.Result, &logs)
@@ -688,14 +688,14 @@ func TestEth_GetFilterChanges_Topics_XB(t *testing.T) {
 
 	// instantiate new filter
 	rpcRes = call(t, "eth_newFilter", param)
-	var ID hexutil.Bytes
+	var ID string
 	err = json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 
 	deployTestContractWithFunction(t)
 
 	// get filter changes
-	changesRes := call(t, "eth_getFilterChanges", []string{ID.String()})
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
 
 	var logs []*ethtypes.Log
 	err = json.Unmarshal(changesRes.Result, &logs)
@@ -712,10 +712,9 @@ func TestEth_GetFilterChanges_Topics_XXC(t *testing.T) {
 func TestEth_PendingTransactionFilter(t *testing.T) {
 	rpcRes := call(t, "eth_newPendingTransactionFilter", []string{})
 
-	var code hexutil.Bytes
-	err := code.UnmarshalJSON(rpcRes.Result)
+	var ID string
+	err := json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
-	require.NotNil(t, code)
 
 	for i := 0; i < 5; i++ {
 		deployTestContractWithFunction(t)
@@ -724,7 +723,7 @@ func TestEth_PendingTransactionFilter(t *testing.T) {
 	time.Sleep(10 * time.Second)
 
 	// get filter changes
-	changesRes := call(t, "eth_getFilterChanges", []string{code.String()})
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
 	require.NotNil(t, changesRes)
 
 	var txs []*hexutil.Bytes
