@@ -30,4 +30,4 @@ This matches Ethereum denomination of:
 
 ## Next {hide}
 
-Learn about the [encoding](./../core/encoding.md) formats used on Ethermint {hide}
+Learn about the supported [JSON-RPC](./json_rpc.md) methods on Ethermint {hide}
