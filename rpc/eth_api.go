@@ -20,6 +20,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/rpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -621,18 +622,23 @@ func formatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
 	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
 ) map[string]interface{} {
+	if bytes.Equal(header.DataHash, []byte{}) {
+		header.DataHash = tmbytes.HexBytes(common.Hash{}.Bytes())
+	}
+
 	return map[string]interface{}{
 		"number":           hexutil.Uint64(header.Height),
 		"hash":             hexutil.Bytes(header.Hash()),
 		"parentHash":       hexutil.Bytes(header.LastBlockID.Hash),
-		"nonce":            nil, // PoW specific
-		"sha3Uncles":       nil, // No uncles in Tendermint
+		"nonce":            hexutil.Uint64(0), // PoW specific
+		"sha3Uncles":       common.Hash{},     // No uncles in Tendermint
 		"logsBloom":        bloom,
 		"transactionsRoot": hexutil.Bytes(header.DataHash),
 		"stateRoot":        hexutil.Bytes(header.AppHash),
 		"miner":            common.Address{},
-		"difficulty":       nil,
-		"totalDifficulty":  nil,
+		"mixHash":          common.Hash{},
+		"difficulty":       0,
+		"totalDifficulty":  0,
 		"extraData":        hexutil.Uint64(0),
 		"size":             hexutil.Uint64(size),
 		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
@@ -640,6 +646,7 @@ func formatBlock(
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
 		"transactions":     transactions.([]common.Hash),
 		"uncles":           []string{},
+		"receiptsRoot":     common.Hash{},
 	}
 }
 
