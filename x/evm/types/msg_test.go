@@ -47,6 +47,7 @@ func TestMsgEthermintValidation(t *testing.T) {
 		{amount: sdk.NewInt(0), gasPrice: sdk.NewInt(100000), expectPass: true},
 		{amount: sdk.NewInt(-1), gasPrice: sdk.NewInt(100000), expectPass: false},
 		{amount: sdk.NewInt(100), gasPrice: sdk.NewInt(-1), expectPass: false},
+		{amount: sdk.NewInt(100), gasPrice: sdk.NewInt(0), expectPass: false},
 	}
 
 	for i, tc := range testCases {
@@ -116,6 +117,7 @@ func TestMsgEthereumTxValidation(t *testing.T) {
 		{msg: "pass", amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
 		{msg: "invalid amount", amount: big.NewInt(-1), gasPrice: big.NewInt(100000), expectPass: false},
 		{msg: "invalid gas price", amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: false},
+		{msg: "invalid gas price", amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: false},
 	}
 
 	for i, tc := range testCases {
