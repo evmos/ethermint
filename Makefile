@@ -221,8 +221,16 @@ else
 	@echo "solcjs already installed; skipping..."
 endif
 
+docs-tools:
+ifeq (, $(shell which yarn))
+	@echo "Installing yarn..."
+	@npm install -g yarn
+else
+	@echo "yarn already installed; skipping..."
+endif
+
 tools: tools-stamp
-tools-stamp: contract-tools runsim
+tools-stamp: contract-tools docs-tools runsim
 	# Create dummy file to satisfy dependency and avoid
 	# rebuilding when this Makefile target is hit twice
 	# in a row.
@@ -232,7 +240,13 @@ tools-clean:
 	rm -f $(RUNSIM)
 	rm -f tools-stamp
 
-.PHONY: runsim tools tools-stamp tools-clean
+docs-tools-stamp: docs-tools
+	# Create dummy file to satisfy dependency and avoid
+	# rebuilding when this Makefile target is hit twice
+	# in a row.
+	touch $@
+
+.PHONY: runsim tools tools-stamp tools-clean docs-tools-stamp
 
 ###############################################################################
 ###                           Tests & Simulation                            ###
@@ -402,7 +416,8 @@ docs-serve:
 
 # Build the site into docs/.vuepress/dist
 docs-build:
-	@cd docs && \
+	@$(MAKE) docs-tools-stamp && \
+	cd docs && \
 	yarn install && \
 	yarn run build
 
