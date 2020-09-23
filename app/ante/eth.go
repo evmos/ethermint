@@ -146,10 +146,10 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		return ctx, sdkerrors.Wrap(emint.ErrInvalidChainID, ctx.ChainID())
 	}
 
-	// validate sender/signature
+	// validate sender/signature and cache the address
 	_, err = msgEthTx.VerifySig(chainID)
 	if err != nil {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, fmt.Sprintf("signature verification failed: %s", err.Error()))
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "signature verification failed: %s", err.Error())
 	}
 
 	// NOTE: when signature verification succeeds, a non-empty signer address can be
@@ -217,7 +217,7 @@ func (avd AccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	return next(ctx, tx, simulate)
 }
 
-// NonceVerificationDecorator that the account nonce from the transaction matches
+// NonceVerificationDecorator checks that the account nonce from the transaction matches
 // the sender account sequence.
 type NonceVerificationDecorator struct {
 	ak auth.AccountKeeper
@@ -246,14 +246,17 @@ func (nvd NonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 
 	acc := nvd.ak.GetAccount(ctx, address)
 	if acc == nil {
-		return ctx, fmt.Errorf("account %s (%s) is nil", common.BytesToAddress(address.Bytes()), address)
+		return ctx, sdkerrors.Wrapf(
+			sdkerrors.ErrUnknownAddress,
+			"account %s (%s) is nil", common.BytesToAddress(address.Bytes()), address,
+		)
 	}
 
 	seq := acc.GetSequence()
 	if msgEthTx.Data.AccountNonce != seq {
-		return ctx, sdkerrors.Wrap(
+		return ctx, sdkerrors.Wrapf(
 			sdkerrors.ErrInvalidSequence,
-			fmt.Sprintf("invalid nonce; got %d, expected %d", msgEthTx.Data.AccountNonce, seq),
+			"invalid nonce; got %d, expected %d", msgEthTx.Data.AccountNonce, seq,
 		)
 	}
 
@@ -290,20 +293,23 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", tx)
 	}
 
-	// sender address should be in the tx cache
+	// sender address should be in the tx cache from the previous AnteHandle call
 	address := msgEthTx.From()
 	if address.Empty() {
 		panic("sender address cannot be empty")
 	}
 
-	// Fetch sender account from signature
+	// fetch sender account from signature
 	senderAcc, err := auth.GetSignerAcc(ctx, egcd.ak, address)
 	if err != nil {
 		return ctx, err
 	}
 
 	if senderAcc == nil {
-		return ctx, fmt.Errorf("sender account %s (%s) is nil", common.BytesToAddress(address.Bytes()), address)
+		return ctx, sdkerrors.Wrapf(
+			sdkerrors.ErrUnknownAddress,
+			"sender account %s (%s) is nil", common.BytesToAddress(address.Bytes()), address,
+		)
 	}
 
 	gasLimit := msgEthTx.GetGas()
@@ -314,7 +320,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	// intrinsic gas verification during CheckTx
 	if ctx.IsCheckTx() && gasLimit < gas {
-		return ctx, fmt.Errorf("intrinsic gas too low: %d < %d", gasLimit, gas)
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "intrinsic gas too low: %d < %d", gasLimit, gas)
 	}
 
 	// Charge sender for gas up to limit

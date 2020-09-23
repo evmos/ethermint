@@ -5,6 +5,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	"github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/cosmos/ethermint/crypto"
@@ -54,6 +55,7 @@ func NewAnteHandler(ak auth.AccountKeeper, evmKeeper EVMKeeper, sk types.SupplyK
 			anteHandler = sdk.ChainAnteDecorators(
 				NewEthSetupContextDecorator(), // outermost AnteDecorator. EthSetUpContext must be called first
 				NewEthMempoolFeeDecorator(evmKeeper),
+				authante.NewValidateBasicDecorator(),
 				NewEthSigVerificationDecorator(),
 				NewAccountVerificationDecorator(ak, evmKeeper),
 				NewNonceVerificationDecorator(ak),
@@ -71,7 +73,7 @@ func NewAnteHandler(ak auth.AccountKeeper, evmKeeper EVMKeeper, sk types.SupplyK
 // sigGasConsumer overrides the DefaultSigVerificationGasConsumer from the x/auth
 // module on the SDK. It doesn't allow ed25519 nor multisig thresholds.
 func sigGasConsumer(
-	meter sdk.GasMeter, sig []byte, pubkey tmcrypto.PubKey, params types.Params,
+	meter sdk.GasMeter, _ []byte, pubkey tmcrypto.PubKey, _ types.Params,
 ) error {
 	switch pubkey.(type) {
 	case crypto.PubKeySecp256k1:
@@ -85,75 +87,42 @@ func sigGasConsumer(
 	}
 }
 
-// IncrementSequenceDecorator handles incrementing sequences of all signers.
-// Use the IncrementSequenceDecorator decorator to prevent replay attacks. Note,
-// there is no need to execute IncrementSequenceDecorator on RecheckTX since
-// CheckTx would already bump the sequence number.
-//
-// NOTE: Since CheckTx and DeliverTx state are managed separately, subsequent and
-// sequential txs orginating from the same account cannot be handled correctly in
-// a reliable way unless sequence numbers are managed and tracked manually by a
-// client. It is recommended to instead use multiple messages in a tx.
-type IncrementSequenceDecorator struct {
-	ak auth.AccountKeeper
-}
-
-func NewIncrementSequenceDecorator(ak auth.AccountKeeper) IncrementSequenceDecorator {
-	return IncrementSequenceDecorator{
-		ak: ak,
-	}
-}
-
-func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	// no need to increment sequence on RecheckTx
-	if ctx.IsReCheckTx() && !simulate {
-		return next(ctx, tx, simulate)
-	}
-
-	sigTx, ok := tx.(authante.SigVerifiableTx)
-	if !ok {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "invalid transaction type")
-	}
-
-	// increment sequence of all signers
-	for _, addr := range sigTx.GetSigners() {
-		acc := isd.ak.GetAccount(ctx, addr)
-		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
-			panic(err)
-		}
-
-		isd.ak.SetAccount(ctx, acc)
-	}
-
-	return next(ctx, tx, simulate)
-}
-
+// AccountSetupDecorator sets an account to state if it's not stored already. This only applies for MsgEthermint.
 type AccountSetupDecorator struct {
 	ak auth.AccountKeeper
 }
 
+// NewAccountSetupDecorator creates a new AccountSetupDecorator instance
 func NewAccountSetupDecorator(ak auth.AccountKeeper) AccountSetupDecorator {
 	return AccountSetupDecorator{
 		ak: ak,
 	}
 }
 
+// AnteHandle sets an account for MsgEthermint (evm) if the sender is registered.
+// NOTE: Since the account is set without any funds, the message execution will
+// fail if the validator requires a minimum fee > 0.
 func (asd AccountSetupDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 	if len(msgs) == 0 {
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "no messages included in transaction")
 	}
 
-	msg, ok := msgs[0].(evmtypes.MsgEthermint)
-	if !ok {
-		return next(ctx, tx, simulate)
-	}
-
-	acc := asd.ak.GetAccount(ctx, msg.From)
-	if acc == nil {
-		info := asd.ak.NewAccountWithAddress(ctx, msg.From)
-		asd.ak.SetAccount(ctx, info)
+	for _, msg := range msgs {
+		if msgEthermint, ok := msg.(evmtypes.MsgEthermint); ok {
+			setupAccount(asd.ak, ctx, msgEthermint.From)
+		}
 	}
 
 	return next(ctx, tx, simulate)
+}
+
+func setupAccount(ak keeper.AccountKeeper, ctx sdk.Context, addr sdk.AccAddress) {
+	acc := ak.GetAccount(ctx, addr)
+	if acc != nil {
+		return
+	}
+
+	acc = ak.NewAccountWithAddress(ctx, addr)
+	ak.SetAccount(ctx, acc)
 }
