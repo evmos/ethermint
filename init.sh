@@ -1,7 +1,7 @@
 #!/bin/bash
 
 KEY="mykey"
-CHAINID=8
+CHAINID="ethermint-1"
 MONIKER="localtestnet"
 
 # remove existing daemon and client

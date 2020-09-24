@@ -2,12 +2,12 @@ package rpc
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/spf13/viper"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	ethermint "github.com/cosmos/ethermint/types"
 )
 
 // PublicNetAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
@@ -19,13 +19,13 @@ type PublicNetAPI struct {
 func NewPublicNetAPI(_ context.CLIContext) *PublicNetAPI {
 	chainID := viper.GetString(flags.FlagChainID)
 	// parse the chainID from a integer string
-	intChainID, err := strconv.ParseUint(chainID, 0, 64)
+	chainIDEpoch, err := ethermint.ParseChainID(chainID)
 	if err != nil {
-		panic(fmt.Sprintf("invalid chainID: %s, must be integer format", chainID))
+		panic(err)
 	}
 
 	return &PublicNetAPI{
-		networkVersion: intChainID,
+		networkVersion: chainIDEpoch.Uint64(),
 	}
 }
 

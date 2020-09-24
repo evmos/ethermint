@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/spf13/viper"
 
 	"github.com/cosmos/ethermint/crypto"
 	params "github.com/cosmos/ethermint/rpc/args"
-	emint "github.com/cosmos/ethermint/types"
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/utils"
 	"github.com/cosmos/ethermint/version"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -43,27 +42,34 @@ import (
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicEthAPI struct {
-	cliCtx      context.CLIContext
-	logger      log.Logger
-	backend     Backend
-	keys        []crypto.PrivKeySecp256k1
-	nonceLock   *AddrLocker
-	keybaseLock sync.Mutex
+	cliCtx       context.CLIContext
+	chainIDEpoch *big.Int
+	logger       log.Logger
+	backend      Backend
+	keys         []crypto.PrivKeySecp256k1
+	nonceLock    *AddrLocker
+	keybaseLock  sync.Mutex
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
 func NewPublicEthAPI(cliCtx context.CLIContext, backend Backend, nonceLock *AddrLocker,
 	key []crypto.PrivKeySecp256k1) *PublicEthAPI {
 
-	api := &PublicEthAPI{
-		cliCtx:    cliCtx,
-		logger:    log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "json-rpc"),
-		backend:   backend,
-		keys:      key,
-		nonceLock: nonceLock,
-	}
-	err := api.getKeybaseInfo()
+	epoch, err := ethermint.ParseChainID(cliCtx.ChainID)
 	if err != nil {
+		panic(err)
+	}
+
+	api := &PublicEthAPI{
+		cliCtx:       cliCtx,
+		chainIDEpoch: epoch,
+		logger:       log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "json-rpc"),
+		backend:      backend,
+		keys:         key,
+		nonceLock:    nonceLock,
+	}
+
+	if err := api.getKeybaseInfo(); err != nil {
 		api.logger.Error("failed to get keybase info", "error", err)
 	}
 
@@ -101,14 +107,7 @@ func (e *PublicEthAPI) ProtocolVersion() hexutil.Uint {
 // ChainId returns the chain's identifier in hex format
 func (e *PublicEthAPI) ChainId() (hexutil.Uint, error) { // nolint
 	e.logger.Debug("eth_chainId")
-
-	// parse the chainID from a integer string
-	intChainID, err := strconv.ParseUint(e.cliCtx.ChainID, 0, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid chainID: %s, must be integer format", e.cliCtx.ChainID)
-	}
-
-	return hexutil.Uint(intChainID), nil
+	return hexutil.Uint(uint(e.chainIDEpoch.Uint64())), nil
 }
 
 // Syncing returns whether or not the current node is syncing with other peers. Returns false if not, or a struct
@@ -404,13 +403,13 @@ func (e *PublicEthAPI) SendTransaction(args params.SendTxArgs) (common.Hash, err
 	// ChainID must be set as flag to send transaction
 	chainID := viper.GetString(flags.FlagChainID)
 	// parse the chainID from a string to a base-10 integer
-	intChainID, ok := new(big.Int).SetString(chainID, 10)
-	if !ok {
-		return common.Hash{}, fmt.Errorf("invalid chainID: %s, must be integer format", chainID)
+	chainIDEpoch, err := ethermint.ParseChainID(chainID)
+	if err != nil {
+		return common.Hash{}, err
 	}
 
 	// Sign transaction
-	if err := tx.Sign(intChainID, key.ToECDSA()); err != nil {
+	if err := tx.Sign(chainIDEpoch, key.ToECDSA()); err != nil {
 		e.logger.Debug("failed to sign tx", "error", err)
 		return common.Hash{}, err
 	}
@@ -475,7 +474,7 @@ type CallArgs struct {
 // Call performs a raw contract call.
 func (e *PublicEthAPI) Call(args CallArgs, blockNr BlockNumber, _ *map[common.Address]account) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_call", "args", args, "block number", blockNr)
-	simRes, err := e.doCall(args, blockNr, big.NewInt(emint.DefaultRPCGasLimit))
+	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
 	}
@@ -528,7 +527,7 @@ func (e *PublicEthAPI) doCall(
 
 	// Set default gas & gas price if none were set
 	// Change this to uint64(math.MaxUint64 / 2) if gas cap can be configured
-	gas := uint64(emint.DefaultRPCGasLimit)
+	gas := uint64(ethermint.DefaultRPCGasLimit)
 	if args.Gas != nil {
 		gas = uint64(*args.Gas)
 	}
@@ -538,7 +537,7 @@ func (e *PublicEthAPI) doCall(
 	}
 
 	// Set gas price using default or parameter if passed in
-	gasPrice := new(big.Int).SetUint64(emint.DefaultGasPrice)
+	gasPrice := new(big.Int).SetUint64(ethermint.DefaultGasPrice)
 	if args.GasPrice != nil {
 		gasPrice = args.GasPrice.ToInt()
 	}
@@ -564,6 +563,10 @@ func (e *PublicEthAPI) doCall(
 	// Create new call message
 	msg := evmtypes.NewMsgEthermint(0, &toAddr, sdk.NewIntFromBigInt(value), gas,
 		sdk.NewIntFromBigInt(gasPrice), data, sdk.AccAddress(addr.Bytes()))
+
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 
 	// Generate tx to be used to simulate (signature isn't needed)
 	var stdSig authtypes.StdSignature
@@ -594,7 +597,7 @@ func (e *PublicEthAPI) doCall(
 // param from the SDK.
 func (e *PublicEthAPI) EstimateGas(args CallArgs) (hexutil.Uint64, error) {
 	e.logger.Debug("eth_estimateGas", "args", args)
-	simResponse, err := e.doCall(args, 0, big.NewInt(emint.DefaultRPCGasLimit))
+	simResponse, err := e.doCall(args, 0, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return 0, err
 	}
@@ -1000,7 +1003,7 @@ func (e *PublicEthAPI) generateFromArgs(args params.SendTxArgs) (*evmtypes.MsgEt
 
 		// Set default gas price
 		// TODO: Change to min gas price from context once available through server/daemon
-		gasPrice = big.NewInt(emint.DefaultGasPrice)
+		gasPrice = big.NewInt(ethermint.DefaultGasPrice)
 	}
 
 	if args.Nonce == nil {

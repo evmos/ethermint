@@ -2,7 +2,7 @@
 
 KEY="mykey"
 TESTKEY="test"
-CHAINID=123321
+CHAINID="ethermint-100"
 MONIKER="localtestnet"
 
 # stop and remove existing daemon and client data and process(es)

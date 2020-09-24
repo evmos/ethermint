@@ -21,6 +21,7 @@ import (
 
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/crypto"
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm"
 	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
@@ -43,7 +44,7 @@ func (suite *EvmTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "3", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
 	suite.handler = evm.NewHandler(suite.app.EvmKeeper)
 	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
 	suite.codec = codec.New()
@@ -58,10 +59,7 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 	suite.Require().NoError(err)
 	sender := ethcmn.HexToAddress(privkey.PubKey().Address().String())
 
-	var (
-		tx      types.MsgEthereumTx
-		chainID *big.Int
-	)
+	var tx types.MsgEthereumTx
 
 	testCases := []struct {
 		msg      string
@@ -75,9 +73,8 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 				tx = types.NewMsgEthereumTx(0, &sender, big.NewInt(100), 0, big.NewInt(10000), nil)
 
 				// parse context chain ID to big.Int
-				var ok bool
-				chainID, ok = new(big.Int).SetString(suite.ctx.ChainID(), 10)
-				suite.Require().True(ok)
+				chainID, err := ethermint.ParseChainID(suite.ctx.ChainID())
+				suite.Require().NoError(err)
 
 				// sign transaction
 				err = tx.Sign(chainID, privkey.ToECDSA())
@@ -91,9 +88,8 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 				tx = types.NewMsgEthereumTxContract(0, big.NewInt(100), 0, big.NewInt(10000), nil)
 
 				// parse context chain ID to big.Int
-				var ok bool
-				chainID, ok = new(big.Int).SetString(suite.ctx.ChainID(), 10)
-				suite.Require().True(ok)
+				chainID, err := ethermint.ParseChainID(suite.ctx.ChainID())
+				suite.Require().NoError(err)
 
 				// sign transaction
 				err = tx.Sign(chainID, privkey.ToECDSA())
@@ -125,7 +121,7 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 	}
 
 	for _, tc := range testCases {
-		suite.Run("", func() {
+		suite.Run(tc.msg, func() {
 			suite.SetupTest() // reset
 			//nolint
 			tc.malleate()

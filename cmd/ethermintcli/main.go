@@ -66,7 +66,9 @@ func main() {
 		sdkclient.ConfigCmd(app.DefaultCLIHome),
 		queryCmd(cdc),
 		txCmd(cdc),
-		rpc.EmintServeCmd(cdc),
+		client.ValidateChainID(
+			rpc.EmintServeCmd(cdc),
+		),
 		flags.LineBreak,
 		client.KeyCommands(),
 		flags.LineBreak,

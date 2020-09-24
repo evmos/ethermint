@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CHAINID=1337
+CHAINID="ethermint-1337"
 MONIKER="localtestnet"
 
 VAL_KEY="localkey"

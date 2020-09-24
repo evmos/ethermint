@@ -25,7 +25,7 @@ In the first, run `ethermintd`:
 In the second, run `ethermintcli` as mentioned in the script's output:
 
 ```sh
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id 1337 --trace --wsport 8546
+ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id "ethermint-1337" --trace --wsport 8546
 ```
 
 You will now have three ethereum accounts unlocked in the test node:
@@ -83,7 +83,7 @@ Running `ethermintcli list keys` should output:
 
 And running:
 
-```
+```sh
 curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}'
 ```
 

@@ -22,7 +22,7 @@ This guide helps you create a single validator node that runs a network locally 
 ```bash
 $MONIKER=testing
 $KEY=mykey
-$CHAINID=8
+$CHAINID="ethermint-1"
 
 ethermintd init $MONIKER --chain-id=$CHAINID
 ```
