@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v3.2
+      - uses: technote-space/get-diff-action@v3.3
         id: git_diff
         with:
           SUFFIX_FILTER: |
