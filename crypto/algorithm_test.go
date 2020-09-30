@@ -6,12 +6,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+
+	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/hd"
 	"github.com/cosmos/cosmos-sdk/tests"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	ethermint "github.com/cosmos/ethermint/types"
 )
 
 func TestEthermintKeygenFunc(t *testing.T) {
@@ -75,25 +79,45 @@ func TestKeyring(t *testing.T) {
 	require.Nil(t, info)
 
 	mockIn.Reset("password\npassword\n")
-	info, mnemonic, err := kr.CreateMnemonic("foo", keys.English, sdk.FullFundraiserPath, EthSecp256k1)
+	info, mnemonic, err := kr.CreateMnemonic("foo", keys.English, ethermint.BIP44HDPath, EthSecp256k1)
 	require.NoError(t, err)
 	require.NotEmpty(t, mnemonic)
 	require.Equal(t, "foo", info.GetName())
 	require.Equal(t, "local", info.GetType().String())
 	require.Equal(t, EthSecp256k1, info.GetAlgo())
 
-	params := *hd.NewFundraiserParams(0, sdk.CoinType, 0)
+	params := *hd.NewFundraiserParams(0, ethermint.Bip44CoinType, 0)
 	hdPath := params.String()
 
-	bz, err := DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, EthSecp256k1)
+	bz, err := DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, keys.Secp256k1)
 	require.NoError(t, err)
 	require.NotEmpty(t, bz)
 
-	bz, err = DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, keys.Secp256k1)
+	bz, err = DeriveSecp256k1(mnemonic, keys.DefaultBIP39Passphrase, hdPath)
 	require.NoError(t, err)
 	require.NotEmpty(t, bz)
 
 	bz, err = DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, keys.SigningAlgo(""))
 	require.Error(t, err)
 	require.Empty(t, bz)
+
+	bz, err = DeriveSecp256k1(mnemonic, keys.DefaultBIP39Passphrase, "/wrong/hdPath")
+	require.Error(t, err)
+	require.Empty(t, bz)
+
+	bz, err = DeriveKey(mnemonic, keys.DefaultBIP39Passphrase, hdPath, EthSecp256k1)
+	require.NoError(t, err)
+	require.NotEmpty(t, bz)
+
+	privkey := PrivKeySecp256k1(bz)
+	addr := common.BytesToAddress(privkey.PubKey().Address().Bytes())
+
+	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+	require.NoError(t, err)
+
+	path := hdwallet.MustParseDerivationPath(hdPath)
+
+	account, err := wallet.Derive(path, false)
+	require.NoError(t, err)
+	require.Equal(t, addr.String(), account.Address.String())
 }

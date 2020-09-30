@@ -5,11 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"crypto/hmac"
-	"crypto/sha512"
-
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/tyler-smith/go-bip39"
 
+	ethaccounts "github.com/ethereum/go-ethereum/accounts"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	tmcrypto "github.com/tendermint/tendermint/crypto"
@@ -18,8 +18,10 @@ import (
 )
 
 const (
+	// EthSecp256k1Type string constant for the EthSecp256k1 algorithm
+	EthSecp256k1Type = "eth_secp256k1"
 	// EthSecp256k1 defines the ECDSA secp256k1 used on Ethereum
-	EthSecp256k1 = keys.SigningAlgo("eth_secp256k1")
+	EthSecp256k1 = keys.SigningAlgo(EthSecp256k1Type)
 )
 
 // SupportedAlgorithms defines the list of signing algorithms used on Ethermint:
@@ -58,27 +60,37 @@ func EthermintKeygenFunc(bz []byte, algo keys.SigningAlgo) (tmcrypto.PrivKey, er
 	return PrivKeySecp256k1(bz), nil
 }
 
-func DeriveSecp256k1(mnemonic, bip39Passphrase, _ string) ([]byte, error) {
+// DeriveSecp256k1 derives and returns the eth_secp256k1 private key for the given mnemonic and HD path.
+func DeriveSecp256k1(mnemonic, bip39Passphrase, path string) ([]byte, error) {
+	hdpath, err := ethaccounts.ParseDerivationPath(path)
+	if err != nil {
+		return nil, err
+	}
+
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, bip39Passphrase)
 	if err != nil {
 		return nil, err
 	}
 
-	// HMAC the seed to produce the private key and chain code
-	mac := hmac.New(sha512.New, []byte("Bitcoin seed"))
-	_, err = mac.Write(seed)
+	masterKey, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
 	if err != nil {
 		return nil, err
 	}
 
-	seed = mac.Sum(nil)
+	key := masterKey
+	for _, n := range hdpath {
+		key, err = key.Child(n)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-	priv, err := ethcrypto.ToECDSA(seed[:32])
+	privateKey, err := key.ECPrivKey()
 	if err != nil {
 		return nil, err
 	}
 
-	derivedKey := PrivKeySecp256k1(ethcrypto.FromECDSA(priv))
-
+	privateKeyECDSA := privateKey.ToECDSA()
+	derivedKey := PrivKeySecp256k1(ethcrypto.FromECDSA(privateKeyECDSA))
 	return derivedKey, nil
 }

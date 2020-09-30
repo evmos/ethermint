@@ -46,7 +46,7 @@ type PublicEthAPI struct {
 	chainIDEpoch *big.Int
 	logger       log.Logger
 	backend      Backend
-	keys         []crypto.PrivKeySecp256k1
+	keys         []crypto.PrivKeySecp256k1 // unlocked keys
 	nonceLock    *AddrLocker
 	keybaseLock  sync.Mutex
 }
