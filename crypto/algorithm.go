@@ -18,8 +18,10 @@ import (
 )
 
 const (
+	// EthSecp256k1Type string constant for the EthSecp256k1 algorithm
+	EthSecp256k1Type = "eth_secp256k1"
 	// EthSecp256k1 defines the ECDSA secp256k1 used on Ethereum
-	EthSecp256k1 = keys.SigningAlgo("eth_secp256k1")
+	EthSecp256k1 = keys.SigningAlgo(EthSecp256k1Type)
 )
 
 // SupportedAlgorithms defines the list of signing algorithms used on Ethermint:

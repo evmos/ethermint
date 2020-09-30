@@ -37,6 +37,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Features
+
+* (rpc) [\#552](https://github.com/ChainSafe/ethermint/pull/552) Implement Eth Personal namespace `personal_importRawKey`.
+
 ### Bug fixes
 
 * (keys) [\#554](https://github.com/ChainSafe/ethermint/pull/554) Fix private key derivation.
