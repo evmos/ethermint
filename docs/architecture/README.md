@@ -1,8 +1,8 @@
 <!--
 order: false
 parent:
-  order: false
---->
+  order: 0
+-->
 
 # Architecture Decision Records (ADR)
 
