@@ -57,6 +57,8 @@ Some of the JSON-RPC API [namespaces](https://geth.ethereum.org/docs/rpc/server)
 
 To connect to the JSON-PRC server, use the `rest-server` command as shown on the section above. Then, you can point any Ethereum development tooling to `http://localhost:8545` or whatever port you choose with the listen address flag (`--laddr`).
 
+For further information JSON-RPC calls, please refer to [this](../basics/json_rpc.md)  document.
+
 ## Next {hide}
 
 Process and subscribe to [events](./events.md) via websockets {hide}

@@ -26,7 +26,7 @@ ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --cha
 
 ## Adding a custom Network for Ethermint
 
-One og the main limitations of using the default `Localhost 8545` network is that the tokens will be represented as `ETH`.
+One of the main limitations of using the default `Localhost 8545` network is that the tokens will be represented as `ETH`.
 
 Open the Metamask extension on your browser, you may have to log in to your Metamask account if you
 are not already. Then click the top right circle and go to `Settings` > `Networks`. Press the `Add
