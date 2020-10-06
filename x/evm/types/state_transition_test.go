@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 
@@ -22,7 +22,7 @@ func (suite *StateDBTestSuite) TestTransitionDb() {
 	_ = acc.SetCoins(sdk.NewCoins(balance))
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-	priv, err := crypto.GenerateKey()
+	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)
 	recipient := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
 

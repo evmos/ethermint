@@ -1,4 +1,4 @@
-package crypto
+package hd
 
 import (
 	"fmt"
@@ -15,13 +15,13 @@ import (
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
+
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
 
 const (
-	// EthSecp256k1Type string constant for the EthSecp256k1 algorithm
-	EthSecp256k1Type = "eth_secp256k1"
 	// EthSecp256k1 defines the ECDSA secp256k1 used on Ethereum
-	EthSecp256k1 = keys.SigningAlgo(EthSecp256k1Type)
+	EthSecp256k1 = keys.SigningAlgo(ethsecp256k1.KeyType)
 )
 
 // SupportedAlgorithms defines the list of signing algorithms used on Ethermint:
@@ -57,7 +57,7 @@ func EthermintKeygenFunc(bz []byte, algo keys.SigningAlgo) (tmcrypto.PrivKey, er
 		return nil, fmt.Errorf("signing algorithm must be %s, got %s", EthSecp256k1, algo)
 	}
 
-	return PrivKeySecp256k1(bz), nil
+	return ethsecp256k1.PrivKey(bz), nil
 }
 
 // DeriveSecp256k1 derives and returns the eth_secp256k1 private key for the given mnemonic and HD path.
@@ -91,6 +91,6 @@ func DeriveSecp256k1(mnemonic, bip39Passphrase, path string) ([]byte, error) {
 	}
 
 	privateKeyECDSA := privateKey.ToECDSA()
-	derivedKey := PrivKeySecp256k1(ethcrypto.FromECDSA(privateKeyECDSA))
+	derivedKey := ethsecp256k1.PrivKey(ethcrypto.FromECDSA(privateKeyECDSA))
 	return derivedKey, nil
 }

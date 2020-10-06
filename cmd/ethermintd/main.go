@@ -30,7 +30,7 @@ import (
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/client"
 	"github.com/cosmos/ethermint/codec"
-	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 )
 
@@ -43,8 +43,8 @@ func main() {
 
 	cdc := codec.MakeCodec(app.ModuleBasics)
 
-	tmamino.RegisterKeyType(crypto.PubKeySecp256k1{}, crypto.PubKeyAminoName)
-	tmamino.RegisterKeyType(crypto.PrivKeySecp256k1{}, crypto.PrivKeyAminoName)
+	tmamino.RegisterKeyType(ethsecp256k1.PubKey{}, ethsecp256k1.PubKeyName)
+	tmamino.RegisterKeyType(ethsecp256k1.PrivKey{}, ethsecp256k1.PrivKeyName)
 
 	keys.CryptoCdc = cdc
 	genutil.ModuleCdc = cdc

@@ -1,4 +1,4 @@
-package crypto
+package ethsecp256k1
 
 import (
 	cryptoamino "github.com/tendermint/tendermint/crypto/encoding/amino"
@@ -9,12 +9,6 @@ import (
 
 // CryptoCodec is the default amino codec used by ethermint
 var CryptoCodec = codec.New()
-
-// Amino encoding names
-const (
-	PrivKeyAminoName = "ethermint/PrivKeySecp256k1"
-	PubKeyAminoName  = "ethermint/PubKeySecp256k1"
-)
 
 func init() {
 	// replace the keyring codec with the ethermint crypto codec to prevent
@@ -28,6 +22,6 @@ func init() {
 // RegisterCodec registers all the necessary types with amino for the given
 // codec.
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(PubKeySecp256k1{}, PubKeyAminoName, nil)
-	cdc.RegisterConcrete(PrivKeySecp256k1{}, PrivKeyAminoName, nil)
+	cdc.RegisterConcrete(PubKey{}, PubKeyName, nil)
+	cdc.RegisterConcrete(PrivKey{}, PrivKeyName, nil)
 }

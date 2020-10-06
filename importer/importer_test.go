@@ -24,7 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/cosmos/ethermint/core"
-	emintcrypto "github.com/cosmos/ethermint/crypto"
+	cryptocodec "github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	"github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -72,7 +72,7 @@ func newTestCodec() *sdkcodec.Codec {
 	auth.RegisterCodec(cdc)
 	bank.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
-	emintcrypto.RegisterCodec(cdc)
+	cryptocodec.RegisterCodec(cdc)
 	sdkcodec.RegisterCrypto(cdc)
 
 	return cdc

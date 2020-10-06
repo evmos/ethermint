@@ -8,14 +8,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 )
 
 func init() {
-	crypto.RegisterCodec(types.ModuleCdc)
+	ethsecp256k1.RegisterCodec(types.ModuleCdc)
 }
 
 const (
@@ -76,7 +76,7 @@ func sigGasConsumer(
 	meter sdk.GasMeter, _ []byte, pubkey tmcrypto.PubKey, _ types.Params,
 ) error {
 	switch pubkey.(type) {
-	case crypto.PubKeySecp256k1:
+	case ethsecp256k1.PubKey:
 		meter.ConsumeGas(secp256k1VerifyCost, "ante verify: secp256k1")
 		return nil
 	case tmcrypto.PubKey:

@@ -4,12 +4,13 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cosmos/ethermint/crypto"
 	"github.com/stretchr/testify/require"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
 
 func TestValidateGenesisAccount(t *testing.T) {
@@ -77,7 +78,7 @@ func TestValidateGenesisAccount(t *testing.T) {
 }
 
 func TestValidateGenesis(t *testing.T) {
-	priv, err := crypto.GenerateKey()
+	priv, err := ethsecp256k1.GenerateKey()
 	require.NoError(t, err)
 	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
 

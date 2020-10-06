@@ -1,4 +1,4 @@
-package crypto
+package hd
 
 import (
 	"strings"
@@ -15,11 +15,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/hd"
 	"github.com/cosmos/cosmos-sdk/tests"
 
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 )
 
 func TestEthermintKeygenFunc(t *testing.T) {
-	privkey, err := GenerateKey()
+	privkey, err := ethsecp256k1.GenerateKey()
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -109,7 +110,7 @@ func TestKeyring(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, bz)
 
-	privkey := PrivKeySecp256k1(bz)
+	privkey := ethsecp256k1.PrivKey(bz)
 	addr := common.BytesToAddress(privkey.PubKey().Address().Bytes())
 
 	wallet, err := hdwallet.NewFromMnemonic(mnemonic)

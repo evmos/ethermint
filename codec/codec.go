@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 
-	emintcrypto "github.com/cosmos/ethermint/crypto"
+	cryptocodec "github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 )
 
@@ -22,7 +22,7 @@ func MakeCodec(bm module.BasicManager) *codec.Codec {
 	bm.RegisterCodec(cdc)
 	vesting.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
-	emintcrypto.RegisterCodec(cdc)
+	cryptocodec.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	ethermint.RegisterCodec(cdc)
 	keys.RegisterCodec(cdc) // temporary. Used to register keyring.Info

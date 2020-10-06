@@ -1,4 +1,4 @@
-package crypto
+package ethsecp256k1
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 )
 
-func TestPrivKeySecp256k1PrivKey(t *testing.T) {
+func TestPrivKeyPrivKey(t *testing.T) {
 	// validate type and equality
 	privKey, err := GenerateKey()
 	require.NoError(t, err)
@@ -38,12 +38,12 @@ func TestPrivKeySecp256k1PrivKey(t *testing.T) {
 	require.Equal(t, expectedSig, sig)
 }
 
-func TestPrivKeySecp256k1PubKey(t *testing.T) {
+func TestPrivKeyPubKey(t *testing.T) {
 	privKey, err := GenerateKey()
 	require.NoError(t, err)
 
 	// validate type and equality
-	pubKey := privKey.PubKey().(PubKeySecp256k1)
+	pubKey := privKey.PubKey().(PubKey)
 	require.Implements(t, (*tmcrypto.PubKey)(nil), pubKey)
 
 	// validate inequality

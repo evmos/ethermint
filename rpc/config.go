@@ -19,7 +19,8 @@ import (
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 
 	"github.com/cosmos/ethermint/app"
-	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/cosmos/ethermint/crypto/hd"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -45,7 +46,7 @@ func registerRoutes(rs *lcd.RestServer) {
 	accountName := viper.GetString(flagUnlockKey)
 	accountNames := strings.Split(accountName, ",")
 
-	var privkeys []crypto.PrivKeySecp256k1
+	var privkeys []ethsecp256k1.PrivKey
 	if len(accountName) > 0 {
 		var err error
 		inBuf := bufio.NewReader(os.Stdin)
@@ -102,31 +103,31 @@ func registerRoutes(rs *lcd.RestServer) {
 	ws.start()
 }
 
-func unlockKeyFromNameAndPassphrase(accountNames []string, passphrase string) ([]crypto.PrivKeySecp256k1, error) {
+func unlockKeyFromNameAndPassphrase(accountNames []string, passphrase string) ([]ethsecp256k1.PrivKey, error) {
 	keybase, err := keys.NewKeyring(
 		sdk.KeyringServiceName(),
 		viper.GetString(flags.FlagKeyringBackend),
 		viper.GetString(flags.FlagHome),
 		os.Stdin,
-		crypto.EthSecp256k1Options()...,
+		hd.EthSecp256k1Options()...,
 	)
 	if err != nil {
-		return []crypto.PrivKeySecp256k1{}, err
+		return []ethsecp256k1.PrivKey{}, err
 	}
 
 	// try the for loop with array []string accountNames
 	// run through the bottom code inside the for loop
 
-	keys := make([]crypto.PrivKeySecp256k1, len(accountNames))
+	keys := make([]ethsecp256k1.PrivKey, len(accountNames))
 	for i, acc := range accountNames {
 		// With keyring keybase, password is not required as it is pulled from the OS prompt
 		privKey, err := keybase.ExportPrivateKeyObject(acc, passphrase)
 		if err != nil {
-			return []crypto.PrivKeySecp256k1{}, err
+			return []ethsecp256k1.PrivKey{}, err
 		}
 
 		var ok bool
-		keys[i], ok = privKey.(crypto.PrivKeySecp256k1)
+		keys[i], ok = privKey.(ethsecp256k1.PrivKey)
 		if !ok {
 			panic(fmt.Sprintf("invalid private key type %T at index %d", privKey, i))
 		}

@@ -10,8 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -164,8 +163,8 @@ func TestMsgEthereumTxRLPDecode(t *testing.T) {
 func TestMsgEthereumTxSig(t *testing.T) {
 	chainID := big.NewInt(3)
 
-	priv1, _ := crypto.GenerateKey()
-	priv2, _ := crypto.GenerateKey()
+	priv1, _ := ethsecp256k1.GenerateKey()
+	priv2, _ := ethsecp256k1.GenerateKey()
 	addr1 := ethcmn.BytesToAddress(priv1.PubKey().Address().Bytes())
 	addr2 := ethcmn.BytesToAddress(priv2.PubKey().Address().Bytes())
 

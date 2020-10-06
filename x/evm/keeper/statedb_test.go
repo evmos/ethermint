@@ -10,7 +10,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
@@ -328,7 +328,7 @@ func (suite *KeeperTestSuite) TestStateDB_CreateAccount() {
 }
 
 func (suite *KeeperTestSuite) TestStateDB_ClearStateObj() {
-	priv, err := crypto.GenerateKey()
+	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)
 
 	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
@@ -341,7 +341,7 @@ func (suite *KeeperTestSuite) TestStateDB_ClearStateObj() {
 }
 
 func (suite *KeeperTestSuite) TestStateDB_Reset() {
-	priv, err := crypto.GenerateKey()
+	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)
 
 	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
@@ -444,7 +444,7 @@ func (suite *KeeperTestSuite) TestSuiteDB_Suicide() {
 			suite.Require().True(suite.app.EvmKeeper.HasSuicided(suite.ctx, suite.address), tc.name)
 		} else {
 			//Suicide only works for an account with non-zero balance/nonce
-			priv, err := crypto.GenerateKey()
+			priv, err := ethsecp256k1.GenerateKey()
 			suite.Require().NoError(err)
 
 			addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)

@@ -19,7 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	emintcrypto "github.com/cosmos/ethermint/crypto"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/cosmos/ethermint/crypto/hd"
 	params "github.com/cosmos/ethermint/rpc/args"
 )
 
@@ -54,7 +55,7 @@ func (e *PersonalEthAPI) getKeybaseInfo() ([]keys.Info, error) {
 			viper.GetString(flags.FlagKeyringBackend),
 			viper.GetString(flags.FlagHome),
 			e.ethAPI.cliCtx.Input,
-			emintcrypto.EthSecp256k1Options()...,
+			hd.EthSecp256k1Options()...,
 		)
 		if err != nil {
 			return nil, err
@@ -77,9 +78,9 @@ func (e *PersonalEthAPI) ImportRawKey(privkey, password string) (common.Address,
 		return common.Address{}, err
 	}
 
-	privKey := emintcrypto.PrivKeySecp256k1(crypto.FromECDSA(priv))
+	privKey := ethsecp256k1.PrivKey(crypto.FromECDSA(priv))
 
-	armor := mintkey.EncryptArmorPrivKey(privKey, password, emintcrypto.EthSecp256k1Type)
+	armor := mintkey.EncryptArmorPrivKey(privKey, password, ethsecp256k1.KeyType)
 
 	// ignore error as we only care about the length of the list
 	list, _ := e.ethAPI.cliCtx.Keybase.List()
@@ -126,7 +127,7 @@ func (e *PersonalEthAPI) LockAccount(address common.Address) bool {
 			continue
 		}
 
-		tmp := make([]emintcrypto.PrivKeySecp256k1, len(e.ethAPI.keys)-1)
+		tmp := make([]ethsecp256k1.PrivKey, len(e.ethAPI.keys)-1)
 		copy(tmp[:i], e.ethAPI.keys[:i])
 		copy(tmp[i:], e.ethAPI.keys[i+1:])
 		e.ethAPI.keys = tmp
@@ -147,7 +148,7 @@ func (e *PersonalEthAPI) NewAccount(password string) (common.Address, error) {
 	}
 
 	name := "key_" + time.Now().UTC().Format(time.RFC3339)
-	info, _, err := e.ethAPI.cliCtx.Keybase.CreateMnemonic(name, keys.English, password, emintcrypto.EthSecp256k1)
+	info, _, err := e.ethAPI.cliCtx.Keybase.CreateMnemonic(name, keys.English, password, hd.EthSecp256k1)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -193,7 +194,7 @@ func (e *PersonalEthAPI) UnlockAccount(_ context.Context, addr common.Address, p
 		return false, err
 	}
 
-	emintKey, ok := privKey.(emintcrypto.PrivKeySecp256k1)
+	emintKey, ok := privKey.(ethsecp256k1.PrivKey)
 	if !ok {
 		return false, fmt.Errorf("invalid private key type: %T", privKey)
 	}
