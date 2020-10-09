@@ -57,7 +57,7 @@ Now you are connected to the droplet.
 Clone and build Ethermint in the droplet using `git`:
 
 ```bash
-go install https://github.com/ChainSafe/ethermint.git
+go install https://github.com/cosmos/ethermint.git
 ```
 
 Check that the binaries have been successfuly installed:
