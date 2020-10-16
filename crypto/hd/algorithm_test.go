@@ -122,3 +122,55 @@ func TestKeyring(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, addr.String(), account.Address.String())
 }
+
+func TestDerivation(t *testing.T) {
+	mnemonic := "picnic rent average infant boat squirrel federal assault mercy purity very motor fossil wheel verify upset box fresh horse vivid copy predict square regret"
+
+	bz, err := DeriveSecp256k1(mnemonic, keys.DefaultBIP39Passphrase, ethermint.BIP44HDPath)
+	require.NoError(t, err)
+	require.NotEmpty(t, bz)
+
+	badBz, err := DeriveSecp256k1(mnemonic, keys.DefaultBIP39Passphrase, "44'/60'/0'/0/0")
+	require.NoError(t, err)
+	require.NotEmpty(t, badBz)
+
+	require.NotEqual(t, bz, badBz)
+
+	privkey, err := EthermintKeygenFunc(bz, EthSecp256k1)
+	require.NoError(t, err)
+	require.NotEmpty(t, privkey)
+
+	badPrivKey, err := EthermintKeygenFunc(badBz, EthSecp256k1)
+	require.NoError(t, err)
+	require.NotEmpty(t, badPrivKey)
+
+	require.NotEqual(t, privkey, badPrivKey)
+
+	wallet, err := hdwallet.NewFromMnemonic(mnemonic)
+	require.NoError(t, err)
+
+	path := hdwallet.MustParseDerivationPath(ethermint.BIP44HDPath)
+	account, err := wallet.Derive(path, false)
+	require.NoError(t, err)
+
+	badPath := hdwallet.MustParseDerivationPath("44'/60'/0'/0/0")
+	badAccount, err := wallet.Derive(badPath, false)
+	require.NoError(t, err)
+
+	// Equality of Address BIP44
+	require.Equal(t, account.Address.String(), "0xA588C66983a81e800Db4dF74564F09f91c026351")
+	require.Equal(t, badAccount.Address.String(), "0xF8D6FDf2B8b488ea37e54903750dcd13F67E71cb")
+	// Inequality of wrong derivation path address
+	require.NotEqual(t, account.Address.String(), badAccount.Address.String())
+	// Equality of Ethermint implementation
+	require.Equal(t, common.BytesToAddress(privkey.PubKey().Address().Bytes()).String(), "0xA588C66983a81e800Db4dF74564F09f91c026351")
+	require.Equal(t, common.BytesToAddress(badPrivKey.PubKey().Address().Bytes()).String(), "0xF8D6FDf2B8b488ea37e54903750dcd13F67E71cb")
+
+	// Equality of Eth and Ethermint implementation
+	require.Equal(t, common.BytesToAddress(privkey.PubKey().Address()).String(), account.Address.String())
+	require.Equal(t, common.BytesToAddress(badPrivKey.PubKey().Address()).String(), badAccount.Address.String())
+
+	// Inequality of wrong derivation path of Eth and Ethermint implementation
+	require.NotEqual(t, common.BytesToAddress(privkey.PubKey().Address()).String(), badAccount.Address.String())
+	require.NotEqual(t, common.BytesToAddress(badPrivKey.PubKey().Address()).String(), account.Address.Hex())
+}
