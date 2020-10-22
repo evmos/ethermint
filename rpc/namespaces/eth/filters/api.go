@@ -1,4 +1,4 @@
-package rpc
+package filters
 
 import (
 	"context"
@@ -16,13 +16,14 @@ import (
 
 	clientcontext "github.com/cosmos/cosmos-sdk/client/context"
 
+	rpctypes "github.com/cosmos/ethermint/rpc/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
-// FiltersBackend defines the methods requided by the PublicFilterAPI backend
-type FiltersBackend interface {
-	GetBlockByNumber(blockNum BlockNumber, fullTx bool) (map[string]interface{}, error)
-	HeaderByNumber(blockNr BlockNumber) (*ethtypes.Header, error)
+// Backend defines the methods requided by the PublicFilterAPI backend
+type Backend interface {
+	GetBlockByNumber(blockNum rpctypes.BlockNumber, fullTx bool) (map[string]interface{}, error)
+	HeaderByNumber(blockNr rpctypes.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 
@@ -47,26 +48,26 @@ type filter struct {
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
 // information related to the Ethereum protocol such as blocks, transactions and logs.
 type PublicFilterAPI struct {
-	cliCtx    clientcontext.CLIContext
-	backend   FiltersBackend
+	clientCtx clientcontext.CLIContext
+	backend   Backend
 	events    *EventSystem
 	filtersMu sync.Mutex
 	filters   map[rpc.ID]*filter
 }
 
-// NewPublicFilterAPI returns a new PublicFilterAPI instance.
-func NewPublicFilterAPI(cliCtx clientcontext.CLIContext, backend FiltersBackend) *PublicFilterAPI {
+// NewAPI returns a new PublicFilterAPI instance.
+func NewAPI(clientCtx clientcontext.CLIContext, backend Backend) *PublicFilterAPI {
 	// start the client to subscribe to Tendermint events
-	err := cliCtx.Client.Start()
+	err := clientCtx.Client.Start()
 	if err != nil {
 		panic(err)
 	}
 
 	api := &PublicFilterAPI{
-		cliCtx:  cliCtx,
-		backend: backend,
-		filters: make(map[rpc.ID]*filter),
-		events:  NewEventSystem(cliCtx.Client),
+		clientCtx: clientCtx,
+		backend:   backend,
+		filters:   make(map[rpc.ID]*filter),
+		events:    NewEventSystem(clientCtx.Client),
 	}
 
 	go api.timeoutLoop()
@@ -209,7 +210,7 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 			select {
 			case ev := <-headersCh:
 				data, _ := ev.Data.(tmtypes.EventDataNewBlockHeader)
-				header := EthHeaderFromTendermint(data.Header)
+				header := rpctypes.EthHeaderFromTendermint(data.Header)
 				api.filtersMu.Lock()
 				if f, found := api.filters[headerSub.ID()]; found {
 					f.hashes = append(f.hashes, header.Hash())
@@ -255,7 +256,7 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 					return
 				}
 
-				header := EthHeaderFromTendermint(data.Header)
+				header := rpctypes.EthHeaderFromTendermint(data.Header)
 				err = notifier.Notify(rpcSub.ID, header)
 				if err != nil {
 					headersSub.err <- err
@@ -317,7 +318,7 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 					return
 				}
 
-				logs := filterLogs(resultData.Logs, crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
+				logs := FilterLogs(resultData.Logs, crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
 
 				for _, log := range logs {
 					err = notifier.Notify(rpcSub.ID, log)
@@ -386,7 +387,7 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 					return
 				}
 
-				logs := filterLogs(resultData.Logs, criteria.FromBlock, criteria.ToBlock, criteria.Addresses, criteria.Topics)
+				logs := FilterLogs(resultData.Logs, criteria.FromBlock, criteria.ToBlock, criteria.Addresses, criteria.Topics)
 
 				api.filtersMu.Lock()
 				if f, found := api.filters[filterID]; found {
@@ -407,7 +408,7 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 
 // GetLogs returns logs matching the given argument that are stored within the state.
 //
-// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
+// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getLogs
 func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit filters.FilterCriteria) ([]*ethtypes.Log, error) {
 	var filter *Filter
 	if crit.BlockHash != nil {
@@ -433,7 +434,7 @@ func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit filters.FilterCrit
 		return nil, err
 	}
 
-	return returnLogs(logs), err
+	return returnLogs(logs), nil
 }
 
 // UninstallFilter removes the filter with the given filter id.
@@ -532,22 +533,4 @@ func (api *PublicFilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("invalid filter %s type %d", id, f.typ)
 	}
-}
-
-// returnHashes is a helper that will return an empty hash array case the given hash array is nil,
-// otherwise the given hashes array is returned.
-func returnHashes(hashes []common.Hash) []common.Hash {
-	if hashes == nil {
-		return []common.Hash{}
-	}
-	return hashes
-}
-
-// returnLogs is a helper that will return an empty log array in case the given logs array is nil,
-// otherwise the given logs array is returned.
-func returnLogs(logs []*ethtypes.Log) []*ethtypes.Log {
-	if logs == nil {
-		return []*ethtypes.Log{}
-	}
-	return logs
 }

@@ -67,7 +67,7 @@ func main() {
 		queryCmd(cdc),
 		txCmd(cdc),
 		client.ValidateChainID(
-			rpc.EmintServeCmd(cdc),
+			rpc.ServeCmd(cdc),
 		),
 		flags.LineBreak,
 		client.KeyCommands(),

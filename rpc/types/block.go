@@ -1,4 +1,4 @@
-package rpc
+package types
 
 import (
 	"fmt"
@@ -63,5 +63,16 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 
 // Int64 converts block number to primitive type
 func (bn BlockNumber) Int64() int64 {
-	return (int64)(bn)
+	return int64(bn)
+}
+
+// TmHeight is a util function used for the Tendermint RPC client. It returns
+// nil if the block number is "latest". Otherwise, it returns the pointer of the
+// int64 value of the height.
+func (bn BlockNumber) TmHeight() *int64 {
+	if bn == LatestBlockNumber {
+		return nil
+	}
+	height := bn.Int64()
+	return &height
 }

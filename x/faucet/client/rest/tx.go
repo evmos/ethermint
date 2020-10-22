@@ -15,9 +15,9 @@ import (
 )
 
 // RegisterRoutes register REST endpoints for the faucet module
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/%s/request", types.ModuleName), requestHandler(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/%s/funded", types.ModuleName), fundedHandlerFn(cliCtx)).Methods("GET")
+func RegisterRoutes(clientCtx context.CLIContext, r *mux.Router) {
+	r.HandleFunc(fmt.Sprintf("/%s/request", types.ModuleName), requestHandler(clientCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/%s/funded", types.ModuleName), fundedHandlerFn(clientCtx)).Methods("GET")
 }
 
 // PostRequestBody defines fund request's body.
@@ -27,10 +27,10 @@ type PostRequestBody struct {
 	Recipient string       `json:"receipient" yaml:"receipient"`
 }
 
-func requestHandler(cliCtx context.CLIContext) http.HandlerFunc {
+func requestHandler(clientCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PostRequestBody
-		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+		if !rest.ReadRESTReq(w, r, clientCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
@@ -65,19 +65,19 @@ func requestHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		authclient.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+		authclient.WriteGenerateStdTxResponse(w, clientCtx, baseReq, []sdk.Msg{msg})
 	}
 }
 
-func fundedHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+func fundedHandlerFn(clientCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
-		res, height, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryFunded))
+		res, height, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryFunded))
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		cliCtx = cliCtx.WithHeight(height)
-		rest.PostProcessResponse(w, cliCtx, res)
+		clientCtx = clientCtx.WithHeight(height)
+		rest.PostProcessResponse(w, clientCtx, res)
 	}
 }

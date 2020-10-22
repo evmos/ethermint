@@ -37,17 +37,17 @@ func GetCmdFunded(cdc *codec.Codec) *cobra.Command {
 		Short: "Gets storage for an account at a given key",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, height, err := cliCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryFunded))
+			res, height, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryFunded))
 			if err != nil {
 				return err
 			}
 
 			var out sdk.Coins
 			cdc.MustUnmarshalJSON(res, &out)
-			cliCtx = cliCtx.WithHeight(height)
-			return cliCtx.PrintOutput(out)
+			clientCtx = clientCtx.WithHeight(height)
+			return clientCtx.PrintOutput(out)
 		},
 	}
 }

@@ -1,9 +1,8 @@
-package rpc
+package filters
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
@@ -18,6 +17,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	rpctypes "github.com/cosmos/ethermint/rpc/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
@@ -262,7 +262,7 @@ func (es *EventSystem) handleLogs(ev coretypes.ResultEvent) {
 		return
 	}
 	for _, f := range es.index[filters.LogsSubscription] {
-		matchedLogs := filterLogs(resultData.Logs, f.logsCrit.FromBlock, f.logsCrit.ToBlock, f.logsCrit.Addresses, f.logsCrit.Topics)
+		matchedLogs := FilterLogs(resultData.Logs, f.logsCrit.FromBlock, f.logsCrit.ToBlock, f.logsCrit.Addresses, f.logsCrit.Topics)
 		if len(matchedLogs) > 0 {
 			f.logs <- matchedLogs
 		}
@@ -279,7 +279,7 @@ func (es *EventSystem) handleTxsEvent(ev coretypes.ResultEvent) {
 func (es *EventSystem) handleChainEvent(ev coretypes.ResultEvent) {
 	data, _ := ev.Data.(tmtypes.EventDataNewBlockHeader)
 	for _, f := range es.index[filters.BlocksSubscription] {
-		f.headers <- EthHeaderFromTendermint(data.Header)
+		f.headers <- rpctypes.EthHeaderFromTendermint(data.Header)
 	}
 	// TODO: light client
 }
@@ -376,58 +376,4 @@ func (es *EventSystem) eventLoop() {
 		}
 	}
 	// }()
-}
-
-// Subscription defines a wrapper for the private subscription
-type Subscription struct {
-	id        rpc.ID
-	typ       filters.Type
-	event     string
-	created   time.Time
-	logsCrit  filters.FilterCriteria
-	logs      chan []*ethtypes.Log
-	hashes    chan []common.Hash
-	headers   chan *ethtypes.Header
-	installed chan struct{} // closed when the filter is installed
-	eventCh   <-chan coretypes.ResultEvent
-	err       chan error
-}
-
-// ID returns the underlying subscription RPC identifier.
-func (s Subscription) ID() rpc.ID {
-	return s.id
-}
-
-// Unsubscribe to the current subscription from Tendermint Websocket. It sends an error to the
-// subscription error channel if unsubscription fails.
-func (s *Subscription) Unsubscribe(es *EventSystem) {
-	if err := es.client.Unsubscribe(es.ctx, string(s.ID()), s.event); err != nil {
-		s.err <- err
-	}
-
-	go func() {
-		defer func() {
-			log.Println("successfully unsubscribed to event", s.event)
-		}()
-
-	uninstallLoop:
-		for {
-			// write uninstall request and consume logs/hashes. This prevents
-			// the eventLoop broadcast method to deadlock when writing to the
-			// filter event channel while the subscription loop is waiting for
-			// this method to return (and thus not reading these events).
-			select {
-			case es.uninstall <- s:
-				break uninstallLoop
-			case <-s.logs:
-			case <-s.hashes:
-			case <-s.headers:
-			}
-		}
-	}()
-}
-
-// Err returns the error channel
-func (s *Subscription) Err() <-chan error {
-	return s.err
 }

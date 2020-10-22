@@ -14,7 +14,6 @@ import (
 	"math/big"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -24,9 +23,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/cosmos/ethermint/rpc"
+	rpctypes "github.com/cosmos/ethermint/rpc/types"
 	"github.com/cosmos/ethermint/version"
-	"github.com/cosmos/ethermint/x/evm/types"
 )
 
 const (
@@ -191,7 +189,14 @@ func TestEth_GetLogs_NoLogs(t *testing.T) {
 	param := make([]map[string][]string, 1)
 	param[0] = make(map[string][]string)
 	param[0]["topics"] = []string{}
-	call(t, "eth_getLogs", param)
+	rpcRes := call(t, "eth_getLogs", param)
+	require.NotNil(t, rpcRes)
+	require.Nil(t, rpcRes.Error)
+
+	var logs []*ethtypes.Log
+	err := json.Unmarshal(rpcRes.Result, &logs)
+	require.NoError(t, err)
+	require.NotEmpty(t, logs)
 }
 
 func TestEth_GetLogs_Topics_AB(t *testing.T) {
@@ -332,7 +337,7 @@ func TestEth_GetProof(t *testing.T) {
 	rpcRes := call(t, "eth_getProof", params)
 	require.NotNil(t, rpcRes)
 
-	var accRes rpc.AccountResult
+	var accRes rpctypes.AccountResult
 	err := json.Unmarshal(rpcRes.Result, &accRes)
 	require.NoError(t, err)
 	require.NotEmpty(t, accRes.AccountProof)
@@ -777,68 +782,6 @@ func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
 	require.NoError(t, err, string(rpcRes.Result))
 
 	require.Equal(t, "0x1c2c4", gas.String())
-}
-
-func TestEth_ExportAccount(t *testing.T) {
-	param := []string{}
-	param = append(param, "0x1122334455667788990011223344556677889901")
-	param = append(param, "latest")
-	rpcRes := call(t, "eth_exportAccount", param)
-
-	var res string
-	err := json.Unmarshal(rpcRes.Result, &res)
-	require.NoError(t, err)
-
-	var account types.GenesisAccount
-	err = json.Unmarshal([]byte(res), &account)
-	require.NoError(t, err)
-
-	require.Equal(t, "0x1122334455667788990011223344556677889901", account.Address.Hex())
-	require.Equal(t, big.NewInt(0), account.Balance)
-	require.Equal(t, hexutil.Bytes(nil), account.Code)
-	require.Equal(t, types.Storage(nil), account.Storage)
-}
-
-func TestEth_ExportAccount_WithStorage(t *testing.T) {
-	hash := deployTestContractWithFunction(t)
-	receipt := waitForReceipt(t, hash)
-	addr := receipt["contractAddress"].(string)
-
-	// call function to set storage
-	calldata := "0xeb8ac92100000000000000000000000000000000000000000000000000000000000000630000000000000000000000000000000000000000000000000000000000000000"
-
-	param := make([]map[string]string, 1)
-	param[0] = make(map[string]string)
-	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
-	param[0]["to"] = addr
-	param[0]["data"] = calldata
-	rpcRes := call(t, "eth_sendTransaction", param)
-
-	var txhash hexutil.Bytes
-	err := json.Unmarshal(rpcRes.Result, &txhash)
-	require.NoError(t, err)
-	waitForReceipt(t, txhash)
-
-	// get exported account
-	eap := []string{}
-	eap = append(eap, addr)
-	eap = append(eap, "latest")
-	rpcRes = call(t, "eth_exportAccount", eap)
-
-	var res string
-	err = json.Unmarshal(rpcRes.Result, &res)
-	require.NoError(t, err)
-
-	var account types.GenesisAccount
-	err = json.Unmarshal([]byte(res), &account)
-	require.NoError(t, err)
-
-	// deployed bytecode
-	bytecode := "0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032"
-	require.Equal(t, addr, strings.ToLower(account.Address.Hex()))
-	require.Equal(t, big.NewInt(0), account.Balance)
-	require.Equal(t, bytecode, account.Code.String())
-	require.NotEqual(t, types.Storage(nil), account.Storage)
 }
 
 func TestEth_GetBlockByNumber(t *testing.T) {

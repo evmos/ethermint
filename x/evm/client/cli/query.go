@@ -37,7 +37,7 @@ func GetCmdGetStorageAt(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		Short: "Gets storage for an account at a given key",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx := context.NewCLIContext().WithCodec(cdc)
 
 			account, err := accountToHex(args[0])
 			if err != nil {
@@ -46,7 +46,7 @@ func GetCmdGetStorageAt(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			key := formatKeyToHash(args[1])
 
-			res, _, err := cliCtx.Query(
+			res, _, err := clientCtx.Query(
 				fmt.Sprintf("custom/%s/storage/%s/%s", queryRoute, account, key))
 
 			if err != nil {
@@ -54,7 +54,7 @@ func GetCmdGetStorageAt(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 			var out types.QueryResStorage
 			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
+			return clientCtx.PrintOutput(out)
 		},
 	}
 }
@@ -66,14 +66,14 @@ func GetCmdGetCode(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		Short: "Gets code from an account",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			clientCtx := context.NewCLIContext().WithCodec(cdc)
 
 			account, err := accountToHex(args[0])
 			if err != nil {
 				return errors.Wrap(err, "could not parse account address")
 			}
 
-			res, _, err := cliCtx.Query(
+			res, _, err := clientCtx.Query(
 				fmt.Sprintf("custom/%s/code/%s", queryRoute, account))
 
 			if err != nil {
@@ -82,7 +82,7 @@ func GetCmdGetCode(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out types.QueryResCode
 			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
+			return clientCtx.PrintOutput(out)
 		},
 	}
 }

@@ -1,12 +1,9 @@
-package rpc
+package net
 
 import (
 	"fmt"
 
-	"github.com/spf13/viper"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	ethermint "github.com/cosmos/ethermint/types"
 )
 
@@ -15,11 +12,10 @@ type PublicNetAPI struct {
 	networkVersion uint64
 }
 
-// NewPublicNetAPI creates an instance of the public Net Web3 API.
-func NewPublicNetAPI(_ context.CLIContext) *PublicNetAPI {
-	chainID := viper.GetString(flags.FlagChainID)
+// NewAPI creates an instance of the public Net Web3 API.
+func NewAPI(clientCtx context.CLIContext) *PublicNetAPI {
 	// parse the chainID from a integer string
-	chainIDEpoch, err := ethermint.ParseChainID(chainID)
+	chainIDEpoch, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
 	}
@@ -30,6 +26,6 @@ func NewPublicNetAPI(_ context.CLIContext) *PublicNetAPI {
 }
 
 // Version returns the current ethereum protocol version.
-func (s *PublicNetAPI) Version() string {
-	return fmt.Sprintf("%d", s.networkVersion)
+func (api *PublicNetAPI) Version() string {
+	return fmt.Sprintf("%d", api.networkVersion)
 }

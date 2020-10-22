@@ -1,4 +1,4 @@
-package rpc
+package filters
 
 import (
 	"context"
@@ -9,25 +9,27 @@ import (
 	"github.com/ethereum/go-ethereum/core/bloombits"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
+
+	rpctypes "github.com/cosmos/ethermint/rpc/types"
 )
 
 // Filter can be used to retrieve and filter logs.
 type Filter struct {
-	backend  FiltersBackend
+	backend  Backend
 	criteria filters.FilterCriteria
 	matcher  *bloombits.Matcher
 }
 
 // NewBlockFilter creates a new filter which directly inspects the contents of
 // a block to figure out whether it is interesting or not.
-func NewBlockFilter(backend FiltersBackend, criteria filters.FilterCriteria) *Filter {
+func NewBlockFilter(backend Backend, criteria filters.FilterCriteria) *Filter {
 	// Create a generic filter and convert it into a block filter
 	return newFilter(backend, criteria, nil)
 }
 
 // NewRangeFilter creates a new filter which uses a bloom filter on blocks to
 // figure out whether a particular block is interesting or not.
-func NewRangeFilter(backend FiltersBackend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
+func NewRangeFilter(backend Backend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
 	// Flatten the address and topic filter clauses into a single bloombits filter
 	// system. Since the bloombits are not positional, nil topics are permitted,
 	// which get flattened into a nil byte slice.
@@ -62,7 +64,7 @@ func NewRangeFilter(backend FiltersBackend, begin, end int64, addresses []common
 }
 
 // newFilter returns a new Filter
-func newFilter(backend FiltersBackend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
+func newFilter(backend Backend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
 	return &Filter{
 		backend:  backend,
 		criteria: criteria,
@@ -89,7 +91,7 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	}
 
 	// Figure out the limits of the filter range
-	header, err := f.backend.HeaderByNumber(LatestBlockNumber)
+	header, err := f.backend.HeaderByNumber(rpctypes.LatestBlockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +109,7 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	}
 
 	for i := f.criteria.FromBlock.Int64(); i <= f.criteria.ToBlock.Int64(); i++ {
-		block, err := f.backend.GetBlockByNumber(BlockNumber(i), true)
+		block, err := f.backend.GetBlockByNumber(rpctypes.BlockNumber(i), true)
 		if err != nil {
 			return logs, err
 		}
@@ -139,7 +141,7 @@ func (f *Filter) blockLogs(header *ethtypes.Header) ([]*ethtypes.Log, error) {
 	for _, logs := range logsList {
 		unfiltered = append(unfiltered, logs...)
 	}
-	logs := filterLogs(unfiltered, nil, nil, f.criteria.Addresses, f.criteria.Topics)
+	logs := FilterLogs(unfiltered, nil, nil, f.criteria.Addresses, f.criteria.Topics)
 	if len(logs) == 0 {
 		return []*ethtypes.Log{}, nil
 	}
@@ -162,81 +164,5 @@ func (f *Filter) checkMatches(transactions []common.Hash) []*ethtypes.Log {
 		unfiltered = append(unfiltered, logs...)
 	}
 
-	return filterLogs(unfiltered, f.criteria.FromBlock, f.criteria.ToBlock, f.criteria.Addresses, f.criteria.Topics)
-}
-
-// filterLogs creates a slice of logs matching the given criteria.
-// [] -> anything
-// [A] -> A in first position of log topics, anything after
-// [null, B] -> anything in first position, B in second position
-// [A, B] -> A in first position and B in second position
-// [[A, B], [A, B]] -> A or B in first position, A or B in second position
-func filterLogs(logs []*ethtypes.Log, fromBlock, toBlock *big.Int, addresses []common.Address, topics [][]common.Hash) []*ethtypes.Log {
-	var ret []*ethtypes.Log
-Logs:
-	for _, log := range logs {
-		if fromBlock != nil && fromBlock.Int64() >= 0 && fromBlock.Uint64() > log.BlockNumber {
-			continue
-		}
-		if toBlock != nil && toBlock.Int64() >= 0 && toBlock.Uint64() < log.BlockNumber {
-			continue
-		}
-		if len(addresses) > 0 && !includes(addresses, log.Address) {
-			continue
-		}
-		// If the to filtered topics is greater than the amount of topics in logs, skip.
-		if len(topics) > len(log.Topics) {
-			continue
-		}
-		for i, sub := range topics {
-			match := len(sub) == 0 // empty rule set == wildcard
-			for _, topic := range sub {
-				if log.Topics[i] == topic {
-					match = true
-					break
-				}
-			}
-			if !match {
-				continue Logs
-			}
-		}
-		ret = append(ret, log)
-	}
-	return ret
-}
-
-func includes(addresses []common.Address, a common.Address) bool {
-	for _, addr := range addresses {
-		if addr == a {
-			return true
-		}
-	}
-
-	return false
-}
-
-func bloomFilter(bloom ethtypes.Bloom, addresses []common.Address, topics [][]common.Hash) bool {
-	var included bool
-	if len(addresses) > 0 {
-		for _, addr := range addresses {
-			if ethtypes.BloomLookup(bloom, addr) {
-				included = true
-				break
-			}
-		}
-		if !included {
-			return false
-		}
-	}
-
-	for _, sub := range topics {
-		included = len(sub) == 0 // empty rule set == wildcard
-		for _, topic := range sub {
-			if ethtypes.BloomLookup(bloom, topic) {
-				included = true
-				break
-			}
-		}
-	}
-	return included
+	return FilterLogs(unfiltered, f.criteria.FromBlock, f.criteria.ToBlock, f.criteria.Addresses, f.criteria.Topics)
 }
