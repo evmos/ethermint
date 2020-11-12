@@ -895,4 +895,4 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_ecRecover","params":["0
 
 ## Next {hide}
 
-Learn about the [encoding](./../core/encoding.md) formats used on Ethermint {hide}
+Learn about the Ethermint [Hard Spoon](./hard_spoon.md) functionality {hide}

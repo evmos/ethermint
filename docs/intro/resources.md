@@ -1,5 +1,5 @@
 <!--
-order: 3
+order: 4
 -->
 
 # Resources
@@ -27,10 +27,12 @@ Learn about Ethermint with the list of official resources. {synopsis}
 Note: most of these articles are outdated as they refer to the previous Ethermint projects (linked below). They are listed here for reference only.
 :::
 
+- [Ethermint Supports Web3 Personal API - Colin Schwarz](https://blog.cosmos.network/ethermint-supports-web3-personal-api-556adf75c24e)
+- [The Road to Ethermint - Colin Schwarz](https://blog.cosmos.network/the-road-to-ethermint-836c0745f535)
 - [A Beginners Guide to Ethermint - ICF](https://blog.cosmos.network/a-beginners-guide-to-ethermint-38ee15f8a6f4)
 - [Using Ethermint with Truffle - Billy Rennekamp](https://blog.cosmos.network/using-ethermint-with-truffle-984e6721e30d)
 - [Light Clients on Ethermint - ICF](https://blog.cosmos.network/light-clients-on-ethermint-9ae1f3c6c4f5)
-- [Cosmos Fee Token  – Introducing the Photon - ICF](https://blog.cosmos.network/cosmos-fee-token-introducing-the-photon-8a62b2f51aa)
+- [Cosmos Fee Token – Introducing the Photon - ICF](https://blog.cosmos.network/cosmos-fee-token-introducing-the-photon-8a62b2f51aa)
 - [Introducing the Hard Spoon - Chjango Unchained](https://blog.cosmos.network/introducing-the-hard-spoon-4a9288d3f0df)
 - [Ethermint and NFTs at EthDenver - Tendermint](https://blog.cosmos.network/ethermint-nfts-at-ethdenver-bf32766835b6)
 

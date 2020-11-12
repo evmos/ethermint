@@ -20,9 +20,9 @@ responsible for performing preliminary message execution business logic such as 
 signature verification, etc. This is particular to Cosmos SDK routed transactions. Ethereum routed
 transactions will bypass this as the EVM handles the same business logic.
 
-Ethereum routed transactions coming from a web3 source are expected to be RLP encoded, however all
+Ethereum routed transactions coming from a Web3 source are expected to be [RLP](./../core/encoding.md#rlp) encoded, however all
 internal interaction between Ethermint and Tendermint will utilize one of the supported encoding
-formats: Protobuf, Amino or Hybrid of the previous two.
+formats: [Protobuf](./../core/encoding.md#protocol-buffers) and [Amino](./../core/encoding.md#amino).
 
 ## Transaction formats
 
