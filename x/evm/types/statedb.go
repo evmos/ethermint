@@ -77,6 +77,9 @@ type CommitStateDB struct {
 	validRevisions []revision
 	nextRevisionID int
 
+	// Per-transaction access list
+	accessList *accessList
+
 	// mutex for state deep copying
 	lock sync.Mutex
 }
@@ -100,6 +103,7 @@ func NewCommitStateDB(
 		preimages:            []preimageEntry{},
 		hashToPreimageIndex:  make(map[ethcmn.Hash]int),
 		journal:              newJournal(),
+		accessList:           newAccessList(),
 	}
 }
 
@@ -241,6 +245,41 @@ func (csdb *CommitStateDB) SubRefund(gas uint64) {
 	}
 
 	csdb.refund -= gas
+}
+
+// AddAddressToAccessList adds the given address to the access list
+func (csdb *CommitStateDB) AddAddressToAccessList(addr ethcmn.Address) {
+	if csdb.accessList.AddAddress(addr) {
+		csdb.journal.append(accessListAddAccountChange{&addr})
+	}
+}
+
+// AddSlotToAccessList adds the given (address, slot)-tuple to the access list
+func (csdb *CommitStateDB) AddSlotToAccessList(addr ethcmn.Address, slot ethcmn.Hash) {
+	addrMod, slotMod := csdb.accessList.AddSlot(addr, slot)
+	if addrMod {
+		// In practice, this should not happen, since there is no way to enter the
+		// scope of 'address' without having the 'address' become already added
+		// to the access list (via call-variant, create, etc).
+		// Better safe than sorry, though
+		csdb.journal.append(accessListAddAccountChange{&addr})
+	}
+	if slotMod {
+		csdb.journal.append(accessListAddSlotChange{
+			address: &addr,
+			slot:    &slot,
+		})
+	}
+}
+
+// AddressInAccessList returns true if the given address is in the access list.
+func (csdb *CommitStateDB) AddressInAccessList(addr ethcmn.Address) bool {
+	return csdb.accessList.ContainsAddress(addr)
+}
+
+// SlotInAccessList returns true if the given (address, slot)-tuple is in the access list.
+func (csdb *CommitStateDB) SlotInAccessList(addr ethcmn.Address, slot ethcmn.Hash) (bool, bool) {
+	return csdb.accessList.Contains(addr, slot)
 }
 
 // ----------------------------------------------------------------------------

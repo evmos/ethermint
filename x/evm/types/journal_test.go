@@ -220,6 +220,12 @@ func (suite *JournalTestSuite) TestJournal_append_revert() {
 				txhash: ethcmn.BytesToHash([]byte("txhash")),
 			},
 		},
+		{
+			"accessListAddAccountChange",
+			accessListAddAccountChange{
+				address: &suite.address,
+			},
+		},
 	}
 	var dirtyCount int
 	for i, tc := range testCases {

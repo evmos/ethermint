@@ -62,7 +62,7 @@ func (suite *KeeperTestSuite) TestBloomFilter() {
 		} else {
 			// get logs bloom from the log
 			bloomInt := ethtypes.LogsBloom(logs)
-			bloomFilter := ethtypes.BytesToBloom(bloomInt.Bytes())
+			bloomFilter := ethtypes.BytesToBloom(bloomInt)
 			suite.Require().True(ethtypes.BloomLookup(bloomFilter, contractAddress), tc.name)
 			suite.Require().False(ethtypes.BloomLookup(bloomFilter, ethcmn.BigToAddress(big.NewInt(2))), tc.name)
 		}

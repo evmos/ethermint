@@ -33,7 +33,7 @@ func TestChainConfigValidate(t *testing.T) {
 				PetersburgBlock:     sdk.OneInt(),
 				IstanbulBlock:       sdk.OneInt(),
 				MuirGlacierBlock:    sdk.OneInt(),
-				YoloV1Block:         sdk.OneInt(),
+				YoloV2Block:         sdk.OneInt(),
 				EWASMBlock:          sdk.OneInt(),
 			},
 			false,
@@ -176,7 +176,7 @@ func TestChainConfigValidate(t *testing.T) {
 			true,
 		},
 		{
-			"invalid YoloV1Block",
+			"invalid YoloV2Block",
 			ChainConfig{
 				HomesteadBlock:      sdk.OneInt(),
 				DAOForkBlock:        sdk.OneInt(),
@@ -189,7 +189,7 @@ func TestChainConfigValidate(t *testing.T) {
 				PetersburgBlock:     sdk.OneInt(),
 				IstanbulBlock:       sdk.OneInt(),
 				MuirGlacierBlock:    sdk.OneInt(),
-				YoloV1Block:         sdk.Int{},
+				YoloV2Block:         sdk.Int{},
 			},
 			true,
 		},
@@ -207,7 +207,7 @@ func TestChainConfigValidate(t *testing.T) {
 				PetersburgBlock:     sdk.OneInt(),
 				IstanbulBlock:       sdk.OneInt(),
 				MuirGlacierBlock:    sdk.OneInt(),
-				YoloV1Block:         sdk.OneInt(),
+				YoloV2Block:         sdk.OneInt(),
 				EWASMBlock:          sdk.Int{},
 			},
 			true,
@@ -238,7 +238,7 @@ constantinople_block: "0"
 petersburg_block: "0"
 istanbul_block: "-1"
 muir_glacier_block: "-1"
-yoloV1_block: "-1"
+yoloV2_block: "-1"
 ewasm_block: "-1"
 `
 	require.Equal(t, configStr, DefaultChainConfig().String())
