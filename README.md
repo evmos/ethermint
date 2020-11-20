@@ -44,7 +44,7 @@ interoperable with Ethereum. It's build using the the [Cosmos SDK](https://githu
 
 > **WARNING:** Ethermint is under VERY ACTIVE DEVELOPMENT and should be treated as pre-alpha software. This means it is not meant to be run in production, its APIs are subject to change without warning and should not be relied upon, and it should not be used to hold any value. We will remove this warning when we have a release that is stable, secure, and properly tested.
 
-**Note**: Requires [Go 1.14+](https://golang.org/dl/)
+**Note**: Requires [Go 1.15+](https://golang.org/dl/)
 
 ## Quick Start
 

@@ -1,6 +1,6 @@
 module github.com/cosmos/ethermint
 
-go 1.14
+go 1.15
 
 require (
 	github.com/aristanetworks/goarista v0.0.0-20200331225509-2cc472e8fbd6 // indirect
