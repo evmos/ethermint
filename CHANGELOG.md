@@ -35,7 +35,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## Unreleased
+## [v0.3.0] - 2020-11-16
 
 ### API Breaking
 
@@ -48,7 +48,6 @@ corresponding Ethereum API namespace:
   * `rpc/namespaces/personal`: `personal` namespace. Exposes the `PrivateAccountAPI`.
   * `rpc/namespaces/net`: `net` namespace. Exposes the `PublicNetAPI`.
   * `rpc/namespaces/web3`: `web3` namespace. Exposes the `PublicWeb3API`.
-
 * (evm) [\#588](https://github.com/cosmos/ethermint/pull/588) The EVM transaction CLI has been removed in favor of the JSON-RPC.
 
 ### Improvements
