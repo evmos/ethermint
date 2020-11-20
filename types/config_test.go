@@ -48,8 +48,7 @@ func TestSetCoinType(t *testing.T) {
 
 func TestHDPath(t *testing.T) {
 	params := *hd.NewFundraiserParams(0, Bip44CoinType, 0)
-	// need to prepend "m/" because the below method provided by the sdk does not add the proper prepending
-	hdPath := "m/" + params.String()
+	hdPath := params.String()
 	require.Equal(t, "m/44'/60'/0'/0/0", hdPath)
 	require.Equal(t, hdPath, BIP44HDPath)
 }
