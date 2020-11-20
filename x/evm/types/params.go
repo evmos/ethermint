@@ -18,7 +18,9 @@ const (
 
 // Parameter keys
 var (
-	ParamStoreKeyEVMDenom = []byte("EVMDenom")
+	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
+	ParamStoreKeyEnableCreate = []byte("EnableCreate")
+	ParamStoreKeyEnableCall   = []byte("EnableCall")
 )
 
 // ParamKeyTable returns the parameter key table.
@@ -28,20 +30,30 @@ func ParamKeyTable() params.KeyTable {
 
 // Params defines the EVM module parameters
 type Params struct {
+	// EVMDenom defines the token denomination used for state transitions on the
+	// EVM module.
 	EvmDenom string `json:"evm_denom" yaml:"evm_denom"`
+	// EnableCreate toggles state transitions that use the vm.Create function
+	EnableCreate bool `json:"enable_create" yaml:"enable_create"`
+	// EnableCall toggles state transitions that use the vm.Call function
+	EnableCall bool `json:"enable_call" yaml:"enable_call"`
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool) Params {
 	return Params{
-		EvmDenom: evmDenom,
+		EvmDenom:     evmDenom,
+		EnableCreate: enableCreate,
+		EnableCall:   enableCall,
 	}
 }
 
 // DefaultParams returns default evm parameters
 func DefaultParams() Params {
 	return Params{
-		EvmDenom: ethermint.AttoPhoton,
+		EvmDenom:     ethermint.AttoPhoton,
+		EnableCreate: true,
+		EnableCall:   true,
 	}
 }
 
@@ -55,6 +67,8 @@ func (p Params) String() string {
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		params.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
+		params.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
+		params.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 	}
 }
 
@@ -66,8 +80,16 @@ func (p Params) Validate() error {
 func validateEVMDenom(i interface{}) error {
 	denom, ok := i.(string)
 	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
+		return fmt.Errorf("invalid parameter EVM denom type: %T", i)
 	}
 
 	return sdk.ValidateDenom(denom)
+}
+
+func validateBool(i interface{}) error {
+	_, ok := i.(bool)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	return nil
 }

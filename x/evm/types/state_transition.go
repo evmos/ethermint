@@ -101,8 +101,9 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	// Clear cache of accounts to handle changes outside of the EVM
 	csdb.UpdateAccounts()
 
-	evmDenom := csdb.GetParams().EvmDenom
-	gasPrice := ctx.MinGasPrices().AmountOf(evmDenom)
+	params := csdb.GetParams()
+
+	gasPrice := ctx.MinGasPrices().AmountOf(params.EvmDenom)
 	if gasPrice.IsNil() {
 		return nil, errors.New("gas price cannot be nil")
 	}
@@ -125,9 +126,17 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	// create contract or execute call
 	switch contractCreation {
 	case true:
+		if !params.EnableCreate {
+			return nil, ErrCreateDisabled
+		}
+
 		ret, contractAddress, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
 		recipientLog = fmt.Sprintf("contract address %s", contractAddress.String())
 	default:
+		if !params.EnableCall {
+			return nil, ErrCreateDisabled
+		}
+
 		// Increment the nonce for the next transaction	(just for evm state transition)
 		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
 		ret, leftOverGas, err = evm.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)

@@ -15,4 +15,10 @@ var (
 
 	// ErrInvalidChainConfig returns an error resulting from an invalid ChainConfig.
 	ErrInvalidChainConfig = sdkerrors.Register(ModuleName, 4, "invalid chain configuration")
+
+	// ErrCreateDisabled returns an error if the EnableCreate parameter is false.
+	ErrCreateDisabled = sdkerrors.Register(ModuleName, 5, "EVM Create operation is disabled")
+
+	// ErrCallDisabled returns an error if the EnableCall parameter is false.
+	ErrCallDisabled = sdkerrors.Register(ModuleName, 6, "EVM Call operation is disabled")
 )

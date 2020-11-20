@@ -15,7 +15,7 @@ func TestParamsValidate(t *testing.T) {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams("ara"),
+			NewParams("ara", true, true),
 			false,
 		},
 		{
@@ -45,8 +45,11 @@ func TestParamsValidate(t *testing.T) {
 
 func TestParamsValidatePriv(t *testing.T) {
 	require.Error(t, validateEVMDenom(false))
+	require.NoError(t, validateEVMDenom("aphoton"))
+	require.Error(t, validateBool(""))
+	require.NoError(t, validateBool(true))
 }
 
 func TestParams_String(t *testing.T) {
-	require.Equal(t, "evm_denom: aphoton\n", DefaultParams().String())
+	require.Equal(t, "evm_denom: aphoton\nenable_create: true\nenable_call: true\n", DefaultParams().String())
 }

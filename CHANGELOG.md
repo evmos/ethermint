@@ -35,6 +35,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+* (deps) [\#610](https://github.com/cosmos/ethermint/pull/610) Update Go dependency to 1.15+.
+* (deps) [\#608](https://github.com/cosmos/ethermint/pull/608) Bump Cosmos SDK version to [v0.39.2](https://github.com/cosmos/cosmos-sdk/tag/v0.39.2)
+* (evm) [#603](https://github.com/cosmos/ethermint/pull/603) Add state transition params that enable or disable the EVM `Call` and `Create` operations.
+* (deps) [\#602](https://github.com/cosmos/ethermint/pull/602) Bump tendermint version to [v0.33.9](https://github.com/tendermint/tendermint/releases/tag/v0.33.9)
+
 ## [v0.3.0] - 2020-11-16
 
 ### API Breaking
