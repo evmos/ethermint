@@ -44,6 +44,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [#603](https://github.com/cosmos/ethermint/pull/603) Add state transition params that enable or disable the EVM `Call` and `Create` operations.
 * (deps) [\#602](https://github.com/cosmos/ethermint/pull/602) Bump tendermint version to [v0.33.9](https://github.com/tendermint/tendermint/releases/tag/v0.33.9)
 
+### Bug Fixes
+
+* (rpc) [\#613](https://github.com/cosmos/ethermint/issues/613) Fix potential deadlock caused if the keyring `List` returned an error.
+
 ## [v0.3.0] - 2020-11-16
 
 ### API Breaking
