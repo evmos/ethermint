@@ -49,12 +49,14 @@ func createRequest(method string, params interface{}) Request {
 
 func getTransactionReceipt(hash hexutil.Bytes) (map[string]interface{}, error) {
 	param := []string{hash.String()}
+
 	rpcRes, err := call("eth_getTransactionReceipt", param)
 	if err != nil {
 		return nil, err
 	}
 
 	receipt := make(map[string]interface{})
+
 	err = json.Unmarshal(rpcRes.Result, &receipt)
 	if err != nil {
 		return nil, err
@@ -74,10 +76,13 @@ func waitForReceipt(hash hexutil.Bytes) (map[string]interface{}, error) {
 
 		time.Sleep(time.Second)
 	}
+
 	return nil, errors.New("cound not find transaction on chain")
 }
 
 func call(method string, params interface{}) (*Response, error) {
+	var rpcRes *Response
+
 	if HOST == "" {
 		HOST = "http://localhost:8545"
 	}
@@ -87,7 +92,6 @@ func call(method string, params interface{}) (*Response, error) {
 		return nil, err
 	}
 
-	var rpcRes *Response
 	time.Sleep(1000000 * time.Nanosecond)
 	/* #nosec */
 	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req))
@@ -97,13 +101,12 @@ func call(method string, params interface{}) (*Response, error) {
 
 	decoder := json.NewDecoder(res.Body)
 	rpcRes = new(Response)
-	err = decoder.Decode(&rpcRes)
-	if err != nil {
+
+	if err := decoder.Decode(&rpcRes); err != nil {
 		return nil, err
 	}
 
-	err = res.Body.Close()
-	if err != nil {
+	if err := res.Body.Close(); err != nil {
 		return nil, err
 	}
 
@@ -111,6 +114,8 @@ func call(method string, params interface{}) (*Response, error) {
 }
 
 func main() {
+	var hash hexutil.Bytes
+
 	dat, err := ioutil.ReadFile(HOME + "/counter/counter_sol.bin")
 	if err != nil {
 		log.Fatal(err)
@@ -126,11 +131,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var hash hexutil.Bytes
-	err = json.Unmarshal(txRPCRes.Result, &hash)
-	if err != nil {
+	if err := json.Unmarshal(txRPCRes.Result, &hash); err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Println("Contract TX hash: ", hash)
 
 	receipt, err := waitForReceipt(hash)

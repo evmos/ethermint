@@ -34,6 +34,9 @@ linters:
     - unused
     - unparam
     - misspell
+    # TODO: address these lint issues
+    # - wsl
+    # - nolintlint
 
 issues:
   exclude-rules:
@@ -63,3 +66,8 @@ linters-settings:
   maligned:
     # print struct with more effective memory layout or not, false by default
     suggest-new: true
+  nolintlint:
+    allow-unused: false
+    allow-leading-space: true
+    require-explanation: false
+    require-specific: false

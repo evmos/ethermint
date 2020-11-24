@@ -8,6 +8,7 @@ func MarshalBigInt(i *big.Int) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return string(bz), nil
 }
 
@@ -18,16 +19,19 @@ func MustMarshalBigInt(i *big.Int) string {
 	if err != nil {
 		panic(err)
 	}
+
 	return str
 }
 
 // UnmarshalBigInt unmarshalls string from *big.Int
 func UnmarshalBigInt(s string) (*big.Int, error) {
 	ret := new(big.Int)
+
 	err := ret.UnmarshalText([]byte(s))
 	if err != nil {
 		return nil, err
 	}
+
 	return ret, nil
 }
 
@@ -38,5 +42,6 @@ func MustUnmarshalBigInt(s string) *big.Int {
 	if err != nil {
 		panic(err)
 	}
+
 	return ret
 }

@@ -15,15 +15,19 @@ coverage:
         threshold: 1% # allow this much decrease on project
       app:
         target: 70%
-        flags: app
+        flags:
+          - app
       modules:
-        target: 50%
-        flags: modules
+        target: 70%
+        flags:
+          - modules
       core:
         target: 50%
-        flags: core
-      clients:
-        flags: clients
+        flags:
+          - core
+      client:
+        flags:
+          - client
     changes: false
 
 comment:
@@ -57,4 +61,6 @@ ignore:
   - "x/faucet"
   - "**/*.pb.go"
   - "types/*.pb.go"
+  - "tests/*"
   - "x/**/*.pb.go"
+  - "scripts/"
