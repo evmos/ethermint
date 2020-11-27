@@ -200,7 +200,8 @@ func queryAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error)
 }
 
 func queryExportAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {
-	addr := ethcmn.HexToAddress(path[1])
+	hexAddress := path[1]
+	addr := ethcmn.HexToAddress(hexAddress)
 
 	var storage types.Storage
 	err := keeper.ForEachStorage(ctx, addr, func(key, value ethcmn.Hash) bool {
@@ -211,9 +212,12 @@ func queryExportAccount(ctx sdk.Context, path []string, keeper Keeper) ([]byte, 
 		return nil, err
 	}
 
+	balanceInt := keeper.GetBalance(ctx, addr)
+	balance := sdk.NewIntFromBigInt(balanceInt)
+
 	res := types.GenesisAccount{
-		Address: addr,
-		Balance: keeper.GetBalance(ctx, addr),
+		Address: hexAddress,
+		Balance: balance,
 		Code:    keeper.GetCode(ctx, addr),
 		Storage: storage,
 	}

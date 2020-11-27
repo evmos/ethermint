@@ -1,10 +1,10 @@
 package types
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"math/big"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -23,22 +23,22 @@ type (
 	// Its main difference between with Geth's GenesisAccount is that it uses a custom
 	// storage type and that it doesn't contain the private key field.
 	GenesisAccount struct {
-		Address ethcmn.Address `json:"address"`
-		Balance *big.Int       `json:"balance"`
-		Code    hexutil.Bytes  `json:"code,omitempty"`
-		Storage Storage        `json:"storage,omitempty"`
+		Address string        `json:"address"`
+		Balance sdk.Int       `json:"balance"`
+		Code    hexutil.Bytes `json:"code,omitempty"`
+		Storage Storage       `json:"storage,omitempty"`
 	}
 )
 
 // Validate performs a basic validation of a GenesisAccount fields.
 func (ga GenesisAccount) Validate() error {
-	if bytes.Equal(ga.Address.Bytes(), ethcmn.Address{}.Bytes()) {
-		return fmt.Errorf("address cannot be the zero address %s", ga.Address.String())
+	if ga.Address == (ethcmn.Address{}.String()) {
+		return fmt.Errorf("address cannot be the zero address %s", ga.Address)
 	}
-	if ga.Balance == nil {
+	if ga.Balance.IsNil() {
 		return errors.New("balance cannot be nil")
 	}
-	if ga.Balance.Sign() == -1 {
+	if ga.Balance.IsNegative() {
 		return errors.New("balance cannot be negative")
 	}
 	if ga.Code != nil && len(ga.Code) == 0 {
@@ -65,14 +65,15 @@ func (gs GenesisState) Validate() error {
 	seenAccounts := make(map[string]bool)
 	seenTxs := make(map[string]bool)
 	for _, acc := range gs.Accounts {
-		if seenAccounts[acc.Address.String()] {
-			return fmt.Errorf("duplicated genesis account %s", acc.Address.String())
+		if seenAccounts[acc.Address] {
+			return fmt.Errorf("duplicated genesis account %s", acc.Address)
 		}
 		if err := acc.Validate(); err != nil {
-			return fmt.Errorf("invalid genesis account %s: %w", acc.Address.String(), err)
+			return fmt.Errorf("invalid genesis account %s: %w", acc.Address, err)
 		}
-		seenAccounts[acc.Address.String()] = true
+		seenAccounts[acc.Address] = true
 	}
+
 	for _, tx := range gs.TxsLogs {
 		if seenTxs[tx.Hash.String()] {
 			return fmt.Errorf("duplicated logs from transaction %s", tx.Hash.String())

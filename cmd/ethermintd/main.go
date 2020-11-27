@@ -111,14 +111,16 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 func exportAppStateAndTMValidators(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
-
-	ethermintApp := app.NewEthermintApp(logger, db, traceStore, true, map[int64]bool{}, 0)
+	var ethermintApp *app.EthermintApp
 
 	if height != -1 {
-		err := ethermintApp.LoadHeight(height)
-		if err != nil {
+		ethermintApp = app.NewEthermintApp(logger, db, traceStore, false, map[int64]bool{}, 0)
+
+		if err := ethermintApp.LoadHeight(height); err != nil {
 			return nil, nil, err
 		}
+	} else {
+		ethermintApp = app.NewEthermintApp(logger, db, traceStore, true, map[int64]bool{}, 0)
 	}
 
 	return ethermintApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
