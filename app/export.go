@@ -28,7 +28,6 @@ func NewDefaultGenesisState() simapp.GenesisState {
 func (app *EthermintApp) ExportAppStateAndValidators(
 	forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
-
 	// Creates context with current height and checks txs for ctx to be usable by start of next block
 	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
 

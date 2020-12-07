@@ -47,11 +47,42 @@ type ExecutionResult struct {
 	GasInfo GasInfo
 }
 
-func (st StateTransition) newEVM(ctx sdk.Context, csdb *CommitStateDB, gasLimit uint64, gasPrice *big.Int, config ChainConfig) *vm.EVM {
+// GetHashFn implements vm.GetHashFunc for Ethermint. It handles 3 cases:
+//  1. The requested height matches the current height from context (and thus same epoch number)
+//  2. The requested height is from an previous height from the same chain epoch
+//  3. The requested height is from a height greater than the latest one
+func GetHashFn(ctx sdk.Context, csdb *CommitStateDB) vm.GetHashFunc {
+	return func(height uint64) common.Hash {
+		switch {
+		case ctx.BlockHeight() == int64(height):
+			// Case 1: The requested height matches the one from the context so we can retrieve the header
+			// hash directly from the context.
+			return HashFromContext(ctx)
+
+		case ctx.BlockHeight() > int64(height):
+			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
+			// current chain epoch. This only applies if the current height is greater than the requested height.
+			return csdb.WithContext(ctx).GetHeightHash(height)
+
+		default:
+			// Case 3: heights greater than the current one returns an empty hash.
+			return common.Hash{}
+		}
+	}
+}
+
+func (st StateTransition) newEVM(
+	ctx sdk.Context,
+	csdb *CommitStateDB,
+	gasLimit uint64,
+	gasPrice *big.Int,
+	config ChainConfig,
+) *vm.EVM {
 	// Create context for evm
 	context := vm.Context{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
+		GetHash:     GetHashFn(ctx, csdb),
 		Origin:      st.Sender,
 		Coinbase:    common.Address{}, // there's no benefitiary since we're not mining
 		BlockNumber: big.NewInt(ctx.BlockHeight()),
@@ -134,7 +165,7 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 		recipientLog = fmt.Sprintf("contract address %s", contractAddress.String())
 	default:
 		if !params.EnableCall {
-			return nil, ErrCreateDisabled
+			return nil, ErrCallDisabled
 		}
 
 		// Increment the nonce for the next transaction	(just for evm state transition)
@@ -222,4 +253,22 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasConsumed, "EVM execution consumption")
 
 	return executionResult, nil
+}
+
+// HashFromContext returns the Ethereum Header hash from the context's Tendermint
+// block header.
+func HashFromContext(ctx sdk.Context) common.Hash {
+	// cast the ABCI header to tendermint Header type
+	tmHeader := AbciHeaderToTendermint(ctx.BlockHeader())
+
+	// get the Tendermint block hash from the current header
+	tmBlockHash := tmHeader.Hash()
+
+	// NOTE: if the validator set hash is missing the hash will be returned as nil,
+	// so we need to check for this case to prevent a panic when calling Bytes()
+	if tmBlockHash == nil {
+		return common.Hash{}
+	}
+
+	return common.BytesToHash(tmBlockHash.Bytes())
 }

@@ -40,7 +40,7 @@ func (suite *StateDBTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "ethermint-1"})
 	suite.stateDB = suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
 
 	privkey, err := ethsecp256k1.GenerateKey()
@@ -65,6 +65,17 @@ func (suite *StateDBTestSuite) TestParams() {
 	suite.stateDB.SetParams(params)
 	newParams := suite.stateDB.GetParams()
 	suite.Require().Equal(newParams, params)
+}
+
+func (suite *StateDBTestSuite) TestGetHeightHash() {
+	hash := suite.stateDB.GetHeightHash(0)
+	suite.Require().Equal(ethcmn.Hash{}.String(), hash.String())
+
+	expHash := ethcmn.BytesToHash([]byte("hash"))
+	suite.stateDB.SetHeightHash(10, expHash)
+
+	hash = suite.stateDB.GetHeightHash(10)
+	suite.Require().Equal(expHash.String(), hash.String())
 }
 
 func (suite *StateDBTestSuite) TestBloomFilter() {

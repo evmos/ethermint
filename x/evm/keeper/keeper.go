@@ -89,6 +89,21 @@ func (k Keeper) SetBlockHash(ctx sdk.Context, hash []byte, height int64) {
 }
 
 // ----------------------------------------------------------------------------
+// Epoch Height -> hash mapping functions
+// Required by EVM context's GetHashFunc
+// ----------------------------------------------------------------------------
+
+// GetHeightHash returns the block header hash associated with a given block height and chain epoch number.
+func (k Keeper) GetHeightHash(ctx sdk.Context, height uint64) common.Hash {
+	return k.CommitStateDB.WithContext(ctx).GetHeightHash(height)
+}
+
+// SetHeightHash sets the block header hash associated with a given height.
+func (k Keeper) SetHeightHash(ctx sdk.Context, height uint64, hash common.Hash) {
+	k.CommitStateDB.WithContext(ctx).SetHeightHash(height, hash)
+}
+
+// ----------------------------------------------------------------------------
 // Block bloom bits mapping functions
 // Required by Web3 API.
 // ----------------------------------------------------------------------------
