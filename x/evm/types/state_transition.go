@@ -77,6 +77,7 @@ func (st StateTransition) newEVM(
 	gasLimit uint64,
 	gasPrice *big.Int,
 	config ChainConfig,
+	extraEIPs []int,
 ) *vm.EVM {
 	// Create context for evm
 	context := vm.Context{
@@ -92,7 +93,11 @@ func (st StateTransition) newEVM(
 		GasPrice:    gasPrice,
 	}
 
-	return vm.NewEVM(context, csdb, config.EthereumConfig(st.ChainID), vm.Config{})
+	vmConfig := vm.Config{
+		ExtraEips: extraEIPs,
+	}
+
+	return vm.NewEVM(context, csdb, config.EthereumConfig(st.ChainID), vmConfig)
 }
 
 // TransitionDb will transition the state by applying the current transaction and
@@ -139,7 +144,7 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 		return nil, errors.New("gas price cannot be nil")
 	}
 
-	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.Int, config)
+	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.Int, config, params.ExtraEIPs)
 
 	var (
 		ret             []byte
