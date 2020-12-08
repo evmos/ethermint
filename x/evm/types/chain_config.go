@@ -85,8 +85,8 @@ func DefaultChainConfig() ChainConfig {
 		ByzantiumBlock:      sdk.ZeroInt(),
 		ConstantinopleBlock: sdk.ZeroInt(),
 		PetersburgBlock:     sdk.ZeroInt(),
-		IstanbulBlock:       sdk.NewInt(-1),
-		MuirGlacierBlock:    sdk.NewInt(-1),
+		IstanbulBlock:       sdk.ZeroInt(),
+		MuirGlacierBlock:    sdk.ZeroInt(),
 		YoloV2Block:         sdk.NewInt(-1),
 		EWASMBlock:          sdk.NewInt(-1),
 	}
