@@ -10,11 +10,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/ethermint/utils"
-	"github.com/cosmos/ethermint/version"
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -23,8 +21,6 @@ import (
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, _ abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
-		case types.QueryProtocolVersion:
-			return queryProtocolVersion(keeper)
 		case types.QueryBalance:
 			return queryBalance(ctx, path, keeper)
 		case types.QueryBlockNumber:
@@ -49,17 +45,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown query endpoint")
 		}
 	}
-}
-
-func queryProtocolVersion(keeper Keeper) ([]byte, error) {
-	vers := version.ProtocolVersion
-
-	bz, err := codec.MarshalJSONIndent(keeper.cdc, hexutil.Uint(vers))
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-
-	return bz, nil
 }
 
 func queryBalance(ctx sdk.Context, path []string, keeper Keeper) ([]byte, error) {

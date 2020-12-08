@@ -123,6 +123,7 @@ all: tools verify install
 ###############################################################################
 
 build: go.sum
+
 ifeq ($(OS), Windows_NT)
 	go build -mod=readonly $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY).exe ./cmd/$(ETHERMINT_DAEMON_BINARY)
 	go build -mod=readonly $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY).exe ./cmd/$(ETHERMINT_CLI_BINARY)
@@ -130,7 +131,6 @@ else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/$(ETHERMINT_DAEMON_BINARY) ./cmd/$(ETHERMINT_DAEMON_BINARY)
 	go build -mod=readonly $(BUILD_FLAGS) -o build/$(ETHERMINT_CLI_BINARY) ./cmd/$(ETHERMINT_CLI_BINARY)
 endif
-	go build -mod=readonly ./...
 
 build-ethermint: go.sum
 	mkdir -p $(BUILDDIR)

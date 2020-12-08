@@ -24,7 +24,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	rpctypes "github.com/cosmos/ethermint/rpc/types"
-	"github.com/cosmos/ethermint/version"
+	ethermint "github.com/cosmos/ethermint/types"
 )
 
 const (
@@ -258,7 +258,7 @@ func TestEth_GetTransactionLogs(t *testing.T) {
 }
 
 func TestEth_protocolVersion(t *testing.T) {
-	expectedRes := hexutil.Uint(version.ProtocolVersion)
+	expectedRes := hexutil.Uint(ethermint.ProtocolVersion)
 
 	rpcRes := call(t, "eth_protocolVersion", []string{})
 

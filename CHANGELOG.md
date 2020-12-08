@@ -46,6 +46,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [\#621](https://github.com/cosmos/ethermint/issues/621) EVM `GenesisAccount` fields now share the same format as the auth module `Account`.
 * (evm) [\#618](https://github.com/cosmos/ethermint/issues/618) Add missing EVM `Context` `GetHash` field that retrieves a the header hash from a given block height.
 * (app) [\#617](https://github.com/cosmos/ethermint/issues/617) Fix genesis export functionality.
+* (rpc) [\#574](https://github.com/cosmos/ethermint/issues/574) Fix outdated version from `eth_protocolVersion`.
 
 ## [v0.3.1] - 2020-11-24
 

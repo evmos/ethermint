@@ -1,23 +1,26 @@
 package web3
 
 import (
-	"github.com/cosmos/ethermint/version"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/cosmos/cosmos-sdk/version"
 )
 
 // PublicWeb3API is the web3_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicWeb3API struct{}
 
-// New creates an instance of the Web3 API.
+// NewAPI creates an instance of the Web3 API.
 func NewAPI() *PublicWeb3API {
 	return &PublicWeb3API{}
 }
 
 // ClientVersion returns the client version in the Web3 user agent format.
 func (PublicWeb3API) ClientVersion() string {
-	return version.ClientVersion()
+	info := version.NewInfo()
+	return fmt.Sprintf("%s-%s", info.Name, info.Version)
 }
 
 // Sha3 returns the keccak-256 hash of the passed-in input.

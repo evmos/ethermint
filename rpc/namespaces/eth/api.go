@@ -17,7 +17,6 @@ import (
 	rpctypes "github.com/cosmos/ethermint/rpc/types"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/utils"
-	"github.com/cosmos/ethermint/version"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -124,7 +123,7 @@ func (api *PublicEthereumAPI) SetKeys(keys []ethsecp256k1.PrivKey) {
 // ProtocolVersion returns the supported Ethereum protocol version.
 func (api *PublicEthereumAPI) ProtocolVersion() hexutil.Uint {
 	api.logger.Debug("eth_protocolVersion")
-	return hexutil.Uint(version.ProtocolVersion)
+	return hexutil.Uint(ethermint.ProtocolVersion)
 }
 
 // ChainId returns the chain's identifier in hex format

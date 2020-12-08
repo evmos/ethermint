@@ -8,7 +8,6 @@ import (
 
 // Supported endpoints
 const (
-	QueryProtocolVersion = "protocolVersion"
 	QueryBalance         = "balance"
 	QueryBlockNumber     = "blockNumber"
 	QueryStorage         = "storage"
@@ -21,15 +20,6 @@ const (
 	QueryAccount         = "account"
 	QueryExportAccount   = "exportAccount"
 )
-
-// QueryResProtocolVersion is response type for protocol version query
-type QueryResProtocolVersion struct {
-	Version string `json:"version"`
-}
-
-func (q QueryResProtocolVersion) String() string {
-	return q.Version
-}
 
 // QueryResBalance is response type for balance query
 type QueryResBalance struct {
