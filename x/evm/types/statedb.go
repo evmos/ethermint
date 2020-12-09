@@ -32,7 +32,7 @@ type revision struct {
 
 // CommitStateDB implements the Geth state.StateDB interface. Instead of using
 // a trie and database for querying and persistence, the Keeper uses KVStores
-// and an account mapper is used to facilitate state transitions.
+// and an AccountKeeper to facilitate state transitions.
 //
 // TODO: This implementation is subject to change in regards to its statefull
 // manner. In otherwords, how this relates to the keeper in this module.

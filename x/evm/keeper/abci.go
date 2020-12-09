@@ -7,9 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-
-	"github.com/cosmos/ethermint/x/evm/types"
 )
 
 // BeginBlock sets the block hash -> block height map for the previous block height
@@ -22,7 +21,12 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	k.SetBlockHash(ctx, req.Header.LastBlockId.GetHash(), req.Header.GetHeight()-1)
+	// Set the hash -> height and height -> hash mapping.
+	hash := req.Header.LastBlockId.GetHash()
+	height := req.Header.GetHeight() - 1
+
+	k.SetHeightHash(ctx, uint64(height), common.BytesToHash(hash))
+	k.SetBlockHash(ctx, hash, height)
 
 	// reset counters that are used on CommitStateDB.Prepare
 	k.Bloom = big.NewInt(0)
@@ -36,13 +40,6 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	// Set the hash for the current height.
-	// NOTE: we set the hash here instead of on BeginBlock in order to set the final block prior to
-	// an upgrade. If we set it on BeginBlock the last block from prior to the upgrade wouldn't be
-	// included on the store.
-	hash := types.HashFromContext(ctx)
-	k.SetHeightHash(ctx, uint64(ctx.BlockHeight()), hash)
 
 	// Update account balances before committing other parts of state
 	k.UpdateAccounts(ctx)
