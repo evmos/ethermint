@@ -1,0 +1,34 @@
+[module]
+description = "The evm module executes Ethereum Virtual Machine (EVM) state transitions."
+homepage = "https://github.com/cosmos/ethermint"
+keywords = [
+  "evm",
+  "ethereum",
+  "ethermint",
+]
+
+name = "x/evm"
+
+[bug_tracker]
+url = "https://github.com/cosmos/ethermint/issues"
+
+[[authors]]
+name = "fedekunze"
+
+[[authors]]
+name = "austinabell"
+
+[[authors]]
+name = "alexanderbez"
+
+[[authors]]
+name = "noot"
+
+[[authors]]
+name = "araskachoi"
+
+[version]
+documentation = "https://raw.githubusercontent.com/cosmos/ethermint/development/x/evm/atlas/atlas-v0.3.1.md"
+repo = "https://github.com/cosmos/ethermint/releases/tag/v0.3.1"
+sdk_compat = "v0.39.x"
+version = "v0.3.1"
