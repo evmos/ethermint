@@ -348,11 +348,12 @@ func applyTransaction(
 	}
 
 	// Create a new context to be used in the EVM environment
-	context := ethcore.NewEVMContext(msg, header, bc, author)
+	blockCtx := ethcore.NewEVMBlockContext(header, bc, author)
+	txCtx := ethcore.NewEVMTxContext(msg)
 
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
-	vmenv := ethvm.NewEVM(context, evmKeeper.CommitStateDB, config, cfg)
+	vmenv := ethvm.NewEVM(blockCtx, txCtx, evmKeeper.CommitStateDB, config, cfg)
 
 	// Apply the transaction to the current state (included in the env)
 	execResult, err := ethcore.ApplyMessage(vmenv, msg, gp)
@@ -384,7 +385,7 @@ func applyTransaction(
 
 	// if the transaction created a contract, store the creation address in the receipt.
 	if msg.To() == nil {
-		receipt.ContractAddress = ethcrypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
+		receipt.ContractAddress = ethcrypto.CreateAddress(vmenv.TxContext.Origin, tx.Nonce())
 	}
 
 	// Set the receipt logs and create a bloom for filtering

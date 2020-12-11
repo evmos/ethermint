@@ -79,25 +79,29 @@ func (st StateTransition) newEVM(
 	config ChainConfig,
 	extraEIPs []int,
 ) *vm.EVM {
-	// Create context for evm
-	context := vm.Context{
+	// Create contexts for evm
+
+	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     GetHashFn(ctx, csdb),
-		Origin:      st.Sender,
-		Coinbase:    common.Address{}, // there's no benefitiary since we're not mining
+		Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
 		BlockNumber: big.NewInt(ctx.BlockHeight()),
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
 		GasLimit:    gasLimit,
-		GasPrice:    gasPrice,
+	}
+
+	txCtx := vm.TxContext{
+		Origin:   st.Sender,
+		GasPrice: gasPrice,
 	}
 
 	vmConfig := vm.Config{
 		ExtraEips: extraEIPs,
 	}
 
-	return vm.NewEVM(context, csdb, config.EthereumConfig(st.ChainID), vmConfig)
+	return vm.NewEVM(blockCtx, txCtx, csdb, config.EthereumConfig(st.ChainID), vmConfig)
 }
 
 // TransitionDb will transition the state by applying the current transaction and
