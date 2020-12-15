@@ -41,6 +41,17 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [\#661](https://github.com/cosmos/ethermint/pull/661) `Balance` field has been removed from the evm module's `GenesisState`.
 
+### Features
+
+* (rpc) [\#571](https://github.com/cosmos/ethermint/pull/571) Add pending queries to JSON-RPC calls. This allows for the querying of pending transactions and other relevant information that pertains to the pending state:
+  * `eth_getBalance`
+  * `eth_getTransactionCount`
+  * `eth_getBlockTransactionCountByNumber`
+  * `eth_getBlockByNumber`
+  * `eth_getTransactionByHash`
+  * `eth_getTransactionByBlockNumberAndIndex`
+  * `eth_sendTransaction` - the nonce will automatically update to its pending nonce (when none is explicitly provided)
+
 ### Improvements
 
 * (evm) [\#661](https://github.com/cosmos/ethermint/pull/661) Add invariant check for account balance and account nonce.

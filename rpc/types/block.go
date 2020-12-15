@@ -18,6 +18,9 @@ const (
 
 	// EarliestBlockNumber mapping from "earliest" to 1 for tm query (earliest query not supported)
 	EarliestBlockNumber = BlockNumber(1)
+
+	// PendingBlockNumber mapping from "pending" to -1 for tm query
+	PendingBlockNumber = BlockNumber(-1)
 )
 
 // NewBlockNumber creates a new BlockNumber instance.
@@ -45,7 +48,7 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 		*bn = LatestBlockNumber
 		return nil
 	case "pending":
-		*bn = LatestBlockNumber
+		*bn = PendingBlockNumber
 		return nil
 	}
 

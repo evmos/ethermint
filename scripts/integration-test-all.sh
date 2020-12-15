@@ -12,7 +12,6 @@ TEST_QTD=1
 #PORT AND RPC_PORT 3 initial digits, to be concat with a suffix later when node is initialized
 RPC_PORT="854"
 IP_ADDR="0.0.0.0"
-MODE="rpc"
 
 KEY="mykey"
 CHAINID="ethermint-2"
@@ -33,7 +32,7 @@ usage() {
     exit 1
 }
 
-while getopts "h?t:q:z:s:" args; do
+while getopts "h?t:q:z:s:m:" args; do
     case $args in
         h|\?)
             usage;
@@ -42,6 +41,7 @@ while getopts "h?t:q:z:s:" args; do
         q ) QTD=${OPTARG};;
         z ) TEST_QTD=${OPTARG};;
         s ) SLEEP_TIMEOUT=${OPTARG};;
+        m ) MODE=${OPTARG};;
     esac
 done
 
@@ -92,6 +92,18 @@ init_func() {
     "$PWD"/build/ethermintd collect-gentxs --home "$DATA_DIR$i"
     echo "prepare genesis: Run validate-genesis to ensure everything worked and that the genesis file is setup correctly"
     "$PWD"/build/ethermintd validate-genesis --home "$DATA_DIR$i"
+
+    if [[ $MODE == "pending" ]]; then
+        ls $DATA_DIR$i
+        # sed -i 's/create_empty_blocks_interval = "0s"/create_empty_blocks_interval = "30s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_propose = "3s"/timeout_propose = "30s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_propose_delta = "500ms"/timeout_propose_delta = "2s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_prevote = "1s"/timeout_prevote = "120s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_prevote_delta = "500ms"/timeout_prevote_delta = "2s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_precommit = "1s"/timeout_precommit = "10s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_precommit_delta = "500ms"/timeout_precommit_delta = "2s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_commit = "5s"/timeout_commit = "150s"/g' $DATA_DIR$i/config/config.toml
+    fi
 }
 
 start_func() {
@@ -138,12 +150,17 @@ echo "done sleeping"
 
 set +e
 
-if [[ -z $TEST || $TEST == "rpc" ]]; then
-    
+if [[ -z $TEST || $TEST == "rpc" || $TEST == "pending" ]]; then
+
     for i in $(seq 1 "$TEST_QTD"); do
         HOST_RPC=http://$IP_ADDR:$RPC_PORT"$i"
         echo "going to test ethermint node $HOST_RPC ..."
-        MODE=$MODE HOST=$HOST_RPC go test ./tests/... -timeout=300s -v -short
+        if [[ $MODE == "pending" ]]; then
+            sleep 150
+            MODE=$MODE HOST=$HOST_RPC go test -v ./tests/tests-pending/rpc_pending_test.go
+        else
+            MODE=$MODE HOST=$HOST_RPC go test ./tests/... -timeout=300s -v -short
+        fi
         
         RPC_FAIL=$?
     done

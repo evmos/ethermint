@@ -266,7 +266,10 @@ test-import:
 	rm -rf importer/tmp
 
 test-rpc:
-	./scripts/integration-test-all.sh -q 1 -z 1 -s 2
+	./scripts/integration-test-all.sh -t "rpc" -q 1 -z 1 -s 2 -m "rpc"
+
+test-rpc-pending:
+	./scripts/integration-test-all.sh -t "pending" -q 1 -z 1 -s 2 -m "pending"
 
 test-contract:
 	@type "npm" 2> /dev/null || (echo 'Npm does not exist. Please install node.js and npm."' && exit 1)

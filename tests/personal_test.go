@@ -12,7 +12,7 @@ import (
 )
 
 func TestPersonal_ListAccounts(t *testing.T) {
-	rpcRes := call(t, "personal_listAccounts", []string{})
+	rpcRes := Call(t, "personal_listAccounts", []string{})
 
 	var res []hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &res)
@@ -21,12 +21,12 @@ func TestPersonal_ListAccounts(t *testing.T) {
 }
 
 func TestPersonal_NewAccount(t *testing.T) {
-	rpcRes := call(t, "personal_newAccount", []string{"password"})
+	rpcRes := Call(t, "personal_newAccount", []string{"password"})
 	var addr common.Address
 	err := json.Unmarshal(rpcRes.Result, &addr)
 	require.NoError(t, err)
 
-	rpcRes = call(t, "personal_listAccounts", []string{})
+	rpcRes = Call(t, "personal_listAccounts", []string{})
 	var res []hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &res)
 	require.NoError(t, err)
@@ -34,7 +34,7 @@ func TestPersonal_NewAccount(t *testing.T) {
 }
 
 func TestPersonal_Sign(t *testing.T) {
-	rpcRes := call(t, "personal_sign", []interface{}{hexutil.Bytes{0x88}, hexutil.Bytes(from), ""})
+	rpcRes := Call(t, "personal_sign", []interface{}{hexutil.Bytes{0x88}, hexutil.Bytes(from), ""})
 
 	var res hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &res)
@@ -49,7 +49,7 @@ func TestPersonal_ImportRawKey(t *testing.T) {
 
 	// parse priv key to hex
 	hexPriv := common.Bytes2Hex(ethcrypto.FromECDSA(privkey))
-	rpcRes := call(t, "personal_importRawKey", []string{hexPriv, "password"})
+	rpcRes := Call(t, "personal_importRawKey", []string{hexPriv, "password"})
 
 	var res hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &res)
@@ -63,14 +63,14 @@ func TestPersonal_ImportRawKey(t *testing.T) {
 
 func TestPersonal_EcRecover(t *testing.T) {
 	data := hexutil.Bytes{0x88}
-	rpcRes := call(t, "personal_sign", []interface{}{data, hexutil.Bytes(from), ""})
+	rpcRes := Call(t, "personal_sign", []interface{}{data, hexutil.Bytes(from), ""})
 
 	var res hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &res)
 	require.NoError(t, err)
 	require.Equal(t, 65, len(res))
 
-	rpcRes = call(t, "personal_ecRecover", []interface{}{data, res})
+	rpcRes = Call(t, "personal_ecRecover", []interface{}{data, res})
 	var ecrecoverRes common.Address
 	err = json.Unmarshal(rpcRes.Result, &ecrecoverRes)
 	require.NoError(t, err)
@@ -79,23 +79,23 @@ func TestPersonal_EcRecover(t *testing.T) {
 
 func TestPersonal_UnlockAccount(t *testing.T) {
 	pswd := "nootwashere"
-	rpcRes := call(t, "personal_newAccount", []string{pswd})
+	rpcRes := Call(t, "personal_newAccount", []string{pswd})
 	var addr common.Address
 	err := json.Unmarshal(rpcRes.Result, &addr)
 	require.NoError(t, err)
 
 	// try to sign, should be locked
-	_, err = callWithError("personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, ""})
+	_, err = CallWithError("personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, ""})
 	require.Error(t, err)
 
-	rpcRes = call(t, "personal_unlockAccount", []interface{}{addr, ""})
+	rpcRes = Call(t, "personal_unlockAccount", []interface{}{addr, ""})
 	var unlocked bool
 	err = json.Unmarshal(rpcRes.Result, &unlocked)
 	require.NoError(t, err)
 	require.True(t, unlocked)
 
 	// try to sign, should work now
-	rpcRes = call(t, "personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, pswd})
+	rpcRes = Call(t, "personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, pswd})
 	var res hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &res)
 	require.NoError(t, err)
@@ -104,24 +104,24 @@ func TestPersonal_UnlockAccount(t *testing.T) {
 
 func TestPersonal_LockAccount(t *testing.T) {
 	pswd := "nootwashere"
-	rpcRes := call(t, "personal_newAccount", []string{pswd})
+	rpcRes := Call(t, "personal_newAccount", []string{pswd})
 	var addr common.Address
 	err := json.Unmarshal(rpcRes.Result, &addr)
 	require.NoError(t, err)
 
-	rpcRes = call(t, "personal_unlockAccount", []interface{}{addr, ""})
+	rpcRes = Call(t, "personal_unlockAccount", []interface{}{addr, ""})
 	var unlocked bool
 	err = json.Unmarshal(rpcRes.Result, &unlocked)
 	require.NoError(t, err)
 	require.True(t, unlocked)
 
-	rpcRes = call(t, "personal_lockAccount", []interface{}{addr})
+	rpcRes = Call(t, "personal_lockAccount", []interface{}{addr})
 	var locked bool
 	err = json.Unmarshal(rpcRes.Result, &locked)
 	require.NoError(t, err)
 	require.True(t, locked)
 
 	// try to sign, should be locked
-	_, err = callWithError("personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, ""})
+	_, err = CallWithError("personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, ""})
 	require.Error(t, err)
 }
