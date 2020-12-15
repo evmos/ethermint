@@ -54,7 +54,6 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Accounts: []types.GenesisAccount{
 					{
 						Address: address.String(),
-						Balance: sdk.OneInt(),
 						Storage: types.Storage{
 							{Key: common.BytesToHash([]byte("key")), Value: common.BytesToHash([]byte("value"))},
 						},
@@ -87,25 +86,6 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Accounts: []types.GenesisAccount{
 					{
 						Address: address.String(),
-						Balance: sdk.OneInt(),
-					},
-				},
-			},
-			true,
-		},
-		{
-			"balance mismatch",
-			func() {
-				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
-				suite.Require().NotNil(acc)
-				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
-			},
-			types.GenesisState{
-				Params: types.DefaultParams(),
-				Accounts: []types.GenesisAccount{
-					{
-						Address: address.String(),
-						Balance: sdk.OneInt(),
 					},
 				},
 			},

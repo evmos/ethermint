@@ -88,7 +88,9 @@ func (AppModule) Name() string {
 }
 
 // RegisterInvariants interface for registering invariants
-func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+	keeper.RegisterInvariants(ir, am.keeper)
+}
 
 // Route specifies path for transactions
 func (am AppModule) Route() string {

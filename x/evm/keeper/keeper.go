@@ -30,6 +30,8 @@ type Keeper struct {
 	// - storing block height -> bloom filter map. Needed for the Web3 API.
 	// - storing block hash -> block height map. Needed for the Web3 API.
 	storeKey sdk.StoreKey
+	// Account Keeper for fetching accounts
+	accountKeeper types.AccountKeeper
 	// Ethermint concrete implementation on the EVM StateDB interface
 	CommitStateDB *types.CommitStateDB
 	// Transaction counter in a block. Used on StateSB's Prepare function.
@@ -52,6 +54,7 @@ func NewKeeper(
 	return Keeper{
 		cdc:           cdc,
 		storeKey:      storeKey,
+		accountKeeper: ak,
 		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak),
 		TxCount:       0,
 		Bloom:         big.NewInt(0),

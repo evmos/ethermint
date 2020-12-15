@@ -280,7 +280,7 @@ func NewEthermintApp(
 	app.mm.SetOrderInitGenesis(
 		auth.ModuleName, distr.ModuleName, staking.ModuleName, bank.ModuleName,
 		slashing.ModuleName, gov.ModuleName, mint.ModuleName, supply.ModuleName,
-		crisis.ModuleName, genutil.ModuleName, evidence.ModuleName, evm.ModuleName,
+		evm.ModuleName, crisis.ModuleName, genutil.ModuleName, evidence.ModuleName,
 		faucet.ModuleName,
 	)
 

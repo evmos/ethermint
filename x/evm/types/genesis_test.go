@@ -9,8 +9,6 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
 
@@ -26,7 +24,6 @@ func TestValidateGenesisAccount(t *testing.T) {
 			"valid genesis account",
 			GenesisAccount{
 				Address: address.String(),
-				Balance: sdk.NewInt(1),
 				Code:    []byte{1, 2, 3},
 				Storage: Storage{
 					NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
@@ -38,23 +35,6 @@ func TestValidateGenesisAccount(t *testing.T) {
 			"empty account address bytes",
 			GenesisAccount{
 				Address: ethcmn.Address{}.String(),
-				Balance: sdk.NewInt(1),
-			},
-			false,
-		},
-		{
-			"nil account balance",
-			GenesisAccount{
-				Address: address.String(),
-				Balance: sdk.Int{},
-			},
-			false,
-		},
-		{
-			"nil account balance",
-			GenesisAccount{
-				Address: address.String(),
-				Balance: sdk.NewInt(-1),
 			},
 			false,
 		},
@@ -62,7 +42,6 @@ func TestValidateGenesisAccount(t *testing.T) {
 			"empty code bytes",
 			GenesisAccount{
 				Address: address.String(),
-				Balance: sdk.NewInt(1),
 				Code:    []byte{},
 			},
 			false,
@@ -101,7 +80,6 @@ func TestValidateGenesis(t *testing.T) {
 				Accounts: []GenesisAccount{
 					{
 						Address: address.String(),
-						Balance: sdk.NewInt(1),
 						Code:    []byte{1, 2, 3},
 						Storage: Storage{
 							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
@@ -153,7 +131,6 @@ func TestValidateGenesis(t *testing.T) {
 				Accounts: []GenesisAccount{
 					{
 						Address: address.String(),
-						Balance: sdk.NewInt(1),
 						Code:    []byte{1, 2, 3},
 						Storage: Storage{
 							NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
@@ -161,7 +138,6 @@ func TestValidateGenesis(t *testing.T) {
 					},
 					{
 						Address: address.String(),
-						Balance: sdk.NewInt(1),
 						Code:    []byte{1, 2, 3},
 						Storage: Storage{
 							NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
@@ -177,7 +153,6 @@ func TestValidateGenesis(t *testing.T) {
 				Accounts: []GenesisAccount{
 					{
 						Address: address.String(),
-						Balance: sdk.NewInt(1),
 						Code:    []byte{1, 2, 3},
 						Storage: Storage{
 							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
@@ -227,7 +202,6 @@ func TestValidateGenesis(t *testing.T) {
 				Accounts: []GenesisAccount{
 					{
 						Address: address.String(),
-						Balance: sdk.NewInt(1),
 						Code:    []byte{1, 2, 3},
 						Storage: Storage{
 							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
