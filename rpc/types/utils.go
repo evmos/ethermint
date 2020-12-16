@@ -201,7 +201,7 @@ func GetBlockCumulativeGas(cdc *codec.Codec, block *tmtypes.Block, idx int) uint
 	var gasUsed uint64
 	txDecoder := evmtypes.TxDecoder(cdc)
 
-	for i := 0; i < idx && i < len(block.Txs[i]); i++ {
+	for i := 0; i < idx && i < len(block.Txs); i++ {
 		txi, err := txDecoder(block.Txs[i])
 		if err != nil {
 			continue
