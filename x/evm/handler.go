@@ -63,8 +63,8 @@ func handleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) (*s
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		// TODO: block hash
-		k.CommitStateDB.Prepare(ethHash, common.Hash{}, k.TxCount)
+		blockHash := types.HashFromContext(ctx)
+		k.CommitStateDB.Prepare(ethHash, blockHash, k.TxCount)
 		k.TxCount++
 	}
 
@@ -149,7 +149,8 @@ func handleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) (*sdk
 
 	if !st.Simulate {
 		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, common.Hash{}, k.TxCount)
+		blockHash := types.HashFromContext(ctx)
+		k.CommitStateDB.Prepare(ethHash, blockHash, k.TxCount)
 		k.TxCount++
 	}
 
