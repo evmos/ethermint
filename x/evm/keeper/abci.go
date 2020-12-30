@@ -44,14 +44,17 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Valid
 	// Update account balances before committing other parts of state
 	k.UpdateAccounts(ctx)
 
+	root, err := k.Commit(ctx, true)
 	// Commit state objects to KV store
-	if _, err := k.Commit(ctx, true); err != nil {
+	if err != nil {
 		k.Logger(ctx).Error("failed to commit state objects", "error", err, "height", ctx.BlockHeight())
 		panic(err)
 	}
 
-	// Clear accounts cache after account data has been committed
-	k.ClearStateObjects(ctx)
+	// reset all cache after account data has been committed, that make sure node state consistent
+	if err = k.Reset(ctx, root); err != nil {
+		panic(err)
+	}
 
 	// set the block bloom filter bytes to store
 	bloom := ethtypes.BytesToBloom(k.Bloom.Bytes())
