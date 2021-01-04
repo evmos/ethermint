@@ -16,6 +16,8 @@ import (
 
 // InitGenesis initializes genesis state based on exported genesis
 func InitGenesis(ctx sdk.Context, k Keeper, accountKeeper types.AccountKeeper, data GenesisState) []abci.ValidatorUpdate { // nolint: interfacer
+	k.SetParams(ctx, data.Params)
+
 	evmDenom := data.Params.EvmDenom
 
 	for _, account := range data.Accounts {
@@ -55,7 +57,6 @@ func InitGenesis(ctx sdk.Context, k Keeper, accountKeeper types.AccountKeeper, d
 	}
 
 	k.SetChainConfig(ctx, data.ChainConfig)
-	k.SetParams(ctx, data.Params)
 
 	// set state objects and code to store
 	_, err = k.Commit(ctx, false)
