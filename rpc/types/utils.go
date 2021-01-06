@@ -48,15 +48,15 @@ func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, b
 	rpcTx := &Transaction{
 		From:     from,
 		Gas:      hexutil.Uint64(tx.Data.GasLimit),
-		GasPrice: (*hexutil.Big)(tx.Data.Price),
+		GasPrice: (*hexutil.Big)(tx.Data.Price.BigInt()),
 		Hash:     txHash,
 		Input:    hexutil.Bytes(tx.Data.Payload),
 		Nonce:    hexutil.Uint64(tx.Data.AccountNonce),
 		To:       tx.To(),
-		Value:    (*hexutil.Big)(tx.Data.Amount),
-		V:        (*hexutil.Big)(tx.Data.V),
-		R:        (*hexutil.Big)(tx.Data.R),
-		S:        (*hexutil.Big)(tx.Data.S),
+		Value:    (*hexutil.Big)(tx.Data.Amount.BigInt()),
+		V:        (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.V)),
+		R:        (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.R)),
+		S:        (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.S)),
 	}
 
 	if blockHash != (common.Hash{}) {

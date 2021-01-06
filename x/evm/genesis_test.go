@@ -55,7 +55,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 					{
 						Address: address.String(),
 						Storage: types.Storage{
-							{Key: common.BytesToHash([]byte("key")), Value: common.BytesToHash([]byte("value"))},
+							{Key: common.BytesToHash([]byte("key")).String(), Value: common.BytesToHash([]byte("value")).String()},
 						},
 					},
 				},

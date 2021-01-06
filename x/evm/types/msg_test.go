@@ -92,7 +92,8 @@ func TestMsgEthereumTx(t *testing.T) {
 
 	msg := NewMsgEthereumTx(0, &addr, nil, 100000, nil, []byte("test"))
 	require.NotNil(t, msg)
-	require.Equal(t, *msg.Data.Recipient, addr)
+	require.NotNil(t, msg.Data.Recipient)
+	require.Equal(t, msg.Data.Recipient.Address, addr.String())
 	require.Equal(t, msg.Route(), RouterKey)
 	require.Equal(t, msg.Type(), TypeMsgEthereumTx)
 	require.NotNil(t, msg.To())
@@ -102,7 +103,7 @@ func TestMsgEthereumTx(t *testing.T) {
 
 	msg = NewMsgEthereumTxContract(0, nil, 100000, nil, []byte("test"))
 	require.NotNil(t, msg)
-	require.Nil(t, msg.Data.Recipient)
+	require.Empty(t, msg.Data.Recipient)
 	require.Nil(t, msg.To())
 }
 

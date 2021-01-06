@@ -3,18 +3,36 @@ package types
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
 
-var address = ethcmn.BytesToAddress([]byte{1, 2, 3, 4, 5})
+type GenesisTestSuite struct {
+	suite.Suite
 
-func TestValidateGenesisAccount(t *testing.T) {
+	address ethcmn.Address
+	hash    ethcmn.Hash
+	code    string
+}
+
+func (suite *GenesisTestSuite) SetupTest() {
+	priv, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+
+	suite.address = ethcmn.BytesToAddress(priv.PubKey().Address().Bytes())
+	suite.hash = ethcmn.BytesToHash([]byte("hash"))
+	suite.code = ethcmn.Bytes2Hex([]byte{1, 2, 3})
+}
+
+func TestGenesisTestSuite(t *testing.T) {
+	suite.Run(t, new(GenesisTestSuite))
+}
+
+func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 	testCases := []struct {
 		name           string
 		genesisAccount GenesisAccount
@@ -23,10 +41,10 @@ func TestValidateGenesisAccount(t *testing.T) {
 		{
 			"valid genesis account",
 			GenesisAccount{
-				Address: address.String(),
-				Code:    []byte{1, 2, 3},
+				Address: suite.address.String(),
+				Code:    suite.code,
 				Storage: Storage{
-					NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+					NewState(suite.hash, suite.hash),
 				},
 			},
 			true,
@@ -41,8 +59,8 @@ func TestValidateGenesisAccount(t *testing.T) {
 		{
 			"empty code bytes",
 			GenesisAccount{
-				Address: address.String(),
-				Code:    []byte{},
+				Address: suite.address.String(),
+				Code:    "",
 			},
 			false,
 		},
@@ -52,18 +70,14 @@ func TestValidateGenesisAccount(t *testing.T) {
 		tc := tc
 		err := tc.genesisAccount.Validate()
 		if tc.expPass {
-			require.NoError(t, err, tc.name)
+			suite.Require().NoError(err, tc.name)
 		} else {
-			require.Error(t, err, tc.name)
+			suite.Require().Error(err, tc.name)
 		}
 	}
 }
 
-func TestValidateGenesis(t *testing.T) {
-	priv, err := ethsecp256k1.GenerateKey()
-	require.NoError(t, err)
-	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
-
+func (suite *GenesisTestSuite) TestValidateGenesis() {
 	testCases := []struct {
 		name     string
 		genState GenesisState
@@ -79,25 +93,25 @@ func TestValidateGenesis(t *testing.T) {
 			genState: GenesisState{
 				Accounts: []GenesisAccount{
 					{
-						Address: address.String(),
-						Code:    []byte{1, 2, 3},
+						Address: suite.address.String(),
+						Code:    suite.code,
 						Storage: Storage{
-							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
+							{Key: suite.hash.String()},
 						},
 					},
 				},
 				TxsLogs: []TransactionLogs{
 					{
-						Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+						Hash: suite.hash.String(),
 						Logs: []*ethtypes.Log{
 							{
-								Address:     addr,
-								Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+								Address:     suite.address,
+								Topics:      []ethcmn.Hash{suite.hash},
 								Data:        []byte("data"),
 								BlockNumber: 1,
-								TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+								TxHash:      suite.hash,
 								TxIndex:     1,
-								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+								BlockHash:   suite.hash,
 								Index:       1,
 								Removed:     false,
 							},
@@ -130,17 +144,17 @@ func TestValidateGenesis(t *testing.T) {
 			genState: GenesisState{
 				Accounts: []GenesisAccount{
 					{
-						Address: address.String(),
-						Code:    []byte{1, 2, 3},
+						Address: suite.address.String(),
+						Code:    suite.code,
 						Storage: Storage{
-							NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+							NewState(suite.hash, suite.hash),
 						},
 					},
 					{
-						Address: address.String(),
-						Code:    []byte{1, 2, 3},
+						Address: suite.address.String(),
+						Code:    suite.code,
 						Storage: Storage{
-							NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+							NewState(suite.hash, suite.hash),
 						},
 					},
 				},
@@ -152,41 +166,41 @@ func TestValidateGenesis(t *testing.T) {
 			genState: GenesisState{
 				Accounts: []GenesisAccount{
 					{
-						Address: address.String(),
-						Code:    []byte{1, 2, 3},
+						Address: suite.address.String(),
+						Code:    suite.code,
 						Storage: Storage{
-							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
+							{Key: suite.hash.String()},
 						},
 					},
 				},
 				TxsLogs: []TransactionLogs{
 					{
-						Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+						Hash: suite.hash.String(),
 						Logs: []*ethtypes.Log{
 							{
-								Address:     addr,
-								Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+								Address:     suite.address,
+								Topics:      []ethcmn.Hash{suite.hash},
 								Data:        []byte("data"),
 								BlockNumber: 1,
-								TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+								TxHash:      suite.hash,
 								TxIndex:     1,
-								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+								BlockHash:   suite.hash,
 								Index:       1,
 								Removed:     false,
 							},
 						},
 					},
 					{
-						Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+						Hash: suite.hash.String(),
 						Logs: []*ethtypes.Log{
 							{
-								Address:     addr,
-								Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+								Address:     suite.address,
+								Topics:      []ethcmn.Hash{suite.hash},
 								Data:        []byte("data"),
 								BlockNumber: 1,
-								TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+								TxHash:      suite.hash,
 								TxIndex:     1,
-								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+								BlockHash:   suite.hash,
 								Index:       1,
 								Removed:     false,
 							},
@@ -201,10 +215,10 @@ func TestValidateGenesis(t *testing.T) {
 			genState: GenesisState{
 				Accounts: []GenesisAccount{
 					{
-						Address: address.String(),
-						Code:    []byte{1, 2, 3},
+						Address: suite.address.String(),
+						Code:    suite.code,
 						Storage: Storage{
-							{Key: ethcmn.BytesToHash([]byte{1, 2, 3})},
+							{Key: suite.hash.String()},
 						},
 					},
 				},
@@ -234,9 +248,9 @@ func TestValidateGenesis(t *testing.T) {
 		tc := tc
 		err := tc.genState.Validate()
 		if tc.expPass {
-			require.NoError(t, err, tc.name)
+			suite.Require().NoError(err, tc.name)
 		} else {
-			require.Error(t, err, tc.name)
+			suite.Require().Error(err, tc.name)
 		}
 	}
 }

@@ -1,10 +1,10 @@
 package types
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -13,14 +13,14 @@ import (
 // with a given hash. It it used for import/export data as transactions are not persisted
 // on blockchain state after an upgrade.
 type TransactionLogs struct {
-	Hash ethcmn.Hash     `json:"hash"`
+	Hash string          `json:"hash"`
 	Logs []*ethtypes.Log `json:"logs"`
 }
 
 // NewTransactionLogs creates a new NewTransactionLogs instance.
-func NewTransactionLogs(hash ethcmn.Hash, logs []*ethtypes.Log) TransactionLogs {
+func NewTransactionLogs(hash ethcmn.Hash, logs []*ethtypes.Log) TransactionLogs { // nolint: interfacer
 	return TransactionLogs{
-		Hash: hash,
+		Hash: hash.String(),
 		Logs: logs,
 	}
 }
@@ -39,16 +39,16 @@ func UnmarshalLogs(in []byte) ([]*ethtypes.Log, error) {
 
 // Validate performs a basic validation of a GenesisAccount fields.
 func (tx TransactionLogs) Validate() error {
-	if bytes.Equal(tx.Hash.Bytes(), ethcmn.Hash{}.Bytes()) {
-		return fmt.Errorf("hash cannot be the empty %s", tx.Hash.String())
+	if ethermint.IsEmptyHash(tx.Hash) {
+		return fmt.Errorf("hash cannot be the empty %s", tx.Hash)
 	}
 
 	for i, log := range tx.Logs {
 		if err := ValidateLog(log); err != nil {
 			return fmt.Errorf("invalid log %d: %w", i, err)
 		}
-		if !bytes.Equal(log.TxHash.Bytes(), tx.Hash.Bytes()) {
-			return fmt.Errorf("log tx hash mismatch (%s ≠ %s)", log.TxHash.String(), tx.Hash.String())
+		if log.TxHash.String() != tx.Hash {
+			return fmt.Errorf("log tx hash mismatch (%s ≠ %s)", log.TxHash.String(), tx.Hash)
 		}
 	}
 	return nil
@@ -59,16 +59,16 @@ func ValidateLog(log *ethtypes.Log) error {
 	if log == nil {
 		return errors.New("log cannot be nil")
 	}
-	if bytes.Equal(log.Address.Bytes(), ethcmn.Address{}.Bytes()) {
+	if ethermint.IsZeroAddress(log.Address.String()) {
 		return fmt.Errorf("log address cannot be empty %s", log.Address.String())
 	}
-	if bytes.Equal(log.BlockHash.Bytes(), ethcmn.Hash{}.Bytes()) {
+	if ethermint.IsEmptyHash(log.BlockHash.String()) {
 		return fmt.Errorf("block hash cannot be the empty %s", log.BlockHash.String())
 	}
 	if log.BlockNumber == 0 {
 		return errors.New("block number cannot be zero")
 	}
-	if bytes.Equal(log.TxHash.Bytes(), ethcmn.Hash{}.Bytes()) {
+	if ethermint.IsEmptyHash(log.TxHash.String()) {
 		return fmt.Errorf("tx hash cannot be the empty %s", log.TxHash.String())
 	}
 	return nil

@@ -41,11 +41,11 @@ type Params struct {
 	// EnableCall toggles state transitions that use the vm.Call function
 	EnableCall bool `json:"enable_call" yaml:"enable_call"`
 	// ExtraEIPs defines the additional EIPs for the vm.Config
-	ExtraEIPs []int `json:"extra_eips" yaml:"extra_eips"`
+	ExtraEIPs []int64 `json:"extra_eips" yaml:"extra_eips"`
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, extraEIPs ...int) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, extraEIPs ...int64) Params {
 	return Params{
 		EvmDenom:     evmDenom,
 		EnableCreate: enableCreate,
@@ -60,7 +60,7 @@ func DefaultParams() Params {
 		EvmDenom:     ethermint.AttoPhoton,
 		EnableCreate: true,
 		EnableCall:   true,
-		ExtraEIPs:    []int(nil), // TODO: define default values
+		ExtraEIPs:    []int64(nil), // TODO: define default values
 	}
 }
 
@@ -107,13 +107,13 @@ func validateBool(i interface{}) error {
 }
 
 func validateEIPs(i interface{}) error {
-	eips, ok := i.([]int)
+	eips, ok := i.([]int64)
 	if !ok {
 		return fmt.Errorf("invalid EIP slice type: %T", i)
 	}
 
 	for _, eip := range eips {
-		if !vm.ValidEip(eip) {
+		if !vm.ValidEip(int(eip)) {
 			return fmt.Errorf("EIP %d is not activateable", eip)
 		}
 	}

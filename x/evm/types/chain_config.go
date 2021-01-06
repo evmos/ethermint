@@ -151,12 +151,6 @@ func validateHash(hex string) error {
 		return sdkerrors.Wrapf(ErrInvalidChainConfig, "hash cannot be blank")
 	}
 
-	bz := common.FromHex(hex)
-	lenHex := len(bz)
-	if lenHex > 0 && lenHex != common.HashLength {
-		return sdkerrors.Wrapf(ErrInvalidChainConfig, "invalid hash length, expected %d, got %d", common.HashLength, lenHex)
-	}
-
 	return nil
 }
 

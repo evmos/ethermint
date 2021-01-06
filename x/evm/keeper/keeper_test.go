@@ -98,10 +98,10 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 	txLogs := suite.app.EvmKeeper.GetAllTxLogs(suite.ctx)
 	suite.Require().Equal(2, len(txLogs))
 
-	suite.Require().Equal(ethcmn.Hash{}.String(), txLogs[0].Hash.String())
+	suite.Require().Equal(ethcmn.Hash{}.String(), txLogs[0].Hash)
 	suite.Require().Equal([]*ethtypes.Log{log2, log3}, txLogs[0].Logs)
 
-	suite.Require().Equal(ethHash.String(), txLogs[1].Hash.String())
+	suite.Require().Equal(ethHash.String(), txLogs[1].Hash)
 	suite.Require().Equal([]*ethtypes.Log{log}, txLogs[1].Logs)
 }
 

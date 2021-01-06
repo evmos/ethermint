@@ -1,21 +1,11 @@
 package types
 
 import (
-	"testing"
-
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
-	"github.com/stretchr/testify/require"
-
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
-func TestTransactionLogsValidate(t *testing.T) {
-	priv, err := ethsecp256k1.GenerateKey()
-	require.NoError(t, err)
-	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
-
+func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 	testCases := []struct {
 		name    string
 		txLogs  TransactionLogs
@@ -24,16 +14,16 @@ func TestTransactionLogsValidate(t *testing.T) {
 		{
 			"valid log",
 			TransactionLogs{
-				Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+				Hash: suite.hash.String(),
 				Logs: []*ethtypes.Log{
 					{
-						Address:     addr,
+						Address:     suite.address,
 						Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
 						Data:        []byte("data"),
 						BlockNumber: 1,
-						TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+						TxHash:      suite.hash,
 						TxIndex:     1,
-						BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+						BlockHash:   suite.hash,
 						Index:       1,
 						Removed:     false,
 					},
@@ -44,14 +34,14 @@ func TestTransactionLogsValidate(t *testing.T) {
 		{
 			"empty hash",
 			TransactionLogs{
-				Hash: ethcmn.Hash{},
+				Hash: ethcmn.Hash{}.String(),
 			},
 			false,
 		},
 		{
 			"invalid log",
 			TransactionLogs{
-				Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+				Hash: suite.hash.String(),
 				Logs: []*ethtypes.Log{nil},
 			},
 			false,
@@ -59,16 +49,16 @@ func TestTransactionLogsValidate(t *testing.T) {
 		{
 			"hash mismatch log",
 			TransactionLogs{
-				Hash: ethcmn.BytesToHash([]byte("tx_hash")),
+				Hash: suite.hash.String(),
 				Logs: []*ethtypes.Log{
 					{
-						Address:     addr,
+						Address:     suite.address,
 						Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
 						Data:        []byte("data"),
 						BlockNumber: 1,
 						TxHash:      ethcmn.BytesToHash([]byte("other_hash")),
 						TxIndex:     1,
-						BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+						BlockHash:   suite.hash,
 						Index:       1,
 						Removed:     false,
 					},
@@ -82,18 +72,14 @@ func TestTransactionLogsValidate(t *testing.T) {
 		tc := tc
 		err := tc.txLogs.Validate()
 		if tc.expPass {
-			require.NoError(t, err, tc.name)
+			suite.Require().NoError(err, tc.name)
 		} else {
-			require.Error(t, err, tc.name)
+			suite.Require().Error(err, tc.name)
 		}
 	}
 }
 
-func TestValidateLog(t *testing.T) {
-	priv, err := ethsecp256k1.GenerateKey()
-	require.NoError(t, err)
-	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
-
+func (suite *GenesisTestSuite) TestValidateLog() {
 	testCases := []struct {
 		name    string
 		log     *ethtypes.Log
@@ -102,13 +88,13 @@ func TestValidateLog(t *testing.T) {
 		{
 			"valid log",
 			&ethtypes.Log{
-				Address:     addr,
+				Address:     suite.address,
 				Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
 				Data:        []byte("data"),
 				BlockNumber: 1,
-				TxHash:      ethcmn.BytesToHash([]byte("tx_hash")),
+				TxHash:      suite.hash,
 				TxIndex:     1,
-				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+				BlockHash:   suite.hash,
 				Index:       1,
 				Removed:     false,
 			},
@@ -127,7 +113,7 @@ func TestValidateLog(t *testing.T) {
 		{
 			"empty block hash",
 			&ethtypes.Log{
-				Address:   addr,
+				Address:   suite.address,
 				BlockHash: ethcmn.Hash{},
 			},
 			false,
@@ -135,8 +121,8 @@ func TestValidateLog(t *testing.T) {
 		{
 			"zero block number",
 			&ethtypes.Log{
-				Address:     addr,
-				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+				Address:     suite.address,
+				BlockHash:   suite.hash,
 				BlockNumber: 0,
 			},
 			false,
@@ -144,8 +130,8 @@ func TestValidateLog(t *testing.T) {
 		{
 			"empty tx hash",
 			&ethtypes.Log{
-				Address:     addr,
-				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")),
+				Address:     suite.address,
+				BlockHash:   suite.hash,
 				BlockNumber: 1,
 				TxHash:      ethcmn.Hash{},
 			},
@@ -157,9 +143,9 @@ func TestValidateLog(t *testing.T) {
 		tc := tc
 		err := ValidateLog(tc.log)
 		if tc.expPass {
-			require.NoError(t, err, tc.name)
+			suite.Require().NoError(err, tc.name)
 		} else {
-			require.Error(t, err, tc.name)
+			suite.Require().Error(err, tc.name)
 		}
 	}
 }

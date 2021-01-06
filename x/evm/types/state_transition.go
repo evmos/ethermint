@@ -77,7 +77,7 @@ func (st StateTransition) newEVM(
 	gasLimit uint64,
 	gasPrice *big.Int,
 	config ChainConfig,
-	extraEIPs []int,
+	extraEIPs []int64,
 ) *vm.EVM {
 	// Create contexts for evm
 
@@ -97,8 +97,13 @@ func (st StateTransition) newEVM(
 		GasPrice: gasPrice,
 	}
 
+	eips := make([]int, len(extraEIPs))
+	for i, eip := range extraEIPs {
+		eips[i] = int(eip)
+	}
+
 	vmConfig := vm.Config{
-		ExtraEips: extraEIPs,
+		ExtraEips: eips,
 	}
 
 	return vm.NewEVM(blockCtx, txCtx, csdb, config.EthereumConfig(st.ChainID), vmConfig)

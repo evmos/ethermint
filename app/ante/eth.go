@@ -330,7 +330,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// Charge sender for gas up to limit
 	if gasLimit != 0 {
 		// Cost calculates the fees paid to validators based on gas limit and price
-		cost := new(big.Int).Mul(msgEthTx.Data.Price, new(big.Int).SetUint64(gasLimit))
+		cost := new(big.Int).Mul(msgEthTx.Data.Price.BigInt(), new(big.Int).SetUint64(gasLimit))
 
 		evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
 

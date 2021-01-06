@@ -18,7 +18,6 @@ const (
 	QueryBloom           = "bloom"
 	QueryLogs            = "logs"
 	QueryAccount         = "account"
-	QueryExportAccount   = "exportAccount"
 )
 
 // QueryResBalance is response type for balance query
