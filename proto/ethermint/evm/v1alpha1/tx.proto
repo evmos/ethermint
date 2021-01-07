@@ -1,0 +1,106 @@
+syntax = "proto3";
+package ethermint.evm.v1alpha1;
+
+import "gogoproto/gogo.proto";
+import "ethermint/evm/v1alpha1/evm.proto";
+
+option go_package = "github.com/cosmos/ethermint/x/evm/types";
+
+// Msg defines the evm Msg service.
+service Msg {
+  // EthereumTx defines a method submitting Ethereum transactions.
+  rpc EthereumTx(MsgEthereumTx) returns (MsgEthereumTxResponse);
+}
+
+// MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
+message MsgEthereumTx {
+  option (gogoproto.goproto_getters) = false;
+
+  TxData data = 1;
+  // caches
+  double size = 2 [ (gogoproto.jsontag) = "-" ];
+  SigCache from = 3 [ (gogoproto.jsontag) = "-" ];
+}
+
+// MsgEthereumTxResponse defines the Msg/EthereumTx response type.
+message MsgEthereumTxResponse { 
+  option (gogoproto.goproto_getters) = false;
+
+  // contract_address contains the ethereum address of the created contract (if
+  // any). If the state transition is an evm.Call, the contract address will be
+  // empty.
+  string contract_address = 1 [(gogoproto.moretags) = "yaml:\"contract_address\""];
+  // bloom represents the bloom filter bytes
+  bytes bloom = 2;
+  // tx_logs contains the transaction hash and the proto-compatible ethereum
+  // logs.
+  TransactionLogs tx_logs = 3 [
+    (gogoproto.moretags) = "yaml:\"tx_logs\"",
+    (gogoproto.nullable) = false
+  ];
+  // ret defines the bytes from the execution.
+  bytes ret = 4;
+}
+
+// TxData implements the Ethereum transaction data structure. It is used
+// solely as intended in Ethereum abiding by the protocol.
+message TxData {
+  option (gogoproto.goproto_getters) = false;
+
+  // nonce corresponds to the account nonce (transaction sequence).
+  uint64 nonce = 1 [(gogoproto.customname) = "AccountNonce"];
+  // price defines the unsigned integer value of the gas price in bytes.
+  string price = 2 [
+    (gogoproto.jsontag) = "gasPrice",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  // gas defines the gas limit defined for the transaction.
+  uint64 gas = 3 [(gogoproto.customname) = "GasLimit"];
+  Recipient to = 4 [
+    (gogoproto.customname) = "Recipient",
+    (gogoproto.moretags) = "rlp:\"nil\""
+  ];
+  // value defines the unsigned integer value of the transaction amount.
+  string value = 5 [
+    (gogoproto.customname) = "Amount",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  // input defines the data payload bytes of the transaction.
+  bytes input = 6 [(gogoproto.customname) = "Payload"];
+  // v defines the signature value
+  bytes v = 7;
+  // r defines the signature value
+  bytes r = 8;
+  // s define the signature value
+  bytes s = 9;
+  // hash defines the tx data hash, which is only used when marshaling to JSON.
+  string hash = 10 [ (gogoproto.moretags) = "rlp:\"-\"" ];
+}
+
+// Recipient defines a protobuf-compatible wrapper for an Ethereum address
+// pointer. It is required for RLP encoding.
+message Recipient {
+  option (gogoproto.goproto_getters) = false;
+
+  // address defines the hex-formated ethereum address of the recipient
+  string address = 1;
+}
+
+// SigCache is used to cache the derived sender and contains the signer used
+// to derive it.
+message SigCache {
+  option (gogoproto.goproto_getters) = false;
+
+  EIP155Signer signer = 1;
+  string address = 2;
+}
+
+// EIP155Transaction implements Signer using the EIP155 rules.
+message EIP155Signer {
+  option (gogoproto.goproto_getters) = false;
+
+  bytes chain_id = 1 [(gogoproto.customname) = "chainId"];
+  bytes chain_id_mul = 2 [(gogoproto.customname) = "chainIdMul"];
+}

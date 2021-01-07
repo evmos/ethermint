@@ -1,0 +1,172 @@
+syntax = "proto3";
+package ethermint.evm.v1alpha1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "ethermint/evm/v1alpha1/evm.proto";
+
+option go_package = "github.com/cosmos/ethermint/x/evm/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Account queries an Ethereum account.
+  rpc Account(QueryAccountRequest) returns (QueryAccountResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/account/{address}";
+  }
+
+  // Balance queries the balance of a the EVM denomination for a single
+  // EthAccount.
+  rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/balances/{address}";
+  }
+
+  // Storage queries the balance of all coins for a single account.
+  rpc Storage(QueryStorageRequest) returns (QueryStorageResponse) {
+    option (google.api.http).get =
+        "/ethermint/evm/v1alpha1/storage/{address}/{key}";
+  }
+
+  // Code queries the balance of all coins for a single account.
+  rpc Code(QueryCodeRequest) returns (QueryCodeResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/codes/{address}";
+  }
+
+  // TxLogs queries ethereum logs from a transaction.
+  rpc TxLogs(QueryTxLogsRequest) returns (QueryTxLogsResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_logs/{hash}";
+  }
+
+  // BlockLogs queries all the ethereum logs for a given block hash.
+  rpc BlockLogs(QueryBlockLogsRequest) returns (QueryBlockLogsResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/block_logs/{hash}";
+  }
+
+  // BlockBloom queries the block bloom filter bytes at a given height.
+  rpc BlockBloom(QueryBlockBloomRequest) returns (QueryBlockBloomResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/block_bloom";
+  }
+
+  // Params queries the parameters of x/evm module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/params";
+  }
+}
+
+// QueryAccountRequest is the request type for the Query/Account RPC method.
+message QueryAccountRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // address is the ethereum hex address to query the account for.
+  string address = 1;
+}
+
+// QueryAccountResponse is the response type for the Query/Account RPC method.
+message QueryAccountResponse {
+  // balance is the balance of the EVM denomination.
+  string balance = 1;
+  // code_hash is the code bytes from the EOA.
+  bytes code_hash = 2;
+  // nonce is the account's sequence number.
+  uint64 nonce = 3;
+}
+
+// QueryBalanceRequest is the request type for the Query/Balance RPC method.
+message QueryBalanceRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // address is the ethereum hex address to query the balance for.
+  string address = 1;
+}
+
+// QueryBalanceResponse is the response type for the Query/Balance RPC method.
+message QueryBalanceResponse {
+  // balance is the balance of the EVM denomination.
+  string balance = 1;
+}
+
+// QueryStorageRequest is the request type for the Query/Storage RPC method.
+message QueryStorageRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  /// address is the ethereum hex address to query the storage state for.
+  string address = 1;
+
+  // key defines the key of the storage state
+  string key = 2;
+}
+
+// QueryStorageResponse is the response type for the Query/Storage RPC
+// method.
+message QueryStorageResponse {
+  // key defines the storage state value hash associated with the given key.
+  string value = 1;
+}
+
+// QueryCodeRequest is the request type for the Query/Code RPC method.
+message QueryCodeRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // address is the ethereum hex address to query the code for.
+  string address = 1;
+}
+
+// QueryCodeResponse is the response type for the Query/Code RPC
+// method.
+message QueryCodeResponse {
+  // code represents the code bytes from an ethereum address.
+  bytes code = 1;
+}
+
+// QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
+message QueryTxLogsRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // hash is the ethereum transaction hex hash to query the logs for.
+  string hash = 1;
+}
+
+// QueryTxLogs is the response type for the Query/TxLogs RPC method.
+message QueryTxLogsResponse {
+  // logs represents the ethereum logs generated from the given transaction.
+  repeated Log logs = 1;
+}
+
+// QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
+message QueryBlockLogsRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // hash is the block hash to query the logs for.
+  string hash = 1;
+}
+
+// QueryTxLogs is the response type for the Query/BlockLogs RPC method.
+message QueryBlockLogsResponse {
+  // logs represents the ethereum logs generated at the given block hash.
+  repeated TransactionLogs tx_logs = 1 [ (gogoproto.nullable) = false ];
+}
+
+// QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
+// method.
+message QueryBlockBloomRequest {}
+
+// QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
+// method.
+message QueryBlockBloomResponse {
+  // bloom represents bloom filter for the given block hash.
+  bytes bloom = 1;
+}
+
+// QueryParamsRequest defines the request type for querying x/evm parameters.
+message QueryParamsRequest {}
+
+// QueryParamsResponse defines the response type for querying x/evm parameters.
+message QueryParamsResponse {
+  // params define the evm module parameters.
+  Params params = 1 [ (gogoproto.nullable) = false ];
+}
