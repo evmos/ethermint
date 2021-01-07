@@ -13,7 +13,7 @@ import (
 )
 
 // NewHandler returns a handler for Ethermint type messages.
-func NewHandler(k Keeper) sdk.Handler {
+func NewHandler(k *Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -28,7 +28,7 @@ func NewHandler(k Keeper) sdk.Handler {
 }
 
 // handleMsgEthereumTx handles an Ethereum specific tx
-func handleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) (*sdk.Result, error) {
+func handleMsgEthereumTx(ctx sdk.Context, k *Keeper, msg types.MsgEthereumTx) (*sdk.Result, error) {
 	// execute state transition
 	res, err := k.EthereumTx(ctx, msg)
 	if err != nil {
@@ -42,7 +42,7 @@ func handleMsgEthereumTx(ctx sdk.Context, k Keeper, msg types.MsgEthereumTx) (*s
 }
 
 // handleMsgEthermint handles an sdk.StdTx for an Ethereum state transition
-func handleMsgEthermint(ctx sdk.Context, k Keeper, msg types.MsgEthermint) (*sdk.Result, error) {
+func handleMsgEthermint(ctx sdk.Context, k *Keeper, msg types.MsgEthermint) (*sdk.Result, error) {
 	// parse the chainID from a string to a base-10 integer
 	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
 	if err != nil {

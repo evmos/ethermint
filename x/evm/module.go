@@ -69,12 +69,12 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule implements an application module for the evm module.
 type AppModule struct {
 	AppModuleBasic
-	keeper Keeper
+	keeper *Keeper
 	ak     types.AccountKeeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper, ak types.AccountKeeper) AppModule {
+func NewAppModule(k *Keeper, ak types.AccountKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -89,7 +89,7 @@ func (AppModule) Name() string {
 
 // RegisterInvariants interface for registering invariants
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
-	keeper.RegisterInvariants(ir, am.keeper)
+	keeper.RegisterInvariants(ir, *am.keeper)
 }
 
 // Route specifies path for transactions
@@ -109,7 +109,7 @@ func (am AppModule) QuerierRoute() string {
 
 // NewQuerierHandler sets up new querier handler for module
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(am.keeper)
+	return keeper.NewQuerier(*am.keeper)
 }
 
 // BeginBlock function for module at start of each block
@@ -126,11 +126,11 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	return InitGenesis(ctx, am.keeper, am.ak, genesisState)
+	return InitGenesis(ctx, *am.keeper, am.ak, genesisState)
 }
 
 // ExportGenesis exports the genesis state to be used by daemon
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	gs := ExportGenesis(ctx, am.keeper, am.ak)
+	gs := ExportGenesis(ctx, *am.keeper, am.ak)
 	return types.ModuleCdc.MustMarshalJSON(gs)
 }

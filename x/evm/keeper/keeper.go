@@ -44,14 +44,14 @@ type Keeper struct {
 // NewKeeper generates new evm module keeper
 func NewKeeper(
 	cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, ak types.AccountKeeper,
-) Keeper {
+) *Keeper {
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
 	}
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
-	return Keeper{
+	return &Keeper{
 		cdc:           cdc,
 		storeKey:      storeKey,
 		accountKeeper: ak,

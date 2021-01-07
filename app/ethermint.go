@@ -125,7 +125,7 @@ type EthermintApp struct {
 	UpgradeKeeper  upgrade.Keeper
 	ParamsKeeper   params.Keeper
 	EvidenceKeeper evidence.Keeper
-	EvmKeeper      evm.Keeper
+	EvmKeeper      *evm.Keeper
 	FaucetKeeper   faucet.Keeper
 
 	// the module manager

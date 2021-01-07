@@ -43,7 +43,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
-	suite.querier = keeper.NewQuerier(suite.app.EvmKeeper)
+	suite.querier = keeper.NewQuerier(*suite.app.EvmKeeper)
 	suite.address = ethcmn.HexToAddress(addrHex)
 
 	balance := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.ZeroInt()))

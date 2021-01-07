@@ -99,7 +99,7 @@ func trapSignals() {
 }
 
 // nolint: interfacer
-func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.AccountKeeper, evmKeeper evm.Keeper) {
+func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.AccountKeeper, evmKeeper *evm.Keeper) {
 	genBlock := ethcore.DefaultGenesisBlock()
 	ms := cms.CacheMultiStore()
 	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
@@ -285,7 +285,7 @@ func TestImportBlocks(t *testing.T) {
 // reward. The total reward consists of the static block reward and rewards for
 // included uncles. The coinbase of each uncle block is also rewarded.
 func accumulateRewards(
-	config *ethparams.ChainConfig, evmKeeper evm.Keeper,
+	config *ethparams.ChainConfig, evmKeeper *evm.Keeper,
 	header *ethtypes.Header, uncles []*ethtypes.Header,
 ) {
 
@@ -318,7 +318,7 @@ func accumulateRewards(
 // Code is pulled from go-ethereum 1.9 because the StateDB interface does not include the
 // SetBalance function implementation
 // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/consensus/misc/dao.go#L74
-func applyDAOHardFork(evmKeeper evm.Keeper) {
+func applyDAOHardFork(evmKeeper *evm.Keeper) {
 	// Retrieve the contract to refund balances into
 	if !evmKeeper.CommitStateDB.Exist(ethparams.DAORefundContract) {
 		evmKeeper.CommitStateDB.CreateAccount(ethparams.DAORefundContract)
@@ -339,7 +339,7 @@ func applyDAOHardFork(evmKeeper evm.Keeper) {
 // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/core/state_processor.go#L88
 func applyTransaction(
 	config *ethparams.ChainConfig, bc ethcore.ChainContext, author *ethcmn.Address,
-	gp *ethcore.GasPool, evmKeeper evm.Keeper, header *ethtypes.Header,
+	gp *ethcore.GasPool, evmKeeper *evm.Keeper, header *ethtypes.Header,
 	tx *ethtypes.Transaction, usedGas *uint64, cfg ethvm.Config,
 ) (*ethtypes.Receipt, uint64, error) {
 	msg, err := tx.AsMessage(ethtypes.MakeSigner(config, header.Number))
