@@ -760,59 +760,63 @@ func (csdb *CommitStateDB) CreateAccount(addr ethcmn.Address) {
 //
 // NOTE: Snapshots of the copied state cannot be applied to the copy.
 func (csdb *CommitStateDB) Copy() *CommitStateDB {
-	csdb.lock.Lock()
-	defer csdb.lock.Unlock()
 
 	// copy all the basic fields, initialize the memory ones
-	state := &CommitStateDB{
-		ctx:                  csdb.ctx,
-		storeKey:             csdb.storeKey,
-		paramSpace:           csdb.paramSpace,
-		accountKeeper:        csdb.accountKeeper,
-		stateObjects:         []stateEntry{},
-		addressToObjectIndex: make(map[ethcmn.Address]int),
-		stateObjectsDirty:    make(map[ethcmn.Address]struct{}),
-		refund:               csdb.refund,
-		logSize:              csdb.logSize,
-		preimages:            make([]preimageEntry, len(csdb.preimages)),
-		hashToPreimageIndex:  make(map[ethcmn.Hash]int, len(csdb.hashToPreimageIndex)),
-		journal:              newJournal(),
-	}
+	state := &CommitStateDB{}
+	CopyCommitStateDB(csdb, state)
+
+	return state
+}
+
+func CopyCommitStateDB(from, to *CommitStateDB) {
+	from.lock.Lock()
+	defer from.lock.Unlock()
+
+	to.ctx = from.ctx
+	to.storeKey = from.storeKey
+	to.paramSpace = from.paramSpace
+	to.accountKeeper = from.accountKeeper
+	to.stateObjects = []stateEntry{}
+	to.addressToObjectIndex = make(map[ethcmn.Address]int)
+	to.stateObjectsDirty = make(map[ethcmn.Address]struct{})
+	to.refund = from.refund
+	to.logSize = from.logSize
+	to.preimages = make([]preimageEntry, len(from.preimages))
+	to.hashToPreimageIndex = make(map[ethcmn.Hash]int, len(from.hashToPreimageIndex))
+	to.journal = newJournal()
 
 	// copy the dirty states, logs, and preimages
-	for _, dirty := range csdb.journal.dirties {
+	for _, dirty := range from.journal.dirties {
 		// There is a case where an object is in the journal but not in the
 		// stateObjects: OOG after touch on ripeMD prior to Byzantium. Thus, we
 		// need to check for nil.
 		//
 		// Ref: https://github.com/ethereum/go-ethereum/pull/16485#issuecomment-380438527
-		if idx, exist := csdb.addressToObjectIndex[dirty.address]; exist {
-			state.stateObjects = append(state.stateObjects, stateEntry{
+		if idx, exist := from.addressToObjectIndex[dirty.address]; exist {
+			to.stateObjects = append(to.stateObjects, stateEntry{
 				address:     dirty.address,
-				stateObject: csdb.stateObjects[idx].stateObject.deepCopy(state),
+				stateObject: from.stateObjects[idx].stateObject.deepCopy(to),
 			})
-			state.addressToObjectIndex[dirty.address] = len(state.stateObjects) - 1
-			state.stateObjectsDirty[dirty.address] = struct{}{}
+			to.addressToObjectIndex[dirty.address] = len(to.stateObjects) - 1
+			to.stateObjectsDirty[dirty.address] = struct{}{}
 		}
 	}
 
 	// Above, we don't copy the actual journal. This means that if the copy is
 	// copied, the loop above will be a no-op, since the copy's journal is empty.
 	// Thus, here we iterate over stateObjects, to enable copies of copies.
-	for addr := range csdb.stateObjectsDirty {
-		if idx, exist := state.addressToObjectIndex[addr]; !exist {
-			state.setStateObject(csdb.stateObjects[idx].stateObject.deepCopy(state))
-			state.stateObjectsDirty[addr] = struct{}{}
+	for addr := range from.stateObjectsDirty {
+		if idx, exist := to.addressToObjectIndex[addr]; !exist {
+			to.setStateObject(from.stateObjects[idx].stateObject.deepCopy(to))
+			to.stateObjectsDirty[addr] = struct{}{}
 		}
 	}
 
 	// copy pre-images
-	for i, preimageEntry := range csdb.preimages {
-		state.preimages[i] = preimageEntry
-		state.hashToPreimageIndex[preimageEntry.hash] = i
+	for i, preimageEntry := range from.preimages {
+		to.preimages[i] = preimageEntry
+		to.hashToPreimageIndex[preimageEntry.hash] = i
 	}
-
-	return state
 }
 
 // ForEachStorage iterates over each storage items, all invoke the provided
