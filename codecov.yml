@@ -58,7 +58,6 @@ ignore:
   - "docs"
   - "*.md"
   - "cmd"
-  - "x/faucet"
   - "**/*.pb.go"
   - "types/*.pb.go"
   - "tests/*"

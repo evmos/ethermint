@@ -30,7 +30,6 @@ import (
 	ethermintcodec "github.com/cosmos/ethermint/codec"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm"
-	"github.com/cosmos/ethermint/x/faucet"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -74,7 +73,6 @@ var (
 		evidence.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evm.AppModuleBasic{},
-		faucet.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -85,7 +83,6 @@ var (
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
-		faucet.ModuleName:         {supply.Minter},
 	}
 
 	// module accounts that are allowed to receive tokens
@@ -126,7 +123,6 @@ type EthermintApp struct {
 	ParamsKeeper   params.Keeper
 	EvidenceKeeper evidence.Keeper
 	EvmKeeper      *evm.Keeper
-	FaucetKeeper   faucet.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -157,7 +153,7 @@ func NewEthermintApp(
 		bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, params.StoreKey, upgrade.StoreKey, evidence.StoreKey,
-		evm.StoreKey, faucet.StoreKey,
+		evm.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(params.TStoreKey)
@@ -215,9 +211,6 @@ func NewEthermintApp(
 	app.EvmKeeper = evm.NewKeeper(
 		app.cdc, keys[evm.StoreKey], app.subspaces[evm.ModuleName], app.AccountKeeper,
 	)
-	app.FaucetKeeper = faucet.NewKeeper(
-		app.cdc, keys[faucet.StoreKey], app.SupplyKeeper,
-	)
 
 	// create evidence keeper with router
 	evidenceKeeper := evidence.NewKeeper(
@@ -261,7 +254,6 @@ func NewEthermintApp(
 		staking.NewAppModule(app.StakingKeeper, app.AccountKeeper, app.SupplyKeeper),
 		evidence.NewAppModule(app.EvidenceKeeper),
 		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper),
-		faucet.NewAppModule(app.FaucetKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -281,7 +273,6 @@ func NewEthermintApp(
 		auth.ModuleName, distr.ModuleName, staking.ModuleName, bank.ModuleName,
 		slashing.ModuleName, gov.ModuleName, mint.ModuleName, supply.ModuleName,
 		evm.ModuleName, crisis.ModuleName, genutil.ModuleName, evidence.ModuleName,
-		faucet.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)

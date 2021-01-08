@@ -311,31 +311,6 @@ For more information on seeds and peers, you can the Tendermint [P2P documentati
 
 The final step is to [start the nodes](./run_node.md#start-node). Once enough voting power (+2/3) from the genesis validators is up-and-running, the testnet will start producing blocks.
 
-## Testnet faucet
-
-Once the ethermint daemon is up and running, you can request tokens to your address using the `faucet` module:
-
-```bash
-# query your initial balance
-ethermintcli q bank balances $(ethermintcli keys show <mykey> -a)  
-
-# send a tx to request tokens to your account address
-ethermintcli tx faucet request 100aphoton --from <mykey>
-
-# query your balance after the request
-ethermintcli q bank balances $(ethermintcli keys show <mykey> -a)
-```
-
-You can also check to total amount funded by the faucet and the total supply of the chain via:
-
-```bash
-# total amount funded by the faucet
-ethermintcli q faucet funded
-
-# total supply
-ethermintcli q supply total
-```
-
 ## Next {hide}
 
 Learn about how to setup a [validator](./validator-setup.md) node on Ethermint {hide}

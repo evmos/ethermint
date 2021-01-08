@@ -42,14 +42,6 @@ ethermintd gentx --name $VAL_KEY --keyring-backend test
 # Collect genesis tx
 ethermintd collect-gentxs
 
-# Enable faucet
-cat  $HOME/.ethermintd/config/genesis.json | jq '.app_state["faucet"]["enable_faucet"]=true' >  $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
-
-echo -e '\n\ntestnet faucet enabled'
-echo -e 'to transfer tokens to your account address use:'
-echo -e "ethermintcli tx faucet request 100aphoton --from $VAL_KEY\n"
-
-
 # Run this to ensure everything worked and that the genesis file is setup correctly
 ethermintd validate-genesis
 

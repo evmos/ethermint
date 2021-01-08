@@ -12,7 +12,7 @@ Run a local node and start the REST and JSON-RPC clients {synopsis}
 
 ## Automated deployment
 
-Run the local node with faucet enabled:
+Run the local node
 
 ::: warning
 The script below will remove any pre-existing binaries installed. Use the manual deploy if you want
