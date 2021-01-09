@@ -1000,15 +1000,15 @@ func (api *PublicEthereumAPI) generateFromArgs(args rpctypes.SendTxArgs) (*evmty
 		gasPrice = big.NewInt(ethermint.DefaultGasPrice)
 	}
 
-	if args.Nonce == nil {
-		// get the nonce from the account retriever and the pending transactions
-		nonce, err = api.accountNonce(api.clientCtx, args.From, true)
-	} else {
-		nonce = (uint64)(*args.Nonce)
-	}
-
+	// get the nonce from the account retriever and the pending transactions
+	nonce, err = api.accountNonce(api.clientCtx, args.From, true)
 	if err != nil {
 		return nil, err
+	}
+	if args.Nonce != nil {
+		if nonce != (uint64)(*args.Nonce) {
+			return nil, fmt.Errorf(fmt.Sprintf("invalid nonce; got %d, expected %d", (uint64)(*args.Nonce), nonce))
+		}
 	}
 
 	if args.Data != nil && args.Input != nil && !bytes.Equal(*args.Data, *args.Input) {
