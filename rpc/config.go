@@ -6,21 +6,19 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/viper"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
-
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	"github.com/cosmos/ethermint/crypto/hd"
 	"github.com/cosmos/ethermint/rpc/websockets"
+	evmrest "github.com/cosmos/ethermint/x/evm/client/rest"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -75,7 +73,7 @@ func RegisterRoutes(rs *lcd.RestServer) {
 
 	// Register all other Cosmos routes
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
-	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	evmrest.RegisterRoutes(rs.CliCtx, rs.Mux)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 
 	// start websockets server
