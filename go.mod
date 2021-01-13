@@ -18,12 +18,11 @@ require (
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.0-20200123000308-a60dcd172b4c
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/tsdb v0.9.1 // indirect
-	github.com/regen-network/cosmos-proto v0.3.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.33.9
 	github.com/tendermint/tm-db v0.5.1
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef
