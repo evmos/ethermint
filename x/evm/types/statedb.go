@@ -784,6 +784,14 @@ func CopyCommitStateDB(from, to *CommitStateDB) {
 	to.preimages = make([]preimageEntry, len(from.preimages))
 	to.hashToPreimageIndex = make(map[ethcmn.Hash]int, len(from.hashToPreimageIndex))
 	to.journal = newJournal()
+	to.thash = from.thash
+	to.bhash = from.bhash
+	to.txIndex = from.txIndex
+	validRevisions := make([]revision, len(from.validRevisions))
+	copy(validRevisions, from.validRevisions)
+	to.validRevisions = validRevisions
+	to.nextRevisionID = from.nextRevisionID
+	to.accessList = from.accessList.Copy()
 
 	// copy the dirty states, logs, and preimages
 	for _, dirty := range from.journal.dirties {
