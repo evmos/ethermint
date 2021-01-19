@@ -690,6 +690,7 @@ func (csdb *CommitStateDB) Reset(_ ethcmn.Hash) error {
 	csdb.logSize = 0
 	csdb.preimages = []preimageEntry{}
 	csdb.hashToPreimageIndex = make(map[ethcmn.Hash]int)
+	csdb.accessList = newAccessList()
 
 	csdb.clearJournalAndRefund()
 	return nil
