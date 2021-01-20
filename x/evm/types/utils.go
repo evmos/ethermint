@@ -68,13 +68,19 @@ type ResultData struct {
 
 // String implements fmt.Stringer interface.
 func (rd ResultData) String() string {
+	var logsStr string
+	logsLen := len(rd.Logs)
+	for i := 0; i < logsLen; i++ {
+		logsStr = fmt.Sprintf("%s\t\t%v\n ", logsStr, *rd.Logs[i])
+	}
+
 	return strings.TrimSpace(fmt.Sprintf(`ResultData:
 	ContractAddress: %s
 	Bloom: %s
-	Logs: %v
 	Ret: %v
-	TxHash: %s
-`, rd.ContractAddress.String(), rd.Bloom.Big().String(), rd.Logs, rd.Ret, rd.TxHash.String()))
+	TxHash: %s	
+	Logs: 
+%s`, rd.ContractAddress.String(), rd.Bloom.Big().String(), rd.Ret, rd.TxHash.String(), logsStr))
 }
 
 // EncodeResultData takes all of the necessary data from the EVM execution
