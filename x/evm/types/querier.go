@@ -71,7 +71,13 @@ type QueryETHLogs struct {
 }
 
 func (q QueryETHLogs) String() string {
-	return fmt.Sprintf("%+v", q.Logs)
+	var logsStr string
+	logsLen := len(q.Logs)
+	for i := 0; i < logsLen; i++ {
+		logsStr = fmt.Sprintf("%s%v\n", logsStr, *q.Logs[i])
+	}
+
+	return logsStr
 }
 
 // QueryBloomFilter is response type for tx logs query
