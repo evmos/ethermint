@@ -43,7 +43,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [\#670](https://github.com/cosmos/ethermint/pull/670) Migrate types to the ones defined by the protobuf messages, which are required for the stargate release.
 
 ### Bug Fixes
-
+* (evm) [\#749](https://github.com/cosmos/ethermint/issues/749) Fix panic in `AnteHandler` when gas price larger than 100000
 * (evm) [\#747](https://github.com/cosmos/ethermint/issues/747) Fix format errors in String() of QueryETHLogs
 * (evm) [\#742](https://github.com/cosmos/ethermint/issues/742) Add parameter check for evm query func. 
 * (evm) [\#687](https://github.com/cosmos/ethermint/issues/687) Fix nonce check to explicitly check for the correct nonce, rather than a simple 'greater than' comparison. 

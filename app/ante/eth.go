@@ -101,7 +101,7 @@ func (emfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	evmDenom := emfd.evmKeeper.GetParams(ctx).EvmDenom
 
 	// fee = gas price * gas limit
-	fee := sdk.NewInt64DecCoin(evmDenom, msgEthTx.Fee().Int64())
+	fee := sdk.NewDecCoin(evmDenom, sdk.NewIntFromBigInt(msgEthTx.Fee()))
 
 	minGasPrices := ctx.MinGasPrices()
 	minFees := minGasPrices.AmountOf(evmDenom).MulInt64(int64(msgEthTx.Data.GasLimit))
