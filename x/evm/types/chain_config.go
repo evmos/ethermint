@@ -66,6 +66,16 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 	}
 }
 
+// IsIstanbul returns whether the Istanbul version is enabled.
+func (cc ChainConfig) IsIstanbul() bool {
+	return getBlockValue(cc.IstanbulBlock) != nil
+}
+
+// IsHomestead returns whether the Homestead version is enabled.
+func (cc ChainConfig) IsHomestead() bool {
+	return getBlockValue(cc.HomesteadBlock) != nil
+}
+
 // String implements the fmt.Stringer interface
 func (cc ChainConfig) String() string {
 	out, _ := yaml.Marshal(cc)

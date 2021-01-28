@@ -558,7 +558,7 @@ func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
 	err := json.Unmarshal(rpcRes.Result, &gas)
 	require.NoError(t, err, string(rpcRes.Result))
 
-	require.Equal(t, "0x1c2c4", gas.String())
+	require.Equal(t, "0x1a724", gas.String())
 }
 
 func TestEth_GetBlockByNumber(t *testing.T) {

@@ -115,7 +115,7 @@ func (st StateTransition) newEVM(
 func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*ExecutionResult, error) {
 	contractCreation := st.Recipient == nil
 
-	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true, false)
+	cost, err := core.IntrinsicGas(st.Payload, contractCreation, config.IsHomestead(), config.IsIstanbul())
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "invalid intrinsic gas for transaction")
 	}
