@@ -13,6 +13,7 @@ This document outlines the steps to join the public testnet hosted by [Chainsafe
     ```bash
     git clone https://github.com/cosmos/ethermint
     cd ethermint
+    git checkout v0.3.1
     make install
     ```
 
