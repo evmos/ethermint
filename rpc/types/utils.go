@@ -125,7 +125,7 @@ func EthTransactionsFromTendermint(clientCtx clientcontext.CLIContext, txs []tmt
 			continue
 		}
 		// TODO: Remove gas usage calculation if saving gasUsed per block
-		gasUsed.Add(gasUsed, ethTx.Fee())
+		gasUsed.Add(gasUsed, big.NewInt(int64(ethTx.GetGas())))
 		transactionHashes = append(transactionHashes, common.BytesToHash(tx.Hash()))
 	}
 
