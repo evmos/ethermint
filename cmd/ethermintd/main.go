@@ -65,8 +65,10 @@ func main() {
 	}
 	// CLI commands to initialize the chain
 	rootCmd.AddCommand(
-		client.ValidateChainID(
-			genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome),
+		client.GenerateChainID(
+			client.ValidateChainID(
+				genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome),
+			),
 		),
 		genutilcli.CollectGenTxsCmd(ctx, cdc, auth.GenesisAccountIterator{}, app.DefaultNodeHome),
 		genutilcli.MigrateGenesisCmd(ctx, cdc),

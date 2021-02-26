@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 )
 
 var (
@@ -45,4 +46,9 @@ func ParseChainID(chainID string) (*big.Int, error) {
 	}
 
 	return chainIDInt, nil
+}
+
+// GenerateRandomChainID returns a random chain-id in the valid format.
+func GenerateRandomChainID() string {
+	return fmt.Sprintf("ethermint-%d", 10+tmrand.Intn(10000))
 }
