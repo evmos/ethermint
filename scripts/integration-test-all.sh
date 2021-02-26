@@ -121,7 +121,7 @@ start_func() {
 
 start_cli_func() {
     echo "starting ethermint node $i in background ..."
-    "$PWD"/build/ethermintcli rest-server --unlock-key $KEY"$i" --chain-id $CHAINID --trace \
+    "$PWD"/build/ethermintcli rest-server --unlock-key $KEY"$i" --chain-id $CHAINID --trace --rpc-api="web3,eth,net,personal" \
     --laddr "tcp://localhost:$RPC_PORT$i" --node tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
     --home "$DATA_CLI_DIR$i" --read-timeout 30 --write-timeout 30 \
     >"$DATA_CLI_DIR"/cli"$i".log 2>&1 & disown

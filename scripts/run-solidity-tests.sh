@@ -24,7 +24,7 @@ fi
 chmod +x ./init-test-node.sh
 ./init-test-node.sh > ethermintd.log &
 sleep 5
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id $CHAINID --trace --wsport 8546 > ethermintcli.log &
+ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id $CHAINID --trace --wsport 8546 --rpc-api="web3,eth,net,personal" > ethermintcli.log &
 
 cd suites/initializable
 yarn test-ethermint
@@ -45,7 +45,7 @@ exit $ok
 
 ./../../init-test-node.sh > ethermintd.log &
 sleep 5
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id $CHAINID --trace --wsport 8546 > ethermintcli.log &
+ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id $CHAINID --trace --wsport 8546 --rpc-api="web3,eth,net,personal" > ethermintcli.log &
 
 cd ../initializable-buidler
 yarn test-ethermint

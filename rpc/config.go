@@ -58,7 +58,11 @@ func RegisterRoutes(rs *lcd.RestServer) {
 		}
 	}
 
-	apis := GetAPIs(rs.CliCtx, privkeys...)
+	rpcapi := viper.GetString(flagRPCAPI)
+	rpcapi = strings.ReplaceAll(rpcapi, " ", "")
+	rpcapiArr := strings.Split(rpcapi, ",")
+
+	apis := GetAPIs(rs.CliCtx, rpcapiArr, privkeys...)
 
 	// Register all the APIs exposed by the namespace services
 	// TODO: handle allowlist and private APIs
