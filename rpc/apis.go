@@ -34,6 +34,23 @@ func GetAPIs(clientCtx context.CLIContext, selectedApis []string, keys ...ethsec
 
 	var apis []rpc.API
 
+	apis = append(apis,
+		rpc.API{
+			Namespace: EthNamespace,
+			Version:   apiVersion,
+			Service:   ethAPI,
+			Public:    true,
+		},
+	)
+	apis = append(apis,
+		rpc.API{
+			Namespace: EthNamespace,
+			Version:   apiVersion,
+			Service:   filters.NewAPI(clientCtx, backend),
+			Public:    true,
+		},
+	)
+
 	for _, api := range selectedApis {
 		switch api {
 		case Web3Namespace:
@@ -42,23 +59,6 @@ func GetAPIs(clientCtx context.CLIContext, selectedApis []string, keys ...ethsec
 					Namespace: Web3Namespace,
 					Version:   apiVersion,
 					Service:   web3.NewAPI(),
-					Public:    true,
-				},
-			)
-		case EthNamespace:
-			apis = append(apis,
-				rpc.API{
-					Namespace: EthNamespace,
-					Version:   apiVersion,
-					Service:   ethAPI,
-					Public:    true,
-				},
-			)
-			apis = append(apis,
-				rpc.API{
-					Namespace: EthNamespace,
-					Version:   apiVersion,
-					Service:   filters.NewAPI(clientCtx, backend),
 					Public:    true,
 				},
 			)
