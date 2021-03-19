@@ -254,7 +254,8 @@ func TestImportBlocks(t *testing.T) {
 		}
 
 		for i, tx := range block.Transactions() {
-			evmKeeper.Prepare(ctx, tx.Hash(), block.Hash(), i)
+			evmKeeper.Prepare(ctx, tx.Hash(), i)
+			evmKeeper.CommitStateDB.SetBlockHash(block.Hash())
 
 			receipt, gas, err := applyTransaction(
 				chainConfig, chainContext, nil, gp, evmKeeper, header, tx, usedGas, vmConfig,

@@ -52,8 +52,7 @@ func (k Keeper) EthereumTx(ctx sdk.Context, msg types.MsgEthereumTx) (*sdk.Resul
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		blockHash := types.HashFromContext(ctx)
-		k.CommitStateDB.Prepare(ethHash, blockHash, k.TxCount)
+		k.CommitStateDB.Prepare(ethHash, k.TxCount)
 		k.TxCount++
 	}
 

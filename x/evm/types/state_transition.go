@@ -48,16 +48,16 @@ type ExecutionResult struct {
 }
 
 // GetHashFn implements vm.GetHashFunc for Ethermint. It handles 3 cases:
-//  1. The requested height matches the current height from context (and thus same epoch number)
+//  1. The requested height matches the current height (and thus same epoch number)
 //  2. The requested height is from an previous height from the same chain epoch
 //  3. The requested height is from a height greater than the latest one
 func GetHashFn(ctx sdk.Context, csdb *CommitStateDB) vm.GetHashFunc {
 	return func(height uint64) common.Hash {
 		switch {
 		case ctx.BlockHeight() == int64(height):
-			// Case 1: The requested height matches the one from the context so we can retrieve the header
-			// hash directly from the context.
-			return HashFromContext(ctx)
+			// Case 1: The requested height matches the one from the CommitStateDB so we can retrieve the block
+			// hash directly from the CommitStateDB.
+			return csdb.bhash
 
 		case ctx.BlockHeight() > int64(height):
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
@@ -267,22 +267,4 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasConsumed, "EVM execution consumption")
 
 	return executionResult, nil
-}
-
-// HashFromContext returns the Ethereum Header hash from the context's Tendermint
-// block header.
-func HashFromContext(ctx sdk.Context) common.Hash {
-	// cast the ABCI header to tendermint Header type
-	tmHeader := AbciHeaderToTendermint(ctx.BlockHeader())
-
-	// get the Tendermint block hash from the current header
-	tmBlockHash := tmHeader.Hash()
-
-	// NOTE: if the validator set hash is missing the hash will be returned as nil,
-	// so we need to check for this case to prevent a panic when calling Bytes()
-	if tmBlockHash == nil {
-		return common.Hash{}
-	}
-
-	return common.BytesToHash(tmBlockHash.Bytes())
 }

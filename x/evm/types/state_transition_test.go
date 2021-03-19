@@ -34,6 +34,8 @@ func (suite *StateDBTestSuite) TestGetHashFn() {
 						ValidatorsHash: []byte("val_hash"),
 					},
 				)
+				hash := ethcmn.BytesToHash([]byte("test hash"))
+				suite.stateDB.SetBlockHash(hash)
 			},
 			false,
 		},
@@ -54,7 +56,7 @@ func (suite *StateDBTestSuite) TestGetHashFn() {
 						ValidatorsHash: []byte("val_hash"),
 					},
 				)
-				hash := types.HashFromContext(suite.ctx)
+				hash := ethcmn.BytesToHash([]byte("test hash"))
 				suite.stateDB.WithContext(suite.ctx).SetHeightHash(1, hash)
 			},
 			false,

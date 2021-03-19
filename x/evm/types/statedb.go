@@ -342,6 +342,10 @@ func (csdb *CommitStateDB) BlockHash() ethcmn.Hash {
 	return csdb.bhash
 }
 
+func (csdb *CommitStateDB) SetBlockHash(hash ethcmn.Hash) {
+	csdb.bhash = hash
+}
+
 // GetCode returns the code for a given account.
 func (csdb *CommitStateDB) GetCode(addr ethcmn.Address) []byte {
 	so := csdb.getStateObject(addr)
@@ -733,9 +737,8 @@ func (csdb *CommitStateDB) clearJournalAndRefund() {
 
 // Prepare sets the current transaction hash and index and block hash which is
 // used when the EVM emits new state logs.
-func (csdb *CommitStateDB) Prepare(thash, bhash ethcmn.Hash, txi int) {
+func (csdb *CommitStateDB) Prepare(thash ethcmn.Hash, txi int) {
 	csdb.thash = thash
-	csdb.bhash = bhash
 	csdb.txIndex = txi
 }
 

@@ -62,6 +62,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (api) [\#687](https://github.com/cosmos/ethermint/issues/687) Returns error for a transaction with an incorrect nonce. 
 * (evm) [\#674](https://github.com/cosmos/ethermint/issues/674) Reset all cache after account data has been committed in `EndBlock` to make sure every node state consistent.
 * (evm) [\#672](https://github.com/cosmos/ethermint/issues/672) Fix panic of `wrong Block.Header.AppHash` when restart a node with snapshot.
+* (evm) [\#775](https://github.com/cosmos/ethermint/issues/775) MisUse of headHash as blockHash when create EVM context.
 
 ### Features
 * (api) [\#821](https://github.com/cosmos/ethermint/pull/821) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.

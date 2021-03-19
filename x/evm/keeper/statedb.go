@@ -225,8 +225,8 @@ func (k *Keeper) Reset(ctx sdk.Context, root ethcmn.Hash) error {
 }
 
 // Prepare calls CommitStateDB.Prepare using the passed in context
-func (k *Keeper) Prepare(ctx sdk.Context, thash, bhash ethcmn.Hash, txi int) {
-	k.CommitStateDB.WithContext(ctx).Prepare(thash, bhash, txi)
+func (k *Keeper) Prepare(ctx sdk.Context, thash ethcmn.Hash, txi int) {
+	k.CommitStateDB.WithContext(ctx).Prepare(thash, txi)
 }
 
 // CreateAccount calls CommitStateDB.CreateAccount using the passed in context

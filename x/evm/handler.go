@@ -106,8 +106,7 @@ func handleMsgEthermint(ctx sdk.Context, k *Keeper, msg types.MsgEthermint) (*sd
 
 	if !st.Simulate {
 		// Prepare db for logs
-		blockHash := types.HashFromContext(ctx)
-		k.CommitStateDB.Prepare(ethHash, blockHash, k.TxCount)
+		k.CommitStateDB.Prepare(ethHash, k.TxCount)
 		k.TxCount++
 	}
 

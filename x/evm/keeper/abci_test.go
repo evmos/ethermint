@@ -8,10 +8,11 @@ func (suite *KeeperTestSuite) TestBeginBlock() {
 	req := abci.RequestBeginBlock{
 		Header: abci.Header{
 			LastBlockId: abci.BlockID{
-				Hash: []byte("hash"),
+				Hash: []byte("last hash"),
 			},
 			Height: 10,
 		},
+		Hash: []byte("hash"),
 	}
 
 	// get the initial consumption
@@ -33,9 +34,9 @@ func (suite *KeeperTestSuite) TestBeginBlock() {
 
 	suite.Require().Equal(int64(initialConsumed), int64(suite.ctx.GasMeter().GasConsumed()))
 
-	lastHeight, found := suite.app.EvmKeeper.GetBlockHash(suite.ctx, req.Header.LastBlockId.Hash)
+	lastHeight, found := suite.app.EvmKeeper.GetBlockHash(suite.ctx, req.Hash)
 	suite.Require().True(found)
-	suite.Require().Equal(int64(9), lastHeight)
+	suite.Require().Equal(int64(10), lastHeight)
 }
 
 func (suite *KeeperTestSuite) TestEndBlock() {

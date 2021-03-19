@@ -18,7 +18,7 @@ import (
 func (suite *KeeperTestSuite) TestBloomFilter() {
 	// Prepare db for logs
 	tHash := ethcmn.BytesToHash([]byte{0x1})
-	suite.app.EvmKeeper.Prepare(suite.ctx, tHash, ethcmn.Hash{}, 0)
+	suite.app.EvmKeeper.Prepare(suite.ctx, tHash, 0)
 	contractAddress := ethcmn.BigToAddress(big.NewInt(1))
 	log := ethtypes.Log{Address: contractAddress}
 
@@ -359,7 +359,8 @@ func (suite *KeeperTestSuite) TestSuiteDB_Prepare() {
 	bhash := ethcmn.BytesToHash([]byte("bhash"))
 	txi := 1
 
-	suite.app.EvmKeeper.Prepare(suite.ctx, thash, bhash, txi)
+	suite.app.EvmKeeper.Prepare(suite.ctx, thash, txi)
+	suite.app.EvmKeeper.CommitStateDB.SetBlockHash(bhash)
 
 	suite.Require().Equal(txi, suite.app.EvmKeeper.TxIndex(suite.ctx))
 	suite.Require().Equal(bhash, suite.app.EvmKeeper.BlockHash(suite.ctx))

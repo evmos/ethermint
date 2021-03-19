@@ -81,7 +81,7 @@ func (suite *StateDBTestSuite) TestGetHeightHash() {
 func (suite *StateDBTestSuite) TestBloomFilter() {
 	// Prepare db for logs
 	tHash := ethcmn.BytesToHash([]byte{0x1})
-	suite.stateDB.Prepare(tHash, ethcmn.Hash{}, 0)
+	suite.stateDB.Prepare(tHash, 0)
 	contractAddress := ethcmn.BigToAddress(big.NewInt(1))
 	log := ethtypes.Log{Address: contractAddress}
 
@@ -419,7 +419,8 @@ func (suite *StateDBTestSuite) TestSuiteDB_Prepare() {
 	bhash := ethcmn.BytesToHash([]byte("bhash"))
 	txi := 1
 
-	suite.stateDB.Prepare(thash, bhash, txi)
+	suite.stateDB.Prepare(thash, txi)
+	suite.stateDB.SetBlockHash(bhash)
 
 	suite.Require().Equal(txi, suite.stateDB.TxIndex())
 	suite.Require().Equal(bhash, suite.stateDB.BlockHash())
