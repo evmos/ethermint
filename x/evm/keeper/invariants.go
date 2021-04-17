@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
@@ -30,7 +30,7 @@ func (k Keeper) BalanceInvariant() sdk.Invariant {
 			count int
 		)
 
-		k.accountKeeper.IterateAccounts(ctx, func(account authexported.Account) bool {
+		k.accountKeeper.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
 			ethAccount, ok := account.(*ethermint.EthAccount)
 			if !ok {
 				// ignore non EthAccounts
@@ -38,10 +38,11 @@ func (k Keeper) BalanceInvariant() sdk.Invariant {
 			}
 
 			evmDenom := k.GetParams(ctx).EvmDenom
-			accountBalance := ethAccount.GetCoins().AmountOf(evmDenom)
+
+			accountBalance := k.bankKeeper.GetBalance(ctx, ethAccount.GetAddress(), evmDenom)
 			evmBalance := k.GetBalance(ctx, ethAccount.EthAddress())
 
-			if evmBalance.Cmp(accountBalance.BigInt()) != 0 {
+			if evmBalance.Cmp(accountBalance.Amount.BigInt()) != 0 {
 				count++
 				msg += fmt.Sprintf(
 					"\tbalance mismatch for address %s: account balance %s, evm balance %s\n",
@@ -70,7 +71,7 @@ func (k Keeper) NonceInvariant() sdk.Invariant {
 			count int
 		)
 
-		k.accountKeeper.IterateAccounts(ctx, func(account authexported.Account) bool {
+		k.accountKeeper.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
 			ethAccount, ok := account.(*ethermint.EthAccount)
 			if !ok {
 				// ignore non EthAccounts

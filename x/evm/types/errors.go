@@ -16,9 +16,18 @@ var (
 	// ErrInvalidChainConfig returns an error resulting from an invalid ChainConfig.
 	ErrInvalidChainConfig = sdkerrors.Register(ModuleName, 4, "invalid chain configuration")
 
+	// ErrZeroAddress returns an error resulting from an zero (empty) ethereum Address.
+	ErrZeroAddress = sdkerrors.Register(ModuleName, 5, "invalid zero address")
+
+	// ErrEmptyHash returns an error resulting from an empty ethereum Hash.
+	ErrEmptyHash = sdkerrors.Register(ModuleName, 6, "empty hash")
+
+	// ErrBloomNotFound returns an error if the block bloom cannot be found on the store.
+	ErrBloomNotFound = sdkerrors.Register(ModuleName, 7, "block bloom not found")
+
 	// ErrCreateDisabled returns an error if the EnableCreate parameter is false.
-	ErrCreateDisabled = sdkerrors.Register(ModuleName, 5, "EVM Create operation is disabled")
+	ErrCreateDisabled = sdkerrors.Register(ModuleName, 8, "EVM Create operation is disabled")
 
 	// ErrCallDisabled returns an error if the EnableCall parameter is false.
-	ErrCallDisabled = sdkerrors.Register(ModuleName, 6, "EVM Call operation is disabled")
+	ErrCallDisabled = sdkerrors.Register(ModuleName, 9, "EVM Call operation is disabled")
 )

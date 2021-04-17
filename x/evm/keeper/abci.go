@@ -11,7 +11,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// BeginBlock sets the block hash -> block height map for the previous block height
+// BeginBlock sets the block height -> header hash map for the previous block height
 // and resets the Bloom filter and the transaction count to 0.
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if req.Header.LastBlockId.GetHash() == nil || req.Header.GetHeight() < 1 {
@@ -25,9 +25,7 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	currentHash := req.Hash
 	height := req.Header.GetHeight()
 
-	k.SetHeightHash(ctx, uint64(height), common.BytesToHash(currentHash))
-	k.SetBlockHash(ctx, currentHash, height)
-	k.CommitStateDB.SetBlockHash(common.BytesToHash(currentHash))
+	k.SetHeightHash(ctx, uint64(height), common.BytesToHash(hash))
 
 	// reset counters that are used on CommitStateDB.Prepare
 	k.Bloom = big.NewInt(0)

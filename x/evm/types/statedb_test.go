@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -19,7 +19,7 @@ import (
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type StateDBTestSuite struct {
@@ -40,7 +40,7 @@ func (suite *StateDBTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "ethermint-1"})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-1"})
 	suite.stateDB = suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
 
 	privkey, err := ethsecp256k1.GenerateKey()
@@ -48,13 +48,16 @@ func (suite *StateDBTestSuite) SetupTest() {
 
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
 
-	balance := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.ZeroInt()))
+	balance := ethermint.NewPhotonCoin(sdk.ZeroInt())
 	acc := &ethermint.EthAccount{
-		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
+		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),
 	}
 
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+	err = suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), balance)
+	suite.Require().NoError(err)
+
 	suite.stateObject = suite.stateDB.GetOrNewStateObject(suite.address)
 }
 
@@ -83,7 +86,10 @@ func (suite *StateDBTestSuite) TestBloomFilter() {
 	tHash := ethcmn.BytesToHash([]byte{0x1})
 	suite.stateDB.Prepare(tHash, 0)
 	contractAddress := ethcmn.BigToAddress(big.NewInt(1))
-	log := ethtypes.Log{Address: contractAddress}
+	log := ethtypes.Log{
+		Address: contractAddress,
+		Topics:  []ethcmn.Hash{},
+	}
 
 	testCase := []struct {
 		name     string
@@ -158,6 +164,13 @@ func (suite *StateDBTestSuite) TestStateDB_Balance() {
 				suite.stateDB.AddBalance(suite.address, big.NewInt(200))
 			},
 			big.NewInt(200),
+		},
+		{
+			"sub more than balance",
+			func() {
+				suite.stateDB.SubBalance(suite.address, big.NewInt(300))
+			},
+			big.NewInt(-100),
 		},
 	}
 
@@ -271,7 +284,7 @@ func (suite *StateDBTestSuite) TestStateDB_Logs() {
 				TxHash:      ethcmn.Hash{},
 				TxIndex:     1,
 				BlockHash:   ethcmn.Hash{},
-				Index:       1,
+				Index:       0,
 				Removed:     false,
 			},
 		},
@@ -293,6 +306,7 @@ func (suite *StateDBTestSuite) TestStateDB_Logs() {
 		suite.Require().Empty(dbLogs, tc.name)
 
 		suite.stateDB.AddLog(&tc.log)
+		tc.log.Index = 0 // reset index
 		suite.Require().Equal(logs, suite.stateDB.AllLogs(), tc.name)
 
 		//resets state but checking to see if storekey still persists.
@@ -441,7 +455,7 @@ func (suite *StateDBTestSuite) TestSuiteDB_CopyState() {
 				TxHash:      ethcmn.Hash{},
 				TxIndex:     1,
 				BlockHash:   ethcmn.Hash{},
-				Index:       1,
+				Index:       0,
 				Removed:     false,
 			},
 		},
@@ -542,6 +556,13 @@ func (suite *StateDBTestSuite) TestCommitStateDB_Commit() {
 			},
 			false, true,
 		},
+		{
+			"faled to update state object",
+			func() {
+				suite.stateDB.SubBalance(suite.address, big.NewInt(10))
+			},
+			false, false,
+		},
 	}
 
 	for _, tc := range testCase {
@@ -598,6 +619,13 @@ func (suite *StateDBTestSuite) TestCommitStateDB_Finalize() {
 				suite.stateDB.SetState(suite.address, ethcmn.BytesToHash([]byte("key")), ethcmn.BytesToHash([]byte("value")))
 			},
 			false, true,
+		},
+		{
+			"faled to update state object",
+			func() {
+				suite.stateDB.SubBalance(suite.address, big.NewInt(10))
+			},
+			false, false,
 		},
 	}
 

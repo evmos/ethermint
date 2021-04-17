@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	ethermint "github.com/cosmos/ethermint/types"
 
@@ -43,8 +43,9 @@ type CommitStateDB struct {
 	ctx sdk.Context
 
 	storeKey      sdk.StoreKey
-	paramSpace    params.Subspace
+	paramSpace    paramtypes.Subspace
 	accountKeeper AccountKeeper
+	bankKeeper    BankKeeper
 
 	// array that hold 'live' objects, which will get modified while processing a
 	// state transition
@@ -90,13 +91,15 @@ type CommitStateDB struct {
 // CONTRACT: Stores used for state must be cache-wrapped as the ordering of the
 // key/value space matters in determining the merkle root.
 func NewCommitStateDB(
-	ctx sdk.Context, storeKey sdk.StoreKey, paramSpace params.Subspace, ak AccountKeeper,
+	ctx sdk.Context, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	ak AccountKeeper, bankKeeper BankKeeper,
 ) *CommitStateDB {
 	return &CommitStateDB{
 		ctx:                  ctx,
 		storeKey:             storeKey,
 		paramSpace:           paramSpace,
 		accountKeeper:        ak,
+		bankKeeper:           bankKeeper,
 		stateObjects:         []stateEntry{},
 		addressToObjectIndex: make(map[ethcmn.Address]int),
 		stateObjectsDirty:    make(map[ethcmn.Address]struct{}),
@@ -132,49 +135,38 @@ func (csdb *CommitStateDB) SetParams(params Params) {
 // SetBalance sets the balance of an account.
 func (csdb *CommitStateDB) SetBalance(addr ethcmn.Address, amount *big.Int) {
 	so := csdb.GetOrNewStateObject(addr)
-	if so != nil {
-		so.SetBalance(amount)
-	}
+	so.SetBalance(amount)
+
 }
 
 // AddBalance adds amount to the account associated with addr.
 func (csdb *CommitStateDB) AddBalance(addr ethcmn.Address, amount *big.Int) {
 	so := csdb.GetOrNewStateObject(addr)
-	if so != nil {
-		so.AddBalance(amount)
-	}
+	so.AddBalance(amount)
 }
 
 // SubBalance subtracts amount from the account associated with addr.
 func (csdb *CommitStateDB) SubBalance(addr ethcmn.Address, amount *big.Int) {
 	so := csdb.GetOrNewStateObject(addr)
-	if so != nil {
-		so.SubBalance(amount)
-	}
+	so.SubBalance(amount)
 }
 
 // SetNonce sets the nonce (sequence number) of an account.
 func (csdb *CommitStateDB) SetNonce(addr ethcmn.Address, nonce uint64) {
 	so := csdb.GetOrNewStateObject(addr)
-	if so != nil {
-		so.SetNonce(nonce)
-	}
+	so.SetNonce(nonce)
 }
 
 // SetState sets the storage state with a key, value pair for an account.
 func (csdb *CommitStateDB) SetState(addr ethcmn.Address, key, value ethcmn.Hash) {
 	so := csdb.GetOrNewStateObject(addr)
-	if so != nil {
-		so.SetState(nil, key, value)
-	}
+	so.SetState(nil, key, value)
 }
 
 // SetCode sets the code for a given account.
 func (csdb *CommitStateDB) SetCode(addr ethcmn.Address, code []byte) {
 	so := csdb.GetOrNewStateObject(addr)
-	if so != nil {
-		so.SetCode(ethcrypto.Keccak256Hash(code), code)
-	}
+	so.SetCode(ethcrypto.Keccak256Hash(code), code)
 }
 
 // ----------------------------------------------------------------------------
@@ -187,7 +179,9 @@ func (csdb *CommitStateDB) SetCode(addr ethcmn.Address, code []byte) {
 // SetLogs sets the logs for a transaction in the KVStore.
 func (csdb *CommitStateDB) SetLogs(hash ethcmn.Hash, logs []*ethtypes.Log) error {
 	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixLogs)
-	bz, err := MarshalLogs(logs)
+
+	txLogs := NewTransactionLogsFromEth(hash, logs)
+	bz, err := ModuleCdc.MarshalBinaryBare(&txLogs)
 	if err != nil {
 		return err
 	}
@@ -306,8 +300,16 @@ func (csdb *CommitStateDB) GetHeightHash(height uint64) ethcmn.Hash {
 }
 
 // GetParams returns the total set of evm parameters.
+// It will check if every param exists in the Subspace's KVStore before querying by the key,
+// the default value of that param will be returned if not exist.
 func (csdb *CommitStateDB) GetParams() (params Params) {
-	csdb.paramSpace.GetParamSet(csdb.ctx, &params)
+	ps := &params
+	for _, pair := range ps.ParamSetPairs() {
+		if csdb.paramSpace.Has(csdb.ctx, pair.Key) {
+			csdb.paramSpace.Get(csdb.ctx, pair.Key, pair.Value)
+		}
+	}
+
 	return params
 }
 
@@ -410,7 +412,12 @@ func (csdb *CommitStateDB) GetLogs(hash ethcmn.Hash) ([]*ethtypes.Log, error) {
 		return []*ethtypes.Log{}, nil
 	}
 
-	return UnmarshalLogs(bz)
+	var txLogs TransactionLogs
+	if err := ModuleCdc.UnmarshalBinaryBare(bz, &txLogs); err != nil {
+		return []*ethtypes.Log{}, err
+	}
+
+	return txLogs.EthLogs(), nil
 }
 
 // AllLogs returns all the current logs in the state.
@@ -421,9 +428,9 @@ func (csdb *CommitStateDB) AllLogs() []*ethtypes.Log {
 
 	allLogs := []*ethtypes.Log{}
 	for ; iterator.Valid(); iterator.Next() {
-		var logs []*ethtypes.Log
-		ModuleCdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &logs)
-		allLogs = append(allLogs, logs...)
+		var txLogs TransactionLogs
+		ModuleCdc.MustUnmarshalBinaryBare(iterator.Value(), &txLogs)
+		allLogs = append(allLogs, txLogs.EthLogs()...)
 	}
 
 	return allLogs
@@ -572,18 +579,11 @@ func (csdb *CommitStateDB) updateStateObject(so *stateObject) error {
 		return fmt.Errorf("invalid balance %s", newBalance)
 	}
 
-	coins := so.account.GetCoins()
-	balance := coins.AmountOf(newBalance.Denom)
-	if balance.IsZero() || !balance.Equal(newBalance.Amount) {
-		coins = coins.Add(newBalance)
-	}
-
-	if err := so.account.SetCoins(coins); err != nil {
+	err := csdb.bankKeeper.SetBalance(csdb.ctx, so.account.GetAddress(), newBalance)
+	if err != nil {
 		return err
 	}
-
 	csdb.accountKeeper.SetAccount(csdb.ctx, so.account)
-	// return csdb.bankKeeper.SetBalance(csdb.ctx, so.account.Address, newBalance)
 	return nil
 }
 
@@ -703,20 +703,21 @@ func (csdb *CommitStateDB) Reset(_ ethcmn.Hash) error {
 // UpdateAccounts updates the nonce and coin balances of accounts
 func (csdb *CommitStateDB) UpdateAccounts() {
 	for _, stateEntry := range csdb.stateObjects {
-		currAcc := csdb.accountKeeper.GetAccount(csdb.ctx, sdk.AccAddress(stateEntry.address.Bytes()))
-		ethermintAcc, ok := currAcc.(*ethermint.EthAccount)
+		address := sdk.AccAddress(stateEntry.address.Bytes())
+		currAccount := csdb.accountKeeper.GetAccount(csdb.ctx, address)
+		ethermintAcc, ok := currAccount.(*ethermint.EthAccount)
 		if !ok {
 			continue
 		}
 
 		evmDenom := csdb.GetParams().EvmDenom
-		balance := sdk.Coin{
-			Denom:  evmDenom,
-			Amount: ethermintAcc.GetCoins().AmountOf(evmDenom),
+		balance := csdb.bankKeeper.GetBalance(csdb.ctx, address, evmDenom)
+
+		if stateEntry.stateObject.Balance() != balance.Amount.BigInt() && balance.IsValid() {
+			stateEntry.stateObject.balance = balance.Amount
 		}
 
-		if stateEntry.stateObject.Balance() != balance.Amount.BigInt() && balance.IsValid() ||
-			stateEntry.stateObject.Nonce() != ethermintAcc.GetSequence() {
+		if stateEntry.stateObject.Nonce() != ethermintAcc.GetSequence() {
 			stateEntry.stateObject.account = ethermintAcc
 		}
 	}
@@ -755,8 +756,7 @@ func (csdb *CommitStateDB) Prepare(thash ethcmn.Hash, txi int) {
 func (csdb *CommitStateDB) CreateAccount(addr ethcmn.Address) {
 	newobj, prevobj := csdb.createObject(addr)
 	if prevobj != nil {
-		evmDenom := csdb.GetParams().EvmDenom
-		newobj.setBalance(evmDenom, sdk.NewIntFromBigInt(prevobj.Balance()))
+		newobj.setBalance(sdk.NewIntFromBigInt(prevobj.Balance()))
 	}
 }
 
@@ -780,6 +780,7 @@ func CopyCommitStateDB(from, to *CommitStateDB) {
 	to.storeKey = from.storeKey
 	to.paramSpace = from.paramSpace
 	to.accountKeeper = from.accountKeeper
+	to.bankKeeper = from.bankKeeper
 	to.stateObjects = []stateEntry{}
 	to.addressToObjectIndex = make(map[ethcmn.Address]int)
 	to.stateObjectsDirty = make(map[ethcmn.Address]struct{})
@@ -866,8 +867,7 @@ func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, valu
 	return nil
 }
 
-// GetOrNewStateObject retrieves a state object or create a new state object if
-// nil.
+// GetOrNewStateObject retrieves a state object or create a new state object if nil.
 func (csdb *CommitStateDB) GetOrNewStateObject(addr ethcmn.Address) StateObject {
 	so := csdb.getStateObject(addr)
 	if so == nil || so.deleted {
@@ -884,7 +884,7 @@ func (csdb *CommitStateDB) createObject(addr ethcmn.Address) (newObj, prevObj *s
 
 	acc := csdb.accountKeeper.NewAccountWithAddress(csdb.ctx, sdk.AccAddress(addr.Bytes()))
 
-	newObj = newStateObject(csdb, acc)
+	newObj = newStateObject(csdb, acc, sdk.ZeroInt())
 	newObj.setNonce(0) // sets the object to dirty
 
 	if prevObj == nil {
@@ -925,8 +925,11 @@ func (csdb *CommitStateDB) getStateObject(addr ethcmn.Address) (stateObject *sta
 		return nil
 	}
 
+	evmDenom := csdb.GetParams().EvmDenom
+	balance := csdb.bankKeeper.GetBalance(csdb.ctx, acc.GetAddress(), evmDenom)
+
 	// insert the state object into the live set
-	so := newStateObject(csdb, acc)
+	so := newStateObject(csdb, acc, balance.Amount)
 	csdb.setStateObject(so)
 
 	return so

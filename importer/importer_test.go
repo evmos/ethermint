@@ -13,20 +13,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	sdkcodec "github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdkstore "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramkeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	"github.com/cosmos/ethermint/codec"
 	"github.com/cosmos/ethermint/core"
-	cryptocodec "github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	"github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm"
+	evmkeeper "github.com/cosmos/ethermint/x/evm/keeper"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -38,8 +43,8 @@ import (
 	ethparams "github.com/ethereum/go-ethereum/params"
 	ethrlp "github.com/ethereum/go-ethereum/rlp"
 
-	abci "github.com/tendermint/tendermint/abci/types"
 	tmlog "github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
 
@@ -64,18 +69,16 @@ func init() {
 	flag.Parse()
 }
 
-func newTestCodec() *sdkcodec.Codec {
-	cdc := sdkcodec.New()
+func newTestCodec() (sdkcodec.BinaryMarshaler, *sdkcodec.LegacyAmino) {
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	cdc := sdkcodec.NewProtoCodec(interfaceRegistry)
+	amino := sdkcodec.NewLegacyAmino()
 
-	evmtypes.RegisterCodec(cdc)
-	types.RegisterCodec(cdc)
-	auth.RegisterCodec(cdc)
-	bank.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	cryptocodec.RegisterCodec(cdc)
-	sdkcodec.RegisterCrypto(cdc)
+	sdk.RegisterLegacyAminoCodec(amino)
 
-	return cdc
+	codec.RegisterInterfaces(interfaceRegistry)
+
+	return cdc, amino
 }
 
 func cleanup() {
@@ -99,10 +102,10 @@ func trapSignals() {
 }
 
 // nolint: interfacer
-func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.AccountKeeper, evmKeeper *evm.Keeper) {
+func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.AccountKeeper, bk bankkeeper.Keeper, evmKeeper *evmkeeper.Keeper) {
 	genBlock := ethcore.DefaultGenesisBlock()
 	ms := cms.CacheMultiStore()
-	ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
+	ctx := sdk.NewContext(ms, tmproto.Header{}, false, logger)
 
 	// Set the default Ethermint parameters to the parameter keeper store
 	evmKeeper.SetParams(ctx, evmtypes.DefaultParams())
@@ -151,7 +154,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak auth.Accoun
 	require.NotNil(t, genAcc)
 
 	evmDenom := evmKeeper.GetParams(ctx).EvmDenom
-	balance := sdk.NewCoin(evmDenom, genAcc.GetCoins().AmountOf(evmDenom))
+	balance := bk.GetBalance(ctx, genAcc.GetAddress(), evmDenom)
 	require.Equal(t, sdk.NewIntFromBigInt(b), balance.Amount)
 }
 
@@ -168,43 +171,50 @@ func TestImportBlocks(t *testing.T) {
 		require.NoError(t, err, "failed to start CPU profile")
 	}
 
-	db := dbm.NewDB("state", dbm.GoLevelDBBackend, flagDataDir)
+	db, err := dbm.NewDB("state_test"+uuid.New().String(), dbm.GoLevelDBBackend, flagDataDir)
+	require.NoError(t, err)
+
 	defer cleanup()
 	trapSignals()
 
-	cdc := newTestCodec()
+	cdc, amino := newTestCodec()
 
 	cms := store.NewCommitMultiStore(db)
 
-	authStoreKey := sdk.NewKVStoreKey(auth.StoreKey)
+	authStoreKey := sdk.NewKVStoreKey(authtypes.StoreKey)
+	bankStoreKey := sdk.NewKVStoreKey(banktypes.StoreKey)
 	evmStoreKey := sdk.NewKVStoreKey(evmtypes.StoreKey)
-	paramsStoreKey := sdk.NewKVStoreKey(params.StoreKey)
-	paramsTransientStoreKey := sdk.NewTransientStoreKey(params.TStoreKey)
+	paramsStoreKey := sdk.NewKVStoreKey(paramtypes.StoreKey)
+	paramsTransientStoreKey := sdk.NewTransientStoreKey(paramtypes.TStoreKey)
 
 	// mount stores
-	keys := []*sdk.KVStoreKey{authStoreKey, evmStoreKey, paramsStoreKey}
+	keys := []*sdk.KVStoreKey{authStoreKey, bankStoreKey, evmStoreKey, paramsStoreKey}
 	for _, key := range keys {
 		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
 	}
 
 	cms.MountStoreWithDB(paramsTransientStoreKey, sdk.StoreTypeTransient, nil)
 
-	paramsKeeper := params.NewKeeper(cdc, paramsStoreKey, paramsTransientStoreKey)
+	paramsKeeper := paramkeeper.NewKeeper(cdc, amino, paramsStoreKey, paramsTransientStoreKey)
 
 	// Set specific subspaces
-	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
-	evmSubspace := paramsKeeper.Subspace(evmtypes.DefaultParamspace).WithKeyTable(evmtypes.ParamKeyTable())
-	ak := auth.NewAccountKeeper(cdc, authStoreKey, authSubspace, types.ProtoAccount)
-	evmKeeper := evm.NewKeeper(cdc, evmStoreKey, evmSubspace, ak)
+	authSubspace := paramsKeeper.Subspace(authtypes.ModuleName)
+	bankSubspace := paramsKeeper.Subspace(banktypes.ModuleName)
+	evmSubspace := paramsKeeper.Subspace(evmtypes.ModuleName).WithKeyTable(evmtypes.ParamKeyTable())
+
+	// create keepers
+	ak := authkeeper.NewAccountKeeper(cdc, authStoreKey, authSubspace, types.ProtoAccount, nil)
+	bk := bankkeeper.NewBaseKeeper(cdc, bankStoreKey, ak, bankSubspace, nil)
+	evmKeeper := evmkeeper.NewKeeper(cdc, evmStoreKey, evmSubspace, ak, bk)
 
 	cms.SetPruning(sdkstore.PruneNothing)
 
 	// load latest version (root)
-	err := cms.LoadLatestVersion()
+	err = cms.LoadLatestVersion()
 	require.NoError(t, err)
 
 	// set and test genesis block
-	createAndTestGenesis(t, cms, ak, evmKeeper)
+	createAndTestGenesis(t, cms, ak, bk, evmKeeper)
 
 	// open blockchain export file
 	blockchainInput, err := os.Open(flagBlockchain)
@@ -246,7 +256,7 @@ func TestImportBlocks(t *testing.T) {
 		// Create a cached-wrapped multi-store based on the commit multi-store and
 		// create a new context based off of that.
 		ms := cms.CacheMultiStore()
-		ctx := sdk.NewContext(ms, abci.Header{}, false, logger)
+		ctx := sdk.NewContext(ms, tmproto.Header{}, false, logger)
 		ctx = ctx.WithBlockHeight(int64(block.NumberU64()))
 
 		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
@@ -286,7 +296,7 @@ func TestImportBlocks(t *testing.T) {
 // reward. The total reward consists of the static block reward and rewards for
 // included uncles. The coinbase of each uncle block is also rewarded.
 func accumulateRewards(
-	config *ethparams.ChainConfig, evmKeeper *evm.Keeper,
+	config *ethparams.ChainConfig, evmKeeper *evmkeeper.Keeper,
 	header *ethtypes.Header, uncles []*ethtypes.Header,
 ) {
 
@@ -319,7 +329,7 @@ func accumulateRewards(
 // Code is pulled from go-ethereum 1.9 because the StateDB interface does not include the
 // SetBalance function implementation
 // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/consensus/misc/dao.go#L74
-func applyDAOHardFork(evmKeeper *evm.Keeper) {
+func applyDAOHardFork(evmKeeper *evmkeeper.Keeper) {
 	// Retrieve the contract to refund balances into
 	if !evmKeeper.CommitStateDB.Exist(ethparams.DAORefundContract) {
 		evmKeeper.CommitStateDB.CreateAccount(ethparams.DAORefundContract)
@@ -340,7 +350,7 @@ func applyDAOHardFork(evmKeeper *evm.Keeper) {
 // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/core/state_processor.go#L88
 func applyTransaction(
 	config *ethparams.ChainConfig, bc ethcore.ChainContext, author *ethcmn.Address,
-	gp *ethcore.GasPool, evmKeeper *evm.Keeper, header *ethtypes.Header,
+	gp *ethcore.GasPool, evmKeeper *evmkeeper.Keeper, header *ethtypes.Header,
 	tx *ethtypes.Transaction, usedGas *uint64, cfg ethvm.Config,
 ) (*ethtypes.Receipt, uint64, error) {
 	msg, err := tx.AsMessage(ethtypes.MakeSigner(config, header.Number))

@@ -10,7 +10,7 @@ Increasingly difficult tests are provided:
 
 ### Quick start
 
-**Prerequisite**: in the repo's root, run `make install` to install the `ethermintd` and `ethermintcli` binaries. When done, come back to this directory.
+**Prerequisite**: in the repo's root, run `make install` to install the `ethermintd` and `ethermintd` binaries. When done, come back to this directory.
 
 **Prerequisite**: install the individual solidity packages. They're set up as individual reops in a yarn monorepo workspace. Install them all via `yarn install`.
 
@@ -22,10 +22,10 @@ In the first, run `ethermintd`:
 ./init-test-node.sh
 ```
 
-In the second, run `ethermintcli` as mentioned in the script's output:
+In the second, run `ethermintd` as mentioned in the script's output:
 
 ```sh
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id "ethermint-1337" --trace --wsport 8546
+ethermintd rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id "ethermint-1337" --trace --wsport 8546
 ```
 
 You will now have three ethereum accounts unlocked in the test node:
@@ -36,7 +36,7 @@ You will now have three ethereum accounts unlocked in the test node:
 
 From here, in your other available terminal, go into any of the tests and run `yarn test-ethermint`. You should see `ethermintd` accepting transactions and producing blocks. You should be able to query for any transaction via:
 
-- `ethermintcli query tx <cosmos-sdk tx>`
+- `ethermintd query tx <cosmos-sdk tx>`
 - `curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["<ethereum tx>"],"id":1}'`
 
 And obviously more, via the Ethereum JSON-RPC API).
@@ -56,7 +56,7 @@ The [`init-test-node.sh`](./init-test-node.sh) script sets up ethermint with the
 
 Each with roughly 100 ETH available (1e18 photon).
 
-Running `ethermintcli list keys` should output:
+Running `ethermintd list keys` should output:
 
 ```json
 [

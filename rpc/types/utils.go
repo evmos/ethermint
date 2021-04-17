@@ -9,10 +9,12 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	clientcontext "github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -23,17 +25,17 @@ import (
 )
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
-func RawTxToEthTx(clientCtx clientcontext.CLIContext, bz []byte) (*evmtypes.MsgEthereumTx, error) {
-	tx, err := evmtypes.TxDecoder(clientCtx.Codec)(bz)
+func RawTxToEthTx(clientCtx client.Context, bz []byte) (*evmtypes.MsgEthereumTx, error) {
+	tx, err := clientCtx.TxConfig.TxDecoder()(bz)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
-	ethTx, ok := tx.(evmtypes.MsgEthereumTx)
+	ethTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
 		return nil, fmt.Errorf("invalid transaction type %T, expected %T", tx, evmtypes.MsgEthereumTx{})
 	}
-	return &ethTx, nil
+	return ethTx, nil
 }
 
 // NewTransaction returns a transaction that will serialize to the RPC
@@ -69,7 +71,7 @@ func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, b
 }
 
 // EthBlockFromTendermint returns a JSON-RPC compatible Ethereum blockfrom a given Tendermint block.
-func EthBlockFromTendermint(clientCtx clientcontext.CLIContext, block *tmtypes.Block) (map[string]interface{}, error) {
+func EthBlockFromTendermint(clientCtx client.Context, queryClient *QueryClient, block *tmtypes.Block) (map[string]interface{}, error) {
 	gasLimit, err := BlockMaxGasFromConsensusParams(context.Background(), clientCtx)
 	if err != nil {
 		return nil, err
@@ -80,15 +82,15 @@ func EthBlockFromTendermint(clientCtx clientcontext.CLIContext, block *tmtypes.B
 		return nil, err
 	}
 
-	res, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%d", evmtypes.ModuleName, evmtypes.QueryBloom, block.Height))
+	req := &evmtypes.QueryBlockBloomRequest{}
+
+	// use height 0 for querying the latest block height
+	res, err := queryClient.BlockBloom(ContextWithHeight(0), req)
 	if err != nil {
 		return nil, err
 	}
 
-	var bloomRes evmtypes.QueryBloomFilter
-	clientCtx.Codec.MustUnmarshalJSON(res, &bloomRes)
-
-	bloom := bloomRes.Bloom
+	bloom := ethtypes.BytesToBloom(res.Bloom)
 
 	return FormatBlock(block.Header, block.Size(), block.Hash(), gasLimit, gasUsed, transactions, bloom), nil
 }
@@ -114,7 +116,7 @@ func EthHeaderFromTendermint(header tmtypes.Header) *ethtypes.Header {
 
 // EthTransactionsFromTendermint returns a slice of ethereum transaction hashes and the total gas usage from a set of
 // tendermint block transactions.
-func EthTransactionsFromTendermint(clientCtx clientcontext.CLIContext, txs []tmtypes.Tx) ([]common.Hash, *big.Int, error) {
+func EthTransactionsFromTendermint(clientCtx client.Context, txs []tmtypes.Tx) ([]common.Hash, *big.Int, error) {
 	transactionHashes := []common.Hash{}
 	gasUsed := big.NewInt(0)
 
@@ -133,8 +135,8 @@ func EthTransactionsFromTendermint(clientCtx clientcontext.CLIContext, txs []tmt
 }
 
 // BlockMaxGasFromConsensusParams returns the gas limit for the latest block from the chain consensus params.
-func BlockMaxGasFromConsensusParams(_ context.Context, clientCtx clientcontext.CLIContext) (int64, error) {
-	resConsParams, err := clientCtx.Client.ConsensusParams(nil)
+func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Context) (int64, error) {
+	resConsParams, err := clientCtx.Client.ConsensusParams(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -194,12 +196,58 @@ func GetKeyByAddress(keys []ethsecp256k1.PrivKey, address common.Address) (key *
 	return nil, false
 }
 
+// BuildEthereumTx builds and signs a Cosmos transaction from a MsgEthereumTx and returns the tx
+func BuildEthereumTx(
+	clientCtx client.Context,
+	msgs []sdk.Msg,
+	accNumber, seq, gasLimit uint64,
+	fees sdk.Coins,
+	privKey cryptotypes.PrivKey,
+) ([]byte, error) {
+	signMode := clientCtx.TxConfig.SignModeHandler().DefaultMode()
+	signerData := authsigning.SignerData{
+		ChainID:       clientCtx.ChainID,
+		AccountNumber: accNumber,
+		Sequence:      seq,
+	}
+
+	// Create a TxBuilder
+	txBuilder := clientCtx.TxConfig.NewTxBuilder()
+	if err := txBuilder.SetMsgs(msgs...); err != nil {
+		return nil, err
+
+	}
+	txBuilder.SetFeeAmount(fees)
+	txBuilder.SetGasLimit(gasLimit)
+
+	// sign with the private key
+	sigV2, err := tx.SignWithPrivKey(
+		signMode, signerData,
+		txBuilder, privKey, clientCtx.TxConfig, seq,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := txBuilder.SetSignatures(sigV2); err != nil {
+		return nil, err
+	}
+
+	txBytes, err := clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	return txBytes, nil
+}
+
 // GetBlockCumulativeGas returns the cumulative gas used on a block up to a given
 // transaction index. The returned gas used includes the gas from both the SDK and
 // EVM module transactions.
-func GetBlockCumulativeGas(cdc *codec.Codec, block *tmtypes.Block, idx int) uint64 {
+func GetBlockCumulativeGas(clientCtx client.Context, block *tmtypes.Block, idx int) uint64 {
 	var gasUsed uint64
-	txDecoder := evmtypes.TxDecoder(cdc)
+	txDecoder := clientCtx.TxConfig.TxDecoder()
 
 	for i := 0; i < idx && i < len(block.Txs); i++ {
 		txi, err := txDecoder(block.Txs[i])
@@ -208,9 +256,9 @@ func GetBlockCumulativeGas(cdc *codec.Codec, block *tmtypes.Block, idx int) uint
 		}
 
 		switch tx := txi.(type) {
-		case authtypes.StdTx:
+		case *evmtypes.MsgEthereumTx:
 			gasUsed += tx.GetGas()
-		case evmtypes.MsgEthereumTx:
+		case sdk.FeeTx:
 			gasUsed += tx.GetGas()
 		}
 	}

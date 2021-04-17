@@ -35,7 +35,7 @@ func (s Storage) Validate() error {
 func (s Storage) String() string {
 	var str string
 	for _, state := range s {
-		str += fmt.Sprintf("%s: %s\n", state.Key, state.Value)
+		str += fmt.Sprintf("%s\n", state.String())
 	}
 
 	return str
@@ -47,12 +47,6 @@ func (s Storage) Copy() Storage {
 	copy(cpy, s)
 
 	return cpy
-}
-
-// State represents a single Storage key value pair item.
-type State struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }
 
 // Validate performs a basic validation of the State fields.

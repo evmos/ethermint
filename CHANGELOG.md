@@ -71,6 +71,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Features
 * (api) [\#821](https://github.com/cosmos/ethermint/pull/821) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
 
+### Features
+* (api) [\#825](https://github.com/cosmos/ethermint/pull/825) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
+
 ## [v0.4.0] - 2020-12-15
 
 ### API Breaking
@@ -227,6 +230,11 @@ corresponding Ethereum API namespace:
 
 ### Bug Fixes
 
+* (evm) [\#767](https://github.com/cosmos/ethermint/issues/767) Fix error of timeout when using Truffle to deploy contract.
+* (evm) [\#751](https://github.com/cosmos/ethermint/issues/751) Fix misused method to calculate block hash in evm related function.
+* (evm) [\#721](https://github.com/cosmos/ethermint/issues/721) Fix mismatch block hash in rpc response when use eth.getBlock.
+* (evm) [\#730](https://github.com/cosmos/ethermint/issues/730) Fix 'EIP2028' not open when Istanbul version has been enabled.
+* (app) [\#749](https://github.com/cosmos/ethermint/issues/749) Fix panic in `AnteHandler` when gas price larger than 100000
 * (rpc) [\#305](https://github.com/cosmos/ethermint/issues/305) Update `eth_getTransactionCount` to check for account existence before getting sequence and return 0 as the nonce if it doesn't exist.
 * (`x/evm`) [\#319](https://github.com/cosmos/ethermint/pull/319) Fix `SetBlockHash` that was setting the incorrect height during `BeginBlock`.
 * (`x/evm`) [\#176](https://github.com/cosmos/ethermint/issues/176) Updated Web3 transaction hash from using RLP hash. Now all transaction hashes exposed are amino hashes:

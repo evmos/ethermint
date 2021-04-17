@@ -2,22 +2,30 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
-// ModuleCdc defines the evm module's codec
-var ModuleCdc = codec.New()
+// RegisterInterfaces registers the client interfaces to protobuf Any.
+func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	registry.RegisterImplementations(
+		(*sdk.Tx)(nil),
+		&MsgEthereumTx{},
+	)
+	registry.RegisterImplementations(
+		(*sdk.Msg)(nil),
+		&MsgEthereumTx{},
+	)
 
-// RegisterCodec registers all the necessary types and interfaces for the
-// evm module
-func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgEthereumTx{}, "ethermint/MsgEthereumTx", nil)
-	cdc.RegisterConcrete(MsgEthermint{}, "ethermint/MsgEthermint", nil)
-	cdc.RegisterConcrete(TxData{}, "ethermint/TxData", nil)
-	cdc.RegisterConcrete(ChainConfig{}, "ethermint/ChainConfig", nil)
+	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
 
-func init() {
-	RegisterCodec(ModuleCdc)
-	codec.RegisterCrypto(ModuleCdc)
-	ModuleCdc.Seal()
-}
+var (
+	// ModuleCdc references the global evm module codec. Note, the codec should
+	// ONLY be used in certain instances of tests and for JSON encoding.
+	//
+	// The actual codec used for serialization should be provided to x/evm and
+	// defined at the application level.
+	ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
+)

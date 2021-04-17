@@ -1,10 +1,15 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/big"
 	"strings"
+
+	"google.golang.org/grpc/metadata"
+
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -26,6 +31,16 @@ const (
 // NewBlockNumber creates a new BlockNumber instance.
 func NewBlockNumber(n *big.Int) BlockNumber {
 	return BlockNumber(n.Int64())
+}
+
+// ContextWithHeight wraps a context with the a gRPC block height header. If the provided height is
+// 0 or -1, it will return an empty context and the gRPC query will use the latest block height for querying.
+func ContextWithHeight(height int64) context.Context {
+	if height == LatestBlockNumber.Int64() || height == PendingBlockNumber.Int64() {
+		return context.Background()
+	}
+
+	return metadata.AppendToOutgoingContext(context.Background(), grpctypes.GRPCBlockHeightHeader, fmt.Sprintf("%d", height))
 }
 
 // UnmarshalJSON parses the given JSON fragment into a BlockNumber. It supports:

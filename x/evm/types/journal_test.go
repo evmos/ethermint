@@ -7,24 +7,41 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/tendermint/tendermint/abci/types"
 	tmlog "github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmdb "github.com/tendermint/tm-db"
 
-	sdkcodec "github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramkeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
+	ethermintcodec "github.com/cosmos/ethermint/codec"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 )
+
+func newTestCodec() (codec.BinaryMarshaler, *codec.LegacyAmino) {
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	cdc := codec.NewProtoCodec(interfaceRegistry)
+	amino := codec.NewLegacyAmino()
+
+	sdk.RegisterLegacyAminoCodec(amino)
+
+	ethermintcodec.RegisterInterfaces(interfaceRegistry)
+
+	return cdc, amino
+}
 
 type JournalTestSuite struct {
 	suite.Suite
@@ -33,19 +50,6 @@ type JournalTestSuite struct {
 	journal *journal
 	ctx     sdk.Context
 	stateDB *CommitStateDB
-}
-
-func newTestCodec() *sdkcodec.Codec {
-	cdc := sdkcodec.New()
-
-	RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	ethsecp256k1.RegisterCodec(cdc)
-	sdkcodec.RegisterCrypto(cdc)
-	auth.RegisterCodec(cdc)
-	ethermint.RegisterCodec(cdc)
-
-	return cdc
 }
 
 func (suite *JournalTestSuite) SetupTest() {
@@ -57,14 +61,14 @@ func (suite *JournalTestSuite) SetupTest() {
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
 	suite.journal = newJournal()
 
-	balance := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewInt(100)))
+	balance := ethermint.NewPhotonCoin(sdk.NewInt(100))
 	acc := &ethermint.EthAccount{
-		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
+		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),
 	}
 
 	suite.stateDB.accountKeeper.SetAccount(suite.ctx, acc)
-	// suite.stateDB.bankKeeper.SetBalance(suite.ctx, sdk.AccAddress(suite.address.Bytes()), balance)
+	suite.stateDB.bankKeeper.SetBalance(suite.ctx, sdk.AccAddress(suite.address.Bytes()), balance)
 	suite.stateDB.SetLogs(ethcmn.BytesToHash([]byte("txhash")), []*ethtypes.Log{
 		{
 			Address:     suite.address,
@@ -96,36 +100,41 @@ func (suite *JournalTestSuite) SetupTest() {
 // the latter would result in a cycle dependency. We also want to avoid declaring the journal methods public
 // to maintain consistency with the Geth implementation.
 func (suite *JournalTestSuite) setup() {
-	authKey := sdk.NewKVStoreKey(auth.StoreKey)
-	paramsKey := sdk.NewKVStoreKey(params.StoreKey)
-	paramsTKey := sdk.NewTransientStoreKey(params.TStoreKey)
-	// bankKey := sdk.NewKVStoreKey(bank.StoreKey)
+	authKey := sdk.NewKVStoreKey(authtypes.StoreKey)
+	paramsKey := sdk.NewKVStoreKey(paramtypes.StoreKey)
+	paramsTKey := sdk.NewTransientStoreKey(paramtypes.TStoreKey)
+	bankKey := sdk.NewKVStoreKey(banktypes.StoreKey)
 	storeKey := sdk.NewKVStoreKey(StoreKey)
 
-	db := tmdb.NewDB("state", tmdb.GoLevelDBBackend, "temp")
+	db, err := tmdb.NewDB("state", tmdb.GoLevelDBBackend, "temp")
+	suite.Require().NoError(err)
+
 	defer func() {
 		os.RemoveAll("temp")
 	}()
 
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(authKey, sdk.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(bankKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(paramsKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(storeKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(paramsTKey, sdk.StoreTypeTransient, db)
 
-	err := cms.LoadLatestVersion()
+	err = cms.LoadLatestVersion()
 	suite.Require().NoError(err)
 
-	cdc := newTestCodec()
+	cdc, amino := newTestCodec()
 
-	paramsKeeper := params.NewKeeper(cdc, paramsKey, paramsTKey)
+	paramsKeeper := paramkeeper.NewKeeper(cdc, amino, paramsKey, paramsTKey)
 
-	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
-	evmSubspace := paramsKeeper.Subspace(types.DefaultParamspace).WithKeyTable(ParamKeyTable())
+	authSubspace := paramsKeeper.Subspace(authtypes.ModuleName)
+	bankSubspace := paramsKeeper.Subspace(banktypes.ModuleName)
+	evmSubspace := paramsKeeper.Subspace(ModuleName).WithKeyTable(ParamKeyTable())
 
-	ak := auth.NewAccountKeeper(cdc, authKey, authSubspace, ethermint.ProtoAccount)
-	suite.ctx = sdk.NewContext(cms, abci.Header{ChainID: "ethermint-8"}, false, tmlog.NewNopLogger())
-	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, evmSubspace, ak).WithContext(suite.ctx)
+	ak := authkeeper.NewAccountKeeper(cdc, authKey, authSubspace, ethermint.ProtoAccount, nil)
+	bk := bankkeeper.NewBaseKeeper(cdc, bankKey, ak, bankSubspace, nil)
+	suite.ctx = sdk.NewContext(cms, tmproto.Header{ChainID: "ethermint-8"}, false, tmlog.NewNopLogger())
+	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, evmSubspace, ak, bk).WithContext(suite.ctx)
 	suite.stateDB.SetParams(DefaultParams())
 }
 
@@ -149,6 +158,7 @@ func (suite *JournalTestSuite) TestJournal_append_revert() {
 			resetObjectChange{
 				prev: &stateObject{
 					address: suite.address,
+					balance: sdk.OneInt(),
 				},
 			},
 		},

@@ -5,28 +5,7 @@ import (
 	"fmt"
 
 	ethermint "github.com/cosmos/ethermint/types"
-
 	ethcmn "github.com/ethereum/go-ethereum/common"
-)
-
-type (
-	// GenesisState defines the evm module genesis state
-	GenesisState struct {
-		Accounts    []GenesisAccount  `json:"accounts"`
-		TxsLogs     []TransactionLogs `json:"txs_logs"`
-		ChainConfig ChainConfig       `json:"chain_config"`
-		Params      Params            `json:"params"`
-	}
-
-	// GenesisAccount defines an account to be initialized in the genesis state.
-	// Its main difference between with Geth's GenesisAccount is that it uses a custom
-	// storage type and that it doesn't contain the private key field.
-	// NOTE: balance is omitted as it is imported from the auth account balance.
-	GenesisAccount struct {
-		Address string  `json:"address"`
-		Code    string  `json:"code,omitempty"`
-		Storage Storage `json:"storage,omitempty"`
-	}
 )
 
 // Validate performs a basic validation of a GenesisAccount fields.
@@ -43,8 +22,8 @@ func (ga GenesisAccount) Validate() error {
 
 // DefaultGenesisState sets default evm genesis state with empty accounts and default params and
 // chain config values.
-func DefaultGenesisState() GenesisState {
-	return GenesisState{
+func DefaultGenesisState() *GenesisState {
+	return &GenesisState{
 		Accounts:    []GenesisAccount{},
 		TxsLogs:     []TransactionLogs{},
 		ChainConfig: DefaultChainConfig(),

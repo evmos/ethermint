@@ -1,34 +1,18 @@
 package types
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
-	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
-
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
-
-// GenerateEthAddress generates an Ethereum address.
-func GenerateEthAddress() ethcmn.Address {
-	priv, err := ethsecp256k1.GenerateKey()
-	if err != nil {
-		panic(err)
-	}
-
-	return ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
-}
 
 // ValidateSigner attempts to validate a signer for a given slice of bytes over
 // which a signature and signer is given. An error is returned if address
@@ -53,72 +37,24 @@ func rlpHash(x interface{}) (hash ethcmn.Hash) {
 	return hash
 }
 
-// ResultData represents the data returned in an sdk.Result
-type ResultData struct {
-	ContractAddress ethcmn.Address  `json:"contract_address"`
-	Bloom           ethtypes.Bloom  `json:"bloom"`
-	Logs            []*ethtypes.Log `json:"logs"`
-	Ret             []byte          `json:"ret"`
-	TxHash          ethcmn.Hash     `json:"tx_hash"`
+// EncodeTxResponse takes all of the necessary data from the EVM execution
+// and returns the data as a byte slice encoded with protobuf.
+func EncodeTxResponse(res *MsgEthereumTxResponse) ([]byte, error) {
+	return proto.Marshal(res)
 }
 
-// String implements fmt.Stringer interface.
-func (rd ResultData) String() string {
-	var logsStr string
-	logsLen := len(rd.Logs)
-	for i := 0; i < logsLen; i++ {
-		logsStr = fmt.Sprintf("%s\t\t%v\n ", logsStr, *rd.Logs[i])
-	}
-
-	return strings.TrimSpace(fmt.Sprintf(`ResultData:
-	ContractAddress: %s
-	Bloom: %s
-	Ret: %v
-	TxHash: %s	
-	Logs: 
-%s`, rd.ContractAddress.String(), rd.Bloom.Big().String(), rd.Ret, rd.TxHash.String(), logsStr))
-}
-
-// EncodeResultData takes all of the necessary data from the EVM execution
-// and returns the data as a byte slice encoded with amino
-func EncodeResultData(data ResultData) ([]byte, error) {
-	return ModuleCdc.MarshalBinaryLengthPrefixed(data)
-}
-
-// DecodeResultData decodes an amino-encoded byte slice into ResultData
-func DecodeResultData(in []byte) (ResultData, error) {
-	var data ResultData
-	err := ModuleCdc.UnmarshalBinaryLengthPrefixed(in, &data)
+// DecodeTxResponse decodes an protobuf-encoded byte slice into TxResponse
+func DecodeTxResponse(data []byte) (MsgEthereumTxResponse, error) {
+	var txResponse MsgEthereumTxResponse
+	err := proto.Unmarshal(data, &txResponse)
 	if err != nil {
-		return ResultData{}, err
+		return MsgEthereumTxResponse{}, err
 	}
-	return data, nil
+	return txResponse, nil
 }
 
 // ----------------------------------------------------------------------------
 // Auxiliary
-
-// TxDecoder returns an sdk.TxDecoder that can decode both auth.StdTx and
-// MsgEthereumTx transactions.
-func TxDecoder(cdc *codec.Codec) sdk.TxDecoder {
-	return func(txBytes []byte) (sdk.Tx, error) {
-		var tx sdk.Tx
-
-		if len(txBytes) == 0 {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx bytes are empty")
-		}
-
-		// sdk.Tx is an interface. The concrete message types
-		// are registered by MakeTxCodec
-		// TODO: switch to UnmarshalBinaryBare on SDK v0.40.0
-		err := cdc.UnmarshalBinaryLengthPrefixed(txBytes, &tx)
-		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
-		}
-
-		return tx, nil
-	}
-}
 
 // recoverEthSig recovers a signature according to the Ethereum specification and
 // returns the sender or an error.
@@ -157,4 +93,14 @@ func recoverEthSig(R, S, Vb *big.Int, sigHash ethcmn.Hash) (ethcmn.Address, erro
 	copy(addr[:], ethcrypto.Keccak256(pub[1:])[12:])
 
 	return addr, nil
+}
+
+// IsEmptyHash returns true if the hash corresponds to an empty ethereum hex hash.
+func IsEmptyHash(hash string) bool {
+	return bytes.Equal(ethcmn.HexToHash(hash).Bytes(), ethcmn.Hash{}.Bytes())
+}
+
+// IsZeroAddress returns true if the address corresponds to an empty ethereum hex address.
+func IsZeroAddress(address string) bool {
+	return bytes.Equal(ethcmn.HexToAddress(address).Bytes(), ethcmn.Address{}.Bytes())
 }

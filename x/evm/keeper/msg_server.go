@@ -1,17 +1,27 @@
 package keeper
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"context"
+
+	"github.com/armon/go-metrics"
+
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	ethcmn "github.com/ethereum/go-ethereum/common"
+
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
 
+var _ types.MsgServer = Keeper{}
+
 // EthereumTx implements the Msg/EthereumTx gRPC method.
-func (k Keeper) EthereumTx(ctx sdk.Context, msg types.MsgEthereumTx) (*sdk.Result, error) {
+func (k Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
 	// parse the chainID from a string to a base-10 integer
 	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
 	if err != nil {
@@ -24,14 +34,18 @@ func (k Keeper) EthereumTx(ctx sdk.Context, msg types.MsgEthereumTx) (*sdk.Resul
 		return nil, err
 	}
 
-	var recipient *common.Address
-	if msg.Data.Recipient != nil {
-		addr := common.HexToAddress(msg.Data.Recipient.Address)
-		recipient = &addr
-	}
-
 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-	ethHash := common.BytesToHash(txHash)
+	ethHash := ethcmn.BytesToHash(txHash)
+
+	var recipient *ethcmn.Address
+
+	labels := []metrics.Label{telemetry.NewLabel("operation", "create")}
+
+	if msg.Data.Recipient != nil {
+		addr := ethcmn.HexToAddress(msg.Data.Recipient.Address)
+		recipient = &addr
+		labels = []metrics.Label{telemetry.NewLabel("operation", "call")}
+	}
 
 	st := types.StateTransition{
 		AccountNonce: msg.Data.AccountNonce,
@@ -52,7 +66,8 @@ func (k Keeper) EthereumTx(ctx sdk.Context, msg types.MsgEthereumTx) (*sdk.Resul
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, k.TxCount)
+		blockHash := types.HashFromContext(ctx)
+		k.Prepare(ctx, ethHash, blockHash, k.TxCount)
 		k.TxCount++
 	}
 
@@ -71,16 +86,28 @@ func (k Keeper) EthereumTx(ctx sdk.Context, msg types.MsgEthereumTx) (*sdk.Resul
 		k.Bloom.Or(k.Bloom, executionResult.Bloom)
 
 		// update transaction logs in KVStore
-		err = k.SetLogs(ctx, common.BytesToHash(txHash), executionResult.Logs)
+		err = k.SetLogs(ctx, ethcmn.BytesToHash(txHash), executionResult.Logs)
 		if err != nil {
 			panic(err)
 		}
 	}
 
+	// add metrics for the transaction
+	defer func() {
+		if st.Amount.IsInt64() {
+			telemetry.SetGaugeWithLabels(
+				[]string{"tx", "msg", "ethereum"},
+				float32(st.Amount.Int64()),
+				labels,
+			)
+		}
+	}()
+
+	// emit events
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			types.EventTypeEthereumTx,
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Data.Amount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, st.Amount.String()),
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -98,6 +125,5 @@ func (k Keeper) EthereumTx(ctx sdk.Context, msg types.MsgEthereumTx) (*sdk.Resul
 		)
 	}
 
-	executionResult.Result.Events = ctx.EventManager().Events()
-	return executionResult.Result, nil
+	return executionResult.Response, nil
 }

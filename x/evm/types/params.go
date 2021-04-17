@@ -3,20 +3,17 @@ package types
 import (
 	"fmt"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	ethermint "github.com/cosmos/ethermint/types"
 )
 
-const (
-	// DefaultParamspace for params keeper
-	DefaultParamspace = ModuleName
-)
+var _ paramtypes.ParamSet = &Params{}
 
 // Parameter keys
 var (
@@ -27,21 +24,8 @@ var (
 )
 
 // ParamKeyTable returns the parameter key table.
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable().RegisterParamSet(&Params{})
-}
-
-// Params defines the EVM module parameters
-type Params struct {
-	// EVMDenom defines the token denomination used for state transitions on the
-	// EVM module.
-	EvmDenom string `json:"evm_denom" yaml:"evm_denom"`
-	// EnableCreate toggles state transitions that use the vm.Create function
-	EnableCreate bool `json:"enable_create" yaml:"enable_create"`
-	// EnableCall toggles state transitions that use the vm.Call function
-	EnableCall bool `json:"enable_call" yaml:"enable_call"`
-	// ExtraEIPs defines the additional EIPs for the vm.Config
-	ExtraEIPs []int64 `json:"extra_eips" yaml:"extra_eips"`
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
 }
 
 // NewParams creates a new Params instance
@@ -71,12 +55,12 @@ func (p Params) String() string {
 }
 
 // ParamSetPairs returns the parameter set pairs.
-func (p *Params) ParamSetPairs() params.ParamSetPairs {
-	return params.ParamSetPairs{
-		params.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
-		params.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
-		params.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
-		params.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
+func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
+		paramtypes.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
+		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
+		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 	}
 }
 

@@ -9,6 +9,9 @@ QTD=1
 SLEEP_TIMEOUT=5
 TEST_QTD=1
 
+## remove test data dir after
+REMOVE_DATA_DIR=false
+
 #PORT AND RPC_PORT 3 initial digits, to be concat with a suffix later when node is initialized
 RPC_PORT="854"
 IP_ADDR="0.0.0.0"
@@ -29,10 +32,11 @@ usage() {
     echo "-q <number>  -- Quantity of nodes to run. eg: 3"
     echo "-z <number>  -- Quantity of nodes to run tests against eg: 3"
     echo "-s <number>  -- Sleep between operations in secs. eg: 5"
+    echo "-r <string>  -- Remove test dir after, eg: true, default is false"
     exit 1
 }
 
-while getopts "h?t:q:z:s:m:" args; do
+while getopts "h?t:q:z:s:m:r:" args; do
     case $args in
         h|\?)
             usage;
@@ -42,6 +46,7 @@ while getopts "h?t:q:z:s:m:" args; do
         z ) TEST_QTD=${OPTARG};;
         s ) SLEEP_TIMEOUT=${OPTARG};;
         m ) MODE=${OPTARG};;
+        r ) REMOVE_DATA_DIR=${OPTARG};;
     esac
 done
 
@@ -54,13 +59,6 @@ if [[ ! "$DATA_DIR" ]]; then
     exit 1
 fi
 
-DATA_CLI_DIR=$(mktemp -d -t ethermint-cli-datadir.XXXXX)
-
-if [[ ! "$DATA_CLI_DIR" ]]; then
-    echo "Could not create $DATA_CLI_DIR"
-    exit 1
-fi
-
 # Compile ethermint
 echo "compiling ethermint"
 make build-ethermint
@@ -68,34 +66,30 @@ make build-ethermint
 # PID array declaration
 arr=()
 
-# PID arraycli declaration
-arrcli=()
-
 init_func() {
-    echo "create and add new keys"
-    "$PWD"/build/ethermintcli config keyring-backend test --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintcli keys add $KEY"$i" --home "$DATA_CLI_DIR$i" --no-backup --chain-id $CHAINID
-    echo "init Ethermint with moniker=$MONIKER and chain-id=$CHAINID"
+    "$PWD"/build/ethermintd keys add $KEY"$i" --keyring-backend test --home "$DATA_DIR$i" --no-backup --algo "eth_secp256k1"
     "$PWD"/build/ethermintd init $MONIKER --chain-id $CHAINID --home "$DATA_DIR$i"
-    echo "init ethermintcli with chain-id=$CHAINID and config it trust-node true"
-    "$PWD"/build/ethermintcli config chain-id $CHAINID --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintcli config output json --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintcli config indent true --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintcli config trust-node true --home "$DATA_CLI_DIR$i"
-    echo "prepare genesis: Allocate genesis accounts"
     "$PWD"/build/ethermintd add-genesis-account \
-    "$("$PWD"/build/ethermintcli keys show "$KEY$i" -a --home "$DATA_CLI_DIR$i" )" 1000000000000000000aphoton,1000000000000000000stake \
-    --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"
-    echo "prepare genesis: Sign genesis transaction"
-    "$PWD"/build/ethermintd gentx --name $KEY"$i" --keyring-backend test --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"
-    echo "prepare genesis: Collect genesis tx"
+    "$("$PWD"/build/ethermintd keys show "$KEY$i" --keyring-backend test -a --home "$DATA_DIR$i")" 1000000000000000000aphoton,1000000000000000000stake \
+    --keyring-backend test --home "$DATA_DIR$i"
+    "$PWD"/build/ethermintd gentx "$KEY$i" 1000000000000000000stake --amount=1000000000000000000aphoton --chain-id $CHAINID --keyring-backend test --home "$DATA_DIR$i"
     "$PWD"/build/ethermintd collect-gentxs --home "$DATA_DIR$i"
-    echo "prepare genesis: Run validate-genesis to ensure everything worked and that the genesis file is setup correctly"
     "$PWD"/build/ethermintd validate-genesis --home "$DATA_DIR$i"
 
     if [[ $MODE == "pending" ]]; then
-        ls $DATA_DIR$i
-        # sed -i 's/create_empty_blocks_interval = "0s"/create_empty_blocks_interval = "30s"/g' $DATA_DIR$i/config/config.toml
+      ls $DATA_DIR$i
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' 's/create_empty_blocks_interval = "0s"/create_empty_blocks_interval = "30s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_propose = "3s"/timeout_propose = "30s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_propose_delta = "500ms"/timeout_propose_delta = "2s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_prevote = "1s"/timeout_prevote = "120s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_prevote_delta = "500ms"/timeout_prevote_delta = "2s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_precommit = "1s"/timeout_precommit = "10s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_precommit_delta = "500ms"/timeout_precommit_delta = "2s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_commit = "5s"/timeout_commit = "150s"/g' $DATA_DIR$i/config/config.toml
+        sed -i '' 's/timeout_broadcast_tx_commit = "10s"/timeout_broadcast_tx_commit = "150s"/g' $DATA_DIR$i/config/config.toml
+      else
+        sed -i 's/create_empty_blocks_interval = "0s"/create_empty_blocks_interval = "30s"/g' $DATA_DIR$i/config/config.toml
         sed -i 's/timeout_propose = "3s"/timeout_propose = "30s"/g' $DATA_DIR$i/config/config.toml
         sed -i 's/timeout_propose_delta = "500ms"/timeout_propose_delta = "2s"/g' $DATA_DIR$i/config/config.toml
         sed -i 's/timeout_prevote = "1s"/timeout_prevote = "120s"/g' $DATA_DIR$i/config/config.toml
@@ -103,33 +97,29 @@ init_func() {
         sed -i 's/timeout_precommit = "1s"/timeout_precommit = "10s"/g' $DATA_DIR$i/config/config.toml
         sed -i 's/timeout_precommit_delta = "500ms"/timeout_precommit_delta = "2s"/g' $DATA_DIR$i/config/config.toml
         sed -i 's/timeout_commit = "5s"/timeout_commit = "150s"/g' $DATA_DIR$i/config/config.toml
+        sed -i 's/timeout_broadcast_tx_commit = "10s"/timeout_broadcast_tx_commit = "150s"/g' $DATA_DIR$i/config/config.toml
+      fi
     fi
 }
 
 start_func() {
     echo "starting ethermint node $i in background ..."
-    "$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe --log_level "main:info,state:info,mempool:info" \
+    "$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe \
     --p2p.laddr tcp://$IP_ADDR:$NODE_P2P_PORT"$i" --address tcp://$IP_ADDR:$NODE_PORT"$i" --rpc.laddr tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
-    --home "$DATA_DIR$i" \
+    --json-rpc.address http://$IP_ADDR:$RPC_PORT"$i" \
+    --keyring-backend test --home "$DATA_DIR$i" \
+    --rpc-api "web3, eth, personal, net" \
     >"$DATA_DIR"/node"$i".log 2>&1 & disown
-    
+
     ETHERMINT_PID=$!
     echo "started ethermint node, pid=$ETHERMINT_PID"
     # add PID to array
     arr+=("$ETHERMINT_PID")
-}
 
-start_cli_func() {
-    echo "starting ethermint node $i in background ..."
-    "$PWD"/build/ethermintcli rest-server --unlock-key $KEY"$i" --chain-id $CHAINID --trace --rpc-api="web3,eth,net,personal" \
-    --laddr "tcp://localhost:$RPC_PORT$i" --node tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
-    --home "$DATA_CLI_DIR$i" --read-timeout 30 --write-timeout 30 \
-    >"$DATA_CLI_DIR"/cli"$i".log 2>&1 & disown
-    
-    ETHERMINT_CLI_PID=$!
-    echo "started ethermintcli node, pid=$ETHERMINT_CLI_PID"
-    # add PID to array
-    arrcli+=("$ETHERMINT_CLI_PID")
+    if [[ $MODE == "pending" ]]; then
+      echo "waiting for the first block..."
+      sleep 300
+    fi
 }
 
 # Run node with static blockchain database
@@ -138,7 +128,6 @@ for i in $(seq 1 "$QTD"); do
     init_func "$i"
     start_func "$i"
     sleep 1
-    start_cli_func "$i"
     echo "sleeping $SLEEP_TIMEOUT seconds for startup"
     sleep "$SLEEP_TIMEOUT"
     echo "done sleeping"
@@ -150,36 +139,36 @@ echo "done sleeping"
 
 set +e
 
-if [[ -z $TEST || $TEST == "rpc" || $TEST == "pending" ]]; then
+if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
+
+    time_out=300s
+    if [[ $TEST == "pending" ]]; then
+      time_out=60m0s
+    fi
 
     for i in $(seq 1 "$TEST_QTD"); do
         HOST_RPC=http://$IP_ADDR:$RPC_PORT"$i"
         echo "going to test ethermint node $HOST_RPC ..."
-        if [[ $MODE == "pending" ]]; then
-            sleep 150
-            MODE=$MODE HOST=$HOST_RPC go test -v ./tests/tests-pending/rpc_pending_test.go
-        else
-            MODE=$MODE HOST=$HOST_RPC go test ./tests/... -timeout=300s -v -short
-        fi
-        
+        MODE=$MODE HOST=$HOST_RPC go test ./tests/... -timeout=$time_out -v -short
+
         RPC_FAIL=$?
     done
-    
+
 fi
 
 stop_func() {
     ETHERMINT_PID=$i
     echo "shutting down node, pid=$ETHERMINT_PID ..."
-    
+
     # Shutdown ethermint node
     kill -9 "$ETHERMINT_PID"
     wait "$ETHERMINT_PID"
+
+    if [ $REMOVE_DATA_DIR == "true" ]
+    then
+        rm -rf $DATA_DIR*
+    fi
 }
-
-
-for i in "${arrcli[@]}"; do
-    stop_func "$i"
-done
 
 for i in "${arr[@]}"; do
     stop_func "$i"

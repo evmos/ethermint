@@ -2,8 +2,9 @@ package types
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
+
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -41,10 +42,10 @@ type GasInfo struct {
 
 // ExecutionResult represents what's returned from a transition
 type ExecutionResult struct {
-	Logs    []*ethtypes.Log
-	Bloom   *big.Int
-	Result  *sdk.Result
-	GasInfo GasInfo
+	Logs     []*ethtypes.Log
+	Bloom    *big.Int
+	Response *MsgEthereumTxResponse
+	GasInfo  GasInfo
 }
 
 // GetHashFn implements vm.GetHashFunc for Ethermint. It handles 3 cases:
@@ -79,7 +80,7 @@ func (st StateTransition) newEVM(
 	config ChainConfig,
 	extraEIPs []int64,
 ) *vm.EVM {
-	// Create contexts for evm
+	// Create context for evm
 
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
@@ -105,7 +106,6 @@ func (st StateTransition) newEVM(
 	vmConfig := vm.Config{
 		ExtraEips: eips,
 	}
-
 	return vm.NewEVM(blockCtx, txCtx, csdb, config.EthereumConfig(st.ChainID), vmConfig)
 }
 
@@ -153,13 +153,12 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 		return nil, errors.New("gas price cannot be nil")
 	}
 
-	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.Int, config, params.ExtraEIPs)
+	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt(), config, params.ExtraEIPs)
 
 	var (
 		ret             []byte
 		leftOverGas     uint64
 		contractAddress common.Address
-		recipientLog    string
 		senderRef       = vm.AccountRef(st.Sender)
 	)
 
@@ -176,7 +175,7 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 		}
 
 		ret, contractAddress, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
-		recipientLog = fmt.Sprintf("contract address %s", contractAddress.String())
+
 	default:
 		if !params.EnableCall {
 			return nil, ErrCallDisabled
@@ -185,7 +184,6 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 		// Increment the nonce for the next transaction	(just for evm state transition)
 		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
 		ret, leftOverGas, err = evm.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
-		recipientLog = fmt.Sprintf("recipient address %s", st.Recipient.String())
 	}
 
 	gasConsumed := gasLimit - leftOverGas
@@ -225,34 +223,20 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 		}
 	}
 
-	// Encode all necessary data into slice of bytes to return in sdk result
-	resultData := ResultData{
-		Bloom:  bloomFilter,
-		Logs:   logs,
+	res := &MsgEthereumTxResponse{
+		Bloom:  bloomFilter.Bytes(),
+		TxLogs: NewTransactionLogsFromEth(*st.TxHash, logs),
 		Ret:    ret,
-		TxHash: *st.TxHash,
 	}
 
 	if contractCreation {
-		resultData.ContractAddress = contractAddress
+		res.ContractAddress = contractAddress.String()
 	}
-
-	resBz, err := EncodeResultData(resultData)
-	if err != nil {
-		return nil, err
-	}
-
-	resultLog := fmt.Sprintf(
-		"executed EVM state transition; sender address %s; %s", st.Sender.String(), recipientLog,
-	)
 
 	executionResult := &ExecutionResult{
-		Logs:  logs,
-		Bloom: bloomInt,
-		Result: &sdk.Result{
-			Data: resBz,
-			Log:  resultLog,
-		},
+		Logs:     logs,
+		Bloom:    bloomInt,
+		Response: res,
 		GasInfo: GasInfo{
 			GasConsumed: gasConsumed,
 			GasLimit:    gasLimit,
@@ -267,4 +251,26 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasConsumed, "EVM execution consumption")
 
 	return executionResult, nil
+}
+
+// HashFromContext returns the Ethereum Header hash from the context's Tendermint
+// block header.
+func HashFromContext(ctx sdk.Context) common.Hash {
+	// cast the ABCI header to tendermint Header type
+	protoHeader := ctx.BlockHeader()
+	tmHeader, err := tmtypes.HeaderFromProto(&protoHeader)
+	if err != nil {
+		return common.Hash{}
+	}
+
+	// get the Tendermint block hash from the current header
+	tmBlockHash := tmHeader.Hash()
+
+	// NOTE: if the validator set hash is missing the hash will be returned as nil,
+	// so we need to check for this case to prevent a panic when calling Bytes()
+	if tmBlockHash == nil {
+		return common.Hash{}
+	}
+
+	return common.BytesToHash(tmBlockHash.Bytes())
 }

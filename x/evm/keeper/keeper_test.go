@@ -7,19 +7,19 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/cosmos/ethermint/app"
 	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const addrHex = "0x756F45E3FA69347A9A973A725E3C98bC4db0b4c1"
@@ -32,27 +32,31 @@ var (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx     sdk.Context
-	querier sdk.Querier
-	app     *app.EthermintApp
-	address ethcmn.Address
+	ctx         sdk.Context
+	app         *app.EthermintApp
+	queryClient types.QueryClient
+	address     ethcmn.Address
 }
 
 func (suite *KeeperTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
-	suite.querier = keeper.NewQuerier(*suite.app.EvmKeeper)
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
 	suite.address = ethcmn.HexToAddress(addrHex)
 
-	balance := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.ZeroInt()))
+	queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
+	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
+	suite.queryClient = types.NewQueryClient(queryHelper)
+
+	balance := ethermint.NewPhotonCoin(sdk.ZeroInt())
 	acc := &ethermint.EthAccount{
-		BaseAccount: auth.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), balance, nil, 0, 0),
+		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),
 	}
 
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+	suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), balance)
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -65,11 +69,13 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 		Address:     suite.address,
 		Data:        []byte("log"),
 		BlockNumber: 10,
+		Topics:      []ethcmn.Hash{},
 	}
 	log2 := &ethtypes.Log{
 		Address:     suite.address,
 		Data:        []byte("log2"),
 		BlockNumber: 11,
+		Topics:      []ethcmn.Hash{},
 	}
 	expLogs := []*ethtypes.Log{log}
 
@@ -84,6 +90,7 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 
 	// add another log under the zero hash
 	suite.app.EvmKeeper.AddLog(suite.ctx, log2)
+	log2.Index = 0
 	logs = suite.app.EvmKeeper.AllLogs(suite.ctx)
 	suite.Require().Equal(expLogs, logs)
 
@@ -92,17 +99,19 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 		Address:     suite.address,
 		Data:        []byte("log3"),
 		BlockNumber: 10,
+		Topics:      []ethcmn.Hash{},
 	}
 	suite.app.EvmKeeper.AddLog(suite.ctx, log3)
+	log3.Index = 0
 
 	txLogs := suite.app.EvmKeeper.GetAllTxLogs(suite.ctx)
 	suite.Require().Equal(2, len(txLogs))
 
 	suite.Require().Equal(ethcmn.Hash{}.String(), txLogs[0].Hash)
-	suite.Require().Equal([]*ethtypes.Log{log2, log3}, txLogs[0].Logs)
+	suite.Require().Equal([]*ethtypes.Log{log2, log3}, txLogs[0].EthLogs())
 
 	suite.Require().Equal(ethHash.String(), txLogs[1].Hash)
-	suite.Require().Equal([]*ethtypes.Log{log}, txLogs[1].Logs)
+	suite.Require().Equal([]*ethtypes.Log{log}, txLogs[1].EthLogs())
 }
 
 func (suite *KeeperTestSuite) TestDBStorage() {
@@ -113,14 +122,6 @@ func (suite *KeeperTestSuite) TestDBStorage() {
 	suite.app.EvmKeeper.SetState(suite.ctx, suite.address, ethcmn.HexToHash("0x2"), ethcmn.HexToHash("0x3"))
 	suite.app.EvmKeeper.SetCode(suite.ctx, suite.address, []byte{0x1})
 
-	// Test block hash mapping functionality
-	suite.app.EvmKeeper.SetBlockHash(suite.ctx, hash, 7)
-	height, found := suite.app.EvmKeeper.GetBlockHash(suite.ctx, hash)
-	suite.Require().True(found)
-	suite.Require().Equal(int64(7), height)
-
-	suite.app.EvmKeeper.SetBlockHash(suite.ctx, []byte{0x43, 0x32}, 8)
-
 	// Test block height mapping functionality
 	testBloom := ethtypes.BytesToBloom([]byte{0x1, 0x3})
 	suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 4, testBloom)
@@ -130,13 +131,6 @@ func (suite *KeeperTestSuite) TestDBStorage() {
 	suite.Require().Equal(suite.app.EvmKeeper.GetNonce(suite.ctx, suite.address), uint64(4))
 	suite.Require().Equal(suite.app.EvmKeeper.GetState(suite.ctx, suite.address, ethcmn.HexToHash("0x2")), ethcmn.HexToHash("0x3"))
 	suite.Require().Equal(suite.app.EvmKeeper.GetCode(suite.ctx, suite.address), []byte{0x1})
-
-	height, found = suite.app.EvmKeeper.GetBlockHash(suite.ctx, hash)
-	suite.Require().True(found)
-	suite.Require().Equal(height, int64(7))
-	height, found = suite.app.EvmKeeper.GetBlockHash(suite.ctx, []byte{0x43, 0x32})
-	suite.Require().True(found)
-	suite.Require().Equal(height, int64(8))
 
 	bloom, found := suite.app.EvmKeeper.GetBlockBloom(suite.ctx, 4)
 	suite.Require().True(found)

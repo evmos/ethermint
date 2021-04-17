@@ -1,9 +1,8 @@
 // This is a test utility for Ethermint's Web3 JSON-RPC services.
 //
 // To run these tests please first ensure you have the ethermintd running
-// and have started the RPC service with `ethermintcli rest-server`.
 //
-// You can configure the desired HOST and MODE as well
+// You can configure the desired HOST and MODE as well in integration-test-all.sh
 package pending
 
 import (
@@ -13,10 +12,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/stretchr/testify/require"
 
 	rpctypes "github.com/cosmos/ethermint/rpc/types"
 	util "github.com/cosmos/ethermint/tests"
@@ -92,6 +90,9 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
+	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, txRes.Error)
+
 	rpcRes = util.Call(t, "eth_sendTransaction", param)
 	require.Nil(t, rpcRes.Error)
 
@@ -118,6 +119,7 @@ func TestEth_Pending_GetTransactionCount(t *testing.T) {
 
 	currentNonce := util.GetNonce(t, "latest")
 	t.Logf("Current nonce is %d", currentNonce)
+	require.Equal(t, prePendingNonce, currentNonce)
 
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
@@ -127,17 +129,20 @@ func TestEth_Pending_GetTransactionCount(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "eth_sendTransaction", param)
+	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, txRes.Error)
+	txRes = util.Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
 	pendingNonce := util.GetNonce(t, "pending")
 	latestNonce := util.GetNonce(t, "latest")
-	t.Logf("Latest nonce is %d", latestNonce)
-	require.Equal(t, currentNonce, latestNonce)
-	t.Logf("Pending nonce is %d", pendingNonce)
-	require.NotEqual(t, latestNonce, pendingNonce)
 
-	require.Greater(t, uint64(pendingNonce), uint64(latestNonce))
+	t.Logf("Latest nonce is %d", latestNonce)
+	require.Equal(t, currentNonce+1, latestNonce)
+
+	t.Logf("Pending nonce is %d", pendingNonce)
+	require.Equal(t, latestNonce, pendingNonce)
+
 	require.Equal(t, uint64(prePendingNonce)+uint64(1), uint64(pendingNonce))
 }
 
@@ -154,6 +159,8 @@ func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("Pre tx latest nonce is %d", preTxLatestTxCount)
 
+	require.Equal(t, preTxPendingTxCount, preTxLatestTxCount)
+
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
@@ -162,7 +169,10 @@ func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "eth_sendTransaction", param)
+	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, txRes.Error)
+
+	txRes = util.Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
 	rpcRes = util.Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
@@ -177,8 +187,10 @@ func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("Post tx latest nonce is %d", postTxLatestTxCount)
 
-	require.Equal(t, uint64(preTxPendingTxCount)+uint64(1), uint64(postTxPendingTxCount))
-	require.NotEqual(t, uint64(postTxPendingTxCount)-uint64(preTxPendingTxCount), uint64(postTxLatestTxCount)-uint64(preTxLatestTxCount))
+	require.Equal(t, postTxPendingTxCount, postTxLatestTxCount)
+
+	require.Equal(t, uint64(preTxPendingTxCount), uint64(postTxPendingTxCount))
+	require.Equal(t, uint64(postTxPendingTxCount)-uint64(preTxPendingTxCount), uint64(postTxLatestTxCount)-uint64(preTxLatestTxCount))
 }
 
 func TestEth_Pending_GetBlockByNumber(t *testing.T) {
@@ -202,7 +214,9 @@ func TestEth_Pending_GetBlockByNumber(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "eth_sendTransaction", param)
+	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, txRes.Error)
+	txRes = util.Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
 	rpcRes = util.Call(t, "eth_getBlockByNumber", []interface{}{"pending", true})
@@ -210,7 +224,7 @@ func TestEth_Pending_GetBlockByNumber(t *testing.T) {
 	err = json.Unmarshal(rpcRes.Result, &postTxPendingBlock)
 	require.NoError(t, err)
 	postTxPendingTxs := len(postTxPendingBlock["transactions"].([]interface{}))
-	require.Greater(t, postTxPendingTxs, preTxPendingTxs)
+	require.Equal(t, postTxPendingTxs, preTxPendingTxs)
 
 	rpcRes = util.Call(t, "eth_getBlockByNumber", []interface{}{"latest", true})
 	var postTxLatestBlock map[string]interface{}
@@ -219,7 +233,7 @@ func TestEth_Pending_GetBlockByNumber(t *testing.T) {
 	postTxLatestTxs := len(postTxLatestBlock["transactions"].([]interface{}))
 	require.Equal(t, preTxLatestTxs, postTxLatestTxs)
 
-	require.Greater(t, postTxPendingTxs, preTxPendingTxs)
+	require.Equal(t, postTxPendingTxs, preTxPendingTxs)
 }
 
 func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
@@ -239,26 +253,33 @@ func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 	param[0]["gasPrice"] = "0x1"
 	param[0]["data"] = data
 
-	txRes := util.Call(t, "eth_sendTransaction", param)
+	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, txRes.Error)
+	txRes = util.Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
-	rpcRes := util.Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"pending", "0x" + fmt.Sprintf("%X", pendingTxCount)})
-	var pendingBlockTx map[string]interface{}
-	err = json.Unmarshal(rpcRes.Result, &pendingBlockTx)
+	// test will be blocked here until tx gets confirmed
+	var txHash common.Hash
+	err = json.Unmarshal(txRes.Result, &txHash)
+	require.NoError(t, err)
+
+	rpcRes := util.Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"latest", "0x" + fmt.Sprintf("%X", pendingTxCount)})
+	var latestBlockTx map[string]interface{}
+	err = json.Unmarshal(rpcRes.Result, &latestBlockTx)
 	require.NoError(t, err)
 
 	// verify the pending tx has all the correct fields from the tx sent.
-	require.NotEmpty(t, pendingBlockTx["hash"])
-	require.Equal(t, pendingBlockTx["value"], "0xa")
-	require.Equal(t, data, pendingBlockTx["input"])
+	require.NotEmpty(t, latestBlockTx["hash"])
+	require.Equal(t, latestBlockTx["value"], "0xa")
+	require.Equal(t, data, latestBlockTx["input"])
 
-	rpcRes = util.Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"latest", "0x" + fmt.Sprintf("%X", pendingTxCount)})
-	var latestBlock map[string]interface{}
-	err = json.Unmarshal(rpcRes.Result, &latestBlock)
+	rpcRes = util.Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"pending", "0x" + fmt.Sprintf("%X", pendingTxCount)})
+	var pendingBlock map[string]interface{}
+	err = json.Unmarshal(rpcRes.Result, &pendingBlock)
 	require.NoError(t, err)
 
-	// verify the pending trasnaction does not exist in the latest block info.
-	require.Empty(t, latestBlock)
+	// verify the transaction does not exist in the pending block info.
+	require.Empty(t, pendingBlock)
 }
 
 func TestEth_Pending_GetTransactionByHash(t *testing.T) {
@@ -272,7 +293,10 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 	param[0]["gasPrice"] = "0x1"
 	param[0]["data"] = data
 
-	txRes := util.Call(t, "eth_sendTransaction", param)
+	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, txRes.Error)
+
+	txRes = util.Call(t, "eth_sendTransaction", param)
 	var txHash common.Hash
 	err := txHash.UnmarshalJSON(txRes.Result)
 	require.NoError(t, err)
@@ -298,6 +322,9 @@ func TestEth_Pending_SendTransaction_PendingNonce(t *testing.T) {
 	param[0]["value"] = "0xA"
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
+
+	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, txRes.Error)
 
 	// first transaction
 	txRes1 := util.Call(t, "eth_sendTransaction", param)

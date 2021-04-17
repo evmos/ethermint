@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
@@ -28,7 +27,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.Require().NotNil(acc)
-				err := acc.SetCoins(sdk.NewCoins(ethermint.NewPhotonCoinInt64(1)))
+				suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), ethermint.NewPhotonCoinInt64(1))
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
@@ -41,7 +40,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.Require().NotNil(acc)
-				err := acc.SetCoins(sdk.NewCoins(ethermint.NewPhotonCoinInt64(1)))
+				suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), ethermint.NewPhotonCoinInt64(1))
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
@@ -53,7 +52,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 			"invalid account type",
 			func() {
 				acc := authtypes.NewBaseAccountWithAddress(address.Bytes())
-				suite.app.AccountKeeper.SetAccount(suite.ctx, &acc)
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 			},
 			false,
 		},
@@ -116,7 +115,7 @@ func (suite *KeeperTestSuite) TestNonceInvariant() {
 			"invalid account type",
 			func() {
 				acc := authtypes.NewBaseAccountWithAddress(address.Bytes())
-				suite.app.AccountKeeper.SetAccount(suite.ctx, &acc)
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 			},
 			false,
 		},

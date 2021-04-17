@@ -37,6 +37,7 @@ coverage.txt
 *.out
 sim_log_file
 importer/tmp
+yarn.lock
 
 # Vagrant
 .vagrant/

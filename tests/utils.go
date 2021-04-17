@@ -141,7 +141,12 @@ func SendTestTransaction(t *testing.T, addr []byte) hexutil.Bytes {
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", addr)
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
 	param[0]["value"] = "0x1"
-	rpcRes := Call(t, "eth_sendTransaction", param)
+
+	rpcRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, rpcRes.Error)
+
+	rpcRes = Call(t, "eth_sendTransaction", param)
+	require.Nil(t, rpcRes.Error)
 
 	var hash hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &hash)
@@ -157,7 +162,11 @@ func DeployTestContract(t *testing.T, addr []byte) (hexutil.Bytes, map[string]in
 	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
 	param[0]["gas"] = "0x200000"
 
-	rpcRes := Call(t, "eth_sendTransaction", param)
+	rpcRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, rpcRes.Error)
+
+	rpcRes = Call(t, "eth_sendTransaction", param)
+	require.Nil(t, rpcRes.Error)
 
 	var hash hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &hash)
@@ -197,7 +206,10 @@ func DeployTestContractWithFunction(t *testing.T, addr []byte) hexutil.Bytes {
 	param[0]["data"] = bytecode
 	param[0]["gas"] = "0x200000"
 
-	rpcRes := Call(t, "eth_sendTransaction", param)
+	rpcRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	require.Nil(t, rpcRes.Error)
+
+	rpcRes = Call(t, "eth_sendTransaction", param)
 
 	var hash hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &hash)

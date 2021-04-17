@@ -21,13 +21,12 @@ const (
 
 // KVStore key prefixes
 var (
-	KeyPrefixBlockHash   = []byte{0x01}
-	KeyPrefixBloom       = []byte{0x02}
-	KeyPrefixLogs        = []byte{0x03}
-	KeyPrefixCode        = []byte{0x04}
-	KeyPrefixStorage     = []byte{0x05}
-	KeyPrefixChainConfig = []byte{0x06}
-	KeyPrefixHeightHash  = []byte{0x07}
+	KeyPrefixBloom       = []byte{0x01}
+	KeyPrefixLogs        = []byte{0x02}
+	KeyPrefixCode        = []byte{0x03}
+	KeyPrefixStorage     = []byte{0x04}
+	KeyPrefixChainConfig = []byte{0x05}
+	KeyPrefixHeightHash  = []byte{0x06}
 )
 
 // HeightHashKey returns the key for the given chain epoch and height.
@@ -48,3 +47,10 @@ func BloomKey(height int64) []byte {
 func AddressStoragePrefix(address ethcmn.Address) []byte {
 	return append(KeyPrefixStorage, address.Bytes()...)
 }
+
+// StateKey defines the full key under which an account state is stored.
+func StateKey(address ethcmn.Address, key []byte) []byte {
+	return append(AddressStoragePrefix(address), key...)
+}
+
+// TODO: fix Logs key and append block hash

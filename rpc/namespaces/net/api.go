@@ -3,7 +3,8 @@ package net
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
+
 	ethermint "github.com/cosmos/ethermint/types"
 )
 
@@ -13,7 +14,7 @@ type PublicNetAPI struct {
 }
 
 // NewAPI creates an instance of the public Net Web3 API.
-func NewAPI(clientCtx context.CLIContext) *PublicNetAPI {
+func NewAPI(clientCtx client.Context) *PublicNetAPI {
 	// parse the chainID from a integer string
 	chainIDEpoch, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {

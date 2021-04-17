@@ -2,7 +2,6 @@ package types
 
 import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
@@ -15,15 +14,15 @@ func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 			"valid log",
 			TransactionLogs{
 				Hash: suite.hash.String(),
-				Logs: []*ethtypes.Log{
+				Logs: []*Log{
 					{
 						Address:     suite.address,
-						Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+						Topics:      []string{suite.hash.String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
-						TxHash:      suite.hash,
+						TxHash:      suite.hash.String(),
 						TxIndex:     1,
-						BlockHash:   suite.hash,
+						BlockHash:   suite.hash.String(),
 						Index:       1,
 						Removed:     false,
 					},
@@ -42,7 +41,7 @@ func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 			"invalid log",
 			TransactionLogs{
 				Hash: suite.hash.String(),
-				Logs: []*ethtypes.Log{nil},
+				Logs: []*Log{nil},
 			},
 			false,
 		},
@@ -50,15 +49,15 @@ func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 			"hash mismatch log",
 			TransactionLogs{
 				Hash: suite.hash.String(),
-				Logs: []*ethtypes.Log{
+				Logs: []*Log{
 					{
 						Address:     suite.address,
-						Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+						Topics:      []string{suite.hash.String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
-						TxHash:      ethcmn.BytesToHash([]byte("other_hash")),
+						TxHash:      ethcmn.BytesToHash([]byte("other_hash")).String(),
 						TxIndex:     1,
-						BlockHash:   suite.hash,
+						BlockHash:   suite.hash.String(),
 						Index:       1,
 						Removed:     false,
 					},
@@ -82,58 +81,58 @@ func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 func (suite *GenesisTestSuite) TestValidateLog() {
 	testCases := []struct {
 		name    string
-		log     *ethtypes.Log
+		log     *Log
 		expPass bool
 	}{
 		{
 			"valid log",
-			&ethtypes.Log{
+			&Log{
 				Address:     suite.address,
-				Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
+				Topics:      []string{suite.hash.String()},
 				Data:        []byte("data"),
 				BlockNumber: 1,
-				TxHash:      suite.hash,
+				TxHash:      suite.hash.String(),
 				TxIndex:     1,
-				BlockHash:   suite.hash,
+				BlockHash:   suite.hash.String(),
 				Index:       1,
 				Removed:     false,
 			},
 			true,
 		},
 		{
-			"nil log", nil, false,
+			"empty log", &Log{}, false,
 		},
 		{
 			"zero address",
-			&ethtypes.Log{
-				Address: ethcmn.Address{},
+			&Log{
+				Address: ethcmn.Address{}.String(),
 			},
 			false,
 		},
 		{
 			"empty block hash",
-			&ethtypes.Log{
+			&Log{
 				Address:   suite.address,
-				BlockHash: ethcmn.Hash{},
+				BlockHash: ethcmn.Hash{}.String(),
 			},
 			false,
 		},
 		{
 			"zero block number",
-			&ethtypes.Log{
+			&Log{
 				Address:     suite.address,
-				BlockHash:   suite.hash,
+				BlockHash:   suite.hash.String(),
 				BlockNumber: 0,
 			},
 			false,
 		},
 		{
 			"empty tx hash",
-			&ethtypes.Log{
+			&Log{
 				Address:     suite.address,
-				BlockHash:   suite.hash,
+				BlockHash:   suite.hash.String(),
 				BlockNumber: 1,
-				TxHash:      ethcmn.Hash{},
+				TxHash:      ethcmn.Hash{}.String(),
 			},
 			false,
 		},
@@ -141,7 +140,7 @@ func (suite *GenesisTestSuite) TestValidateLog() {
 
 	for _, tc := range testCases {
 		tc := tc
-		err := ValidateLog(tc.log)
+		err := tc.log.Validate()
 		if tc.expPass {
 			suite.Require().NoError(err, tc.name)
 		} else {

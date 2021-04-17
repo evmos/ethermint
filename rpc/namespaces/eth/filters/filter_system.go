@@ -253,16 +253,16 @@ type filterIndex map[filters.Type]map[rpc.ID]*Subscription
 
 func (es *EventSystem) handleLogs(ev coretypes.ResultEvent) {
 	data, _ := ev.Data.(tmtypes.EventDataTx)
-	resultData, err := evmtypes.DecodeResultData(data.TxResult.Result.Data)
+	txResponse, err := evmtypes.DecodeTxResponse(data.TxResult.Result.Data)
 	if err != nil {
 		return
 	}
 
-	if len(resultData.Logs) == 0 {
+	if len(txResponse.TxLogs.Logs) == 0 {
 		return
 	}
 	for _, f := range es.index[filters.LogsSubscription] {
-		matchedLogs := FilterLogs(resultData.Logs, f.logsCrit.FromBlock, f.logsCrit.ToBlock, f.logsCrit.Addresses, f.logsCrit.Topics)
+		matchedLogs := FilterLogs(txResponse.TxLogs.EthLogs(), f.logsCrit.FromBlock, f.logsCrit.ToBlock, f.logsCrit.Addresses, f.logsCrit.Topics)
 		if len(matchedLogs) > 0 {
 			f.logs <- matchedLogs
 		}
@@ -272,7 +272,7 @@ func (es *EventSystem) handleLogs(ev coretypes.ResultEvent) {
 func (es *EventSystem) handleTxsEvent(ev coretypes.ResultEvent) {
 	data, _ := ev.Data.(tmtypes.EventDataTx)
 	for _, f := range es.index[filters.PendingTransactionsSubscription] {
-		f.hashes <- []common.Hash{common.BytesToHash(data.Tx.Hash())}
+		f.hashes <- []common.Hash{common.BytesToHash(tmtypes.Tx(data.Tx).Hash())}
 	}
 }
 

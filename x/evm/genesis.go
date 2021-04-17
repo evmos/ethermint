@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
@@ -20,9 +20,9 @@ func InitGenesis(
 	ctx sdk.Context,
 	k keeper.Keeper,
 	accountKeeper types.AccountKeeper, // nolint: interfacer
-	data GenesisState,
+	bankKeeper types.BankKeeper,
+	data types.GenesisState,
 ) []abci.ValidatorUpdate {
-
 	k.SetParams(ctx, data.Params)
 	evmDenom := data.Params.EvmDenom
 
@@ -44,10 +44,9 @@ func InitGenesis(
 			)
 		}
 
-		evmBalance := acc.GetCoins().AmountOf(evmDenom)
-
+		evmBalance := bankKeeper.GetBalance(ctx, accAddress, evmDenom)
+		k.SetBalance(ctx, address, evmBalance.Amount.BigInt())
 		k.SetNonce(ctx, address, acc.GetSequence())
-		k.SetBalance(ctx, address, evmBalance.BigInt())
 		k.SetCode(ctx, address, ethcmn.Hex2Bytes(account.Code))
 
 		for _, storage := range account.Storage {
@@ -57,7 +56,8 @@ func InitGenesis(
 
 	var err error
 	for _, txLog := range data.TxsLogs {
-		if err = k.SetLogs(ctx, ethcmn.HexToHash(txLog.Hash), txLog.Logs); err != nil {
+		err = k.SetLogs(ctx, ethcmn.HexToHash(txLog.Hash), txLog.EthLogs())
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -81,10 +81,10 @@ func InitGenesis(
 }
 
 // ExportGenesis exports genesis state of the EVM module
-func ExportGenesis(ctx sdk.Context, k keeper.Keeper, ak types.AccountKeeper) GenesisState {
+func ExportGenesis(ctx sdk.Context, k keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
 	// nolint: prealloc
 	var ethGenAccounts []types.GenesisAccount
-	ak.IterateAccounts(ctx, func(account authexported.Account) bool {
+	ak.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
 		ethAccount, ok := account.(*ethermint.EthAccount)
 		if !ok {
 			// ignore non EthAccounts
@@ -110,7 +110,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper, ak types.AccountKeeper) Gen
 
 	config, _ := k.GetChainConfig(ctx)
 
-	return GenesisState{
+	return &types.GenesisState{
 		Accounts:    ethGenAccounts,
 		TxsLogs:     k.GetAllTxLogs(ctx),
 		ChainConfig: config,

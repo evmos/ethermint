@@ -34,8 +34,11 @@ func TestPersonal_NewAccount(t *testing.T) {
 }
 
 func TestPersonal_Sign(t *testing.T) {
-	rpcRes := Call(t, "personal_sign", []interface{}{hexutil.Bytes{0x88}, hexutil.Bytes(from), ""})
+	rpcRes := Call(t, "personal_unlockAccount", []interface{}{hexutil.Bytes(from), ""})
+	require.Nil(t, rpcRes.Error)
 
+	rpcRes = Call(t, "personal_sign", []interface{}{hexutil.Bytes{0x88}, hexutil.Bytes(from), ""})
+	require.Nil(t, rpcRes.Error)
 	var res hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &res)
 	require.NoError(t, err)

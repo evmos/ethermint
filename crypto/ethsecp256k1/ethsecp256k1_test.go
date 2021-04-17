@@ -1,22 +1,25 @@
 package ethsecp256k1
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-	ethsecp256k1 "github.com/ethereum/go-ethereum/crypto/secp256k1"
+	"github.com/cosmos/cosmos-sdk/codec"
 
-	tmcrypto "github.com/tendermint/tendermint/crypto"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
 
-func TestPrivKeyPrivKey(t *testing.T) {
+func TestPrivKey(t *testing.T) {
 	// validate type and equality
 	privKey, err := GenerateKey()
 	require.NoError(t, err)
 	require.True(t, privKey.Equals(privKey))
-	require.Implements(t, (*tmcrypto.PrivKey)(nil), privKey)
+	require.Implements(t, (*cryptotypes.PrivKey)(nil), privKey)
 
 	// validate inequality
 	privKey2, err := GenerateKey()
@@ -31,20 +34,23 @@ func TestPrivKeyPrivKey(t *testing.T) {
 	// validate we can sign some bytes
 	msg := []byte("hello world")
 	sigHash := ethcrypto.Keccak256Hash(msg)
-	expectedSig, _ := ethsecp256k1.Sign(sigHash.Bytes(), privKey)
+	expectedSig, err := secp256k1.Sign(sigHash.Bytes(), privKey.Bytes())
+	require.NoError(t, err)
 
 	sig, err := privKey.Sign(msg)
 	require.NoError(t, err)
 	require.Equal(t, expectedSig, sig)
 }
 
-func TestPrivKeyPubKey(t *testing.T) {
+func TestPrivKey_PubKey(t *testing.T) {
 	privKey, err := GenerateKey()
 	require.NoError(t, err)
 
 	// validate type and equality
-	pubKey := privKey.PubKey().(PubKey)
-	require.Implements(t, (*tmcrypto.PubKey)(nil), pubKey)
+	pubKey := &PubKey{
+		Key: privKey.PubKey().Bytes(),
+	}
+	require.Implements(t, (*cryptotypes.PubKey)(nil), pubKey)
 
 	// validate inequality
 	privKey2, err := GenerateKey()
@@ -56,6 +62,61 @@ func TestPrivKeyPubKey(t *testing.T) {
 	sig, err := privKey.Sign(msg)
 	require.NoError(t, err)
 
-	res := pubKey.VerifyBytes(msg, sig)
+	res := pubKey.VerifySignature(msg, sig)
 	require.True(t, res)
+}
+
+func TestMarshalAmino(t *testing.T) {
+	aminoCdc := codec.NewLegacyAmino()
+	privKey, err := GenerateKey()
+	require.NoError(t, err)
+
+	pubKey := privKey.PubKey().(*PubKey)
+
+	testCases := []struct {
+		desc      string
+		msg       codec.AminoMarshaler
+		typ       interface{}
+		expBinary []byte
+		expJSON   string
+	}{
+		{
+			"ethsecp256k1 private key",
+			privKey,
+			&PrivKey{},
+			append([]byte{32}, privKey.Bytes()...), // Length-prefixed.
+			"\"" + base64.StdEncoding.EncodeToString(privKey.Bytes()) + "\"",
+		},
+		{
+			"ethsecp256k1 public key",
+			pubKey,
+			&PubKey{},
+			append([]byte{33}, pubKey.Bytes()...), // Length-prefixed.
+			"\"" + base64.StdEncoding.EncodeToString(pubKey.Bytes()) + "\"",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			// Do a round trip of encoding/decoding binary.
+			bz, err := aminoCdc.MarshalBinaryBare(tc.msg)
+			require.NoError(t, err)
+			require.Equal(t, tc.expBinary, bz)
+
+			err = aminoCdc.UnmarshalBinaryBare(bz, tc.typ)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.msg, tc.typ)
+
+			// Do a round trip of encoding/decoding JSON.
+			bz, err = aminoCdc.MarshalJSON(tc.msg)
+			require.NoError(t, err)
+			require.Equal(t, tc.expJSON, string(bz))
+
+			err = aminoCdc.UnmarshalJSON(bz, tc.typ)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.msg, tc.typ)
+		})
+	}
 }

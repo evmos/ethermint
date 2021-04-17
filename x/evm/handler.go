@@ -1,20 +1,24 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"fmt"
+	"time"
 
-	ethermint "github.com/cosmos/ethermint/types"
+	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
 
+	ethcmn "github.com/ethereum/go-ethereum/common"
+
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 // NewHandler returns a handler for Ethermint type messages.
-func NewHandler(k *Keeper) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) (result *sdk.Result, err error) {
+func NewHandler(k keeper.Keeper) sdk.Handler {
+	defer telemetry.MeasureSince(time.Now(), "evm", "state_transition")
+
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		snapshotStateDB := k.CommitStateDB.Copy()
 
 		// The "recover" code here is used to solve the problem of dirty data
@@ -46,116 +50,41 @@ func NewHandler(k *Keeper) sdk.Handler {
 			}
 		}()
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
-		case types.MsgEthereumTx:
-			result, err = handleMsgEthereumTx(ctx, k, msg)
-		case types.MsgEthermint:
-			result, err = handleMsgEthermint(ctx, k, msg)
+		case *types.MsgEthereumTx:
+			// execute state transition
+			res, err := k.EthereumTx(sdk.WrapSDKContext(ctx), msg)
+			if err != nil {
+				return nil, err
+			}
+
+			result, err := sdk.WrapServiceResult(ctx, res, err)
+			if err != nil {
+				return nil, err
+			}
+
+			// log state transition result
+			var recipientLog string
+			if res.ContractAddress != "" {
+				recipientLog = fmt.Sprintf("contract address %s", res.ContractAddress)
+			} else {
+				recipientLog = fmt.Sprintf("recipient address %s", msg.Data.Recipient)
+			}
+
+			sender := ethcmn.BytesToAddress(msg.GetFrom().Bytes())
+
+			log := fmt.Sprintf(
+				"executed EVM state transition; sender address %s; %s", sender, recipientLog,
+			)
+
+			k.Logger(ctx).Info(log)
+			result.Log = log
+
+			return result, nil
+
 		default:
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", ModuleName, msg)
-		}
-		if err != nil {
-			types.CopyCommitStateDB(snapshotStateDB, k.CommitStateDB)
-		}
-		return result, err
-	}
-}
-
-// handleMsgEthereumTx handles an Ethereum specific tx
-func handleMsgEthereumTx(ctx sdk.Context, k *Keeper, msg types.MsgEthereumTx) (*sdk.Result, error) {
-	// execute state transition
-	res, err := k.EthereumTx(ctx, msg)
-	if err != nil {
-		return nil, err
-	}
-
-	// log state transition result
-	k.Logger(ctx).Info(res.Log)
-
-	return res, nil
-}
-
-// handleMsgEthermint handles an sdk.StdTx for an Ethereum state transition
-func handleMsgEthermint(ctx sdk.Context, k *Keeper, msg types.MsgEthermint) (*sdk.Result, error) {
-	// parse the chainID from a string to a base-10 integer
-	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
-	if err != nil {
-		return nil, err
-	}
-
-	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-	ethHash := common.BytesToHash(txHash)
-
-	st := types.StateTransition{
-		AccountNonce: msg.AccountNonce,
-		Price:        msg.Price.BigInt(),
-		GasLimit:     msg.GasLimit,
-		Amount:       msg.Amount.BigInt(),
-		Payload:      msg.Payload,
-		Csdb:         k.CommitStateDB.WithContext(ctx),
-		ChainID:      chainIDEpoch,
-		TxHash:       &ethHash,
-		Sender:       common.BytesToAddress(msg.From.Bytes()),
-		Simulate:     ctx.IsCheckTx(),
-	}
-
-	if msg.Recipient != nil {
-		to := common.BytesToAddress(msg.Recipient.Bytes())
-		st.Recipient = &to
-	}
-
-	if !st.Simulate {
-		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, k.TxCount)
-		k.TxCount++
-	}
-
-	config, found := k.GetChainConfig(ctx)
-	if !found {
-		return nil, types.ErrChainConfigNotFound
-	}
-
-	executionResult, err := st.TransitionDb(ctx, config)
-	if err != nil {
-		return nil, err
-	}
-
-	// update block bloom filter
-	if !st.Simulate {
-		k.Bloom.Or(k.Bloom, executionResult.Bloom)
-
-		// update transaction logs in KVStore
-		err = k.SetLogs(ctx, common.BytesToHash(txHash), executionResult.Logs)
-		if err != nil {
-			panic(err)
+			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized %s message type: %T", types.ModuleName, msg)
 		}
 	}
-
-	// log successful execution
-	k.Logger(ctx).Info(executionResult.Result.Log)
-
-	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeEthermint,
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.From.String()),
-		),
-	})
-
-	if msg.Recipient != nil {
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeEthermint,
-				sdk.NewAttribute(types.AttributeKeyRecipient, msg.Recipient.String()),
-			),
-		)
-	}
-
-	// set the events to the result
-	executionResult.Result.Events = ctx.EventManager().Events()
-	return executionResult.Result, nil
 }

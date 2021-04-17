@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	ethaccounts "github.com/ethereum/go-ethereum/accounts"
 )
 

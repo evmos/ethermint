@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
+
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -14,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	clientcontext "github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 
 	rpctypes "github.com/cosmos/ethermint/rpc/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -48,7 +50,7 @@ type filter struct {
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
 // information related to the Ethereum protocol such as blocks, transactions and logs.
 type PublicFilterAPI struct {
-	clientCtx clientcontext.CLIContext
+	clientCtx client.Context
 	backend   Backend
 	events    *EventSystem
 	filtersMu sync.Mutex
@@ -56,13 +58,7 @@ type PublicFilterAPI struct {
 }
 
 // NewAPI returns a new PublicFilterAPI instance.
-func NewAPI(clientCtx clientcontext.CLIContext, backend Backend) *PublicFilterAPI {
-	// start the client to subscribe to Tendermint events
-	err := clientCtx.Client.Start()
-	if err != nil {
-		panic(err)
-	}
-
+func NewAPI(clientCtx client.Context, backend Backend) *PublicFilterAPI {
 	api := &PublicFilterAPI{
 		clientCtx: clientCtx,
 		backend:   backend,
@@ -122,7 +118,8 @@ func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {
 			select {
 			case ev := <-txsCh:
 				data, _ := ev.Data.(tmtypes.EventDataTx)
-				txHash := common.BytesToHash(data.Tx.Hash())
+
+				txHash := common.BytesToHash(tmtypes.Tx(data.Tx).Hash())
 
 				api.filtersMu.Lock()
 				if f, found := api.filters[pendingTxSub.ID()]; found {
@@ -167,7 +164,7 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 			select {
 			case ev := <-txsCh:
 				data, _ := ev.Data.(tmtypes.EventDataTx)
-				txHash := common.BytesToHash(data.Tx.Hash())
+				txHash := common.BytesToHash(tmtypes.Tx(data.Tx).Hash())
 
 				// To keep the original behaviour, send a single tx hash in one notification.
 				// TODO(rjl493456442) Send a batch of tx hashes in one notification
@@ -297,10 +294,9 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 			select {
 			case event := <-logsCh:
 				// filter only events from EVM module txs
-				_, isMsgEthermint := event.Events[evmtypes.TypeMsgEthermint]
 				_, isMsgEthereumTx := event.Events[evmtypes.TypeMsgEthereumTx]
 
-				if !(isMsgEthermint || isMsgEthereumTx) {
+				if !isMsgEthereumTx {
 					// ignore transaction as it's not from the evm module
 					return
 				}
@@ -313,12 +309,13 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 					return
 				}
 
-				resultData, err := evmtypes.DecodeResultData(dataTx.TxResult.Result.Data)
+				var txResponse evmtypes.MsgEthereumTxResponse
+				err := proto.Unmarshal(dataTx.TxResult.Result.Data, &txResponse)
 				if err != nil {
 					return
 				}
 
-				logs := FilterLogs(resultData.Logs, crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
+				logs := FilterLogs(txResponse.TxLogs.EthLogs(), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
 
 				for _, log := range logs {
 					err = notifier.Notify(rpcSub.ID, log)
@@ -381,13 +378,12 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 					return
 				}
 
-				var resultData evmtypes.ResultData
-				resultData, err = evmtypes.DecodeResultData(dataTx.TxResult.Result.Data)
+				txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
 				if err != nil {
 					return
 				}
 
-				logs := FilterLogs(resultData.Logs, criteria.FromBlock, criteria.ToBlock, criteria.Addresses, criteria.Topics)
+				logs := FilterLogs(txResponse.TxLogs.EthLogs(), criteria.FromBlock, criteria.ToBlock, criteria.Addresses, criteria.Topics)
 
 				api.filtersMu.Lock()
 				if f, found := api.filters[filterID]; found {

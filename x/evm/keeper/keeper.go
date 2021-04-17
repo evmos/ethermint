@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/cosmos/ethermint/x/evm/types"
 
@@ -21,8 +20,8 @@ import (
 // Keeper wraps the CommitStateDB, allowing us to pass in SDK context while adhering
 // to the StateDB interface.
 type Keeper struct {
-	// Amino codec
-	cdc *codec.Codec
+	// Protobuf codec
+	cdc codec.BinaryMarshaler
 	// Store key required for the EVM Prefix KVStore. It is required by:
 	// - storing Account's Storage State
 	// - storing Account's Code
@@ -32,6 +31,7 @@ type Keeper struct {
 	storeKey sdk.StoreKey
 	// Account Keeper for fetching accounts
 	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
 	// Ethermint concrete implementation on the EVM StateDB interface
 	CommitStateDB *types.CommitStateDB
 	// Transaction counter in a block. Used on StateSB's Prepare function.
@@ -43,7 +43,8 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, ak types.AccountKeeper,
+	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	ak types.AccountKeeper, bankKeeper types.BankKeeper,
 ) *Keeper {
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
@@ -53,9 +54,10 @@ func NewKeeper(
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
 		cdc:           cdc,
-		storeKey:      storeKey,
 		accountKeeper: ak,
-		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak),
+		bankKeeper:    bankKeeper,
+		storeKey:      storeKey,
+		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
 		TxCount:       0,
 		Bloom:         big.NewInt(0),
 	}
@@ -64,31 +66,6 @@ func NewKeeper(
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-// ----------------------------------------------------------------------------
-// Block hash mapping functions
-// Required by Web3 API.
-//  TODO: remove once tendermint support block queries by hash.
-// ----------------------------------------------------------------------------
-
-// GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetBlockHash(ctx sdk.Context, hash []byte) (int64, bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixBlockHash)
-	bz := store.Get(hash)
-	if len(bz) == 0 {
-		return 0, false
-	}
-
-	height := binary.BigEndian.Uint64(bz)
-	return int64(height), true
-}
-
-// SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHash(ctx sdk.Context, hash []byte, height int64) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixBlockHash)
-	bz := sdk.Uint64ToBigEndian(uint64(height))
-	store.Set(hash, bz)
 }
 
 // ----------------------------------------------------------------------------
@@ -137,12 +114,10 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 
 	txsLogs := []types.TransactionLogs{}
 	for ; iterator.Valid(); iterator.Next() {
-		hash := common.BytesToHash(iterator.Key())
-		var logs []*ethtypes.Log
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &logs)
+		var txLog types.TransactionLogs
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &txLog)
 
 		// add a new entry
-		txLog := types.NewTransactionLogs(hash, logs)
 		txsLogs = append(txsLogs, txLog)
 	}
 	return txsLogs
@@ -166,7 +141,6 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 // GetChainConfig gets block height from block consensus hash
 func (k Keeper) GetChainConfig(ctx sdk.Context) (types.ChainConfig, bool) {
 	store := ctx.KVStore(k.storeKey)
-
 	bz := store.Get(types.KeyPrefixChainConfig)
 	if len(bz) == 0 {
 		return types.ChainConfig{}, false
@@ -180,6 +154,6 @@ func (k Keeper) GetChainConfig(ctx sdk.Context) (types.ChainConfig, bool) {
 // SetChainConfig sets the mapping from block consensus hash to block height
 func (k Keeper) SetChainConfig(ctx sdk.Context, config types.ChainConfig) {
 	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshalBinaryBare(config)
+	bz := k.cdc.MustMarshalBinaryBare(&config)
 	store.Set(types.KeyPrefixChainConfig, bz)
 }

@@ -1,16 +1,19 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-const (
-	// EthAccountName is the amino encoding name for EthAccount
-	EthAccountName = "ethermint/EthAccount"
-)
-
-// RegisterCodec registers the account interfaces and concrete types on the
-// provided Amino codec.
-func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(&EthAccount{}, EthAccountName, nil)
+// RegisterInterfaces registers the tendermint concrete client-related
+// implementations and interfaces.
+func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	registry.RegisterImplementations(
+		(*authtypes.AccountI)(nil),
+		&EthAccount{},
+	)
+	registry.RegisterImplementations(
+		(*authtypes.GenesisAccount)(nil),
+		&EthAccount{},
+	)
 }

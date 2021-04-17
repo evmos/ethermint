@@ -3,7 +3,6 @@ package evm_test
 import (
 	"crypto/ecdsa"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -24,11 +23,9 @@ import (
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm"
-	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type EvmTestSuite struct {
@@ -36,19 +33,32 @@ type EvmTestSuite struct {
 
 	ctx     sdk.Context
 	handler sdk.Handler
-	querier sdk.Querier
 	app     *app.EthermintApp
-	codec   *codec.Codec
+	codec   codec.BinaryMarshaler
+
+	privKey *ethsecp256k1.PrivKey
+	from    ethcmn.Address
+	to      sdk.AccAddress
 }
 
 func (suite *EvmTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, abci.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
-	suite.handler = evm.NewHandler(suite.app.EvmKeeper)
-	suite.querier = keeper.NewQuerier(*suite.app.EvmKeeper)
-	suite.codec = codec.New()
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
+	suite.handler = evm.NewHandler(*suite.app.EvmKeeper)
+	suite.codec = suite.app.AppCodec()
+
+	privKey, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+
+	suite.to = sdk.AccAddress(privKey.PubKey().Address())
+
+	suite.privKey, err = ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+
+	suite.from = ethcmn.BytesToAddress(privKey.PubKey().Address().Bytes())
+
 }
 
 func TestEvmTestSuite(t *testing.T) {
@@ -56,11 +66,8 @@ func TestEvmTestSuite(t *testing.T) {
 }
 
 func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
-	privkey, err := ethsecp256k1.GenerateKey()
-	suite.Require().NoError(err)
-	sender := ethcmn.HexToAddress(privkey.PubKey().Address().String())
 
-	var tx types.MsgEthereumTx
+	var tx *types.MsgEthereumTx
 
 	testCases := []struct {
 		msg      string
@@ -70,15 +77,15 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 		{
 			"passed",
 			func() {
-				suite.app.EvmKeeper.SetBalance(suite.ctx, sender, big.NewInt(100))
-				tx = types.NewMsgEthereumTx(0, &sender, big.NewInt(100), 0, big.NewInt(10000), nil)
+				suite.app.EvmKeeper.SetBalance(suite.ctx, suite.from, big.NewInt(100))
+				tx = types.NewMsgEthereumTx(0, &suite.from, big.NewInt(0), 0, big.NewInt(10000), nil)
 
 				// parse context chain ID to big.Int
 				chainID, err := ethermint.ParseChainID(suite.ctx.ChainID())
 				suite.Require().NoError(err)
 
 				// sign transaction
-				err = tx.Sign(chainID, privkey.ToECDSA())
+				err = tx.Sign(chainID, suite.privKey.ToECDSA())
 				suite.Require().NoError(err)
 			},
 			true,
@@ -93,7 +100,7 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 				suite.Require().NoError(err)
 
 				// sign transaction
-				err = tx.Sign(chainID, privkey.ToECDSA())
+				err = tx.Sign(chainID, suite.privKey.ToECDSA())
 				suite.Require().NoError(err)
 			},
 			false,
@@ -123,62 +130,6 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.msg, func() {
-			suite.SetupTest() // reset
-			//nolint
-			tc.malleate()
-
-			res, err := suite.handler(suite.ctx, tx)
-
-			//nolint
-			if tc.expPass {
-				suite.Require().NoError(err)
-				suite.Require().NotNil(res)
-			} else {
-				suite.Require().Error(err)
-				suite.Require().Nil(res)
-			}
-		})
-	}
-}
-
-func (suite *EvmTestSuite) TestMsgEthermint() {
-	var (
-		tx   types.MsgEthermint
-		from = sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
-		to   = sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
-	)
-
-	testCases := []struct {
-		msg      string
-		malleate func()
-		expPass  bool
-	}{
-		{
-			"passed",
-			func() {
-				tx = types.NewMsgEthermint(0, &to, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), from)
-				suite.app.EvmKeeper.SetBalance(suite.ctx, ethcmn.BytesToAddress(from.Bytes()), big.NewInt(100))
-			},
-			true,
-		},
-		{
-			"invalid state transition",
-			func() {
-				tx = types.NewMsgEthermint(0, &to, sdk.NewInt(1), 100000, sdk.NewInt(2), []byte("test"), from)
-			},
-			false,
-		},
-		{
-			"invalid chain ID",
-			func() {
-				suite.ctx = suite.ctx.WithChainID("chainID")
-			},
-			false,
-		},
-	}
-
-	for _, tc := range testCases {
-		suite.Run("", func() {
 			suite.SetupTest() // reset
 			//nolint
 			tc.malleate()
@@ -231,20 +182,47 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 	result, err := suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err, "failed to handle eth tx msg")
 
-	resultData, err := types.DecodeResultData(result.Data)
+	txResponse, err := types.DecodeTxResponse(result.Data)
 	suite.Require().NoError(err, "failed to decode result data")
 
-	suite.Require().Equal(len(resultData.Logs), 1)
-	suite.Require().Equal(len(resultData.Logs[0].Topics), 2)
+	suite.Require().Equal(len(txResponse.TxLogs.Logs), 1)
+	suite.Require().Equal(len(txResponse.TxLogs.Logs[0].Topics), 2)
 
 	hash := []byte{1}
-	err = suite.app.EvmKeeper.SetLogs(suite.ctx, ethcmn.BytesToHash(hash), resultData.Logs)
+	err = suite.app.EvmKeeper.SetLogs(suite.ctx, ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
 	suite.Require().NoError(err)
 
 	logs, err := suite.app.EvmKeeper.GetLogs(suite.ctx, ethcmn.BytesToHash(hash))
 	suite.Require().NoError(err, "failed to get logs")
 
-	suite.Require().Equal(logs, resultData.Logs)
+	suite.Require().Equal(len(logs), len(txResponse.TxLogs.Logs))
+
+	for i, logI := range logs {
+		for j, logJ := range txResponse.TxLogs.Logs {
+			if i != j {
+				continue
+			}
+			suite.Require().Equal(uint64(logI.Index), logJ.Index)
+			suite.Require().Equal(logI.Data, logJ.Data)
+			suite.Require().Equal(logI.Address.String(), logJ.Address)
+			suite.Require().Equal(logI.BlockHash.String(), logJ.BlockHash)
+			suite.Require().Equal(logI.BlockNumber, logJ.BlockNumber)
+			suite.Require().Equal(logI.Removed, logJ.Removed)
+			suite.Require().Equal(logI.TxHash.String(), logJ.TxHash)
+			suite.Require().Equal(uint64(logI.TxIndex), logJ.TxIndex)
+
+			suite.Require().Equal(len(logI.Topics), len(logJ.Topics))
+
+			for i2, topicI := range logI.Topics {
+				for j2, topicJ := range logJ.Topics {
+					if i2 != j2 {
+						continue
+					}
+					suite.Require().Equal(topicI.String(), topicJ)
+				}
+			}
+		}
+	}
 }
 
 func (suite *EvmTestSuite) TestQueryTxLogs() {
@@ -264,31 +242,19 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	suite.Require().NoError(err)
 	suite.Require().NotNil(result)
 
-	resultData, err := types.DecodeResultData(result.Data)
+	txResponse, err := types.DecodeTxResponse(result.Data)
 	suite.Require().NoError(err, "failed to decode result data")
 
-	suite.Require().Equal(len(resultData.Logs), 1)
-	suite.Require().Equal(len(resultData.Logs[0].Topics), 2)
+	suite.Require().Equal(len(txResponse.TxLogs.Logs), 1)
+	suite.Require().Equal(len(txResponse.TxLogs.Logs[0].Topics), 2)
 
 	// get logs by tx hash
-	hash := resultData.TxHash.Bytes()
+	hash := txResponse.TxLogs.Hash
 
-	logs, err := suite.app.EvmKeeper.GetLogs(suite.ctx, ethcmn.BytesToHash(hash))
+	logs, err := suite.app.EvmKeeper.GetLogs(suite.ctx, ethcmn.HexToHash(hash))
 	suite.Require().NoError(err, "failed to get logs")
 
-	suite.Require().Equal(logs, resultData.Logs)
-
-	// query tx logs
-	path := []string{"transactionLogs", fmt.Sprintf("0x%x", hash)}
-	res, err := suite.querier(suite.ctx, path, abci.RequestQuery{})
-	suite.Require().NoError(err, "failed to query txLogs")
-
-	var txLogs types.QueryETHLogs
-	suite.codec.MustUnmarshalJSON(res, &txLogs)
-
-	// amino decodes an empty byte array as nil, whereas JSON decodes it as []byte{} causing a discrepancy
-	resultData.Logs[0].Data = []byte{}
-	suite.Require().Equal(txLogs.Logs[0], resultData.Logs[0])
+	suite.Require().Equal(logs, txResponse.TxLogs.EthLogs())
 }
 
 func (suite *EvmTestSuite) TestDeployAndCallContract() {
@@ -361,13 +327,13 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	result, err := suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err, "failed to handle eth tx msg")
 
-	resultData, err := types.DecodeResultData(result.Data)
+	txResponse, err := types.DecodeTxResponse(result.Data)
 	suite.Require().NoError(err, "failed to decode result data")
 
 	// store - changeOwner
 	gasLimit = uint64(100000000000)
 	gasPrice = big.NewInt(100)
-	receiver := common.HexToAddress(resultData.ContractAddress.String())
+	receiver := common.HexToAddress(txResponse.ContractAddress)
 
 	storeAddr := "0xa6f9dae10000000000000000000000006a82e4a67715c8412a9114fbd2cbaefbc8181424"
 	bytecode = common.FromHex(storeAddr)
@@ -378,7 +344,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	result, err = suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err, "failed to handle eth tx msg")
 
-	resultData, err = types.DecodeResultData(result.Data)
+	txResponse, err = types.DecodeTxResponse(result.Data)
 	suite.Require().NoError(err, "failed to decode result data")
 
 	// query - getOwner
@@ -390,10 +356,10 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	result, err = suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err, "failed to handle eth tx msg")
 
-	resultData, err = types.DecodeResultData(result.Data)
+	txResponse, err = types.DecodeTxResponse(result.Data)
 	suite.Require().NoError(err, "failed to decode result data")
 
-	getAddr := strings.ToLower(hexutils.BytesToHex(resultData.Ret))
+	getAddr := strings.ToLower(hexutils.BytesToHex(txResponse.Ret))
 	suite.Require().Equal(true, strings.HasSuffix(storeAddr, getAddr), "Fail to query the address")
 }
 

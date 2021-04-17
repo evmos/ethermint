@@ -20,7 +20,7 @@ func (suite *KeeperTestSuite) TestBloomFilter() {
 	tHash := ethcmn.BytesToHash([]byte{0x1})
 	suite.app.EvmKeeper.Prepare(suite.ctx, tHash, 0)
 	contractAddress := ethcmn.BigToAddress(big.NewInt(1))
-	log := ethtypes.Log{Address: contractAddress}
+	log := ethtypes.Log{Address: contractAddress, Topics: []ethcmn.Hash{}}
 
 	testCase := []struct {
 		name     string
@@ -196,11 +196,11 @@ func (suite *KeeperTestSuite) TestStateDB_Code() {
 func (suite *KeeperTestSuite) TestStateDB_Logs() {
 	testCase := []struct {
 		name string
-		log  ethtypes.Log
+		log  *ethtypes.Log
 	}{
 		{
 			"state db log",
-			ethtypes.Log{
+			&ethtypes.Log{
 				Address:     suite.address,
 				Topics:      []ethcmn.Hash{ethcmn.BytesToHash([]byte("topic"))},
 				Data:        []byte("data"),
@@ -208,7 +208,7 @@ func (suite *KeeperTestSuite) TestStateDB_Logs() {
 				TxHash:      ethcmn.Hash{},
 				TxIndex:     1,
 				BlockHash:   ethcmn.Hash{},
-				Index:       1,
+				Index:       0,
 				Removed:     false,
 			},
 		},
@@ -216,7 +216,7 @@ func (suite *KeeperTestSuite) TestStateDB_Logs() {
 
 	for _, tc := range testCase {
 		hash := ethcmn.BytesToHash([]byte("hash"))
-		logs := []*ethtypes.Log{&tc.log}
+		logs := []*ethtypes.Log{tc.log}
 
 		err := suite.app.EvmKeeper.SetLogs(suite.ctx, hash, logs)
 		suite.Require().NoError(err, tc.name)
@@ -229,7 +229,8 @@ func (suite *KeeperTestSuite) TestStateDB_Logs() {
 		suite.Require().NoError(err, tc.name)
 		suite.Require().Empty(dbLogs, tc.name)
 
-		suite.app.EvmKeeper.AddLog(suite.ctx, &tc.log)
+		suite.app.EvmKeeper.AddLog(suite.ctx, tc.log)
+		tc.log.Index = 0 // reset index
 		suite.Require().Equal(logs, suite.app.EvmKeeper.AllLogs(suite.ctx), tc.name)
 
 		//resets state but checking to see if storekey still persists.
@@ -381,7 +382,7 @@ func (suite *KeeperTestSuite) TestSuiteDB_CopyState() {
 				TxHash:      ethcmn.Hash{},
 				TxIndex:     1,
 				BlockHash:   ethcmn.Hash{},
-				Index:       1,
+				Index:       0,
 				Removed:     false,
 			},
 		},

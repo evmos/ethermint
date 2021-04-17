@@ -12,46 +12,30 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/spf13/viper"
 
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	context "github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
 // Server defines a server that handles Ethereum websockets.
 type Server struct {
-	rpcAddr string // listen address of rest-server
-	wsAddr  string // listen address of ws server
+	Address string
 	api     *PubSubAPI
 	logger  log.Logger
 }
 
 // NewServer creates a new websocket server instance.
-func NewServer(clientCtx context.CLIContext, wsAddr string) *Server {
+func NewServer(clientCtx client.Context) *Server {
 	return &Server{
-		rpcAddr: viper.GetString("laddr"),
-		wsAddr:  wsAddr,
+		Address: "",
 		api:     NewAPI(clientCtx),
 		logger:  log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "websocket-server"),
 	}
-}
-
-// Start runs the websocket server
-func (s *Server) Start() {
-	ws := mux.NewRouter()
-	ws.Handle("/", s)
-
-	go func() {
-		err := http.ListenAndServe(fmt.Sprintf(":%s", s.wsAddr), ws)
-		if err != nil {
-			s.logger.Error("http error:", err)
-		}
-	}()
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +47,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		s.logger.Error("websocket upgrade failed; error:", err)
+		err := fmt.Errorf("websocket upgrade failed: %w", err)
+		rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -163,14 +148,14 @@ func (s *Server) readLoop(wsConn *websocket.Conn) {
 // tcpGetAndSendResponse connects to the rest-server over tcp, posts a JSON-RPC request, and sends the response
 // to the client over websockets
 func (s *Server) tcpGetAndSendResponse(conn *websocket.Conn, mb []byte) error {
-	addr := strings.Split(s.rpcAddr, "tcp://")
+	addr := strings.Split(s.Address, "tcp://")
 	if len(addr) != 2 {
-		return fmt.Errorf("invalid laddr %s", s.rpcAddr)
+		return fmt.Errorf("invalid laddr %s", s.Address)
 	}
 
 	tcpConn, err := net.Dial("tcp", addr[1])
 	if err != nil {
-		return fmt.Errorf("cannot connect to %s; %s", s.rpcAddr, err)
+		return fmt.Errorf("cannot connect to %s; %s", s.Address, err)
 	}
 
 	buf := &bytes.Buffer{}
@@ -179,7 +164,7 @@ func (s *Server) tcpGetAndSendResponse(conn *websocket.Conn, mb []byte) error {
 		return fmt.Errorf("failed to write message; %s", err)
 	}
 
-	req, err := http.NewRequest("POST", s.rpcAddr, buf)
+	req, err := http.NewRequest("POST", s.Address, buf)
 	if err != nil {
 		return fmt.Errorf("failed to request; %s", err)
 	}

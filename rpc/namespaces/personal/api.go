@@ -7,10 +7,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/cosmos/ethermint/crypto/hd"
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/mintkey"
+	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
-	"github.com/cosmos/ethermint/crypto/hd"
 	"github.com/cosmos/ethermint/rpc/namespaces/eth"
 	rpctypes "github.com/cosmos/ethermint/rpc/types"
 )
@@ -27,7 +28,7 @@ import (
 type PrivateAccountAPI struct {
 	ethAPI   *eth.PublicEthereumAPI
 	logger   log.Logger
-	keyInfos []keys.Info // all keys, both locked and unlocked. unlocked keys are stored in ethAPI.keys
+	keyInfos []keyring.Info // all keys, both locked and unlocked. unlocked keys are stored in ethAPI.keys
 }
 
 // NewAPI creates an instance of the public Personal Eth API.
@@ -42,7 +43,7 @@ func NewAPI(ethAPI *eth.PublicEthereumAPI) *PrivateAccountAPI {
 		return api
 	}
 
-	api.keyInfos, err = api.ethAPI.ClientCtx().Keybase.List()
+	api.keyInfos, err = api.ethAPI.ClientCtx().Keyring.List()
 	if err != nil {
 		return api
 	}
@@ -61,27 +62,27 @@ func (api *PrivateAccountAPI) ImportRawKey(privkey, password string) (common.Add
 		return common.Address{}, err
 	}
 
-	privKey := ethsecp256k1.PrivKey(crypto.FromECDSA(priv))
+	privKey := &ethsecp256k1.PrivKey{Key: crypto.FromECDSA(priv)}
 
-	armor := mintkey.EncryptArmorPrivKey(privKey, password, ethsecp256k1.KeyType)
+	armor := sdkcrypto.EncryptArmorPrivKey(privKey, password, ethsecp256k1.KeyType)
 
 	// ignore error as we only care about the length of the list
-	list, _ := api.ethAPI.ClientCtx().Keybase.List()
+	list, _ := api.ethAPI.ClientCtx().Keyring.List()
 	privKeyName := fmt.Sprintf("personal_%d", len(list))
 
-	if err := api.ethAPI.ClientCtx().Keybase.ImportPrivKey(privKeyName, armor, password); err != nil {
+	if err := api.ethAPI.ClientCtx().Keyring.ImportPrivKey(privKeyName, armor, password); err != nil {
 		return common.Address{}, err
 	}
 
 	addr := common.BytesToAddress(privKey.PubKey().Address().Bytes())
 
-	info, err := api.ethAPI.ClientCtx().Keybase.Get(privKeyName)
+	info, err := api.ethAPI.ClientCtx().Keyring.Key(privKeyName)
 	if err != nil {
 		return common.Address{}, err
 	}
 
 	// append key and info to be able to lock and list the account
-	//api.ethAPI.keys = append(api.ethAPI.keys, privKey)
+	// api.ethAPI.keys = append(api.ethAPI.keys, privKey)
 	api.keyInfos = append(api.keyInfos, info)
 	api.logger.Info("key successfully imported", "name", privKeyName, "address", addr.String())
 
@@ -116,7 +117,7 @@ func (api *PrivateAccountAPI) LockAccount(address common.Address) bool {
 		copy(tmp[i:], keys[i+1:])
 		api.ethAPI.SetKeys(tmp)
 
-		api.logger.Debug("account unlocked", "address", address.String())
+		api.logger.Debug("account locked", "address", address.String())
 		return true
 	}
 
@@ -128,16 +129,33 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 	api.logger.Debug("personal_newAccount")
 
 	name := "key_" + time.Now().UTC().Format(time.RFC3339)
-	info, _, err := api.ethAPI.ClientCtx().Keybase.CreateMnemonic(name, keys.English, password, hd.EthSecp256k1)
+	info, _, err := api.ethAPI.ClientCtx().Keyring.NewMnemonic(name, keyring.English, ethermint.BIP44HDPath, hd.EthSecp256k1)
 	if err != nil {
 		return common.Address{}, err
 	}
+
+	// TODO: rpc_test_fix: if we use NewMnemonic, it will create an account automatically, and
+	// the new account encrypted with default empty string in cosmos-SDK,
+	// if we create mnemonic then create new account, we basically generated two accounts
+
+	// nolint
+	//name = "key_" + time.Now().UTC().Format(time.RFC3339)
+	//info, err := api.ethAPI.ClientCtx().Keyring.NewAccount(name, mnemonic, password, ethermint.BIP44HDPath, hd.EthSecp256k1)
+	//if err != nil {
+	//	return common.Address{}, err
+	//}
+	//
+	//// encrypt the key info with given password
+	//armor, err := api.ethAPI.ClientCtx().Keyring.ExportPrivKeyArmor(info.GetName(), password)
+	//if err != nil {
+	//	return common.Address{}, err
+	//}
 
 	api.keyInfos = append(api.keyInfos, info)
 
 	addr := common.BytesToAddress(info.GetPubKey().Address().Bytes())
 	api.logger.Info("Your new key was generated", "address", addr.String())
-	api.logger.Info("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermintd/"+name)
+	api.logger.Info("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermint/"+name)
 	api.logger.Info("Please remember your password!")
 	return addr, nil
 }
@@ -150,7 +168,7 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 	api.logger.Debug("personal_unlockAccount", "address", addr.String())
 	// TODO: use duration
 
-	var keyInfo keys.Info
+	var keyInfo keyring.Info
 
 	for _, info := range api.keyInfos {
 		addressBytes := info.GetPubKey().Address().Bytes()
@@ -164,17 +182,34 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 		return false, fmt.Errorf("cannot find key with given address %s", addr.String())
 	}
 
-	privKey, err := api.ethAPI.ClientCtx().Keybase.ExportPrivateKeyObject(keyInfo.GetName(), password)
+	// exporting private key only works on local keys
+	if keyInfo.GetType() != keyring.TypeLocal {
+		return false, fmt.Errorf("key type must be %s, got %s", keyring.TypeLedger.String(), keyInfo.GetType().String())
+	}
+
+	// TODO: rpc_test_fix: password is used for encrypt and then decrypt, what's the point of locking the account ?
+	armor, err := api.ethAPI.ClientCtx().Keyring.ExportPrivKeyArmor(keyInfo.GetName(), password)
 	if err != nil {
 		return false, err
 	}
 
-	ethermintPrivKey, ok := privKey.(ethsecp256k1.PrivKey)
+	privKey, algo, err := sdkcrypto.UnarmorDecryptPrivKey(armor, password)
+	if err != nil {
+		return false, err
+	}
+
+	// TODO: rpc_test_fix: we need to support both ethsecp256k1 and secp256k1, however, cosmos-SDK only support secp256k1 when init with keys add CLI
+	// so that the very first account has key type as secp256k1, thus, we need to support both key types here
+	if algo != ethsecp256k1.KeyType {
+		return false, fmt.Errorf("invalid key algorithm, got %s, expected %s", algo, ethsecp256k1.KeyType)
+	}
+
+	ethermintPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
 	if !ok {
 		return false, fmt.Errorf("invalid private key type %T, expected %T", privKey, &ethsecp256k1.PrivKey{})
 	}
 
-	api.ethAPI.SetKeys(append(api.ethAPI.GetKeys(), ethermintPrivKey))
+	api.ethAPI.SetKeys(append(api.ethAPI.GetKeys(), *ethermintPrivKey))
 	api.logger.Debug("account unlocked", "address", addr.String())
 	return true, nil
 }
@@ -198,6 +233,7 @@ func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.S
 func (api *PrivateAccountAPI) Sign(_ context.Context, data hexutil.Bytes, addr common.Address, _ string) (hexutil.Bytes, error) {
 	api.logger.Debug("personal_sign", "data", data, "address", addr.String())
 
+	// TODO: rpc_test_fix: because the default account is secp256k1, it can not be unlocked and put into api.ethAPI array
 	key, ok := rpctypes.GetKeyByAddress(api.ethAPI.GetKeys(), addr)
 	if !ok {
 		return nil, fmt.Errorf("cannot find key with address %s", addr.String())
