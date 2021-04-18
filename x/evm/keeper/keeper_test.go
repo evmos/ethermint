@@ -44,7 +44,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "3", Time: time.Now().UTC()})
 	suite.address = ethcmn.HexToAddress(addrHex)
 
-	balance := ethermint.NewInjectiveCoin(sdk.ZeroInt())
+	balance := ethermint.NewPhotonCoin(sdk.ZeroInt())
 	acc := &ethermint.EthAccount{
 		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),

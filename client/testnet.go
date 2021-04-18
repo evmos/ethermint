@@ -46,7 +46,7 @@ import (
 	chaintypes "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
-	"github.com/cosmos/ethermint/cmd/injectived/config"
+	"github.com/cosmos/ethermint/cmd/ethermintd/config"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -74,7 +74,7 @@ necessary files (private validator, genesis, config, etc.).
 
 Note, strict routability for addresses is turned off in the config file.`,
 
-		Example: "injectived testnet --v 4 --keyring-backend test --output-dir ./output --ip-addresses 192.168.10.2",
+		Example: "ethermintd testnet --v 4 --keyring-backend test --output-dir ./output --ip-addresses 192.168.10.2",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 
@@ -106,7 +106,7 @@ Note, strict routability for addresses is turned off in the config file.`,
 	cmd.Flags().Int(flagNumValidators, 4, "Number of validators to initialize the testnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", "./mytestnet", "Directory to store initialization data for the testnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
-	cmd.Flags().String(flagNodeDaemonHome, "injectived", "Home directory of the node's daemon configuration")
+	cmd.Flags().String(flagNodeDaemonHome, "ethermintd", "Home directory of the node's daemon configuration")
 	cmd.Flags().StringSlice(flagIPAddrs, []string{"192.168.0.1"}, "List of IP addresses to use (i.e. `192.168.0.1,172.168.0.1` results in persistent peers list ID0@192.168.0.1:46656, ID1@172.168.0.1)")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 	cmd.Flags().String(server.FlagMinGasPrices, "", "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01inj,0.001stake)")

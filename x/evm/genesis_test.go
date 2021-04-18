@@ -47,7 +47,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.Require().NotNil(acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, address.Bytes(), ethermint.NewInjectiveCoinInt64(1))
+				err := suite.app.BankKeeper.SetBalance(suite.ctx, address.Bytes(), ethermint.NewPhotonCoinInt64(1))
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 			},

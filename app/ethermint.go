@@ -2,27 +2,29 @@ package app
 
 import (
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cast"
+	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/gorilla/mux"
+	"github.com/rakyll/statik/fs"
 	abci "github.com/tendermint/tendermint/abci/types"
-	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	sdkapi "github.com/cosmos/cosmos-sdk/server/api"
-	sdkconfig "github.com/cosmos/cosmos-sdk/server/config"
-	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	"github.com/cosmos/cosmos-sdk/server/api"
+	"github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +33,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -55,7 +56,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	transfer "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
+	"github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
 	ibctransferkeeper "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
 	ibc "github.com/cosmos/cosmos-sdk/x/ibc/core"
@@ -83,12 +84,11 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	// unnamed import of statik for swagger UI support
-	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
+	_ "github.com/cosmos/ethermint/client/docs/statik"
 
 	"github.com/cosmos/ethermint/app/ante"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm"
-
 	evmrest "github.com/cosmos/ethermint/x/evm/client/rest"
 	evmkeeper "github.com/cosmos/ethermint/x/evm/keeper"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -105,10 +105,14 @@ func init() {
 		panic(err)
 	}
 
-	DefaultNodeHome = filepath.Join(userHomeDir, ".ethermint")
+	DefaultNodeHome = filepath.Join(userHomeDir, ".ethermintd")
 }
 
-const appName = "Ethermint"
+func init() {
+
+}
+
+const appName = "ethermintd"
 
 var (
 	// DefaultNodeHome default home directories for the application daemon
@@ -156,10 +160,9 @@ var (
 	}
 )
 
-var (
-	// _ simapp.App              = (*EthermintApp)(nil)
-	_ servertypes.Application = (*EthermintApp)(nil)
-)
+var _ simapp.App = (*EthermintApp)(nil)
+
+//var _ server.Application (*EthermintApp)(nil)
 
 // EthermintApp implements an extended ABCI application. It is an application
 // that may process transactions through Ethereum's EVM running atop of
@@ -197,18 +200,17 @@ type EthermintApp struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
-	// ethermint keepers
+	// Ethermint keepers
 	EvmKeeper *evmkeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
 
 	// simulation manager
-	// disable for now, enable it once SDK side fix the simulator issue for custom keys
-	// sm *module.SimulationManager
+	sm *module.SimulationManager
 }
 
-// NewEthermintApp returns a reference to a new initialized Ethermint application.
+// NewEthermintApp returns a reference to a new initialized Injective application.
 func NewEthermintApp(
 	logger log.Logger,
 	db dbm.DB,
@@ -226,7 +228,7 @@ func NewEthermintApp(
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
-	// NOTE we use custom Ethermint transaction decoder that supports the sdk.Tx interface instead of sdk.StdTx
+	// NOTE we use custom Injective transaction decoder that supports the sdk.Tx interface instead of sdk.StdTx
 	bApp := baseapp.NewBaseApp(
 		appName,
 		logger,
@@ -304,6 +306,11 @@ func NewEthermintApp(
 		stakingtypes.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()),
 	)
 
+	// Create Ethermint keepers
+	app.EvmKeeper = evmkeeper.NewKeeper(
+		appCodec, keys[evmtypes.StoreKey], app.GetSubspace(evmtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
+	)
+
 	// Create IBC Keeper
 	app.IBCKeeper = ibckeeper.NewKeeper(
 		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName), app.StakingKeeper, scopedIBCKeeper,
@@ -315,8 +322,8 @@ func NewEthermintApp(
 		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper)).
 		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.DistrKeeper)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.UpgradeKeeper)).
-		AddRoute(ibchost.RouterKey, ibcclient.NewClientUpdateProposalHandler(app.IBCKeeper.ClientKeeper))
-	app.GovKeeper = govkeeper.NewKeeper(
+		AddRoute(ibchost.RouterKey, ibcclient.NewClientUpdateProposalHandler(app.IBCKeeper.ClientKeeper)).
+		app.GovKeeper = govkeeper.NewKeeper(
 		appCodec, keys[govtypes.StoreKey], app.GetSubspace(govtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
 		&stakingKeeper, govRouter,
 	)
@@ -341,16 +348,13 @@ func NewEthermintApp(
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
 
-	// Create Ethermint keepers
-	app.EvmKeeper = evmkeeper.NewKeeper(
-		appCodec, keys[evmtypes.StoreKey], app.GetSubspace(evmtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
-	)
-
 	/****  Module Options ****/
 
+	// TODO: do properly
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
-	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	//var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	skipGenesisInvariants := true
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -375,7 +379,7 @@ func NewEthermintApp(
 		ibc.NewAppModule(app.IBCKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
-		// Ethermint app modules
+		// Injective app modules
 		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper, app.BankKeeper),
 	)
 
@@ -391,8 +395,8 @@ func NewEthermintApp(
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
 	)
 	app.mm.SetOrderEndBlockers(
-		evmtypes.ModuleName,
 		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName,
+		evmtypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -405,8 +409,9 @@ func NewEthermintApp(
 		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName, distrtypes.ModuleName, stakingtypes.ModuleName,
 		slashingtypes.ModuleName, govtypes.ModuleName, minttypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
-		// Ethermint modules
+		// Injective modules
 		evmtypes.ModuleName,
+
 		// NOTE: crisis module must go at the end to check for invariants on each module
 		crisistypes.ModuleName,
 	)
@@ -415,29 +420,29 @@ func NewEthermintApp(
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
 	app.mm.RegisterServices(module.NewConfigurator(app.MsgServiceRouter(), app.GRPCQueryRouter()))
 
-	// add test gRPC service for testing gRPC queries in isolation
+	//add test gRPC service for testing gRPC queries in isolation
 	// testdata.RegisterTestServiceServer(app.GRPCQueryRouter(), testdata.TestServiceImpl{})
 
-	// create the simulation manager and define the order of the modules for deterministic simulations
-	//
-	// NOTE: this is not required apps that don't use the simulator for fuzz testing
-	// transactions
-	// app.sm = module.NewSimulationManager(
-	//	auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts),
-	//	bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
-	//	capability.NewAppModule(appCodec, *app.CapabilityKeeper),
-	//	gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
-	//	mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper),
-	//	staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
-	//	distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
-	//	slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
-	//	params.NewAppModule(app.ParamsKeeper),
-	//	evidence.NewAppModule(app.EvidenceKeeper),
-	//	ibc.NewAppModule(app.IBCKeeper),
-	//	transferModule,
-	//)
+	//create the simulation manager and define the order of the modules for deterministic simulations
 
-	// app.sm.RegisterStoreDecoders()
+	//NOTE: this is not required apps that don't use the simulator for fuzz testing
+	// transactions
+	app.sm = module.NewSimulationManager(
+		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
+		capability.NewAppModule(appCodec, *app.CapabilityKeeper),
+		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
+		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper),
+		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
+		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		params.NewAppModule(app.ParamsKeeper),
+		evidence.NewAppModule(app.EvidenceKeeper),
+		ibc.NewAppModule(app.IBCKeeper),
+		transferModule,
+	)
+
+	app.sm.RegisterStoreDecoders()
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -448,13 +453,14 @@ func NewEthermintApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 
-	// use Ethermint's custom AnteHandler
+	// use Injective's custom AnteHandler
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
 			app.AccountKeeper, app.BankKeeper, app.EvmKeeper,
 			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)
+
 	app.SetEndBlocker(app.EndBlocker)
 
 	if loadLatest {
@@ -495,9 +501,7 @@ func (app *EthermintApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) a
 // InitChainer updates at chain initialization
 func (app *EthermintApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState simapp.GenesisState
-	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
-		panic(err)
-	}
+	app.cdc.MustUnmarshalJSON(req.AppStateBytes, &genesisState)
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
@@ -578,34 +582,50 @@ func (app *EthermintApp) GetSubspace(moduleName string) paramstypes.Subspace {
 }
 
 // SimulationManager implements the SimulationApp interface
-// func (app *EthermintApp) SimulationManager() *module.SimulationManager {
-//	return app.sm
-//}
+func (app *EthermintApp) SimulationManager() *module.SimulationManager {
+	return app.sm
+}
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
-func (app *EthermintApp) RegisterAPIRoutes(apiSvr *sdkapi.Server, apiConfig sdkconfig.APIConfig) {
+func (app *EthermintApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
 	rpc.RegisterRoutes(clientCtx, apiSvr.Router)
+
 	evmrest.RegisterTxRoutes(clientCtx, apiSvr.Router)
 
+	// Register new tx routes from grpc-gateway.
+	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Register new tendermint queries routes from grpc-gateway.
+	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+
+	// Register legacy and grpc-gateway routes for all modules.
 	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
-	ModuleBasics.RegisterGRPCGatewayRoutes(apiSvr.ClientCtx, apiSvr.GRPCGatewayRouter)
+	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
 	if apiConfig.Swagger {
-		simapp.RegisterSwaggerAPI(clientCtx, apiSvr.Router)
+		RegisterSwaggerAPI(clientCtx, apiSvr.Router)
 	}
 }
 
-// RegisterTxService implements the Application.RegisterTxService method.
 func (app *EthermintApp) RegisterTxService(clientCtx client.Context) {
 	authtx.RegisterTxService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.BaseApp.Simulate, app.interfaceRegistry)
 }
 
-// RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *EthermintApp) RegisterTendermintService(clientCtx client.Context) {
 	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.interfaceRegistry)
+}
+
+// RegisterSwaggerAPI registers swagger route with API Server
+func RegisterSwaggerAPI(ctx client.Context, rtr *mux.Router) {
+	statikFS, err := fs.New()
+	if err != nil {
+		panic(err)
+	}
+
+	staticServer := http.FileServer(statikFS)
+	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
 }
 
 // GetMaccPerms returns a copy of the module account permissions
@@ -636,6 +656,5 @@ func initParamsKeeper(
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	// ethermint subspaces
 	paramsKeeper.Subspace(evmtypes.ModuleName)
-
 	return paramsKeeper
 }

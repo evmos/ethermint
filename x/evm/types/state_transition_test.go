@@ -17,7 +17,7 @@ func (suite *StateDBTestSuite) TestTransitionDb() {
 	suite.stateDB.SetNonce(suite.address, 123)
 
 	addr := sdk.AccAddress(suite.address.Bytes())
-	balance := ethermint.NewInjectiveCoin(sdk.NewInt(5000))
+	balance := ethermint.NewPhotonCoin(sdk.NewInt(5000))
 	acc := suite.app.AccountKeeper.GetAccount(suite.ctx, addr)
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 	suite.app.BankKeeper.SetBalance(suite.ctx, addr, balance)

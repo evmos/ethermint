@@ -48,7 +48,7 @@ func (suite *StateDBTestSuite) SetupTest() {
 
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
 
-	balance := ethermint.NewInjectiveCoin(sdk.ZeroInt())
+	balance := ethermint.NewPhotonCoin(sdk.ZeroInt())
 	acc := &ethermint.EthAccount{
 		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),

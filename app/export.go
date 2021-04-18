@@ -34,6 +34,7 @@ func (app *EthermintApp) ExportAppStateAndValidators(
 	height := app.LastBlockHeight() + 1
 	if forZeroHeight {
 		height = 0
+
 		if err := app.prepForZeroHeightGenesis(ctx, jailAllowedAddrs); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
@@ -60,7 +61,7 @@ func (app *EthermintApp) ExportAppStateAndValidators(
 
 // prepare for fresh start at zero height
 // NOTE zero height genesis is a temporary feature which will be deprecated
-//      in favour of export at a block height
+//      in favor of export at a block height
 func (app *EthermintApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []string) error {
 	applyAllowedAddrs := false
 
