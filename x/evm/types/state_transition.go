@@ -3,7 +3,6 @@ package types
 import (
 	"math/big"
 	"os"
-	"sync"
 
 	"github.com/pkg/errors"
 	log "github.com/xlab/suplog"
@@ -16,7 +15,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/ethermint/metrics"
 )
 
 // StateTransition defines data to transitionDB in evm
@@ -35,17 +33,6 @@ type StateTransition struct {
 	Sender   common.Address
 	Simulate bool // i.e CheckTx execution
 	Debug    bool // enable EVM debugging
-
-	once    sync.Once
-	svcTags metrics.Tags
-}
-
-func (st *StateTransition) initOnce() {
-	st.once.Do(func() {
-		st.svcTags = metrics.Tags{
-			"svc": "evm_state",
-		}
-	})
 }
 
 // GasInfo returns the gas limit, gas consumed and gas refunded from the EVM transition
@@ -96,14 +83,12 @@ func (st *StateTransition) newEVM(
 	config ChainConfig,
 	extraEIPs []int64,
 ) *vm.EVM {
-	st.initOnce()
-
 	// Create context for evm
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     GetHashFn(ctx, csdb),
-		Coinbase:    common.Address{}, // there's no benefitiary since we're not mining
+		Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
 		BlockNumber: big.NewInt(ctx.BlockHeight()),
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
@@ -139,17 +124,10 @@ func (st *StateTransition) newEVM(
 // returning the evm execution result.
 // NOTE: State transition checks are run during AnteHandler execution.
 func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (resp *ExecutionResult, err error) {
-	st.initOnce()
-
-	metrics.ReportFuncCall(st.svcTags)
-	doneFn := metrics.ReportFuncTiming(st.svcTags)
-	defer doneFn()
-
 	contractCreation := st.Recipient == nil
 
 	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true, false)
 	if err != nil {
-		metrics.ReportFuncError(st.svcTags)
 		err = sdkerrors.Wrap(err, "invalid intrinsic gas for transaction")
 		return nil, err
 	}
@@ -185,7 +163,6 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 	gasPrice := ctx.MinGasPrices().AmountOf(params.EvmDenom)
 	//gasPrice := sdk.ZeroDec()
 	if gasPrice.IsNil() {
-		metrics.ReportFuncError(st.svcTags)
 		return nil, errors.New("min gas price cannot be nil")
 	}
 
@@ -263,8 +240,6 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 
 	if err != nil {
 		// Consume gas before returning
-		metrics.EVMRevertedTx(st.svcTags)
-		metrics.EVMGasConsumed(resp.GasInfo.GasConsumed)
 		ctx.GasMeter().ConsumeGas(resp.GasInfo.GasConsumed, "evm execution consumption")
 		return resp, err
 	}
@@ -283,7 +258,6 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 	if st.TxHash != nil && !st.Simulate {
 		logs, err = csdb.GetLogs(*st.TxHash)
 		if err != nil {
-			metrics.ReportFuncError(st.svcTags)
 			err = errors.Wrap(err, "failed to get logs")
 			return nil, err
 		}
@@ -296,7 +270,6 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 		// Finalise state if not a simulated transaction
 		// TODO: change to depend on config
 		if err := csdb.Finalise(true); err != nil {
-			metrics.ReportFuncError(st.svcTags)
 			return nil, err
 		}
 	}
@@ -317,7 +290,7 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 
 	// Consume gas from evm execution
 	// Out of gas check does not need to be done here since it is done within the EVM execution
-	metrics.EVMGasConsumed(resp.GasInfo.GasConsumed)
+
 	// TODO: @albert, @maxim, decide if can take this out, since InternalEthereumTx may want to continue execution afterwards
 	// which will use gas.
 	_ = currentGasMeter
@@ -331,8 +304,6 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 // Opcodes that attempt to perform such modifications will result in exceptions
 // instead of performing the modifications.
 func (st *StateTransition) StaticCall(ctx sdk.Context, config ChainConfig) ([]byte, error) {
-	st.initOnce()
-
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
 	gasLimit := st.GasLimit - ctx.GasMeter().GasConsumed()
 	csdb := st.Csdb.WithContext(ctx)

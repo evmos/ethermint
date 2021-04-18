@@ -12,7 +12,6 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/cosmos/ethermint/metrics"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
@@ -20,16 +19,11 @@ import (
 var _ types.MsgServer = &Keeper{}
 
 func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
-
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	// parse the chainID from a string to a base-10 integer
 	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
 	if err != nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, err
 	}
 
@@ -44,7 +38,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 				"homestead_err": homesteadErr.Error(),
 			}).Warningln("failed to verify signatures with EIP155 and Homestead signers")
 
-			metrics.ReportFuncError(k.svcTags)
 			return nil, errors.New("no valid signatures")
 		}
 	}
@@ -84,7 +77,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	config, found := k.GetChainConfig(ctx)
 	if !found {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, types.ErrChainConfigNotFound
 	}
 
@@ -93,7 +85,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		if err.Error() == "execution reverted" && executionResult != nil {
 			// keep the execution result for revert reason
 			executionResult.Response.Reverted = true
-			metrics.ReportFuncError(k.svcTags)
 
 			if !st.Simulate {
 				blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
@@ -117,7 +108,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			return executionResult.Response, nil
 		}
 
-		metrics.ReportFuncError(k.svcTags)
 		return nil, err
 	}
 
@@ -180,7 +170,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		)
 	}
 
-	metrics.ReportFuncError(k.svcTags)
 	return executionResult.Response, nil
 }
 
@@ -232,15 +221,10 @@ func (k *Keeper) InternalEthereumTx(
 	sender common.Address,
 	tx *types.TxData,
 ) (*types.MsgEthereumTxResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
-
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	// parse the chainID from a string to a base-10 integer
 	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
 	if err != nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, err
 	}
 
@@ -281,7 +265,6 @@ func (k *Keeper) InternalEthereumTx(
 
 	config, found := k.GetChainConfig(ctx)
 	if !found {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, types.ErrChainConfigNotFound
 	}
 
@@ -290,7 +273,6 @@ func (k *Keeper) InternalEthereumTx(
 		if err.Error() == "execution reverted" && executionResult != nil {
 			// keep the execution result for revert reason
 			executionResult.Response.Reverted = true
-			metrics.ReportFuncError(k.svcTags)
 
 			if !st.Simulate {
 				blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
@@ -314,7 +296,6 @@ func (k *Keeper) InternalEthereumTx(
 			return executionResult.Response, err
 		}
 
-		metrics.ReportFuncError(k.svcTags)
 		return nil, err
 	}
 

@@ -12,7 +12,6 @@ import (
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
-	"github.com/cosmos/ethermint/metrics"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
@@ -21,17 +20,11 @@ var _ types.QueryServer = Keeper{}
 
 // Account implements the Query/Account gRPC method
 func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*types.QueryAccountResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
-
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsZeroAddress(req.Address) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -42,7 +35,6 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 	so := k.GetOrNewStateObject(ctx, ethcmn.HexToAddress(req.Address))
 	balance, err := ethermint.MarshalBigInt(so.Balance())
 	if err != nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, err
 	}
 
@@ -54,17 +46,12 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 }
 
 func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRequest) (*types.QueryCosmosAccountResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
 
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsZeroAddress(req.Address) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -92,17 +79,11 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 
 // Balance implements the Query/Balance gRPC method
 func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*types.QueryBalanceResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
-
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsZeroAddress(req.Address) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -114,7 +95,6 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	balanceInt := k.GetBalance(ctx, ethcmn.HexToAddress(req.Address))
 	balance, err := ethermint.MarshalBigInt(balanceInt)
 	if err != nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.Internal,
 			"failed to marshal big.Int to string",
@@ -128,17 +108,12 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 
 // Storage implements the Query/Storage gRPC method
 func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*types.QueryStorageResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
 
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsZeroAddress(req.Address) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -159,17 +134,11 @@ func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*typ
 
 // Code implements the Query/Code gRPC method
 func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.QueryCodeResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
-
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsZeroAddress(req.Address) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -188,17 +157,11 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 
 // TxLogs implements the Query/TxLogs gRPC method
 func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types.QueryTxLogsResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
-
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsEmptyHash(req.Hash) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),
@@ -210,7 +173,6 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	hash := ethcmn.HexToHash(req.Hash)
 	logs, err := k.GetLogs(ctx, hash)
 	if err != nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.Internal,
 			err.Error(),
@@ -224,17 +186,12 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 
 // TxReceipt implements the Query/TxReceipt gRPC method
 func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (*types.QueryTxReceiptResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
 
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsEmptyHash(req.Hash) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),
@@ -246,7 +203,6 @@ func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (
 	hash := ethcmn.HexToHash(req.Hash)
 	receipt, found := k.GetTxReceiptFromHash(ctx, hash)
 	if !found {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.NotFound, types.ErrTxReceiptNotFound.Error(),
 		)
@@ -259,12 +215,7 @@ func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (
 
 // TxReceiptsByBlockHeight implements the Query/TxReceiptsByBlockHeight gRPC method
 func (k Keeper) TxReceiptsByBlockHeight(c context.Context, req *types.QueryTxReceiptsByBlockHeightRequest) (*types.QueryTxReceiptsByBlockHeightResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
-
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
@@ -278,17 +229,12 @@ func (k Keeper) TxReceiptsByBlockHeight(c context.Context, req *types.QueryTxRec
 
 // TxReceiptsByBlockHash implements the Query/TxReceiptsByBlockHash gRPC method
 func (k Keeper) TxReceiptsByBlockHash(c context.Context, req *types.QueryTxReceiptsByBlockHashRequest) (*types.QueryTxReceiptsByBlockHashResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
 
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsEmptyHash(req.Hash) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),
@@ -307,17 +253,12 @@ func (k Keeper) TxReceiptsByBlockHash(c context.Context, req *types.QueryTxRecei
 
 // BlockLogs implements the Query/BlockLogs gRPC method
 func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (*types.QueryBlockLogsResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
 
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if types.IsEmptyHash(req.Hash) {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),
@@ -335,12 +276,8 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 // BlockBloom implements the Query/BlockBloom gRPC method
 func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
 
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
@@ -353,7 +290,6 @@ func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest)
 
 	bloom, found := k.GetBlockBloom(ctx, height)
 	if !found {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(
 			codes.NotFound, types.ErrBloomNotFound.Error(),
 		)
@@ -366,12 +302,8 @@ func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest)
 
 // Params implements the Query/Params gRPC method
 func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-	metrics.ReportFuncCall(k.svcTags)
-	doneFn := metrics.ReportFuncTiming(k.svcTags)
-	defer doneFn()
 
 	if req == nil {
-		metrics.ReportFuncError(k.svcTags)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 

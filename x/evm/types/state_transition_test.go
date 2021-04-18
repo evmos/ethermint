@@ -126,7 +126,7 @@ func (suite *StateDBTestSuite) TestTransitionDb() {
 			"nil gas price",
 			func() {
 				invalidGas := sdk.DecCoins{
-					{Denom: ethermint.InjectiveCoin},
+					{Denom: ethermint.PhotonCoin},
 				}
 				suite.ctx = suite.ctx.WithMinGasPrices(invalidGas)
 			},

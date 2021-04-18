@@ -168,24 +168,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	cfg := ctx.Config
 	home := cfg.RootDir
 
-	envName := "chain-" + ctx.Viper.GetString(flags.FlagChainID)
-	if env := os.Getenv("APP_ENV"); len(env) > 0 {
-		envName = env
-	}
-
-	if statsdEnabled {
-		hostname, _ := os.Hostname()
-		metrics.Init(statsdAddress, statsdPrefix, &metrics.StatterConfig{
-			EnvName:              envName,
-			HostName:             hostname,
-			StuckFunctionTimeout: duration(statsdStuckFunc, 5*time.Minute),
-			MockingEnabled:       false,
-		})
-		closer.Bind(func() {
-			metrics.Close()
-		})
-	}
-
 	traceWriterFile := ctx.Viper.GetString(flagTraceStore)
 	db, err := openDB(home)
 	if err != nil {
@@ -243,7 +225,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	var grpcSrv *grpc.Server
 	if config.GRPC.Enable {
-		grpcSrv, err = servergrpc.StartGRPCServer(app, config.GRPC.Address)
+		grpcSrv, err = servergrpc.StartGRPCServer(clientCtx, app, config.GRPC.Address)
 		if err != nil {
 			log.WithError(err).Errorln("failed to boot GRPC server")
 		}

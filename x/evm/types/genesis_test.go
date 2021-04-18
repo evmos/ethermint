@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
@@ -43,7 +42,6 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 			"valid genesis account",
 			GenesisAccount{
 				Address: suite.address,
-				Balance: sdk.OneInt(),
 				Code:    suite.code,
 				Storage: Storage{
 					NewState(suite.hash, suite.hash),
@@ -55,23 +53,6 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 			"empty account address bytes",
 			GenesisAccount{
 				Address: ethcmn.Address{}.String(),
-				Balance: sdk.OneInt(),
-			},
-			false,
-		},
-		{
-			"empty account balance",
-			GenesisAccount{
-				Address: suite.address,
-				Balance: sdk.Int{},
-			},
-			false,
-		},
-		{
-			"negative account balance",
-			GenesisAccount{
-				Address: suite.address,
-				Balance: sdk.NewInt(-1),
 			},
 			false,
 		},
@@ -79,7 +60,6 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 			"empty code bytes",
 			GenesisAccount{
 				Address: suite.address,
-				Balance: sdk.OneInt(),
 				Code:    "",
 			},
 			false,
@@ -115,8 +95,8 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 				Accounts: []GenesisAccount{
 					{
 						Address: suite.address,
-						Balance: sdk.OneInt(),
-						Code:    suite.code,
+
+						Code: suite.code,
 						Storage: Storage{
 							{Key: suite.hash.String()},
 						},
@@ -167,16 +147,16 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 				Accounts: []GenesisAccount{
 					{
 						Address: suite.address,
-						Balance: sdk.OneInt(),
-						Code:    suite.code,
+
+						Code: suite.code,
 						Storage: Storage{
 							NewState(suite.hash, suite.hash),
 						},
 					},
 					{
 						Address: suite.address,
-						Balance: sdk.OneInt(),
-						Code:    suite.code,
+
+						Code: suite.code,
 						Storage: Storage{
 							NewState(suite.hash, suite.hash),
 						},
@@ -191,8 +171,8 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 				Accounts: []GenesisAccount{
 					{
 						Address: suite.address,
-						Balance: sdk.OneInt(),
-						Code:    suite.code,
+
+						Code: suite.code,
 						Storage: Storage{
 							{Key: suite.hash.String()},
 						},
@@ -241,8 +221,8 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 				Accounts: []GenesisAccount{
 					{
 						Address: suite.address,
-						Balance: sdk.OneInt(),
-						Code:    suite.code,
+
+						Code: suite.code,
 						Storage: Storage{
 							{Key: suite.hash.String()},
 						},

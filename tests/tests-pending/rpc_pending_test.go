@@ -16,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
-	rpctypes "github.com/cosmos/ethermint/rpc/types"
+	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
 	util "github.com/cosmos/ethermint/tests"
 )
 
@@ -29,25 +29,6 @@ var (
 	MODE = os.Getenv("MODE")
 	from = []byte{}
 )
-
-type Request struct {
-	Version string      `json:"jsonrpc"`
-	Method  string      `json:"method"`
-	Params  interface{} `json:"params"`
-	ID      int         `json:"id"`
-}
-
-type RPCError struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
-type Response struct {
-	Error  *RPCError       `json:"error"`
-	ID     int             `json:"id"`
-	Result json.RawMessage `json:"result,omitempty"`
-}
 
 func TestMain(m *testing.M) {
 	if MODE != "pending" {
