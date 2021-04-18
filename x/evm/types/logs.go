@@ -1,10 +1,12 @@
 package types
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
-	ethermint "github.com/cosmos/ethermint/types"
+	log "github.com/xlab/suplog"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -32,7 +34,7 @@ func NewTransactionLogsFromEth(hash ethcmn.Hash, ethlogs []*ethtypes.Log) Transa
 
 // Validate performs a basic validation of a GenesisAccount fields.
 func (tx TransactionLogs) Validate() error {
-	if ethermint.IsEmptyHash(tx.Hash) {
+	if bytes.Equal(ethcmn.Hex2Bytes(tx.Hash), ethcmn.Hash{}.Bytes()) {
 		return fmt.Errorf("hash cannot be the empty %s", tx.Hash)
 	}
 
@@ -57,7 +59,7 @@ func (tx TransactionLogs) EthLogs() []*ethtypes.Log {
 
 // Validate performs a basic validation of an ethereum Log fields.
 func (log *Log) Validate() error {
-	if ethermint.IsZeroAddress(log.Address) {
+	if IsZeroAddress(log.Address) {
 		return fmt.Errorf("log address cannot be empty %s", log.Address)
 	}
 	if IsEmptyHash(log.BlockHash) {
@@ -66,7 +68,7 @@ func (log *Log) Validate() error {
 	if log.BlockNumber == 0 {
 		return errors.New("block number cannot be zero")
 	}
-	if ethermint.IsEmptyHash(log.TxHash) {
+	if IsEmptyHash(log.TxHash) {
 		return fmt.Errorf("tx hash cannot be the empty %s", log.TxHash)
 	}
 	return nil
@@ -86,6 +88,7 @@ func (log *Log) ToEthereum() *ethtypes.Log {
 		BlockNumber: log.BlockNumber,
 		TxHash:      ethcmn.HexToHash(log.TxHash),
 		TxIndex:     uint(log.TxIndex),
+		Index:       uint(log.Index),
 		BlockHash:   ethcmn.HexToHash(log.BlockHash),
 		Removed:     log.Removed,
 	}
@@ -95,6 +98,12 @@ func (log *Log) ToEthereum() *ethtypes.Log {
 func LogsToEthereum(logs []*Log) []*ethtypes.Log {
 	ethLogs := make([]*ethtypes.Log, len(logs))
 	for i := range logs {
+		err := logs[i].Validate()
+		if err != nil {
+			log.WithError(err).Errorln("failed log validation", logs[i].String())
+			continue
+		}
+
 		ethLogs[i] = logs[i].ToEthereum()
 	}
 	return ethLogs

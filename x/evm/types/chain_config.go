@@ -28,12 +28,13 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		PetersburgBlock:     getBlockValue(cc.PetersburgBlock),
 		IstanbulBlock:       getBlockValue(cc.IstanbulBlock),
 		MuirGlacierBlock:    getBlockValue(cc.MuirGlacierBlock),
-		YoloV2Block:         getBlockValue(cc.YoloV2Block),
-		EWASMBlock:          getBlockValue(cc.EWASMBlock),
+		//TODO(xlab): after upgrading ethereum to newer version, this should be set to YoloV2Block
+		YoloV2Block: getBlockValue(cc.YoloV2Block),
+		EWASMBlock:  getBlockValue(cc.EWASMBlock),
 	}
 }
 
-// DefaultChainConfig returns default evm parameters.
+// DefaultChainConfig returns default evm parameters. Th
 func DefaultChainConfig() ChainConfig {
 	return ChainConfig{
 		HomesteadBlock:      sdk.ZeroInt(),
@@ -46,8 +47,8 @@ func DefaultChainConfig() ChainConfig {
 		ByzantiumBlock:      sdk.ZeroInt(),
 		ConstantinopleBlock: sdk.ZeroInt(),
 		PetersburgBlock:     sdk.ZeroInt(),
-		IstanbulBlock:       sdk.ZeroInt(),
-		MuirGlacierBlock:    sdk.ZeroInt(),
+		IstanbulBlock:       sdk.NewInt(-1),
+		MuirGlacierBlock:    sdk.NewInt(-1),
 		YoloV2Block:         sdk.NewInt(-1),
 		EWASMBlock:          sdk.NewInt(-1),
 	}
@@ -124,14 +125,4 @@ func validateBlock(block sdk.Int) error {
 	}
 
 	return nil
-}
-
-// IsIstanbul returns whether the Istanbul version is enabled.
-func (cc ChainConfig) IsIstanbul() bool {
-	return getBlockValue(cc.IstanbulBlock) != nil
-}
-
-// IsHomestead returns whether the Homestead version is enabled.
-func (cc ChainConfig) IsHomestead() bool {
-	return getBlockValue(cc.HomesteadBlock) != nil
 }

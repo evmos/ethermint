@@ -171,3 +171,79 @@ message Log {
   // through a filter query.
   bool removed = 9;
 }
+
+// TxReceipt defines the receipt type stored in KV for each EVM transaction.
+message TxReceipt {
+  option (gogoproto.goproto_getters) = false;
+
+  bytes hash = 1;
+  bytes from = 2;
+  TxData data = 3;
+  TxResult result = 4;
+  uint64 index = 5;
+  uint64 blockHeight = 6;
+  bytes blockHash = 7;
+}
+
+// TxResult stores results of Tx execution.
+message TxResult {
+  option (gogoproto.goproto_getters) = false;
+
+  // contract_address contains the ethereum address of the created contract (if
+  // any). If the state transition is an evm.Call, the contract address will be
+  // empty.
+  string contract_address = 1
+      [ (gogoproto.moretags) = "yaml:\"contract_address\"" ];
+  // bloom represents the bloom filter bytes
+  bytes bloom = 2;
+  // tx_logs contains the transaction hash and the proto-compatible ethereum
+  // logs.
+  TransactionLogs tx_logs = 3 [
+    (gogoproto.moretags) = "yaml:\"tx_logs\"",
+    (gogoproto.nullable) = false
+  ];
+  // ret defines the bytes from the execution.
+  bytes ret = 4;
+  // reverted flag is set to true when the call has been reverted
+  bool reverted = 5;
+  // gas_used notes the amount of gas consumed while execution
+  uint64 gas_used = 6;
+}
+
+// TxData implements the Ethereum transaction data structure. It is used
+// solely as intended in Ethereum abiding by the protocol.
+message TxData {
+  option (gogoproto.goproto_getters) = false;
+
+  // nonce corresponds to the account nonce (transaction sequence).
+  uint64 nonce = 1 [(gogoproto.customname) = "AccountNonce"];
+  // price defines the unsigned integer value of the gas price in bytes.
+  bytes price = 2 [
+    (gogoproto.jsontag) = "gasPrice"
+  ];
+  // gas defines the gas limit defined for the transaction.
+  uint64 gas = 3 [(gogoproto.customname) = "GasLimit"];
+  bytes to = 4 [
+    (gogoproto.customname) = "Recipient"
+  ];
+  // value defines the unsigned integer value of the transaction amount.
+  bytes value = 5 [
+    (gogoproto.customname) = "Amount"
+  ];
+  // input defines the data payload bytes of the transaction.
+  bytes input = 6 [(gogoproto.customname) = "Payload"];
+  // v defines the signature value
+  bytes v = 7;
+  // r defines the signature value
+  bytes r = 8;
+  // s define the signature value
+  bytes s = 9;
+  // hash defines the tx data hash, which is only used when marshaling to JSON.
+  string hash = 10 [ (gogoproto.moretags) = "rlp:\"-\"" ];
+}
+
+message BytesList {
+  option (gogoproto.goproto_getters) = false;
+
+  repeated bytes bytes = 1;
+}

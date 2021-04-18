@@ -3,29 +3,29 @@ package keeper
 import (
 	"math/big"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/cosmos/ethermint/metrics"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-// BeginBlock sets the block height -> header hash map for the previous block height
+// BeginBlock sets the block hash -> block height map for the previous block height
 // and resets the Bloom filter and the transaction count to 0.
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	if req.Header.LastBlockId.GetHash() == nil || req.Header.GetHeight() < 1 {
+	if req.Header.Height < 1 {
 		return
 	}
 
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	// Set the hash -> height and height -> hash mapping.
-	currentHash := req.Hash
-	height := req.Header.GetHeight()
+	k.SetBlockHash(ctx, req.Hash, req.Header.Height)
+	k.SetBlockHeightToHash(ctx, req.Hash, req.Header.Height)
 
-	k.SetHeightHash(ctx, uint64(height), common.BytesToHash(hash))
+	// special setter for csdb
+	k.SetHeightHash(ctx, uint64(req.Header.Height), common.BytesToHash(req.Hash))
 
 	// reset counters that are used on CommitStateDB.Prepare
 	k.Bloom = big.NewInt(0)
@@ -37,6 +37,10 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // the store. The EVM end block logic doesn't update the validator set, thus it returns
 // an empty slice.
 func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+	metrics.ReportFuncCall(k.svcTags)
+	doneFn := metrics.ReportFuncTiming(k.svcTags)
+	defer doneFn()
+
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 

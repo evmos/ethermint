@@ -4,10 +4,8 @@ import (
 	"math/big"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
-
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
@@ -27,7 +25,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.Require().NotNil(acc)
-				suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), ethermint.NewPhotonCoinInt64(1))
+				suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), ethermint.NewInjectiveCoinInt64(1))
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
@@ -40,7 +38,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.Require().NotNil(acc)
-				suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), ethermint.NewPhotonCoinInt64(1))
+				suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), ethermint.NewInjectiveCoinInt64(1))
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 

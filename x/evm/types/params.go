@@ -7,10 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-
 	"github.com/ethereum/go-ethereum/core/vm"
-
-	ethermint "github.com/cosmos/ethermint/types"
 )
 
 var _ paramtypes.ParamSet = &Params{}
@@ -41,7 +38,7 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, extraEIPs ...int6
 // DefaultParams returns default evm parameters
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:     ethermint.AttoPhoton,
+		EvmDenom:     "inj",
 		EnableCreate: true,
 		EnableCall:   true,
 		ExtraEIPs:    []int64(nil), // TODO: define default values

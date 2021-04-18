@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	ethermint "github.com/cosmos/ethermint/types"
+	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
@@ -53,7 +53,7 @@ type StateObject interface {
 // Account values can be accessed and modified through the object.
 // Finally, call CommitTrie to write the modified storage trie into a database.
 type stateObject struct {
-	code ethermint.Code // contract bytecode, which gets set when code is loaded
+	code types.Code // contract bytecode, which gets set when code is loaded
 	// State objects are used by the consensus core and VM which are
 	// unable to deal with database-level errors. Any error that occurs
 	// during a database read is memoized here and will eventually be returned
@@ -64,7 +64,7 @@ type stateObject struct {
 	// DB error
 	dbErr   error
 	stateDB *CommitStateDB
-	account *ethermint.EthAccount
+	account *types.EthAccount
 	// balance represents the amount of the EVM denom token that an account holds
 	balance sdk.Int
 
@@ -83,21 +83,21 @@ type stateObject struct {
 }
 
 func newStateObject(db *CommitStateDB, accProto authtypes.AccountI, balance sdk.Int) *stateObject {
-	ethermintAccount, ok := accProto.(*ethermint.EthAccount)
+	ethAccount, ok := accProto.(*types.EthAccount)
 	if !ok {
 		panic(fmt.Sprintf("invalid account type for state object: %T", accProto))
 	}
 
 	// set empty code hash
-	if ethermintAccount.CodeHash == nil {
-		ethermintAccount.CodeHash = emptyCodeHash
+	if ethAccount.CodeHash == nil {
+		ethAccount.CodeHash = emptyCodeHash
 	}
 
 	return &stateObject{
 		stateDB:                 db,
-		account:                 ethermintAccount,
+		account:                 ethAccount,
 		balance:                 balance,
-		address:                 ethermintAccount.EthAddress(),
+		address:                 ethAccount.EthAddress(),
 		originStorage:           Storage{},
 		dirtyStorage:            Storage{},
 		keyToOriginStorageIndex: make(map[ethcmn.Hash]int),
@@ -250,9 +250,8 @@ func (so *stateObject) commitState() {
 
 		key := ethcmn.HexToHash(state.Key)
 		value := ethcmn.HexToHash(state.Value)
-
 		// delete empty values from the store
-		if ethermint.IsEmptyHash(state.Value) {
+		if IsEmptyHash(state.Value) {
 			store.Delete(key.Bytes())
 		}
 
@@ -264,7 +263,7 @@ func (so *stateObject) commitState() {
 			continue
 		}
 
-		if ethermint.IsEmptyHash(state.Value) {
+		if IsEmptyHash(state.Value) {
 			delete(so.keyToOriginStorageIndex, key)
 			continue
 		}

@@ -5,14 +5,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/keeper"
 	"github.com/cosmos/ethermint/x/evm/types"
-
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // InitGenesis initializes genesis state based on exported genesis

@@ -21,26 +21,21 @@ const (
 
 // KVStore key prefixes
 var (
-	KeyPrefixBloom       = []byte{0x01}
-	KeyPrefixLogs        = []byte{0x02}
-	KeyPrefixCode        = []byte{0x03}
-	KeyPrefixStorage     = []byte{0x04}
-	KeyPrefixChainConfig = []byte{0x05}
-	KeyPrefixHeightHash  = []byte{0x06}
+	KeyPrefixBlockHash       = []byte{0x01}
+	KeyPrefixBloom           = []byte{0x02}
+	KeyPrefixLogs            = []byte{0x03}
+	KeyPrefixCode            = []byte{0x04}
+	KeyPrefixStorage         = []byte{0x05}
+	KeyPrefixChainConfig     = []byte{0x06}
+	KeyPrefixBlockHeightHash = []byte{0x07}
+	KeyPrefixHashTxReceipt   = []byte{0x08}
+	KeyPrefixBlockHeightTxs  = []byte{0x09}
 )
-
-// HeightHashKey returns the key for the given chain epoch and height.
-// The key will be composed in the following order:
-//   key = prefix + bytes(height)
-// This ordering facilitates the iteration by height for the EVM GetHashFn
-// queries.
-func HeightHashKey(height uint64) []byte {
-	return sdk.Uint64ToBigEndian(height)
-}
 
 // BloomKey defines the store key for a block Bloom
 func BloomKey(height int64) []byte {
-	return sdk.Uint64ToBigEndian(uint64(height))
+	heightBytes := sdk.Uint64ToBigEndian(uint64(height))
+	return append(KeyPrefixBloom, heightBytes...)
 }
 
 // AddressStoragePrefix returns a prefix to iterate over a given account storage.
@@ -53,4 +48,24 @@ func StateKey(address ethcmn.Address, key []byte) []byte {
 	return append(AddressStoragePrefix(address), key...)
 }
 
-// TODO: fix Logs key and append block hash
+// KeyBlockHash returns a key for accessing block hash data.
+func KeyBlockHash(hash ethcmn.Hash) []byte {
+	return append(KeyPrefixBlockHash, hash.Bytes()...)
+}
+
+// KeyBlockHash returns a key for accessing block hash data.
+func KeyBlockHeightHash(height uint64) []byte {
+	heightBytes := sdk.Uint64ToBigEndian(height)
+	return append(KeyPrefixBlockHeightHash, heightBytes...)
+}
+
+// KeyHashTxReceipt returns a key for accessing tx receipt data by hash.
+func KeyHashTxReceipt(hash ethcmn.Hash) []byte {
+	return append(KeyPrefixHashTxReceipt, hash.Bytes()...)
+}
+
+// KeyBlockHeightTxs returns a key for accessing tx hash list by block height.
+func KeyBlockHeightTxs(height uint64) []byte {
+	heightBytes := sdk.Uint64ToBigEndian(height)
+	return append(KeyPrefixBlockHeightTxs, heightBytes...)
+}

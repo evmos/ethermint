@@ -6,5 +6,6 @@ const (
 
 	AttributeKeyContractAddress = "contract"
 	AttributeKeyRecipient       = "recipient"
+	AttributeKeyTxHash          = "txHash"
 	AttributeValueCategory      = ModuleName
 )

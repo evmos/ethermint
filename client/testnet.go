@@ -4,13 +4,20 @@ package client
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -22,8 +29,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -36,12 +41,14 @@ import (
 	mintypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/ethermint/crypto/hd"
-	srvconfig "github.com/cosmos/ethermint/server/config"
-	ethermint "github.com/cosmos/ethermint/types"
+	chaintypes "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+
+	"github.com/cosmos/ethermint/cmd/injectived/config"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var (
@@ -67,7 +74,7 @@ necessary files (private validator, genesis, config, etc.).
 
 Note, strict routability for addresses is turned off in the config file.`,
 
-		Example: "ethermintd testnet --v 4 --keyring-backend test --output-dir ./output --ip-addresses 192.168.10.2",
+		Example: "injectived testnet --v 4 --keyring-backend test --output-dir ./output --ip-addresses 192.168.10.2",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 
@@ -99,13 +106,13 @@ Note, strict routability for addresses is turned off in the config file.`,
 	cmd.Flags().Int(flagNumValidators, 4, "Number of validators to initialize the testnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", "./mytestnet", "Directory to store initialization data for the testnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
-	cmd.Flags().String(flagNodeDaemonHome, "simd", "Home directory of the node's daemon configuration")
+	cmd.Flags().String(flagNodeDaemonHome, "injectived", "Home directory of the node's daemon configuration")
 	cmd.Flags().StringSlice(flagIPAddrs, []string{"192.168.0.1"}, "List of IP addresses to use (i.e. `192.168.0.1,172.168.0.1` results in persistent peers list ID0@192.168.0.1:46656, ID1@172.168.0.1)")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", ethermint.AttoPhoton), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01aphoton,0.001stake)")
+	cmd.Flags().String(server.FlagMinGasPrices, "", "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01inj,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.EthSecp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().String(flagCoinDenom, ethermint.AttoPhoton, "Coin denomination used for staking, governance, mint, crisis and evm parameters")
+	cmd.Flags().String(flagCoinDenom, chaintypes.InjectiveCoin, "Coin denomination used for staking, governance, mint, crisis and evm parameters")
 	return cmd
 }
 
@@ -129,10 +136,10 @@ func InitTestnet(
 ) error {
 
 	if chainID == "" {
-		chainID = fmt.Sprintf("ethermint-%d", tmrand.Int63n(9999999999999)+1)
+		chainID = fmt.Sprintf("injective-%d", tmrand.Int63n(9999999999999)+1)
 	}
 
-	if !ethermint.IsValidChainID(chainID) {
+	if !chaintypes.IsValidChainID(chainID) {
 		return fmt.Errorf("invalid chain-id: %s", chainID)
 	}
 
@@ -147,7 +154,7 @@ func InitTestnet(
 	nodeIDs := make([]string, numValidators)
 	valPubKeys := make([]cryptotypes.PubKey, numValidators)
 
-	appConfig := srvconfig.DefaultConfig()
+	appConfig := config.DefaultConfig()
 	appConfig.MinGasPrices = minGasPrices
 	appConfig.API.Enable = true
 	appConfig.Telemetry.Enabled = true
@@ -243,7 +250,7 @@ func InitTestnet(
 		)
 
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins})
-		genAccounts = append(genAccounts, &ethermint.EthAccount{
+		genAccounts = append(genAccounts, &chaintypes.EthAccount{
 			BaseAccount: authtypes.NewBaseAccount(addr, nil, 0, 0),
 			CodeHash:    ethcrypto.Keccak256(nil),
 		})
@@ -289,7 +296,10 @@ func InitTestnet(
 			return err
 		}
 
-		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appConfig)
+		config.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appConfig)
+
+		ethPrivKey, err := keyring.NewUnsafe(kb).UnsafeExportPrivKeyHex(nodeDirName)
+		initPeggo(outputDir, nodeDirName, []byte(strings.ToUpper(ethPrivKey)))
 	}
 
 	if err := initGenFiles(clientCtx, mbm, chainID, coinDenom, genAccounts, genBalances, genFiles, numValidators); err != nil {
@@ -306,6 +316,32 @@ func InitTestnet(
 
 	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators)
 	return nil
+}
+
+func initPeggo(outputDir string, nodeDirName string, privKey []byte) {
+	peggoDir := filepath.Join(outputDir, nodeDirName, "peggo")
+	if envdata, _ := ioutil.ReadFile("./templates/peggo_config.template"); len(envdata) > 0 {
+		s := bufio.NewScanner(bytes.NewReader(envdata))
+		for s.Scan() {
+			parts := strings.Split(s.Text(), "=")
+			if len(parts) != 2 {
+				continue
+			} else {
+				content := []byte(s.Text())
+				if parts[0] == "PEGGY_COSMOS_PRIVKEY" {
+					content = append([]byte(parts[0]+"="), privKey...)
+				} else if parts[0] == "PEGGY_ETH_PRIVATE_KEY" {
+					newPrivkey, _ := ethsecp256k1.GenerateKey()
+					privKeyStr := common.Bytes2Hex(newPrivkey.GetKey())
+					privKeyBytes := []byte(strings.ToUpper(privKeyStr))
+					content = append([]byte(parts[0]+"="), privKeyBytes...)
+				}
+				if err := appendToFile(fmt.Sprintf("config.env"), peggoDir, content); err != nil {
+					fmt.Println("Error writing peggo config", "error", err)
+				}
+			}
+		}
+	}
 }
 
 func initGenFiles(
@@ -471,6 +507,45 @@ func writeFile(name string, dir string, contents []byte) error {
 
 	err = tmos.WriteFile(file, contents, 0644)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func appendToFile(name string, dir string, contents []byte) error {
+	writePath := filepath.Join(dir)
+	file := filepath.Join(writePath, name)
+
+	err := tmos.EnsureDir(writePath, 0755)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(file); err == nil {
+		err = os.Chmod(file, 0777)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(contents)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	f.Write([]byte("\n"))
+	if err != nil {
+		log.Println(err)
 		return err
 	}
 

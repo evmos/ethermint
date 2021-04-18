@@ -61,25 +61,3 @@ func ValidateChainID(baseCmd *cobra.Command) *cobra.Command {
 	baseCmd.RunE = validateFn
 	return baseCmd
 }
-
-// GenerateChainID wraps a cobra command with a RunE function with base 10 integer chain-id random generation
-// when a chain-id is not provided.
-func GenerateChainID(baseCmd *cobra.Command) *cobra.Command {
-	// Copy base run command to be used after chain verification
-	baseRunE := baseCmd.RunE
-
-	// Function to replace command's RunE function
-	generateFn := func(cmd *cobra.Command, args []string) error {
-		chainID, _ := cmd.Flags().GetString(flags.FlagChainID)
-
-		if chainID == "" {
-			if err := cmd.Flags().Set(flags.FlagChainID, ethermint.GenerateRandomChainID()); err != nil {
-				return fmt.Errorf("could not set random chain-id: %v", err)
-			}
-		}
-		return baseRunE(cmd, args)
-	}
-
-	baseCmd.RunE = generateFn
-	return baseCmd
-}

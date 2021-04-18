@@ -49,6 +49,11 @@ func (k *Keeper) SetCode(ctx sdk.Context, addr ethcmn.Address, code []byte) {
 
 // SetLogs calls CommitStateDB.SetLogs using the passed in context
 func (k *Keeper) SetLogs(ctx sdk.Context, hash ethcmn.Hash, logs []*ethtypes.Log) error {
+	// TODO:@albert
+	// since SetLogs is only called for non-simulation mode, GasEstimation is quite not correct
+	// I suggest using ctx.ConsumeGas(XXX) where XXX is max of gas consume for set logs.
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
 	return k.CommitStateDB.WithContext(ctx).SetLogs(hash, logs)
 }
 
@@ -225,8 +230,8 @@ func (k *Keeper) Reset(ctx sdk.Context, root ethcmn.Hash) error {
 }
 
 // Prepare calls CommitStateDB.Prepare using the passed in context
-func (k *Keeper) Prepare(ctx sdk.Context, thash ethcmn.Hash, txi int) {
-	k.CommitStateDB.WithContext(ctx).Prepare(thash, txi)
+func (k *Keeper) Prepare(ctx sdk.Context, thash, bhash ethcmn.Hash, txi int) {
+	k.CommitStateDB.WithContext(ctx).Prepare(thash, bhash, txi)
 }
 
 // CreateAccount calls CommitStateDB.CreateAccount using the passed in context

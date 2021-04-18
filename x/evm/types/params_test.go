@@ -53,7 +53,7 @@ func TestParamsValidate(t *testing.T) {
 
 func TestParamsValidatePriv(t *testing.T) {
 	require.Error(t, validateEVMDenom(false))
-	require.NoError(t, validateEVMDenom("aphoton"))
+	require.NoError(t, validateEVMDenom("inj"))
 	require.Error(t, validateBool(""))
 	require.NoError(t, validateBool(true))
 	require.Error(t, validateEIPs(""))
@@ -61,5 +61,5 @@ func TestParamsValidatePriv(t *testing.T) {
 }
 
 func TestParams_String(t *testing.T) {
-	require.Equal(t, "evm_denom: aphoton\nenable_create: true\nenable_call: true\nextra_eips: []\n", DefaultParams().String())
+	require.Equal(t, "evm_denom: inj\nenable_create: true\nenable_call: true\nextra_eips: []\n", DefaultParams().String())
 }

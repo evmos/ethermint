@@ -1,10 +1,21 @@
 package types
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
-func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
+func TestTransactionLogsValidate(t *testing.T) {
+	priv, err := ethsecp256k1.GenerateKey()
+	require.NoError(t, err)
+	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey).String()
+
 	testCases := []struct {
 		name    string
 		txLogs  TransactionLogs
@@ -13,16 +24,16 @@ func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 		{
 			"valid log",
 			TransactionLogs{
-				Hash: suite.hash.String(),
+				Hash: ethcmn.BytesToHash([]byte("tx_hash")).String(),
 				Logs: []*Log{
 					{
-						Address:     suite.address,
-						Topics:      []string{suite.hash.String()},
+						Address:     addr,
+						Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
-						TxHash:      suite.hash.String(),
+						TxHash:      ethcmn.BytesToHash([]byte("tx_hash")).String(),
 						TxIndex:     1,
-						BlockHash:   suite.hash.String(),
+						BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
 						Index:       1,
 						Removed:     false,
 					},
@@ -40,24 +51,24 @@ func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 		{
 			"invalid log",
 			TransactionLogs{
-				Hash: suite.hash.String(),
-				Logs: []*Log{nil},
+				Hash: ethcmn.BytesToHash([]byte("tx_hash")).String(),
+				Logs: []*Log{{}},
 			},
 			false,
 		},
 		{
 			"hash mismatch log",
 			TransactionLogs{
-				Hash: suite.hash.String(),
+				Hash: ethcmn.BytesToHash([]byte("tx_hash")).String(),
 				Logs: []*Log{
 					{
-						Address:     suite.address,
-						Topics:      []string{suite.hash.String()},
+						Address:     addr,
+						Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
 						TxHash:      ethcmn.BytesToHash([]byte("other_hash")).String(),
 						TxIndex:     1,
-						BlockHash:   suite.hash.String(),
+						BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
 						Index:       1,
 						Removed:     false,
 					},
@@ -71,14 +82,18 @@ func (suite *GenesisTestSuite) TestTransactionLogsValidate() {
 		tc := tc
 		err := tc.txLogs.Validate()
 		if tc.expPass {
-			suite.Require().NoError(err, tc.name)
+			require.NoError(t, err, tc.name)
 		} else {
-			suite.Require().Error(err, tc.name)
+			require.Error(t, err, tc.name)
 		}
 	}
 }
 
-func (suite *GenesisTestSuite) TestValidateLog() {
+func TestValidateLog(t *testing.T) {
+	priv, err := ethsecp256k1.GenerateKey()
+	require.NoError(t, err)
+	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey).String()
+
 	testCases := []struct {
 		name    string
 		log     *Log
@@ -87,13 +102,13 @@ func (suite *GenesisTestSuite) TestValidateLog() {
 		{
 			"valid log",
 			&Log{
-				Address:     suite.address,
-				Topics:      []string{suite.hash.String()},
+				Address:     addr,
+				Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
 				Data:        []byte("data"),
 				BlockNumber: 1,
-				TxHash:      suite.hash.String(),
+				TxHash:      ethcmn.BytesToHash([]byte("tx_hash")).String(),
 				TxIndex:     1,
-				BlockHash:   suite.hash.String(),
+				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
 				Index:       1,
 				Removed:     false,
 			},
@@ -112,7 +127,7 @@ func (suite *GenesisTestSuite) TestValidateLog() {
 		{
 			"empty block hash",
 			&Log{
-				Address:   suite.address,
+				Address:   addr,
 				BlockHash: ethcmn.Hash{}.String(),
 			},
 			false,
@@ -120,8 +135,8 @@ func (suite *GenesisTestSuite) TestValidateLog() {
 		{
 			"zero block number",
 			&Log{
-				Address:     suite.address,
-				BlockHash:   suite.hash.String(),
+				Address:     addr,
+				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
 				BlockNumber: 0,
 			},
 			false,
@@ -129,8 +144,8 @@ func (suite *GenesisTestSuite) TestValidateLog() {
 		{
 			"empty tx hash",
 			&Log{
-				Address:     suite.address,
-				BlockHash:   suite.hash.String(),
+				Address:     addr,
+				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
 				BlockNumber: 1,
 				TxHash:      ethcmn.Hash{}.String(),
 			},
@@ -142,9 +157,9 @@ func (suite *GenesisTestSuite) TestValidateLog() {
 		tc := tc
 		err := tc.log.Validate()
 		if tc.expPass {
-			suite.Require().NoError(err, tc.name)
+			require.NoError(t, err, tc.name)
 		} else {
-			suite.Require().Error(err, tc.name)
+			require.Error(t, err, tc.name)
 		}
 	}
 }

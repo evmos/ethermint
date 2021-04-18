@@ -61,3 +61,24 @@ func TestCosmosToEthereumTypes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, hexString, ethDecoded)
 }
+
+func TestAddressToCosmosAddress(t *testing.T) {
+	baseAddr, err := sdk.AccAddressFromHex("6A98D72760f7bbA69d62Ed6F48278451251948E7")
+	require.NoError(t, err)
+
+	// Test cosmos string back to address
+	cosmosFormatted, err := cosmosAddressFromArg(baseAddr.String())
+	require.NoError(t, err)
+	require.Equal(t, baseAddr, cosmosFormatted)
+
+	// Test account address from Ethereum address
+	ethAddr := common.BytesToAddress(baseAddr.Bytes())
+	ethFormatted, err := cosmosAddressFromArg(ethAddr.Hex())
+	require.NoError(t, err)
+	require.Equal(t, baseAddr, ethFormatted)
+
+	// Test encoding without the 0x prefix
+	ethFormatted, err = cosmosAddressFromArg(ethAddr.Hex()[2:])
+	require.NoError(t, err)
+	require.Equal(t, baseAddr, ethFormatted)
+}

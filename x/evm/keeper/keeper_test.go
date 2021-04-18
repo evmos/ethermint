@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -32,24 +31,20 @@ var (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx         sdk.Context
-	app         *app.EthermintApp
-	queryClient types.QueryClient
-	address     ethcmn.Address
+	ctx     sdk.Context
+	querier sdk.Querier
+	app     *app.InjectiveApp
+	address ethcmn.Address
 }
 
 func (suite *KeeperTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "3", Time: time.Now().UTC()})
 	suite.address = ethcmn.HexToAddress(addrHex)
 
-	queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
-	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
-	suite.queryClient = types.NewQueryClient(queryHelper)
-
-	balance := ethermint.NewPhotonCoin(sdk.ZeroInt())
+	balance := ethermint.NewInjectiveCoin(sdk.ZeroInt())
 	acc := &ethermint.EthAccount{
 		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),
@@ -69,13 +64,11 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 		Address:     suite.address,
 		Data:        []byte("log"),
 		BlockNumber: 10,
-		Topics:      []ethcmn.Hash{},
 	}
 	log2 := &ethtypes.Log{
 		Address:     suite.address,
 		Data:        []byte("log2"),
 		BlockNumber: 11,
-		Topics:      []ethcmn.Hash{},
 	}
 	expLogs := []*ethtypes.Log{log}
 
@@ -90,7 +83,6 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 
 	// add another log under the zero hash
 	suite.app.EvmKeeper.AddLog(suite.ctx, log2)
-	log2.Index = 0
 	logs = suite.app.EvmKeeper.AllLogs(suite.ctx)
 	suite.Require().Equal(expLogs, logs)
 
@@ -99,19 +91,17 @@ func (suite *KeeperTestSuite) TestTransactionLogs() {
 		Address:     suite.address,
 		Data:        []byte("log3"),
 		BlockNumber: 10,
-		Topics:      []ethcmn.Hash{},
 	}
 	suite.app.EvmKeeper.AddLog(suite.ctx, log3)
-	log3.Index = 0
 
 	txLogs := suite.app.EvmKeeper.GetAllTxLogs(suite.ctx)
 	suite.Require().Equal(2, len(txLogs))
 
 	suite.Require().Equal(ethcmn.Hash{}.String(), txLogs[0].Hash)
-	suite.Require().Equal([]*ethtypes.Log{log2, log3}, txLogs[0].EthLogs())
+	suite.Require().Equal([]*ethtypes.Log{log2, log3}, txLogs[0].Logs)
 
 	suite.Require().Equal(ethHash.String(), txLogs[1].Hash)
-	suite.Require().Equal([]*ethtypes.Log{log}, txLogs[1].EthLogs())
+	suite.Require().Equal([]*ethtypes.Log{log}, txLogs[1].Logs)
 }
 
 func (suite *KeeperTestSuite) TestDBStorage() {

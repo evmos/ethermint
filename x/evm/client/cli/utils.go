@@ -45,3 +45,19 @@ func formatKeyToHash(key string) string {
 
 	return ethkey.Hex()
 }
+
+func cosmosAddressFromArg(addr string) (sdk.AccAddress, error) {
+	if strings.HasPrefix(addr, sdk.GetConfig().GetBech32AccountAddrPrefix()) {
+		// Check to see if address is Cosmos bech32 formatted
+		toAddr, err := sdk.AccAddressFromBech32(addr)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid bech32 formatted address")
+		}
+		return toAddr, nil
+	}
+
+	// Strip 0x prefix if exists
+	addr = strings.TrimPrefix(addr, "0x")
+
+	return sdk.AccAddressFromHex(addr)
+}

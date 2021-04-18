@@ -5,14 +5,14 @@ import (
 	"os"
 	"testing"
 
+	ethermint "github.com/cosmos/ethermint/types"
+
 	"github.com/stretchr/testify/suite"
 
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmdb "github.com/tendermint/tm-db"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -26,9 +26,10 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
-	ethermintcodec "github.com/cosmos/ethermint/codec"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	ethcodec "github.com/cosmos/ethermint/codec"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
-	ethermint "github.com/cosmos/ethermint/types"
 )
 
 func newTestCodec() (codec.BinaryMarshaler, *codec.LegacyAmino) {
@@ -38,7 +39,7 @@ func newTestCodec() (codec.BinaryMarshaler, *codec.LegacyAmino) {
 
 	sdk.RegisterLegacyAminoCodec(amino)
 
-	ethermintcodec.RegisterInterfaces(interfaceRegistry)
+	ethcodec.RegisterInterfaces(interfaceRegistry)
 
 	return cdc, amino
 }
@@ -61,7 +62,7 @@ func (suite *JournalTestSuite) SetupTest() {
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
 	suite.journal = newJournal()
 
-	balance := ethermint.NewPhotonCoin(sdk.NewInt(100))
+	balance := ethermint.NewInjectiveCoin(sdk.NewInt(100))
 	acc := &ethermint.EthAccount{
 		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),

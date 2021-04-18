@@ -1,18 +1,22 @@
 package types
 
 import (
-	"errors"
 	"math/big"
+	"os"
+	"sync"
 
-	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/pkg/errors"
+	log "github.com/xlab/suplog"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/ethermint/metrics"
 )
 
 // StateTransition defines data to transitionDB in evm
@@ -30,6 +34,18 @@ type StateTransition struct {
 	TxHash   *common.Hash
 	Sender   common.Address
 	Simulate bool // i.e CheckTx execution
+	Debug    bool // enable EVM debugging
+
+	once    sync.Once
+	svcTags metrics.Tags
+}
+
+func (st *StateTransition) initOnce() {
+	st.once.Do(func() {
+		st.svcTags = metrics.Tags{
+			"svc": "evm_state",
+		}
+	})
 }
 
 // GasInfo returns the gas limit, gas consumed and gas refunded from the EVM transition
@@ -49,16 +65,16 @@ type ExecutionResult struct {
 }
 
 // GetHashFn implements vm.GetHashFunc for Ethermint. It handles 3 cases:
-//  1. The requested height matches the current height (and thus same epoch number)
+//  1. The requested height matches the current height from context (and thus same epoch number)
 //  2. The requested height is from an previous height from the same chain epoch
 //  3. The requested height is from a height greater than the latest one
 func GetHashFn(ctx sdk.Context, csdb *CommitStateDB) vm.GetHashFunc {
 	return func(height uint64) common.Hash {
 		switch {
 		case ctx.BlockHeight() == int64(height):
-			// Case 1: The requested height matches the one from the CommitStateDB so we can retrieve the block
-			// hash directly from the CommitStateDB.
-			return csdb.bhash
+			// Case 1: The requested height matches the one from the context so we can retrieve the header
+			// hash directly from the context.
+			return HashFromContext(ctx)
 
 		case ctx.BlockHeight() > int64(height):
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
@@ -72,7 +88,7 @@ func GetHashFn(ctx sdk.Context, csdb *CommitStateDB) vm.GetHashFunc {
 	}
 }
 
-func (st StateTransition) newEVM(
+func (st *StateTransition) newEVM(
 	ctx sdk.Context,
 	csdb *CommitStateDB,
 	gasLimit uint64,
@@ -80,13 +96,14 @@ func (st StateTransition) newEVM(
 	config ChainConfig,
 	extraEIPs []int64,
 ) *vm.EVM {
-	// Create context for evm
+	st.initOnce()
 
+	// Create context for evm
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     GetHashFn(ctx, csdb),
-		Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
+		Coinbase:    common.Address{}, // there's no benefitiary since we're not mining
 		BlockNumber: big.NewInt(ctx.BlockHeight()),
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
@@ -106,18 +123,35 @@ func (st StateTransition) newEVM(
 	vmConfig := vm.Config{
 		ExtraEips: eips,
 	}
+
+	if st.Debug {
+		vmConfig.Tracer = vm.NewJSONLogger(&vm.LogConfig{
+			Debug: true,
+		}, os.Stderr)
+
+		vmConfig.Debug = true
+	}
+
 	return vm.NewEVM(blockCtx, txCtx, csdb, config.EthereumConfig(st.ChainID), vmConfig)
 }
 
 // TransitionDb will transition the state by applying the current transaction and
 // returning the evm execution result.
 // NOTE: State transition checks are run during AnteHandler execution.
-func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*ExecutionResult, error) {
+func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (resp *ExecutionResult, err error) {
+	st.initOnce()
+
+	metrics.ReportFuncCall(st.svcTags)
+	doneFn := metrics.ReportFuncTiming(st.svcTags)
+	defer doneFn()
+
 	contractCreation := st.Recipient == nil
 
-	cost, err := core.IntrinsicGas(st.Payload, contractCreation, config.IsHomestead(), config.IsIstanbul())
+	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true, false)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid intrinsic gas for transaction")
+		metrics.ReportFuncError(st.svcTags)
+		err = sdkerrors.Wrap(err, "invalid intrinsic gas for transaction")
+		return nil, err
 	}
 
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
@@ -149,8 +183,10 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	params := csdb.GetParams()
 
 	gasPrice := ctx.MinGasPrices().AmountOf(params.EvmDenom)
+	//gasPrice := sdk.ZeroDec()
 	if gasPrice.IsNil() {
-		return nil, errors.New("gas price cannot be nil")
+		metrics.ReportFuncError(st.svcTags)
+		return nil, errors.New("min gas price cannot be nil")
 	}
 
 	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt(), config, params.ExtraEIPs)
@@ -176,6 +212,24 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 
 		ret, contractAddress, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
 
+		if err != nil {
+			log.WithField("simulate?", st.Simulate).
+				WithField("AccountNonce", st.AccountNonce).
+				WithField("contract", contractAddress.String()).
+				WithError(err).Warningln("evm contract creation failed")
+		}
+
+		gasConsumed := gasLimit - leftOverGas
+		resp = &ExecutionResult{
+			Response: &MsgEthereumTxResponse{
+				Ret: ret,
+			},
+			GasInfo: GasInfo{
+				GasConsumed: gasConsumed,
+				GasLimit:    gasLimit,
+				GasRefunded: leftOverGas,
+			},
+		}
 	default:
 		if !params.EnableCall {
 			return nil, ErrCallDisabled
@@ -183,15 +237,36 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 
 		// Increment the nonce for the next transaction	(just for evm state transition)
 		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
-		ret, leftOverGas, err = evm.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
-	}
 
-	gasConsumed := gasLimit - leftOverGas
+		ret, leftOverGas, err = evm.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
+
+		// fmt.Println("EVM CALL!!!", senderRef.Address().Hex(), (*st.Recipient).Hex(), gasLimit)
+		// fmt.Println("EVM CALL RESULT", common.ToHex(ret), leftOverGas, err)
+
+		if err != nil {
+			log.WithField("recipient", st.Recipient.String()).
+				WithError(err).Debugln("evm call failed")
+		}
+
+		gasConsumed := gasLimit - leftOverGas
+		resp = &ExecutionResult{
+			Response: &MsgEthereumTxResponse{
+				Ret: ret,
+			},
+			GasInfo: GasInfo{
+				GasConsumed: gasConsumed,
+				GasLimit:    gasLimit,
+				GasRefunded: leftOverGas,
+			},
+		}
+	}
 
 	if err != nil {
 		// Consume gas before returning
-		ctx.GasMeter().ConsumeGas(gasConsumed, "evm execution consumption")
-		return nil, err
+		metrics.EVMRevertedTx(st.svcTags)
+		metrics.EVMGasConsumed(resp.GasInfo.GasConsumed)
+		ctx.GasMeter().ConsumeGas(resp.GasInfo.GasConsumed, "evm execution consumption")
+		return resp, err
 	}
 
 	// Resets nonce to value pre state transition
@@ -208,6 +283,8 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 	if st.TxHash != nil && !st.Simulate {
 		logs, err = csdb.GetLogs(*st.TxHash)
 		if err != nil {
+			metrics.ReportFuncError(st.svcTags)
+			err = errors.Wrap(err, "failed to get logs")
 			return nil, err
 		}
 
@@ -219,38 +296,70 @@ func (st StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (*Ex
 		// Finalise state if not a simulated transaction
 		// TODO: change to depend on config
 		if err := csdb.Finalise(true); err != nil {
+			metrics.ReportFuncError(st.svcTags)
 			return nil, err
 		}
 	}
 
-	res := &MsgEthereumTxResponse{
+	resp.Logs = logs
+	resp.Bloom = bloomInt
+	resp.Response = &MsgEthereumTxResponse{
 		Bloom:  bloomFilter.Bytes(),
 		TxLogs: NewTransactionLogsFromEth(*st.TxHash, logs),
 		Ret:    ret,
 	}
 
 	if contractCreation {
-		res.ContractAddress = contractAddress.String()
-	}
-
-	executionResult := &ExecutionResult{
-		Logs:     logs,
-		Bloom:    bloomInt,
-		Response: res,
-		GasInfo: GasInfo{
-			GasConsumed: gasConsumed,
-			GasLimit:    gasLimit,
-			GasRefunded: leftOverGas,
-		},
+		resp.Response.ContractAddress = contractAddress.String()
 	}
 
 	// TODO: Refund unused gas here, if intended in future
 
 	// Consume gas from evm execution
 	// Out of gas check does not need to be done here since it is done within the EVM execution
-	ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(gasConsumed, "EVM execution consumption")
+	metrics.EVMGasConsumed(resp.GasInfo.GasConsumed)
+	// TODO: @albert, @maxim, decide if can take this out, since InternalEthereumTx may want to continue execution afterwards
+	// which will use gas.
+	_ = currentGasMeter
+	//ctx.WithGasMeter(currentGasMeter).GasMeter().ConsumeGas(resp.GasInfo.GasConsumed, "EVM execution consumption")
 
-	return executionResult, nil
+	return resp, nil
+}
+
+// StaticCall executes the contract associated with the addr with the given input
+// as parameters while disallowing any modifications to the state during the call.
+// Opcodes that attempt to perform such modifications will result in exceptions
+// instead of performing the modifications.
+func (st *StateTransition) StaticCall(ctx sdk.Context, config ChainConfig) ([]byte, error) {
+	st.initOnce()
+
+	// This gas limit the the transaction gas limit with intrinsic gas subtracted
+	gasLimit := st.GasLimit - ctx.GasMeter().GasConsumed()
+	csdb := st.Csdb.WithContext(ctx)
+
+	// This gas meter is set up to consume gas from gaskv during evm execution and be ignored
+	evmGasMeter := sdk.NewInfiniteGasMeter()
+	csdb.WithContext(ctx.WithGasMeter(evmGasMeter))
+
+	// Clear cache of accounts to handle changes outside of the EVM
+	csdb.UpdateAccounts()
+
+	params := csdb.GetParams()
+
+	gasPrice := ctx.MinGasPrices().AmountOf(params.EvmDenom)
+	if gasPrice.IsNil() {
+		return []byte{}, errors.New("min gas price cannot be nil")
+	}
+
+	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt(), config, params.ExtraEIPs)
+	senderRef := vm.AccountRef(st.Sender)
+
+	ret, _, err := evm.StaticCall(senderRef, *st.Recipient, st.Payload, gasLimit)
+
+	// fmt.Println("EVM STATIC CALL!!!", senderRef.Address().Hex(), (*st.Recipient).Hex(), st.Payload, gasLimit)
+	// fmt.Println("EVM STATIC CALL RESULT", common.ToHex(ret), leftOverGas, err)
+
+	return ret, err
 }
 
 // HashFromContext returns the Ethereum Header hash from the context's Tendermint

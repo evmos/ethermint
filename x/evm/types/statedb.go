@@ -122,8 +122,8 @@ func (csdb *CommitStateDB) WithContext(ctx sdk.Context) *CommitStateDB {
 
 // SetHeightHash sets the block header hash associated with a given height.
 func (csdb *CommitStateDB) SetHeightHash(height uint64, hash ethcmn.Hash) {
-	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixHeightHash)
-	key := HeightHashKey(height)
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixBlockHeightHash)
+	key := KeyBlockHeightHash(height)
 	store.Set(key, hash.Bytes())
 }
 
@@ -135,38 +135,49 @@ func (csdb *CommitStateDB) SetParams(params Params) {
 // SetBalance sets the balance of an account.
 func (csdb *CommitStateDB) SetBalance(addr ethcmn.Address, amount *big.Int) {
 	so := csdb.GetOrNewStateObject(addr)
-	so.SetBalance(amount)
-
+	if so != nil {
+		so.SetBalance(amount)
+	}
 }
 
 // AddBalance adds amount to the account associated with addr.
 func (csdb *CommitStateDB) AddBalance(addr ethcmn.Address, amount *big.Int) {
 	so := csdb.GetOrNewStateObject(addr)
-	so.AddBalance(amount)
+	if so != nil {
+		so.AddBalance(amount)
+	}
 }
 
 // SubBalance subtracts amount from the account associated with addr.
 func (csdb *CommitStateDB) SubBalance(addr ethcmn.Address, amount *big.Int) {
 	so := csdb.GetOrNewStateObject(addr)
-	so.SubBalance(amount)
+	if so != nil {
+		so.SubBalance(amount)
+	}
 }
 
 // SetNonce sets the nonce (sequence number) of an account.
 func (csdb *CommitStateDB) SetNonce(addr ethcmn.Address, nonce uint64) {
 	so := csdb.GetOrNewStateObject(addr)
-	so.SetNonce(nonce)
+	if so != nil {
+		so.SetNonce(nonce)
+	}
 }
 
 // SetState sets the storage state with a key, value pair for an account.
 func (csdb *CommitStateDB) SetState(addr ethcmn.Address, key, value ethcmn.Hash) {
 	so := csdb.GetOrNewStateObject(addr)
-	so.SetState(nil, key, value)
+	if so != nil {
+		so.SetState(nil, key, value)
+	}
 }
 
 // SetCode sets the code for a given account.
 func (csdb *CommitStateDB) SetCode(addr ethcmn.Address, code []byte) {
 	so := csdb.GetOrNewStateObject(addr)
-	so.SetCode(ethcrypto.Keccak256Hash(code), code)
+	if so != nil {
+		so.SetCode(ethcrypto.Keccak256Hash(code), code)
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -289,8 +300,8 @@ func (csdb *CommitStateDB) SlotInAccessList(addr ethcmn.Address, slot ethcmn.Has
 
 // GetHeightHash returns the block header hash associated with a given block height and chain epoch number.
 func (csdb *CommitStateDB) GetHeightHash(height uint64) ethcmn.Hash {
-	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixHeightHash)
-	key := HeightHashKey(height)
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixBlockHeightHash)
+	key := KeyBlockHeightHash(height)
 	bz := store.Get(key)
 	if len(bz) == 0 {
 		return ethcmn.Hash{}
@@ -300,16 +311,8 @@ func (csdb *CommitStateDB) GetHeightHash(height uint64) ethcmn.Hash {
 }
 
 // GetParams returns the total set of evm parameters.
-// It will check if every param exists in the Subspace's KVStore before querying by the key,
-// the default value of that param will be returned if not exist.
 func (csdb *CommitStateDB) GetParams() (params Params) {
-	ps := &params
-	for _, pair := range ps.ParamSetPairs() {
-		if csdb.paramSpace.Has(csdb.ctx, pair.Key) {
-			csdb.paramSpace.Get(csdb.ctx, pair.Key, pair.Value)
-		}
-	}
-
+	csdb.paramSpace.GetParamSet(csdb.ctx, &params)
 	return params
 }
 
@@ -342,10 +345,6 @@ func (csdb *CommitStateDB) TxIndex() int {
 // BlockHash returns the current block hash set by Prepare.
 func (csdb *CommitStateDB) BlockHash() ethcmn.Hash {
 	return csdb.bhash
-}
-
-func (csdb *CommitStateDB) SetBlockHash(hash ethcmn.Hash) {
-	csdb.bhash = hash
 }
 
 // GetCode returns the code for a given account.
@@ -417,7 +416,12 @@ func (csdb *CommitStateDB) GetLogs(hash ethcmn.Hash) ([]*ethtypes.Log, error) {
 		return []*ethtypes.Log{}, err
 	}
 
-	return txLogs.EthLogs(), nil
+	allLogs := []*ethtypes.Log{}
+	for _, txLog := range txLogs.Logs {
+		allLogs = append(allLogs, txLog.ToEthereum())
+	}
+
+	return allLogs, nil
 }
 
 // AllLogs returns all the current logs in the state.
@@ -430,7 +434,10 @@ func (csdb *CommitStateDB) AllLogs() []*ethtypes.Log {
 	for ; iterator.Valid(); iterator.Next() {
 		var txLogs TransactionLogs
 		ModuleCdc.MustUnmarshalBinaryBare(iterator.Value(), &txLogs)
-		allLogs = append(allLogs, txLogs.EthLogs()...)
+
+		for _, txLog := range txLogs.Logs {
+			allLogs = append(allLogs, txLog.ToEthereum())
+		}
 	}
 
 	return allLogs
@@ -705,7 +712,7 @@ func (csdb *CommitStateDB) UpdateAccounts() {
 	for _, stateEntry := range csdb.stateObjects {
 		address := sdk.AccAddress(stateEntry.address.Bytes())
 		currAccount := csdb.accountKeeper.GetAccount(csdb.ctx, address)
-		ethermintAcc, ok := currAccount.(*ethermint.EthAccount)
+		ethAcc, ok := currAccount.(*ethermint.EthAccount)
 		if !ok {
 			continue
 		}
@@ -717,8 +724,8 @@ func (csdb *CommitStateDB) UpdateAccounts() {
 			stateEntry.stateObject.balance = balance.Amount
 		}
 
-		if stateEntry.stateObject.Nonce() != ethermintAcc.GetSequence() {
-			stateEntry.stateObject.account = ethermintAcc
+		if stateEntry.stateObject.Nonce() != ethAcc.GetSequence() {
+			stateEntry.stateObject.account = ethAcc
 		}
 	}
 }
@@ -738,8 +745,9 @@ func (csdb *CommitStateDB) clearJournalAndRefund() {
 
 // Prepare sets the current transaction hash and index and block hash which is
 // used when the EVM emits new state logs.
-func (csdb *CommitStateDB) Prepare(thash ethcmn.Hash, txi int) {
+func (csdb *CommitStateDB) Prepare(thash, bhash ethcmn.Hash, txi int) {
 	csdb.thash = thash
+	csdb.bhash = bhash
 	csdb.txIndex = txi
 }
 
@@ -867,7 +875,8 @@ func (csdb *CommitStateDB) ForEachStorage(addr ethcmn.Address, cb func(key, valu
 	return nil
 }
 
-// GetOrNewStateObject retrieves a state object or create a new state object if nil.
+// GetOrNewStateObject retrieves a state object or create a new state object if
+// nil.
 func (csdb *CommitStateDB) GetOrNewStateObject(addr ethcmn.Address) StateObject {
 	so := csdb.getStateObject(addr)
 	if so == nil || so.deleted {

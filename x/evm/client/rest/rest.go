@@ -14,7 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 
-	rpctypes "github.com/cosmos/ethermint/rpc/types"
+	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -81,7 +81,7 @@ func getEthTransactionByHash(clientCtx client.Context, hashHex string) ([]byte, 
 		return nil, err
 	}
 
-	blockHash := common.BytesToHash(block.Block.Hash())
+	blockHash := common.BytesToHash(block.Block.Header.Hash())
 
 	ethTx, err := rpctypes.RawTxToEthTx(clientCtx, tx.Tx)
 	if err != nil {

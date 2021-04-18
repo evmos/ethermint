@@ -5,17 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/crypto"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/spf13/cobra"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	"github.com/cosmos/ethermint/crypto/hd"
 )
@@ -77,13 +75,13 @@ func UnsafeExportEthKeyCommand() *cobra.Command {
 			}
 
 			// Converts key to Ethermint secp256 implementation
-			ethermintPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
+			ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
 			if !ok {
 				return fmt.Errorf("invalid private key type %T, expected %T", privKey, &ethsecp256k1.PrivKey{})
 			}
 
 			// Formats key for output
-			privB := ethcrypto.FromECDSA(ethermintPrivKey.ToECDSA())
+			privB := ethcrypto.FromECDSA(ethPrivKey.ToECDSA())
 			keyS := strings.ToUpper(hexutil.Encode(privB)[2:])
 
 			fmt.Println(keyS)

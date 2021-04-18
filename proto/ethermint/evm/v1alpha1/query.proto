@@ -14,6 +14,11 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/account/{address}";
   }
 
+  // Account queries an Ethereum account's Cosmos Address.
+  rpc CosmosAccount(QueryCosmosAccountRequest) returns (QueryCosmosAccountResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/cosmos_account/{address}";
+  }
+
   // Balance queries the balance of a the EVM denomination for a single
   // EthAccount.
   rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
@@ -36,6 +41,21 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_logs/{hash}";
   }
 
+  // TxReceipt queries a receipt by a transaction hash.
+  rpc TxReceipt(QueryTxReceiptRequest) returns (QueryTxReceiptResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipt/{hash}";
+  }
+
+  // TxReceiptsByBlockHeight queries tx receipts by a block height.
+  rpc TxReceiptsByBlockHeight(QueryTxReceiptsByBlockHeightRequest) returns (QueryTxReceiptsByBlockHeightResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipts_block/{height}";
+  }
+
+  // TxReceiptsByBlockHash queries tx receipts by a block hash.
+  rpc TxReceiptsByBlockHash(QueryTxReceiptsByBlockHashRequest) returns (QueryTxReceiptsByBlockHashResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipts_block_hash/{hash}";
+  }
+
   // BlockLogs queries all the ethereum logs for a given block hash.
   rpc BlockLogs(QueryBlockLogsRequest) returns (QueryBlockLogsResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/block_logs/{hash}";
@@ -49,6 +69,11 @@ service Query {
   // Params queries the parameters of x/evm module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/params";
+  }
+
+  // StaticCall queries the static call value of x/evm module.
+  rpc StaticCall(QueryStaticCallRequest) returns (QueryStaticCallResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/static_call";
   }
 }
 
@@ -69,6 +94,25 @@ message QueryAccountResponse {
   bytes code_hash = 2;
   // nonce is the account's sequence number.
   uint64 nonce = 3;
+}
+
+// QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC method.
+message QueryCosmosAccountRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // address is the ethereum hex address to query the account for.
+  string address = 1;
+}
+
+// QueryCosmosAccountResponse is the response type for the Query/CosmosAccount RPC method.
+message QueryCosmosAccountResponse {
+  // cosmos_address is the cosmos address of the account.
+  string cosmos_address = 1;
+  // sequence is the account's sequence number.
+  uint64 sequence = 2;
+  // account_number is the account numbert
+  uint64 account_number = 3;
 }
 
 // QueryBalanceRequest is the request type for the Query/Balance RPC method.
@@ -136,6 +180,51 @@ message QueryTxLogsResponse {
   repeated Log logs = 1;
 }
 
+// QueryTxReceiptRequest is the request type for the Query/TxReceipt RPC method.
+message QueryTxReceiptRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // hash is the ethereum transaction hex hash to query the receipt for.
+  string hash = 1;
+}
+
+// QueryTxReceiptResponse is the response type for the Query/TxReceipt RPC method.
+message QueryTxReceiptResponse {
+  // receipt represents the ethereum receipt for the given transaction.
+  TxReceipt receipt = 1;
+}
+
+// QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
+message QueryTxReceiptsByBlockHeightRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // height is the block height to query tx receipts for
+  int64 height = 1;
+}
+
+// QueryTxReceiptsByBlockHeightResponse is the response type for the Query/TxReceiptsByBlockHeight RPC method.
+message QueryTxReceiptsByBlockHeightResponse {
+  // tx receipts list for the block
+  repeated TxReceipt receipts = 1;
+}
+
+// QueryTxReceiptsByBlockHashRequest is the request type for the Query/TxReceiptsByBlockHash RPC method.
+message QueryTxReceiptsByBlockHashRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // hash is the ethereum transaction hex hash to query the receipt for.
+  string hash = 1;
+}
+
+// QueryTxReceiptsByBlockHashResponse is the response type for the Query/TxReceiptsByBlockHash RPC method.
+message QueryTxReceiptsByBlockHashResponse {
+  // tx receipts list for the block
+  repeated TxReceipt receipts = 1;
+}
+
 // QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
 message QueryBlockLogsRequest {
   option (gogoproto.equal) = false;
@@ -153,7 +242,7 @@ message QueryBlockLogsResponse {
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest {}
+message QueryBlockBloomRequest { int64 height = 1; }
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.
@@ -169,4 +258,17 @@ message QueryParamsRequest {}
 message QueryParamsResponse {
   // params define the evm module parameters.
   Params params = 1 [ (gogoproto.nullable) = false ];
+}
+
+// QueryStaticCallRequest defines static call request
+message QueryStaticCallRequest {
+  // address is the ethereum contract hex address to for static call.
+  string address = 1;
+  // static call input generated from abi
+  bytes input = 2;
+}
+
+// // QueryStaticCallRequest defines static call response
+message QueryStaticCallResponse {
+  bytes data = 1;
 }

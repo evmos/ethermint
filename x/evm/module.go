@@ -57,17 +57,16 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, _ client.TxEncodi
 
 // RegisterRESTRoutes performs a no-op as the EVM module doesn't expose REST
 // endpoints
-func (AppModuleBasic) RegisterRESTRoutes(_ client.Context, _ *mux.Router) {
+func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
 }
 
-// RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the evm module.
-func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
-	if err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx)); err != nil {
+func (b AppModuleBasic) RegisterGRPCGatewayRoutes(c client.Context, serveMux *runtime.ServeMux) {
+	if err := types.RegisterQueryHandlerClient(context.Background(), serveMux, types.NewQueryClient(c)); err != nil {
 		panic(err)
 	}
 }
 
-// GetTxCmd returns nil as the evm module doesn't support transactions through the CLI.
+// GetTxCmd returns the root tx command for the evm module.
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
 	return nil
 }
@@ -82,7 +81,7 @@ func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) 
 	types.RegisterInterfaces(registry)
 }
 
-// ____________________________________________________________________________
+//____________________________________________________________________________
 
 // AppModule implements an application module for the evm module.
 type AppModule struct {
@@ -107,20 +106,23 @@ func (AppModule) Name() string {
 	return types.ModuleName
 }
 
-// RegisterInvariants interface for registering invariants
+// RegisterInvariants interface for registering invariants. Performs a no-op
+// as the evm module doesn't expose invariants.
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
-	keeper.RegisterInvariants(ir, *am.keeper)
+	// Invariats lead to performance degradation
+	//
+	// keeper.RegisterInvariants(ir, *am.keeper)
 }
 
-// RegisterServices registers the evm module Msg and gRPC services.
+// RegisterQueryService registers a GRPC query service to respond to the
+// module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), am.keeper)
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 // Route returns the message routing key for the evm module.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(*am.keeper))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
 }
 
 // QuerierRoute returns the evm module's querier route name.
@@ -149,7 +151,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, data j
 	var genesisState types.GenesisState
 
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	return InitGenesis(ctx, *am.keeper, am.ak, am.bk, genesisState)
+	InitGenesis(ctx, *am.keeper, am.ak, am.bk, genesisState)
+	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis returns the exported genesis state as raw bytes for the evm

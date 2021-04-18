@@ -9,4 +9,4 @@ for D in ../x/*; do
   fi
 done
 
-cat ../x/README.md | sed 's/\.\/x/\/modules/g' | sed 's/spec\/README.md//g'
+cat ../x/README.md | sed 's/\.\/x/\/x/g' | sed 's/spec\/README.md//g'

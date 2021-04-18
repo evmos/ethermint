@@ -25,9 +25,21 @@ var (
 	// ErrBloomNotFound returns an error if the block bloom cannot be found on the store.
 	ErrBloomNotFound = sdkerrors.Register(ModuleName, 7, "block bloom not found")
 
+	// ErrInvalidValue returns an error resulting from an invalid value.
+	ErrInvalidValue = sdkerrors.Register(ModuleName, 8, "invalid value")
+
+	// ErrInvalidChainID returns an error resulting from an invalid chain ID.
+	ErrInvalidChainID = sdkerrors.Register(ModuleName, 9, "invalid chain ID")
+
+	// ErrVMExecution returns an error resulting from an error in EVM execution.
+	ErrVMExecution = sdkerrors.Register(ModuleName, 10, "error while executing evm transaction")
+
+	// ErrTxReceiptNotFound returns an error if the transaction receipt could not be found
+	ErrTxReceiptNotFound = sdkerrors.Register(ModuleName, 11, "transaction receipt not found")
+
 	// ErrCreateDisabled returns an error if the EnableCreate parameter is false.
-	ErrCreateDisabled = sdkerrors.Register(ModuleName, 8, "EVM Create operation is disabled")
+	ErrCreateDisabled = sdkerrors.Register(ModuleName, 12, "EVM Create operation is disabled")
 
 	// ErrCallDisabled returns an error if the EnableCall parameter is false.
-	ErrCallDisabled = sdkerrors.Register(ModuleName, 9, "EVM Call operation is disabled")
+	ErrCallDisabled = sdkerrors.Register(ModuleName, 13, "EVM Call operation is disabled")
 )
