@@ -3,12 +3,9 @@ package rpc
 import (
 	"fmt"
 
-	"github.com/spf13/viper"
-
 	ethermint "github.com/cosmos/ethermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 )
 
 // PublicNetAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
@@ -17,10 +14,9 @@ type PublicNetAPI struct {
 }
 
 // NewPublicNetAPI creates an instance of the public Net Web3 API.
-func NewPublicNetAPI(_ client.Context) *PublicNetAPI {
-	chainID := viper.GetString(flags.FlagChainID)
+func NewPublicNetAPI(clientCtx client.Context) *PublicNetAPI {
 	// parse the chainID from a integer string
-	chainIDEpoch, err := ethermint.ParseChainID(chainID)
+	chainIDEpoch, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
 	}
