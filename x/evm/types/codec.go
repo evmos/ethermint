@@ -18,13 +18,13 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgEthereumTx{},
 	)
 
-	registry.RegisterInterface("injective.evm.v1beta1.ExtensionOptionsEthereumTx", (*ExtensionOptionsEthereumTxI)(nil))
+	registry.RegisterInterface("injective.evm.v1alpha1.ExtensionOptionsEthereumTx", (*ExtensionOptionsEthereumTxI)(nil))
 	registry.RegisterImplementations(
 		(*ExtensionOptionsEthereumTxI)(nil),
 		&ExtensionOptionsEthereumTx{},
 	)
 
-	registry.RegisterInterface("injective.evm.v1beta1.ExtensionOptionsWeb3Tx", (*ExtensionOptionsWeb3TxI)(nil))
+	registry.RegisterInterface("injective.evm.v1alpha1.ExtensionOptionsWeb3Tx", (*ExtensionOptionsWeb3TxI)(nil))
 	registry.RegisterImplementations(
 		(*ExtensionOptionsWeb3TxI)(nil),
 		&ExtensionOptionsWeb3Tx{},

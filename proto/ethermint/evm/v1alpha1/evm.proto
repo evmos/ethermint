@@ -11,16 +11,13 @@ message Params {
 
   // evm_denom represents the token denomination used to run the EVM state
   // transitions.
-  string evm_denom = 1 [ (gogoproto.moretags) = "yaml:\"evm_denom\""];
+  string evm_denom = 1 [(gogoproto.moretags) = "yaml:\"evm_denom\""];
   // enable_create toggles state transitions that use the vm.Create function
-  bool enable_create = 2 [ (gogoproto.moretags) = "yaml:\"enable_create\""];
+  bool enable_create = 2 [(gogoproto.moretags) = "yaml:\"enable_create\""];
   // enable_call toggles state transitions that use the vm.Call function
-  bool enable_call = 3 [ (gogoproto.moretags) = "yaml:\"enable_call\""];
+  bool enable_call = 3 [(gogoproto.moretags) = "yaml:\"enable_call\""];
   // extra_eips defines the additional EIPs for the vm.Config
-  repeated int64 extra_eips = 4 [
-    (gogoproto.customname) = "ExtraEIPs",
-    (gogoproto.moretags) = "yaml:\"extra_eips\""
-  ];
+  repeated int64 extra_eips = 4 [(gogoproto.customname) = "ExtraEIPs", (gogoproto.moretags) = "yaml:\"extra_eips\""];
 }
 
 // ChainConfig defines the Ethereum ChainConfig parameters using sdk.Int values
@@ -38,96 +35,91 @@ message ChainConfig {
   // Homestead switch block (< 0 no fork, 0 = already homestead)
   string homestead_block = 1 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"homestead_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"homestead_block\"",
+    (gogoproto.nullable)   = false
   ];
   // TheDAO hard-fork switch block (< 0 no fork)
   string dao_fork_block = 2 [
     (gogoproto.customname) = "DAOForkBlock",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"dao_fork_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"dao_fork_block\"",
+    (gogoproto.nullable)   = false
   ];
   // Whether the nodes supports or opposes the DAO hard-fork
-  bool dao_fork_support = 3 [
-    (gogoproto.customname) = "DAOForkSupport",
-    (gogoproto.moretags) = "yaml:\"dao_fork_support\""
-  ];
+  bool dao_fork_support = 3
+      [(gogoproto.customname) = "DAOForkSupport", (gogoproto.moretags) = "yaml:\"dao_fork_support\""];
   // EIP150 implements the Gas price changes
   // (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (< 0 no fork)
   string eip150_block = 4 [
     (gogoproto.customname) = "EIP150Block",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"eip150_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"eip150_block\"",
+    (gogoproto.nullable)   = false
   ];
   // EIP150 HF hash (needed for header only clients as only gas pricing changed)
-  string eip150_hash = 5 [
-    (gogoproto.customname) = "EIP150Hash",
-    (gogoproto.moretags) = "yaml:\"byzantium_block\""
-  ];
+  string eip150_hash = 5 [(gogoproto.customname) = "EIP150Hash", (gogoproto.moretags) = "yaml:\"byzantium_block\""];
   // EIP155Block HF block
   string eip155_block = 6 [
     (gogoproto.customname) = "EIP155Block",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"eip155_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"eip155_block\"",
+    (gogoproto.nullable)   = false
   ];
   // EIP158 HF block
   string eip158_block = 7 [
     (gogoproto.customname) = "EIP158Block",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"eip158_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"eip158_block\"",
+    (gogoproto.nullable)   = false
   ];
   // Byzantium switch block (< 0 no fork, 0 = already on byzantium)
   string byzantium_block = 8 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"byzantium_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"byzantium_block\"",
+    (gogoproto.nullable)   = false
   ];
   // Constantinople switch block (< 0 no fork, 0 = already activated)
   string constantinople_block = 9 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"constantinople_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"constantinople_block\"",
+    (gogoproto.nullable)   = false
   ];
   // Petersburg switch block (< 0 same as Constantinople)
   string petersburg_block = 10 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"petersburg_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"petersburg_block\"",
+    (gogoproto.nullable)   = false
   ];
   // Istanbul switch block (< 0 no fork, 0 = already on istanbul)
   string istanbul_block = 11 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"istanbul_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"istanbul_block\"",
+    (gogoproto.nullable)   = false
   ];
   // Eip-2384 (bomb delay) switch block (< 0 no fork, 0 = already activated)
   string muir_glacier_block = 12 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"muir_glacier_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"muir_glacier_block\"",
+    (gogoproto.nullable)   = false
   ];
   // YOLO v2: https://github.com/ethereum/EIPs/pull/2657 (Ephemeral testnet)
   string yolo_v2_block = 13 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"yolo_v2_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"yolo_v2_block\"",
+    (gogoproto.nullable)   = false
   ];
   // EWASM switch block (< 0 no fork, 0 = already activated)
   string ewasm_block = 14 [
     (gogoproto.customname) = "EWASMBlock",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"ewasm_block\"",
-    (gogoproto.nullable) = false
+    (gogoproto.moretags)   = "yaml:\"ewasm_block\"",
+    (gogoproto.nullable)   = false
   ];
 }
 
 // State represents a single Storage key value pair item.
 message State {
-  string key = 1;
+  string key   = 1;
   string value = 2;
 }
 
@@ -135,7 +127,7 @@ message State {
 // with a given hash. It it used for import/export data as transactions are not
 // persisted on blockchain state after an upgrade.
 message TransactionLogs {
-  string hash = 1;
+  string       hash = 1;
   repeated Log logs = 2;
 }
 
@@ -156,15 +148,15 @@ message Log {
   // but not secured by consensus.
 
   // block in which the transaction was included
-  uint64 block_number = 4 [ (gogoproto.jsontag) = "blockNumber" ];
+  uint64 block_number = 4 [(gogoproto.jsontag) = "blockNumber"];
   // hash of the transaction
-  string tx_hash = 5 [ (gogoproto.jsontag) = "transactionHash" ];
+  string tx_hash = 5 [(gogoproto.jsontag) = "transactionHash"];
   // index of the transaction in the block
-  uint64 tx_index = 6 [ (gogoproto.jsontag) = "transactionIndex" ];
+  uint64 tx_index = 6 [(gogoproto.jsontag) = "transactionIndex"];
   // hash of the block in which the transaction was included
-  string block_hash = 7 [ (gogoproto.jsontag) = "blockHash" ];
+  string block_hash = 7 [(gogoproto.jsontag) = "blockHash"];
   // index of the log in the block
-  uint64 index = 8 [ (gogoproto.jsontag) = "logIndex" ];
+  uint64 index = 8 [(gogoproto.jsontag) = "logIndex"];
 
   // The Removed field is true if this log was reverted due to a chain
   // reorganisation. You must pay attention to this field if you receive logs
@@ -176,13 +168,13 @@ message Log {
 message TxReceipt {
   option (gogoproto.goproto_getters) = false;
 
-  bytes hash = 1;
-  bytes from = 2;
-  TxData data = 3;
-  TxResult result = 4;
-  uint64 index = 5;
-  uint64 blockHeight = 6;
-  bytes blockHash = 7;
+  bytes    hash        = 1;
+  bytes    from        = 2;
+  TxData   data        = 3;
+  TxResult result      = 4;
+  uint64   index       = 5;
+  uint64   blockHeight = 6;
+  bytes    blockHash   = 7;
 }
 
 // TxResult stores results of Tx execution.
@@ -192,16 +184,12 @@ message TxResult {
   // contract_address contains the ethereum address of the created contract (if
   // any). If the state transition is an evm.Call, the contract address will be
   // empty.
-  string contract_address = 1
-      [ (gogoproto.moretags) = "yaml:\"contract_address\"" ];
+  string contract_address = 1 [(gogoproto.moretags) = "yaml:\"contract_address\""];
   // bloom represents the bloom filter bytes
   bytes bloom = 2;
   // tx_logs contains the transaction hash and the proto-compatible ethereum
   // logs.
-  TransactionLogs tx_logs = 3 [
-    (gogoproto.moretags) = "yaml:\"tx_logs\"",
-    (gogoproto.nullable) = false
-  ];
+  TransactionLogs tx_logs = 3 [(gogoproto.moretags) = "yaml:\"tx_logs\"", (gogoproto.nullable) = false];
   // ret defines the bytes from the execution.
   bytes ret = 4;
   // reverted flag is set to true when the call has been reverted
@@ -218,18 +206,12 @@ message TxData {
   // nonce corresponds to the account nonce (transaction sequence).
   uint64 nonce = 1 [(gogoproto.customname) = "AccountNonce"];
   // price defines the unsigned integer value of the gas price in bytes.
-  bytes price = 2 [
-    (gogoproto.jsontag) = "gasPrice"
-  ];
+  bytes price = 2 [(gogoproto.jsontag) = "gasPrice"];
   // gas defines the gas limit defined for the transaction.
   uint64 gas = 3 [(gogoproto.customname) = "GasLimit"];
-  bytes to = 4 [
-    (gogoproto.customname) = "Recipient"
-  ];
+  bytes  to  = 4 [(gogoproto.customname) = "Recipient"];
   // value defines the unsigned integer value of the transaction amount.
-  bytes value = 5 [
-    (gogoproto.customname) = "Amount"
-  ];
+  bytes value = 5 [(gogoproto.customname) = "Amount"];
   // input defines the data payload bytes of the transaction.
   bytes input = 6 [(gogoproto.customname) = "Payload"];
   // v defines the signature value
@@ -239,7 +221,7 @@ message TxData {
   // s define the signature value
   bytes s = 9;
   // hash defines the tx data hash, which is only used when marshaling to JSON.
-  string hash = 10 [ (gogoproto.moretags) = "rlp:\"-\"" ];
+  string hash = 10 [(gogoproto.moretags) = "rlp:\"-\""];
 }
 
 message BytesList {

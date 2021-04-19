@@ -364,9 +364,6 @@ proto-swagger-gen:
 proto-format:
 	find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 
-proto-swagger-gen:
-	@./scripts/protoc-swagger-gen.sh
-
 proto-lint:
 	@$(DOCKER_BUF) check lint --error-format=json
 

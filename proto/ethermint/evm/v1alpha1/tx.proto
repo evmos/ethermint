@@ -18,8 +18,8 @@ message MsgEthereumTx {
 
   TxData data = 1;
   // caches
-  double size = 2 [ (gogoproto.jsontag) = "-" ];
-  SigCache from = 3 [ (gogoproto.jsontag) = "-" ];
+  double   size = 2 [(gogoproto.jsontag) = "-"];
+  SigCache from = 3 [(gogoproto.jsontag) = "-"];
 }
 
 message ExtensionOptionsEthereumTx {
@@ -37,15 +37,12 @@ message MsgEthereumTxResponse {
   // contract_address contains the ethereum address of the created contract (if
   // any). If the state transition is an evm.Call, the contract address will be
   // empty.
-  string contract_address = 1 [(gogoproto.moretags) = "yaml:\"contract_address\"" ];
+  string contract_address = 1 [(gogoproto.moretags) = "yaml:\"contract_address\""];
   // bloom represents the bloom filter bytes
   bytes bloom = 2;
   // tx_logs contains the transaction hash and the proto-compatible ethereum
   // logs.
-  TransactionLogs tx_logs = 3 [
-    (gogoproto.moretags) = "yaml:\"tx_logs\"",
-    (gogoproto.nullable) = false
-  ];
+  TransactionLogs tx_logs = 3 [(gogoproto.moretags) = "yaml:\"tx_logs\"", (gogoproto.nullable) = false];
   // ret defines the bytes from the execution.
   bytes ret = 4;
   // reverted flag is set to true when the call has been reverted
@@ -57,14 +54,14 @@ message MsgEthereumTxResponse {
 message SigCache {
   option (gogoproto.goproto_getters) = false;
 
-  EIP155Signer signer = 1;
-  bytes address = 2;
+  EIP155Signer signer  = 1;
+  bytes        address = 2;
 }
 
 // EIP155Transaction implements Signer using the EIP155 rules.
 message EIP155Signer {
   option (gogoproto.goproto_getters) = false;
 
-  bytes chain_id = 1 [(gogoproto.customname) = "chainId"];
+  bytes chain_id     = 1 [(gogoproto.customname) = "chainId"];
   bytes chain_id_mul = 2 [(gogoproto.customname) = "chainIdMul"];
 }

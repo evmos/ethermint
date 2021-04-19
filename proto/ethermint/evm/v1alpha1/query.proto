@@ -27,8 +27,7 @@ service Query {
 
   // Storage queries the balance of all coins for a single account.
   rpc Storage(QueryStorageRequest) returns (QueryStorageResponse) {
-    option (google.api.http).get =
-        "/ethermint/evm/v1alpha1/storage/{address}/{key}";
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/storage/{address}/{key}";
   }
 
   // Code queries the balance of all coins for a single account.
@@ -79,7 +78,7 @@ service Query {
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
 message QueryAccountRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the account for.
@@ -98,7 +97,7 @@ message QueryAccountResponse {
 
 // QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC method.
 message QueryCosmosAccountRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the account for.
@@ -117,7 +116,7 @@ message QueryCosmosAccountResponse {
 
 // QueryBalanceRequest is the request type for the Query/Balance RPC method.
 message QueryBalanceRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the balance for.
@@ -132,7 +131,7 @@ message QueryBalanceResponse {
 
 // QueryStorageRequest is the request type for the Query/Storage RPC method.
 message QueryStorageRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   /// address is the ethereum hex address to query the storage state for.
@@ -151,7 +150,7 @@ message QueryStorageResponse {
 
 // QueryCodeRequest is the request type for the Query/Code RPC method.
 message QueryCodeRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the code for.
@@ -167,7 +166,7 @@ message QueryCodeResponse {
 
 // QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
 message QueryTxLogsRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // hash is the ethereum transaction hex hash to query the logs for.
@@ -182,7 +181,7 @@ message QueryTxLogsResponse {
 
 // QueryTxReceiptRequest is the request type for the Query/TxReceipt RPC method.
 message QueryTxReceiptRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // hash is the ethereum transaction hex hash to query the receipt for.
@@ -197,7 +196,7 @@ message QueryTxReceiptResponse {
 
 // QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
 message QueryTxReceiptsByBlockHeightRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // height is the block height to query tx receipts for
@@ -212,7 +211,7 @@ message QueryTxReceiptsByBlockHeightResponse {
 
 // QueryTxReceiptsByBlockHashRequest is the request type for the Query/TxReceiptsByBlockHash RPC method.
 message QueryTxReceiptsByBlockHashRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // hash is the ethereum transaction hex hash to query the receipt for.
@@ -227,7 +226,7 @@ message QueryTxReceiptsByBlockHashResponse {
 
 // QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
 message QueryBlockLogsRequest {
-  option (gogoproto.equal) = false;
+  option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
   // hash is the block hash to query the logs for.
@@ -237,12 +236,14 @@ message QueryBlockLogsRequest {
 // QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 message QueryBlockLogsResponse {
   // logs represents the ethereum logs generated at the given block hash.
-  repeated TransactionLogs tx_logs = 1 [ (gogoproto.nullable) = false ];
+  repeated TransactionLogs tx_logs = 1 [(gogoproto.nullable) = false];
 }
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest { int64 height = 1; }
+message QueryBlockBloomRequest {
+  int64 height = 1;
+}
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.
@@ -257,7 +258,7 @@ message QueryParamsRequest {}
 // QueryParamsResponse defines the response type for querying x/evm parameters.
 message QueryParamsResponse {
   // params define the evm module parameters.
-  Params params = 1 [ (gogoproto.nullable) = false ];
+  Params params = 1 [(gogoproto.nullable) = false];
 }
 
 // QueryStaticCallRequest defines static call request
