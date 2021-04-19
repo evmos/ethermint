@@ -89,7 +89,7 @@ func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, b
 	return rpcTx, nil
 }
 
-// NewTransaction returns a transaction that will serialize to the RPC
+// NewTransactionFromData returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func NewTransactionFromData(
 	txData *evmtypes.TxData,
@@ -118,7 +118,7 @@ func NewTransactionFromData(
 		S:        (*hexutil.Big)(new(big.Int).SetBytes(txData.S)),
 	}
 	if rpcTx.To == nil {
-		addr := common.HexToAddress("0x0000000000000000000000000000000000000000")
+		addr := zeroAddr
 		rpcTx.To = &addr
 	}
 
@@ -173,7 +173,7 @@ func bigOrZero(i *big.Int) *hexutil.Big {
 	return (*hexutil.Big)(i)
 }
 
-func formatBlock(
+func FormatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
 	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
 ) map[string]interface{} {

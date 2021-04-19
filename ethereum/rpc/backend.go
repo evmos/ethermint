@@ -43,7 +43,7 @@ type Backend interface {
 
 var _ Backend = (*EVMBackend)(nil)
 
-// implements the Backend interface
+// EVMBackend implements the Backend interface
 type EVMBackend struct {
 	ctx         context.Context
 	clientCtx   client.Context
@@ -51,6 +51,7 @@ type EVMBackend struct {
 	logger      log.Logger
 }
 
+// NewEVMBackend creates a new EVMBackend instance
 func NewEVMBackend(clientCtx client.Context) *EVMBackend {
 	return &EVMBackend{
 		ctx:         context.Background(),
@@ -105,7 +106,7 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 		}
 	}
 
-	res, err := e.ethBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
+	res, err := e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
 	if err != nil {
 		e.logger.WithError(err).Warningf("EthBlockFromTendermint failed with block %s", resBlock.Block.String())
 	}
@@ -121,19 +122,22 @@ func (e *EVMBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]i
 		return nil, err
 	}
 
-	return e.ethBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
+	return e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
 }
 
-// ethBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block.
-func (e *EVMBackend) ethBlockFromTendermint(
+// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block.
+func (e *EVMBackend) EthBlockFromTendermint(
 	clientCtx client.Context,
 	queryClient evmtypes.QueryClient,
 	block *tmtypes.Block,
 	fullTx bool,
 ) (map[string]interface{}, error) {
-	txReceiptsResp, err := queryClient.TxReceiptsByBlockHeight(types.ContextWithHeight(0), &evmtypes.QueryTxReceiptsByBlockHeightRequest{
+
+	req := &evmtypes.QueryTxReceiptsByBlockHeightRequest{
 		Height: block.Height,
-	})
+	}
+
+	txReceiptsResp, err := queryClient.TxReceiptsByBlockHeight(types.ContextWithHeight(0), req)
 	if err != nil {
 		e.logger.Warningf("TxReceiptsByBlockHeight fail: %s", err.Error())
 		return nil, err
@@ -142,29 +146,30 @@ func (e *EVMBackend) ethBlockFromTendermint(
 	gasUsed := big.NewInt(0)
 
 	ethRPCTxs := make([]interface{}, 0, len(txReceiptsResp.Receipts))
-	if !fullTx {
-		// simply hashes
-		for _, receipt := range txReceiptsResp.Receipts {
-			ethRPCTxs = append(ethRPCTxs, common.BytesToHash(receipt.Hash))
-		}
-	} else {
-		// full txns from receipts
-		for _, receipt := range txReceiptsResp.Receipts {
+
+	for _, receipt := range txReceiptsResp.Receipts {
+		hash := common.BytesToHash(receipt.Hash)
+		if fullTx {
+			// full txs from receipts
 			tx, err := NewTransactionFromData(
 				receipt.Data,
 				common.BytesToAddress(receipt.From),
-				common.BytesToHash(receipt.Hash),
+				hash,
 				common.BytesToHash(receipt.BlockHash),
 				receipt.BlockHeight,
 				receipt.Index,
 			)
+
 			if err != nil {
-				e.logger.Warningf("NewTransactionFromData fail: %s", err.Error())
+				e.logger.Warningf("NewTransactionFromData for receipt %s failed: %s", hash, err.Error())
 				continue
 			}
 
 			ethRPCTxs = append(ethRPCTxs, tx)
 			gasUsed.Add(gasUsed, new(big.Int).SetUint64(receipt.Result.GasUsed))
+		} else {
+			// simply hashes
+			ethRPCTxs = append(ethRPCTxs, hash)
 		}
 	}
 
@@ -177,7 +182,7 @@ func (e *EVMBackend) ethBlockFromTendermint(
 	}
 
 	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
-	formattedBlock := formatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, gasUsed, ethRPCTxs, bloom)
+	formattedBlock := FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, gasUsed, ethRPCTxs, bloom)
 
 	return formattedBlock, nil
 }

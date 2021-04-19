@@ -144,7 +144,19 @@ func (e *PublicEthAPI) GasPrice() *hexutil.Big {
 func (e *PublicEthAPI) Accounts() ([]common.Address, error) {
 	e.logger.Debugln("eth_accounts")
 
-	return []common.Address{}, nil
+	addresses := make([]common.Address, 0) // return [] instead of nil if empty
+
+	infos, err := e.clientCtx.Keyring.List()
+	if err != nil {
+		return addresses, err
+	}
+
+	for _, info := range infos {
+		addressBytes := info.GetPubKey().Address().Bytes()
+		addresses = append(addresses, common.BytesToAddress(addressBytes))
+	}
+
+	return addresses, nil
 }
 
 // BlockNumber returns the current block number.
@@ -155,7 +167,7 @@ func (e *PublicEthAPI) BlockNumber() (hexutil.Uint64, error) {
 
 // GetBalance returns the provided account's balance up to the provided block number.
 func (e *PublicEthAPI) GetBalance(address common.Address, blockNum types.BlockNumber) (*hexutil.Big, error) { // nolint: interfacer
-	e.logger.Debugln("eth_getBalance", "address", address.Hex(), "block number", blockNum)
+	e.logger.Debugln("eth_getBalance", "address", address.String(), "block number", blockNum)
 
 	req := &evmtypes.QueryBalanceRequest{
 		Address: address.String(),
@@ -367,7 +379,7 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *m
 	return (hexutil.Bytes)(data.Ret), nil
 }
 
-var zeroAddr = common.HexToAddress("0x0000000000000000000000000000000000000000")
+var zeroAddr = common.Address{}
 
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
@@ -489,10 +501,13 @@ func (e *PublicEthAPI) EstimateGas(args types.CallArgs) (hexutil.Uint64, error) 
 	simRes, err := e.doCall(args, 0, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return 0, err
-	} else if len(simRes.Result.Log) > 0 {
+	}
+
+	if len(simRes.Result.Log) > 0 {
 		var logs []sdkTxLogs
 		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
 			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
+			return 0, err
 		}
 
 		if len(logs) > 0 && logs[0].Log == logRevertedFlag {

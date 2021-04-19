@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/ethermint/ethereum/rpc/types"
 	"github.com/ethereum/go-ethereum/rpc"
+
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
 
