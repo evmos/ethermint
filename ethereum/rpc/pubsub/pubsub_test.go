@@ -6,55 +6,40 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 func TestAddTopic(t *testing.T) {
-	assert := assert.New(t)
-
 	q := NewEventBus()
-	err := q.AddTopic("kek", make(chan interface{}))
-	if !assert.NoError(err) {
-		return
-	}
+	err := q.AddTopic("kek", make(<-chan coretypes.ResultEvent))
+	require.NoError(t, err)
 
-	err = q.AddTopic("lol", make(chan interface{}))
-	if !assert.NoError(err) {
-		return
-	}
+	err = q.AddTopic("lol", make(<-chan coretypes.ResultEvent))
+	require.NoError(t, err)
 
-	err = q.AddTopic("lol", make(chan interface{}))
-	if !assert.Error(err) {
-		return
-	}
+	err = q.AddTopic("lol", make(<-chan coretypes.ResultEvent))
+	require.Error(t, err)
 
-	assert.EqualValues([]string{"kek", "lol"}, q.Topics())
+	require.EqualValues(t, []string{"kek", "lol"}, q.Topics())
 }
 
 func TestSubscribe(t *testing.T) {
-	assert := assert.New(t)
-
 	q := NewEventBus()
-	kekSrc := make(chan interface{})
+	kekSrc := make(<-chan coretypes.ResultEvent)
 	q.AddTopic("kek", kekSrc)
 
-	lolSrc := make(chan interface{})
+	lolSrc := make(<-chan coretypes.ResultEvent)
 	q.AddTopic("lol", lolSrc)
 
 	kekSubC, err := q.Subscribe("kek")
-	if !assert.NoError(err) {
-		return
-	}
+	require.NoError(t, err)
 
 	lolSubC, err := q.Subscribe("lol")
-	if !assert.NoError(err) {
-		return
-	}
+	require.NoError(t, err)
 
 	lol2SubC, err := q.Subscribe("lol")
-	if !assert.NoError(err) {
-		return
-	}
+	require.NoError(t, err)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(4)
@@ -63,32 +48,29 @@ func TestSubscribe(t *testing.T) {
 		defer wg.Done()
 		msg := <-kekSubC
 		log.Println("kek:", msg)
-		assert.EqualValues(1, msg)
+		require.EqualValues(t, 1, msg)
 	}()
 
 	go func() {
 		defer wg.Done()
 		msg := <-lolSubC
 		log.Println("lol:", msg)
-		assert.EqualValues(1, msg)
+		require.EqualValues(t, 1, msg)
 	}()
 
 	go func() {
 		defer wg.Done()
 		msg := <-lol2SubC
 		log.Println("lol2:", msg)
-		assert.EqualValues(1, msg)
+		require.EqualValues(t, 1, msg)
 	}()
 
 	go func() {
 		defer wg.Done()
 
 		time.Sleep(time.Second)
-		kekSrc <- 1
-		lolSrc <- 1
-
-		close(kekSrc)
-		close(lolSrc)
+		<-kekSrc
+		<-lolSrc
 	}()
 
 	wg.Wait()

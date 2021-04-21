@@ -9,9 +9,9 @@ import (
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
-	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/ethermint/app"
@@ -83,7 +83,7 @@ func (suite *AnteTestSuite) TestValidTx() {
 	msg1 := newTestMsg(addr1, addr2)
 	msgs := []sdk.Msg{msg1}
 
-	privKeys := []tmcrypto.PrivKey{priv1, priv2}
+	privKeys := []cryptotypes.PrivKey{priv1, priv2}
 	accNums := []uint64{acc1.GetAccountNumber(), acc2.GetAccountNumber()}
 	accSeqs := []uint64{acc1.GetSequence(), acc2.GetSequence()}
 
@@ -115,7 +115,7 @@ func (suite *AnteTestSuite) TestSDKInvalidSigs() {
 	// require validation failure with no signers
 	msgs := []sdk.Msg{msg1}
 
-	privKeys := []tmcrypto.PrivKey{}
+	privKeys := []cryptotypes.PrivKey{}
 	accNums := []uint64{acc1.GetAccountNumber(), acc2.GetAccountNumber()}
 	accSeqs := []uint64{acc1.GetSequence(), acc2.GetSequence()}
 
@@ -125,7 +125,7 @@ func (suite *AnteTestSuite) TestSDKInvalidSigs() {
 	// require validation failure with invalid number of signers
 	msgs = []sdk.Msg{msg1}
 
-	privKeys = []tmcrypto.PrivKey{priv1}
+	privKeys = []cryptotypes.PrivKey{priv1}
 	accNums = []uint64{acc1.GetAccountNumber(), acc2.GetAccountNumber()}
 	accSeqs = []uint64{acc1.GetSequence(), acc2.GetSequence()}
 
@@ -136,7 +136,7 @@ func (suite *AnteTestSuite) TestSDKInvalidSigs() {
 	msg2 := newTestMsg(addr1, addr3)
 	msgs = []sdk.Msg{msg1, msg2}
 
-	privKeys = []tmcrypto.PrivKey{priv1, priv2, priv3}
+	privKeys = []cryptotypes.PrivKey{priv1, priv2, priv3}
 	accNums = []uint64{acc1.GetAccountNumber(), acc2.GetAccountNumber(), 0}
 	accSeqs = []uint64{acc1.GetSequence(), acc2.GetSequence(), 0}
 
@@ -157,7 +157,7 @@ func (suite *AnteTestSuite) TestSDKInvalidAcc() {
 	fee := newTestStdFee()
 	msg1 := newTestMsg(addr1)
 	msgs := []sdk.Msg{msg1}
-	privKeys := []tmcrypto.PrivKey{priv1}
+	privKeys := []cryptotypes.PrivKey{priv1}
 
 	// require validation failure with invalid account number
 	accNums := []uint64{1}
