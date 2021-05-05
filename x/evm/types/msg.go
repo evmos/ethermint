@@ -24,7 +24,7 @@ var big8 = big.NewInt(8)
 
 // message type and route constants
 const (
-	// TypeMsgEthereumTx defines the type string of an Ethereum tranasction
+	// TypeMsgEthereumTx defines the type string of an Ethereum transaction
 	TypeMsgEthereumTx = "ethereum"
 )
 

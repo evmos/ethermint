@@ -126,3 +126,13 @@ func validateBlock(block sdk.Int) error {
 
 	return nil
 }
+
+// IsIstanbul returns whether the Istanbul version is enabled.
+func (cc ChainConfig) IsIstanbul() bool {
+	return getBlockValue(cc.IstanbulBlock) != nil
+}
+
+// IsHomestead returns whether the Homestead version is enabled.
+func (cc ChainConfig) IsHomestead() bool {
+	return getBlockValue(cc.HomesteadBlock) != nil
+}

@@ -61,7 +61,7 @@ func GetHashFn(ctx sdk.Context, csdb *CommitStateDB) vm.GetHashFunc {
 		case ctx.BlockHeight() == int64(height):
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
-			return HashFromContext(ctx)
+			return csdb.bhash
 
 		case ctx.BlockHeight() > int64(height):
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
@@ -190,7 +190,7 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 		ret, contractAddress, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
 
 		if err != nil {
-			log.WithField("simulate?", st.Simulate).
+			log.WithField("simulate", st.Simulate).
 				WithField("AccountNonce", st.AccountNonce).
 				WithField("contract", contractAddress.String()).
 				WithError(err).Warningln("evm contract creation failed")

@@ -44,6 +44,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
 	ethHash := ethcmn.BytesToHash(txHash)
+	blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
+	ethBlockHash := ethcmn.BytesToHash(blockHash)
 
 	var recipient *ethcmn.Address
 	if len(msg.Data.Recipient) > 0 {
@@ -70,8 +72,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		hash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
-		k.Prepare(ctx, ethHash, ethcmn.BytesToHash(hash), k.TxCount)
+		k.Prepare(ctx, ethHash, ethBlockHash, k.TxCount)
 		k.TxCount++
 	}
 
@@ -87,7 +88,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			executionResult.Response.Reverted = true
 
 			if !st.Simulate {
-				blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
 				k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
 					Hash:        ethHash.Bytes(),
 					From:        sender.Bytes(),

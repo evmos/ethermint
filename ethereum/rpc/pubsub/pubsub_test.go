@@ -26,10 +26,10 @@ func TestAddTopic(t *testing.T) {
 
 func TestSubscribe(t *testing.T) {
 	q := NewEventBus()
-	kekSrc := make(<-chan coretypes.ResultEvent)
+	kekSrc := make(chan coretypes.ResultEvent)
 	q.AddTopic("kek", kekSrc)
 
-	lolSrc := make(<-chan coretypes.ResultEvent)
+	lolSrc := make(chan coretypes.ResultEvent)
 	q.AddTopic("lol", lolSrc)
 
 	kekSubC, err := q.Subscribe("kek")
@@ -69,8 +69,9 @@ func TestSubscribe(t *testing.T) {
 		defer wg.Done()
 
 		time.Sleep(time.Second)
-		<-kekSrc
-		<-lolSrc
+
+		close(kekSrc)
+		close(lolSrc)
 	}()
 
 	wg.Wait()
