@@ -34,7 +34,7 @@ require (
 	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/rs/cors v1.7.0
 	github.com/spf13/cast v1.3.1
-	github.com/spf13/cobra v1.1.1
+	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	github.com/status-im/keycard-go v0.0.0-20200402102358-957c09536969
 	github.com/stretchr/testify v1.7.0
