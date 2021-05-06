@@ -41,7 +41,7 @@ func RawTxToEthTx(clientCtx client.Context, bz []byte) (*evmtypes.MsgEthereumTx,
 
 // NewTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, blockNumber, index uint64) (*Transaction, error) {
+func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, blockNumber, index uint64) (*RPCTransaction, error) {
 	// Verify signature and retrieve sender address
 	from, err := tx.VerifySig(tx.ChainID())
 	if err != nil {
@@ -51,7 +51,7 @@ func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, b
 	gasPrice := new(big.Int).SetBytes(tx.Data.Price)
 	value := new(big.Int).SetBytes(tx.Data.Amount)
 
-	rpcTx := &Transaction{
+	result := &RPCTransaction{
 		From:     from,
 		Gas:      hexutil.Uint64(tx.Data.GasLimit),
 		GasPrice: (*hexutil.Big)(gasPrice),
@@ -67,13 +67,20 @@ func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, b
 		S: (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.S)),
 	}
 
+	// TODO: add fields to Msg
+	// if tx.Type() == ethtypes.AccessListTxType {
+	// 	al := tx.AccessList()
+	// 	result.Accesses = &al
+	// 	result.ChainID = (*hexutil.Big)(tx.ChainId())
+	// }
+
 	if blockHash != (common.Hash{}) {
-		rpcTx.BlockHash = &blockHash
-		rpcTx.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
-		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
+		result.BlockHash = &blockHash
+		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		result.TransactionIndex = (*hexutil.Uint64)(&index)
 	}
 
-	return rpcTx, nil
+	return result, nil
 }
 
 // EthBlockFromTendermint returns a JSON-RPC compatible Ethereum blockfrom a given Tendermint block.

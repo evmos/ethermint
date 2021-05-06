@@ -10,14 +10,17 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
-	_ sdk.Msg = &MsgEthereumTx{}
-	_ sdk.Tx  = &MsgEthereumTx{}
+	_ sdk.Msg      = &MsgEthereumTx{}
+	_ sdk.Tx       = &MsgEthereumTx{}
+	_ core.Message = &MsgEthereumTx{}
+	// _ ethtypes.TxData = &MsgEthereumTx{}
 )
 
 var big8 = big.NewInt(8)
@@ -57,23 +60,26 @@ func newMsgEthereumTx(
 		toBz = to.Bytes()
 	}
 
+	// TODO: chain id and access list
 	txData := &TxData{
-		AccountNonce: nonce,
-		Recipient:    toBz,
-		Payload:      payload,
-		GasLimit:     gasLimit,
-		Amount:       []byte{},
-		Price:        []byte{},
-		V:            []byte{},
-		R:            []byte{},
-		S:            []byte{},
+		ChainID:  nil,
+		Nonce:    nonce,
+		To:       toBz,
+		Input:    payload,
+		GasLimit: gasLimit,
+		Amount:   []byte{},
+		GasPrice: []byte{},
+		Accesses: nil,
+		V:        []byte{},
+		R:        []byte{},
+		S:        []byte{},
 	}
 
 	if amount != nil {
 		txData.Amount = amount.Bytes()
 	}
 	if gasPrice != nil {
-		txData.Price = gasPrice.Bytes()
+		txData.GasPrice = gasPrice.Bytes()
 	}
 
 	return &MsgEthereumTx{Data: txData}
@@ -88,7 +94,7 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 // ValidateBasic implements the sdk.Msg interface. It performs basic validation
 // checks of a Transaction. If returns an error if validation fails.
 func (msg MsgEthereumTx) ValidateBasic() error {
-	gasPrice := new(big.Int).SetBytes(msg.Data.Price)
+	gasPrice := new(big.Int).SetBytes(msg.Data.GasPrice)
 	// if gasPrice.Sign() == 0 {
 	// 	return sdkerrors.Wrapf(ErrInvalidValue, "gas price cannot be 0")
 	// }
@@ -109,11 +115,11 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 // To returns the recipient address of the transaction. It returns nil if the
 // transaction is a contract creation.
 func (msg MsgEthereumTx) To() *ethcmn.Address {
-	if len(msg.Data.Recipient) == 0 {
+	if len(msg.Data.To) == 0 {
 		return nil
 	}
 
-	recipient := ethcmn.BytesToAddress(msg.Data.Recipient)
+	recipient := ethcmn.BytesToAddress(msg.Data.To)
 	return &recipient
 }
 
@@ -147,15 +153,14 @@ func (msg MsgEthereumTx) GetSignBytes() []byte {
 // given chainID used for signing.
 func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
 	return rlpHash([]interface{}{
-		msg.Data.AccountNonce,
-		new(big.Int).SetBytes(msg.Data.Price),
+		new(big.Int).SetBytes(msg.Data.ChainID),
+		msg.Data.Nonce,
+		new(big.Int).SetBytes(msg.Data.GasPrice),
 		msg.Data.GasLimit,
 		msg.To(),
 		new(big.Int).SetBytes(msg.Data.Amount),
-		new(big.Int).SetBytes(msg.Data.Payload),
-		chainID,
-		uint(0),
-		uint(0),
+		new(big.Int).SetBytes(msg.Data.Input),
+		msg.Data.Accesses.ToEthAccessList(),
 	})
 }
 
@@ -163,12 +168,12 @@ func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
 // a Homestead layout without chainID.
 func (msg MsgEthereumTx) RLPSignHomesteadBytes() ethcmn.Hash {
 	return rlpHash([]interface{}{
-		msg.Data.AccountNonce,
-		msg.Data.Price,
+		msg.Data.Nonce,
+		msg.Data.GasPrice,
 		msg.Data.GasLimit,
 		msg.To(),
 		msg.Data.Amount,
-		msg.Data.Payload,
+		msg.Data.Input,
 	})
 }
 
@@ -307,7 +312,7 @@ func (msg MsgEthereumTx) GetGas() uint64 {
 
 // Fee returns gasprice * gaslimit.
 func (msg MsgEthereumTx) Fee() *big.Int {
-	gasPrice := new(big.Int).SetBytes(msg.Data.Price)
+	gasPrice := new(big.Int).SetBytes(msg.Data.GasPrice)
 	gasLimit := new(big.Int).SetUint64(msg.Data.GasLimit)
 	return new(big.Int).Mul(gasPrice, gasLimit)
 }

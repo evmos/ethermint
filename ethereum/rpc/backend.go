@@ -34,7 +34,7 @@ type Backend interface {
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 
 	// Used by pending transaction filter
-	PendingTransactions() ([]*types.Transaction, error)
+	PendingTransactions() ([]*types.RPCTransaction, error)
 
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
@@ -273,8 +273,8 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
-func (e *EVMBackend) PendingTransactions() ([]*types.Transaction, error) {
-	return []*types.Transaction{}, nil
+func (e *EVMBackend) PendingTransactions() ([]*types.RPCTransaction, error) {
+	return []*types.RPCTransaction{}, nil
 }
 
 // GetLogs returns all the logs from all the ethereum transactions in a block.

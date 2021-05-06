@@ -2,6 +2,8 @@ package types
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // accessList is copied from go-ethereum
@@ -131,4 +133,25 @@ func (al *accessList) DeleteSlot(address common.Address, slot common.Hash) {
 // operations.
 func (al *accessList) DeleteAddress(address common.Address) {
 	delete(al.addresses, address)
+}
+
+// ToEthAccessList is an utility function to convert the protobuf compatible
+// AccessList to eth core AccessList from go-ethereum
+func (al AccessList) ToEthAccessList() ethtypes.AccessList {
+	var accessList ethtypes.AccessList
+
+	for _, tuple := range al.Tuples {
+		storageKeys := make([]ethcmn.Hash, len(tuple.StorageKeys))
+
+		for i := range tuple.StorageKeys {
+			storageKeys[i] = ethcmn.HexToHash(tuple.StorageKeys[i])
+		}
+
+		accessList = append(accessList, ethtypes.AccessTuple{
+			Address:     ethcmn.HexToAddress(tuple.Address),
+			StorageKeys: storageKeys,
+		})
+	}
+
+	return accessList
 }

@@ -349,7 +349,7 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 }
 
 // Call performs a raw contract call.
-func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *map[common.Address]types.Account) (hexutil.Bytes, error) {
+func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *types.StateOverride) (hexutil.Bytes, error) {
 	//e.logger.Debugln("eth_call", "args", args, "block number", blockNr)
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
@@ -415,6 +415,12 @@ func (e *PublicEthAPI) doCall(
 		data = []byte(*args.Data)
 	}
 
+	// TODO:
+	// var accessList ethtypes.AccessList
+	// if args.AccessList != nil {
+	// 	accessList = *args.AccessList
+	// }
+
 	// Set destination address for call
 	var fromAddr sdk.AccAddress
 	if args.From != nil {
@@ -429,6 +435,7 @@ func (e *PublicEthAPI) doCall(
 	}
 
 	// Create new call message
+	// TODO: access list proto
 	msg := evmtypes.NewMsgEthereumTx(seq, args.To, value, gas, gasPrice, data)
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -541,7 +548,7 @@ func (e *PublicEthAPI) GetBlockByNumber(ethBlockNum types.BlockNumber, fullTx bo
 }
 
 // GetTransactionByHash returns the transaction identified by hash.
-func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.Transaction, error) {
+func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHash", "hash", hash.Hex())
 
 	resp, err := e.queryClient.TxReceipt(e.ctx, &evmtypes.QueryTxReceiptRequest{
@@ -563,7 +570,7 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.Transactio
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
-func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types.Transaction, error) {
+func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHashAndIndex", "hash", hash.Hex(), "index", idx)
 
 	resp, err := e.queryClient.TxReceiptsByBlockHash(e.ctx, &evmtypes.QueryTxReceiptsByBlockHashRequest{
@@ -578,7 +585,7 @@ func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx h
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
-func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum types.BlockNumber, idx hexutil.Uint) (*types.Transaction, error) {
+func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum types.BlockNumber, idx hexutil.Uint) (*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
 
 	resp, err := e.queryClient.TxReceiptsByBlockHeight(e.ctx, &evmtypes.QueryTxReceiptsByBlockHeightRequest{
@@ -592,7 +599,7 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum types.BlockN
 	return e.getReceiptByIndex(resp.Receipts, common.Hash{}, idx)
 }
 
-func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHash common.Hash, idx hexutil.Uint) (*types.Transaction, error) {
+func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHash common.Hash, idx hexutil.Uint) (*types.RPCTransaction, error) {
 	// return if index out of bounds
 	if uint64(idx) >= uint64(len(receipts)) {
 		return nil, nil
@@ -690,7 +697,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
-func (e *PublicEthAPI) PendingTransactions() ([]*types.Transaction, error) {
+func (e *PublicEthAPI) PendingTransactions() ([]*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getPendingTransactions")
 	return e.backend.PendingTransactions()
 }

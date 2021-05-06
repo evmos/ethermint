@@ -55,14 +55,14 @@ func errRevertedWith(data []byte) DataError {
 
 // NewTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, blockNumber, index uint64) (*rpctypes.Transaction, error) {
+func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, blockNumber, index uint64) (*rpctypes.RPCTransaction, error) {
 	// Verify signature and retrieve sender address
 	from, err := tx.VerifySig(tx.ChainID())
 	if err != nil {
 		return nil, err
 	}
 
-	rpcTx := &rpctypes.Transaction{
+	rpcTx := &rpctypes.RPCTransaction{
 		From:     from,
 		Gas:      hexutil.Uint64(tx.Data.GasLimit),
 		GasPrice: (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.Price)),
@@ -96,7 +96,7 @@ func NewTransactionFromData(
 	from common.Address,
 	txHash, blockHash common.Hash,
 	blockNumber, index uint64,
-) (*rpctypes.Transaction, error) {
+) (*rpctypes.RPCTransaction, error) {
 
 	var to *common.Address
 	if len(txData.Recipient) > 0 {
@@ -104,7 +104,7 @@ func NewTransactionFromData(
 		to = &recipient
 	}
 
-	rpcTx := &rpctypes.Transaction{
+	rpcTx := &rpctypes.RPCTransaction{
 		From:     from,
 		Gas:      hexutil.Uint64(txData.GasLimit),
 		GasPrice: (*hexutil.Big)(new(big.Int).SetBytes(txData.Price)),
