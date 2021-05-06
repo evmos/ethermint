@@ -56,12 +56,10 @@
     - [Query](#ethermint.evm.v1alpha1.Query)
   
 - [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
-    - [EIP155Signer](#ethermint.evm.v1alpha1.EIP155Signer)
     - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
     - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
     - [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx)
     - [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse)
-    - [SigCache](#ethermint.evm.v1alpha1.SigCache)
   
     - [Msg](#ethermint.evm.v1alpha1.Msg)
   
@@ -310,7 +308,6 @@ solely as intended in Ethereum abiding by the protocol.
 | `v` | [bytes](#bytes) |  | v defines the signature value |
 | `r` | [bytes](#bytes) |  | r defines the signature value |
 | `s` | [bytes](#bytes) |  | s define the signature value |
-| `hash` | [string](#string) |  | hash defines the tx data hash, which is only used when marshaling to JSON. |
 
 
 
@@ -860,22 +857,6 @@ Query defines the gRPC querier service.
 
 
 
-<a name="ethermint.evm.v1alpha1.EIP155Signer"></a>
-
-### EIP155Signer
-EIP155Transaction implements Signer using the EIP155 rules.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain_id` | [bytes](#bytes) |  |  |
-| `chain_id_mul` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx"></a>
 
 ### ExtensionOptionsEthereumTx
@@ -904,9 +885,12 @@ MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  |  |
-| `size` | [double](#double) |  | caches |
-| `from` | [SigCache](#ethermint.evm.v1alpha1.SigCache) |  |  |
+| `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  | inner transaction data
+
+caches |
+| `size` | [double](#double) |  | encoded storage size of the transaction |
+| `hash` | [string](#string) |  | transaction hash in hex format |
+| `from` | [string](#string) |  | ethereum signer address in hex format. This address value is checked against the address derived from the signature (V, R, S) using the secp256k1 elliptic curve |
 
 
 
@@ -926,23 +910,6 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 | `tx_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) |  | tx_logs contains the transaction hash and the proto-compatible ethereum logs. |
 | `ret` | [bytes](#bytes) |  | ret defines the bytes from the execution. |
 | `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.SigCache"></a>
-
-### SigCache
-SigCache is used to cache the derived sender and contains the signer used
-to derive it.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `signer` | [EIP155Signer](#ethermint.evm.v1alpha1.EIP155Signer) |  |  |
-| `address` | [bytes](#bytes) |  |  |
 
 
 

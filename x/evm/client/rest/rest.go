@@ -89,9 +89,7 @@ func getEthTransactionByHash(clientCtx client.Context, hashHex string) ([]byte, 
 	}
 
 	height := uint64(tx.Height)
-	res, err := rpctypes.NewTransaction(ethTx, common.BytesToHash(tx.Tx.Hash()), blockHash, height, uint64(tx.Index))
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(res)
+	rpcTx := rpctypes.NewTransaction(ethTx.AsTransaction(), blockHash, height, uint64(tx.Index))
+
+	return json.Marshal(rpcTx)
 }

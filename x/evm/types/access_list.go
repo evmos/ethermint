@@ -137,7 +137,7 @@ func (al *accessList) DeleteAddress(address common.Address) {
 
 // ToEthAccessList is an utility function to convert the protobuf compatible
 // AccessList to eth core AccessList from go-ethereum
-func (al AccessList) ToEthAccessList() ethtypes.AccessList {
+func (al AccessList) ToEthAccessList() *ethtypes.AccessList {
 	var accessList ethtypes.AccessList
 
 	for _, tuple := range al.Tuples {
@@ -153,5 +153,5 @@ func (al AccessList) ToEthAccessList() ethtypes.AccessList {
 		})
 	}
 
-	return accessList
+	return &accessList
 }

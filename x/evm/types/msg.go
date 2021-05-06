@@ -10,16 +10,14 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
-	_ sdk.Msg      = &MsgEthereumTx{}
-	_ sdk.Tx       = &MsgEthereumTx{}
-	_ core.Message = &MsgEthereumTx{}
+	_ sdk.Msg = &MsgEthereumTx{}
+	_ sdk.Tx  = &MsgEthereumTx{}
 	// _ ethtypes.TxData = &MsgEthereumTx{}
 )
 
@@ -133,11 +131,12 @@ func (msg *MsgEthereumTx) GetMsgs() []sdk.Msg {
 //
 // NOTE: This method panics if 'VerifySig' hasn't been called first.
 func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
-	sender := msg.GetFrom()
-	if sender.Empty() {
+	if IsZeroAddress(msg.From) {
 		panic("must use 'VerifySig' with a chain ID to get the signer")
 	}
-	return []sdk.AccAddress{sender}
+
+	signer := sdk.AccAddress(ethcmn.HexToAddress(msg.From).Bytes())
+	return []sdk.AccAddress{signer}
 }
 
 // GetSignBytes returns the Amino bytes of an Ethereum transaction message used
@@ -234,77 +233,6 @@ func (msg *MsgEthereumTx) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) error {
 	return nil
 }
 
-// VerifySig attempts to verify a Transaction's signature for a given chainID.
-// A derived address is returned upon success or an error if recovery fails.
-func (msg *MsgEthereumTx) VerifySig(chainID *big.Int) (ethcmn.Address, error) {
-	signer := ethtypes.NewEIP155Signer(chainID)
-
-	if msg.From != nil {
-		if msg.From.Signer == nil {
-			return msg.VerifySigHomestead()
-		}
-
-		// If the signer used to derive from in a previous call is not the same as
-		// used current, invalidate the cache.
-		fromSigner := ethtypes.NewEIP155Signer(new(big.Int).SetBytes(msg.From.Signer.chainId))
-		if signer.Equal(fromSigner) {
-			return ethcmn.BytesToAddress(msg.From.Address), nil
-		}
-	}
-
-	// do not allow recovery for transactions with an unprotected chainID
-	if chainID.Sign() == 0 {
-		return msg.VerifySigHomestead()
-	}
-
-	v, r, s := msg.RawSignatureValues()
-	chainIDMul := new(big.Int).Mul(chainID, big.NewInt(2))
-	V := new(big.Int).Sub(v, chainIDMul)
-	V.Sub(V, big8)
-
-	sigHash := msg.RLPSignBytes(chainID)
-	sender, err := recoverEthSig(r, s, V, sigHash)
-	if err != nil {
-		return ethcmn.Address{}, err
-	}
-
-	msg.From = &SigCache{
-		Signer: &EIP155Signer{
-			chainId:    chainID.Bytes(),
-			chainIdMul: new(big.Int).Mul(chainID, big.NewInt(2)).Bytes(),
-		},
-		Address: sender.Bytes(),
-	}
-
-	return sender, nil
-}
-
-// VerifySigHomestead attempts to verify a Transaction's signature in legacy way (no EIP155).
-// A derived address is returned upon success or an error if recovery fails.
-func (msg *MsgEthereumTx) VerifySigHomestead() (ethcmn.Address, error) {
-	// signer := ethtypes.HomesteadSigner{}
-	if msg.From != nil {
-		// If the signer used to derive from in a previous call is not the same as
-		// used current, invalidate the cache.
-		if msg.From.Signer == nil {
-			return ethcmn.BytesToAddress(msg.From.Address), nil
-		}
-	}
-
-	v, r, s := msg.RawSignatureValues()
-	sigHash := msg.RLPSignHomesteadBytes()
-	sender, err := recoverEthSig(r, s, v, sigHash)
-	if err != nil {
-		return ethcmn.Address{}, err
-	}
-
-	msg.From = &SigCache{
-		Address: sender.Bytes(),
-	}
-
-	return sender, nil
-}
-
 // GetGas implements the GasTx interface. It returns the GasLimit of the transaction.
 func (msg MsgEthereumTx) GetGas() uint64 {
 	return msg.Data.GasLimit
@@ -340,11 +268,39 @@ func (msg MsgEthereumTx) RawSignatureValues() (v, r, s *big.Int) {
 // GetFrom loads the ethereum sender address from the sigcache and returns an
 // sdk.AccAddress from its bytes
 func (msg *MsgEthereumTx) GetFrom() sdk.AccAddress {
-	if msg.From == nil {
+	if msg.From == "" {
 		return nil
 	}
 
-	return sdk.AccAddress(msg.From.Address)
+	return ethcmn.HexToAddress(msg.From).Bytes()
+}
+
+func (msg MsgEthereumTx) AsTransaction() *ethtypes.Transaction {
+	return ethtypes.NewTx(msg.Data.AsEthereumData())
+}
+
+// AsEthereumData returns an AccessListTx transaction data from the proto-formatted
+// TxData defined on the Cosmos EVM.
+func (data TxData) AsEthereumData() ethtypes.TxData {
+	var to *ethcmn.Address
+	if data.To != nil {
+		toAddr := ethcmn.BytesToAddress(data.To)
+		to = &toAddr
+	}
+
+	return &ethtypes.AccessListTx{
+		ChainID:    new(big.Int).SetBytes(data.ChainID),
+		Nonce:      data.Nonce,
+		GasPrice:   new(big.Int).SetBytes(data.GasPrice),
+		Gas:        data.GasLimit,
+		To:         to,
+		Value:      new(big.Int).SetBytes(data.Amount),
+		Data:       data.Input,
+		AccessList: *data.Accesses.ToEthAccessList(),
+		V:          new(big.Int).SetBytes(data.V),
+		R:          new(big.Int).SetBytes(data.R),
+		S:          new(big.Int).SetBytes(data.S),
+	}
 }
 
 // deriveChainID derives the chain id from the given v parameter

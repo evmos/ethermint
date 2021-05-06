@@ -20,12 +20,7 @@ import (
 // StateTransition defines data to transitionDB in evm
 type StateTransition struct {
 	// TxData fields
-	AccountNonce uint64
-	Price        *big.Int
-	GasLimit     uint64
-	Recipient    *common.Address
-	Amount       *big.Int
-	Payload      []byte
+	Message core.Message
 
 	ChainID  *big.Int
 	Csdb     *CommitStateDB
@@ -124,23 +119,23 @@ func (st *StateTransition) newEVM(
 // returning the evm execution result.
 // NOTE: State transition checks are run during AnteHandler execution.
 func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (resp *ExecutionResult, err error) {
-	contractCreation := st.Recipient == nil
+	contractCreation := st.Message.To() == nil
 
-	cost, err := core.IntrinsicGas(st.Payload, contractCreation, true, false)
+	cost, err := core.IntrinsicGas(st.Message.Data(), st.Message.AccessList(), true, false, true)
 	if err != nil {
 		err = sdkerrors.Wrap(err, "invalid intrinsic gas for transaction")
 		return nil, err
 	}
 
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
-	gasLimit := st.GasLimit - ctx.GasMeter().GasConsumed()
+	gasLimit := st.Message.Gas() - ctx.GasMeter().GasConsumed()
 
 	csdb := st.Csdb.WithContext(ctx)
 	if st.Simulate {
 		// gasLimit is set here because stdTxs incur gaskv charges in the ante handler, but for eth_call
 		// the cost needs to be the same as an Ethereum transaction sent through the web3 API
 		consumedGas := ctx.GasMeter().GasConsumed()
-		gasLimit = st.GasLimit - cost
+		gasLimit = st.Message.Gas() - cost
 		if consumedGas < cost {
 			// If Cosmos standard tx ante handler cost is less than EVM intrinsic cost
 			// gas must be consumed to match to accurately simulate an Ethereum transaction
@@ -178,7 +173,7 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 	// Get nonce of account outside of the EVM
 	currentNonce := csdb.GetNonce(st.Sender)
 	// Set nonce of sender account before evm state transition for usage in generating Create address
-	csdb.SetNonce(st.Sender, st.AccountNonce)
+	csdb.SetNonce(st.Sender, st.Message.Nonce())
 
 	// create contract or execute call
 	switch contractCreation {
@@ -187,11 +182,11 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 			return nil, ErrCreateDisabled
 		}
 
-		ret, contractAddress, leftOverGas, err = evm.Create(senderRef, st.Payload, gasLimit, st.Amount)
+		ret, contractAddress, leftOverGas, err = evm.Create(senderRef, st.Message.Data(), gasLimit, st.Message.Value())
 
 		if err != nil {
 			log.WithField("simulate", st.Simulate).
-				WithField("AccountNonce", st.AccountNonce).
+				WithField("nonce", st.Message.Nonce()).
 				WithField("contract", contractAddress.String()).
 				WithError(err).Warningln("evm contract creation failed")
 		}
@@ -215,13 +210,13 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 		// Increment the nonce for the next transaction	(just for evm state transition)
 		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
 
-		ret, leftOverGas, err = evm.Call(senderRef, *st.Recipient, st.Payload, gasLimit, st.Amount)
+		ret, leftOverGas, err = evm.Call(senderRef, *st.Message.To(), st.Message.Data(), gasLimit, st.Message.Value())
 
-		// fmt.Println("EVM CALL!!!", senderRef.Address().Hex(), (*st.Recipient).Hex(), gasLimit)
+		// fmt.Println("EVM CALL!!!", senderRef.Address().Hex(), (*st.Message.To()).Hex(), gasLimit)
 		// fmt.Println("EVM CALL RESULT", common.ToHex(ret), leftOverGas, err)
 
 		if err != nil {
-			log.WithField("recipient", st.Recipient.String()).
+			log.WithField("recipient", st.Message.To().String()).
 				WithError(err).Debugln("evm call failed")
 		}
 
@@ -305,7 +300,7 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 // instead of performing the modifications.
 func (st *StateTransition) StaticCall(ctx sdk.Context, config ChainConfig) ([]byte, error) {
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
-	gasLimit := st.GasLimit - ctx.GasMeter().GasConsumed()
+	gasLimit := st.Message.Gas() - ctx.GasMeter().GasConsumed()
 	csdb := st.Csdb.WithContext(ctx)
 
 	// This gas meter is set up to consume gas from gaskv during evm execution and be ignored
@@ -325,9 +320,9 @@ func (st *StateTransition) StaticCall(ctx sdk.Context, config ChainConfig) ([]by
 	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt(), config, params.ExtraEIPs)
 	senderRef := vm.AccountRef(st.Sender)
 
-	ret, _, err := evm.StaticCall(senderRef, *st.Recipient, st.Payload, gasLimit)
+	ret, _, err := evm.StaticCall(senderRef, *st.Message.To(), st.Message.Data(), gasLimit)
 
-	// fmt.Println("EVM STATIC CALL!!!", senderRef.Address().Hex(), (*st.Recipient).Hex(), st.Payload, gasLimit)
+	// fmt.Println("EVM STATIC CALL!!!", senderRef.Address().Hex(), (*st.Message.To()).Hex(), st.Message.Data(), gasLimit)
 	// fmt.Println("EVM STATIC CALL RESULT", common.ToHex(ret), leftOverGas, err)
 
 	return ret, err

@@ -232,8 +232,6 @@ message TxData {
   bytes r = 10;
   // s define the signature value
   bytes s = 11;
-  // hash defines the tx data hash, which is only used when marshaling to JSON.
-  string hash = 12 [(gogoproto.moretags) = "rlp:\"-\""];
 }
 
 message BytesList {

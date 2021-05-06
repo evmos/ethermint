@@ -355,18 +355,18 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *t
 	if err != nil {
 		return []byte{}, err
 	} else if len(simRes.Result.Log) > 0 {
-		var logs []sdkTxLogs
+		var logs []types.SDKTxLogs
 		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
 			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
 		}
 
-		if len(logs) > 0 && logs[0].Log == logRevertedFlag {
+		if len(logs) > 0 && logs[0].Log == types.LogRevertedFlag {
 			data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
 			if err != nil {
 				e.logger.WithError(err).Warningln("call result decoding failed")
 				return []byte{}, err
 			}
-			return []byte{}, errRevertedWith(data.Ret)
+			return []byte{}, types.ErrRevertedWith(data.Ret)
 		}
 	}
 
@@ -378,8 +378,6 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *t
 
 	return (hexutil.Bytes)(data.Ret), nil
 }
-
-var zeroAddr = common.Address{}
 
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
@@ -426,7 +424,7 @@ func (e *PublicEthAPI) doCall(
 	if args.From != nil {
 		fromAddr = sdk.AccAddress(args.From.Bytes())
 	} else {
-		fromAddr = sdk.AccAddress(zeroAddr.Bytes())
+		fromAddr = sdk.AccAddress(common.Address{}.Bytes())
 	}
 
 	_, seq, err := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, fromAddr)
@@ -441,12 +439,7 @@ func (e *PublicEthAPI) doCall(
 		return nil, err
 	}
 
-	msg.From = &evmtypes.SigCache{
-		Address: fromAddr.Bytes(),
-	}
-	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
-	}
+	msg.From = fromAddr.String()
 
 	// Create a TxBuilder
 	txBuilder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
@@ -511,20 +504,20 @@ func (e *PublicEthAPI) EstimateGas(args types.CallArgs) (hexutil.Uint64, error) 
 	}
 
 	if len(simRes.Result.Log) > 0 {
-		var logs []sdkTxLogs
+		var logs []types.SDKTxLogs
 		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
 			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
 			return 0, err
 		}
 
-		if len(logs) > 0 && logs[0].Log == logRevertedFlag {
+		if len(logs) > 0 && logs[0].Log == types.LogRevertedFlag {
 			data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
 			if err != nil {
 				e.logger.WithError(err).Warningln("call result decoding failed")
 				return 0, err
 			}
 
-			return 0, errRevertedWith(data.Ret)
+			return 0, types.ErrRevertedWith(data.Ret)
 		}
 	}
 
@@ -559,7 +552,7 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.RPCTransac
 		return nil, nil
 	}
 
-	return NewTransactionFromData(
+	return types.NewTransactionFromData(
 		resp.Receipt.Data,
 		common.BytesToAddress(resp.Receipt.From),
 		common.BytesToHash(resp.Receipt.Hash),
@@ -618,7 +611,7 @@ func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHa
 		}
 	}
 
-	return NewTransactionFromData(
+	return types.NewTransactionFromData(
 		receipt.Data,
 		common.BytesToAddress(receipt.From),
 		common.BytesToHash(receipt.Hash),
@@ -662,8 +655,8 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	}
 
 	toHex := common.Address{}
-	if len(tx.Receipt.Data.Recipient) > 0 {
-		toHex = common.BytesToAddress(tx.Receipt.Data.Recipient)
+	if len(tx.Receipt.Data.To) > 0 {
+		toHex = common.BytesToAddress(tx.Receipt.Data.To)
 	}
 
 	contractAddress := common.HexToAddress(tx.Receipt.Result.ContractAddress)
