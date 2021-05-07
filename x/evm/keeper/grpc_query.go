@@ -2,9 +2,12 @@ package keeper
 
 import (
 	"context"
+	"math/big"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -227,7 +230,6 @@ func (k Keeper) TxReceiptsByBlockHeight(c context.Context, req *types.QueryTxRec
 
 // TxReceiptsByBlockHash implements the Query/TxReceiptsByBlockHash gRPC method
 func (k Keeper) TxReceiptsByBlockHash(c context.Context, req *types.QueryTxReceiptsByBlockHashRequest) (*types.QueryTxReceiptsByBlockHashResponse, error) {
-
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -274,7 +276,6 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 // BlockBloom implements the Query/BlockBloom gRPC method
 func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
-
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -300,7 +301,6 @@ func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest)
 
 // Params implements the Query/Params gRPC method
 func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -313,55 +313,61 @@ func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types
 	}, nil
 }
 
-// // StaticCall implements Query/StaticCall gRPCP method
-// func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest) (*types.QueryStaticCallResponse, error) {
-// 	if req == nil {
-// 		return nil, status.Error(codes.InvalidArgument, "empty request")
-// 	}
+// StaticCall implements Query/StaticCall gRPCP method
+func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest) (*types.QueryStaticCallResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
 
-// 	ctx := sdk.UnwrapSDKContext(c)
+	ctx := sdk.UnwrapSDKContext(c)
 
-// 	// parse the chainID from a string to a base-10 integer
-// 	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	// parse the chainID from a string to a base-10 integer
+	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
-// 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-// 	ethHash := ethcmn.BytesToHash(txHash)
+	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
+	ethHash := ethcmn.BytesToHash(txHash)
 
-// 	var recipient *ethcmn.Address
-// 	if len(req.Address) > 0 {
-// 		addr := ethcmn.HexToAddress(req.Address)
-// 		recipient = &addr
-// 	}
+	var recipient *ethcmn.Address
+	if len(req.Address) > 0 {
+		addr := ethcmn.HexToAddress(req.Address)
+		recipient = &addr
+	}
 
-// 	so := k.GetOrNewStateObject(ctx, *recipient)
-// 	sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
+	so := k.GetOrNewStateObject(ctx, *recipient)
+	sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
 
-// 	st := &types.StateTransition{
-// 		AccountNonce: so.Nonce(),
-// 		Price:        new(big.Int).SetBytes(big.NewInt(0).Bytes()),
-// 		GasLimit:     100000000,
-// 		Recipient:    recipient,
-// 		Amount:       new(big.Int).SetBytes(big.NewInt(0).Bytes()),
-// 		Payload:      req.Input,
-// 		Csdb:         k.CommitStateDB.WithContext(ctx),
-// 		ChainID:      chainIDEpoch,
-// 		TxHash:       &ethHash,
-// 		Sender:       sender,
-// 		Simulate:     ctx.IsCheckTx(),
-// 	}
+	msg := types.NewMsgEthereumTx(
+		chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
+	)
 
-// 	config, found := k.GetChainConfig(ctx)
-// 	if !found {
-// 		return nil, types.ErrChainConfigNotFound
-// 	}
+	msg.From = sender.Hex()
 
-// 	ret, err := st.StaticCall(ctx, config)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	ethMsg, err := msg.AsMessage()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
-// 	return &types.QueryStaticCallResponse{Data: ret}, nil
-// }
+	st := &types.StateTransition{
+		Message:  ethMsg,
+		Csdb:     k.CommitStateDB.WithContext(ctx),
+		ChainID:  chainIDEpoch,
+		TxHash:   &ethHash,
+		Sender:   sender,
+		Simulate: ctx.IsCheckTx(),
+	}
+
+	config, found := k.GetChainConfig(ctx)
+	if !found {
+		return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
+	}
+
+	ret, err := st.StaticCall(ctx, config)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryStaticCallResponse{Data: ret}, nil
+}

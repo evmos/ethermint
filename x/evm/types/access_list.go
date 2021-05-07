@@ -135,6 +135,32 @@ func (al *accessList) DeleteAddress(address common.Address) {
 	delete(al.addresses, address)
 }
 
+// NewAccessList creates a new protobuf-compatible AccessList from an ethereum
+// core AccessList type
+func NewAccessList(ethAccessList *ethtypes.AccessList) *AccessList {
+	if ethAccessList == nil {
+		return nil
+	}
+
+	var tuples []AccessTuple
+	for _, tuple := range *ethAccessList {
+		storageKeys := make([]string, len(tuple.StorageKeys))
+
+		for i := range tuple.StorageKeys {
+			storageKeys[i] = tuple.StorageKeys[i].String()
+		}
+
+		tuples = append(tuples, AccessTuple{
+			Address:     tuple.Address.String(),
+			StorageKeys: storageKeys,
+		})
+	}
+
+	return &AccessList{
+		Tuples: tuples,
+	}
+}
+
 // ToEthAccessList is an utility function to convert the protobuf compatible
 // AccessList to eth core AccessList from go-ethereum
 func (al AccessList) ToEthAccessList() *ethtypes.AccessList {

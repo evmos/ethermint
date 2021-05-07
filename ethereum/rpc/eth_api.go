@@ -413,11 +413,10 @@ func (e *PublicEthAPI) doCall(
 		data = []byte(*args.Data)
 	}
 
-	// TODO:
-	// var accessList ethtypes.AccessList
-	// if args.AccessList != nil {
-	// 	accessList = *args.AccessList
-	// }
+	var accessList *ethtypes.AccessList
+	if args.AccessList != nil {
+		accessList = args.AccessList
+	}
 
 	// Set destination address for call
 	var fromAddr sdk.AccAddress
@@ -433,13 +432,12 @@ func (e *PublicEthAPI) doCall(
 	}
 
 	// Create new call message
-	// TODO: access list proto
-	msg := evmtypes.NewMsgEthereumTx(seq, args.To, value, gas, gasPrice, data)
+	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
+	msg.From = fromAddr.String()
+
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
-
-	msg.From = fromAddr.String()
 
 	// Create a TxBuilder
 	txBuilder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
