@@ -6,7 +6,6 @@ import (
 
 	log "github.com/xlab/suplog"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -15,12 +14,14 @@ import (
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethcore "github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // EVMKeeper defines the expected keeper interface used on the Eth AnteHandler
 type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
+	GetChainConfig(ctx sdk.Context) (evmtypes.ChainConfig, bool)
 }
 
 // EthSetupContextDecorator sets the infinite GasMeter in the Context and wraps
@@ -164,12 +165,14 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 
 // EthSigVerificationDecorator validates an ethereum signature
 type EthSigVerificationDecorator struct {
-	interfaceRegistry codectypes.InterfaceRegistry
+	evmKeeper EVMKeeper
 }
 
 // NewEthSigVerificationDecorator creates a new EthSigVerificationDecorator
-func NewEthSigVerificationDecorator() EthSigVerificationDecorator {
-	return EthSigVerificationDecorator{}
+func NewEthSigVerificationDecorator(ek EVMKeeper) EthSigVerificationDecorator {
+	return EthSigVerificationDecorator{
+		evmKeeper: ek,
+	}
 }
 
 // AnteHandle validates the signature and returns sender address
@@ -187,22 +190,34 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	// parse the chainID from a string to a base-10 integer
 	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
 	if err != nil {
-		fmt.Println("chain id parsing failed")
-
 		return ctx, err
 	}
 
-	// validate sender/signature
-	_, eip155Err := msgEthTx.VerifySig(chainIDEpoch)
-	if eip155Err != nil {
-		_, homesteadErr := msgEthTx.VerifySigHomestead()
-		if homesteadErr != nil {
-			errMsg := fmt.Sprintf("signature verification failed for both EIP155 and Homestead signers: (%s, %s)",
-				eip155Err.Error(), homesteadErr.Error())
-			err := sdkerrors.Wrap(sdkerrors.ErrUnauthorized, errMsg)
-			return ctx, err
-		}
+	config, found := esvd.evmKeeper.GetChainConfig(ctx)
+	if !found {
+		return ctx, evmtypes.ErrChainConfigNotFound
 	}
+
+	ethCfg := config.EthereumConfig(chainIDEpoch)
+
+	blockNum := big.NewInt(ctx.BlockHeight())
+	signer := ethtypes.MakeSigner(ethCfg, blockNum)
+	chainID := signer.ChainID()
+
+	if chainIDEpoch.Cmp(chainID) != 0 {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidChainID,
+			"EVM chain ID doesn't match the one derived from the signer (%s ≠ %s)",
+			chainIDEpoch.String(), chainID.String(),
+		)
+	}
+
+	sender, err := signer.Sender(msgEthTx.AsTransaction())
+	if err != nil {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
+	}
+
+	// set the sender
+	msgEthTx.From = sender.String()
 
 	// NOTE: when signature verification succeeds, a non-empty signer address can be
 	// retrieved from the transaction on the next AnteDecorators.
@@ -321,10 +336,10 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 	// if multiple transactions are submitted in succession with increasing nonces,
 	// all will be rejected except the first, since the first needs to be included in a block
 	// before the sequence increments
-	if msgEthTx.Data.AccountNonce != seq {
+	if msgEthTx.Data.Nonce != seq {
 		return ctx, sdkerrors.Wrapf(
 			sdkerrors.ErrInvalidSequence,
-			"invalid nonce; got %d, expected %d", msgEthTx.Data.AccountNonce, seq,
+			"invalid nonce; got %d, expected %d", msgEthTx.Data.Nonce, seq,
 		)
 	}
 
@@ -381,7 +396,13 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	gasLimit := msgEthTx.GetGas()
-	gas, err := ethcore.IntrinsicGas(msgEthTx.Data.Payload, msgEthTx.To() == nil, true, false)
+
+	var accessList ethtypes.AccessList
+	if msgEthTx.Data.Accesses != nil {
+		accessList = *msgEthTx.Data.Accesses.ToEthAccessList()
+	}
+
+	gas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, msgEthTx.To() == nil, true, false)
 	if err != nil {
 		return ctx, sdkerrors.Wrap(err, "failed to compute intrinsic gas cost")
 	}
@@ -394,7 +415,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// Charge sender for gas up to limit
 	if gasLimit != 0 {
 		// Cost calculates the fees paid to validators based on gas limit and price
-		cost := new(big.Int).Mul(new(big.Int).SetBytes(msgEthTx.Data.Price), new(big.Int).SetUint64(gasLimit))
+		cost := new(big.Int).Mul(new(big.Int).SetBytes(msgEthTx.Data.GasPrice), new(big.Int).SetUint64(gasLimit))
 
 		evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
 

@@ -102,10 +102,10 @@ message ChainConfig {
     (gogoproto.moretags)   = "yaml:\"muir_glacier_block\"",
     (gogoproto.nullable)   = false
   ];
-  // YOLO v2: https://github.com/ethereum/EIPs/pull/2657 (Ephemeral testnet)
-  string yolo_v2_block = 13 [
+  // YOLO v3: Gas repricings
+  string yolo_v3_block = 13 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"yolo_v2_block\"",
+    (gogoproto.moretags)   = "yaml:\"yolo_v3_block\"",
     (gogoproto.nullable)   = false
   ];
   // EWASM switch block (< 0 no fork, 0 = already activated)
@@ -113,6 +113,12 @@ message ChainConfig {
     (gogoproto.customname) = "EWASMBlock",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags)   = "yaml:\"ewasm_block\"",
+    (gogoproto.nullable)   = false
+  ];
+  // Catalyst switch block (< 0 = no fork, 0 = already on catalyst)
+  string catalyst_block = 15 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags)   = "yaml:\"catalyst_block\"",
     (gogoproto.nullable)   = false
   ];
 }
@@ -173,8 +179,8 @@ message TxReceipt {
   TxData   data        = 3;
   TxResult result      = 4;
   uint64   index       = 5;
-  uint64   blockHeight = 6;
-  bytes    blockHash   = 7;
+  uint64   block_height = 6;
+  bytes    block_hash   = 7;
 }
 
 // TxResult stores results of Tx execution.
@@ -203,29 +209,50 @@ message TxResult {
 message TxData {
   option (gogoproto.goproto_getters) = false;
 
+  // destination EVM chain ID
+  bytes chain_id = 1 [
+    (gogoproto.customname) = "ChainID",
+    (gogoproto.jsontag) = "chainID"
+  ];
   // nonce corresponds to the account nonce (transaction sequence).
-  uint64 nonce = 1 [(gogoproto.customname) = "AccountNonce"];
+  uint64 nonce = 2;
   // price defines the unsigned integer value of the gas price in bytes.
-  bytes price = 2 [(gogoproto.jsontag) = "gasPrice"];
+  bytes gas_price = 3 [(gogoproto.customname) = "GasPrice"];
   // gas defines the gas limit defined for the transaction.
-  uint64 gas = 3 [(gogoproto.customname) = "GasLimit"];
-  bytes  to  = 4 [(gogoproto.customname) = "Recipient"];
+  uint64 gas = 4 [(gogoproto.customname) = "GasLimit"];
+  bytes  to  = 5;
   // value defines the unsigned integer value of the transaction amount.
-  bytes value = 5 [(gogoproto.customname) = "Amount"];
+  bytes value = 6 [(gogoproto.customname) = "Amount"];
   // input defines the data payload bytes of the transaction.
-  bytes input = 6 [(gogoproto.customname) = "Payload"];
+  bytes input = 7;
+  AccessList accesses = 8 [(gogoproto.jsontag) = "accessList"];
   // v defines the signature value
-  bytes v = 7;
+  bytes v = 9;
   // r defines the signature value
-  bytes r = 8;
+  bytes r = 10;
   // s define the signature value
-  bytes s = 9;
-  // hash defines the tx data hash, which is only used when marshaling to JSON.
-  string hash = 10 [(gogoproto.moretags) = "rlp:\"-\""];
+  bytes s = 11;
 }
 
 message BytesList {
   option (gogoproto.goproto_getters) = false;
 
   repeated bytes bytes = 1;
+}
+
+// AccessList is an EIP-2930 access list defined as a proto message.
+message AccessList {
+  // access list tuples
+  repeated AccessTuple tuples = 1 [(gogoproto.nullable) = false];
+}
+
+
+// AccessTuple is the element type of an access list.
+message AccessTuple {
+  option (gogoproto.goproto_getters) = false;
+
+  // hex formatted ethereum address
+  string    address = 1;
+  // hex formatted hashes of the storage keys
+	repeated  string storage_keys = 2 [(gogoproto.jsontag) = "storageKeys"];
 }

@@ -55,9 +55,9 @@ func (suite *AnteTestSuite) TestValidEthTx() {
 	to := ethcmn.BytesToAddress(addr2.Bytes())
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 22000, gas, []byte("test"))
+	ethMsg := evmtypes.NewMsgEthereumTx(suite.chainID, 0, &to, amt, 22000, gas, []byte("test"), nil)
 
-	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
+	tx, err := suite.newTestEthTx(ethMsg, priv1)
 	suite.Require().NoError(err)
 	requireValidTx(suite.T(), suite.anteHandler, suite.ctx, tx, false)
 }
@@ -182,9 +182,9 @@ func (suite *AnteTestSuite) TestEthInvalidSig() {
 	to := ethcmn.BytesToAddress(addr2.Bytes())
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 22000, gas, []byte("test"))
+	ethMsg := evmtypes.NewMsgEthereumTx(suite.chainID, 0, &to, amt, 22000, gas, []byte("test"), nil)
 
-	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
+	tx, err := suite.newTestEthTx(ethMsg, priv1)
 	suite.Require().NoError(err)
 
 	ctx := suite.ctx.WithChainID("ethermint-4")
@@ -209,9 +209,9 @@ func (suite *AnteTestSuite) TestEthInvalidNonce() {
 	to := ethcmn.BytesToAddress(addr2.Bytes())
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 22000, gas, []byte("test"))
+	ethMsg := evmtypes.NewMsgEthereumTx(suite.chainID, 0, &to, amt, 22000, gas, []byte("test"), nil)
 
-	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
+	tx, err := suite.newTestEthTx(ethMsg, priv1)
 	suite.Require().NoError(err)
 	requireInvalidTx(suite.T(), suite.anteHandler, suite.ctx, tx, false)
 }
@@ -229,9 +229,9 @@ func (suite *AnteTestSuite) TestEthInsufficientBalance() {
 	to := ethcmn.BytesToAddress(addr2.Bytes())
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 22000, gas, []byte("test"))
+	ethMsg := evmtypes.NewMsgEthereumTx(suite.chainID, 0, &to, amt, 22000, gas, []byte("test"), nil)
 
-	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
+	tx, err := suite.newTestEthTx(ethMsg, priv1)
 	suite.Require().NoError(err)
 	requireInvalidTx(suite.T(), suite.anteHandler, suite.ctx, tx, false)
 }
@@ -252,9 +252,9 @@ func (suite *AnteTestSuite) TestEthInvalidIntrinsicGas() {
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
 	gasLimit := uint64(1000)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, gasLimit, gas, []byte("test"))
+	ethMsg := evmtypes.NewMsgEthereumTx(suite.chainID, 0, &to, amt, gasLimit, gas, []byte("test"), nil)
 
-	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
+	tx, err := suite.newTestEthTx(ethMsg, priv1)
 	suite.Require().NoError(err)
 	requireInvalidTx(suite.T(), suite.anteHandler, suite.ctx.WithIsCheckTx(true), tx, false)
 }
@@ -279,9 +279,9 @@ func (suite *AnteTestSuite) TestEthInvalidMempoolFees() {
 	to := ethcmn.BytesToAddress(addr2.Bytes())
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 22000, gas, []byte("payload"))
+	ethMsg := evmtypes.NewMsgEthereumTx(suite.chainID, 0, &to, amt, 22000, gas, []byte("payload"), nil)
 
-	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
+	tx, err := suite.newTestEthTx(ethMsg, priv1)
 	suite.Require().NoError(err)
 	requireInvalidTx(suite.T(), suite.anteHandler, suite.ctx, tx, false)
 }
@@ -301,9 +301,9 @@ func (suite *AnteTestSuite) TestEthInvalidChainID() {
 	to := ethcmn.BytesToAddress(addr2.Bytes())
 	amt := big.NewInt(32)
 	gas := big.NewInt(20)
-	ethMsg := evmtypes.NewMsgEthereumTx(0, &to, amt, 22000, gas, []byte("test"))
+	ethMsg := evmtypes.NewMsgEthereumTx(suite.chainID, 0, &to, amt, 22000, gas, []byte("test"), nil)
 
-	tx, err := newTestEthTx(suite.ctx, ethMsg, priv1)
+	tx, err := suite.newTestEthTx(ethMsg, priv1)
 	suite.Require().NoError(err)
 
 	ctx := suite.ctx.WithChainID("bad-chain-id")

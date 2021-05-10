@@ -33,8 +33,9 @@ func TestChainConfigValidate(t *testing.T) {
 				PetersburgBlock:     sdk.OneInt(),
 				IstanbulBlock:       sdk.OneInt(),
 				MuirGlacierBlock:    sdk.OneInt(),
-				YoloV2Block:         sdk.OneInt(),
+				YoloV3Block:         sdk.OneInt(),
 				EWASMBlock:          sdk.OneInt(),
+				CatalystBlock:       sdk.OneInt(),
 			},
 			false,
 		},
@@ -189,7 +190,7 @@ func TestChainConfigValidate(t *testing.T) {
 				PetersburgBlock:     sdk.OneInt(),
 				IstanbulBlock:       sdk.OneInt(),
 				MuirGlacierBlock:    sdk.OneInt(),
-				YoloV2Block:         sdk.Int{},
+				YoloV3Block:         sdk.Int{},
 			},
 			true,
 		},
@@ -207,8 +208,28 @@ func TestChainConfigValidate(t *testing.T) {
 				PetersburgBlock:     sdk.OneInt(),
 				IstanbulBlock:       sdk.OneInt(),
 				MuirGlacierBlock:    sdk.OneInt(),
-				YoloV2Block:         sdk.OneInt(),
+				YoloV3Block:         sdk.OneInt(),
 				EWASMBlock:          sdk.Int{},
+			},
+			true,
+		},
+		{
+			"invalid CatalystBlock",
+			ChainConfig{
+				HomesteadBlock:      sdk.OneInt(),
+				DAOForkBlock:        sdk.OneInt(),
+				EIP150Block:         sdk.OneInt(),
+				EIP150Hash:          defaultEIP150Hash,
+				EIP155Block:         sdk.OneInt(),
+				EIP158Block:         sdk.OneInt(),
+				ByzantiumBlock:      sdk.OneInt(),
+				ConstantinopleBlock: sdk.OneInt(),
+				PetersburgBlock:     sdk.OneInt(),
+				IstanbulBlock:       sdk.OneInt(),
+				MuirGlacierBlock:    sdk.OneInt(),
+				YoloV3Block:         sdk.OneInt(),
+				EWASMBlock:          sdk.OneInt(),
+				CatalystBlock:       sdk.Int{},
 			},
 			true,
 		},
@@ -226,7 +247,7 @@ func TestChainConfigValidate(t *testing.T) {
 }
 
 func TestChainConfig_String(t *testing.T) {
-	configStr := `homestead_block:"0" dao_fork_block:"0" dao_fork_support:true eip150_block:"0" eip150_hash:"0x0000000000000000000000000000000000000000000000000000000000000000" eip155_block:"0" eip158_block:"0" byzantium_block:"0" constantinople_block:"0" petersburg_block:"0" istanbul_block:"-1" muir_glacier_block:"-1" yolo_v2_block:"-1" ewasm_block:"-1" `
+	configStr := `homestead_block:"0" dao_fork_block:"0" dao_fork_support:true eip150_block:"0" eip150_hash:"0x0000000000000000000000000000000000000000000000000000000000000000" eip155_block:"0" eip158_block:"0" byzantium_block:"0" constantinople_block:"0" petersburg_block:"0" istanbul_block:"-1" muir_glacier_block:"-1" yolo_v3_block:"-1" ewasm_block:"-1" catalyst_block:"-1" `
 	config := DefaultChainConfig()
 	require.Equal(t, configStr, config.String())
 }

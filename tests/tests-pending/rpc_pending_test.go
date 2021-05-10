@@ -218,7 +218,7 @@ func TestEth_Pending_GetBlockByNumber(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
-	var pendingTx []*rpctypes.Transaction
+	var pendingTx []*rpctypes.RPCTransaction
 	resPendingTxs := util.Call(t, "eth_pendingTransactions", []string{})
 	err := json.Unmarshal(resPendingTxs.Result, &pendingTx)
 	require.NoError(t, err)

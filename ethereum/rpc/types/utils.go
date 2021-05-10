@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 
@@ -39,43 +40,6 @@ func RawTxToEthTx(clientCtx client.Context, bz []byte) (*evmtypes.MsgEthereumTx,
 	return ethTx, nil
 }
 
-// NewTransaction returns a transaction that will serialize to the RPC
-// representation, with the given location metadata set (if available).
-func NewTransaction(tx *evmtypes.MsgEthereumTx, txHash, blockHash common.Hash, blockNumber, index uint64) (*Transaction, error) {
-	// Verify signature and retrieve sender address
-	from, err := tx.VerifySig(tx.ChainID())
-	if err != nil {
-		return nil, err
-	}
-
-	gasPrice := new(big.Int).SetBytes(tx.Data.Price)
-	value := new(big.Int).SetBytes(tx.Data.Amount)
-
-	rpcTx := &Transaction{
-		From:     from,
-		Gas:      hexutil.Uint64(tx.Data.GasLimit),
-		GasPrice: (*hexutil.Big)(gasPrice),
-		//GasPrice: (*hexutil.Big)(tx.Data.Price.BigInt()),
-		Hash:  txHash,
-		Input: hexutil.Bytes(tx.Data.Payload),
-		Nonce: hexutil.Uint64(tx.Data.AccountNonce),
-		To:    tx.To(),
-		Value: (*hexutil.Big)(value),
-		//Value:    (*hexutil.Big)(tx.Data.Amount.BigInt()),
-		V: (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.V)),
-		R: (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.R)),
-		S: (*hexutil.Big)(new(big.Int).SetBytes(tx.Data.S)),
-	}
-
-	if blockHash != (common.Hash{}) {
-		rpcTx.BlockHash = &blockHash
-		rpcTx.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
-		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
-	}
-
-	return rpcTx, nil
-}
-
 // EthBlockFromTendermint returns a JSON-RPC compatible Ethereum blockfrom a given Tendermint block.
 func EthBlockFromTendermint(clientCtx client.Context, queryClient *QueryClient, block *tmtypes.Block) (map[string]interface{}, error) {
 	gasLimit, err := BlockMaxGasFromConsensusParams(context.Background(), clientCtx)
@@ -98,6 +62,49 @@ func EthBlockFromTendermint(clientCtx client.Context, queryClient *QueryClient, 
 	bloom := ethtypes.BytesToBloom(res.Bloom)
 
 	return FormatBlock(block.Header, block.Size(), gasLimit, gasUsed, transactions, bloom), nil
+}
+
+// NewTransaction returns a transaction that will serialize to the RPC
+// representation, with the given location metadata set (if available).
+func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
+	// Determine the signer. For replay-protected transactions, use the most permissive
+	// signer, because we assume that signers are backwards-compatible with old
+	// transactions. For non-protected transactions, the homestead signer signer is used
+	// because the return value of ChainId is zero for those transactions.
+	var signer ethtypes.Signer
+	if tx.Protected() {
+		signer = ethtypes.LatestSignerForChainID(tx.ChainId())
+	} else {
+		signer = ethtypes.HomesteadSigner{}
+	}
+
+	from, _ := ethtypes.Sender(signer, tx)
+	v, r, s := tx.RawSignatureValues()
+	result := &RPCTransaction{
+		Type:     hexutil.Uint64(tx.Type()),
+		From:     from,
+		Gas:      hexutil.Uint64(tx.Gas()),
+		GasPrice: (*hexutil.Big)(tx.GasPrice()),
+		Hash:     tx.Hash(),
+		Input:    hexutil.Bytes(tx.Data()),
+		Nonce:    hexutil.Uint64(tx.Nonce()),
+		To:       tx.To(),
+		Value:    (*hexutil.Big)(tx.Value()),
+		V:        (*hexutil.Big)(v),
+		R:        (*hexutil.Big)(r),
+		S:        (*hexutil.Big)(s),
+	}
+	if blockHash != (common.Hash{}) {
+		result.BlockHash = &blockHash
+		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		result.TransactionIndex = (*hexutil.Uint64)(&index)
+	}
+	if tx.Type() == ethtypes.AccessListTxType {
+		al := tx.AccessList()
+		result.Accesses = &al
+		result.ChainID = (*hexutil.Big)(tx.ChainId())
+	}
+	return result
 }
 
 // EthHeaderFromTendermint is an util function that returns an Ethereum Header
@@ -265,4 +272,95 @@ func GetBlockCumulativeGas(clientCtx client.Context, block *tmtypes.Block, idx i
 		}
 	}
 	return gasUsed
+}
+
+type DataError interface {
+	Error() string          // returns the message
+	ErrorData() interface{} // returns the error data
+}
+
+type dataError struct {
+	msg  string
+	data string
+}
+
+func (d *dataError) Error() string {
+	return d.msg
+}
+
+func (d *dataError) ErrorData() interface{} {
+	return d.data
+}
+
+type SDKTxLogs struct {
+	Log string `json:"log"`
+}
+
+const LogRevertedFlag = "transaction reverted"
+
+func ErrRevertedWith(data []byte) DataError {
+	return &dataError{
+		msg:  "VM execution error.",
+		data: fmt.Sprintf("0x%s", hex.EncodeToString(data)),
+	}
+}
+
+// NewTransactionFromData returns a transaction that will serialize to the RPC
+// representation, with the given location metadata set (if available).
+func NewTransactionFromData(
+	txData *evmtypes.TxData,
+	from common.Address,
+	txHash, blockHash common.Hash,
+	blockNumber, index uint64,
+) (*RPCTransaction, error) {
+
+	var to *common.Address
+	if len(txData.To) > 0 {
+		recipient := common.BytesToAddress(txData.To)
+		to = &recipient
+	}
+
+	rpcTx := &RPCTransaction{
+		From:     from,
+		Gas:      hexutil.Uint64(txData.GasLimit),
+		GasPrice: (*hexutil.Big)(new(big.Int).SetBytes(txData.GasPrice)),
+		Hash:     txHash,
+		Input:    hexutil.Bytes(txData.Input),
+		Nonce:    hexutil.Uint64(txData.Nonce),
+		To:       to,
+		Value:    (*hexutil.Big)(new(big.Int).SetBytes(txData.Amount)),
+		V:        (*hexutil.Big)(new(big.Int).SetBytes(txData.V)),
+		R:        (*hexutil.Big)(new(big.Int).SetBytes(txData.R)),
+		S:        (*hexutil.Big)(new(big.Int).SetBytes(txData.S)),
+	}
+	if rpcTx.To == nil {
+		addr := common.Address{}
+		rpcTx.To = &addr
+	}
+
+	if blockHash != (common.Hash{}) {
+		rpcTx.BlockHash = &blockHash
+		rpcTx.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
+	}
+
+	return rpcTx, nil
+}
+
+var zeroHash = hexutil.Bytes(make([]byte, 32))
+
+func hashOrZero(data []byte) hexutil.Bytes {
+	if len(data) == 0 {
+		return zeroHash
+	}
+
+	return hexutil.Bytes(data)
+}
+
+func bigOrZero(i *big.Int) *hexutil.Big {
+	if i == nil {
+		return new(hexutil.Big)
+	}
+
+	return (*hexutil.Big)(i)
 }

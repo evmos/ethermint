@@ -14,10 +14,6 @@ import (
 	"github.com/cosmos/ethermint/crypto/hd"
 )
 
-const (
-	flagDryRun = "dry-run"
-)
-
 // KeyCommands registers a sub-tree of commands to interact with
 // local private key storage.
 func KeyCommands(defaultNodeHome string) *cobra.Command {

@@ -34,7 +34,7 @@ type Backend interface {
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 
 	// Used by pending transaction filter
-	PendingTransactions() ([]*types.Transaction, error)
+	PendingTransactions() ([]*types.RPCTransaction, error)
 
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
@@ -151,7 +151,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		hash := common.BytesToHash(receipt.Hash)
 		if fullTx {
 			// full txs from receipts
-			tx, err := NewTransactionFromData(
+			tx, err := types.NewTransactionFromData(
 				receipt.Data,
 				common.BytesToAddress(receipt.From),
 				hash,
@@ -182,7 +182,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	}
 
 	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
-	formattedBlock := FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, gasUsed, ethRPCTxs, bloom)
+	formattedBlock := types.FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, gasUsed, ethRPCTxs, bloom)
 
 	return formattedBlock, nil
 }
@@ -226,7 +226,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		return nil, err
 	}
 
-	ethHeader := EthHeaderFromTendermint(resBlock.Block.Header)
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
 	ethHeader.Bloom = ethtypes.BytesToBloom(res.Bloom)
 	return ethHeader, nil
 }
@@ -249,7 +249,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
-	ethHeader := EthHeaderFromTendermint(resBlock.Block.Header)
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
 	ethHeader.Bloom = ethtypes.BytesToBloom(res.Bloom)
 	return ethHeader, nil
 }
@@ -273,8 +273,8 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
-func (e *EVMBackend) PendingTransactions() ([]*types.Transaction, error) {
-	return []*types.Transaction{}, nil
+func (e *EVMBackend) PendingTransactions() ([]*types.RPCTransaction, error) {
+	return []*types.RPCTransaction{}, nil
 }
 
 // GetLogs returns all the logs from all the ethereum transactions in a block.

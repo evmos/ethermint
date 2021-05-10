@@ -349,24 +349,24 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 }
 
 // Call performs a raw contract call.
-func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *map[common.Address]types.Account) (hexutil.Bytes, error) {
+func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *types.StateOverride) (hexutil.Bytes, error) {
 	//e.logger.Debugln("eth_call", "args", args, "block number", blockNr)
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
 	} else if len(simRes.Result.Log) > 0 {
-		var logs []sdkTxLogs
+		var logs []types.SDKTxLogs
 		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
 			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
 		}
 
-		if len(logs) > 0 && logs[0].Log == logRevertedFlag {
+		if len(logs) > 0 && logs[0].Log == types.LogRevertedFlag {
 			data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
 			if err != nil {
 				e.logger.WithError(err).Warningln("call result decoding failed")
 				return []byte{}, err
 			}
-			return []byte{}, errRevertedWith(data.Ret)
+			return []byte{}, types.ErrRevertedWith(data.Ret)
 		}
 	}
 
@@ -378,8 +378,6 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *m
 
 	return (hexutil.Bytes)(data.Ret), nil
 }
-
-var zeroAddr = common.Address{}
 
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
@@ -415,12 +413,17 @@ func (e *PublicEthAPI) doCall(
 		data = []byte(*args.Data)
 	}
 
+	var accessList *ethtypes.AccessList
+	if args.AccessList != nil {
+		accessList = args.AccessList
+	}
+
 	// Set destination address for call
 	var fromAddr sdk.AccAddress
 	if args.From != nil {
 		fromAddr = sdk.AccAddress(args.From.Bytes())
 	} else {
-		fromAddr = sdk.AccAddress(zeroAddr.Bytes())
+		fromAddr = sdk.AccAddress(common.Address{}.Bytes())
 	}
 
 	_, seq, err := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, fromAddr)
@@ -429,14 +432,9 @@ func (e *PublicEthAPI) doCall(
 	}
 
 	// Create new call message
-	msg := evmtypes.NewMsgEthereumTx(seq, args.To, value, gas, gasPrice, data)
-	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
-	}
+	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
+	msg.From = fromAddr.String()
 
-	msg.From = &evmtypes.SigCache{
-		Address: fromAddr.Bytes(),
-	}
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
@@ -504,20 +502,20 @@ func (e *PublicEthAPI) EstimateGas(args types.CallArgs) (hexutil.Uint64, error) 
 	}
 
 	if len(simRes.Result.Log) > 0 {
-		var logs []sdkTxLogs
+		var logs []types.SDKTxLogs
 		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
 			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
 			return 0, err
 		}
 
-		if len(logs) > 0 && logs[0].Log == logRevertedFlag {
+		if len(logs) > 0 && logs[0].Log == types.LogRevertedFlag {
 			data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
 			if err != nil {
 				e.logger.WithError(err).Warningln("call result decoding failed")
 				return 0, err
 			}
 
-			return 0, errRevertedWith(data.Ret)
+			return 0, types.ErrRevertedWith(data.Ret)
 		}
 	}
 
@@ -541,7 +539,7 @@ func (e *PublicEthAPI) GetBlockByNumber(ethBlockNum types.BlockNumber, fullTx bo
 }
 
 // GetTransactionByHash returns the transaction identified by hash.
-func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.Transaction, error) {
+func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHash", "hash", hash.Hex())
 
 	resp, err := e.queryClient.TxReceipt(e.ctx, &evmtypes.QueryTxReceiptRequest{
@@ -552,7 +550,7 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.Transactio
 		return nil, nil
 	}
 
-	return NewTransactionFromData(
+	return types.NewTransactionFromData(
 		resp.Receipt.Data,
 		common.BytesToAddress(resp.Receipt.From),
 		common.BytesToHash(resp.Receipt.Hash),
@@ -563,7 +561,7 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.Transactio
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
-func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types.Transaction, error) {
+func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHashAndIndex", "hash", hash.Hex(), "index", idx)
 
 	resp, err := e.queryClient.TxReceiptsByBlockHash(e.ctx, &evmtypes.QueryTxReceiptsByBlockHashRequest{
@@ -578,7 +576,7 @@ func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx h
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
-func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum types.BlockNumber, idx hexutil.Uint) (*types.Transaction, error) {
+func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum types.BlockNumber, idx hexutil.Uint) (*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
 
 	resp, err := e.queryClient.TxReceiptsByBlockHeight(e.ctx, &evmtypes.QueryTxReceiptsByBlockHeightRequest{
@@ -592,7 +590,7 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum types.BlockN
 	return e.getReceiptByIndex(resp.Receipts, common.Hash{}, idx)
 }
 
-func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHash common.Hash, idx hexutil.Uint) (*types.Transaction, error) {
+func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHash common.Hash, idx hexutil.Uint) (*types.RPCTransaction, error) {
 	// return if index out of bounds
 	if uint64(idx) >= uint64(len(receipts)) {
 		return nil, nil
@@ -611,7 +609,7 @@ func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHa
 		}
 	}
 
-	return NewTransactionFromData(
+	return types.NewTransactionFromData(
 		receipt.Data,
 		common.BytesToAddress(receipt.From),
 		common.BytesToHash(receipt.Hash),
@@ -655,8 +653,8 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	}
 
 	toHex := common.Address{}
-	if len(tx.Receipt.Data.Recipient) > 0 {
-		toHex = common.BytesToAddress(tx.Receipt.Data.Recipient)
+	if len(tx.Receipt.Data.To) > 0 {
+		toHex = common.BytesToAddress(tx.Receipt.Data.To)
 	}
 
 	contractAddress := common.HexToAddress(tx.Receipt.Result.ContractAddress)
@@ -690,7 +688,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
-func (e *PublicEthAPI) PendingTransactions() ([]*types.Transaction, error) {
+func (e *PublicEthAPI) PendingTransactions() ([]*types.RPCTransaction, error) {
 	e.logger.Debugln("eth_getPendingTransactions")
 	return e.backend.PendingTransactions()
 }

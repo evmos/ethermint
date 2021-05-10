@@ -134,5 +134,9 @@ func IsEmptyHash(hash string) bool {
 
 // IsZeroAddress returns true if the address corresponds to an empty ethereum hex address.
 func IsZeroAddress(address string) bool {
+	if address == "" {
+		return true
+	}
+
 	return bytes.Equal(ethcmn.HexToAddress(address).Bytes(), ethcmn.Address{}.Bytes())
 }

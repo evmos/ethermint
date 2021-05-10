@@ -157,7 +157,7 @@ address = "{{ .GRPC.Address }}"
 enable = {{ .EVMRPC.Enable }}
 
 # Address defines the EVM RPC HTTP server address to bind to.
-address = "{{ .EVMRPC.RpcAddress }}"
+address = "{{ .EVMRPC.RPCAddress }}"
 
 # Address defines the EVM WebSocket server address to bind to.
 ws-address = "{{ .EVMRPC.WsAddress }}"

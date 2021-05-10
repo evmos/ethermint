@@ -294,6 +294,32 @@ func (csdb *CommitStateDB) SlotInAccessList(addr ethcmn.Address, slot ethcmn.Has
 	return csdb.accessList.Contains(addr, slot)
 }
 
+// PrepareAccessList handles the preparatory steps for executing a state transition with
+// regards to both EIP-2929 and EIP-2930:
+//
+// - Add sender to access list (2929)
+// - Add destination to access list (2929)
+// - Add precompiles to access list (2929)
+// - Add the contents of the optional tx access list (2930)
+//
+// This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
+func (csdb *CommitStateDB) PrepareAccessList(sender ethcmn.Address, dst *ethcmn.Address, precompiles []ethcmn.Address, list ethtypes.AccessList) {
+	csdb.AddAddressToAccessList(sender)
+	if dst != nil {
+		csdb.AddAddressToAccessList(*dst)
+		// If it's a create-tx, the destination will be added inside evm.create
+	}
+	for _, addr := range precompiles {
+		csdb.AddAddressToAccessList(addr)
+	}
+	for _, el := range list {
+		csdb.AddAddressToAccessList(el.Address)
+		for _, key := range el.StorageKeys {
+			csdb.AddSlotToAccessList(el.Address, key)
+		}
+	}
+}
+
 // ----------------------------------------------------------------------------
 // Getters
 // ----------------------------------------------------------------------------

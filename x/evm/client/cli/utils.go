@@ -46,6 +46,7 @@ func formatKeyToHash(key string) string {
 	return ethkey.Hex()
 }
 
+// nolint: deadcode
 func cosmosAddressFromArg(addr string) (sdk.AccAddress, error) {
 	if strings.HasPrefix(addr, sdk.GetConfig().GetBech32AccountAddrPrefix()) {
 		// Check to see if address is Cosmos bech32 formatted

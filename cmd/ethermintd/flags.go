@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -13,8 +12,7 @@ import (
 )
 
 const (
-	flagLong     = "long"
-	flagLogLevel = "log_level"
+	flagLong = "long"
 )
 
 func init() {
@@ -79,12 +77,4 @@ func addTxFlags(cmd *cobra.Command) *cobra.Command {
 
 	cmd.MarkFlagRequired(flags.FlagChainID)
 	return cmd
-}
-
-func duration(s string, defaults time.Duration) time.Duration {
-	dur, err := time.ParseDuration(s)
-	if err != nil {
-		dur = defaults
-	}
-	return dur
 }

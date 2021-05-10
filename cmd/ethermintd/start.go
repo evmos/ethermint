@@ -276,13 +276,13 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		})
 
 		httpSrv = &http.Server{
-			Addr:    config.EVMRPC.RpcAddress,
+			Addr:    config.EVMRPC.RPCAddress,
 			Handler: handlerWithCors.Handler(r),
 		}
 
 		errCh := make(chan error)
 		go func() {
-			log.Infoln("Starting EVM RPC server on", config.EVMRPC.RpcAddress)
+			log.Infoln("Starting EVM RPC server on", config.EVMRPC.RPCAddress)
 			if err := httpSrv.ListenAndServe(); err != nil {
 				if err == http.ErrServerClosed {
 					close(httpSrvDone)
@@ -302,7 +302,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 
 		log.Infoln("Starting EVM WebSocket server on", config.EVMRPC.WsAddress)
-		_, port, _ := net.SplitHostPort(config.EVMRPC.RpcAddress)
+		_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
 
 		// allocate separate WS connection to Tendermint
 		tmWsClient = connectTmWS(tmRPCAddr, tmEndpoint)

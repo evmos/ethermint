@@ -250,7 +250,7 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 					continue
 				}
 
-				header := EthHeaderFromTendermint(data.Header)
+				header := types.EthHeaderFromTendermint(data.Header)
 				api.filtersMu.Lock()
 				if f, found := api.filters[headerSub.ID()]; found {
 					f.hashes = append(f.hashes, header.Hash())
@@ -303,7 +303,7 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 					continue
 				}
 
-				header := EthHeaderFromTendermint(data.Header)
+				header := types.EthHeaderFromTendermint(data.Header)
 				err = notifier.Notify(rpcSub.ID, header)
 				if err != nil {
 					headersSub.err <- err

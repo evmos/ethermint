@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	"github.com/cosmos/ethermint/ethereum/rpc/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
@@ -373,7 +374,7 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 					continue
 				}
 
-				header := EthHeaderFromTendermint(data.Header)
+				header := types.EthHeaderFromTendermint(data.Header)
 
 				api.filtersMu.RLock()
 				for subID, wsSub := range api.filters {
