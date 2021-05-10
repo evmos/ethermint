@@ -25,7 +25,6 @@ type StateTransition struct {
 	ChainID  *big.Int
 	Csdb     *CommitStateDB
 	TxHash   *common.Hash
-	Sender   common.Address
 	Simulate bool // i.e CheckTx execution
 	Debug    bool // enable EVM debugging
 }
@@ -74,7 +73,6 @@ func (st *StateTransition) newEVM(
 	ctx sdk.Context,
 	csdb *CommitStateDB,
 	gasLimit uint64,
-	gasPrice *big.Int,
 	config ChainConfig,
 	extraEIPs []int64,
 ) *vm.EVM {
@@ -90,10 +88,7 @@ func (st *StateTransition) newEVM(
 		GasLimit:    gasLimit,
 	}
 
-	txCtx := vm.TxContext{
-		Origin:   st.Sender,
-		GasPrice: gasPrice,
-	}
+	txCtx := core.NewEVMTxContext(st.Message)
 
 	eips := make([]int, len(extraEIPs))
 	for i, eip := range extraEIPs {
@@ -161,19 +156,19 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 		return nil, errors.New("min gas price cannot be nil")
 	}
 
-	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt(), config, params.ExtraEIPs)
+	evm := st.newEVM(ctx, csdb, gasLimit, config, params.ExtraEIPs)
 
 	var (
 		ret             []byte
 		leftOverGas     uint64
 		contractAddress common.Address
-		senderRef       = vm.AccountRef(st.Sender)
+		senderRef       = vm.AccountRef(st.Message.From())
 	)
 
 	// Get nonce of account outside of the EVM
-	currentNonce := csdb.GetNonce(st.Sender)
+	currentNonce := csdb.GetNonce(st.Message.From())
 	// Set nonce of sender account before evm state transition for usage in generating Create address
-	csdb.SetNonce(st.Sender, st.Message.Nonce())
+	csdb.SetNonce(st.Message.From(), st.Message.Nonce())
 
 	// create contract or execute call
 	switch contractCreation {
@@ -208,7 +203,7 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 		}
 
 		// Increment the nonce for the next transaction	(just for evm state transition)
-		csdb.SetNonce(st.Sender, csdb.GetNonce(st.Sender)+1)
+		csdb.SetNonce(st.Message.From(), csdb.GetNonce(st.Message.From())+1)
 
 		ret, leftOverGas, err = evm.Call(senderRef, *st.Message.To(), st.Message.Data(), gasLimit, st.Message.Value())
 
@@ -240,7 +235,7 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 	}
 
 	// Resets nonce to value pre state transition
-	csdb.SetNonce(st.Sender, currentNonce)
+	csdb.SetNonce(st.Message.From(), currentNonce)
 
 	// Generate bloom filter to be saved in tx receipt data
 	bloomInt := big.NewInt(0)
@@ -317,8 +312,8 @@ func (st *StateTransition) StaticCall(ctx sdk.Context, config ChainConfig) ([]by
 		return []byte{}, errors.New("min gas price cannot be nil")
 	}
 
-	evm := st.newEVM(ctx, csdb, gasLimit, gasPrice.BigInt(), config, params.ExtraEIPs)
-	senderRef := vm.AccountRef(st.Sender)
+	evm := st.newEVM(ctx, csdb, gasLimit, config, params.ExtraEIPs)
+	senderRef := vm.AccountRef(st.Message.From())
 
 	ret, _, err := evm.StaticCall(senderRef, *st.Message.To(), st.Message.Data(), gasLimit)
 

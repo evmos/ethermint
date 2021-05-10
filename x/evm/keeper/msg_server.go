@@ -2,8 +2,10 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -40,7 +42,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		Csdb:     k.CommitStateDB.WithContext(ctx),
 		ChainID:  msg.ChainID(),
 		TxHash:   &ethHash,
-		Sender:   sender,
 		Simulate: ctx.IsCheckTx(),
 	}
 
@@ -55,7 +56,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	executionResult, err := st.TransitionDb(ctx, config)
 	if err != nil {
-		if err.Error() == "execution reverted" && executionResult != nil {
+		if errors.Is(err, vm.ErrExecutionReverted) && executionResult != nil {
 			// keep the execution result for revert reason
 			executionResult.Response.Reverted = true
 

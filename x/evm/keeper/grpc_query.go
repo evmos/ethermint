@@ -355,7 +355,6 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 		Csdb:     k.CommitStateDB.WithContext(ctx),
 		ChainID:  chainIDEpoch,
 		TxHash:   &ethHash,
-		Sender:   sender,
 		Simulate: ctx.IsCheckTx(),
 	}
 
