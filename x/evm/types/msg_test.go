@@ -61,30 +61,22 @@ func TestMsgEthereumTxRLPSignBytes(t *testing.T) {
 	addr := ethcmn.BytesToAddress([]byte("test_address"))
 	chainID := big.NewInt(3)
 
-	msg := NewMsgEthereumTx(nil, 0, &addr, nil, 100000, nil, []byte("test"), nil)
+	msg := NewMsgEthereumTx(chainID, 0, &addr, nil, 100000, nil, []byte("test"), nil)
 	hash := msg.RLPSignBytes(chainID)
 	require.Equal(t, "5BD30E35AD27449390B14C91E6BCFDCAADF8FE44EF33680E3BC200FC0DC083C7", fmt.Sprintf("%X", hash))
 }
 
 func TestMsgEthereumTxRLPEncode(t *testing.T) {
 	addr := ethcmn.BytesToAddress([]byte("test_address"))
-	msg := NewMsgEthereumTx(nil, 0, &addr, nil, 100000, nil, []byte("test"), nil)
+	expMsg := NewMsgEthereumTx(big.NewInt(1), 0, &addr, nil, 100000, nil, []byte("test"), nil)
 
-	raw, err := rlp.EncodeToBytes(&msg)
+	raw, err := rlp.EncodeToBytes(&expMsg)
 	require.NoError(t, err)
-	require.Equal(t, ethcmn.FromHex("E48080830186A0940000000000000000746573745F61646472657373808474657374808080"), raw)
-}
 
-func TestMsgEthereumTxRLPDecode(t *testing.T) {
-	var msg MsgEthereumTx
-
-	raw := ethcmn.FromHex("E48080830186A0940000000000000000746573745F61646472657373808474657374808080")
-	addr := ethcmn.BytesToAddress([]byte("test_address"))
-	expectedMsg := NewMsgEthereumTx(nil, 0, &addr, nil, 100000, nil, []byte("test"), nil)
-
-	err := rlp.Decode(bytes.NewReader(raw), &msg)
+	msg := &MsgEthereumTx{}
+	err = rlp.Decode(bytes.NewReader(raw), &msg)
 	require.NoError(t, err)
-	require.Equal(t, expectedMsg.Data, msg.Data)
+	require.Equal(t, expMsg.Data, msg.Data)
 }
 
 // func TestMsgEthereumTxSig(t *testing.T) {

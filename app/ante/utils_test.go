@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"math/big"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ type AnteTestSuite struct {
 	app            *app.EthermintApp
 	encodingConfig params.EncodingConfig
 	anteHandler    sdk.AnteHandler
+	chainID        *big.Int
 }
 
 func (suite *AnteTestSuite) SetupTest() {
@@ -38,7 +40,7 @@ func (suite *AnteTestSuite) SetupTest() {
 
 	suite.app = app.Setup(checkTx)
 
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "injective-3", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint-888", Time: time.Now().UTC()})
 	suite.app.AccountKeeper.SetParams(suite.ctx, authtypes.DefaultParams())
 	suite.app.EvmKeeper.SetParams(suite.ctx, evmtypes.DefaultParams())
 
@@ -47,6 +49,7 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.encodingConfig.Amino.RegisterConcrete(&testdata.TestMsg{}, "testdata.TestMsg", nil)
 
 	suite.anteHandler = ante.NewAnteHandler(suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper, suite.encodingConfig.TxConfig.SignModeHandler())
+	suite.chainID = big.NewInt(888)
 }
 
 func TestAnteTestSuite(t *testing.T) {
@@ -96,15 +99,10 @@ func newTestSDKTx(
 	return legacytx.NewStdTx(msgs, fee, sigs, "")
 }
 
-func newTestEthTx(ctx sdk.Context, msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) (sdk.Tx, error) {
-	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
-	if err != nil {
-		return nil, err
-	}
-
+func (suite *AnteTestSuite) newTestEthTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) (sdk.Tx, error) {
 	privkey := &ethsecp256k1.PrivKey{Key: priv.Bytes()}
 
-	if err := msg.Sign(chainIDEpoch, privkey.ToECDSA()); err != nil {
+	if err := msg.Sign(suite.chainID, privkey.ToECDSA()); err != nil {
 		return nil, err
 	}
 

@@ -57,8 +57,13 @@ func newMsgEthereumTx(
 		toBz = to.Bytes()
 	}
 
+	var chainIDBz []byte
+	if chainID != nil {
+		chainIDBz = chainID.Bytes()
+	}
+
 	txData := &TxData{
-		ChainID:  chainID.Bytes(),
+		ChainID:  chainIDBz,
 		Nonce:    nonce,
 		To:       toBz,
 		Input:    input,
@@ -145,6 +150,11 @@ func (msg MsgEthereumTx) GetSignBytes() []byte {
 // RLPSignBytes returns the RLP hash of an Ethereum transaction message with a
 // given chainID used for signing.
 func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
+	var accessList *ethtypes.AccessList
+	if msg.Data.Accesses != nil {
+		accessList = msg.Data.Accesses.ToEthAccessList()
+	}
+
 	return rlpHash([]interface{}{
 		new(big.Int).SetBytes(msg.Data.ChainID),
 		msg.Data.Nonce,
@@ -153,7 +163,7 @@ func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
 		msg.To(),
 		new(big.Int).SetBytes(msg.Data.Amount),
 		new(big.Int).SetBytes(msg.Data.Input),
-		msg.Data.Accesses.ToEthAccessList(),
+		accessList,
 	})
 }
 
