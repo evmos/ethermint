@@ -396,7 +396,13 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	gasLimit := msgEthTx.GetGas()
-	gas, err := core.IntrinsicGas(msgEthTx.Data.Input, *msgEthTx.Data.Accesses.ToEthAccessList(), msgEthTx.To() == nil, true, false)
+
+	var accessList ethtypes.AccessList
+	if msgEthTx.Data.Accesses != nil {
+		accessList = *msgEthTx.Data.Accesses.ToEthAccessList()
+	}
+
+	gas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, msgEthTx.To() == nil, true, false)
 	if err != nil {
 		return ctx, sdkerrors.Wrap(err, "failed to compute intrinsic gas cost")
 	}

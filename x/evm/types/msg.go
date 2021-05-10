@@ -296,6 +296,11 @@ func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 		to = &toAddr
 	}
 
+	var accessList ethtypes.AccessList
+	if msg.Data.Accesses != nil {
+		accessList = *msg.Data.Accesses.ToEthAccessList()
+	}
+
 	return ethtypes.NewMessage(
 		from,
 		to,
@@ -304,7 +309,7 @@ func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 		msg.Data.GasLimit,
 		new(big.Int).SetBytes(msg.Data.GasPrice),
 		msg.Data.Input,
-		*msg.Data.Accesses.ToEthAccessList(),
+		accessList,
 		true,
 	), nil
 }
@@ -318,6 +323,11 @@ func (data TxData) AsEthereumData() ethtypes.TxData {
 		to = &toAddr
 	}
 
+	var accessList ethtypes.AccessList
+	if data.Accesses != nil {
+		accessList = *data.Accesses.ToEthAccessList()
+	}
+
 	return &ethtypes.AccessListTx{
 		ChainID:    new(big.Int).SetBytes(data.ChainID),
 		Nonce:      data.Nonce,
@@ -326,7 +336,7 @@ func (data TxData) AsEthereumData() ethtypes.TxData {
 		To:         to,
 		Value:      new(big.Int).SetBytes(data.Amount),
 		Data:       data.Input,
-		AccessList: *data.Accesses.ToEthAccessList(),
+		AccessList: accessList,
 		V:          new(big.Int).SetBytes(data.V),
 		R:          new(big.Int).SetBytes(data.R),
 		S:          new(big.Int).SetBytes(data.S),
