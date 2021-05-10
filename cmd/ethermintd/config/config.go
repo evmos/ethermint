@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	"strings"
 
 	"github.com/spf13/viper"
+
+	"github.com/cosmos/cosmos-sdk/telemetry"
 
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -91,7 +92,7 @@ type EVMRPCConfig struct {
 	// Enable defines if the EVM RPC server should be enabled.
 	Enable bool `mapstructure:"enable"`
 	// Address defines the HTTP server to listen on
-	RpcAddress string `mapstructure:"address"`
+	RPCAddress string `mapstructure:"address"`
 	// Address defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
 }
@@ -178,7 +179,7 @@ func DefaultConfig() *Config {
 		},
 		EVMRPC: EVMRPCConfig{
 			Enable:     true,
-			RpcAddress: DefaultEVMAddress,
+			RPCAddress: DefaultEVMAddress,
 			WsAddress:  DefaultEVMWSAddress,
 		},
 		StateSync: StateSyncConfig{
@@ -231,7 +232,7 @@ func GetConfig(v *viper.Viper) Config {
 		},
 		EVMRPC: EVMRPCConfig{
 			Enable:     v.GetBool("evm-rpc.enable"),
-			RpcAddress: v.GetString("evm-rpc.address"),
+			RPCAddress: v.GetString("evm-rpc.address"),
 			WsAddress:  v.GetString("evm-rpc.ws-address"),
 		},
 		StateSync: StateSyncConfig{
