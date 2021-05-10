@@ -61,5 +61,5 @@ func TestParamsValidatePriv(t *testing.T) {
 }
 
 func TestParams_String(t *testing.T) {
-	require.Equal(t, "evm_denom: inj\nenable_create: true\nenable_call: true\nextra_eips: []\n", DefaultParams().String())
+	require.Equal(t, "evm_denom: aphoton\nenable_create: true\nenable_call: true\nextra_eips: []\n", DefaultParams().String())
 }

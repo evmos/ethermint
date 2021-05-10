@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/cosmos/ethermint/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
 
@@ -38,10 +39,10 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, extraEIPs ...int6
 // DefaultParams returns default evm parameters
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:     "inj",
+		EvmDenom:     types.AttoPhoton,
 		EnableCreate: true,
 		EnableCall:   true,
-		ExtraEIPs:    []int64(nil), // TODO: define default values
+		ExtraEIPs:    []int64(nil), // TODO: define default values from: [2929, 2200, 1884, 1344]
 	}
 }
 
@@ -95,7 +96,7 @@ func validateEIPs(i interface{}) error {
 
 	for _, eip := range eips {
 		if !vm.ValidEip(int(eip)) {
-			return fmt.Errorf("EIP %d is not activateable", eip)
+			return fmt.Errorf("EIP %d is not activateable, valid EIPS are: %s", eip, vm.ActivateableEips())
 		}
 	}
 
