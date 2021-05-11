@@ -15,7 +15,7 @@ CHAINID="ethermint-1337"
 # build ethermint binary
 make install
 
-cd tests-solidity
+cd tests/solidity
 
 if command -v yarn &> /dev/null; then
     yarn install

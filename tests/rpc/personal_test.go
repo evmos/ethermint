@@ -1,4 +1,4 @@
-package tests
+package rpc
 
 import (
 	"encoding/json"
