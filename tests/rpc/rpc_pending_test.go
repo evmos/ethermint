@@ -3,13 +3,12 @@
 // To run these tests please first ensure you have the ethermintd running
 //
 // You can configure the desired HOST and MODE as well in integration-test-all.sh
-package pending
+package rpc
 
 import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,45 +16,34 @@ import (
 	"github.com/stretchr/testify/require"
 
 	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
-	util "github.com/cosmos/ethermint/tests"
 )
 
-const (
-	addrA         = "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
-	addrAStoreKey = 0
-)
+// func TestMain(m *testing.M) {
+// 	if MODE != "pending" {
+// 		_, _ = fmt.Fprintln(os.Stdout, "Skipping pending RPC test")
+// 		return
+// 	}
 
-var (
-	MODE = os.Getenv("MODE")
-	from = []byte{}
-)
+// 	var err error
+// 	from, err = GetAddress()
+// 	if err != nil {
+// 		fmt.Printf("failed to get account: %s\n", err)
+// 		os.Exit(1)
+// 	}
 
-func TestMain(m *testing.M) {
-	if MODE != "pending" {
-		_, _ = fmt.Fprintln(os.Stdout, "Skipping pending RPC test")
-		return
-	}
-
-	var err error
-	from, err = util.GetAddress()
-	if err != nil {
-		fmt.Printf("failed to get account: %s\n", err)
-		os.Exit(1)
-	}
-
-	// Start all tests
-	code := m.Run()
-	os.Exit(code)
-}
+// 	// Start all tests
+// 	code := m.Run()
+// 	os.Exit(code)
+// }
 
 func TestEth_Pending_GetBalance(t *testing.T) {
 	var res hexutil.Big
-	rpcRes := util.Call(t, "eth_getBalance", []string{addrA, "latest"})
+	rpcRes := Call(t, "eth_getBalance", []string{addrA, "latest"})
 	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 	preTxLatestBalance := res.ToInt()
 
-	rpcRes = util.Call(t, "eth_getBalance", []string{addrA, "pending"})
+	rpcRes = Call(t, "eth_getBalance", []string{addrA, "pending"})
 	err = res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 	preTxPendingBalance := res.ToInt()
@@ -71,13 +59,13 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	txRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
 	require.Nil(t, txRes.Error)
 
-	rpcRes = util.Call(t, "eth_sendTransaction", param)
+	rpcRes = Call(t, "eth_sendTransaction", param)
 	require.Nil(t, rpcRes.Error)
 
-	rpcRes = util.Call(t, "eth_getBalance", []string{addrA, "pending"})
+	rpcRes = Call(t, "eth_getBalance", []string{addrA, "pending"})
 	err = res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 	postTxPendingBalance := res.ToInt()
@@ -85,7 +73,7 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 
 	require.Equal(t, preTxPendingBalance.Add(preTxPendingBalance, big.NewInt(10)), postTxPendingBalance)
 
-	rpcRes = util.Call(t, "eth_getBalance", []string{addrA, "latest"})
+	rpcRes = Call(t, "eth_getBalance", []string{addrA, "latest"})
 	err = res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
 	postTxLatestBalance := res.ToInt()
@@ -95,10 +83,10 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionCount(t *testing.T) {
-	prePendingNonce := util.GetNonce(t, "pending")
+	prePendingNonce := GetNonce(t, "pending")
 	t.Logf("Pending nonce before tx is %d", prePendingNonce)
 
-	currentNonce := util.GetNonce(t, "latest")
+	currentNonce := GetNonce(t, "latest")
 	t.Logf("Current nonce is %d", currentNonce)
 	require.Equal(t, prePendingNonce, currentNonce)
 
@@ -110,13 +98,13 @@ func TestEth_Pending_GetTransactionCount(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	txRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
 	require.Nil(t, txRes.Error)
-	txRes = util.Call(t, "eth_sendTransaction", param)
+	txRes = Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
-	pendingNonce := util.GetNonce(t, "pending")
-	latestNonce := util.GetNonce(t, "latest")
+	pendingNonce := GetNonce(t, "pending")
+	latestNonce := GetNonce(t, "latest")
 
 	t.Logf("Latest nonce is %d", latestNonce)
 	require.Equal(t, currentNonce+1, latestNonce)
@@ -128,13 +116,13 @@ func TestEth_Pending_GetTransactionCount(t *testing.T) {
 }
 
 func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
-	rpcRes := util.Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
+	rpcRes := Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
 	var preTxPendingTxCount hexutil.Uint
 	err := json.Unmarshal(rpcRes.Result, &preTxPendingTxCount)
 	require.NoError(t, err)
 	t.Logf("Pre tx pending nonce is %d", preTxPendingTxCount)
 
-	rpcRes = util.Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"latest"})
+	rpcRes = Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"latest"})
 	var preTxLatestTxCount hexutil.Uint
 	err = json.Unmarshal(rpcRes.Result, &preTxLatestTxCount)
 	require.NoError(t, err)
@@ -150,19 +138,19 @@ func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	txRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
 	require.Nil(t, txRes.Error)
 
-	txRes = util.Call(t, "eth_sendTransaction", param)
+	txRes = Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
-	rpcRes = util.Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
+	rpcRes = Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
 	var postTxPendingTxCount hexutil.Uint
 	err = json.Unmarshal(rpcRes.Result, &postTxPendingTxCount)
 	require.NoError(t, err)
 	t.Logf("Post tx pending nonce is %d", postTxPendingTxCount)
 
-	rpcRes = util.Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"latest"})
+	rpcRes = Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"latest"})
 	var postTxLatestTxCount hexutil.Uint
 	err = json.Unmarshal(rpcRes.Result, &postTxLatestTxCount)
 	require.NoError(t, err)
@@ -175,13 +163,13 @@ func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 }
 
 func TestEth_Pending_GetBlockByNumber(t *testing.T) {
-	rpcRes := util.Call(t, "eth_getBlockByNumber", []interface{}{"latest", true})
+	rpcRes := Call(t, "eth_getBlockByNumber", []interface{}{"latest", true})
 	var preTxLatestBlock map[string]interface{}
 	err := json.Unmarshal(rpcRes.Result, &preTxLatestBlock)
 	require.NoError(t, err)
 	preTxLatestTxs := len(preTxLatestBlock["transactions"].([]interface{}))
 
-	rpcRes = util.Call(t, "eth_getBlockByNumber", []interface{}{"pending", true})
+	rpcRes = Call(t, "eth_getBlockByNumber", []interface{}{"pending", true})
 	var preTxPendingBlock map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &preTxPendingBlock)
 	require.NoError(t, err)
@@ -195,19 +183,19 @@ func TestEth_Pending_GetBlockByNumber(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	txRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
 	require.Nil(t, txRes.Error)
-	txRes = util.Call(t, "eth_sendTransaction", param)
+	txRes = Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
-	rpcRes = util.Call(t, "eth_getBlockByNumber", []interface{}{"pending", true})
+	rpcRes = Call(t, "eth_getBlockByNumber", []interface{}{"pending", true})
 	var postTxPendingBlock map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &postTxPendingBlock)
 	require.NoError(t, err)
 	postTxPendingTxs := len(postTxPendingBlock["transactions"].([]interface{}))
 	require.Equal(t, postTxPendingTxs, preTxPendingTxs)
 
-	rpcRes = util.Call(t, "eth_getBlockByNumber", []interface{}{"latest", true})
+	rpcRes = Call(t, "eth_getBlockByNumber", []interface{}{"latest", true})
 	var postTxLatestBlock map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &postTxLatestBlock)
 	require.NoError(t, err)
@@ -219,7 +207,7 @@ func TestEth_Pending_GetBlockByNumber(t *testing.T) {
 
 func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 	var pendingTx []*rpctypes.RPCTransaction
-	resPendingTxs := util.Call(t, "eth_pendingTransactions", []string{})
+	resPendingTxs := Call(t, "eth_pendingTransactions", []string{})
 	err := json.Unmarshal(resPendingTxs.Result, &pendingTx)
 	require.NoError(t, err)
 	pendingTxCount := len(pendingTx)
@@ -234,9 +222,9 @@ func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 	param[0]["gasPrice"] = "0x1"
 	param[0]["data"] = data
 
-	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	txRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
 	require.Nil(t, txRes.Error)
-	txRes = util.Call(t, "eth_sendTransaction", param)
+	txRes = Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
 	// test will be blocked here until tx gets confirmed
@@ -244,7 +232,7 @@ func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 	err = json.Unmarshal(txRes.Result, &txHash)
 	require.NoError(t, err)
 
-	rpcRes := util.Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"latest", "0x" + fmt.Sprintf("%X", pendingTxCount)})
+	rpcRes := Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"latest", "0x" + fmt.Sprintf("%X", pendingTxCount)})
 	var latestBlockTx map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &latestBlockTx)
 	require.NoError(t, err)
@@ -254,7 +242,7 @@ func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 	require.Equal(t, latestBlockTx["value"], "0xa")
 	require.Equal(t, data, latestBlockTx["input"])
 
-	rpcRes = util.Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"pending", "0x" + fmt.Sprintf("%X", pendingTxCount)})
+	rpcRes = Call(t, "eth_getTransactionByBlockNumberAndIndex", []interface{}{"pending", "0x" + fmt.Sprintf("%X", pendingTxCount)})
 	var pendingBlock map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &pendingBlock)
 	require.NoError(t, err)
@@ -274,15 +262,15 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 	param[0]["gasPrice"] = "0x1"
 	param[0]["data"] = data
 
-	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	txRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
 	require.Nil(t, txRes.Error)
 
-	txRes = util.Call(t, "eth_sendTransaction", param)
+	txRes = Call(t, "eth_sendTransaction", param)
 	var txHash common.Hash
 	err := txHash.UnmarshalJSON(txRes.Result)
 	require.NoError(t, err)
 
-	rpcRes := util.Call(t, "eth_getTransactionByHash", []interface{}{txHash})
+	rpcRes := Call(t, "eth_getTransactionByHash", []interface{}{txHash})
 	var pendingBlockTx map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &pendingBlockTx)
 	require.NoError(t, err)
@@ -295,7 +283,7 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 }
 
 func TestEth_Pending_SendTransaction_PendingNonce(t *testing.T) {
-	currNonce := util.GetNonce(t, "latest")
+	currNonce := GetNonce(t, "latest")
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
@@ -304,28 +292,28 @@ func TestEth_Pending_SendTransaction_PendingNonce(t *testing.T) {
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x1"
 
-	txRes := util.Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
+	txRes := Call(t, "personal_unlockAccount", []interface{}{param[0]["from"], ""})
 	require.Nil(t, txRes.Error)
 
 	// first transaction
-	txRes1 := util.Call(t, "eth_sendTransaction", param)
+	txRes1 := Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes1.Error)
-	pendingNonce1 := util.GetNonce(t, "pending")
+	pendingNonce1 := GetNonce(t, "pending")
 	require.Greater(t, uint64(pendingNonce1), uint64(currNonce))
 
 	// second transaction
 	param[0]["to"] = "0x7f0f463c4d57b1bd3e3b79051e6c5ab703e803d9"
-	txRes2 := util.Call(t, "eth_sendTransaction", param)
+	txRes2 := Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes2.Error)
-	pendingNonce2 := util.GetNonce(t, "pending")
+	pendingNonce2 := GetNonce(t, "pending")
 	require.Greater(t, uint64(pendingNonce2), uint64(currNonce))
 	require.Greater(t, uint64(pendingNonce2), uint64(pendingNonce1))
 
 	// third transaction
 	param[0]["to"] = "0x7fb24493808b3f10527e3e0870afeb8a953052d2"
-	txRes3 := util.Call(t, "eth_sendTransaction", param)
+	txRes3 := Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes3.Error)
-	pendingNonce3 := util.GetNonce(t, "pending")
+	pendingNonce3 := GetNonce(t, "pending")
 	require.Greater(t, uint64(pendingNonce3), uint64(currNonce))
 	require.Greater(t, uint64(pendingNonce3), uint64(pendingNonce2))
 }

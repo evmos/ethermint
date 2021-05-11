@@ -40,9 +40,9 @@ cat $HOME/.ethermint/config/genesis.json | jq '.app_state["mint"]["params"]["min
 # Give ethermintd node enough time to launch
 sleep 5
 
-solcjs --abi "$PWD"/tests-solidity/suites/basic/contracts/Counter.sol --bin -o "$PWD"/tests-solidity/suites/basic/counter
-mv "$PWD"/tests-solidity/suites/basic/counter/*.abi "$PWD"/tests-solidity/suites/basic/counter/counter_sol.abi 2> /dev/null
-mv "$PWD"/tests-solidity/suites/basic/counter/*.bin "$PWD"/tests-solidity/suites/basic/counter/counter_sol.bin 2> /dev/null
+solcjs --abi "$PWD"/tests/solidity/suites/basic/contracts/Counter.sol --bin -o "$PWD"/tests/solidity/suites/basic/counter
+mv "$PWD"/tests/solidity/suites/basic/counter/*.abi "$PWD"/tests/solidity/suites/basic/counter/counter_sol.abi 2> /dev/null
+mv "$PWD"/tests/solidity/suites/basic/counter/*.bin "$PWD"/tests/solidity/suites/basic/counter/counter_sol.bin 2> /dev/null
 
 # Query for the account
 ACCT=$(curl --fail --silent -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545 | grep -o '\0x[^"]*')
@@ -54,7 +54,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_unlockAccount","params"
 #PRIVKEY="$("$PWD"/build/ethermintd keys export $KEY)"
 
 ## need to get the private key from the account in order to check this functionality.
-cd tests-solidity/suites/basic/ && go get && go run main.go $ACCT
+cd tests/solidity/suites/basic/ && go get && go run main.go $ACCT
 
 # After tests
 # kill test ethermintd
