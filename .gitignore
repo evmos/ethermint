@@ -36,7 +36,7 @@ keyring_test_cosmos
 coverage.txt
 *.out
 sim_log_file
-importer/tmp
+tests/**/tmp/*
 yarn.lock
 
 # Vagrant

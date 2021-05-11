@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
 	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
@@ -36,7 +37,7 @@ import (
 // }
 
 func TestEth_Pending_GetBalance(t *testing.T) {
-	var res hexBig
+	var res hexutil.Big
 	rpcRes := Call(t, "eth_getBalance", []string{addrA, "latest"})
 	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
@@ -116,13 +117,13 @@ func TestEth_Pending_GetTransactionCount(t *testing.T) {
 
 func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 	rpcRes := Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
-	var preTxPendingTxCount hexUint
+	var preTxPendingTxCount hexutil.Uint
 	err := json.Unmarshal(rpcRes.Result, &preTxPendingTxCount)
 	require.NoError(t, err)
 	t.Logf("Pre tx pending nonce is %d", preTxPendingTxCount)
 
 	rpcRes = Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"latest"})
-	var preTxLatestTxCount hexUint
+	var preTxLatestTxCount hexutil.Uint
 	err = json.Unmarshal(rpcRes.Result, &preTxLatestTxCount)
 	require.NoError(t, err)
 	t.Logf("Pre tx latest nonce is %d", preTxLatestTxCount)
@@ -144,13 +145,13 @@ func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 	require.Nil(t, txRes.Error)
 
 	rpcRes = Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
-	var postTxPendingTxCount hexUint
+	var postTxPendingTxCount hexutil.Uint
 	err = json.Unmarshal(rpcRes.Result, &postTxPendingTxCount)
 	require.NoError(t, err)
 	t.Logf("Post tx pending nonce is %d", postTxPendingTxCount)
 
 	rpcRes = Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"latest"})
-	var postTxLatestTxCount hexUint
+	var postTxLatestTxCount hexutil.Uint
 	err = json.Unmarshal(rpcRes.Result, &postTxLatestTxCount)
 	require.NoError(t, err)
 	t.Logf("Post tx latest nonce is %d", postTxLatestTxCount)
