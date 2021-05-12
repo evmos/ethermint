@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
@@ -196,16 +194,6 @@ func FormatBlock(
 		"uncles":           []string{},
 		"receiptsRoot":     common.Hash{},
 	}
-}
-
-// GetKeyByAddress returns the private key matching the given address. If not found it returns false.
-func GetKeyByAddress(keys []ethsecp256k1.PrivKey, address common.Address) (key *ethsecp256k1.PrivKey, exist bool) {
-	for _, key := range keys {
-		if bytes.Equal(key.PubKey().Address().Bytes(), address.Bytes()) {
-			return &key, true
-		}
-	}
-	return nil, false
 }
 
 // BuildEthereumTx builds and signs a Cosmos transaction from a MsgEthereumTx and returns the tx

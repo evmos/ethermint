@@ -51,5 +51,11 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 			Service:   NewPublicNetAPI(clientCtx),
 			Public:    true,
 		},
+		{
+			Namespace: PersonalNamespace,
+			Version:   apiVersion,
+			Service:   NewPersonalAPI(ethAPI),
+			Public:    true,
+		},
 	}
 }

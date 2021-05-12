@@ -9,19 +9,20 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cosmos/ethermint/ethereum/rpc/types"
 	"github.com/gogo/protobuf/jsonpb"
-	abci "github.com/tendermint/tendermint/abci/types"
-
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	log "github.com/xlab/suplog"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -30,6 +31,8 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 
+	"github.com/cosmos/ethermint/crypto/hd"
+	"github.com/cosmos/ethermint/ethereum/rpc/types"
 	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
 	ethermint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -39,11 +42,11 @@ import (
 type PublicEthAPI struct {
 	ctx          context.Context
 	clientCtx    client.Context
-	queryClient  *types.QueryClient
+	queryClient  *rpctypes.QueryClient
 	chainIDEpoch *big.Int
 	logger       log.Logger
 	backend      Backend
-	nonceLock    *types.AddrLocker
+	nonceLock    *rpctypes.AddrLocker
 	keyringLock  sync.Mutex
 }
 
@@ -58,6 +61,24 @@ func NewPublicEthAPI(
 		panic(err)
 	}
 
+	algos, _ := clientCtx.Keyring.SupportedAlgorithms()
+
+	if !algos.Contains(hd.EthSecp256k1) {
+		kr, err := keyring.New(
+			sdk.KeyringServiceName(),
+			viper.GetString(flags.FlagKeyringBackend),
+			clientCtx.KeyringDir,
+			clientCtx.Input,
+			hd.EthSecp256k1Option(),
+		)
+
+		if err != nil {
+			panic(err)
+		}
+
+		clientCtx = clientCtx.WithKeyring(kr)
+	}
+
 	api := &PublicEthAPI{
 		ctx:          context.Background(),
 		clientCtx:    clientCtx,
@@ -69,6 +90,11 @@ func NewPublicEthAPI(
 	}
 
 	return api
+}
+
+// ClientCtx returns client context
+func (e *PublicEthAPI) ClientCtx() client.Context {
+	return e.clientCtx
 }
 
 // ProtocolVersion returns the supported Ethereum protocol version.
