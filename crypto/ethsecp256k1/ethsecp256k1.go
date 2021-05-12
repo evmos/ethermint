@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -105,10 +104,14 @@ func (privKey *PrivKey) UnmarshalAminoJSON(bz []byte) error {
 }
 
 // Sign creates a recoverable ECDSA signature on the secp256k1 curve over the
-// Keccak256 hash of the provided message. The produced signature is 65 bytes
+// provided hash of the message. The produced signature is 65 bytes
 // where the last byte contains the recovery ID.
-func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
-	return ethcrypto.Sign(ethcrypto.Keccak256Hash(msg).Bytes(), privKey.ToECDSA())
+func (privKey PrivKey) Sign(digestBz []byte) ([]byte, error) {
+	if len(digestBz) != ethcrypto.DigestLength {
+		digestBz = ethcrypto.Keccak256Hash(digestBz).Bytes()
+	}
+
+	return ethcrypto.Sign(digestBz, privKey.ToECDSA())
 }
 
 // ToECDSA returns the ECDSA private key as a reference to ecdsa.PrivateKey type.
@@ -190,12 +193,14 @@ func (pubKey *PubKey) UnmarshalAminoJSON(bz []byte) error {
 // VerifySignature verifies that the ECDSA public key created a given signature over
 // the provided message. It will calculate the Keccak256 hash of the message
 // prior to verification.
+//
+// CONTRACT: The signature should be in [R || S] format.
 func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
-	if len(sig) == 65 {
-		// remove recovery ID if contained in the signature
+	if len(sig) == ethcrypto.SignatureLength {
+		// remove recovery ID (V) if contained in the signature
 		sig = sig[:len(sig)-1]
 	}
 
 	// the signature needs to be in [R || S] format when provided to VerifySignature
-	return secp256k1.VerifySignature(pubKey.Key, ethcrypto.Keccak256Hash(msg).Bytes(), sig)
+	return ethcrypto.VerifySignature(pubKey.Key, ethcrypto.Keccak256Hash(msg).Bytes(), sig)
 }

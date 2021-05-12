@@ -290,7 +290,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 	if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
 		return ctx, sdkerrors.Wrapf(
 			sdkerrors.ErrInsufficientFunds,
-			"sender balance < tx gas cost (%s%s < %s%s)", balance.String(), evmDenom, msgEthTx.Cost().String(), evmDenom,
+			"sender balance < tx gas cost (%s < %s%s)", balance.String(), msgEthTx.Cost().String(), evmDenom,
 		)
 	}
 

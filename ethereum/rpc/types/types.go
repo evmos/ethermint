@@ -1,6 +1,7 @@
 package types
 
 import (
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -65,6 +66,33 @@ type SendTxArgs struct {
 	// For non-legacy transactions
 	AccessList *ethtypes.AccessList `json:"accessList,omitempty"`
 	ChainID    *hexutil.Big         `json:"chainId,omitempty"`
+}
+
+// ToTransaction converts the arguments to an ethereum transaction.
+// This assumes that setTxDefaults has been called.
+func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
+	var input []byte
+	if args.Input != nil {
+		input = *args.Input
+	} else if args.Data != nil {
+		input = *args.Data
+	}
+
+	data := &evmtypes.TxData{
+		To:       args.To.Bytes(),
+		ChainID:  args.ChainID.ToInt().Bytes(),
+		Nonce:    uint64(*args.Nonce),
+		GasLimit: uint64(*args.Gas),
+		GasPrice: args.GasPrice.ToInt().Bytes(),
+		Amount:   args.Value.ToInt().Bytes(),
+		Input:    input,
+		Accesses: evmtypes.NewAccessList(args.AccessList),
+	}
+
+	return &evmtypes.MsgEthereumTx{
+		Data: data,
+		From: args.From.String(),
+	}
 }
 
 // CallArgs represents the arguments for a call.

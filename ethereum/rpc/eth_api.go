@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -23,6 +24,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
+	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -288,13 +290,96 @@ func (e *PublicEthAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
 func (e *PublicEthAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
 	e.logger.Debugln("eth_sign", "address", address.Hex(), "data", common.Bytes2Hex(data))
-	return nil, errors.New("eth_sign not supported")
+
+	from := sdk.AccAddress(address.Bytes())
+
+	_, err := e.clientCtx.Keyring.KeyByAddress(from)
+	if err != nil {
+		e.logger.Errorln("failed to find key in keyring", "address", address.String())
+		return nil, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
+	}
+
+	// Sign the requested hash with the wallet
+	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, data)
+	if err != nil {
+		e.logger.Panicln("keyring.SignByAddress failed")
+		return nil, err
+	}
+
+	signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	return signature, nil
 }
 
 // SendTransaction sends an Ethereum transaction.
 func (e *PublicEthAPI) SendTransaction(args types.SendTxArgs) (common.Hash, error) {
 	e.logger.Debugln("eth_sendTransaction", "args", args)
-	return common.Hash{}, errors.New("eth_sendTransaction not supported")
+
+	// Look up the wallet containing the requested signer
+	_, err := e.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to find key in keyring", "address", args.From)
+		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
+	}
+
+	args, err = e.setTxDefaults(args)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	tx := args.ToTransaction()
+
+	// Assemble transaction from fields
+	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
+	if !ok {
+		e.logger.WithError(err).Panicln("clientCtx.TxConfig.NewTxBuilder returns unsupported builder")
+	}
+
+	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+	if err != nil {
+		e.logger.WithError(err).Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
+		return common.Hash{}, err
+	}
+
+	builder.SetExtensionOptions(option)
+	err = builder.SetMsgs(tx.GetMsgs()...)
+	if err != nil {
+		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
+	}
+
+	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(tx.Fee())))
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(tx.GetGas())
+
+	if err := tx.ValidateBasic(); err != nil {
+		e.logger.Debugln("tx failed basic validation", "error", err)
+		return common.Hash{}, err
+	}
+
+	// Sign transaction
+	if err := tx.Sign(e.chainIDEpoch, e.clientCtx.Keyring); err != nil {
+		e.logger.Debugln("failed to sign tx", "error", err)
+		return common.Hash{}, err
+	}
+
+	// Encode transaction by default Tx encoder
+	txEncoder := e.clientCtx.TxConfig.TxEncoder()
+	txBytes, err := txEncoder(tx)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	txHash := common.BytesToHash(txBytes)
+
+	// Broadcast transaction in sync mode (default)
+	// NOTE: If error is encountered on the node, the broadcast will not return an error
+	asyncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastAsync)
+	if _, err := asyncCtx.BroadcastTx(txBytes); err != nil {
+		e.logger.WithError(err).Errorln("failed to broadcast Eth tx")
+		return txHash, err
+	}
+
+	// Return transaction hash
+	return txHash, nil
 }
 
 // SendRawTransaction send a raw Ethereum transaction.
@@ -317,13 +402,13 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 
 	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	if err != nil {
-		e.logger.Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
+		e.logger.WithError(err).Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
 	}
 
 	builder.SetExtensionOptions(option)
 	err = builder.SetMsgs(ethereumTx.GetMsgs()...)
 	if err != nil {
-		e.logger.Panicln("builder.SetMsgs failed")
+		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
 	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(ethereumTx.Fee())))
@@ -354,8 +439,11 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *t
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
-	} else if len(simRes.Result.Log) > 0 {
+	}
+
+	if len(simRes.Result.Log) > 0 {
 		var logs []types.SDKTxLogs
+
 		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
 			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
 		}
@@ -366,6 +454,7 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *t
 				e.logger.WithError(err).Warningln("call result decoding failed")
 				return []byte{}, err
 			}
+
 			return []byte{}, types.ErrRevertedWith(data.Ret)
 		}
 	}
@@ -770,4 +859,75 @@ func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, bl
 		StorageHash:  common.Hash{}, // NOTE: Ethermint doesn't have a storage hash. TODO: implement?
 		StorageProof: storageProofs,
 	}, nil
+}
+
+// setTxDefaults populates tx message with default values in case they are not
+// provided on the args
+func (e *PublicEthAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
+
+	// Get nonce (sequence) from sender account
+	from := sdk.AccAddress(args.From.Bytes())
+
+	if args.GasPrice == nil {
+		// TODO: Change to either:
+		// - min gas price from context once available through server/daemon, or
+		// - suggest a gas price based on the previous included txs
+		args.GasPrice = (*hexutil.Big)(big.NewInt(ethermint.DefaultGasPrice))
+	}
+
+	if args.Nonce != nil {
+		// get the nonce from the account retriever
+		// ignore error in case tge account doesn't exist yet
+		_, nonce, _ := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, from)
+		args.Nonce = (*hexutil.Uint64)(&nonce)
+	}
+
+	if args.Data != nil && args.Input != nil && !bytes.Equal(*args.Data, *args.Input) {
+		return args, errors.New("both 'data' and 'input' are set and not equal. Please use 'input' to pass transaction call data")
+	}
+
+	if args.To == nil {
+		// Contract creation
+		var input []byte
+		if args.Data != nil {
+			input = *args.Data
+		} else if args.Input != nil {
+			input = *args.Input
+		}
+
+		if len(input) == 0 {
+			return args, errors.New(`contract creation without any data provided`)
+		}
+	}
+
+	if args.Gas == nil {
+		// For backwards-compatibility reason, we try both input and data
+		// but input is preferred.
+		input := args.Input
+		if input == nil {
+			input = args.Data
+		}
+
+		callArgs := rpctypes.CallArgs{
+			From:       &args.From, // From shouldn't be nil
+			To:         args.To,
+			Gas:        args.Gas,
+			GasPrice:   args.GasPrice,
+			Value:      args.Value,
+			Data:       input,
+			AccessList: args.AccessList,
+		}
+		estimated, err := e.EstimateGas(callArgs)
+		if err != nil {
+			return args, err
+		}
+		args.Gas = &estimated
+		e.logger.Debugln("estimate gas usage automatically", "gas", args.Gas)
+	}
+
+	if args.ChainID == nil {
+		args.ChainID = (*hexutil.Big)(e.chainIDEpoch)
+	}
+
+	return args, nil
 }

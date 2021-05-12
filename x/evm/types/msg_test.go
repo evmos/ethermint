@@ -2,38 +2,66 @@ package types
 
 import (
 	"bytes"
-	"fmt"
 	"math/big"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/cosmos/ethermint/tests"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-func TestMsgEthereumTx(t *testing.T) {
-	addr := GenerateEthAddress()
+type MsgsTestSuite struct {
+	suite.Suite
 
-	msg := NewMsgEthereumTx(nil, 0, &addr, nil, 100000, nil, []byte("test"), nil)
-	require.NotNil(t, msg)
-	require.EqualValues(t, msg.Data.To, addr.Bytes())
-	require.Equal(t, msg.Route(), RouterKey)
-	require.Equal(t, msg.Type(), TypeMsgEthereumTx)
-	require.NotNil(t, msg.To())
-	require.Equal(t, msg.GetMsgs(), []sdk.Msg{msg})
-	require.Panics(t, func() { msg.GetSigners() })
-	require.Panics(t, func() { msg.GetSignBytes() })
-
-	msg = NewMsgEthereumTxContract(nil, 0, nil, 100000, nil, []byte("test"), nil)
-	require.NotNil(t, msg)
-	require.Nil(t, msg.Data.To)
-	require.Nil(t, msg.To())
+	signer  keyring.Signer
+	from    ethcmn.Address
+	to      ethcmn.Address
+	chainID *big.Int
 }
 
-func TestMsgEthereumTxValidation(t *testing.T) {
+func TestMsgsTestSuite(t *testing.T) {
+	suite.Run(t, new(MsgsTestSuite))
+}
+
+func (suite *MsgsTestSuite) SetupTest() {
+	privFrom, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+
+	privTo, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+
+	suite.signer = tests.NewSigner(privFrom)
+	suite.from = crypto.PubkeyToAddress(privFrom.ToECDSA().PublicKey)
+	suite.to = crypto.PubkeyToAddress(privTo.ToECDSA().PublicKey)
+	suite.chainID = big.NewInt(1)
+}
+
+func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
+	msg := NewMsgEthereumTx(nil, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
+
+	suite.Require().Equal(msg.Data.To, suite.to.Bytes())
+	suite.Require().Equal(msg.Route(), RouterKey)
+	suite.Require().Equal(msg.Type(), TypeMsgEthereumTx)
+	suite.Require().NotNil(msg.To())
+	suite.Require().Equal(msg.GetMsgs(), []sdk.Msg{msg})
+	suite.Require().Panics(func() { msg.GetSigners() })
+	suite.Require().Panics(func() { msg.GetSignBytes() })
+
+	msg = NewMsgEthereumTxContract(nil, 0, nil, 100000, nil, []byte("test"), nil)
+	suite.Require().NotNil(msg)
+	suite.Require().Nil(msg.Data.To)
+	suite.Require().Nil(msg.To())
+}
+
+func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	testCases := []struct {
 		msg        string
 		amount     *big.Int
@@ -41,68 +69,81 @@ func TestMsgEthereumTxValidation(t *testing.T) {
 		expectPass bool
 	}{
 		{msg: "pass", amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "invalid amount", amount: big.NewInt(-1), gasPrice: big.NewInt(100000), expectPass: false},
-		{msg: "invalid gas price", amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: false},
-		{msg: "invalid gas price", amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: false},
+		// NOTE: these can't be effectively tested because the SetBytes function from big.Int only sets
+		// the absolute value
+		{msg: "negative amount", amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
+		{msg: "negative gas price", amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
+		{msg: "zero gas price", amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
 	}
 
 	for i, tc := range testCases {
-		msg := NewMsgEthereumTx(nil, 0, nil, tc.amount, 0, tc.gasPrice, nil, nil)
+		msg := NewMsgEthereumTx(suite.chainID, 0, nil, tc.amount, 0, tc.gasPrice, nil, nil)
+		err := msg.ValidateBasic()
 
 		if tc.expectPass {
-			require.Nil(t, msg.ValidateBasic(), "valid test %d failed: %s", i, tc.msg)
+			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 		} else {
-			require.NotNil(t, msg.ValidateBasic(), "invalid test %d passed: %s", i, tc.msg)
+			suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
 		}
 	}
 }
 
-func TestMsgEthereumTxRLPSignBytes(t *testing.T) {
-	addr := ethcmn.BytesToAddress([]byte("test_address"))
-	chainID := big.NewInt(3)
-
-	msg := NewMsgEthereumTx(chainID, 0, &addr, nil, 100000, nil, []byte("test"), nil)
-	hash := msg.RLPSignBytes(chainID)
-	require.Equal(t, "5BD30E35AD27449390B14C91E6BCFDCAADF8FE44EF33680E3BC200FC0DC083C7", fmt.Sprintf("%X", hash))
-}
-
-func TestMsgEthereumTxRLPEncode(t *testing.T) {
-	addr := ethcmn.BytesToAddress([]byte("test_address"))
-	expMsg := NewMsgEthereumTx(big.NewInt(1), 0, &addr, nil, 100000, nil, []byte("test"), nil)
+func (suite *MsgsTestSuite) TestMsgEthereumTx_EncodeRLP() {
+	expMsg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
 
 	raw, err := rlp.EncodeToBytes(&expMsg)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	msg := &MsgEthereumTx{}
 	err = rlp.Decode(bytes.NewReader(raw), &msg)
-	require.NoError(t, err)
-	require.Equal(t, expMsg.Data, msg.Data)
+	suite.Require().NoError(err)
+	suite.Require().Equal(expMsg.Data, msg.Data)
 }
 
-// func TestMsgEthereumTxSig(t *testing.T) {
-// 	chainID := big.NewInt(3)
+func (suite *MsgsTestSuite) TestMsgEthereumTx_RLPSignBytes() {
+	msg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
+	suite.NotPanics(func() { _ = msg.RLPSignBytes(suite.chainID) })
+}
 
-// 	priv1, _ := ethsecp256k1.GenerateKey()
-// 	priv2, _ := ethsecp256k1.GenerateKey()
-// 	addr1 := ethcmn.BytesToAddress(priv1.PubKey().Address().Bytes())
-// 	addr2 := ethcmn.BytesToAddress(priv2.PubKey().Address().Bytes())
+func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
+	msg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
 
-// 	// require valid signature passes validation
-// 	msg := NewMsgEthereumTx(nil, 0, &addr1, nil, 100000, nil, []byte("test"), nil)
-// 	err := msg.Sign(chainID, priv1.ToECDSA())
-// 	require.Nil(t, err)
+	testCases := []struct {
+		msg        string
+		malleate   func()
+		expectPass bool
+	}{
+		{
+			"pass",
+			func() { msg.From = suite.from.Hex() },
+			true,
+		},
+		{
+			"no from address ",
+			func() { msg.From = "" },
+			false,
+		},
+		{
+			"from address ≠ signer address",
+			func() { msg.From = suite.to.Hex() },
+			false,
+		},
+	}
 
-// 	signer, err := msg.VerifySig(chainID)
-// 	require.NoError(t, err)
-// 	require.Equal(t, addr1, signer)
-// 	require.NotEqual(t, addr2, signer)
+	for i, tc := range testCases {
+		tc.malleate()
+		err := msg.Sign(suite.chainID, suite.signer)
+		if tc.expectPass {
+			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 
-// 	// require invalid chain ID fail validation
-// 	msg = NewMsgEthereumTx(nil, 0, &addr1, nil, 100000, nil, []byte("test"), nil)
-// 	err = msg.Sign(chainID, priv1.ToECDSA())
-// 	require.Nil(t, err)
+			tx := msg.AsTransaction()
+			signer := ethtypes.NewEIP2930Signer(suite.chainID)
 
-// 	signer, err = msg.VerifySig(big.NewInt(4))
-// 	require.Error(t, err)
-// 	require.Equal(t, ethcmn.Address{}, signer)
-// }
+			sender, err := ethtypes.Sender(signer, tx)
+			suite.Require().NoError(err, tc.msg)
+			suite.Require().Equal(msg.From, sender.Hex(), tc.msg)
+		} else {
+			suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
+		}
+	}
+}

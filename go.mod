@@ -43,9 +43,9 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/xlab/closer v0.0.0-20190328110542-03326addb7c2
 	github.com/xlab/suplog v1.3.0
-	golang.org/x/crypto v0.0.0-20210505212654-3497b51f5e64
+	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
 	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6 // indirect
-	google.golang.org/genproto v0.0.0-20210505142820-a42aa055cf76
+	google.golang.org/genproto v0.0.0-20210510173355-fb37daa5cd7a
 	google.golang.org/grpc v1.37.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

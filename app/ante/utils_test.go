@@ -17,9 +17,11 @@ import (
 	"github.com/cosmos/ethermint/app"
 	ante "github.com/cosmos/ethermint/app/ante"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/cosmos/ethermint/tests"
 	ethermint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -102,7 +104,10 @@ func newTestSDKTx(
 func (suite *AnteTestSuite) newTestEthTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) (sdk.Tx, error) {
 	privkey := &ethsecp256k1.PrivKey{Key: priv.Bytes()}
 
-	if err := msg.Sign(suite.chainID, privkey.ToECDSA()); err != nil {
+	signer := tests.NewSigner(privkey)
+	msg.From = common.BytesToAddress(privkey.PubKey().Address().Bytes()).String()
+
+	if err := msg.Sign(suite.chainID, signer); err != nil {
 		return nil, err
 	}
 
