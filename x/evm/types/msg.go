@@ -1,18 +1,18 @@
 package types
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 	"io"
 	"math/big"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -205,16 +205,20 @@ func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 // takes a private key and chainID to sign an Ethereum transaction according to
 // EIP155 standard. It mutates the transaction as it populates the V, R, S
 // fields of the Transaction's Signature.
-func (msg *MsgEthereumTx) Sign(chainID *big.Int, priv *ecdsa.PrivateKey) error {
+func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
 	txHash := msg.RLPSignBytes(chainID)
 
-	sig, err := ethcrypto.Sign(txHash[:], priv)
+	sig, _, err := signer.SignByAddress(msg.GetFrom(), txHash[:])
 	if err != nil {
 		return err
 	}
 
-	if len(sig) != 65 {
-		return fmt.Errorf("wrong size for signature: got %d, want 65", len(sig))
+	if len(sig) != crypto.SignatureLength {
+		return fmt.Errorf(
+			"wrong size for signature: got %d, want %d",
+			len(sig),
+			crypto.SignatureLength,
+		)
 	}
 
 	r := new(big.Int).SetBytes(sig[:32])

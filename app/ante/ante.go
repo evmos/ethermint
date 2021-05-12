@@ -63,7 +63,7 @@ func NewAnteHandler(
 			opts := txWithExtensions.GetExtensionOptions()
 			if len(opts) > 0 {
 				switch typeURL := opts[0].GetTypeUrl(); typeURL {
-				case "/ethermint.evm.v1beta1.ExtensionOptionsEthereumTx":
+				case "/ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx":
 					// handle as *evmtypes.MsgEthereumTx
 
 					anteHandler = sdk.ChainAnteDecorators(
@@ -79,7 +79,7 @@ func NewAnteHandler(
 						NewEthIncrementSenderSequenceDecorator(ak), // innermost AnteDecorator.
 					)
 
-				case "/ethermint.evm.v1beta1.ExtensionOptionsWeb3Tx":
+				case "/ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx":
 					// handle as normal Cosmos SDK tx, except signature is checked for EIP712 representation
 
 					switch tx.(type) {
