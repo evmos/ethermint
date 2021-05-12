@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -30,7 +30,7 @@ jobs:
   split-test-files:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - name: Create a file with all the pkgs
         run: go list ./... | grep -Ev 'vendor|importer|rpc/tester' > pkgs.txt
       - name: Split pkgs into 4 files
@@ -58,11 +58,11 @@ jobs:
     needs: split-test-files
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -86,7 +86,7 @@ jobs:
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v1.5.0
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -97,11 +97,11 @@ jobs:
     needs: split-test-files
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -125,7 +125,7 @@ jobs:
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v1.5.0
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -136,11 +136,11 @@ jobs:
     needs: split-test-files
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -164,7 +164,7 @@ jobs:
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v1.5.0
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -175,11 +175,11 @@ jobs:
     needs: split-test-files
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -203,7 +203,7 @@ jobs:
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v1.5.0
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -213,11 +213,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -233,8 +233,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v4
+      - uses: actions/checkout@v2.3.4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |

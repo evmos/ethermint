@@ -317,7 +317,7 @@ func (e *PublicEthAPI) SendTransaction(args types.SendTxArgs) (common.Hash, erro
 	// Look up the wallet containing the requested signer
 	_, err := e.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
 	if err != nil {
-		e.logger.Errorln("failed to find key in keyring", "address", args.From)
+		e.logger.WithError(err).Errorln("failed to find key in keyring", "address", args.From)
 		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
@@ -331,18 +331,19 @@ func (e *PublicEthAPI) SendTransaction(args types.SendTxArgs) (common.Hash, erro
 	// Assemble transaction from fields
 	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
 	if !ok {
-		e.logger.Panicln("clientCtx.TxConfig.NewTxBuilder returns unsupported builder")
+		e.logger.WithError(err).Panicln("clientCtx.TxConfig.NewTxBuilder returns unsupported builder")
 	}
 
 	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	if err != nil {
-		e.logger.Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
+		e.logger.WithError(err).Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
+		return common.Hash{}, err
 	}
 
 	builder.SetExtensionOptions(option)
 	err = builder.SetMsgs(tx.GetMsgs()...)
 	if err != nil {
-		e.logger.Panicln("builder.SetMsgs failed")
+		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
 	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(tx.Fee())))
@@ -401,13 +402,13 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 
 	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	if err != nil {
-		e.logger.Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
+		e.logger.WithError(err).Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
 	}
 
 	builder.SetExtensionOptions(option)
 	err = builder.SetMsgs(ethereumTx.GetMsgs()...)
 	if err != nil {
-		e.logger.Panicln("builder.SetMsgs failed")
+		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
 	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(ethereumTx.Fee())))
@@ -438,8 +439,11 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *t
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
-	} else if len(simRes.Result.Log) > 0 {
+	}
+
+	if len(simRes.Result.Log) > 0 {
 		var logs []types.SDKTxLogs
+
 		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
 			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
 		}
@@ -450,6 +454,7 @@ func (e *PublicEthAPI) Call(args types.CallArgs, blockNr types.BlockNumber, _ *t
 				e.logger.WithError(err).Warningln("call result decoding failed")
 				return []byte{}, err
 			}
+
 			return []byte{}, types.ErrRevertedWith(data.Ret)
 		}
 	}
