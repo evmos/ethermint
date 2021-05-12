@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -101,7 +101,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -140,7 +140,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -179,7 +179,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -217,7 +217,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -234,7 +234,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - uses: technote-space/get-diff-action@v4
+      - uses: technote-space/get-diff-action@v4.1.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
