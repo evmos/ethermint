@@ -206,6 +206,11 @@ func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 // EIP155 standard. It mutates the transaction as it populates the V, R, S
 // fields of the Transaction's Signature.
 func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
+	from := msg.GetFrom()
+	if from == nil {
+		return fmt.Errorf("sender address not defined for message")
+	}
+
 	txHash := msg.RLPSignBytes(chainID)
 
 	sig, _, err := signer.SignByAddress(msg.GetFrom(), txHash[:])
