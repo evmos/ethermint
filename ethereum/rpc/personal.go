@@ -1,4 +1,4 @@
-package personal
+package rpc
 
 import (
 	"context"
@@ -21,18 +21,17 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
-	"github.com/cosmos/ethermint/ethereum/rpc"
 	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
 )
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PrivateAccountAPI struct {
-	ethAPI *rpc.PublicEthAPI
+	ethAPI *PublicEthAPI
 	logger log.Logger
 }
 
-// NewAPI creates an instance of the public Personal Eth API.
-func NewAPI(ethAPI *rpc.PublicEthAPI) *PrivateAccountAPI {
+// NewPersonalAPI creates an instance of the public Personal Eth API.
+func NewPersonalAPI(ethAPI *PublicEthAPI) *PrivateAccountAPI {
 	return &PrivateAccountAPI{
 		ethAPI: ethAPI,
 		logger: log.WithField("module", "personal"),
