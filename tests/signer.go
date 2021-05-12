@@ -44,7 +44,7 @@ func (s Signer) Sign(_ string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
 // SignByAddress sign byte messages with a user key providing the address.
 func (s Signer) SignByAddress(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
 	signer := sdk.AccAddress(s.privKey.PubKey().Address())
-	if signer.Equals(address) {
+	if !signer.Equals(address) {
 		return nil, nil, fmt.Errorf("address mismatch: signer %s ≠ given address %s", signer, address)
 	}
 

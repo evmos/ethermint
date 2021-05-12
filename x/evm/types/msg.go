@@ -150,13 +150,17 @@ func (msg MsgEthereumTx) GetSignBytes() []byte {
 // RLPSignBytes returns the RLP hash of an Ethereum transaction message with a
 // given chainID used for signing.
 func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
+	if msg.Data.ChainID != nil {
+		chainID = new(big.Int).SetBytes(msg.Data.ChainID)
+	}
+
 	var accessList *ethtypes.AccessList
 	if msg.Data.Accesses != nil {
 		accessList = msg.Data.Accesses.ToEthAccessList()
 	}
 
 	return rlpHash([]interface{}{
-		new(big.Int).SetBytes(msg.Data.ChainID),
+		chainID,
 		msg.Data.Nonce,
 		new(big.Int).SetBytes(msg.Data.GasPrice),
 		msg.Data.GasLimit,
@@ -164,19 +168,6 @@ func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
 		new(big.Int).SetBytes(msg.Data.Amount),
 		new(big.Int).SetBytes(msg.Data.Input),
 		accessList,
-	})
-}
-
-// RLPSignHomesteadBytes returns the RLP hash of an Ethereum transaction message with a
-// a Homestead layout without chainID.
-func (msg MsgEthereumTx) RLPSignHomesteadBytes() ethcmn.Hash {
-	return rlpHash([]interface{}{
-		msg.Data.Nonce,
-		msg.Data.GasPrice,
-		msg.Data.GasLimit,
-		msg.To(),
-		msg.Data.Amount,
-		msg.Data.Input,
 	})
 }
 
@@ -202,9 +193,12 @@ func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 }
 
 // Sign calculates a secp256k1 ECDSA signature and signs the transaction. It
-// takes a private key and chainID to sign an Ethereum transaction according to
-// EIP155 standard. It mutates the transaction as it populates the V, R, S
+// takes a keyring signer and the chainID to sign an Ethereum transaction according to
+// EIP155 standard.
+// This method mutates the transaction as it populates the V, R, S
 // fields of the Transaction's Signature.
+// The function will fail if the sender address is not defined for the msg or if
+// the sender is not registered on the keyring
 func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
 	from := msg.GetFrom()
 	if from == nil {
@@ -213,7 +207,7 @@ func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
 
 	txHash := msg.RLPSignBytes(chainID)
 
-	sig, _, err := signer.SignByAddress(msg.GetFrom(), txHash[:])
+	sig, _, err := signer.SignByAddress(from, txHash[:])
 	if err != nil {
 		return err
 	}
@@ -288,10 +282,13 @@ func (msg *MsgEthereumTx) GetFrom() sdk.AccAddress {
 	return ethcmn.HexToAddress(msg.From).Bytes()
 }
 
+// AsTransaction creates an Ethereum Transaction type from the msg fields
 func (msg MsgEthereumTx) AsTransaction() *ethtypes.Transaction {
 	return ethtypes.NewTx(msg.Data.AsEthereumData())
 }
 
+// AsMessage creates an Ethereum core.Message from the msg fields. This method
+// fails if the sender address is not defined
 func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 	if msg.From == "" {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "'from' address cannot be empty")
