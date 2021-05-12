@@ -71,6 +71,11 @@ func NewPublicEthAPI(
 	return api
 }
 
+// ClientCtx returns client context
+func (e *PublicEthAPI) ClientCtx() client.Context {
+	return e.clientCtx
+}
+
 // ProtocolVersion returns the supported Ethereum protocol version.
 func (e *PublicEthAPI) ProtocolVersion() hexutil.Uint {
 	e.logger.Debugln("eth_protocolVersion")
