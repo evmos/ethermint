@@ -64,20 +64,23 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
 func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	testCases := []struct {
 		msg        string
+		to         *ethcmn.Address
 		amount     *big.Int
 		gasPrice   *big.Int
 		expectPass bool
 	}{
-		{msg: "pass", amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "pass with recipient", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "pass contract", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
 		// NOTE: these can't be effectively tested because the SetBytes function from big.Int only sets
 		// the absolute value
-		{msg: "negative amount", amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
-		{msg: "negative gas price", amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
-		{msg: "zero gas price", amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
+		{msg: "negative amount", to: &suite.to, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
+		{msg: "negative gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
+		{msg: "zero gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
 	}
 
 	for i, tc := range testCases {
-		msg := NewMsgEthereumTx(suite.chainID, 0, nil, tc.amount, 0, tc.gasPrice, nil, nil)
+		msg := NewMsgEthereumTx(suite.chainID, 0, tc.to, tc.amount, 0, tc.gasPrice, nil, nil)
 		err := msg.ValidateBasic()
 
 		if tc.expectPass {
