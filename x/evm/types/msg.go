@@ -71,7 +71,7 @@ func newMsgEthereumTx(
 		GasLimit: gasLimit,
 		Amount:   []byte{},
 		GasPrice: []byte{},
-		Accesses: *NewAccessList(accesses),
+		Accesses: NewAccessList(accesses),
 		V:        []byte{},
 		R:        []byte{},
 		S:        []byte{},

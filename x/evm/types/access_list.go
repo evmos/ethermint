@@ -141,7 +141,7 @@ type AccessList []AccessTuple
 
 // NewAccessList creates a new protobuf-compatible AccessList from an ethereum
 // core AccessList type
-func NewAccessList(ethAccessList *ethtypes.AccessList) *AccessList {
+func NewAccessList(ethAccessList *ethtypes.AccessList) AccessList {
 	if ethAccessList == nil {
 		return nil
 	}
@@ -160,7 +160,7 @@ func NewAccessList(ethAccessList *ethtypes.AccessList) *AccessList {
 		})
 	}
 
-	return &accessList
+	return accessList
 }
 
 // ToEthAccessList is an utility function to convert the protobuf compatible

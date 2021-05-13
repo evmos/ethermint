@@ -86,7 +86,7 @@ func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 		GasPrice: args.GasPrice.ToInt().Bytes(),
 		Amount:   args.Value.ToInt().Bytes(),
 		Input:    input,
-		Accesses: *evmtypes.NewAccessList(args.AccessList),
+		Accesses: evmtypes.NewAccessList(args.AccessList),
 	}
 
 	return &evmtypes.MsgEthereumTx{

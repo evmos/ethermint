@@ -47,7 +47,7 @@ func (suite *MsgsTestSuite) SetupTest() {
 func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
 	msg := NewMsgEthereumTx(nil, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
 
-	suite.Require().Equal(msg.Data.To, suite.to.Bytes())
+	suite.Require().Equal(msg.Data.To, suite.to.Hex())
 	suite.Require().Equal(msg.Route(), RouterKey)
 	suite.Require().Equal(msg.Type(), TypeMsgEthereumTx)
 	suite.Require().NotNil(msg.To())
@@ -57,7 +57,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
 
 	msg = NewMsgEthereumTxContract(nil, 0, nil, 100000, nil, []byte("test"), nil)
 	suite.Require().NotNil(msg)
-	suite.Require().Nil(msg.Data.To)
+	suite.Require().Empty(msg.Data.To)
 	suite.Require().Nil(msg.To())
 }
 
