@@ -304,7 +304,7 @@ func NewTransactionFromData(
 
 	var to *common.Address
 	if len(txData.To) > 0 {
-		recipient := common.BytesToAddress(txData.To)
+		recipient := common.HexToAddress(txData.To)
 		to = &recipient
 	}
 
