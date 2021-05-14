@@ -38,10 +38,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ## Unreleased
 
 ### API Breaking
+
 * (eth) [\#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
 
 ### Improvements
 
+* (evm) [tharsis#24](https://github.com/tharsis/ethermint/pull/24)Implement metrics for `MsgEthereumTx`, state transtitions, `BeginBlock` and `EndBlock`.
 * (deps) [\#602](https://github.com/cosmos/ethermint/pull/856) Bump tendermint version to [v0.39.3](https://github.com/tendermint/tendermint/releases/tag/v0.39.3)
 
 ## [v0.4.1] - 2021-03-01

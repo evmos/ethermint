@@ -3,6 +3,7 @@ module github.com/cosmos/ethermint
 go 1.15
 
 require (
+	github.com/armon/go-metrics v0.3.8
 	github.com/aws/aws-sdk-go v1.38.21 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/btcsuite/btcd v0.21.0-beta
@@ -22,6 +23,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/improbable-eng/grpc-web v0.14.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect

@@ -3,12 +3,15 @@ package keeper
 import (
 	"context"
 	"errors"
+	"time"
 
+	"github.com/armon/go-metrics"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -18,6 +21,8 @@ import (
 var _ types.MsgServer = &Keeper{}
 
 func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
+	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.TypeMsgEthereumTx)
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	ethMsg, err := msg.AsMessage()
@@ -28,6 +33,19 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	config, found := k.GetChainConfig(ctx)
 	if !found {
 		return nil, types.ErrChainConfigNotFound
+	}
+
+	var labels []metrics.Label
+	if msg.To() == nil {
+		labels = []metrics.Label{
+			telemetry.NewLabel("execution", "create"),
+		}
+	} else {
+		labels = []metrics.Label{
+			telemetry.NewLabel("execution", "call"),
+			// add label to the called recipient address (contract or account)
+			telemetry.NewLabel("to", msg.Data.To),
+		}
 	}
 
 	sender := ethMsg.From()
@@ -117,6 +135,21 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			k.LogsCache[ethLog.Address] = append(k.LogsCache[ethLog.Address], ethLog)
 		}
 	}
+
+	defer func() {
+		if st.Message.Value().IsInt64() {
+			telemetry.SetGauge(
+				float32(st.Message.Value().Int64()),
+				"tx", "msg", "ethereum_tx",
+			)
+		}
+
+		telemetry.IncrCounterWithLabels(
+			[]string{types.ModuleName, "ethereum_tx"},
+			1,
+			labels,
+		)
+	}()
 
 	// emit events
 	ctx.EventManager().EmitEvents(sdk.Events{
