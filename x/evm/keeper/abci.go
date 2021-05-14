@@ -27,6 +27,10 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
+	// TODO: why do we have so many hash -> height mappings
+	k.SetBlockHash(ctx, req.Hash, req.Header.Height)
+	k.SetBlockHeightToHash(ctx, req.Hash, req.Header.Height)
+
 	// special setter for csdb
 	k.SetHeightHash(ctx, uint64(req.Header.Height), common.BytesToHash(req.Hash))
 
