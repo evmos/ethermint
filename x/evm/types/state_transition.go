@@ -3,6 +3,7 @@ package types
 import (
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/xlab/suplog"
@@ -13,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -114,6 +116,8 @@ func (st *StateTransition) newEVM(
 // returning the evm execution result.
 // NOTE: State transition checks are run during AnteHandler execution.
 func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (resp *ExecutionResult, err error) {
+	defer telemetry.ModuleMeasureSince(ModuleName, time.Now(), MetricKeyTransitionDB)
+
 	contractCreation := st.Message.To() == nil
 
 	cost, err := core.IntrinsicGas(st.Message.Data(), st.Message.AccessList(), true, false, true)
@@ -294,6 +298,8 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 // Opcodes that attempt to perform such modifications will result in exceptions
 // instead of performing the modifications.
 func (st *StateTransition) StaticCall(ctx sdk.Context, config ChainConfig) ([]byte, error) {
+	defer telemetry.ModuleMeasureSince(ModuleName, time.Now(), MetricKeyStaticCall)
+
 	// This gas limit the the transaction gas limit with intrinsic gas subtracted
 	gasLimit := st.Message.Gas() - ctx.GasMeter().GasConsumed()
 	csdb := st.Csdb.WithContext(ctx)

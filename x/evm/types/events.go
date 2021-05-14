@@ -8,4 +8,7 @@ const (
 	AttributeKeyRecipient       = "recipient"
 	AttributeKeyTxHash          = "txHash"
 	AttributeValueCategory      = ModuleName
+
+	MetricKeyTransitionDB = "transition_db"
+	MetricKeyStaticCall   = "static_call"
 )

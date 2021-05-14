@@ -25,7 +25,7 @@ var (
 // message type and route constants
 const (
 	// TypeMsgEthereumTx defines the type string of an Ethereum transaction
-	TypeMsgEthereumTx = "ethereum"
+	TypeMsgEthereumTx = "ethereum_tx"
 )
 
 // NewMsgEthereumTx returns a reference to a new Ethereum transaction message.
