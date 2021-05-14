@@ -148,14 +148,14 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	ethRPCTxs := make([]interface{}, 0, len(txReceiptsResp.Receipts))
 
 	for _, receipt := range txReceiptsResp.Receipts {
-		hash := common.BytesToHash(receipt.Hash)
+		hash := common.HexToHash(receipt.Hash)
 		if fullTx {
 			// full txs from receipts
 			tx, err := types.NewTransactionFromData(
 				receipt.Data,
-				common.BytesToAddress(receipt.From),
+				common.HexToAddress(receipt.From),
 				hash,
-				common.BytesToHash(receipt.BlockHash),
+				common.HexToHash(receipt.BlockHash),
 				receipt.BlockHeight,
 				receipt.Index,
 			)

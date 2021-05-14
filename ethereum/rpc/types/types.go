@@ -79,7 +79,7 @@ func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 	}
 
 	data := &evmtypes.TxData{
-		To:       args.To.Bytes(),
+		To:       args.To.Hex(),
 		ChainID:  args.ChainID.ToInt().Bytes(),
 		Nonce:    uint64(*args.Nonce),
 		GasLimit: uint64(*args.Gas),

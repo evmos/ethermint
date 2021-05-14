@@ -9,7 +9,6 @@
     - [PubKey](#ethermint.crypto.v1alpha1.ethsecp256k1.PubKey)
   
 - [ethermint/evm/v1alpha1/evm.proto](#ethermint/evm/v1alpha1/evm.proto)
-    - [AccessList](#ethermint.evm.v1alpha1.AccessList)
     - [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple)
     - [BytesList](#ethermint.evm.v1alpha1.BytesList)
     - [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig)
@@ -123,21 +122,6 @@ key format.
 <p align="right"><a href="#top">Top</a></p>
 
 ## ethermint/evm/v1alpha1/evm.proto
-
-
-
-<a name="ethermint.evm.v1alpha1.AccessList"></a>
-
-### AccessList
-AccessList is an EIP-2930 access list defined as a proto message.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tuples` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated | access list tuples |
-
-
-
 
 
 
@@ -301,10 +285,10 @@ solely as intended in Ethereum abiding by the protocol.
 | `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
 | `gas_price` | [bytes](#bytes) |  | price defines the unsigned integer value of the gas price in bytes. |
 | `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
-| `to` | [bytes](#bytes) |  |  |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
 | `value` | [bytes](#bytes) |  | value defines the unsigned integer value of the transaction amount. |
 | `input` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
-| `accesses` | [AccessList](#ethermint.evm.v1alpha1.AccessList) |  |  |
+| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
 | `v` | [bytes](#bytes) |  | v defines the signature value |
 | `r` | [bytes](#bytes) |  | r defines the signature value |
 | `s` | [bytes](#bytes) |  | s define the signature value |
@@ -322,13 +306,13 @@ TxReceipt defines the receipt type stored in KV for each EVM transaction.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `hash` | [bytes](#bytes) |  |  |
-| `from` | [bytes](#bytes) |  |  |
+| `hash` | [string](#string) |  |  |
+| `from` | [string](#string) |  |  |
 | `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  |  |
 | `result` | [TxResult](#ethermint.evm.v1alpha1.TxResult) |  |  |
 | `index` | [uint64](#uint64) |  |  |
 | `block_height` | [uint64](#uint64) |  |  |
-| `block_hash` | [bytes](#bytes) |  |  |
+| `block_hash` | [string](#string) |  |  |
 
 
 

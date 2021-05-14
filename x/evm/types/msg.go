@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -52,9 +53,9 @@ func newMsgEthereumTx(
 		input = ethcmn.CopyBytes(input)
 	}
 
-	var toBz []byte
+	var toHex string
 	if to != nil {
-		toBz = to.Bytes()
+		toHex = to.Hex()
 	}
 
 	var chainIDBz []byte
@@ -65,7 +66,7 @@ func newMsgEthereumTx(
 	txData := &TxData{
 		ChainID:  chainIDBz,
 		Nonce:    nonce,
-		To:       toBz,
+		To:       toHex,
 		Input:    input,
 		GasLimit: gasLimit,
 		Amount:   []byte{},
@@ -106,17 +107,29 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrInvalidValue, "amount cannot be negative %s", amount)
 	}
 
+	if msg.Data.To != "" {
+		if err := types.ValidateAddress(msg.Data.To); err != nil {
+			return sdkerrors.Wrap(err, "invalid to address")
+		}
+	}
+
+	if msg.From != "" {
+		if err := types.ValidateAddress(msg.From); err != nil {
+			return sdkerrors.Wrap(err, "invalid from address")
+		}
+	}
+
 	return nil
 }
 
 // To returns the recipient address of the transaction. It returns nil if the
 // transaction is a contract creation.
 func (msg MsgEthereumTx) To() *ethcmn.Address {
-	if len(msg.Data.To) == 0 {
+	if msg.Data.To == "" {
 		return nil
 	}
 
-	recipient := ethcmn.BytesToAddress(msg.Data.To)
+	recipient := ethcmn.HexToAddress(msg.Data.To)
 	return &recipient
 }
 
@@ -297,8 +310,8 @@ func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 	from := ethcmn.HexToAddress(msg.From)
 
 	var to *ethcmn.Address
-	if msg.Data.To != nil {
-		toAddr := ethcmn.BytesToAddress(msg.Data.To)
+	if msg.Data.To != "" {
+		toAddr := ethcmn.HexToAddress(msg.Data.To)
 		to = &toAddr
 	}
 
@@ -324,8 +337,8 @@ func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 // TxData defined on the Cosmos EVM.
 func (data TxData) AsEthereumData() ethtypes.TxData {
 	var to *ethcmn.Address
-	if data.To != nil {
-		toAddr := ethcmn.BytesToAddress(data.To)
+	if data.To != "" {
+		toAddr := ethcmn.HexToAddress(data.To)
 		to = &toAddr
 	}
 

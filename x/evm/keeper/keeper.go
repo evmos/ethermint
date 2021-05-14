@@ -98,14 +98,14 @@ func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloo
 }
 
 // GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetBlockHashFromHeight(ctx sdk.Context, height int64) ([]byte, bool) {
+func (k Keeper) GetBlockHashFromHeight(ctx sdk.Context, height int64) (common.Hash, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.KeyBlockHeightHash(uint64(height)))
 	if len(bz) == 0 {
-		return common.Hash{}.Bytes(), false
+		return common.Hash{}, false
 	}
 
-	return common.BytesToHash(bz).Bytes(), true
+	return common.BytesToHash(bz), true
 }
 
 // SetBlockHash sets the mapping from block consensus hash to block height

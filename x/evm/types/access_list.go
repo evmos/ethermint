@@ -135,14 +135,18 @@ func (al *accessList) DeleteAddress(address common.Address) {
 	delete(al.addresses, address)
 }
 
+// AccessList is an EIP-2930 access list that represents the slice of
+// the protobuf AccessTuples.
+type AccessList []AccessTuple
+
 // NewAccessList creates a new protobuf-compatible AccessList from an ethereum
 // core AccessList type
-func NewAccessList(ethAccessList *ethtypes.AccessList) *AccessList {
+func NewAccessList(ethAccessList *ethtypes.AccessList) AccessList {
 	if ethAccessList == nil {
 		return nil
 	}
 
-	var tuples []AccessTuple
+	var accessList AccessList
 	for _, tuple := range *ethAccessList {
 		storageKeys := make([]string, len(tuple.StorageKeys))
 
@@ -150,15 +154,13 @@ func NewAccessList(ethAccessList *ethtypes.AccessList) *AccessList {
 			storageKeys[i] = tuple.StorageKeys[i].String()
 		}
 
-		tuples = append(tuples, AccessTuple{
+		accessList = append(accessList, AccessTuple{
 			Address:     tuple.Address.String(),
 			StorageKeys: storageKeys,
 		})
 	}
 
-	return &AccessList{
-		Tuples: tuples,
-	}
+	return accessList
 }
 
 // ToEthAccessList is an utility function to convert the protobuf compatible
@@ -166,7 +168,7 @@ func NewAccessList(ethAccessList *ethtypes.AccessList) *AccessList {
 func (al AccessList) ToEthAccessList() *ethtypes.AccessList {
 	var accessList ethtypes.AccessList
 
-	for _, tuple := range al.Tuples {
+	for _, tuple := range al {
 		storageKeys := make([]ethcmn.Hash, len(tuple.StorageKeys))
 
 		for i := range tuple.StorageKeys {

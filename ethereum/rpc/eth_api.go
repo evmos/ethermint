@@ -667,9 +667,9 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*types.RPCTransac
 
 	return types.NewTransactionFromData(
 		resp.Receipt.Data,
-		common.BytesToAddress(resp.Receipt.From),
-		common.BytesToHash(resp.Receipt.Hash),
-		common.BytesToHash(resp.Receipt.BlockHash),
+		common.HexToAddress(resp.Receipt.From),
+		common.HexToHash(resp.Receipt.Hash),
+		common.HexToHash(resp.Receipt.BlockHash),
 		resp.Receipt.BlockHeight,
 		resp.Receipt.Index,
 	)
@@ -714,20 +714,19 @@ func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHa
 	receipt := receipts[idx]
 
 	if (blockHash != common.Hash{}) {
-		if !bytes.Equal(receipt.BlockHash, blockHash.Bytes()) {
-			err := errors.Errorf("receipt found but block hashes don't match %s != %s",
-				common.Bytes2Hex(receipt.BlockHash),
-				blockHash.Hex(),
+		hexBlockHash := blockHash.Hex()
+		if receipt.BlockHash != hexBlockHash {
+			return nil, errors.Errorf("receipt found but block hashes don't match %s != %s",
+				receipt.BlockHash,
+				hexBlockHash,
 			)
-
-			return nil, err
 		}
 	}
 
 	return types.NewTransactionFromData(
 		receipt.Data,
-		common.BytesToAddress(receipt.From),
-		common.BytesToHash(receipt.Hash),
+		common.HexToAddress(receipt.From),
+		common.HexToHash(receipt.Hash),
 		blockHash,
 		receipt.BlockHeight,
 		uint64(idx),
@@ -769,7 +768,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 
 	toHex := common.Address{}
 	if len(tx.Receipt.Data.To) > 0 {
-		toHex = common.BytesToAddress(tx.Receipt.Data.To)
+		toHex = common.HexToAddress(tx.Receipt.Data.To)
 	}
 
 	contractAddress := common.HexToAddress(tx.Receipt.Result.ContractAddress)
@@ -794,7 +793,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		"transactionIndex": hexutil.Uint64(tx.Receipt.Index),
 
 		// sender and receiver (contract or EOA) addreses
-		"from": common.BytesToAddress(tx.Receipt.From),
+		"from": common.HexToAddress(tx.Receipt.From),
 		"to":   toHex,
 	}
 

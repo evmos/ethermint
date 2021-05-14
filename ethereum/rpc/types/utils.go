@@ -304,7 +304,7 @@ func NewTransactionFromData(
 
 	var to *common.Address
 	if len(txData.To) > 0 {
-		recipient := common.BytesToAddress(txData.To)
+		recipient := common.HexToAddress(txData.To)
 		to = &recipient
 	}
 
@@ -333,22 +333,4 @@ func NewTransactionFromData(
 	}
 
 	return rpcTx, nil
-}
-
-var zeroHash = hexutil.Bytes(make([]byte, 32))
-
-func hashOrZero(data []byte) hexutil.Bytes {
-	if len(data) == 0 {
-		return zeroHash
-	}
-
-	return hexutil.Bytes(data)
-}
-
-func bigOrZero(i *big.Int) *hexutil.Big {
-	if i == nil {
-		return new(hexutil.Big)
-	}
-
-	return (*hexutil.Big)(i)
 }

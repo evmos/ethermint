@@ -35,7 +35,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
 	ethHash := ethcmn.BytesToHash(txHash)
 	blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
-	ethBlockHash := ethcmn.BytesToHash(blockHash)
 
 	st := &types.StateTransition{
 		Message:  ethMsg,
@@ -50,7 +49,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		k.Prepare(ctx, ethHash, ethBlockHash, k.TxCount)
+		k.Prepare(ctx, ethHash, blockHash, k.TxCount)
 		k.TxCount++
 	}
 
@@ -62,11 +61,11 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 			if !st.Simulate {
 				k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-					Hash:        ethHash.Bytes(),
-					From:        sender.Bytes(),
+					Hash:        ethHash.Hex(),
+					From:        sender.Hex(),
 					Data:        msg.Data,
 					BlockHeight: uint64(ctx.BlockHeight()),
-					BlockHash:   blockHash,
+					BlockHash:   blockHash.Hex(),
 					Result: &types.TxResult{
 						ContractAddress: executionResult.Response.ContractAddress,
 						Bloom:           executionResult.Response.Bloom,
@@ -96,12 +95,12 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 		blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
 		k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-			Hash:        ethHash.Bytes(),
-			From:        sender.Bytes(),
+			Hash:        ethHash.Hex(),
+			From:        sender.Hex(),
 			Data:        msg.Data,
 			Index:       uint64(st.Csdb.TxIndex()),
 			BlockHeight: uint64(ctx.BlockHeight()),
-			BlockHash:   blockHash,
+			BlockHash:   blockHash.Hex(),
 			Result: &types.TxResult{
 				ContractAddress: executionResult.Response.ContractAddress,
 				Bloom:           executionResult.Response.Bloom,
@@ -134,11 +133,10 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	})
 
 	if len(msg.Data.To) > 0 {
-		ethAddr := ethcmn.BytesToAddress(msg.Data.To)
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(
 				types.EventTypeEthereumTx,
-				sdk.NewAttribute(types.AttributeKeyRecipient, ethAddr.Hex()),
+				sdk.NewAttribute(types.AttributeKeyRecipient, msg.Data.To),
 			),
 		)
 	}

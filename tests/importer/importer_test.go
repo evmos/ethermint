@@ -29,7 +29,6 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/cosmos/ethermint/codec"
-	"github.com/cosmos/ethermint/core"
 	"github.com/cosmos/ethermint/types"
 	evmkeeper "github.com/cosmos/ethermint/x/evm/keeper"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
@@ -226,7 +225,7 @@ func TestImportBlocks(t *testing.T) {
 	}()
 
 	// ethereum mainnet config
-	chainContext := core.NewChainContext()
+	chainContext := NewChainContext()
 	vmConfig := ethvm.Config{}
 	chainConfig := ethparams.MainnetChainConfig
 

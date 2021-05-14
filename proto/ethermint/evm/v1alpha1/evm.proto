@@ -174,13 +174,13 @@ message Log {
 message TxReceipt {
   option (gogoproto.goproto_getters) = false;
 
-  bytes    hash        = 1;
-  bytes    from        = 2;
+  string    hash        = 1;
+  string    from        = 2;
   TxData   data        = 3;
   TxResult result      = 4;
   uint64   index       = 5;
   uint64   block_height = 6;
-  bytes    block_hash   = 7;
+  string    block_hash   = 7;
 }
 
 // TxResult stores results of Tx execution.
@@ -220,12 +220,17 @@ message TxData {
   bytes gas_price = 3 [(gogoproto.customname) = "GasPrice"];
   // gas defines the gas limit defined for the transaction.
   uint64 gas = 4 [(gogoproto.customname) = "GasLimit"];
-  bytes  to  = 5;
+  // hex formatted address of the recipient
+  string  to  = 5;
   // value defines the unsigned integer value of the transaction amount.
   bytes value = 6 [(gogoproto.customname) = "Amount"];
   // input defines the data payload bytes of the transaction.
   bytes input = 7;
-  AccessList accesses = 8 [(gogoproto.jsontag) = "accessList"];
+  repeated AccessTuple accesses = 8 [
+    (gogoproto.castrepeated) = "AccessList",
+    (gogoproto.jsontag) = "accessList",
+    (gogoproto.nullable)   = false
+  ];
   // v defines the signature value
   bytes v = 9;
   // r defines the signature value
@@ -239,13 +244,6 @@ message BytesList {
 
   repeated bytes bytes = 1;
 }
-
-// AccessList is an EIP-2930 access list defined as a proto message.
-message AccessList {
-  // access list tuples
-  repeated AccessTuple tuples = 1 [(gogoproto.nullable) = false];
-}
-
 
 // AccessTuple is the element type of an access list.
 message AccessTuple {
