@@ -1,12 +1,12 @@
-# ADR {ADR-NUMBER}: {TITLE}
+# ADR 001: State
 
 ## Changelog
 
-- {date}: {changelog}
+- 2021-05-15: first draft
 
 ## Status
 
-{DRAFT | PROPOSED} Not Implemented
+DRAFT, Not Implemented
 
 > Please have a look at the [PROCESS](./PROCESS.md#adr-status) page.
 > Use DRAFT if the ADR is in a draft stage (draft PR) or PROPOSED if it's in review.
