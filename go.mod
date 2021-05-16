@@ -23,7 +23,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.2.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/improbable-eng/grpc-web v0.14.0
@@ -46,7 +45,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/xlab/closer v0.0.0-20190328110542-03326addb7c2
 	github.com/xlab/suplog v1.3.0
-	golang.org/x/crypto v0.0.0-20210513122933-cd7d49e622d5
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect
 	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6 // indirect
 	golang.org/x/text v0.3.5 // indirect
