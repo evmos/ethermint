@@ -34,6 +34,7 @@ keyring_test_cosmos
 ./**/node_modules
 ./**/dist
 secret.yml
+# vue/
 
 # Testing
 coverage.txt

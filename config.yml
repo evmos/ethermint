@@ -1,31 +1,36 @@
 accounts:
   - name: alice
-    coins: ["1000uatom", "100000000000000000000aphoton"]
+    coins: ["100000000uatom", "100000000000000000000stake"]
   - name: bob
-    coins: ["5000000000000aphoton"]
+    coins: ["5000000000000stake"]
 validator:
   name: alice
-  staked: "10000000000aphoton"
+  staked: "100000000stake"
 client:
   vuex:
-    path: "starport-ui/src/store"
+    path: "vue/src/store"
 faucet:
   name: bob 
-  coins: ["5aphoton"]
+  coins: ["10stake"]
 build:
   binary: "ethermintd"
 genesis:
-  chain_id: "ethermint-777"
+  chain_id: "ethermint-2"
   app_state:
     staking:
       params:
-        bond_denom: "aphoton"
+        bond_denom: "stake"
     mint:
       params:
-        mint_denom: "aphoton"
+        mint_denom: "stake"
     crisis:
       constant_fee:
-        denom: "aphoton"
+        denom: "stake"
     gov:
       deposit_params:
-        min_deposit: ["1aphoton"]
+        min_deposit:
+          - amount: "10000000"
+            denom: "stake"
+    evm:
+      params:
+        evm_denom: "stake"
