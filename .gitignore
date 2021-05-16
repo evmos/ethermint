@@ -31,6 +31,9 @@ docs-tools-stamp
 proto-tools-stamp
 golangci-lint
 keyring_test_cosmos
+./**/node_modules
+./**/dist
+secret.yml
 
 # Testing
 coverage.txt

@@ -1,0 +1,40 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm install && vue-cli-service serve",
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "dependencies": {
+    "@cosmjs/crypto": "^0.24.1",
+    "@cosmjs/encoding": "^0.24.1",
+    "@cosmjs/proto-signing": "^0.24.1",
+    "@cosmjs/stargate": "^0.24.1",
+    "@starport/vue": "^0.1.38",
+    "@starport/vuex": "^0.1.41",
+    "bip39": "^3.0.3",
+    "core-js": "^3.10.0",
+    "crypto-js": "^4.0.0",
+    "file-saver": "^2.0.5",
+    "moment": "^2.29.1",
+    "vue": "^3.0.10",
+    "vue-router": "^4.0.3",
+    "vue-uuid": "^2.0.2",
+    "vuex": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.13.8",
+    "@babel/node": "^7.13.0",
+    "@vue/cli-plugin-babel": "^4.5.11",
+    "@vue/cli-plugin-vuex": "^4.5.11",
+    "@vue/cli-service": "^4.5.11",
+    "@vue/compiler-sfc": "^3.0.10",
+    "node-sass": "^5.0.0",
+    "prettier": "^2.2.1",
+    "protobufjs": "^6.10.2",
+    "sass-loader": "^10.1.1"
+  }
+}
