@@ -1,8 +1,6 @@
 package types
 
 import (
-	"bytes"
-
 	log "github.com/xlab/suplog"
 
 	"github.com/gogo/protobuf/proto"
@@ -65,21 +63,4 @@ func DecodeTransactionLogs(data []byte) (TransactionLogs, error) {
 		return TransactionLogs{}, err
 	}
 	return logs, nil
-}
-
-// ----------------------------------------------------------------------------
-// Auxiliary
-
-// IsEmptyHash returns true if the hash corresponds to an empty ethereum hex hash.
-func IsEmptyHash(hash string) bool {
-	return bytes.Equal(ethcmn.HexToHash(hash).Bytes(), ethcmn.Hash{}.Bytes())
-}
-
-// IsZeroAddress returns true if the address corresponds to an empty ethereum hex address.
-func IsZeroAddress(address string) bool {
-	if address == "" {
-		return true
-	}
-
-	return bytes.Equal(ethcmn.HexToAddress(address).Bytes(), ethcmn.Address{}.Bytes())
 }

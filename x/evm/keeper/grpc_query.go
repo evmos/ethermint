@@ -25,10 +25,9 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsZeroAddress(req.Address) {
+	if err := ethermint.ValidateAddress(req.Address); err != nil {
 		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrZeroAddress.Error(),
+			codes.InvalidArgument, err.Error(),
 		)
 	}
 
@@ -52,7 +51,7 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsZeroAddress(req.Address) {
+	if err := ethermint.ValidateAddress(req.Address); err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -84,7 +83,7 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsZeroAddress(req.Address) {
+	if err := ethermint.ValidateAddress(req.Address); err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -114,7 +113,7 @@ func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*typ
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsZeroAddress(req.Address) {
+	if err := ethermint.ValidateAddress(req.Address); err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -139,7 +138,7 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsZeroAddress(req.Address) {
+	if err := ethermint.ValidateAddress(req.Address); err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrZeroAddress.Error(),
@@ -162,7 +161,7 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsEmptyHash(req.Hash) {
+	if ethermint.IsEmptyHash(req.Hash) {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),
@@ -191,7 +190,7 @@ func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsEmptyHash(req.Hash) {
+	if ethermint.IsEmptyHash(req.Hash) {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),
@@ -229,7 +228,7 @@ func (k Keeper) TxReceiptsByBlockHash(c context.Context, req *types.QueryTxRecei
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsEmptyHash(req.Hash) {
+	if ethermint.IsEmptyHash(req.Hash) {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),
@@ -252,7 +251,7 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	if types.IsEmptyHash(req.Hash) {
+	if ethermint.IsEmptyHash(req.Hash) {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrEmptyHash.Error(),

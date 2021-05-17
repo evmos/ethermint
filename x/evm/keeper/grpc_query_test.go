@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"fmt"
+
 	"google.golang.org/grpc/metadata"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -39,7 +40,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 					Address: ethcmn.Address{}.String(),
 				}
 			},
-			true,
+			false,
 		},
 		{
 			"success",
@@ -97,7 +98,7 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 					Address: ethcmn.Address{}.String(),
 				}
 			},
-			true,
+			false,
 		},
 		{
 			"success",
@@ -217,7 +218,7 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 				exp := &types.QueryCodeResponse{}
 				expCode = exp.Code
 			},
-			true,
+			false,
 		},
 		{
 			"success",

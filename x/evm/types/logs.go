@@ -9,6 +9,8 @@ import (
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
+	ethermint "github.com/cosmos/ethermint/types"
 )
 
 // NewTransactionLogs creates a new NewTransactionLogs instance.
@@ -59,16 +61,16 @@ func (tx TransactionLogs) EthLogs() []*ethtypes.Log {
 
 // Validate performs a basic validation of an ethereum Log fields.
 func (log *Log) Validate() error {
-	if IsZeroAddress(log.Address) {
-		return fmt.Errorf("log address cannot be empty %s", log.Address)
+	if err := ethermint.ValidateAddress(log.Address); err != nil {
+		return fmt.Errorf("invalid log address %w", err)
 	}
-	if IsEmptyHash(log.BlockHash) {
+	if ethermint.IsEmptyHash(log.BlockHash) {
 		return fmt.Errorf("block hash cannot be the empty %s", log.BlockHash)
 	}
 	if log.BlockNumber == 0 {
 		return errors.New("block number cannot be zero")
 	}
-	if IsEmptyHash(log.TxHash) {
+	if ethermint.IsEmptyHash(log.TxHash) {
 		return fmt.Errorf("tx hash cannot be the empty %s", log.TxHash)
 	}
 	return nil
