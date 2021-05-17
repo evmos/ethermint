@@ -79,6 +79,84 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 	}
 }
 
+func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
+	var (
+		req        *types.QueryCosmosAccountRequest
+		expAccount *types.QueryCosmosAccountResponse
+	)
+
+	testCases := []struct {
+		msg      string
+		malleate func()
+		expPass  bool
+	}{
+		{"zero address",
+			func() {
+				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
+				expAccount = &types.QueryCosmosAccountResponse{
+					CosmosAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
+				}
+				req = &types.QueryCosmosAccountRequest{
+					Address: ethcmn.Address{}.String(),
+				}
+			},
+			false,
+		},
+		{
+			"success",
+			func() {
+				expAccount = &types.QueryCosmosAccountResponse{
+					CosmosAddress: sdk.AccAddress(suite.address.Bytes()).String(),
+					Sequence:      0,
+					AccountNumber: 0,
+				}
+				req = &types.QueryCosmosAccountRequest{
+					Address: suite.address.String(),
+				}
+			},
+			true,
+		},
+		{
+			"success with seq and account number",
+			func() {
+				acc := suite.app.AccountKeeper.GetAccount(suite.ctx, suite.address.Bytes())
+				suite.Require().NoError(acc.SetSequence(10))
+				suite.Require().NoError(acc.SetAccountNumber(1))
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
+				expAccount = &types.QueryCosmosAccountResponse{
+					CosmosAddress: sdk.AccAddress(suite.address.Bytes()).String(),
+					Sequence:      10,
+					AccountNumber: 1,
+				}
+				req = &types.QueryCosmosAccountRequest{
+					Address: suite.address.String(),
+				}
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.SetupTest() // reset
+
+			tc.malleate()
+			ctx := sdk.WrapSDKContext(suite.ctx)
+			res, err := suite.queryClient.CosmosAccount(ctx, req)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().NotNil(res)
+
+				suite.Require().Equal(expAccount, res)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
 func (suite *KeeperTestSuite) TestQueryBalance() {
 	var (
 		req        *types.QueryBalanceRequest
@@ -452,8 +530,18 @@ func (suite *KeeperTestSuite) TestQueryBlockBloom() {
 		malleate func()
 		expPass  bool
 	}{
-		{"bloom bytes not found for height",
+		{"marshal error",
 			func() {},
+			false,
+		},
+		{"bloom not found for height",
+			func() {
+				req = &types.QueryBlockBloomRequest{}
+				bloom := ethtypes.BytesToBloom([]byte("bloom"))
+				expBloom = bloom.Bytes()
+				suite.ctx = suite.ctx.WithBlockHeight(10)
+				suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 2, bloom)
+			},
 			false,
 		},
 		{

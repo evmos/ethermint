@@ -46,34 +46,31 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 }
 
 func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRequest) (*types.QueryCosmosAccountResponse, error) {
-
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	if err := ethermint.ValidateAddress(req.Address); err != nil {
 		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrZeroAddress.Error(),
+			codes.InvalidArgument, err.Error(),
 		)
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
 
-	ethStr := req.Address
-	ethAddr := ethcmn.FromHex(ethStr)
+	ethAddr := ethcmn.HexToAddress(req.Address)
+	cosmosAddr := sdk.AccAddress(ethAddr.Bytes())
 
-	ethToCosmosAddr := sdk.AccAddress(ethAddr[:]).String()
-	cosmosToEthAddr, _ := sdk.AccAddressFromBech32(ethToCosmosAddr)
-
-	acc := k.accountKeeper.GetAccount(ctx, cosmosToEthAddr)
+	account := k.accountKeeper.GetAccount(ctx, cosmosAddr)
 	res := types.QueryCosmosAccountResponse{
-		CosmosAddress: cosmosToEthAddr.String(),
+		CosmosAddress: cosmosAddr.String(),
 	}
-	if acc != nil {
-		res.Sequence = acc.GetSequence()
-		res.AccountNumber = acc.GetAccountNumber()
+
+	if account != nil {
+		res.Sequence = account.GetSequence()
+		res.AccountNumber = account.GetAccountNumber()
 	}
+
 	return &res, nil
 }
 
@@ -108,7 +105,6 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 
 // Storage implements the Query/Storage gRPC method
 func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*types.QueryStorageResponse, error) {
-
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -202,8 +198,8 @@ func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (
 	hash := ethcmn.HexToHash(req.Hash)
 	receipt, found := k.GetTxReceiptFromHash(ctx, hash)
 	if !found {
-		return nil, status.Error(
-			codes.NotFound, types.ErrTxReceiptNotFound.Error(),
+		return nil, status.Errorf(
+			codes.NotFound, "%s: %s", types.ErrTxReceiptNotFound.Error(), req.Hash,
 		)
 	}
 
