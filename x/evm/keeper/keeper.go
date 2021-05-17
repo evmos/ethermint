@@ -78,14 +78,11 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 // GetBlockBloom gets bloombits from block height
 func (k Keeper) GetBlockBloom(ctx sdk.Context, height int64) (ethtypes.Bloom, bool) {
 	store := ctx.KVStore(k.storeKey)
-
-	key := types.BloomKey(height)
-	has := store.Has(key)
-	if !has {
-		return ethtypes.Bloom{}, true // sometimes bloom not found, fix this
+	bz := store.Get(types.BloomKey(height))
+	if len(bz) == 0 {
+		return ethtypes.Bloom{}, false
 	}
 
-	bz := store.Get(key)
 	return ethtypes.BytesToBloom(bz), true
 }
 
@@ -128,9 +125,9 @@ func (k Keeper) GetBlockHeightByHash(ctx sdk.Context, hash common.Hash) (int64, 
 }
 
 // SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHeightToHash(ctx sdk.Context, hash []byte, height int64) {
+func (k Keeper) SetBlockHeightToHash(ctx sdk.Context, hash common.Hash, height int64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyBlockHeightHash(uint64(height)), hash)
+	store.Set(types.KeyBlockHeightHash(uint64(height)), hash.Bytes())
 }
 
 // SetTxReceiptToHash sets the mapping from tx hash to tx receipt
