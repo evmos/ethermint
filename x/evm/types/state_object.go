@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/cosmos/ethermint/types"
+	ethermint "github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethstate "github.com/ethereum/go-ethereum/core/state"
@@ -53,7 +53,7 @@ type StateObject interface {
 // Account values can be accessed and modified through the object.
 // Finally, call CommitTrie to write the modified storage trie into a database.
 type stateObject struct {
-	code types.Code // contract bytecode, which gets set when code is loaded
+	code ethermint.Code // contract bytecode, which gets set when code is loaded
 	// State objects are used by the consensus core and VM which are
 	// unable to deal with database-level errors. Any error that occurs
 	// during a database read is memoized here and will eventually be returned
@@ -64,7 +64,7 @@ type stateObject struct {
 	// DB error
 	dbErr   error
 	stateDB *CommitStateDB
-	account *types.EthAccount
+	account *ethermint.EthAccount
 	// balance represents the amount of the EVM denom token that an account holds
 	balance sdk.Int
 
@@ -83,7 +83,7 @@ type stateObject struct {
 }
 
 func newStateObject(db *CommitStateDB, accProto authtypes.AccountI, balance sdk.Int) *stateObject {
-	ethAccount, ok := accProto.(*types.EthAccount)
+	ethAccount, ok := accProto.(*ethermint.EthAccount)
 	if !ok {
 		panic(fmt.Sprintf("invalid account type for state object: %T", accProto))
 	}
@@ -251,7 +251,7 @@ func (so *stateObject) commitState() {
 		key := ethcmn.HexToHash(state.Key)
 		value := ethcmn.HexToHash(state.Value)
 		// delete empty values from the store
-		if IsEmptyHash(state.Value) {
+		if ethermint.IsEmptyHash(state.Value) {
 			store.Delete(key.Bytes())
 		}
 
@@ -263,7 +263,7 @@ func (so *stateObject) commitState() {
 			continue
 		}
 
-		if IsEmptyHash(state.Value) {
+		if ethermint.IsEmptyHash(state.Value) {
 			delete(so.keyToOriginStorageIndex, key)
 			continue
 		}

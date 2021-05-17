@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 // Validate performs a basic validation of a GenesisAccount fields.
 func (ga GenesisAccount) Validate() error {
-	if IsZeroAddress(ga.Address) {
-		return fmt.Errorf("address cannot be the zero address %s", ga.Address)
+	if err := ethermint.ValidateAddress(ga.Address); err != nil {
+		return err
 	}
 	if len(ethcmn.Hex2Bytes(ga.Code)) == 0 {
 		return errors.New("code cannot be empty")

@@ -47,7 +47,7 @@ service Query {
 
   // TxReceiptsByBlockHeight queries tx receipts by a block height.
   rpc TxReceiptsByBlockHeight(QueryTxReceiptsByBlockHeightRequest) returns (QueryTxReceiptsByBlockHeightResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipts_block/{height}";
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipts_block";
   }
 
   // TxReceiptsByBlockHash queries tx receipts by a block hash.
@@ -196,11 +196,6 @@ message QueryTxReceiptResponse {
 
 // QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
 message QueryTxReceiptsByBlockHeightRequest {
-  option (gogoproto.equal)           = false;
-  option (gogoproto.goproto_getters) = false;
-
-  // height is the block height to query tx receipts for
-  int64 height = 1;
 }
 
 // QueryTxReceiptsByBlockHeightResponse is the response type for the Query/TxReceiptsByBlockHeight RPC method.
@@ -241,9 +236,7 @@ message QueryBlockLogsResponse {
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest {
-  int64 height = 1;
-}
+message QueryBlockBloomRequest { }
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.

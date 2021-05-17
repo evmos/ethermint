@@ -29,7 +29,7 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 	// TODO: why do we have so many hash -> height mappings
 	k.SetBlockHash(ctx, req.Hash, req.Header.Height)
-	k.SetBlockHeightToHash(ctx, req.Hash, req.Header.Height)
+	k.SetBlockHeightToHash(ctx, common.BytesToHash(req.Hash), req.Header.Height)
 
 	// special setter for csdb
 	k.SetHeightHash(ctx, uint64(req.Header.Height), common.BytesToHash(req.Hash))
