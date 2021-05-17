@@ -133,9 +133,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	fullTx bool,
 ) (map[string]interface{}, error) {
 
-	req := &evmtypes.QueryTxReceiptsByBlockHeightRequest{
-		Height: block.Height,
-	}
+	req := &evmtypes.QueryTxReceiptsByBlockHeightRequest{}
 
 	txReceiptsResp, err := queryClient.TxReceiptsByBlockHeight(types.ContextWithHeight(block.Height), req)
 	if err != nil {
@@ -173,9 +171,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		}
 	}
 
-	blockBloomResp, err := queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{
-		Height: block.Height,
-	})
+	blockBloomResp, err := queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
 	if err != nil {
 		e.logger.WithError(err).Debugln("failed to query BlockBloom at height", block.Height)
 		blockBloomResp.Bloom = ethtypes.Bloom{}.Bytes()
@@ -217,9 +213,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{
-		Height: resBlock.Block.Height,
-	}
+	req := &evmtypes.QueryBlockBloomRequest{}
 
 	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
@@ -240,9 +234,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{
-		Height: resBlock.Block.Height,
-	}
+	req := &evmtypes.QueryBlockBloomRequest{}
 
 	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
