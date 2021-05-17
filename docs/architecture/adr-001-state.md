@@ -30,11 +30,11 @@ This database interface is defined by go-ethereum's `vm.StateDB`, which is curre
 using the `CommitStateDB` concrete type.
 
 The `CommitStateDB` performs state updates by having a direct access to the `sdk.Context`, the evm's
-`sdk.StoreKey`, and external `Keepers` for account and balances. Currently, the context field needs
+`sdk.StoreKey` and external `Keepers` for account and balances. Currently, the context field needs
 to be set on every block or state transition using `WithContext(ctx)` in order to pass the updated
 block and transaction data to the `CommitStateDB`.
 
-However, traditionally in Cosmos SDK-based chains it has been the `Keeper` the de-facto abstraction
+However, traditionally in Cosmos SDK-based chains, the `Keeper` type has been the de-facto abstraction
 that manages access the key-value store (`KVStore`) owned by the module through the store key.
 `Keepers` usually hold a reference to external module `Keepers` to perform functionality outside of
 the scope of their module.
@@ -61,13 +61,13 @@ directly.
 
 ### State Transition
 
-- Custom, error-prone
-- q: why do we have a custom logic?
-  - a: prev we didn't use the ethereum `core.Message` type but an `sdk.Msg` (`MsgEthereumTx`), making it impossible to call the `ApplyMessage`
-  function without having to introduce extra functionality.
-- Maintenance of state transition logic
-  - Custom gas accounting is not properly documented
-  - Simulate logic (state is not commited due to finalizations at EndBlock)
+A general EVM state transition is performed by calling the ethereum `vm.EVM` `Create` or `Call` functions, depending on wheather the transaction creates a contract or performs a transfer or call to a given contract.
+
+In the case of the `x/evm` module, it currently uses a modified version of Geth's `TransitionDB`, that wraps these two `vm.EVM` methods. The reason for using this modified function, is due to several reasons:
+
+  1. The use of `sdk.Msg` (`MsgEthereumTx`) instead of the ethereum `core.Message` type for the `vm.EVM` functions, preventing the direct use of the `core.ApplyMessage`.
+  2. The use of custom gas accounting through the transaction `GasMeter` available on the `sdk.Context` to consume the same amount of gas as on Ethereum.
+  3. Simulate logic via ABCI `CheckTx`, that prevents the state from being finalized.
 
 ## Decision
 
@@ -148,8 +148,15 @@ func (k Keeper) Suicide(address common.Address) bool {
 
 ### State Transition
 
-The state transition logic will be refactored to use the `ApplyMessage` function from the `core/` package of go-ethereum
-as the backbone. This method calls creates a new `StateTransition` and, as it name implies, applies a Ethereum message to execute it and update the state. This `ApplyMessage` call will be wrapped in the `Keeper`'s `TransitionDb` function, which will generate the required arguments for this call (EVM, chain config, and gas pool).
+The state transition logic will be refactored to use the `ApplyMessage` function from the `core/`
+package of go-ethereum as the backbone. This method calls creates a go-ethereum `StateTransition`
+instance and, as it name implies, applies a Ethereum message to execute it and update the state.
+This `ApplyMessage` call will be wrapped in the `Keeper`'s `TransitionDb` function, which will
+generate the required arguments for this call (EVM, chain config, and gas pool), thus performing the
+same gas accounting as before.
+
+This will lead to the switching from the existing Ethermint's evm `StateTransition` type to the
+go-ethereum `vm.ApplyMessage` type, thus reducing code necessary perform a state transition.
 
 ```go
 func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.ExecutionResult, error) {
@@ -257,13 +264,15 @@ since no chain that uses this code is in a production ready-state (at the moment
 
 ### Positive
 
-- Decreases maintenance of state transition code
-- Creates a single option for accessing the store through the `Keeper`, thus removing the `CommitStateDB` type
+- Improve maintenance by simplifying the state transition logic
+- Defines a single option for accessing the store through the `Keeper`, thus removing the
+  `CommitStateDB` type.
 - State operations and tests are now all located in the `evm/keeper/` package
 - Removes the concept of `stateObject` by commiting to the store directly
-- Delete operations on `EndBlock` for updating and commiting dirty `stateObject`s.
-- Splitting the state transition functionality (`NewEVM` from `TransitionDb`) allows us to modularize certain components that can
-  be beneficial for further customization (eg: using other EVMs other than Geth's)
+- Delete operations on `EndBlock` for updating and commiting dirty state objects.
+- Split the state transition functionality (`NewEVM` from `TransitionDb`) allows to further
+  modularize certain components that can be beneficial for customization (eg: using other EVMs other
+  than Geth's)
 
 ### Negative
 
