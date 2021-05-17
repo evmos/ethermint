@@ -649,7 +649,7 @@ func (e *PublicEthAPI) GetBlockByHash(hash common.Hash, fullTx bool) (map[string
 
 // GetBlockByNumber returns the block identified by number.
 func (e *PublicEthAPI) GetBlockByNumber(ethBlockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error) {
-	// e.logger.Debugln("eth_getBlockByNumber", "number", ethBlockNum, "full", fullTx)
+	e.logger.Debugln("eth_getBlockByNumber", "number", ethBlockNum, "full", fullTx)
 	return e.backend.GetBlockByNumber(ethBlockNum, fullTx)
 }
 

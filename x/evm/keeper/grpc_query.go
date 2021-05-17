@@ -187,7 +187,6 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 
 // TxReceipt implements the Query/TxReceipt gRPC method
 func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (*types.QueryTxReceiptResponse, error) {
-
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -215,14 +214,10 @@ func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (
 }
 
 // TxReceiptsByBlockHeight implements the Query/TxReceiptsByBlockHeight gRPC method
-func (k Keeper) TxReceiptsByBlockHeight(c context.Context, req *types.QueryTxReceiptsByBlockHeightRequest) (*types.QueryTxReceiptsByBlockHeightResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
+func (k Keeper) TxReceiptsByBlockHeight(c context.Context, _ *types.QueryTxReceiptsByBlockHeightRequest) (*types.QueryTxReceiptsByBlockHeightResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	receipts := k.GetTxReceiptsByBlockHeight(ctx, req.Height)
+	receipts := k.GetTxReceiptsByBlockHeight(ctx, ctx.BlockHeight())
 	return &types.QueryTxReceiptsByBlockHeightResponse{
 		Receipts: receipts,
 	}, nil
@@ -253,7 +248,6 @@ func (k Keeper) TxReceiptsByBlockHash(c context.Context, req *types.QueryTxRecei
 
 // BlockLogs implements the Query/BlockLogs gRPC method
 func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (*types.QueryBlockLogsResponse, error) {
-
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -275,19 +269,10 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 }
 
 // BlockBloom implements the Query/BlockBloom gRPC method
-func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
+func (k Keeper) BlockBloom(c context.Context, _ *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	height := ctx.BlockHeight()
-	if setHeight := req.Height; setHeight > 0 {
-		height = setHeight
-	}
-
-	bloom, found := k.GetBlockBloom(ctx, height)
+	bloom, found := k.GetBlockBloom(ctx, ctx.BlockHeight())
 	if !found {
 		return nil, status.Error(
 			codes.NotFound, types.ErrBloomNotFound.Error(),
@@ -300,11 +285,7 @@ func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest)
 }
 
 // Params implements the Query/Params gRPC method
-func (k Keeper) Params(c context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
+func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 	params := k.GetParams(ctx)
 
@@ -342,8 +323,11 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 	msg := types.NewMsgEthereumTx(
 		chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
 	)
-
 	msg.From = sender.Hex()
+
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	ethMsg, err := msg.AsMessage()
 	if err != nil {
@@ -356,6 +340,7 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 		ChainID:  chainIDEpoch,
 		TxHash:   &ethHash,
 		Simulate: ctx.IsCheckTx(),
+		Debug:    false,
 	}
 
 	config, found := k.GetChainConfig(ctx)
