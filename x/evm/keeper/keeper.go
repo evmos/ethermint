@@ -125,9 +125,9 @@ func (k Keeper) GetBlockHeightByHash(ctx sdk.Context, hash common.Hash) (int64, 
 }
 
 // SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHeightToHash(ctx sdk.Context, hash []byte, height int64) {
+func (k Keeper) SetBlockHeightToHash(ctx sdk.Context, hash common.Hash, height int64) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyBlockHeightHash(uint64(height)), hash)
+	store.Set(types.KeyBlockHeightHash(uint64(height)), hash.Bytes())
 }
 
 // SetTxReceiptToHash sets the mapping from tx hash to tx receipt
