@@ -24,38 +24,40 @@ below in the section for each corresponding component:
 
 ### `StateDB`
 
-- EVM state with an instance of the go-ethereum `vm.StateDB` interface
-- This StateDB defines the database interface for the state querying
-  - Account, Balance, Code, State
-  - Access Lists
-  - Snapshot
-  - Logs and preimages
-- Some of these operations are executed in SDK-based chains by the auth module's `AccountKeeper` and bank module's `Keeper`.
-- Current EVM module state design
-  - EVM Keeper which contains an field for a CommitStateDB instance
-    - This instance receives:
-      - module store key on initialization
-      - account and bank keeper interfaces
-      - parameter space to access relevant module params (eg: evm denomination
-    - The `CommitStateDB` needs to receive the `sdk.Context` in every call in order to access the store
-  - `CommitStateDB` is then passed to the new EVM instance that is created on every state transiton (i.e `StateTransition.TransitionDB`)
+In order to execute state transitions, the EVM receives a reference to a database interface to
+perform CRUD operations on accounts, balances, code and state storage, among other state queries.
+This database interface is defined by go-ethereum's `vm.StateDB`, which is currently implemented
+using the `CommitStateDB` concrete type.
+
+The `CommitStateDB` performs state updates by having a direct access to the `sdk.Context`, the evm's
+`sdk.StoreKey`, and external `Keepers` for account and balances. Currently, the context field needs
+to be set on every block or state transition using `WithContext(ctx)` in order to pass the updated
+block and transaction data to the `CommitStateDB`.
+
+However, traditionally in Cosmos SDK-based chains it has been the `Keeper` the de-facto abstraction
+that manages access the key-value store (`KVStore`) owned by the module through the store key.
+`Keepers` usually hold a reference to external module `Keepers` to perform functionality outside of
+the scope of their module.
+
+In the existing architecture of the EVM module, both `CommitStateDB` and `Keeper` have access to
+state.
 
 ### State Objects
 
-The `CommitStateDB` holds references of `stateObjects`, defined as live ethereum consensus accounts
-(i.e any balance, account nonces or storage) which will get modified while processing a state
-transition.
+The `CommitStateDB` also holds references of `stateObjects`, defined as "live ethereum consensus
+accounts (i.e any balance, account nonces or storage) which will get modified while processing a
+state transition".
 
-Upon a state transition, these objects will be modified and marked as 'dirty'. Then, at every
-`EndBlock`, the state of these modified objects will be 'finalized' and commited to the store,
-resetting all their cache fields.
+Upon a state transition, these objects will be modified and marked as 'dirty' (a.k.a stateless
+update) on the `CommitStateDB`. Then, at every `EndBlock`, the state of these modified objects will
+be 'finalized' and commited to the store, resetting all the dirty list of objects.
 
-While this model works for Ethereum, asumming the state can only be modified through EVM
-transactions, a chain that uses the EVM module can have their account balances updated through
-operations from other modules. This means that an EVM state object can be modified through an EVM
-transaction (`evm.MsgEthereumTx`) and other transactions like `bank.MsgSend` or
-`ibctransfer.MsgTransfer`. This can lead to unexpected behaviors like state overwrites, due to the
-current behaviour that caches the dirty state on the EVM instead of commiting any changes directly.
+The core issue arises when a chain that uses the EVM module can have also have their account and
+balances updated through operations from other modules. This means that an EVM state object can be
+modified through an EVM transaction (`evm.MsgEthereumTx`) and other transactions like `bank.MsgSend`
+or `ibctransfer.MsgTransfer`. This can lead to unexpected behaviors like state overwrites, due to
+the current behaviour that caches the dirty state on the EVM instead of commiting any changes
+directly.
 
 ### State Transition
 
@@ -87,19 +89,15 @@ var _ vm.StateDB = (*Keeper)(nil)
 // accounting.
 type Keeper struct {
   // store key and encoding codec
-  // ...
-
-  // external module keepers (account, bank, etc)
-  // ...
-
-  // cache fields and context (reset every block)
-  ctx sdk.Context
-
-  // other CommitStateDB fields (journal, etc)
+  // external module keepers (account, bank, etc) and params subspace
+  // cache fields and sdk.Context (reset every block)
+  // other CommitStateDB fields (journal, accessList, etc)
 }
 ```
 
-The ABCI `BeginBlock` and `EndBlock` are  
+This means that a `Keeper` pointer will now directly be passed to the `vm.EVM` for accessing the state and performing state transitions.
+
+The ABCI `BeginBlock` and `EndBlock` are have now been refactored to only (1) reset cached fields, and (2) keep track of internal mappings (hashes, height, etc).
 
 ```go
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
@@ -151,7 +149,7 @@ func (k Keeper) Suicide(address common.Address) bool {
 ### State Transition
 
 The state transition logic will be refactored to use the `ApplyMessage` function from the `core/` package of go-ethereum
-as the backbone. This method calls creates a new `StateTransition`
+as the backbone. This method calls creates a new `StateTransition` and, as it name implies, applies a Ethereum message to execute it and update the state. This `ApplyMessage` call will be wrapped in the `Keeper`'s `TransitionDb` function, which will generate the required arguments for this call (EVM, chain config, and gas pool).
 
 ```go
 func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.ExecutionResult, error) {
