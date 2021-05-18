@@ -19,17 +19,31 @@ const (
 	RouterKey = ModuleName
 )
 
+const (
+	prefixBlockHash = iota + 1
+	prefixBloom
+	prefixLogs
+	prefixCode
+	prefixStorage
+	prefixChainConfig
+	prefixBlockHeightHash
+	prefixHashTxReceipt
+	prefixBlockHeightTxs
+	prefixSuicide
+)
+
 // KVStore key prefixes
 var (
-	KeyPrefixBlockHash       = []byte{0x01}
-	KeyPrefixBloom           = []byte{0x02}
-	KeyPrefixLogs            = []byte{0x03}
-	KeyPrefixCode            = []byte{0x04}
-	KeyPrefixStorage         = []byte{0x05}
-	KeyPrefixChainConfig     = []byte{0x06}
-	KeyPrefixBlockHeightHash = []byte{0x07}
-	KeyPrefixHashTxReceipt   = []byte{0x08}
-	KeyPrefixBlockHeightTxs  = []byte{0x09}
+	KeyPrefixBlockHash       = []byte{prefixBlockHash}
+	KeyPrefixBloom           = []byte{prefixBloom}
+	KeyPrefixLogs            = []byte{prefixLogs}
+	KeyPrefixCode            = []byte{prefixCode}
+	KeyPrefixStorage         = []byte{prefixStorage}
+	KeyPrefixChainConfig     = []byte{prefixChainConfig}
+	KeyPrefixBlockHeightHash = []byte{prefixBlockHeightHash}
+	KeyPrefixHashTxReceipt   = []byte{prefixHashTxReceipt}
+	KeyPrefixBlockHeightTxs  = []byte{prefixBlockHeightTxs}
+	KeyPrefixSuicide         = []byte{prefixSuicide}
 )
 
 // BloomKey defines the store key for a block Bloom

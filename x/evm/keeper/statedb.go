@@ -1,11 +1,18 @@
 package keeper
 
 import (
+	"bytes"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	ethermint "github.com/cosmos/ethermint/types"
+	"github.com/cosmos/ethermint/x/evm/types"
 )
 
 var _ vm.StateDB = &Keeper{}
@@ -14,9 +21,18 @@ var _ vm.StateDB = &Keeper{}
 // Account
 // ----------------------------------------------------------------------------
 
-// CreateAccount calls CommitStateDB.CreateAccount using the passed in context
+// CreateAccount creates a new EthAccount instance from the provided address and
+// sets the value to store.
 func (k *Keeper) CreateAccount(addr common.Address) {
-	// TODO: implement
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+
+	_ = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+
+	k.Logger(k.ctx).Debug(
+		"account created",
+		"ethereum-address", addr.Hex(),
+		"cosmos-address", cosmosAddr.String(),
+	)
 }
 
 // ----------------------------------------------------------------------------
@@ -25,19 +41,45 @@ func (k *Keeper) CreateAccount(addr common.Address) {
 
 // AddBalance calls CommitStateDB.AddBalance using the passed in context
 func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
-	// TODO: implement
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+
+	params := k.GetParams(k.ctx)
+	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
+
+	if err := k.bankKeeper.AddCoins(k.ctx, cosmosAddr, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to add balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
+	}
 }
 
 // SubBalance calls CommitStateDB.SubBalance using the passed in context
 func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
-	// TODO: implement
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+
+	params := k.GetParams(k.ctx)
+	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
+
+	if err := k.bankKeeper.SubtractCoins(k.ctx, cosmosAddr, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to subtract balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
+	}
 }
 
 // GetBalance calls CommitStateDB.GetBalance using the passed in context
 func (k *Keeper) GetBalance(addr common.Address) *big.Int {
-	// TODO: implement
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+	params := k.GetParams(k.ctx)
+	balance := k.bankKeeper.GetBalance(k.ctx, cosmosAddr, params.EvmDenom)
 
-	return nil
+	return balance.Amount.BigInt()
 }
 
 // ----------------------------------------------------------------------------
@@ -46,14 +88,45 @@ func (k *Keeper) GetBalance(addr common.Address) *big.Int {
 
 // GetNonce calls CommitStateDB.GetNonce using the passed in context
 func (k *Keeper) GetNonce(addr common.Address) uint64 {
-	// TODO: implement
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+	nonce, err := k.accountKeeper.GetSequence(k.ctx, cosmosAddr)
+	if err != nil {
+		k.Logger(k.ctx).Error(
+			"account not found",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
+	}
 
-	return 0
+	return nonce
 }
 
 // SetNonce calls CommitStateDB.SetNonce using the passed in context
 func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
-	// TODO: implement
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
+	if account == nil {
+		k.Logger(k.ctx).Error(
+			"account not found",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+		)
+
+		// create address if it doesn't exist
+		account = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+	}
+
+	if err := account.SetSequence(nonce); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to set nonce",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"nonce", strconv.FormatUint(nonce, 64),
+		)
+	}
+
+	k.accountKeeper.SetAccount(k.ctx, account)
 }
 
 // ----------------------------------------------------------------------------
@@ -128,16 +201,17 @@ func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 // Suicide
 // ----------------------------------------------------------------------------
 
-// Suicide calls CommitStateDB.Suicide using the passed in context
+// Suicide implements the vm.StoreDB interface
 func (k *Keeper) Suicide(addr common.Address) bool {
-	// TODO: implement
-	return false
+	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixSuicide)
+	store.Set(addr.Bytes(), []byte{0x1})
+	return true
 }
 
-// HasSuicided calls CommitStateDB.HasSuicided using the passed in context
+// HasSuicided implements the vm.StoreDB interface
 func (k *Keeper) HasSuicided(addr common.Address) bool {
-	// TODO: implement
-	return false
+	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixSuicide)
+	return store.Has(addr.Bytes())
 }
 
 // ----------------------------------------------------------------------------
@@ -146,14 +220,37 @@ func (k *Keeper) HasSuicided(addr common.Address) bool {
 
 // Exist calls CommitStateDB.Exist using the passed in context
 func (k *Keeper) Exist(addr common.Address) bool {
-	// TODO: implement
-	return false
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
+	if account != nil {
+		return true
+	}
+
+	// return true if the account doesn't exist but has suicided
+	return k.HasSuicided(addr)
 }
 
 // Empty calls CommitStateDB.Empty using the passed in context
 func (k *Keeper) Empty(addr common.Address) bool {
-	// TODO: implement
-	return false
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
+	if account == nil {
+		// CONTRACT: we assume that if the account doesn't exist in store, it doesn't
+		// have a balance
+		return true
+	}
+
+	ethAccount, isEthAccount := account.(*ethermint.EthAccount)
+	if !isEthAccount {
+		// NOTE: non-ethereum accounts are considered empty
+		return true
+	}
+
+	balance := k.GetBalance(addr)
+	hasZeroBalance := balance.Sign() == 0
+	hasEmptyHash := bytes.Equal(ethAccount.CodeHash, types.EmptyCodeHash)
+
+	return hasZeroBalance && account.GetSequence() == 0 && hasEmptyHash
 }
 
 // ----------------------------------------------------------------------------

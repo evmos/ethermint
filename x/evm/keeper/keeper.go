@@ -26,8 +26,11 @@ type Keeper struct {
 	// - storing block hash -> block height map. Needed for the Web3 API. TODO: remove
 	storeKey sdk.StoreKey
 
+	paramSpace    paramtypes.Subspace
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
+
+	ctx sdk.Context
 
 	// Ethermint concrete implementation on the EVM StateDB interface
 	CommitStateDB *types.CommitStateDB
@@ -55,6 +58,7 @@ func NewKeeper(
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
 		cdc:           cdc,
+		paramSpace:    paramSpace,
 		accountKeeper: ak,
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
@@ -260,13 +264,13 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (types.Storage, error) {
 	storage := types.Storage{}
 
-	err := k.ForEachStorage(ctx, address, func(key, value common.Hash) bool {
-		storage = append(storage, types.NewState(key, value))
-		return false
-	})
-	if err != nil {
-		return types.Storage{}, err
-	}
+	// err := k.ForEachStorage(ctx, address, func(key, value common.Hash) bool {
+	// 	storage = append(storage, types.NewState(key, value))
+	// 	return false
+	// })
+	// if err != nil {
+	// 	return types.Storage{}, err
+	// }
 
 	return storage, nil
 }
