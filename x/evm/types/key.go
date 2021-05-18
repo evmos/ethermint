@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -82,4 +83,16 @@ func KeyHashTxReceipt(hash ethcmn.Hash) []byte {
 func KeyBlockHeightTxs(height uint64) []byte {
 	heightBytes := sdk.Uint64ToBigEndian(height)
 	return append(KeyPrefixBlockHeightTxs, heightBytes...)
+}
+
+func GetStorageByAddressKey(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
+	prefix := address.Bytes()
+	key := hash.Bytes()
+
+	compositeKey := make([]byte, len(prefix)+len(key))
+
+	copy(compositeKey, prefix)
+	copy(compositeKey[len(prefix):], key)
+
+	return ethcrypto.Keccak256Hash(compositeKey)
 }
