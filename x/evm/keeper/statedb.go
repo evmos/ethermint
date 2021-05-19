@@ -9,6 +9,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -217,23 +218,23 @@ func (k *Keeper) GetCodeSize(addr common.Address) int {
 // AddRefund calls CommitStateDB.AddRefund using the passed in context
 func (k *Keeper) AddRefund(gas uint64) {
 	// TODO: implement
-	// csdb.journal.append(refundChange{prev: csdb.refund})
+	// k.journal.append(refundChange{prev: k.refund})
 
 	// TODO: refund to transaction gas meter or block gas meter?
-	// csdb.refund += gas
+	// k.refund += gas
 }
 
 // SubRefund calls CommitStateDB.SubRefund using the passed in context
 func (k *Keeper) SubRefund(gas uint64) {
 	// TODO: implement
-	// csdb.journal.append(refundChange{prev: csdb.refund})
+	// k.journal.append(refundChange{prev: k.refund})
 
-	// if gas > csdb.refund {
+	// if gas > k.refund {
 	// 	panic("refund counter below zero")
 	// }
 
 	// TODO: refund to transaction gas meter or block gas meter?
-	// csdb.refund -= gas
+	// k.refund -= gas
 }
 
 // GetRefund calls CommitStateDB.GetRefund using the passed in context
@@ -362,7 +363,7 @@ func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, 
 
 func (k *Keeper) AddressInAccessList(addr common.Address) bool {
 	// TODO: implement
-	// return csdb.accessList.ContainsAddress(addr)
+	// return k.accessList.ContainsAddress(addr)
 	return false
 }
 
@@ -376,8 +377,8 @@ func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addres
 // even if the feature/fork is not active yet
 func (k *Keeper) AddAddressToAccessList(addr common.Address) {
 	// TODO: implement
-	// if csdb.accessList.AddAddress(addr) {
-	// 	csdb.journal.append(accessListAddAccountChange{&addr})
+	// if k.accessList.AddAddress(addr) {
+	// 	k.journal.append(accessListAddAccountChange{&addr})
 	// }
 }
 
@@ -405,6 +406,13 @@ func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 // Snapshotting
 // ----------------------------------------------------------------------------
 
+// TODO: (@fedekunze) The Cosmos SDK has a Snapshotter (https://github.com/cosmos/cosmos-sdk/blob/v0.42.4/snapshots/types/snapshotter.go#L8)
+// interface that allows for state snapshots and reverts to a given snapshot.
+// Unfortunately, this doesn't allow for the snapshot of a subtree (in this case the EVM). Ideally
+// this funcationality should be included in the SMT work. See https://github.com/cosmos/cosmos-sdk/discussions/8297 for
+// more details.
+// Coordinate with the LazyLedger and Regen teams on this work
+
 // Snapshot calls CommitStateDB.Snapshot using the passed in context
 func (k *Keeper) Snapshot() int {
 	id := 0
@@ -425,19 +433,19 @@ func (k *Keeper) Snapshot() int {
 // RevertToSnapshot calls CommitStateDB.RevertToSnapshot using the passed in context
 func (k *Keeper) RevertToSnapshot(revID int) {
 	// // find the snapshot in the stack of valid snapshots
-	// idx := sort.Search(len(csdb.validRevisions), func(i int) bool {
-	// 	return csdb.validRevisions[i].id >= revID
+	// idx := sort.Search(len(k.validRevisions), func(i int) bool {
+	// 	return k.validRevisions[i].id >= revID
 	// })
 
-	// if idx == len(csdb.validRevisions) || csdb.validRevisions[idx].id != revID {
+	// if idx == len(k.validRevisions) || k.validRevisions[idx].id != revID {
 	// 	panic(fmt.Errorf("revision ID %v cannot be reverted", revID))
 	// }
 
-	// snapshot := csdb.validRevisions[idx].journalIndex
+	// snapshot := k.validRevisions[idx].journalIndex
 
 	// // replay the journal to undo changes and remove invalidated snapshots
-	// csdb.journal.revert(csdb, snapshot)
-	// csdb.validRevisions = csdb.validRevisions[:idx]
+	// k.journal.revert(csdb, snapshot)
+	// k.validRevisions = k.validRevisions[:idx]
 }
 
 // ----------------------------------------------------------------------------
@@ -446,33 +454,32 @@ func (k *Keeper) RevertToSnapshot(revID int) {
 
 // AddLog calls CommitStateDB.AddLog using the passed in context
 func (k *Keeper) AddLog(log *ethtypes.Log) {
-	// TODO: implement
-	// csdb.journal.append(addLogChange{txhash: csdb.thash})
-	// log.TxHash = csdb.thash
-	// log.BlockHash = csdb.bhash
-	// log.TxIndex = uint(csdb.txIndex)
-	// log.Index = csdb.logSize
+	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
+	blockHash, found := k.GetBlockHashFromHeight(k.ctx, k.ctx.BlockHeight())
+	if found {
+		log.BlockHash = blockHash
+	}
 
-	// logs := k.GetLogs()
-	// check if nik
-	// logs = append(logs, log)
-	// k.SetLogs(logs)
+	log.TxHash = txHash
+
+	log.TxIndex = uint(k.TxIndex)
+
+	// k.journal.append(addLogChange{txhash: txHash})
+
+	logs := k.GetTxLogs(txHash)
+	log.Index = uint(len(logs))
+	logs = append(logs, log)
+	k.SetLogs(txHash, logs)
 }
 
-// AddPreimage calls CommitStateDB.AddPreimage using the passed in context
-func (k *Keeper) AddPreimage(hash common.Hash, preimage []byte) {
-	// TODO: implement
-	// TODO: maybe this isn't necessary at all
-	// if _, ok := csdb.hashToPreimageIndex[hash]; !ok {
-	// 	csdb.journal.append(addPreimageChange{hash: hash})
+// ----------------------------------------------------------------------------
+// Trie
+// ----------------------------------------------------------------------------
 
-	// 	pi := make([]byte, len(preimage))
-	// 	copy(pi, preimage)
-
-	// 	csdb.preimages = append(csdb.preimages, preimageEntry{hash: hash, preimage: pi})
-	// 	csdb.hashToPreimageIndex[hash] = len(csdb.preimages) - 1
-	// }
-}
+// AddPreimage performs a no-op since the EnablePreimageRecording flag is disabled
+// on the vm.Config during state transitions. No store trie preimages are written
+// to the database.
+func (k *Keeper) AddPreimage(_ common.Hash, _ []byte) {}
 
 // ----------------------------------------------------------------------------
 // Iterator

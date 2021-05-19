@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -37,7 +38,7 @@ type Keeper struct {
 	// Transaction counter in a block. Used on StateSB's Prepare function.
 	// It is reset to 0 every block on BeginBlock so there's no point in storing the counter
 	// on the KVStore or adding it as a field on the EVM genesis state.
-	TxCount int
+	TxIndex int
 	Bloom   *big.Int
 
 	// LogsCache keeps mapping of contract address -> eth logs emitted
@@ -63,7 +64,7 @@ func NewKeeper(
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
 		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
-		TxCount:       0,
+		TxIndex:       0,
 		Bloom:         big.NewInt(0),
 		LogsCache:     map[common.Address][]*ethtypes.Log{},
 	}
@@ -72,6 +73,11 @@ func NewKeeper(
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", types.ModuleName)
+}
+
+// WithContext sets an updated SDK context to the keeper
+func (k *Keeper) WithContext(ctx sdk.Context) {
+	k.ctx = ctx
 }
 
 // ----------------------------------------------------------------------------
@@ -243,6 +249,10 @@ func (k Keeper) GetTxReceiptsByBlockHash(ctx sdk.Context, hash common.Hash) []*t
 	return k.GetTxReceiptsByBlockHeight(ctx, blockHeight)
 }
 
+// ----------------------------------------------------------------------------
+// Log
+// ----------------------------------------------------------------------------
+
 // GetAllTxLogs return all the transaction logs from the store.
 func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	store := ctx.KVStore(k.storeKey)
@@ -260,6 +270,42 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	return txsLogs
 }
 
+// GetLogs returns the current logs for a given transaction hash from the KVStore.
+// This function returns an empty, non-nil slice if no logs are found.
+func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
+	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
+
+	bz := store.Get(txHash.Bytes())
+	if len(bz) == 0 {
+		return []*ethtypes.Log{}
+	}
+
+	var logs types.TransactionLogs
+	k.cdc.MustUnmarshalBinaryBare(bz, &logs)
+
+	return logs.EthLogs()
+}
+
+// SetLogs sets the logs for a transaction in the KVStore.
+func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
+	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
+
+	txLogs := types.NewTransactionLogsFromEth(txHash, logs)
+	bz := k.cdc.MustMarshalBinaryBare(&txLogs)
+
+	store.Set(txHash.Bytes(), bz)
+}
+
+// DeleteLogs removes the logs from the KVStore. It is used during journal.Revert.
+func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
+	store.Delete(txHash.Bytes())
+}
+
+// ----------------------------------------------------------------------------
+// Storage
+// ----------------------------------------------------------------------------
+
 // GetAccountStorage return state storage associated with an account
 func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (types.Storage, error) {
 	storage := types.Storage{}
@@ -273,24 +319,4 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 	// }
 
 	return storage, nil
-}
-
-// GetChainConfig gets block height from block consensus hash
-func (k Keeper) GetChainConfig(ctx sdk.Context) (types.ChainConfig, bool) {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.KeyPrefixChainConfig)
-	if len(bz) == 0 {
-		return types.ChainConfig{}, false
-	}
-
-	var config types.ChainConfig
-	k.cdc.MustUnmarshalBinaryBare(bz, &config)
-	return config, true
-}
-
-// SetChainConfig sets the mapping from block consensus hash to block height
-func (k Keeper) SetChainConfig(ctx sdk.Context, config types.ChainConfig) {
-	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshalBinaryBare(&config)
-	store.Set(types.KeyPrefixChainConfig, bz)
 }
