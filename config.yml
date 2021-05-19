@@ -13,6 +13,10 @@ build:
   binary: "ethermintd"
 init:
   home: "$HOME/.ethermintd"
+  app:
+    evm-rpc:
+      address: "0.0.0.0:1317"     # change the JSON-RPC address and port
+      ws-address: "0.0.0.0:1318"  # change the JSON-RPC websocket address and port
 genesis:
   chain_id: "ethermint-2"
   app_state:
