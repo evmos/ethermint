@@ -143,7 +143,7 @@ func (msg *MsgEthereumTx) GetMsgs() []sdk.Msg {
 //
 // NOTE: This method panics if 'VerifySig' hasn't been called first.
 func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
-	if IsZeroAddress(msg.From) {
+	if msg.From == "" {
 		panic("must use 'VerifySig' with a chain ID to get the signer")
 	}
 

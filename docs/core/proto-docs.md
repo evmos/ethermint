@@ -477,11 +477,6 @@ QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 method.
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `height` | [int64](#int64) |  |  |
-
-
 
 
 
@@ -779,11 +774,6 @@ QueryTxReceiptsByBlockHashResponse is the response type for the Query/TxReceipts
 QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `height` | [int64](#int64) |  | height is the block height to query tx receipts for |
-
-
 
 
 
@@ -823,7 +813,7 @@ Query defines the gRPC querier service.
 | `Code` | [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest) | [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse) | Code queries the balance of all coins for a single account. | GET|/ethermint/evm/v1alpha1/codes/{address}|
 | `TxLogs` | [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest) | [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse) | TxLogs queries ethereum logs from a transaction. | GET|/ethermint/evm/v1alpha1/tx_logs/{hash}|
 | `TxReceipt` | [QueryTxReceiptRequest](#ethermint.evm.v1alpha1.QueryTxReceiptRequest) | [QueryTxReceiptResponse](#ethermint.evm.v1alpha1.QueryTxReceiptResponse) | TxReceipt queries a receipt by a transaction hash. | GET|/ethermint/evm/v1alpha1/tx_receipt/{hash}|
-| `TxReceiptsByBlockHeight` | [QueryTxReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest) | [QueryTxReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse) | TxReceiptsByBlockHeight queries tx receipts by a block height. | GET|/ethermint/evm/v1alpha1/tx_receipts_block/{height}|
+| `TxReceiptsByBlockHeight` | [QueryTxReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest) | [QueryTxReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse) | TxReceiptsByBlockHeight queries tx receipts by a block height. | GET|/ethermint/evm/v1alpha1/tx_receipts_block|
 | `TxReceiptsByBlockHash` | [QueryTxReceiptsByBlockHashRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashRequest) | [QueryTxReceiptsByBlockHashResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashResponse) | TxReceiptsByBlockHash queries tx receipts by a block hash. | GET|/ethermint/evm/v1alpha1/tx_receipts_block_hash/{hash}|
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
