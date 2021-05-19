@@ -5,7 +5,7 @@ accounts:
     coins: ["5000000000000aphoton"]
 validator:
   name: alice
-  staked: "100000000aphoton"
+  staked: "100000000000000000000aphoton"
 faucet:
   name: bob 
   coins: ["10aphoton"]
