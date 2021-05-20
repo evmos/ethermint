@@ -315,8 +315,8 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 	// })
 
 	// if len(code) == 0 && k.Empty(addr) {
-	// //  NOTE: Ensure journal is updated with the changes
-	// // 	DeleteAccount, balance, code, storage
+	//  TODO: Ensure journal is updated with the changes
+	// 	DeleteAccount, balance, code, storage
 	// }
 }
 
@@ -471,25 +471,28 @@ func (k *Keeper) Exist(addr common.Address) bool {
 
 // Empty calls CommitStateDB.Empty using the passed in context
 func (k *Keeper) Empty(addr common.Address) bool {
+	nonce := uint64(0)
+	codeHash := types.EmptyCodeHash
+
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
-	if account == nil {
-		// CONTRACT: we assume that if the account doesn't exist in store, it doesn't
-		// have a balance
-		return true
-	}
 
-	ethAccount, isEthAccount := account.(*ethermint.EthAccount)
-	if !isEthAccount {
-		// NOTE: non-ethereum accounts are considered not empty
-		return false
+	if account != nil {
+		nonce = account.GetSequence()
+		ethAccount, isEthAccount := account.(*ethermint.EthAccount)
+		if !isEthAccount {
+			// NOTE: non-ethereum accounts are considered not empty
+			return false
+		}
+
+		codeHash = ethAccount.CodeHash
 	}
 
 	balance := k.GetBalance(addr)
 	hasZeroBalance := balance.Sign() == 0
-	hasEmptyHash := bytes.Equal(ethAccount.CodeHash, types.EmptyCodeHash)
+	hasEmptyCodeHash := bytes.Equal(codeHash, types.EmptyCodeHash)
 
-	return hasZeroBalance && account.GetSequence() == 0 && hasEmptyHash
+	return hasZeroBalance && nonce == 0 && hasEmptyCodeHash
 }
 
 // ----------------------------------------------------------------------------

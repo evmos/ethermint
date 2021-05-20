@@ -30,7 +30,6 @@ const (
 	prefixBlockHeightHash
 	prefixHashTxReceipt
 	prefixBlockHeightTxs
-	prefixSuicide
 )
 
 // KVStore key prefixes
@@ -44,7 +43,6 @@ var (
 	KeyPrefixBlockHeightHash = []byte{prefixBlockHeightHash}
 	KeyPrefixHashTxReceipt   = []byte{prefixHashTxReceipt}
 	KeyPrefixBlockHeightTxs  = []byte{prefixBlockHeightTxs}
-	KeyPrefixSuicide         = []byte{prefixSuicide}
 )
 
 // BloomKey defines the store key for a block Bloom

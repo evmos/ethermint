@@ -354,9 +354,10 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 	return prevBalance, nil
 }
 
+//TODO: update as part of journal work
 func (k Keeper) ResetAccount(addr common.Address) {
-	k.ClearBalance(addr.Bytes())
+	_, _ = k.ClearBalance(addr.Bytes())
 	k.DeleteCode(addr)
-	k.DeleteState(addr, common.Hash{}) //TODO:
+	k.DeleteState(addr, common.Hash{})
 
 }
