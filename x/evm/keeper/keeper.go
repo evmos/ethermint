@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -317,4 +318,45 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 	}
 
 	return storage, nil
+}
+
+// ----------------------------------------------------------------------------
+// Account
+// ----------------------------------------------------------------------------
+
+func (k Keeper) DeleteState(addr common.Address, key common.Hash) {
+	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
+	key = types.GetStorageByAddressKey(addr, key)
+	store.Delete(key.Bytes())
+}
+
+func (k Keeper) DeleteCode(addr common.Address) {
+	hash := k.GetCodeHash(addr)
+	if bytes.Equal(hash.Bytes(), common.BytesToHash(types.EmptyCodeHash).Bytes()) {
+		return
+	}
+
+	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixCode)
+	store.Delete(hash.Bytes())
+}
+
+func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err error) {
+	params := k.GetParams(k.ctx)
+
+	prevBalance = k.bankKeeper.GetBalance(k.ctx, addr, params.EvmDenom)
+	if prevBalance.IsPositive() {
+		err := k.bankKeeper.SubtractCoins(k.ctx, addr, sdk.Coins{prevBalance})
+		if err != nil {
+			return sdk.Coin{}, err
+		}
+	}
+
+	return prevBalance, nil
+}
+
+func (k Keeper) ResetAccount(addr common.Address) {
+	k.ClearBalance(addr.Bytes())
+	k.DeleteCode(addr)
+	k.DeleteState(addr, common.Hash{}) //TODO:
+
 }

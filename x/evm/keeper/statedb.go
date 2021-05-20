@@ -3,7 +3,6 @@ package keeper
 import (
 	"bytes"
 	"math/big"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -42,6 +41,10 @@ type csdb struct {
 	// logs is a cache field that keeps mapping of contract address -> eth logs emitted
 	// during EVM execution in the current block.
 	logs map[common.Address][]*ethtypes.Log
+
+	// accounts that are suicided will be returned as non-nil and will be deleted at every.
+	suicided         map[common.Address]bool
+	suicidedAccounts []common.Address
 }
 
 // ----------------------------------------------------------------------------
@@ -53,10 +56,22 @@ type csdb struct {
 func (k *Keeper) CreateAccount(addr common.Address) {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
+	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
+	log := ""
+	if account == nil {
+		// k.cache.journal.append(createObjectChange{account: &addr})
+		log = "account created"
+	} else {
+		// TODO: add journal to ResetAccount func?
+		// k.cache.journal.append(resetObjectChange{prev: account})
+		log = "account overwritten"
+		k.ResetAccount(addr)
+	}
+
 	_ = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
 
 	k.Logger(k.ctx).Debug(
-		"account created",
+		log,
 		"ethereum-address", addr.Hex(),
 		"cosmos-address", cosmosAddr.String(),
 	)
@@ -73,6 +88,8 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
+	prevBalance := k.bankKeeper.GetBalance(k.ctx, cosmosAddr, params.EvmDenom).Amount.BigInt()
+
 	if err := k.bankKeeper.AddCoins(k.ctx, cosmosAddr, coins); err != nil {
 		k.Logger(k.ctx).Error(
 			"failed to add balance",
@@ -80,7 +97,22 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
+
+		return
 	}
+
+	// k.cache.journal.append(balanceChange{
+	// 	account: addr,
+	// 	prev:    prevBalance,
+	// })
+
+	k.Logger(k.ctx).Debug(
+		"balance addition",
+		"ethereum-address", addr.Hex(),
+		"cosmos-address", cosmosAddr.String(),
+		"previous-balance", prevBalance.String(),
+		"new-balance", big.NewInt(0).Add(prevBalance, amount).String(),
+	)
 }
 
 // SubBalance calls CommitStateDB.SubBalance using the passed in context
@@ -90,6 +122,8 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
+	prevBalance := k.bankKeeper.GetBalance(k.ctx, cosmosAddr, params.EvmDenom).Amount.BigInt()
+
 	if err := k.bankKeeper.SubtractCoins(k.ctx, cosmosAddr, coins); err != nil {
 		k.Logger(k.ctx).Error(
 			"failed to subtract balance",
@@ -97,7 +131,27 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
+
+		return
 	}
+
+	// k.cache.journal.append(balanceChange{
+	// 	account: addr,
+	// 	prev:    prevBalance,
+	// })
+
+	// if k.Empty(addr) {
+	//  NOTE: Ensure journal is updated with the changes
+	// 	DeleteAccount, balance, code, storage
+	// }
+
+	k.Logger(k.ctx).Debug(
+		"balance substraction",
+		"ethereum-address", addr.Hex(),
+		"cosmos-address", cosmosAddr.String(),
+		"previous-balance", prevBalance.String(),
+		"new-balance", big.NewInt(0).Sub(prevBalance, amount).String(),
+	)
 }
 
 // GetBalance calls CommitStateDB.GetBalance using the passed in context
@@ -134,7 +188,7 @@ func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
 	if account == nil {
-		k.Logger(k.ctx).Error(
+		k.Logger(k.ctx).Debug(
 			"account not found",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
@@ -142,18 +196,39 @@ func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 
 		// create address if it doesn't exist
 		account = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+
+		// if nonce == 0 && k.Empty(addr) {
+
+		// }
 	}
+
+	// prevNonce := account.GetSequence()
 
 	if err := account.SetSequence(nonce); err != nil {
 		k.Logger(k.ctx).Error(
 			"failed to set nonce",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
-			"nonce", strconv.FormatUint(nonce, 64),
+			"nonce", nonce,
+			"error", err,
 		)
+
+		return
 	}
 
 	k.accountKeeper.SetAccount(k.ctx, account)
+
+	k.Logger(k.ctx).Debug(
+		"nonce set",
+		"ethereum-address", addr.Hex(),
+		"cosmos-address", cosmosAddr.String(),
+		"nonce", nonce,
+	)
+
+	// k.cache.journal.append(nonceChange{
+	// 	account: addr,
+	// 	prev:    prevNonce,
+	// })
 }
 
 // ----------------------------------------------------------------------------
@@ -218,6 +293,9 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 		return
 	}
 
+	// prevHash := common.BytesToHash(ethAccount.CodeHash)
+	// prevCode := k.GetCode(addr)
+
 	ethAccount.CodeHash = hash.Bytes()
 	k.accountKeeper.SetAccount(k.ctx, ethAccount)
 
@@ -229,6 +307,17 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 		"ethereum-address", addr.Hex(),
 		"code-hash", hash.Hex(),
 	)
+
+	// k.cache.journal.append(codeChange{
+	// 	account:  addr,
+	// 	prevHash: prevHash,
+	// 	prevCode: prevCode,
+	// })
+
+	// if len(code) == 0 && k.Empty(addr) {
+	// //  NOTE: Ensure journal is updated with the changes
+	// // 	DeleteAccount, balance, code, storage
+	// }
 }
 
 // GetCodeSize calls CommitStateDB.GetCodeSize using the passed in context
@@ -243,29 +332,28 @@ func (k *Keeper) GetCodeSize(addr common.Address) int {
 // AddRefund calls CommitStateDB.AddRefund using the passed in context
 func (k *Keeper) AddRefund(gas uint64) {
 	// TODO: implement
-	// k.journal.append(refundChange{prev: k.refund})
+	// k.cache.journal.append(refundChange{prev: k.refund})
 
 	// TODO: refund to transaction gas meter or block gas meter?
-	// k.refund += gas
+	k.cache.refund += gas
 }
 
 // SubRefund calls CommitStateDB.SubRefund using the passed in context
 func (k *Keeper) SubRefund(gas uint64) {
 	// TODO: implement
-	// k.journal.append(refundChange{prev: k.refund})
+	// k.cache.journal.append(refundChange{prev: k.refund})
 
-	// if gas > k.refund {
-	// 	panic("refund counter below zero")
-	// }
+	if gas > k.cache.refund {
+		panic("refund counter below zero")
+	}
 
 	// TODO: refund to transaction gas meter or block gas meter?
-	// k.refund -= gas
+	k.cache.refund -= gas
 }
 
 // GetRefund calls CommitStateDB.GetRefund using the passed in context
 func (k *Keeper) GetRefund() uint64 {
-	// TODO: implement
-	return 0
+	return k.cache.refund
 }
 
 // ----------------------------------------------------------------------------
@@ -296,25 +384,73 @@ func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
 func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
 	// TODO: document logic
+	// prevValue := k.GetState(addr, key)
+
 	key = types.GetStorageByAddressKey(addr, key)
 	store.Set(key.Bytes(), value.Bytes())
+
+	k.Logger(k.ctx).Debug(
+		"state updated",
+		"ethereum-address", addr.Hex(),
+		"key", key.Hex(),
+	)
+
+	// since the new value is different, update and journal the change
+	// k.cache.journal.append(storageChange{
+	// 	account:   addr,
+	// 	key:       key,
+	// 	prevValue: prevValue,
+	// })
 }
 
 // ----------------------------------------------------------------------------
 // Suicide
 // ----------------------------------------------------------------------------
 
-// Suicide implements the vm.StoreDB interface
+// TODO: (@fedekunze) consider prunning suicide records after unbonding period?
+
+// Suicide marks the given account as suicided and clears the account balance.
 func (k *Keeper) Suicide(addr common.Address) bool {
-	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixSuicide)
-	store.Set(addr.Bytes(), []byte{0x1})
+	prev := k.HasSuicided(addr)
+	if prev {
+		return true
+	}
+
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
+
+	_, err := k.ClearBalance(cosmosAddr)
+	if err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to subtract balance on suicide",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
+
+		return false
+	}
+
+	k.cache.suicided[addr] = true
+	k.cache.suicidedAccounts = append(k.cache.suicidedAccounts, addr)
+
+	// k.cache.journal.append(suicideChange{
+	// 	account:     &addr,
+	// 	prev:        prev,
+	// 	prevBalance: prevBalance,
+	// })
+
+	k.Logger(k.ctx).Debug(
+		"account suicided",
+		"ethereum-address", addr.Hex(),
+		"cosmos-address", cosmosAddr.String(),
+	)
+
 	return true
 }
 
 // HasSuicided implements the vm.StoreDB interface
 func (k *Keeper) HasSuicided(addr common.Address) bool {
-	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixSuicide)
-	return store.Has(addr.Bytes())
+	return k.cache.suicided[addr]
 }
 
 // ----------------------------------------------------------------------------
@@ -345,8 +481,8 @@ func (k *Keeper) Empty(addr common.Address) bool {
 
 	ethAccount, isEthAccount := account.(*ethermint.EthAccount)
 	if !isEthAccount {
-		// NOTE: non-ethereum accounts are considered empty
-		return true
+		// NOTE: non-ethereum accounts are considered not empty
+		return false
 	}
 
 	balance := k.GetBalance(addr)
@@ -388,43 +524,38 @@ func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, 
 
 func (k *Keeper) AddressInAccessList(addr common.Address) bool {
 	// TODO: implement
-	// return k.accessList.ContainsAddress(addr)
-	return false
+	return k.cache.accessList.ContainsAddress(addr)
 }
 
 func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
-	// TODO: implement
-	// return k.accessList.Contains(addr, slot)
-	return false, false
+	return k.cache.accessList.Contains(addr, slot)
 }
 
 // AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (k *Keeper) AddAddressToAccessList(addr common.Address) {
-	// TODO: implement
-	// if k.accessList.AddAddress(addr) {
-	// 	k.journal.append(accessListAddAccountChange{&addr})
-	// }
+	if k.cache.accessList.AddAddress(addr) {
+		// 	k.cache.journal.append(accessListAddAccountChange{&addr})
+	}
 }
 
 // AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
-	// // TODO: implement
-	// addrMod, slotMod := k.accessList.AddSlot(addr, slot)
-	// if addrMod {
-	// 	// In practice, this should not happen, since there is no way to enter the
-	// 	// scope of 'address' without having the 'address' become already added
-	// 	// to the access list (via call-variant, create, etc).
-	// 	// Better safe than sorry, though
-	// 	k.journal.append(accessListAddAccountChange{&addr})
-	// }
-	// if slotMod {
-	// 	k.journal.append(accessListAddSlotChange{
-	// 		address: &addr,
-	// 		slot:    &slot,
-	// 	})
-	// }
+	addrMod, slotMod := k.cache.accessList.AddSlot(addr, slot)
+	if addrMod {
+		// In practice, this should not happen, since there is no way to enter the
+		// scope of 'address' without having the 'address' become already added
+		// to the access list (via call-variant, create, etc).
+		// Better safe than sorry, though
+		// k.cache.journal.append(accessListAddAccountChange{&addr})
+	}
+	if slotMod {
+		// k.cache.journal.append(accessListAddSlotChange{
+		// 	address: &addr,
+		// 	slot:    &slot,
+		// })
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -448,7 +579,7 @@ func (k *Keeper) Snapshot() int {
 	// 	k.validRevisions,
 	// 	revision{
 	// 		id:           id,
-	// 		journalIndex: k.journal.length(),
+	// 		journalIndex: k.cache.journal.length(),
 	// 	},
 	// )
 
@@ -459,18 +590,23 @@ func (k *Keeper) Snapshot() int {
 func (k *Keeper) RevertToSnapshot(revID int) {
 	// // find the snapshot in the stack of valid snapshots
 	// idx := sort.Search(len(k.validRevisions), func(i int) bool {
-	// 	return k.validRevisions[i].id >= revID
+	// 	return k.cache.validRevisionsi].id >= revID
 	// })
 
-	// if idx == len(k.validRevisions) || k.validRevisions[idx].id != revID {
+	// if idx == len(k.validRevisions) || k.cache.validRevisionsidx].id != revID {
 	// 	panic(fmt.Errorf("revision ID %v cannot be reverted", revID))
 	// }
 
-	// snapshot := k.validRevisions[idx].journalIndex
+	// snapshot := k.cache.validRevisionsidx].journalIndex
 
 	// // replay the journal to undo changes and remove invalidated snapshots
-	// k.journal.revert(csdb, snapshot)
-	// k.validRevisions = k.validRevisions[:idx]
+	// k.cache.journal.revert(csdb, snapshot)
+	// k.validRevisions = k.cache.validRevisions:idx]
+
+	k.Logger(k.ctx).Debug(
+		"reverted to snapshot",
+		"revision-id", revID,
+	)
 }
 
 // ----------------------------------------------------------------------------
@@ -486,15 +622,20 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 	}
 
 	log.TxHash = txHash
-
 	log.TxIndex = uint(k.cache.txIndex)
-
-	// k.journal.append(addLogChange{txhash: txHash})
 
 	logs := k.GetTxLogs(txHash)
 	log.Index = uint(len(logs))
 	logs = append(logs, log)
 	k.SetLogs(txHash, logs)
+
+	// k.cache.journal.append(addLogChange{txhash: txHash})
+
+	k.Logger(k.ctx).Debug(
+		"log added",
+		"tx-hash", txHash.Hex(),
+		"log-index", int(log.Index),
+	)
 }
 
 // ----------------------------------------------------------------------------
