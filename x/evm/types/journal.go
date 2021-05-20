@@ -41,7 +41,7 @@ type dirty struct {
 }
 
 // newJournal create a new initialized Journal.
-func newJournal() *Journal {
+func NewJournal() *Journal {
 	return &Journal{
 		dirties:               []dirty{},
 		addressToJournalIndex: make(map[ethcmn.Address]int),

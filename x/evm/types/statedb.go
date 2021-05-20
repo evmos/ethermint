@@ -25,11 +25,6 @@ var (
 	zeroBalance = sdk.ZeroInt().BigInt()
 )
 
-type Revision struct {
-	id           int
-	journalIndex int
-}
-
 // CommitStateDB implements the Geth state.StateDB interface. Instead of using
 // a trie and database for querying and persistence, the Keeper uses KVStores
 // and an AccountKeeper to facilitate state transitions.
@@ -105,8 +100,8 @@ func NewCommitStateDB(
 		stateObjectsDirty:    make(map[ethcmn.Address]struct{}),
 		preimages:            []preimageEntry{},
 		hashToPreimageIndex:  make(map[ethcmn.Hash]int),
-		journal:              newJournal(),
-		accessList:           newAccessList(),
+		journal:              NewJournal(),
+		accessList:           NewAccessListMappings(),
 	}
 }
 
@@ -727,7 +722,7 @@ func (csdb *CommitStateDB) Reset(_ ethcmn.Hash) error {
 	csdb.logSize = 0
 	csdb.preimages = []preimageEntry{}
 	csdb.hashToPreimageIndex = make(map[ethcmn.Hash]int)
-	csdb.accessList = newAccessList()
+	csdb.accessList = NewAccessListMappings()
 
 	csdb.clearJournalAndRefund()
 	return nil
@@ -764,7 +759,7 @@ func (csdb *CommitStateDB) ClearStateObjects() {
 }
 
 func (csdb *CommitStateDB) clearJournalAndRefund() {
-	csdb.journal = newJournal()
+	csdb.journal = NewJournal()
 	csdb.validRevisions = csdb.validRevisions[:0]
 	csdb.refund = 0
 }
@@ -822,7 +817,7 @@ func CopyCommitStateDB(from, to *CommitStateDB) {
 	to.logSize = from.logSize
 	to.preimages = make([]preimageEntry, len(from.preimages))
 	to.hashToPreimageIndex = make(map[ethcmn.Hash]int, len(from.hashToPreimageIndex))
-	to.journal = newJournal()
+	to.journal = NewJournal()
 	to.thash = from.thash
 	to.bhash = from.bhash
 	to.txIndex = from.txIndex

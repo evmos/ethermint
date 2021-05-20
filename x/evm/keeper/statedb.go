@@ -32,6 +32,16 @@ type csdb struct {
 
 	// Per-transaction access list
 	accessList *types.AccessListMappings
+
+	// Transaction counter in a block. Used on StateSB's Prepare function.
+	// It is reset to 0 every block on BeginBlock so there's no point in storing the counter
+	// on the KVStore or adding it as a field on the EVM genesis state.
+	txIndex int
+	bloom   *big.Int
+
+	// logs is a cache field that keeps mapping of contract address -> eth logs emitted
+	// during EVM execution in the current block.
+	logs map[common.Address][]*ethtypes.Log
 }
 
 // ----------------------------------------------------------------------------
@@ -477,7 +487,7 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 
 	log.TxHash = txHash
 
-	log.TxIndex = uint(k.TxIndex)
+	log.TxIndex = uint(k.cache.txIndex)
 
 	// k.journal.append(addLogChange{txhash: txHash})
 

@@ -105,6 +105,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.
 	genBlock := ethcore.DefaultGenesisBlock()
 	ms := cms.CacheMultiStore()
 	ctx := sdk.NewContext(ms, tmproto.Header{}, false, logger)
+	evmKeeper.CommitStateDB.WithContext(ctx)
 
 	// Set the default Ethermint parameters to the parameter keeper store
 	evmKeeper.SetParams(ctx, evmtypes.DefaultParams())
@@ -128,12 +129,12 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.
 		evmKeeper.CommitStateDB.SetNonce(addr, acc.Nonce)
 
 		for key, value := range acc.Storage {
-			evmKeeper.SetState(addr, key, value)
+			evmKeeper.CommitStateDB.SetState(addr, key, value)
 		}
 	}
 
 	// get balance of one of the genesis account having 400 ETH
-	b := evmKeeper.GetBalance(genInvestor)
+	b := evmKeeper.CommitStateDB.GetBalance(genInvestor)
 	require.Equal(t, "200000000000000000000", b.String())
 
 	// commit the stateDB with 'false' to delete empty objects
@@ -257,6 +258,7 @@ func TestImportBlocks(t *testing.T) {
 		ms := cms.CacheMultiStore()
 		ctx := sdk.NewContext(ms, tmproto.Header{}, false, logger)
 		ctx = ctx.WithBlockHeight(int64(block.NumberU64()))
+		evmKeeper.CommitStateDB.WithContext(ctx)
 
 		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
 			applyDAOHardFork(evmKeeper)

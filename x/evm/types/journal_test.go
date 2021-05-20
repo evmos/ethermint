@@ -60,7 +60,7 @@ func (suite *JournalTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
-	suite.journal = newJournal()
+	suite.journal = NewJournal()
 
 	balance := ethermint.NewPhotonCoin(sdk.NewInt(100))
 	acc := &ethermint.EthAccount{

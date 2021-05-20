@@ -68,8 +68,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, blockHash, k.TxIndex)
-		k.TxIndex++
+		k.CommitStateDB.Prepare(ethHash, blockHash, k.cache.txIndex)
+		k.cache.txIndex++
 	}
 
 	executionResult, err := st.TransitionDb(ctx, config)
@@ -104,7 +104,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	if !st.Simulate {
 		// update block bloom filter
-		k.Bloom.Or(k.Bloom, executionResult.Bloom)
+		k.cache.bloom.Or(k.cache.bloom, executionResult.Bloom)
 
 		// update transaction logs in KVStore
 		err = k.CommitStateDB.SetLogs(ethHash, executionResult.Logs)
@@ -133,7 +133,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		k.AddTxHashToBlock(ctx, ctx.BlockHeight(), ethHash)
 
 		for _, ethLog := range executionResult.Logs {
-			k.LogsCache[ethLog.Address] = append(k.LogsCache[ethLog.Address], ethLog)
+			k.cache.logs[ethLog.Address] = append(k.cache.logs[ethLog.Address], ethLog)
 		}
 	}
 

@@ -35,15 +35,8 @@ type Keeper struct {
 
 	// Ethermint concrete implementation on the EVM StateDB interface
 	CommitStateDB *types.CommitStateDB
-	// Transaction counter in a block. Used on StateSB's Prepare function.
-	// It is reset to 0 every block on BeginBlock so there's no point in storing the counter
-	// on the KVStore or adding it as a field on the EVM genesis state.
-	TxIndex int
-	Bloom   *big.Int
 
-	// LogsCache keeps mapping of contract address -> eth logs emitted
-	// during EVM execution in the current block.
-	LogsCache map[common.Address][]*ethtypes.Log
+	cache csdb
 }
 
 // NewKeeper generates new evm module keeper
@@ -64,9 +57,13 @@ func NewKeeper(
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
 		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
-		TxIndex:       0,
-		Bloom:         big.NewInt(0),
-		LogsCache:     map[common.Address][]*ethtypes.Log{},
+		cache: csdb{
+			journal:    types.NewJournal(),
+			accessList: types.NewAccessListMappings(),
+			txIndex:    0,
+			bloom:      big.NewInt(0),
+			logs:       map[common.Address][]*ethtypes.Log{},
+		},
 	}
 }
 
