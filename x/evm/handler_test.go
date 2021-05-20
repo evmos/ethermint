@@ -47,6 +47,7 @@ func (suite *EvmTestSuite) SetupTest() {
 
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-888", Time: time.Now().UTC()})
+	suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
 	suite.handler = evm.NewHandler(suite.app.EvmKeeper)
 	suite.codec = suite.app.AppCodec()
 	suite.chainID = suite.chainID
@@ -80,7 +81,7 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 		{
 			"passed",
 			func() {
-				suite.app.EvmKeeper.SetBalance(suite.ctx, suite.from, big.NewInt(100))
+				suite.app.EvmKeeper.CommitStateDB.SetBalance(suite.from, big.NewInt(100))
 				to := ethcmn.BytesToAddress(suite.to)
 				tx = types.NewMsgEthereumTx(suite.chainID, 0, &to, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 				tx.From = suite.from.String()
@@ -193,10 +194,10 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 	suite.Require().Equal(len(txResponse.TxLogs.Logs[0].Topics), 2)
 
 	hash := []byte{1}
-	err = suite.app.EvmKeeper.SetLogs(suite.ctx, ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
+	err = suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
 	suite.Require().NoError(err)
 
-	logs, err := suite.app.EvmKeeper.GetLogs(suite.ctx, ethcmn.BytesToHash(hash))
+	logs, err := suite.app.EvmKeeper.CommitStateDB.GetLogs(ethcmn.BytesToHash(hash))
 	suite.Require().NoError(err, "failed to get logs")
 
 	suite.Require().Equal(logs, txResponse.TxLogs.Logs)
@@ -227,7 +228,7 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	// get logs by tx hash
 	hash := txResponse.TxLogs.Hash
 
-	logs, err := suite.app.EvmKeeper.GetLogs(suite.ctx, ethcmn.HexToHash(hash))
+	logs, err := suite.app.EvmKeeper.CommitStateDB.GetLogs(ethcmn.HexToHash(hash))
 	suite.Require().NoError(err, "failed to get logs")
 
 	suite.Require().Equal(logs, txResponse.TxLogs.EthLogs())
@@ -345,7 +346,7 @@ func (suite *EvmTestSuite) TestSendTransaction() {
 	gasLimit := uint64(21000)
 	gasPrice := big.NewInt(0x55ae82600)
 
-	suite.app.EvmKeeper.SetBalance(suite.ctx, suite.from, big.NewInt(100))
+	suite.app.EvmKeeper.CommitStateDB.SetBalance(suite.from, big.NewInt(100))
 
 	// send simple value transfer with gasLimit=21000
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, &ethcmn.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil, nil)

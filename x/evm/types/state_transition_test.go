@@ -179,8 +179,8 @@ func (suite *StateDBTestSuite) TestTransitionDb() {
 
 		if tc.expPass {
 			suite.Require().NoError(err, tc.name)
-			fromBalance := suite.app.EvmKeeper.GetBalance(suite.ctx, suite.address)
-			toBalance := suite.app.EvmKeeper.GetBalance(suite.ctx, recipient)
+			fromBalance := suite.app.EvmKeeper.CommitStateDB.GetBalance(suite.address)
+			toBalance := suite.app.EvmKeeper.CommitStateDB.GetBalance(recipient)
 			suite.Require().Equal(fromBalance, big.NewInt(4950), tc.name)
 			suite.Require().Equal(toBalance, big.NewInt(50), tc.name)
 		} else {
