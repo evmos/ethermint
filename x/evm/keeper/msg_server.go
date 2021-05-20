@@ -24,6 +24,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.TypeMsgEthereumTx)
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
+	k.CommitStateDB.WithContext(ctx)
 
 	ethMsg, err := msg.AsMessage()
 	if err != nil {
@@ -67,8 +68,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		k.Prepare(ctx, ethHash, blockHash, k.TxCount)
-		k.TxCount++
+		k.CommitStateDB.Prepare(ethHash, blockHash, k.TxIndex)
+		k.TxIndex++
 	}
 
 	executionResult, err := st.TransitionDb(ctx, config)
@@ -106,7 +107,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		k.Bloom.Or(k.Bloom, executionResult.Bloom)
 
 		// update transaction logs in KVStore
-		err = k.SetLogs(ctx, ethHash, executionResult.Logs)
+		err = k.CommitStateDB.SetLogs(ethHash, executionResult.Logs)
 		if err != nil {
 			panic(err)
 		}

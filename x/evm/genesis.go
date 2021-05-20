@@ -21,6 +21,8 @@ func InitGenesis(
 	bankKeeper types.BankKeeper,
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
+	k.CommitStateDB.WithContext(ctx)
+
 	k.SetParams(ctx, data.Params)
 	evmDenom := data.Params.EvmDenom
 
@@ -43,18 +45,18 @@ func InitGenesis(
 		}
 
 		evmBalance := bankKeeper.GetBalance(ctx, accAddress, evmDenom)
-		k.SetBalance(ctx, address, evmBalance.Amount.BigInt())
-		k.SetNonce(ctx, address, acc.GetSequence())
-		k.SetCode(ctx, address, ethcmn.Hex2Bytes(account.Code))
+		k.CommitStateDB.SetBalance(address, evmBalance.Amount.BigInt())
+		k.CommitStateDB.SetNonce(address, acc.GetSequence())
+		k.CommitStateDB.SetCode(address, ethcmn.Hex2Bytes(account.Code))
 
 		for _, storage := range account.Storage {
-			k.SetState(ctx, address, ethcmn.HexToHash(storage.Key), ethcmn.HexToHash(storage.Value))
+			k.SetState(address, ethcmn.HexToHash(storage.Key), ethcmn.HexToHash(storage.Value))
 		}
 	}
 
 	var err error
 	for _, txLog := range data.TxsLogs {
-		err = k.SetLogs(ctx, ethcmn.HexToHash(txLog.Hash), txLog.EthLogs())
+		err = k.CommitStateDB.SetLogs(ethcmn.HexToHash(txLog.Hash), txLog.EthLogs())
 		if err != nil {
 			panic(err)
 		}
@@ -63,14 +65,14 @@ func InitGenesis(
 	k.SetChainConfig(ctx, data.ChainConfig)
 
 	// set state objects and code to store
-	_, err = k.Commit(ctx, false)
+	_, err = k.CommitStateDB.Commit(false)
 	if err != nil {
 		panic(err)
 	}
 
 	// set storage to store
 	// NOTE: don't delete empty object to prevent import-export simulation failure
-	err = k.Finalise(ctx, false)
+	err = k.CommitStateDB.Finalise(false)
 	if err != nil {
 		panic(err)
 	}
@@ -80,6 +82,8 @@ func InitGenesis(
 
 // ExportGenesis exports genesis state of the EVM module
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
+	k.CommitStateDB.WithContext(ctx)
+
 	// nolint: prealloc
 	var ethGenAccounts []types.GenesisAccount
 	ak.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
@@ -98,7 +102,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper, ak types.AccountKeeper) *ty
 
 		genAccount := types.GenesisAccount{
 			Address: addr.String(),
-			Code:    ethcmn.Bytes2Hex(k.GetCode(ctx, addr)),
+			Code:    ethcmn.Bytes2Hex(k.CommitStateDB.GetCode(addr)),
 			Storage: storage,
 		}
 

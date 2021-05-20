@@ -29,7 +29,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.SetBalance(suite.ctx, address, big.NewInt(1000))
+				suite.app.EvmKeeper.CommitStateDB.SetBalance(address, big.NewInt(1000))
 			},
 			true,
 		},
@@ -42,7 +42,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.SetBalance(suite.ctx, address, big.NewInt(1))
+				suite.app.EvmKeeper.CommitStateDB.SetBalance(address, big.NewInt(1))
 			},
 			false,
 		},
@@ -60,6 +60,7 @@ func (suite *KeeperTestSuite) TestBalanceInvariant() {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset values
 
+			suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
 			tc.malleate()
 
 			_, broken := suite.app.EvmKeeper.BalanceInvariant()(suite.ctx)
@@ -92,7 +93,7 @@ func (suite *KeeperTestSuite) TestNonceInvariant() {
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.SetNonce(suite.ctx, address, 100)
+				suite.app.EvmKeeper.CommitStateDB.SetNonce(address, 100)
 			},
 			true,
 		},
@@ -105,7 +106,7 @@ func (suite *KeeperTestSuite) TestNonceInvariant() {
 				suite.Require().NoError(err)
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.SetNonce(suite.ctx, address, 1)
+				suite.app.EvmKeeper.CommitStateDB.SetNonce(address, 1)
 			},
 			false,
 		},
@@ -123,6 +124,7 @@ func (suite *KeeperTestSuite) TestNonceInvariant() {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset values
 
+			suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
 			tc.malleate()
 
 			_, broken := suite.app.EvmKeeper.NonceInvariant()(suite.ctx)

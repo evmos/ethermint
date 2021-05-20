@@ -123,23 +123,23 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.
 		addr := ethcmn.HexToAddress(addrStr)
 		acc := genBlock.Alloc[addr]
 
-		evmKeeper.AddBalance(ctx, addr, acc.Balance)
-		evmKeeper.SetCode(ctx, addr, acc.Code)
-		evmKeeper.SetNonce(ctx, addr, acc.Nonce)
+		evmKeeper.CommitStateDB.AddBalance(addr, acc.Balance)
+		evmKeeper.CommitStateDB.SetCode(addr, acc.Code)
+		evmKeeper.CommitStateDB.SetNonce(addr, acc.Nonce)
 
 		for key, value := range acc.Storage {
-			evmKeeper.SetState(ctx, addr, key, value)
+			evmKeeper.SetState(addr, key, value)
 		}
 	}
 
 	// get balance of one of the genesis account having 400 ETH
-	b := evmKeeper.GetBalance(ctx, genInvestor)
+	b := evmKeeper.GetBalance(genInvestor)
 	require.Equal(t, "200000000000000000000", b.String())
 
 	// commit the stateDB with 'false' to delete empty objects
 	//
 	// NOTE: Commit does not yet return the intra merkle root (version)
-	_, err := evmKeeper.Commit(ctx, false)
+	_, err := evmKeeper.CommitStateDB.Commit(false)
 	require.NoError(t, err)
 
 	// persist multi-store cache state
@@ -263,7 +263,7 @@ func TestImportBlocks(t *testing.T) {
 		}
 
 		for i, tx := range block.Transactions() {
-			evmKeeper.Prepare(ctx, tx.Hash(), block.Hash(), i)
+			evmKeeper.CommitStateDB.Prepare(tx.Hash(), block.Hash(), i)
 			// evmKeeper.CommitStateDB.Set(block.Hash())
 
 			receipt, gas, err := applyTransaction(
