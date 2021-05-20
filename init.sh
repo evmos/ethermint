@@ -58,7 +58,7 @@ fi
 ethermintd add-genesis-account $KEY 100000000000000000000000000aphoton --keyring-backend test
 
 # Sign genesis transaction
-ethermintd gentx $KEY --amount=1000000000000000000000aphoton --keyring-backend test --chain-id $CHAINID
+ethermintd gentx $KEY 1000000000000000000000aphoton --keyring-backend test --chain-id $CHAINID
 
 # Collect genesis tx
 ethermintd collect-gentxs
