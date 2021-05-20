@@ -1,0 +1,39 @@
+accounts:
+  - name: alice
+    coins: ["100000000uatom", "100000000000000000000aphoton"]
+  - name: bob
+    coins: ["5000000000000aphoton"]
+validator:
+  name: alice
+  staked: "100000000000000000000aphoton"
+faucet:
+  name: bob 
+  coins: ["10aphoton"]
+build:
+  binary: "ethermintd"
+init:
+  home: "$HOME/.ethermintd"
+  app:
+    evm-rpc:
+      address: "0.0.0.0:1317"     # change the JSON-RPC address and port
+      ws-address: "0.0.0.0:1318"  # change the JSON-RPC websocket address and port
+genesis:
+  chain_id: "ethermint-2"
+  app_state:
+    staking:
+      params:
+        bond_denom: "aphoton"
+    mint:
+      params:
+        mint_denom: "aphoton"
+    crisis:
+      constant_fee:
+        denom: "aphoton"
+    gov:
+      deposit_params:
+        min_deposit:
+          - amount: "10000000"
+            denom: "aphoton"
+    evm:
+      params:
+        evm_denom: "aphoton"
