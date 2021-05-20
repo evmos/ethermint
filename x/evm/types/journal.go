@@ -8,26 +8,31 @@ import (
 
 var ripemd = ethcmn.HexToAddress("0000000000000000000000000000000000000003")
 
-// journalEntry is a modification entry in the state change journal that can be
+// journalEntry is a modification entry in the state change Journal that can be
 // reverted on demand.
 type journalEntry interface {
-	// revert undoes the changes introduced by this journal entry.
+	// revert undoes the changes introduced by this Journal entry.
 	revert(*CommitStateDB)
 
-	// dirtied returns the Ethereum address modified by this journal entry.
+	// dirtied returns the Ethereum address modified by this Journal entry.
 	dirtied() *ethcmn.Address
 }
 
-// journal contains the list of state modifications applied since the last state
+type Revision struct {
+	id           int
+	journalIndex int
+}
+
+// Journal contains the list of state modifications applied since the last state
 // commit. These are tracked to be able to be reverted in case of an execution
 // exception or revertal request.
-type journal struct {
-	entries               []journalEntry         // Current changes tracked by the journal
+type Journal struct {
+	entries               []journalEntry         // Current changes tracked by the Journal
 	dirties               []dirty                // Dirty accounts and the number of changes
 	addressToJournalIndex map[ethcmn.Address]int // map from address to the index of the dirties slice
 }
 
-// dirty represents a single key value pair of the journal dirties, where the
+// dirty represents a single key value pair of the Journal dirties, where the
 // key correspons to the account address and the value to the number of
 // changes for that account.
 type dirty struct {
@@ -35,16 +40,16 @@ type dirty struct {
 	changes int
 }
 
-// newJournal create a new initialized journal.
-func newJournal() *journal {
-	return &journal{
+// newJournal create a new initialized Journal.
+func newJournal() *Journal {
+	return &Journal{
 		dirties:               []dirty{},
 		addressToJournalIndex: make(map[ethcmn.Address]int),
 	}
 }
 
-// append inserts a new modification entry to the end of the change journal.
-func (j *journal) append(entry journalEntry) {
+// append inserts a new modification entry to the end of the change Journal.
+func (j *Journal) append(entry journalEntry) {
 	j.entries = append(j.entries, entry)
 	if addr := entry.dirtied(); addr != nil {
 		j.addDirty(*addr)
@@ -53,7 +58,7 @@ func (j *journal) append(entry journalEntry) {
 
 // revert undoes a batch of journalled modifications along with any reverted
 // dirty handling too.
-func (j *journal) revert(statedb *CommitStateDB, snapshot int) {
+func (j *Journal) revert(statedb *CommitStateDB, snapshot int) {
 	for i := len(j.entries) - 1; i >= snapshot; i-- {
 		// Undo the changes made by the operation
 		j.entries[i].revert(statedb)
@@ -72,18 +77,18 @@ func (j *journal) revert(statedb *CommitStateDB, snapshot int) {
 // dirty explicitly sets an address to dirty, even if the change entries would
 // otherwise suggest it as clean. This method is an ugly hack to handle the RIPEMD
 // precompile consensus exception.
-func (j *journal) dirty(addr ethcmn.Address) {
+func (j *Journal) dirty(addr ethcmn.Address) {
 	j.addDirty(addr)
 }
 
-// length returns the current number of entries in the journal.
-func (j *journal) length() int {
+// length returns the current number of entries in the Journal.
+func (j *Journal) length() int {
 	return len(j.entries)
 }
 
 // getDirty returns the dirty count for a given address. If the address is not
 // found it returns 0.
-func (j *journal) getDirty(addr ethcmn.Address) int {
+func (j *Journal) getDirty(addr ethcmn.Address) int {
 	idx, found := j.addressToJournalIndex[addr]
 	if !found {
 		return 0
@@ -94,7 +99,7 @@ func (j *journal) getDirty(addr ethcmn.Address) int {
 
 // addDirty adds 1 to the dirty count of an address. If the dirty entry is not
 // found it creates it.
-func (j *journal) addDirty(addr ethcmn.Address) {
+func (j *Journal) addDirty(addr ethcmn.Address) {
 	idx, found := j.addressToJournalIndex[addr]
 	if !found {
 		j.dirties = append(j.dirties, dirty{address: addr, changes: 0})
@@ -107,7 +112,7 @@ func (j *journal) addDirty(addr ethcmn.Address) {
 
 // substractDirty subtracts 1 to the dirty count of an address. It performs a
 // no-op if the address is not found.
-func (j *journal) substractDirty(addr ethcmn.Address) {
+func (j *Journal) substractDirty(addr ethcmn.Address) {
 	idx, found := j.addressToJournalIndex[addr]
 	if !found {
 		return
@@ -121,7 +126,7 @@ func (j *journal) substractDirty(addr ethcmn.Address) {
 
 // deleteDirty deletes a dirty entry from the jounal's dirties slice. If the
 // entry is not found it performs a no-op.
-func (j *journal) deleteDirty(addr ethcmn.Address) {
+func (j *Journal) deleteDirty(addr ethcmn.Address) {
 	idx, found := j.addressToJournalIndex[addr]
 	if !found {
 		return
@@ -352,7 +357,7 @@ func (ch addPreimageChange) dirtied() *ethcmn.Address {
 func (ch accessListAddAccountChange) revert(s *CommitStateDB) {
 	/*
 		One important invariant here, is that whenever a (addr, slot) is added, if the
-		addr is not already present, the add causes two journal entries:
+		addr is not already present, the add causes two Journal entries:
 		- one for the address,
 		- one for the (address,slot)
 		Therefore, when unrolling the change, we can always blindly delete the

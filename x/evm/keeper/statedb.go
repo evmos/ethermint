@@ -19,6 +19,21 @@ import (
 
 var _ vm.StateDB = &Keeper{}
 
+// csdb defines the internal field values used on the StateDB operations
+type csdb struct {
+	// The refund counter, also used by state transitioning.
+	refund uint64
+
+	// Journal of state modifications. This is the backbone of
+	// Snapshot and RevertToSnapshot.
+	journal        *types.Journal
+	validRevisions []types.Revision
+	nextRevisionID int
+
+	// Per-transaction access list
+	accessList *types.AccessListMappings
+}
+
 // ----------------------------------------------------------------------------
 // Account
 // ----------------------------------------------------------------------------

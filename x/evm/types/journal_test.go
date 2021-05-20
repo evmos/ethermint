@@ -48,7 +48,7 @@ type JournalTestSuite struct {
 	suite.Suite
 
 	address ethcmn.Address
-	journal *journal
+	journal *Journal
 	ctx     sdk.Context
 	stateDB *CommitStateDB
 }

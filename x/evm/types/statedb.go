@@ -25,7 +25,7 @@ var (
 	zeroBalance = sdk.ZeroInt().BigInt()
 )
 
-type revision struct {
+type Revision struct {
 	id           int
 	journalIndex int
 }
@@ -74,12 +74,12 @@ type CommitStateDB struct {
 
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
-	journal        *journal
-	validRevisions []revision
+	journal        *Journal
+	validRevisions []Revision
 	nextRevisionID int
 
 	// Per-transaction access list
-	accessList *accessList
+	accessList *AccessListMappings
 
 	// mutex for state deep copying
 	lock sync.Mutex
@@ -630,14 +630,14 @@ func (csdb *CommitStateDB) deleteStateObject(so *stateObject) {
 // Snapshotting
 // ----------------------------------------------------------------------------
 
-// Snapshot returns an identifier for the current revision of the state.
+// Snapshot returns an identifier for the current Revision of the state.
 func (csdb *CommitStateDB) Snapshot() int {
 	id := csdb.nextRevisionID
 	csdb.nextRevisionID++
 
 	csdb.validRevisions = append(
 		csdb.validRevisions,
-		revision{
+		Revision{
 			id:           id,
 			journalIndex: csdb.journal.length(),
 		},
@@ -646,7 +646,7 @@ func (csdb *CommitStateDB) Snapshot() int {
 	return id
 }
 
-// RevertToSnapshot reverts all state changes made since the given revision.
+// RevertToSnapshot reverts all state changes made since the given Revision.
 func (csdb *CommitStateDB) RevertToSnapshot(revID int) {
 	// find the snapshot in the stack of valid snapshots
 	idx := sort.Search(len(csdb.validRevisions), func(i int) bool {
@@ -654,7 +654,7 @@ func (csdb *CommitStateDB) RevertToSnapshot(revID int) {
 	})
 
 	if idx == len(csdb.validRevisions) || csdb.validRevisions[idx].id != revID {
-		panic(fmt.Errorf("revision ID %v cannot be reverted", revID))
+		panic(fmt.Errorf("Revision ID %v cannot be reverted", revID))
 	}
 
 	snapshot := csdb.validRevisions[idx].journalIndex
@@ -826,7 +826,7 @@ func CopyCommitStateDB(from, to *CommitStateDB) {
 	to.thash = from.thash
 	to.bhash = from.bhash
 	to.txIndex = from.txIndex
-	validRevisions := make([]revision, len(from.validRevisions))
+	validRevisions := make([]Revision, len(from.validRevisions))
 	copy(validRevisions, from.validRevisions)
 	to.validRevisions = validRevisions
 	to.nextRevisionID = from.nextRevisionID

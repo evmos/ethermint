@@ -310,13 +310,14 @@ func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
 func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (types.Storage, error) {
 	storage := types.Storage{}
 
-	// err := k.ForEachStorage(ctx, address, func(key, value common.Hash) bool {
-	// 	storage = append(storage, types.NewState(key, value))
-	// 	return false
-	// })
-	// if err != nil {
-	// 	return types.Storage{}, err
-	// }
+	err := k.ForEachStorage(address, func(key, value common.Hash) bool {
+		storage = append(storage, types.NewState(key, value))
+		return false
+	})
+
+	if err != nil {
+		return types.Storage{}, err
+	}
 
 	return storage, nil
 }

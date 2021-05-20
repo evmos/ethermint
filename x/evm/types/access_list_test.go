@@ -15,7 +15,7 @@ type AccessListTestSuite struct {
 	suite.Suite
 
 	address    ethcmn.Address
-	accessList *accessList
+	accessList *AccessListMappings
 }
 
 func (suite *AccessListTestSuite) SetupTest() {
