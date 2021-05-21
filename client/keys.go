@@ -101,5 +101,5 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return keys.RunAddCmd(cmd, args, kr, buf)
+	return keys.RunAddCmd(clientCtx.WithKeyring(kr), cmd, args, buf)
 }
