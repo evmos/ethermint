@@ -120,7 +120,7 @@ ldflags := $(strip $(ldflags))
 
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
-all: tools verify install
+all: tools install
 
 ###############################################################################
 ###                                  Build                                  ###

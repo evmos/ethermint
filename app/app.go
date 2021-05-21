@@ -169,6 +169,8 @@ var _ simapp.App = (*EthermintApp)(nil)
 // Tendermint consensus.
 type EthermintApp struct {
 	*baseapp.BaseApp
+
+	// encoding
 	cdc               *codec.LegacyAmino
 	appCodec          codec.Marshaler
 	interfaceRegistry types.InterfaceRegistry
@@ -210,7 +212,7 @@ type EthermintApp struct {
 	sm *module.SimulationManager
 }
 
-// NewEthermintApp returns a reference to a new initialized Injective application.
+// NewEthermintApp returns a reference to a new initialized Ethermint application.
 func NewEthermintApp(
 	logger log.Logger,
 	db dbm.DB,
