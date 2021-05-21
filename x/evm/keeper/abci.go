@@ -37,6 +37,7 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	// reset counters that are used on CommitStateDB.Prepare
 	k.cache.bloom = big.NewInt(0)
 	k.cache.txIndex = 0
+	k.cache.blockHash = common.BytesToHash(req.Hash)
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while

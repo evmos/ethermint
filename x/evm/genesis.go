@@ -16,12 +16,14 @@ import (
 // InitGenesis initializes genesis state based on exported genesis
 func InitGenesis(
 	ctx sdk.Context,
-	k keeper.Keeper,
+	k *keeper.Keeper,
 	accountKeeper types.AccountKeeper, // nolint: interfacer
 	bankKeeper types.BankKeeper,
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
-	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
+
+	k.CommitStateDB.WithContext(ctx) // TODO: remove
 
 	k.SetParams(ctx, data.Params)
 	evmDenom := data.Params.EvmDenom
@@ -81,8 +83,10 @@ func InitGenesis(
 }
 
 // ExportGenesis exports genesis state of the EVM module
-func ExportGenesis(ctx sdk.Context, k keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
-	k.CommitStateDB.WithContext(ctx)
+func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
+	k.WithContext(ctx)
+
+	k.CommitStateDB.WithContext(ctx) // TODO: remove
 
 	// nolint: prealloc
 	var ethGenAccounts []types.GenesisAccount

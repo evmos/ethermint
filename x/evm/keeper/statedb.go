@@ -35,8 +35,9 @@ type csdb struct {
 	// Transaction counter in a block. Used on StateSB's Prepare function.
 	// It is reset to 0 every block on BeginBlock so there's no point in storing the counter
 	// on the KVStore or adding it as a field on the EVM genesis state.
-	txIndex int
-	bloom   *big.Int
+	txIndex   int
+	bloom     *big.Int
+	blockHash common.Hash
 
 	// logs is a cache field that keeps mapping of contract address -> eth logs emitted
 	// during EVM execution in the current block.
@@ -619,13 +620,10 @@ func (k *Keeper) RevertToSnapshot(revID int) {
 // AddLog calls CommitStateDB.AddLog using the passed in context
 func (k *Keeper) AddLog(log *ethtypes.Log) {
 	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
-	blockHash, found := k.GetBlockHashFromHeight(k.ctx, k.ctx.BlockHeight())
-	if found {
-		log.BlockHash = blockHash
-	}
 
 	log.TxHash = txHash
 	log.TxIndex = uint(k.cache.txIndex)
+	log.BlockHash = k.cache.blockHash
 
 	logs := k.GetTxLogs(txHash)
 	log.Index = uint(len(logs))

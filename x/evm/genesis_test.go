@@ -13,10 +13,10 @@ import (
 func (suite *EvmTestSuite) TestExportImport() {
 	var genState *types.GenesisState
 	suite.Require().NotPanics(func() {
-		genState = evm.ExportGenesis(suite.ctx, *suite.app.EvmKeeper, suite.app.AccountKeeper)
+		genState = evm.ExportGenesis(suite.ctx, suite.app.EvmKeeper, suite.app.AccountKeeper)
 	})
 
-	_ = evm.InitGenesis(suite.ctx, *suite.app.EvmKeeper, suite.app.AccountKeeper, suite.app.BankKeeper, *genState)
+	_ = evm.InitGenesis(suite.ctx, suite.app.EvmKeeper, suite.app.AccountKeeper, suite.app.BankKeeper, *genState)
 }
 
 func (suite *EvmTestSuite) TestInitGenesis() {
@@ -100,13 +100,13 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 			if tc.expPanic {
 				suite.Require().Panics(
 					func() {
-						_ = evm.InitGenesis(suite.ctx, *suite.app.EvmKeeper, suite.app.AccountKeeper, suite.app.BankKeeper, *tc.genState)
+						_ = evm.InitGenesis(suite.ctx, suite.app.EvmKeeper, suite.app.AccountKeeper, suite.app.BankKeeper, *tc.genState)
 					},
 				)
 			} else {
 				suite.Require().NotPanics(
 					func() {
-						_ = evm.InitGenesis(suite.ctx, *suite.app.EvmKeeper, suite.app.AccountKeeper, suite.app.BankKeeper, *tc.genState)
+						_ = evm.InitGenesis(suite.ctx, suite.app.EvmKeeper, suite.app.AccountKeeper, suite.app.BankKeeper, *tc.genState)
 					},
 				)
 			}
