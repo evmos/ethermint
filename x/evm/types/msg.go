@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -98,13 +99,13 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 func (msg MsgEthereumTx) ValidateBasic() error {
 	gasPrice := new(big.Int).SetBytes(msg.Data.GasPrice)
 	if gasPrice.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidValue, "gas price cannot be negative %s", gasPrice)
+		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
 
 	// Amount can be 0
 	amount := new(big.Int).SetBytes(msg.Data.Amount)
 	if amount.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidValue, "amount cannot be negative %s", amount)
+		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
 
 	if msg.Data.To != "" {

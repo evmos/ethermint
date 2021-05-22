@@ -8,9 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ethermint/x/evm/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -116,25 +114,14 @@ func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.Executi
 	// return the VM Execution error (see go-ethereum/core/vm/errors.go)
 
 	revertReason := result.Revert()
-	reverted := len(revertReason) > 0
-
-	if reverted {
-		// log error
-		reason, errUnpack := abi.UnpackRevert(revertReason)
-		var keyvals []string
-		if errUnpack == nil {
-			keyvals = []string{"reason", reason}
-		} else {
-			keyvals = []string{"hex-value", hexutil.Encode(revertReason)}
-		}
-
-		k.Logger(ctx).Error(vm.ErrExecutionReverted.Error(), keyvals)
+	if len(revertReason) > 0 {
+		return nil, types.NewExecErrorWithReson(revertReason)
 	}
 
 	executionRes := &types.ExecutionResult{
 		Response: &types.MsgEthereumTxResponse{
 			Ret:      result.ReturnData,
-			Reverted: reverted,
+			Reverted: false,
 		},
 		GasInfo: types.GasInfo{
 			GasConsumed: result.UsedGas,

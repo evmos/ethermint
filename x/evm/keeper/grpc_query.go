@@ -120,6 +120,13 @@ func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*typ
 		)
 	}
 
+	if ethermint.IsEmptyHash(req.Key) {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			types.ErrEmptyHash.Error(),
+		)
+	}
+
 	ctx := sdk.UnwrapSDKContext(c)
 	k.CommitStateDB.WithContext(ctx)
 
@@ -127,9 +134,16 @@ func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*typ
 	key := ethcmn.HexToHash(req.Key)
 
 	state := k.CommitStateDB.GetState(address, key)
+	stateHex := state.Hex()
+
+	if ethermint.IsEmptyHash(stateHex) {
+		return nil, status.Error(
+			codes.NotFound, "contract code not found for given address",
+		)
+	}
 
 	return &types.QueryStorageResponse{
-		Value: state.String(),
+		Value: stateHex,
 	}, nil
 }
 

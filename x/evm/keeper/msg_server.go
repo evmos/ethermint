@@ -152,12 +152,20 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		)
 	}()
 
+	attrs := []sdk.Attribute{
+		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
+		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+	}
+
+	if len(msg.Data.To) > 0 {
+		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, msg.Data.To))
+	}
+
 	// emit events
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			types.EventTypeEthereumTx,
-			sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
-			sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+			attrs...,
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -165,15 +173,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
 		),
 	})
-
-	if len(msg.Data.To) > 0 {
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeEthereumTx,
-				sdk.NewAttribute(types.AttributeKeyRecipient, msg.Data.To),
-			),
-		)
-	}
 
 	return executionResult.Response, nil
 }
