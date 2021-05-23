@@ -5,30 +5,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-// StateReverter defines necessary functions to revert the state operations.
-// It is used on journal.revert()
-type StateReverter interface {
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	SetAccount(ctx sdk.Context, account authtypes.AccountI)
-	RemoveAccount(ctx sdk.Context, account authtypes.AccountI)
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-	AddCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error
-	SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error
-	// TODO: define
-	// GetStorage
-	// SetStorage
-	// GetCode
-	// SetCode
-	// GetRefund
-	// SetRefund
-	// GetLog
-	// SetLog
-	// GetAccessListAccount
-	// SetAccessListAccount
-	// GetAccessListSlot
-	// SetAccessListSlot
-}
-
 // AccountKeeper defines the expected account keeper interface
 type AccountKeeper interface {
 	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI

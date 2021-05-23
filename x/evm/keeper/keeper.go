@@ -59,7 +59,6 @@ func NewKeeper(
 		storeKey:      storeKey,
 		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
 		cache: csdb{
-			journal:    types.NewJournal(),
 			accessList: types.NewAccessListMappings(),
 			txIndex:    0,
 			bloom:      big.NewInt(0),
@@ -330,6 +329,14 @@ func (k Keeper) DeleteState(addr common.Address, key common.Hash) {
 	store.Delete(key.Bytes())
 }
 
+// DeleteAccountStorage clears all the storage state associated with the given address.
+func (k Keeper) DeleteAccountStorage(addr common.Address) {
+	_ = k.ForEachStorage(addr, func(key, _ common.Hash) bool {
+		k.DeleteState(addr, key)
+		return false
+	})
+}
+
 func (k Keeper) DeleteCode(addr common.Address) {
 	hash := k.GetCodeHash(addr)
 	if bytes.Equal(hash.Bytes(), common.BytesToHash(types.EmptyCodeHash).Bytes()) {
@@ -340,6 +347,8 @@ func (k Keeper) DeleteCode(addr common.Address) {
 	store.Delete(hash.Bytes())
 }
 
+// ClearBalance substracts the EVM all the balance denomination from the address
+// balance while also updating the total supply.
 func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err error) {
 	params := k.GetParams(k.ctx)
 
@@ -354,10 +363,16 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 	return prevBalance, nil
 }
 
-//TODO: update as part of journal work
+// ResetAccount removes the code, storage state and evm denom balance coins stored
+// with the given address.
 func (k Keeper) ResetAccount(addr common.Address) {
-	_, _ = k.ClearBalance(addr.Bytes())
 	k.DeleteCode(addr)
-	k.DeleteState(addr, common.Hash{})
-
+	k.DeleteAccountStorage(addr)
+	_, err := k.ClearBalance(addr.Bytes())
+	if err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to clear balance during account reset",
+			"ethereum-address", addr.Hex(),
+		)
+	}
 }

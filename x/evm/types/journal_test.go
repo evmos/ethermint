@@ -48,7 +48,7 @@ type JournalTestSuite struct {
 	suite.Suite
 
 	address ethcmn.Address
-	journal *Journal
+	journal *journal
 	ctx     sdk.Context
 	stateDB *CommitStateDB
 }
@@ -60,7 +60,7 @@ func (suite *JournalTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
-	suite.journal = NewJournal()
+	suite.journal = newJournal()
 
 	balance := ethermint.NewPhotonCoin(sdk.NewInt(100))
 	acc := &ethermint.EthAccount{
