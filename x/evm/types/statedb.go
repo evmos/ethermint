@@ -67,9 +67,9 @@ type CommitStateDB struct {
 	// by StateDB.Commit.
 	dbErr error
 
-	// Journal of state modifications. This is the backbone of
+	// journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
-	journal        *Journal
+	journal        *journal
 	validRevisions []Revision
 	nextRevisionID int
 
@@ -100,7 +100,7 @@ func NewCommitStateDB(
 		stateObjectsDirty:    make(map[ethcmn.Address]struct{}),
 		preimages:            []preimageEntry{},
 		hashToPreimageIndex:  make(map[ethcmn.Hash]int),
-		journal:              NewJournal(),
+		journal:              newJournal(),
 		accessList:           NewAccessListMappings(),
 	}
 }
@@ -759,7 +759,7 @@ func (csdb *CommitStateDB) ClearStateObjects() {
 }
 
 func (csdb *CommitStateDB) clearJournalAndRefund() {
-	csdb.journal = NewJournal()
+	csdb.journal = newJournal()
 	csdb.validRevisions = csdb.validRevisions[:0]
 	csdb.refund = 0
 }
@@ -817,7 +817,7 @@ func CopyCommitStateDB(from, to *CommitStateDB) {
 	to.logSize = from.logSize
 	to.preimages = make([]preimageEntry, len(from.preimages))
 	to.hashToPreimageIndex = make(map[ethcmn.Hash]int, len(from.hashToPreimageIndex))
-	to.journal = NewJournal()
+	to.journal = newJournal()
 	to.thash = from.thash
 	to.bhash = from.bhash
 	to.txIndex = from.txIndex

@@ -62,7 +62,6 @@ func NewKeeper(
 		storeKey:      storeKey,
 		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
 		cache: csdb{
-			journal:    types.NewJournal(),
 			accessList: types.NewAccessListMappings(),
 			txIndex:    0,
 			bloom:      big.NewInt(0),
@@ -165,7 +164,7 @@ func (k Keeper) SetHeightHash(ctx sdk.Context, height uint64, hash common.Hash) 
 func (k Keeper) GetTxReceiptFromHash(ctx sdk.Context, hash common.Hash) (*types.TxReceipt, bool) {
 	store := ctx.KVStore(k.storeKey)
 	data := store.Get(types.KeyHashTxReceipt(hash))
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, false
 	}
 
@@ -227,7 +226,7 @@ func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight int64) [
 
 	for idx, txHash := range txs {
 		data := store.Get(types.KeyHashTxReceipt(txHash))
-		if data == nil || len(data) == 0 {
+		if len(data) == 0 {
 			continue
 		}
 
@@ -333,6 +332,16 @@ func (k Keeper) DeleteState(addr common.Address, key common.Hash) {
 	store.Delete(key.Bytes())
 }
 
+// DeleteAccountStorage clears all the storage state associated with the given address.
+func (k Keeper) DeleteAccountStorage(addr common.Address) {
+	_ = k.ForEachStorage(addr, func(key, _ common.Hash) bool {
+		k.DeleteState(addr, key)
+		return false
+	})
+}
+
+// DeleteCode removes the contract code byte array from the store associated with
+// the given address.
 func (k Keeper) DeleteCode(addr common.Address) {
 	hash := k.GetCodeHash(addr)
 	if bytes.Equal(hash.Bytes(), common.BytesToHash(types.EmptyCodeHash).Bytes()) {
@@ -343,6 +352,8 @@ func (k Keeper) DeleteCode(addr common.Address) {
 	store.Delete(hash.Bytes())
 }
 
+// ClearBalance subtracts the EVM all the balance denomination from the address
+// balance while also updating the total supply.
 func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err error) {
 	params := k.GetParams(k.ctx)
 
@@ -357,10 +368,16 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 	return prevBalance, nil
 }
 
-//TODO: update as part of journal work
+// ResetAccount removes the code, storage state and evm denom balance coins stored
+// with the given address.
 func (k Keeper) ResetAccount(addr common.Address) {
-	_, _ = k.ClearBalance(addr.Bytes())
 	k.DeleteCode(addr)
-	k.DeleteState(addr, common.Hash{})
-
+	k.DeleteAccountStorage(addr)
+	_, err := k.ClearBalance(addr.Bytes())
+	if err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to clear balance during account reset",
+			"ethereum-address", addr.Hex(),
+		)
+	}
 }
