@@ -247,7 +247,7 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 				key := ethcmn.BytesToHash([]byte("key"))
 				value := ethcmn.BytesToHash([]byte("value"))
 				expValue = value.String()
-				suite.app.EvmKeeper.CommitStateDB.SetState(suite.address, key, value)
+				suite.app.EvmKeeper.SetState(suite.address, key, value)
 				req = &types.QueryStorageRequest{
 					Address: suite.address.String(),
 					Key:     key.String(),
@@ -302,7 +302,7 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 			"success",
 			func() {
 				expCode = []byte("code")
-				suite.app.EvmKeeper.CommitStateDB.SetCode(suite.address, expCode)
+				suite.app.EvmKeeper.SetCode(suite.address, expCode)
 
 				req = &types.QueryCodeRequest{
 					Address: suite.address.String(),
@@ -379,7 +379,7 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 					},
 				}
 
-				suite.app.EvmKeeper.CommitStateDB.SetLogs(hash, types.LogsToEthereum(expLogs))
+				suite.app.EvmKeeper.SetLogs(hash, types.LogsToEthereum(expLogs))
 
 				req = &types.QueryTxLogsRequest{
 					Hash: hash.String(),
@@ -488,8 +488,8 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 					},
 				}
 
-				suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_0")), types.LogsToEthereum(expLogs[0].Logs))
-				suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_1")), types.LogsToEthereum(expLogs[1].Logs))
+				suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_0")), types.LogsToEthereum(expLogs[0].Logs))
+				suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_1")), types.LogsToEthereum(expLogs[1].Logs))
 
 				req = &types.QueryBlockLogsRequest{
 					Hash: hash.String(),
@@ -680,7 +680,7 @@ func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHash() {
 					BlockHash:   blockHash.Hex(),
 				}
 
-				suite.app.EvmKeeper.SetBlockHash(suite.ctx, blockHash.Bytes(), suite.ctx.BlockHeight())
+				suite.app.EvmKeeper.SetBlockHash(suite.ctx, suite.ctx.BlockHeight(), blockHash)
 				suite.app.EvmKeeper.AddTxHashToBlock(suite.ctx, suite.ctx.BlockHeight(), hash)
 				suite.app.EvmKeeper.SetTxReceiptToHash(suite.ctx, hash, receipt)
 

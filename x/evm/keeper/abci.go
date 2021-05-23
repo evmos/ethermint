@@ -24,20 +24,17 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		return
 	}
 
+	k.WithContext(ctx)
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	// TODO: why do we have so many hash -> height mappings
-	k.SetBlockHash(ctx, req.Hash, req.Header.Height)
-	k.SetBlockHeightToHash(ctx, common.BytesToHash(req.Hash), req.Header.Height)
-
-	// special setter for csdb
-	k.SetHeightHash(ctx, uint64(req.Header.Height), common.BytesToHash(req.Hash))
+	blockHash := common.BytesToHash(req.Hash)
+	k.SetBlockHash(ctx, req.Header.Height, blockHash)
 
 	// reset counters that are used on CommitStateDB.Prepare
 	k.cache.bloom = big.NewInt(0)
 	k.cache.txIndex = 0
-	k.cache.blockHash = common.BytesToHash(req.Hash)
+	k.cache.blockHash = blockHash
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while
@@ -49,22 +46,6 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Valid
 
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-	k.CommitStateDB.WithContext(ctx)
-
-	// Update account balances before committing other parts of state
-	k.CommitStateDB.UpdateAccounts()
-
-	root, err := k.CommitStateDB.Commit(true)
-	// Commit state objects to KV store
-	if err != nil {
-		k.Logger(ctx).Error("failed to commit state objects", "error", err, "height", ctx.BlockHeight())
-		panic(err)
-	}
-
-	// reset all cache after account data has been committed, that make sure node state consistent
-	if err = k.CommitStateDB.Reset(root); err != nil {
-		panic(err)
-	}
 
 	// set the block bloom filter bytes to store
 	bloom := ethtypes.BytesToBloom(k.cache.bloom.Bytes())

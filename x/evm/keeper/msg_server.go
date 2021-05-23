@@ -2,14 +2,9 @@ package keeper
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/armon/go-metrics"
-	ethcmn "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
-
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,16 +19,11 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.TypeMsgEthereumTx)
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
 
 	ethMsg, err := msg.AsMessage()
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
-	}
-
-	config, found := k.GetChainConfig(ctx)
-	if !found {
-		return nil, types.ErrChainConfigNotFound
 	}
 
 	var labels []metrics.Label
@@ -44,103 +34,38 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	} else {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "call"),
-			// add label to the called recipient address (contract or account)
-			telemetry.NewLabel("to", msg.Data.To),
+			telemetry.NewLabel("to", msg.Data.To), // recipient address (contract or account)
 		}
 	}
 
 	sender := ethMsg.From()
 
-	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-	ethHash := ethcmn.BytesToHash(txHash)
-	blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
-
-	st := &types.StateTransition{
-		Message:  ethMsg,
-		Csdb:     k.CommitStateDB.WithContext(ctx),
-		ChainID:  msg.ChainID(),
-		TxHash:   &ethHash,
-		Simulate: ctx.IsCheckTx(),
-	}
-
-	// since the txCount is used by the stateDB, and a simulated tx is run only on the node it's submitted to,
-	// then this will cause the txCount/stateDB of the node that ran the simulated tx to be different than the
-	// other nodes, causing a consensus error
-	if !st.Simulate {
-		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, blockHash, k.cache.txIndex)
-		k.cache.txIndex++
-	}
-
-	executionResult, err := st.TransitionDb(ctx, config)
+	executionResult, err := k.TransitionDb(ctx, ethMsg)
 	if err != nil {
-		if errors.Is(err, vm.ErrExecutionReverted) && executionResult != nil {
-			// keep the execution result for revert reason
-			executionResult.Response.Reverted = true
-
-			if !st.Simulate {
-				k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-					Hash:        ethHash.Hex(),
-					From:        sender.Hex(),
-					Data:        msg.Data,
-					BlockHeight: uint64(ctx.BlockHeight()),
-					BlockHash:   blockHash.Hex(),
-					Result: &types.TxResult{
-						ContractAddress: executionResult.Response.ContractAddress,
-						Bloom:           executionResult.Response.Bloom,
-						TxLogs:          executionResult.Response.TxLogs,
-						Ret:             executionResult.Response.Ret,
-						Reverted:        executionResult.Response.Reverted,
-						GasUsed:         executionResult.GasInfo.GasConsumed,
-					},
-				})
-			}
-
-			return executionResult.Response, nil
-		}
-
 		return nil, err
 	}
 
-	if !st.Simulate {
-		// update block bloom filter
-		k.cache.bloom.Or(k.cache.bloom, executionResult.Bloom)
-
-		// update transaction logs in KVStore
-		err = k.CommitStateDB.SetLogs(ethHash, executionResult.Logs)
-		if err != nil {
-			panic(err)
-		}
-
-		blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
-		k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-			Hash:        ethHash.Hex(),
-			From:        sender.Hex(),
-			Data:        msg.Data,
-			Index:       uint64(st.Csdb.TxIndex()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-			BlockHash:   blockHash.Hex(),
-			Result: &types.TxResult{
-				ContractAddress: executionResult.Response.ContractAddress,
-				Bloom:           executionResult.Response.Bloom,
-				TxLogs:          executionResult.Response.TxLogs,
-				Ret:             executionResult.Response.Ret,
-				Reverted:        executionResult.Response.Reverted,
-				GasUsed:         executionResult.GasInfo.GasConsumed,
-			},
-		})
-
-		k.AddTxHashToBlock(ctx, ctx.BlockHeight(), ethHash)
-
-		for _, ethLog := range executionResult.Logs {
-			k.cache.logs[ethLog.Address] = append(k.cache.logs[ethLog.Address], ethLog)
-		}
-	}
+	// k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
+	// 	Hash:        ethHash.Hex(),
+	// 	From:        sender.Hex(),
+	// 	Data:        msg.Data,
+	// 	Index:       uint64(st.Csdb.TxIndex()),
+	// 	BlockHeight: uint64(ctx.BlockHeight()),
+	// 	BlockHash:   blockHash.Hex(),
+	// 	Result: &types.TxResult{
+	// 		ContractAddress: executionResult.Response.ContractAddress,
+	// 		Bloom:           executionResult.Response.Bloom,
+	// 		TxLogs:          executionResult.Response.TxLogs,
+	// 		Ret:             executionResult.Response.Ret,
+	// 		Reverted:        executionResult.Response.Reverted,
+	// 		GasUsed:         executionResult.GasInfo.GasConsumed,
+	// 	},
+	// })
 
 	defer func() {
-		if st.Message.Value().IsInt64() {
+		if ethMsg.Value().IsInt64() {
 			telemetry.SetGauge(
-				float32(st.Message.Value().Int64()),
+				float32(ethMsg.Value().Int64()),
 				"tx", "msg", "ethereum_tx",
 			)
 		}
@@ -153,8 +78,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	}()
 
 	attrs := []sdk.Attribute{
-		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
-		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+		sdk.NewAttribute(sdk.AttributeKeyAmount, ethMsg.Value().String()),
+		// sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
 	}
 
 	if len(msg.Data.To) > 0 {
@@ -173,6 +98,12 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
 		),
 	})
+
+	// update block bloom filter and tx index on the local cache if the tx is on DeliverTx mode
+	if ctx.IsCheckTx() || ctx.IsReCheckTx() {
+		k.cache.txIndex++
+		k.cache.bloom.Or(k.cache.bloom, executionResult.Bloom)
+	}
 
 	return executionResult.Response, nil
 }

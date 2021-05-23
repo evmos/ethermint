@@ -36,10 +36,6 @@ type Keeper struct {
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
 
-	// TODO: deprecate
-	// Ethermint concrete implementation on the EVM StateDB interface
-	CommitStateDB *types.CommitStateDB
-
 	cache csdb
 }
 
@@ -60,7 +56,6 @@ func NewKeeper(
 		accountKeeper: ak,
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
-		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
 		cache: csdb{
 			accessList: types.NewAccessListMappings(),
 			txIndex:    0,
@@ -105,21 +100,20 @@ func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloo
 }
 
 // GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetBlockHashFromHeight(ctx sdk.Context, height int64) (common.Hash, bool) {
+func (k Keeper) GetBlockHash(ctx sdk.Context, height int64) common.Hash {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.KeyBlockHeightHash(uint64(height)))
 	if len(bz) == 0 {
-		return common.Hash{}, false
+		return common.Hash{}
 	}
 
-	return common.BytesToHash(bz), true
+	return common.BytesToHash(bz)
 }
 
 // SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHash(ctx sdk.Context, hash []byte, height int64) {
+func (k Keeper) SetBlockHash(ctx sdk.Context, height int64, hash common.Hash) {
 	store := ctx.KVStore(k.storeKey)
-	bz := sdk.Uint64ToBigEndian(uint64(height))
-	store.Set(types.KeyBlockHash(common.BytesToHash(hash)), bz)
+	store.Set(types.KeyBlockHeightHash(uint64(height)), hash.Bytes())
 }
 
 // GetBlockHash gets block height from block consensus hash
@@ -134,12 +128,6 @@ func (k Keeper) GetBlockHeightByHash(ctx sdk.Context, hash common.Hash) (int64, 
 	return int64(height), true
 }
 
-// SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHeightToHash(ctx sdk.Context, hash common.Hash, height int64) {
-	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyBlockHeightHash(uint64(height)), hash.Bytes())
-}
-
 // SetTxReceiptToHash sets the mapping from tx hash to tx receipt
 func (k Keeper) SetTxReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *types.TxReceipt) {
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -148,16 +136,6 @@ func (k Keeper) SetTxReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *t
 
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.KeyHashTxReceipt(hash), data)
-}
-
-// GetHeightHash returns the block header hash associated with a given block height and chain epoch number.
-func (k Keeper) GetHeightHash(ctx sdk.Context, height uint64) common.Hash {
-	return k.CommitStateDB.WithContext(ctx).GetHeightHash(height)
-}
-
-// SetHeightHash sets the block header hash associated with a given height.
-func (k Keeper) SetHeightHash(ctx sdk.Context, height uint64, hash common.Hash) {
-	k.CommitStateDB.WithContext(ctx).SetHeightHash(height, hash)
 }
 
 // GetTxReceiptFromHash gets tx receipt by tx hash.

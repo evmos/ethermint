@@ -7,7 +7,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
+
+var EmptyCodeHash = crypto.Keccak256(nil)
 
 // Storage represents the account Storage map as a slice of single key value
 // State pairs. This is to prevent non determinism at genesis initialization or export.

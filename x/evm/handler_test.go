@@ -47,7 +47,7 @@ func (suite *EvmTestSuite) SetupTest() {
 
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-888", Time: time.Now().UTC()})
-	suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
+	suite.app.EvmKeeper.WithContext(suite.ctx)
 	suite.handler = evm.NewHandler(suite.app.EvmKeeper)
 	suite.codec = suite.app.AppCodec()
 	suite.chainID = suite.chainID
@@ -81,7 +81,7 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 		{
 			"passed",
 			func() {
-				suite.app.EvmKeeper.CommitStateDB.SetBalance(suite.from, big.NewInt(100))
+				suite.app.EvmKeeper.AddBalance(suite.from, big.NewInt(100))
 				to := ethcmn.BytesToAddress(suite.to)
 				tx = types.NewMsgEthereumTx(suite.chainID, 0, &to, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 				tx.From = suite.from.String()
@@ -194,12 +194,9 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 	suite.Require().Equal(len(txResponse.TxLogs.Logs[0].Topics), 2)
 
 	hash := []byte{1}
-	err = suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
-	suite.Require().NoError(err)
+	suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
 
-	logs, err := suite.app.EvmKeeper.CommitStateDB.GetLogs(ethcmn.BytesToHash(hash))
-	suite.Require().NoError(err, "failed to get logs")
-
+	logs := suite.app.EvmKeeper.GetTxLogs(ethcmn.BytesToHash(hash))
 	suite.Require().Equal(logs, txResponse.TxLogs.Logs)
 }
 
@@ -228,9 +225,7 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	// get logs by tx hash
 	hash := txResponse.TxLogs.Hash
 
-	logs, err := suite.app.EvmKeeper.CommitStateDB.GetLogs(ethcmn.HexToHash(hash))
-	suite.Require().NoError(err, "failed to get logs")
-
+	logs := suite.app.EvmKeeper.GetTxLogs(ethcmn.HexToHash(hash))
 	suite.Require().Equal(logs, txResponse.TxLogs.EthLogs())
 }
 
@@ -346,7 +341,7 @@ func (suite *EvmTestSuite) TestSendTransaction() {
 	gasLimit := uint64(21000)
 	gasPrice := big.NewInt(0x55ae82600)
 
-	suite.app.EvmKeeper.CommitStateDB.SetBalance(suite.from, big.NewInt(100))
+	suite.app.EvmKeeper.AddBalance(suite.from, big.NewInt(100))
 
 	// send simple value transfer with gasLimit=21000
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, &ethcmn.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil, nil)
@@ -426,12 +421,12 @@ func (suite *EvmTestSuite) TestOutOfGasWhenDeployContract() {
 	err := tx.Sign(suite.chainID, suite.signer)
 	suite.Require().NoError(err)
 
-	snapshotCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper.CommitStateDB)
+	snapshotCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper)
 	suite.Require().Nil(err)
 
 	defer func() {
 		if r := recover(); r != nil {
-			currentCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper.CommitStateDB)
+			currentCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper)
 			suite.Require().Nil(err)
 			suite.Require().Equal(snapshotCommitStateDBJson, currentCommitStateDBJson)
 		} else {
@@ -455,13 +450,13 @@ func (suite *EvmTestSuite) TestErrorWhenDeployContract() {
 	err := tx.Sign(suite.chainID, suite.signer)
 	suite.Require().NoError(err)
 
-	snapshotCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper.CommitStateDB)
+	snapshotCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper)
 	suite.Require().Nil(err)
 
 	_, sdkErr := suite.handler(suite.ctx, tx)
 	suite.Require().NotNil(sdkErr)
 
-	currentCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper.CommitStateDB)
+	currentCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper)
 	suite.Require().Nil(err)
 	suite.Require().Equal(snapshotCommitStateDBJson, currentCommitStateDBJson)
 }
