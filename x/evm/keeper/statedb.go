@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -263,16 +264,22 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 	k.accountKeeper.SetAccount(k.ctx, ethAccount)
 
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixCode)
-	store.Set(hash.Bytes(), code)
+
+	action := "updated"
+
+	// store or delete code
+	if len(code) == 0 {
+		store.Delete(hash.Bytes())
+		action = "deleted"
+	} else {
+		store.Set(hash.Bytes(), code)
+	}
 
 	k.Logger(k.ctx).Debug(
-		"code updated",
+		fmt.Sprintf("code %s", action),
 		"ethereum-address", addr.Hex(),
 		"code-hash", hash.Hex(),
 	)
-	// if len(code) == 0 && k.Empty(addr) {
-	// 	DeleteAccount, balance, code, storage
-	// }
 }
 
 // GetCodeSize calls CommitStateDB.GetCodeSize using the passed in context
@@ -330,7 +337,7 @@ func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common
 
 // GetState calls CommitStateDB.GetState using the passed in context
 func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
-	// All state is commited directly
+	// All state is committed directly
 	return k.GetCommittedState(addr, hash)
 }
 
@@ -340,10 +347,17 @@ func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 	// TODO: document logic
 
 	key = types.GetStorageByAddressKey(addr, key)
-	store.Set(key.Bytes(), value.Bytes())
+
+	action := "updated"
+	if ethermint.IsEmptyHash(value.Hex()) {
+		store.Delete(key.Bytes())
+		action = "deleted"
+	} else {
+		store.Set(key.Bytes(), value.Bytes())
+	}
 
 	k.Logger(k.ctx).Debug(
-		"state updated",
+		fmt.Sprintf("state %s", action),
 		"ethereum-address", addr.Hex(),
 		"key", key.Hex(),
 	)
@@ -353,7 +367,7 @@ func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 // Suicide
 // ----------------------------------------------------------------------------
 
-// TODO: (@fedekunze) consider removing the state immediatly once Suicide has been
+// TODO: (@fedekunze) consider removing the state immediately once Suicide has been
 // called and store the map value in case address is queried again during the same
 // execution. This will prevent us from having to iterate over the accounts and we
 // can just reset the map during begin block.
@@ -379,6 +393,8 @@ func (k *Keeper) Suicide(addr common.Address) bool {
 
 		return false
 	}
+
+	// TODO: (@fedekunze) do we also need to delete the storage state and the code?
 
 	k.cache.suicided[addr] = true
 
@@ -496,7 +512,7 @@ func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 // Snapshotting
 // ----------------------------------------------------------------------------
 
-// Snapshot return zero as the state changes won't be commited if the state transition fails. So there
+// Snapshot return zero as the state changes won't be committed if the state transition fails. So there
 // is no need to snapshot before the VM execution.
 // See Cosmos SDK docs for more info: https://docs.cosmos.network/master/core/baseapp.html#delivertx-state-updates
 func (k *Keeper) Snapshot() int {

@@ -161,7 +161,7 @@ func (k Keeper) SetHeightHash(ctx sdk.Context, height uint64, hash common.Hash) 
 func (k Keeper) GetTxReceiptFromHash(ctx sdk.Context, hash common.Hash) (*types.TxReceipt, bool) {
 	store := ctx.KVStore(k.storeKey)
 	data := store.Get(types.KeyHashTxReceipt(hash))
-	if data == nil || len(data) == 0 {
+	if len(data) == 0 {
 		return nil, false
 	}
 
@@ -223,7 +223,7 @@ func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight int64) [
 
 	for idx, txHash := range txs {
 		data := store.Get(types.KeyHashTxReceipt(txHash))
-		if data == nil || len(data) == 0 {
+		if len(data) == 0 {
 			continue
 		}
 
@@ -337,6 +337,8 @@ func (k Keeper) DeleteAccountStorage(addr common.Address) {
 	})
 }
 
+// DeleteCode removes the contract code byte array from the store associated with
+// the given address.
 func (k Keeper) DeleteCode(addr common.Address) {
 	hash := k.GetCodeHash(addr)
 	if bytes.Equal(hash.Bytes(), common.BytesToHash(types.EmptyCodeHash).Bytes()) {
@@ -347,7 +349,7 @@ func (k Keeper) DeleteCode(addr common.Address) {
 	store.Delete(hash.Bytes())
 }
 
-// ClearBalance substracts the EVM all the balance denomination from the address
+// ClearBalance subtracts the EVM all the balance denomination from the address
 // balance while also updating the total supply.
 func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err error) {
 	params := k.GetParams(k.ctx)
