@@ -21,6 +21,7 @@ const (
 	codeErrCallDisabled
 	codeErrInvalidAmount
 	codeErrInvalidGasPrice
+	codeErrVMExecution
 )
 
 var (
@@ -59,6 +60,9 @@ var (
 
 	// ErrInvalidGasPrice returns an error if an invalid gas price is provided to the tx.
 	ErrInvalidGasPrice = sdkerrors.Register(ModuleName, codeErrInvalidGasPrice, "invalid gas price")
+
+	// ErrVMExecution returns an error resulting from an error in EVM execution.
+	ErrVMExecution = sdkerrors.Register(ModuleName, codeErrVMExecution, "evm transaction execution failed")
 )
 
 // NewExecErrorWithReson unpacks the revert return bytes and returns a wrapped error
