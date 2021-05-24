@@ -21,6 +21,7 @@ func InitGenesis(
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
 
+	k.WithChainID(ctx)
 	k.WithContext(ctx)
 	k.SetParams(ctx, data.Params)
 

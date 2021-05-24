@@ -12,6 +12,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
 
@@ -73,6 +74,24 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 // WithContext sets an updated SDK context to the keeper
 func (k *Keeper) WithContext(ctx sdk.Context) {
 	k.ctx = ctx
+}
+
+// WithChainID sets the chain id to the local variable in the keeper
+func (k *Keeper) WithChainID(ctx sdk.Context) {
+	if k.eip155ChainID != nil {
+		panic("chain id already set")
+	}
+
+	chainID, err := ethermint.ParseChainID(ctx.ChainID())
+	if err != nil {
+		panic(err)
+	}
+	k.eip155ChainID = chainID
+}
+
+// ChainID returns the EIP155 chain ID for the EVM context
+func (k Keeper) ChainID() *big.Int {
+	return k.eip155ChainID
 }
 
 // ----------------------------------------------------------------------------
