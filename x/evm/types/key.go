@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -15,21 +16,51 @@ const (
 	// The EVM module should use a prefix store.
 	StoreKey = ModuleName
 
+	// Transient Key is the key to access the EVM transient store, that is reset
+	// during the Commit phase.
+	TransientKey = "transient_" + ModuleName
+
 	// RouterKey uses module name for routing
 	RouterKey = ModuleName
 )
 
+const (
+	prefixBlockHash = iota + 1
+	prefixBloom
+	prefixLogs
+	prefixCode
+	prefixStorage
+	prefixChainConfig
+	prefixBlockHeightHash
+	prefixHashTxReceipt
+	prefixBlockHeightTxs
+)
+
+const (
+	prefixTransientSuicided = iota + 1
+	prefixTransientBloom
+	prefixTransientTxIndex
+	prefixTransientRefund
+)
+
 // KVStore key prefixes
 var (
-	KeyPrefixBlockHash       = []byte{0x01}
-	KeyPrefixBloom           = []byte{0x02}
-	KeyPrefixLogs            = []byte{0x03}
-	KeyPrefixCode            = []byte{0x04}
-	KeyPrefixStorage         = []byte{0x05}
-	KeyPrefixChainConfig     = []byte{0x06}
-	KeyPrefixBlockHeightHash = []byte{0x07}
-	KeyPrefixHashTxReceipt   = []byte{0x08}
-	KeyPrefixBlockHeightTxs  = []byte{0x09}
+	KeyPrefixBlockHash       = []byte{prefixBlockHash}
+	KeyPrefixBloom           = []byte{prefixBloom}
+	KeyPrefixLogs            = []byte{prefixLogs}
+	KeyPrefixCode            = []byte{prefixCode}
+	KeyPrefixStorage         = []byte{prefixStorage}
+	KeyPrefixChainConfig     = []byte{prefixChainConfig}
+	KeyPrefixBlockHeightHash = []byte{prefixBlockHeightHash}
+	KeyPrefixHashTxReceipt   = []byte{prefixHashTxReceipt}
+	KeyPrefixBlockHeightTxs  = []byte{prefixBlockHeightTxs}
+)
+
+var (
+	KeyPrefixTransientSuicided = []byte{prefixTransientSuicided}
+	KeyPrefixTransientBloom    = []byte{prefixTransientBloom}
+	KeyPrefixTransientTxIndex  = []byte{prefixTransientTxIndex}
+	KeyPrefixTransientRefund   = []byte{prefixTransientRefund}
 )
 
 // BloomKey defines the store key for a block Bloom
@@ -68,4 +99,18 @@ func KeyHashTxReceipt(hash ethcmn.Hash) []byte {
 func KeyBlockHeightTxs(height uint64) []byte {
 	heightBytes := sdk.Uint64ToBigEndian(height)
 	return append(KeyPrefixBlockHeightTxs, heightBytes...)
+}
+
+// KeyAddressStorage returns the key hash to access a given account state. The composite key
+// (address + hash) is hashed using Keccak256.
+func KeyAddressStorage(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
+	prefix := address.Bytes()
+	key := hash.Bytes()
+
+	compositeKey := make([]byte, len(prefix)+len(key))
+
+	copy(compositeKey, prefix)
+	copy(compositeKey[len(prefix):], key)
+
+	return ethcrypto.Keccak256Hash(compositeKey)
 }

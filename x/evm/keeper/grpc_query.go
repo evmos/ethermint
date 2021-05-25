@@ -32,7 +32,9 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	so := k.GetOrNewStateObject(ctx, ethcmn.HexToAddress(req.Address))
+	k.CommitStateDB.WithContext(ctx)
+
+	so := k.CommitStateDB.GetOrNewStateObject(ethcmn.HexToAddress(req.Address))
 	balance, err := ethermint.MarshalBigInt(so.Balance())
 	if err != nil {
 		return nil, err
@@ -57,6 +59,7 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	k.CommitStateDB.WithContext(ctx)
 
 	ethAddr := ethcmn.HexToAddress(req.Address)
 	cosmosAddr := sdk.AccAddress(ethAddr.Bytes())
@@ -88,8 +91,9 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	k.CommitStateDB.WithContext(ctx)
 
-	balanceInt := k.GetBalance(ctx, ethcmn.HexToAddress(req.Address))
+	balanceInt := k.CommitStateDB.GetBalance(ethcmn.HexToAddress(req.Address))
 	balance, err := ethermint.MarshalBigInt(balanceInt)
 	if err != nil {
 		return nil, status.Error(
@@ -117,11 +121,12 @@ func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	k.CommitStateDB.WithContext(ctx)
 
 	address := ethcmn.HexToAddress(req.Address)
 	key := ethcmn.HexToHash(req.Key)
 
-	state := k.GetState(ctx, address, key)
+	state := k.CommitStateDB.GetState(address, key)
 
 	return &types.QueryStorageResponse{
 		Value: state.String(),
@@ -142,9 +147,10 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	k.CommitStateDB.WithContext(ctx)
 
 	address := ethcmn.HexToAddress(req.Address)
-	code := k.GetCode(ctx, address)
+	code := k.CommitStateDB.GetCode(address)
 
 	return &types.QueryCodeResponse{
 		Code: code,
@@ -165,9 +171,10 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	k.CommitStateDB.WithContext(ctx)
 
 	hash := ethcmn.HexToHash(req.Hash)
-	logs, err := k.GetLogs(ctx, hash)
+	logs, err := k.CommitStateDB.GetLogs(hash)
 	if err != nil {
 		return nil, status.Error(
 			codes.Internal,
@@ -296,6 +303,7 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	k.CommitStateDB.WithContext(ctx)
 
 	// parse the chainID from a string to a base-10 integer
 	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
@@ -312,7 +320,7 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 		recipient = &addr
 	}
 
-	so := k.GetOrNewStateObject(ctx, *recipient)
+	so := k.CommitStateDB.GetOrNewStateObject(*recipient)
 	sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
 
 	msg := types.NewMsgEthereumTx(

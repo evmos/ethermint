@@ -21,7 +21,7 @@ import (
 var (
 	_ StateObject = (*stateObject)(nil)
 
-	emptyCodeHash = ethcrypto.Keccak256(nil)
+	EmptyCodeHash = ethcrypto.Keccak256(nil)
 )
 
 // StateObject interface for interacting with state object
@@ -90,7 +90,7 @@ func newStateObject(db *CommitStateDB, accProto authtypes.AccountI, balance sdk.
 
 	// set empty code hash
 	if ethAccount.CodeHash == nil {
-		ethAccount.CodeHash = emptyCodeHash
+		ethAccount.CodeHash = EmptyCodeHash
 	}
 
 	return &stateObject{
@@ -307,7 +307,7 @@ func (so *stateObject) Balance() *big.Int {
 // CodeHash returns the state object's code hash.
 func (so *stateObject) CodeHash() []byte {
 	if so.account == nil || len(so.account.CodeHash) == 0 {
-		return emptyCodeHash
+		return EmptyCodeHash
 	}
 	return so.account.CodeHash
 }
@@ -326,7 +326,7 @@ func (so *stateObject) Code(_ ethstate.Database) []byte {
 		return so.code
 	}
 
-	if bytes.Equal(so.CodeHash(), emptyCodeHash) {
+	if bytes.Equal(so.CodeHash(), EmptyCodeHash) {
 		return nil
 	}
 
@@ -416,7 +416,7 @@ func (so *stateObject) empty() bool {
 		(so.account != nil &&
 			so.account.Sequence == 0 &&
 			(so.balance.BigInt() == nil || so.balance.IsZero()) &&
-			bytes.Equal(so.account.CodeHash, emptyCodeHash))
+			bytes.Equal(so.account.CodeHash, EmptyCodeHash))
 }
 
 // EncodeRLP implements rlp.Encoder.

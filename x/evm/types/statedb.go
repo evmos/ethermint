@@ -72,14 +72,14 @@ type CommitStateDB struct {
 	// by StateDB.Commit.
 	dbErr error
 
-	// Journal of state modifications. This is the backbone of
+	// journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
 	journal        *journal
 	validRevisions []revision
 	nextRevisionID int
 
 	// Per-transaction access list
-	accessList *accessList
+	accessList *AccessListMappings
 
 	// mutex for state deep copying
 	lock sync.Mutex
@@ -106,7 +106,7 @@ func NewCommitStateDB(
 		preimages:            []preimageEntry{},
 		hashToPreimageIndex:  make(map[ethcmn.Hash]int),
 		journal:              newJournal(),
-		accessList:           newAccessList(),
+		accessList:           NewAccessListMappings(),
 	}
 }
 
@@ -727,7 +727,7 @@ func (csdb *CommitStateDB) Reset(_ ethcmn.Hash) error {
 	csdb.logSize = 0
 	csdb.preimages = []preimageEntry{}
 	csdb.hashToPreimageIndex = make(map[ethcmn.Hash]int)
-	csdb.accessList = newAccessList()
+	csdb.accessList = NewAccessListMappings()
 
 	csdb.clearJournalAndRefund()
 	return nil

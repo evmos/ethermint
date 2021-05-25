@@ -30,6 +30,8 @@ func (k Keeper) BalanceInvariant() sdk.Invariant {
 			count int
 		)
 
+		k.CommitStateDB.WithContext(ctx)
+
 		k.accountKeeper.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
 			ethAccount, ok := account.(*ethermint.EthAccount)
 			if !ok {
@@ -40,7 +42,7 @@ func (k Keeper) BalanceInvariant() sdk.Invariant {
 			evmDenom := k.GetParams(ctx).EvmDenom
 
 			accountBalance := k.bankKeeper.GetBalance(ctx, ethAccount.GetAddress(), evmDenom)
-			evmBalance := k.GetBalance(ctx, ethAccount.EthAddress())
+			evmBalance := k.CommitStateDB.GetBalance(ethAccount.EthAddress())
 
 			if evmBalance.Cmp(accountBalance.Amount.BigInt()) != 0 {
 				count++
@@ -71,6 +73,8 @@ func (k Keeper) NonceInvariant() sdk.Invariant {
 			count int
 		)
 
+		k.CommitStateDB.WithContext(ctx)
+
 		k.accountKeeper.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
 			ethAccount, ok := account.(*ethermint.EthAccount)
 			if !ok {
@@ -78,7 +82,7 @@ func (k Keeper) NonceInvariant() sdk.Invariant {
 				return false
 			}
 
-			evmNonce := k.GetNonce(ctx, ethAccount.EthAddress())
+			evmNonce := k.CommitStateDB.GetNonce(ethAccount.EthAddress())
 
 			if evmNonce != ethAccount.Sequence {
 				count++

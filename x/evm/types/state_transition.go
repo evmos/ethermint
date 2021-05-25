@@ -98,7 +98,8 @@ func (st *StateTransition) newEVM(
 	}
 
 	vmConfig := vm.Config{
-		ExtraEips: eips,
+		EnablePreimageRecording: false, // no need for StateDB.AddPreimage
+		ExtraEips:               eips,
 	}
 
 	if st.Debug {

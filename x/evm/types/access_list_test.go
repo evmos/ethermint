@@ -15,7 +15,7 @@ type AccessListTestSuite struct {
 	suite.Suite
 
 	address    ethcmn.Address
-	accessList *accessList
+	accessList *AccessListMappings
 }
 
 func (suite *AccessListTestSuite) SetupTest() {
@@ -23,7 +23,7 @@ func (suite *AccessListTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	suite.address = ethcmn.BytesToAddress(privkey.PubKey().Address().Bytes())
-	suite.accessList = newAccessList()
+	suite.accessList = NewAccessListMappings()
 	suite.accessList.addresses[suite.address] = 1
 }
 
@@ -85,7 +85,7 @@ func (suite *AccessListTestSuite) TestContains() {
 }
 
 func (suite *AccessListTestSuite) TestCopy() {
-	expAccessList := newAccessList()
+	expAccessList := NewAccessListMappings()
 
 	testCases := []struct {
 		name     string
@@ -96,7 +96,7 @@ func (suite *AccessListTestSuite) TestCopy() {
 		}},
 		{
 			"single address", func() {
-				expAccessList = newAccessList()
+				expAccessList = NewAccessListMappings()
 				expAccessList.slots = make([]map[ethcmn.Hash]struct{}, 0)
 				expAccessList.addresses[suite.address] = -1
 			},
@@ -104,7 +104,7 @@ func (suite *AccessListTestSuite) TestCopy() {
 		{
 			"single address, single slot",
 			func() {
-				expAccessList = newAccessList()
+				expAccessList = NewAccessListMappings()
 				expAccessList.addresses[suite.address] = 0
 				expAccessList.slots = make([]map[ethcmn.Hash]struct{}, 1)
 				expAccessList.slots[0] = make(map[ethcmn.Hash]struct{})
@@ -114,7 +114,7 @@ func (suite *AccessListTestSuite) TestCopy() {
 		{
 			"multiple addresses, single slot each",
 			func() {
-				expAccessList = newAccessList()
+				expAccessList = NewAccessListMappings()
 				expAccessList.slots = make([]map[ethcmn.Hash]struct{}, 10)
 				for i := 0; i < 10; i++ {
 					expAccessList.addresses[ethcmn.BytesToAddress([]byte(fmt.Sprintf("%d", i)))] = i
@@ -126,7 +126,7 @@ func (suite *AccessListTestSuite) TestCopy() {
 		{
 			"multiple addresses, multiple slots each",
 			func() {
-				expAccessList = newAccessList()
+				expAccessList = NewAccessListMappings()
 				expAccessList.slots = make([]map[ethcmn.Hash]struct{}, 10)
 				for i := 0; i < 10; i++ {
 					expAccessList.addresses[ethcmn.BytesToAddress([]byte(fmt.Sprintf("%d", i)))] = i
