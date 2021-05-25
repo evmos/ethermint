@@ -19,15 +19,6 @@ import (
 
 var _ vm.StateDB = &Keeper{}
 
-// csdb defines the internal field values used on the StateDB operations
-type csdb struct {
-	// The refund counter, also used by state transitioning.
-	refund uint64
-
-	// Per-transaction access list
-	accessList *types.AccessListMappings
-}
-
 // ----------------------------------------------------------------------------
 // Account
 // ----------------------------------------------------------------------------
@@ -489,11 +480,11 @@ func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, 
 
 // AddressInAccessList returns true if the address is registered on the access list map.
 func (k *Keeper) AddressInAccessList(addr common.Address) bool {
-	return k.cache.accessList.ContainsAddress(addr)
+	return k.accessList.ContainsAddress(addr)
 }
 
 func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
-	return k.cache.accessList.Contains(addr, slot)
+	return k.accessList.Contains(addr, slot)
 }
 
 // AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
@@ -505,7 +496,7 @@ func (k *Keeper) AddAddressToAccessList(addr common.Address) {
 	}
 
 	// NOTE: ignore change return bool because we don't have to keep a journal for state changes
-	_ = k.cache.accessList.AddAddress(addr)
+	_ = k.accessList.AddAddress(addr)
 }
 
 // AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
@@ -517,7 +508,7 @@ func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 	}
 
 	// NOTE: ignore change return booleans because we don't have to keep a journal for state changes
-	_, _ = k.cache.accessList.AddSlot(addr, slot)
+	_, _ = k.accessList.AddSlot(addr, slot)
 }
 
 // ----------------------------------------------------------------------------
