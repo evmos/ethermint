@@ -16,6 +16,10 @@ const (
 	// The EVM module should use a prefix store.
 	StoreKey = ModuleName
 
+	// Transient Key is the key to access the EVM transient store, that is reset
+	// during the Commit phase.
+	TransientKey = "transient_" + ModuleName
+
 	// RouterKey uses module name for routing
 	RouterKey = ModuleName
 )
@@ -32,6 +36,13 @@ const (
 	prefixBlockHeightTxs
 )
 
+const (
+	prefixTransientSuicided = iota + 1
+	prefixTransientBloom
+	prefixTransientTxIndex
+	prefixTransientRefund
+)
+
 // KVStore key prefixes
 var (
 	KeyPrefixBlockHash       = []byte{prefixBlockHash}
@@ -43,6 +54,13 @@ var (
 	KeyPrefixBlockHeightHash = []byte{prefixBlockHeightHash}
 	KeyPrefixHashTxReceipt   = []byte{prefixHashTxReceipt}
 	KeyPrefixBlockHeightTxs  = []byte{prefixBlockHeightTxs}
+)
+
+var (
+	KeyPrefixTransientSuicided = []byte{prefixTransientSuicided}
+	KeyPrefixTransientBloom    = []byte{prefixTransientBloom}
+	KeyPrefixTransientTxIndex  = []byte{prefixTransientTxIndex}
+	KeyPrefixTransientRefund   = []byte{prefixTransientRefund}
 )
 
 // BloomKey defines the store key for a block Bloom
@@ -83,7 +101,9 @@ func KeyBlockHeightTxs(height uint64) []byte {
 	return append(KeyPrefixBlockHeightTxs, heightBytes...)
 }
 
-func GetStorageByAddressKey(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
+// KeyAddressStorage returns the key hash to access a given account state. The composite key
+// (address + hash) is hashed using Keccak256.
+func KeyAddressStorage(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
 	prefix := address.Bytes()
 	key := hash.Bytes()
 

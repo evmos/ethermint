@@ -33,11 +33,6 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 	// special setter for csdb
 	k.SetHeightHash(ctx, uint64(req.Header.Height), common.BytesToHash(req.Hash))
-
-	// reset counters that are used on CommitStateDB.Prepare
-	k.cache.bloom = big.NewInt(0)
-	k.cache.txIndex = 0
-	k.cache.blockHash = common.BytesToHash(req.Hash)
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while
@@ -66,8 +61,13 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Valid
 		panic(err)
 	}
 
-	// set the block bloom filter bytes to store
-	bloom := ethtypes.BytesToBloom(k.cache.bloom.Bytes())
+	// get the block bloom bytes from the transient store and set it to the persistent storage
+	bloomBig, found := k.GetBlockBloomTransient()
+	if !found {
+		bloomBig = big.NewInt(0)
+	}
+
+	bloom := ethtypes.BytesToBloom(bloomBig.Bytes())
 	k.SetBlockBloom(ctx, req.Height, bloom)
 
 	return []abci.ValidatorUpdate{}
