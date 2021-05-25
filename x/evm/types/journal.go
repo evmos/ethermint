@@ -18,7 +18,7 @@ type journalEntry interface {
 	dirtied() *ethcmn.Address
 }
 
-type Revision struct {
+type revision struct {
 	id           int
 	journalIndex int
 }

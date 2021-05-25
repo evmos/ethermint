@@ -15,13 +15,13 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, gasLimit uint64) *vm.EVM {
+func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     k.GetHashFn(),
 		Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
-		GasLimit:    gasLimit,
+		GasLimit:    k.ctx.BlockGasMeter().Limit(),
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
@@ -108,9 +108,10 @@ func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.Executi
 	// Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
 	k.ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	gasLimit := uint64(0) // TODO: define
-	evm := k.NewEVM(msg, cfg.EthereumConfig(k.eip155ChainID), gasLimit)
-	gasPool := core.GasPool(ctx.BlockGasMeter().Limit()) // available gas left in the block for the tx execution
+	evm := k.NewEVM(msg, cfg.EthereumConfig(k.eip155ChainID))
+
+	// amount of gas available during execution of the transactions in a block
+	gasPool := core.GasPool(ctx.BlockGasMeter().Limit())
 
 	// create an ethereum StateTransition instance and run TransitionDb
 	result, err := core.ApplyMessage(evm, msg, &gasPool)
@@ -123,7 +124,7 @@ func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.Executi
 	// The gas used on the state transition will
 	// be returned in the execution result so we need to deduct it from the transaction (?) GasMeter // TODO: double-check
 
-	startingGas.ConsumeGas(result.UsedGas-k.cache.refund, "evm state transition")
+	startingGas.ConsumeGas(result.UsedGas-k.GetRefund(), "evm state transition")
 
 	// set the gas meter to gas_consumed = starting_gas + used_gas - refund
 	k.ctx = k.ctx.WithGasMeter(startingGas)
