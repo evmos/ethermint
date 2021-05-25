@@ -22,6 +22,8 @@ import (
 type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	GetChainConfig(ctx sdk.Context) (evmtypes.ChainConfig, bool)
+	WithContext(ctx sdk.Context)
+	ResetRefundTransient(ctx sdk.Context)
 }
 
 // EthSetupContextDecorator sets the infinite GasMeter in the Context and wraps
@@ -30,11 +32,15 @@ type EVMKeeper interface {
 // on gas provided and gas used.
 // CONTRACT: Must be first decorator in the chain
 // CONTRACT: Tx must implement GasTx interface
-type EthSetupContextDecorator struct{}
+type EthSetupContextDecorator struct {
+	evmKeeper EVMKeeper
+}
 
 // NewEthSetupContextDecorator creates a new EthSetupContextDecorator
-func NewEthSetupContextDecorator() EthSetupContextDecorator {
-	return EthSetupContextDecorator{}
+func NewEthSetupContextDecorator(ek EVMKeeper) EthSetupContextDecorator {
+	return EthSetupContextDecorator{
+		evmKeeper: ek,
+	}
 }
 
 // AnteHandle sets the infinite gas meter to done to ignore costs in AnteHandler checks.
@@ -42,6 +48,9 @@ func NewEthSetupContextDecorator() EthSetupContextDecorator {
 // ethereum tx GasLimit.
 func (escd EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	// reset the refund gas value for the current transaction
+	escd.evmKeeper.ResetRefundTransient(ctx)
 
 	// all transactions must implement GasTx
 	gasTx, ok := tx.(authante.GasTx)
@@ -431,6 +440,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	// Set gas meter after ante handler to ignore gaskv costs
 	newCtx = authante.SetGasMeter(simulate, ctx, gasLimit)
+	egcd.evmKeeper.WithContext(newCtx)
+
 	return next(newCtx, tx, simulate)
 }
 

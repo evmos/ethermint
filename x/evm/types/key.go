@@ -40,6 +40,7 @@ const (
 	prefixTransientSuicided = iota + 1
 	prefixTransientBloom
 	prefixTransientTxIndex
+	prefixTransientRefund
 )
 
 // KVStore key prefixes
@@ -59,6 +60,7 @@ var (
 	KeyPrefixTransientSuicided = []byte{prefixTransientSuicided}
 	KeyPrefixTransientBloom    = []byte{prefixTransientBloom}
 	KeyPrefixTransientTxIndex  = []byte{prefixTransientTxIndex}
+	KeyPrefixTransientRefund   = []byte{prefixTransientRefund}
 )
 
 // BloomKey defines the store key for a block Bloom

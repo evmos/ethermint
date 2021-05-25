@@ -268,29 +268,47 @@ func (k *Keeper) GetCodeSize(addr common.Address) int {
 // ----------------------------------------------------------------------------
 
 // NOTE: gas refunded needs to be tracked and stored in a separate variable in
-// order to add it subtract/add it from/to the gas used value adter the EVM
-// execution has finalised.
+// order to add it subtract/add it from/to the gas used value after the EVM
+// execution has finalised. The refund value is cleared on every transaction and
+// at the end of every block.
 
-// AddRefund adds the given amount of gas to the refund cached value
+// AddRefund adds the given amount of gas to the refund cached value.
 func (k *Keeper) AddRefund(gas uint64) {
-	k.cache.refund += gas
+	refund := k.GetRefund()
+
+	refund += gas
+
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientRefund, sdk.Uint64ToBigEndian(refund))
 }
 
 // SubRefund subtracts the given amount of gas from the refund value. This function
 // will panic if gas amount is greater than the stored refund.
 func (k *Keeper) SubRefund(gas uint64) {
-	if gas > k.cache.refund {
+	refund := k.GetRefund()
+
+	if gas > refund {
 		// TODO: (@fedekunze) set to 0?? Geth panics here
 		panic("refund counter below zero")
 	}
 
-	k.cache.refund -= gas
+	refund -= gas
+
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientRefund, sdk.Uint64ToBigEndian(refund))
 }
 
 // GetRefund returns the amount of gas available for return after the tx execution
-// finalises.
+// finalises. This value is reset to 0 on every transaction.
 func (k *Keeper) GetRefund() uint64 {
-	return k.cache.refund
+	store := k.ctx.TransientStore(k.transientKey)
+
+	bz := store.Get(types.KeyPrefixTransientRefund)
+	if len(bz) == 0 {
+		return 0
+	}
+
+	return sdk.BigEndianToUint64(bz)
 }
 
 // ----------------------------------------------------------------------------
@@ -448,6 +466,11 @@ func (k *Keeper) Empty(addr common.Address) bool {
 //
 // This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
 func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList) {
+	// NOTE: only update the access list during DeliverTx
+	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+		return
+	}
+
 	k.AddAddressToAccessList(sender)
 	if dest != nil {
 		k.AddAddressToAccessList(*dest)
@@ -476,6 +499,11 @@ func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addres
 // AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (k *Keeper) AddAddressToAccessList(addr common.Address) {
+	// NOTE: only update the access list during DeliverTx
+	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+		return
+	}
+
 	// NOTE: ignore change return bool because we don't have to keep a journal for state changes
 	_ = k.cache.accessList.AddAddress(addr)
 }
@@ -483,6 +511,11 @@ func (k *Keeper) AddAddressToAccessList(addr common.Address) {
 // AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
+	// NOTE: only update the access list during DeliverTx
+	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+		return
+	}
+
 	// NOTE: ignore change return booleans because we don't have to keep a journal for state changes
 	_, _ = k.cache.accessList.AddSlot(addr, slot)
 }
