@@ -72,7 +72,7 @@ init_func() {
     "$PWD"/build/ethermintd add-genesis-account \
     "$("$PWD"/build/ethermintd keys show "$KEY$i" --keyring-backend test -a --home "$DATA_DIR$i")" 1000000000000000000aphoton,1000000000000000000stake \
     --keyring-backend test --home "$DATA_DIR$i"
-    "$PWD"/build/ethermintd gentx "$KEY$i" --amount=1000000000000000000aphoton --chain-id $CHAINID --keyring-backend test --home "$DATA_DIR$i"
+    "$PWD"/build/ethermintd gentx "$KEY$i" 1000000000000000000stake --chain-id $CHAINID --keyring-backend test --home "$DATA_DIR$i"
     "$PWD"/build/ethermintd collect-gentxs --home "$DATA_DIR$i"
     "$PWD"/build/ethermintd validate-genesis --home "$DATA_DIR$i"
 
@@ -106,9 +106,8 @@ start_func() {
     echo "starting ethermint node $i in background ..."
     "$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe \
     --p2p.laddr tcp://$IP_ADDR:$NODE_P2P_PORT"$i" --address tcp://$IP_ADDR:$NODE_PORT"$i" --rpc.laddr tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
-    --json-rpc.address http://$IP_ADDR:$RPC_PORT"$i" \
+    --evm-rpc.address $IP_ADDR:$RPC_PORT"$i" \
     --keyring-backend test --home "$DATA_DIR$i" \
-    --rpc-api "web3, eth, personal, net" \
     >"$DATA_DIR"/node"$i".log 2>&1 & disown
 
     ETHERMINT_PID=$!
