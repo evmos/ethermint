@@ -310,8 +310,7 @@ func (k *Keeper) GetRefund() uint64 {
 func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
 
-	// TODO: document logic
-	key := types.GetStorageByAddressKey(addr, hash)
+	key := types.KeyAddressStorage(addr, hash)
 	value := store.Get(key.Bytes())
 	if len(value) == 0 {
 		return common.Hash{}
@@ -329,9 +328,7 @@ func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
 // SetState calls CommitStateDB.SetState using the passed in context
 func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
-	// TODO: document logic
-
-	key = types.GetStorageByAddressKey(addr, key)
+	key = types.KeyAddressStorage(addr, key)
 
 	action := "updated"
 	if ethermint.IsEmptyHash(value.Hex()) {

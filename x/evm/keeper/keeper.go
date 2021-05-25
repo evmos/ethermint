@@ -379,7 +379,7 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 
 func (k Keeper) DeleteState(addr common.Address, key common.Hash) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
-	key = types.GetStorageByAddressKey(addr, key)
+	key = types.KeyAddressStorage(addr, key)
 	store.Delete(key.Bytes())
 }
 

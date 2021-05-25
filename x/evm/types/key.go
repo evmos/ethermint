@@ -101,7 +101,9 @@ func KeyBlockHeightTxs(height uint64) []byte {
 	return append(KeyPrefixBlockHeightTxs, heightBytes...)
 }
 
-func GetStorageByAddressKey(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
+// KeyAddressStorage returns the key hash to access a given account state. The composite key
+// (address + hash) is hashed using Keccak256.
+func KeyAddressStorage(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
 	prefix := address.Bytes()
 	key := hash.Bytes()
 
