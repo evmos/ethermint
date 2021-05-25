@@ -442,13 +442,13 @@ ifeq ($(OS),Windows_NT)
 	mkdir build &
 	@$(MAKE) docker-localnet
 
-	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --starting-ip-address 192.168.10.2 --keyring-backend=test"
+	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --keyring-backend=test"
 	docker-compose up -d
 else
 	mkdir -p ./build/
 	@$(MAKE) docker-localnet
 
-	if ! [ -f build/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --starting-ip-address 192.168.10.2 --keyring-backend=test"; fi
+	if ! [ -f build/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --keyring-backend=test"; fi
 	docker-compose up -d
 endif
 

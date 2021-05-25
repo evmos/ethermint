@@ -10,7 +10,7 @@ SLEEP_TIMEOUT=5
 TEST_QTD=1
 
 #PORT AND RPC_PORT 3 initial digits, to be concat with a suffix later when node is initialized
-RPC_PORT="8545"
+RPC_PORT="854"
 IP_ADDR="0.0.0.0"
 MODE="rpc"
 
@@ -73,21 +73,15 @@ arrcli=()
 
 init_func() {
     echo "create and add new keys"
-    "$PWD"/build/ethermintd config keyring-backend test --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintd keys add $KEY"$i" --home "$DATA_CLI_DIR$i" --no-backup --chain-id $CHAINID --algo "eth_secp256k1"
+    "$PWD"/build/ethermintd keys add $KEY"$i" --home "$DATA_DIR$i" --no-backup --chain-id $CHAINID --algo "eth_secp256k1" --keyring-backend test
     echo "init Ethermint with moniker=$MONIKER and chain-id=$CHAINID"
     "$PWD"/build/ethermintd init $MONIKER --chain-id $CHAINID --home "$DATA_DIR$i"
-    echo "init ethermintd with chain-id=$CHAINID and config it trust-node true"
-    "$PWD"/build/ethermintd config chain-id $CHAINID --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintd config output json --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintd config indent true --home "$DATA_CLI_DIR$i"
-    "$PWD"/build/ethermintd config trust-node true --home "$DATA_CLI_DIR$i"
     echo "prepare genesis: Allocate genesis accounts"
     "$PWD"/build/ethermintd add-genesis-account \
-    "$("$PWD"/build/ethermintd keys show "$KEY$i" -a --home "$DATA_CLI_DIR$i" )" 1000000000000000000aphoton,1000000000000000000stake \
-    --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"
+    "$("$PWD"/build/ethermintd keys show "$KEY$i" -a --home "$DATA_DIR$i" --keyring-backend test)" 1000000000000000000aphoton,1000000000000000000stake \
+    --home "$DATA_DIR$i" --keyring-backend test
     echo "prepare genesis: Sign genesis transaction"
-    "$PWD"/build/ethermintd gentx --name $KEY"$i" --keyring-backend test --home "$DATA_DIR$i" --home-client "$DATA_CLI_DIR$i"
+    "$PWD"/build/ethermintd gentx $KEY"$i" 1000000000000000000stake --keyring-backend test --home "$DATA_DIR$i" --keyring-backend test --chain-id $CHAINID
     echo "prepare genesis: Collect genesis tx"
     "$PWD"/build/ethermintd collect-gentxs --home "$DATA_DIR$i"
     echo "prepare genesis: Run validate-genesis to ensure everything worked and that the genesis file is setup correctly"
@@ -98,7 +92,8 @@ start_func() {
     echo "starting ethermint node $i in background ..."
     "$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe \
     --p2p.laddr tcp://$IP_ADDR:$NODE_P2P_PORT"$i" --address tcp://$IP_ADDR:$NODE_PORT"$i" --rpc.laddr tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
-    --home "$DATA_DIR$i" \
+    --evm-rpc.address $IP_ADDR:$RPC_PORT"$i" \
+    --keyring-backend test --home "$DATA_DIR$i" \
     >"$DATA_DIR"/node"$i".log 2>&1 & disown
     
     ETHERMINT_PID=$!
@@ -107,27 +102,12 @@ start_func() {
     arr+=("$ETHERMINT_PID")
 }
 
-start_cli_func() {
-    echo "starting ethermint node $i in background ..."
-    "$PWD"/build/ethermintd rest-server --unlock-key $KEY"$i" --chain-id $CHAINID --trace \
-    --laddr "tcp://localhost:$RPC_PORT$i" --node tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
-    --home "$DATA_CLI_DIR$i" --read-timeout 30 --write-timeout 30 \
-    --rpc-api "web3, eth, personal, net" \
-    >"$DATA_CLI_DIR"/cli"$i".log 2>&1 & disown
-    
-    ETHERMINT_CLI_PID=$!
-    echo "started ethermintd node, pid=$ETHERMINT_CLI_PID"
-    # add PID to array
-    arrcli+=("$ETHERMINT_CLI_PID")
-}
-
 # Run node with static blockchain database
 # For loop N times
 for i in $(seq 1 "$QTD"); do
     init_func "$i"
     start_func "$i"
     sleep 1
-    start_cli_func "$i"
     echo "sleeping $SLEEP_TIMEOUT seconds for startup"
     sleep "$SLEEP_TIMEOUT"
     echo "done sleeping"
