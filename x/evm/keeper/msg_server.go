@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"errors"
+	"math/big"
 	"time"
 
 	"github.com/armon/go-metrics"
@@ -68,8 +69,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, blockHash, k.cache.txIndex)
-		k.cache.txIndex++
+		k.CommitStateDB.Prepare(ethHash, blockHash, int(k.GetTxIndexTransient()))
+		k.IncreaseTxIndexTransient()
 	}
 
 	executionResult, err := st.TransitionDb(ctx, config)
@@ -103,8 +104,13 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	}
 
 	if !st.Simulate {
+		bloom, found := k.GetBlockBloomTransient()
+		if !found {
+			bloom = big.NewInt(0)
+		}
 		// update block bloom filter
-		k.cache.bloom.Or(k.cache.bloom, executionResult.Bloom)
+		bloom = bloom.Or(bloom, executionResult.Bloom)
+		k.SetBlockBloomTransient(bloom)
 
 		// update transaction logs in KVStore
 		err = k.CommitStateDB.SetLogs(ethHash, executionResult.Logs)
@@ -131,10 +137,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		})
 
 		k.AddTxHashToBlock(ctx, ctx.BlockHeight(), ethHash)
-
-		for _, ethLog := range executionResult.Logs {
-			k.cache.logs[ethLog.Address] = append(k.cache.logs[ethLog.Address], ethLog)
-		}
 	}
 
 	defer func() {

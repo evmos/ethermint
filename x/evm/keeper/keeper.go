@@ -28,6 +28,9 @@ type Keeper struct {
 	// - storing block hash -> block height map. Needed for the Web3 API. TODO: remove
 	storeKey sdk.StoreKey
 
+	// key to access the transient store, which is reset on every block during Commit
+	transientKey sdk.StoreKey
+
 	paramSpace    paramtypes.Subspace
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
@@ -42,7 +45,7 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	cdc codec.BinaryMarshaler, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper,
 ) *Keeper {
 	// set KeyTable if it has not already been set
@@ -57,12 +60,10 @@ func NewKeeper(
 		accountKeeper: ak,
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
+		transientKey:  transientKey,
 		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
 		cache: csdb{
 			accessList: types.NewAccessListMappings(),
-			txIndex:    0,
-			bloom:      big.NewInt(0),
-			logs:       map[common.Address][]*ethtypes.Log{},
 		},
 	}
 }
@@ -78,7 +79,7 @@ func (k *Keeper) WithContext(ctx sdk.Context) {
 }
 
 // ----------------------------------------------------------------------------
-// Block bloom bits mapping functions
+// Block Bloom
 // Required by Web3 API.
 // ----------------------------------------------------------------------------
 
@@ -100,6 +101,28 @@ func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloo
 	key := types.BloomKey(height)
 	store.Set(key, bloom.Bytes())
 }
+
+// GetBlockBloomTransient returns bloom bytes for the current block height
+func (k Keeper) GetBlockBloomTransient() (*big.Int, bool) {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientBloom)
+	if len(bz) == 0 {
+		return nil, false
+	}
+
+	return new(big.Int).SetBytes(bz), true
+}
+
+// SetBlockBloomTransient sets the given bloom bytes to the transient store. This value is reset on
+// every block.
+func (k Keeper) SetBlockBloomTransient(bloom *big.Int) {
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientBloom, bloom.Bytes())
+}
+
+// ----------------------------------------------------------------------------
+// Block
+// ----------------------------------------------------------------------------
 
 // GetBlockHash gets block height from block consensus hash
 func (k Keeper) GetBlockHashFromHeight(ctx sdk.Context, height int64) (common.Hash, bool) {
@@ -155,6 +178,29 @@ func (k Keeper) GetHeightHash(ctx sdk.Context, height uint64) common.Hash {
 // SetHeightHash sets the block header hash associated with a given height.
 func (k Keeper) SetHeightHash(ctx sdk.Context, height uint64, hash common.Hash) {
 	k.CommitStateDB.WithContext(ctx).SetHeightHash(height, hash)
+}
+
+// ----------------------------------------------------------------------------
+// Tx
+// ----------------------------------------------------------------------------
+
+// GetTxIndexTransient returns EVM transaction index on the current block.
+func (k Keeper) GetTxIndexTransient() uint64 {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientBloom)
+	if len(bz) == 0 {
+		return 0
+	}
+
+	return sdk.BigEndianToUint64(bz)
+}
+
+// IncreaseTxIndexTransient fetches the current EVM tx index from the transient store, increases its
+// value by one and then sets the new index back to the transient store.
+func (k Keeper) IncreaseTxIndexTransient() {
+	txIndex := k.GetTxIndexTransient()
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientBloom, sdk.Uint64ToBigEndian(txIndex+1))
 }
 
 // GetTxReceiptFromHash gets tx receipt by tx hash.

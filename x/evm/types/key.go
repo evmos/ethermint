@@ -16,6 +16,10 @@ const (
 	// The EVM module should use a prefix store.
 	StoreKey = ModuleName
 
+	// Transient Key is the key to access the EVM transient store, that is reset
+	// during the Commit phase.
+	TransientKey = "transient_" + ModuleName
+
 	// RouterKey uses module name for routing
 	RouterKey = ModuleName
 )
@@ -32,6 +36,12 @@ const (
 	prefixBlockHeightTxs
 )
 
+const (
+	prefixTransientSuicided = iota + 1
+	prefixTransientBloom
+	prefixTransientTxIndex
+)
+
 // KVStore key prefixes
 var (
 	KeyPrefixBlockHash       = []byte{prefixBlockHash}
@@ -43,6 +53,12 @@ var (
 	KeyPrefixBlockHeightHash = []byte{prefixBlockHeightHash}
 	KeyPrefixHashTxReceipt   = []byte{prefixHashTxReceipt}
 	KeyPrefixBlockHeightTxs  = []byte{prefixBlockHeightTxs}
+)
+
+var (
+	KeyPrefixTransientSuicided = []byte{prefixTransientSuicided}
+	KeyPrefixTransientBloom    = []byte{prefixTransientBloom}
+	KeyPrefixTransientTxIndex  = []byte{prefixTransientTxIndex}
 )
 
 // BloomKey defines the store key for a block Bloom
