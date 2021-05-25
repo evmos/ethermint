@@ -532,11 +532,8 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
 	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
-	blockHash, found := k.GetBlockHashFromHeight(k.ctx, k.ctx.BlockHeight())
-	if found {
-		log.BlockHash = blockHash
-	}
 
+	log.BlockHash = k.headerHash
 	log.TxHash = txHash
 	log.TxIndex = uint(k.GetTxIndexTransient())
 

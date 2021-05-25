@@ -680,7 +680,7 @@ func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHash() {
 					BlockHash:   blockHash.Hex(),
 				}
 
-				suite.app.EvmKeeper.SetBlockHash(suite.ctx, blockHash.Bytes(), suite.ctx.BlockHeight())
+				suite.app.EvmKeeper.SetHeaderHash(suite.ctx, suite.ctx.BlockHeight(), blockHash)
 				suite.app.EvmKeeper.AddTxHashToBlock(suite.ctx, suite.ctx.BlockHeight(), hash)
 				suite.app.EvmKeeper.SetTxReceiptToHash(suite.ctx, hash, receipt)
 

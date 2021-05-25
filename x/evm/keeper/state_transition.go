@@ -61,7 +61,7 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 		case k.ctx.BlockHeight() == int64(height):
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
-			return k.cache.blockHash
+			return k.headerHash
 
 		case k.ctx.BlockHeight() > int64(height):
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the

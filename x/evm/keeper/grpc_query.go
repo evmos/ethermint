@@ -233,7 +233,7 @@ func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (
 func (k Keeper) TxReceiptsByBlockHeight(c context.Context, _ *types.QueryTxReceiptsByBlockHeightRequest) (*types.QueryTxReceiptsByBlockHeightResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	receipts := k.GetTxReceiptsByBlockHeight(ctx, ctx.BlockHeight())
+	receipts := k.GetTxReceiptsByBlockHeight(ctx, uint64(ctx.BlockHeight()))
 	return &types.QueryTxReceiptsByBlockHeightResponse{
 		Receipts: receipts,
 	}, nil

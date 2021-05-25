@@ -12,6 +12,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
 
@@ -48,6 +49,9 @@ type Keeper struct {
 	// TODO: (@fedekunze) for how long should we persist the entries in the access list?
 	// same block (i.e Transient Store)? 2 or more (KVStore with module Parameter which resets the state after that window)?
 	accessList *types.AccessListMappings
+
+	// hash header for the current height. Reset during abci.RequestBeginBlock
+	headerHash common.Hash
 }
 
 // NewKeeper generates new evm module keeper
@@ -81,6 +85,24 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 // WithContext sets an updated SDK context to the keeper
 func (k *Keeper) WithContext(ctx sdk.Context) {
 	k.ctx = ctx
+}
+
+// WithChainID sets the chain id to the local variable in the keeper
+func (k *Keeper) WithChainID(ctx sdk.Context) {
+	if k.eip155ChainID != nil {
+		panic("chain id already set")
+	}
+
+	chainID, err := ethermint.ParseChainID(ctx.ChainID())
+	if err != nil {
+		panic(err)
+	}
+	k.eip155ChainID = chainID
+}
+
+// ChainID returns the EIP155 chain ID for the EVM context
+func (k Keeper) ChainID() *big.Int {
+	return k.eip155ChainID
 }
 
 // ----------------------------------------------------------------------------
@@ -129,40 +151,41 @@ func (k Keeper) SetBlockBloomTransient(bloom *big.Int) {
 // Block
 // ----------------------------------------------------------------------------
 
-// GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetBlockHashFromHeight(ctx sdk.Context, height int64) (common.Hash, bool) {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.KeyBlockHeightHash(uint64(height)))
+// GetHeaderHash gets the header hash from a given height
+func (k Keeper) GetHeaderHash(ctx sdk.Context, height int64) common.Hash {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeightToHeaderHash)
+	key := sdk.Uint64ToBigEndian(uint64(height))
+
+	bz := store.Get(key)
 	if len(bz) == 0 {
-		return common.Hash{}, false
+		return common.Hash{}
 	}
 
-	return common.BytesToHash(bz), true
+	return common.BytesToHash(bz)
+}
+
+// SetBlockHash sets the mapping from heigh -> header hash
+func (k Keeper) SetHeaderHash(ctx sdk.Context, height int64, hash common.Hash) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeightToHeaderHash)
+	key := sdk.Uint64ToBigEndian(uint64(height))
+	store.Set(key, hash.Bytes())
+}
+
+// GetBlockHash gets block height from block consensus hash
+func (k Keeper) GetHeightFromHeaderHash(ctx sdk.Context, hash common.Hash) uint64 {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeaderHashToHeight)
+	bz := store.Get(hash.Bytes())
+	if len(bz) == 0 {
+		return 0
+	}
+
+	return sdk.BigEndianToUint64(bz)
 }
 
 // SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHash(ctx sdk.Context, hash []byte, height int64) {
-	store := ctx.KVStore(k.storeKey)
-	bz := sdk.Uint64ToBigEndian(uint64(height))
-	store.Set(types.KeyBlockHash(common.BytesToHash(hash)), bz)
-}
-
-// GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetBlockHeightByHash(ctx sdk.Context, hash common.Hash) (int64, bool) {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.KeyBlockHash(hash))
-	if len(bz) == 0 {
-		return 0, false
-	}
-
-	height := sdk.BigEndianToUint64(bz)
-	return int64(height), true
-}
-
-// SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHeightToHash(ctx sdk.Context, hash common.Hash, height int64) {
-	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyBlockHeightHash(uint64(height)), hash.Bytes())
+func (k Keeper) SetHeightFromHeaderHash(ctx sdk.Context, hash common.Hash, height uint64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeaderHashToHeight)
+	store.Set(hash.Bytes(), sdk.Uint64ToBigEndian(height))
 }
 
 // SetTxReceiptToHash sets the mapping from tx hash to tx receipt
@@ -247,8 +270,8 @@ func (k Keeper) AddTxHashToBlock(ctx sdk.Context, blockHeight int64, txHash comm
 }
 
 // GetTxsFromBlock returns list of tx hash in the block by height.
-func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight int64) []common.Hash {
-	key := types.KeyBlockHeightTxs(uint64(blockHeight))
+func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight uint64) []common.Hash {
+	key := types.KeyBlockHeightTxs(blockHeight)
 
 	store := ctx.KVStore(k.storeKey)
 	data := store.Get(key)
@@ -268,7 +291,7 @@ func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight int64) []common.Has
 }
 
 // GetTxReceiptsByBlockHeight gets tx receipts by block height.
-func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight int64) []*types.TxReceipt {
+func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) []*types.TxReceipt {
 	txs := k.GetTxsFromBlock(ctx, blockHeight)
 	if len(txs) == 0 {
 		return nil
@@ -295,8 +318,8 @@ func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight int64) [
 
 // GetTxReceiptsByBlockHash gets tx receipts by block hash.
 func (k Keeper) GetTxReceiptsByBlockHash(ctx sdk.Context, hash common.Hash) []*types.TxReceipt {
-	blockHeight, ok := k.GetBlockHeightByHash(ctx, hash)
-	if !ok {
+	blockHeight := k.GetHeightFromHeaderHash(ctx, hash)
+	if blockHeight != 0 {
 		return nil
 	}
 
