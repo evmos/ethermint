@@ -454,11 +454,6 @@ func (k *Keeper) Empty(addr common.Address) bool {
 //
 // This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
 func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
-		return
-	}
-
 	k.AddAddressToAccessList(sender)
 	if dest != nil {
 		k.AddAddressToAccessList(*dest)

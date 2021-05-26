@@ -30,8 +30,7 @@ const (
 type AccountKeeper interface {
 	authante.AccountKeeper
 	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	SetAccount(ctx sdk.Context, account authtypes.AccountI)
+	GetSequence(sdk.Context, sdk.AccAddress) (uint64, error)
 }
 
 // BankKeeper defines an expected keeper interface for the bank module's Keeper
@@ -67,39 +66,17 @@ func NewAnteHandler(
 					// handle as *evmtypes.MsgEthereumTx
 
 					anteHandler = sdk.ChainAnteDecorators(
-						NewEthSetupContextDecorator(evmKeeper), // outermost AnteDecorator. EthSetUpContext must be called first
+						authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 						NewEthMempoolFeeDecorator(evmKeeper),
-						NewEthValidateBasicDecorator(),
+						authante.NewValidateBasicDecorator(),
 						authante.TxTimeoutHeightDecorator{},
 						NewEthSigVerificationDecorator(evmKeeper),
-						NewEthAccountSetupDecorator(ak),
 						NewEthAccountVerificationDecorator(ak, bankKeeper, evmKeeper),
 						NewEthNonceVerificationDecorator(ak),
 						NewEthGasConsumeDecorator(ak, bankKeeper, evmKeeper),
+						NewAccessListDecorator(evmKeeper),
 						NewEthIncrementSenderSequenceDecorator(ak), // innermost AnteDecorator.
 					)
-
-				case "/ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx":
-					// handle as normal Cosmos SDK tx, except signature is checked for EIP712 representation
-
-					switch tx.(type) {
-					case sdk.Tx:
-						anteHandler = sdk.ChainAnteDecorators(
-							authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-							authante.NewMempoolFeeDecorator(),
-							authante.NewValidateBasicDecorator(),
-							authante.TxTimeoutHeightDecorator{},
-							authante.NewValidateMemoDecorator(ak),
-							authante.NewConsumeGasForTxSizeDecorator(ak),
-							authante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
-							authante.NewValidateSigCountDecorator(ak),
-							authante.NewDeductFeeDecorator(ak, bankKeeper),
-							authante.NewSigGasConsumeDecorator(ak, DefaultSigVerificationGasConsumer),
-							authante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
-						)
-					default:
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", tx)
-					}
 
 				default:
 					log.WithField("type_url", typeURL).Errorln("rejecting tx with unsupported extension option")
