@@ -35,18 +35,12 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 
 func (k Keeper) VMConfig() vm.Config {
 	params := k.GetParams(k.ctx)
-
-	eips := make([]int, len(params.ExtraEIPs))
-	for i, eip := range params.ExtraEIPs {
-		eips[i] = int(eip)
-	}
-
 	// TODO: define on keeper fields (this is passed through the flag)
 	debug := false
 
 	return vm.Config{
-		ExtraEips: eips,
-		Tracer:    vm.NewJSONLogger(&vm.LogConfig{Debug: debug}, os.Stderr),
+		ExtraEips: params.EIPs(),
+		Tracer:    vm.NewJSONLogger(&vm.LogConfig{Debug: debug}, os.Stderr), // TODO: consider using the Struct Logger
 		Debug:     debug,
 	}
 }
@@ -92,26 +86,26 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 // returning.
 //
 // For relevant discussion see: https://github.com/cosmos/cosmos-sdk/discussions/9072
-func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.ExecutionResult, error) {
+func (k *Keeper) TransitionDb(msg core.Message) (*types.ExecutionResult, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
-	cfg, found := k.GetChainConfig(ctx)
+	cfg, found := k.GetChainConfig(k.ctx)
 	if !found {
 		return nil, types.ErrChainConfigNotFound
 	}
 
 	// transaction gas meter (tracks limit and usage)
-	startingGas := ctx.GasMeter()
+	startingGas := k.ctx.GasMeter()
 
 	// NOTE: Since CRUD operations on the SDK store consume gasm we need to set up an infinite gas meter so that we only consume
 	// the gas used by the Ethereum message execution.
 	// Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
-	k.ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	k.ctx = k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	evm := k.NewEVM(msg, cfg.EthereumConfig(k.eip155ChainID))
 
 	// amount of gas available during execution of the transactions in a block
-	gasPool := core.GasPool(ctx.BlockGasMeter().Limit())
+	gasPool := core.GasPool(k.ctx.BlockGasMeter().Limit())
 
 	// create an ethereum StateTransition instance and run TransitionDb
 	result, err := core.ApplyMessage(evm, msg, &gasPool)
@@ -128,7 +122,6 @@ func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.Executi
 
 	// set the gas meter to gas_consumed = starting_gas + used_gas - refund
 	k.ctx = k.ctx.WithGasMeter(startingGas)
-	ctx = k.ctx // TODO: move to msg_server.go ?
 
 	// return the VM Execution error (see go-ethereum/core/vm/errors.go)
 
