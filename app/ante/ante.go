@@ -1,14 +1,10 @@
 package ante
 
 import (
-	"fmt"
 	"runtime/debug"
 
 	log "github.com/xlab/suplog"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -80,7 +76,7 @@ func NewAnteHandler(
 
 				default:
 					log.WithField("type_url", typeURL).Errorln("rejecting tx with unsupported extension option")
-					return ctx, sdkerrors.ErrUnknownExtensionOptions
+					return ctx, sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, typeURL)
 				}
 
 				return anteHandler(ctx, tx, sim)
@@ -135,33 +131,12 @@ var _ authante.SignatureVerificationGasConsumer = DefaultSigVerificationGasConsu
 func DefaultSigVerificationGasConsumer(
 	meter sdk.GasMeter, sig signing.SignatureV2, params authtypes.Params,
 ) error {
-	pubkey := sig.PubKey
-	switch pubkey := pubkey.(type) {
-	case *ed25519.PubKey:
-		meter.ConsumeGas(params.SigVerifyCostED25519, "ante verify: ed25519")
-		return nil
-
-	case *secp256k1.PubKey:
-		meter.ConsumeGas(params.SigVerifyCostSecp256k1, "ante verify: secp256k1")
-		return nil
-
 	// support for ethereum ECDSA secp256k1 keys
-	case *ethsecp256k1.PubKey:
+	_, ok := sig.PubKey.(*ethsecp256k1.PubKey)
+	if ok {
 		meter.ConsumeGas(secp256k1VerifyCost, "ante verify: eth_secp256k1")
 		return nil
-
-	case multisig.PubKey:
-		multisignature, ok := sig.Data.(*signing.MultiSignatureData)
-		if !ok {
-			return fmt.Errorf("expected %T, got, %T", &signing.MultiSignatureData{}, sig.Data)
-		}
-		err := authante.ConsumeMultisignatureVerificationGas(meter, multisignature, pubkey, params, sig.Sequence)
-		if err != nil {
-			return err
-		}
-		return nil
-
-	default:
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidPubKey, "unrecognized public key type: %T", pubkey)
 	}
+
+	return authante.DefaultSigVerificationGasConsumer(meter, sig, params)
 }
