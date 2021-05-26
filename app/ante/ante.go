@@ -95,6 +95,7 @@ func NewAnteHandler(
 				authante.TxTimeoutHeightDecorator{},
 				authante.NewValidateMemoDecorator(ak),
 				authante.NewConsumeGasForTxSizeDecorator(ak),
+				authante.NewRejectFeeGranterDecorator(),
 				authante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
 				authante.NewValidateSigCountDecorator(ak),
 				authante.NewDeductFeeDecorator(ak, bankKeeper),
