@@ -43,7 +43,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
-	suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
+	suite.app.EvmKeeper.WithContext(suite.ctx)
 
 	suite.address = ethcmn.HexToAddress(addrHex)
 

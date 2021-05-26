@@ -37,7 +37,8 @@ func (k *Keeper) CreateAccount(addr common.Address) {
 		k.ResetAccount(addr)
 	}
 
-	_ = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+	account = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+	k.accountKeeper.SetAccount(k.ctx, account)
 
 	k.Logger(k.ctx).Debug(
 		log,
@@ -141,6 +142,7 @@ func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 
 		// create address if it doesn't exist
 		account = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+		k.accountKeeper.SetAccount(k.ctx, account)
 	}
 
 	if err := account.SetSequence(nonce); err != nil {
@@ -215,6 +217,7 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 	account := k.accountKeeper.GetAccount(k.ctx, addr.Bytes())
 	if account == nil {
 		account = k.accountKeeper.NewAccountWithAddress(k.ctx, addr.Bytes())
+		k.accountKeeper.SetAccount(k.ctx, account)
 	}
 
 	ethAccount, isEthAccount := account.(*ethermint.EthAccount)
