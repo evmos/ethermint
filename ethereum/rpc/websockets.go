@@ -378,6 +378,8 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 
 				api.filtersMu.RLock()
 				for subID, wsSub := range api.filters {
+					subID := subID
+					wsSub := wsSub
 					if wsSub.query != query {
 						continue
 					}
@@ -696,6 +698,8 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 
 				api.filtersMu.RLock()
 				for subID, wsSub := range api.filters {
+					subID := subID
+					wsSub := wsSub
 					if wsSub.query != query {
 						continue
 					}
