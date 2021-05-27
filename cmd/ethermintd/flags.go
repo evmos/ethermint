@@ -73,12 +73,12 @@ func addTxFlags(cmd *cobra.Command) *cobra.Command {
 
 	//viper.BindPFlag(flags.FlagTrustNode, cmd.Flags().Lookup(flags.FlagTrustNode))
 
-	// TODO: we need to handle the errors for these two, maybe service level logger
+	// TODO: we need to handle the errors for these, decide if we should return error upward and handle
 	// nolint: errcheck
 	viper.BindPFlag(flags.FlagNode, cmd.Flags().Lookup(flags.FlagNode))
 	// nolint: errcheck
 	viper.BindPFlag(flags.FlagKeyringBackend, cmd.Flags().Lookup(flags.FlagKeyringBackend))
-
+	// nolint: errcheck
 	cmd.MarkFlagRequired(flags.FlagChainID)
 	return cmd
 }
