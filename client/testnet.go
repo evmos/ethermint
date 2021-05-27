@@ -543,7 +543,7 @@ func appendToFile(name string, dir string, contents []byte) error {
 		return err
 	}
 
-	f.Write([]byte("\n"))
+	_, err = f.Write([]byte("\n"))
 	if err != nil {
 		log.Println(err)
 		return err
