@@ -45,6 +45,7 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Valid
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
 
 	// Update account balances before committing other parts of state
 	k.CommitStateDB.UpdateAccounts()
