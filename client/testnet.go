@@ -4,16 +4,13 @@ package client
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
-	"strings"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
@@ -47,8 +44,6 @@ import (
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/cosmos/ethermint/cmd/ethermintd/config"
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 var (
@@ -136,7 +131,7 @@ func InitTestnet(
 ) error {
 
 	if chainID == "" {
-		chainID = fmt.Sprintf("injective-%d", tmrand.Int63n(9999999999999)+1)
+		chainID = fmt.Sprintf("ethermint-%d", tmrand.Int63n(9999999999999)+1)
 	}
 
 	if !chaintypes.IsValidChainID(chainID) {
@@ -297,9 +292,6 @@ func InitTestnet(
 		}
 
 		config.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appConfig)
-
-		ethPrivKey, err := keyring.NewUnsafe(kb).UnsafeExportPrivKeyHex(nodeDirName)
-		initPeggo(outputDir, nodeDirName, []byte(strings.ToUpper(ethPrivKey)))
 	}
 
 	if err := initGenFiles(clientCtx, mbm, chainID, coinDenom, genAccounts, genBalances, genFiles, numValidators); err != nil {
@@ -316,32 +308,6 @@ func InitTestnet(
 
 	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators)
 	return nil
-}
-
-func initPeggo(outputDir string, nodeDirName string, privKey []byte) {
-	peggoDir := filepath.Join(outputDir, nodeDirName, "peggo")
-	if envdata, _ := ioutil.ReadFile("./templates/peggo_config.template"); len(envdata) > 0 {
-		s := bufio.NewScanner(bytes.NewReader(envdata))
-		for s.Scan() {
-			parts := strings.Split(s.Text(), "=")
-			if len(parts) != 2 {
-				continue
-			} else {
-				content := []byte(s.Text())
-				if parts[0] == "PEGGY_COSMOS_PRIVKEY" {
-					content = append([]byte(parts[0]+"="), privKey...)
-				} else if parts[0] == "PEGGY_ETH_PRIVATE_KEY" {
-					newPrivkey, _ := ethsecp256k1.GenerateKey()
-					privKeyStr := common.Bytes2Hex(newPrivkey.GetKey())
-					privKeyBytes := []byte(strings.ToUpper(privKeyStr))
-					content = append([]byte(parts[0]+"="), privKeyBytes...)
-				}
-				if err := appendToFile(fmt.Sprintf("config.env"), peggoDir, content); err != nil {
-					fmt.Println("Error writing peggo config", "error", err)
-				}
-			}
-		}
-	}
 }
 
 func initGenFiles(
