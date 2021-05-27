@@ -45,7 +45,6 @@ import (
 
 // Tendermint full-node start flags
 const (
-	flagWithTendermint     = "with-tendermint"
 	flagAddress            = "address"
 	flagTransport          = "transport"
 	flagTraceStore         = "trace-store"
@@ -62,7 +61,6 @@ const (
 	FlagPruningKeepRecent = "pruning-keep-recent"
 	FlagPruningKeepEvery  = "pruning-keep-every"
 	FlagPruningInterval   = "pruning-interval"
-	FlagIndexEvents       = "index-events"
 	FlagMinRetainBlocks   = "min-retain-blocks"
 )
 
