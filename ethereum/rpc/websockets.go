@@ -65,7 +65,7 @@ type websocketsServer struct {
 	logger  log.Logger
 }
 
-func NewWebsocketsServer(tmWSClient *rpcclient.WSClient, rpcAddr, wsAddr string) *websocketsServer {
+func NewWebsocketsServer(tmWSClient *rpcclient.WSClient, rpcAddr, wsAddr string) WebsocketsServer {
 	return &websocketsServer{
 		rpcAddr: rpcAddr,
 		wsAddr:  wsAddr,
@@ -174,7 +174,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			continue
 		}
 
-		connId := msg["id"].(float64)
+		connID := msg["id"].(float64)
 		if method == "eth_subscribe" {
 			params := msg["params"].([]interface{})
 			if len(params) == 0 {
@@ -190,7 +190,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 
 			res := &SubscriptionResponseJSON{
 				Jsonrpc: "2.0",
-				ID:      connId,
+				ID:      connID,
 				Result:  id,
 			}
 
@@ -210,7 +210,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			ok = s.api.unsubscribe(rpc.ID(ids[0].(string)))
 			res := &SubscriptionResponseJSON{
 				Jsonrpc: "2.0",
-				ID:      connId,
+				ID:      connID,
 				Result:  ok,
 			}
 
