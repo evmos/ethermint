@@ -5,10 +5,10 @@ services:
     container_name: ethermintdnode0
     image: "ethermintd/node"
     ports:
-      - "26656-26657:26656-26657"
+      - "26657:26657"
       - "1317:1317"
-      - "8545:8545"
-      - "8546:8546"
+      - "1318:1318"
+      - "8125:8125"
     environment:
       - ID=0
       - LOG=${LOG:-ethermintd.log}
@@ -17,16 +17,16 @@ services:
     networks:
       localnet:
         ipv4_address: 192.168.10.2
-    entrypoint: "bash start.sh"
+    entrypoint: "bash start-docker.sh"
 
   ethermintdnode1:
     container_name: ethermintdnode1
     image: "ethermintd/node"
     ports:
-      - "26659-26660:26656-26657"
-      - "1318:1317"
-      - "8547:8545"
-      - "8548:8546"
+      - "26658:26657"
+      - "1327:1317"
+      - "1328:1318"
+      - "8126:8125"
     environment:
       - ID=1
       - LOG=${LOG:-ethermintd.log}
@@ -35,7 +35,7 @@ services:
     networks:
       localnet:
         ipv4_address: 192.168.10.3
-    entrypoint: "bash start.sh"
+    entrypoint: "bash start-docker.sh"
 
   ethermintdnode2:
     container_name: ethermintdnode2
@@ -44,16 +44,16 @@ services:
       - ID=2
       - LOG=${LOG:-ethermintd.log}
     ports:
-      - "26661-26662:26656-26657"
-      - "1319:1317"
-      - "8549:8545"
-      - "8550:8546"
+      - "26659:26657"
+      - "1337:1317"
+      - "1338:1318"
+      - "8127:8125"
     volumes:
       - ./build:/ethermint:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.4
-    entrypoint: "bash start.sh"
+    entrypoint: "bash start-docker.sh"
 
   ethermintdnode3:
     container_name: ethermintdnode3
@@ -62,16 +62,16 @@ services:
       - ID=3
       - LOG=${LOG:-ethermintd.log}
     ports:
-      - "26663-26664:26656-26657"
-      - "1320:1317"
-      - "8551:8545"
-      - "8552:8546"
+      - "26660:26657"
+      - "1347:1317"
+      - "1348:1318"
+      - "8128:8125"
     volumes:
       - ./build:/ethermint:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.5
-    entrypoint: "bash start.sh"
+    entrypoint: "bash start-docker.sh"
 
 networks:
   localnet:
