@@ -14,16 +14,20 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // EVMKeeper defines the expected keeper interface used on the Eth AnteHandler
 type EVMKeeper interface {
+	vm.StateDB
+
 	ChainID() *big.Int
 	GetParams(ctx sdk.Context) evmtypes.Params
 	GetChainConfig(ctx sdk.Context) (evmtypes.ChainConfig, bool)
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
 	PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList)
+	NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM
 }
 
 // EthMempoolFeeDecorator validates that sufficient fees have been provided that
@@ -365,6 +369,55 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	// set up the updated context to the evm Keeper
 	egcd.evmKeeper.WithContext(ctx)
+	return next(ctx, tx, simulate)
+}
+
+type CanTransferDecorator struct {
+	evmKeeper EVMKeeper
+}
+
+// NewCanTransferDecorator creates a new CanTransferDecorator.
+func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
+	return CanTransferDecorator{
+		evmKeeper: evmKeeper,
+	}
+}
+
+// AnteHandle creates an EVM from the message and calls the BlockContext CanTransfer function to
+// see if the address can execute the transaction.
+func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	// get and set account must be called with an infinite gas meter in order to prevent
+	// additional gas from being deducted.
+	gasMeter := ctx.GasMeter()
+	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
+	if !ok {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+	}
+
+	msg, err := msgEthTx.AsMessage()
+	if err != nil {
+		return ctx, err
+	}
+
+	config, found := ctd.evmKeeper.GetChainConfig(ctx)
+	if !found {
+		return ctx, evmtypes.ErrChainConfigNotFound
+	}
+
+	ethCfg := config.EthereumConfig(ctd.evmKeeper.ChainID())
+
+	evm := ctd.evmKeeper.NewEVM(msg, ethCfg)
+
+	// check that caller has enough balance to cover asset transfer for **topmost** call
+	// NOTE: here the gas consumed is from the original context
+	if msg.Value().Sign() > 0 && !evm.Context.CanTransfer(ctd.evmKeeper, msg.From(), msg.Value()) {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", msg.From().Hex())
+	}
+
+	// set the original gas meter
+	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
 
