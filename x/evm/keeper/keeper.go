@@ -39,6 +39,7 @@ type Keeper struct {
 	ctx sdk.Context
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
+	debug         bool
 
 	// TODO: deprecate
 	// Ethermint concrete implementation on the EVM StateDB interface

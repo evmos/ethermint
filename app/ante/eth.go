@@ -334,22 +334,23 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		accessList = *msgEthTx.Data.Accesses.ToEthAccessList()
 	}
 
-	gas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, isContractCreation, homestead, istanbul)
+	intrinsicGas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, isContractCreation, homestead, istanbul)
 	if err != nil {
 		return ctx, sdkerrors.Wrap(err, "failed to compute intrinsic gas cost")
 	}
 
 	// intrinsic gas verification during CheckTx
-	if ctx.IsCheckTx() && gasLimit < gas {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "intrinsic gas too low: %d < %d", gasLimit, gas)
+	if ctx.IsCheckTx() && gasLimit < intrinsicGas {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas)
 	}
 
 	// Cost calculates the fees paid to validators based on gas limit and price
-	cost := msgEthTx.Cost()
+	cost := msgEthTx.Cost() // gas limit * gas price
 
 	evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
 	feeAmt := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(cost))}
 
+	// deduct the full gas cost from the user balance
 	err = authante.DeductFees(egcd.bankKeeper, ctx, signerAcc, feeAmt)
 	if err != nil {
 		return ctx, err
@@ -357,9 +358,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	ctx = ctx.WithGasMeter(gasMeter) // set the original gas meter limit
 
-	// consume gas for the current transaction. After runTx is executed on Baseapp, the application will consume gas
-	// from the block gas pool.
-	ctx.GasMeter().ConsumeGas(gas, "intrinsic gas")
+	// consume intrinsic gas for the current transaction. After runTx is executed on Baseapp, the
+	// application will consume gas from the block gas pool.
+	ctx.GasMeter().ConsumeGas(intrinsicGas, "intrinsic gas")
 
 	// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
 	// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp

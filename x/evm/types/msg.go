@@ -215,7 +215,7 @@ func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 // the sender is not registered on the keyring
 func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
 	from := msg.GetFrom()
-	if from == nil {
+	if from.Empty() {
 		return fmt.Errorf("sender address not defined for message")
 	}
 

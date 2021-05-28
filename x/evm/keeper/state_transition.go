@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
 	"os"
 	"time"
@@ -8,7 +10,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
 	"github.com/cosmos/ethermint/x/evm/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -35,13 +40,11 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 
 func (k Keeper) VMConfig() vm.Config {
 	params := k.GetParams(k.ctx)
-	// TODO: define on keeper fields (this is passed through the flag)
-	debug := false
 
 	return vm.Config{
 		ExtraEips: params.EIPs(),
-		Tracer:    vm.NewJSONLogger(&vm.LogConfig{Debug: debug}, os.Stderr), // TODO: consider using the Struct Logger
-		Debug:     debug,
+		Tracer:    vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger
+		Debug:     k.debug,
 	}
 }
 
@@ -94,58 +97,139 @@ func (k *Keeper) TransitionDb(msg core.Message) (*types.ExecutionResult, error) 
 		return nil, types.ErrChainConfigNotFound
 	}
 
+	evm := k.NewEVM(msg, cfg.EthereumConfig(k.eip155ChainID))
+
+	// create an ethereum StateTransition instance and run TransitionDb
+	result, err := k.ApplyMessage(evm, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// gas = remaining gas = limit - consumed
+
+// Gas consumption in ethereum:
+// 0. Buy gas -> deduct gasLimit * gasPrice from user account
+// 		0.1 leftover gas = gas limit
+// 1. consume intrinsic gas
+//   1.1 leftover gas = leftover gas - intrinsic gas
+// 2. Exec vm functions by passing the gas (i.e remaining gas)
+//   2.1 final leftover gas returned after spending gas from the opcodes jump tables
+// 3. Refund amount =  max(gasConsumed / 2, gas refund), where gas refund is a local variable
+
+// TODO: (@fedekunze) currently we consume the entire gas limit in the ante handler, so if a transaction fails
+// the amount spent will be grater than the gas spent in an Ethereum tx (i.e here the leftover gas won't be refunded).
+
+func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionResult, error) {
+	var (
+		ret          []byte // return bytes from evm execution
+		contract     common.Address
+		contractAddr string
+		vmErr, err   error // vm errors do not effect consensus and are therefore not assigned to err
+	)
+
+	sender := vm.AccountRef(msg.From())
+	contractCreation := msg.To() == nil
+
 	// transaction gas meter (tracks limit and usage)
-	startingGas := k.ctx.GasMeter()
+	gasConsumed := k.ctx.GasMeter().GasConsumed()
+	leftoverGas := k.ctx.GasMeter().Limit() - k.ctx.GasMeter().GasConsumedToLimit()
 
 	// NOTE: Since CRUD operations on the SDK store consume gasm we need to set up an infinite gas meter so that we only consume
 	// the gas used by the Ethereum message execution.
 	// Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
-	k.ctx = k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	k.WithContext(k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
 
-	evm := k.NewEVM(msg, cfg.EthereumConfig(k.eip155ChainID))
+	// NOTE: gas limit is the GasLimit defied in the message minus the Intrinsic Gas that has already been
+	// consumed on the AnteHandler.
 
-	// amount of gas available during execution of the transactions in a block
-	gasPool := core.GasPool(k.ctx.BlockGasMeter().Limit())
+	// ensure gas is consistent during CheckTx
+	if k.ctx.IsCheckTx() {
+		cfg, _ := k.GetChainConfig(k.ctx)
+		ethCfg := cfg.EthereumConfig(k.eip155ChainID)
 
-	// create an ethereum StateTransition instance and run TransitionDb
-	result, err := core.ApplyMessage(evm, msg, &gasPool)
-	// return precheck errors (nonce, signature, balance and gas)
-	// NOTE: these should be checked previously on the AnteHandler and thus this shouldn't error
+		height := big.NewInt(k.ctx.BlockHeight())
+		homestead := ethCfg.IsHomestead(height)
+		istanbul := ethCfg.IsIstanbul(height)
+
+		intrinsicGas, err := core.IntrinsicGas(msg.Data(), msg.AccessList(), contractCreation, homestead, istanbul)
+		if err != nil {
+			// should have already been checked on Ante Handler
+			return nil, err
+		}
+
+		if intrinsicGas != gasConsumed {
+			return nil, fmt.Errorf("inconsistent gas. Expected gas consumption to be %d (intrinsic gas only), got %d", intrinsicGas, gasConsumed)
+		}
+	}
+
+	if contractCreation {
+		ret, contract, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
+		contractAddr = contract.Hex()
+	} else {
+		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
+	}
+
+	// refund gas prior to handling the vm error in order to set the updated gas meter
+	gasConsumed, leftoverGas, err = k.refundGas(msg, leftoverGas)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrVMExecution, err.Error())
+		return nil, err
 	}
 
-	// The gas used on the state transition will
-	// be returned in the execution result so we need to deduct it from the transaction (?) GasMeter // TODO: double-check
+	if vmErr != nil {
+		if errors.Is(vmErr, vm.ErrExecutionReverted) {
+			// unpack the return data bytes from the err
+			return nil, types.NewExecErrorWithReson(ret)
+		}
 
-	startingGas.ConsumeGas(result.UsedGas-k.GetRefund(), "evm state transition")
-
-	// set the gas meter to gas_consumed = starting_gas + used_gas - refund
-	k.ctx = k.ctx.WithGasMeter(startingGas)
-
-	// return the VM Execution error (see go-ethereum/core/vm/errors.go)
-
-	revertReason := result.Revert()
-	if len(revertReason) > 0 {
-		// NOTE: unpack the return data bytes from the er
-		return nil, types.NewExecErrorWithReson(revertReason)
+		return nil, sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error())
 	}
 
-	if result.Err != nil {
-		return nil, sdkerrors.Wrap(types.ErrVMExecution, err.Error())
-	}
-
-	// return result and persist state (if tx is run using ABCI DeliverTx execution mode)
-	executionRes := &types.ExecutionResult{
+	return &types.ExecutionResult{
 		Response: &types.MsgEthereumTxResponse{
-			Ret:      result.ReturnData,
-			Reverted: false,
+			ContractAddress: contractAddr,
+			Ret:             ret,
 		},
 		GasInfo: types.GasInfo{
-			GasConsumed: result.UsedGas,
-			GasLimit:    uint64(gasPool),
+			GasLimit:    k.ctx.GasMeter().Limit(),
+			GasConsumed: gasConsumed,
+			GasRefunded: leftoverGas,
 		},
+	}, nil
+}
+
+func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, leftover uint64, err error) {
+	gasConsumed := msg.Gas() - leftoverGas
+
+	// Apply refund counter, capped to half of the used gas.
+	refund := gasConsumed / 2
+	if refund > k.GetRefund() {
+		refund = k.GetRefund()
 	}
 
-	return executionRes, nil
+	leftoverGas += refund
+	gasConsumed = msg.Gas() - leftoverGas
+
+	// Return EVM tokens for remaining gas, exchanged at the original rate.
+	remaining := new(big.Int).Mul(new(big.Int).SetUint64(leftoverGas), msg.GasPrice())
+
+	params := k.GetParams(k.ctx)
+
+	refundedCoins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(remaining))}
+
+	// refund to sender from the fee collector module account
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins); err != nil {
+		return 0, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
+	}
+
+	// set the gas consumed into the context with the new gas meter. This gas meter will have the
+	// original gas limit defined in the msg and will consume the gas now that the amount has been
+	// refunded
+	gasMeter := sdk.NewGasMeter(msg.Gas())
+	gasMeter.ConsumeGas(gasConsumed, "update gas consumption after refund")
+	k.WithContext(k.ctx.WithGasMeter(gasMeter))
+
+	return gasConsumed, leftoverGas, nil
 }
