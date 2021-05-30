@@ -41,9 +41,12 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint-1", Time: time.Now().UTC()})
 	suite.ctx = suite.ctx.WithMinGasPrices(sdk.NewDecCoins(sdk.NewDecCoin(evmtypes.DefaultEVMDenom, sdk.OneInt())))
+	suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000000000000000))
 	suite.app.EvmKeeper.WithChainID(suite.ctx)
-	suite.app.AccountKeeper.SetParams(suite.ctx, authtypes.DefaultParams())
-	suite.app.EvmKeeper.SetParams(suite.ctx, evmtypes.DefaultParams())
+
+	infCtx := suite.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	suite.app.AccountKeeper.SetParams(infCtx, authtypes.DefaultParams())
+	suite.app.EvmKeeper.SetParams(infCtx, evmtypes.DefaultParams())
 
 	encodingConfig := app.MakeEncodingConfig()
 	// We're using TestMsg amino encoding in some tests, so register it here.

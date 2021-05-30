@@ -258,8 +258,7 @@ func NewEthGasConsumeDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKe
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
@@ -267,9 +266,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// reset the refund gas value for the current transaction
-	egcd.evmKeeper.ResetRefundTransient(ctx)
+	egcd.evmKeeper.ResetRefundTransient(infCtx)
 
-	config, found := egcd.evmKeeper.GetChainConfig(ctx)
+	config, found := egcd.evmKeeper.GetChainConfig(infCtx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
@@ -282,7 +281,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	isContractCreation := msgEthTx.To() == nil
 
 	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, egcd.ak, msgEthTx.GetFrom())
+	signerAcc, err := authante.GetSignerAcc(infCtx, egcd.ak, msgEthTx.GetFrom())
 	if err != nil {
 		return ctx, err
 	}
@@ -305,18 +304,15 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// Cost calculates the fees paid to validators based on gas limit and price
-	cost := msgEthTx.Cost() // gas limit * gas price
+	cost := msgEthTx.Fee() // fee = gas limit * gas price
 
 	evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
 	feeAmt := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(cost))}
 
 	// deduct the full gas cost from the user balance
-	err = authante.DeductFees(egcd.bankKeeper, ctx, signerAcc, feeAmt)
-	if err != nil {
+	if err := authante.DeductFees(egcd.bankKeeper, infCtx, signerAcc, feeAmt); err != nil {
 		return ctx, err
 	}
-
-	ctx = ctx.WithGasMeter(gasMeter) // set the original gas meter limit
 
 	// consume intrinsic gas for the current transaction. After runTx is executed on Baseapp, the
 	// application will consume gas from the block gas pool.
