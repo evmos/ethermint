@@ -39,10 +39,8 @@ type AnteTestSuite struct {
 
 func (suite *AnteTestSuite) SetupTest() {
 	checkTx := false
-
 	suite.app = app.Setup(checkTx)
-
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint-888", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint-1", Time: time.Now().UTC()})
 	suite.app.AccountKeeper.SetParams(suite.ctx, authtypes.DefaultParams())
 	suite.app.EvmKeeper.SetParams(suite.ctx, evmtypes.DefaultParams())
 
@@ -51,7 +49,6 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.encodingConfig.Amino.RegisterConcrete(&testdata.TestMsg{}, "testdata.TestMsg", nil)
 
 	suite.anteHandler = ante.NewAnteHandler(suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper, suite.encodingConfig.TxConfig.SignModeHandler())
-	suite.chainID = big.NewInt(888)
 }
 
 func TestAnteTestSuite(t *testing.T) {
