@@ -13,6 +13,10 @@ import (
 
 var _ paramtypes.ParamSet = &Params{}
 
+const (
+	DefaultEVMDenom = types.AttoPhoton
+)
+
 // Parameter keys
 var (
 	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
@@ -39,7 +43,7 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, extraEIPs ...int6
 // DefaultParams returns default evm parameters
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:     types.AttoPhoton,
+		EvmDenom:     DefaultEVMDenom,
 		EnableCreate: true,
 		EnableCall:   true,
 		ExtraEIPs:    []int64(nil), // TODO: define default values from: [2929, 2200, 1884, 1344]

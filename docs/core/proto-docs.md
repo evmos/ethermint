@@ -186,6 +186,7 @@ values, use an software upgrade procedure.
 | `petersburg_block` | [string](#string) |  | Petersburg switch block (< 0 same as Constantinople) |
 | `istanbul_block` | [string](#string) |  | Istanbul switch block (< 0 no fork, 0 = already on istanbul) |
 | `muir_glacier_block` | [string](#string) |  | Eip-2384 (bomb delay) switch block (< 0 no fork, 0 = already activated) |
+| `berlin_block` | [string](#string) |  | Berlin switch block (< 0 = no fork, 0 = already on berlin) |
 | `yolo_v3_block` | [string](#string) |  | YOLO v3: Gas repricings |
 | `ewasm_block` | [string](#string) |  | EWASM switch block (< 0 no fork, 0 = already activated) |
 | `catalyst_block` | [string](#string) |  | Catalyst switch block (< 0 = no fork, 0 = already on catalyst) |

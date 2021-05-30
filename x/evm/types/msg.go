@@ -218,6 +218,10 @@ func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
 		return fmt.Errorf("sender address not defined for message")
 	}
 
+	if chainID == nil {
+		return fmt.Errorf("chain id cannot be nil")
+	}
+
 	txHash := msg.RLPSignBytes(chainID)
 
 	sig, _, err := signer.SignByAddress(from, txHash[:])
@@ -335,7 +339,7 @@ func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 
 // AsEthereumData returns an AccessListTx transaction data from the proto-formatted
 // TxData defined on the Cosmos EVM.
-func (data TxData) AsEthereumData() ethtypes.TxData {
+func (data *TxData) AsEthereumData() ethtypes.TxData {
 	var to *ethcmn.Address
 	if data.To != "" {
 		toAddr := ethcmn.HexToAddress(data.To)

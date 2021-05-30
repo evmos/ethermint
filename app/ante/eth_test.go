@@ -1,8 +1,12 @@
 package ante_test
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/cosmos/ethermint/app/ante"
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
 func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
@@ -12,32 +16,48 @@ func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
 func (suite AnteTestSuite) TestEthMempoolFeeDecorator() {
 	dec := ante.NewEthMempoolFeeDecorator(suite.app.EvmKeeper)
 
+	addr, _ := newTestAddrKey()
+
 	testCases := []struct {
-		name     string
-		tx       sdk.Tx
-		checkTx  bool
-		simulate bool
-		expPass  bool
+		name    string
+		tx      sdk.Tx
+		checkTx bool
+		expPass bool
 	}{
-		{"not CheckTx", nil, false, false, true},
+		{"not CheckTx", nil, false, true},
+		{"invalid transaction type", nil, true, false},
+		{
+			"insufficient fees for tx cost",
+			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 0, big.NewInt(0), nil, nil),
+			true,
+			false,
+		},
+		{
+			"suficient fees",
+			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			true,
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, tc.simulate, nextFn)
+			consumed := suite.ctx.GasMeter().GasConsumed()
+			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
+			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+
 			if tc.expPass {
 				suite.Require().NoError(err)
 			} else {
-				// TODO: check gas meter consumption remains 0
 				suite.Require().Error(err)
 			}
-
 		})
 	}
 }
 
 func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
+	addr, _ := newTestAddrKey()
 
 	testCases := []struct {
 		name      string
@@ -46,15 +66,24 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 		expPass   bool
 	}{
 		{"ReCheckTx", nil, true, true},
+		{"invalid transaction type", nil, false, false},
+		{
+			"invalid sender",
+			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			false,
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
+			consumed := suite.ctx.GasMeter().GasConsumed()
+			ctx, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
+			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+
 			if tc.expPass {
 				suite.Require().NoError(err)
 			} else {
-				// TODO: check gas meter consumption remains 0
 				suite.Require().Error(err)
 			}
 
@@ -78,7 +107,10 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
+			consumed := suite.ctx.GasMeter().GasConsumed()
+			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
+			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+
 			if tc.expPass {
 				suite.Require().NoError(err)
 			} else {

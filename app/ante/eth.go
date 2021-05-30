@@ -49,19 +49,18 @@ func (emfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type, not implements sdk.FeeTx: %T", tx)
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
-	evmDenom := emfd.evmKeeper.GetParams(ctx).EvmDenom
+	evmDenom := emfd.evmKeeper.GetParams(infCtx).EvmDenom
 
-	// fee cost = gas price * gas limit
+	// fee = gas price * gas limit
 	// NOTE: this panics if the cost's BitLen is > 255
-	fee := sdk.NewDecCoin(evmDenom, sdk.NewIntFromBigInt(msgEthTx.Cost()))
+	fee := sdk.NewDecCoin(evmDenom, sdk.NewIntFromBigInt(msgEthTx.Fee()))
 
 	minGasPrices := ctx.MinGasPrices()
 
@@ -69,23 +68,13 @@ func (emfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	//
 	// NOTE: we only check if the evm tokens are present in min gas prices.
 	// It is up to the sender if they want to send additional fees in other denominations.
-	var hasEnoughFees bool
-	if fee.Amount.GTE(minGasPrices.AmountOf(evmDenom)) {
-		hasEnoughFees = true
-	}
-
-	// reject transaction if minimum gas price is positive and the transaction does not
-	// meet the minimum fee
-
-	// NOTE: here we are supporting 0 fee txs
-	if !ctx.MinGasPrices().IsZero() && !hasEnoughFees {
+	if fee.Amount.LT(minGasPrices.AmountOf(evmDenom)) {
 		return ctx, sdkerrors.Wrap(
 			sdkerrors.ErrInsufficientFee,
 			fmt.Sprintf("insufficient fee, got: %q required: %q", fee, ctx.MinGasPrices()),
 		)
 	}
 
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
 
@@ -111,17 +100,16 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
+	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
 	chainID := esvd.evmKeeper.ChainID()
 
-	config, found := esvd.evmKeeper.GetChainConfig(ctx)
+	config, found := esvd.evmKeeper.GetChainConfig(infCtx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
@@ -139,21 +127,8 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	// set the sender
 	msgEthTx.From = sender.String()
 
-	ctx = ctx.WithGasMeter(gasMeter)
-
 	// NOTE: when signature verification succeeds, a non-empty signer address can be
 	return next(ctx, msgEthTx, simulate)
-}
-
-type noMessages struct{}
-
-func getTxMsg(tx sdk.Tx) interface{} {
-	msgs := tx.GetMsgs()
-	if len(msgs) == 0 {
-		return &noMessages{}
-	}
-
-	return msgs[0]
 }
 
 // EthAccountVerificationDecorator validates an account balance checks
@@ -183,9 +158,9 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 	gasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
+	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
 	// sender address should be in the tx cache from the previous AnteHandle call
@@ -240,9 +215,9 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 	gasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
+	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
 	// sender address should be in the tx cache from the previous AnteHandle call
@@ -295,9 +270,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	gasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
+	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
 	// reset the refund gas value for the current transaction
@@ -390,9 +365,9 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 	gasMeter := ctx.GasMeter()
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
+	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
 	// increment sequence of all signers
