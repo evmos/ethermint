@@ -141,10 +141,12 @@ func (msg *MsgEthereumTx) GetMsgs() []sdk.Msg {
 // GetSigners returns the expected signers for an Ethereum transaction message.
 // For such a message, there should exist only a single 'signer'.
 //
-// NOTE: This method panics if 'VerifySig' hasn't been called first.
+// NOTE: This method panics if 'Sign' hasn't been called first.
 func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
-	if msg.From == "" {
-		panic("must use 'VerifySig' with a chain ID to get the signer")
+	v, r, s := msg.RawSignatureValues()
+
+	if msg.From == "" || v == nil || r == nil || s == nil {
+		panic("must use 'Sign' with a chain ID to get the signer")
 	}
 
 	signer := sdk.AccAddress(ethcmn.HexToAddress(msg.From).Bytes())

@@ -119,15 +119,10 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
 
-	sender, err := signer.Sender(msgEthTx.AsTransaction())
-	if err != nil {
+	if _, err := signer.Sender(msgEthTx.AsTransaction()); err != nil {
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
 	}
 
-	// set the sender
-	msgEthTx.From = sender.String()
-
-	// NOTE: when signature verification succeeds, a non-empty signer address can be
 	return next(ctx, msgEthTx, simulate)
 }
 
@@ -155,8 +150,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
@@ -169,15 +163,15 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "from address cannot be empty")
 	}
 
-	acc := avd.ak.GetAccount(ctx, from)
+	acc := avd.ak.GetAccount(infCtx, from)
 	if acc == nil {
-		_ = avd.ak.NewAccountWithAddress(ctx, from)
+		_ = avd.ak.NewAccountWithAddress(infCtx, from)
 	}
 
-	evmDenom := avd.evmKeeper.GetParams(ctx).EvmDenom
+	evmDenom := avd.evmKeeper.GetParams(infCtx).EvmDenom
 
 	// validate sender has enough funds to pay for gas cost
-	balance := avd.bankKeeper.GetBalance(ctx, from, evmDenom)
+	balance := avd.bankKeeper.GetBalance(infCtx, from, evmDenom)
 	if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
 		return ctx, sdkerrors.Wrapf(
 			sdkerrors.ErrInsufficientFunds,
@@ -185,7 +179,6 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		)
 	}
 
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
 
@@ -212,8 +205,7 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
@@ -221,7 +213,7 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 	}
 
 	// sender address should be in the tx cache from the previous AnteHandle call
-	seq, err := nvd.ak.GetSequence(ctx, msgEthTx.GetFrom())
+	seq, err := nvd.ak.GetSequence(infCtx, msgEthTx.GetFrom())
 	if err != nil {
 		return ctx, err
 	}
@@ -236,7 +228,6 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 		)
 	}
 
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
 
@@ -362,8 +353,7 @@ func NewEthIncrementSenderSequenceDecorator(ak AccountKeeper) EthIncrementSender
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
 	if !ok {
@@ -372,7 +362,7 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 
 	// increment sequence of all signers
 	for _, addr := range msgEthTx.GetSigners() {
-		acc := issd.ak.GetAccount(ctx, addr)
+		acc := issd.ak.GetAccount(infCtx, addr)
 		if acc == nil {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrUnknownAddress,
@@ -384,10 +374,9 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 			return ctx, err
 		}
 
-		issd.ak.SetAccount(ctx, acc)
+		issd.ak.SetAccount(infCtx, acc)
 	}
 
 	// set the original gas meter
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
