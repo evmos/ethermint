@@ -10,6 +10,7 @@ import (
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
@@ -334,9 +335,11 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				return
 			}
 
-			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
+			consumed := suite.ctx.GasMeter().GasConsumed()
+			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 			if tc.expPass {
 				suite.Require().NoError(err)
+				suite.Require().Equal(int(params.TxGasContractCreation+params.TxAccessListAddressGas), int(ctx.GasMeter().GasConsumed()-consumed))
 			} else {
 				suite.Require().Error(err)
 			}

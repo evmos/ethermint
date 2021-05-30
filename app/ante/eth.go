@@ -306,7 +306,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// Cost calculates the fees paid to validators based on gas limit and price
 	cost := msgEthTx.Fee() // fee = gas limit * gas price
 
-	evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
+	evmDenom := egcd.evmKeeper.GetParams(infCtx).EvmDenom
 	feeAmt := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(cost))}
 
 	// deduct the full gas cost from the user balance
