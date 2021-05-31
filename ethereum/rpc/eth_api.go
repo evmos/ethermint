@@ -465,24 +465,6 @@ func (e *PublicEthAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber
 		return []byte{}, err
 	}
 
-	// if len(simRes.Result.Log) > 0 {
-	// 	var logs []rpctypes.SDKTxLogs
-
-	// 	if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
-	// 		e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
-	// 	}
-
-	// 	if len(logs) > 0 && logs[0].Log == rpctypes.LogRevertedFlag {
-	// 		data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
-	// 		if err != nil {
-	// 			e.logger.WithError(err).Warningln("call result decoding failed")
-	// 			return []byte{}, err
-	// 		}
-
-	// 		return []byte{}, rpctypes.ErrRevertedWith(data.Ret)
-	// 	}
-	// }
-
 	data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
 	if err != nil {
 		e.logger.WithError(err).Warningln("call result decoding failed")

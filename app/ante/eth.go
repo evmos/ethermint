@@ -25,11 +25,10 @@ type EVMKeeper interface {
 	GetChainConfig(ctx sdk.Context) (evmtypes.ChainConfig, bool)
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList)
 	NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM
 }
 
-// EthSigVerificationDecorator validates an ethereum signature
+// EthSigVerificationDecorator validates an ethereum signatures
 type EthSigVerificationDecorator struct {
 	evmKeeper EVMKeeper
 }
@@ -94,7 +93,12 @@ func NewEthAccountVerificationDecorator(ak AccountKeeper, bankKeeper BankKeeper,
 	}
 }
 
-// AnteHandle validates the signature and returns sender address
+// AnteHandle validates checks that the sender balance is greater than the total transaction cost.
+// The account will be set to store if it doesn't exis, i.e cannot be found on store.
+// This AnteHandler decorator will fail if:
+// - any of the msgs is not a MsgEthereumTx
+// - from address is empty
+// - account balance is lower than the transaction cost
 func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	if !ctx.IsCheckTx() {
 		return next(ctx, tx, simulate)
@@ -120,7 +124,8 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 
 		acc := avd.ak.GetAccount(infCtx, from)
 		if acc == nil {
-			_ = avd.ak.NewAccountWithAddress(infCtx, from)
+			acc = avd.ak.NewAccountWithAddress(infCtx, from)
+			avd.ak.SetAccount(infCtx, acc)
 		}
 
 		// validate sender has enough funds to pay for gas cost
@@ -149,8 +154,8 @@ func NewEthNonceVerificationDecorator(ak AccountKeeper) EthNonceVerificationDeco
 	}
 }
 
-// AnteHandle validates that the transaction nonce is valid (equivalent to the sender account’s
-// current nonce).
+// AnteHandle validates that the transaction nonces are valid and equivalent to the sender account’s
+// current nonce.
 func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	// no need to check the nonce on ReCheckTx
 	if ctx.IsReCheckTx() {
@@ -207,10 +212,17 @@ func NewEthGasConsumeDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKe
 // AnteHandle validates that the Ethereum tx message has enough to cover intrinsic gas
 // (during CheckTx only) and that the sender has enough balance to pay for the gas cost.
 //
-// Intrinsic gas for a transaction is the amount of gas
-// that the transaction uses before the transaction is executed. The gas is a
-// constant value of 21000 plus any cost inccured by additional bytes of data
-// supplied with the transaction.
+// Intrinsic gas for a transaction is the amount of gas that the transaction uses before the
+// transaction is executed. The gas is a constant value plus any cost inccured by additional bytes
+// of data supplied with the transaction.
+//
+// This AnteHandler decorator will fail if:
+// - the transaction contains more than one message
+// - the message is not a MsgEthereumTx
+// - sender account cannot be found
+// - transaction's gas limit is lower than the intrinsic gas
+// - user doesn't have enough balance to deduct the transaction fees (gas_limit * gas_price)
+// - transaction or block gas meter runs out of gas
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
@@ -220,7 +232,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
 	}
 
-	// reset the refund gas value for the current transaction
+	// reset the refund gas value in the keeper for the current transaction
 	egcd.evmKeeper.ResetRefundTransient(infCtx)
 
 	config, found := egcd.evmKeeper.GetChainConfig(infCtx)
@@ -265,14 +277,14 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas)
 		}
 
-		// Cost calculates the fees paid to validators based on gas limit and price
-		cost := msgEthTx.Fee() // fee = gas limit * gas price
+		// calculate the fees paid to validators based on gas limit and price
+		feeAmt := msgEthTx.Fee() // fee = gas limit * gas price
 
 		evmDenom := egcd.evmKeeper.GetParams(infCtx).EvmDenom
-		feeAmt := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(cost))}
+		fees := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(feeAmt))}
 
 		// deduct the full gas cost from the user balance
-		if err := authante.DeductFees(egcd.bankKeeper, infCtx, signerAcc, feeAmt); err != nil {
+		if err := authante.DeductFees(egcd.bankKeeper, infCtx, signerAcc, fees); err != nil {
 			return ctx, err
 		}
 
@@ -292,11 +304,13 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	return next(ctx, tx, simulate)
 }
 
+// CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
+// context rules.
 type CanTransferDecorator struct {
 	evmKeeper EVMKeeper
 }
 
-// NewCanTransferDecorator creates a new CanTransferDecorator.
+// NewCanTransferDecorator creates a new CanTransferDecorator instance.
 func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
 	return CanTransferDecorator{
 		evmKeeper: evmKeeper,
@@ -309,6 +323,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	ctd.evmKeeper.WithContext(infCtx)
 
 	config, found := ctd.evmKeeper.GetChainConfig(infCtx)
 	if !found {
@@ -331,16 +346,20 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg)
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
-		// NOTE: here the gas consumed is from the original context
+		// NOTE: here the gas consumed is from the context with the infinite gas meter
 		if coreMsg.Value().Sign() > 0 && !evm.Context.CanTransfer(ctd.evmKeeper, coreMsg.From(), coreMsg.Value()) {
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", coreMsg.From().Hex())
 		}
 	}
 
+	ctd.evmKeeper.WithContext(ctx)
+
 	// set the original gas meter
 	return next(ctx, tx, simulate)
 }
 
+// AccessListDecorator prepare an access list for the sender if Yolov3/Berlin/EIPs 2929 and 2930 are
+// applicable at the current block number.
 type AccessListDecorator struct {
 	evmKeeper EVMKeeper
 }
@@ -360,7 +379,7 @@ func NewAccessListDecorator(evmKeeper EVMKeeper) AccessListDecorator {
 // 	- Add precompiles to access list (2929)
 // 	- Add the contents of the optional tx access list (2930)
 //
-// This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
+// The AnteHandler will only prepare the access list if Yolov3/Berlin/EIPs 2929 and 2930 are applicable at the current number.
 func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
