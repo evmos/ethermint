@@ -30,11 +30,10 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 	k.headerHash = common.BytesToHash(req.Hash)
 
-	// set height -> hash and hash -> height mappings
+	// set height -> hash
 
 	// TODO: prune
 	k.SetHeaderHash(ctx, req.Header.Height, k.headerHash)
-	k.SetHeightFromHeaderHash(ctx, k.headerHash, uint64(req.Header.Height))
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while

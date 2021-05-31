@@ -9,7 +9,9 @@ import (
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
@@ -239,29 +241,6 @@ func (k Keeper) TxReceiptsByBlockHeight(c context.Context, _ *types.QueryTxRecei
 	}, nil
 }
 
-// TxReceiptsByBlockHash implements the Query/TxReceiptsByBlockHash gRPC method
-func (k Keeper) TxReceiptsByBlockHash(c context.Context, req *types.QueryTxReceiptsByBlockHashRequest) (*types.QueryTxReceiptsByBlockHashResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
-	if ethermint.IsEmptyHash(req.Hash) {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrEmptyHash.Error(),
-		)
-	}
-
-	ctx := sdk.UnwrapSDKContext(c)
-
-	hash := ethcmn.HexToHash(req.Hash)
-	receipts := k.GetTxReceiptsByBlockHash(ctx, hash)
-
-	return &types.QueryTxReceiptsByBlockHashResponse{
-		Receipts: receipts,
-	}, nil
-}
-
 // BlockLogs implements the Query/BlockLogs gRPC method
 func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (*types.QueryBlockLogsResponse, error) {
 	if req == nil {
@@ -277,10 +256,30 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 	ctx := sdk.UnwrapSDKContext(c)
 
-	txLogs := k.GetAllTxLogs(ctx)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
+	txLogs := []types.TransactionLogs{}
+
+	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
+		var txLog types.TransactionLogs
+		k.cdc.MustUnmarshalBinaryBare(value, &txLog)
+
+		if len(txLog.Logs) > 0 && txLog.Logs[0].BlockHash == req.Hash {
+			if accumulate {
+				txLogs = append(txLogs, txLog)
+			}
+			return true, nil
+		}
+
+		return false, nil
+	})
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	return &types.QueryBlockLogsResponse{
-		TxLogs: txLogs,
+		TxLogs:     txLogs,
+		Pagination: pageRes,
 	}, nil
 }
 

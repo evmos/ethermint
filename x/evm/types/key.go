@@ -25,8 +25,7 @@ const (
 )
 
 const (
-	prefixHeaderHashToHeight = iota + 1
-	prefixHeightToHeaderHash
+	prefixHeightToHeaderHash = iota + 1
 	prefixBloom
 	prefixLogs
 	prefixCode
@@ -45,7 +44,6 @@ const (
 
 // KVStore key prefixes
 var (
-	KeyPrefixHeaderHashToHeight = []byte{prefixHeaderHashToHeight}
 	KeyPrefixHeightToHeaderHash = []byte{prefixHeightToHeaderHash}
 	KeyPrefixBloom              = []byte{prefixBloom}
 	KeyPrefixLogs               = []byte{prefixLogs}

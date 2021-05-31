@@ -173,23 +173,6 @@ func (k Keeper) SetHeaderHash(ctx sdk.Context, height int64, hash common.Hash) {
 	store.Set(key, hash.Bytes())
 }
 
-// GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetHeightFromHeaderHash(ctx sdk.Context, hash common.Hash) uint64 {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeaderHashToHeight)
-	bz := store.Get(hash.Bytes())
-	if len(bz) == 0 {
-		return 0
-	}
-
-	return sdk.BigEndianToUint64(bz)
-}
-
-// SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetHeightFromHeaderHash(ctx sdk.Context, hash common.Hash, height uint64) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeaderHashToHeight)
-	store.Set(hash.Bytes(), sdk.Uint64ToBigEndian(height))
-}
-
 // SetTxReceiptToHash sets the mapping from tx hash to tx receipt
 func (k Keeper) SetTxReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *types.TxReceipt) {
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -316,16 +299,6 @@ func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) 
 	}
 
 	return receipts
-}
-
-// GetTxReceiptsByBlockHash gets tx receipts by block hash.
-func (k Keeper) GetTxReceiptsByBlockHash(ctx sdk.Context, hash common.Hash) []*types.TxReceipt {
-	blockHeight := k.GetHeightFromHeaderHash(ctx, hash)
-	if blockHeight != 0 {
-		return nil
-	}
-
-	return k.GetTxReceiptsByBlockHeight(ctx, blockHeight)
 }
 
 // ----------------------------------------------------------------------------
