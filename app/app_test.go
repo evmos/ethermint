@@ -25,6 +25,7 @@ func TestEthermintAppExport(t *testing.T) {
 	// Initialize the chain
 	app.InitChain(
 		abci.RequestInitChain{
+			ChainId:       "ethermint-1",
 			Validators:    []abci.ValidatorUpdate{},
 			AppStateBytes: stateBytes,
 		},

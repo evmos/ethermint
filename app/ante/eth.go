@@ -1,7 +1,6 @@
 package ante
 
 import (
-	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -30,71 +29,6 @@ type EVMKeeper interface {
 	NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM
 }
 
-// EthMempoolFeeDecorator validates that sufficient fees have been provided that
-// meet a minimum threshold defined by the proposer (for mempool purposes during CheckTx).
-type EthMempoolFeeDecorator struct {
-	evmKeeper EVMKeeper
-}
-
-// NewEthMempoolFeeDecorator creates a new EthMempoolFeeDecorator
-func NewEthMempoolFeeDecorator(ek EVMKeeper) EthMempoolFeeDecorator {
-	return EthMempoolFeeDecorator{
-		evmKeeper: ek,
-	}
-}
-
-// AnteHandle verifies that enough fees have been provided by the
-// Ethereum transaction that meet the minimum threshold set by the block
-// proposer.
-//
-// NOTE: This should only be run during a CheckTx mode.
-func (emfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	if !ctx.IsCheckTx() || simulate {
-		return next(ctx, tx, simulate)
-	}
-
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type, not implements sdk.FeeTx: %T", tx)
-	}
-
-	evmDenom := emfd.evmKeeper.GetParams(ctx).EvmDenom
-
-	// fee cost = gas price * gas limit
-	// NOTE: this panics if the cost's BitLen is > 255
-	fee := sdk.NewDecCoin(evmDenom, sdk.NewIntFromBigInt(msgEthTx.Cost()))
-
-	minGasPrices := ctx.MinGasPrices()
-
-	// check that fee provided is greater than the minimum
-	//
-	// NOTE: we only check if the evm tokens are present in min gas prices.
-	// It is up to the sender if they want to send additional fees in other denominations.
-	var hasEnoughFees bool
-	if fee.Amount.GTE(minGasPrices.AmountOf(evmDenom)) {
-		hasEnoughFees = true
-	}
-
-	// reject transaction if minimum gas price is positive and the transaction does not
-	// meet the minimum fee
-
-	// NOTE: here we are supporting 0 fee txs
-	if !ctx.MinGasPrices().IsZero() && !hasEnoughFees {
-		return ctx, sdkerrors.Wrap(
-			sdkerrors.ErrInsufficientFee,
-			fmt.Sprintf("insufficient fee, got: %q required: %q", fee, ctx.MinGasPrices()),
-		)
-	}
-
-	ctx = ctx.WithGasMeter(gasMeter)
-	return next(ctx, tx, simulate)
-}
-
 // EthSigVerificationDecorator validates an ethereum signature
 type EthSigVerificationDecorator struct {
 	evmKeeper EVMKeeper
@@ -117,49 +51,31 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
-	}
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	chainID := esvd.evmKeeper.ChainID()
 
-	config, found := esvd.evmKeeper.GetChainConfig(ctx)
+	config, found := esvd.evmKeeper.GetChainConfig(infCtx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
 
 	ethCfg := config.EthereumConfig(chainID)
-
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
 
-	sender, err := signer.Sender(msgEthTx.AsTransaction())
-	if err != nil {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
+	for _, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
+		}
+
+		if _, err := signer.Sender(msgEthTx.AsTransaction()); err != nil {
+			return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
+		}
 	}
 
-	// set the sender
-	msgEthTx.From = sender.String()
-
-	ctx = ctx.WithGasMeter(gasMeter)
-
-	// NOTE: when signature verification succeeds, a non-empty signer address can be
-	return next(ctx, msgEthTx, simulate)
-}
-
-type noMessages struct{}
-
-func getTxMsg(tx sdk.Tx) interface{} {
-	msgs := tx.GetMsgs()
-	if len(msgs) == 0 {
-		return &noMessages{}
-	}
-
-	return msgs[0]
+	return next(ctx, tx, simulate)
 }
 
 // EthAccountVerificationDecorator validates an account balance checks
@@ -186,37 +102,37 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+	evmDenom := avd.evmKeeper.GetParams(infCtx).EvmDenom
+
+	for _, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
+		}
+
+		// sender address should be in the tx cache from the previous AnteHandle call
+		from := msgEthTx.GetFrom()
+		if from.Empty() {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "from address cannot be empty")
+		}
+
+		acc := avd.ak.GetAccount(infCtx, from)
+		if acc == nil {
+			_ = avd.ak.NewAccountWithAddress(infCtx, from)
+		}
+
+		// validate sender has enough funds to pay for gas cost
+		balance := avd.bankKeeper.GetBalance(infCtx, from, evmDenom)
+		if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrInsufficientFunds,
+				"sender balance < tx gas cost (%s < %s%s)", balance.String(), msgEthTx.Cost().String(), evmDenom,
+			)
+		}
 	}
 
-	// sender address should be in the tx cache from the previous AnteHandle call
-	from := msgEthTx.GetFrom()
-	if from.Empty() {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "from address cannot be empty")
-	}
-
-	acc := avd.ak.GetAccount(ctx, from)
-	if acc == nil {
-		_ = avd.ak.NewAccountWithAddress(ctx, from)
-	}
-
-	evmDenom := avd.evmKeeper.GetParams(ctx).EvmDenom
-
-	// validate sender has enough funds to pay for gas cost
-	balance := avd.bankKeeper.GetBalance(ctx, from, evmDenom)
-	if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
-		return ctx, sdkerrors.Wrapf(
-			sdkerrors.ErrInsufficientFunds,
-			"sender balance < tx gas cost (%s < %s%s)", balance.String(), msgEthTx.Cost().String(), evmDenom,
-		)
-	}
-
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
 
@@ -243,31 +159,31 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+	for _, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
+		}
+
+		// sender address should be in the tx cache from the previous AnteHandle call
+		seq, err := nvd.ak.GetSequence(infCtx, msgEthTx.GetFrom())
+		if err != nil {
+			return ctx, err
+		}
+
+		// if multiple transactions are submitted in succession with increasing nonces,
+		// all will be rejected except the first, since the first needs to be included in a block
+		// before the sequence increments
+		if msgEthTx.Data.Nonce != seq {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrInvalidSequence,
+				"invalid nonce; got %d, expected %d", msgEthTx.Data.Nonce, seq,
+			)
+		}
 	}
 
-	// sender address should be in the tx cache from the previous AnteHandle call
-	seq, err := nvd.ak.GetSequence(ctx, msgEthTx.GetFrom())
-	if err != nil {
-		return ctx, err
-	}
-
-	// if multiple transactions are submitted in succession with increasing nonces,
-	// all will be rejected except the first, since the first needs to be included in a block
-	// before the sequence increments
-	if msgEthTx.Data.Nonce != seq {
-		return ctx, sdkerrors.Wrapf(
-			sdkerrors.ErrInvalidSequence,
-			"invalid nonce; got %d, expected %d", msgEthTx.Data.Nonce, seq,
-		)
-	}
-
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
 
@@ -298,18 +214,16 @@ func NewEthGasConsumeDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKe
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
+	if len(tx.GetMsgs()) != 1 {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
 	}
 
 	// reset the refund gas value for the current transaction
-	egcd.evmKeeper.ResetRefundTransient(ctx)
+	egcd.evmKeeper.ResetRefundTransient(infCtx)
 
-	config, found := egcd.evmKeeper.GetChainConfig(ctx)
+	config, found := egcd.evmKeeper.GetChainConfig(infCtx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
@@ -319,48 +233,53 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
-	isContractCreation := msgEthTx.To() == nil
 
-	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, egcd.ak, msgEthTx.GetFrom())
-	if err != nil {
-		return ctx, err
+	for _, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
+		}
+
+		isContractCreation := msgEthTx.To() == nil
+
+		// fetch sender account from signature
+		signerAcc, err := authante.GetSignerAcc(infCtx, egcd.ak, msgEthTx.GetFrom())
+		if err != nil {
+			return ctx, err
+		}
+
+		gasLimit := msgEthTx.GetGas()
+
+		var accessList ethtypes.AccessList
+		if msgEthTx.Data.Accesses != nil {
+			accessList = *msgEthTx.Data.Accesses.ToEthAccessList()
+		}
+
+		intrinsicGas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, isContractCreation, homestead, istanbul)
+		if err != nil {
+			return ctx, sdkerrors.Wrap(err, "failed to compute intrinsic gas cost")
+		}
+
+		// intrinsic gas verification during CheckTx
+		if ctx.IsCheckTx() && gasLimit < intrinsicGas {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas)
+		}
+
+		// Cost calculates the fees paid to validators based on gas limit and price
+		cost := msgEthTx.Fee() // fee = gas limit * gas price
+
+		evmDenom := egcd.evmKeeper.GetParams(infCtx).EvmDenom
+		feeAmt := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(cost))}
+
+		// deduct the full gas cost from the user balance
+		if err := authante.DeductFees(egcd.bankKeeper, infCtx, signerAcc, feeAmt); err != nil {
+			return ctx, err
+		}
+
+		// consume intrinsic gas for the current transaction. After runTx is executed on Baseapp, the
+		// application will consume gas from the block gas pool.
+		ctx.GasMeter().ConsumeGas(intrinsicGas, "intrinsic gas")
 	}
-
-	gasLimit := msgEthTx.GetGas()
-
-	var accessList ethtypes.AccessList
-	if msgEthTx.Data.Accesses != nil {
-		accessList = *msgEthTx.Data.Accesses.ToEthAccessList()
-	}
-
-	intrinsicGas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, isContractCreation, homestead, istanbul)
-	if err != nil {
-		return ctx, sdkerrors.Wrap(err, "failed to compute intrinsic gas cost")
-	}
-
-	// intrinsic gas verification during CheckTx
-	if ctx.IsCheckTx() && gasLimit < intrinsicGas {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas)
-	}
-
-	// Cost calculates the fees paid to validators based on gas limit and price
-	cost := msgEthTx.Cost() // gas limit * gas price
-
-	evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
-	feeAmt := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(cost))}
-
-	// deduct the full gas cost from the user balance
-	err = authante.DeductFees(egcd.bankKeeper, ctx, signerAcc, feeAmt)
-	if err != nil {
-		return ctx, err
-	}
-
-	ctx = ctx.WithGasMeter(gasMeter) // set the original gas meter limit
-
-	// consume intrinsic gas for the current transaction. After runTx is executed on Baseapp, the
-	// application will consume gas from the block gas pool.
-	ctx.GasMeter().ConsumeGas(intrinsicGas, "intrinsic gas")
 
 	// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
 	// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
@@ -389,36 +308,36 @@ func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
 func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
-	}
-
-	msg, err := msgEthTx.AsMessage()
-	if err != nil {
-		return ctx, err
-	}
-
-	config, found := ctd.evmKeeper.GetChainConfig(ctx)
+	config, found := ctd.evmKeeper.GetChainConfig(infCtx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
 
 	ethCfg := config.EthereumConfig(ctd.evmKeeper.ChainID())
 
-	evm := ctd.evmKeeper.NewEVM(msg, ethCfg)
+	for _, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
+		}
 
-	// check that caller has enough balance to cover asset transfer for **topmost** call
-	// NOTE: here the gas consumed is from the original context
-	if msg.Value().Sign() > 0 && !evm.Context.CanTransfer(ctd.evmKeeper, msg.From(), msg.Value()) {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", msg.From().Hex())
+		coreMsg, err := msgEthTx.AsMessage()
+		if err != nil {
+			return ctx, err
+		}
+
+		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg)
+
+		// check that caller has enough balance to cover asset transfer for **topmost** call
+		// NOTE: here the gas consumed is from the original context
+		if coreMsg.Value().Sign() > 0 && !evm.Context.CanTransfer(ctd.evmKeeper, coreMsg.From(), coreMsg.Value()) {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", coreMsg.From().Hex())
+		}
 	}
 
 	// set the original gas meter
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }
 
@@ -445,35 +364,37 @@ func NewAccessListDecorator(evmKeeper EVMKeeper) AccessListDecorator {
 func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	config, found := ald.evmKeeper.GetChainConfig(ctx)
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
+	config, found := ald.evmKeeper.GetChainConfig(infCtx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
-	}
-
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
-	}
-
-	msg, err := msgEthTx.AsMessage()
-	if err != nil {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx cannot be expressed as core.Message: %s", err.Error())
 	}
 
 	ethCfg := config.EthereumConfig(ald.evmKeeper.ChainID())
 
 	// setup the keeper context before setting the access list
-	ald.evmKeeper.WithContext(ctx)
+	ald.evmKeeper.WithContext(infCtx)
 
-	if rules := ethCfg.Rules(big.NewInt(ctx.BlockHeight())); rules.IsBerlin {
-		ald.evmKeeper.PrepareAccessList(msg.From(), msg.To(), vm.ActivePrecompiles(rules), msg.AccessList())
+	for _, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
+		}
+
+		coreMsg, err := msgEthTx.AsMessage()
+		if err != nil {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx cannot be expressed as core.Message: %s", err.Error())
+		}
+
+		if rules := ethCfg.Rules(big.NewInt(ctx.BlockHeight())); rules.IsBerlin {
+			ald.evmKeeper.PrepareAccessList(coreMsg.From(), coreMsg.To(), vm.ActivePrecompiles(rules), coreMsg.AccessList())
+		}
 	}
 
 	// set the original gas meter
-	ctx = ctx.WithGasMeter(gasMeter)
+	ald.evmKeeper.WithContext(ctx)
 	return next(ctx, tx, simulate)
 }
 
@@ -497,33 +418,28 @@ func NewEthIncrementSenderSequenceDecorator(ak AccountKeeper) EthIncrementSender
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
-	gasMeter := ctx.GasMeter()
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := getTxMsg(tx).(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", getTxMsg(tx))
-	}
+	for _, msg := range tx.GetMsgs() {
+		// increment sequence of all signers
+		for _, addr := range msg.GetSigners() {
+			acc := issd.ak.GetAccount(infCtx, addr)
 
-	// increment sequence of all signers
-	for _, addr := range msgEthTx.GetSigners() {
-		acc := issd.ak.GetAccount(ctx, addr)
+			if acc == nil {
+				return ctx, sdkerrors.Wrapf(
+					sdkerrors.ErrUnknownAddress,
+					"account %s (%s) is nil", common.BytesToAddress(addr.Bytes()), addr,
+				)
+			}
 
-		if acc == nil {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrUnknownAddress,
-				"account %s (%s) is nil", common.BytesToAddress(addr.Bytes()), addr,
-			)
+			if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
+				return ctx, err
+			}
+
+			issd.ak.SetAccount(infCtx, acc)
 		}
-
-		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
-			return ctx, err
-		}
-
-		issd.ak.SetAccount(ctx, acc)
 	}
 
 	// set the original gas meter
-	ctx = ctx.WithGasMeter(gasMeter)
 	return next(ctx, tx, simulate)
 }

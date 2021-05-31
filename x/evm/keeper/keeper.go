@@ -90,14 +90,15 @@ func (k *Keeper) WithContext(ctx sdk.Context) {
 
 // WithChainID sets the chain id to the local variable in the keeper
 func (k *Keeper) WithChainID(ctx sdk.Context) {
-	if k.eip155ChainID != nil {
-		panic("chain id already set")
-	}
-
 	chainID, err := ethermint.ParseChainID(ctx.ChainID())
 	if err != nil {
 		panic(err)
 	}
+
+	if k.eip155ChainID != nil && k.eip155ChainID.Cmp(chainID) != 0 {
+		panic("chain id already set")
+	}
+
 	k.eip155ChainID = chainID
 }
 

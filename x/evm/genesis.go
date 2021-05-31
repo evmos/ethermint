@@ -22,8 +22,9 @@ func InitGenesis(
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
 	k.WithContext(ctx)
+	k.WithChainID(ctx)
 
-	k.CommitStateDB.WithContext(ctx) // TODO: remove
+	k.CommitStateDB.WithContext(ctx)
 
 	k.SetParams(ctx, data.Params)
 	evmDenom := data.Params.EvmDenom
@@ -85,8 +86,7 @@ func InitGenesis(
 // ExportGenesis exports genesis state of the EVM module
 func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
 	k.WithContext(ctx)
-
-	k.CommitStateDB.WithContext(ctx) // TODO: remove
+	k.CommitStateDB.WithContext(ctx)
 
 	// nolint: prealloc
 	var ethGenAccounts []types.GenesisAccount

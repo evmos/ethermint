@@ -16,9 +16,6 @@ import (
 )
 
 const (
-	// TODO: Use this cost per byte through parameter or overriding NewConsumeGasForTxSizeDecorator
-	// which currently defaults at 10, if intended
-	// memoCostPerByte     sdk.Gas = 3
 	secp256k1VerifyCost uint64 = 21000
 )
 
@@ -63,7 +60,7 @@ func NewAnteHandler(
 
 					anteHandler = sdk.ChainAnteDecorators(
 						authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-						NewEthMempoolFeeDecorator(evmKeeper),
+						authante.NewMempoolFeeDecorator(),
 						authante.NewValidateBasicDecorator(),
 						authante.TxTimeoutHeightDecorator{},
 						NewEthSigVerificationDecorator(evmKeeper),
