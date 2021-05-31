@@ -1,7 +1,6 @@
 package ante_test
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
@@ -68,8 +67,7 @@ func TestAnteTestSuite(t *testing.T) {
 
 // CreateTestTx is a helper function to create a tx given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTx(
-	txs []*evmtypes.MsgEthereumTx,
-	privs []cryptotypes.PrivKey, accNums []uint64,
+	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64,
 ) authsigning.Tx {
 
 	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
@@ -80,60 +78,45 @@ func (suite *AnteTestSuite) CreateTestTx(
 
 	builder.SetExtensionOptions(option)
 
-	msgs := make([]sdk.Msg, len(txs))
-	gasLimit := uint64(0)
-	feeAmt := big.NewInt(0)
+	err = msg.Sign(suite.app.EvmKeeper.ChainID(), tests.NewSigner(priv))
+	suite.Require().NoError(err)
 
-	for i := range txs {
-		err := txs[i].Sign(suite.app.EvmKeeper.ChainID(), tests.NewSigner(privs[0]))
-		suite.Require().NoError(err)
-
-		msgs[i] = txs[i]
-		gasLimit += txs[i].GetGas()
-		feeAmt = new(big.Int).Add(feeAmt, txs[i].Fee())
-	}
-
-	err = builder.SetMsgs(msgs...)
-	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(feeAmt)))
+	err = builder.SetMsgs(msg)
+	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(msg.Fee())))
 	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(gasLimit)
+	builder.SetGasLimit(msg.GetGas())
 
 	// First round: we gather all the signer infos. We use the "set empty
 	// signature" hack to do that.
-	var sigsV2 []signing.SignatureV2
-	for i, priv := range privs {
-		sigV2 := signing.SignatureV2{
-			PubKey: priv.PubKey(),
-			Data: &signing.SingleSignatureData{
-				SignMode:  suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(),
-				Signature: nil,
-			},
-			Sequence: txs[i].Data.Nonce,
-		}
-
-		sigsV2 = append(sigsV2, sigV2)
+	sigV2 := signing.SignatureV2{
+		PubKey: priv.PubKey(),
+		Data: &signing.SingleSignatureData{
+			SignMode:  suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(),
+			Signature: nil,
+		},
+		Sequence: msg.Data.Nonce,
 	}
+
+	sigsV2 := []signing.SignatureV2{sigV2}
 
 	err = suite.txBuilder.SetSignatures(sigsV2...)
 	suite.Require().NoError(err)
 
 	// Second round: all signer infos are set, so each signer can sign.
-	sigsV2 = []signing.SignatureV2{}
-	for i, priv := range privs {
 
-		signerData := authsigning.SignerData{
-			ChainID:       suite.ctx.ChainID(),
-			AccountNumber: accNums[i],
-			Sequence:      txs[i].Data.Nonce,
-		}
-		sigV2, err := tx.SignWithPrivKey(
-			suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(), signerData,
-			suite.txBuilder, priv, suite.clientCtx.TxConfig, txs[i].Data.Nonce,
-		)
-		suite.Require().NoError(err)
-
-		sigsV2 = append(sigsV2, sigV2)
+	signerData := authsigning.SignerData{
+		ChainID:       suite.ctx.ChainID(),
+		AccountNumber: accNum,
+		Sequence:      msg.Data.Nonce,
 	}
+	sigV2, err = tx.SignWithPrivKey(
+		suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(), signerData,
+		suite.txBuilder, priv, suite.clientCtx.TxConfig, msg.Data.Nonce,
+	)
+	suite.Require().NoError(err)
+
+	sigsV2 = []signing.SignatureV2{sigV2}
+
 	err = suite.txBuilder.SetSignatures(sigsV2...)
 	suite.Require().NoError(err)
 

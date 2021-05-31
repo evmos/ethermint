@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -18,8 +19,9 @@ import (
 )
 
 var (
-	_ sdk.Msg = &MsgEthereumTx{}
-	_ sdk.Tx  = &MsgEthereumTx{}
+	_ sdk.Msg    = &MsgEthereumTx{}
+	_ sdk.Tx     = &MsgEthereumTx{}
+	_ ante.GasTx = &MsgEthereumTx{}
 )
 
 // message type and route constants

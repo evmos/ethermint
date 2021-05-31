@@ -3,8 +3,8 @@ package ante_test
 import (
 	"math/big"
 
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/params"
 
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
@@ -19,7 +19,10 @@ func (suite AnteTestSuite) TestAnteHandler() {
 	signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 2, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 	signedTx.From = addr.Hex()
 
-	tx := suite.CreateTestTx([]*evmtypes.MsgEthereumTx{signedContractTx, signedTx}, []cryptotypes.PrivKey{privKey}, []uint64{1, 1})
+	txContract := suite.CreateTestTx(signedContractTx, privKey, 1)
+
+	suite.txBuilder = suite.clientCtx.TxConfig.NewTxBuilder()
+	tx := suite.CreateTestTx(signedTx, privKey, 1)
 
 	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 	suite.Require().NoError(acc.SetSequence(1))
@@ -31,14 +34,16 @@ func (suite AnteTestSuite) TestAnteHandler() {
 	testCases := []struct {
 		name      string
 		tx        sdk.Tx
-		malleate  func()
 		checkTx   bool
 		reCheckTx bool
 		expPass   bool
 	}{
-		{"success - DeliverTx", tx, func() {}, false, false, true},
-		{"success - CheckTx", tx, func() {}, true, false, true},
-		{"success - ReCheckTx", tx, func() {}, false, true, true},
+		{"success - DeliverTx (contract)", txContract, false, false, true},
+		{"success - CheckTx (contract)", txContract, true, false, true},
+		{"success - ReCheckTx (contract)", txContract, false, true, true},
+		{"success - DeliverTx", tx, false, false, true},
+		{"success - CheckTx", tx, true, false, true},
+		{"success - ReCheckTx", tx, false, true, true},
 	}
 
 	for _, tc := range testCases {
@@ -46,13 +51,14 @@ func (suite AnteTestSuite) TestAnteHandler() {
 
 			suite.ctx = suite.ctx.WithIsCheckTx(tc.reCheckTx).WithIsReCheckTx(tc.reCheckTx)
 
-			tc.malleate()
-			// consumed := suite.ctx.GasMeter().GasConsumed()
+			expConsumed := params.TxGasContractCreation + params.TxGas
 			_, err := suite.anteHandler(suite.ctx, tc.tx, false)
+
 			// suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
 
 			if tc.expPass {
 				suite.Require().NoError(err)
+				suite.Require().Equal(int(expConsumed), int(suite.ctx.GasMeter().GasConsumed()))
 			} else {
 				suite.Require().Error(err)
 			}

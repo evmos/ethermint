@@ -210,6 +210,10 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
+	if len(tx.GetMsgs()) != 1 {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
+	}
+
 	// reset the refund gas value for the current transaction
 	egcd.evmKeeper.ResetRefundTransient(infCtx)
 
