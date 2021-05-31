@@ -304,26 +304,23 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	msgEthTx, ok := tx.(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
-	}
+	for _, msg := range tx.GetMsgs() {
+		// increment sequence of all signers
+		for _, addr := range msg.GetSigners() {
+			acc := issd.ak.GetAccount(infCtx, addr)
+			if acc == nil {
+				return ctx, sdkerrors.Wrapf(
+					sdkerrors.ErrUnknownAddress,
+					"account %s (%s) is nil", common.BytesToAddress(addr.Bytes()), addr,
+				)
+			}
 
-	// increment sequence of all signers
-	for _, addr := range msgEthTx.GetSigners() {
-		acc := issd.ak.GetAccount(infCtx, addr)
-		if acc == nil {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrUnknownAddress,
-				"account %s (%s) is nil", common.BytesToAddress(addr.Bytes()), addr,
-			)
+			if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
+				return ctx, err
+			}
+
+			issd.ak.SetAccount(infCtx, acc)
 		}
-
-		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
-			return ctx, err
-		}
-
-		issd.ak.SetAccount(infCtx, acc)
 	}
 
 	// set the original gas meter

@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"math/big"
 	"testing"
 	"time"
 
@@ -11,16 +12,19 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/cosmos/ethermint/app"
 	ante "github.com/cosmos/ethermint/app/ante"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/cosmos/ethermint/tests"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -63,7 +67,37 @@ func TestAnteTestSuite(t *testing.T) {
 }
 
 // CreateTestTx is a helper function to create a tx given multiple inputs.
-func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []uint64, accSeqs []uint64) (authsigning.Tx, error) {
+func (suite *AnteTestSuite) CreateTestTx(
+	txs []*evmtypes.MsgEthereumTx,
+	privs []cryptotypes.PrivKey, accNums []uint64,
+) authsigning.Tx {
+
+	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+	suite.Require().NoError(err)
+
+	builder, ok := suite.txBuilder.(authtx.ExtensionOptionsTxBuilder)
+	suite.Require().True(ok)
+
+	builder.SetExtensionOptions(option)
+
+	msgs := make([]sdk.Msg, len(txs))
+	gasLimit := uint64(0)
+	feeAmt := big.NewInt(0)
+
+	for i := range txs {
+		err := txs[i].Sign(suite.app.EvmKeeper.ChainID(), tests.NewSigner(privs[0]))
+		suite.Require().NoError(err)
+
+		msgs[i] = txs[i]
+		gasLimit += txs[i].GetGas()
+		feeAmt = new(big.Int).Add(feeAmt, txs[i].Fee())
+	}
+
+	err = builder.SetMsgs(msgs...)
+	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(feeAmt)))
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(gasLimit)
+
 	// First round: we gather all the signer infos. We use the "set empty
 	// signature" hack to do that.
 	var sigsV2 []signing.SignatureV2
@@ -74,39 +108,36 @@ func (suite *AnteTestSuite) CreateTestTx(privs []cryptotypes.PrivKey, accNums []
 				SignMode:  suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(),
 				Signature: nil,
 			},
-			Sequence: accSeqs[i],
+			Sequence: txs[i].Data.Nonce,
 		}
 
 		sigsV2 = append(sigsV2, sigV2)
 	}
-	err := suite.txBuilder.SetSignatures(sigsV2...)
-	if err != nil {
-		return nil, err
-	}
+
+	err = suite.txBuilder.SetSignatures(sigsV2...)
+	suite.Require().NoError(err)
 
 	// Second round: all signer infos are set, so each signer can sign.
 	sigsV2 = []signing.SignatureV2{}
 	for i, priv := range privs {
+
 		signerData := authsigning.SignerData{
 			ChainID:       suite.ctx.ChainID(),
 			AccountNumber: accNums[i],
-			Sequence:      accSeqs[i],
+			Sequence:      txs[i].Data.Nonce,
 		}
 		sigV2, err := tx.SignWithPrivKey(
 			suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(), signerData,
-			suite.txBuilder, priv, suite.clientCtx.TxConfig, accSeqs[i])
-		if err != nil {
-			return nil, err
-		}
+			suite.txBuilder, priv, suite.clientCtx.TxConfig, txs[i].Data.Nonce,
+		)
+		suite.Require().NoError(err)
 
 		sigsV2 = append(sigsV2, sigV2)
 	}
 	err = suite.txBuilder.SetSignatures(sigsV2...)
-	if err != nil {
-		return nil, err
-	}
+	suite.Require().NoError(err)
 
-	return suite.txBuilder.GetTx(), nil
+	return suite.txBuilder.GetTx()
 }
 
 func newTestAddrKey() (common.Address, cryptotypes.PrivKey) {

@@ -322,7 +322,6 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		expPass  bool
 		expPanic bool
 	}{
-		{"invalid transaction type", nil, func() {}, false, false},
 		{
 			"no signers",
 			evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),

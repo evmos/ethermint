@@ -3,43 +3,30 @@ package ante_test
 import (
 	"math/big"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
-	"github.com/cosmos/ethermint/tests"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {
 	addr, privKey := newTestAddrKey()
+	to, _ := newTestAddrKey()
 
-	signedContractTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	signedContractTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 	signedContractTx.From = addr.Hex()
-	err := signedContractTx.Sign(suite.app.EvmKeeper.ChainID(), tests.NewSigner(privKey))
-	suite.Require().NoError(err)
 
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	suite.Require().NoError(err)
+	signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 2, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+	signedTx.From = addr.Hex()
 
-	builder, ok := suite.txBuilder.(authtx.ExtensionOptionsTxBuilder)
-	suite.Require().True(ok)
-
-	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(signedContractTx)
-	suite.Require().NoError(err)
-
-	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(signedContractTx.Fee())))
-	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(signedContractTx.GetGas())
-
-	tx, err := suite.CreateTestTx([]cryptotypes.PrivKey{privKey}, []uint64{1}, []uint64{1})
-	suite.Require().NoError(err)
+	tx := suite.CreateTestTx([]*evmtypes.MsgEthereumTx{signedContractTx, signedTx}, []cryptotypes.PrivKey{privKey}, []uint64{1, 1})
 
 	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 	suite.Require().NoError(acc.SetSequence(1))
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
+	err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
+	suite.Require().NoError(err)
 
 	testCases := []struct {
 		name      string
@@ -49,9 +36,9 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		reCheckTx bool
 		expPass   bool
 	}{
-		{"success - DeliverTx (contract)", tx, func() {}, false, false, true},
-		{"success - CheckTx (contract)", tx, func() {}, true, false, true},
-		{"success - ReCheckTx (contract)", tx, func() {}, false, true, true},
+		{"success - DeliverTx", tx, func() {}, false, false, true},
+		{"success - CheckTx", tx, func() {}, true, false, true},
+		{"success - ReCheckTx", tx, func() {}, false, true, true},
 	}
 
 	for _, tc := range testCases {
