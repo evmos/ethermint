@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
+// NewEVM generates an ethereum VM from the provided Message fields and the ChainConfig.
 func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
@@ -38,13 +39,16 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
 }
 
+// VMConfig creates an EVM configuration from the module parameters and the debug setting.
+// The config generated uses the default JumpTable from the EVM.
 func (k Keeper) VMConfig() vm.Config {
 	params := k.GetParams(k.ctx)
 
 	return vm.Config{
-		ExtraEips: params.EIPs(),
-		Tracer:    vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger
-		Debug:     k.debug,
+		Debug:       k.debug,
+		Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger too
+		NoRecursion: false,                                                      // TODO: consider disabling recursion though params
+		ExtraEips:   params.EIPs(),
 	}
 }
 
@@ -58,6 +62,7 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 		case k.ctx.BlockHeight() == int64(height):
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
+			// TODO: deprecate field from the keeper on next SDK release
 			return k.headerHash
 
 		case k.ctx.BlockHeight() > int64(height):
@@ -107,6 +112,8 @@ func (k *Keeper) TransitionDb(msg core.Message) (*types.ExecutionResult, error) 
 
 	return result, nil
 }
+
+// Gas consumption notes (write doc from this)
 
 // gas = remaining gas = limit - consumed
 
@@ -180,10 +187,11 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionRe
 
 	if vmErr != nil {
 		if errors.Is(vmErr, vm.ErrExecutionReverted) {
-			// unpack the return data bytes from the err
+			// unpack the return data bytes from the err if the execution has been reverted on the VM
 			return nil, types.NewExecErrorWithReson(ret)
 		}
 
+		// wrap the VM error
 		return nil, sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error())
 	}
 
@@ -200,6 +208,10 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionRe
 	}, nil
 }
 
+// refundGas transfer the leftover gas to the sender of the message, caped to half of the total gas
+// consumed in the transaction. Additionally, the function sets the total gas consumed to the value
+// returned by the EVM execution, thus ignoring the previous intrinsic gas inconsumed during in the
+// AnteHandler.
 func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, leftover uint64, err error) {
 	gasConsumed := msg.Gas() - leftoverGas
 
@@ -219,7 +231,7 @@ func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, left
 
 	refundedCoins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(remaining))}
 
-	// refund to sender from the fee collector module account
+	// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins); err != nil {
 		return 0, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
 	}
