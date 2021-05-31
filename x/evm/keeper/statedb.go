@@ -454,11 +454,6 @@ func (k *Keeper) Empty(addr common.Address) bool {
 //
 // This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
 func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
-		return
-	}
-
 	k.AddAddressToAccessList(sender)
 	if dest != nil {
 		k.AddAddressToAccessList(*dest)
@@ -532,11 +527,8 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
 	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
-	blockHash, found := k.GetBlockHashFromHeight(k.ctx, k.ctx.BlockHeight())
-	if found {
-		log.BlockHash = blockHash
-	}
 
+	log.BlockHash = k.headerHash
 	log.TxHash = txHash
 	log.TxIndex = uint(k.GetTxIndexTransient())
 

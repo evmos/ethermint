@@ -46,7 +46,7 @@ func DefaultParams() Params {
 		EvmDenom:     DefaultEVMDenom,
 		EnableCreate: true,
 		EnableCall:   true,
-		ExtraEIPs:    []int64(nil), // TODO: define default values from: [2929, 2200, 1884, 1344]
+		ExtraEIPs:    []int64{2929, 2200, 1884, 1344},
 	}
 }
 
@@ -73,6 +73,15 @@ func (p Params) Validate() error {
 	}
 
 	return validateEIPs(p.ExtraEIPs)
+}
+
+// EIPs returns the ExtraEips as a int slice
+func (p Params) EIPs() []int {
+	eips := make([]int, len(p.ExtraEIPs))
+	for i, eip := range p.ExtraEIPs {
+		eips[i] = int(eip)
+	}
+	return eips
 }
 
 func validateEVMDenom(i interface{}) error {

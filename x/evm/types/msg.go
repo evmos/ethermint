@@ -100,13 +100,13 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 func (msg MsgEthereumTx) ValidateBasic() error {
 	gasPrice := new(big.Int).SetBytes(msg.Data.GasPrice)
 	if gasPrice.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidValue, "gas price cannot be negative %s", gasPrice)
+		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
 
 	// Amount can be 0
 	amount := new(big.Int).SetBytes(msg.Data.Amount)
 	if amount.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidValue, "amount cannot be negative %s", amount)
+		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
 
 	if msg.Data.To != "" {
@@ -218,7 +218,7 @@ func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 // the sender is not registered on the keyring
 func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
 	from := msg.GetFrom()
-	if from == nil {
+	if from.Empty() {
 		return fmt.Errorf("sender address not defined for message")
 	}
 

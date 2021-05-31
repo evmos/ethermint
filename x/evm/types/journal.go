@@ -18,6 +18,11 @@ type journalEntry interface {
 	dirtied() *ethcmn.Address
 }
 
+type revision struct {
+	id           int
+	journalIndex int
+}
+
 // journal contains the list of state modifications applied since the last state
 // commit. These are tracked to be able to be reverted in case of an execution
 // exception or revertal request.
