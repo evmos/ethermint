@@ -46,11 +46,11 @@ func (suite *EvmTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-888", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-1", Time: time.Now().UTC()})
 	suite.app.EvmKeeper.CommitStateDB.WithContext(suite.ctx)
 	suite.handler = evm.NewHandler(suite.app.EvmKeeper)
 	suite.codec = suite.app.AppCodec()
-	suite.chainID = suite.chainID
+	suite.chainID = suite.app.EvmKeeper.ChainID()
 
 	privKey, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)

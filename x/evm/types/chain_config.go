@@ -28,6 +28,7 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		PetersburgBlock:     getBlockValue(cc.PetersburgBlock),
 		IstanbulBlock:       getBlockValue(cc.IstanbulBlock),
 		MuirGlacierBlock:    getBlockValue(cc.MuirGlacierBlock),
+		BerlinBlock:         getBlockValue(cc.BerlinBlock),
 		//TODO(xlab): after upgrading ethereum to newer version, this should be set to YoloV2Block
 		YoloV3Block:   getBlockValue(cc.YoloV3Block),
 		EWASMBlock:    getBlockValue(cc.EWASMBlock),
@@ -35,7 +36,7 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 	}
 }
 
-// DefaultChainConfig returns default evm parameters. Th
+// DefaultChainConfig returns default evm parameters.
 func DefaultChainConfig() ChainConfig {
 	return ChainConfig{
 		HomesteadBlock:      sdk.ZeroInt(),
@@ -48,9 +49,10 @@ func DefaultChainConfig() ChainConfig {
 		ByzantiumBlock:      sdk.ZeroInt(),
 		ConstantinopleBlock: sdk.ZeroInt(),
 		PetersburgBlock:     sdk.ZeroInt(),
-		IstanbulBlock:       sdk.NewInt(-1),
-		MuirGlacierBlock:    sdk.NewInt(-1),
-		YoloV3Block:         sdk.NewInt(-1),
+		IstanbulBlock:       sdk.ZeroInt(),
+		MuirGlacierBlock:    sdk.ZeroInt(),
+		BerlinBlock:         sdk.ZeroInt(),
+		YoloV3Block:         sdk.ZeroInt(),
 		EWASMBlock:          sdk.NewInt(-1),
 		CatalystBlock:       sdk.NewInt(-1),
 	}

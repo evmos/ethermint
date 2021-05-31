@@ -12,6 +12,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
 
@@ -36,6 +37,8 @@ type Keeper struct {
 	bankKeeper    types.BankKeeper
 
 	ctx sdk.Context
+	// chain ID number obtained from the context's chain id
+	eip155ChainID *big.Int
 
 	// Ethermint concrete implementation on the EVM StateDB interface
 	CommitStateDB *types.CommitStateDB
@@ -78,6 +81,25 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 // WithContext sets an updated SDK context to the keeper
 func (k *Keeper) WithContext(ctx sdk.Context) {
 	k.ctx = ctx
+}
+
+// WithChainID sets the chain id to the local variable in the keeper
+func (k *Keeper) WithChainID(ctx sdk.Context) {
+	chainID, err := ethermint.ParseChainID(ctx.ChainID())
+	if err != nil {
+		panic(err)
+	}
+
+	if k.eip155ChainID != nil && k.eip155ChainID.Cmp(chainID) != 0 {
+		panic("chain id already set")
+	}
+
+	k.eip155ChainID = chainID
+}
+
+// ChainID returns the EIP155 chain ID for the EVM context
+func (k Keeper) ChainID() *big.Int {
+	return k.eip155ChainID
 }
 
 // ----------------------------------------------------------------------------

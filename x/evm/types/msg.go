@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -18,8 +19,9 @@ import (
 )
 
 var (
-	_ sdk.Msg = &MsgEthereumTx{}
-	_ sdk.Tx  = &MsgEthereumTx{}
+	_ sdk.Msg    = &MsgEthereumTx{}
+	_ sdk.Tx     = &MsgEthereumTx{}
+	_ ante.GasTx = &MsgEthereumTx{}
 )
 
 // message type and route constants
@@ -141,10 +143,12 @@ func (msg *MsgEthereumTx) GetMsgs() []sdk.Msg {
 // GetSigners returns the expected signers for an Ethereum transaction message.
 // For such a message, there should exist only a single 'signer'.
 //
-// NOTE: This method panics if 'VerifySig' hasn't been called first.
+// NOTE: This method panics if 'Sign' hasn't been called first.
 func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
-	if msg.From == "" {
-		panic("must use 'VerifySig' with a chain ID to get the signer")
+	v, r, s := msg.RawSignatureValues()
+
+	if msg.From == "" || v == nil || r == nil || s == nil {
+		panic("must use 'Sign' with a chain ID to get the signer")
 	}
 
 	signer := sdk.AccAddress(ethcmn.HexToAddress(msg.From).Bytes())
@@ -216,6 +220,10 @@ func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
 	from := msg.GetFrom()
 	if from == nil {
 		return fmt.Errorf("sender address not defined for message")
+	}
+
+	if chainID == nil {
+		return fmt.Errorf("chain id cannot be nil")
 	}
 
 	txHash := msg.RLPSignBytes(chainID)
@@ -335,7 +343,7 @@ func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 
 // AsEthereumData returns an AccessListTx transaction data from the proto-formatted
 // TxData defined on the Cosmos EVM.
-func (data TxData) AsEthereumData() ethtypes.TxData {
+func (data *TxData) AsEthereumData() ethtypes.TxData {
 	var to *ethcmn.Address
 	if data.To != "" {
 		toAddr := ethcmn.HexToAddress(data.To)
