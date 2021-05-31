@@ -25,13 +25,12 @@ const (
 )
 
 const (
-	prefixBlockHash = iota + 1
+	prefixHeightToHeaderHash = iota + 1
 	prefixBloom
 	prefixLogs
 	prefixCode
 	prefixStorage
 	prefixChainConfig
-	prefixBlockHeightHash
 	prefixHashTxReceipt
 	prefixBlockHeightTxs
 )
@@ -45,15 +44,14 @@ const (
 
 // KVStore key prefixes
 var (
-	KeyPrefixBlockHash       = []byte{prefixBlockHash}
-	KeyPrefixBloom           = []byte{prefixBloom}
-	KeyPrefixLogs            = []byte{prefixLogs}
-	KeyPrefixCode            = []byte{prefixCode}
-	KeyPrefixStorage         = []byte{prefixStorage}
-	KeyPrefixChainConfig     = []byte{prefixChainConfig}
-	KeyPrefixBlockHeightHash = []byte{prefixBlockHeightHash}
-	KeyPrefixHashTxReceipt   = []byte{prefixHashTxReceipt}
-	KeyPrefixBlockHeightTxs  = []byte{prefixBlockHeightTxs}
+	KeyPrefixHeightToHeaderHash = []byte{prefixHeightToHeaderHash}
+	KeyPrefixBloom              = []byte{prefixBloom}
+	KeyPrefixLogs               = []byte{prefixLogs}
+	KeyPrefixCode               = []byte{prefixCode}
+	KeyPrefixStorage            = []byte{prefixStorage}
+	KeyPrefixChainConfig        = []byte{prefixChainConfig}
+	KeyPrefixHashTxReceipt      = []byte{prefixHashTxReceipt}
+	KeyPrefixBlockHeightTxs     = []byte{prefixBlockHeightTxs}
 )
 
 var (
@@ -77,17 +75,6 @@ func AddressStoragePrefix(address ethcmn.Address) []byte {
 // StateKey defines the full key under which an account state is stored.
 func StateKey(address ethcmn.Address, key []byte) []byte {
 	return append(AddressStoragePrefix(address), key...)
-}
-
-// KeyBlockHash returns a key for accessing block hash data.
-func KeyBlockHash(hash ethcmn.Hash) []byte {
-	return append(KeyPrefixBlockHash, hash.Bytes()...)
-}
-
-// KeyBlockHash returns a key for accessing block hash data.
-func KeyBlockHeightHash(height uint64) []byte {
-	heightBytes := sdk.Uint64ToBigEndian(height)
-	return append(KeyPrefixBlockHeightHash, heightBytes...)
 }
 
 // KeyHashTxReceipt returns a key for accessing tx receipt data by hash.

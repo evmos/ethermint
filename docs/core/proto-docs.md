@@ -47,8 +47,6 @@
     - [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse)
     - [QueryTxReceiptRequest](#ethermint.evm.v1alpha1.QueryTxReceiptRequest)
     - [QueryTxReceiptResponse](#ethermint.evm.v1alpha1.QueryTxReceiptResponse)
-    - [QueryTxReceiptsByBlockHashRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashRequest)
-    - [QueryTxReceiptsByBlockHashResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashResponse)
     - [QueryTxReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest)
     - [QueryTxReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse)
   
@@ -507,6 +505,7 @@ QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `hash` | [string](#string) |  | hash is the block hash to query the logs for. |
+| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
 
 
 
@@ -522,6 +521,7 @@ QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `tx_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) | repeated | logs represents the ethereum logs generated at the given block hash. |
+| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
 
 
 
@@ -739,36 +739,6 @@ QueryTxReceiptResponse is the response type for the Query/TxReceipt RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashRequest"></a>
-
-### QueryTxReceiptsByBlockHashRequest
-QueryTxReceiptsByBlockHashRequest is the request type for the Query/TxReceiptsByBlockHash RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `hash` | [string](#string) |  | hash is the ethereum transaction hex hash to query the receipt for. |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashResponse"></a>
-
-### QueryTxReceiptsByBlockHashResponse
-QueryTxReceiptsByBlockHashResponse is the response type for the Query/TxReceiptsByBlockHash RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `receipts` | [TxReceipt](#ethermint.evm.v1alpha1.TxReceipt) | repeated | tx receipts list for the block |
-
-
-
-
-
-
 <a name="ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest"></a>
 
 ### QueryTxReceiptsByBlockHeightRequest
@@ -815,7 +785,6 @@ Query defines the gRPC querier service.
 | `TxLogs` | [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest) | [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse) | TxLogs queries ethereum logs from a transaction. | GET|/ethermint/evm/v1alpha1/tx_logs/{hash}|
 | `TxReceipt` | [QueryTxReceiptRequest](#ethermint.evm.v1alpha1.QueryTxReceiptRequest) | [QueryTxReceiptResponse](#ethermint.evm.v1alpha1.QueryTxReceiptResponse) | TxReceipt queries a receipt by a transaction hash. | GET|/ethermint/evm/v1alpha1/tx_receipt/{hash}|
 | `TxReceiptsByBlockHeight` | [QueryTxReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest) | [QueryTxReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse) | TxReceiptsByBlockHeight queries tx receipts by a block height. | GET|/ethermint/evm/v1alpha1/tx_receipts_block|
-| `TxReceiptsByBlockHash` | [QueryTxReceiptsByBlockHashRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashRequest) | [QueryTxReceiptsByBlockHashResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashResponse) | TxReceiptsByBlockHash queries tx receipts by a block hash. | GET|/ethermint/evm/v1alpha1/tx_receipts_block_hash/{hash}|
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
