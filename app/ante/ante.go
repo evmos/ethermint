@@ -60,7 +60,7 @@ func NewAnteHandler(
 
 					anteHandler = sdk.ChainAnteDecorators(
 						authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-						NewEthMempoolFeeDecorator(evmKeeper),
+						authante.NewMempoolFeeDecorator(),
 						authante.NewValidateBasicDecorator(),
 						authante.TxTimeoutHeightDecorator{},
 						NewEthSigVerificationDecorator(evmKeeper),

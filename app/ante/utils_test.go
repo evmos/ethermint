@@ -115,3 +115,10 @@ func newTestAddrKey() (common.Address, cryptotypes.PrivKey) {
 
 	return addr, privkey
 }
+
+var _ sdk.Tx = &invalidTx{}
+
+type invalidTx struct{}
+
+func (invalidTx) GetMsgs() []sdk.Msg   { return []sdk.Msg{nil} }
+func (invalidTx) ValidateBasic() error { return nil }

@@ -17,48 +17,6 @@ func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
 	return ctx, nil
 }
 
-func (suite AnteTestSuite) TestEthMempoolFeeDecorator() {
-	dec := ante.NewEthMempoolFeeDecorator(suite.app.EvmKeeper)
-
-	addr, _ := newTestAddrKey()
-
-	testCases := []struct {
-		name    string
-		tx      sdk.Tx
-		checkTx bool
-		expPass bool
-	}{
-		{"not CheckTx", nil, false, true},
-		{"invalid transaction type", nil, true, false},
-		{
-			"insufficient fees for tx cost",
-			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 0, big.NewInt(0), nil, nil),
-			true,
-			false,
-		},
-		{
-			"suficient fees",
-			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
-			true,
-			true,
-		},
-	}
-
-	for _, tc := range testCases {
-		suite.Run(tc.name, func() {
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
-
-			if tc.expPass {
-				suite.Require().NoError(err)
-			} else {
-				suite.Require().Error(err)
-			}
-		})
-	}
-}
-
 func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
 	addr, privKey := newTestAddrKey()
@@ -75,7 +33,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 		expPass   bool
 	}{
 		{"ReCheckTx", nil, true, true},
-		{"invalid transaction type", nil, false, false},
+		{"invalid transaction type", &invalidTx{}, false, false},
 		{
 			"invalid sender",
 			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
@@ -119,7 +77,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 		expPass  bool
 	}{
 		{"not CheckTx", nil, func() {}, false, true},
-		{"invalid transaction type", nil, func() {}, true, false},
+		{"invalid transaction type", &invalidTx{}, func() {}, true, false},
 		{
 			"sender not set to msg",
 			evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
@@ -193,7 +151,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 		expPass   bool
 	}{
 		{"ReCheckTx", nil, func() {}, true, true},
-		{"invalid transaction type", nil, func() {}, false, false},
+		{"invalid transaction type", &invalidTx{}, func() {}, false, false},
 		{"sender account not found", tx, func() {}, false, false},
 		{
 			"sender nonce missmatch",
@@ -256,7 +214,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		expPass  bool
 		expPanic bool
 	}{
-		{"invalid transaction type", nil, func() {}, false, false},
+		{"invalid transaction type", &invalidTx{}, func() {}, false, false},
 		{
 			"sender not found",
 			evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
