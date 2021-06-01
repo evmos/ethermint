@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -493,13 +494,108 @@ func (suite *KeeperTestSuite) TestAddLog() {
 		suite.Run(tc.name, func() {
 			tc.malleate()
 
-			// prev := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
+			prev := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
 			suite.app.EvmKeeper.AddLog(tc.log)
 			post := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
-			// suite.Require().Equal(len(prev)+1, len(post))
+
 			suite.Require().NotZero(len(post), tc.expLog.TxHash.Hex())
+			suite.Require().Equal(len(prev)+1, len(post))
 			suite.Require().NotNil(post[len(post)-1])
 			suite.Require().Equal(tc.log, post[len(post)-1])
 		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestAccessList() {
+	dest := tests.GenerateAddress()
+	precompiles := []common.Address{tests.GenerateAddress(), tests.GenerateAddress()}
+	accesses := ethtypes.AccessList{
+		{Address: tests.GenerateAddress(), StorageKeys: []common.Hash{common.BytesToHash([]byte("key"))}},
+		{Address: tests.GenerateAddress(), StorageKeys: []common.Hash{common.BytesToHash([]byte("key1"))}},
+	}
+
+	suite.app.EvmKeeper.PrepareAccessList(suite.address, &dest, precompiles, accesses)
+
+	suite.Require().True(suite.app.EvmKeeper.AddressInAccessList(suite.address))
+	suite.Require().True(suite.app.EvmKeeper.AddressInAccessList(dest))
+
+	for _, precompile := range precompiles {
+		suite.Require().True(suite.app.EvmKeeper.AddressInAccessList(precompile))
+	}
+
+	for _, access := range accesses {
+		for _, key := range access.StorageKeys {
+			addrOK, slotOK := suite.app.EvmKeeper.SlotInAccessList(access.Address, key)
+			suite.Require().True(addrOK)
+			suite.Require().True(slotOK)
+		}
+	}
+}
+
+func (suite *KeeperTestSuite) TestForEachStorage() {
+	var storage types.Storage
+
+	testCase := []struct {
+		name      string
+		malleate  func()
+		callback  func(key, value common.Hash) (stop bool)
+		expValues []common.Hash
+	}{
+		{
+			"aggregate state",
+			func() {
+				for i := 0; i < 5; i++ {
+					suite.app.EvmKeeper.SetState(suite.address, common.BytesToHash([]byte(fmt.Sprintf("key%d", i))), common.BytesToHash([]byte(fmt.Sprintf("value%d", i))))
+				}
+			},
+			func(key, value common.Hash) bool {
+				storage = append(storage, types.NewState(key, value))
+				return false
+			},
+			[]common.Hash{
+				common.BytesToHash([]byte("value0")),
+				common.BytesToHash([]byte("value1")),
+				common.BytesToHash([]byte("value2")),
+				common.BytesToHash([]byte("value3")),
+				common.BytesToHash([]byte("value4")),
+			},
+		},
+		{
+			"filter state",
+			func() {
+				suite.app.EvmKeeper.SetState(suite.address, common.BytesToHash([]byte("key")), common.BytesToHash([]byte("value")))
+				suite.app.EvmKeeper.SetState(suite.address, common.BytesToHash([]byte("filterkey")), common.BytesToHash([]byte("filtervalue")))
+			},
+			func(key, value common.Hash) bool {
+				if value == common.BytesToHash([]byte("filtervalue")) {
+					storage = append(storage, types.NewState(key, value))
+					return true
+				}
+				return false
+			},
+			[]common.Hash{
+				common.BytesToHash([]byte("filtervalue")),
+			},
+		},
+	}
+
+	for _, tc := range testCase {
+		suite.Run(tc.name, func() {
+			suite.SetupTest() // reset
+			tc.malleate()
+
+			err := suite.app.EvmKeeper.ForEachStorage(suite.address, tc.callback)
+			suite.Require().NoError(err)
+			suite.Require().Equal(len(tc.expValues), len(storage), fmt.Sprintf("Expected values:\n%v\nStorage Values\n%v", tc.expValues, storage))
+
+			vals := make([]common.Hash, len(storage))
+			for i := range storage {
+				vals[i] = common.HexToHash(storage[i].Value)
+			}
+
+			// TODO: not sure why Equals fails
+			suite.Require().ElementsMatch(tc.expValues, vals)
+		})
+		storage = types.Storage{}
 	}
 }
