@@ -113,21 +113,44 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 
 	testCases := []struct {
 		msg        string
+		ethSigner  ethtypes.Signer
 		malleate   func()
 		expectPass bool
 	}{
 		{
-			"pass",
+			"pass - EIP2930 signer",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = suite.from.Hex() },
 			true,
 		},
+		// TODO: support legacy txs
+		{
+			"not supported - EIP155 signer",
+			ethtypes.NewEIP155Signer(suite.chainID),
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
+		{
+			"not supported - Homestead signer",
+			ethtypes.HomesteadSigner{},
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
+		{
+			"not supported - Frontier signer",
+			ethtypes.FrontierSigner{},
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
 		{
 			"no from address ",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = "" },
 			false,
 		},
 		{
 			"from address ≠ signer address",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = suite.to.Hex() },
 			false,
 		},
@@ -135,7 +158,8 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 
 	for i, tc := range testCases {
 		tc.malleate()
-		err := msg.Sign(suite.chainID, suite.signer)
+
+		err := msg.Sign(tc.ethSigner, suite.signer)
 		if tc.expectPass {
 			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 

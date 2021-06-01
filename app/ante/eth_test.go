@@ -24,7 +24,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 
 	signedTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	signedTx.From = addr.Hex()
-	err := signedTx.Sign(suite.app.EvmKeeper.ChainID(), tests.NewSigner(privKey))
+	err := signedTx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
 
 	testCases := []struct {
@@ -439,7 +439,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 
 	signedTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	signedTx.From = addr.Hex()
-	err := signedTx.Sign(suite.app.EvmKeeper.ChainID(), tests.NewSigner(privKey))
+	err := signedTx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
 
 	testCases := []struct {
