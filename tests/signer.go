@@ -3,12 +3,29 @@ package tests
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
+
+// NewAddrKey generates an Ethereum address and its corresponding private key.
+func NewAddrKey() (common.Address, cryptotypes.PrivKey) {
+	privkey, _ := ethsecp256k1.GenerateKey()
+	addr := crypto.PubkeyToAddress(privkey.ToECDSA().PublicKey)
+
+	return addr, privkey
+}
+
+// GenerateAddress generates an Ethereum address.
+func GenerateAddress() common.Address {
+	addr, _ := NewAddrKey()
+	return addr
+}
 
 var _ keyring.Signer = &Signer{}
 

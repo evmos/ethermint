@@ -147,7 +147,8 @@ func (k *Keeper) GetNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-// SetNonce calls CommitStateDB.SetNonce using the passed in context
+// SetNonce sets the given nonce as the sequence of the address' account. If the
+// account doesn't exist, a new one will be created from the address.
 func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
@@ -160,7 +161,6 @@ func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 
 		// create address if it doesn't exist
 		account = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
-		k.accountKeeper.SetAccount(k.ctx, account)
 	}
 
 	if err := account.SetSequence(nonce); err != nil {
