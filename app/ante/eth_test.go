@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/ethermint/tests"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -302,6 +303,132 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				suite.Require().Error(err)
 			}
 
+		})
+	}
+}
+
+func (suite AnteTestSuite) TestCanTransferDecorator() {
+	dec := ante.NewCanTransferDecorator(suite.app.EvmKeeper)
+
+	addr, _ := newTestAddrKey()
+
+	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+
+	tx.From = addr.Hex()
+
+	testCases := []struct {
+		name     string
+		tx       sdk.Tx
+		malleate func()
+		expPass  bool
+	}{
+		{"invalid transaction type", &invalidTx{}, func() {}, false},
+		{"AsMessage failed", tx2, func() {}, false},
+		{
+			"evm CanTransfer failed",
+			tx,
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+			},
+			false,
+		},
+		{
+			"success",
+			tx,
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
+				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
+				suite.Require().NoError(err)
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+
+			tc.malleate()
+
+			consumed := suite.ctx.GasMeter().GasConsumed()
+			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
+			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite AnteTestSuite) TestAccessListDecorator() {
+	dec := ante.NewAccessListDecorator(suite.app.EvmKeeper)
+
+	addr, _ := newTestAddrKey()
+	al := &ethtypes.AccessList{
+		{Address: addr, StorageKeys: []common.Hash{{}}},
+	}
+
+	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, al)
+	tx3 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+
+	tx.From = addr.Hex()
+	tx2.From = addr.Hex()
+
+	testCases := []struct {
+		name     string
+		tx       sdk.Tx
+		malleate func()
+		expPass  bool
+	}{
+		{"invalid transaction type", &invalidTx{}, func() {}, false},
+		{"AsMessage failed", tx3, func() {}, false},
+		{
+			"success - no access list",
+			tx,
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
+				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
+				suite.Require().NoError(err)
+			},
+			true,
+		},
+		{
+			"success - with access list",
+			tx2,
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
+				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
+				suite.Require().NoError(err)
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+
+			tc.malleate()
+
+			consumed := suite.ctx.GasMeter().GasConsumed()
+			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
+			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
 		})
 	}
 }
