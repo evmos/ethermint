@@ -111,23 +111,28 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_RLPSignBytes() {
 func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 	msg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
 
+	// TODO: support other legacy signers
 	testCases := []struct {
 		msg        string
+		ethSigner  ethtypes.Signer
 		malleate   func()
 		expectPass bool
 	}{
 		{
 			"pass",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"no from address ",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = "" },
 			false,
 		},
 		{
 			"from address ≠ signer address",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = suite.to.Hex() },
 			false,
 		},
@@ -135,7 +140,8 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 
 	for i, tc := range testCases {
 		tc.malleate()
-		err := msg.Sign(suite.chainID, suite.signer)
+
+		err := msg.Sign(tc.ethSigner, suite.signer)
 		if tc.expectPass {
 			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 
