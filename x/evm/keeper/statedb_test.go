@@ -46,3 +46,93 @@ func (suite *KeeperTestSuite) TestCreateAccount() {
 		})
 	}
 }
+
+func (suite *KeeperTestSuite) TestAddBalance() {
+	testCases := []struct {
+		name   string
+		amount *big.Int
+		isNoOp bool
+	}{
+		{
+			"positive amount",
+			big.NewInt(100),
+			false,
+		},
+		{
+			"zero amount",
+			big.NewInt(0),
+			true,
+		},
+		{
+			"negative amount",
+			big.NewInt(-1),
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			prev := suite.app.EvmKeeper.GetBalance(suite.address)
+			suite.app.EvmKeeper.AddBalance(suite.address, tc.amount)
+			post := suite.app.EvmKeeper.GetBalance(suite.address)
+
+			if tc.isNoOp {
+				suite.Require().Equal(prev.Int64(), post.Int64())
+			} else {
+				suite.Require().Equal(new(big.Int).Add(prev, tc.amount).Int64(), post.Int64())
+			}
+		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestSubBalance() {
+	testCases := []struct {
+		name     string
+		amount   *big.Int
+		malleate func()
+		isNoOp   bool
+	}{
+		{
+			"positive amount, below zero",
+			big.NewInt(100),
+			func() {},
+			true,
+		},
+		{
+			"positive amount, below zero",
+			big.NewInt(50),
+			func() {
+				suite.app.EvmKeeper.AddBalance(suite.address, big.NewInt(100))
+			},
+			true,
+		},
+		{
+			"zero amount",
+			big.NewInt(0),
+			func() {},
+			true,
+		},
+		{
+			"negative amount",
+			big.NewInt(-1),
+			func() {},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			tc.malleate()
+
+			prev := suite.app.EvmKeeper.GetBalance(suite.address)
+			suite.app.EvmKeeper.SubBalance(suite.address, tc.amount)
+			post := suite.app.EvmKeeper.GetBalance(suite.address)
+
+			if tc.isNoOp {
+				suite.Require().Equal(prev.Int64(), post.Int64())
+			} else {
+				suite.Require().Equal(new(big.Int).Sub(prev, tc.amount).Int64(), post.Int64())
+			}
+		})
+	}
+}

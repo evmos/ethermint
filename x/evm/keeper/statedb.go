@@ -53,6 +53,15 @@ func (k *Keeper) CreateAccount(addr common.Address) {
 
 // AddBalance calls CommitStateDB.AddBalance using the passed in context
 func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
+	if amount.Sign() != 1 {
+		k.Logger(k.ctx).Debug(
+			"ignored non-positive amount addition",
+			"ethereum-address", addr.Hex(),
+			"amount", amount.Int64(),
+		)
+		return
+	}
+
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
 	params := k.GetParams(k.ctx)
@@ -77,6 +86,15 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 
 // SubBalance calls CommitStateDB.SubBalance using the passed in context
 func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
+	if amount.Sign() != 1 {
+		k.Logger(k.ctx).Debug(
+			"ignored non-positive amount addition",
+			"ethereum-address", addr.Hex(),
+			"amount", amount.Int64(),
+		)
+		return
+	}
+
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
 	params := k.GetParams(k.ctx)
