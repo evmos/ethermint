@@ -1,14 +1,10 @@
 package ante
 
 import (
-	"fmt"
 	"runtime/debug"
 
 	log "github.com/xlab/suplog"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -20,9 +16,6 @@ import (
 )
 
 const (
-	// TODO: Use this cost per byte through parameter or overriding NewConsumeGasForTxSizeDecorator
-	// which currently defaults at 10, if intended
-	// memoCostPerByte     sdk.Gas = 3
 	secp256k1VerifyCost uint64 = 21000
 )
 
@@ -30,8 +23,7 @@ const (
 type AccountKeeper interface {
 	authante.AccountKeeper
 	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	SetAccount(ctx sdk.Context, account authtypes.AccountI)
+	GetSequence(sdk.Context, sdk.AccAddress) (uint64, error)
 }
 
 // BankKeeper defines an expected keeper interface for the bank module's Keeper
@@ -67,43 +59,20 @@ func NewAnteHandler(
 					// handle as *evmtypes.MsgEthereumTx
 
 					anteHandler = sdk.ChainAnteDecorators(
-						NewEthSetupContextDecorator(evmKeeper), // outermost AnteDecorator. EthSetUpContext must be called first
-						NewEthMempoolFeeDecorator(evmKeeper),
-						NewEthValidateBasicDecorator(),
+						authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
+						authante.NewMempoolFeeDecorator(),
+						authante.NewValidateBasicDecorator(),
 						authante.TxTimeoutHeightDecorator{},
 						NewEthSigVerificationDecorator(evmKeeper),
-						NewEthAccountSetupDecorator(ak),
 						NewEthAccountVerificationDecorator(ak, bankKeeper, evmKeeper),
 						NewEthNonceVerificationDecorator(ak),
 						NewEthGasConsumeDecorator(ak, bankKeeper, evmKeeper),
 						NewEthIncrementSenderSequenceDecorator(ak), // innermost AnteDecorator.
 					)
 
-				case "/ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx":
-					// handle as normal Cosmos SDK tx, except signature is checked for EIP712 representation
-
-					switch tx.(type) {
-					case sdk.Tx:
-						anteHandler = sdk.ChainAnteDecorators(
-							authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-							authante.NewMempoolFeeDecorator(),
-							authante.NewValidateBasicDecorator(),
-							authante.TxTimeoutHeightDecorator{},
-							authante.NewValidateMemoDecorator(ak),
-							authante.NewConsumeGasForTxSizeDecorator(ak),
-							authante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
-							authante.NewValidateSigCountDecorator(ak),
-							authante.NewDeductFeeDecorator(ak, bankKeeper),
-							authante.NewSigGasConsumeDecorator(ak, DefaultSigVerificationGasConsumer),
-							authante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
-						)
-					default:
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", tx)
-					}
-
 				default:
 					log.WithField("type_url", typeURL).Errorln("rejecting tx with unsupported extension option")
-					return ctx, sdkerrors.ErrUnknownExtensionOptions
+					return ctx, sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, typeURL)
 				}
 
 				return anteHandler(ctx, tx, sim)
@@ -122,6 +91,7 @@ func NewAnteHandler(
 				authante.TxTimeoutHeightDecorator{},
 				authante.NewValidateMemoDecorator(ak),
 				authante.NewConsumeGasForTxSizeDecorator(ak),
+				authante.NewRejectFeeGranterDecorator(),
 				authante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
 				authante.NewValidateSigCountDecorator(ak),
 				authante.NewDeductFeeDecorator(ak, bankKeeper),
@@ -158,33 +128,12 @@ var _ authante.SignatureVerificationGasConsumer = DefaultSigVerificationGasConsu
 func DefaultSigVerificationGasConsumer(
 	meter sdk.GasMeter, sig signing.SignatureV2, params authtypes.Params,
 ) error {
-	pubkey := sig.PubKey
-	switch pubkey := pubkey.(type) {
-	case *ed25519.PubKey:
-		meter.ConsumeGas(params.SigVerifyCostED25519, "ante verify: ed25519")
-		return nil
-
-	case *secp256k1.PubKey:
-		meter.ConsumeGas(params.SigVerifyCostSecp256k1, "ante verify: secp256k1")
-		return nil
-
 	// support for ethereum ECDSA secp256k1 keys
-	case *ethsecp256k1.PubKey:
+	_, ok := sig.PubKey.(*ethsecp256k1.PubKey)
+	if ok {
 		meter.ConsumeGas(secp256k1VerifyCost, "ante verify: eth_secp256k1")
 		return nil
-
-	case multisig.PubKey:
-		multisignature, ok := sig.Data.(*signing.MultiSignatureData)
-		if !ok {
-			return fmt.Errorf("expected %T, got, %T", &signing.MultiSignatureData{}, sig.Data)
-		}
-		err := authante.ConsumeMultisignatureVerificationGas(meter, multisignature, pubkey, params, sig.Sequence)
-		if err != nil {
-			return err
-		}
-		return nil
-
-	default:
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidPubKey, "unrecognized public key type: %T", pubkey)
 	}
+
+	return authante.DefaultSigVerificationGasConsumer(meter, sig, params)
 }

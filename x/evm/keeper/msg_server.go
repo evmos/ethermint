@@ -54,7 +54,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
 	ethHash := ethcmn.BytesToHash(txHash)
-	blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
 
 	st := &types.StateTransition{
 		Message:  ethMsg,
@@ -69,7 +68,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	// other nodes, causing a consensus error
 	if !st.Simulate {
 		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, blockHash, int(k.GetTxIndexTransient()))
+		k.CommitStateDB.Prepare(ethHash, k.headerHash, int(k.GetTxIndexTransient()))
 		k.IncreaseTxIndexTransient()
 	}
 
@@ -85,7 +84,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 					From:        sender.Hex(),
 					Data:        msg.Data,
 					BlockHeight: uint64(ctx.BlockHeight()),
-					BlockHash:   blockHash.Hex(),
+					BlockHash:   k.headerHash.Hex(),
 					Result: &types.TxResult{
 						ContractAddress: executionResult.Response.ContractAddress,
 						Bloom:           executionResult.Response.Bloom,
@@ -118,14 +117,13 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			panic(err)
 		}
 
-		blockHash, _ := k.GetBlockHashFromHeight(ctx, ctx.BlockHeight())
 		k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
 			Hash:        ethHash.Hex(),
 			From:        sender.Hex(),
 			Data:        msg.Data,
 			Index:       uint64(st.Csdb.TxIndex()),
 			BlockHeight: uint64(ctx.BlockHeight()),
-			BlockHash:   blockHash.Hex(),
+			BlockHash:   k.headerHash.Hex(),
 			Result: &types.TxResult{
 				ContractAddress: executionResult.Response.ContractAddress,
 				Bloom:           executionResult.Response.Bloom,
@@ -154,12 +152,20 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		)
 	}()
 
+	attrs := []sdk.Attribute{
+		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
+		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+	}
+
+	if len(msg.Data.To) > 0 {
+		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, msg.Data.To))
+	}
+
 	// emit events
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			types.EventTypeEthereumTx,
-			sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
-			sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+			attrs...,
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -167,15 +173,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
 		),
 	})
-
-	if len(msg.Data.To) > 0 {
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeEthereumTx,
-				sdk.NewAttribute(types.AttributeKeyRecipient, msg.Data.To),
-			),
-		)
-	}
 
 	return executionResult.Response, nil
 }

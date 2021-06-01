@@ -8,18 +8,19 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/ethermint/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
-	_ sdk.Msg = &MsgEthereumTx{}
-	_ sdk.Tx  = &MsgEthereumTx{}
+	_ sdk.Msg    = &MsgEthereumTx{}
+	_ sdk.Tx     = &MsgEthereumTx{}
+	_ ante.GasTx = &MsgEthereumTx{}
 )
 
 // message type and route constants
@@ -87,6 +88,33 @@ func newMsgEthereumTx(
 	return &MsgEthereumTx{Data: txData}
 }
 
+// fromEthereumTx populates the message fields from the given ethereum transaction
+func (msg *MsgEthereumTx) fromEthereumTx(tx *ethtypes.Transaction) {
+	to := ""
+	if tx.To() != nil {
+		to = tx.To().Hex()
+	}
+
+	al := tx.AccessList()
+	v, r, s := tx.RawSignatureValues()
+
+	msg.Data = &TxData{
+		ChainID:  tx.ChainId().Bytes(),
+		Nonce:    tx.Nonce(),
+		Input:    tx.Data(),
+		GasLimit: tx.Gas(),
+		To:       to,
+		Amount:   tx.Value().Bytes(),
+		GasPrice: tx.GasPrice().Bytes(),
+		Accesses: NewAccessList(&al),
+		V:        v.Bytes(),
+		R:        r.Bytes(),
+		S:        s.Bytes(),
+	}
+
+	msg.Size_ = float64(tx.Size())
+}
+
 // Route returns the route value of an MsgEthereumTx.
 func (msg MsgEthereumTx) Route() string { return RouterKey }
 
@@ -98,13 +126,13 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 func (msg MsgEthereumTx) ValidateBasic() error {
 	gasPrice := new(big.Int).SetBytes(msg.Data.GasPrice)
 	if gasPrice.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidValue, "gas price cannot be negative %s", gasPrice)
+		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
 
 	// Amount can be 0
 	amount := new(big.Int).SetBytes(msg.Data.Amount)
 	if amount.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidValue, "amount cannot be negative %s", amount)
+		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
 
 	if msg.Data.To != "" {
@@ -141,10 +169,12 @@ func (msg *MsgEthereumTx) GetMsgs() []sdk.Msg {
 // GetSigners returns the expected signers for an Ethereum transaction message.
 // For such a message, there should exist only a single 'signer'.
 //
-// NOTE: This method panics if 'VerifySig' hasn't been called first.
+// NOTE: This method panics if 'Sign' hasn't been called first.
 func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
-	if msg.From == "" {
-		panic("must use 'VerifySig' with a chain ID to get the signer")
+	v, r, s := msg.RawSignatureValues()
+
+	if msg.From == "" || v == nil || r == nil || s == nil {
+		panic("must use 'Sign' with a chain ID to get the signer")
 	}
 
 	signer := sdk.AccAddress(ethcmn.HexToAddress(msg.From).Bytes())
@@ -186,22 +216,19 @@ func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
 
 // EncodeRLP implements the rlp.Encoder interface.
 func (msg *MsgEthereumTx) EncodeRLP(w io.Writer) error {
-	return rlp.Encode(w, &msg.Data)
+	tx := msg.AsTransaction()
+	return tx.EncodeRLP(w)
 }
 
 // DecodeRLP implements the rlp.Decoder interface.
-func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
-	_, size, err := s.Kind()
-	if err != nil {
-		// return error if stream is too large
+func (msg *MsgEthereumTx) DecodeRLP(stream *rlp.Stream) error {
+	tx := &ethtypes.Transaction{}
+	if err := tx.DecodeRLP(stream); err != nil {
 		return err
 	}
 
-	if err := s.Decode(&msg.Data); err != nil {
-		return err
-	}
+	msg.fromEthereumTx(tx)
 
-	msg.Size_ = float64(ethcmn.StorageSize(rlp.ListSize(size)))
 	return nil
 }
 
@@ -212,44 +239,26 @@ func (msg *MsgEthereumTx) DecodeRLP(s *rlp.Stream) error {
 // fields of the Transaction's Signature.
 // The function will fail if the sender address is not defined for the msg or if
 // the sender is not registered on the keyring
-func (msg *MsgEthereumTx) Sign(chainID *big.Int, signer keyring.Signer) error {
+func (msg *MsgEthereumTx) Sign(ethSigner ethtypes.Signer, keyringSigner keyring.Signer) error {
 	from := msg.GetFrom()
-	if from == nil {
+	if from.Empty() {
 		return fmt.Errorf("sender address not defined for message")
 	}
 
-	txHash := msg.RLPSignBytes(chainID)
+	tx := msg.AsTransaction()
+	txHash := ethSigner.Hash(tx)
 
-	sig, _, err := signer.SignByAddress(from, txHash[:])
+	sig, _, err := keyringSigner.SignByAddress(from, txHash.Bytes())
 	if err != nil {
 		return err
 	}
 
-	if len(sig) != crypto.SignatureLength {
-		return fmt.Errorf(
-			"wrong size for signature: got %d, want %d",
-			len(sig),
-			crypto.SignatureLength,
-		)
+	tx, err = tx.WithSignature(ethSigner, sig)
+	if err != nil {
+		return err
 	}
 
-	r := new(big.Int).SetBytes(sig[:32])
-	s := new(big.Int).SetBytes(sig[32:64])
-
-	var v *big.Int
-
-	if chainID.Sign() == 0 {
-		v = new(big.Int).SetBytes([]byte{sig[64] + 27})
-	} else {
-		v = big.NewInt(int64(sig[64] + 35))
-		chainIDMul := new(big.Int).Mul(chainID, big.NewInt(2))
-
-		v.Add(v, chainIDMul)
-	}
-
-	msg.Data.V = v.Bytes()
-	msg.Data.R = r.Bytes()
-	msg.Data.S = s.Bytes()
+	msg.fromEthereumTx(tx)
 	return nil
 }
 
@@ -335,7 +344,7 @@ func (msg MsgEthereumTx) AsMessage() (core.Message, error) {
 
 // AsEthereumData returns an AccessListTx transaction data from the proto-formatted
 // TxData defined on the Cosmos EVM.
-func (data TxData) AsEthereumData() ethtypes.TxData {
+func (data *TxData) AsEthereumData() ethtypes.TxData {
 	var to *ethcmn.Address
 	if data.To != "" {
 		toAddr := ethcmn.HexToAddress(data.To)

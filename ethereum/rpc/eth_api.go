@@ -380,8 +380,12 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 		return common.Hash{}, err
 	}
 
+	// creates a new EIP2929 signer
+	// TODO: support legacy txs
+	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+
 	// Sign transaction
-	if err := tx.Sign(e.chainIDEpoch, e.clientCtx.Keyring); err != nil {
+	if err := tx.Sign(signer, e.clientCtx.Keyring); err != nil {
 		e.logger.Debugln("failed to sign tx", "error", err)
 		return common.Hash{}, err
 	}
@@ -678,12 +682,14 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTran
 func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHashAndIndex", "hash", hash.Hex(), "index", idx)
 
-	resp, err := e.queryClient.TxReceiptsByBlockHash(e.ctx, &evmtypes.QueryTxReceiptsByBlockHashRequest{
-		Hash: hash.Hex(),
-	})
+	header, err := e.backend.HeaderByHash(hash)
 	if err != nil {
-		err = errors.Wrap(err, "failed to query tx receipts by block hash")
-		return nil, err
+		return nil, errors.Wrapf(err, "failed retrieve block from hash")
+	}
+
+	resp, err := e.queryClient.TxReceiptsByBlockHeight(rpctypes.ContextWithHeight(header.Number.Int64()), &evmtypes.QueryTxReceiptsByBlockHeightRequest{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query tx receipts by block height")
 	}
 
 	return e.getReceiptByIndex(resp.Receipts, hash, idx)
