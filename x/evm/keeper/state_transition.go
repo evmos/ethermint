@@ -154,21 +154,8 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionRe
 
 	// ensure gas is consistent during CheckTx
 	if k.ctx.IsCheckTx() {
-		cfg, _ := k.GetChainConfig(k.ctx)
-		ethCfg := cfg.EthereumConfig(k.eip155ChainID)
-
-		height := big.NewInt(k.ctx.BlockHeight())
-		homestead := ethCfg.IsHomestead(height)
-		istanbul := ethCfg.IsIstanbul(height)
-
-		intrinsicGas, err := core.IntrinsicGas(msg.Data(), msg.AccessList(), contractCreation, homestead, istanbul)
-		if err != nil {
-			// should have already been checked on Ante Handler
+		if err := k.checkGasConsumption(msg, gasConsumed, contractCreation); err != nil {
 			return nil, err
-		}
-
-		if intrinsicGas != gasConsumed {
-			return nil, fmt.Errorf("inconsistent gas. Expected gas consumption to be %d (intrinsic gas only), got %d", intrinsicGas, gasConsumed)
 		}
 	}
 
@@ -208,7 +195,29 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionRe
 	}, nil
 }
 
-// refundGas transfer the leftover gas to the sender of the message, caped to half of the total gas
+// checkGasConsumption verifies that the amount of gas consumed so far matches the intrinsic gas value.
+func (k *Keeper) checkGasConsumption(msg core.Message, gasConsumed uint64, isContractCreation bool) error {
+	cfg, _ := k.GetChainConfig(k.ctx)
+	ethCfg := cfg.EthereumConfig(k.eip155ChainID)
+
+	height := big.NewInt(k.ctx.BlockHeight())
+	homestead := ethCfg.IsHomestead(height)
+	istanbul := ethCfg.IsIstanbul(height)
+
+	intrinsicGas, err := core.IntrinsicGas(msg.Data(), msg.AccessList(), isContractCreation, homestead, istanbul)
+	if err != nil {
+		// should have already been checked on Ante Handler
+		return err
+	}
+
+	if intrinsicGas != gasConsumed {
+		return fmt.Errorf("inconsistent gas. Expected gas consumption to be %d (intrinsic gas only), got %d", intrinsicGas, gasConsumed)
+	}
+
+	return nil
+}
+
+// refundGas transfers the leftover gas to the sender of the message, caped to half of the total gas
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas inconsumed during in the
 // AnteHandler.
@@ -227,13 +236,21 @@ func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, left
 	// Return EVM tokens for remaining gas, exchanged at the original rate.
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(leftoverGas), msg.GasPrice())
 
-	params := k.GetParams(k.ctx)
+	switch remaining.Sign() {
+	case -1:
+		// negative refund errors
+		return 0, 0, fmt.Errorf("refunded amount value cannot be negative %d", remaining.Int64())
+	case 1:
+		// positive amount refund
+		params := k.GetParams(k.ctx)
+		refundedCoins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(remaining))}
 
-	refundedCoins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(remaining))}
-
-	// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
-	if err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins); err != nil {
-		return 0, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
+		// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
+		if err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins); err != nil {
+			return 0, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
+		}
+	default:
+		// no refund, consume gas and update the tx gas meter
 	}
 
 	// set the gas consumed into the context with the new gas meter. This gas meter will have the
