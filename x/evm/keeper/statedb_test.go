@@ -305,3 +305,46 @@ func (suite *KeeperTestSuite) TestSetCode() {
 		})
 	}
 }
+
+func (suite *KeeperTestSuite) TestRefund() {
+	testCases := []struct {
+		name      string
+		malleate  func()
+		expRefund uint64
+		expPanic  bool
+	}{
+		{
+			"success - add and subtract refund",
+			func() {
+				suite.app.EvmKeeper.AddRefund(11)
+			},
+			1,
+			false,
+		},
+		{
+			"fail - subtract amount > current refund",
+			func() {
+			},
+			0,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+
+			tc.malleate()
+
+			if tc.expPanic {
+				suite.Require().Panics(func() { suite.app.EvmKeeper.SubRefund(10) })
+			} else {
+				suite.app.EvmKeeper.SubRefund(10)
+				suite.Require().Equal(tc.expRefund, suite.app.EvmKeeper.GetRefund())
+			}
+
+			// clear and reset refund from store
+			suite.app.EvmKeeper.ResetRefundTransient(suite.ctx)
+			suite.Require().Zero(suite.app.EvmKeeper.GetRefund())
+		})
+	}
+}
