@@ -19,6 +19,7 @@ import (
 // and resets the Bloom filter and the transaction count to 0.
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
+	k.WithContext(ctx)
 
 	if req.Header.Height < 1 {
 		return
@@ -27,12 +28,12 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	// Gas costs are handled within msg handler so costs should be ignored
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	// TODO: why do we have so many hash -> height mappings
-	k.SetBlockHash(ctx, req.Hash, req.Header.Height)
-	k.SetBlockHeightToHash(ctx, common.BytesToHash(req.Hash), req.Header.Height)
+	k.headerHash = common.BytesToHash(req.Hash)
 
-	// special setter for csdb
-	k.SetHeightHash(ctx, uint64(req.Header.Height), common.BytesToHash(req.Hash))
+	// set height -> hash
+
+	// TODO: prune
+	k.SetHeaderHash(ctx, req.Header.Height, k.headerHash)
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while

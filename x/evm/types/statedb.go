@@ -25,11 +25,6 @@ var (
 	zeroBalance = sdk.ZeroInt().BigInt()
 )
 
-type revision struct {
-	id           int
-	journalIndex int
-}
-
 // CommitStateDB implements the Geth state.StateDB interface. Instead of using
 // a trie and database for querying and persistence, the Keeper uses KVStores
 // and an AccountKeeper to facilitate state transitions.
@@ -122,9 +117,8 @@ func (csdb *CommitStateDB) WithContext(ctx sdk.Context) *CommitStateDB {
 
 // SetHeightHash sets the block header hash associated with a given height.
 func (csdb *CommitStateDB) SetHeightHash(height uint64, hash ethcmn.Hash) {
-	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixBlockHeightHash)
-	key := KeyBlockHeightHash(height)
-	store.Set(key, hash.Bytes())
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixHeightToHeaderHash)
+	store.Set(sdk.Uint64ToBigEndian(height), hash.Bytes())
 }
 
 // SetParams sets the evm parameters to the param space.
@@ -326,8 +320,8 @@ func (csdb *CommitStateDB) PrepareAccessList(sender ethcmn.Address, dst *ethcmn.
 
 // GetHeightHash returns the block header hash associated with a given block height and chain epoch number.
 func (csdb *CommitStateDB) GetHeightHash(height uint64) ethcmn.Hash {
-	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixBlockHeightHash)
-	key := KeyBlockHeightHash(height)
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixHeightToHeaderHash)
+	key := sdk.Uint64ToBigEndian(height)
 	bz := store.Get(key)
 	if len(bz) == 0 {
 		return ethcmn.Hash{}

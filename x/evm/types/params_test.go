@@ -59,7 +59,3 @@ func TestParamsValidatePriv(t *testing.T) {
 	require.Error(t, validateEIPs(""))
 	require.NoError(t, validateEIPs([]int64{1884}))
 }
-
-func TestParams_String(t *testing.T) {
-	require.Equal(t, "evm_denom: aphoton\nenable_create: true\nenable_call: true\nextra_eips: []\n", DefaultParams().String())
-}
