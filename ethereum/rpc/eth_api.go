@@ -380,8 +380,12 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 		return common.Hash{}, err
 	}
 
+	// creates a new EIP2929 signer
+	// TODO: support legacy txs
+	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+
 	// Sign transaction
-	if err := tx.Sign(e.chainIDEpoch, e.clientCtx.Keyring); err != nil {
+	if err := tx.Sign(signer, e.clientCtx.Keyring); err != nil {
 		e.logger.Debugln("failed to sign tx", "error", err)
 		return common.Hash{}, err
 	}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -21,7 +22,6 @@ import (
 	"github.com/cosmos/ethermint/app"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	"github.com/cosmos/ethermint/tests"
-	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm"
 	"github.com/cosmos/ethermint/x/evm/types"
 
@@ -37,9 +37,10 @@ type EvmTestSuite struct {
 	codec   codec.BinaryMarshaler
 	chainID *big.Int
 
-	signer keyring.Signer
-	from   ethcmn.Address
-	to     sdk.AccAddress
+	signer    keyring.Signer
+	ethSigner ethtypes.Signer
+	from      ethcmn.Address
+	to        sdk.AccAddress
 }
 
 func (suite *EvmTestSuite) SetupTest() {
@@ -61,6 +62,7 @@ func (suite *EvmTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	suite.signer = tests.NewSigner(privKey)
+	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.chainID)
 	suite.from = ethcmn.BytesToAddress(privKey.PubKey().Address().Bytes())
 
 }
@@ -86,12 +88,8 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 				tx = types.NewMsgEthereumTx(suite.chainID, 0, &to, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 				tx.From = suite.from.String()
 
-				// parse context chain ID to big.Int
-				chainID, err := ethermint.ParseChainID(suite.ctx.ChainID())
-				suite.Require().NoError(err)
-
 				// sign transaction
-				err = tx.Sign(chainID, suite.signer)
+				err := tx.Sign(suite.ethSigner, suite.signer)
 				suite.Require().NoError(err)
 			},
 			true,
@@ -101,12 +99,8 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 			func() {
 				tx = types.NewMsgEthereumTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 
-				// parse context chain ID to big.Int
-				chainID, err := ethermint.ParseChainID(suite.ctx.ChainID())
-				suite.Require().NoError(err)
-
 				// sign transaction
-				err = tx.Sign(chainID, suite.signer)
+				err := tx.Sign(suite.ethSigner, suite.signer)
 				suite.Require().NoError(err)
 			},
 			false,
@@ -181,7 +175,7 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 	tx.From = suite.from.String()
 
-	err := tx.Sign(suite.chainID, suite.signer)
+	err := tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	result, err := suite.handler(suite.ctx, tx)
@@ -212,7 +206,7 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 	tx.From = suite.from.String()
 
-	err := tx.Sign(suite.chainID, suite.signer)
+	err := tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	result, err := suite.handler(suite.ctx, tx)
@@ -297,7 +291,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 	tx.From = suite.from.String()
 
-	err := tx.Sign(suite.chainID, suite.signer)
+	err := tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	result, err := suite.handler(suite.ctx, tx)
@@ -316,7 +310,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	tx = types.NewMsgEthereumTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 	tx.From = suite.from.String()
 
-	err = tx.Sign(suite.chainID, suite.signer)
+	err = tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	result, err = suite.handler(suite.ctx, tx)
@@ -329,7 +323,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	bytecode = common.FromHex("0x893d20e8")
 	tx = types.NewMsgEthereumTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 	tx.From = suite.from.String()
-	err = tx.Sign(suite.chainID, suite.signer)
+	err = tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	result, err = suite.handler(suite.ctx, tx)
@@ -351,7 +345,7 @@ func (suite *EvmTestSuite) TestSendTransaction() {
 	// send simple value transfer with gasLimit=21000
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, &ethcmn.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil, nil)
 	tx.From = suite.from.String()
-	err := tx.Sign(suite.chainID, suite.signer)
+	err := tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	result, err := suite.handler(suite.ctx, tx)
@@ -423,7 +417,7 @@ func (suite *EvmTestSuite) TestOutOfGasWhenDeployContract() {
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 	tx.From = suite.from.String()
 
-	err := tx.Sign(suite.chainID, suite.signer)
+	err := tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	snapshotCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper.CommitStateDB)
@@ -452,7 +446,7 @@ func (suite *EvmTestSuite) TestErrorWhenDeployContract() {
 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 	tx.From = suite.from.String()
 
-	err := tx.Sign(suite.chainID, suite.signer)
+	err := tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
 
 	snapshotCommitStateDBJson, err := json.Marshal(suite.app.EvmKeeper.CommitStateDB)

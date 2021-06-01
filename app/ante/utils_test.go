@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/stretchr/testify/suite"
@@ -37,6 +38,7 @@ type AnteTestSuite struct {
 	clientCtx   client.Context
 	txBuilder   client.TxBuilder
 	anteHandler sdk.AnteHandler
+	ethSigner   ethtypes.Signer
 }
 
 func (suite *AnteTestSuite) SetupTest() {
@@ -59,6 +61,7 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.txBuilder = suite.clientCtx.TxConfig.NewTxBuilder()
 
 	suite.anteHandler = ante.NewAnteHandler(suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper, encodingConfig.TxConfig.SignModeHandler())
+	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 }
 
 func TestAnteTestSuite(t *testing.T) {
@@ -78,7 +81,7 @@ func (suite *AnteTestSuite) CreateTestTx(
 
 	builder.SetExtensionOptions(option)
 
-	err = msg.Sign(suite.app.EvmKeeper.ChainID(), tests.NewSigner(priv))
+	err = msg.Sign(suite.ethSigner, tests.NewSigner(priv))
 	suite.Require().NoError(err)
 
 	err = builder.SetMsgs(msg)
