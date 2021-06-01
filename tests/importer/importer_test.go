@@ -185,15 +185,19 @@ func TestImportBlocks(t *testing.T) {
 	bankStoreKey := sdk.NewKVStoreKey(banktypes.StoreKey)
 	evmStoreKey := sdk.NewKVStoreKey(evmtypes.StoreKey)
 	paramsStoreKey := sdk.NewKVStoreKey(paramtypes.StoreKey)
+	evmTransientStoreKey := sdk.NewTransientStoreKey(evmtypes.TransientKey)
 	paramsTransientStoreKey := sdk.NewTransientStoreKey(paramtypes.TStoreKey)
 
 	// mount stores
 	keys := []*sdk.KVStoreKey{authStoreKey, bankStoreKey, evmStoreKey, paramsStoreKey}
+	tkeys := []*sdk.TransientStoreKey{paramsTransientStoreKey, evmTransientStoreKey}
 	for _, key := range keys {
 		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
 	}
 
-	cms.MountStoreWithDB(paramsTransientStoreKey, sdk.StoreTypeTransient, nil)
+	for _, tkey := range tkeys {
+		cms.MountStoreWithDB(tkey, sdk.StoreTypeTransient, nil)
+	}
 
 	paramsKeeper := paramkeeper.NewKeeper(cdc, amino, paramsStoreKey, paramsTransientStoreKey)
 
@@ -205,7 +209,7 @@ func TestImportBlocks(t *testing.T) {
 	// create keepers
 	ak := authkeeper.NewAccountKeeper(cdc, authStoreKey, authSubspace, types.ProtoAccount, nil)
 	bk := bankkeeper.NewBaseKeeper(cdc, bankStoreKey, ak, bankSubspace, nil)
-	evmKeeper := evmkeeper.NewKeeper(cdc, evmStoreKey, evmSubspace, ak, bk)
+	evmKeeper := evmkeeper.NewKeeper(cdc, evmStoreKey, evmTransientStoreKey, evmSubspace, ak, bk)
 
 	cms.SetPruning(sdkstore.PruneNothing)
 

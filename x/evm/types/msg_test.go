@@ -111,7 +111,6 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_RLPSignBytes() {
 func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 	msg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
 
-	// TODO: support other legacy signers
 	testCases := []struct {
 		msg        string
 		ethSigner  ethtypes.Signer
@@ -119,10 +118,29 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 		expectPass bool
 	}{
 		{
-			"pass",
+			"pass - EIP2930 signer",
 			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = suite.from.Hex() },
 			true,
+		},
+		// TODO: support legacy txs
+		{
+			"not supported - EIP155 signer",
+			ethtypes.NewEIP155Signer(suite.chainID),
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
+		{
+			"not supported - Homestead signer",
+			ethtypes.HomesteadSigner{},
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
+		{
+			"not supported - Frontier signer",
+			ethtypes.FrontierSigner{},
+			func() { msg.From = suite.from.Hex() },
+			false,
 		},
 		{
 			"no from address ",
