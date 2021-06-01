@@ -9,7 +9,6 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -327,7 +326,8 @@ func (k *Keeper) GetRefund() uint64 {
 // State
 // ----------------------------------------------------------------------------
 
-// GetCommittedState calls CommitStateDB.GetCommittedState using the passed in context
+// GetCommittedState returns the value set in store for the given key hash. If the key is not registered
+// this function returns the empty hash.
 func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
 
@@ -340,13 +340,14 @@ func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common
 	return common.BytesToHash(value)
 }
 
-// GetState calls CommitStateDB.GetState using the passed in context
+// GetState returns the commited state for the given key hash, as all changes are commited directly
+// to the KVStore.
 func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
-	// All state is committed directly
 	return k.GetCommittedState(addr, hash)
 }
 
-// SetState calls CommitStateDB.SetState using the passed in context
+// SetState sets the given hashes (key, value) to the KVStore. If the value hash is empty, this
+// function deletes the key from the store.
 func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
 	key = types.KeyAddressStorage(addr, key)
@@ -436,6 +437,8 @@ func (k *Keeper) Exist(addr common.Address) bool {
 // 	- nonce is 0
 // 	- balance amount for evm denom is 0
 // 	- account code hash is empty
+//
+// Non-ethereum accounts are considered not empty
 func (k *Keeper) Empty(addr common.Address) bool {
 	nonce := uint64(0)
 	codeHash := types.EmptyCodeHash
@@ -447,7 +450,6 @@ func (k *Keeper) Empty(addr common.Address) bool {
 		nonce = account.GetSequence()
 		ethAccount, isEthAccount := account.(*ethermint.EthAccount)
 		if !isEthAccount {
-			// NOTE: non-ethereum accounts are considered not empty
 			return false
 		}
 
@@ -547,20 +549,31 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
-	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
+	if len(k.ctx.TxBytes()) > 0 {
+		tx := &ethtypes.Transaction{}
+		if err := tx.UnmarshalBinary(k.ctx.TxBytes()); err != nil {
+			k.Logger(k.ctx).Error(
+				"ethereum tx unmarshaling failed",
+				"error", err,
+			)
+			return
+		}
+
+		log.TxHash = tx.Hash()
+	}
 
 	log.BlockHash = k.headerHash
-	log.TxHash = txHash
 	log.TxIndex = uint(k.GetTxIndexTransient())
 
-	logs := k.GetTxLogs(txHash)
+	logs := k.GetTxLogs(log.TxHash)
+
 	log.Index = uint(len(logs))
 	logs = append(logs, log)
-	k.SetLogs(txHash, logs)
+	k.SetLogs(log.TxHash, logs)
 
 	k.Logger(k.ctx).Debug(
 		"log added",
-		"tx-hash", txHash.Hex(),
+		"tx-hash", log.TxHash.Hex(),
 		"log-index", int(log.Index),
 	)
 }
