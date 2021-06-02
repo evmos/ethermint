@@ -18,9 +18,6 @@ var (
 	// ErrInvalidChainID returns an error resulting from an invalid chain ID.
 	ErrInvalidChainID = sdkerrors.Register(RootCodespace, 3, "invalid chain ID")
 
-	// ErrVMExecution returns an error resulting from an error in EVM execution.
-	ErrVMExecution = sdkerrors.Register(RootCodespace, 4, "error while executing evm transaction")
-
 	// ErrMarshalBigInt returns an error resulting from marshaling a big.Int to a string.
 	ErrMarshalBigInt = sdkerrors.Register(RootCodespace, 5, "cannot marshal big.Int to string")
 
