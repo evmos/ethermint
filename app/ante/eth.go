@@ -417,11 +417,7 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	return next(ctx, tx, simulate)
 }
 
-// EthIncrementSenderSequenceDecorator increments the sequence of the signers. The
-// main difference with the SDK's IncrementSequenceDecorator is that the MsgEthereumTx
-// doesn't implement the SigVerifiableTx interface.
-//
-// CONTRACT: must be called after msg.VerifySig in order to cache the sender address.
+// EthIncrementSenderSequenceDecorator increments the sequence of the signers.
 type EthIncrementSenderSequenceDecorator struct {
 	ak AccountKeeper
 }
@@ -433,13 +429,28 @@ func NewEthIncrementSenderSequenceDecorator(ak AccountKeeper) EthIncrementSender
 	}
 }
 
-// AnteHandle handles incrementing the sequence of the sender.
+// AnteHandle handles incrementing the sequence of the signer (i.e sender). If the transaction is a
+// contract creation, the nonce will be incremented during the transaction execution and not within
+// this AnteHandler decorator.
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	for _, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
+		}
+
+		// NOTE: on contract creation, the nonce is incremented within the EVM Create function during tx execution
+		// and not previous to the state transition ¯\_(ツ)_/¯
+		if msgEthTx.To() == nil {
+			// contract creation, don't increment sequence on AnteHandler but on tx execution
+			// continue to the next item
+			continue
+		}
+
 		// increment sequence of all signers
 		for _, addr := range msg.GetSigners() {
 			acc := issd.ak.GetAccount(infCtx, addr)
