@@ -542,6 +542,7 @@ func (e *PublicEthAPI) doCall(
 		fromAddr = sdk.AccAddress(args.From.Bytes())
 	} else {
 		fromAddr = sdk.AccAddress(common.Address{}.Bytes())
+		args.From = &common.Address{}
 	}
 
 	_, seq, err := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, fromAddr)
@@ -551,7 +552,7 @@ func (e *PublicEthAPI) doCall(
 
 	// Create new call message
 	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
-	msg.From = fromAddr.String()
+	msg.From = args.From.String()
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
