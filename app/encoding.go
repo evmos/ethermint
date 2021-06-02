@@ -7,9 +7,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/cosmos/ethermint/codec"
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
 // MakeEncodingConfig creates an EncodingConfig for testing
@@ -49,9 +51,9 @@ func NewTxConfig(marshaler amino.ProtoCodecMarshaler) client.TxConfig {
 // TxEncoder overwrites sdk.TxEncoder to support MsgEthereumTx
 func (g txConfig) TxEncoder() sdk.TxEncoder {
 	return func(tx sdk.Tx) ([]byte, error) {
-		ethtx, ok := tx.(*evmtypes.MsgEthereumTx)
+		msg, ok := tx.(*evmtypes.MsgEthereumTx)
 		if ok {
-			return g.cdc.MarshalBinaryBare(ethtx)
+			return msg.AsTransaction().MarshalBinary()
 		}
 		return g.TxConfig.TxEncoder()(tx)
 	}
@@ -60,11 +62,13 @@ func (g txConfig) TxEncoder() sdk.TxEncoder {
 // TxDecoder overwrites sdk.TxDecoder to support MsgEthereumTx
 func (g txConfig) TxDecoder() sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, error) {
-		var ethtx evmtypes.MsgEthereumTx
+		tx := &ethtypes.Transaction{}
 
-		err := g.cdc.UnmarshalBinaryBare(txBytes, &ethtx)
+		err := tx.UnmarshalBinary(txBytes)
 		if err == nil {
-			return &ethtx, nil
+			msg := &evmtypes.MsgEthereumTx{}
+			msg.FromEthereumTx(tx)
+			return msg, nil
 		}
 
 		return g.TxConfig.TxDecoder()(txBytes)

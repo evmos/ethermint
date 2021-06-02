@@ -89,7 +89,7 @@ func newMsgEthereumTx(
 }
 
 // fromEthereumTx populates the message fields from the given ethereum transaction
-func (msg *MsgEthereumTx) fromEthereumTx(tx *ethtypes.Transaction) {
+func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
 	to := ""
 	if tx.To() != nil {
 		to = tx.To().Hex()
@@ -227,7 +227,7 @@ func (msg *MsgEthereumTx) DecodeRLP(stream *rlp.Stream) error {
 		return err
 	}
 
-	msg.fromEthereumTx(tx)
+	msg.FromEthereumTx(tx)
 
 	return nil
 }
@@ -258,7 +258,7 @@ func (msg *MsgEthereumTx) Sign(ethSigner ethtypes.Signer, keyringSigner keyring.
 		return err
 	}
 
-	msg.fromEthereumTx(tx)
+	msg.FromEthereumTx(tx)
 	return nil
 }
 
