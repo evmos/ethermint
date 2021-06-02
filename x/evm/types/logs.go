@@ -1,11 +1,8 @@
 package types
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-
-	log "github.com/xlab/suplog"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -36,7 +33,7 @@ func NewTransactionLogsFromEth(hash ethcmn.Hash, ethlogs []*ethtypes.Log) Transa
 
 // Validate performs a basic validation of a GenesisAccount fields.
 func (tx TransactionLogs) Validate() error {
-	if bytes.Equal(ethcmn.Hex2Bytes(tx.Hash), ethcmn.Hash{}.Bytes()) {
+	if ethermint.IsEmptyHash(tx.Hash) {
 		return fmt.Errorf("hash cannot be the empty %s", tx.Hash)
 	}
 
@@ -78,9 +75,9 @@ func (log *Log) Validate() error {
 
 // ToEthereum returns the Ethereum type Log from a Ethermint-proto compatible Log.
 func (log *Log) ToEthereum() *ethtypes.Log {
-	topics := make([]ethcmn.Hash, len(log.Topics))
+	var topics []ethcmn.Hash // nolint: prealloc
 	for i := range log.Topics {
-		topics[i] = ethcmn.HexToHash(log.Topics[i])
+		topics = append(topics, ethcmn.HexToHash(log.Topics[i]))
 	}
 
 	return &ethtypes.Log{
@@ -98,24 +95,18 @@ func (log *Log) ToEthereum() *ethtypes.Log {
 
 // LogsToEthereum casts the Ethermint Logs to a slice of Ethereum Logs.
 func LogsToEthereum(logs []*Log) []*ethtypes.Log {
-	ethLogs := make([]*ethtypes.Log, len(logs))
+	var ethLogs []*ethtypes.Log // nolint: prealloc
 	for i := range logs {
-		err := logs[i].Validate()
-		if err != nil {
-			log.WithError(err).Errorln("failed log validation", logs[i].String())
-			continue
-		}
-
-		ethLogs[i] = logs[i].ToEthereum()
+		ethLogs = append(ethLogs, logs[i].ToEthereum())
 	}
 	return ethLogs
 }
 
 // NewLogFromEth creates a new Log instance from a Ethereum type Log.
 func NewLogFromEth(log *ethtypes.Log) *Log {
-	topics := make([]string, len(log.Topics))
-	for i := range log.Topics {
-		topics[i] = log.Topics[i].String()
+	var topics []string // nolint: prealloc
+	for _, topic := range log.Topics {
+		topics = append(topics, topic.String())
 	}
 
 	return &Log{

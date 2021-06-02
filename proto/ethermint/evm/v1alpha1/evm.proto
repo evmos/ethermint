@@ -102,21 +102,27 @@ message ChainConfig {
     (gogoproto.moretags)   = "yaml:\"muir_glacier_block\"",
     (gogoproto.nullable)   = false
   ];
+// Berlin switch block (< 0 = no fork, 0 = already on berlin)
+    string berlin_block = 13 [
+      (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+      (gogoproto.moretags)   = "yaml:\"berlin_block\"",
+      (gogoproto.nullable)   = false
+    ];
   // YOLO v3: Gas repricings
-  string yolo_v3_block = 13 [
+  string yolo_v3_block = 14 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags)   = "yaml:\"yolo_v3_block\"",
     (gogoproto.nullable)   = false
   ];
   // EWASM switch block (< 0 no fork, 0 = already activated)
-  string ewasm_block = 14 [
+  string ewasm_block = 15 [
     (gogoproto.customname) = "EWASMBlock",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags)   = "yaml:\"ewasm_block\"",
     (gogoproto.nullable)   = false
   ];
   // Catalyst switch block (< 0 = no fork, 0 = already on catalyst)
-  string catalyst_block = 15 [
+  string catalyst_block = 16 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags)   = "yaml:\"catalyst_block\"",
     (gogoproto.nullable)   = false

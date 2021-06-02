@@ -20,9 +20,9 @@ func InitGenesis(
 	accountKeeper types.AccountKeeper, // nolint: interfacer
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
-
-	k.WithChainID(ctx)
 	k.WithContext(ctx)
+	k.WithChainID(ctx)
+
 	k.SetParams(ctx, data.Params)
 
 	for _, account := range data.Accounts {
@@ -63,8 +63,6 @@ func InitGenesis(
 // ExportGenesis exports genesis state of the EVM module
 func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
 	k.WithContext(ctx)
-
-	k.WithContext(ctx) // TODO: remove
 
 	// nolint: prealloc
 	var ethGenAccounts []types.GenesisAccount

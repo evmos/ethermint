@@ -19,6 +19,7 @@ import (
 // and resets the Bloom filter and the transaction count to 0.
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
+	k.WithContext(ctx)
 
 	if req.Header.Height < 1 {
 		return
@@ -26,15 +27,14 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 	k.WithContext(ctx)
 	// Gas costs are handled within msg handler so costs should be ignored
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	blockHash := common.BytesToHash(req.Hash)
-	k.SetBlockHash(ctx, req.Header.Height, blockHash)
+	k.headerHash = common.BytesToHash(req.Hash)
 
-	// reset counters that are used on CommitStateDB.Prepare
-	k.cache.bloom = big.NewInt(0)
-	k.cache.txIndex = 0
-	k.cache.blockHash = blockHash
+	// set height -> hash
+
+	// TODO: prune
+	k.SetHeaderHash(infCtx, req.Header.Height, k.headerHash)
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while
@@ -45,11 +45,19 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Valid
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
 
 	// Gas costs are handled within msg handler so costs should be ignored
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	k.WithContext(infCtx)
 
-	// set the block bloom filter bytes to store
-	bloom := ethtypes.BytesToBloom(k.cache.bloom.Bytes())
-	k.SetBlockBloom(ctx, req.Height, bloom)
+	// get the block bloom bytes from the transient store and set it to the persistent storage
+	bloomBig, found := k.GetBlockBloomTransient()
+	if !found {
+		bloomBig = big.NewInt(0)
+	}
+
+	bloom := ethtypes.BytesToBloom(bloomBig.Bytes())
+	k.SetBlockBloom(infCtx, req.Height, bloom)
+
+	k.WithContext(ctx)
 
 	return []abci.ValidatorUpdate{}
 }

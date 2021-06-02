@@ -108,15 +108,22 @@ func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber
 // EthHeaderFromTendermint is an util function that returns an Ethereum Header
 // from a tendermint Header.
 func EthHeaderFromTendermint(header tmtypes.Header) *ethtypes.Header {
+	txHash := ethtypes.EmptyRootHash
+	if len(header.DataHash) == 0 {
+		txHash = common.BytesToHash(header.DataHash)
+	}
 	return &ethtypes.Header{
 		ParentHash:  common.BytesToHash(header.LastBlockID.Hash.Bytes()),
-		UncleHash:   common.Hash{},
+		UncleHash:   ethtypes.EmptyUncleHash,
 		Coinbase:    common.Address{},
 		Root:        common.BytesToHash(header.AppHash),
-		TxHash:      common.BytesToHash(header.DataHash),
-		ReceiptHash: common.Hash{},
-		Difficulty:  nil,
+		TxHash:      txHash,
+		ReceiptHash: ethtypes.EmptyRootHash,
+		Bloom:       ethtypes.Bloom{},
+		Difficulty:  big.NewInt(0),
 		Number:      big.NewInt(header.Height),
+		GasLimit:    0,
+		GasUsed:     0,
 		Time:        uint64(header.Time.Unix()),
 		Extra:       nil,
 		MixDigest:   common.Hash{},
@@ -176,23 +183,24 @@ func FormatBlock(
 		"number":           hexutil.Uint64(header.Height),
 		"hash":             hexutil.Bytes(header.Hash()),
 		"parentHash":       hexutil.Bytes(header.LastBlockID.Hash),
-		"nonce":            hexutil.Uint64(0), // PoW specific
-		"sha3Uncles":       common.Hash{},     // No uncles in Tendermint
+		"nonce":            hexutil.Uint64(0),       // PoW specific
+		"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
 		"logsBloom":        bloom,
-		"transactionsRoot": hexutil.Bytes(header.DataHash),
 		"stateRoot":        hexutil.Bytes(header.AppHash),
 		"miner":            common.Address{},
 		"mixHash":          common.Hash{},
-		"difficulty":       0,
-		"totalDifficulty":  0,
+		"difficulty":       (*hexutil.Big)(big.NewInt(0)),
 		"extraData":        hexutil.Uint64(0),
 		"size":             hexutil.Uint64(size),
 		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
 		"gasUsed":          (*hexutil.Big)(gasUsed),
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
-		"transactions":     transactions.([]common.Hash),
-		"uncles":           []string{},
-		"receiptsRoot":     common.Hash{},
+		"transactionsRoot": hexutil.Bytes(header.DataHash),
+		"receiptsRoot":     ethtypes.EmptyRootHash,
+
+		"uncles":          []common.Hash{},
+		"transactions":    transactions.([]common.Hash),
+		"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
 	}
 }
 
@@ -306,6 +314,10 @@ func NewTransactionFromData(
 	if len(txData.To) > 0 {
 		recipient := common.HexToAddress(txData.To)
 		to = &recipient
+	}
+
+	if txHash == (common.Hash{}) {
+		txHash = ethtypes.EmptyRootHash
 	}
 
 	rpcTx := &RPCTransaction{

@@ -29,6 +29,9 @@ type Keeper struct {
 	// - storing block hash -> block height map. Needed for the Web3 API. TODO: remove
 	storeKey sdk.StoreKey
 
+	// key to access the transient store, which is reset on every block during Commit
+	transientKey sdk.StoreKey
+
 	paramSpace    paramtypes.Subspace
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
@@ -36,13 +39,21 @@ type Keeper struct {
 	ctx sdk.Context
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
+	debug         bool
 
-	cache csdb
+	// Per-transaction access list
+	// See EIP-2930 for more info: https://eips.ethereum.org/EIPS/eip-2930
+	// TODO: (@fedekunze) for how long should we persist the entries in the access list?
+	// same block (i.e Transient Store)? 2 or more (KVStore with module Parameter which resets the state after that window)?
+	accessList *types.AccessListMappings
+
+	// hash header for the current height. Reset during abci.RequestBeginBlock
+	headerHash common.Hash
 }
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	cdc codec.BinaryMarshaler, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper,
 ) *Keeper {
 	// set KeyTable if it has not already been set
@@ -57,12 +68,9 @@ func NewKeeper(
 		accountKeeper: ak,
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
-		cache: csdb{
-			accessList: types.NewAccessListMappings(),
-			txIndex:    0,
-			bloom:      big.NewInt(0),
-			logs:       map[common.Address][]*ethtypes.Log{},
-		},
+		transientKey:  transientKey,
+		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
+		accessList:    types.NewAccessListMappings(),
 	}
 }
 
@@ -78,14 +86,15 @@ func (k *Keeper) WithContext(ctx sdk.Context) {
 
 // WithChainID sets the chain id to the local variable in the keeper
 func (k *Keeper) WithChainID(ctx sdk.Context) {
-	if k.eip155ChainID != nil {
-		panic("chain id already set")
-	}
-
 	chainID, err := ethermint.ParseChainID(ctx.ChainID())
 	if err != nil {
 		panic(err)
 	}
+
+	if k.eip155ChainID != nil && k.eip155ChainID.Cmp(chainID) != 0 {
+		panic("chain id already set")
+	}
+
 	k.eip155ChainID = chainID
 }
 
@@ -95,7 +104,7 @@ func (k Keeper) ChainID() *big.Int {
 }
 
 // ----------------------------------------------------------------------------
-// Block bloom bits mapping functions
+// Block Bloom
 // Required by Web3 API.
 // ----------------------------------------------------------------------------
 
@@ -118,10 +127,34 @@ func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloo
 	store.Set(key, bloom.Bytes())
 }
 
-// GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetBlockHash(ctx sdk.Context, height int64) common.Hash {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.KeyBlockHeightHash(uint64(height)))
+// GetBlockBloomTransient returns bloom bytes for the current block height
+func (k Keeper) GetBlockBloomTransient() (*big.Int, bool) {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientBloom)
+	if len(bz) == 0 {
+		return nil, false
+	}
+
+	return new(big.Int).SetBytes(bz), true
+}
+
+// SetBlockBloomTransient sets the given bloom bytes to the transient store. This value is reset on
+// every block.
+func (k Keeper) SetBlockBloomTransient(bloom *big.Int) {
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientBloom, bloom.Bytes())
+}
+
+// ----------------------------------------------------------------------------
+// Block
+// ----------------------------------------------------------------------------
+
+// GetHeaderHash gets the header hash from a given height
+func (k Keeper) GetHeaderHash(ctx sdk.Context, height int64) common.Hash {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeightToHeaderHash)
+	key := sdk.Uint64ToBigEndian(uint64(height))
+
+	bz := store.Get(key)
 	if len(bz) == 0 {
 		return common.Hash{}
 	}
@@ -129,22 +162,11 @@ func (k Keeper) GetBlockHash(ctx sdk.Context, height int64) common.Hash {
 	return common.BytesToHash(bz)
 }
 
-// SetBlockHash sets the mapping from block consensus hash to block height
-func (k Keeper) SetBlockHash(ctx sdk.Context, height int64, hash common.Hash) {
-	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyBlockHeightHash(uint64(height)), hash.Bytes())
-}
-
-// GetBlockHash gets block height from block consensus hash
-func (k Keeper) GetBlockHeightByHash(ctx sdk.Context, hash common.Hash) (int64, bool) {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.KeyBlockHash(hash))
-	if len(bz) == 0 {
-		return 0, false
-	}
-
-	height := sdk.BigEndianToUint64(bz)
-	return int64(height), true
+// SetBlockHash sets the mapping from heigh -> header hash
+func (k Keeper) SetHeaderHash(ctx sdk.Context, height int64, hash common.Hash) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixHeightToHeaderHash)
+	key := sdk.Uint64ToBigEndian(uint64(height))
+	store.Set(key, hash.Bytes())
 }
 
 // SetTxReceiptToHash sets the mapping from tx hash to tx receipt
@@ -155,6 +177,45 @@ func (k Keeper) SetTxReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *t
 
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.KeyHashTxReceipt(hash), data)
+}
+
+// GetHeightHash returns the block header hash associated with a given block height and chain epoch number.
+func (k Keeper) GetHeightHash(ctx sdk.Context, height uint64) common.Hash {
+	return k.CommitStateDB.WithContext(ctx).GetHeightHash(height)
+}
+
+// SetHeightHash sets the block header hash associated with a given height.
+func (k Keeper) SetHeightHash(ctx sdk.Context, height uint64, hash common.Hash) {
+	k.CommitStateDB.WithContext(ctx).SetHeightHash(height, hash)
+}
+
+// ----------------------------------------------------------------------------
+// Tx
+// ----------------------------------------------------------------------------
+
+// GetTxIndexTransient returns EVM transaction index on the current block.
+func (k Keeper) GetTxIndexTransient() uint64 {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientBloom)
+	if len(bz) == 0 {
+		return 0
+	}
+
+	return sdk.BigEndianToUint64(bz)
+}
+
+// IncreaseTxIndexTransient fetches the current EVM tx index from the transient store, increases its
+// value by one and then sets the new index back to the transient store.
+func (k Keeper) IncreaseTxIndexTransient() {
+	txIndex := k.GetTxIndexTransient()
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientBloom, sdk.Uint64ToBigEndian(txIndex+1))
+}
+
+// ResetRefundTransient resets the refund gas value.
+func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
+	store := ctx.TransientStore(k.transientKey)
+	store.Delete(types.KeyPrefixTransientRefund)
 }
 
 // GetTxReceiptFromHash gets tx receipt by tx hash.
@@ -190,8 +251,8 @@ func (k Keeper) AddTxHashToBlock(ctx sdk.Context, blockHeight int64, txHash comm
 }
 
 // GetTxsFromBlock returns list of tx hash in the block by height.
-func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight int64) []common.Hash {
-	key := types.KeyBlockHeightTxs(uint64(blockHeight))
+func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight uint64) []common.Hash {
+	key := types.KeyBlockHeightTxs(blockHeight)
 
 	store := ctx.KVStore(k.storeKey)
 	data := store.Get(key)
@@ -211,7 +272,7 @@ func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight int64) []common.Has
 }
 
 // GetTxReceiptsByBlockHeight gets tx receipts by block height.
-func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight int64) []*types.TxReceipt {
+func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) []*types.TxReceipt {
 	txs := k.GetTxsFromBlock(ctx, blockHeight)
 	if len(txs) == 0 {
 		return nil
@@ -236,15 +297,9 @@ func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight int64) [
 	return receipts
 }
 
-// GetTxReceiptsByBlockHash gets tx receipts by block hash.
-func (k Keeper) GetTxReceiptsByBlockHash(ctx sdk.Context, hash common.Hash) []*types.TxReceipt {
-	blockHeight, ok := k.GetBlockHeightByHash(ctx, hash)
-	if !ok {
-		return nil
-	}
-
-	return k.GetTxReceiptsByBlockHeight(ctx, blockHeight)
-}
+// ----------------------------------------------------------------------------
+// Log
+// ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 // Log
@@ -325,7 +380,7 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 
 func (k Keeper) DeleteState(addr common.Address, key common.Hash) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
-	key = types.GetStorageByAddressKey(addr, key)
+	key = types.KeyAddressStorage(addr, key)
 	store.Delete(key.Bytes())
 }
 

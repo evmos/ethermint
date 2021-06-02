@@ -169,6 +169,8 @@ var _ simapp.App = (*EthermintApp)(nil)
 // Tendermint consensus.
 type EthermintApp struct {
 	*baseapp.BaseApp
+
+	// encoding
 	cdc               *codec.LegacyAmino
 	appCodec          codec.Marshaler
 	interfaceRegistry types.InterfaceRegistry
@@ -210,7 +212,7 @@ type EthermintApp struct {
 	sm *module.SimulationManager
 }
 
-// NewEthermintApp returns a reference to a new initialized Injective application.
+// NewEthermintApp returns a reference to a new initialized Ethermint application.
 func NewEthermintApp(
 	logger log.Logger,
 	db dbm.DB,
@@ -228,7 +230,7 @@ func NewEthermintApp(
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
-	// NOTE we use custom Injective transaction decoder that supports the sdk.Tx interface instead of sdk.StdTx
+	// NOTE we use custom transaction decoder that supports the sdk.Tx interface instead of sdk.StdTx
 	bApp := baseapp.NewBaseApp(
 		appName,
 		logger,
@@ -250,7 +252,8 @@ func NewEthermintApp(
 		evmtypes.StoreKey,
 	)
 
-	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
+	// Add the EVM transient store key
+	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey, evmtypes.TransientKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	app := &EthermintApp{
@@ -308,7 +311,7 @@ func NewEthermintApp(
 
 	// Create Ethermint keepers
 	app.EvmKeeper = evmkeeper.NewKeeper(
-		appCodec, keys[evmtypes.StoreKey], app.GetSubspace(evmtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
+		appCodec, keys[evmtypes.StoreKey], tkeys[evmtypes.TransientKey], app.GetSubspace(evmtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
 	)
 
 	// Create IBC Keeper
@@ -380,7 +383,7 @@ func NewEthermintApp(
 		ibc.NewAppModule(app.IBCKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
-		// Injective app modules
+		// Ethermint app modules
 		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper, app.BankKeeper),
 	)
 
@@ -410,7 +413,7 @@ func NewEthermintApp(
 		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName, distrtypes.ModuleName, stakingtypes.ModuleName,
 		slashingtypes.ModuleName, govtypes.ModuleName, minttypes.ModuleName,
 		ibchost.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, ibctransfertypes.ModuleName,
-		// Injective modules
+		// Ethermint modules
 		evmtypes.ModuleName,
 
 		// NOTE: crisis module must go at the end to check for invariants on each module
@@ -454,7 +457,7 @@ func NewEthermintApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 
-	// use Injective's custom AnteHandler
+	// use Ethermint's custom AnteHandler
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
 			app.AccountKeeper, app.BankKeeper, app.EvmKeeper,

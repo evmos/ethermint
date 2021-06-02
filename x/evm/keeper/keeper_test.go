@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -42,7 +40,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 	checkTx := false
 
 	suite.app = app.Setup(checkTx)
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-3", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, ChainID: "ethermint-1", Time: time.Now().UTC()})
 	suite.app.EvmKeeper.WithContext(suite.ctx)
 
 	suite.address = ethcmn.HexToAddress(addrHex)
@@ -63,74 +61,6 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
-}
-
-func (suite *KeeperTestSuite) TestTransactionLogs() {
-	ethHash := ethcmn.BytesToHash(hash)
-	log := &ethtypes.Log{
-		Address:     suite.address,
-		Data:        []byte("log"),
-		BlockNumber: 10,
-	}
-	log2 := &ethtypes.Log{
-		Address:     suite.address,
-		Data:        []byte("log2"),
-		BlockNumber: 11,
-	}
-	expLogs := []*ethtypes.Log{log}
-
-	suite.app.EvmKeeper.SetLogs(ethHash, expLogs)
-
-	logs := suite.app.EvmKeeper.GetTxLogs(ethHash)
-	suite.Require().Equal(expLogs, logs)
-
-	expLogs = []*ethtypes.Log{log2, log}
-
-	// add another log under the zero hash
-	suite.app.EvmKeeper.AddLog(log2)
-
-	// add another log under the zero hash
-	log3 := &ethtypes.Log{
-		Address:     suite.address,
-		Data:        []byte("log3"),
-		BlockNumber: 10,
-	}
-	suite.app.EvmKeeper.AddLog(log3)
-
-	txLogs := suite.app.EvmKeeper.GetAllTxLogs(suite.ctx)
-	suite.Require().Equal(2, len(txLogs))
-
-	suite.Require().Equal(ethcmn.Hash{}.String(), txLogs[0].Hash)
-	suite.Require().Equal([]*ethtypes.Log{log2, log3}, txLogs[0].Logs)
-
-	suite.Require().Equal(ethHash.String(), txLogs[1].Hash)
-	suite.Require().Equal([]*ethtypes.Log{log}, txLogs[1].Logs)
-}
-
-func (suite *KeeperTestSuite) TestDBStorage() {
-	// Perform state transitions
-	suite.app.EvmKeeper.CreateAccount(suite.address)
-	suite.app.EvmKeeper.AddBalance(suite.address, big.NewInt(5))
-	suite.app.EvmKeeper.SetNonce(suite.address, 4)
-	suite.app.EvmKeeper.SetState(suite.address, ethcmn.HexToHash("0x2"), ethcmn.HexToHash("0x3"))
-	suite.app.EvmKeeper.SetCode(suite.address, []byte{0x1})
-
-	// Test block height mapping functionality
-	testBloom := ethtypes.BytesToBloom([]byte{0x1, 0x3})
-	suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 4, testBloom)
-
-	// Get those state transitions
-	suite.Require().Equal(suite.app.EvmKeeper.GetBalance(suite.address).Cmp(big.NewInt(5)), 0)
-	suite.Require().Equal(suite.app.EvmKeeper.GetNonce(suite.address), uint64(4))
-	suite.Require().Equal(suite.app.EvmKeeper.GetState(suite.address, ethcmn.HexToHash("0x2")), ethcmn.HexToHash("0x3"))
-	suite.Require().Equal(suite.app.EvmKeeper.GetCode(suite.address), []byte{0x1})
-
-	bloom, found := suite.app.EvmKeeper.GetBlockBloom(suite.ctx, 4)
-	suite.Require().True(found)
-	suite.Require().Equal(bloom, testBloom)
-
-	// simulate BaseApp EndBlocker commitment
-	suite.app.Commit()
 }
 
 func (suite *KeeperTestSuite) TestChainConfig() {

@@ -78,8 +78,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	}()
 
 	attrs := []sdk.Attribute{
-		sdk.NewAttribute(sdk.AttributeKeyAmount, ethMsg.Value().String()),
-		// sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
+		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
 	}
 
 	if len(msg.Data.To) > 0 {
@@ -98,12 +98,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
 		),
 	})
-
-	// update block bloom filter and tx index on the local cache if the tx is on DeliverTx mode
-	if ctx.IsCheckTx() || ctx.IsReCheckTx() {
-		k.cache.txIndex++
-		k.cache.bloom.Or(k.cache.bloom, executionResult.Bloom)
-	}
 
 	return executionResult.Response, nil
 }

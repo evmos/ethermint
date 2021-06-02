@@ -137,12 +137,6 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.
 	b := evmKeeper.GetBalance(genInvestor)
 	require.Equal(t, "200000000000000000000", b.String())
 
-	// commit the stateDB with 'false' to delete empty objects
-	//
-	// NOTE: Commit does not yet return the intra merkle root (version)
-	_, err := evmKeeper.Commit(false)
-	require.NoError(t, err)
-
 	// persist multi-store cache state
 	ms.Write()
 
@@ -185,15 +179,19 @@ func TestImportBlocks(t *testing.T) {
 	bankStoreKey := sdk.NewKVStoreKey(banktypes.StoreKey)
 	evmStoreKey := sdk.NewKVStoreKey(evmtypes.StoreKey)
 	paramsStoreKey := sdk.NewKVStoreKey(paramtypes.StoreKey)
+	evmTransientStoreKey := sdk.NewTransientStoreKey(evmtypes.TransientKey)
 	paramsTransientStoreKey := sdk.NewTransientStoreKey(paramtypes.TStoreKey)
 
 	// mount stores
 	keys := []*sdk.KVStoreKey{authStoreKey, bankStoreKey, evmStoreKey, paramsStoreKey}
+	tkeys := []*sdk.TransientStoreKey{paramsTransientStoreKey, evmTransientStoreKey}
 	for _, key := range keys {
 		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
 	}
 
-	cms.MountStoreWithDB(paramsTransientStoreKey, sdk.StoreTypeTransient, nil)
+	for _, tkey := range tkeys {
+		cms.MountStoreWithDB(tkey, sdk.StoreTypeTransient, nil)
+	}
 
 	paramsKeeper := paramkeeper.NewKeeper(cdc, amino, paramsStoreKey, paramsTransientStoreKey)
 
@@ -205,7 +203,7 @@ func TestImportBlocks(t *testing.T) {
 	// create keepers
 	ak := authkeeper.NewAccountKeeper(cdc, authStoreKey, authSubspace, types.ProtoAccount, nil)
 	bk := bankkeeper.NewBaseKeeper(cdc, bankStoreKey, ak, bankSubspace, nil)
-	evmKeeper := evmkeeper.NewKeeper(cdc, evmStoreKey, evmSubspace, ak, bk)
+	evmKeeper := evmkeeper.NewKeeper(cdc, evmStoreKey, evmTransientStoreKey, evmSubspace, ak, bk)
 
 	cms.SetPruning(sdkstore.PruneNothing)
 
@@ -264,8 +262,7 @@ func TestImportBlocks(t *testing.T) {
 			applyDAOHardFork(evmKeeper)
 		}
 
-		for i, tx := range block.Transactions() {
-			evmKeeper.Prepare(tx.Hash(), block.Hash(), i)
+		for _, tx := range block.Transactions() {
 			// evmKeeper.Set(block.Hash())
 
 			receipt, gas, err := applyTransaction(
@@ -277,10 +274,6 @@ func TestImportBlocks(t *testing.T) {
 
 		// apply mining rewards
 		accumulateRewards(chainConfig, evmKeeper, header, block.Uncles())
-
-		// commit stateDB
-		_, err := evmKeeper.Commit(chainConfig.IsEIP158(block.Number()))
-		require.NoError(t, err, "failed to commit StateDB")
 
 		// simulate BaseApp EndBlocker commitment
 		ms.Write()

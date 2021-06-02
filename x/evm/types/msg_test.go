@@ -71,7 +71,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	}{
 		{msg: "pass with recipient", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
 		{msg: "pass contract", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
+		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: false},
 		// NOTE: these can't be effectively tested because the SetBytes function from big.Int only sets
 		// the absolute value
 		{msg: "negative amount", to: &suite.to, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
@@ -113,21 +113,44 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 
 	testCases := []struct {
 		msg        string
+		ethSigner  ethtypes.Signer
 		malleate   func()
 		expectPass bool
 	}{
 		{
-			"pass",
+			"pass - EIP2930 signer",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = suite.from.Hex() },
 			true,
 		},
+		// TODO: support legacy txs
+		{
+			"not supported - EIP155 signer",
+			ethtypes.NewEIP155Signer(suite.chainID),
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
+		{
+			"not supported - Homestead signer",
+			ethtypes.HomesteadSigner{},
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
+		{
+			"not supported - Frontier signer",
+			ethtypes.FrontierSigner{},
+			func() { msg.From = suite.from.Hex() },
+			false,
+		},
 		{
 			"no from address ",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = "" },
 			false,
 		},
 		{
 			"from address ≠ signer address",
+			ethtypes.NewEIP2930Signer(suite.chainID),
 			func() { msg.From = suite.to.Hex() },
 			false,
 		},
@@ -135,7 +158,8 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 
 	for i, tc := range testCases {
 		tc.malleate()
-		err := msg.Sign(suite.chainID, suite.signer)
+
+		err := msg.Sign(tc.ethSigner, suite.signer)
 		if tc.expectPass {
 			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 

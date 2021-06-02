@@ -35,7 +35,7 @@ cat $HOME/.ethermint/config/genesis.json | jq '.app_state["mint"]["params"]["min
 "$PWD"/build/ethermintd validate-genesis
 
 # Start the node (remove the --pruning=nothing flag if historical queries are not needed) in background and log to file
-"$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe --rpc-api "web3, eth, personal, net" --keyring-backend test > ethermintd.log 2>&1 &
+"$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe --evm-rpc.address="0.0.0.0:8545" --keyring-backend test > ethermintd.log 2>&1 &
 
 # Give ethermintd node enough time to launch
 sleep 5
@@ -48,8 +48,8 @@ mv "$PWD"/tests/solidity/suites/basic/counter/*.bin "$PWD"/tests/solidity/suites
 ACCT=$(curl --fail --silent -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545 | grep -o '\0x[^"]*')
 echo "$ACCT"
 
-# Start testcases
-curl -X POST --data '{"jsonrpc":"2.0","method":"personal_unlockAccount","params":["'$ACCT'", ""],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+# Start testcases (not supported)
+# curl -X POST --data '{"jsonrpc":"2.0","method":"personal_unlockAccount","params":["'$ACCT'", ""],"id":1}' -H "Content-Type: application/json" http://localhost:8545
 
 #PRIVKEY="$("$PWD"/build/ethermintd keys export $KEY)"
 
