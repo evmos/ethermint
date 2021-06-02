@@ -564,7 +564,7 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 	log.BlockHash = k.headerHash
 	log.TxIndex = uint(k.GetTxIndexTransient())
 
-	logs := k.GetTxLogs(log.TxHash)
+	logs := k.GetLogs(log.TxHash)
 
 	log.Index = uint(len(logs))
 	logs = append(logs, log)

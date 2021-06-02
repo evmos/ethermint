@@ -183,7 +183,7 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	k.WithContext(ctx)
 
 	hash := ethcmn.HexToHash(req.Hash)
-	logs := k.GetTxLogs(hash)
+	logs := k.GetLogs(hash)
 
 	return &types.QueryTxLogsResponse{
 		Logs: types.NewTransactionLogsFromEth(hash, logs).Logs,

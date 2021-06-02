@@ -190,7 +190,7 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 	hash := []byte{1}
 	suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
 
-	logs := suite.app.EvmKeeper.GetTxLogs(ethcmn.BytesToHash(hash))
+	logs := suite.app.EvmKeeper.GetLogs(ethcmn.BytesToHash(hash))
 	suite.Require().Equal(logs, txResponse.TxLogs.Logs)
 }
 
@@ -219,7 +219,7 @@ func (suite *EvmTestSuite) TestQueryTxLogs() {
 	// get logs by tx hash
 	hash := txResponse.TxLogs.Hash
 
-	logs := suite.app.EvmKeeper.GetTxLogs(ethcmn.HexToHash(hash))
+	logs := suite.app.EvmKeeper.GetLogs(ethcmn.HexToHash(hash))
 	suite.Require().Equal(logs, txResponse.TxLogs.EthLogs())
 }
 

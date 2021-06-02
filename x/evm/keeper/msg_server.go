@@ -8,7 +8,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/ethermint/x/evm/types"
 )
@@ -20,11 +19,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	k.WithContext(ctx)
-
-	ethMsg, err := msg.AsMessage()
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
-	}
 
 	var labels []metrics.Label
 	if msg.To() == nil {
@@ -38,34 +32,18 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		}
 	}
 
-	sender := ethMsg.From()
+	sender := msg.From
+	tx := msg.AsTransaction()
 
-	executionResult, err := k.TransitionDb(ethMsg)
+	response, err := k.ApplyTransaction(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	// k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-	// 	Hash:        ethHash.Hex(),
-	// 	From:        sender.Hex(),
-	// 	Data:        msg.Data,
-	// 	Index:       uint64(st.Csdb.TxIndex()),
-	// 	BlockHeight: uint64(ctx.BlockHeight()),
-	// 	BlockHash:   blockHash.Hex(),
-	// 	Result: &types.TxResult{
-	// 		ContractAddress: executionResult.Response.ContractAddress,
-	// 		Bloom:           executionResult.Response.Bloom,
-	// 		TxLogs:          executionResult.Response.TxLogs,
-	// 		Ret:             executionResult.Response.Ret,
-	// 		Reverted:        executionResult.Response.Reverted,
-	// 		GasUsed:         executionResult.GasInfo.GasConsumed,
-	// 	},
-	// })
-
 	defer func() {
-		if ethMsg.Value().IsInt64() {
+		if tx.Value().IsInt64() {
 			telemetry.SetGauge(
-				float32(ethMsg.Value().Int64()),
+				float32(tx.Value().Int64()),
 				"tx", "msg", "ethereum_tx",
 			)
 		}
@@ -78,7 +56,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	}()
 
 	attrs := []sdk.Attribute{
-		sdk.NewAttribute(sdk.AttributeKeyAmount, ethMsg.Value().String()),
+		sdk.NewAttribute(sdk.AttributeKeyAmount, tx.Value().String()),
 		// sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(ethMsg.Hash).Hex()),
 	}
 
@@ -95,9 +73,9 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, sender),
 		),
 	})
 
-	return executionResult.Response, nil
+	return response, nil
 }

@@ -830,7 +830,7 @@ func (m *QueryBlockLogsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryBlockLogsResponse proto.InternalMessageInfo
 
-func (m *QueryBlockLogsResponse) GetTxLogs() []TransactionLogs {
+func (m *QueryBlockLogsResponse) GetLogs() []TransactionLogs {
 	if m != nil {
 		return m.TxLogs
 	}

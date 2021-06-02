@@ -494,9 +494,9 @@ func (suite *KeeperTestSuite) TestAddLog() {
 		suite.Run(tc.name, func() {
 			tc.malleate()
 
-			prev := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
+			prev := suite.app.EvmKeeper.GetLogs(tc.expLog.TxHash)
 			suite.app.EvmKeeper.AddLog(tc.log)
-			post := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
+			post := suite.app.EvmKeeper.GetLogs(tc.expLog.TxHash)
 
 			suite.Require().NotZero(len(post), tc.expLog.TxHash.Hex())
 			suite.Require().Equal(len(prev)+1, len(post))

@@ -176,17 +176,29 @@ message Log {
   bool removed = 9;
 }
 
-// TxReceipt defines the receipt type stored in KV for each EVM transaction.
-message TxReceipt {
-  option (gogoproto.goproto_getters) = false;
+enum TxType {
+  Legacy = 0;
+	AccessList = 1;
+}
 
-  string    hash        = 1;
-  string    from        = 2;
-  TxData   data        = 3;
-  TxResult result      = 4;
-  uint64   index       = 5;
-  uint64   block_height = 6;
-  string    block_hash   = 7;
+// Receipt defines the receipt type stored in KVStore for each EVM transaction.
+message Receipt {
+  option (gogoproto.goproto_getters) = false;
+	// Consensus fields: These fields are defined by the Yellow Paper
+  TxType type = 1;
+  uint64 cumulative_gas_used = 2;
+  bytes bloom = 3;
+  repeated Log logs =4;
+  // Implementation fields: These fields are added by geth when processing a transaction.
+	// They are stored in the chain database.
+  string tx_hash = 5;
+  string contract_address = 6;
+  uint64 gas_used = 7;
+  // Inclusion information: These fields provide information about the inclusion of the
+	// transaction corresponding to this receipt.
+  string block_hash = 8; 
+  uint64 block_number = 9;
+  uint64 transaction_index = 10;
 }
 
 // TxResult stores results of Tx execution.

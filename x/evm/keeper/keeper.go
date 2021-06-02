@@ -290,10 +290,6 @@ func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) 
 // Log
 // ----------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
-// Log
-// ----------------------------------------------------------------------------
-
 // GetAllTxLogs return all the transaction logs from the store.
 func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	store := ctx.KVStore(k.storeKey)
@@ -313,7 +309,7 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 
 // GetLogs returns the current logs for a given transaction hash from the KVStore.
 // This function returns an empty, non-nil slice if no logs are found.
-func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
+func (k Keeper) GetLogs(txHash common.Hash) []*ethtypes.Log {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
 
 	bz := store.Get(txHash.Bytes())
