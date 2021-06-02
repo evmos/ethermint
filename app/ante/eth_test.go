@@ -437,9 +437,17 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 	dec := ante.NewEthIncrementSenderSequenceDecorator(suite.app.AccountKeeper)
 	addr, privKey := newTestAddrKey()
 
-	signedTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
-	signedTx.From = addr.Hex()
-	err := signedTx.Sign(suite.ethSigner, tests.NewSigner(privKey))
+	contract := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 0, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	contract.From = addr.Hex()
+
+	to := tests.GenerateAddress()
+	tx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 0, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx.From = addr.Hex()
+
+	err := contract.Sign(suite.ethSigner, tests.NewSigner(privKey))
+	suite.Require().NoError(err)
+
+	err = tx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
 
 	testCases := []struct {
@@ -450,24 +458,36 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		expPanic bool
 	}{
 		{
+			"invalid transaction type",
+			&invalidTx{},
+			func() {},
+			false, false,
+		},
+		{
 			"no signers",
-			evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
 			func() {},
 			false, true,
 		},
 		{
 			"account not set to store",
-			signedTx,
+			tx,
 			func() {},
 			false, false,
 		},
 		{
-			"success",
-			signedTx,
+			"success - create contract",
+			contract,
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 			},
+			true, false,
+		},
+		{
+			"success - call",
+			tx,
+			func() {},
 			true, false,
 		},
 	}
@@ -490,6 +510,13 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 
 			if tc.expPass {
 				suite.Require().NoError(err)
+				msg := tc.tx.(*evmtypes.MsgEthereumTx)
+				nonce := suite.app.EvmKeeper.GetNonce(addr)
+				if msg.To() == nil {
+					suite.Require().Equal(msg.Data.Nonce, nonce)
+				} else {
+					suite.Require().Equal(msg.Data.Nonce+1, nonce)
+				}
 			} else {
 				suite.Require().Error(err)
 			}

@@ -393,6 +393,13 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 	ethCfg := config.EthereumConfig(ald.evmKeeper.ChainID())
 
+	rules := ethCfg.Rules(big.NewInt(ctx.BlockHeight()))
+
+	// we don't need to prepare the access list if the chain is not currently on the Berlin upgrade
+	if !rules.IsBerlin {
+		return next(ctx, tx, simulate)
+	}
+
 	// setup the keeper context before setting the access list
 	ald.evmKeeper.WithContext(infCtx)
 
@@ -407,9 +414,7 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx cannot be expressed as core.Message: %s", err.Error())
 		}
 
-		if rules := ethCfg.Rules(big.NewInt(ctx.BlockHeight())); rules.IsBerlin {
-			ald.evmKeeper.PrepareAccessList(coreMsg.From(), coreMsg.To(), vm.ActivePrecompiles(rules), coreMsg.AccessList())
-		}
+		ald.evmKeeper.PrepareAccessList(coreMsg.From(), coreMsg.To(), vm.ActivePrecompiles(rules), coreMsg.AccessList())
 	}
 
 	// set the original gas meter
