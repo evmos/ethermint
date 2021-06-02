@@ -40,7 +40,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	sender := ethMsg.From()
 
-	executionResult, err := k.TransitionDb(ctx, ethMsg)
+	executionResult, err := k.TransitionDb(ethMsg)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +78,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	}()
 
 	attrs := []sdk.Attribute{
-		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
-		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+		sdk.NewAttribute(sdk.AttributeKeyAmount, ethMsg.Value().String()),
+		// sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(ethMsg.Hash).Hex()),
 	}
 
 	if len(msg.Data.To) > 0 {

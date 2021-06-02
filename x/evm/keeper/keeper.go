@@ -69,7 +69,6 @@ func NewKeeper(
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
 		transientKey:  transientKey,
-		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
 		accessList:    types.NewAccessListMappings(),
 	}
 }
@@ -177,16 +176,6 @@ func (k Keeper) SetTxReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *t
 
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.KeyHashTxReceipt(hash), data)
-}
-
-// GetHeightHash returns the block header hash associated with a given block height and chain epoch number.
-func (k Keeper) GetHeightHash(ctx sdk.Context, height uint64) common.Hash {
-	return k.CommitStateDB.WithContext(ctx).GetHeightHash(height)
-}
-
-// SetHeightHash sets the block header hash associated with a given height.
-func (k Keeper) SetHeightHash(ctx sdk.Context, height uint64, hash common.Hash) {
-	k.CommitStateDB.WithContext(ctx).SetHeightHash(height, hash)
 }
 
 // ----------------------------------------------------------------------------

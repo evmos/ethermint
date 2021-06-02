@@ -41,7 +41,7 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // deleting the empty ones. It also sets the bloom filers for the request block to
 // the store. The EVM end block logic doesn't update the validator set, thus it returns
 // an empty slice.
-func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
 
 	// Gas costs are handled within msg handler so costs should be ignored

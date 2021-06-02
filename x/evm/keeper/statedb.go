@@ -57,8 +57,11 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 			"ignored non-positive amount addition",
 			"ethereum-address", addr.Hex(),
 			"amount", amount.Int64(),
+		)
+		return
+	}
 
-
+	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
@@ -336,7 +339,7 @@ func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common
 	return common.BytesToHash(value)
 }
 
-// GetState returns the commited state for the given key hash, as all changes are commited directly
+// GetState returns the committed state for the given key hash, as all changes are committed directly
 // to the KVStore.
 func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
 	return k.GetCommittedState(addr, hash)

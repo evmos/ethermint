@@ -464,6 +464,7 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 // Call performs a raw contract call.
 func (e *PublicEthAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
 	//e.logger.Debugln("eth_call", "args", args, "block number", blockNr)
+	log.Debugln("eth_call", "args", args, "block number", blockNr)
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
@@ -595,7 +596,7 @@ func (e *PublicEthAPI) doCall(
 // It adds 1,000 gas to the returned value instead of using the gas adjustment
 // param from the SDK.
 func (e *PublicEthAPI) EstimateGas(args rpctypes.CallArgs) (hexutil.Uint64, error) {
-	e.logger.Debugln("eth_estimateGas")
+	e.logger.Debugln("eth_estimateGas", "args", args)
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use

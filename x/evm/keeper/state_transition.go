@@ -68,7 +68,7 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 		case k.ctx.BlockHeight() > int64(height):
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
 			// current chain epoch. This only applies if the current height is greater than the requested height.
-			return k.GetHeightHash(k.ctx, height)
+			return k.GetHeaderHash(k.ctx, int64(height))
 
 		default:
 			// Case 3: heights greater than the current one returns an empty hash.
