@@ -166,8 +166,8 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 	}, nil
 }
 
-// TxLogs implements the Query/TxLogs gRPC method
-func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types.QueryTxLogsResponse, error) {
+// Logs implements the Query/Logs gRPC method
+func (k Keeper) Logs(c context.Context, req *types.QueryTxLogsRequest) (*types.QueryTxLogsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -190,8 +190,8 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	}, nil
 }
 
-// TxReceipt implements the Query/TxReceipt gRPC method
-func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (*types.QueryTxReceiptResponse, error) {
+// Receipt implements the Query/Receipt gRPC method
+func (k Keeper) Receipt(c context.Context, req *types.QueryReceiptRequest) (*types.QueryReceiptResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -206,24 +206,24 @@ func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	hash := ethcmn.HexToHash(req.Hash)
-	receipt, found := k.GetTxReceiptFromHash(ctx, hash)
+	receipt, found := k.GetReceiptFromHash(ctx, hash)
 	if !found {
 		return nil, status.Errorf(
-			codes.NotFound, "%s: %s", types.ErrTxReceiptNotFound.Error(), req.Hash,
+			codes.NotFound, "%s: %s", types.ErrReceiptNotFound.Error(), req.Hash,
 		)
 	}
 
-	return &types.QueryTxReceiptResponse{
+	return &types.QueryReceiptResponse{
 		Receipt: receipt,
 	}, nil
 }
 
-// TxReceiptsByBlockHeight implements the Query/TxReceiptsByBlockHeight gRPC method
-func (k Keeper) TxReceiptsByBlockHeight(c context.Context, _ *types.QueryTxReceiptsByBlockHeightRequest) (*types.QueryTxReceiptsByBlockHeightResponse, error) {
+// ReceiptsByBlockHeight implements the Query/ReceiptsByBlockHeight gRPC method
+func (k Keeper) ReceiptsByBlockHeight(c context.Context, _ *types.QueryReceiptsByBlockHeightRequest) (*types.QueryReceiptsByBlockHeightResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	receipts := k.GetTxReceiptsByBlockHeight(ctx, uint64(ctx.BlockHeight()))
-	return &types.QueryTxReceiptsByBlockHeightResponse{
+	receipts := k.GetReceiptsByBlockHeight(ctx, uint64(ctx.BlockHeight()))
+	return &types.QueryReceiptsByBlockHeightResponse{
 		Receipts: receipts,
 	}, nil
 }

@@ -31,7 +31,7 @@ const (
 	prefixCode
 	prefixStorage
 	prefixChainConfig
-	prefixHashTxReceipt
+	prefixHashReceipt
 	prefixBlockHeightTxs
 )
 
@@ -50,7 +50,7 @@ var (
 	KeyPrefixCode               = []byte{prefixCode}
 	KeyPrefixStorage            = []byte{prefixStorage}
 	KeyPrefixChainConfig        = []byte{prefixChainConfig}
-	KeyPrefixHashTxReceipt      = []byte{prefixHashTxReceipt}
+	KeyPrefixHashReceipt        = []byte{prefixHashReceipt}
 	KeyPrefixBlockHeightTxs     = []byte{prefixBlockHeightTxs}
 )
 
@@ -77,9 +77,9 @@ func StateKey(address ethcmn.Address, key []byte) []byte {
 	return append(AddressStoragePrefix(address), key...)
 }
 
-// KeyHashTxReceipt returns a key for accessing tx receipt data by hash.
-func KeyHashTxReceipt(hash ethcmn.Hash) []byte {
-	return append(KeyPrefixHashTxReceipt, hash.Bytes()...)
+// KeyHashReceipt returns a key for accessing tx receipt data by hash.
+func KeyHashReceipt(hash ethcmn.Hash) []byte {
+	return append(KeyPrefixHashReceipt, hash.Bytes()...)
 }
 
 // KeyBlockHeightTxs returns a key for accessing tx hash list by block height.

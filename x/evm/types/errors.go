@@ -16,7 +16,7 @@ const (
 	codeErrZeroAddress
 	codeErrEmptyHash
 	codeErrBloomNotFound
-	codeErrTxReceiptNotFound
+	codeErrReceiptNotFound
 	codeErrCreateDisabled
 	codeErrCallDisabled
 	codeErrInvalidAmount
@@ -46,8 +46,8 @@ var (
 	// ErrBloomNotFound returns an error if the block bloom cannot be found on the store.
 	ErrBloomNotFound = sdkerrors.Register(ModuleName, codeErrBloomNotFound, "block bloom not found")
 
-	// ErrTxReceiptNotFound returns an error if the transaction receipt could not be found
-	ErrTxReceiptNotFound = sdkerrors.Register(ModuleName, codeErrTxReceiptNotFound, "transaction receipt not found")
+	// ErrReceiptNotFound returns an error if the transaction receipt could not be found
+	ErrReceiptNotFound = sdkerrors.Register(ModuleName, codeErrReceiptNotFound, "transaction receipt not found")
 
 	// ErrCreateDisabled returns an error if the EnableCreate parameter is false.
 	ErrCreateDisabled = sdkerrors.Register(ModuleName, codeErrCreateDisabled, "EVM Create operation is disabled")

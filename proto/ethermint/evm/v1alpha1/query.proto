@@ -36,19 +36,19 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/codes/{address}";
   }
 
-  // TxLogs queries ethereum logs from a transaction.
-  rpc TxLogs(QueryTxLogsRequest) returns (QueryTxLogsResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_logs/{hash}";
+  // Logs queries ethereum logs from a transaction.
+  rpc Logs(QueryLogsRequest) returns (QueryLogsResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/logs/{hash}";
   }
 
-  // TxReceipt queries a receipt by a transaction hash.
-  rpc TxReceipt(QueryTxReceiptRequest) returns (QueryTxReceiptResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipt/{hash}";
+  // Receipt queries a receipt by a transaction hash.
+  rpc Receipt(QueryReceiptRequest) returns (QueryReceiptResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/receipts/{hash}";
   }
 
-  // TxReceiptsByBlockHeight queries tx receipts by a block height.
-  rpc TxReceiptsByBlockHeight(QueryTxReceiptsByBlockHeightRequest) returns (QueryTxReceiptsByBlockHeightResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipts_block";
+  // ReceiptsByBlockHeight queries tx receipts by a block height.
+  rpc ReceiptsByBlockHeight(QueryReceiptsByBlockHeightRequest) returns (QueryReceiptsByBlockHeightResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/receipts_block";
   }
 
   // BlockLogs queries all the ethereum logs for a given block hash.
@@ -160,8 +160,8 @@ message QueryCodeResponse {
   bytes code = 1;
 }
 
-// QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
-message QueryTxLogsRequest {
+// QueryLogsRequest is the request type for the Query/Logs RPC method.
+message QueryLogsRequest {
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -169,14 +169,14 @@ message QueryTxLogsRequest {
   string hash = 1;
 }
 
-// QueryTxLogs is the response type for the Query/TxLogs RPC method.
-message QueryTxLogsResponse {
+// QueryLogs is the response type for the Query/Logs RPC method.
+message QueryLogsResponse {
   // logs represents the ethereum logs generated from the given transaction.
   repeated Log logs = 1;
 }
 
-// QueryTxReceiptRequest is the request type for the Query/TxReceipt RPC method.
-message QueryTxReceiptRequest {
+// QueryReceiptRequest is the request type for the Query/Receipt RPC method.
+message QueryReceiptRequest {
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -184,20 +184,20 @@ message QueryTxReceiptRequest {
   string hash = 1;
 }
 
-// QueryTxReceiptResponse is the response type for the Query/TxReceipt RPC method.
-message QueryTxReceiptResponse {
+// QueryReceiptResponse is the response type for the Query/Receipt RPC method.
+message QueryReceiptResponse {
   // receipt represents the ethereum receipt for the given transaction.
-  TxReceipt receipt = 1;
+  Receipt receipt = 1;
 }
 
-// QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
-message QueryTxReceiptsByBlockHeightRequest {
+// QueryReceiptsByBlockHeightRequest is the request type for the Query/ReceiptsByBlockHeight RPC method.
+message QueryReceiptsByBlockHeightRequest {
 }
 
-// QueryTxReceiptsByBlockHeightResponse is the response type for the Query/TxReceiptsByBlockHeight RPC method.
-message QueryTxReceiptsByBlockHeightResponse {
+// QueryReceiptsByBlockHeightResponse is the response type for the Query/ReceiptsByBlockHeight RPC method.
+message QueryReceiptsByBlockHeightResponse {
   // tx receipts list for the block
-  repeated TxReceipt receipts = 1;
+  repeated Receipt receipts = 1;
 }
 
 // QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
@@ -211,7 +211,7 @@ message QueryBlockLogsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
-// QueryTxLogs is the response type for the Query/BlockLogs RPC method.
+// QueryLogs is the response type for the Query/BlockLogs RPC method.
 message QueryBlockLogsResponse {
   // logs represents the ethereum logs generated at the given block hash.
   repeated TransactionLogs tx_logs = 1 [(gogoproto.nullable) = false];

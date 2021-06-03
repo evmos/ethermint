@@ -580,24 +580,24 @@ func (m *QueryTxLogsResponse) GetLogs() []*Log {
 	return nil
 }
 
-// QueryTxReceiptRequest is the request type for the Query/TxReceipt RPC method.
-type QueryTxReceiptRequest struct {
+// QueryReceiptRequest is the request type for the Query/Receipt RPC method.
+type QueryReceiptRequest struct {
 	// hash is the ethereum transaction hex hash to query the receipt for.
 	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 }
 
-func (m *QueryTxReceiptRequest) Reset()         { *m = QueryTxReceiptRequest{} }
-func (m *QueryTxReceiptRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryTxReceiptRequest) ProtoMessage()    {}
-func (*QueryTxReceiptRequest) Descriptor() ([]byte, []int) {
+func (m *QueryReceiptRequest) Reset()         { *m = QueryReceiptRequest{} }
+func (m *QueryReceiptRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryReceiptRequest) ProtoMessage()    {}
+func (*QueryReceiptRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_8bbc79ec2b6c5cb2, []int{12}
 }
-func (m *QueryTxReceiptRequest) XXX_Unmarshal(b []byte) error {
+func (m *QueryReceiptRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryTxReceiptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryReceiptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryTxReceiptRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryReceiptRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -607,36 +607,36 @@ func (m *QueryTxReceiptRequest) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *QueryTxReceiptRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryTxReceiptRequest.Merge(m, src)
+func (m *QueryReceiptRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryReceiptRequest.Merge(m, src)
 }
-func (m *QueryTxReceiptRequest) XXX_Size() int {
+func (m *QueryReceiptRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryTxReceiptRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryTxReceiptRequest.DiscardUnknown(m)
+func (m *QueryReceiptRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryReceiptRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryTxReceiptRequest proto.InternalMessageInfo
+var xxx_messageInfo_QueryReceiptRequest proto.InternalMessageInfo
 
-// QueryTxReceiptResponse is the response type for the Query/TxReceipt RPC method.
-type QueryTxReceiptResponse struct {
+// QueryReceiptResponse is the response type for the Query/Receipt RPC method.
+type QueryReceiptResponse struct {
 	// receipt represents the ethereum receipt for the given transaction.
-	Receipt *TxReceipt `protobuf:"bytes,1,opt,name=receipt,proto3" json:"receipt,omitempty"`
+	Receipt *Receipt `protobuf:"bytes,1,opt,name=receipt,proto3" json:"receipt,omitempty"`
 }
 
-func (m *QueryTxReceiptResponse) Reset()         { *m = QueryTxReceiptResponse{} }
-func (m *QueryTxReceiptResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryTxReceiptResponse) ProtoMessage()    {}
-func (*QueryTxReceiptResponse) Descriptor() ([]byte, []int) {
+func (m *QueryReceiptResponse) Reset()         { *m = QueryReceiptResponse{} }
+func (m *QueryReceiptResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryReceiptResponse) ProtoMessage()    {}
+func (*QueryReceiptResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_8bbc79ec2b6c5cb2, []int{13}
 }
-func (m *QueryTxReceiptResponse) XXX_Unmarshal(b []byte) error {
+func (m *QueryReceiptResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryTxReceiptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryReceiptResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryTxReceiptResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryReceiptResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -646,41 +646,41 @@ func (m *QueryTxReceiptResponse) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *QueryTxReceiptResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryTxReceiptResponse.Merge(m, src)
+func (m *QueryReceiptResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryReceiptResponse.Merge(m, src)
 }
-func (m *QueryTxReceiptResponse) XXX_Size() int {
+func (m *QueryReceiptResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryTxReceiptResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryTxReceiptResponse.DiscardUnknown(m)
+func (m *QueryReceiptResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryReceiptResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryTxReceiptResponse proto.InternalMessageInfo
+var xxx_messageInfo_QueryReceiptResponse proto.InternalMessageInfo
 
-func (m *QueryTxReceiptResponse) GetReceipt() *TxReceipt {
+func (m *QueryReceiptResponse) GetReceipt() *Receipt {
 	if m != nil {
 		return m.Receipt
 	}
 	return nil
 }
 
-// QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
-type QueryTxReceiptsByBlockHeightRequest struct {
+// QueryReceiptsByBlockHeightRequest is the request type for the Query/ReceiptsByBlockHeight RPC method.
+type QueryReceiptsByBlockHeightRequest struct {
 }
 
-func (m *QueryTxReceiptsByBlockHeightRequest) Reset()         { *m = QueryTxReceiptsByBlockHeightRequest{} }
-func (m *QueryTxReceiptsByBlockHeightRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryTxReceiptsByBlockHeightRequest) ProtoMessage()    {}
-func (*QueryTxReceiptsByBlockHeightRequest) Descriptor() ([]byte, []int) {
+func (m *QueryReceiptsByBlockHeightRequest) Reset()         { *m = QueryReceiptsByBlockHeightRequest{} }
+func (m *QueryReceiptsByBlockHeightRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryReceiptsByBlockHeightRequest) ProtoMessage()    {}
+func (*QueryReceiptsByBlockHeightRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_8bbc79ec2b6c5cb2, []int{14}
 }
-func (m *QueryTxReceiptsByBlockHeightRequest) XXX_Unmarshal(b []byte) error {
+func (m *QueryReceiptsByBlockHeightRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryTxReceiptsByBlockHeightRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryReceiptsByBlockHeightRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryTxReceiptsByBlockHeightRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryReceiptsByBlockHeightRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -690,36 +690,36 @@ func (m *QueryTxReceiptsByBlockHeightRequest) XXX_Marshal(b []byte, deterministi
 		return b[:n], nil
 	}
 }
-func (m *QueryTxReceiptsByBlockHeightRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryTxReceiptsByBlockHeightRequest.Merge(m, src)
+func (m *QueryReceiptsByBlockHeightRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryReceiptsByBlockHeightRequest.Merge(m, src)
 }
-func (m *QueryTxReceiptsByBlockHeightRequest) XXX_Size() int {
+func (m *QueryReceiptsByBlockHeightRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryTxReceiptsByBlockHeightRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryTxReceiptsByBlockHeightRequest.DiscardUnknown(m)
+func (m *QueryReceiptsByBlockHeightRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryReceiptsByBlockHeightRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryTxReceiptsByBlockHeightRequest proto.InternalMessageInfo
+var xxx_messageInfo_QueryReceiptsByBlockHeightRequest proto.InternalMessageInfo
 
-// QueryTxReceiptsByBlockHeightResponse is the response type for the Query/TxReceiptsByBlockHeight RPC method.
-type QueryTxReceiptsByBlockHeightResponse struct {
+// QueryReceiptsByBlockHeightResponse is the response type for the Query/ReceiptsByBlockHeight RPC method.
+type QueryReceiptsByBlockHeightResponse struct {
 	// tx receipts list for the block
-	Receipts []*TxReceipt `protobuf:"bytes,1,rep,name=receipts,proto3" json:"receipts,omitempty"`
+	Receipts []*Receipt `protobuf:"bytes,1,rep,name=receipts,proto3" json:"receipts,omitempty"`
 }
 
-func (m *QueryTxReceiptsByBlockHeightResponse) Reset()         { *m = QueryTxReceiptsByBlockHeightResponse{} }
-func (m *QueryTxReceiptsByBlockHeightResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryTxReceiptsByBlockHeightResponse) ProtoMessage()    {}
-func (*QueryTxReceiptsByBlockHeightResponse) Descriptor() ([]byte, []int) {
+func (m *QueryReceiptsByBlockHeightResponse) Reset()         { *m = QueryReceiptsByBlockHeightResponse{} }
+func (m *QueryReceiptsByBlockHeightResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryReceiptsByBlockHeightResponse) ProtoMessage()    {}
+func (*QueryReceiptsByBlockHeightResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_8bbc79ec2b6c5cb2, []int{15}
 }
-func (m *QueryTxReceiptsByBlockHeightResponse) XXX_Unmarshal(b []byte) error {
+func (m *QueryReceiptsByBlockHeightResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryTxReceiptsByBlockHeightResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryReceiptsByBlockHeightResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryTxReceiptsByBlockHeightResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryReceiptsByBlockHeightResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -729,19 +729,19 @@ func (m *QueryTxReceiptsByBlockHeightResponse) XXX_Marshal(b []byte, determinist
 		return b[:n], nil
 	}
 }
-func (m *QueryTxReceiptsByBlockHeightResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryTxReceiptsByBlockHeightResponse.Merge(m, src)
+func (m *QueryReceiptsByBlockHeightResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryReceiptsByBlockHeightResponse.Merge(m, src)
 }
-func (m *QueryTxReceiptsByBlockHeightResponse) XXX_Size() int {
+func (m *QueryReceiptsByBlockHeightResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryTxReceiptsByBlockHeightResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryTxReceiptsByBlockHeightResponse.DiscardUnknown(m)
+func (m *QueryReceiptsByBlockHeightResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryReceiptsByBlockHeightResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryTxReceiptsByBlockHeightResponse proto.InternalMessageInfo
+var xxx_messageInfo_QueryReceiptsByBlockHeightResponse proto.InternalMessageInfo
 
-func (m *QueryTxReceiptsByBlockHeightResponse) GetReceipts() []*TxReceipt {
+func (m *QueryReceiptsByBlockHeightResponse) GetReceipts() []*Receipt {
 	if m != nil {
 		return m.Receipts
 	}
@@ -830,7 +830,7 @@ func (m *QueryBlockLogsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryBlockLogsResponse proto.InternalMessageInfo
 
-func (m *QueryBlockLogsResponse) GetLogs() []TransactionLogs {
+func (m *QueryBlockLogsResponse) GetTxLogs() []TransactionLogs {
 	if m != nil {
 		return m.TxLogs
 	}
@@ -1125,10 +1125,10 @@ func init() {
 	proto.RegisterType((*QueryCodeResponse)(nil), "ethermint.evm.v1alpha1.QueryCodeResponse")
 	proto.RegisterType((*QueryTxLogsRequest)(nil), "ethermint.evm.v1alpha1.QueryTxLogsRequest")
 	proto.RegisterType((*QueryTxLogsResponse)(nil), "ethermint.evm.v1alpha1.QueryTxLogsResponse")
-	proto.RegisterType((*QueryTxReceiptRequest)(nil), "ethermint.evm.v1alpha1.QueryTxReceiptRequest")
-	proto.RegisterType((*QueryTxReceiptResponse)(nil), "ethermint.evm.v1alpha1.QueryTxReceiptResponse")
-	proto.RegisterType((*QueryTxReceiptsByBlockHeightRequest)(nil), "ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest")
-	proto.RegisterType((*QueryTxReceiptsByBlockHeightResponse)(nil), "ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse")
+	proto.RegisterType((*QueryReceiptRequest)(nil), "ethermint.evm.v1alpha1.QueryReceiptRequest")
+	proto.RegisterType((*QueryReceiptResponse)(nil), "ethermint.evm.v1alpha1.QueryReceiptResponse")
+	proto.RegisterType((*QueryReceiptsByBlockHeightRequest)(nil), "ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightRequest")
+	proto.RegisterType((*QueryReceiptsByBlockHeightResponse)(nil), "ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightResponse")
 	proto.RegisterType((*QueryBlockLogsRequest)(nil), "ethermint.evm.v1alpha1.QueryBlockLogsRequest")
 	proto.RegisterType((*QueryBlockLogsResponse)(nil), "ethermint.evm.v1alpha1.QueryBlockLogsResponse")
 	proto.RegisterType((*QueryBlockBloomRequest)(nil), "ethermint.evm.v1alpha1.QueryBlockBloomRequest")
@@ -1144,79 +1144,79 @@ func init() {
 }
 
 var fileDescriptor_8bbc79ec2b6c5cb2 = []byte{
-	// 1141 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x97, 0x4d, 0x6f, 0x1b, 0x45,
-	0x18, 0xc7, 0xbd, 0x89, 0x13, 0x27, 0x4f, 0x1a, 0x28, 0x83, 0x69, 0xc3, 0x16, 0x39, 0x61, 0x4b,
-	0x12, 0xe7, 0xa5, 0xbb, 0xb5, 0x11, 0xaf, 0x2d, 0x42, 0x71, 0xa5, 0x10, 0x89, 0x0a, 0x15, 0x07,
-	0x2e, 0x5c, 0xac, 0xf1, 0x7a, 0xb4, 0xb6, 0xb2, 0xde, 0x71, 0xbd, 0xeb, 0x28, 0x51, 0x94, 0x4b,
-	0x0f, 0x08, 0x24, 0x0e, 0x20, 0x0e, 0x20, 0x24, 0xa4, 0x5e, 0xb9, 0xf1, 0x2d, 0xe8, 0xb1, 0x12,
-	0x17, 0x4e, 0x08, 0x25, 0x1c, 0xf8, 0x18, 0x68, 0x66, 0x9e, 0xb5, 0x77, 0x63, 0x6f, 0x76, 0xd3,
-	0xdb, 0xce, 0xf8, 0x79, 0xf9, 0xcd, 0x7f, 0x5e, 0xfe, 0x32, 0x18, 0x2c, 0x68, 0xb3, 0x7e, 0xb7,
-	0xe3, 0x05, 0x16, 0x3b, 0xec, 0x5a, 0x87, 0x15, 0xea, 0xf6, 0xda, 0xb4, 0x62, 0x3d, 0x1e, 0xb0,
-	0xfe, 0xb1, 0xd9, 0xeb, 0xf3, 0x80, 0x93, 0x1b, 0xc3, 0x18, 0x93, 0x1d, 0x76, 0xcd, 0x30, 0x46,
-	0x2f, 0x3a, 0xdc, 0xe1, 0x32, 0xc4, 0x12, 0x5f, 0x2a, 0x5a, 0xdf, 0xb4, 0xb9, 0xdf, 0xe5, 0xbe,
-	0xd5, 0xa4, 0x3e, 0x53, 0x65, 0xac, 0xc3, 0x4a, 0x93, 0x05, 0xb4, 0x62, 0xf5, 0xa8, 0xd3, 0xf1,
-	0x68, 0xd0, 0xe1, 0x1e, 0xc6, 0xbe, 0xe1, 0x70, 0xee, 0xb8, 0xcc, 0xa2, 0xbd, 0x8e, 0x45, 0x3d,
-	0x8f, 0x07, 0xf2, 0x47, 0x1f, 0x7f, 0x5d, 0x49, 0x60, 0x13, 0x10, 0x32, 0xc2, 0xf8, 0x00, 0x5e,
-	0xfd, 0x5c, 0x74, 0xd8, 0xb1, 0x6d, 0x3e, 0xf0, 0x82, 0x3a, 0x7b, 0x3c, 0x60, 0x7e, 0x40, 0x96,
-	0xa0, 0x40, 0x5b, 0xad, 0x3e, 0xf3, 0xfd, 0x25, 0x6d, 0x45, 0x2b, 0xcf, 0xd7, 0xc3, 0xe1, 0x87,
-	0x73, 0xdf, 0x3c, 0x5d, 0xce, 0xfd, 0xf7, 0x74, 0x39, 0x67, 0xd8, 0x50, 0x8c, 0xa7, 0xfa, 0x3d,
-	0xee, 0xf9, 0x4c, 0xe4, 0x36, 0xa9, 0x4b, 0x3d, 0x9b, 0x85, 0xb9, 0x38, 0x24, 0xb7, 0x60, 0xde,
-	0xe6, 0x2d, 0xd6, 0x68, 0x53, 0xbf, 0xbd, 0x34, 0xb5, 0xa2, 0x95, 0xaf, 0xd5, 0xe7, 0xc4, 0xc4,
-	0x1e, 0xf5, 0xdb, 0xa4, 0x08, 0x33, 0x1e, 0x17, 0x49, 0xd3, 0x2b, 0x5a, 0x39, 0x5f, 0x57, 0x03,
-	0xe3, 0x63, 0x78, 0x5d, 0x36, 0x79, 0x20, 0x25, 0x79, 0x01, 0xca, 0xaf, 0x35, 0xd0, 0x27, 0x55,
-	0x40, 0xd8, 0x55, 0x78, 0x49, 0xa9, 0xdd, 0x88, 0x57, 0x5a, 0x54, 0xb3, 0x3b, 0x6a, 0x92, 0xe8,
-	0x30, 0xe7, 0x8b, 0xa6, 0x82, 0x6f, 0x4a, 0xf2, 0x0d, 0xc7, 0xa2, 0x04, 0x55, 0x55, 0x1b, 0xde,
-	0xa0, 0xdb, 0x64, 0x7d, 0x5c, 0xc1, 0x22, 0xce, 0x7e, 0x26, 0x27, 0x87, 0x4a, 0xd7, 0x94, 0x18,
-	0x57, 0x59, 0xc3, 0x5d, 0x54, 0x7a, 0x98, 0x9a, 0xa6, 0xb4, 0xf1, 0x29, 0x36, 0xdb, 0x0f, 0x78,
-	0x9f, 0x3a, 0xe9, 0xcd, 0xc8, 0x75, 0x98, 0x3e, 0x60, 0xc7, 0x72, 0x6d, 0xf3, 0x75, 0xf1, 0x19,
-	0x69, 0xbf, 0x8d, 0xed, 0x87, 0xc5, 0xb0, 0x7d, 0x11, 0x66, 0x0e, 0xa9, 0x3b, 0x08, 0x9b, 0xab,
-	0x81, 0xf1, 0x2e, 0x5c, 0x47, 0xbd, 0x5b, 0x57, 0x5a, 0xe4, 0x3a, 0xbc, 0x12, 0xc9, 0xc3, 0x16,
-	0x04, 0xf2, 0xe2, 0x80, 0xc8, 0xac, 0x6b, 0x75, 0xf9, 0x6d, 0x54, 0x81, 0xc8, 0xc0, 0x2f, 0x8e,
-	0x1e, 0x72, 0xc7, 0x0f, 0x5b, 0x10, 0xc8, 0xcb, 0x63, 0xa5, 0xea, 0xcb, 0xef, 0x48, 0xf1, 0x5d,
-	0xd4, 0x23, 0xcc, 0xc1, 0xf2, 0x16, 0xe4, 0x5d, 0xee, 0x08, 0xa8, 0xe9, 0xf2, 0x42, 0xf5, 0x96,
-	0x39, 0xf9, 0x9a, 0x9a, 0x0f, 0xb9, 0x53, 0x97, 0x81, 0xc6, 0x3b, 0xf0, 0x1a, 0xd6, 0xa9, 0x33,
-	0x9b, 0x75, 0x7a, 0x41, 0xb6, 0xf6, 0x5f, 0xc2, 0x8d, 0x8b, 0x69, 0x48, 0x70, 0x0f, 0x0a, 0x7d,
-	0x35, 0x25, 0x53, 0x17, 0xaa, 0x6f, 0x26, 0x41, 0x8c, 0x72, 0xc3, 0x0c, 0x63, 0x15, 0x6e, 0xc7,
-	0xcb, 0xfa, 0xb5, 0xe3, 0x9a, 0xcb, 0xed, 0x83, 0x3d, 0xd6, 0x71, 0xda, 0x21, 0x9b, 0xc1, 0xe0,
-	0xad, 0xcb, 0xc3, 0x90, 0xe5, 0x23, 0x98, 0xc3, 0xca, 0xa1, 0x22, 0x19, 0x60, 0x86, 0x29, 0xc6,
-	0x29, 0x6a, 0x23, 0x4b, 0xa7, 0x6c, 0x0d, 0xd9, 0x05, 0x18, 0xbd, 0x65, 0xf2, 0xd8, 0x2d, 0x54,
-	0xd7, 0x4c, 0x75, 0xe9, 0x4c, 0xf1, 0xf0, 0x99, 0xea, 0xfd, 0xc4, 0x87, 0xcf, 0x7c, 0x34, 0x3a,
-	0xc5, 0xf5, 0x48, 0x66, 0x44, 0xe3, 0xdf, 0x34, 0x14, 0x39, 0xd2, 0x1f, 0x17, 0xb6, 0x0b, 0x85,
-	0xe0, 0xa8, 0x11, 0xd9, 0xe9, 0xf5, 0xc4, 0x75, 0xf5, 0xa9, 0xe7, 0x53, 0x5b, 0x94, 0x16, 0x15,
-	0x6a, 0xf9, 0x67, 0x7f, 0x2f, 0xe7, 0xea, 0xb3, 0x81, 0x3c, 0x36, 0xe4, 0x93, 0x09, 0xd0, 0xeb,
-	0xa9, 0xd0, 0x0a, 0x22, 0x4a, 0x6d, 0x2c, 0x45, 0x51, 0x6b, 0x2e, 0xe7, 0xdd, 0x70, 0xaf, 0x2c,
-	0xb8, 0x39, 0xf6, 0xcb, 0xe8, 0xba, 0x35, 0xc5, 0x04, 0x5e, 0x06, 0x35, 0x30, 0x8a, 0x78, 0x1b,
-	0x1e, 0xd1, 0x3e, 0xed, 0x86, 0x92, 0x1b, 0xfb, 0x78, 0xde, 0xc3, 0x59, 0x2c, 0x71, 0x1f, 0x66,
-	0x7b, 0x72, 0x06, 0x0f, 0x5b, 0x29, 0x49, 0x07, 0x95, 0x17, 0x2e, 0x5f, 0xe5, 0x18, 0x7b, 0x48,
-	0xbd, 0x2f, 0x4c, 0xc6, 0x7e, 0x40, 0x5d, 0x37, 0xfd, 0x5d, 0x29, 0xc2, 0x4c, 0xc7, 0xeb, 0x0d,
-	0x02, 0x7c, 0xee, 0xd5, 0xc0, 0xb8, 0x83, 0xab, 0x8c, 0x56, 0x1a, 0xdd, 0xf8, 0x16, 0x0d, 0x68,
-	0x78, 0xe3, 0xc5, 0x77, 0xf5, 0xc9, 0xcb, 0x30, 0x23, 0xe3, 0xc9, 0x4f, 0x1a, 0x14, 0xf0, 0x09,
-	0x27, 0x5b, 0x49, 0xf0, 0x13, 0x0c, 0x4d, 0xdf, 0xce, 0x16, 0xac, 0x20, 0x8c, 0xca, 0x93, 0x3f,
-	0xff, 0xfd, 0x71, 0x6a, 0x8b, 0x6c, 0x58, 0x09, 0x06, 0x8a, 0x4f, 0xbb, 0x75, 0x82, 0xeb, 0x3c,
-	0x25, 0xbf, 0x6b, 0xb0, 0x18, 0xb3, 0x18, 0x52, 0xb9, 0xb4, 0xe5, 0x24, 0x43, 0xd3, 0xab, 0x57,
-	0x49, 0x41, 0xd6, 0xf7, 0x25, 0x6b, 0x95, 0xdc, 0x4d, 0x62, 0x0d, 0xfd, 0x6d, 0x0c, 0xf9, 0x67,
-	0x0d, 0x0a, 0x68, 0x29, 0x29, 0x62, 0xc6, 0x3d, 0x2b, 0x45, 0xcc, 0x0b, 0x2e, 0x65, 0x54, 0x25,
-	0xe0, 0x36, 0xd9, 0x4c, 0x02, 0x44, 0xd3, 0xf2, 0x23, 0x68, 0xbf, 0x6a, 0x50, 0x40, 0xbb, 0x49,
-	0x41, 0x8b, 0x3b, 0x5c, 0x0a, 0xda, 0x05, 0x07, 0x33, 0xde, 0x93, 0x68, 0x15, 0x62, 0x25, 0xa1,
-	0xf9, 0x2a, 0x61, 0x44, 0x66, 0x9d, 0x1c, 0xb0, 0xe3, 0x53, 0xf2, 0x9d, 0x06, 0x79, 0x61, 0x54,
-	0xa4, 0x9c, 0xb2, 0x63, 0x43, 0x0f, 0xd4, 0x37, 0x32, 0x44, 0x22, 0x96, 0x25, 0xb1, 0x36, 0xc8,
-	0x7a, 0xf2, 0x96, 0xb6, 0x62, 0x72, 0xfd, 0xa0, 0xc1, 0xac, 0xb2, 0x36, 0xb2, 0x79, 0x69, 0x9b,
-	0x98, 0x67, 0xea, 0x5b, 0x99, 0x62, 0x11, 0xca, 0x94, 0x50, 0x65, 0xb2, 0x96, 0x04, 0x85, 0x4f,
-	0xac, 0x75, 0x22, 0x1e, 0x78, 0xb9, 0x85, 0xf3, 0x43, 0x9b, 0x20, 0x77, 0x52, 0x5a, 0xc5, 0xed,
-	0x54, 0x37, 0xb3, 0x86, 0x67, 0xbd, 0xb0, 0xc1, 0x51, 0x03, 0x8d, 0x2a, 0xe4, 0xfb, 0x43, 0x83,
-	0x9b, 0x09, 0x8e, 0x48, 0xee, 0x65, 0x6b, 0x3f, 0xd1, 0x6e, 0xf5, 0xfb, 0x2f, 0x96, 0x7c, 0xf5,
-	0x95, 0xf8, 0x8d, 0xa6, 0x28, 0x20, 0x95, 0x1e, 0x9a, 0x5e, 0x8a, 0xd2, 0x17, 0xcd, 0x39, 0x45,
-	0xe9, 0x31, 0x2f, 0x4d, 0xe7, 0x93, 0x4c, 0xb1, 0x93, 0xf0, 0x8b, 0x06, 0x30, 0xf2, 0x33, 0x92,
-	0xa1, 0x63, 0xd4, 0x12, 0x75, 0x2b, 0x73, 0x3c, 0x22, 0x6e, 0x49, 0xc4, 0x55, 0x72, 0xfb, 0x72,
-	0x44, 0xe9, 0x9f, 0xe4, 0x5b, 0x0d, 0x66, 0x95, 0xdb, 0xa5, 0x5c, 0x9d, 0x98, 0xc1, 0xa6, 0x5c,
-	0x9d, 0xb8, 0xed, 0x1a, 0x6b, 0x12, 0x68, 0x85, 0x94, 0x92, 0x80, 0x94, 0xc1, 0x4a, 0xa1, 0x46,
-	0x96, 0x98, 0x22, 0xd4, 0x98, 0x0b, 0xa7, 0x08, 0x35, 0xee, 0xb5, 0xe9, 0x42, 0xf9, 0x32, 0xa7,
-	0x61, 0x53, 0xd7, 0xad, 0xed, 0x3c, 0x3b, 0x2b, 0x69, 0xcf, 0xcf, 0x4a, 0xda, 0x3f, 0x67, 0x25,
-	0xed, 0xfb, 0xf3, 0x52, 0xee, 0xf9, 0x79, 0x29, 0xf7, 0xd7, 0x79, 0x29, 0xf7, 0xd5, 0xba, 0xd3,
-	0x09, 0xda, 0x83, 0xa6, 0x69, 0xf3, 0x2e, 0x9a, 0x4d, 0xa4, 0xde, 0x91, 0xac, 0x18, 0x1c, 0xf7,
-	0x98, 0xdf, 0x9c, 0x95, 0xff, 0x39, 0xdf, 0xfe, 0x3f, 0x00, 0x00, 0xff, 0xff, 0x64, 0x1a, 0x51,
-	0x62, 0x33, 0x0f, 0x00, 0x00,
+	// 1147 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x97, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xc7, 0xbd, 0x89, 0x13, 0x27, 0x2f, 0x4d, 0x55, 0x06, 0xb7, 0x84, 0x2d, 0x72, 0xc2, 0x54,
+	0x4d, 0x9c, 0x1f, 0xdd, 0xad, 0x5d, 0x09, 0x48, 0x41, 0x42, 0x71, 0xa5, 0x10, 0x89, 0x0a, 0xb5,
+	0x4e, 0x4f, 0x5c, 0xac, 0xf1, 0x7a, 0xb4, 0xb6, 0xb2, 0xde, 0x71, 0xbd, 0xeb, 0x28, 0x51, 0x94,
+	0x0b, 0x07, 0x04, 0x12, 0x07, 0x24, 0x84, 0x40, 0x48, 0x48, 0xbd, 0x72, 0xe3, 0x2f, 0xe0, 0xdc,
+	0x63, 0x25, 0x2e, 0x9c, 0x10, 0x4a, 0x38, 0x70, 0xe0, 0x8f, 0xa8, 0x66, 0xe6, 0xad, 0xbd, 0x76,
+	0xbc, 0x59, 0xa7, 0xb7, 0x9d, 0xf1, 0xfb, 0xf1, 0x79, 0x6f, 0x66, 0xde, 0x57, 0x06, 0xca, 0xc3,
+	0x26, 0xef, 0xb6, 0x5b, 0x7e, 0x68, 0xf3, 0xc3, 0xb6, 0x7d, 0x58, 0x62, 0x5e, 0xa7, 0xc9, 0x4a,
+	0xf6, 0xf3, 0x1e, 0xef, 0x1e, 0x5b, 0x9d, 0xae, 0x08, 0x05, 0xb9, 0xd5, 0xb7, 0xb1, 0xf8, 0x61,
+	0xdb, 0x8a, 0x6c, 0xcc, 0xbc, 0x2b, 0x5c, 0xa1, 0x4c, 0x6c, 0xf9, 0xa5, 0xad, 0xcd, 0x0d, 0x47,
+	0x04, 0x6d, 0x11, 0xd8, 0x75, 0x16, 0x70, 0x1d, 0xc6, 0x3e, 0x2c, 0xd5, 0x79, 0xc8, 0x4a, 0x76,
+	0x87, 0xb9, 0x2d, 0x9f, 0x85, 0x2d, 0xe1, 0xa3, 0xed, 0x7b, 0xae, 0x10, 0xae, 0xc7, 0x6d, 0xd6,
+	0x69, 0xd9, 0xcc, 0xf7, 0x45, 0xa8, 0x7e, 0x0c, 0xf0, 0xd7, 0x95, 0x04, 0x36, 0x09, 0xa1, 0x2c,
+	0xe8, 0x36, 0xbc, 0xfd, 0x54, 0x66, 0xd8, 0x71, 0x1c, 0xd1, 0xf3, 0xc3, 0x2a, 0x7f, 0xde, 0xe3,
+	0x41, 0x48, 0x96, 0x20, 0xc7, 0x1a, 0x8d, 0x2e, 0x0f, 0x82, 0x25, 0x63, 0xc5, 0x28, 0xce, 0x57,
+	0xa3, 0xe5, 0xc3, 0xb9, 0x6f, 0x5e, 0x2c, 0x67, 0xfe, 0x7b, 0xb1, 0x9c, 0xa1, 0x0e, 0xe4, 0x87,
+	0x5d, 0x83, 0x8e, 0xf0, 0x03, 0x2e, 0x7d, 0xeb, 0xcc, 0x63, 0xbe, 0xc3, 0x23, 0x5f, 0x5c, 0x92,
+	0xdb, 0x30, 0xef, 0x88, 0x06, 0xaf, 0x35, 0x59, 0xd0, 0x5c, 0x9a, 0x5a, 0x31, 0x8a, 0xd7, 0xaa,
+	0x73, 0x72, 0x63, 0x8f, 0x05, 0x4d, 0x92, 0x87, 0x19, 0x5f, 0x48, 0xa7, 0xe9, 0x15, 0xa3, 0x98,
+	0xad, 0xea, 0x05, 0xfd, 0x14, 0xde, 0x55, 0x49, 0x1e, 0xa9, 0x96, 0xbc, 0x01, 0xe5, 0xd7, 0x06,
+	0x98, 0xe3, 0x22, 0x20, 0xec, 0x5d, 0xb8, 0xae, 0xbb, 0x5d, 0x1b, 0x8e, 0xb4, 0xa8, 0x77, 0x77,
+	0xf4, 0x26, 0x31, 0x61, 0x2e, 0x90, 0x49, 0x25, 0xdf, 0x94, 0xe2, 0xeb, 0xaf, 0x65, 0x08, 0xa6,
+	0xa3, 0xd6, 0xfc, 0x5e, 0xbb, 0xce, 0xbb, 0x58, 0xc1, 0x22, 0xee, 0x7e, 0xa1, 0x36, 0xfb, 0x9d,
+	0xae, 0xe8, 0x66, 0x5c, 0xa5, 0x86, 0xfb, 0xd8, 0xe9, 0xbe, 0x6b, 0x5a, 0xa7, 0xe9, 0xe7, 0x98,
+	0x6c, 0x3f, 0x14, 0x5d, 0xe6, 0xa6, 0x27, 0x23, 0x37, 0x60, 0xfa, 0x80, 0x1f, 0xab, 0xda, 0xe6,
+	0xab, 0xf2, 0x33, 0x96, 0x7e, 0x0b, 0xd3, 0xf7, 0x83, 0x61, 0xfa, 0x3c, 0xcc, 0x1c, 0x32, 0xaf,
+	0x17, 0x25, 0xd7, 0x0b, 0xfa, 0x01, 0xdc, 0xc0, 0x7e, 0x37, 0xae, 0x54, 0xe4, 0x1a, 0xbc, 0x15,
+	0xf3, 0xc3, 0x14, 0x04, 0xb2, 0xf2, 0x82, 0x28, 0xaf, 0x6b, 0x55, 0xf5, 0x4d, 0xcb, 0x40, 0x94,
+	0xe1, 0xb3, 0xa3, 0xc7, 0xc2, 0x0d, 0xa2, 0x14, 0x04, 0xb2, 0xea, 0x5a, 0xe9, 0xf8, 0xea, 0x3b,
+	0x16, 0x7c, 0x17, 0xfb, 0x11, 0xf9, 0x60, 0x78, 0x1b, 0xb2, 0x9e, 0x70, 0x25, 0xd4, 0x74, 0x71,
+	0xa1, 0x7c, 0xdb, 0x1a, 0xff, 0x4c, 0xad, 0xc7, 0xc2, 0xad, 0x2a, 0x43, 0xfa, 0x00, 0xe3, 0x54,
+	0xb9, 0xc3, 0x5b, 0x9d, 0x70, 0xb2, 0xe4, 0x4f, 0xb1, 0x7f, 0x7d, 0x27, 0xcc, 0xbe, 0x0d, 0xb9,
+	0xae, 0xde, 0x52, 0x8e, 0x0b, 0xe5, 0xe5, 0x24, 0x80, 0xc8, 0x33, 0xb2, 0xa7, 0x77, 0xe0, 0xfd,
+	0x78, 0xc8, 0xa0, 0x72, 0x5c, 0xf1, 0x84, 0x73, 0xb0, 0xc7, 0x5b, 0x6e, 0x33, 0xa2, 0xa2, 0x0c,
+	0xe8, 0x65, 0x46, 0x48, 0xf1, 0x31, 0xcc, 0x61, 0xd4, 0xa8, 0x0f, 0xa9, 0x18, 0x7d, 0x07, 0x7a,
+	0x0a, 0x37, 0xf5, 0xcd, 0x94, 0x81, 0x53, 0x8e, 0x83, 0xec, 0x02, 0x0c, 0xe6, 0x97, 0xba, 0x6a,
+	0x0b, 0xe5, 0x55, 0x4b, 0x3f, 0x34, 0x4b, 0x0e, 0x3b, 0x4b, 0xcf, 0x4c, 0x1c, 0x76, 0xd6, 0x93,
+	0xc1, 0xcd, 0xad, 0xc6, 0x3c, 0x63, 0x9d, 0xfd, 0xcd, 0x80, 0x5b, 0xa3, 0xf9, 0xb1, 0xac, 0x5d,
+	0xc8, 0x85, 0x47, 0xb5, 0xd8, 0xe9, 0xae, 0x25, 0x55, 0xf5, 0xac, 0xcb, 0xfc, 0x80, 0x39, 0x32,
+	0xb4, 0x8c, 0x50, 0xc9, 0xbe, 0xfc, 0x7b, 0x39, 0x53, 0x9d, 0x0d, 0xd5, 0x55, 0x21, 0x9f, 0x8d,
+	0x81, 0x5e, 0x4b, 0x85, 0xd6, 0x10, 0x71, 0x6a, 0xba, 0x14, 0x47, 0xad, 0x78, 0x42, 0xb4, 0xa3,
+	0x73, 0xb2, 0xe1, 0x9d, 0x0b, 0xbf, 0x0c, 0x9e, 0x58, 0x5d, 0x6e, 0xe0, 0x03, 0xd0, 0x0b, 0x9a,
+	0xc7, 0x17, 0xf0, 0x84, 0x75, 0x59, 0x3b, 0x6a, 0x39, 0xdd, 0xc7, 0xbb, 0x19, 0xed, 0x62, 0x88,
+	0x4f, 0x60, 0xb6, 0xa3, 0x76, 0xf0, 0x92, 0x15, 0x92, 0xfa, 0xa0, 0xfd, 0xa2, 0xf2, 0xb5, 0x0f,
+	0xdd, 0x43, 0xea, 0x7d, 0x29, 0x2c, 0xce, 0x23, 0xe6, 0x79, 0xe9, 0xb3, 0x24, 0x0f, 0x33, 0x2d,
+	0xbf, 0xd3, 0x0b, 0x71, 0xc4, 0xeb, 0x05, 0xbd, 0x87, 0x55, 0xc6, 0x23, 0x0d, 0x5e, 0x79, 0x83,
+	0x85, 0x2c, 0x7a, 0xe5, 0xf2, 0xbb, 0xfc, 0xff, 0x75, 0x98, 0x51, 0xf6, 0xe4, 0x27, 0x03, 0x72,
+	0x38, 0xb6, 0xc9, 0x66, 0x12, 0xfc, 0x18, 0x11, 0x33, 0xb7, 0x26, 0x33, 0xd6, 0x10, 0xb4, 0xf4,
+	0xd5, 0x9f, 0xff, 0xfe, 0x30, 0xb5, 0x49, 0xd6, 0xed, 0x04, 0xd1, 0xc4, 0x71, 0x6e, 0x9f, 0x60,
+	0x9d, 0xa7, 0xe4, 0x77, 0x03, 0x16, 0x87, 0x64, 0x85, 0x94, 0x2e, 0x4d, 0x39, 0x4e, 0xc4, 0xcc,
+	0xf2, 0x55, 0x5c, 0x90, 0xf5, 0x23, 0xc5, 0x5a, 0x26, 0xf7, 0x93, 0x58, 0x23, 0x4d, 0xbb, 0x80,
+	0xfc, 0xb3, 0x01, 0x39, 0x94, 0x91, 0x94, 0x66, 0x0e, 0xeb, 0x54, 0x4a, 0x33, 0x47, 0x94, 0x89,
+	0x96, 0x15, 0xe0, 0x16, 0xd9, 0x48, 0x02, 0x44, 0xa1, 0x0a, 0x62, 0x68, 0xbf, 0x1a, 0x90, 0x43,
+	0x89, 0x49, 0x41, 0x1b, 0x56, 0xb5, 0x14, 0xb4, 0x11, 0xd5, 0xa2, 0x1f, 0x2a, 0xb4, 0x12, 0xb1,
+	0x93, 0xd0, 0x02, 0xed, 0x30, 0x20, 0xb3, 0x4f, 0x0e, 0xf8, 0xf1, 0x29, 0xf9, 0xce, 0x80, 0xac,
+	0x14, 0x27, 0x52, 0x4c, 0x39, 0xb1, 0xbe, 0xee, 0x99, 0xeb, 0x13, 0x58, 0x22, 0x96, 0xad, 0xb0,
+	0xd6, 0xc9, 0x5a, 0xf2, 0x91, 0x36, 0x86, 0xda, 0x25, 0x71, 0xd4, 0x84, 0xda, 0xb8, 0x34, 0xc9,
+	0x90, 0x4a, 0x9a, 0x9b, 0x13, 0xd9, 0x22, 0xd2, 0xa6, 0x42, 0xba, 0x4b, 0xee, 0x24, 0x21, 0xc9,
+	0xe9, 0x6a, 0x9f, 0xc8, 0xd9, 0x7e, 0x4a, 0x7e, 0x34, 0x20, 0x87, 0xfa, 0x90, 0x72, 0x7a, 0xc3,
+	0xda, 0x99, 0x72, 0x7a, 0x23, 0x9a, 0x99, 0xde, 0xa6, 0x48, 0x9a, 0x22, 0xae, 0x3f, 0x0c, 0xb8,
+	0x39, 0x56, 0x00, 0xc9, 0xf6, 0x24, 0x89, 0xc7, 0x2a, 0xab, 0xf9, 0xf0, 0x4d, 0x5c, 0xb1, 0x02,
+	0x4b, 0x55, 0x50, 0x24, 0xab, 0x69, 0x15, 0xd4, 0xea, 0xd2, 0x5b, 0x3e, 0x8b, 0xf9, 0xbe, 0xbc,
+	0x91, 0x7b, 0x97, 0x3f, 0xc3, 0x11, 0x19, 0x36, 0xad, 0x49, 0xcd, 0x27, 0x1d, 0x82, 0x8a, 0xa9,
+	0x16, 0x3f, 0xf8, 0x5f, 0x0c, 0x80, 0x81, 0x72, 0x91, 0x09, 0x32, 0xc6, 0xc5, 0xcf, 0xb4, 0x27,
+	0xb6, 0x9f, 0xf4, 0x56, 0x6a, 0x44, 0xa5, 0x94, 0xe4, 0x5b, 0x03, 0x66, 0xb5, 0xae, 0xa5, 0x3c,
+	0x93, 0x21, 0x29, 0x4d, 0x79, 0x26, 0xc3, 0x02, 0x4b, 0x57, 0x15, 0xd0, 0x0a, 0x29, 0x24, 0x01,
+	0x69, 0x29, 0x55, 0x8d, 0x1a, 0x88, 0x5f, 0x4a, 0xa3, 0x2e, 0xe8, 0x6d, 0x4a, 0xa3, 0x2e, 0xaa,
+	0x6a, 0x7a, 0xa3, 0x02, 0xe5, 0x53, 0x73, 0x98, 0xe7, 0x55, 0x76, 0x5e, 0x9e, 0x15, 0x8c, 0x57,
+	0x67, 0x05, 0xe3, 0x9f, 0xb3, 0x82, 0xf1, 0xfd, 0x79, 0x21, 0xf3, 0xea, 0xbc, 0x90, 0xf9, 0xeb,
+	0xbc, 0x90, 0xf9, 0x72, 0xcd, 0x6d, 0x85, 0xcd, 0x5e, 0xdd, 0x72, 0x44, 0x1b, 0x65, 0x25, 0x16,
+	0xef, 0x48, 0x45, 0x0c, 0x8f, 0x3b, 0x3c, 0xa8, 0xcf, 0xaa, 0x7f, 0x94, 0x0f, 0x5e, 0x07, 0x00,
+	0x00, 0xff, 0xff, 0xfd, 0x2e, 0x3d, 0xfe, 0x11, 0x0f, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1242,12 +1242,12 @@ type QueryClient interface {
 	Storage(ctx context.Context, in *QueryStorageRequest, opts ...grpc.CallOption) (*QueryStorageResponse, error)
 	// Code queries the balance of all coins for a single account.
 	Code(ctx context.Context, in *QueryCodeRequest, opts ...grpc.CallOption) (*QueryCodeResponse, error)
-	// TxLogs queries ethereum logs from a transaction.
-	TxLogs(ctx context.Context, in *QueryTxLogsRequest, opts ...grpc.CallOption) (*QueryTxLogsResponse, error)
-	// TxReceipt queries a receipt by a transaction hash.
-	TxReceipt(ctx context.Context, in *QueryTxReceiptRequest, opts ...grpc.CallOption) (*QueryTxReceiptResponse, error)
-	// TxReceiptsByBlockHeight queries tx receipts by a block height.
-	TxReceiptsByBlockHeight(ctx context.Context, in *QueryTxReceiptsByBlockHeightRequest, opts ...grpc.CallOption) (*QueryTxReceiptsByBlockHeightResponse, error)
+	// Logs queries ethereum logs from a transaction.
+	Logs(ctx context.Context, in *QueryTxLogsRequest, opts ...grpc.CallOption) (*QueryTxLogsResponse, error)
+	// Receipt queries a receipt by a transaction hash.
+	Receipt(ctx context.Context, in *QueryReceiptRequest, opts ...grpc.CallOption) (*QueryReceiptResponse, error)
+	// ReceiptsByBlockHeight queries tx receipts by a block height.
+	ReceiptsByBlockHeight(ctx context.Context, in *QueryReceiptsByBlockHeightRequest, opts ...grpc.CallOption) (*QueryReceiptsByBlockHeightResponse, error)
 	// BlockLogs queries all the ethereum logs for a given block hash.
 	BlockLogs(ctx context.Context, in *QueryBlockLogsRequest, opts ...grpc.CallOption) (*QueryBlockLogsResponse, error)
 	// BlockBloom queries the block bloom filter bytes at a given height.
@@ -1311,27 +1311,27 @@ func (c *queryClient) Code(ctx context.Context, in *QueryCodeRequest, opts ...gr
 	return out, nil
 }
 
-func (c *queryClient) TxLogs(ctx context.Context, in *QueryTxLogsRequest, opts ...grpc.CallOption) (*QueryTxLogsResponse, error) {
+func (c *queryClient) Logs(ctx context.Context, in *QueryTxLogsRequest, opts ...grpc.CallOption) (*QueryTxLogsResponse, error) {
 	out := new(QueryTxLogsResponse)
-	err := c.cc.Invoke(ctx, "/ethermint.evm.v1alpha1.Query/TxLogs", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ethermint.evm.v1alpha1.Query/Logs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) TxReceipt(ctx context.Context, in *QueryTxReceiptRequest, opts ...grpc.CallOption) (*QueryTxReceiptResponse, error) {
-	out := new(QueryTxReceiptResponse)
-	err := c.cc.Invoke(ctx, "/ethermint.evm.v1alpha1.Query/TxReceipt", in, out, opts...)
+func (c *queryClient) Receipt(ctx context.Context, in *QueryReceiptRequest, opts ...grpc.CallOption) (*QueryReceiptResponse, error) {
+	out := new(QueryReceiptResponse)
+	err := c.cc.Invoke(ctx, "/ethermint.evm.v1alpha1.Query/Receipt", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) TxReceiptsByBlockHeight(ctx context.Context, in *QueryTxReceiptsByBlockHeightRequest, opts ...grpc.CallOption) (*QueryTxReceiptsByBlockHeightResponse, error) {
-	out := new(QueryTxReceiptsByBlockHeightResponse)
-	err := c.cc.Invoke(ctx, "/ethermint.evm.v1alpha1.Query/TxReceiptsByBlockHeight", in, out, opts...)
+func (c *queryClient) ReceiptsByBlockHeight(ctx context.Context, in *QueryReceiptsByBlockHeightRequest, opts ...grpc.CallOption) (*QueryReceiptsByBlockHeightResponse, error) {
+	out := new(QueryReceiptsByBlockHeightResponse)
+	err := c.cc.Invoke(ctx, "/ethermint.evm.v1alpha1.Query/ReceiptsByBlockHeight", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1387,12 +1387,12 @@ type QueryServer interface {
 	Storage(context.Context, *QueryStorageRequest) (*QueryStorageResponse, error)
 	// Code queries the balance of all coins for a single account.
 	Code(context.Context, *QueryCodeRequest) (*QueryCodeResponse, error)
-	// TxLogs queries ethereum logs from a transaction.
-	TxLogs(context.Context, *QueryTxLogsRequest) (*QueryTxLogsResponse, error)
-	// TxReceipt queries a receipt by a transaction hash.
-	TxReceipt(context.Context, *QueryTxReceiptRequest) (*QueryTxReceiptResponse, error)
-	// TxReceiptsByBlockHeight queries tx receipts by a block height.
-	TxReceiptsByBlockHeight(context.Context, *QueryTxReceiptsByBlockHeightRequest) (*QueryTxReceiptsByBlockHeightResponse, error)
+	// Logs queries ethereum logs from a transaction.
+	Logs(context.Context, *QueryTxLogsRequest) (*QueryTxLogsResponse, error)
+	// Receipt queries a receipt by a transaction hash.
+	Receipt(context.Context, *QueryReceiptRequest) (*QueryReceiptResponse, error)
+	// ReceiptsByBlockHeight queries tx receipts by a block height.
+	ReceiptsByBlockHeight(context.Context, *QueryReceiptsByBlockHeightRequest) (*QueryReceiptsByBlockHeightResponse, error)
 	// BlockLogs queries all the ethereum logs for a given block hash.
 	BlockLogs(context.Context, *QueryBlockLogsRequest) (*QueryBlockLogsResponse, error)
 	// BlockBloom queries the block bloom filter bytes at a given height.
@@ -1422,14 +1422,14 @@ func (*UnimplementedQueryServer) Storage(ctx context.Context, req *QueryStorageR
 func (*UnimplementedQueryServer) Code(ctx context.Context, req *QueryCodeRequest) (*QueryCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Code not implemented")
 }
-func (*UnimplementedQueryServer) TxLogs(ctx context.Context, req *QueryTxLogsRequest) (*QueryTxLogsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TxLogs not implemented")
+func (*UnimplementedQueryServer) Logs(ctx context.Context, req *QueryTxLogsRequest) (*QueryTxLogsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Logs not implemented")
 }
-func (*UnimplementedQueryServer) TxReceipt(ctx context.Context, req *QueryTxReceiptRequest) (*QueryTxReceiptResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TxReceipt not implemented")
+func (*UnimplementedQueryServer) Receipt(ctx context.Context, req *QueryReceiptRequest) (*QueryReceiptResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Receipt not implemented")
 }
-func (*UnimplementedQueryServer) TxReceiptsByBlockHeight(ctx context.Context, req *QueryTxReceiptsByBlockHeightRequest) (*QueryTxReceiptsByBlockHeightResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TxReceiptsByBlockHeight not implemented")
+func (*UnimplementedQueryServer) ReceiptsByBlockHeight(ctx context.Context, req *QueryReceiptsByBlockHeightRequest) (*QueryReceiptsByBlockHeightResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiptsByBlockHeight not implemented")
 }
 func (*UnimplementedQueryServer) BlockLogs(ctx context.Context, req *QueryBlockLogsRequest) (*QueryBlockLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BlockLogs not implemented")
@@ -1538,56 +1538,56 @@ func _Query_Code_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_TxLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Query_Logs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryTxLogsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TxLogs(ctx, in)
+		return srv.(QueryServer).Logs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ethermint.evm.v1alpha1.Query/TxLogs",
+		FullMethod: "/ethermint.evm.v1alpha1.Query/Logs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TxLogs(ctx, req.(*QueryTxLogsRequest))
+		return srv.(QueryServer).Logs(ctx, req.(*QueryTxLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_TxReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTxReceiptRequest)
+func _Query_Receipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryReceiptRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TxReceipt(ctx, in)
+		return srv.(QueryServer).Receipt(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ethermint.evm.v1alpha1.Query/TxReceipt",
+		FullMethod: "/ethermint.evm.v1alpha1.Query/Receipt",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TxReceipt(ctx, req.(*QueryTxReceiptRequest))
+		return srv.(QueryServer).Receipt(ctx, req.(*QueryReceiptRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_TxReceiptsByBlockHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTxReceiptsByBlockHeightRequest)
+func _Query_ReceiptsByBlockHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryReceiptsByBlockHeightRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TxReceiptsByBlockHeight(ctx, in)
+		return srv.(QueryServer).ReceiptsByBlockHeight(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ethermint.evm.v1alpha1.Query/TxReceiptsByBlockHeight",
+		FullMethod: "/ethermint.evm.v1alpha1.Query/ReceiptsByBlockHeight",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TxReceiptsByBlockHeight(ctx, req.(*QueryTxReceiptsByBlockHeightRequest))
+		return srv.(QueryServer).ReceiptsByBlockHeight(ctx, req.(*QueryReceiptsByBlockHeightRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1689,16 +1689,16 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Code_Handler,
 		},
 		{
-			MethodName: "TxLogs",
-			Handler:    _Query_TxLogs_Handler,
+			MethodName: "Logs",
+			Handler:    _Query_Logs_Handler,
 		},
 		{
-			MethodName: "TxReceipt",
-			Handler:    _Query_TxReceipt_Handler,
+			MethodName: "Receipt",
+			Handler:    _Query_Receipt_Handler,
 		},
 		{
-			MethodName: "TxReceiptsByBlockHeight",
-			Handler:    _Query_TxReceiptsByBlockHeight_Handler,
+			MethodName: "ReceiptsByBlockHeight",
+			Handler:    _Query_ReceiptsByBlockHeight_Handler,
 		},
 		{
 			MethodName: "BlockLogs",
@@ -2117,7 +2117,7 @@ func (m *QueryTxLogsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryTxReceiptRequest) Marshal() (dAtA []byte, err error) {
+func (m *QueryReceiptRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2127,12 +2127,12 @@ func (m *QueryTxReceiptRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryTxReceiptRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryReceiptRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryTxReceiptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryReceiptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2147,7 +2147,7 @@ func (m *QueryTxReceiptRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryTxReceiptResponse) Marshal() (dAtA []byte, err error) {
+func (m *QueryReceiptResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2157,12 +2157,12 @@ func (m *QueryTxReceiptResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryTxReceiptResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryReceiptResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryTxReceiptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryReceiptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2182,7 +2182,7 @@ func (m *QueryTxReceiptResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryTxReceiptsByBlockHeightRequest) Marshal() (dAtA []byte, err error) {
+func (m *QueryReceiptsByBlockHeightRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2192,12 +2192,12 @@ func (m *QueryTxReceiptsByBlockHeightRequest) Marshal() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *QueryTxReceiptsByBlockHeightRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryReceiptsByBlockHeightRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryTxReceiptsByBlockHeightRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryReceiptsByBlockHeightRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2205,7 +2205,7 @@ func (m *QueryTxReceiptsByBlockHeightRequest) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryTxReceiptsByBlockHeightResponse) Marshal() (dAtA []byte, err error) {
+func (m *QueryReceiptsByBlockHeightResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2215,12 +2215,12 @@ func (m *QueryTxReceiptsByBlockHeightResponse) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *QueryTxReceiptsByBlockHeightResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryReceiptsByBlockHeightResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryTxReceiptsByBlockHeightResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryReceiptsByBlockHeightResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2695,7 +2695,7 @@ func (m *QueryTxLogsResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryTxReceiptRequest) Size() (n int) {
+func (m *QueryReceiptRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2708,7 +2708,7 @@ func (m *QueryTxReceiptRequest) Size() (n int) {
 	return n
 }
 
-func (m *QueryTxReceiptResponse) Size() (n int) {
+func (m *QueryReceiptResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2721,7 +2721,7 @@ func (m *QueryTxReceiptResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryTxReceiptsByBlockHeightRequest) Size() (n int) {
+func (m *QueryReceiptsByBlockHeightRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2730,7 +2730,7 @@ func (m *QueryTxReceiptsByBlockHeightRequest) Size() (n int) {
 	return n
 }
 
-func (m *QueryTxReceiptsByBlockHeightResponse) Size() (n int) {
+func (m *QueryReceiptsByBlockHeightResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4006,7 +4006,7 @@ func (m *QueryTxLogsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryTxReceiptRequest) Unmarshal(dAtA []byte) error {
+func (m *QueryReceiptRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4029,10 +4029,10 @@ func (m *QueryTxReceiptRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryTxReceiptRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryReceiptRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryTxReceiptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryReceiptRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4091,7 +4091,7 @@ func (m *QueryTxReceiptRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryTxReceiptResponse) Unmarshal(dAtA []byte) error {
+func (m *QueryReceiptResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4114,10 +4114,10 @@ func (m *QueryTxReceiptResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryTxReceiptResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryReceiptResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryTxReceiptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryReceiptResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4150,7 +4150,7 @@ func (m *QueryTxReceiptResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Receipt == nil {
-				m.Receipt = &TxReceipt{}
+				m.Receipt = &Receipt{}
 			}
 			if err := m.Receipt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4180,7 +4180,7 @@ func (m *QueryTxReceiptResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryTxReceiptsByBlockHeightRequest) Unmarshal(dAtA []byte) error {
+func (m *QueryReceiptsByBlockHeightRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4203,10 +4203,10 @@ func (m *QueryTxReceiptsByBlockHeightRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryTxReceiptsByBlockHeightRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryReceiptsByBlockHeightRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryTxReceiptsByBlockHeightRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryReceiptsByBlockHeightRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -4233,7 +4233,7 @@ func (m *QueryTxReceiptsByBlockHeightRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryTxReceiptsByBlockHeightResponse) Unmarshal(dAtA []byte) error {
+func (m *QueryReceiptsByBlockHeightResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4256,10 +4256,10 @@ func (m *QueryTxReceiptsByBlockHeightResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryTxReceiptsByBlockHeightResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryReceiptsByBlockHeightResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryTxReceiptsByBlockHeightResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryReceiptsByBlockHeightResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4291,7 +4291,7 @@ func (m *QueryTxReceiptsByBlockHeightResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Receipts = append(m.Receipts, &TxReceipt{})
+			m.Receipts = append(m.Receipts, &Receipt{})
 			if err := m.Receipts[len(m.Receipts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

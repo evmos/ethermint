@@ -133,20 +133,20 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	fullTx bool,
 ) (map[string]interface{}, error) {
 
-	req := &evmtypes.QueryTxReceiptsByBlockHeightRequest{}
+	req := &evmtypes.QueryReceiptsByBlockHeightRequest{}
 
-	txReceiptsResp, err := queryClient.TxReceiptsByBlockHeight(types.ContextWithHeight(block.Height), req)
+	receiptsResp, err := queryClient.ReceiptsByBlockHeight(types.ContextWithHeight(block.Height), req)
 	if err != nil {
-		e.logger.Debugf("TxReceiptsByBlockHeight fail: %s", err.Error())
+		e.logger.Debugf("ReceiptsByBlockHeight fail: %s", err.Error())
 		return nil, err
 	}
 
 	gasUsed := big.NewInt(0)
 
-	ethRPCTxs := make([]interface{}, 0, len(txReceiptsResp.Receipts))
+	ethRPCTxs := make([]interface{}, 0, len(receiptsResp.Receipts))
 
-	for _, receipt := range txReceiptsResp.Receipts {
-		hash := common.HexToHash(receipt.Hash)
+	for _, receipt := range receiptsResp.Receipts {
+		hash := common.HexToHash(receipt.TxHash)
 		if fullTx {
 			// full txs from receipts
 			tx, err := types.NewTransactionFromData(
@@ -154,8 +154,8 @@ func (e *EVMBackend) EthBlockFromTendermint(
 				common.HexToAddress(receipt.From),
 				hash,
 				common.HexToHash(receipt.BlockHash),
-				receipt.BlockHeight,
-				receipt.Index,
+				receipt.BlockNumber,
+				receipt.TransactionIndex,
 			)
 
 			if err != nil {
@@ -164,7 +164,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 			}
 
 			ethRPCTxs = append(ethRPCTxs, tx)
-			gasUsed.Add(gasUsed, new(big.Int).SetUint64(receipt.Result.GasUsed))
+			gasUsed.Add(gasUsed, new(big.Int).SetUint64(receipt.GasUsed))
 		} else {
 			// simply hashes
 			ethRPCTxs = append(ethRPCTxs, hash)
@@ -255,9 +255,9 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 		Hash: txHash.String(),
 	}
 
-	res, err := e.queryClient.TxLogs(e.ctx, req)
+	res, err := e.queryClient.Logs(e.ctx, req)
 	if err != nil {
-		e.logger.Warningf("TxLogs fail")
+		e.logger.Warningf("Logs fail")
 		return nil, err
 	}
 

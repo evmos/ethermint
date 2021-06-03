@@ -639,21 +639,21 @@ func (e *PublicEthAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx
 func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHash", "hash", hash.Hex())
 
-	resp, err := e.queryClient.TxReceipt(e.ctx, &evmtypes.QueryTxReceiptRequest{
+	resp, err := e.queryClient.Receipt(e.ctx, &evmtypes.QueryReceiptRequest{
 		Hash: hash.Hex(),
 	})
 	if err != nil {
-		e.logger.Debugf("failed to get tx info for %s: %s", hash.Hex(), err.Error())
+		e.logger.Debugf("failed to get tx receipt for %s: %s", hash.Hex(), err.Error())
 		return nil, nil
 	}
 
 	return rpctypes.NewTransactionFromData(
 		resp.Receipt.Data,
 		common.HexToAddress(resp.Receipt.From),
-		common.HexToHash(resp.Receipt.Hash),
+		common.HexToHash(resp.Receipt.TxHash),
 		common.HexToHash(resp.Receipt.BlockHash),
-		resp.Receipt.BlockHeight,
-		resp.Receipt.Index,
+		resp.Receipt.BlockNumber,
+		resp.Receipt.TransactionIndex,
 	)
 }
 
@@ -666,7 +666,7 @@ func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx h
 		return nil, errors.Wrapf(err, "failed retrieve block from hash")
 	}
 
-	resp, err := e.queryClient.TxReceiptsByBlockHeight(rpctypes.ContextWithHeight(header.Number.Int64()), &evmtypes.QueryTxReceiptsByBlockHeightRequest{})
+	resp, err := e.queryClient.ReceiptsByBlockHeight(rpctypes.ContextWithHeight(header.Number.Int64()), &evmtypes.QueryReceiptsByBlockHeightRequest{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query tx receipts by block height")
 	}
@@ -678,8 +678,8 @@ func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx h
 func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
 
-	req := &evmtypes.QueryTxReceiptsByBlockHeightRequest{}
-	resp, err := e.queryClient.TxReceiptsByBlockHeight(rpctypes.ContextWithHeight(blockNum.Int64()), req)
+	req := &evmtypes.QueryReceiptsByBlockHeightRequest{}
+	resp, err := e.queryClient.ReceiptsByBlockHeight(rpctypes.ContextWithHeight(blockNum.Int64()), req)
 	if err != nil {
 		err = errors.Wrap(err, "failed to query tx receipts by block height")
 		return nil, err
@@ -688,7 +688,7 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.Blo
 	return e.getReceiptByIndex(resp.Receipts, common.Hash{}, idx)
 }
 
-func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.Receipt, blockHash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	// return if index out of bounds
 	if uint64(idx) >= uint64(len(receipts)) {
 		return nil, nil
@@ -709,9 +709,9 @@ func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHa
 	return rpctypes.NewTransactionFromData(
 		receipt.Data,
 		common.HexToAddress(receipt.From),
-		common.HexToHash(receipt.Hash),
+		common.HexToHash(receipt.TxHash),
 		blockHash,
-		receipt.BlockHeight,
+		receipt.BlockNumber,
 		uint64(idx),
 	)
 }
@@ -721,7 +721,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	e.logger.Debugln("eth_getTransactionReceipt", "hash", hash.Hex())
 
 	ctx := rpctypes.ContextWithHeight(int64(0))
-	tx, err := e.queryClient.TxReceipt(ctx, &evmtypes.QueryTxReceiptRequest{
+	tx, err := e.queryClient.Receipt(ctx, &evmtypes.QueryReceiptRequest{
 		Hash: hash.Hex(),
 	})
 	if err != nil {
@@ -730,50 +730,40 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 	}
 
 	// Query block for consensus hash
-	height := int64(tx.Receipt.BlockHeight)
-	block, err := e.clientCtx.Client.Block(e.ctx, &height)
-	if err != nil {
-		e.logger.Warningln("didnt find block for tx height", height)
-		return nil, err
-	}
-
-	cumulativeGasUsed := uint64(tx.Receipt.Result.GasUsed)
-	if tx.Receipt.Index != 0 {
-		cumulativeGasUsed += rpctypes.GetBlockCumulativeGas(e.clientCtx, block.Block, int(tx.Receipt.Index))
-	}
+	height := int64(tx.Receipt.BlockNumber)
 
 	var status hexutil.Uint
-	if tx.Receipt.Result.Reverted {
+	if tx.Receipt.Reverted {
 		status = hexutil.Uint(0)
 	} else {
 		status = hexutil.Uint(1)
 	}
 
 	toHex := common.Address{}
-	if len(tx.Receipt.Data.To) > 0 {
+	if len(tx.Receipt.To) > 0 {
 		toHex = common.HexToAddress(tx.Receipt.Data.To)
 	}
 
-	contractAddress := common.HexToAddress(tx.Receipt.Result.ContractAddress)
-	logsBloom := hexutil.Encode(ethtypes.BytesToBloom(tx.Receipt.Result.Bloom).Bytes())
+	contractAddress := common.HexToAddress(tx.Receipt.ContractAddress)
+	logsBloom := hexutil.Encode(ethtypes.BytesToBloom(tx.Receipt.Bloom).Bytes())
 	receipt := map[string]interface{}{
 		// Consensus fields: These fields are defined by the Yellow Paper
 		"status":            status,
-		"cumulativeGasUsed": hexutil.Uint64(cumulativeGasUsed),
+		"cumulativeGasUsed": hexutil.Uint64(tx.Receipt.CumulativeGasUsed),
 		"logsBloom":         logsBloom,
-		"logs":              tx.Receipt.Result.TxLogs.EthLogs(),
+		"logs":              tx.Receipt.Logs.EthLogs(),
 
 		// Implementation fields: These fields are added by geth when processing a transaction.
 		// They are stored in the chain database.
 		"transactionHash": hash.Hex(),
 		"contractAddress": contractAddress.Hex(),
-		"gasUsed":         hexutil.Uint64(tx.Receipt.Result.GasUsed),
+		"gasUsed":         hexutil.Uint64(tx.Receipt.GasUsed),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
-		"blockHash":        common.BytesToHash(block.Block.Header.Hash()).Hex(),
-		"blockNumber":      hexutil.Uint64(tx.Receipt.BlockHeight),
-		"transactionIndex": hexutil.Uint64(tx.Receipt.Index),
+		"blockHash":        common.HexToHash(tx.Receipt.BlockHash),
+		"blockNumber":      hexutil.Uint64(tx.Receipt.BlockNumber),
+		"transactionIndex": hexutil.Uint64(tx.Receipt.TransactionIndex),
 
 		// sender and receiver (contract or EOA) addreses
 		"from": common.HexToAddress(tx.Receipt.From),

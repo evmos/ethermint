@@ -393,7 +393,7 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 
 			tc.malleate()
 			ctx := sdk.WrapSDKContext(suite.ctx)
-			res, err := suite.queryClient.TxLogs(ctx, req)
+			res, err := suite.queryClient.Logs(ctx, req)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -517,10 +517,10 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 	}
 }
 
-func (suite *KeeperTestSuite) TestQueryTxReceipt() {
+func (suite *KeeperTestSuite) TestQueryReceipt() {
 	var (
-		req    *types.QueryTxReceiptRequest
-		expRes *types.QueryTxReceiptResponse
+		req    *types.QueryReceiptRequest
+		expRes *types.QueryReceiptResponse
 	)
 
 	testCases := []struct {
@@ -530,14 +530,14 @@ func (suite *KeeperTestSuite) TestQueryTxReceipt() {
 	}{
 		{"empty hash",
 			func() {
-				req = &types.QueryTxReceiptRequest{}
+				req = &types.QueryReceiptRequest{}
 			},
 			false,
 		},
 		{"tx receipt not found for hash",
 			func() {
 				hash := ethcmn.BytesToHash([]byte("thash"))
-				req = &types.QueryTxReceiptRequest{
+				req = &types.QueryReceiptRequest{
 					Hash: hash.Hex(),
 				}
 			},
@@ -546,19 +546,19 @@ func (suite *KeeperTestSuite) TestQueryTxReceipt() {
 		{"success",
 			func() {
 				hash := ethcmn.BytesToHash([]byte("thash"))
-				receipt := &types.TxReceipt{
+				receipt := &types.Receipt{
 					Hash:        hash.Hex(),
 					From:        suite.address.Hex(),
 					BlockHeight: uint64(suite.ctx.BlockHeight()),
 					BlockHash:   ethcmn.BytesToHash(suite.ctx.BlockHeader().DataHash).Hex(),
 				}
 
-				suite.app.EvmKeeper.SetTxReceiptToHash(suite.ctx, hash, receipt)
-				req = &types.QueryTxReceiptRequest{
+				suite.app.EvmKeeper.SetReceiptToHash(suite.ctx, hash, receipt)
+				req = &types.QueryReceiptRequest{
 					Hash: hash.Hex(),
 				}
 
-				expRes = &types.QueryTxReceiptResponse{
+				expRes = &types.QueryReceiptResponse{
 					Receipt: receipt,
 				}
 			},
@@ -572,7 +572,7 @@ func (suite *KeeperTestSuite) TestQueryTxReceipt() {
 
 			tc.malleate()
 			ctx := sdk.WrapSDKContext(suite.ctx)
-			res, err := suite.queryClient.TxReceipt(ctx, req)
+			res, err := suite.queryClient.Receipt(ctx, req)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -586,10 +586,10 @@ func (suite *KeeperTestSuite) TestQueryTxReceipt() {
 	}
 }
 
-func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHeight() {
+func (suite *KeeperTestSuite) TestQueryReceiptByBlockHeight() {
 	var (
-		req    = &types.QueryTxReceiptsByBlockHeightRequest{}
-		expRes *types.QueryTxReceiptsByBlockHeightResponse
+		req    = &types.QueryReceiptsByBlockHeightRequest{}
+		expRes *types.QueryReceiptsByBlockHeightResponse
 	)
 
 	testCases := []struct {
@@ -599,7 +599,7 @@ func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHeight() {
 	}{
 		{"empty response",
 			func() {
-				expRes = &types.QueryTxReceiptsByBlockHeightResponse{
+				expRes = &types.QueryReceiptsByBlockHeightResponse{
 					Receipts: nil,
 				}
 			},
@@ -608,7 +608,7 @@ func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHeight() {
 		{"success",
 			func() {
 				hash := ethcmn.BytesToHash([]byte("thash"))
-				receipt := &types.TxReceipt{
+				receipt := &types.Receipt{
 					Hash:        hash.Hex(),
 					From:        suite.address.Hex(),
 					BlockHeight: uint64(suite.ctx.BlockHeight()),
@@ -616,9 +616,9 @@ func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHeight() {
 				}
 
 				suite.app.EvmKeeper.AddTxHashToBlock(suite.ctx, suite.ctx.BlockHeight(), hash)
-				suite.app.EvmKeeper.SetTxReceiptToHash(suite.ctx, hash, receipt)
-				expRes = &types.QueryTxReceiptsByBlockHeightResponse{
-					Receipts: []*types.TxReceipt{receipt},
+				suite.app.EvmKeeper.SetReceiptToHash(suite.ctx, hash, receipt)
+				expRes = &types.QueryReceiptsByBlockHeightResponse{
+					Receipts: []*types.Receipt{receipt},
 				}
 			},
 			true,
@@ -633,7 +633,7 @@ func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHeight() {
 			ctx := sdk.WrapSDKContext(suite.ctx)
 			ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, fmt.Sprintf("%d", suite.ctx.BlockHeight()))
 
-			res, err := suite.queryClient.TxReceiptsByBlockHeight(ctx, req)
+			res, err := suite.queryClient.ReceiptsByBlockHeight(ctx, req)
 
 			if tc.expPass {
 				suite.Require().NoError(err)

@@ -14,11 +14,13 @@
     - [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig)
     - [Log](#ethermint.evm.v1alpha1.Log)
     - [Params](#ethermint.evm.v1alpha1.Params)
+    - [Receipt](#ethermint.evm.v1alpha1.Receipt)
     - [State](#ethermint.evm.v1alpha1.State)
     - [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs)
     - [TxData](#ethermint.evm.v1alpha1.TxData)
-    - [TxReceipt](#ethermint.evm.v1alpha1.TxReceipt)
     - [TxResult](#ethermint.evm.v1alpha1.TxResult)
+  
+    - [TxType](#ethermint.evm.v1alpha1.TxType)
   
 - [ethermint/evm/v1alpha1/genesis.proto](#ethermint/evm/v1alpha1/genesis.proto)
     - [GenesisAccount](#ethermint.evm.v1alpha1.GenesisAccount)
@@ -39,16 +41,16 @@
     - [QueryCosmosAccountResponse](#ethermint.evm.v1alpha1.QueryCosmosAccountResponse)
     - [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest)
     - [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse)
+    - [QueryReceiptRequest](#ethermint.evm.v1alpha1.QueryReceiptRequest)
+    - [QueryReceiptResponse](#ethermint.evm.v1alpha1.QueryReceiptResponse)
+    - [QueryReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightRequest)
+    - [QueryReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightResponse)
     - [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest)
     - [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse)
     - [QueryStorageRequest](#ethermint.evm.v1alpha1.QueryStorageRequest)
     - [QueryStorageResponse](#ethermint.evm.v1alpha1.QueryStorageResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest)
     - [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse)
-    - [QueryTxReceiptRequest](#ethermint.evm.v1alpha1.QueryTxReceiptRequest)
-    - [QueryTxReceiptResponse](#ethermint.evm.v1alpha1.QueryTxReceiptResponse)
-    - [QueryTxReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest)
-    - [QueryTxReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse)
   
     - [Query](#ethermint.evm.v1alpha1.Query)
   
@@ -237,6 +239,30 @@ Params defines the EVM module parameters
 
 
 
+<a name="ethermint.evm.v1alpha1.Receipt"></a>
+
+### Receipt
+Receipt defines the receipt type stored in KVStore for each EVM transaction.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `type` | [TxType](#ethermint.evm.v1alpha1.TxType) |  | Consensus fields: These fields are defined by the Yellow Paper |
+| `cumulative_gas_used` | [uint64](#uint64) |  |  |
+| `bloom` | [bytes](#bytes) |  |  |
+| `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated |  |
+| `tx_hash` | [string](#string) |  | Implementation fields: These fields are added by geth when processing a transaction. They are stored in the chain database. |
+| `contract_address` | [string](#string) |  |  |
+| `gas_used` | [uint64](#uint64) |  |  |
+| `block_hash` | [string](#string) |  | Inclusion information: These fields provide information about the inclusion of the transaction corresponding to this receipt. |
+| `block_number` | [uint64](#uint64) |  |  |
+| `transaction_index` | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.State"></a>
 
 ### State
@@ -297,27 +323,6 @@ solely as intended in Ethereum abiding by the protocol.
 
 
 
-<a name="ethermint.evm.v1alpha1.TxReceipt"></a>
-
-### TxReceipt
-TxReceipt defines the receipt type stored in KV for each EVM transaction.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `hash` | [string](#string) |  |  |
-| `from` | [string](#string) |  |  |
-| `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  |  |
-| `result` | [TxResult](#ethermint.evm.v1alpha1.TxResult) |  |  |
-| `index` | [uint64](#uint64) |  |  |
-| `block_height` | [uint64](#uint64) |  |  |
-| `block_hash` | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="ethermint.evm.v1alpha1.TxResult"></a>
 
 ### TxResult
@@ -338,6 +343,18 @@ TxResult stores results of Tx execution.
 
 
  <!-- end messages -->
+
+
+<a name="ethermint.evm.v1alpha1.TxType"></a>
+
+### TxType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| Legacy | 0 |  |
+| AccessList | 1 |  |
+
 
  <!-- end enums -->
 
@@ -616,6 +633,61 @@ QueryParamsResponse defines the response type for querying x/evm parameters.
 
 
 
+<a name="ethermint.evm.v1alpha1.QueryReceiptRequest"></a>
+
+### QueryReceiptRequest
+QueryReceiptRequest is the request type for the Query/Receipt RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `hash` | [string](#string) |  | hash is the ethereum transaction hex hash to query the receipt for. |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryReceiptResponse"></a>
+
+### QueryReceiptResponse
+QueryReceiptResponse is the response type for the Query/Receipt RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `receipt` | [Receipt](#ethermint.evm.v1alpha1.Receipt) |  | receipt represents the ethereum receipt for the given transaction. |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightRequest"></a>
+
+### QueryReceiptsByBlockHeightRequest
+QueryReceiptsByBlockHeightRequest is the request type for the Query/ReceiptsByBlockHeight RPC method.
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightResponse"></a>
+
+### QueryReceiptsByBlockHeightResponse
+QueryReceiptsByBlockHeightResponse is the response type for the Query/ReceiptsByBlockHeight RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `receipts` | [Receipt](#ethermint.evm.v1alpha1.Receipt) | repeated | tx receipts list for the block |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.QueryStaticCallRequest"></a>
 
 ### QueryStaticCallRequest
@@ -708,61 +780,6 @@ QueryTxLogs is the response type for the Query/TxLogs RPC method.
 
 
 
-
-<a name="ethermint.evm.v1alpha1.QueryTxReceiptRequest"></a>
-
-### QueryTxReceiptRequest
-QueryTxReceiptRequest is the request type for the Query/TxReceipt RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `hash` | [string](#string) |  | hash is the ethereum transaction hex hash to query the receipt for. |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.QueryTxReceiptResponse"></a>
-
-### QueryTxReceiptResponse
-QueryTxReceiptResponse is the response type for the Query/TxReceipt RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `receipt` | [TxReceipt](#ethermint.evm.v1alpha1.TxReceipt) |  | receipt represents the ethereum receipt for the given transaction. |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest"></a>
-
-### QueryTxReceiptsByBlockHeightRequest
-QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse"></a>
-
-### QueryTxReceiptsByBlockHeightResponse
-QueryTxReceiptsByBlockHeightResponse is the response type for the Query/TxReceiptsByBlockHeight RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `receipts` | [TxReceipt](#ethermint.evm.v1alpha1.TxReceipt) | repeated | tx receipts list for the block |
-
-
-
-
-
  <!-- end messages -->
 
  <!-- end enums -->
@@ -782,9 +799,9 @@ Query defines the gRPC querier service.
 | `Balance` | [QueryBalanceRequest](#ethermint.evm.v1alpha1.QueryBalanceRequest) | [QueryBalanceResponse](#ethermint.evm.v1alpha1.QueryBalanceResponse) | Balance queries the balance of a the EVM denomination for a single EthAccount. | GET|/ethermint/evm/v1alpha1/balances/{address}|
 | `Storage` | [QueryStorageRequest](#ethermint.evm.v1alpha1.QueryStorageRequest) | [QueryStorageResponse](#ethermint.evm.v1alpha1.QueryStorageResponse) | Storage queries the balance of all coins for a single account. | GET|/ethermint/evm/v1alpha1/storage/{address}/{key}|
 | `Code` | [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest) | [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse) | Code queries the balance of all coins for a single account. | GET|/ethermint/evm/v1alpha1/codes/{address}|
-| `TxLogs` | [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest) | [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse) | TxLogs queries ethereum logs from a transaction. | GET|/ethermint/evm/v1alpha1/tx_logs/{hash}|
-| `TxReceipt` | [QueryTxReceiptRequest](#ethermint.evm.v1alpha1.QueryTxReceiptRequest) | [QueryTxReceiptResponse](#ethermint.evm.v1alpha1.QueryTxReceiptResponse) | TxReceipt queries a receipt by a transaction hash. | GET|/ethermint/evm/v1alpha1/tx_receipt/{hash}|
-| `TxReceiptsByBlockHeight` | [QueryTxReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightRequest) | [QueryTxReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse) | TxReceiptsByBlockHeight queries tx receipts by a block height. | GET|/ethermint/evm/v1alpha1/tx_receipts_block|
+| `Logs` | [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest) | [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse) | Logs queries ethereum logs from a transaction. | GET|/ethermint/evm/v1alpha1/logs/{hash}|
+| `Receipt` | [QueryReceiptRequest](#ethermint.evm.v1alpha1.QueryReceiptRequest) | [QueryReceiptResponse](#ethermint.evm.v1alpha1.QueryReceiptResponse) | Receipt queries a receipt by a transaction hash. | GET|/ethermint/evm/v1alpha1/receipts/{hash}|
+| `ReceiptsByBlockHeight` | [QueryReceiptsByBlockHeightRequest](#ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightRequest) | [QueryReceiptsByBlockHeightResponse](#ethermint.evm.v1alpha1.QueryReceiptsByBlockHeightResponse) | ReceiptsByBlockHeight queries tx receipts by a block height. | GET|/ethermint/evm/v1alpha1/receipts_block|
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|

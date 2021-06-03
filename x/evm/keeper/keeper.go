@@ -168,14 +168,14 @@ func (k Keeper) SetHeaderHash(ctx sdk.Context, height int64, hash common.Hash) {
 	store.Set(key, hash.Bytes())
 }
 
-// SetTxReceiptToHash sets the mapping from tx hash to tx receipt
-func (k Keeper) SetTxReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *types.TxReceipt) {
+// SetReceiptToHash sets the mapping from tx hash to tx receipt
+func (k Keeper) SetReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *types.Receipt) {
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	data := k.cdc.MustMarshalBinaryBare(receipt)
 
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyHashTxReceipt(hash), data)
+	store.Set(types.KeyHashReceipt(hash), data)
 }
 
 // ----------------------------------------------------------------------------
@@ -207,15 +207,15 @@ func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
 	store.Delete(types.KeyPrefixTransientRefund)
 }
 
-// GetTxReceiptFromHash gets tx receipt by tx hash.
-func (k Keeper) GetTxReceiptFromHash(ctx sdk.Context, hash common.Hash) (*types.TxReceipt, bool) {
+// GetReceiptFromHash gets tx receipt by tx hash.
+func (k Keeper) GetReceiptFromHash(ctx sdk.Context, hash common.Hash) (*types.Receipt, bool) {
 	store := ctx.KVStore(k.storeKey)
-	data := store.Get(types.KeyHashTxReceipt(hash))
+	data := store.Get(types.KeyHashReceipt(hash))
 	if len(data) == 0 {
 		return nil, false
 	}
 
-	var receipt types.TxReceipt
+	var receipt types.Receipt
 	k.cdc.MustUnmarshalBinaryBare(data, &receipt)
 
 	return &receipt, true
@@ -260,8 +260,8 @@ func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight uint64) []common.Ha
 	return nil
 }
 
-// GetTxReceiptsByBlockHeight gets tx receipts by block height.
-func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) []*types.TxReceipt {
+// GetReceiptsByBlockHeight gets tx receipts by block height.
+func (k Keeper) GetReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) []*types.Receipt {
 	txs := k.GetTxsFromBlock(ctx, blockHeight)
 	if len(txs) == 0 {
 		return nil
@@ -269,17 +269,17 @@ func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) 
 
 	store := ctx.KVStore(k.storeKey)
 
-	receipts := make([]*types.TxReceipt, 0, len(txs))
+	receipts := make([]*types.Receipt, 0, len(txs))
 
 	for idx, txHash := range txs {
-		data := store.Get(types.KeyHashTxReceipt(txHash))
+		data := store.Get(types.KeyHashReceipt(txHash))
 		if len(data) == 0 {
 			continue
 		}
 
-		var receipt types.TxReceipt
+		var receipt types.Receipt
 		k.cdc.MustUnmarshalBinaryBare(data, &receipt)
-		receipt.Index = uint64(idx)
+		receipt.TransactionIndex = uint64(idx)
 		receipts = append(receipts, &receipt)
 	}
 
