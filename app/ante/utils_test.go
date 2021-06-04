@@ -24,6 +24,7 @@ import (
 	"github.com/cosmos/ethermint/app"
 	ante "github.com/cosmos/ethermint/app/ante"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/cosmos/ethermint/encoding"
 	"github.com/cosmos/ethermint/tests"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
@@ -53,7 +54,7 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.app.AccountKeeper.SetParams(infCtx, authtypes.DefaultParams())
 	suite.app.EvmKeeper.SetParams(infCtx, evmtypes.DefaultParams())
 
-	encodingConfig := app.MakeEncodingConfig()
+	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	// We're using TestMsg amino encoding in some tests, so register it here.
 	encodingConfig.Amino.RegisterConcrete(&testdata.TestMsg{}, "testdata.TestMsg", nil)
 
