@@ -34,4 +34,11 @@ func TestTxEncoding(t *testing.T) {
 	require.NoError(t, err, "decoding failed")
 	require.IsType(t, &evmtypes.MsgEthereumTx{}, tx)
 	require.Equal(t, msg.Data, tx.(*evmtypes.MsgEthereumTx).Data)
+
+	// FIXME: transaction hashing is hardcoded on Terndermint:
+	// See https://github.com/tendermint/tendermint/issues/6539 for reference
+	// txHash := msg.AsTransaction().Hash()
+	// tmTx := tmtypes.Tx(bz)
+
+	// require.Equal(t, txHash.Bytes(), tmTx.Hash())
 }
