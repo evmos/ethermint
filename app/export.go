@@ -12,11 +12,13 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/cosmos/ethermint/encoding"
 )
 
 // NewDefaultGenesisState generates the default state for the application.
 func NewDefaultGenesisState() simapp.GenesisState {
-	encCfg := MakeEncodingConfig()
+	encCfg := encoding.MakeConfig(ModuleBasics)
 	return ModuleBasics.DefaultGenesis(encCfg.Marshaler)
 }
 

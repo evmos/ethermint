@@ -1,4 +1,4 @@
-package app
+package encoding
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
@@ -6,16 +6,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/cosmos/ethermint/codec"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
 // MakeEncodingConfig creates an EncodingConfig for testing
-func MakeEncodingConfig() params.EncodingConfig {
+func MakeConfig(mb module.BasicManager) params.EncodingConfig {
 	cdc := amino.NewLegacyAmino()
 	interfaceRegistry := types.NewInterfaceRegistry()
 	marshaler := amino.NewProtoCodec(interfaceRegistry)
@@ -27,10 +27,10 @@ func MakeEncodingConfig() params.EncodingConfig {
 		Amino:             cdc,
 	}
 
-	codec.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	codec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	RegisterLegacyAminoCodec(encodingConfig.Amino)
+	mb.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	mb.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	return encodingConfig
 }
 
