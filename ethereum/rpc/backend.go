@@ -135,6 +135,8 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	req := &evmtypes.QueryReceiptsByBlockHeightRequest{}
 
+	block.Txs
+
 	receiptsResp, err := queryClient.ReceiptsByBlockHeight(types.ContextWithHeight(block.Height), req)
 	if err != nil {
 		e.logger.Debugf("ReceiptsByBlockHeight fail: %s", err.Error())

@@ -140,8 +140,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	receipt.Bloom = ethtypes.CreateBloom(ethtypes.Receipts{receipt})
 
-	// TODO: create
-
 	return result.Response, nil
 }
 

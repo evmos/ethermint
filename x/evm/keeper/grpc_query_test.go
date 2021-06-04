@@ -547,9 +547,9 @@ func (suite *KeeperTestSuite) TestQueryReceipt() {
 			func() {
 				hash := ethcmn.BytesToHash([]byte("thash"))
 				receipt := &types.Receipt{
-					Hash:        hash.Hex(),
-					From:        suite.address.Hex(),
-					BlockHeight: uint64(suite.ctx.BlockHeight()),
+					TxHash: hash.Hex(),
+					// From:        suite.address.Hex(),
+					BlockNumber: uint64(suite.ctx.BlockHeight()),
 					BlockHash:   ethcmn.BytesToHash(suite.ctx.BlockHeader().DataHash).Hex(),
 				}
 

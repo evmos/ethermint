@@ -638,22 +638,35 @@ func (e *PublicEthAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx
 // GetTransactionByHash returns the transaction identified by hash.
 func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHash", "hash", hash.Hex())
-
-	resp, err := e.queryClient.Receipt(e.ctx, &evmtypes.QueryReceiptRequest{
-		Hash: hash.Hex(),
-	})
+	res, err := e.clientCtx.Client.Tx(e.ctx, hash.Bytes(), false)
 	if err != nil {
-		e.logger.Debugf("failed to get tx receipt for %s: %s", hash.Hex(), err.Error())
-		return nil, nil
+		e.logger.Debugf("failed to get tx", "hash", hash.Hex(), "error", err)
+		return nil, err
+	}
+
+	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
+	if err != nil {
+		e.logger.Debugf("failed to get block from tx number", "height", res.Height, "error", err)
+		return nil, err
+	}
+
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+	if err != nil {
+		return nil, err
+	}
+
+	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		return nil, fmt.Errorf("invalid tx type")
 	}
 
 	return rpctypes.NewTransactionFromData(
-		resp.Receipt.Data,
-		common.HexToAddress(resp.Receipt.From),
-		common.HexToHash(resp.Receipt.TxHash),
-		common.HexToHash(resp.Receipt.BlockHash),
-		resp.Receipt.BlockNumber,
-		resp.Receipt.TransactionIndex,
+		msg.Data,
+		common.HexToAddress(msg.From),
+		common.BytesToHash(res.Hash),
+		common.BytesToHash(resBlock.Block.Hash()),
+		uint64(res.Height),
+		uint64(res.Index),
 	)
 }
 
@@ -751,7 +764,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		"status":            status,
 		"cumulativeGasUsed": hexutil.Uint64(tx.Receipt.CumulativeGasUsed),
 		"logsBloom":         logsBloom,
-		"logs":              tx.Receipt.Logs.EthLogs(),
+		"logs":              evmtypes.LogsToEthereum(tx.Receipt.Logs),
 
 		// Implementation fields: These fields are added by geth when processing a transaction.
 		// They are stored in the chain database.
