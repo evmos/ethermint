@@ -28,7 +28,7 @@ import (
 	paramkeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/cosmos/ethermint/codec"
+	"github.com/cosmos/ethermint/encoding/codec"
 	"github.com/cosmos/ethermint/types"
 	evmkeeper "github.com/cosmos/ethermint/x/evm/keeper"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"

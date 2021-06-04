@@ -11,6 +11,7 @@ import (
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
+	enccodec "github.com/cosmos/ethermint/encoding/codec"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
@@ -27,9 +28,9 @@ func MakeConfig(mb module.BasicManager) params.EncodingConfig {
 		Amino:             cdc,
 	}
 
-	RegisterLegacyAminoCodec(encodingConfig.Amino)
+	enccodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	mb.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	enccodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	mb.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	return encodingConfig
 }

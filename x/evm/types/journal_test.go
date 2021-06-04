@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	enccodec "github.com/cosmos/ethermint/encoding/codec"
 	ethermint "github.com/cosmos/ethermint/types"
 
 	"github.com/stretchr/testify/suite"
@@ -28,8 +30,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	ethcodec "github.com/cosmos/ethermint/codec"
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
 
 func newTestCodec() (codec.BinaryMarshaler, *codec.LegacyAmino) {
@@ -39,7 +39,7 @@ func newTestCodec() (codec.BinaryMarshaler, *codec.LegacyAmino) {
 
 	sdk.RegisterLegacyAminoCodec(amino)
 
-	ethcodec.RegisterInterfaces(interfaceRegistry)
+	enccodec.RegisterInterfaces(interfaceRegistry)
 
 	return cdc, amino
 }
