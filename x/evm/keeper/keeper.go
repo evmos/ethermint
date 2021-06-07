@@ -145,20 +145,6 @@ func (k Keeper) SetBlockBloomTransient(bloom *big.Int) {
 }
 
 // ----------------------------------------------------------------------------
-// Block
-// ----------------------------------------------------------------------------
-
-// SetTxReceiptToHash sets the mapping from tx hash to tx receipt
-func (k Keeper) SetTxReceiptToHash(ctx sdk.Context, hash common.Hash, receipt *types.TxReceipt) {
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	data := k.cdc.MustMarshalBinaryBare(receipt)
-
-	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyHashTxReceipt(hash), data)
-}
-
-// ----------------------------------------------------------------------------
 // Tx
 // ----------------------------------------------------------------------------
 
@@ -185,85 +171,6 @@ func (k Keeper) IncreaseTxIndexTransient() {
 func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
 	store := ctx.TransientStore(k.transientKey)
 	store.Delete(types.KeyPrefixTransientRefund)
-}
-
-// GetTxReceiptFromHash gets tx receipt by tx hash.
-func (k Keeper) GetTxReceiptFromHash(ctx sdk.Context, hash common.Hash) (*types.TxReceipt, bool) {
-	store := ctx.KVStore(k.storeKey)
-	data := store.Get(types.KeyHashTxReceipt(hash))
-	if len(data) == 0 {
-		return nil, false
-	}
-
-	var receipt types.TxReceipt
-	k.cdc.MustUnmarshalBinaryBare(data, &receipt)
-
-	return &receipt, true
-}
-
-// AddTxHashToBlock stores tx hash in the list of tx for the block.
-func (k Keeper) AddTxHashToBlock(ctx sdk.Context, blockHeight int64, txHash common.Hash) {
-	key := types.KeyBlockHeightTxs(uint64(blockHeight))
-
-	list := types.BytesList{}
-
-	store := ctx.KVStore(k.storeKey)
-	data := store.Get(key)
-	if len(data) > 0 {
-		k.cdc.MustUnmarshalBinaryBare(data, &list)
-	}
-
-	list.Bytes = append(list.Bytes, txHash.Bytes())
-
-	data = k.cdc.MustMarshalBinaryBare(&list)
-	store.Set(key, data)
-}
-
-// GetTxsFromBlock returns list of tx hash in the block by height.
-func (k Keeper) GetTxsFromBlock(ctx sdk.Context, blockHeight uint64) []common.Hash {
-	key := types.KeyBlockHeightTxs(blockHeight)
-
-	store := ctx.KVStore(k.storeKey)
-	data := store.Get(key)
-	if len(data) > 0 {
-		list := types.BytesList{}
-		k.cdc.MustUnmarshalBinaryBare(data, &list)
-
-		txs := make([]common.Hash, 0, len(list.Bytes))
-		for _, b := range list.Bytes {
-			txs = append(txs, common.BytesToHash(b))
-		}
-
-		return txs
-	}
-
-	return nil
-}
-
-// GetTxReceiptsByBlockHeight gets tx receipts by block height.
-func (k Keeper) GetTxReceiptsByBlockHeight(ctx sdk.Context, blockHeight uint64) []*types.TxReceipt {
-	txs := k.GetTxsFromBlock(ctx, blockHeight)
-	if len(txs) == 0 {
-		return nil
-	}
-
-	store := ctx.KVStore(k.storeKey)
-
-	receipts := make([]*types.TxReceipt, 0, len(txs))
-
-	for idx, txHash := range txs {
-		data := store.Get(types.KeyHashTxReceipt(txHash))
-		if len(data) == 0 {
-			continue
-		}
-
-		var receipt types.TxReceipt
-		k.cdc.MustUnmarshalBinaryBare(data, &receipt)
-		receipt.Index = uint64(idx)
-		receipts = append(receipts, &receipt)
-	}
-
-	return receipts
 }
 
 // ----------------------------------------------------------------------------

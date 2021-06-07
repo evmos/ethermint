@@ -203,44 +203,6 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	}, nil
 }
 
-// TxReceipt implements the Query/TxReceipt gRPC method
-func (k Keeper) TxReceipt(c context.Context, req *types.QueryTxReceiptRequest) (*types.QueryTxReceiptResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
-	if ethermint.IsEmptyHash(req.Hash) {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrEmptyHash.Error(),
-		)
-	}
-
-	ctx := sdk.UnwrapSDKContext(c)
-
-	hash := ethcmn.HexToHash(req.Hash)
-	receipt, found := k.GetTxReceiptFromHash(ctx, hash)
-	if !found {
-		return nil, status.Errorf(
-			codes.NotFound, "%s: %s", types.ErrTxReceiptNotFound.Error(), req.Hash,
-		)
-	}
-
-	return &types.QueryTxReceiptResponse{
-		Receipt: receipt,
-	}, nil
-}
-
-// TxReceiptsByBlockHeight implements the Query/TxReceiptsByBlockHeight gRPC method
-func (k Keeper) TxReceiptsByBlockHeight(c context.Context, _ *types.QueryTxReceiptsByBlockHeightRequest) (*types.QueryTxReceiptsByBlockHeightResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	receipts := k.GetTxReceiptsByBlockHeight(ctx, uint64(ctx.BlockHeight()))
-	return &types.QueryTxReceiptsByBlockHeightResponse{
-		Receipts: receipts,
-	}, nil
-}
-
 // BlockLogs implements the Query/BlockLogs gRPC method
 func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (*types.QueryBlockLogsResponse, error) {
 	if req == nil {

@@ -683,12 +683,13 @@ func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx h
 		return nil, nil
 	}
 
-	if len(resBlock.Block.Txs) <= int(idx) {
-		e.logger.Debugln("block txs index out of bound", "index", int(idx))
+	i := int(idx)
+	if len(resBlock.Block.Txs) >= i {
+		e.logger.Debugln("block txs index out of bound", "index", i)
 		return nil, nil
 	}
 
-	txBz := resBlock.Block.Txs[int(idx)]
+	txBz := resBlock.Block.Txs[i]
 	tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 	if err != nil {
 		e.logger.WithError(err).Debugln("decoding failed")
@@ -721,12 +722,13 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.Blo
 		return nil, nil
 	}
 
-	if len(resBlock.Block.Txs) <= int(idx) {
-		e.logger.Debugln("block txs index out of bound", "index", int(idx))
+	i := int(idx)
+	if len(resBlock.Block.Txs) >= i {
+		e.logger.Debugln("block txs index out of bound", "index", i)
 		return nil, nil
 	}
 
-	txBz := resBlock.Block.Txs[int(idx)]
+	txBz := resBlock.Block.Txs[i]
 	tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 	if err != nil {
 		e.logger.WithError(err).Debugln("decoding failed")

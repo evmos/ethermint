@@ -77,25 +77,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		if errors.Is(err, vm.ErrExecutionReverted) && executionResult != nil {
 			// keep the execution result for revert reason
 			executionResult.Response.Reverted = true
-
-			if !st.Simulate {
-				k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-					Hash:        ethHash.Hex(),
-					From:        sender.Hex(),
-					Data:        msg.Data,
-					BlockHeight: uint64(ctx.BlockHeight()),
-					BlockHash:   k.headerHash.Hex(),
-					Result: &types.TxResult{
-						ContractAddress: executionResult.Response.ContractAddress,
-						Bloom:           executionResult.Response.Bloom,
-						TxLogs:          executionResult.Response.TxLogs,
-						Ret:             executionResult.Response.Ret,
-						Reverted:        executionResult.Response.Reverted,
-						GasUsed:         executionResult.GasInfo.GasConsumed,
-					},
-				})
-			}
-
 			return executionResult.Response, nil
 		}
 
@@ -110,31 +91,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		// update block bloom filter
 		bloom = bloom.Or(bloom, executionResult.Bloom)
 		k.SetBlockBloomTransient(bloom)
-
-		// update transaction logs in KVStore
-		err = k.CommitStateDB.SetLogs(ethHash, executionResult.Logs)
-		if err != nil {
-			panic(err)
-		}
-
-		k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-			Hash:        ethHash.Hex(),
-			From:        sender.Hex(),
-			Data:        msg.Data,
-			Index:       uint64(st.Csdb.TxIndex()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-			BlockHash:   k.headerHash.Hex(),
-			Result: &types.TxResult{
-				ContractAddress: executionResult.Response.ContractAddress,
-				Bloom:           executionResult.Response.Bloom,
-				TxLogs:          executionResult.Response.TxLogs,
-				Ret:             executionResult.Response.Ret,
-				Reverted:        executionResult.Response.Reverted,
-				GasUsed:         executionResult.GasInfo.GasConsumed,
-			},
-		})
-
-		k.AddTxHashToBlock(ctx, ctx.BlockHeight(), ethHash)
 	}
 
 	defer func() {
