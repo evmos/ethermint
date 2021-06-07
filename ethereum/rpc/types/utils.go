@@ -25,8 +25,8 @@ import (
 )
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
-func RawTxToEthTx(clientCtx client.Context, bz []byte) (*evmtypes.MsgEthereumTx, error) {
-	tx, err := clientCtx.TxConfig.TxDecoder()(bz)
+func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEthereumTx, error) {
+	tx, err := clientCtx.TxConfig.TxDecoder()(txBz)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
@@ -244,6 +244,25 @@ func BuildEthereumTx(clientCtx client.Context, msg *evmtypes.MsgEthereumTx, accN
 	}
 
 	return txBytes, nil
+}
+
+func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
+	var gasUsed uint64
+	txDecoder := clientCtx.TxConfig.TxDecoder()
+
+	tx, err := txDecoder(txBz)
+	if err != nil {
+		return nil, 0
+	}
+
+	switch tx := tx.(type) {
+	case *evmtypes.MsgEthereumTx:
+		gasUsed = tx.GetGas() // NOTE: this doesn't include the gas refunded
+	case sdk.FeeTx:
+		gasUsed = tx.GetGas()
+	}
+
+	return tx, gasUsed
 }
 
 type DataError interface {
