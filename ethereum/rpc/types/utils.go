@@ -199,7 +199,7 @@ func FormatBlock(
 		"receiptsRoot":     ethtypes.EmptyRootHash,
 
 		"uncles":          []common.Hash{},
-		"transactions":    transactions.([]common.Hash),
+		"transactions":    transactions,
 		"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
 	}
 }

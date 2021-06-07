@@ -137,44 +137,47 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	txReceiptsResp, err := queryClient.TxReceiptsByBlockHeight(types.ContextWithHeight(block.Height), req)
 	if err != nil {
-		e.logger.Debugf("TxReceiptsByBlockHeight fail: %s", err.Error())
-		return nil, err
+		e.logger.WithError(err).Debugln("TxReceiptsByBlockHeight failed")
 	}
 
 	gasUsed := big.NewInt(0)
 
-	ethRPCTxs := make([]interface{}, 0, len(txReceiptsResp.Receipts))
+	ethRPCTxs := []interface{}{}
 
-	for _, receipt := range txReceiptsResp.Receipts {
-		hash := common.HexToHash(receipt.Hash)
-		if fullTx {
-			// full txs from receipts
-			tx, err := types.NewTransactionFromData(
-				receipt.Data,
-				common.HexToAddress(receipt.From),
-				hash,
-				common.HexToHash(receipt.BlockHash),
-				receipt.BlockHeight,
-				receipt.Index,
-			)
+	if txReceiptsResp != nil {
 
-			if err != nil {
-				e.logger.WithError(err).Warningf("NewTransactionFromData for receipt %s failed", hash)
-				continue
+		for _, receipt := range txReceiptsResp.Receipts {
+			hash := common.HexToHash(receipt.Hash)
+			if fullTx {
+				// full txs from receipts
+				tx, err := types.NewTransactionFromData(
+					receipt.Data,
+					common.HexToAddress(receipt.From),
+					hash,
+					common.HexToHash(receipt.BlockHash),
+					receipt.BlockHeight,
+					receipt.Index,
+				)
+
+				if err != nil {
+					e.logger.WithError(err).Warningf("NewTransactionFromData for receipt %s failed", hash)
+					continue
+				}
+
+				ethRPCTxs = append(ethRPCTxs, tx)
+				gasUsed.Add(gasUsed, new(big.Int).SetUint64(receipt.Result.GasUsed))
+			} else {
+				// simply hashes
+				ethRPCTxs = append(ethRPCTxs, hash)
 			}
-
-			ethRPCTxs = append(ethRPCTxs, tx)
-			gasUsed.Add(gasUsed, new(big.Int).SetUint64(receipt.Result.GasUsed))
-		} else {
-			// simply hashes
-			ethRPCTxs = append(ethRPCTxs, hash)
 		}
 	}
 
 	blockBloomResp, err := queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
 	if err != nil {
-		e.logger.WithError(err).Debugln("failed to query BlockBloom at height", block.Height)
-		blockBloomResp.Bloom = ethtypes.Bloom{}.Bytes()
+		e.logger.WithError(err).Debugln("failed to query BlockBloom", "height", block.Height)
+
+		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
 	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
