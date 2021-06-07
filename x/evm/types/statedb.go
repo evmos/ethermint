@@ -252,7 +252,7 @@ func (csdb *CommitStateDB) SubRefund(gas uint64) {
 }
 
 // ----------------------------------------------------------------------------
-// Access List
+// Access List // TODO: deprecate
 // ----------------------------------------------------------------------------
 
 // PrepareAccessList handles the preparatory steps for executing a state transition with
@@ -288,12 +288,15 @@ func (csdb *CommitStateDB) AddressInAccessList(addr ethcmn.Address) bool {
 }
 
 func (csdb *CommitStateDB) SlotInAccessList(addr ethcmn.Address, slot ethcmn.Hash) (addressOk bool, slotOk bool) {
+	addressOk = csdb.AddressInAccessList(addr)
+	slotOk = csdb.addressSlotInAccessList(addr, slot)
+	return addressOk, slotOk
+}
+
+func (csdb *CommitStateDB) addressSlotInAccessList(addr ethcmn.Address, slot ethcmn.Hash) bool {
 	ts := prefix.NewStore(csdb.ctx.TransientStore(csdb.transientKey), KeyPrefixTransientAccessListSlot)
 	key := append(addr.Bytes(), slot.Bytes()...)
-
-	addressOk = csdb.AddressInAccessList(addr)
-	slotOk = ts.Has(key)
-	return addressOk, slotOk
+	return ts.Has(key)
 }
 
 // AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
@@ -310,21 +313,14 @@ func (csdb *CommitStateDB) AddAddressToAccessList(addr ethcmn.Address) {
 // AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (csdb *CommitStateDB) AddSlotToAccessList(addr ethcmn.Address, slot ethcmn.Hash) {
-	addrOk, slotOk := csdb.SlotInAccessList(addr, slot)
-
-	switch {
-	case !addrOk:
-		csdb.AddAddressToAccessList(addr)
-		fallthrough
-	case !slotOk:
-		ts := prefix.NewStore(csdb.ctx.TransientStore(csdb.transientKey), KeyPrefixTransientAccessListSlot)
-		key := append(addr.Bytes(), slot.Bytes()...)
-		ts.Set(key, []byte{0x1})
-	default:
-		// access list and slot in acccess list
+	csdb.AddAddressToAccessList(addr)
+	if csdb.addressSlotInAccessList(addr, slot) {
 		return
 	}
 
+	ts := prefix.NewStore(csdb.ctx.TransientStore(csdb.transientKey), KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+	ts.Set(key, []byte{0x1})
 }
 
 // ----------------------------------------------------------------------------
