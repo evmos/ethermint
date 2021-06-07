@@ -45,12 +45,6 @@ type Keeper struct {
 	// Ethermint concrete implementation on the EVM StateDB interface
 	CommitStateDB *types.CommitStateDB
 
-	// Per-transaction access list
-	// See EIP-2930 for more info: https://eips.ethereum.org/EIPS/eip-2930
-	// TODO: (@fedekunze) for how long should we persist the entries in the access list?
-	// same block (i.e Transient Store)? 2 or more (KVStore with module Parameter which resets the state after that window)?
-	accessList *types.AccessListMappings
-
 	// hash header for the current height. Reset during abci.RequestBeginBlock
 	headerHash common.Hash
 }
@@ -73,8 +67,7 @@ func NewKeeper(
 		bankKeeper:    bankKeeper,
 		storeKey:      storeKey,
 		transientKey:  transientKey,
-		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, paramSpace, ak, bankKeeper),
-		accessList:    types.NewAccessListMappings(),
+		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, transientKey, paramSpace, ak, bankKeeper),
 	}
 }
 

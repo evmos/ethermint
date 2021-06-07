@@ -536,7 +536,6 @@ func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 		// access list and slot in acccess list
 		return
 	}
-
 }
 
 // ----------------------------------------------------------------------------
