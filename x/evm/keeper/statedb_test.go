@@ -506,7 +506,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	}
 }
 
-func (suite *KeeperTestSuite) TestAccessList() {
+func (suite *KeeperTestSuite) TestPrepareAccessList() {
 	dest := tests.GenerateAddress()
 	precompiles := []common.Address{tests.GenerateAddress(), tests.GenerateAddress()}
 	accesses := ethtypes.AccessList{
@@ -526,9 +526,49 @@ func (suite *KeeperTestSuite) TestAccessList() {
 	for _, access := range accesses {
 		for _, key := range access.StorageKeys {
 			addrOK, slotOK := suite.app.EvmKeeper.SlotInAccessList(access.Address, key)
-			suite.Require().True(addrOK)
-			suite.Require().True(slotOK)
+			suite.Require().True(addrOK, access.Address.Hex())
+			suite.Require().True(slotOK, key.Hex())
 		}
+	}
+}
+
+func (suite *KeeperTestSuite) TestAddAddressToAccessList() {
+	testCases := []struct {
+		name string
+		addr common.Address
+	}{
+		{"new address", suite.address},
+		{"existing address", suite.address},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.app.EvmKeeper.AddAddressToAccessList(tc.addr)
+			addrOk := suite.app.EvmKeeper.AddressInAccessList(tc.addr)
+			suite.Require().True(addrOk, tc.addr.Hex())
+		})
+	}
+}
+
+func (suite *KeeperTestSuite) AddSlotToAccessList() {
+	testCases := []struct {
+		name string
+		addr common.Address
+		slot common.Hash
+	}{
+		{"new address and slot (1)", tests.GenerateAddress(), common.BytesToHash([]byte("hash"))},
+		{"new address and slot (2)", suite.address, common.Hash{}},
+		{"existing address and slot", suite.address, common.Hash{}},
+		{"existing address, new slot", suite.address, common.BytesToHash([]byte("hash"))},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.app.EvmKeeper.AddSlotToAccessList(tc.addr, tc.slot)
+			addrOk, slotOk := suite.app.EvmKeeper.SlotInAccessList(tc.addr, tc.slot)
+			suite.Require().True(addrOk, tc.addr.Hex())
+			suite.Require().True(slotOk, tc.slot.Hex())
+		})
 	}
 }
 
