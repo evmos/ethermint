@@ -495,35 +495,48 @@ func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, 
 
 // AddressInAccessList returns true if the address is registered on the access list map.
 func (k *Keeper) AddressInAccessList(addr common.Address) bool {
-	return k.accessList.ContainsAddress(addr)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListAddress)
+	return ts.Has(addr.Bytes())
 }
 
 func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
-	return k.accessList.Contains(addr, slot)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+
+	addressOk = k.AddressInAccessList(addr)
+	slotOk = ts.Has(key)
+	return addressOk, slotOk
 }
 
 // AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (k *Keeper) AddAddressToAccessList(addr common.Address) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+	if k.AddressInAccessList(addr) {
 		return
 	}
 
-	// NOTE: ignore change return bool because we don't have to keep a journal for state changes
-	_ = k.accessList.AddAddress(addr)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListAddress)
+	ts.Set(addr.Bytes(), []byte{0x1})
 }
 
 // AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+	addrOk, slotOk := k.SlotInAccessList(addr, slot)
+
+	switch {
+	case !addrOk:
+		k.AddAddressToAccessList(addr)
+		fallthrough
+	case !slotOk:
+		ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListSlot)
+		key := append(addr.Bytes(), slot.Bytes()...)
+		ts.Set(key, []byte{0x1})
+	default:
+		// access list and slot in acccess list
 		return
 	}
 
-	// NOTE: ignore change return booleans because we don't have to keep a journal for state changes
-	_, _ = k.accessList.AddSlot(addr, slot)
 }
 
 // ----------------------------------------------------------------------------
