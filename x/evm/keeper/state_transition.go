@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -58,18 +60,30 @@ func (k Keeper) VMConfig() vm.Config {
 //  3. The requested height is from a height greater than the latest one
 func (k Keeper) GetHashFn() vm.GetHashFunc {
 	return func(height uint64) common.Hash {
+		h := int64(height)
 		switch {
-		case k.ctx.BlockHeight() == int64(height):
+		case k.ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
 			// TODO: deprecate field from the keeper on next SDK release
 			return k.headerHash
 
-		case k.ctx.BlockHeight() > int64(height):
+		case k.ctx.BlockHeight() > h:
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
 			// current chain epoch. This only applies if the current height is greater than the requested height.
-			return k.GetHeightHash(k.ctx, height)
+			histInfo, found := k.stakingKeeper.GetHistoricalInfo(k.ctx, h)
+			if !found {
+				k.Logger(k.ctx).Debug("historical info not found", "height", h)
+				return common.Hash{}
+			}
 
+			header, err := tmtypes.HeaderFromProto(&histInfo.Header)
+			if err != nil {
+				k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
+				return common.Hash{}
+			}
+
+			return common.BytesToHash(header.Hash())
 		default:
 			// Case 3: heights greater than the current one returns an empty hash.
 			return common.Hash{}

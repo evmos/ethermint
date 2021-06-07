@@ -20,20 +20,7 @@ import (
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 	k.WithContext(ctx)
-
-	if req.Header.Height < 1 {
-		return
-	}
-
-	// Gas costs are handled within msg handler so costs should be ignored
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
 	k.headerHash = common.BytesToHash(req.Hash)
-
-	// set height -> hash
-
-	// TODO: prune
-	k.SetHeaderHash(ctx, req.Header.Height, k.headerHash)
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while

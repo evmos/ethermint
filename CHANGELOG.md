@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (evm) [tharsis#72](https://github.com/tharsis/ethermint/issues/72) Update `AccessList` to use `TransientStore` instead of map.
+* (evm) [tharsis#68](https://github.com/tharsis/ethermint/issues/68) Replace block hash storage map to use staking `HistoricalInfo`.
 
 ### API Breaking
 

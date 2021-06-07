@@ -3,6 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 // AccountKeeper defines the expected account keeper interface
@@ -23,4 +24,9 @@ type BankKeeper interface {
 	AddCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error
 	SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error
 	SetBalance(ctx sdk.Context, addr sdk.AccAddress, balance sdk.Coin) error
+}
+
+// StakingKeeper returns the historical headers kept in store.
+type StakingKeeper interface {
+	GetHistoricalInfo(ctx sdk.Context, height int64) (stakingtypes.HistoricalInfo, bool)
 }
