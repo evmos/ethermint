@@ -27,6 +27,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	paramkeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/cosmos/ethermint/encoding/codec"
 	"github.com/cosmos/ethermint/types"
@@ -183,13 +185,14 @@ func TestImportBlocks(t *testing.T) {
 
 	authStoreKey := sdk.NewKVStoreKey(authtypes.StoreKey)
 	bankStoreKey := sdk.NewKVStoreKey(banktypes.StoreKey)
+	stakingStoreKey := sdk.NewKVStoreKey(stakingtypes.StoreKey)
 	evmStoreKey := sdk.NewKVStoreKey(evmtypes.StoreKey)
 	paramsStoreKey := sdk.NewKVStoreKey(paramtypes.StoreKey)
 	evmTransientStoreKey := sdk.NewTransientStoreKey(evmtypes.TransientKey)
 	paramsTransientStoreKey := sdk.NewTransientStoreKey(paramtypes.TStoreKey)
 
 	// mount stores
-	keys := []*sdk.KVStoreKey{authStoreKey, bankStoreKey, evmStoreKey, paramsStoreKey}
+	keys := []*sdk.KVStoreKey{authStoreKey, bankStoreKey, stakingStoreKey, evmStoreKey, paramsStoreKey}
 	tkeys := []*sdk.TransientStoreKey{paramsTransientStoreKey, evmTransientStoreKey}
 	for _, key := range keys {
 		cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
@@ -204,12 +207,14 @@ func TestImportBlocks(t *testing.T) {
 	// Set specific subspaces
 	authSubspace := paramsKeeper.Subspace(authtypes.ModuleName)
 	bankSubspace := paramsKeeper.Subspace(banktypes.ModuleName)
+	stakingSubspace := paramsKeeper.Subspace(stakingtypes.ModuleName)
 	evmSubspace := paramsKeeper.Subspace(evmtypes.ModuleName).WithKeyTable(evmtypes.ParamKeyTable())
 
 	// create keepers
 	ak := authkeeper.NewAccountKeeper(cdc, authStoreKey, authSubspace, types.ProtoAccount, nil)
 	bk := bankkeeper.NewBaseKeeper(cdc, bankStoreKey, ak, bankSubspace, nil)
-	evmKeeper := evmkeeper.NewKeeper(cdc, evmStoreKey, evmTransientStoreKey, evmSubspace, ak, bk)
+	sk := stakingkeeper.NewKeeper(cdc, stakingStoreKey, ak, bk, stakingSubspace)
+	evmKeeper := evmkeeper.NewKeeper(cdc, evmStoreKey, evmTransientStoreKey, evmSubspace, ak, bk, sk)
 
 	cms.SetPruning(sdkstore.PruneNothing)
 
