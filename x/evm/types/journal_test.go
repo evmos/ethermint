@@ -104,6 +104,7 @@ func (suite *JournalTestSuite) setup() {
 	authKey := sdk.NewKVStoreKey(authtypes.StoreKey)
 	paramsKey := sdk.NewKVStoreKey(paramtypes.StoreKey)
 	paramsTKey := sdk.NewTransientStoreKey(paramtypes.TStoreKey)
+	tKey := sdk.NewTransientStoreKey(TransientKey)
 	bankKey := sdk.NewKVStoreKey(banktypes.StoreKey)
 	storeKey := sdk.NewKVStoreKey(StoreKey)
 
@@ -120,6 +121,7 @@ func (suite *JournalTestSuite) setup() {
 	cms.MountStoreWithDB(paramsKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(storeKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(paramsTKey, sdk.StoreTypeTransient, db)
+	cms.MountStoreWithDB(tKey, sdk.StoreTypeTransient, db)
 
 	err = cms.LoadLatestVersion()
 	suite.Require().NoError(err)
@@ -135,7 +137,7 @@ func (suite *JournalTestSuite) setup() {
 	ak := authkeeper.NewAccountKeeper(cdc, authKey, authSubspace, ethermint.ProtoAccount, nil)
 	bk := bankkeeper.NewBaseKeeper(cdc, bankKey, ak, bankSubspace, nil)
 	suite.ctx = sdk.NewContext(cms, tmproto.Header{ChainID: "ethermint-8"}, false, tmlog.NewNopLogger())
-	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, evmSubspace, ak, bk).WithContext(suite.ctx)
+	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, tKey, evmSubspace, ak, bk).WithContext(suite.ctx)
 	suite.stateDB.SetParams(DefaultParams())
 }
 

@@ -37,6 +37,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+* (evm) [tharsis#72](https://github.com/tharsis/ethermint/issues/72) Update `AccessList` to use `TransientStore` instead of map.
+
 ### API Breaking
 
 * (eth) [\#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.

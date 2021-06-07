@@ -493,37 +493,48 @@ func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, 
 	}
 }
 
-// AddressInAccessList returns true if the address is registered on the access list map.
+// AddressInAccessList returns true if the address is registered on the transient store.
 func (k *Keeper) AddressInAccessList(addr common.Address) bool {
-	return k.accessList.ContainsAddress(addr)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListAddress)
+	return ts.Has(addr.Bytes())
 }
 
+// SlotInAccessList checks if the address and the slots are registered in the transient store
 func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
-	return k.accessList.Contains(addr, slot)
+	addressOk = k.AddressInAccessList(addr)
+	slotOk = k.addressSlotInAccessList(addr, slot)
+	return addressOk, slotOk
 }
 
-// AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
-// even if the feature/fork is not active yet
+// addressSlotInAccessList returns true if the address's slot is registered on the transient store.
+func (k *Keeper) addressSlotInAccessList(addr common.Address, slot common.Hash) bool {
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+	return ts.Has(key)
+}
+
+// AddAddressToAccessList adds the given address to the access list. If the address is already
+// in the access list, this function performs a no-op.
 func (k *Keeper) AddAddressToAccessList(addr common.Address) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+	if k.AddressInAccessList(addr) {
 		return
 	}
 
-	// NOTE: ignore change return bool because we don't have to keep a journal for state changes
-	_ = k.accessList.AddAddress(addr)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListAddress)
+	ts.Set(addr.Bytes(), []byte{0x1})
 }
 
-// AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
-// even if the feature/fork is not active yet
+// AddSlotToAccessList adds the given (address, slot) to the access list. If the address and slot are
+// already in the access list, this function performs a no-op.
 func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+	k.AddAddressToAccessList(addr)
+	if k.addressSlotInAccessList(addr, slot) {
 		return
 	}
 
-	// NOTE: ignore change return booleans because we don't have to keep a journal for state changes
-	_, _ = k.accessList.AddSlot(addr, slot)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+	ts.Set(key, []byte{0x1})
 }
 
 // ----------------------------------------------------------------------------

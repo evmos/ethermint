@@ -364,7 +364,7 @@ func (ch accessListAddAccountChange) revert(s *CommitStateDB) {
 		(addr) at this point, since no storage adds can remain when come upon
 		a single (addr) change.
 	*/
-	s.accessList.DeleteAddress(*ch.address)
+	// s.accessList.DeleteAddress(*ch.address)
 }
 
 func (ch accessListAddAccountChange) dirtied() *ethcmn.Address {
@@ -372,7 +372,7 @@ func (ch accessListAddAccountChange) dirtied() *ethcmn.Address {
 }
 
 func (ch accessListAddSlotChange) revert(s *CommitStateDB) {
-	s.accessList.DeleteSlot(*ch.address, *ch.slot)
+	// s.accessList.DeleteSlot(*ch.address, *ch.slot)
 }
 
 func (ch accessListAddSlotChange) dirtied() *ethcmn.Address {
