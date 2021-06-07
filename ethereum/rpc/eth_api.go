@@ -28,6 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/cosmos/ethermint/crypto/hd"
@@ -638,79 +639,112 @@ func (e *PublicEthAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx
 func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHash", "hash", hash.Hex())
 
-	resp, err := e.queryClient.TxReceipt(e.ctx, &evmtypes.QueryTxReceiptRequest{
-		Hash: hash.Hex(),
-	})
+	res, err := e.clientCtx.Client.Tx(e.ctx, hash.Bytes(), false)
 	if err != nil {
-		e.logger.Debugf("failed to get tx info for %s: %s", hash.Hex(), err.Error())
+		e.logger.WithError(err).Debugln("tx not found", "hash", hash.Hex())
 		return nil, nil
 	}
 
+	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
+	if err != nil {
+		e.logger.WithError(err).Debugln("block not found", "height", res.Height)
+		return nil, nil
+	}
+
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to decode tx: %w", err)
+	}
+
+	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+
 	return rpctypes.NewTransactionFromData(
-		resp.Receipt.Data,
-		common.HexToAddress(resp.Receipt.From),
-		common.HexToHash(resp.Receipt.Hash),
-		common.HexToHash(resp.Receipt.BlockHash),
-		resp.Receipt.BlockHeight,
-		resp.Receipt.Index,
+		msg.Data,
+		common.HexToAddress(msg.From),
+		common.BytesToHash(res.Hash),
+		common.BytesToHash(resBlock.Block.Hash()),
+		uint64(res.Height),
+		uint64(res.Index),
 	)
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
 func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	e.logger.Debugln("eth_getTransactionByHashAndIndex", "hash", hash.Hex(), "index", idx)
+	e.logger.Debugln("eth_getTransactionByBlockHashAndIndex", "hash", hash.Hex(), "index", idx)
 
-	header, err := e.backend.HeaderByHash(hash)
+	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed retrieve block from hash")
+		e.logger.WithError(err).Debugln("block not found", "hash", hash.Hex())
+		return nil, nil
 	}
 
-	resp, err := e.queryClient.TxReceiptsByBlockHeight(rpctypes.ContextWithHeight(header.Number.Int64()), &evmtypes.QueryTxReceiptsByBlockHeightRequest{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query tx receipts by block height")
+	if len(resBlock.Block.Txs) <= int(idx) {
+		e.logger.Debugln("block txs index out of bound", "index", int(idx))
+		return nil, nil
 	}
 
-	return e.getReceiptByIndex(resp.Receipts, hash, idx)
+	txBz := resBlock.Block.Txs[int(idx)]
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to decode tx: %w", err)
+	}
+
+	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+
+	return rpctypes.NewTransactionFromData(
+		msg.Data,
+		common.HexToAddress(msg.From),
+		common.BytesToHash(txBz.Hash()), // TODO: retrieve hash from tx data
+		common.BytesToHash(resBlock.Block.Hash()),
+		uint64(resBlock.Block.Height),
+		uint64(idx),
+	)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
 func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
 
-	req := &evmtypes.QueryTxReceiptsByBlockHeightRequest{}
-	resp, err := e.queryClient.TxReceiptsByBlockHeight(rpctypes.ContextWithHeight(blockNum.Int64()), req)
+	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
-		err = errors.Wrap(err, "failed to query tx receipts by block height")
-		return nil, err
-	}
-
-	return e.getReceiptByIndex(resp.Receipts, common.Hash{}, idx)
-}
-
-func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	// return if index out of bounds
-	if uint64(idx) >= uint64(len(receipts)) {
+		e.logger.WithError(err).Debugln("block not found", "height", blockNum.Int64())
 		return nil, nil
 	}
 
-	receipt := receipts[idx]
+	if len(resBlock.Block.Txs) <= int(idx) {
+		e.logger.Debugln("block txs index out of bound", "index", int(idx))
+		return nil, nil
+	}
 
-	if (blockHash != common.Hash{}) {
-		hexBlockHash := blockHash.Hex()
-		if receipt.BlockHash != hexBlockHash {
-			return nil, errors.Errorf("receipt found but block hashes don't match %s != %s",
-				receipt.BlockHash,
-				hexBlockHash,
-			)
-		}
+	txBz := resBlock.Block.Txs[int(idx)]
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to decode tx: %w", err)
+	}
+
+	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
 	return rpctypes.NewTransactionFromData(
-		receipt.Data,
-		common.HexToAddress(receipt.From),
-		common.HexToHash(receipt.Hash),
-		blockHash,
-		receipt.BlockHeight,
+		msg.Data,
+		common.HexToAddress(msg.From),
+		common.BytesToHash(txBz.Hash()), // TODO: retrieve hash from tx data
+		common.BytesToHash(resBlock.Block.Hash()),
+		uint64(resBlock.Block.Height),
 		uint64(idx),
 	)
 }
@@ -719,64 +753,92 @@ func (e *PublicEthAPI) getReceiptByIndex(receipts []*evmtypes.TxReceipt, blockHa
 func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	e.logger.Debugln("eth_getTransactionReceipt", "hash", hash.Hex())
 
-	ctx := rpctypes.ContextWithHeight(int64(0))
-	tx, err := e.queryClient.TxReceipt(ctx, &evmtypes.QueryTxReceiptRequest{
-		Hash: hash.Hex(),
-	})
+	res, err := e.clientCtx.Client.Tx(e.ctx, hash.Bytes(), false)
 	if err != nil {
-		e.logger.Debugf("failed to get tx receipt for %s: %s", hash.Hex(), err.Error())
+		e.logger.WithError(err).Debugln("tx not found", "hash", hash.Hex())
 		return nil, nil
 	}
 
-	// Query block for consensus hash
-	height := int64(tx.Receipt.BlockHeight)
-	block, err := e.clientCtx.Client.Block(e.ctx, &height)
+	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
 	if err != nil {
-		e.logger.Warningln("didnt find block for tx height", height)
-		return nil, err
+		e.logger.WithError(err).Debugln("block not found", "height", res.Height)
+		return nil, nil
 	}
 
-	cumulativeGasUsed := uint64(tx.Receipt.Result.GasUsed)
-	if tx.Receipt.Index != 0 {
-		cumulativeGasUsed += rpctypes.GetBlockCumulativeGas(e.clientCtx, block.Block, int(tx.Receipt.Index))
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
+
+	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+
+	// TODO: return gas used on msg response data
+	cumulativeGasUsed := uint64(0)
+	// if tx.Receipt.Index != 0 {
+	// 	cumulativeGasUsed += rpctypes.GetBlockCumulativeGas(e.clientCtx, block.Block, int(tx.Receipt.Index))
+	// }
 
 	var status hexutil.Uint
-	if tx.Receipt.Result.Reverted {
-		status = hexutil.Uint(0)
+
+	// NOTE: Response{Deliver/Check}Tx Code from Tendermint and the Ethereum receipt status are switched:
+	// |         | Tendermint | Ethereum |
+	// | ------- | ---------- | -------- |
+	// | Success | 0          | 1        |
+	// | Fail    | 1          | 0        |
+
+	if res.TxResult.Code == 0 {
+		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
 	} else {
-		status = hexutil.Uint(1)
+		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	}
 
-	toHex := common.Address{}
-	if len(tx.Receipt.Data.To) > 0 {
-		toHex = common.HexToAddress(tx.Receipt.Data.To)
+	from := common.HexToAddress(msg.From)
+
+	resLogs, err := e.queryClient.TxLogs(e.ctx, &evmtypes.QueryTxLogsRequest{Hash: hash.Hex()})
+	if err != nil {
+		e.logger.WithError(err).Debugln("logs not found", "hash", hash.Hex())
+		resLogs = &evmtypes.QueryTxLogsResponse{Logs: []*evmtypes.Log{}}
 	}
 
-	contractAddress := common.HexToAddress(tx.Receipt.Result.ContractAddress)
-	logsBloom := hexutil.Encode(ethtypes.BytesToBloom(tx.Receipt.Result.Bloom).Bytes())
+	logs := evmtypes.LogsToEthereum(resLogs.Logs)
+
 	receipt := map[string]interface{}{
 		// Consensus fields: These fields are defined by the Yellow Paper
 		"status":            status,
 		"cumulativeGasUsed": hexutil.Uint64(cumulativeGasUsed),
-		"logsBloom":         logsBloom,
-		"logs":              tx.Receipt.Result.TxLogs.EthLogs(),
+		"logsBloom":         ethtypes.BytesToBloom(ethtypes.LogsBloom(logs)),
+		"logs":              logs,
 
 		// Implementation fields: These fields are added by geth when processing a transaction.
 		// They are stored in the chain database.
-		"transactionHash": hash.Hex(),
-		"contractAddress": contractAddress.Hex(),
-		"gasUsed":         hexutil.Uint64(tx.Receipt.Result.GasUsed),
+		"transactionHash": hash,
+		"contractAddress": nil,
+		"gasUsed":         hexutil.Uint64(res.TxResult.GasUsed),
+		"type":            hexutil.Uint(ethtypes.AccessListTxType), // TODO: support legacy type
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
-		"blockHash":        common.BytesToHash(block.Block.Header.Hash()).Hex(),
-		"blockNumber":      hexutil.Uint64(tx.Receipt.BlockHeight),
-		"transactionIndex": hexutil.Uint64(tx.Receipt.Index),
+		"blockHash":        common.BytesToHash(resBlock.Block.Header.Hash()).Hex(),
+		"blockNumber":      hexutil.Uint64(res.Height),
+		"transactionIndex": hexutil.Uint64(res.Index),
 
 		// sender and receiver (contract or EOA) addreses
-		"from": common.HexToAddress(tx.Receipt.From),
-		"to":   toHex,
+		"from": from,
+		"to":   msg.To(),
+	}
+
+	if logs == nil {
+		receipt["logs"] = [][]*ethtypes.Log{}
+	}
+
+	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
+	if msg.To() == nil {
+		receipt["contractAddress"] = crypto.CreateAddress(from, msg.Data.Nonce)
 	}
 
 	return receipt, nil
