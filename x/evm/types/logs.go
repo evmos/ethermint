@@ -89,7 +89,7 @@ func (log *Log) ToEthereum() *ethtypes.Log {
 }
 
 func NewLogsFromEth(ethlogs []*ethtypes.Log) []*Log {
-	var logs []*Log
+	var logs []*Log // nolint: prealloc
 	for _, ethlog := range ethlogs {
 		logs = append(logs, NewLogFromEth(ethlog))
 	}

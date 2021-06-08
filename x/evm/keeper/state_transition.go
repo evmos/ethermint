@@ -162,8 +162,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainConfig) (*types.MsgEthereumTxResponse, error) {
 	var (
-		ret        []byte // return bytes from evm execution
-		vmErr, err error  // vm errors do not effect consensus and are therefore not assigned to err
+		ret   []byte // return bytes from evm execution
+		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
 	)
 
 	sender := vm.AccountRef(msg.From())
@@ -195,8 +195,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}
 
 	// refund gas prior to handling the vm error in order to set the updated gas meter
-	gasConsumed, leftoverGas, err = k.refundGas(msg, leftoverGas)
-	if err != nil {
+	if err := k.refundGas(msg, leftoverGas); err != nil {
 		return nil, err
 	}
 
@@ -239,7 +238,7 @@ func (k *Keeper) checkGasConsumption(msg core.Message, cfg *params.ChainConfig, 
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas inconsumed during in the
 // AnteHandler.
-func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, leftover uint64, err error) {
+func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) error {
 	gasConsumed := msg.Gas() - leftoverGas
 
 	// Apply refund counter, capped to half of the used gas.
@@ -260,7 +259,7 @@ func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, left
 	switch remaining.Sign() {
 	case -1:
 		// negative refund errors
-		return 0, 0, fmt.Errorf("refunded amount value cannot be negative %d", remaining.Int64())
+		return fmt.Errorf("refunded amount value cannot be negative %d", remaining.Int64())
 	case 1:
 		// positive amount refund
 		params := k.GetParams(infCtx)
@@ -268,7 +267,7 @@ func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, left
 
 		// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(infCtx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins); err != nil {
-			return 0, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
+			return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
 		}
 	default:
 		// no refund, consume gas and update the tx gas meter
@@ -281,5 +280,5 @@ func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) (consumed, left
 	gasMeter.ConsumeGas(gasConsumed, "update gas consumption after refund")
 	k.WithContext(k.ctx.WithGasMeter(gasMeter))
 
-	return gasConsumed, leftoverGas, nil
+	return nil
 }
