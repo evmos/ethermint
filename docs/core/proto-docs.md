@@ -427,7 +427,7 @@ QueryAccountResponse is the response type for the Query/Account RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `balance` | [string](#string) |  | balance is the balance of the EVM denomination. |
-| `code_hash` | [bytes](#bytes) |  | code_hash is the code bytes from the EOA. |
+| `code_hash` | [string](#string) |  | code hash is the hex-formatted code bytes from the EOA. |
 | `nonce` | [uint64](#uint64) |  | nonce is the account's sequence number. |
 
 

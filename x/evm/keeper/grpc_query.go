@@ -37,7 +37,7 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 
 	return &types.QueryAccountResponse{
 		Balance:  k.GetBalance(addr).String(),
-		CodeHash: k.GetCodeHash(addr).Bytes(), // TODO: use hex
+		CodeHash: k.GetCodeHash(addr).Hex(),
 		Nonce:    k.GetNonce(addr),
 	}, nil
 }

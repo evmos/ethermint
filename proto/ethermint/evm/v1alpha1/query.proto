@@ -75,8 +75,8 @@ message QueryAccountRequest {
 message QueryAccountResponse {
   // balance is the balance of the EVM denomination.
   string balance = 1;
-  // code_hash is the code bytes from the EOA.
-  bytes code_hash = 2;
+  // code hash is the hex-formatted code bytes from the EOA.
+  string code_hash = 2;
   // nonce is the account's sequence number.
   uint64 nonce = 3;
 }

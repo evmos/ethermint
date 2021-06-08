@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -33,7 +34,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "0",
-					CodeHash: ethcrypto.Keccak256(nil),
+					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
@@ -48,7 +49,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(100))
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "100",
-					CodeHash: ethcrypto.Keccak256(nil),
+					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
