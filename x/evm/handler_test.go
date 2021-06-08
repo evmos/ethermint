@@ -184,17 +184,17 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 	txResponse, err := types.DecodeTxResponse(result.Data)
 	suite.Require().NoError(err, "failed to decode result data")
 
-	suite.Require().Equal(len(txResponse.TxLogs.Logs), 1)
-	suite.Require().Equal(len(txResponse.TxLogs.Logs[0].Topics), 2)
+	suite.Require().Equal(len(txResponse.Logs), 1)
+	suite.Require().Equal(len(txResponse.Logs[0].Topics), 2)
 
 	hash := []byte{1}
-	err = suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
+	err = suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash(hash), types.LogsToEthereum(txResponse.Logs))
 	suite.Require().NoError(err)
 
 	logs, err := suite.app.EvmKeeper.CommitStateDB.GetLogs(ethcmn.BytesToHash(hash))
 	suite.Require().NoError(err, "failed to get logs")
 
-	suite.Require().Equal(logs, txResponse.TxLogs.Logs)
+	suite.Require().Equal(logs, txResponse.Logs)
 }
 
 func (suite *EvmTestSuite) TestQueryTxLogs() {

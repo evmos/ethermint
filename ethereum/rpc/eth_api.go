@@ -663,10 +663,13 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTran
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
+	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
+	// https://github.com/tendermint/tendermint/issues/6539
+
 	return rpctypes.NewTransactionFromData(
 		msg.Data,
 		common.HexToAddress(msg.From),
-		common.BytesToHash(res.Hash),
+		hash,
 		common.BytesToHash(resBlock.Block.Hash()),
 		uint64(res.Height),
 		uint64(res.Index),
@@ -702,11 +705,15 @@ func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx h
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
+	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
+	// https://github.com/tendermint/tendermint/issues/6539
+	txHash := common.BytesToHash(txBz.Hash())
+
 	return rpctypes.NewTransactionFromData(
 		msg.Data,
 		common.HexToAddress(msg.From),
-		common.BytesToHash(txBz.Hash()), // TODO: retrieve hash from tx data
-		common.BytesToHash(resBlock.Block.Hash()),
+		txHash,
+		hash,
 		uint64(resBlock.Block.Height),
 		uint64(idx),
 	)
@@ -741,10 +748,14 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.Blo
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
+	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
+	// https://github.com/tendermint/tendermint/issues/6539
+	txHash := common.BytesToHash(txBz.Hash())
+
 	return rpctypes.NewTransactionFromData(
 		msg.Data,
 		common.HexToAddress(msg.From),
-		common.BytesToHash(txBz.Hash()), // TODO: retrieve hash from tx data
+		txHash,
 		common.BytesToHash(resBlock.Block.Hash()),
 		uint64(resBlock.Block.Height),
 		uint64(idx),

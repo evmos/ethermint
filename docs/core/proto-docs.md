@@ -788,10 +788,9 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `contract_address` | [string](#string) |  | contract_address contains the ethereum address of the created contract (if any). If the state transition is an evm.Call, the contract address will be empty. |
-| `bloom` | [bytes](#bytes) |  | bloom represents the bloom filter bytes |
-| `tx_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) |  | tx_logs contains the transaction hash and the proto-compatible ethereum logs. |
-| `ret` | [bytes](#bytes) |  | ret defines the bytes from the execution. |
+| `hash` | [bytes](#bytes) |  | ethereum transaction hash. This hash differs from the Tendermint sha256 hash of the transaction bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference |
+| `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
+| `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
 | `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
 
 

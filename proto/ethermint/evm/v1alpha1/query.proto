@@ -186,7 +186,7 @@ message QueryBlockLogsResponse {
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest { }
+message QueryBlockBloomRequest {}
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.

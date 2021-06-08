@@ -20,14 +20,9 @@ func NewTransactionLogs(hash ethcmn.Hash, logs []*Log) TransactionLogs { // noli
 
 // NewTransactionLogsFromEth creates a new NewTransactionLogs instance using []*ethtypes.Log.
 func NewTransactionLogsFromEth(hash ethcmn.Hash, ethlogs []*ethtypes.Log) TransactionLogs { // nolint: interfacer
-	logs := make([]*Log, len(ethlogs))
-	for i := range ethlogs {
-		logs[i] = NewLogFromEth(ethlogs[i])
-	}
-
 	return TransactionLogs{
 		Hash: hash.String(),
-		Logs: logs,
+		Logs: NewLogsFromEth(ethlogs),
 	}
 }
 
@@ -91,6 +86,15 @@ func (log *Log) ToEthereum() *ethtypes.Log {
 		BlockHash:   ethcmn.HexToHash(log.BlockHash),
 		Removed:     log.Removed,
 	}
+}
+
+func NewLogsFromEth(ethlogs []*ethtypes.Log) []*Log {
+	var logs []*Log
+	for _, ethlog := range ethlogs {
+		logs = append(logs, NewLogFromEth(ethlog))
+	}
+
+	return logs
 }
 
 // LogsToEthereum casts the Ethermint Logs to a slice of Ethereum Logs.
