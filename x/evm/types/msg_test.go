@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"math/big"
 	"testing"
 
@@ -15,7 +14,6 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type MsgsTestSuite struct {
@@ -89,23 +87,6 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
 		}
 	}
-}
-
-func (suite *MsgsTestSuite) TestMsgEthereumTx_EncodeRLP() {
-	expMsg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
-
-	raw, err := rlp.EncodeToBytes(&expMsg)
-	suite.Require().NoError(err)
-
-	msg := &MsgEthereumTx{}
-	err = rlp.Decode(bytes.NewReader(raw), &msg)
-	suite.Require().NoError(err)
-	suite.Require().Equal(expMsg.Data, msg.Data)
-}
-
-func (suite *MsgsTestSuite) TestMsgEthereumTx_RLPSignBytes() {
-	msg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
-	suite.NotPanics(func() { _ = msg.RLPSignBytes(suite.chainID) })
 }
 
 func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {

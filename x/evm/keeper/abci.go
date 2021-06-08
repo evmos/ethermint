@@ -27,28 +27,12 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // deleting the empty ones. It also sets the bloom filers for the request block to
 // the store. The EVM end block logic doesn't update the validator set, thus it returns
 // an empty slice.
-func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
 
 	// Gas costs are handled within msg handler so costs should be ignored
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-	k.CommitStateDB.WithContext(ctx)
+	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	k.WithContext(ctx)
-
-	// Update account balances before committing other parts of state
-	k.CommitStateDB.UpdateAccounts()
-
-	root, err := k.CommitStateDB.Commit(true)
-	// Commit state objects to KV store
-	if err != nil {
-		k.Logger(ctx).Error("failed to commit state objects", "error", err, "height", ctx.BlockHeight())
-		panic(err)
-	}
-
-	// reset all cache after account data has been committed, that make sure node state consistent
-	if err = k.CommitStateDB.Reset(root); err != nil {
-		panic(err)
-	}
 
 	// get the block bloom bytes from the transient store and set it to the persistent storage
 	bloomBig, found := k.GetBlockBloomTransient()
@@ -57,7 +41,8 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Valid
 	}
 
 	bloom := ethtypes.BytesToBloom(bloomBig.Bytes())
-	k.SetBlockBloom(ctx, req.Height, bloom)
+	k.SetBlockBloom(infCtx, req.Height, bloom)
+	k.WithContext(ctx)
 
 	return []abci.ValidatorUpdate{}
 }

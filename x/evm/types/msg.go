@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"io"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -14,7 +13,6 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
@@ -189,48 +187,6 @@ func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
 // to sign over. Use 'RLPSignBytes' instead.
 func (msg MsgEthereumTx) GetSignBytes() []byte {
 	panic("must use 'RLPSignBytes' with a chain ID to get the valid bytes to sign")
-}
-
-// RLPSignBytes returns the RLP hash of an Ethereum transaction message with a
-// given chainID used for signing.
-func (msg MsgEthereumTx) RLPSignBytes(chainID *big.Int) ethcmn.Hash {
-	if msg.Data.ChainID != nil {
-		chainID = new(big.Int).SetBytes(msg.Data.ChainID)
-	}
-
-	var accessList *ethtypes.AccessList
-	if msg.Data.Accesses != nil {
-		accessList = msg.Data.Accesses.ToEthAccessList()
-	}
-
-	return rlpHash([]interface{}{
-		chainID,
-		msg.Data.Nonce,
-		new(big.Int).SetBytes(msg.Data.GasPrice),
-		msg.Data.GasLimit,
-		msg.To(),
-		new(big.Int).SetBytes(msg.Data.Amount),
-		new(big.Int).SetBytes(msg.Data.Input),
-		accessList,
-	})
-}
-
-// EncodeRLP implements the rlp.Encoder interface.
-func (msg *MsgEthereumTx) EncodeRLP(w io.Writer) error {
-	tx := msg.AsTransaction()
-	return tx.EncodeRLP(w)
-}
-
-// DecodeRLP implements the rlp.Decoder interface.
-func (msg *MsgEthereumTx) DecodeRLP(stream *rlp.Stream) error {
-	tx := &ethtypes.Transaction{}
-	if err := tx.DecodeRLP(stream); err != nil {
-		return err
-	}
-
-	msg.FromEthereumTx(tx)
-
-	return nil
 }
 
 // Sign calculates a secp256k1 ECDSA signature and signs the transaction. It
