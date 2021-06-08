@@ -385,7 +385,7 @@ func NewEthermintApp(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 		// Ethermint app modules
-		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper, app.BankKeeper),
+		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that

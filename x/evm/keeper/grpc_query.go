@@ -2,12 +2,9 @@ package keeper
 
 import (
 	"context"
-	"math/big"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -33,19 +30,15 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 		)
 	}
 
-	ctx := sdk.UnwrapSDKContext(c)
-	k.CommitStateDB.WithContext(ctx)
+	addr := ethcmn.HexToAddress(req.Address)
 
-	so := k.CommitStateDB.GetOrNewStateObject(ethcmn.HexToAddress(req.Address))
-	balance, err := ethermint.MarshalBigInt(so.Balance())
-	if err != nil {
-		return nil, err
-	}
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
 
 	return &types.QueryAccountResponse{
-		Balance:  balance,
-		CodeHash: so.CodeHash(),
-		Nonce:    so.Nonce(),
+		Balance:  k.GetBalance(addr).String(),
+		CodeHash: k.GetCodeHash(addr).Hex(),
+		Nonce:    k.GetNonce(addr),
 	}, nil
 }
 
@@ -61,7 +54,7 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
 
 	ethAddr := ethcmn.HexToAddress(req.Address)
 	cosmosAddr := sdk.AccAddress(ethAddr.Bytes())
@@ -93,9 +86,9 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
 
-	balanceInt := k.CommitStateDB.GetBalance(ethcmn.HexToAddress(req.Address))
+	balanceInt := k.GetBalance(ethcmn.HexToAddress(req.Address))
 	balance, err := ethermint.MarshalBigInt(balanceInt)
 	if err != nil {
 		return nil, status.Error(
@@ -130,12 +123,12 @@ func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
 
 	address := ethcmn.HexToAddress(req.Address)
 	key := ethcmn.HexToHash(req.Key)
 
-	state := k.CommitStateDB.GetState(address, key)
+	state := k.GetState(address, key)
 	stateHex := state.Hex()
 
 	if ethermint.IsEmptyHash(stateHex) {
@@ -163,10 +156,10 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
 
 	address := ethcmn.HexToAddress(req.Address)
-	code := k.CommitStateDB.GetCode(address)
+	code := k.GetCode(address)
 
 	return &types.QueryCodeResponse{
 		Code: code,
@@ -187,19 +180,13 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	k.CommitStateDB.WithContext(ctx)
+	k.WithContext(ctx)
 
 	hash := ethcmn.HexToHash(req.Hash)
-	logs, err := k.CommitStateDB.GetLogs(hash)
-	if err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			err.Error(),
-		)
-	}
+	logs := k.GetTxLogs(hash)
 
 	return &types.QueryTxLogsResponse{
-		Logs: types.NewTransactionLogsFromEth(hash, logs).Logs,
+		Logs: types.NewLogsFromEth(logs),
 	}, nil
 }
 
@@ -277,59 +264,61 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
-	ctx := sdk.UnwrapSDKContext(c)
-	k.CommitStateDB.WithContext(ctx)
+	// ctx := sdk.UnwrapSDKContext(c)
+	// k.WithContext(ctx)
 
-	// parse the chainID from a string to a base-10 integer
-	chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	// // parse the chainID from a string to a base-10 integer
+	// chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
+	// if err != nil {
+	// 	return nil, status.Error(codes.Internal, err.Error())
+	// }
 
-	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-	ethHash := ethcmn.BytesToHash(txHash)
+	// txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
+	// ethHash := ethcmn.BytesToHash(txHash)
 
-	var recipient *ethcmn.Address
-	if len(req.Address) > 0 {
-		addr := ethcmn.HexToAddress(req.Address)
-		recipient = &addr
-	}
+	// var recipient *ethcmn.Address
+	// if len(req.Address) > 0 {
+	// 	addr := ethcmn.HexToAddress(req.Address)
+	// 	recipient = &addr
+	// }
 
-	so := k.CommitStateDB.GetOrNewStateObject(*recipient)
-	sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
+	// so := k.GetOrNewStateObject(*recipient)
+	// sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
 
-	msg := types.NewMsgEthereumTx(
-		chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
-	)
-	msg.From = sender.Hex()
+	// msg := types.NewMsgEthereumTx(
+	// 	chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
+	// )
+	// msg.From = sender.Hex()
 
-	if err := msg.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	// if err := msg.ValidateBasic(); err != nil {
+	// 	return nil, status.Error(codes.Internal, err.Error())
+	// }
 
-	ethMsg, err := msg.AsMessage()
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	// ethMsg, err := msg.AsMessage()
+	// if err != nil {
+	// 	return nil, status.Error(codes.Internal, err.Error())
+	// }
 
-	st := &types.StateTransition{
-		Message:  ethMsg,
-		Csdb:     k.CommitStateDB.WithContext(ctx),
-		ChainID:  chainIDEpoch,
-		TxHash:   &ethHash,
-		Simulate: ctx.IsCheckTx(),
-		Debug:    false,
-	}
+	// st := &types.StateTransition{
+	// 	Message:  ethMsg,
+	// 	Csdb:     k.WithContext(ctx),
+	// 	ChainID:  chainIDEpoch,
+	// 	TxHash:   &ethHash,
+	// 	Simulate: ctx.IsCheckTx(),
+	// 	Debug:    false,
+	// }
 
-	config, found := k.GetChainConfig(ctx)
-	if !found {
-		return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
-	}
+	// config, found := k.GetChainConfig(ctx)
+	// if !found {
+	// 	return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
+	// }
 
-	ret, err := st.StaticCall(ctx, config)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	// ret, err := st.StaticCall(ctx, config)
+	// if err != nil {
+	// 	return nil, status.Error(codes.Internal, err.Error())
+	// }
 
-	return &types.QueryStaticCallResponse{Data: ret}, nil
+	// return &types.QueryStaticCallResponse{Data: ret}, nil
+
+	return nil, nil
 }

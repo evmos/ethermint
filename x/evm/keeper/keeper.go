@@ -42,10 +42,6 @@ type Keeper struct {
 	eip155ChainID *big.Int
 	debug         bool
 
-	// TODO: deprecate
-	// Ethermint concrete implementation on the EVM StateDB interface
-	CommitStateDB *types.CommitStateDB
-
 	// hash header for the current height. Reset during abci.RequestBeginBlock
 	headerHash common.Hash
 }
@@ -69,7 +65,6 @@ func NewKeeper(
 		stakingKeeper: sk,
 		storeKey:      storeKey,
 		transientKey:  transientKey,
-		CommitStateDB: types.NewCommitStateDB(sdk.Context{}, storeKey, transientKey, paramSpace, ak, bankKeeper),
 	}
 }
 

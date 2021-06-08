@@ -5,20 +5,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/sha3"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ethcmn "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rlp"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func rlpHash(x interface{}) (hash ethcmn.Hash) {
-	hasher := sha3.NewLegacyKeccak256()
-	_ = rlp.Encode(hasher, x)
-	_ = hasher.Sum(hash[:0])
-
-	return hash
-}
+var EmptyCodeHash = crypto.Keccak256(nil)
 
 // EncodeTxResponse takes all of the necessary data from the EVM execution
 // and returns the data as a byte slice encoded with protobuf.

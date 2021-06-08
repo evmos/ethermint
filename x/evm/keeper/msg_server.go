@@ -2,20 +2,15 @@ package keeper
 
 import (
 	"context"
-	"errors"
-	"math/big"
 	"time"
 
 	"github.com/armon/go-metrics"
-	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
 
+	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/ethermint/x/evm/types"
 )
@@ -26,17 +21,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.TypeMsgEthereumTx)
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	k.CommitStateDB.WithContext(ctx)
-
-	ethMsg, err := msg.AsMessage()
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
-	}
-
-	config, found := k.GetChainConfig(ctx)
-	if !found {
-		return nil, types.ErrChainConfigNotFound
-	}
+	k.WithContext(ctx)
 
 	var labels []metrics.Label
 	if msg.To() == nil {
@@ -46,62 +31,22 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	} else {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "call"),
-			// add label to the called recipient address (contract or account)
-			telemetry.NewLabel("to", msg.Data.To),
+			telemetry.NewLabel("to", msg.Data.To), // recipient address (contract or account)
 		}
 	}
 
-	sender := ethMsg.From()
+	sender := msg.From
+	tx := msg.AsTransaction()
 
-	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-	ethHash := ethcmn.BytesToHash(txHash)
-
-	// Ethereum formatted tx hash
-	etherumTxHash := msg.AsTransaction().Hash()
-
-	st := &types.StateTransition{
-		Message:  ethMsg,
-		Csdb:     k.CommitStateDB.WithContext(ctx),
-		ChainID:  msg.ChainID(),
-		TxHash:   &ethHash,
-		Simulate: ctx.IsCheckTx(),
-	}
-
-	// since the txCount is used by the stateDB, and a simulated tx is run only on the node it's submitted to,
-	// then this will cause the txCount/stateDB of the node that ran the simulated tx to be different than the
-	// other nodes, causing a consensus error
-	if !st.Simulate {
-		// Prepare db for logs
-		k.CommitStateDB.Prepare(ethHash, k.headerHash, int(k.GetTxIndexTransient()))
-		k.IncreaseTxIndexTransient()
-	}
-
-	executionResult, err := st.TransitionDb(ctx, config)
+	response, err := k.ApplyTransaction(tx)
 	if err != nil {
-		if errors.Is(err, vm.ErrExecutionReverted) && executionResult != nil {
-			// keep the execution result for revert reason
-			executionResult.Response.Reverted = true
-			return executionResult.Response, nil
-		}
-
 		return nil, err
 	}
 
-	if !st.Simulate {
-		bloom, found := k.GetBlockBloomTransient()
-		if !found {
-			bloom = big.NewInt(0)
-		}
-		// update block bloom filter
-		logsBloom := ethtypes.LogsBloom(executionResult.Logs)
-		bloom = bloom.Or(bloom, new(big.Int).SetBytes(logsBloom))
-		k.SetBlockBloomTransient(bloom)
-	}
-
 	defer func() {
-		if st.Message.Value().IsInt64() {
+		if tx.Value().IsInt64() {
 			telemetry.SetGauge(
-				float32(st.Message.Value().Int64()),
+				float32(tx.Value().Int64()),
 				"tx", "msg", "ethereum_tx",
 			)
 		}
@@ -114,9 +59,15 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	}()
 
 	attrs := []sdk.Attribute{
-		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
-		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
-		sdk.NewAttribute(types.AttributeKeyEthereumTxHash, etherumTxHash.Hex()),
+		sdk.NewAttribute(sdk.AttributeKeyAmount, tx.Value().String()),
+		// add event for ethereum transaction hash format
+		sdk.NewAttribute(types.AttributeKeyEthereumTxHash, response.Hash),
+	}
+
+	if len(ctx.TxBytes()) > 0 {
+		// add event for tendermint transaction hash format
+		hash := tmbytes.HexBytes(tmtypes.Tx(ctx.TxBytes()).Hash())
+		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyTxHash, hash.String()))
 	}
 
 	if len(msg.Data.To) > 0 {
@@ -132,10 +83,9 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, sender.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, sender),
 		),
 	})
 
-	executionResult.Response.Hash = etherumTxHash.Hex()
-	return executionResult.Response, nil
+	return response, nil
 }

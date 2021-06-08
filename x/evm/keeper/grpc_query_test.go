@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -33,7 +34,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "0",
-					CodeHash: ethcrypto.Keccak256(nil),
+					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
@@ -48,7 +49,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(100))
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "100",
-					CodeHash: ethcrypto.Keccak256(nil),
+					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
@@ -245,7 +246,7 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 				key := ethcmn.BytesToHash([]byte("key"))
 				value := ethcmn.BytesToHash([]byte("value"))
 				expValue = value.String()
-				suite.app.EvmKeeper.CommitStateDB.SetState(suite.address, key, value)
+				suite.app.EvmKeeper.SetState(suite.address, key, value)
 				req = &types.QueryStorageRequest{
 					Address: suite.address.String(),
 					Key:     key.String(),
@@ -300,7 +301,7 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 			"success",
 			func() {
 				expCode = []byte("code")
-				suite.app.EvmKeeper.CommitStateDB.SetCode(suite.address, expCode)
+				suite.app.EvmKeeper.SetCode(suite.address, expCode)
 
 				req = &types.QueryCodeRequest{
 					Address: suite.address.String(),
@@ -377,7 +378,7 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 					},
 				}
 
-				suite.app.EvmKeeper.CommitStateDB.SetLogs(hash, types.LogsToEthereum(expLogs))
+				suite.app.EvmKeeper.SetLogs(hash, types.LogsToEthereum(expLogs))
 
 				req = &types.QueryTxLogsRequest{
 					Hash: hash.String(),
@@ -486,8 +487,8 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 					},
 				}
 
-				suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_0")), types.LogsToEthereum(expLogs[0].Logs))
-				suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_1")), types.LogsToEthereum(expLogs[1].Logs))
+				suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_0")), types.LogsToEthereum(expLogs[0].Logs))
+				suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_1")), types.LogsToEthereum(expLogs[1].Logs))
 
 				req = &types.QueryBlockLogsRequest{
 					Hash: hash.String(),

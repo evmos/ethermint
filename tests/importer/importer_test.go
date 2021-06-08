@@ -107,7 +107,7 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.
 	genBlock := ethcore.DefaultGenesisBlock()
 	ms := cms.CacheMultiStore()
 	ctx := sdk.NewContext(ms, tmproto.Header{}, false, logger)
-	evmKeeper.CommitStateDB.WithContext(ctx)
+	evmKeeper.WithContext(ctx)
 
 	// Set the default Ethermint parameters to the parameter keeper store
 	evmKeeper.SetParams(ctx, evmtypes.DefaultParams())
@@ -126,24 +126,18 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.
 		addr := ethcmn.HexToAddress(addrStr)
 		acc := genBlock.Alloc[addr]
 
-		evmKeeper.CommitStateDB.AddBalance(addr, acc.Balance)
-		evmKeeper.CommitStateDB.SetCode(addr, acc.Code)
-		evmKeeper.CommitStateDB.SetNonce(addr, acc.Nonce)
+		evmKeeper.AddBalance(addr, acc.Balance)
+		evmKeeper.SetCode(addr, acc.Code)
+		evmKeeper.SetNonce(addr, acc.Nonce)
 
 		for key, value := range acc.Storage {
-			evmKeeper.CommitStateDB.SetState(addr, key, value)
+			evmKeeper.SetState(addr, key, value)
 		}
 	}
 
 	// get balance of one of the genesis account having 400 ETH
-	b := evmKeeper.CommitStateDB.GetBalance(genInvestor)
+	b := evmKeeper.GetBalance(genInvestor)
 	require.Equal(t, "200000000000000000000", b.String())
-
-	// commit the stateDB with 'false' to delete empty objects
-	//
-	// NOTE: Commit does not yet return the intra merkle root (version)
-	_, err := evmKeeper.CommitStateDB.Commit(false)
-	require.NoError(t, err)
 
 	// persist multi-store cache state
 	ms.Write()
@@ -267,15 +261,13 @@ func TestImportBlocks(t *testing.T) {
 		ms := cms.CacheMultiStore()
 		ctx := sdk.NewContext(ms, tmproto.Header{}, false, logger)
 		ctx = ctx.WithBlockHeight(int64(block.NumberU64()))
-		evmKeeper.CommitStateDB.WithContext(ctx)
+		evmKeeper.WithContext(ctx)
 
 		if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(block.Number()) == 0 {
 			applyDAOHardFork(evmKeeper)
 		}
 
-		for i, tx := range block.Transactions() {
-			evmKeeper.CommitStateDB.Prepare(tx.Hash(), block.Hash(), i)
-			// evmKeeper.CommitStateDB.Set(block.Hash())
+		for _, tx := range block.Transactions() {
 
 			receipt, gas, err := applyTransaction(
 				chainConfig, chainContext, nil, gp, evmKeeper, header, tx, usedGas, vmConfig,
@@ -286,10 +278,6 @@ func TestImportBlocks(t *testing.T) {
 
 		// apply mining rewards
 		accumulateRewards(chainConfig, evmKeeper, header, block.Uncles())
-
-		// commit stateDB
-		_, err := evmKeeper.CommitStateDB.Commit(chainConfig.IsEIP158(block.Number()))
-		require.NoError(t, err, "failed to commit StateDB")
 
 		// simulate BaseApp EndBlocker commitment
 		ms.Write()
@@ -325,12 +313,12 @@ func accumulateRewards(
 		r.Sub(r, header.Number)
 		r.Mul(r, blockReward)
 		r.Div(r, rewardBig8)
-		evmKeeper.CommitStateDB.AddBalance(uncle.Coinbase, r)
+		evmKeeper.AddBalance(uncle.Coinbase, r)
 		r.Div(blockReward, rewardBig32)
 		reward.Add(reward, r)
 	}
 
-	evmKeeper.CommitStateDB.AddBalance(header.Coinbase, reward)
+	evmKeeper.AddBalance(header.Coinbase, reward)
 }
 
 // ApplyDAOHardFork modifies the state database according to the DAO hard-fork
@@ -341,14 +329,13 @@ func accumulateRewards(
 // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/consensus/misc/dao.go#L74
 func applyDAOHardFork(evmKeeper *evmkeeper.Keeper) {
 	// Retrieve the contract to refund balances into
-	if !evmKeeper.CommitStateDB.Exist(ethparams.DAORefundContract) {
-		evmKeeper.CommitStateDB.CreateAccount(ethparams.DAORefundContract)
+	if !evmKeeper.Exist(ethparams.DAORefundContract) {
+		evmKeeper.CreateAccount(ethparams.DAORefundContract)
 	}
 
 	// Move every DAO account and extra-balance account funds into the refund contract
 	for _, addr := range ethparams.DAODrainList() {
-		evmKeeper.CommitStateDB.AddBalance(ethparams.DAORefundContract, evmKeeper.CommitStateDB.GetBalance(addr))
-		evmKeeper.CommitStateDB.SetBalance(addr, new(big.Int))
+		evmKeeper.AddBalance(ethparams.DAORefundContract, evmKeeper.GetBalance(addr))
 	}
 }
 
@@ -374,7 +361,7 @@ func applyTransaction(
 
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
-	vmenv := ethvm.NewEVM(blockCtx, txCtx, evmKeeper.CommitStateDB, config, cfg)
+	vmenv := ethvm.NewEVM(blockCtx, txCtx, evmKeeper, config, cfg)
 
 	// Apply the transaction to the current state (included in the env)
 	execResult, err := ethcore.ApplyMessage(vmenv, msg, gp)
@@ -383,19 +370,11 @@ func applyTransaction(
 		return &ethtypes.Receipt{}, 0, nil
 	}
 
-	// Update the state with pending changes
-	var intRoot ethcmn.Hash
-	if config.IsByzantium(header.Number) {
-		err = evmKeeper.CommitStateDB.Finalise(true)
-	} else {
-		intRoot, err = evmKeeper.CommitStateDB.IntermediateRoot(config.IsEIP158(header.Number))
-	}
-
 	if err != nil {
 		return nil, execResult.UsedGas, err
 	}
 
-	root := intRoot.Bytes()
+	root := ethcmn.Hash{}.Bytes()
 	*usedGas += execResult.UsedGas
 
 	// Create a new receipt for the transaction, storing the intermediate root and gas used by the tx
@@ -410,11 +389,11 @@ func applyTransaction(
 	}
 
 	// Set the receipt logs and create a bloom for filtering
-	receipt.Logs, err = evmKeeper.CommitStateDB.GetLogs(tx.Hash())
+	receipt.Logs = evmKeeper.GetTxLogs(tx.Hash())
 	receipt.Bloom = ethtypes.CreateBloom(ethtypes.Receipts{receipt})
-	receipt.BlockHash = evmKeeper.CommitStateDB.BlockHash()
+	receipt.BlockHash = header.Hash()
 	receipt.BlockNumber = header.Number
-	receipt.TransactionIndex = uint(evmKeeper.CommitStateDB.TxIndex())
+	receipt.TransactionIndex = uint(evmKeeper.GetTxIndexTransient())
 
 	return receipt, execResult.UsedGas, err
 }

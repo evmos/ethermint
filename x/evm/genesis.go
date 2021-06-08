@@ -18,16 +18,12 @@ func InitGenesis(
 	ctx sdk.Context,
 	k *keeper.Keeper,
 	accountKeeper types.AccountKeeper, // nolint: interfacer
-	bankKeeper types.BankKeeper,
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
 	k.WithContext(ctx)
 	k.WithChainID(ctx)
 
-	k.CommitStateDB.WithContext(ctx)
-
 	k.SetParams(ctx, data.Params)
-	evmDenom := data.Params.EvmDenom
 
 	for _, account := range data.Accounts {
 		address := ethcmn.HexToAddress(account.Address)
@@ -47,38 +43,18 @@ func InitGenesis(
 			)
 		}
 
-		evmBalance := bankKeeper.GetBalance(ctx, accAddress, evmDenom)
-		k.CommitStateDB.SetBalance(address, evmBalance.Amount.BigInt())
-		k.CommitStateDB.SetNonce(address, acc.GetSequence())
-		k.CommitStateDB.SetCode(address, ethcmn.Hex2Bytes(account.Code))
+		k.SetCode(address, ethcmn.Hex2Bytes(account.Code))
 
 		for _, storage := range account.Storage {
 			k.SetState(address, ethcmn.HexToHash(storage.Key), ethcmn.HexToHash(storage.Value))
 		}
 	}
 
-	var err error
 	for _, txLog := range data.TxsLogs {
-		err = k.CommitStateDB.SetLogs(ethcmn.HexToHash(txLog.Hash), txLog.EthLogs())
-		if err != nil {
-			panic(err)
-		}
+		k.SetLogs(ethcmn.HexToHash(txLog.Hash), txLog.EthLogs())
 	}
 
 	k.SetChainConfig(ctx, data.ChainConfig)
-
-	// set state objects and code to store
-	_, err = k.CommitStateDB.Commit(false)
-	if err != nil {
-		panic(err)
-	}
-
-	// set storage to store
-	// NOTE: don't delete empty object to prevent import-export simulation failure
-	err = k.CommitStateDB.Finalise(false)
-	if err != nil {
-		panic(err)
-	}
 
 	return []abci.ValidatorUpdate{}
 }
@@ -86,7 +62,6 @@ func InitGenesis(
 // ExportGenesis exports genesis state of the EVM module
 func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
 	k.WithContext(ctx)
-	k.CommitStateDB.WithContext(ctx)
 
 	// nolint: prealloc
 	var ethGenAccounts []types.GenesisAccount
@@ -106,7 +81,7 @@ func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *t
 
 		genAccount := types.GenesisAccount{
 			Address: addr.String(),
-			Code:    ethcmn.Bytes2Hex(k.CommitStateDB.GetCode(addr)),
+			Code:    ethcmn.Bytes2Hex(k.GetCode(addr)),
 			Storage: storage,
 		}
 
