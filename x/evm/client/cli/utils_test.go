@@ -1,14 +1,32 @@
 package cli
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 )
+
+func cosmosAddressFromArg(addr string) (sdk.AccAddress, error) {
+	if strings.HasPrefix(addr, sdk.GetConfig().GetBech32AccountAddrPrefix()) {
+		// Check to see if address is Cosmos bech32 formatted
+		toAddr, err := sdk.AccAddressFromBech32(addr)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid bech32 formatted address")
+		}
+		return toAddr, nil
+	}
+
+	// Strip 0x prefix if exists
+	addr = strings.TrimPrefix(addr, "0x")
+
+	return sdk.AccAddressFromHex(addr)
+}
 
 func TestAddressFormats(t *testing.T) {
 	testCases := []struct {

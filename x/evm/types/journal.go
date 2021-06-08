@@ -191,13 +191,6 @@ type (
 		// prev      bool
 		// prevDirty bool
 	}
-	accessListAddAccountChange struct {
-		address *ethcmn.Address
-	}
-	accessListAddSlotChange struct {
-		address *ethcmn.Address
-		slot    *ethcmn.Hash
-	}
 )
 
 func (ch createObjectChange) revert(s *CommitStateDB) {
@@ -351,30 +344,5 @@ func (ch addPreimageChange) revert(s *CommitStateDB) {
 }
 
 func (ch addPreimageChange) dirtied() *ethcmn.Address {
-	return nil
-}
-
-func (ch accessListAddAccountChange) revert(s *CommitStateDB) {
-	/*
-		One important invariant here, is that whenever a (addr, slot) is added, if the
-		addr is not already present, the add causes two journal entries:
-		- one for the address,
-		- one for the (address,slot)
-		Therefore, when unrolling the change, we can always blindly delete the
-		(addr) at this point, since no storage adds can remain when come upon
-		a single (addr) change.
-	*/
-	// s.accessList.DeleteAddress(*ch.address)
-}
-
-func (ch accessListAddAccountChange) dirtied() *ethcmn.Address {
-	return nil
-}
-
-func (ch accessListAddSlotChange) revert(s *CommitStateDB) {
-	// s.accessList.DeleteSlot(*ch.address, *ch.slot)
-}
-
-func (ch accessListAddSlotChange) dirtied() *ethcmn.Address {
 	return nil
 }
