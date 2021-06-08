@@ -604,7 +604,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 					return
 				}
 
-				logs := filterLogs(txResponse.TxLogs.EthLogs(), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
+				logs := filterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
 				if len(logs) == 0 {
 					continue
 				}

@@ -42,34 +42,14 @@ message ExtensionOptionsWeb3Tx {
 message MsgEthereumTxResponse {
   option (gogoproto.goproto_getters) = false;
 
-  // contract_address contains the ethereum address of the created contract (if
-  // any). If the state transition is an evm.Call, the contract address will be
-  // empty.
-  string contract_address = 1 [(gogoproto.moretags) = "yaml:\"contract_address\""];
-  // bloom represents the bloom filter bytes
-  bytes bloom = 2;
-  // tx_logs contains the transaction hash and the proto-compatible ethereum
+  // ethereum transaction hash in hex format. This hash differs from the Tendermint sha256 hash of the transaction
+  // bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference
+  string hash = 1;
+  // logs contains the transaction hash and the proto-compatible ethereum
   // logs.
-  TransactionLogs tx_logs = 3 [(gogoproto.moretags) = "yaml:\"tx_logs\"", (gogoproto.nullable) = false];
-  // ret defines the bytes from the execution.
-  bytes ret = 4;
+  repeated Log logs = 2;
+  // returned data from evm function (result or data supplied with revert opcode)
+  bytes ret = 3;
   // reverted flag is set to true when the call has been reverted
-  bool reverted = 5;
+  bool reverted = 4;
 }
-
-// // SigCache is used to cache the derived sender and contains the signer used
-// // to derive it.
-// message SigCache {
-//   option (gogoproto.goproto_getters) = false;
-
-//   EIP155Signer signer  = 1;
-//   bytes        address = 2;
-// }
-
-// // EIP155Transaction implements Signer using the EIP155 rules.
-// message EIP155Signer {
-//   option (gogoproto.goproto_getters) = false;
-
-//   bytes chain_id     = 1 [(gogoproto.customname) = "chainId"];
-//   bytes chain_id_mul = 2 [(gogoproto.customname) = "chainIdMul"];
-// }

@@ -25,8 +25,8 @@ import (
 )
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
-func RawTxToEthTx(clientCtx client.Context, bz []byte) (*evmtypes.MsgEthereumTx, error) {
-	tx, err := clientCtx.TxConfig.TxDecoder()(bz)
+func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEthereumTx, error) {
+	tx, err := clientCtx.TxConfig.TxDecoder()(txBz)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
@@ -246,28 +246,23 @@ func BuildEthereumTx(clientCtx client.Context, msg *evmtypes.MsgEthereumTx, accN
 	return txBytes, nil
 }
 
-// GetBlockCumulativeGas returns the cumulative gas used on a block up to a given
-// transaction index. The returned gas used includes the gas from both the SDK and
-// EVM module transactions.
-func GetBlockCumulativeGas(clientCtx client.Context, block *tmtypes.Block, idx int) uint64 {
+func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
 	var gasUsed uint64
 	txDecoder := clientCtx.TxConfig.TxDecoder()
 
-	for i := 0; i < idx && i < len(block.Txs); i++ {
-		txi, err := txDecoder(block.Txs[i])
-		if err != nil {
-			continue
-		}
-
-		switch tx := txi.(type) {
-		case *evmtypes.MsgEthereumTx:
-			gasUsed += tx.GetGas()
-		case sdk.FeeTx:
-			// TODO: add internal txns
-			gasUsed += tx.GetGas()
-		}
+	tx, err := txDecoder(txBz)
+	if err != nil {
+		return nil, 0
 	}
-	return gasUsed
+
+	switch tx := tx.(type) {
+	case *evmtypes.MsgEthereumTx:
+		gasUsed = tx.GetGas() // NOTE: this doesn't include the gas refunded
+	case sdk.FeeTx:
+		gasUsed = tx.GetGas()
+	}
+
+	return tx, gasUsed
 }
 
 type DataError interface {

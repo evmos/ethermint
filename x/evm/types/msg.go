@@ -113,6 +113,7 @@ func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
 	}
 
 	msg.Size_ = float64(tx.Size())
+	msg.Hash = tx.Hash().Hex()
 }
 
 // Route returns the route value of an MsgEthereumTx.

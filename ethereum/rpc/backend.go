@@ -133,43 +133,44 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	fullTx bool,
 ) (map[string]interface{}, error) {
 
-	req := &evmtypes.QueryTxReceiptsByBlockHeightRequest{}
-
-	txReceiptsResp, err := queryClient.TxReceiptsByBlockHeight(types.ContextWithHeight(block.Height), req)
-	if err != nil {
-		e.logger.WithError(err).Debugln("TxReceiptsByBlockHeight failed")
-	}
-
-	gasUsed := big.NewInt(0)
+	gasUsed := uint64(0)
 
 	ethRPCTxs := []interface{}{}
 
-	if txReceiptsResp != nil {
+	for i, txBz := range block.Txs {
+		// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
+		// https://github.com/tendermint/tendermint/issues/6539
+		hash := common.BytesToHash(txBz.Hash())
 
-		for _, receipt := range txReceiptsResp.Receipts {
-			hash := common.HexToHash(receipt.Hash)
-			if fullTx {
-				// full txs from receipts
-				tx, err := types.NewTransactionFromData(
-					receipt.Data,
-					common.HexToAddress(receipt.From),
-					hash,
-					common.HexToHash(receipt.BlockHash),
-					receipt.BlockHeight,
-					receipt.Index,
-				)
+		tx, gas := types.DecodeTx(e.clientCtx, txBz)
 
-				if err != nil {
-					e.logger.WithError(err).Warningf("NewTransactionFromData for receipt %s failed", hash)
-					continue
-				}
+		gasUsed += gas
 
-				ethRPCTxs = append(ethRPCTxs, tx)
-				gasUsed.Add(gasUsed, new(big.Int).SetUint64(receipt.Result.GasUsed))
-			} else {
-				// simply hashes
-				ethRPCTxs = append(ethRPCTxs, hash)
+		msg, isEthTx := tx.(*evmtypes.MsgEthereumTx)
+
+		if fullTx {
+			if !isEthTx {
+				// TODO: eventually support Cosmos txs in the block
+				continue
 			}
+
+			tx, err := types.NewTransactionFromData(
+				msg.Data,
+				common.HexToAddress(msg.From),
+				hash,
+				common.BytesToHash(block.Hash()),
+				uint64(block.Height),
+				uint64(i),
+			)
+
+			ethRPCTxs = append(ethRPCTxs, tx)
+
+			if err != nil {
+				e.logger.WithError(err).Debugln("NewTransactionFromData for receipt failed", "hash", hash.Hex)
+				continue
+			}
+		} else {
+			ethRPCTxs = append(ethRPCTxs, hash)
 		}
 	}
 
@@ -181,7 +182,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	}
 
 	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, gasUsed, ethRPCTxs, bloom)
+	formattedBlock := types.FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom)
 
 	e.logger.Infoln(formattedBlock)
 	return formattedBlock, nil

@@ -7,6 +7,7 @@ const (
 	AttributeKeyContractAddress = "contract"
 	AttributeKeyRecipient       = "recipient"
 	AttributeKeyTxHash          = "txHash"
+	AttributeKeyEthereumTxHash  = "ethereumTxHash"
 	AttributeValueCategory      = ModuleName
 
 	MetricKeyTransitionDB = "transition_db"

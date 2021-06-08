@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -98,7 +99,7 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 			"insufficient balance",
 			func() {
 				tx = types.NewMsgEthereumTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
-
+				tx.From = suite.from.Hex()
 				// sign transaction
 				err := tx.Sign(suite.ethSigner, suite.signer)
 				suite.Require().NoError(err)
@@ -184,48 +185,17 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 	txResponse, err := types.DecodeTxResponse(result.Data)
 	suite.Require().NoError(err, "failed to decode result data")
 
-	suite.Require().Equal(len(txResponse.TxLogs.Logs), 1)
-	suite.Require().Equal(len(txResponse.TxLogs.Logs[0].Topics), 2)
+	suite.Require().Equal(len(txResponse.Logs), 1)
+	suite.Require().Equal(len(txResponse.Logs[0].Topics), 2)
 
 	hash := []byte{1}
-	err = suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash(hash), txResponse.TxLogs.EthLogs())
+	err = suite.app.EvmKeeper.CommitStateDB.SetLogs(ethcmn.BytesToHash(hash), types.LogsToEthereum(txResponse.Logs))
 	suite.Require().NoError(err)
 
 	logs, err := suite.app.EvmKeeper.CommitStateDB.GetLogs(ethcmn.BytesToHash(hash))
 	suite.Require().NoError(err, "failed to get logs")
 
-	suite.Require().Equal(logs, txResponse.TxLogs.Logs)
-}
-
-func (suite *EvmTestSuite) TestQueryTxLogs() {
-	gasLimit := uint64(100000)
-	gasPrice := big.NewInt(1000000)
-
-	// send contract deployment transaction with an event in the constructor
-	bytecode := common.FromHex("0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029")
-	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
-	tx.From = suite.from.String()
-
-	err := tx.Sign(suite.ethSigner, suite.signer)
-	suite.Require().NoError(err)
-
-	result, err := suite.handler(suite.ctx, tx)
-	suite.Require().NoError(err)
-	suite.Require().NotNil(result)
-
-	txResponse, err := types.DecodeTxResponse(result.Data)
-	suite.Require().NoError(err, "failed to decode result data")
-
-	suite.Require().Equal(len(txResponse.TxLogs.Logs), 1)
-	suite.Require().Equal(len(txResponse.TxLogs.Logs[0].Topics), 2)
-
-	// get logs by tx hash
-	hash := txResponse.TxLogs.Hash
-
-	logs, err := suite.app.EvmKeeper.CommitStateDB.GetLogs(ethcmn.HexToHash(hash))
-	suite.Require().NoError(err, "failed to get logs")
-
-	suite.Require().Equal(logs, txResponse.TxLogs.EthLogs())
+	suite.Require().Equal(logs, txResponse.Logs)
 }
 
 func (suite *EvmTestSuite) TestDeployAndCallContract() {
@@ -303,7 +273,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	// store - changeOwner
 	gasLimit = uint64(100000000000)
 	gasPrice = big.NewInt(100)
-	receiver := common.HexToAddress(txResponse.ContractAddress)
+	receiver := crypto.CreateAddress(suite.from, 1)
 
 	storeAddr := "0xa6f9dae10000000000000000000000006a82e4a67715c8412a9114fbd2cbaefbc8181424"
 	bytecode = common.FromHex(storeAddr)

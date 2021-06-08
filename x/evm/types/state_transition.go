@@ -242,12 +242,8 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 	// Resets nonce to value pre state transition
 	csdb.SetNonce(st.Message.From(), currentNonce)
 
-	// Generate bloom filter to be saved in tx receipt data
-	bloomInt := big.NewInt(0)
-
 	var (
-		bloomFilter ethtypes.Bloom
-		logs        []*ethtypes.Log
+		logs []*ethtypes.Log
 	)
 
 	if st.TxHash != nil && !st.Simulate {
@@ -256,9 +252,6 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 			err = errors.Wrap(err, "failed to get logs")
 			return nil, err
 		}
-
-		bloomInt = big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs))
-		bloomFilter = ethtypes.BytesToBloom(bloomInt.Bytes())
 	}
 
 	if !st.Simulate {
@@ -270,15 +263,9 @@ func (st *StateTransition) TransitionDb(ctx sdk.Context, config ChainConfig) (re
 	}
 
 	resp.Logs = logs
-	resp.Bloom = bloomInt
 	resp.Response = &MsgEthereumTxResponse{
-		Bloom:  bloomFilter.Bytes(),
-		TxLogs: NewTransactionLogsFromEth(*st.TxHash, logs),
-		Ret:    ret,
-	}
-
-	if contractCreation {
-		resp.Response.ContractAddress = contractAddress.String()
+		Logs: NewLogsFromEth(logs),
+		Ret:  ret,
 	}
 
 	// TODO: Refund unused gas here, if intended in future

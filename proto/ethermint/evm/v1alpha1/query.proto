@@ -41,16 +41,6 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_logs/{hash}";
   }
 
-  // TxReceipt queries a receipt by a transaction hash.
-  rpc TxReceipt(QueryTxReceiptRequest) returns (QueryTxReceiptResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipt/{hash}";
-  }
-
-  // TxReceiptsByBlockHeight queries tx receipts by a block height.
-  rpc TxReceiptsByBlockHeight(QueryTxReceiptsByBlockHeightRequest) returns (QueryTxReceiptsByBlockHeightResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_receipts_block";
-  }
-
   // BlockLogs queries all the ethereum logs for a given block hash.
   rpc BlockLogs(QueryBlockLogsRequest) returns (QueryBlockLogsResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/block_logs/{hash}";
@@ -175,31 +165,6 @@ message QueryTxLogsResponse {
   repeated Log logs = 1;
 }
 
-// QueryTxReceiptRequest is the request type for the Query/TxReceipt RPC method.
-message QueryTxReceiptRequest {
-  option (gogoproto.equal)           = false;
-  option (gogoproto.goproto_getters) = false;
-
-  // hash is the ethereum transaction hex hash to query the receipt for.
-  string hash = 1;
-}
-
-// QueryTxReceiptResponse is the response type for the Query/TxReceipt RPC method.
-message QueryTxReceiptResponse {
-  // receipt represents the ethereum receipt for the given transaction.
-  TxReceipt receipt = 1;
-}
-
-// QueryTxReceiptsByBlockHeightRequest is the request type for the Query/TxReceiptsByBlockHeight RPC method.
-message QueryTxReceiptsByBlockHeightRequest {
-}
-
-// QueryTxReceiptsByBlockHeightResponse is the response type for the Query/TxReceiptsByBlockHeight RPC method.
-message QueryTxReceiptsByBlockHeightResponse {
-  // tx receipts list for the block
-  repeated TxReceipt receipts = 1;
-}
-
 // QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
 message QueryBlockLogsRequest {
   option (gogoproto.equal)           = false;
@@ -221,7 +186,7 @@ message QueryBlockLogsResponse {
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest { }
+message QueryBlockBloomRequest {}
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.

@@ -8,6 +8,7 @@ import (
 
 	"github.com/armon/go-metrics"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -55,6 +56,9 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
 	ethHash := ethcmn.BytesToHash(txHash)
 
+	// Ethereum formatted tx hash
+	etherumTxHash := msg.AsTransaction().Hash()
+
 	st := &types.StateTransition{
 		Message:  ethMsg,
 		Csdb:     k.CommitStateDB.WithContext(ctx),
@@ -77,25 +81,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		if errors.Is(err, vm.ErrExecutionReverted) && executionResult != nil {
 			// keep the execution result for revert reason
 			executionResult.Response.Reverted = true
-
-			if !st.Simulate {
-				k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-					Hash:        ethHash.Hex(),
-					From:        sender.Hex(),
-					Data:        msg.Data,
-					BlockHeight: uint64(ctx.BlockHeight()),
-					BlockHash:   k.headerHash.Hex(),
-					Result: &types.TxResult{
-						ContractAddress: executionResult.Response.ContractAddress,
-						Bloom:           executionResult.Response.Bloom,
-						TxLogs:          executionResult.Response.TxLogs,
-						Ret:             executionResult.Response.Ret,
-						Reverted:        executionResult.Response.Reverted,
-						GasUsed:         executionResult.GasInfo.GasConsumed,
-					},
-				})
-			}
-
 			return executionResult.Response, nil
 		}
 
@@ -108,33 +93,9 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			bloom = big.NewInt(0)
 		}
 		// update block bloom filter
-		bloom = bloom.Or(bloom, executionResult.Bloom)
+		logsBloom := ethtypes.LogsBloom(executionResult.Logs)
+		bloom = bloom.Or(bloom, new(big.Int).SetBytes(logsBloom))
 		k.SetBlockBloomTransient(bloom)
-
-		// update transaction logs in KVStore
-		err = k.CommitStateDB.SetLogs(ethHash, executionResult.Logs)
-		if err != nil {
-			panic(err)
-		}
-
-		k.SetTxReceiptToHash(ctx, ethHash, &types.TxReceipt{
-			Hash:        ethHash.Hex(),
-			From:        sender.Hex(),
-			Data:        msg.Data,
-			Index:       uint64(st.Csdb.TxIndex()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-			BlockHash:   k.headerHash.Hex(),
-			Result: &types.TxResult{
-				ContractAddress: executionResult.Response.ContractAddress,
-				Bloom:           executionResult.Response.Bloom,
-				TxLogs:          executionResult.Response.TxLogs,
-				Ret:             executionResult.Response.Ret,
-				Reverted:        executionResult.Response.Reverted,
-				GasUsed:         executionResult.GasInfo.GasConsumed,
-			},
-		})
-
-		k.AddTxHashToBlock(ctx, ctx.BlockHeight(), ethHash)
 	}
 
 	defer func() {
@@ -155,6 +116,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
 		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+		sdk.NewAttribute(types.AttributeKeyEthereumTxHash, etherumTxHash.Hex()),
 	}
 
 	if len(msg.Data.To) > 0 {
@@ -174,5 +136,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		),
 	})
 
+	executionResult.Response.Hash = etherumTxHash.Hex()
 	return executionResult.Response, nil
 }

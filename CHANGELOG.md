@@ -39,11 +39,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (rpc, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Remove tx `Receipt` from store and replace it with fields obtained from the Tendermint RPC client.
 * (evm) [tharsis#72](https://github.com/tharsis/ethermint/issues/72) Update `AccessList` to use `TransientStore` instead of map.
 * (evm) [tharsis#68](https://github.com/tharsis/ethermint/issues/68) Replace block hash storage map to use staking `HistoricalInfo`.
 
 ### API Breaking
 
+* (proto, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) gRPC Query and Tx service changes:
+  * The `TxReceipt`, `TxReceiptsByBlockHeight` endpoints have been removed from the Query service.
+  * The `ContractAddress`, `Bloom` have been removed from the `MsgEthereumTxResponse` and the
+    response now contains the ethereum-formatted `Hash` in hex format.
 * (eth) [\#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
 
 ### Improvements
@@ -53,6 +58,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (rpc) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Fix transaction hashing and decoding on `eth_sendTransaction`.
 * (rpc) [tharsis#45](https://github.com/tharsis/ethermint/pull/45) Use `EmptyUncleHash` and `EmptyRootHash` for empty ethereum `Header` fields.
 
 ## [v0.4.1] - 2021-03-01

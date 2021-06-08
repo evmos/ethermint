@@ -102,12 +102,12 @@ message ChainConfig {
     (gogoproto.moretags)   = "yaml:\"muir_glacier_block\"",
     (gogoproto.nullable)   = false
   ];
-// Berlin switch block (< 0 = no fork, 0 = already on berlin)
-    string berlin_block = 13 [
-      (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-      (gogoproto.moretags)   = "yaml:\"berlin_block\"",
-      (gogoproto.nullable)   = false
-    ];
+  // Berlin switch block (< 0 = no fork, 0 = already on berlin)
+  string berlin_block = 13 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags)   = "yaml:\"berlin_block\"",
+    (gogoproto.nullable)   = false
+  ];
   // YOLO v3: Gas repricings
   string yolo_v3_block = 14 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
@@ -180,13 +180,13 @@ message Log {
 message TxReceipt {
   option (gogoproto.goproto_getters) = false;
 
-  string    hash        = 1;
-  string    from        = 2;
-  TxData   data        = 3;
-  TxResult result      = 4;
-  uint64   index       = 5;
+  string   hash         = 1;
+  string   from         = 2;
+  TxData   data         = 3;
+  TxResult result       = 4;
+  uint64   index        = 5;
   uint64   block_height = 6;
-  string    block_hash   = 7;
+  string   block_hash   = 7;
 }
 
 // TxResult stores results of Tx execution.
@@ -216,10 +216,7 @@ message TxData {
   option (gogoproto.goproto_getters) = false;
 
   // destination EVM chain ID
-  bytes chain_id = 1 [
-    (gogoproto.customname) = "ChainID",
-    (gogoproto.jsontag) = "chainID"
-  ];
+  bytes chain_id = 1 [(gogoproto.customname) = "ChainID", (gogoproto.jsontag) = "chainID"];
   // nonce corresponds to the account nonce (transaction sequence).
   uint64 nonce = 2;
   // price defines the unsigned integer value of the gas price in bytes.
@@ -227,16 +224,13 @@ message TxData {
   // gas defines the gas limit defined for the transaction.
   uint64 gas = 4 [(gogoproto.customname) = "GasLimit"];
   // hex formatted address of the recipient
-  string  to  = 5;
+  string to = 5;
   // value defines the unsigned integer value of the transaction amount.
   bytes value = 6 [(gogoproto.customname) = "Amount"];
   // input defines the data payload bytes of the transaction.
-  bytes input = 7;
-  repeated AccessTuple accesses = 8 [
-    (gogoproto.castrepeated) = "AccessList",
-    (gogoproto.jsontag) = "accessList",
-    (gogoproto.nullable)   = false
-  ];
+  bytes                input    = 7;
+  repeated AccessTuple accesses = 8
+      [(gogoproto.castrepeated) = "AccessList", (gogoproto.jsontag) = "accessList", (gogoproto.nullable) = false];
   // v defines the signature value
   bytes v = 9;
   // r defines the signature value
@@ -256,7 +250,7 @@ message AccessTuple {
   option (gogoproto.goproto_getters) = false;
 
   // hex formatted ethereum address
-  string    address = 1;
+  string address = 1;
   // hex formatted hashes of the storage keys
-	repeated  string storage_keys = 2 [(gogoproto.jsontag) = "storageKeys"];
+  repeated string storage_keys = 2 [(gogoproto.jsontag) = "storageKeys"];
 }

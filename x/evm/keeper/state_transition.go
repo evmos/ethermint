@@ -145,10 +145,8 @@ func (k *Keeper) TransitionDb(msg core.Message) (*types.ExecutionResult, error) 
 
 func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionResult, error) {
 	var (
-		ret          []byte // return bytes from evm execution
-		contract     common.Address
-		contractAddr string
-		vmErr, err   error // vm errors do not effect consensus and are therefore not assigned to err
+		ret        []byte // return bytes from evm execution
+		vmErr, err error  // vm errors do not effect consensus and are therefore not assigned to err
 	)
 
 	sender := vm.AccountRef(msg.From())
@@ -174,8 +172,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionRe
 	}
 
 	if contractCreation {
-		ret, contract, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
-		contractAddr = contract.Hex()
+		ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
 	} else {
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
@@ -198,8 +195,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message) (*types.ExecutionRe
 
 	return &types.ExecutionResult{
 		Response: &types.MsgEthereumTxResponse{
-			ContractAddress: contractAddr,
-			Ret:             ret,
+			Ret: ret,
 		},
 		GasInfo: types.GasInfo{
 			GasLimit:    k.ctx.GasMeter().Limit(),
