@@ -42,9 +42,9 @@ message ExtensionOptionsWeb3Tx {
 message MsgEthereumTxResponse {
   option (gogoproto.goproto_getters) = false;
 
-  // ethereum transaction hash. This hash differs from the Tendermint sha256 hash of the transaction
+  // ethereum transaction hash in hex format. This hash differs from the Tendermint sha256 hash of the transaction
   // bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference
-  bytes hash = 1;
+  string hash = 1;
   // logs contains the transaction hash and the proto-compatible ethereum
   // logs.
   repeated Log logs = 2;

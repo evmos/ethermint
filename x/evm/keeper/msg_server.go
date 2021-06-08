@@ -56,6 +56,9 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
 	ethHash := ethcmn.BytesToHash(txHash)
 
+	// Ethereum formatted tx hash
+	etherumTxHash := msg.AsTransaction().Hash()
+
 	st := &types.StateTransition{
 		Message:  ethMsg,
 		Csdb:     k.CommitStateDB.WithContext(ctx),
@@ -113,6 +116,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(sdk.AttributeKeyAmount, st.Message.Value().String()),
 		sdk.NewAttribute(types.AttributeKeyTxHash, ethcmn.BytesToHash(txHash).Hex()),
+		sdk.NewAttribute(types.AttributeKeyEthereumTxHash, etherumTxHash.Hex()),
 	}
 
 	if len(msg.Data.To) > 0 {
@@ -132,5 +136,6 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		),
 	})
 
+	executionResult.Response.Hash = etherumTxHash.Hex()
 	return executionResult.Response, nil
 }

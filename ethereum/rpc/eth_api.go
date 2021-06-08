@@ -699,7 +699,7 @@ func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx h
 	}
 
 	i := int(idx)
-	if len(resBlock.Block.Txs) >= i {
+	if i >= len(resBlock.Block.Txs) {
 		e.logger.Debugln("block txs index out of bound", "index", i)
 		return nil, nil
 	}
@@ -742,7 +742,7 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.Blo
 	}
 
 	i := int(idx)
-	if len(resBlock.Block.Txs) >= i {
+	if i >= len(resBlock.Block.Txs) {
 		e.logger.Debugln("block txs index out of bound", "index", i)
 		return nil, nil
 	}
