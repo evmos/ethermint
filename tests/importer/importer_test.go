@@ -139,12 +139,6 @@ func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.
 	b := evmKeeper.GetBalance(genInvestor)
 	require.Equal(t, "200000000000000000000", b.String())
 
-	// commit the stateDB with 'false' to delete empty objects
-	//
-	// NOTE: Commit does not yet return the intra merkle root (version)
-	_, err := evmKeeper.Commit(false)
-	require.NoError(t, err)
-
 	// persist multi-store cache state
 	ms.Write()
 
@@ -273,9 +267,7 @@ func TestImportBlocks(t *testing.T) {
 			applyDAOHardFork(evmKeeper)
 		}
 
-		for i, tx := range block.Transactions() {
-			evmKeeper.Prepare(tx.Hash(), block.Hash(), i)
-			// evmKeeper.Set(block.Hash())
+		for _, tx := range block.Transactions() {
 
 			receipt, gas, err := applyTransaction(
 				chainConfig, chainContext, nil, gp, evmKeeper, header, tx, usedGas, vmConfig,
@@ -286,10 +278,6 @@ func TestImportBlocks(t *testing.T) {
 
 		// apply mining rewards
 		accumulateRewards(chainConfig, evmKeeper, header, block.Uncles())
-
-		// commit stateDB
-		_, err := evmKeeper.Commit(chainConfig.IsEIP158(block.Number()))
-		require.NoError(t, err, "failed to commit StateDB")
 
 		// simulate BaseApp EndBlocker commitment
 		ms.Write()
@@ -348,7 +336,6 @@ func applyDAOHardFork(evmKeeper *evmkeeper.Keeper) {
 	// Move every DAO account and extra-balance account funds into the refund contract
 	for _, addr := range ethparams.DAODrainList() {
 		evmKeeper.AddBalance(ethparams.DAORefundContract, evmKeeper.GetBalance(addr))
-		evmKeeper.SetBalance(addr, new(big.Int))
 	}
 }
 
@@ -383,19 +370,11 @@ func applyTransaction(
 		return &ethtypes.Receipt{}, 0, nil
 	}
 
-	// Update the state with pending changes
-	var intRoot ethcmn.Hash
-	if config.IsByzantium(header.Number) {
-		err = evmKeeper.Finalise(true)
-	} else {
-		intRoot, err = evmKeeper.IntermediateRoot(config.IsEIP158(header.Number))
-	}
-
 	if err != nil {
 		return nil, execResult.UsedGas, err
 	}
 
-	root := intRoot.Bytes()
+	root := ethcmn.Hash{}.Bytes()
 	*usedGas += execResult.UsedGas
 
 	// Create a new receipt for the transaction, storing the intermediate root and gas used by the tx
@@ -410,11 +389,11 @@ func applyTransaction(
 	}
 
 	// Set the receipt logs and create a bloom for filtering
-	receipt.Logs, err = evmKeeper.GetLogs(tx.Hash())
+	receipt.Logs = evmKeeper.GetTxLogs(tx.Hash())
 	receipt.Bloom = ethtypes.CreateBloom(ethtypes.Receipts{receipt})
-	receipt.BlockHash = evmKeeper.BlockHash()
+	receipt.BlockHash = header.Hash()
 	receipt.BlockNumber = header.Number
-	receipt.TransactionIndex = uint(evmKeeper.TxIndex())
+	receipt.TransactionIndex = uint(evmKeeper.GetTxIndexTransient())
 
 	return receipt, execResult.UsedGas, err
 }
