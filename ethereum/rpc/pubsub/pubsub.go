@@ -86,19 +86,15 @@ func (m *memEventBus) Subscribe(name string) (<-chan coretypes.ResultEvent, erro
 
 func (m *memEventBus) publishTopic(name string, src <-chan coretypes.ResultEvent) {
 	for {
-		select {
-		case msg, ok := <-src:
-			if !ok {
-				m.closeAllSubscribers(name)
-				m.topicsMux.Lock()
-				delete(m.topics, name)
-				m.topicsMux.Unlock()
-
-				return
-			}
-
-			m.publishAllSubscribers(name, msg)
+		msg, ok := <-src
+		if !ok {
+			m.closeAllSubscribers(name)
+			m.topicsMux.Lock()
+			delete(m.topics, name)
+			m.topicsMux.Unlock()
+			return
 		}
+		m.publishAllSubscribers(name, msg)
 	}
 }
 
