@@ -23,14 +23,14 @@ type Request struct {
 	ID      int         `json:"id"`
 }
 
-type RPCError struct {
+type Error struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
 
 type Response struct {
-	Error  *RPCError       `json:"error"`
+	Error  *Error          `json:"error"`
 	ID     int             `json:"id"`
 	Result json.RawMessage `json:"result,omitempty"`
 }

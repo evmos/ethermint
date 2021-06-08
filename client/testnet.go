@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -473,45 +472,6 @@ func writeFile(name string, dir string, contents []byte) error {
 
 	err = tmos.WriteFile(file, contents, 0644)
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func appendToFile(name string, dir string, contents []byte) error {
-	writePath := filepath.Join(dir)
-	file := filepath.Join(writePath, name)
-
-	err := tmos.EnsureDir(writePath, 0755)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(file); err == nil {
-		err = os.Chmod(file, 0777)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-	}
-
-	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	defer f.Close()
-
-	_, err = f.Write(contents)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	f.Write([]byte("\n"))
-	if err != nil {
-		log.Println(err)
 		return err
 	}
 

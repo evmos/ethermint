@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"sync"
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -45,7 +44,6 @@ type PublicEthAPI struct {
 	logger       log.Logger
 	backend      Backend
 	nonceLock    *rpctypes.AddrLocker
-	keyringLock  sync.Mutex
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.

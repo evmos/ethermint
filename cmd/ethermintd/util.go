@@ -28,8 +28,14 @@ import (
 // to get the Tendermint configuration or to get access to Viper.
 func InterceptConfigsPreRunHandler(cmd *cobra.Command) error {
 	rootViper := viper.New()
-	rootViper.BindPFlags(cmd.Flags())
-	rootViper.BindPFlags(cmd.PersistentFlags())
+	err := rootViper.BindPFlags(cmd.Flags())
+	if err != nil {
+		return err
+	}
+	err = rootViper.BindPFlags(cmd.PersistentFlags())
+	if err != nil {
+		return err
+	}
 
 	serverCtx := server.NewDefaultContext()
 	config, err := interceptConfigs(serverCtx, rootViper)
