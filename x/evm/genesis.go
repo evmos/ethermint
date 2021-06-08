@@ -43,7 +43,6 @@ func InitGenesis(
 			)
 		}
 
-		k.SetNonce(address, acc.GetSequence())
 		k.SetCode(address, ethcmn.Hex2Bytes(account.Code))
 
 		for _, storage := range account.Storage {

@@ -183,7 +183,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 
 	// ensure gas is consistent during CheckTx
 	if k.ctx.IsCheckTx() {
-		if err := k.checkGasConsumption(msg, cfg, gasConsumed, contractCreation); err != nil {
+		if err := k.CheckGasConsumption(msg, cfg, gasConsumed, contractCreation); err != nil {
 			return nil, err
 		}
 	}
@@ -195,7 +195,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}
 
 	// refund gas prior to handling the vm error in order to set the updated gas meter
-	if err := k.refundGas(msg, leftoverGas); err != nil {
+	if err := k.RefundGas(msg, leftoverGas); err != nil {
 		return nil, err
 	}
 
@@ -215,8 +215,8 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}, nil
 }
 
-// checkGasConsumption verifies that the amount of gas consumed so far matches the intrinsic gas value.
-func (k *Keeper) checkGasConsumption(msg core.Message, cfg *params.ChainConfig, gasConsumed uint64, isContractCreation bool) error {
+// CheckGasConsumption verifies that the amount of gas consumed so far matches the intrinsic gas value.
+func (k *Keeper) CheckGasConsumption(msg core.Message, cfg *params.ChainConfig, gasConsumed uint64, isContractCreation bool) error {
 	height := big.NewInt(k.ctx.BlockHeight())
 	homestead := cfg.IsHomestead(height)
 	istanbul := cfg.IsIstanbul(height)
@@ -234,11 +234,11 @@ func (k *Keeper) checkGasConsumption(msg core.Message, cfg *params.ChainConfig, 
 	return nil
 }
 
-// refundGas transfers the leftover gas to the sender of the message, caped to half of the total gas
+// RefundGas transfers the leftover gas to the sender of the message, caped to half of the total gas
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas inconsumed during in the
 // AnteHandler.
-func (k *Keeper) refundGas(msg core.Message, leftoverGas uint64) error {
+func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 	gasConsumed := msg.Gas() - leftoverGas
 
 	// Apply refund counter, capped to half of the used gas.
