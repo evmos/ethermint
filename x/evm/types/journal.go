@@ -194,10 +194,6 @@ type (
 	accessListAddAccountChange struct {
 		address *ethcmn.Address
 	}
-	accessListAddSlotChange struct {
-		address *ethcmn.Address
-		slot    *ethcmn.Hash
-	}
 )
 
 func (ch createObjectChange) revert(s *CommitStateDB) {
@@ -368,13 +364,5 @@ func (ch accessListAddAccountChange) revert(s *CommitStateDB) {
 }
 
 func (ch accessListAddAccountChange) dirtied() *ethcmn.Address {
-	return nil
-}
-
-func (ch accessListAddSlotChange) revert(s *CommitStateDB) {
-	// s.accessList.DeleteSlot(*ch.address, *ch.slot)
-}
-
-func (ch accessListAddSlotChange) dirtied() *ethcmn.Address {
 	return nil
 }

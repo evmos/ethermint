@@ -325,18 +325,6 @@ func (api *pubSubAPI) unsubscribe(id rpc.ID) bool {
 	return true
 }
 
-func (api *pubSubAPI) getSubscriptionByQuery(query string) *Subscription {
-	api.filtersMu.Lock()
-	defer api.filtersMu.Unlock()
-
-	for _, wsSub := range api.filters {
-		if wsSub.query == query {
-			return wsSub.sub
-		}
-	}
-	return nil
-}
-
 func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 	var query = "subscribeNewHeads"
 	var subID = rpc.NewID()

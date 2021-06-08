@@ -65,12 +65,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		},
 	}
 
-	initRootCmd(rootCmd, encodingConfig)
-
-	return rootCmd, encodingConfig
-}
-
-func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	authclient.Codec = encodingConfig.Marshaler
 	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
@@ -119,6 +113,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	)
 	rootCmd = addTxFlags(rootCmd)
 
+	return rootCmd, encodingConfig
 }
 
 func queryCommand() *cobra.Command {

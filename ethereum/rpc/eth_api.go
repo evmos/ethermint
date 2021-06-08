@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"sync"
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -45,7 +44,6 @@ type PublicEthAPI struct {
 	logger       log.Logger
 	backend      Backend
 	nonceLock    *rpctypes.AddrLocker
-	keyringLock  sync.Mutex
 }
 
 // NewPublicEthAPI creates an instance of the public ETH Web3 API.
@@ -736,7 +734,7 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		return nil, err
 	}
 
-	cumulativeGasUsed := uint64(tx.Receipt.Result.GasUsed)
+	cumulativeGasUsed := tx.Receipt.Result.GasUsed
 	if tx.Receipt.Index != 0 {
 		cumulativeGasUsed += rpctypes.GetBlockCumulativeGas(e.clientCtx, block.Block, int(tx.Receipt.Index))
 	}
