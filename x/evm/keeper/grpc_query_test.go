@@ -236,10 +236,8 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 					Address: suite.address.String(),
 					Key:     ethcmn.Hash{}.String(),
 				}
-				exp := &types.QueryStorageResponse{Value: "0x0000000000000000000000000000000000000000000000000000000000000000"}
-				expValue = exp.Value
 			},
-			true,
+			false,
 		},
 		{
 			"success",
@@ -636,74 +634,6 @@ func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHeight() {
 			ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, fmt.Sprintf("%d", suite.ctx.BlockHeight()))
 
 			res, err := suite.queryClient.TxReceiptsByBlockHeight(ctx, req)
-
-			if tc.expPass {
-				suite.Require().NoError(err)
-				suite.Require().NotNil(res)
-
-				suite.Require().Equal(expRes, res)
-			} else {
-				suite.Require().Error(err)
-			}
-		})
-	}
-}
-
-func (suite *KeeperTestSuite) TestQueryTxReceiptByBlockHash() {
-	var (
-		req    *types.QueryTxReceiptsByBlockHashRequest
-		expRes *types.QueryTxReceiptsByBlockHashResponse
-	)
-
-	testCases := []struct {
-		msg      string
-		malleate func()
-		expPass  bool
-	}{
-		{"empty block hash",
-			func() {
-				req = &types.QueryTxReceiptsByBlockHashRequest{
-					Hash: "",
-				}
-			},
-			false,
-		},
-		{"success",
-			func() {
-				hash := ethcmn.BytesToHash([]byte("thash"))
-				blockHash := ethcmn.BytesToHash([]byte("bhash"))
-
-				receipt := &types.TxReceipt{
-					Hash:        hash.Hex(),
-					From:        suite.address.Hex(),
-					BlockHeight: uint64(suite.ctx.BlockHeight()),
-					BlockHash:   blockHash.Hex(),
-				}
-
-				suite.app.EvmKeeper.SetBlockHash(suite.ctx, blockHash.Bytes(), suite.ctx.BlockHeight())
-				suite.app.EvmKeeper.AddTxHashToBlock(suite.ctx, suite.ctx.BlockHeight(), hash)
-				suite.app.EvmKeeper.SetTxReceiptToHash(suite.ctx, hash, receipt)
-
-				req = &types.QueryTxReceiptsByBlockHashRequest{
-					Hash: blockHash.Hex(),
-				}
-
-				expRes = &types.QueryTxReceiptsByBlockHashResponse{
-					Receipts: []*types.TxReceipt{receipt},
-				}
-			},
-			true,
-		},
-	}
-
-	for _, tc := range testCases {
-		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
-			suite.SetupTest() // reset
-
-			tc.malleate()
-			ctx := sdk.WrapSDKContext(suite.ctx)
-
-			res, err := suite.queryClient.TxReceiptsByBlockHash(ctx, req)
 
 			if tc.expPass {
 				suite.Require().NoError(err)

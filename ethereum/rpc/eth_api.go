@@ -3,7 +3,6 @@ package rpc
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -380,8 +379,12 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 		return common.Hash{}, err
 	}
 
+	// creates a new EIP2929 signer
+	// TODO: support legacy txs
+	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+
 	// Sign transaction
-	if err := tx.Sign(e.chainIDEpoch, e.clientCtx.Keyring); err != nil {
+	if err := tx.Sign(signer, e.clientCtx.Keyring); err != nil {
 		e.logger.Debugln("failed to sign tx", "error", err)
 		return common.Hash{}, err
 	}
@@ -466,28 +469,14 @@ func (e *PublicEthAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber
 		return []byte{}, err
 	}
 
-	if len(simRes.Result.Log) > 0 {
-		var logs []rpctypes.SDKTxLogs
-
-		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
-			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
-		}
-
-		if len(logs) > 0 && logs[0].Log == rpctypes.LogRevertedFlag {
-			data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
-			if err != nil {
-				e.logger.WithError(err).Warningln("call result decoding failed")
-				return []byte{}, err
-			}
-
-			return []byte{}, rpctypes.ErrRevertedWith(data.Ret)
-		}
-	}
-
 	data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
 	if err != nil {
 		e.logger.WithError(err).Warningln("call result decoding failed")
 		return []byte{}, err
+	}
+
+	if data.Reverted {
+		return []byte{}, rpctypes.ErrRevertedWith(data.Ret)
 	}
 
 	return (hexutil.Bytes)(data.Ret), nil
@@ -538,6 +527,7 @@ func (e *PublicEthAPI) doCall(
 		fromAddr = sdk.AccAddress(args.From.Bytes())
 	} else {
 		fromAddr = sdk.AccAddress(common.Address{}.Bytes())
+		args.From = &common.Address{}
 	}
 
 	_, seq, err := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, fromAddr)
@@ -547,7 +537,7 @@ func (e *PublicEthAPI) doCall(
 
 	// Create new call message
 	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
-	msg.From = fromAddr.String()
+	msg.From = args.From.String()
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -615,25 +605,17 @@ func (e *PublicEthAPI) EstimateGas(args rpctypes.CallArgs) (hexutil.Uint64, erro
 		return 0, err
 	}
 
-	if len(simRes.Result.Log) > 0 {
-		var logs []rpctypes.SDKTxLogs
-		if err := json.Unmarshal([]byte(simRes.Result.Log), &logs); err != nil {
-			e.logger.WithError(err).Errorln("failed to unmarshal simRes.Result.Log")
-			return 0, err
-		}
-
-		if len(logs) > 0 && logs[0].Log == rpctypes.LogRevertedFlag {
-			data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
-			if err != nil {
-				e.logger.WithError(err).Warningln("call result decoding failed")
-				return 0, err
-			}
-
-			return 0, rpctypes.ErrRevertedWith(data.Ret)
-		}
+	data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
+	if err != nil {
+		e.logger.WithError(err).Warningln("call result decoding failed")
+		return 0, err
 	}
 
-	// TODO: change 1000 buffer for more accurate buffer (eg: SDK's gasAdjusted)
+	if data.Reverted {
+		return 0, rpctypes.ErrRevertedWith(data.Ret)
+	}
+
+	// TODO: Add Gas Info from state transition to MsgEthereumTxResponse fields and return that instead
 	estimatedGas := simRes.GasInfo.GasUsed
 	gas := estimatedGas + 200000
 
@@ -678,12 +660,14 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTran
 func (e *PublicEthAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHashAndIndex", "hash", hash.Hex(), "index", idx)
 
-	resp, err := e.queryClient.TxReceiptsByBlockHash(e.ctx, &evmtypes.QueryTxReceiptsByBlockHashRequest{
-		Hash: hash.Hex(),
-	})
+	header, err := e.backend.HeaderByHash(hash)
 	if err != nil {
-		err = errors.Wrap(err, "failed to query tx receipts by block hash")
-		return nil, err
+		return nil, errors.Wrapf(err, "failed retrieve block from hash")
+	}
+
+	resp, err := e.queryClient.TxReceiptsByBlockHeight(rpctypes.ContextWithHeight(header.Number.Int64()), &evmtypes.QueryTxReceiptsByBlockHeightRequest{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query tx receipts by block height")
 	}
 
 	return e.getReceiptByIndex(resp.Receipts, hash, idx)

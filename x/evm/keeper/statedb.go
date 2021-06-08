@@ -9,7 +9,6 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -37,7 +36,8 @@ func (k *Keeper) CreateAccount(addr common.Address) {
 		k.ResetAccount(addr)
 	}
 
-	_ = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+	account = k.accountKeeper.NewAccountWithAddress(k.ctx, cosmosAddr)
+	k.accountKeeper.SetAccount(k.ctx, account)
 
 	k.Logger(k.ctx).Debug(
 		log,
@@ -52,6 +52,15 @@ func (k *Keeper) CreateAccount(addr common.Address) {
 
 // AddBalance calls CommitStateDB.AddBalance using the passed in context
 func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
+	if amount.Sign() != 1 {
+		k.Logger(k.ctx).Debug(
+			"ignored non-positive amount addition",
+			"ethereum-address", addr.Hex(),
+			"amount", amount.Int64(),
+		)
+		return
+	}
+
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
 	params := k.GetParams(k.ctx)
@@ -76,6 +85,15 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 
 // SubBalance calls CommitStateDB.SubBalance using the passed in context
 func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
+	if amount.Sign() != 1 {
+		k.Logger(k.ctx).Debug(
+			"ignored non-positive amount addition",
+			"ethereum-address", addr.Hex(),
+			"amount", amount.Int64(),
+		)
+		return
+	}
+
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
 	params := k.GetParams(k.ctx)
@@ -128,7 +146,8 @@ func (k *Keeper) GetNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-// SetNonce calls CommitStateDB.SetNonce using the passed in context
+// SetNonce sets the given nonce as the sequence of the address' account. If the
+// account doesn't exist, a new one will be created from the address.
 func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
@@ -215,6 +234,7 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 	account := k.accountKeeper.GetAccount(k.ctx, addr.Bytes())
 	if account == nil {
 		account = k.accountKeeper.NewAccountWithAddress(k.ctx, addr.Bytes())
+		k.accountKeeper.SetAccount(k.ctx, account)
 	}
 
 	ethAccount, isEthAccount := account.(*ethermint.EthAccount)
@@ -306,7 +326,8 @@ func (k *Keeper) GetRefund() uint64 {
 // State
 // ----------------------------------------------------------------------------
 
-// GetCommittedState calls CommitStateDB.GetCommittedState using the passed in context
+// GetCommittedState returns the value set in store for the given key hash. If the key is not registered
+// this function returns the empty hash.
 func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
 
@@ -319,13 +340,14 @@ func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common
 	return common.BytesToHash(value)
 }
 
-// GetState calls CommitStateDB.GetState using the passed in context
+// GetState returns the commited state for the given key hash, as all changes are commited directly
+// to the KVStore.
 func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
-	// All state is committed directly
 	return k.GetCommittedState(addr, hash)
 }
 
-// SetState calls CommitStateDB.SetState using the passed in context
+// SetState sets the given hashes (key, value) to the KVStore. If the value hash is empty, this
+// function deletes the key from the store.
 func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
 	key = types.KeyAddressStorage(addr, key)
@@ -415,6 +437,8 @@ func (k *Keeper) Exist(addr common.Address) bool {
 // 	- nonce is 0
 // 	- balance amount for evm denom is 0
 // 	- account code hash is empty
+//
+// Non-ethereum accounts are considered not empty
 func (k *Keeper) Empty(addr common.Address) bool {
 	nonce := uint64(0)
 	codeHash := types.EmptyCodeHash
@@ -426,7 +450,6 @@ func (k *Keeper) Empty(addr common.Address) bool {
 		nonce = account.GetSequence()
 		ethAccount, isEthAccount := account.(*ethermint.EthAccount)
 		if !isEthAccount {
-			// NOTE: non-ethereum accounts are considered not empty
 			return false
 		}
 
@@ -454,11 +477,6 @@ func (k *Keeper) Empty(addr common.Address) bool {
 //
 // This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
 func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
-		return
-	}
-
 	k.AddAddressToAccessList(sender)
 	if dest != nil {
 		k.AddAddressToAccessList(*dest)
@@ -475,37 +493,48 @@ func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, 
 	}
 }
 
-// AddressInAccessList returns true if the address is registered on the access list map.
+// AddressInAccessList returns true if the address is registered on the transient store.
 func (k *Keeper) AddressInAccessList(addr common.Address) bool {
-	return k.accessList.ContainsAddress(addr)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListAddress)
+	return ts.Has(addr.Bytes())
 }
 
+// SlotInAccessList checks if the address and the slots are registered in the transient store
 func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
-	return k.accessList.Contains(addr, slot)
+	addressOk = k.AddressInAccessList(addr)
+	slotOk = k.addressSlotInAccessList(addr, slot)
+	return addressOk, slotOk
 }
 
-// AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
-// even if the feature/fork is not active yet
+// addressSlotInAccessList returns true if the address's slot is registered on the transient store.
+func (k *Keeper) addressSlotInAccessList(addr common.Address, slot common.Hash) bool {
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+	return ts.Has(key)
+}
+
+// AddAddressToAccessList adds the given address to the access list. If the address is already
+// in the access list, this function performs a no-op.
 func (k *Keeper) AddAddressToAccessList(addr common.Address) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+	if k.AddressInAccessList(addr) {
 		return
 	}
 
-	// NOTE: ignore change return bool because we don't have to keep a journal for state changes
-	_ = k.accessList.AddAddress(addr)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListAddress)
+	ts.Set(addr.Bytes(), []byte{0x1})
 }
 
-// AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
-// even if the feature/fork is not active yet
+// AddSlotToAccessList adds the given (address, slot) to the access list. If the address and slot are
+// already in the access list, this function performs a no-op.
 func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
-	// NOTE: only update the access list during DeliverTx
-	if k.ctx.IsCheckTx() || k.ctx.IsReCheckTx() {
+	k.AddAddressToAccessList(addr)
+	if k.addressSlotInAccessList(addr, slot) {
 		return
 	}
 
-	// NOTE: ignore change return booleans because we don't have to keep a journal for state changes
-	_, _ = k.accessList.AddSlot(addr, slot)
+	ts := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+	ts.Set(key, []byte{0x1})
 }
 
 // ----------------------------------------------------------------------------
@@ -531,23 +560,31 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
-	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
-	blockHash, found := k.GetBlockHashFromHeight(k.ctx, k.ctx.BlockHeight())
-	if found {
-		log.BlockHash = blockHash
+	if len(k.ctx.TxBytes()) > 0 {
+		tx := &ethtypes.Transaction{}
+		if err := tx.UnmarshalBinary(k.ctx.TxBytes()); err != nil {
+			k.Logger(k.ctx).Error(
+				"ethereum tx unmarshaling failed",
+				"error", err,
+			)
+			return
+		}
+
+		log.TxHash = tx.Hash()
 	}
 
-	log.TxHash = txHash
+	log.BlockHash = k.headerHash
 	log.TxIndex = uint(k.GetTxIndexTransient())
 
-	logs := k.GetTxLogs(txHash)
+	logs := k.GetTxLogs(log.TxHash)
+
 	log.Index = uint(len(logs))
 	logs = append(logs, log)
-	k.SetLogs(txHash, logs)
+	k.SetLogs(log.TxHash, logs)
 
 	k.Logger(k.ctx).Debug(
 		"log added",
-		"tx-hash", txHash.Hex(),
+		"tx-hash", log.TxHash.Hex(),
 		"log-index", int(log.Index),
 	)
 }

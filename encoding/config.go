@@ -1,4 +1,4 @@
-package app
+package encoding
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
@@ -6,14 +6,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
-	"github.com/cosmos/ethermint/codec"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
+	enccodec "github.com/cosmos/ethermint/encoding/codec"
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 )
 
 // MakeEncodingConfig creates an EncodingConfig for testing
-func MakeEncodingConfig() params.EncodingConfig {
+func MakeConfig(mb module.BasicManager) params.EncodingConfig {
 	cdc := amino.NewLegacyAmino()
 	interfaceRegistry := types.NewInterfaceRegistry()
 	marshaler := amino.NewProtoCodec(interfaceRegistry)
@@ -25,10 +28,10 @@ func MakeEncodingConfig() params.EncodingConfig {
 		Amino:             cdc,
 	}
 
-	codec.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	codec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	enccodec.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	mb.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	enccodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	mb.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	return encodingConfig
 }
 
@@ -49,9 +52,9 @@ func NewTxConfig(marshaler amino.ProtoCodecMarshaler) client.TxConfig {
 // TxEncoder overwrites sdk.TxEncoder to support MsgEthereumTx
 func (g txConfig) TxEncoder() sdk.TxEncoder {
 	return func(tx sdk.Tx) ([]byte, error) {
-		ethtx, ok := tx.(*evmtypes.MsgEthereumTx)
+		msg, ok := tx.(*evmtypes.MsgEthereumTx)
 		if ok {
-			return g.cdc.MarshalBinaryBare(ethtx)
+			return msg.AsTransaction().MarshalBinary()
 		}
 		return g.TxConfig.TxEncoder()(tx)
 	}
@@ -60,11 +63,13 @@ func (g txConfig) TxEncoder() sdk.TxEncoder {
 // TxDecoder overwrites sdk.TxDecoder to support MsgEthereumTx
 func (g txConfig) TxDecoder() sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, error) {
-		var ethtx evmtypes.MsgEthereumTx
+		tx := &ethtypes.Transaction{}
 
-		err := g.cdc.UnmarshalBinaryBare(txBytes, &ethtx)
+		err := tx.UnmarshalBinary(txBytes)
 		if err == nil {
-			return &ethtx, nil
+			msg := &evmtypes.MsgEthereumTx{}
+			msg.FromEthereumTx(tx)
+			return msg, nil
 		}
 
 		return g.TxConfig.TxDecoder()(txBytes)

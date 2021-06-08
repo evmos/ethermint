@@ -12,9 +12,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	ethermintcodec "github.com/cosmos/ethermint/codec"
 	cryptocodec "github.com/cosmos/ethermint/crypto/codec"
 	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	ethermintcodec "github.com/cosmos/ethermint/encoding/codec"
 	"github.com/cosmos/ethermint/types"
 )
 

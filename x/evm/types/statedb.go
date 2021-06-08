@@ -25,11 +25,6 @@ var (
 	zeroBalance = sdk.ZeroInt().BigInt()
 )
 
-type revision struct {
-	id           int
-	journalIndex int
-}
-
 // CommitStateDB implements the Geth state.StateDB interface. Instead of using
 // a trie and database for querying and persistence, the Keeper uses KVStores
 // and an AccountKeeper to facilitate state transitions.
@@ -43,6 +38,7 @@ type CommitStateDB struct {
 	ctx sdk.Context
 
 	storeKey      sdk.StoreKey
+	transientKey  sdk.StoreKey
 	paramSpace    paramtypes.Subspace
 	accountKeeper AccountKeeper
 	bankKeeper    BankKeeper
@@ -78,9 +74,6 @@ type CommitStateDB struct {
 	validRevisions []revision
 	nextRevisionID int
 
-	// Per-transaction access list
-	accessList *AccessListMappings
-
 	// mutex for state deep copying
 	lock sync.Mutex
 }
@@ -91,12 +84,13 @@ type CommitStateDB struct {
 // CONTRACT: Stores used for state must be cache-wrapped as the ordering of the
 // key/value space matters in determining the merkle root.
 func NewCommitStateDB(
-	ctx sdk.Context, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	ctx sdk.Context, storeKey, tKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak AccountKeeper, bankKeeper BankKeeper,
 ) *CommitStateDB {
 	return &CommitStateDB{
 		ctx:                  ctx,
 		storeKey:             storeKey,
+		transientKey:         tKey,
 		paramSpace:           paramSpace,
 		accountKeeper:        ak,
 		bankKeeper:           bankKeeper,
@@ -106,7 +100,6 @@ func NewCommitStateDB(
 		preimages:            []preimageEntry{},
 		hashToPreimageIndex:  make(map[ethcmn.Hash]int),
 		journal:              newJournal(),
-		accessList:           NewAccessListMappings(),
 	}
 }
 
@@ -122,9 +115,8 @@ func (csdb *CommitStateDB) WithContext(ctx sdk.Context) *CommitStateDB {
 
 // SetHeightHash sets the block header hash associated with a given height.
 func (csdb *CommitStateDB) SetHeightHash(height uint64, hash ethcmn.Hash) {
-	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixBlockHeightHash)
-	key := KeyBlockHeightHash(height)
-	store.Set(key, hash.Bytes())
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixHeightToHeaderHash)
+	store.Set(sdk.Uint64ToBigEndian(height), hash.Bytes())
 }
 
 // SetParams sets the evm parameters to the param space.
@@ -259,65 +251,76 @@ func (csdb *CommitStateDB) SubRefund(gas uint64) {
 	csdb.refund -= gas
 }
 
-// AddAddressToAccessList adds the given address to the access list
-func (csdb *CommitStateDB) AddAddressToAccessList(addr ethcmn.Address) {
-	if csdb.accessList.AddAddress(addr) {
-		csdb.journal.append(accessListAddAccountChange{&addr})
-	}
-}
-
-// AddSlotToAccessList adds the given (address, slot)-tuple to the access list
-func (csdb *CommitStateDB) AddSlotToAccessList(addr ethcmn.Address, slot ethcmn.Hash) {
-	addrMod, slotMod := csdb.accessList.AddSlot(addr, slot)
-	if addrMod {
-		// In practice, this should not happen, since there is no way to enter the
-		// scope of 'address' without having the 'address' become already added
-		// to the access list (via call-variant, create, etc).
-		// Better safe than sorry, though
-		csdb.journal.append(accessListAddAccountChange{&addr})
-	}
-	if slotMod {
-		csdb.journal.append(accessListAddSlotChange{
-			address: &addr,
-			slot:    &slot,
-		})
-	}
-}
-
-// AddressInAccessList returns true if the given address is in the access list.
-func (csdb *CommitStateDB) AddressInAccessList(addr ethcmn.Address) bool {
-	return csdb.accessList.ContainsAddress(addr)
-}
-
-// SlotInAccessList returns true if the given (address, slot)-tuple is in the access list.
-func (csdb *CommitStateDB) SlotInAccessList(addr ethcmn.Address, slot ethcmn.Hash) (bool, bool) {
-	return csdb.accessList.Contains(addr, slot)
-}
+// ----------------------------------------------------------------------------
+// Access List // TODO: deprecate
+// ----------------------------------------------------------------------------
 
 // PrepareAccessList handles the preparatory steps for executing a state transition with
 // regards to both EIP-2929 and EIP-2930:
 //
-// - Add sender to access list (2929)
-// - Add destination to access list (2929)
-// - Add precompiles to access list (2929)
-// - Add the contents of the optional tx access list (2930)
+// 	- Add sender to access list (2929)
+// 	- Add destination to access list (2929)
+// 	- Add precompiles to access list (2929)
+// 	- Add the contents of the optional tx access list (2930)
 //
 // This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
-func (csdb *CommitStateDB) PrepareAccessList(sender ethcmn.Address, dst *ethcmn.Address, precompiles []ethcmn.Address, list ethtypes.AccessList) {
+func (csdb *CommitStateDB) PrepareAccessList(sender ethcmn.Address, dest *ethcmn.Address, precompiles []ethcmn.Address, txAccesses ethtypes.AccessList) {
 	csdb.AddAddressToAccessList(sender)
-	if dst != nil {
-		csdb.AddAddressToAccessList(*dst)
+	if dest != nil {
+		csdb.AddAddressToAccessList(*dest)
 		// If it's a create-tx, the destination will be added inside evm.create
 	}
 	for _, addr := range precompiles {
 		csdb.AddAddressToAccessList(addr)
 	}
-	for _, el := range list {
-		csdb.AddAddressToAccessList(el.Address)
-		for _, key := range el.StorageKeys {
-			csdb.AddSlotToAccessList(el.Address, key)
+	for _, tuple := range txAccesses {
+		csdb.AddAddressToAccessList(tuple.Address)
+		for _, key := range tuple.StorageKeys {
+			csdb.AddSlotToAccessList(tuple.Address, key)
 		}
 	}
+}
+
+// AddressInAccessList returns true if the address is registered on the access list map.
+func (csdb *CommitStateDB) AddressInAccessList(addr ethcmn.Address) bool {
+	ts := prefix.NewStore(csdb.ctx.TransientStore(csdb.transientKey), KeyPrefixTransientAccessListAddress)
+	return ts.Has(addr.Bytes())
+}
+
+func (csdb *CommitStateDB) SlotInAccessList(addr ethcmn.Address, slot ethcmn.Hash) (addressOk bool, slotOk bool) {
+	addressOk = csdb.AddressInAccessList(addr)
+	slotOk = csdb.addressSlotInAccessList(addr, slot)
+	return addressOk, slotOk
+}
+
+func (csdb *CommitStateDB) addressSlotInAccessList(addr ethcmn.Address, slot ethcmn.Hash) bool {
+	ts := prefix.NewStore(csdb.ctx.TransientStore(csdb.transientKey), KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+	return ts.Has(key)
+}
+
+// AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
+// even if the feature/fork is not active yet
+func (csdb *CommitStateDB) AddAddressToAccessList(addr ethcmn.Address) {
+	if csdb.AddressInAccessList(addr) {
+		return
+	}
+
+	ts := prefix.NewStore(csdb.ctx.TransientStore(csdb.transientKey), KeyPrefixTransientAccessListAddress)
+	ts.Set(addr.Bytes(), []byte{0x1})
+}
+
+// AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
+// even if the feature/fork is not active yet
+func (csdb *CommitStateDB) AddSlotToAccessList(addr ethcmn.Address, slot ethcmn.Hash) {
+	csdb.AddAddressToAccessList(addr)
+	if csdb.addressSlotInAccessList(addr, slot) {
+		return
+	}
+
+	ts := prefix.NewStore(csdb.ctx.TransientStore(csdb.transientKey), KeyPrefixTransientAccessListSlot)
+	key := append(addr.Bytes(), slot.Bytes()...)
+	ts.Set(key, []byte{0x1})
 }
 
 // ----------------------------------------------------------------------------
@@ -326,8 +329,8 @@ func (csdb *CommitStateDB) PrepareAccessList(sender ethcmn.Address, dst *ethcmn.
 
 // GetHeightHash returns the block header hash associated with a given block height and chain epoch number.
 func (csdb *CommitStateDB) GetHeightHash(height uint64) ethcmn.Hash {
-	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixBlockHeightHash)
-	key := KeyBlockHeightHash(height)
+	store := prefix.NewStore(csdb.ctx.KVStore(csdb.storeKey), KeyPrefixHeightToHeaderHash)
+	key := sdk.Uint64ToBigEndian(height)
 	bz := store.Get(key)
 	if len(bz) == 0 {
 		return ethcmn.Hash{}
@@ -727,7 +730,6 @@ func (csdb *CommitStateDB) Reset(_ ethcmn.Hash) error {
 	csdb.logSize = 0
 	csdb.preimages = []preimageEntry{}
 	csdb.hashToPreimageIndex = make(map[ethcmn.Hash]int)
-	csdb.accessList = NewAccessListMappings()
 
 	csdb.clearJournalAndRefund()
 	return nil
@@ -830,7 +832,6 @@ func CopyCommitStateDB(from, to *CommitStateDB) {
 	copy(validRevisions, from.validRevisions)
 	to.validRevisions = validRevisions
 	to.nextRevisionID = from.nextRevisionID
-	to.accessList = from.accessList.Copy()
 
 	// copy the dirty states, logs, and preimages
 	for _, dirty := range from.journal.dirties {

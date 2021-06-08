@@ -18,6 +18,11 @@ type journalEntry interface {
 	dirtied() *ethcmn.Address
 }
 
+type revision struct {
+	id           int
+	journalIndex int
+}
+
 // journal contains the list of state modifications applied since the last state
 // commit. These are tracked to be able to be reverted in case of an execution
 // exception or revertal request.
@@ -359,7 +364,7 @@ func (ch accessListAddAccountChange) revert(s *CommitStateDB) {
 		(addr) at this point, since no storage adds can remain when come upon
 		a single (addr) change.
 	*/
-	s.accessList.DeleteAddress(*ch.address)
+	// s.accessList.DeleteAddress(*ch.address)
 }
 
 func (ch accessListAddAccountChange) dirtied() *ethcmn.Address {
@@ -367,7 +372,7 @@ func (ch accessListAddAccountChange) dirtied() *ethcmn.Address {
 }
 
 func (ch accessListAddSlotChange) revert(s *CommitStateDB) {
-	s.accessList.DeleteSlot(*ch.address, *ch.slot)
+	// s.accessList.DeleteSlot(*ch.address, *ch.slot)
 }
 
 func (ch accessListAddSlotChange) dirtied() *ethcmn.Address {

@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	enccodec "github.com/cosmos/ethermint/encoding/codec"
 	ethermint "github.com/cosmos/ethermint/types"
 
 	"github.com/stretchr/testify/suite"
@@ -28,8 +30,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	ethcodec "github.com/cosmos/ethermint/codec"
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 )
 
 func newTestCodec() (codec.BinaryMarshaler, *codec.LegacyAmino) {
@@ -39,7 +39,7 @@ func newTestCodec() (codec.BinaryMarshaler, *codec.LegacyAmino) {
 
 	sdk.RegisterLegacyAminoCodec(amino)
 
-	ethcodec.RegisterInterfaces(interfaceRegistry)
+	enccodec.RegisterInterfaces(interfaceRegistry)
 
 	return cdc, amino
 }
@@ -104,6 +104,7 @@ func (suite *JournalTestSuite) setup() {
 	authKey := sdk.NewKVStoreKey(authtypes.StoreKey)
 	paramsKey := sdk.NewKVStoreKey(paramtypes.StoreKey)
 	paramsTKey := sdk.NewTransientStoreKey(paramtypes.TStoreKey)
+	tKey := sdk.NewTransientStoreKey(TransientKey)
 	bankKey := sdk.NewKVStoreKey(banktypes.StoreKey)
 	storeKey := sdk.NewKVStoreKey(StoreKey)
 
@@ -120,6 +121,7 @@ func (suite *JournalTestSuite) setup() {
 	cms.MountStoreWithDB(paramsKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(storeKey, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(paramsTKey, sdk.StoreTypeTransient, db)
+	cms.MountStoreWithDB(tKey, sdk.StoreTypeTransient, db)
 
 	err = cms.LoadLatestVersion()
 	suite.Require().NoError(err)
@@ -135,7 +137,7 @@ func (suite *JournalTestSuite) setup() {
 	ak := authkeeper.NewAccountKeeper(cdc, authKey, authSubspace, ethermint.ProtoAccount, nil)
 	bk := bankkeeper.NewBaseKeeper(cdc, bankKey, ak, bankSubspace, nil)
 	suite.ctx = sdk.NewContext(cms, tmproto.Header{ChainID: "ethermint-8"}, false, tmlog.NewNopLogger())
-	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, evmSubspace, ak, bk).WithContext(suite.ctx)
+	suite.stateDB = NewCommitStateDB(suite.ctx, storeKey, tKey, evmSubspace, ak, bk).WithContext(suite.ctx)
 	suite.stateDB.SetParams(DefaultParams())
 }
 
