@@ -22,14 +22,13 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/cosmos/ethermint/crypto/hd"
 	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
@@ -394,10 +393,14 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 	txEncoder := e.clientCtx.TxConfig.TxEncoder()
 	txBytes, err := txEncoder(tx)
 	if err != nil {
+		e.logger.WithError(err).Errorln("failed to encode eth tx using default encoder")
 		return common.Hash{}, err
 	}
 
-	txHash := common.BytesToHash(txBytes)
+	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
+	// https://github.com/tendermint/tendermint/issues/6539
+	tmTx := tmtypes.Tx(txBytes)
+	txHash := common.BytesToHash(tmTx.Hash())
 
 	// Broadcast transaction in sync mode (default)
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
@@ -414,14 +417,19 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 // SendRawTransaction send a raw Ethereum transaction.
 func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) {
 	e.logger.Debugln("eth_sendRawTransaction", "data_len", len(data))
-	ethereumTx := new(evmtypes.MsgEthereumTx)
 
 	// RLP decode raw transaction bytes
-	if err := rlp.DecodeBytes(data, ethereumTx); err != nil {
-		e.logger.WithError(err).Errorln("transaction RLP decode failed")
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("transaction decoding failed")
 
-		// Return nil is for when gasLimit overflows uint64
 		return common.Hash{}, err
+	}
+
+	ethereumTx, isEthTx := tx.(*evmtypes.MsgEthereumTx)
+	if !isEthTx {
+		e.logger.Debugln("invalid transaction type", "type", fmt.Sprintf("%T", tx))
+		return common.Hash{}, fmt.Errorf("invalid transaction type %T", tx)
 	}
 
 	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
@@ -435,7 +443,7 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 	}
 
 	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(ethereumTx.GetMsgs()...)
+	err = builder.SetMsgs(tx.GetMsgs()...)
 	if err != nil {
 		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
@@ -447,15 +455,19 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 	// Encode transaction by default Tx encoder
 	txBytes, err := e.clientCtx.TxConfig.TxEncoder()(builder.GetTx())
 	if err != nil {
-		e.logger.WithError(err).Errorln("failed to encode Eth tx using default encoder")
+		e.logger.WithError(err).Errorln("failed to encode eth tx using default encoder")
 		return common.Hash{}, err
 	}
 
-	txHash := common.BytesToHash(tmhash.Sum(txBytes))
+	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
+	// https://github.com/tendermint/tendermint/issues/6539
+	tmTx := tmtypes.Tx(txBytes)
+	txHash := common.BytesToHash(tmTx.Hash())
+
 	asyncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastAsync)
 
 	if _, err := asyncCtx.BroadcastTx(txBytes); err != nil {
-		e.logger.WithError(err).Errorln("failed to broadcast Eth tx")
+		e.logger.WithError(err).Errorln("failed to broadcast eth tx")
 		return txHash, err
 	}
 
@@ -464,7 +476,7 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 
 // Call performs a raw contract call.
 func (e *PublicEthAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
-	//e.logger.Debugln("eth_call", "args", args, "block number", blockNr)
+	e.logger.Debugln("eth_call", "args", args, "block number", blockNr)
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
@@ -564,8 +576,8 @@ func (e *PublicEthAPI) doCall(
 	txBuilder.SetFeeAmount(fees)
 	txBuilder.SetGasLimit(gas)
 
-	//doc about generate and transform tx into json, protobuf bytes
-	//https://github.com/cosmos/cosmos-sdk/blob/master/docs/run-node/txs.md
+	// doc about generate and transform tx into json, protobuf bytes
+	// https://github.com/cosmos/cosmos-sdk/blob/master/docs/run-node/txs.md
 	txBytes, err := e.clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
 	if err != nil {
 		return nil, err
