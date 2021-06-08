@@ -138,20 +138,15 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	ethRPCTxs := []interface{}{}
 
 	for i, txBz := range block.Txs {
-		// simply hashes
-		var hash common.Hash
+		// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
+		// https://github.com/tendermint/tendermint/issues/6539
+		hash := common.BytesToHash(txBz.Hash())
 
 		tx, gas := types.DecodeTx(e.clientCtx, txBz)
 
 		gasUsed += gas
 
 		msg, isEthTx := tx.(*evmtypes.MsgEthereumTx)
-
-		if isEthTx {
-			hash = common.BytesToHash(txBz.Hash())
-		} else {
-			hash = msg.AsTransaction().Hash()
-		}
 
 		if fullTx {
 			if !isEthTx {
@@ -174,11 +169,9 @@ func (e *EVMBackend) EthBlockFromTendermint(
 				e.logger.WithError(err).Debugln("NewTransactionFromData for receipt failed", "hash", hash.Hex)
 				continue
 			}
-
 		} else {
 			ethRPCTxs = append(ethRPCTxs, hash)
 		}
-
 	}
 
 	blockBloomResp, err := queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
