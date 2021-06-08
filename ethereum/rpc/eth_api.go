@@ -802,11 +802,16 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
-	// TODO: return gas used on msg response data
 	cumulativeGasUsed := uint64(0)
-	// if tx.Receipt.Index != 0 {
-	// 	cumulativeGasUsed += rpctypes.GetBlockCumulativeGas(e.clientCtx, block.Block, int(tx.Receipt.Index))
-	// }
+	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &res.Height)
+	if err != nil {
+		e.logger.WithError(err).Debugln("failed to retrieve block results", "height", res.Height)
+		return nil, nil
+	}
+
+	for i := 0; i <= int(res.Index) && i < len(blockRes.TxsResults); i++ {
+		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
+	}
 
 	var status hexutil.Uint
 

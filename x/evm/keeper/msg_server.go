@@ -8,6 +8,7 @@ import (
 
 	"github.com/armon/go-metrics"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -89,7 +90,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			bloom = big.NewInt(0)
 		}
 		// update block bloom filter
-		bloom = bloom.Or(bloom, executionResult.Bloom)
+		logsBloom := ethtypes.LogsBloom(executionResult.Logs)
+		bloom = bloom.Or(bloom, new(big.Int).SetBytes(logsBloom))
 		k.SetBlockBloomTransient(bloom)
 	}
 
