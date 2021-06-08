@@ -299,6 +299,9 @@ func InitTestnet(
 		config.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appConfig)
 
 		ethPrivKey, err := keyring.NewUnsafe(kb).UnsafeExportPrivKeyHex(nodeDirName)
+		if err != nil {
+			return err
+		}
 		initPeggo(outputDir, nodeDirName, []byte(strings.ToUpper(ethPrivKey)))
 	}
 
