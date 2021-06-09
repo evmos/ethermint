@@ -5,7 +5,7 @@ on:
   pull_request:
   push:
     branches:
-      - development
+      - main
 jobs:
   test-rpc:
     runs-on: ubuntu-latest

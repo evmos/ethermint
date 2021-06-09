@@ -2,7 +2,7 @@ name: Build
 on:
   pull_request:
     branches:
-      - "development"
+      - main
 
 jobs:
   cleanup-runs:
@@ -11,7 +11,7 @@ jobs:
       - uses: rokroskar/workflow-run-cleanup-action@master
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-    if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/development'"
+    if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
 
   build:
     runs-on: ubuntu-latest
