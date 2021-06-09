@@ -19,7 +19,7 @@ func (data *TxData) txType() byte {
 func (data *TxData) chainID() *big.Int {
 	if data.txType() == ethtypes.LegacyTxType {
 		v, _, _ := data.rawSignatureValues()
-		return deriveChainId(v)
+		return DeriveChainID(v)
 	}
 
 	if data.ChainID == nil {
@@ -131,8 +131,8 @@ func (data *TxData) setSignatureValues(chainID, v, r, s *big.Int) {
 	}
 }
 
-// deriveChainId derives the chain id from the given v parameter
-func deriveChainId(v *big.Int) *big.Int {
+// DeriveChainID derives the chain id from the given v parameter
+func DeriveChainID(v *big.Int) *big.Int {
 	if v == nil {
 		return nil
 	}

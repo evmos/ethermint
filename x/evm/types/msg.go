@@ -51,9 +51,6 @@ func newMsgEthereumTx(
 	txData := &TxData{
 		Nonce:    nonce,
 		GasLimit: gasLimit,
-		V:        []byte{},
-		R:        []byte{},
-		S:        []byte{},
 	}
 
 	if len(input) > 0 {
@@ -64,12 +61,13 @@ func newMsgEthereumTx(
 		txData.To = to.Hex()
 	}
 
-	if chainID != nil {
-		txData.ChainID = chainID.Bytes()
-	}
-
 	if accesses != nil {
 		txData.Accesses = NewAccessList(accesses)
+
+		// NOTE: we don't populate chain id on LegacyTx type
+		if chainID != nil {
+			txData.ChainID = chainID.Bytes()
+		}
 	}
 
 	if amount != nil {
@@ -165,7 +163,7 @@ func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
 	v, r, s := msg.RawSignatureValues()
 
 	if msg.From == "" || v == nil || r == nil || s == nil {
-		panic("must use 'Sign' with a chain ID to get the signer")
+		panic("must use 'Sign' to get the signer address")
 	}
 
 	signer := sdk.AccAddress(common.HexToAddress(msg.From).Bytes())
