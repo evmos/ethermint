@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
+	"github.com/palantir/stacktrace"
 
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -40,7 +41,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	response, err := k.ApplyTransaction(tx)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "failed to apply transaction")
 	}
 
 	defer func() {
