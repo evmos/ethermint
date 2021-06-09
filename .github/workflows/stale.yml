@@ -11,12 +11,11 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           stale-pr-message: "This pull request has been automatically marked as stale because it has not had
-    recent activity. It will be closed in 7 days-before-close if no further activity occurs. Thank you
-    for your contributions."
-          stale-issue-message: "This issue is stale because it has been open 45 days with no activity. Remove `stale` label or comment or this will be closed in 7 days."
+    recent activity. It will be closed in 7 days-before-close if no further activity occurs."
+          stale-issue-message: "This issue is stale because it has been open 45 days with no activity. Remove `Status: Stale` label or comment or this will be closed in 7 days."
           days-before-stale: 45
           days-before-close: 7
-          exempt-issue-labels: "Status: On Ice, Status: Blocked, Type: Bug, Type: Security, Type: Meta-Issue, Type: Enhancement, Epic"
-          exempt-pr-labels: "Status: On Ice, Status: Blocked, Type: Bug, Type: Security, Type: Meta-Issue, Type: Enhancement, Epic"
-          stale-pr-label: "stale"
-          stale-issue-label: "stale"
+          exempt-issue-labels: "Status: Blocked, Type: Bug, pinned, automerge"
+          exempt-pr-labels: "Status: Blocked, Type: Bug, pinned, automerge"
+          stale-pr-label: "Status: Stale"
+          stale-issue-label: "Status: Stale"
