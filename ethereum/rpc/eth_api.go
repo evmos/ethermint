@@ -951,7 +951,7 @@ func (e *PublicEthAPI) GetProof(address common.Address, storageKeys []string, bl
 		Address:      address,
 		AccountProof: []string{accProofStr},
 		Balance:      (*hexutil.Big)(balance),
-		CodeHash:     common.BytesToHash(res.CodeHash),
+		CodeHash:     common.HexToHash(res.CodeHash),
 		Nonce:        hexutil.Uint64(res.Nonce),
 		StorageHash:  common.Hash{}, // NOTE: Ethermint doesn't have a storage hash. TODO: implement?
 		StorageProof: storageProofs,
