@@ -162,7 +162,7 @@ func (k Keeper) IncreaseTxIndexTransient() {
 	store.Set(types.KeyPrefixTransientBloom, sdk.Uint64ToBigEndian(txIndex+1))
 }
 
-// ResetRefund resets the available refund amount to 0
+// ResetRefundTransient resets the available refund amount to 0
 func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
 	store := ctx.TransientStore(k.transientKey)
 	store.Set(types.KeyPrefixTransientRefund, sdk.Uint64ToBigEndian(0))
