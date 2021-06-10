@@ -48,35 +48,7 @@ func newMsgEthereumTx(
 	chainID *big.Int, nonce uint64, to *common.Address, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
-	txData := &TxData{
-		Nonce:    nonce,
-		GasLimit: gasLimit,
-	}
-
-	if len(input) > 0 {
-		txData.Input = common.CopyBytes(input)
-	}
-
-	if to != nil {
-		txData.To = to.Hex()
-	}
-
-	if accesses != nil {
-		txData.Accesses = NewAccessList(accesses)
-
-		// NOTE: we don't populate chain id on LegacyTx type
-		if chainID != nil {
-			txData.ChainID = chainID.Bytes()
-		}
-	}
-
-	if amount != nil {
-		txData.Amount = amount.Bytes()
-	}
-	if gasPrice != nil {
-		txData.GasPrice = gasPrice.Bytes()
-	}
-
+	txData := newTxData(chainID, nonce, to, amount, gasLimit, gasPrice, input, accesses)
 	return &MsgEthereumTx{Data: txData}
 }
 
