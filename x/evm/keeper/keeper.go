@@ -162,10 +162,10 @@ func (k Keeper) IncreaseTxIndexTransient() {
 	store.Set(types.KeyPrefixTransientBloom, sdk.Uint64ToBigEndian(txIndex+1))
 }
 
-// ResetRefundTransient resets the refund gas value.
+// ResetRefundTransient resets the available refund amount to 0
 func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
 	store := ctx.TransientStore(k.transientKey)
-	store.Delete(types.KeyPrefixTransientRefund)
+	store.Set(types.KeyPrefixTransientRefund, sdk.Uint64ToBigEndian(0))
 }
 
 // ----------------------------------------------------------------------------
