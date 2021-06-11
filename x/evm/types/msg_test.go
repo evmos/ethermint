@@ -66,26 +66,33 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		to         *ethcmn.Address
 		amount     *big.Int
 		gasPrice   *big.Int
+		from       string
+		accessList *ethtypes.AccessList
+		chainID    *big.Int
 		expectPass bool
 	}{
-		{msg: "pass with recipient", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "pass contract", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "pass with recipient - Legacy Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "pass with recipient - AccessList Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: big.NewInt(1), expectPass: true},
+		{msg: "pass contract - Legacy Tx", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
 		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: false},
-		// NOTE: these can't be effectively tested because the SetBytes function from big.Int only sets
-		// the absolute value
+		{msg: "nil amount", to: &suite.to, amount: nil, gasPrice: big.NewInt(1000), expectPass: false},
 		{msg: "negative amount", to: &suite.to, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
+		{msg: "nil gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: nil, expectPass: false},
 		{msg: "negative gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
 		{msg: "zero gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
+		{msg: "invalid from address", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), from: ethcmn.Address{}.Hex(), expectPass: false},
+		{msg: "chain ID not set on AccessListTx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
 	}
 
 	for i, tc := range testCases {
-		msg := NewMsgEthereumTx(suite.chainID, 0, tc.to, tc.amount, 0, tc.gasPrice, nil, nil)
+		msg := NewMsgEthereumTx(tc.chainID, 0, tc.to, tc.amount, 0, tc.gasPrice, nil, tc.accessList)
+		msg.From = tc.from
 		err := msg.ValidateBasic()
 
 		if tc.expectPass {
-			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
+			suite.Require().NoError(err, "valid test %d failed: %s, %v", i, tc.msg, msg)
 		} else {
-			suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
+			suite.Require().Error(err, "invalid test %d passed: %s, %v", i, tc.msg, msg.Data)
 		}
 	}
 }

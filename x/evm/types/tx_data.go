@@ -3,6 +3,8 @@ package types
 import (
 	"math/big"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/ethermint/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -164,6 +166,43 @@ func (data *TxData) setSignatureValues(chainID, v, r, s *big.Int) {
 	if data.txType() == ethtypes.AccessListTxType && chainID != nil {
 		data.ChainID = chainID.Bytes()
 	}
+}
+
+// Validate performs a basic validation of the tx data fields.
+func (data TxData) Validate() error {
+	gasPrice := data.gasPrice()
+	if gasPrice == nil {
+		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
+	}
+
+	if gasPrice.Sign() == -1 {
+		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
+	}
+
+	amount := data.amount()
+	if amount == nil {
+		return sdkerrors.Wrap(ErrInvalidAmount, "cannot be nil")
+	}
+
+	// Amount can be 0
+	if amount.Sign() == -1 {
+		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+	}
+
+	if data.To != "" {
+		if err := types.ValidateAddress(data.To); err != nil {
+			return sdkerrors.Wrap(err, "invalid to address")
+		}
+	}
+
+	if data.txType() == ethtypes.AccessListTxType && data.chainID() == nil {
+		return sdkerrors.Wrap(
+			sdkerrors.ErrInvalidChainID,
+			"chain ID must be present on AccessList txs",
+		)
+	}
+
+	return nil
 }
 
 // DeriveChainID derives the chain id from the given v parameter

@@ -90,30 +90,13 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 // ValidateBasic implements the sdk.Msg interface. It performs basic validation
 // checks of a Transaction. If returns an error if validation fails.
 func (msg MsgEthereumTx) ValidateBasic() error {
-	gasPrice := msg.Data.gasPrice()
-	if gasPrice.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
-	}
-
-	// Amount can be 0
-	amount := msg.Data.amount()
-	if amount.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
-	}
-
-	if msg.Data.To != "" {
-		if err := types.ValidateAddress(msg.Data.To); err != nil {
-			return sdkerrors.Wrap(err, "invalid to address")
-		}
-	}
-
 	if msg.From != "" {
 		if err := types.ValidateAddress(msg.From); err != nil {
 			return sdkerrors.Wrap(err, "invalid from address")
 		}
 	}
 
-	return nil
+	return msg.Data.Validate()
 }
 
 // To returns the recipient address of the transaction. It returns nil if the
