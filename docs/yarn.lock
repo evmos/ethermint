@@ -8347,7 +8347,7 @@ vuepress-plugin-smooth-scroll@^0.0.3:
   dependencies:
     smoothscroll-polyfill "^0.4.3"
 
-vuepress-theme-cosmos@^1.0.172:
+vuepress-theme-cosmos@^1.0.182:
   version "1.0.182"
   resolved "https://registry.yarnpkg.com/vuepress-theme-cosmos/-/vuepress-theme-cosmos-1.0.182.tgz#c13a1f5fc8e85b67997d1674bdc024a358fca6c1"
   integrity sha512-Mc1ZOsSqLGgbB9xEXsx5QkHUBkKXOoDgkjrp5iX+fwmM4TCmR4MWbTlKpEzfzsxZ1DuixtwVkv0MT+eNvD2Lfw==
