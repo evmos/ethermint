@@ -67,22 +67,21 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
 
-	for _, msg := range tx.GetMsgs() {
-		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
-		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
-		}
-
-		sender, err := signer.Sender(msgEthTx.AsTransaction())
-		if err != nil {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
-		}
-
-		// set up the sender to the transaction field
-		msgEthTx.From = sender.Hex()
+	msg := tx.GetMsgs()[0]
+	msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
-	return next(ctx, tx, simulate)
+	sender, err := signer.Sender(msgEthTx.AsTransaction())
+	if err != nil {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
+	}
+
+	// set up the sender to the transaction field if not already
+	msgEthTx.From = sender.Hex()
+
+	return next(ctx, msgEthTx, simulate)
 }
 
 // EthAccountVerificationDecorator validates an account balance checks
