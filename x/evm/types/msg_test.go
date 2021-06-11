@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/ethermint/tests"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -65,91 +66,101 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		to         *ethcmn.Address
 		amount     *big.Int
 		gasPrice   *big.Int
+		from       string
+		accessList *ethtypes.AccessList
+		chainID    *big.Int
 		expectPass bool
 	}{
-		{msg: "pass with recipient", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "pass contract", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "pass with recipient - Legacy Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "pass with recipient - AccessList Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: big.NewInt(1), expectPass: true},
+		{msg: "pass contract - Legacy Tx", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
 		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: false},
-		// NOTE: these can't be effectively tested because the SetBytes function from big.Int only sets
-		// the absolute value
+		{msg: "nil amount", to: &suite.to, amount: nil, gasPrice: big.NewInt(1000), expectPass: false},
 		{msg: "negative amount", to: &suite.to, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
+		{msg: "nil gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: nil, expectPass: false},
 		{msg: "negative gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
 		{msg: "zero gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
+		{msg: "invalid from address", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), from: ethcmn.Address{}.Hex(), expectPass: false},
+		{msg: "chain ID not set on AccessListTx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
 	}
 
 	for i, tc := range testCases {
-		msg := NewMsgEthereumTx(suite.chainID, 0, tc.to, tc.amount, 0, tc.gasPrice, nil, nil)
+		msg := NewMsgEthereumTx(tc.chainID, 0, tc.to, tc.amount, 0, tc.gasPrice, nil, tc.accessList)
+		msg.From = tc.from
 		err := msg.ValidateBasic()
 
 		if tc.expectPass {
-			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
+			suite.Require().NoError(err, "valid test %d failed: %s, %v", i, tc.msg, msg)
 		} else {
-			suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
+			suite.Require().Error(err, "invalid test %d passed: %s, %v", i, tc.msg, msg.Data)
 		}
 	}
 }
 
 func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
-	msg := NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
-
 	testCases := []struct {
 		msg        string
+		tx         *MsgEthereumTx
 		ethSigner  ethtypes.Signer
-		malleate   func()
+		malleate   func(tx *MsgEthereumTx)
 		expectPass bool
 	}{
 		{
 			"pass - EIP2930 signer",
+			NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
 			ethtypes.NewEIP2930Signer(suite.chainID),
-			func() { msg.From = suite.from.Hex() },
+			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
-		// TODO: support legacy txs
 		{
-			"not supported - EIP155 signer",
+			"pass - EIP155 signer",
+			NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
 			ethtypes.NewEIP155Signer(suite.chainID),
-			func() { msg.From = suite.from.Hex() },
-			false,
+			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
+			true,
 		},
 		{
-			"not supported - Homestead signer",
+			"pass - Homestead signer",
+			NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
 			ethtypes.HomesteadSigner{},
-			func() { msg.From = suite.from.Hex() },
-			false,
+			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
+			true,
 		},
 		{
-			"not supported - Frontier signer",
+			"pass - Frontier signer",
+			NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
 			ethtypes.FrontierSigner{},
-			func() { msg.From = suite.from.Hex() },
-			false,
+			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
+			true,
 		},
 		{
 			"no from address ",
+			NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
 			ethtypes.NewEIP2930Signer(suite.chainID),
-			func() { msg.From = "" },
+			func(tx *MsgEthereumTx) { tx.From = "" },
 			false,
 		},
 		{
 			"from address ≠ signer address",
+			NewMsgEthereumTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
 			ethtypes.NewEIP2930Signer(suite.chainID),
-			func() { msg.From = suite.to.Hex() },
+			func(tx *MsgEthereumTx) { tx.From = suite.to.Hex() },
 			false,
 		},
 	}
 
 	for i, tc := range testCases {
-		tc.malleate()
+		tc.malleate(tc.tx)
 
-		err := msg.Sign(tc.ethSigner, suite.signer)
+		err := tc.tx.Sign(tc.ethSigner, suite.signer)
 		if tc.expectPass {
 			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 
-			tx := msg.AsTransaction()
-			signer := ethtypes.NewEIP2930Signer(suite.chainID)
+			tx := tc.tx.AsTransaction()
 
-			sender, err := ethtypes.Sender(signer, tx)
+			sender, err := ethtypes.Sender(tc.ethSigner, tx)
 			suite.Require().NoError(err, tc.msg)
-			suite.Require().Equal(msg.From, sender.Hex(), tc.msg)
+			suite.Require().Equal(tc.tx.From, sender.Hex(), tc.msg)
 		} else {
 			suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
 		}

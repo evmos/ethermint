@@ -310,12 +310,15 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 func (suite AnteTestSuite) TestCanTransferDecorator() {
 	dec := ante.NewCanTransferDecorator(suite.app.EvmKeeper)
 
-	addr, _ := newTestAddrKey()
+	addr, privKey := newTestAddrKey()
 
-	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
-	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
+	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
 
 	tx.From = addr.Hex()
+
+	err := tx.Sign(suite.ethSigner, tests.NewSigner(privKey))
+	suite.Require().NoError(err)
 
 	testCases := []struct {
 		name     string
@@ -376,7 +379,6 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 
 	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, al)
-	tx3 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 
 	tx.From = addr.Hex()
 	tx2.From = addr.Hex()
@@ -388,7 +390,6 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 		expPass  bool
 	}{
 		{"invalid transaction type", &invalidTx{}, func() {}, false},
-		{"AsMessage failed", tx3, func() {}, false},
 		{
 			"success - no access list",
 			tx,
