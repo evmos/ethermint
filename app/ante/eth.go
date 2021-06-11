@@ -48,6 +48,10 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		return next(ctx, tx, simulate)
 	}
 
+	if len(tx.GetMsgs()) != 1 {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
+	}
+
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -69,9 +73,13 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 		}
 
-		if _, err := signer.Sender(msgEthTx.AsTransaction()); err != nil {
+		sender, err := signer.Sender(msgEthTx.AsTransaction())
+		if err != nil {
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
 		}
+
+		// set up the sender to the transaction field
+		msgEthTx.From = sender.Hex()
 	}
 
 	return next(ctx, tx, simulate)
@@ -227,10 +235,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	if len(tx.GetMsgs()) != 1 {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
-	}
 
 	// reset the refund gas value in the keeper for the current transaction
 	egcd.evmKeeper.ResetRefundTransient(infCtx)
