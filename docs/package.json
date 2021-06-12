@@ -22,6 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "entities": "^2.0.3",
+    "markdown-it": "^12.0.6",
     "vuepress-theme-cosmos": "^1.0.182"
   },
   "devDependencies": {

@@ -2,9 +2,9 @@
 order: 5
 -->
 
-# Joining Chainsafe's Public Testnet
+# JoiningTestnet
 
-This document outlines the steps to join the public testnet hosted by [Chainsafe](https://chainsafe.io).
+This document outlines the steps to join the public testnet
 
 ## Steps
 

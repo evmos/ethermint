@@ -115,7 +115,7 @@ The command above  command will run containers in the background using Docker co
 
 ```bash
 ...
-Creating network "chainsafe-ethermint_localnet" with driver "bridge"
+Creating network "ethermint_localnet" with driver "bridge"
 Creating ethermintdnode0 ... done
 Creating ethermintdnode2 ... done
 Creating ethermintdnode1 ... done
