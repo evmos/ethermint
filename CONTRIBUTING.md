@@ -9,11 +9,11 @@
 * [Testing](#testing)
 * [Updating Documentation](#updating_doc)
 * [Branching Model and Release](#braching_model_and_release)
-    * [PR Targeting](#pr_targeting)
-    * [Pull Requests](#pull_requests)
-    * [Process for reviewing PRs](#reviewing_prs)
-    * [Pull Merge Procedure](#pull_merge_procedure)
-    * [Release Procedure](#release_procedure)
+  * [PR Targeting](#pr_targeting)
+  * [Pull Requests](#pull_requests)
+  * [Process for reviewing PRs](#reviewing_prs)
+  * [Pull Merge Procedure](#pull_merge_procedure)
+  * [Release Procedure](#release_procedure)
 
 ## <span id="general_procedure">General Procedure</span>
 
@@ -25,12 +25,12 @@ workflow and standards.
 Contributing to this repo can mean many things such as participating in discussion or proposing code changes. To ensure
 a smooth workflow for all contributors, the following general procedure for contributing has been established:
 
-1. Either [open](https://github.com/cosmos/cosmos-sdk/issues/new/choose)
-   or [find](https://github.com/cosmos/cosmos-sdk/issues) an issue you have identified and would like to contribute to
+1. Either [open](https://github.com/cosmos/ethermint/issues/new/choose)
+   or [find](https://github.com/cosmos/ethermint/issues) an issue you have identified and would like to contribute to
    resolving.
 2. Participate in thoughtful discussion on that issue.
 3. If you would like to contribute:
-    1. If the issue is a proposal, ensure that the proposal has been accepted by ChainSafe’s Ethermint team.
+    1. If the issue is a proposal, ensure that the proposal has been accepted by the Ethermint team.
     2. Ensure that nobody else has already begun working on the same issue. If someone already has, please make sure to
        contact the individual to collaborate.
     3. If nobody has been assigned the issue and you would like to work on it, make a comment on the issue to inform the
@@ -38,7 +38,7 @@ a smooth workflow for all contributors, the following general procedure for cont
        if you are eager and do not get a prompt response, feel free to dive on in!
     4. Follow standard Github best practices:
         1. Fork the repo
-        2. Branch from the HEAD of `development`(For core developers working within the cosmos-sdk repo, to ensure a
+        2. Branch from the HEAD of `development`(For core developers working within the ethermint repo, to ensure a
            clear ownership of branches, branches must be named with the convention `{moniker}/{issue#}-branch-name`).
         3. Make commits
         4. Submit a PR to `development`
@@ -70,19 +70,19 @@ to [Tendermint ADRs](https://github.com/tendermint/tendermint/tree/master/docs/a
 ## <span id="forking">Forking</span>
 
 Please note that Go requires code to live under absolute paths, which complicates forking. While my fork lives
-at `https://github.com/chainsafe/cosmos-sdk`, the code should never exist
-at `$GOPATH/src/github.com/chainsafe/cosmos-sdk`. Instead, we use `git remote` to add the fork as a new remote for the
-original repo,`$GOPATH/src/github.com/cosmos/cosmos-sdk`, and do all the work there.
+at `https://github.com/tharsis/ethermint`, the code should never exist
+at `$GOPATH/src/github.com/tharsis/ethermint`. Instead, we use `git remote` to add the fork as a new remote for the
+original repo,`$GOPATH/src/github.com/cosmos/ethermint`, and do all the work there.
 
 For instance, to create a fork and work on a branch of it, you would:
 
 1. Create the fork on github, using the fork button.
-2. Go to the original repo checked out locally. (i.e. `$GOPATH/src/github.com/cosmos/cosmos-sdk`)
+2. Go to the original repo checked out locally. (i.e. `$GOPATH/src/github.com/cosmos/ethermint`)
 3. `git remote rename origin upstream`
-4. `git remote add origin git@github.com:chainsafe/cosmos-sdk.git`
+4. `git remote add origin git@github.com:tharsis/ethermint.git`
 
-Now `origin` refers to my fork and `upstream` refers to the Cosmos-SDK version. So I can `git push -u origin master` to
-update my fork, and make pull requests to Cosmos-SDK from there. Of course, replace `chainsafe` with your git handle.
+Now `origin` refers to my fork and `upstream` refers to the ethermint version. So I can `git push -u origin master` to
+update my fork, and make pull requests to ethermint from there. Of course, replace `tharsis` with your git handle.
 
 To pull in updates from the origin repo, run:
 
@@ -215,5 +215,5 @@ All PRs require two Reviews before merge. When reviewing PRs, please use the fol
 8. Tag the release (use `git tag -a`) and create a release in Github.
 9. Delete the `RC` branches.
 
-**Note**: ChainSafe’s Ethermint team currently cuts releases on a need to have basis. We will announce a more
+**Note**: tharsis’s Ethermint team currently cuts releases on a need to have basis. We will announce a more
 standardized release schedule as we near production readiness.

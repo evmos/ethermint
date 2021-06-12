@@ -36,10 +36,6 @@ Note: most of these articles are outdated as they refer to the previous Ethermin
 - [Introducing the Hard Spoon - Chjango Unchained](https://blog.cosmos.network/introducing-the-hard-spoon-4a9288d3f0df)
 - [Ethermint and NFTs at EthDenver - Tendermint](https://blog.cosmos.network/ethermint-nfts-at-ethdenver-bf32766835b6)
 
-### ChainSafe Blog
-
-- [ChainSafe Awarded Second Ethermint Grant](https://medium.com/chainsafe-systems/chainsafe-awarded-second-ethermint-grant-f65930309cae)
-
 ## Previous Ethermint implementations
 
 - [Ethermint ABCI:](https://github.com/cosmos/ethermint_abci) This project was the first and original Tendermint ABCI application with EVM support. Not built with Cosmos SDK.
