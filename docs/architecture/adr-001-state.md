@@ -2,11 +2,12 @@
 
 ## Changelog
 
+- 2021-06-14: updates after implementation
 - 2021-05-15: first draft
 
 ## Status
 
-DRAFT, Not Implemented
+PROPOSED, Implemented
 
 ## Abstract
 
@@ -97,27 +98,48 @@ type Keeper struct {
 
 This means that a `Keeper` pointer will now directly be passed to the `vm.EVM` for accessing the state and performing state transitions.
 
-The ABCI `BeginBlock` and `EndBlock` are have now been refactored to only (1) reset cached fields, and (2) keep track of internal mappings (hashes, height, etc).
+The ABCI `BeginBlock` and `EndBlock` are have now been refactored to only keep track of internal fields (hashes, block bloom, etc).
 
 ```go
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
   // ...
 
-  // reset cache values and context
-  k.ResetCacheFields(ctx)
+  // update context
+  k.WithContext(ctx)
+  //...
 }
 
 func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
   // NOTE: UpdateAccounts, Commit and Reset execution steps have been removed in favor of directly
   // updating the state.
 
-  // set the block bloom filter bytes to store
-  bloom := ethtypes.BytesToBloom(k.Bloom.Bytes())
-  k.SetBlockBloom(ctx, req.Height, bloom)
+  // Gas costs are handled within msg handler so costs should be ignored
+  infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+  k.WithContext(ctx)
+
+  // get the block bloom bytes from the transient store and set it to the persistent storage
+  bloomBig, found := k.GetBlockBloomTransient()
+  if !found {
+    bloomBig = big.NewInt(0)
+  }
+
+  bloom := ethtypes.BytesToBloom(bloomBig.Bytes())
+  k.SetBlockBloom(infCtx, req.Height, bloom)
+  k.WithContext(ctx)
 
   return []abci.ValidatorUpdate{}
 }
 ```
+
+The new `StateDB` (`Keeper`) will adopt the use of the  [`TransientStore`](https://docs.cosmos.network/master/core/store.html#transient-store) that discards the existing values of the store when the block is commited.
+
+The fields that have been modified to use the `TransientStore` are:
+
+- Block bloom filter (cleared at the end of every block)
+- Tx index (updated on every transaction)
+- Gas amount refunded (updated on every transaction)
+- Suicided account (cleared at the end of every block)
+- `AccessList` address and slot (cleared at the end of every block)
 
 ### State Objects
 
@@ -125,26 +147,6 @@ The `stateObject` type will be completely removed in favor of updating the store
 the use of the auth `AccountKeeper` and the bank `Keeper`. For the storage `State` and `Code`, the
 evm module `Keeper` will store these values directly on the KVStore using the EVM module store key
 and corresponding prefix keys.
-
-For accounts marked as 'suicided', a new relationship will be added to the `Keeper` to map `Address
-(bytes) -> suicided (bool)`.
-
-```go
-// HasSuicided implements the vm.StoreDB interface
-func (k Keeper) HasSuicided(address common.Address) bool {
-  store := prefix.NewStore(k.ctx.KVStore(csdb.storeKey), KeyPrefixSuicide)
-  key := types.KeySuicide(address.Bytes())
-  return store.Has(key)
-}
-
-// Suicide implements the vm.StoreDB interface
-func (k Keeper) Suicide(address common.Address) bool {
-  store := prefix.NewStore(k.ctx.KVStore(csdb.storeKey), KeyPrefixSuicide)
-  key := types.KeySuicide(address.Bytes())
-  store.Set(key, []byte{0x1})
-  return true
-}
-```
 
 ### State Transition
 
