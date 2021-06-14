@@ -2,16 +2,17 @@
 
 ## Changelog
 
+- 2021-06-14: updates after implementation
 - 2021-05-15: first draft
 
 ## Status
 
-DRAFT, Not Implemented
+PROPOSED, Implemented
 
 ## Abstract
 
 The current ADR proposes a state machine breaking change to the EVM module state operations
-(`Keeper`, `StateDB` and `StateTransition`) with the goal of reducing code maintainance, increase
+(`Keeper`, `StateDB` and `StateTransition`) with the goal of reducing code maintenance, increase
 performance, and document all the transaction and state cycles and flows.
 
 ## Context
@@ -50,18 +51,18 @@ state transition".
 
 Upon a state transition, these objects will be modified and marked as 'dirty' (a.k.a stateless
 update) on the `CommitStateDB`. Then, at every `EndBlock`, the state of these modified objects will
-be 'finalized' and commited to the store, resetting all the dirty list of objects.
+be 'finalized' and committed to the store, resetting all the dirty list of objects.
 
 The core issue arises when a chain that uses the EVM module can have also have their account and
 balances updated through operations from other modules. This means that an EVM state object can be
 modified through an EVM transaction (`evm.MsgEthereumTx`) and other transactions like `bank.MsgSend`
 or `ibctransfer.MsgTransfer`. This can lead to unexpected behaviors like state overwrites, due to
-the current behaviour that caches the dirty state on the EVM instead of commiting any changes
+the current behavior that caches the dirty state on the EVM instead of committing any changes
 directly.
 
 ### State Transition
 
-A general EVM state transition is performed by calling the ethereum `vm.EVM` `Create` or `Call` functions, depending on wheather the transaction creates a contract or performs a transfer or call to a given contract.
+A general EVM state transition is performed by calling the ethereum `vm.EVM` `Create` or `Call` functions, depending on whether the transaction creates a contract or performs a transfer or call to a given contract.
 
 In the case of the `x/evm` module, it currently uses a modified version of Geth's `TransitionDB`, that wraps these two `vm.EVM` methods. The reason for using this modified function, is due to several reasons:
 
@@ -97,27 +98,48 @@ type Keeper struct {
 
 This means that a `Keeper` pointer will now directly be passed to the `vm.EVM` for accessing the state and performing state transitions.
 
-The ABCI `BeginBlock` and `EndBlock` are have now been refactored to only (1) reset cached fields, and (2) keep track of internal mappings (hashes, height, etc).
+The ABCI `BeginBlock` and `EndBlock` are have now been refactored to only keep track of internal fields (hashes, block bloom, etc).
 
 ```go
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
   // ...
 
-  // reset cache values and context
-  k.ResetCacheFields(ctx)
+  // update context
+  k.WithContext(ctx)
+  //...
 }
 
 func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
   // NOTE: UpdateAccounts, Commit and Reset execution steps have been removed in favor of directly
   // updating the state.
 
-  // set the block bloom filter bytes to store
-  bloom := ethtypes.BytesToBloom(k.Bloom.Bytes())
-  k.SetBlockBloom(ctx, req.Height, bloom)
+  // Gas costs are handled within msg handler so costs should be ignored
+  infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+  k.WithContext(ctx)
+
+  // get the block bloom bytes from the transient store and set it to the persistent storage
+  bloomBig, found := k.GetBlockBloomTransient()
+  if !found {
+    bloomBig = big.NewInt(0)
+  }
+
+  bloom := ethtypes.BytesToBloom(bloomBig.Bytes())
+  k.SetBlockBloom(infCtx, req.Height, bloom)
+  k.WithContext(ctx)
 
   return []abci.ValidatorUpdate{}
 }
 ```
+
+The new `StateDB` (`Keeper`) will adopt the use of the  [`TransientStore`](https://docs.cosmos.network/master/core/store.html#transient-store) that discards the existing values of the store when the block is commited.
+
+The fields that have been modified to use the `TransientStore` are:
+
+- Block bloom filter (cleared at the end of every block)
+- Tx index (updated on every transaction)
+- Gas amount refunded (updated on every transaction)
+- Suicided account (cleared at the end of every block)
+- `AccessList` address and slot (cleared at the end of every block)
 
 ### State Objects
 
@@ -126,95 +148,106 @@ the use of the auth `AccountKeeper` and the bank `Keeper`. For the storage `Stat
 evm module `Keeper` will store these values directly on the KVStore using the EVM module store key
 and corresponding prefix keys.
 
-For accounts marked as 'suicided', a new relationship will be added to the `Keeper` to map `Address
-(bytes) -> suicided (bool)`.
-
-```go
-// HasSuicided implements the vm.StoreDB interface
-func (k Keeper) HasSuicided(address common.Address) bool {
-  store := prefix.NewStore(k.ctx.KVStore(csdb.storeKey), KeyPrefixSuicide)
-  key := types.KeySuicide(address.Bytes())
-  return store.Has(key)
-}
-
-// Suicide implements the vm.StoreDB interface
-func (k Keeper) Suicide(address common.Address) bool {
-  store := prefix.NewStore(k.ctx.KVStore(csdb.storeKey), KeyPrefixSuicide)
-  key := types.KeySuicide(address.Bytes())
-  store.Set(key, []byte{0x1})
-  return true
-}
-```
-
 ### State Transition
 
-The state transition logic will be refactored to use the `ApplyMessage` function from the `core/`
-package of go-ethereum as the backbone. This method calls creates a go-ethereum `StateTransition`
+The state transition logic will be refactored to use the [`ApplyTransaction`](https://github.com/ethereum/go-ethereum/blob/v1.10.3/core/state_processor.go#L137-L150) function from the `core`
+package of go-ethereum as reference. This method calls creates a go-ethereum `StateTransition`
 instance and, as it name implies, applies a Ethereum message to execute it and update the state.
-This `ApplyMessage` call will be wrapped in the `Keeper`'s `TransitionDb` function, which will
-generate the required arguments for this call (EVM, chain config, and gas pool), thus performing the
+This `ApplyMessage` call will be wrapped in the `Keeper`'s `ApplyTransaction` function, which will
+generate the required arguments for this call (EVM, `core.Message`, chain config, and gas pool), thus performing the
 same gas accounting as before.
 
-This will lead to the switching from the existing Ethermint's evm `StateTransition` type to the
-go-ethereum `vm.ApplyMessage` type, thus reducing code necessary perform a state transition.
-
 ```go
-func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.ExecutionResult, error) {
-  defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
-
-  initialGasMeter := ctx.GasMeter()
-
-  // NOTE: Since CRUD operations on the SDK store consume gasm we need to set up an infinite gas meter so that we only consume
-  // the gas used by the Ethereum message execution.
-  // Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
-  k.ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-  params := k.GetParams(ctx)
-  cfg, found := k.GetChainConfig(ctx)
+func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
+ // ...
+  cfg, found := k.GetChainConfig(infCtx)
   if !found {
-    // error
+    // return error
   }
 
-  evm := k.NewEVM(msg, cfg.EthereumConfig(chainID))
-  gasPool := &core.GasPool(ctx.BlockGasMeter().Limit()) // available gas left in the block for the tx execution
+  ethCfg := cfg.EthereumConfig(chainID)
+
+  signer := MakeSigner(ethCfg, height)
+
+  msg, err := tx.AsMessage(signer)
+  if err != nil {
+   // return error
+  }
+
+  evm := k.NewEVM(msg, ethCfg)
+
+  k.IncreaseTxIndexTransient()
 
   // create an ethereum StateTransition instance and run TransitionDb
-  result, err := core.ApplyMessage(evm, msg, gasPool)
-  // return precheck errors (nonce, signature, balance and gas)
-  // NOTE: these should be checked previously on the AnteHandler
+  res, err := k.ApplyMessage(evm, msg, ethCfg)
   if err != nil {
-    // log error
-    return err
+    // return error
   }
 
-  // The gas used on the state transition will 
-  // be returned in the execution result so we need to deduct it from the transaction (?) GasMeter // TODO: double-check
-  initialGasMeter.ConsumeGas(resp.UsedGas, "evm state transition")
+  // ...
 
-  // set the gas meter to current_gas = initial_gas - used_gas
-  k.ctx = k.ctx.WithGasMeter(initialGasMeter) 
-
-  // return the VM Execution error (see go-ethereum/core/vm/errors.go)
-  if result.Err != nil {
-    // log error
-    return result.Err
-  }
-
-  // return logs
-  executionRes := &ExecutionResult{
-    Response: &MsgEthereumTxResponse{
-      Ret: result.ret,
-    },
-    GasInfo: GasInfo{
-      GasConsumed: result.UsedGas,
-      GasLimit:    gasPool,
-    }
-  
-  return executionRes, nil
+  return res, nil
 }
 ```
 
-The EVM is created then as follows:
+`ApplyMessage` computes the new state by applying the given message against the existing state. If
+the message fails, the VM execution error with the reason will be returned to the client and the
+transaction won't be committed to the store.
+
+```go
+func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainConfig) (*types.MsgEthereumTxResponse, error) {
+  var (
+    ret   []byte // return bytes from evm execution
+    vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
+  )
+
+  sender := vm.AccountRef(msg.From())
+  contractCreation := msg.To() == nil
+
+  // transaction gas meter (tracks limit and usage)
+  gasConsumed := k.ctx.GasMeter().GasConsumed()
+  leftoverGas := k.ctx.GasMeter().Limit() - k.ctx.GasMeter().GasConsumedToLimit()
+
+  // NOTE: Since CRUD operations on the SDK store consume gas we need to set up an infinite gas meter so that we only consume
+  // the gas used by the Ethereum message execution.
+  // Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
+  k.WithContext(k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
+
+  // NOTE: gas limit is the GasLimit defined in the message minus the Intrinsic Gas that has already been
+  // consumed on the AnteHandler.
+
+  // ensure gas is consistent during CheckTx
+  if k.ctx.IsCheckTx() {
+    // check gas consumption correctness
+  }
+
+  if contractCreation {
+    ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
+  } else {
+    ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
+  }
+
+  // refund gas prior to handling the vm error in order to set the updated gas meter
+  if err := k.RefundGas(msg, leftoverGas); err != nil {
+    // return error
+  }
+
+  if vmErr != nil {
+    if errors.Is(vmErr, vm.ErrExecutionReverted) {
+      // return error with revert reason
+    }
+
+    // return execution error
+  }
+
+  return &types.MsgEthereumTxResponse{
+    Ret:      ret,
+    Reverted: false,
+  }, nil
+}
+```
+
+The EVM is created as follows:
 
 ```go
 func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
@@ -223,31 +256,16 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
     Transfer:    core.Transfer,
     GetHash:     k.GetHashFn(),
     Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
-    BlockNumber: big.NewInt(k.ctx.BlockHeight()),
-    Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
-    Difficulty:  big.NewInt(0), // unused. Only required in PoW context
-    GasLimit:    gasLimit,
+    GasLimit:    blockGasMeter.Limit(),
+    BlockNumber: blockHeight,
+    Time:        blockTime,
+    Difficulty:  0, // unused. Only required in PoW context
   }
 
   txCtx := core.NewEVMTxContext(msg)
-  vmConfig := k.VMConfig(st.Debug)
+  vmConfig := k.VMConfig()
 
   return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
-}
-
-func (k Keeper) VMConfig(debug bool) vm.Config{
-  params := k.GetParams(ctx)
-
-  eips := make([]int, len(params.ExtraEIPs))
-  for i, eip := range params.ExtraEIPs {
-    eips[i] = int(eip)
-  }
-
-  return vm.Config{
-    ExtraEips:  eips,
-    Tracer:     vm.NewJSONLogger(&vm.LogConfig{Debug: debug}, os.Stderr),
-    Debug:      debug,
-  }
 }
 ```
 
@@ -268,20 +286,18 @@ since no chain that uses this code is in a production ready-state (at the moment
 - Defines a single option for accessing the store through the `Keeper`, thus removing the
   `CommitStateDB` type.
 - State operations and tests are now all located in the `evm/keeper/` package
-- Removes the concept of `stateObject` by commiting to the store directly
-- Delete operations on `EndBlock` for updating and commiting dirty state objects.
-- Split the state transition functionality (`NewEVM` from `TransitionDb`) allows to further
-  modularize certain components that can be beneficial for customization (eg: using other EVMs other
-  than Geth's)
+- Removes the concept of `stateObject` by committing to the store directly
+- Delete operations on `EndBlock` for updating and committing dirty state objects.
+- Split the state transition functionality to modularize components that can be beneficial for further customization (eg: using an alternative EVM)
 
 ### Negative
 
 - Increases the dependency of external packages (eg: `go-ethereum`)
-- Some state changes will have to be kept in store (eg: suicide state)
 
 ### Neutral
 
 - Some of the fields from the `CommitStateDB` will have to be added to the `Keeper`
+- Some state changes will have to be kept in store (eg: suicide state)
 
 ## Further Discussions
 
