@@ -114,6 +114,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
 	gasMeter := k.ctx.GasMeter() // tx gas meter
+
+	// ignore gas consumption costs
 	infCtx := k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	cfg, found := k.GetChainConfig(infCtx)
@@ -122,6 +124,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	}
 	ethCfg := cfg.EthereumConfig(k.eip155ChainID)
 
+	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
 
 	msg, err := tx.AsMessage(signer)
@@ -133,6 +136,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	k.IncreaseTxIndexTransient()
 
+	// set the original gas meter to apply the message and perform the state transition
+
 	k.WithContext(k.ctx.WithGasMeter(gasMeter))
 	// create an ethereum StateTransition instance and run TransitionDb
 	res, err := k.ApplyMessage(evm, msg, ethCfg)
@@ -140,6 +145,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
+	// set the ethereum-formatted hash to the tx result as the tendermint hash is different
+	// NOTE: see https://github.com/tendermint/tendermint/issues/6539 for reference.
 	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
 	res.Logs = types.NewLogsFromEth(k.GetTxLogs(txHash))
@@ -163,6 +170,30 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 // TODO: (@fedekunze) currently we consume the entire gas limit in the ante handler, so if a transaction fails
 // the amount spent will be grater than the gas spent in an Ethereum tx (i.e here the leftover gas won't be refunded).
 
+// ApplyMessage computes the new state by applying the given message against the existing state.
+// If the message fails, the VM execution error with the reason will be returned to the client
+// and the transaction won't be committed to the store.
+//
+// Reverted state
+//
+// The transaction is never "reverted" since there is no snapshot + rollback performed on the StateDB.
+// Only successful transactions are written to the store during DeliverTx mode.
+//
+// Prechecks and Preprocessing
+//
+// All relevant state transition prechecks for the MsgEthereumTx are performed on the AnteHandler,
+// prior to running the transaction against the state. The prechecks run are the following:
+//
+// 1. the nonce of the message caller is correct
+// 2. caller has enough balance to cover transaction fee(gaslimit * gasprice)
+// 3. the amount of gas required is available in the block
+// 4. the purchased gas is enough to cover intrinsic usage
+// 5. there is no overflow when calculating intrinsic gas
+// 6. caller has enough balance to cover asset transfer for **topmost** call
+//
+// The preprocessing steps performed by the AnteHandler are:
+//
+// 1. set up the initial access list (iff fork > Berlin)
 func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainConfig) (*types.MsgEthereumTxResponse, error) {
 	var (
 		ret   []byte // return bytes from evm execution
@@ -176,7 +207,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	gasConsumed := k.ctx.GasMeter().GasConsumed()
 	leftoverGas := k.ctx.GasMeter().Limit() - k.ctx.GasMeter().GasConsumedToLimit()
 
-	// NOTE: Since CRUD operations on the SDK store consume gasm we need to set up an infinite gas meter so that we only consume
+	// NOTE: Since CRUD operations on the SDK store consume gas we need to set up an infinite gas meter so that we only consume
 	// the gas used by the Ethereum message execution.
 	// Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
 	k.WithContext(k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
@@ -204,7 +235,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 
 	if vmErr != nil {
 		if errors.Is(vmErr, vm.ErrExecutionReverted) {
-			// unpack the return data bytes from the err if the execution has been reverted on the VM
+			// unpack the return data bytes from the err if the execution has been "reverted" on the VM
 			return nil, stacktrace.Propagate(types.NewExecErrorWithReson(ret), "transaction reverted")
 		}
 

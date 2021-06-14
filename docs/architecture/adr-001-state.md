@@ -150,69 +150,50 @@ and corresponding prefix keys.
 
 ### State Transition
 
-The state transition logic will be refactored to use the `ApplyMessage` function from the `core/`
-package of go-ethereum as the backbone. This method calls creates a go-ethereum `StateTransition`
+The state transition logic will be refactored to use the [`ApplyTransaction`](https://github.com/ethereum/go-ethereum/blob/v1.10.3/core/state_processor.go#L137-L150) function from the `core`
+package of go-ethereum as reference. This method calls creates a go-ethereum `StateTransition`
 instance and, as it name implies, applies a Ethereum message to execute it and update the state.
-This `ApplyMessage` call will be wrapped in the `Keeper`'s `TransitionDb` function, which will
-generate the required arguments for this call (EVM, chain config, and gas pool), thus performing the
+This `ApplyMessage` call will be wrapped in the `Keeper`'s `ApplyTranasction` function, which will
+generate the required arguments for this call (EVM, `core.Message`, chain config, and gas pool), thus performing the
 same gas accounting as before.
 
-This will lead to the switching from the existing Ethermint's evm `StateTransition` type to the
-go-ethereum `vm.ApplyMessage` type, thus reducing code necessary perform a state transition.
 
 ```go
-func (k *Keeper) TransitionDb(ctx sdk.Context, msg core.Message) (*types.ExecutionResult, error) {
+func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
   defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
-  initialGasMeter := ctx.GasMeter()
+  gasMeter := k.ctx.GasMeter() // tx gas meter
+  infCtx := k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-  // NOTE: Since CRUD operations on the SDK store consume gasm we need to set up an infinite gas meter so that we only consume
-  // the gas used by the Ethereum message execution.
-  // Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
-  k.ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-  params := k.GetParams(ctx)
-  cfg, found := k.GetChainConfig(ctx)
+  cfg, found := k.GetChainConfig(infCtx)
   if !found {
-    // error
+    return nil, stacktrace.Propagate(types.ErrChainConfigNotFound, "configuration not found")
   }
+  ethCfg := cfg.EthereumConfig(k.eip155ChainID)
 
-  evm := k.NewEVM(msg, cfg.EthereumConfig(chainID))
-  gasPool := &core.GasPool(ctx.BlockGasMeter().Limit()) // available gas left in the block for the tx execution
+  signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
 
-  // create an ethereum StateTransition instance and run TransitionDb
-  result, err := core.ApplyMessage(evm, msg, gasPool)
-  // return precheck errors (nonce, signature, balance and gas)
-  // NOTE: these should be checked previously on the AnteHandler
+  msg, err := tx.AsMessage(signer)
   if err != nil {
-    // log error
-    return err
+    return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
   }
 
-  // The gas used on the state transition will 
-  // be returned in the execution result so we need to deduct it from the transaction (?) GasMeter // TODO: double-check
-  initialGasMeter.ConsumeGas(resp.UsedGas, "evm state transition")
+  evm := k.NewEVM(msg, ethCfg)
 
-  // set the gas meter to current_gas = initial_gas - used_gas
-  k.ctx = k.ctx.WithGasMeter(initialGasMeter) 
+  k.IncreaseTxIndexTransient()
 
-  // return the VM Execution error (see go-ethereum/core/vm/errors.go)
-  if result.Err != nil {
-    // log error
-    return result.Err
+  k.WithContext(k.ctx.WithGasMeter(gasMeter))
+  // create an ethereum StateTransition instance and run TransitionDb
+  res, err := k.ApplyMessage(evm, msg, ethCfg)
+  if err != nil {
+    return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
   }
 
-  // return logs
-  executionRes := &ExecutionResult{
-    Response: &MsgEthereumTxResponse{
-      Ret: result.ret,
-    },
-    GasInfo: GasInfo{
-      GasConsumed: result.UsedGas,
-      GasLimit:    gasPool,
-    }
-  
-  return executionRes, nil
+  txHash := tx.Hash()
+  res.Hash = txHash.Hex()
+  res.Logs = types.NewLogsFromEth(k.GetTxLogs(txHash))
+
+  return res, nil
 }
 ```
 
@@ -225,30 +206,28 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
     Transfer:    core.Transfer,
     GetHash:     k.GetHashFn(),
     Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
+    GasLimit:    ethermint.BlockGasLimit(k.ctx),
     BlockNumber: big.NewInt(k.ctx.BlockHeight()),
     Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
     Difficulty:  big.NewInt(0), // unused. Only required in PoW context
-    GasLimit:    gasLimit,
   }
 
   txCtx := core.NewEVMTxContext(msg)
-  vmConfig := k.VMConfig(st.Debug)
+  vmConfig := k.VMConfig()
 
   return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
 }
 
+// VMConfig creates an EVM configuration from the module parameters and the debug setting.
+// The config generated uses the default JumpTable from the EVM.
 func (k Keeper) VMConfig(debug bool) vm.Config{
-  params := k.GetParams(ctx)
-
-  eips := make([]int, len(params.ExtraEIPs))
-  for i, eip := range params.ExtraEIPs {
-    eips[i] = int(eip)
-  }
+  params := k.GetParams(k.ctx)
 
   return vm.Config{
-    ExtraEips:  eips,
-    Tracer:     vm.NewJSONLogger(&vm.LogConfig{Debug: debug}, os.Stderr),
-    Debug:      debug,
+    Debug:       k.debug,
+    Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr),
+    NoRecursion: false,
+    ExtraEips:   params.EIPs(),
   }
 }
 ```
