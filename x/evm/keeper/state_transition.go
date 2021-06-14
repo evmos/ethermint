@@ -14,6 +14,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -30,7 +31,7 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 		Transfer:    core.Transfer,
 		GetHash:     k.GetHashFn(),
 		Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
-		GasLimit:    k.ctx.BlockGasMeter().Limit(),
+		GasLimit:    ethermint.BlockGasLimit(k.ctx),
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
