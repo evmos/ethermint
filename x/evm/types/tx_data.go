@@ -180,12 +180,8 @@ func (data TxData) Validate() error {
 	}
 
 	amount := data.amount()
-	if amount == nil {
-		return sdkerrors.Wrap(ErrInvalidAmount, "cannot be nil")
-	}
-
 	// Amount can be 0
-	if amount.Sign() == -1 {
+	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
 

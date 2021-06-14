@@ -184,7 +184,9 @@ func (msg *MsgEthereumTx) ChainID() *big.Int {
 // Cost returns amount + gasprice * gaslimit.
 func (msg MsgEthereumTx) Cost() *big.Int {
 	total := msg.Fee()
-	total.Add(total, msg.Data.amount())
+	if msg.Data.amount() != nil {
+		total.Add(total, msg.Data.amount())
+	}
 	return total
 }
 
