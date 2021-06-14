@@ -75,7 +75,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		{msg: "pass with recipient - AccessList Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: big.NewInt(1), expectPass: true},
 		{msg: "pass contract - Legacy Tx", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
 		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: false},
-		{msg: "nil amount", to: &suite.to, amount: nil, gasPrice: big.NewInt(1000), expectPass: false},
+		{msg: "nil amount", to: &suite.to, amount: nil, gasPrice: big.NewInt(1000), expectPass: true},
 		{msg: "negative amount", to: &suite.to, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
 		{msg: "nil gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: nil, expectPass: false},
 		{msg: "negative gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
