@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -296,10 +297,16 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		ctx.GasMeter().ConsumeGas(intrinsicGas, "intrinsic gas")
 	}
 
-	// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
-	// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
-	gasPool := sdk.NewGasMeter(ctx.BlockGasMeter().Limit())
-	gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
+	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
+	blockGasLimit := ethermint.BlockGasLimit(ctx)
+
+	// NOTE: safety check
+	if blockGasLimit > 0 {
+		// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
+		// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
+		gasPool := sdk.NewGasMeter(blockGasLimit)
+		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
+	}
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	// set up the updated context to the evm Keeper

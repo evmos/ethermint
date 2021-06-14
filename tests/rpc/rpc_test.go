@@ -20,7 +20,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
+	ethermint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -230,7 +232,7 @@ func TestEth_GetTransactionLogs(t *testing.T) {
 }
 
 func TestEth_protocolVersion(t *testing.T) {
-	expectedRes := hexutil.Uint(evmtypes.ProtocolVersion)
+	expectedRes := hexutil.Uint(ethermint.ProtocolVersion)
 
 	rpcRes := call(t, "eth_protocolVersion", []string{})
 
