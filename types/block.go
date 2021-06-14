@@ -12,14 +12,14 @@ func BlockGasLimit(ctx sdk.Context) uint64 {
 	}
 
 	cp := ctx.ConsensusParams()
-	if cp == nil {
+	if cp == nil || cp.Block == nil {
 		return 0
 	}
 
 	maxGas := cp.Block.MaxGas
-	if maxGas == -1 {
-		maxGas = 0
+	if maxGas > 0 {
+		return uint64(maxGas)
 	}
 
-	return uint64(maxGas)
+	return 0
 }
