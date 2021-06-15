@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
+	ethermint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -48,6 +49,10 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		return next(ctx, tx, simulate)
 	}
 
+	if len(tx.GetMsgs()) != 1 {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
+	}
+
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -63,18 +68,21 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
 
-	for _, msg := range tx.GetMsgs() {
-		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
-		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
-		}
-
-		if _, err := signer.Sender(msgEthTx.AsTransaction()); err != nil {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
-		}
+	msg := tx.GetMsgs()[0]
+	msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
 	}
 
-	return next(ctx, tx, simulate)
+	sender, err := signer.Sender(msgEthTx.AsTransaction())
+	if err != nil {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
+	}
+
+	// set up the sender to the transaction field if not already
+	msgEthTx.From = sender.Hex()
+
+	return next(ctx, msgEthTx, simulate)
 }
 
 // EthAccountVerificationDecorator validates an account balance checks
@@ -228,10 +236,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	if len(tx.GetMsgs()) != 1 {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
-	}
-
 	// reset the refund gas value in the keeper for the current transaction
 	egcd.evmKeeper.ResetRefundTransient(infCtx)
 
@@ -293,10 +297,16 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		ctx.GasMeter().ConsumeGas(intrinsicGas, "intrinsic gas")
 	}
 
-	// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
-	// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
-	gasPool := sdk.NewGasMeter(ctx.BlockGasMeter().Limit())
-	gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
+	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
+	blockGasLimit := ethermint.BlockGasLimit(ctx)
+
+	// NOTE: safety check
+	if blockGasLimit > 0 {
+		// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
+		// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
+		gasPool := sdk.NewGasMeter(blockGasLimit)
+		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
+	}
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	// set up the updated context to the evm Keeper
@@ -331,6 +341,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	}
 
 	ethCfg := config.EthereumConfig(ctd.evmKeeper.ChainID())
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
 	for _, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -338,7 +349,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
 		}
 
-		coreMsg, err := msgEthTx.AsMessage()
+		coreMsg, err := msgEthTx.AsMessage(signer)
 		if err != nil {
 			return ctx, err
 		}
@@ -409,12 +420,9 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
 		}
 
-		coreMsg, err := msgEthTx.AsMessage()
-		if err != nil {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx cannot be expressed as core.Message: %s", err.Error())
-		}
+		sender := common.BytesToAddress(msgEthTx.GetFrom())
 
-		ald.evmKeeper.PrepareAccessList(coreMsg.From(), coreMsg.To(), vm.ActivePrecompiles(rules), coreMsg.AccessList())
+		ald.evmKeeper.PrepareAccessList(sender, msgEthTx.To(), vm.ActivePrecompiles(rules), *msgEthTx.Data.Accesses.ToEthAccessList())
 	}
 
 	// set the original gas meter

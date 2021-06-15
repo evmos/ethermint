@@ -172,6 +172,7 @@ docker-localnet:
 ###############################################################################
 
 TOOLS_DESTDIR  ?= $(GOPATH)/bin
+STATIK         = $(TOOLS_DESTDIR)/statik
 RUNSIM         = $(TOOLS_DESTDIR)/runsim
 
 # Install the runsim binary with a temporary workaround of entering an outside
@@ -183,6 +184,11 @@ runsim: $(RUNSIM)
 $(RUNSIM):
 	@echo "Installing runsim..."
 	@(cd /tmp && ${GO_MOD} go get github.com/cosmos/tools/cmd/runsim@master)
+
+statik: $(STATIK)
+$(STATIK):
+	@echo "Installing statik..."
+	@(cd /tmp && go get github.com/rakyll/statik@v0.1.6)
 
 contract-tools:
 ifeq (, $(shell which stringer))
@@ -237,7 +243,7 @@ else
 endif
 
 tools: tools-stamp
-tools-stamp: contract-tools docs-tools proto-tools runsim
+tools-stamp: contract-tools docs-tools proto-tools statik runsim
 	# Create dummy file to satisfy dependency and avoid
 	# rebuilding when this Makefile target is hit twice
 	# in a row.
@@ -253,7 +259,7 @@ docs-tools-stamp: docs-tools
 	# in a row.
 	touch $@
 
-.PHONY: runsim tools contract-tools docs-tools proto-tools  tools-stamp tools-clean docs-tools-stamp
+.PHONY: runsim statik tools contract-tools docs-tools proto-tools  tools-stamp tools-clean docs-tools-stamp
 
 ###############################################################################
 ###                           Tests & Simulation                            ###
@@ -413,22 +419,32 @@ proto-update-deps:
 ###                              Documentation                              ###
 ###############################################################################
 
-# Start docs site at localhost:8080
-docs-serve:
-	@cd docs && \
-	yarn install && \
-	yarn run serve
-
-# Build the site into docs/.vuepress/dist
-docs-build:
-	@$(MAKE) docs-tools-stamp && \
-	cd docs && \
-	yarn install && \
-	yarn run build
+update-swagger-docs: statik
+	$(BINDIR)/statik -src=client/docs/swagger-ui -dest=client/docs -f -m
+	@if [ -n "$(git status --porcelain)" ]; then \
+        echo "\033[91mSwagger docs are out of sync!!!\033[0m";\
+        exit 1;\
+    else \
+        echo "\033[92mSwagger docs are in sync\033[0m";\
+    fi
+.PHONY: update-swagger-docs
 
 godocs:
-	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/cosmos/ethermint"
+	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/tharsis/ethermint/types"
 	godoc -http=:6060
+
+# This builds a docs site for each branch/tag in `./docs/versions`
+# and copies each site to a version prefixed path. The last entry inside
+# the `versions` file will be the default root index.html.
+build-docs:
+	@cd docs && \
+	while read -r branch path_prefix; do \
+		(git checkout $${branch} && npm install && VUEPRESS_BASE="/$${path_prefix}/" npm run build) ; \
+		mkdir -p ~/output/$${path_prefix} ; \
+		cp -r .vuepress/dist/* ~/output/$${path_prefix}/ ; \
+		cp ~/output/$${path_prefix}/index.html ~/output ; \
+	done < versions ;
+.PHONY: build-docs
 
 ###############################################################################
 ###                                Localnet                                 ###

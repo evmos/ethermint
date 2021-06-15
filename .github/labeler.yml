@@ -1,0 +1,37 @@
+"C:Crypto":
+  - crypto/**/*
+"C:Encoding":
+  - encoding/**/*
+"C:JSON-RPC":
+  - ethereum/rpc/**/*
+"C:Proto":
+  - proto/**/*
+  - third_party/**/*
+  - /**/*.pb.go
+  - /**/*.pb.gw.go
+"C:Types":
+  - types/**/*
+"C:x/evm":
+  - x/evm/**/*/
+"Type: Build":
+  - Makefile
+  - Dockerfile
+  - docker-compose.yml
+  - scripts/*
+  - config.yml
+"Type: CI":
+  - .github/**/*.yml
+  - buf.yaml
+  - .mergify.yml
+  - .golangci.yml
+"C:CLI":
+  - client/**/*
+  - x/*/client/**/*
+"Type: Tests":
+  - tests/**/*
+  - /**/*/*_test.go
+"Type: Docs":
+  - docs/**/*
+  - x/*/spec/**/*
+"Type: ADR":
+    - docs/architecture/**/*
