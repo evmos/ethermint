@@ -10,5 +10,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: local-storage
-  hostPath:
-    path: <local-directory> # replace with local directory, such as "/home/<user-name>/kaniko"
+  hostPath: # on minikube host
+    path: /home/docker/kaniko
+    type: DirectoryOrCreate

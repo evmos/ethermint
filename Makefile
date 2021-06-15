@@ -151,20 +151,23 @@ clean:
 
 .PHONY: install clean
 
-docker-build:
+docker-build-image: 
 	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+
+docker-build: docker-build-image
 	# docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
 	# update old container
 	docker rm ethermint || true
 	# create a new container from the latest image
-	docker create --name ethermint -t -i cosmos/ethermint:latest ethermint
+	docker create --name ethermint -t -i tharsis/ethermint:latest ethermint
 	# move the binaries to the ./build directory
 	mkdir -p ./build/
 	docker cp ethermint:/usr/bin/ethermintd ./build/
 
-docker-localnet:
-	docker build -f ./networks/local/ethermintnode/Dockerfile . -t ethermintd/node
+docker-build-localnet:
+	minikube mount .:/workspace
+	# docker build -f ./networks/local/ethermintnode/Dockerfile . -t ethermintd/node
 
 ###############################################################################
 ###                          Tools & Dependencies                           ###

@@ -6,22 +6,15 @@ spec:
   containers:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:latest
-    args: ["--dockerfile=/workspace/dockerfile",
-            "--context=dir://workspace",
-            "--destination=<user-name>/<repo>"] # replace with your dockerhub account
+    args: ["--dockerfile=../networks/local/ethermintnode/Dockerfile", # TODO: how to get this pass as a variable
+           "--build-arg=-t ethermintd/node",
+           "--context=dir://workspace", # TODO same thing
+           "--no-push"]
     volumeMounts:
-      - name: kaniko-secret
-        mountPath: /kaniko/.docker
       - name: dockerfile-storage
-        mountPath: /workspace
+        mountPath: /workspace # TODO same thing
   restartPolicy: Never
   volumes:
-    - name: kaniko-secret
-      secret:
-        secretName: regcred
-        items:
-          - key: .dockerconfigjson
-            path: config.json
     - name: dockerfile-storage
       persistentVolumeClaim:
         claimName: dockerfile-claim
