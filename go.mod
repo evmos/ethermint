@@ -3,7 +3,7 @@ module github.com/cosmos/ethermint
 go 1.15
 
 require (
-	github.com/armon/go-metrics v0.3.8
+	github.com/armon/go-metrics v0.3.9
 	github.com/aws/aws-sdk-go v1.38.21 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta
@@ -30,7 +30,7 @@ require (
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.0-20200123000308-a60dcd172b4c
-	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177 // indirect
+	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/rakyll/statik v0.1.7
