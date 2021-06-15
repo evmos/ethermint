@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
+	"github.com/cosmos/ethermint/x/evm/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -26,7 +27,7 @@ type EVMKeeper interface {
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
 	NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM
-	GetCodeSize(addr common.Address) int
+	GetCodeHash(addr common.Address) common.Hash
 }
 
 // EthSigVerificationDecorator validates an ethereum signatures
@@ -125,9 +126,10 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 
 		// check whether the sender address is EOA
 		fromAddr := common.BytesToAddress(from)
-		if codesize := avd.evmKeeper.GetCodeSize(fromAddr); codesize != 0 {
+		codeHash := avd.evmKeeper.GetCodeHash(fromAddr)
+		if codeHash == common.BytesToHash(types.EmptyCodeHash) {
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress,
-				"the sender is not EOA: address %v, codesize: %d", fromAddr, codesize)
+				"the sender is not EOA: address <%v>, codeHash is empty", fromAddr)
 		}
 
 		acc := avd.ak.GetAccount(infCtx, from)
