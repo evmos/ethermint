@@ -124,7 +124,7 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 // default of 300 seconds. It returns an indication if the account was unlocked.
 func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Address, _ string, _ *uint64) (bool, error) { // nolint: interfacer
 	api.logger.Debugln("personal_unlockAccount", "address", addr.String())
-	return true, nil
+	return false, nil
 }
 
 // SendTransaction will create a transaction from the given arguments and
