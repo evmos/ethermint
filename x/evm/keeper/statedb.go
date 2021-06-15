@@ -216,6 +216,7 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 	code := store.Get(hash.Bytes())
 
 	if len(code) == 0 {
+		// TODO (@khoslaventures): why not error?
 		k.Logger(k.ctx).Debug(
 			"code not found",
 			"ethereum-address", addr.Hex(),
@@ -269,9 +270,17 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 	)
 }
 
-// GetCodeSize returns the code hash stored in the address account.
+// GetCodeSize returns the size of the contract code associated with this object,
+// or zero if none.
 func (k *Keeper) GetCodeSize(addr common.Address) int {
-	return len(k.GetCode(addr))
+	// TODO (@khoslaventures): suppose this call to GetCode fails. How does
+	// GetCodeSize know without an error return - 0 is always an error case but
+	// can we be more explicit?
+	code := k.GetCode(addr)
+	if code != nil {
+		return len(code)
+	}
+	return 0
 }
 
 // ----------------------------------------------------------------------------
