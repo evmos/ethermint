@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "preserve": "./pre.sh",
-    "serve": "trap 'exit 0' SIGINT; vuepress dev --no-cache",
+    "serve": "vuepress dev",
+    "build": "vuepress build",
     "postserve": "./post.sh",
     "prebuild": "./pre.sh",
-    "build": "trap 'exit 0' SIGINT; vuepress build --no-cache",
     "postbuild": "./post.sh"
   },
   "keywords": [
@@ -18,11 +18,12 @@
     "blockchain",
     "cryptocurrency"
   ],
-  "author": "ChainSafe Systems",
+  "author": "Tharsis",
   "license": "ISC",
   "dependencies": {
     "entities": "^2.0.3",
-    "vuepress-theme-cosmos": "^1.0.172"
+    "markdown-it": "^12.0.6",
+    "vuepress-theme-cosmos": "^1.0.182"
   },
   "devDependencies": {
     "watchpack": "^1.7.2"

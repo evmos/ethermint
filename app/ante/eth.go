@@ -6,8 +6,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	"github.com/palantir/stacktrace"
 
-	"github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/cosmos/ethermint/types"
 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -50,6 +51,13 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		return next(ctx, tx, simulate)
 	}
 
+	if len(tx.GetMsgs()) != 1 {
+		return ctx, stacktrace.Propagate(
+			sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs())),
+			"",
+		)
+	}
+
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
@@ -65,18 +73,28 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
 
-	for _, msg := range tx.GetMsgs() {
-		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
-		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
-		}
-
-		if _, err := signer.Sender(msgEthTx.AsTransaction()); err != nil {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error())
-		}
+	msg := tx.GetMsgs()[0]
+	msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		return ctx, stacktrace.Propagate(
+			sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+			"failed to cast transaction",
+		)
 	}
 
-	return next(ctx, tx, simulate)
+	sender, err := signer.Sender(msgEthTx.AsTransaction())
+	if err != nil {
+		return ctx, stacktrace.Propagate(
+			sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, err.Error()),
+			"couldn't retrieve sender address ('%s') from the ethereum transaction",
+			msgEthTx.From,
+		)
+	}
+
+	// set up the sender to the transaction field if not already
+	msgEthTx.From = sender.Hex()
+
+	return next(ctx, msgEthTx, simulate)
 }
 
 // EthAccountVerificationDecorator validates an account balance checks
@@ -112,16 +130,22 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 	avd.evmKeeper.WithContext(infCtx)
 	evmDenom := avd.evmKeeper.GetParams(infCtx).EvmDenom
 
-	for _, msg := range tx.GetMsgs() {
+	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				"failed to cast transaction %d", i,
+			)
 		}
 
 		// sender address should be in the tx cache from the previous AnteHandle call
 		from := msgEthTx.GetFrom()
 		if from.Empty() {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "from address cannot be empty")
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "from address cannot be empty"),
+				"sender address should have been in the tx field from the previous AnteHandle call",
+			)
 		}
 
 		// check whether the sender address is EOA
@@ -138,12 +162,15 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 			avd.ak.SetAccount(infCtx, acc)
 		}
 
-		// validate sender has enough funds to pay for gas cost
+		// validate sender has enough funds to pay for tx cost
 		balance := avd.bankKeeper.GetBalance(infCtx, from, evmDenom)
 		if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrInsufficientFunds,
-				"sender balance < tx gas cost (%s < %s%s)", balance.String(), msgEthTx.Cost().String(), evmDenom,
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(
+					sdkerrors.ErrInsufficientFunds,
+					"sender balance < tx cost (%s < %s%s)", balance, msgEthTx.Cost(), evmDenom,
+				),
+				"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + amount)", msgEthTx.Cost(), msgEthTx.Fee(),
 			)
 		}
 
@@ -178,25 +205,31 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	for _, msg := range tx.GetMsgs() {
+	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				"failed to cast transaction %d", i,
+			)
 		}
 
 		// sender address should be in the tx cache from the previous AnteHandle call
 		seq, err := nvd.ak.GetSequence(infCtx, msgEthTx.GetFrom())
 		if err != nil {
-			return ctx, err
+			return ctx, stacktrace.Propagate(err, "sequence not found for address %s", msgEthTx.From)
 		}
 
 		// if multiple transactions are submitted in succession with increasing nonces,
 		// all will be rejected except the first, since the first needs to be included in a block
 		// before the sequence increments
 		if msgEthTx.Data.Nonce != seq {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrInvalidSequence,
-				"invalid nonce; got %d, expected %d", msgEthTx.Data.Nonce, seq,
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(
+					sdkerrors.ErrInvalidSequence,
+					"invalid nonce; got %d, expected %d", msgEthTx.Data.Nonce, seq,
+				),
+				"",
 			)
 		}
 	}
@@ -240,10 +273,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	if len(tx.GetMsgs()) != 1 {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs()))
-	}
-
 	// reset the refund gas value in the keeper for the current transaction
 	egcd.evmKeeper.ResetRefundTransient(infCtx)
 
@@ -258,10 +287,13 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
 
-	for _, msg := range tx.GetMsgs() {
+	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{})
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				"failed to cast transaction %d", i,
+			)
 		}
 
 		isContractCreation := msgEthTx.To() == nil
@@ -269,7 +301,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		// fetch sender account from signature
 		signerAcc, err := authante.GetSignerAcc(infCtx, egcd.ak, msgEthTx.GetFrom())
 		if err != nil {
-			return ctx, err
+			return ctx, stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
 		}
 
 		gasLimit := msgEthTx.GetGas()
@@ -281,7 +313,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		intrinsicGas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, isContractCreation, homestead, istanbul)
 		if err != nil {
-			return ctx, sdkerrors.Wrap(err, "failed to compute intrinsic gas cost")
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrap(err, "failed to compute intrinsic gas cost"),
+				"failed to retrieve intrinsic gas, contract creation = %t; homestead = %t, istanbul = %t", isContractCreation, homestead, istanbul)
 		}
 
 		// intrinsic gas verification during CheckTx
@@ -297,7 +331,10 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		// deduct the full gas cost from the user balance
 		if err := authante.DeductFees(egcd.bankKeeper, infCtx, signerAcc, fees); err != nil {
-			return ctx, err
+			return ctx, stacktrace.Propagate(
+				err,
+				"failed to deduct full gas cost %s from the user %s balance", fees, msgEthTx.From,
+			)
 		}
 
 		// consume intrinsic gas for the current transaction. After runTx is executed on Baseapp, the
@@ -305,10 +342,16 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		ctx.GasMeter().ConsumeGas(intrinsicGas, "intrinsic gas")
 	}
 
-	// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
-	// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
-	gasPool := sdk.NewGasMeter(ctx.BlockGasMeter().Limit())
-	gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
+	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
+	blockGasLimit := ethermint.BlockGasLimit(ctx)
+
+	// NOTE: safety check
+	if blockGasLimit > 0 {
+		// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
+		// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
+		gasPool := sdk.NewGasMeter(blockGasLimit)
+		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
+	}
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	// set up the updated context to the evm Keeper
@@ -343,16 +386,23 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	}
 
 	ethCfg := config.EthereumConfig(ctd.evmKeeper.ChainID())
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
-	for _, msg := range tx.GetMsgs() {
+	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				"failed to cast transaction %d", i,
+			)
 		}
 
-		coreMsg, err := msgEthTx.AsMessage()
+		coreMsg, err := msgEthTx.AsMessage(signer)
 		if err != nil {
-			return ctx, err
+			return ctx, stacktrace.Propagate(
+				err,
+				"failed to create an ethereum core.Message from signer %T", signer,
+			)
 		}
 
 		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg)
@@ -360,7 +410,10 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
 		if coreMsg.Value().Sign() > 0 && !evm.Context.CanTransfer(ctd.evmKeeper, coreMsg.From(), coreMsg.Value()) {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", coreMsg.From().Hex())
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", coreMsg.From()),
+				"failed to transfer %s using the EVM block context transfer function", coreMsg.Value(),
+			)
 		}
 	}
 
@@ -415,18 +468,18 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	// setup the keeper context before setting the access list
 	ald.evmKeeper.WithContext(infCtx)
 
-	for _, msg := range tx.GetMsgs() {
+	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				"failed to cast transaction %d", i,
+			)
 		}
 
-		coreMsg, err := msgEthTx.AsMessage()
-		if err != nil {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx cannot be expressed as core.Message: %s", err.Error())
-		}
+		sender := common.BytesToAddress(msgEthTx.GetFrom())
 
-		ald.evmKeeper.PrepareAccessList(coreMsg.From(), coreMsg.To(), vm.ActivePrecompiles(rules), coreMsg.AccessList())
+		ald.evmKeeper.PrepareAccessList(sender, msgEthTx.To(), vm.ActivePrecompiles(rules), *msgEthTx.Data.Accesses.ToEthAccessList())
 	}
 
 	// set the original gas meter
@@ -454,10 +507,13 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
-	for _, msg := range tx.GetMsgs() {
+	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", msg)
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				"failed to cast transaction %d", i,
+			)
 		}
 
 		// NOTE: on contract creation, the nonce is incremented within the EVM Create function during tx execution
@@ -473,14 +529,17 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 			acc := issd.ak.GetAccount(infCtx, addr)
 
 			if acc == nil {
-				return ctx, sdkerrors.Wrapf(
-					sdkerrors.ErrUnknownAddress,
-					"account %s (%s) is nil", common.BytesToAddress(addr.Bytes()), addr,
+				return ctx, stacktrace.Propagate(
+					sdkerrors.Wrapf(
+						sdkerrors.ErrUnknownAddress,
+						"account %s (%s) is nil", common.BytesToAddress(addr.Bytes()), addr,
+					),
+					"signer account not found",
 				)
 			}
 
 			if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
-				return ctx, err
+				return ctx, stacktrace.Propagate(err, "failed to set sequence to %d", acc.GetSequence()+1)
 			}
 
 			issd.ak.SetAccount(infCtx, acc)

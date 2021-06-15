@@ -96,7 +96,7 @@ func (e *PublicEthAPI) ClientCtx() client.Context {
 // ProtocolVersion returns the supported Ethereum protocol version.
 func (e *PublicEthAPI) ProtocolVersion() hexutil.Uint {
 	e.logger.Debugln("eth_protocolVersion")
-	return hexutil.Uint(evmtypes.ProtocolVersion)
+	return hexutil.Uint(ethermint.ProtocolVersion)
 }
 
 // ChainId returns the chain's identifier in hex format
