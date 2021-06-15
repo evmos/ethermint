@@ -151,9 +151,9 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		// check whether the sender address is EOA
 		fromAddr := common.BytesToAddress(from)
 		codeHash := avd.evmKeeper.GetCodeHash(fromAddr)
-		if codeHash == common.BytesToHash(evmtypes.EmptyCodeHash) {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress,
-				"the sender is not EOA: address <%v>, codeHash is empty", fromAddr)
+		if codeHash != common.BytesToHash(evmtypes.EmptyCodeHash) {
+			return ctx, stacktrace.Propagate(sdkerrors.Wrapf(sdkerrors.ErrInvalidType,
+				"the sender is not EOA: address <%v>, codeHash <%s>", fromAddr, codeHash), "")
 		}
 
 		acc := avd.ak.GetAccount(infCtx, from)
