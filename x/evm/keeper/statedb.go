@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -229,7 +230,9 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 
 // SetCode calls CommitStateDB.SetCode using the passed in context
 func (k *Keeper) SetCode(addr common.Address, code []byte) {
-	// TODO input checks
+	if bytes.Equal(code, evmtypes.EmptyCodeHash) {
+		k.Logger(k.ctx).Debug("passed in EmptyCodeHash, but expected empty code")
+	}
 	hash := crypto.Keccak256Hash(code)
 
 	// update account code hash
