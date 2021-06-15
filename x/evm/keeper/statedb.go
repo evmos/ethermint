@@ -229,6 +229,7 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 
 // SetCode calls CommitStateDB.SetCode using the passed in context
 func (k *Keeper) SetCode(addr common.Address, code []byte) {
+	// TODO input checks
 	hash := crypto.Keccak256Hash(code)
 
 	// update account code hash
@@ -273,14 +274,8 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 // GetCodeSize returns the size of the contract code associated with this object,
 // or zero if none.
 func (k *Keeper) GetCodeSize(addr common.Address) int {
-	// TODO (@khoslaventures): suppose this call to GetCode fails. How does
-	// GetCodeSize know without an error return - is nil is always an error case?
-	// Can we be more explicit?
 	code := k.GetCode(addr)
-	if code != nil {
-		return len(code)
-	}
-	return 0
+	return len(code)
 }
 
 // ----------------------------------------------------------------------------
