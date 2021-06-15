@@ -86,6 +86,7 @@ func (suite *AnteTestSuite) CreateTestTx(
 	suite.Require().NoError(err)
 
 	err = builder.SetMsgs(msg)
+	suite.Require().NoError(err)
 	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(msg.Fee())))
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
