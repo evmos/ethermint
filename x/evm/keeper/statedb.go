@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -217,7 +216,6 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 	code := store.Get(hash.Bytes())
 
 	if len(code) == 0 {
-		// TODO (@khoslaventures): why not error?
 		k.Logger(k.ctx).Debug(
 			"code not found",
 			"ethereum-address", addr.Hex(),
@@ -230,7 +228,7 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 
 // SetCode calls CommitStateDB.SetCode using the passed in context
 func (k *Keeper) SetCode(addr common.Address, code []byte) {
-	if bytes.Equal(code, evmtypes.EmptyCodeHash) {
+	if bytes.Equal(code, types.EmptyCodeHash) {
 		k.Logger(k.ctx).Debug("passed in EmptyCodeHash, but expected empty code")
 	}
 	hash := crypto.Keccak256Hash(code)
