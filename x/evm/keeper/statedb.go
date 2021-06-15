@@ -274,8 +274,8 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 // or zero if none.
 func (k *Keeper) GetCodeSize(addr common.Address) int {
 	// TODO (@khoslaventures): suppose this call to GetCode fails. How does
-	// GetCodeSize know without an error return - 0 is always an error case but
-	// can we be more explicit?
+	// GetCodeSize know without an error return - is nil is always an error case?
+	// Can we be more explicit?
 	code := k.GetCode(addr)
 	if code != nil {
 		return len(code)
