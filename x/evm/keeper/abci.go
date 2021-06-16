@@ -20,6 +20,7 @@ import (
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 	k.WithContext(ctx)
+	k.WithChainID(ctx)
 	k.headerHash = common.BytesToHash(req.Hash)
 }
 

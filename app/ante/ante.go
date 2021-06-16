@@ -3,6 +3,7 @@ package ante
 import (
 	"runtime/debug"
 
+	"github.com/palantir/stacktrace"
 	log "github.com/xlab/suplog"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -73,8 +74,10 @@ func NewAnteHandler(
 					)
 
 				default:
-					log.WithField("type_url", typeURL).Errorln("rejecting tx with unsupported extension option")
-					return ctx, sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, typeURL)
+					return ctx, stacktrace.Propagate(
+						sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, typeURL),
+						"rejecting tx with unsupported extension option",
+					)
 				}
 
 				return anteHandler(ctx, tx, sim)
@@ -102,7 +105,10 @@ func NewAnteHandler(
 				authante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
 			)
 		default:
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", tx)
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", tx),
+				"transaction is not an SDK tx",
+			)
 		}
 
 		return anteHandler(ctx, tx, sim)

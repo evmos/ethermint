@@ -94,9 +94,10 @@ func (api *PrivateAccountAPI) ListAccounts() ([]common.Address, error) {
 
 // LockAccount will lock the account associated with the given address when it's unlocked.
 // It removes the key corresponding to the given address from the API's local keys.
-func (api *PrivateAccountAPI) LockAccount(address common.Address) bool {
+func (api *PrivateAccountAPI) LockAccount(address common.Address) bool { // nolint: interfacer
 	api.logger.Debugln("personal_lockAccount", "address", address.String())
 	api.logger.Info("personal_lockAccount not supported")
+	// TODO: Not supported. See underlying issue  https://github.com/99designs/keyring/issues/85
 	return false
 }
 
@@ -122,11 +123,10 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 // UnlockAccount will unlock the account associated with the given address with
 // the given password for duration seconds. If duration is nil it will use a
 // default of 300 seconds. It returns an indication if the account was unlocked.
-// It exports the private key corresponding to the given address from the keyring and stores it in the API's local keys.
-func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Address, password string, _ *uint64) (bool, error) { // nolint: interfacer
+func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Address, _ string, _ *uint64) (bool, error) { // nolint: interfacer
 	api.logger.Debugln("personal_unlockAccount", "address", addr.String())
-	api.logger.Info("personal_unlockAccount not supported")
-	return false, fmt.Errorf("not supported")
+	// TODO: Not supported. See underlying issue  https://github.com/99designs/keyring/issues/85
+	return false, nil
 }
 
 // SendTransaction will create a transaction from the given arguments and

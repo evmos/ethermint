@@ -228,6 +228,9 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 
 // SetCode calls CommitStateDB.SetCode using the passed in context
 func (k *Keeper) SetCode(addr common.Address, code []byte) {
+	if bytes.Equal(code, types.EmptyCodeHash) {
+		k.Logger(k.ctx).Debug("passed in EmptyCodeHash, but expected empty code")
+	}
 	hash := crypto.Keccak256Hash(code)
 
 	// update account code hash
@@ -269,9 +272,11 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 	)
 }
 
-// GetCodeSize returns the code hash stored in the address account.
+// GetCodeSize returns the size of the contract code associated with this object,
+// or zero if none.
 func (k *Keeper) GetCodeSize(addr common.Address) int {
-	return len(k.GetCode(addr))
+	code := k.GetCode(addr)
+	return len(code)
 }
 
 // ----------------------------------------------------------------------------
