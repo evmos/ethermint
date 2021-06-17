@@ -1,5 +1,3 @@
-// +build norace
-
 package network_test
 
 import (
@@ -8,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/cosmos/cosmos-sdk/testutil/network"
+	"github.com/cosmos/ethermint/testutil/network"
 )
 
 type IntegrationTestSuite struct {

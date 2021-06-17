@@ -2,12 +2,14 @@ package network
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"time"
 
 	jsonrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/rs/cors"
 
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -25,8 +27,11 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/cosmos/ethermint/ethereum/rpc"
+	ethsrv "github.com/cosmos/ethermint/server"
+	ethermint "github.com/cosmos/ethermint/types"
 )
 
 func startInProcess(cfg Config, val *Validator) error {
@@ -36,7 +41,7 @@ func startInProcess(cfg Config, val *Validator) error {
 
 	nodeKey, err := p2p.LoadOrGenNodeKey(tmCfg.NodeKeyFile())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load or generate node key: %w", err)
 	}
 
 	app := cfg.AppConstructor(*val)
@@ -53,11 +58,11 @@ func startInProcess(cfg Config, val *Validator) error {
 		logger.With("module", val.Moniker),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create node: %w", err)
 	}
 
 	if err := tmNode.Start(); err != nil {
-		return err
+		return fmt.Errorf("failed to start node: %w", err)
 	}
 
 	val.tmNode = tmNode
@@ -92,7 +97,7 @@ func startInProcess(cfg Config, val *Validator) error {
 
 		select {
 		case err := <-errCh:
-			return err
+			return fmt.Errorf("failed to start API server: %w", err)
 		case <-time.After(5 * time.Second): // assume server started successfully
 		}
 
@@ -102,30 +107,32 @@ func startInProcess(cfg Config, val *Validator) error {
 	if val.AppConfig.GRPC.Enable {
 		grpcSrv, err := servergrpc.StartGRPCServer(val.ClientCtx, app, val.AppConfig.GRPC.Address)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to start gRPC server: %w", err)
 		}
 
 		val.grpc = grpcSrv
 	}
 
 	if val.AppConfig.EVMRPC.Enable {
-		// TODO: enable websocket
-		// tmEndpoint := "/websocket"
-		// tmRPCAddr := val.AppConfig.API.
-		// log.Infoln("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
-		// tmWsClient := connectTmWS(tmRPCAddr, tmEndpoint)
+		tmEndpoint := "/websocket"
+		tmRPCAddr := val.Ctx.Config.RPC.ListenAddress
+		tmWsClient := ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		val.jsonRPC = jsonrpc.NewServer()
 
-		apis := rpc.GetRPCAPIs(val.ClientCtx, nil)
+		apis := rpc.GetRPCAPIs(val.ClientCtx, tmWsClient)
 		for _, api := range apis {
 			if err := val.jsonRPC.RegisterName(api.Namespace, api.Service); err != nil {
-				return err
+				return fmt.Errorf("failed to register JSON-RPC namespace %s: %w", api.Namespace, err)
 			}
 		}
 
 		r := mux.NewRouter()
 		r.HandleFunc("/", val.jsonRPC.ServeHTTP).Methods("POST")
+		if val.grpc != nil {
+			grpcWeb := grpcweb.WrapServer(val.grpc)
+			ethsrv.MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(val.grpc))
+		}
 
 		handlerWithCors := cors.New(cors.Options{
 			AllowedOrigins: []string{"*"},
@@ -143,7 +150,8 @@ func startInProcess(cfg Config, val *Validator) error {
 		})
 
 		httpSrv := &http.Server{
-			Addr:    val.AppConfig.EVMRPC.RPCAddress,
+			// Addr:    strings.TrimPrefix(val.AppConfig.EVMRPC.RPCAddress, "tcp://"), // FIXME: timeouts
+			Addr:    val.AppConfig.EVMRPC.RPCAddress, // FIXME: address has too many colons
 			Handler: handlerWithCors.Handler(r),
 		}
 
@@ -163,7 +171,7 @@ func startInProcess(cfg Config, val *Validator) error {
 
 		select {
 		case err := <-errCh:
-			return err
+			return fmt.Errorf("JSON-RPC go routine failed to start: %w", err)
 		case <-time.After(1 * time.Second): // assume EVM RPC server started successfully
 		}
 	}
@@ -177,7 +185,7 @@ func collectGenFiles(cfg Config, vals []*Validator, outputDir string) error {
 	for i := 0; i < cfg.NumValidators; i++ {
 		tmCfg := vals[i].Ctx.Config
 
-		nodeDir := filepath.Join(outputDir, vals[i].Moniker, "simd")
+		nodeDir := filepath.Join(outputDir, vals[i].Moniker, "ethermintd")
 		gentxsDir := filepath.Join(outputDir, "gentxs")
 
 		tmCfg.Moniker = vals[i].Moniker
@@ -188,18 +196,18 @@ func collectGenFiles(cfg Config, vals []*Validator, outputDir string) error {
 		genFile := tmCfg.GenesisFile()
 		genDoc, err := types.GenesisDocFromFile(genFile)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create genesis doc: %w", err)
 		}
 
 		appState, err := genutil.GenAppStateFromConfig(cfg.Codec, cfg.TxConfig,
 			tmCfg, initCfg, *genDoc, banktypes.GenesisBalancesIterator{})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create app state: %w", err)
 		}
 
 		// overwrite each validator's genesis file to have a canonical genesis time
 		if err := genutil.ExportGenesisFileWithTime(genFile, cfg.ChainID, nil, appState, genTime); err != nil {
-			return err
+			return fmt.Errorf("failed to export genesis: %w", err)
 		}
 	}
 
@@ -226,6 +234,12 @@ func initGenFiles(cfg Config, genAccounts []authtypes.GenesisAccount, genBalance
 
 	bankGenState.Balances = genBalances
 	cfg.GenesisState[banktypes.ModuleName] = cfg.Codec.MustMarshalJSON(&bankGenState)
+
+	var stakingGenState stakingtypes.GenesisState
+	cfg.Codec.MustUnmarshalJSON(cfg.GenesisState[stakingtypes.ModuleName], &stakingGenState)
+
+	stakingGenState.Params.BondDenom = ethermint.AttoPhoton
+	cfg.GenesisState[stakingtypes.ModuleName] = cfg.Codec.MustMarshalJSON(&stakingGenState)
 
 	appGenStateJSON, err := json.MarshalIndent(cfg.GenesisState, "", "  ")
 	if err != nil {

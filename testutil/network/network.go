@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -23,7 +22,6 @@ import (
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	"github.com/tendermint/tendermint/libs/log"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/node"
 	tmclient "github.com/tendermint/tendermint/rpc/client"
 	dbm "github.com/tendermint/tm-db"
@@ -114,7 +112,7 @@ func DefaultConfig() Config {
 		AppConstructor:    NewAppConstructor(encCfg),
 		GenesisState:      app.NewDefaultGenesisState(),
 		TimeoutCommit:     2 * time.Second,
-		ChainID:           "ethermint-" + strconv.FormatInt(tmrand.NewRand().Int63n(200), 64),
+		ChainID:           "ethermint-777",
 		NumValidators:     4,
 		BondDenom:         ethermint.AttoPhoton,
 		MinGasPrices:      fmt.Sprintf("0.000006%s", ethermint.AttoPhoton),
@@ -240,6 +238,7 @@ func New(t *testing.T, cfg Config) *Network {
 
 			jsonRPCListenAddr, _, err := server.FreeTCPAddr()
 			require.NoError(t, err)
+			t.Log(jsonRPCListenAddr)
 			appCfg.EVMRPC.RPCAddress = jsonRPCListenAddr
 			appCfg.EVMRPC.Enable = true
 
