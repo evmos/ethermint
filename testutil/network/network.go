@@ -22,6 +22,7 @@ import (
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	"github.com/tendermint/tendermint/libs/log"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/node"
 	tmclient "github.com/tendermint/tendermint/rpc/client"
 	dbm "github.com/tendermint/tm-db"
@@ -68,6 +69,7 @@ func NewAppConstructor(encodingCfg params.EncodingConfig) AppConstructor {
 			simapp.EmptyAppOptions{},
 			baseapp.SetPruning(storetypes.NewPruningOptionsFromString(val.AppConfig.Pruning)),
 			baseapp.SetMinGasPrices(val.AppConfig.MinGasPrices),
+			baseapp.SetTrace(true),
 		)
 	}
 }
@@ -112,7 +114,7 @@ func DefaultConfig() Config {
 		AppConstructor:    NewAppConstructor(encCfg),
 		GenesisState:      app.NewDefaultGenesisState(),
 		TimeoutCommit:     2 * time.Second,
-		ChainID:           "ethermint-777",
+		ChainID:           "ethermint-" + fmt.Sprintf("%d", tmrand.NewRand().Int63n(1000)),
 		NumValidators:     4,
 		BondDenom:         ethermint.AttoPhoton,
 		MinGasPrices:      fmt.Sprintf("0.000006%s", ethermint.AttoPhoton),
