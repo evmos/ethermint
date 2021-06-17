@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	jsonrpc "github.com/ethereum/go-ethereum/rpc"
 	"google.golang.org/grpc"
 
@@ -49,6 +50,7 @@ import (
 	"github.com/cosmos/ethermint/app"
 	srvconfig "github.com/cosmos/ethermint/cmd/ethermintd/config"
 	"github.com/cosmos/ethermint/crypto/hd"
+	"github.com/cosmos/ethermint/encoding"
 	ethermint "github.com/cosmos/ethermint/types"
 )
 
@@ -101,7 +103,7 @@ type Config struct {
 // DefaultConfig returns a sane default configuration suitable for nearly all
 // testing requirements.
 func DefaultConfig() Config {
-	encCfg := simapp.MakeTestEncodingConfig()
+	encCfg := encoding.MakeConfig(app.ModuleBasics)
 
 	return Config{
 		Codec:             encCfg.Marshaler,
@@ -110,7 +112,7 @@ func DefaultConfig() Config {
 		InterfaceRegistry: encCfg.InterfaceRegistry,
 		AccountRetriever:  authtypes.AccountRetriever{},
 		AppConstructor:    NewAppConstructor(encCfg),
-		GenesisState:      simapp.ModuleBasics.DefaultGenesis(encCfg.Marshaler),
+		GenesisState:      app.NewDefaultGenesisState(),
 		TimeoutCommit:     2 * time.Second,
 		ChainID:           "ethermint-" + strconv.FormatInt(tmrand.NewRand().Int63n(200), 64),
 		NumValidators:     4,
@@ -149,21 +151,22 @@ type (
 	// a client can make RPC and API calls and interact with any client command
 	// or handler.
 	Validator struct {
-		AppConfig      *srvconfig.Config
-		ClientCtx      client.Context
-		Ctx            *server.Context
-		Dir            string
-		NodeID         string
-		PubKey         cryptotypes.PubKey
-		Moniker        string
-		APIAddress     string
-		RPCAddress     string
-		P2PAddress     string
-		JSONRPCAddress string
-		Address        sdk.AccAddress
-		ValAddress     sdk.ValAddress
-		RPCClient      tmclient.Client
-		JSONRPCClient  *jsonrpc.Client
+		AppConfig       *srvconfig.Config
+		ClientCtx       client.Context
+		Ctx             *server.Context
+		Dir             string
+		NodeID          string
+		PubKey          cryptotypes.PubKey
+		Moniker         string
+		APIAddress      string
+		RPCAddress      string
+		P2PAddress      string
+		JSONRPCAddress  string
+		EthereumAddress common.Address
+		Address         sdk.AccAddress
+		ValAddress      sdk.ValAddress
+		RPCClient       tmclient.Client
+		JSONRPCClient   *jsonrpc.Client
 
 		tmNode  *node.Node
 		api     *api.Server
@@ -191,9 +194,11 @@ func New(t *testing.T, cfg Config) *Network {
 
 	t.Log("preparing test network...")
 
-	monikers := make([]string, cfg.NumValidators)
-	nodeIDs := make([]string, cfg.NumValidators)
-	valPubKeys := make([]cryptotypes.PubKey, cfg.NumValidators)
+	var (
+		monikers   = make([]string, cfg.NumValidators)
+		nodeIDs    = make([]string, cfg.NumValidators)
+		valPubKeys = make([]cryptotypes.PubKey, cfg.NumValidators)
+	)
 
 	var (
 		genAccounts []authtypes.GenesisAccount
@@ -363,19 +368,20 @@ func New(t *testing.T, cfg Config) *Network {
 			WithAccountRetriever(cfg.AccountRetriever)
 
 		network.Validators[i] = &Validator{
-			AppConfig:      appCfg,
-			ClientCtx:      clientCtx,
-			Ctx:            ctx,
-			Dir:            filepath.Join(network.BaseDir, nodeDirName),
-			NodeID:         nodeID,
-			PubKey:         pubKey,
-			Moniker:        nodeDirName,
-			RPCAddress:     tmCfg.RPC.ListenAddress,
-			P2PAddress:     tmCfg.P2P.ListenAddress,
-			APIAddress:     apiAddr,
-			JSONRPCAddress: jsonRPCAddr,
-			Address:        addr,
-			ValAddress:     sdk.ValAddress(addr),
+			AppConfig:       appCfg,
+			ClientCtx:       clientCtx,
+			Ctx:             ctx,
+			Dir:             filepath.Join(network.BaseDir, nodeDirName),
+			NodeID:          nodeID,
+			PubKey:          pubKey,
+			Moniker:         nodeDirName,
+			RPCAddress:      tmCfg.RPC.ListenAddress,
+			P2PAddress:      tmCfg.P2P.ListenAddress,
+			APIAddress:      apiAddr,
+			JSONRPCAddress:  jsonRPCAddr,
+			EthereumAddress: common.BytesToAddress(addr),
+			Address:         addr,
+			ValAddress:      sdk.ValAddress(addr),
 		}
 	}
 
