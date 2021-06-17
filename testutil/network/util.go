@@ -2,10 +2,13 @@ package network
 
 import (
 	"encoding/json"
+	"net/http"
 	"path/filepath"
 	"time"
 
 	jsonrpc "github.com/ethereum/go-ethereum/rpc"
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
@@ -22,6 +25,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+
+	"github.com/cosmos/ethermint/ethereum/rpc"
 )
 
 func startInProcess(cfg Config, val *Validator) error {
@@ -104,8 +109,63 @@ func startInProcess(cfg Config, val *Validator) error {
 	}
 
 	if val.AppConfig.EVMRPC.Enable {
+		// TODO: enable websocket
+		// tmEndpoint := "/websocket"
+		// tmRPCAddr := val.AppConfig.API.
+		// log.Infoln("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
+		// tmWsClient := connectTmWS(tmRPCAddr, tmEndpoint)
+
 		val.jsonRPC = jsonrpc.NewServer()
 
+		apis := rpc.GetRPCAPIs(val.ClientCtx, nil)
+		for _, api := range apis {
+			if err := val.jsonRPC.RegisterName(api.Namespace, api.Service); err != nil {
+				return err
+			}
+		}
+
+		r := mux.NewRouter()
+		r.HandleFunc("/", val.jsonRPC.ServeHTTP).Methods("POST")
+
+		handlerWithCors := cors.New(cors.Options{
+			AllowedOrigins: []string{"*"},
+			AllowedMethods: []string{
+				http.MethodHead,
+				http.MethodGet,
+				http.MethodPost,
+				http.MethodPut,
+				http.MethodPatch,
+				http.MethodDelete,
+			},
+			AllowedHeaders:     []string{"*"},
+			AllowCredentials:   false,
+			OptionsPassthrough: false,
+		})
+
+		httpSrv := &http.Server{
+			Addr:    val.AppConfig.EVMRPC.RPCAddress,
+			Handler: handlerWithCors.Handler(r),
+		}
+
+		httpSrvDone := make(chan struct{}, 1)
+
+		errCh := make(chan error)
+		go func() {
+			if err := httpSrv.ListenAndServe(); err != nil {
+				if err == http.ErrServerClosed {
+					close(httpSrvDone)
+					return
+				}
+
+				errCh <- err
+			}
+		}()
+
+		select {
+		case err := <-errCh:
+			return err
+		case <-time.After(1 * time.Second): // assume EVM RPC server started successfully
+		}
 	}
 
 	return nil
@@ -197,10 +257,5 @@ func writeFile(name string, dir string, contents []byte) error {
 		return err
 	}
 
-	err = tmos.WriteFile(file, contents, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tmos.WriteFile(file, contents, 0644)
 }

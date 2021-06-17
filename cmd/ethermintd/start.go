@@ -229,6 +229,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		grpcSrv, err = servergrpc.StartGRPCServer(clientCtx, app, config.GRPC.Address)
 		if err != nil {
 			log.WithError(err).Errorln("failed to boot GRPC server")
+			return err
 		}
 	}
 
@@ -251,6 +252,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 					"namespace": api.Namespace,
 					"service":   api.Service,
 				}).WithError(err).Fatalln("failed to register service in EVM RPC namespace")
+				return err
 			}
 		}
 
