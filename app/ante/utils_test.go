@@ -37,7 +37,6 @@ type AnteTestSuite struct {
 	ctx         sdk.Context
 	app         *app.EthermintApp
 	clientCtx   client.Context
-	txBuilder   client.TxBuilder
 	anteHandler sdk.AnteHandler
 	ethSigner   ethtypes.Signer
 }
@@ -59,7 +58,6 @@ func (suite *AnteTestSuite) SetupTest() {
 	encodingConfig.Amino.RegisterConcrete(&testdata.TestMsg{}, "testdata.TestMsg", nil)
 
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
-	suite.txBuilder = suite.clientCtx.TxConfig.NewTxBuilder()
 
 	suite.anteHandler = ante.NewAnteHandler(suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper, encodingConfig.TxConfig.SignModeHandler())
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
@@ -71,20 +69,21 @@ func TestAnteTestSuite(t *testing.T) {
 
 // CreateTestTx is a helper function to create a tx given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTx(
-	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64,
+	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
 ) authsigning.Tx {
-	return suite.CreateTestTxBuilder(msg, priv, accNum).GetTx()
+	return suite.CreateTestTxBuilder(msg, priv, accNum, signCosmosTx).GetTx()
 }
 
 // CreateTestTxBuilder is a helper function to create a tx builder given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTxBuilder(
-	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64,
+	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
 ) client.TxBuilder {
 
 	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	suite.Require().NoError(err)
 
-	builder, ok := suite.txBuilder.(authtx.ExtensionOptionsTxBuilder)
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
 	suite.Require().True(ok)
 
 	builder.SetExtensionOptions(option)
@@ -98,41 +97,43 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
 
-	// First round: we gather all the signer infos. We use the "set empty
-	// signature" hack to do that.
-	sigV2 := signing.SignatureV2{
-		PubKey: priv.PubKey(),
-		Data: &signing.SingleSignatureData{
-			SignMode:  suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(),
-			Signature: nil,
-		},
-		Sequence: msg.Data.Nonce,
+	if signCosmosTx {
+		// First round: we gather all the signer infos. We use the "set empty
+		// signature" hack to do that.
+		sigV2 := signing.SignatureV2{
+			PubKey: priv.PubKey(),
+			Data: &signing.SingleSignatureData{
+				SignMode:  suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(),
+				Signature: nil,
+			},
+			Sequence: msg.Data.Nonce,
+		}
+
+		sigsV2 := []signing.SignatureV2{sigV2}
+
+		err = txBuilder.SetSignatures(sigsV2...)
+		suite.Require().NoError(err)
+
+		// Second round: all signer infos are set, so each signer can sign.
+
+		signerData := authsigning.SignerData{
+			ChainID:       suite.ctx.ChainID(),
+			AccountNumber: accNum,
+			Sequence:      msg.Data.Nonce,
+		}
+		sigV2, err = tx.SignWithPrivKey(
+			suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(), signerData,
+			txBuilder, priv, suite.clientCtx.TxConfig, msg.Data.Nonce,
+		)
+		suite.Require().NoError(err)
+
+		sigsV2 = []signing.SignatureV2{sigV2}
+
+		err = txBuilder.SetSignatures(sigsV2...)
+		suite.Require().NoError(err)
 	}
 
-	sigsV2 := []signing.SignatureV2{sigV2}
-
-	err = suite.txBuilder.SetSignatures(sigsV2...)
-	suite.Require().NoError(err)
-
-	// Second round: all signer infos are set, so each signer can sign.
-
-	signerData := authsigning.SignerData{
-		ChainID:       suite.ctx.ChainID(),
-		AccountNumber: accNum,
-		Sequence:      msg.Data.Nonce,
-	}
-	sigV2, err = tx.SignWithPrivKey(
-		suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(), signerData,
-		suite.txBuilder, priv, suite.clientCtx.TxConfig, msg.Data.Nonce,
-	)
-	suite.Require().NoError(err)
-
-	sigsV2 = []signing.SignatureV2{sigV2}
-
-	err = suite.txBuilder.SetSignatures(sigsV2...)
-	suite.Require().NoError(err)
-
-	return suite.txBuilder
+	return txBuilder
 }
 
 func newTestAddrKey() (common.Address, cryptotypes.PrivKey) {

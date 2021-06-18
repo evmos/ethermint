@@ -33,7 +33,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedContractTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
 				return tx
 			},
 			false, false, true,
@@ -44,7 +44,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedContractTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
 				return tx
 			},
 			true, false, true,
@@ -55,7 +55,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedContractTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
 				return tx
 			},
 			false, true, true,
@@ -66,7 +66,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
 				return tx
 			},
 			false, false, true,
@@ -77,7 +77,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 2, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
 				return tx
 			},
 			true, false, true,
@@ -88,17 +88,39 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 3, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
 				return tx
 			}, false, true, true,
 		},
 		{
-			"fail - CheckTx (memo too long)",
+			"success - CheckTx (cosmos tx not signed)",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 3, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 4, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
 				signedTx.From = addr.Hex()
 
-				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
+				return tx
+			}, false, true, true,
+		},
+		{
+			"fail - CheckTx (cosmos tx is not valid)",
+			func() sdk.Tx {
+				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 4, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
+				// bigger than MaxGasWanted
+				txBuilder.SetGasLimit(uint64(1 << 63))
+				return txBuilder.GetTx()
+			}, false, true, false,
+		},
+		{
+			"fail - CheckTx (memo too long)",
+			func() sdk.Tx {
+				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 5, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, true)
 				txBuilder.SetMemo(strings.Repeat("*", 257))
 				return txBuilder.GetTx()
 			}, true, false, false,

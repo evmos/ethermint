@@ -549,3 +549,27 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 	// set the original gas meter
 	return next(ctx, tx, simulate)
 }
+
+// EthValidateBasicDecorator is adapted from ValidateBasicDecorator from cosmos-sdk, it ignores ErrNoSignatures
+type EthValidateBasicDecorator struct{}
+
+// NewEthValidateBasicDecorator creates a new EthValidateBasicDecorator
+func NewEthValidateBasicDecorator() EthValidateBasicDecorator {
+	return EthValidateBasicDecorator{}
+}
+
+// AnteHandle handles basic validation of tx
+func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	// no need to validate basic on recheck tx, call next antehandler
+	if ctx.IsReCheckTx() {
+		return next(ctx, tx, simulate)
+	}
+
+	err := tx.ValidateBasic()
+	// ErrNoSignatures is fine with eth tx
+	if err != nil && err != sdkerrors.ErrNoSignatures {
+		return ctx, err
+	}
+
+	return next(ctx, tx, simulate)
+}
