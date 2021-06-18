@@ -41,7 +41,7 @@ require (
 	github.com/spf13/viper v1.8.0
 	github.com/status-im/keycard-go v0.0.0-20200402102358-957c09536969
 	github.com/stretchr/testify v1.7.0
-	github.com/tendermint/tendermint v0.34.10
+	github.com/tendermint/tendermint v0.34.11
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/xlab/closer v0.0.0-20190328110542-03326addb7c2
