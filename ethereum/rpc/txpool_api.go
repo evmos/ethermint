@@ -6,6 +6,7 @@ import (
 )
 
 // PublicTxPoolAPI offers and API for the transaction pool. It only operates on data that is non-confidential.
+// NOTE: For more info about the current status of this endpoints see https://github.com/tharsis/ethermint/issues/124
 type PublicTxPoolAPI struct {
 	logger  log.Logger
 	backend Backend
@@ -20,8 +21,13 @@ func NewPublicTxPoolAPI(backend Backend) *PublicTxPoolAPI {
 }
 
 // Content returns the transactions contained within the transaction pool
-// NOTE: For more info about the current status of this endpoint https://github.com/tharsis/ethermint/issues/124
 func (api *PublicTxPoolAPI) Content() (map[string]map[string]map[string]*types.RPCTransaction, error) {
 	api.logger.Debug("txpool_content")
 	return api.backend.TxPoolContent()
+}
+
+// Inspect returns the content of the transaction pool and flattens it into an
+func (api *PublicTxPoolAPI) Inspect() (map[string]map[string]map[string]string, error) {
+	api.logger.Debug("txpool_inspect")
+	return api.backend.TxPoolInspect()
 }

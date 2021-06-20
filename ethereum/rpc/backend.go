@@ -38,6 +38,7 @@ type Backend interface {
 
 	// Used by txpool content
 	TxPoolContent() (map[string]map[string]map[string]*types.RPCTransaction, error)
+	TxPoolInspect() (map[string]map[string]map[string]string, error)
 
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
@@ -282,6 +283,16 @@ func (e *EVMBackend) TxPoolContent() (map[string]map[string]map[string]*types.RP
 	content := map[string]map[string]map[string]*types.RPCTransaction{
 		"pending": make(map[string]map[string]*types.RPCTransaction),
 		"queued":  make(map[string]map[string]*types.RPCTransaction),
+	}
+	return content, nil
+}
+
+// TxPoolInspect retrieves the content of the transaction pool and flattens it into an
+// easily inspectable list.
+func (e *EVMBackend) TxPoolInspect() (map[string]map[string]map[string]string, error) {
+	content := map[string]map[string]map[string]string{
+		"pending": make(map[string]map[string]string),
+		"queued":  make(map[string]map[string]string),
 	}
 	return content, nil
 }
