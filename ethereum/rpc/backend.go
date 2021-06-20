@@ -36,9 +36,10 @@ type Backend interface {
 	// Used by pending transaction filter
 	PendingTransactions() ([]*types.RPCTransaction, error)
 
-	// Used by txpool content
+	// Used by txpool methods
 	TxPoolContent() (map[string]map[string]map[string]*types.RPCTransaction, error)
 	TxPoolInspect() (map[string]map[string]map[string]string, error)
+	TxPoolStatus() map[string]hexutil.Uint
 
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
@@ -295,6 +296,14 @@ func (e *EVMBackend) TxPoolInspect() (map[string]map[string]map[string]string, e
 		"queued":  make(map[string]map[string]string),
 	}
 	return content, nil
+}
+
+// TxPoolStatus returns the number of pending and queued transaction in the pool.
+func (e *EVMBackend) TxPoolStatus() map[string]hexutil.Uint {
+	return map[string]hexutil.Uint{
+		"pending": hexutil.Uint(0),
+		"queued":  hexutil.Uint(0),
+	}
 }
 
 // GetLogs returns all the logs from all the ethereum transactions in a block.

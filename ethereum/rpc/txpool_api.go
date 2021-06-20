@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"github.com/cosmos/ethermint/ethereum/rpc/types"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	log "github.com/xlab/suplog"
 )
 
@@ -30,4 +31,10 @@ func (api *PublicTxPoolAPI) Content() (map[string]map[string]map[string]*types.R
 func (api *PublicTxPoolAPI) Inspect() (map[string]map[string]map[string]string, error) {
 	api.logger.Debug("txpool_inspect")
 	return api.backend.TxPoolInspect()
+}
+
+// Status returns the number of pending and queued transaction in the pool.
+func (api *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
+	api.logger.Debug("txpool_status")
+	return api.backend.TxPoolStatus()
 }
