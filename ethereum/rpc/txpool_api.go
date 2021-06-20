@@ -5,6 +5,7 @@ import (
 	log "github.com/xlab/suplog"
 )
 
+// PublicTxPoolAPI offers and API for the transaction pool. It only operates on data that is non-confidential.
 type PublicTxPoolAPI struct {
 	logger  log.Logger
 	backend Backend
