@@ -11,6 +11,7 @@ type PublicTxPoolAPI struct {
 	backend Backend
 }
 
+// NewPublicTxPoolAPI creates a new tx pool service that gives information about the transaction pool.
 func NewPublicTxPoolAPI(backend Backend) *PublicTxPoolAPI {
 	return &PublicTxPoolAPI{
 		logger:  log.WithField("module", "txpool"),
