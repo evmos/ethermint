@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -12,6 +11,7 @@ import (
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	ethermint "github.com/cosmos/ethermint/types"
 	"github.com/cosmos/ethermint/x/evm/types"
 )
@@ -70,6 +70,64 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 	}
 
 	return &res, nil
+}
+
+func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAccountRequest) (*types.QueryValidatorAccountResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	consAddr, err := sdk.ConsAddressFromHex(req.ValAddress)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument, err.Error(),
+		)
+	}
+
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
+
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
+
+	if found {
+		// Get validator account from operator address
+		// We first need to convert an operator address to an account address
+		bech32addr, err :=  sdk.GetFromBech32(validator.OperatorAddress, sdk.GetConfig().GetBech32ValidatorAddrPrefix())
+		if err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				"failed to get operator bech32 bytestring address",
+			)
+		}
+		bech32AccAddr, err := bech32.ConvertAndEncode(sdk.GetConfig().GetBech32AccountAddrPrefix(), bech32addr)
+		if err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				"failed to get bech32 account address",
+			)
+		}
+		accAddr, err := sdk.AccAddressFromBech32(bech32AccAddr)
+		if err != nil {
+			return nil, status.Error(
+				codes.Internal,
+				"failed to get account address",
+			)
+		}
+
+		res := types.QueryValidatorAccountResponse{
+			AccountAddress: accAddr.String(),
+		}
+
+		account := k.accountKeeper.GetAccount(ctx, accAddr)
+		if account != nil {
+			res.Sequence = account.GetSequence()
+			res.AccountNumber = account.GetAccountNumber()
+		}
+
+		return &res, nil
+	} else {
+		return nil, nil
+	}
 }
 
 // Balance implements the Query/Balance gRPC method

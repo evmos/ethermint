@@ -20,6 +20,11 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/cosmos_account/{address}";
   }
 
+  // Account queries an Validator Cosmos Address.
+  rpc ValidatorAccount(QueryValidatorAccountRequest) returns (QueryValidatorAccountResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/validator_account/{val_address}";
+  }
+
   // Balance queries the balance of a the EVM denomination for a single
   // EthAccount.
   rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
@@ -97,6 +102,25 @@ message QueryCosmosAccountResponse {
   // sequence is the account's sequence number.
   uint64 sequence = 2;
   // account_number is the account numbert
+  uint64 account_number = 3;
+}
+
+// QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
+message QueryValidatorAccountRequest {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+
+  // val_address is the validator hex address to query the account for.
+  string val_address = 1;
+}
+
+// QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
+message QueryValidatorAccountResponse {
+  // account_address is the cosmos address of the account.
+  string account_address = 1;
+  // sequence is the account's sequence number.
+  uint64 sequence = 2;
+  // account_number is the account number
   uint64 account_number = 3;
 }
 
