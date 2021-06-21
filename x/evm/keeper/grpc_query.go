@@ -92,7 +92,7 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 	if found {
 		// Get validator account from operator address
 		// We first need to convert an operator address to an account address
-		bech32addr, err :=  sdk.GetFromBech32(validator.OperatorAddress, sdk.GetConfig().GetBech32ValidatorAddrPrefix())
+		bech32addr, err := sdk.GetFromBech32(validator.OperatorAddress, sdk.GetConfig().GetBech32ValidatorAddrPrefix())
 		if err != nil {
 			return nil, status.Error(
 				codes.Internal,
@@ -125,9 +125,9 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 		}
 
 		return &res, nil
-	} else {
-		return nil, nil
 	}
+
+	return nil, nil
 }
 
 // Balance implements the Query/Balance gRPC method
