@@ -550,6 +550,10 @@ func (e *PublicEthAPI) doCall(
 	// Create new call message
 	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
 	msg.From = args.From.String()
+	signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
+	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
+		return nil, err
+	}
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
