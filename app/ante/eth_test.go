@@ -87,9 +87,22 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			false,
 		},
 		{
+			"sender not EOA",
+			tx,
+			func() {
+				// set not as an EOA
+				suite.app.EvmKeeper.SetCode(addr, []byte("1"))
+			},
+			true,
+			false,
+		},
+		{
 			"not enough balance to cover tx cost",
 			tx,
-			func() {},
+			func() {
+				// reset back to EOA
+				suite.app.EvmKeeper.SetCode(addr, nil)
+			},
 			true,
 			false,
 		},

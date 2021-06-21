@@ -2,6 +2,7 @@ package ante_test
 
 import (
 	"math/big"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -90,6 +91,17 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				tx := suite.CreateTestTx(signedTx, privKey, 1)
 				return tx
 			}, false, true, true,
+		},
+		{
+			"fail - CheckTx (memo too long)",
+			func() sdk.Tx {
+				signedTx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 3, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1)
+				txBuilder.SetMemo(strings.Repeat("*", 257))
+				return txBuilder.GetTx()
+			}, true, false, false,
 		},
 	}
 

@@ -36,6 +36,7 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	ethlog "github.com/ethereum/go-ethereum/log"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/cosmos/ethermint/cmd/ethermintd/config"
@@ -237,6 +238,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var httpSrvDone = make(chan struct{}, 1)
 	var wsSrv rpc.WebsocketsServer
 
+	ethlog.Root().SetHandler(ethlog.StdoutHandler)
 	if config.EVMRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress

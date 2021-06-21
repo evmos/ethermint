@@ -28,6 +28,7 @@ type EVMKeeper interface {
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
 	NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM
+	GetCodeHash(addr common.Address) common.Hash
 }
 
 // EthSigVerificationDecorator validates an ethereum signatures
@@ -126,7 +127,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 	// get and set account must be called with an infinite gas meter in order to prevent
 	// additional gas from being deducted.
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
+	avd.evmKeeper.WithContext(infCtx)
 	evmDenom := avd.evmKeeper.GetParams(infCtx).EvmDenom
 
 	for i, msg := range tx.GetMsgs() {
@@ -147,6 +148,14 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 			)
 		}
 
+		// check whether the sender address is EOA
+		fromAddr := common.BytesToAddress(from)
+		codeHash := avd.evmKeeper.GetCodeHash(fromAddr)
+		if codeHash != common.BytesToHash(evmtypes.EmptyCodeHash) {
+			return ctx, stacktrace.Propagate(sdkerrors.Wrapf(sdkerrors.ErrInvalidType,
+				"the sender is not EOA: address <%v>, codeHash <%s>", fromAddr, codeHash), "")
+		}
+
 		acc := avd.ak.GetAccount(infCtx, from)
 		if acc == nil {
 			acc = avd.ak.NewAccountWithAddress(infCtx, from)
@@ -164,8 +173,10 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 				"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + amount)", msgEthTx.Cost(), msgEthTx.Fee(),
 			)
 		}
-	}
 
+	}
+	// recover  the original gas meter
+	avd.evmKeeper.WithContext(ctx)
 	return next(ctx, tx, simulate)
 }
 

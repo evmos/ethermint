@@ -73,6 +73,13 @@ func TestAnteTestSuite(t *testing.T) {
 func (suite *AnteTestSuite) CreateTestTx(
 	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64,
 ) authsigning.Tx {
+	return suite.CreateTestTxBuilder(msg, priv, accNum).GetTx()
+}
+
+// CreateTestTxBuilder is a helper function to create a tx builder given multiple inputs.
+func (suite *AnteTestSuite) CreateTestTxBuilder(
+	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64,
+) client.TxBuilder {
 
 	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	suite.Require().NoError(err)
@@ -86,6 +93,7 @@ func (suite *AnteTestSuite) CreateTestTx(
 	suite.Require().NoError(err)
 
 	err = builder.SetMsgs(msg)
+	suite.Require().NoError(err)
 	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(msg.Fee())))
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
@@ -124,7 +132,7 @@ func (suite *AnteTestSuite) CreateTestTx(
 	err = suite.txBuilder.SetSignatures(sigsV2...)
 	suite.Require().NoError(err)
 
-	return suite.txBuilder.GetTx()
+	return suite.txBuilder
 }
 
 func newTestAddrKey() (common.Address, cryptotypes.PrivKey) {

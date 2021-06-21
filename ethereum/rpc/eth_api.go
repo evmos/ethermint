@@ -160,7 +160,8 @@ func (e *PublicEthAPI) Hashrate() hexutil.Uint64 {
 // GasPrice returns the current gas price based on Ethermint's gas price oracle.
 func (e *PublicEthAPI) GasPrice() *hexutil.Big {
 	e.logger.Debugln("eth_gasPrice")
-	out := big.NewInt(0)
+	// TODO: use minimum value defined in config instead of default or implement oracle
+	out := big.NewInt(ethermint.DefaultGasPrice)
 	return (*hexutil.Big)(out)
 }
 
@@ -972,7 +973,7 @@ func (e *PublicEthAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxA
 		args.GasPrice = (*hexutil.Big)(big.NewInt(ethermint.DefaultGasPrice))
 	}
 
-	if args.Nonce != nil {
+	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
 		_, nonce, _ := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, from)
