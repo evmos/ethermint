@@ -972,7 +972,7 @@ func (e *PublicEthAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxA
 		args.GasPrice = (*hexutil.Big)(big.NewInt(ethermint.DefaultGasPrice))
 	}
 
-	if args.Nonce != nil {
+	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
 		_, nonce, _ := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, from)
