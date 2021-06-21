@@ -21,20 +21,16 @@ func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 		return nil, err
 	}
 
-	dataList := txMsgData.GetData()
-	if len(dataList) == 0 {
+	data := txMsgData.GetData()
+	if len(data) == 0 {
 		return &MsgEthereumTxResponse{}, nil
 	}
 
 	var res MsgEthereumTxResponse
 
-	for _, data := range dataList {
-		err := proto.Unmarshal(data.GetData(), &res)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to unmarshal tx response message data")
-		}
-		// TODO: remove when supporting multiple msgs
-		return &res, nil
+	err := proto.Unmarshal(data[0].GetData(), &res)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to unmarshal tx response message data")
 	}
 
 	return &res, nil
