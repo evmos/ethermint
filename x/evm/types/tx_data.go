@@ -20,9 +20,7 @@ func newTxData(
 		GasLimit: gasLimit,
 	}
 
-	if len(input) > 0 {
-		txData.Input = common.CopyBytes(input)
-	}
+	txData.Input = common.CopyBytes(input)
 
 	if to != nil {
 		txData.To = to.Hex()
