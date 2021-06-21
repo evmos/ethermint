@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	jsonrpc "github.com/ethereum/go-ethereum/rpc"
@@ -150,8 +151,8 @@ func startInProcess(cfg Config, val *Validator) error {
 		})
 
 		httpSrv := &http.Server{
-			// Addr:    strings.TrimPrefix(val.AppConfig.EVMRPC.RPCAddress, "tcp://"), // FIXME: timeouts
-			Addr:    val.AppConfig.EVMRPC.RPCAddress, // FIXME: address has too many colons
+			Addr: strings.TrimPrefix(val.AppConfig.EVMRPC.RPCAddress, "tcp://"), // FIXME: timeouts
+			// Addr:    val.AppConfig.EVMRPC.RPCAddress, // FIXME: address has too many colons
 			Handler: handlerWithCors.Handler(r),
 		}
 

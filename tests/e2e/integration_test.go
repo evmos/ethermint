@@ -1,4 +1,4 @@
-package rpc
+package e2e
 
 import (
 	"context"
