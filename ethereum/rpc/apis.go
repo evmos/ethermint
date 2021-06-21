@@ -61,7 +61,7 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicTxPoolAPI(backend),
+			Service:   NewPublicTxPoolAPI(),
 			Public:    true,
 		},
 	}

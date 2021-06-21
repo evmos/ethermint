@@ -36,11 +36,6 @@ type Backend interface {
 	// Used by pending transaction filter
 	PendingTransactions() ([]*types.RPCTransaction, error)
 
-	// Used by txpool methods
-	TxPoolContent() (map[string]map[string]map[string]*types.RPCTransaction, error)
-	TxPoolInspect() (map[string]map[string]map[string]string, error)
-	TxPoolStatus() map[string]hexutil.Uint
-
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
@@ -277,33 +272,6 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 // and have a from address that is one of the accounts this node manages.
 func (e *EVMBackend) PendingTransactions() ([]*types.RPCTransaction, error) {
 	return []*types.RPCTransaction{}, nil
-}
-
-// TxPoolContent returns the transactions contained within the transaction pool
-func (e *EVMBackend) TxPoolContent() (map[string]map[string]map[string]*types.RPCTransaction, error) {
-	content := map[string]map[string]map[string]*types.RPCTransaction{
-		"pending": make(map[string]map[string]*types.RPCTransaction),
-		"queued":  make(map[string]map[string]*types.RPCTransaction),
-	}
-	return content, nil
-}
-
-// TxPoolInspect retrieves the content of the transaction pool and flattens it into an
-// easily inspectable list.
-func (e *EVMBackend) TxPoolInspect() (map[string]map[string]map[string]string, error) {
-	content := map[string]map[string]map[string]string{
-		"pending": make(map[string]map[string]string),
-		"queued":  make(map[string]map[string]string),
-	}
-	return content, nil
-}
-
-// TxPoolStatus returns the number of pending and queued transaction in the pool.
-func (e *EVMBackend) TxPoolStatus() map[string]hexutil.Uint {
-	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(0),
-		"queued":  hexutil.Uint(0),
-	}
 }
 
 // GetLogs returns all the logs from all the ethereum transactions in a block.
