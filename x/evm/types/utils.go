@@ -4,20 +4,14 @@ import (
 	log "github.com/xlab/suplog"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/pkg/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var EmptyCodeHash = crypto.Keccak256(nil)
-
-// EncodeTxResponse takes all of the necessary data from the EVM execution
-// and returns the data as a byte slice encoded with protobuf.
-func EncodeTxResponse(res *MsgEthereumTxResponse) ([]byte, error) {
-	return proto.Marshal(res)
-}
 
 // DecodeTxResponse decodes an protobuf-encoded byte slice into TxResponse
 func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
@@ -27,17 +21,16 @@ func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 		return nil, err
 	}
 
-	dataList := txMsgData.GetData()
-	if len(dataList) == 0 {
+	data := txMsgData.GetData()
+	if len(data) == 0 {
 		return &MsgEthereumTxResponse{}, nil
 	}
 
 	var res MsgEthereumTxResponse
 
-	err := proto.Unmarshal(dataList[0].GetData(), &res)
+	err := proto.Unmarshal(data[0].GetData(), &res)
 	if err != nil {
-		err = errors.Wrap(err, "proto.Unmarshal failed")
-		return nil, err
+		return nil, sdkerrors.Wrap(err, "failed to unmarshal tx response message data")
 	}
 
 	return &res, nil
