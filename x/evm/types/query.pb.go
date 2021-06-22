@@ -238,7 +238,7 @@ func (m *QueryCosmosAccountResponse) GetAccountNumber() uint64 {
 
 // QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
 type QueryValidatorAccountRequest struct {
-	// val_address is the validator cons address to query the account for.
+	// cons_address is the validator cons address to query the account for.
 	ConsAddress string `protobuf:"bytes,1,opt,name=cons_address,json=consAddress,proto3" json:"cons_address,omitempty"`
 }
 

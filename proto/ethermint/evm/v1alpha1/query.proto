@@ -110,7 +110,7 @@ message QueryValidatorAccountRequest {
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
-  // val_address is the validator cons address to query the account for.
+  // cons_address is the validator cons address to query the account for.
   string cons_address = 1;
 }
 

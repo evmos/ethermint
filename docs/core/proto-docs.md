@@ -715,7 +715,7 @@ QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `cons_address` | [string](#string) |  | val_address is the validator cons address to query the account for. |
+| `cons_address` | [string](#string) |  | cons_address is the validator cons address to query the account for. |
 
 
 
