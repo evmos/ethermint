@@ -72,6 +72,42 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 	return &res, nil
 }
 
+func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAccountRequest) (*types.QueryValidatorAccountResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	consAddr, err := sdk.ConsAddressFromBech32(req.ConsAddress)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument, err.Error(),
+		)
+	}
+
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
+
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
+	if !found {
+		return nil, nil
+	}
+
+	accAddr := sdk.AccAddress(validator.GetOperator())
+
+	res := types.QueryValidatorAccountResponse{
+		AccountAddress: accAddr.String(),
+	}
+
+	account := k.accountKeeper.GetAccount(ctx, accAddr)
+	if account != nil {
+		res.Sequence = account.GetSequence()
+		res.AccountNumber = account.GetAccountNumber()
+	}
+
+	return &res, nil
+
+}
+
 // Balance implements the Query/Balance gRPC method
 func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*types.QueryBalanceResponse, error) {
 	if req == nil {

@@ -129,20 +129,31 @@ func (e *PublicEthAPI) Syncing() (interface{}, error) {
 }
 
 // Coinbase is the address that staking rewards will be send to (alias for Etherbase).
-func (e *PublicEthAPI) Coinbase() (common.Address, error) {
+func (e *PublicEthAPI) Coinbase() (string, error) {
 	e.logger.Debugln("eth_coinbase")
 
 	node, err := e.clientCtx.GetNode()
 	if err != nil {
-		return common.Address{}, err
+		return "", err
 	}
 
 	status, err := node.Status(e.ctx)
 	if err != nil {
-		return common.Address{}, err
+		return "", err
 	}
 
-	return common.BytesToAddress(status.ValidatorInfo.Address.Bytes()), nil
+	req := &evmtypes.QueryValidatorAccountRequest{
+		ConsAddress: sdk.ConsAddress(status.ValidatorInfo.Address).String(),
+	}
+
+	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	toAddr, _ := sdk.AccAddressFromBech32(res.AccountAddress)
+	ethAddr := common.BytesToAddress(toAddr.Bytes())
+	return ethAddr.Hex(), nil
 }
 
 // Mining returns whether or not this node is currently mining. Always false.
