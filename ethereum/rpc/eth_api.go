@@ -352,7 +352,7 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 	msg := args.ToTransaction()
 
 	if err := msg.ValidateBasic(); err != nil {
-		e.logger.Debugln("tx failed basic validation", "error", err)
+		e.logger.WithError(err).Debugln("tx failed basic validation")
 		return common.Hash{}, err
 	}
 
