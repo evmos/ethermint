@@ -5,6 +5,7 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
@@ -50,7 +51,7 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: NetNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicNetAPI(clientCtx),
+			Service:   net.NewPublicApi(clientCtx),
 			Public:    true,
 		},
 		{

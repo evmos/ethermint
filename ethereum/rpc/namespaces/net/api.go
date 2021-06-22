@@ -1,4 +1,4 @@
-package rpc
+package net
 
 import (
 	"fmt"
@@ -8,25 +8,25 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 )
 
-// PublicNetAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
-type PublicNetAPI struct {
+// PublicApi is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
+type PublicApi struct {
 	networkVersion uint64
 }
 
-// NewPublicNetAPI creates an instance of the public Net Web3 API.
-func NewPublicNetAPI(clientCtx client.Context) *PublicNetAPI {
+// NewPublicApi creates an instance of the public Net Web3 API.
+func NewPublicApi(clientCtx client.Context) *PublicApi {
 	// parse the chainID from a integer string
 	chainIDEpoch, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
 	}
 
-	return &PublicNetAPI{
+	return &PublicApi{
 		networkVersion: chainIDEpoch.Uint64(),
 	}
 }
 
 // Version returns the current ethereum protocol version.
-func (s *PublicNetAPI) Version() string {
+func (s *PublicApi) Version() string {
 	return fmt.Sprintf("%d", s.networkVersion)
 }
