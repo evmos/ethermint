@@ -29,10 +29,10 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/cosmos/ethermint/crypto/hd"
-	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
-	ethermint "github.com/cosmos/ethermint/types"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/crypto/hd"
+	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.

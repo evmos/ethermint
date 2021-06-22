@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {

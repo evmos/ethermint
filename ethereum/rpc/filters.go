@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/cosmos/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	"github.com/pkg/errors"
 	log "github.com/xlab/suplog"

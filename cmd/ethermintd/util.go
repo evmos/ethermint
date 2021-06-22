@@ -16,7 +16,7 @@ import (
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/cosmos/ethermint/cmd/ethermintd/config"
+	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 )
 
 // InterceptConfigsPreRunHandler performs a pre-run function for the root daemon

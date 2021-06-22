@@ -13,7 +13,7 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 )
 
 const (

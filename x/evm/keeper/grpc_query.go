@@ -12,8 +12,8 @@ import (
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 var _ types.QueryServer = Keeper{}

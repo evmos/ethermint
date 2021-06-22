@@ -4,8 +4,8 @@ package rpc
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/ethermint/ethereum/rpc/types"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )

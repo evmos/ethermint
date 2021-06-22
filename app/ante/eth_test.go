@@ -5,9 +5,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/cosmos/ethermint/app/ante"
-	"github.com/cosmos/ethermint/tests"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/app/ante"
+	"github.com/tharsis/ethermint/tests"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"

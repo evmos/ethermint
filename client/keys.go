@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/ethermint/crypto/hd"
+	"github.com/tharsis/ethermint/crypto/hd"
 )
 
 // KeyCommands registers a sub-tree of commands to interact with

@@ -33,9 +33,9 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
-	"github.com/cosmos/ethermint/app"
-	ethermintclient "github.com/cosmos/ethermint/client"
-	"github.com/cosmos/ethermint/encoding"
+	"github.com/tharsis/ethermint/app"
+	ethermintclient "github.com/tharsis/ethermint/client"
+	"github.com/tharsis/ethermint/encoding"
 )
 
 // NewRootCmd creates a new root command for simd. It is called once in the

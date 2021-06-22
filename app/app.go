@@ -84,14 +84,14 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	// unnamed import of statik for swagger UI support
-	_ "github.com/cosmos/ethermint/client/docs/statik"
+	_ "github.com/tharsis/ethermint/client/docs/statik"
 
-	"github.com/cosmos/ethermint/app/ante"
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm"
-	evmrest "github.com/cosmos/ethermint/x/evm/client/rest"
-	evmkeeper "github.com/cosmos/ethermint/x/evm/keeper"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/app/ante"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm"
+	evmrest "github.com/tharsis/ethermint/x/evm/client/rest"
+	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func init() {
