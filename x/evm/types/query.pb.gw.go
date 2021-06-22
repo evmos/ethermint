@@ -150,15 +150,15 @@ func request_Query_ValidatorAccount_0(ctx context.Context, marshaler runtime.Mar
 		_   = err
 	)
 
-	val, ok = pathParams["val_address"]
+	val, ok = pathParams["cons_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "val_address")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cons_address")
 	}
 
-	protoReq.ValAddress, err = runtime.String(val)
+	protoReq.ConsAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "val_address", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cons_address", err)
 	}
 
 	msg, err := client.ValidatorAccount(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -177,15 +177,15 @@ func local_request_Query_ValidatorAccount_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["val_address"]
+	val, ok = pathParams["cons_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "val_address")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cons_address")
 	}
 
-	protoReq.ValAddress, err = runtime.String(val)
+	protoReq.ConsAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "val_address", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cons_address", err)
 	}
 
 	msg, err := server.ValidatorAccount(ctx, &protoReq)
@@ -1070,7 +1070,7 @@ var (
 
 	pattern_Query_CosmosAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"ethermint", "evm", "v1alpha1", "cosmos_account", "address"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_ValidatorAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"ethermint", "evm", "v1alpha1", "validator_account", "val_address"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_ValidatorAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"ethermint", "evm", "v1alpha1", "validator_account", "cons_address"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_Query_Balance_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"ethermint", "evm", "v1alpha1", "balances", "address"}, "", runtime.AssumeColonVerbOpt(true)))
 

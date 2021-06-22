@@ -22,7 +22,7 @@ service Query {
 
   // Account queries an Validator Cosmos Address.
   rpc ValidatorAccount(QueryValidatorAccountRequest) returns (QueryValidatorAccountResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/validator_account/{val_address}";
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/validator_account/{cons_address}";
   }
 
   // Balance queries the balance of a the EVM denomination for a single
@@ -111,12 +111,12 @@ message QueryValidatorAccountRequest {
   option (gogoproto.goproto_getters) = false;
 
   // val_address is the validator hex address to query the account for.
-  string val_address = 1;
+  string cons_address = 1;
 }
 
 // QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
 message QueryValidatorAccountResponse {
-  // account_address is the cosmos address of the account.
+  // account_address is the cosmos address of the account in bech32 format.
   string account_address = 1;
   // sequence is the account's sequence number.
   uint64 sequence = 2;

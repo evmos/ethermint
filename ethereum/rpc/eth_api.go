@@ -143,7 +143,7 @@ func (e *PublicEthAPI) Coinbase() (string, error) {
 	}
 
 	req := &evmtypes.QueryValidatorAccountRequest{
-		ValAddress: common.Bytes2Hex(status.ValidatorInfo.Address),
+		ConsAddress: sdk.ConsAddress(status.ValidatorInfo.Address).String(),
 	}
 
 	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
