@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 
 	"github.com/stretchr/testify/require"
 

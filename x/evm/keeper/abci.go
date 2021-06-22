@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 // BeginBlock sets the block hash -> block height map for the previous block height

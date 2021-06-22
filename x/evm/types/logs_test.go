@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"

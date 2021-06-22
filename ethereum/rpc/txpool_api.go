@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/cosmos/ethermint/ethereum/rpc/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 	log "github.com/xlab/suplog"
 )
 

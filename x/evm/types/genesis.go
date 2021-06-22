@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	ethermint "github.com/cosmos/ethermint/types"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // Validate performs a basic validation of a GenesisAccount fields.

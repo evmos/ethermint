@@ -146,11 +146,11 @@ module.exports = {
           title: 'Contributing',
           children: [{
               title: 'Contributing to the docs',
-              url: 'https://github.com/tharsis/ethermint/tree/development/docs'
+              url: 'https://github.com/tharsis/ethermint/tree/main/docs'
             },
             {
               title: 'Source code on GitHub',
-              url: 'https://github.com/tharsis/ethermint/blob/development/docs/DOCS_README.md'
+              url: 'https://github.com/tharsis/ethermint/blob/main/docs/DOCS_README.md'
             }
           ]
         }

@@ -18,7 +18,7 @@ VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 PACKAGES=$(shell go list ./... | grep -Ev 'vendor|importer|rpc/tester')
 DOCKER_TAG = unstable
-DOCKER_IMAGE = cosmos/ethermint
+DOCKER_IMAGE = tharsis/ethermint
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 ETHERMINT_BINARY = ethermintd
 ETHERMINT_DIR = ethermint
@@ -26,7 +26,7 @@ GO_MOD=GO111MODULE=on
 BUILDDIR ?= $(CURDIR)/build
 SIMAPP = ./app
 LEDGER_ENABLED ?= true
-HTTPS_GIT := https://github.com/cosmos/ethermint.git
+HTTPS_GIT := https://github.com/tharsis/ethermint.git
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 
@@ -159,7 +159,7 @@ docker-build:
 	# update old container
 	docker rm ethermint || true
 	# create a new container from the latest image
-	docker create --name ethermint -t -i cosmos/ethermint:latest ethermint
+	docker create --name ethermint -t -i tharsis/ethermint:latest ethermint
 	# move the binaries to the ./build directory
 	mkdir -p ./build/
 	docker cp ethermint:/usr/bin/ethermintd ./build/
@@ -345,7 +345,7 @@ format:
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/tendermint
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/ethereum/go-ethereum
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/cosmos/cosmos-sdk
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/cosmos/ethermint
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/tharsis/ethermint
 
 .PHONY: lint format
 

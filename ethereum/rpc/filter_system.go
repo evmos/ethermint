@@ -22,8 +22,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/cosmos/ethermint/ethereum/rpc/pubsub"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/ethereum/rpc/pubsub"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 var (

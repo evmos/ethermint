@@ -12,8 +12,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 )
@@ -614,8 +614,8 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 			func() {
 				expAccount = &types.QueryValidatorAccountResponse{
 					AccountAddress: sdk.AccAddress(suite.address.Bytes()).String(),
-					Sequence:      0,
-					AccountNumber: 0,
+					Sequence:       0,
+					AccountNumber:  0,
 				}
 				req = &types.QueryValidatorAccountRequest{
 					ConsAddress: suite.consAddress.String(),
@@ -633,8 +633,8 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 
 				expAccount = &types.QueryValidatorAccountResponse{
 					AccountAddress: sdk.AccAddress(suite.address.Bytes()).String(),
-					Sequence:      10,
-					AccountNumber: 1,
+					Sequence:       10,
+					AccountNumber:  1,
 				}
 				req = &types.QueryValidatorAccountRequest{
 					ConsAddress: suite.consAddress.String(),

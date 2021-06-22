@@ -6,7 +6,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "google/api/annotations.proto";
 import "ethermint/evm/v1alpha1/evm.proto";
 
-option go_package = "github.com/cosmos/ethermint/x/evm/types";
+option go_package = "github.com/tharsis/ethermint/x/evm/types";
 
 // Query defines the gRPC querier service.
 service Query {

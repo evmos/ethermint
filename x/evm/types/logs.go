@@ -7,7 +7,7 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	ethermint "github.com/cosmos/ethermint/types"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // NewTransactionLogs creates a new NewTransactionLogs instance.

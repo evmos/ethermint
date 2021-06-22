@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cosmos/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	log "github.com/xlab/suplog"
 
@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // FiltersBackend defines the methods requided by the PublicFilterAPI backend

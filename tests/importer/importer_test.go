@@ -30,10 +30,10 @@ package importer
 // 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 // 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-// 	"github.com/cosmos/ethermint/encoding/codec"
-// 	"github.com/cosmos/ethermint/types"
-// 	evmkeeper "github.com/cosmos/ethermint/x/evm/keeper"
-// 	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+// 	"github.com/tharsis/ethermint/encoding/codec"
+// 	"github.com/tharsis/ethermint/types"
+// 	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
+// 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 // 	ethcmn "github.com/ethereum/go-ethereum/common"
 // 	"github.com/ethereum/go-ethereum/consensus/ethash"

@@ -12,8 +12,8 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 // Keeper wraps the CommitStateDB, allowing us to pass in SDK context while adhering

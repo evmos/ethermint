@@ -27,7 +27,7 @@ The usage pattern is as follows:
 
 The `x/evm` module `GenesisState` defines the state necessary for initializing the chain from a previous exported height.
 
-+++ https://github.com/cosmos/ethermint/blob/v0.3.1/x/evm/types/genesis.go#L14-L20
++++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/genesis.go#L14-L20
 
 ### Genesis Accounts
 
@@ -42,7 +42,7 @@ module `AccountKeeper` and the balance must match the balance of the `EvmDenom` 
 defined on the `GenesisState`'s `Param`. The values for the address and the balance amount maintain
 the same format as the ones from the SDK to make manual inspections easier on the genesis.json.
 
-+++ https://github.com/cosmos/ethermint/blob/v0.3.1/x/evm/types/genesis.go#L22-L30
++++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/genesis.go#L22-L30
 
 ### Transaction Logs
 
@@ -54,7 +54,7 @@ state to prevent the queries from failing.
 `TxsLogs` is the field that contains all the transaction logs that need to be persisted after an
 upgrade. It uses an array instead of a map to ensure determinism on the iteration.
 
-+++ https://github.com/cosmos/ethermint/blob/v0.3.1/x/evm/types/logs.go#L12-L18
++++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/logs.go#L12-L18
 
 ### Chain Config
 
@@ -70,7 +70,7 @@ to a past block).
 
 If you want to update the config values, use an software upgrade procedure.
 
-+++ https://github.com/cosmos/ethermint/blob/v0.3.1/x/evm/types/chain_config.go#L16-L45
++++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/chain_config.go#L16-L45
 
 ### Params
 
