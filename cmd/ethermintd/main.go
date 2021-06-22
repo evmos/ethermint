@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"github.com/cosmos/ethermint/app"
+	"github.com/tharsis/ethermint/app"
 )
 
 func main() {

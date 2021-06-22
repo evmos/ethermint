@@ -4,8 +4,8 @@ package rpc
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/ethermint/ethereum/rpc/types"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
@@ -16,6 +16,7 @@ const (
 	EthNamespace      = "eth"
 	PersonalNamespace = "personal"
 	NetNamespace      = "net"
+	TxPoolNamespace   = "txpool"
 
 	apiVersion = "1.0"
 )
@@ -55,6 +56,12 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 			Namespace: PersonalNamespace,
 			Version:   apiVersion,
 			Service:   NewPersonalAPI(ethAPI),
+			Public:    true,
+		},
+		{
+			Namespace: TxPoolNamespace,
+			Version:   apiVersion,
+			Service:   NewPublicTxPoolAPI(),
 			Public:    true,
 		},
 	}

@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"regexp"
 
-	"github.com/cosmos/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	"github.com/pkg/errors"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -16,8 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	ethermint "github.com/cosmos/ethermint/types"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // Backend implements the functionality needed to filter changes.

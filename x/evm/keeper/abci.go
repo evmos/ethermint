@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -12,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 // BeginBlock sets the block hash -> block height map for the previous block height
@@ -21,7 +20,6 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 	k.WithContext(ctx)
 	k.WithChainID(ctx)
-	k.headerHash = common.BytesToHash(req.Hash)
 }
 
 // EndBlock updates the accounts and commits state objects to the KV Store, while

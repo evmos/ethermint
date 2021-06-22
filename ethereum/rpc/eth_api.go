@@ -29,10 +29,10 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/cosmos/ethermint/crypto/hd"
-	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
-	ethermint "github.com/cosmos/ethermint/types"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/crypto/hd"
+	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // PublicEthAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
@@ -129,20 +129,31 @@ func (e *PublicEthAPI) Syncing() (interface{}, error) {
 }
 
 // Coinbase is the address that staking rewards will be send to (alias for Etherbase).
-func (e *PublicEthAPI) Coinbase() (common.Address, error) {
+func (e *PublicEthAPI) Coinbase() (string, error) {
 	e.logger.Debugln("eth_coinbase")
 
 	node, err := e.clientCtx.GetNode()
 	if err != nil {
-		return common.Address{}, err
+		return "", err
 	}
 
 	status, err := node.Status(e.ctx)
 	if err != nil {
-		return common.Address{}, err
+		return "", err
 	}
 
-	return common.BytesToAddress(status.ValidatorInfo.Address.Bytes()), nil
+	req := &evmtypes.QueryValidatorAccountRequest{
+		ConsAddress: sdk.ConsAddress(status.ValidatorInfo.Address).String(),
+	}
+
+	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	toAddr, _ := sdk.AccAddressFromBech32(res.AccountAddress)
+	ethAddr := common.BytesToAddress(toAddr.Bytes())
+	return ethAddr.Hex(), nil
 }
 
 // Mining returns whether or not this node is currently mining. Always false.
@@ -349,7 +360,21 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 		return common.Hash{}, err
 	}
 
-	tx := args.ToTransaction()
+	msg := args.ToTransaction()
+
+	if err := msg.ValidateBasic(); err != nil {
+		e.logger.WithError(err).Debugln("tx failed basic validation")
+		return common.Hash{}, err
+	}
+
+	// creates a new EIP2929 signer
+	// TODO: support legacy txs
+	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+	// Sign transaction
+	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
+		e.logger.Debugln("failed to sign tx", "error", err)
+		return common.Hash{}, err
+	}
 
 	// Assemble transaction from fields
 	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
@@ -364,33 +389,18 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 	}
 
 	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(tx.GetMsgs()...)
+	err = builder.SetMsgs(msg)
 	if err != nil {
 		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(tx.Fee())))
+	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(msg.Fee())))
 	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(tx.GetGas())
-
-	if err := tx.ValidateBasic(); err != nil {
-		e.logger.Debugln("tx failed basic validation", "error", err)
-		return common.Hash{}, err
-	}
-
-	// creates a new EIP2929 signer
-	// TODO: support legacy txs
-	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
-
-	// Sign transaction
-	if err := tx.Sign(signer, e.clientCtx.Keyring); err != nil {
-		e.logger.Debugln("failed to sign tx", "error", err)
-		return common.Hash{}, err
-	}
+	builder.SetGasLimit(msg.GetGas())
 
 	// Encode transaction by default Tx encoder
 	txEncoder := e.clientCtx.TxConfig.TxEncoder()
-	txBytes, err := txEncoder(tx)
+	txBytes, err := txEncoder(builder.GetTx())
 	if err != nil {
 		e.logger.WithError(err).Errorln("failed to encode eth tx using default encoder")
 		return common.Hash{}, err
@@ -403,9 +413,13 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 
 	// Broadcast transaction in sync mode (default)
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
-	asyncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastAsync)
-	if _, err := asyncCtx.BroadcastTx(txBytes); err != nil {
-		e.logger.WithError(err).Errorln("failed to broadcast Eth tx")
+	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
+	rsp, err := syncCtx.BroadcastTx(txBytes)
+	if err != nil || rsp.Code != 0 {
+		if err == nil {
+			err = errors.New(rsp.RawLog)
+		}
+		e.logger.WithError(err).Errorln("failed to broadcast tx")
 		return txHash, err
 	}
 
@@ -463,10 +477,13 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 	tmTx := tmtypes.Tx(txBytes)
 	txHash := common.BytesToHash(tmTx.Hash())
 
-	asyncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastAsync)
-
-	if _, err := asyncCtx.BroadcastTx(txBytes); err != nil {
-		e.logger.WithError(err).Errorln("failed to broadcast eth tx")
+	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
+	rsp, err := syncCtx.BroadcastTx(txBytes)
+	if err != nil || rsp.Code != 0 {
+		if err == nil {
+			err = errors.New(rsp.RawLog)
+		}
+		e.logger.WithError(err).Errorln("failed to broadcast tx")
 		return txHash, err
 	}
 
@@ -550,6 +567,10 @@ func (e *PublicEthAPI) doCall(
 	// Create new call message
 	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
 	msg.From = args.From.String()
+	signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
+	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
+		return nil, err
+	}
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -668,7 +689,11 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTran
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
@@ -753,7 +778,11 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.Blo
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
@@ -795,7 +824,11 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)

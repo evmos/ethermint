@@ -3,7 +3,7 @@ package rpc
 import (
 	"fmt"
 
-	ethermint "github.com/cosmos/ethermint/types"
+	ethermint "github.com/tharsis/ethermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 )

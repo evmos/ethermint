@@ -14,7 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 
-	rpctypes "github.com/cosmos/ethermint/ethereum/rpc/types"
+	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	"github.com/ethereum/go-ethereum/common"
 )

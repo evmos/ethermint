@@ -4,9 +4,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cosmos/ethermint/tests"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
+	"github.com/tharsis/ethermint/tests"
 )
 
 func TestTxData_chainID(t *testing.T) {

@@ -38,11 +38,11 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/ethermint/crypto/hd"
-	chaintypes "github.com/cosmos/ethermint/types"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/crypto/hd"
+	chaintypes "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
-	"github.com/cosmos/ethermint/cmd/ethermintd/config"
+	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/cosmos/ethermint/version"
+	"github.com/tharsis/ethermint/version"
 )
 
 const (

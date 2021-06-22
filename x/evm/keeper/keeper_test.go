@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"testing"
 	"time"
 
@@ -9,10 +10,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/cosmos/ethermint/app"
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/app"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -34,6 +36,7 @@ type KeeperTestSuite struct {
 	app         *app.EthermintApp
 	queryClient types.QueryClient
 	address     ethcmn.Address
+	consAddress sdk.ConsAddress
 }
 
 func (suite *KeeperTestSuite) SetupTest() {
@@ -57,6 +60,14 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 	suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), balance)
+
+	priv, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+	valAddr := sdk.ValAddress(suite.address.Bytes())
+	validator, err := stakingtypes.NewValidator(valAddr, priv.PubKey(), stakingtypes.Description{})
+	suite.app.StakingKeeper.SetValidatorByConsAddr(suite.ctx, validator)
+	suite.app.StakingKeeper.SetValidator(suite.ctx, validator)
+	suite.consAddress = sdk.ConsAddress(priv.PubKey().Address())
 }
 
 func TestKeeperTestSuite(t *testing.T) {

@@ -52,9 +52,9 @@ aside: false
 ## Other Resources
 
 - **[Module Directory](../x/)**: Module implementations and their respective documentation.
-- **[Ethermint API Reference](https://godoc.org/github.com/cosmos/ethermint)**: Godocs of Ethermint.
+- **[Ethermint API Reference](https://godoc.org/github.com/tharsis/ethermint)**: Godocs of Ethermint.
 - **[REST API spec](https://cosmos.network/rpc/)**: List of REST endpoints to interact with an full-node through REST.
 
 ## Contribute
 
-See [this file](https://github.com/cosmos/ethermint/blob/development/docs/DOCS_README.md) for details of the build process and considerations when making changes.
+See [this file](https://github.com/tharsis/ethermint/blob/main/docs/DOCS_README.md) for details of the build process and considerations when making changes.

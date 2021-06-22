@@ -4,9 +4,9 @@ import (
 	"math/big"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/ethermint/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/tharsis/ethermint/types"
 )
 
 // var _ ethtypes.TxData = &TxData{}
@@ -20,9 +20,7 @@ func newTxData(
 		GasLimit: gasLimit,
 	}
 
-	if len(input) > 0 {
-		txData.Input = common.CopyBytes(input)
-	}
+	txData.Input = common.CopyBytes(input)
 
 	if to != nil {
 		txData.To = to.Hex()

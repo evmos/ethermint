@@ -11,7 +11,7 @@ This document outlines the steps to join the public testnet
 1. Install the Ethermint binaries (ethermintd & ethermint cli)
 
     ```bash
-    git clone https://github.com/cosmos/ethermint
+    git clone https://github.com/tharsis/ethermint
     cd ethermint
     git checkout v0.4.1
     make install

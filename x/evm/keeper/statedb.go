@@ -12,8 +12,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 var _ vm.StateDB = &Keeper{}
@@ -578,7 +578,7 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 		log.TxHash = tx.Hash()
 	}
 
-	log.BlockHash = k.headerHash
+	log.BlockHash = common.BytesToHash(k.ctx.HeaderHash())
 	log.TxIndex = uint(k.GetTxIndexTransient())
 
 	logs := k.GetTxLogs(log.TxHash)
