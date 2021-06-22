@@ -26,7 +26,6 @@ type Keeper struct {
 	// - storing Account's Code
 	// - storing transaction Logs
 	// - storing block height -> bloom filter map. Needed for the Web3 API.
-	// - storing block hash -> block height map. Needed for the Web3 API. TODO: remove
 	storeKey sdk.StoreKey
 
 	// key to access the transient store, which is reset on every block during Commit
@@ -41,9 +40,6 @@ type Keeper struct {
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
 	debug         bool
-
-	// hash header for the current height. Reset during abci.RequestBeginBlock
-	headerHash common.Hash
 }
 
 // NewKeeper generates new evm module keeper
