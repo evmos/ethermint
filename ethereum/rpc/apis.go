@@ -5,6 +5,8 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/web3"
@@ -28,7 +30,7 @@ const (
 func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
 	nonceLock := new(types.AddrLocker)
 	backend := NewEVMBackend(clientCtx)
-	ethAPI := NewPublicEthAPI(clientCtx, backend, nonceLock)
+	ethAPI := eth.NewPublicApi(clientCtx, backend, nonceLock)
 
 	return []rpc.API{
 		{
@@ -46,7 +48,7 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicFilterAPI(tmWSClient, backend),
+			Service:   filters.NewPublicApi(tmWSClient, backend),
 			Public:    true,
 		},
 		{

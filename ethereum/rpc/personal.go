@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
+
 	"github.com/tharsis/ethermint/crypto/hd"
 	ethermint "github.com/tharsis/ethermint/types"
 
@@ -26,12 +28,12 @@ import (
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PrivateAccountAPI struct {
-	ethAPI *PublicEthAPI
+	ethAPI *eth.PublicApi
 	logger log.Logger
 }
 
 // NewPersonalAPI creates an instance of the public Personal Eth API.
-func NewPersonalAPI(ethAPI *PublicEthAPI) *PrivateAccountAPI {
+func NewPersonalAPI(ethAPI *eth.PublicApi) *PrivateAccountAPI {
 	return &PrivateAccountAPI{
 		ethAPI: ethAPI,
 		logger: log.WithField("module", "personal"),

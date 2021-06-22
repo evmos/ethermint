@@ -1,4 +1,4 @@
-package rpc
+package filters
 
 import (
 	"context"
@@ -57,8 +57,8 @@ type PublicFilterAPI struct {
 	filters   map[rpc.ID]*filter
 }
 
-// NewPublicFilterAPI returns a new PublicFilterAPI instance.
-func NewPublicFilterAPI(tmWSClient *rpcclient.WSClient, backend FiltersBackend) *PublicFilterAPI {
+// NewPublicApi returns a new PublicFilterAPI instance.
+func NewPublicApi(tmWSClient *rpcclient.WSClient, backend FiltersBackend) *PublicFilterAPI {
 	api := &PublicFilterAPI{
 		backend: backend,
 		filters: make(map[rpc.ID]*filter),
