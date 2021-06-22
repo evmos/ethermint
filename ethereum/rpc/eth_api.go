@@ -349,7 +349,21 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 		return common.Hash{}, err
 	}
 
-	tx := args.ToTransaction()
+	msg := args.ToTransaction()
+
+	if err := msg.ValidateBasic(); err != nil {
+		e.logger.WithError(err).Debugln("tx failed basic validation")
+		return common.Hash{}, err
+	}
+
+	// creates a new EIP2929 signer
+	// TODO: support legacy txs
+	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+	// Sign transaction
+	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
+		e.logger.Debugln("failed to sign tx", "error", err)
+		return common.Hash{}, err
+	}
 
 	// Assemble transaction from fields
 	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
@@ -364,33 +378,18 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 	}
 
 	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(tx.GetMsgs()...)
+	err = builder.SetMsgs(msg)
 	if err != nil {
 		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(tx.Fee())))
+	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(msg.Fee())))
 	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(tx.GetGas())
-
-	if err := tx.ValidateBasic(); err != nil {
-		e.logger.Debugln("tx failed basic validation", "error", err)
-		return common.Hash{}, err
-	}
-
-	// creates a new EIP2929 signer
-	// TODO: support legacy txs
-	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
-
-	// Sign transaction
-	if err := tx.Sign(signer, e.clientCtx.Keyring); err != nil {
-		e.logger.Debugln("failed to sign tx", "error", err)
-		return common.Hash{}, err
-	}
+	builder.SetGasLimit(msg.GetGas())
 
 	// Encode transaction by default Tx encoder
 	txEncoder := e.clientCtx.TxConfig.TxEncoder()
-	txBytes, err := txEncoder(tx)
+	txBytes, err := txEncoder(builder.GetTx())
 	if err != nil {
 		e.logger.WithError(err).Errorln("failed to encode eth tx using default encoder")
 		return common.Hash{}, err
