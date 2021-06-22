@@ -406,10 +406,10 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
 	rsp, err := syncCtx.BroadcastTx(txBytes)
 	if err != nil || rsp.Code != 0 {
-		e.logger.WithError(err).Errorln("failed to broadcast Eth tx")
 		if err == nil {
 			err = errors.New(rsp.RawLog)
 		}
+		e.logger.WithError(err).Errorln("failed to broadcast tx")
 		return txHash, err
 	}
 
@@ -470,10 +470,10 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
 	rsp, err := syncCtx.BroadcastTx(txBytes)
 	if err != nil || rsp.Code != 0 {
-		e.logger.WithError(err).Errorln("failed to broadcast eth tx")
 		if err == nil {
 			err = errors.New(rsp.RawLog)
 		}
+		e.logger.WithError(err).Errorln("failed to broadcast tx")
 		return txHash, err
 	}
 
