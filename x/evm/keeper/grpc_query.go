@@ -94,11 +94,6 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 	}
 
 	accAddr := sdk.AccAddress(validator.GetOperator())
-	if err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			"failed to get validator account address",
-		)
 	}
 
 	res := types.QueryValidatorAccountResponse{
