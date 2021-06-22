@@ -1,4 +1,4 @@
-package rpc
+package personal
 
 import (
 	"context"
@@ -32,8 +32,8 @@ type PrivateAccountAPI struct {
 	logger log.Logger
 }
 
-// NewPersonalAPI creates an instance of the public Personal Eth API.
-func NewPersonalAPI(ethAPI *eth.PublicApi) *PrivateAccountAPI {
+// NewAPI creates an instance of the public Personal Eth API.
+func NewAPI(ethAPI *eth.PublicApi) *PrivateAccountAPI {
 	return &PrivateAccountAPI{
 		ethAPI: ethAPI,
 		logger: log.WithField("module", "personal"),

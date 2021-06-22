@@ -8,6 +8,7 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/personal"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/web3"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
@@ -60,7 +61,7 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: PersonalNamespace,
 			Version:   apiVersion,
-			Service:   NewPersonalAPI(ethAPI),
+			Service:   personal.NewAPI(ethAPI),
 			Public:    true,
 		},
 		{
