@@ -28,12 +28,12 @@ import (
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PrivateAccountAPI struct {
-	ethAPI *eth.PublicApi
+	ethAPI *eth.PublicAPI
 	logger log.Logger
 }
 
 // NewAPI creates an instance of the public Personal Eth API.
-func NewAPI(ethAPI *eth.PublicApi) *PrivateAccountAPI {
+func NewAPI(ethAPI *eth.PublicAPI) *PrivateAccountAPI {
 	return &PrivateAccountAPI{
 		ethAPI: ethAPI,
 		logger: log.WithField("module", "personal"),

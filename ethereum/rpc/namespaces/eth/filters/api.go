@@ -57,8 +57,8 @@ type PublicFilterAPI struct {
 	filters   map[rpc.ID]*filter
 }
 
-// NewPublicApi returns a new PublicFilterAPI instance.
-func NewPublicApi(tmWSClient *rpcclient.WSClient, backend FiltersBackend) *PublicFilterAPI {
+// NewPublicAPI returns a new PublicFilterAPI instance.
+func NewPublicAPI(tmWSClient *rpcclient.WSClient, backend FiltersBackend) *PublicFilterAPI {
 	api := &PublicFilterAPI{
 		backend: backend,
 		filters: make(map[rpc.ID]*filter),

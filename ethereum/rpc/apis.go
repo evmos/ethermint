@@ -31,13 +31,13 @@ const (
 func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
 	nonceLock := new(types.AddrLocker)
 	backend := NewEVMBackend(clientCtx)
-	ethAPI := eth.NewPublicApi(clientCtx, backend, nonceLock)
+	ethAPI := eth.NewPublicAPI(clientCtx, backend, nonceLock)
 
 	return []rpc.API{
 		{
 			Namespace: Web3Namespace,
 			Version:   apiVersion,
-			Service:   web3.NewPublicApi(),
+			Service:   web3.NewPublicAPI(),
 			Public:    true,
 		},
 		{
@@ -49,13 +49,13 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   filters.NewPublicApi(tmWSClient, backend),
+			Service:   filters.NewPublicAPI(tmWSClient, backend),
 			Public:    true,
 		},
 		{
 			Namespace: NetNamespace,
 			Version:   apiVersion,
-			Service:   net.NewPublicApi(clientCtx),
+			Service:   net.NewPublicAPI(clientCtx),
 			Public:    true,
 		},
 		{
