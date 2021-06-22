@@ -5,6 +5,7 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -61,7 +62,7 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicTxPoolAPI(),
+			Service:   txpool.NewPublicAPI(),
 			Public:    true,
 		},
 	}
