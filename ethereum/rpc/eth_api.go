@@ -678,7 +678,11 @@ func (e *PublicEthAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTran
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
@@ -763,7 +767,11 @@ func (e *PublicEthAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.Blo
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
@@ -805,7 +813,11 @@ func (e *PublicEthAPI) GetTransactionReceipt(hash common.Hash) (map[string]inter
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
