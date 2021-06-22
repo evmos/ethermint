@@ -403,9 +403,13 @@ func (e *PublicEthAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, e
 
 	// Broadcast transaction in sync mode (default)
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
-	asyncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastAsync)
-	if _, err := asyncCtx.BroadcastTx(txBytes); err != nil {
-		e.logger.WithError(err).Errorln("failed to broadcast Eth tx")
+	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
+	rsp, err := syncCtx.BroadcastTx(txBytes)
+	if err != nil || rsp.Code != 0 {
+		if err == nil {
+			err = errors.New(rsp.RawLog)
+		}
+		e.logger.WithError(err).Errorln("failed to broadcast tx")
 		return txHash, err
 	}
 
@@ -463,10 +467,13 @@ func (e *PublicEthAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, erro
 	tmTx := tmtypes.Tx(txBytes)
 	txHash := common.BytesToHash(tmTx.Hash())
 
-	asyncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastAsync)
-
-	if _, err := asyncCtx.BroadcastTx(txBytes); err != nil {
-		e.logger.WithError(err).Errorln("failed to broadcast eth tx")
+	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
+	rsp, err := syncCtx.BroadcastTx(txBytes)
+	if err != nil || rsp.Code != 0 {
+		if err == nil {
+			err = errors.New(rsp.RawLog)
+		}
+		e.logger.WithError(err).Errorln("failed to broadcast tx")
 		return txHash, err
 	}
 
