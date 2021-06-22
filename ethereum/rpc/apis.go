@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/web3"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -33,7 +34,7 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: Web3Namespace,
 			Version:   apiVersion,
-			Service:   NewPublicWeb3API(),
+			Service:   web3.NewPublicApi(),
 			Public:    true,
 		},
 		{
