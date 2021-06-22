@@ -88,13 +88,11 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 	k.WithContext(ctx)
 
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
-
 	if !found {
 		return nil, nil
 	}
 
 	accAddr := sdk.AccAddress(validator.GetOperator())
-	}
 
 	res := types.QueryValidatorAccountResponse{
 		AccountAddress: accAddr.String(),
