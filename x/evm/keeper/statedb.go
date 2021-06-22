@@ -578,7 +578,7 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 		log.TxHash = tx.Hash()
 	}
 
-	log.BlockHash = k.headerHash
+	log.BlockHash = common.BytesToHash(k.ctx.HeaderHash())
 	log.TxIndex = uint(k.GetTxIndexTransient())
 
 	logs := k.GetTxLogs(log.TxHash)
