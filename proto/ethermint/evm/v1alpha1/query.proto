@@ -15,12 +15,12 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/account/{address}";
   }
 
-  // Account queries an Ethereum account's Cosmos Address.
+  // CosmosAccount queries an Ethereum account's Cosmos Address.
   rpc CosmosAccount(QueryCosmosAccountRequest) returns (QueryCosmosAccountResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/cosmos_account/{address}";
   }
 
-  // Account queries an Validator Cosmos Address.
+  // ValidatorAccount queries an Ethereum account's from a validator consensus Address.
   rpc ValidatorAccount(QueryValidatorAccountRequest) returns (QueryValidatorAccountResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/validator_account/{cons_address}";
   }
@@ -110,7 +110,7 @@ message QueryValidatorAccountRequest {
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
-  // val_address is the validator hex address to query the account for.
+  // val_address is the validator cons address to query the account for.
   string cons_address = 1;
 }
 

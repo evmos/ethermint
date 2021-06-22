@@ -238,7 +238,7 @@ func (m *QueryCosmosAccountResponse) GetAccountNumber() uint64 {
 
 // QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
 type QueryValidatorAccountRequest struct {
-	// val_address is the validator hex address to query the account for.
+	// val_address is the validator cons address to query the account for.
 	ConsAddress string `protobuf:"bytes,1,opt,name=cons_address,json=consAddress,proto3" json:"cons_address,omitempty"`
 }
 
@@ -1164,9 +1164,9 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// Account queries an Ethereum account.
 	Account(ctx context.Context, in *QueryAccountRequest, opts ...grpc.CallOption) (*QueryAccountResponse, error)
-	// Account queries an Ethereum account's Cosmos Address.
+	// CosmosAccount queries an Ethereum account's Cosmos Address.
 	CosmosAccount(ctx context.Context, in *QueryCosmosAccountRequest, opts ...grpc.CallOption) (*QueryCosmosAccountResponse, error)
-	// Account queries an Validator Cosmos Address.
+	// ValidatorAccount queries an Ethereum account's from a validator consensus Address.
 	ValidatorAccount(ctx context.Context, in *QueryValidatorAccountRequest, opts ...grpc.CallOption) (*QueryValidatorAccountResponse, error)
 	// Balance queries the balance of a the EVM denomination for a single
 	// EthAccount.
@@ -1298,9 +1298,9 @@ func (c *queryClient) StaticCall(ctx context.Context, in *QueryStaticCallRequest
 type QueryServer interface {
 	// Account queries an Ethereum account.
 	Account(context.Context, *QueryAccountRequest) (*QueryAccountResponse, error)
-	// Account queries an Ethereum account's Cosmos Address.
+	// CosmosAccount queries an Ethereum account's Cosmos Address.
 	CosmosAccount(context.Context, *QueryCosmosAccountRequest) (*QueryCosmosAccountResponse, error)
-	// Account queries an Validator Cosmos Address.
+	// ValidatorAccount queries an Ethereum account's from a validator consensus Address.
 	ValidatorAccount(context.Context, *QueryValidatorAccountRequest) (*QueryValidatorAccountResponse, error)
 	// Balance queries the balance of a the EVM denomination for a single
 	// EthAccount.
