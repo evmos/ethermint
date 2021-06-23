@@ -7,8 +7,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/tharsis/ethermint/ethereum/rpc"
-
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -32,6 +30,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/hd"
+	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -44,14 +43,14 @@ type PublicAPI struct {
 	queryClient  *rpctypes.QueryClient
 	chainIDEpoch *big.Int
 	logger       log.Logger
-	backend      rpc.Backend
+	backend      backend.Backend
 	nonceLock    *rpctypes.AddrLocker
 }
 
 // NewPublicAPI creates an instance of the public ETH Web3 API.
 func NewPublicAPI(
 	clientCtx client.Context,
-	backend rpc.Backend,
+	backend backend.Backend,
 	nonceLock *rpctypes.AddrLocker,
 ) *PublicAPI {
 	epoch, err := ethermint.ParseChainID(clientCtx.ChainID)

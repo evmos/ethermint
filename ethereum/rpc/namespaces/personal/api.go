@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
-
 	"github.com/tharsis/ethermint/crypto/hd"
 	ethermint "github.com/tharsis/ethermint/types"
 
@@ -23,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 )
 
