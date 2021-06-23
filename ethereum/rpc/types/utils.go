@@ -16,8 +16,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
-	ethermint "github.com/cosmos/ethermint/types"
-	evmtypes "github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -183,7 +183,7 @@ func FormatBlock(
 		"number":           hexutil.Uint64(header.Height),
 		"hash":             hexutil.Bytes(header.Hash()),
 		"parentHash":       hexutil.Bytes(header.LastBlockID.Hash),
-		"nonce":            hexutil.Uint64(0),       // PoW specific
+		"nonce":            ethtypes.BlockNonce{},   // PoW specific
 		"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
 		"logsBloom":        bloom,
 		"stateRoot":        hexutil.Bytes(header.AppHash),

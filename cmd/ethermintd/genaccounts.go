@@ -21,8 +21,8 @@ import (
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/ethermint/crypto/hd"
-	chain "github.com/cosmos/ethermint/types"
+	"github.com/tharsis/ethermint/crypto/hd"
+	chain "github.com/tharsis/ethermint/types"
 )
 
 const (

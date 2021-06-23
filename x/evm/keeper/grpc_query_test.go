@@ -12,8 +12,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 )
@@ -584,4 +584,82 @@ func (suite *KeeperTestSuite) TestQueryParams() {
 	res, err := suite.queryClient.Params(ctx, &types.QueryParamsRequest{})
 	suite.Require().NoError(err)
 	suite.Require().Equal(expParams, res.Params)
+}
+
+func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
+	var (
+		req        *types.QueryValidatorAccountRequest
+		expAccount *types.QueryValidatorAccountResponse
+	)
+
+	testCases := []struct {
+		msg      string
+		malleate func()
+		expPass  bool
+	}{
+		{"zero address",
+			func() {
+				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
+				expAccount = &types.QueryValidatorAccountResponse{
+					AccountAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
+				}
+				req = &types.QueryValidatorAccountRequest{
+					ConsAddress: "",
+				}
+			},
+			false,
+		},
+		{
+			"success",
+			func() {
+				expAccount = &types.QueryValidatorAccountResponse{
+					AccountAddress: sdk.AccAddress(suite.address.Bytes()).String(),
+					Sequence:       0,
+					AccountNumber:  0,
+				}
+				req = &types.QueryValidatorAccountRequest{
+					ConsAddress: suite.consAddress.String(),
+				}
+			},
+			true,
+		},
+		{
+			"success with seq and account number",
+			func() {
+				acc := suite.app.AccountKeeper.GetAccount(suite.ctx, suite.address.Bytes())
+				suite.Require().NoError(acc.SetSequence(10))
+				suite.Require().NoError(acc.SetAccountNumber(1))
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
+				expAccount = &types.QueryValidatorAccountResponse{
+					AccountAddress: sdk.AccAddress(suite.address.Bytes()).String(),
+					Sequence:       10,
+					AccountNumber:  1,
+				}
+				req = &types.QueryValidatorAccountRequest{
+					ConsAddress: suite.consAddress.String(),
+				}
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.SetupTest() // reset
+
+			tc.malleate()
+			ctx := sdk.WrapSDKContext(suite.ctx)
+			res, err := suite.queryClient.ValidatorAccount(ctx, req)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().NotNil(res)
+
+				suite.Require().Equal(expAccount, res)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
 }

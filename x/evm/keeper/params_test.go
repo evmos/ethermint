@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-	"github.com/cosmos/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestParams() {

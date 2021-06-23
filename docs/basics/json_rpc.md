@@ -57,7 +57,7 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 | `eth_compileSerpent`                                                              | Eth       |             |                           |
 | `eth_signTransaction`                                                             | Eth       |             |                           |
 | `eth_mining`                                                                      | Eth       | N/A         | Not relevant to Ethermint |
-| `eth_coinbase`                                                                    | Eth       | N/A         | Not relevant to Ethermint |
+| [`eth_coinbase`](#eth-coinbase)                                                                    | Eth       | ✔           |                           |
 | `eth_hashrate`                                                                    | Eth       | N/A         | Not relevant to Ethermint |
 | `eth_getUncleCountByBlockHash`                                                    | Eth       | N/A         | Not relevant to Ethermint |
 | `eth_getUncleCountByBlockNumber`                                                  | Eth       | N/A         | Not relevant to Ethermint |
@@ -144,9 +144,9 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 | `miner_start`                                                                     | Miner     |             |                           |
 | `miner_stop`                                                                      | Miner     |             |                           |
 | `miner_setEtherbase`                                                              | Miner     |             |                           |
-| `txpool_content`                                                                  | TXPool    |             |                           |
-| `txpool_inspect`                                                                  | TXPool    |             |                           |
-| `txpool_status`                                                                   | TXPool    |             |                           |
+| `txpool_content`                                                                  | TXPool    | ✔           |                           |
+| `txpool_inspect`                                                                  | TXPool    | ✔           |                           |
+| `txpool_status`                                                                   | TXPool    | ✔           |                           |
 
 
 :::tip
@@ -691,6 +691,57 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getLogs","params":[{"topics"
 
 // Result
 {"jsonrpc":"2.0","id":1,"result":[]}
+```
+
+## TxPool Methods
+
+### txpool_content
+
+Returns a list of the exact details of all the transactions currently pending for inclusion in the next block(s), as well as the ones that are being scheduled for future execution only.
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"txpool_content","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":{"pending":{},"queued":{}}
+```
+
+### txpool_inspect
+
+Returns a list on text format to summarize all the transactions currently pending for inclusion in the next block(s), as well as the ones that are being scheduled for future execution only. This is a method specifically tailored to developers to quickly see the transactions in the pool and find any potential issues.
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"txpool_inspect","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":{"pending":{},"queued":{}}
+```        
+
+### txpool_status
+
+Returns the number of transactions currently pending for inclusion in the next block(s), as well as the ones that are being scheduled for future execution only.
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"txpool_status","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":{"pending":"0x0","queued":"0x0"}}
+```        
+
+### eth_coinbase
+
+Returns the account the mining rewards will be send to.
+
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_coinbase","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":"0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E"}
 ```
 
 ## WebSocket Methods

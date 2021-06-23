@@ -13,7 +13,7 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 )
 
 const (
@@ -62,8 +62,9 @@ func NewAnteHandler(
 					anteHandler = sdk.ChainAnteDecorators(
 						authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 						authante.NewMempoolFeeDecorator(),
-						authante.NewValidateBasicDecorator(),
 						authante.TxTimeoutHeightDecorator{},
+						authante.NewValidateMemoDecorator(ak),
+						NewEthValidateBasicDecorator(),
 						NewEthSigVerificationDecorator(evmKeeper),
 						NewEthAccountVerificationDecorator(ak, bankKeeper, evmKeeper),
 						NewEthNonceVerificationDecorator(ak),

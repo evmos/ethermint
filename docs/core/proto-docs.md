@@ -45,6 +45,8 @@
     - [QueryStorageResponse](#ethermint.evm.v1alpha1.QueryStorageResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest)
     - [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse)
+    - [QueryValidatorAccountRequest](#ethermint.evm.v1alpha1.QueryValidatorAccountRequest)
+    - [QueryValidatorAccountResponse](#ethermint.evm.v1alpha1.QueryValidatorAccountResponse)
   
     - [Query](#ethermint.evm.v1alpha1.Query)
   
@@ -704,6 +706,38 @@ QueryTxLogs is the response type for the Query/TxLogs RPC method.
 
 
 
+
+<a name="ethermint.evm.v1alpha1.QueryValidatorAccountRequest"></a>
+
+### QueryValidatorAccountRequest
+QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `cons_address` | [string](#string) |  | cons_address is the validator cons address to query the account for. |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryValidatorAccountResponse"></a>
+
+### QueryValidatorAccountResponse
+QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `account_address` | [string](#string) |  | account_address is the cosmos address of the account in bech32 format. |
+| `sequence` | [uint64](#uint64) |  | sequence is the account's sequence number. |
+| `account_number` | [uint64](#uint64) |  | account_number is the account number |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -719,7 +753,8 @@ Query defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Account` | [QueryAccountRequest](#ethermint.evm.v1alpha1.QueryAccountRequest) | [QueryAccountResponse](#ethermint.evm.v1alpha1.QueryAccountResponse) | Account queries an Ethereum account. | GET|/ethermint/evm/v1alpha1/account/{address}|
-| `CosmosAccount` | [QueryCosmosAccountRequest](#ethermint.evm.v1alpha1.QueryCosmosAccountRequest) | [QueryCosmosAccountResponse](#ethermint.evm.v1alpha1.QueryCosmosAccountResponse) | Account queries an Ethereum account's Cosmos Address. | GET|/ethermint/evm/v1alpha1/cosmos_account/{address}|
+| `CosmosAccount` | [QueryCosmosAccountRequest](#ethermint.evm.v1alpha1.QueryCosmosAccountRequest) | [QueryCosmosAccountResponse](#ethermint.evm.v1alpha1.QueryCosmosAccountResponse) | CosmosAccount queries an Ethereum account's Cosmos Address. | GET|/ethermint/evm/v1alpha1/cosmos_account/{address}|
+| `ValidatorAccount` | [QueryValidatorAccountRequest](#ethermint.evm.v1alpha1.QueryValidatorAccountRequest) | [QueryValidatorAccountResponse](#ethermint.evm.v1alpha1.QueryValidatorAccountResponse) | ValidatorAccount queries an Ethereum account's from a validator consensus Address. | GET|/ethermint/evm/v1alpha1/validator_account/{cons_address}|
 | `Balance` | [QueryBalanceRequest](#ethermint.evm.v1alpha1.QueryBalanceRequest) | [QueryBalanceResponse](#ethermint.evm.v1alpha1.QueryBalanceResponse) | Balance queries the balance of a the EVM denomination for a single EthAccount. | GET|/ethermint/evm/v1alpha1/balances/{address}|
 | `Storage` | [QueryStorageRequest](#ethermint.evm.v1alpha1.QueryStorageRequest) | [QueryStorageResponse](#ethermint.evm.v1alpha1.QueryStorageResponse) | Storage queries the balance of all coins for a single account. | GET|/ethermint/evm/v1alpha1/storage/{address}/{key}|
 | `Code` | [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest) | [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse) | Code queries the balance of all coins for a single account. | GET|/ethermint/evm/v1alpha1/codes/{address}|

@@ -14,8 +14,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	ethermint "github.com/cosmos/ethermint/types"
-	"github.com/cosmos/ethermint/x/evm/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -67,8 +67,7 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 		case k.ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
-			// TODO: deprecate field from the keeper on next SDK release
-			return k.headerHash
+			return common.BytesToHash(k.ctx.HeaderHash())
 
 		case k.ctx.BlockHeight() > h:
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the

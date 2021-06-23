@@ -45,5 +45,5 @@ $(find "$(pwd)/proto" -maxdepth 5 -name '*.proto')
 go mod tidy
 
 # move proto files to the right places
-cp -r github.com/cosmos/ethermint/* ./
+cp -r github.com/tharsis/ethermint/* ./
 rm -rf github.com

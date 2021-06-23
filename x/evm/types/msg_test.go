@@ -8,8 +8,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/ethermint/crypto/ethsecp256k1"
-	"github.com/cosmos/ethermint/tests"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/tests"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"

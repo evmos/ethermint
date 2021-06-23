@@ -19,7 +19,7 @@ Zone](https://github.com/cosmos/peggy)) to enable interoperability between mainn
 
 ## EVM module dependency
 
-The EVM module ([x/evm](https://github.com/cosmos/ethermint/tree/development/x/evm)) packaged inside
+The EVM module ([x/evm](https://github.com/tharsis/ethermint/tree/main/x/evm)) packaged inside
 Ethermint can be used separately as its own standalone module. This can be added as a dependency to
 any Cosmos chain, which will allow for smart contract support.
 
