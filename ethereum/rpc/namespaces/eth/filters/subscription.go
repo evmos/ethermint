@@ -55,3 +55,8 @@ func (s *Subscription) Unsubscribe(es *EventSystem) {
 func (s *Subscription) Err() <-chan error {
 	return s.err
 }
+
+// Event returns the tendermint result event channel
+func (s *Subscription) Event() <-chan coretypes.ResultEvent {
+	return s.eventCh
+}
