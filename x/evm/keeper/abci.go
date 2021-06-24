@@ -1,16 +1,14 @@
 package keeper
 
 import (
-	"math/big"
 	"time"
-
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
@@ -33,14 +31,7 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	k.WithContext(ctx)
 
-	// get the block bloom bytes from the transient store and set it to the persistent storage
-	bloomBig, found := k.GetBlockBloomTransient()
-	if !found {
-		bloomBig = big.NewInt(0)
-	}
-
-	bloom := ethtypes.BytesToBloom(bloomBig.Bytes())
-	k.SetBlockBloom(infCtx, req.Height, bloom)
+	k.SetBlockBloom(infCtx, req.Height, ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes()))
 	k.WithContext(ctx)
 
 	return []abci.ValidatorUpdate{}

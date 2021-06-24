@@ -144,11 +144,18 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
-	// set the ethereum-formatted hash to the tx result as the tendermint hash is different
-	// NOTE: see https://github.com/tendermint/tendermint/issues/6539 for reference.
-	txHash := tx.Hash()
+	// NOTE: we set up the transaction hash from tendermint as it is the format expected by the application:
+	// Remove once hashing is fixed on Tendermint. See https://github.com/tendermint/tendermint/issues/6539
+	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
 	res.Hash = txHash.Hex()
-	res.Logs = types.NewLogsFromEth(k.GetTxLogs(txHash))
+
+	logs := k.GetTxLogs(txHash)
+	res.Logs = types.NewLogsFromEth(logs)
+
+	// update block bloom filter
+	bloom := k.GetBlockBloomTransient()
+	bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
+	k.SetBlockBloomTransient(bloom)
 
 	return res, nil
 }
