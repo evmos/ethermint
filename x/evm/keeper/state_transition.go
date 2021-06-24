@@ -213,6 +213,9 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
+	gasUsed := msg.Gas() - leftoverGas
+	k.setGasMeterAndConsumeGas(msg, gasUsed)
+
 	if vmErr != nil {
 		if errors.Is(vmErr, vm.ErrExecutionReverted) {
 			// unpack the return data bytes from the err if the execution has been "reverted" on the VM
@@ -226,6 +229,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	return &types.MsgEthereumTxResponse{
 		Ret:      ret,
 		Reverted: false,
+		GasUsed:  gasUsed,
 	}, nil
 }
 
@@ -268,11 +272,8 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 		)
 	}
 
-	gasConsumed = msg.Gas() - leftoverGas
-
 	// Return EVM tokens for remaining gas, exchanged at the original rate.
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(leftoverGas), msg.GasPrice())
-
 
 	switch remaining.Sign() {
 	case -1:
@@ -294,13 +295,15 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 		// no refund, consume gas and update the tx gas meter
 	}
 
+	return nil
+}
+
+func (k *Keeper) setGasMeterAndConsumeGas(msg core.Message, gasUsed uint64) {
 	// set the gas consumed into the context with the new gas meter. This gas meter will have the
 	// original gas limit defined in the msg and will consume the gas now that the amount has been
 	// refunded
 	gasMeter := sdk.NewGasMeter(msg.Gas())
 	// NOTE: gas consumed will always be less than the limit
-	gasMeter.ConsumeGas(gasConsumed, "update gas consumption after refund")
+	gasMeter.ConsumeGas(gasUsed, "update gas consumption after refund")
 	k.WithContext(k.ctx.WithGasMeter(gasMeter))
-
-	return nil
 }

@@ -827,6 +827,7 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 | `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
 | `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
 | `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
+| `gas_used` | [uint64](#uint64) |  | gas consumed by the transaction |
 
 
 
