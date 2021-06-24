@@ -347,7 +347,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 
 // SendTransaction sends an Ethereum transaction.
 func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, error) {
-	e.logger.Debugln("eth_sendTransaction", "args", args)
+	e.logger.Debugln("eth_sendTransaction", "args", args.String())
 
 	// Look up the wallet containing the requested signer
 	_, err := e.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
@@ -493,7 +493,7 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 
 // Call performs a raw contract call.
 func (e *PublicAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
-	e.logger.Debugln("eth_call", "args", args, "block number", blockNr)
+	e.logger.Debugln("eth_call", "args", args.String(), "block number", blockNr)
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
