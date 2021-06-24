@@ -288,7 +288,7 @@ func (k *Keeper) GetCodeSize(addr common.Address) int {
 
 // NOTE: gas refunded needs to be tracked and stored in a separate variable in
 // order to add it subtract/add it from/to the gas used value after the EVM
-// execution has finalised. The refund value is cleared on every transaction and
+// execution has finalized. The refund value is cleared on every transaction and
 // at the end of every block.
 
 // AddRefund adds the given amount of gas to the refund cached value.
