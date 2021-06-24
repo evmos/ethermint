@@ -22,6 +22,9 @@ func NewHandler(server types.MsgServer) sdk.Handler {
 		case *types.MsgEthereumTx:
 			// execute state transition
 			res, err := server.EthereumTx(sdk.WrapSDKContext(ctx), msg)
+			if err == nil {
+				SetGasInContext(ctx, res.GasUsed)
+			}
 			return sdk.WrapServiceResult(ctx, res, err)
 
 		default:
@@ -42,4 +45,10 @@ func Recover(err *error) {
 			log.Errorln(r)
 		}
 	}
+}
+
+func SetGasInContext(ctx sdk.Context, gasUsed uint64) {
+	// reset the gas count
+	ctx.GasMeter().RefundGas(ctx.GasMeter().GasConsumed(), "reset the gas count")
+	ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
 }

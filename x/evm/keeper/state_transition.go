@@ -142,6 +142,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	res.Hash = txHash.Hex()
 	res.Logs = types.NewLogsFromEth(k.GetTxLogs(txHash))
 
+	k.setGasMeterAndConsumeGas(msg, res.GasUsed)
 	return res, nil
 }
 
@@ -213,9 +214,6 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
-	gasUsed := msg.Gas() - leftoverGas
-	k.setGasMeterAndConsumeGas(msg, gasUsed)
-
 	if vmErr != nil {
 		if errors.Is(vmErr, vm.ErrExecutionReverted) {
 			// unpack the return data bytes from the err if the execution has been "reverted" on the VM
@@ -226,6 +224,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
 	}
 
+	gasUsed := msg.Gas() - leftoverGas
 	return &types.MsgEthereumTxResponse{
 		Ret:      ret,
 		Reverted: false,
