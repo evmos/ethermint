@@ -282,14 +282,15 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 	gasConsumed := msg.Gas() - leftoverGas
 
 	// Apply refund counter, capped to half of the used gas.
-	refund := gasConsumed / 2
-	availableRefund := k.GetRefund()
+	refund := gasConsumed / 2        // 44500
+	availableRefund := k.GetRefund() //20000
 	if refund > availableRefund {
 		refund = availableRefund
 	}
 
-	leftoverGas += refund
+	leftoverGas += refund // 21k
 
+	// safe check
 	if leftoverGas > msg.Gas() {
 		return stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
@@ -315,10 +316,9 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 		refundedCoins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(remaining))}
 
 		// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
-
 		err := k.bankKeeper.SendCoinsFromModuleToAccount(infCtx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
-			err = sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
+			err = sdkerrors.Wrap(err, "fee collector account failed to refund fees")
 			return stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
 		}
 	default:

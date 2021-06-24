@@ -69,6 +69,11 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", types.ModuleName)
 }
 
+// Context returns the SDK context field from the keeper
+func (k Keeper) Context() sdk.Context {
+	return k.ctx
+}
+
 // WithContext sets an updated SDK context to the keeper
 func (k *Keeper) WithContext(ctx sdk.Context) {
 	k.ctx = ctx
