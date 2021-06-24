@@ -398,7 +398,7 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 	// Query params to use the EVM denomination
 	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
-		e.logger.WithError(err).Errorln("failed query evm params")
+		e.logger.WithError(err).Errorln("failed to query evm params")
 		return common.Hash{}, err
 	}
 
@@ -472,7 +472,7 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 	// Query params to use the EVM denomination
 	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
-		e.logger.WithError(err).Errorln("failed query evm params")
+		e.logger.WithError(err).Errorln("failed to query evm params")
 		return common.Hash{}, err
 	}
 
@@ -610,7 +610,7 @@ func (e *PublicAPI) doCall(
 	// Query params to use the EVM denomination
 	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
-		e.logger.WithError(err).Errorln("failed query evm params")
+		e.logger.WithError(err).Errorln("failed to query evm params")
 		return nil, err
 	}
 
