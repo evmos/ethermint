@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -68,6 +70,20 @@ type SendTxArgs struct {
 	ChainID    *hexutil.Big         `json:"chainId,omitempty"`
 }
 
+// String return the struct in a string format
+func (args *SendTxArgs) String() string {
+	// Todo: There is currently a bug with hexutil.Big when the value its nil, printing would trigger an exception
+	return fmt.Sprintf("SendTxArgs{From:%v, To:%v, Gas:%v,"+
+		" Nonce:%v, Data:%v, Input:%v, AccessList:%v}",
+		args.From,
+		args.To,
+		args.Gas,
+		args.Nonce,
+		args.Data,
+		args.Input,
+		args.AccessList)
+}
+
 // ToTransaction converts the arguments to an ethereum transaction.
 // This assumes that setTxDefaults has been called.
 func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
@@ -79,14 +95,32 @@ func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 	}
 
 	data := &evmtypes.TxData{
-		To:       args.To.Hex(),
-		ChainID:  args.ChainID.ToInt().Bytes(),
-		Nonce:    uint64(*args.Nonce),
-		GasLimit: uint64(*args.Gas),
-		GasPrice: args.GasPrice.ToInt().Bytes(),
-		Amount:   args.Value.ToInt().Bytes(),
 		Input:    input,
 		Accesses: evmtypes.NewAccessList(args.AccessList),
+	}
+
+	if args.ChainID != nil {
+		data.ChainID = args.ChainID.ToInt().Bytes()
+	}
+
+	if args.Nonce != nil {
+		data.Nonce = uint64(*args.Nonce)
+	}
+
+	if args.Gas != nil {
+		data.GasLimit = uint64(*args.Gas)
+	}
+
+	if args.GasPrice != nil {
+		data.GasPrice = args.GasPrice.ToInt().Bytes()
+	}
+
+	if args.Value != nil {
+		data.Amount = args.Value.ToInt().Bytes()
+	}
+
+	if args.To != nil {
+		data.To = args.To.Hex()
 	}
 
 	return &evmtypes.MsgEthereumTx{
@@ -104,6 +138,18 @@ type CallArgs struct {
 	Value      *hexutil.Big         `json:"value"`
 	Data       *hexutil.Bytes       `json:"data"`
 	AccessList *ethtypes.AccessList `json:"accessList"`
+}
+
+// String return the struct in a string format
+func (args *CallArgs) String() string {
+	// Todo: There is currently a bug with hexutil.Big when the value its nil, printing would trigger an exception
+	return fmt.Sprintf("SendTxArgs{From:%v, To:%v, Gas:%v,"+
+		" Data:%v, AccessList:%v}",
+		args.From,
+		args.To,
+		args.Gas,
+		args.Data,
+		args.AccessList)
 }
 
 // StateOverride is the collection of overridden accounts.
