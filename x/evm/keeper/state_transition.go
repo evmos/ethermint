@@ -167,7 +167,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 // 3. Refund amount =  max(gasConsumed / 2, gas refund), where gas refund is a local variable
 
 // TODO: (@fedekunze) currently we consume the entire gas limit in the ante handler, so if a transaction fails
-// the amount spent will be grater than the gas spent in an Ethereum tx (i.e here the leftover gas won't be refunded).
+// the amount spent will be greater than the gas spent in an Ethereum tx (i.e here the leftover gas won't be refunded).
 
 // ApplyMessage computes the new state by applying the given message against the existing state.
 // If the message fails, the VM execution error with the reason will be returned to the client
@@ -211,7 +211,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	// Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
 	k.WithContext(k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
 
-	// NOTE: gas limit is the GasLimit defied in the message minus the Intrinsic Gas that has already been
+	// NOTE: gas limit is the GasLimit defined in the message minus the Intrinsic Gas that has already been
 	// consumed on the AnteHandler.
 
 	// ensure gas is consistent during CheckTx
@@ -261,7 +261,7 @@ func (k *Keeper) CheckGasConsumption(msg core.Message, cfg *params.ChainConfig, 
 	}
 
 	if intrinsicGas != gasConsumed {
-		return sdkerrors.Wrapf(types.ErrInconsistentGas, "expected gas consumption to be %d (intrinsic gas only), got %d", intrinsicGas, gasConsumed)
+		return sdkerrors.Wrapf(types.ErrInconsistentGas, "expected gas consumption to be intrinsic gas of %d, got %d", intrinsicGas, gasConsumed)
 	}
 
 	return nil
