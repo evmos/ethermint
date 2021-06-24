@@ -10,13 +10,9 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/tx"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
-	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -202,48 +198,6 @@ func FormatBlock(
 		"transactions":    transactions,
 		"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
 	}
-}
-
-// BuildEthereumTx builds and signs a Cosmos transaction from a MsgEthereumTx and returns the tx
-func BuildEthereumTx(clientCtx client.Context, msg *evmtypes.MsgEthereumTx, accNumber, seq uint64, privKey cryptotypes.PrivKey) ([]byte, error) {
-	// TODO: user defined evm coin
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(msg.Fee())))
-	signMode := clientCtx.TxConfig.SignModeHandler().DefaultMode()
-	signerData := authsigning.SignerData{
-		ChainID:       clientCtx.ChainID,
-		AccountNumber: accNumber,
-		Sequence:      seq,
-	}
-
-	// Create a TxBuilder
-	txBuilder := clientCtx.TxConfig.NewTxBuilder()
-	if err := txBuilder.SetMsgs(msg); err != nil {
-		return nil, err
-
-	}
-	txBuilder.SetFeeAmount(fees)
-	txBuilder.SetGasLimit(msg.GetGas())
-
-	// sign with the private key
-	sigV2, err := tx.SignWithPrivKey(
-		signMode, signerData,
-		txBuilder, privKey, clientCtx.TxConfig, seq,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err := txBuilder.SetSignatures(sigV2); err != nil {
-		return nil, err
-	}
-
-	txBytes, err := clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
-	if err != nil {
-		return nil, err
-	}
-
-	return txBytes, nil
 }
 
 func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {

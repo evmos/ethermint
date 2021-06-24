@@ -395,7 +395,14 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(msg.Fee())))
+	// Query params to use the EVM denomination
+	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to query evm params")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
 
@@ -462,7 +469,14 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(ethereumTx.Fee())))
+	// Query params to use the EVM denomination
+	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to query evm params")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(ethereumTx.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethereumTx.GetGas())
 
@@ -593,7 +607,14 @@ func (e *PublicAPI) doCall(
 		log.Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(msg.Fee())))
+	// Query params to use the EVM denomination
+	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to query evm params")
+		return nil, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
 	txBuilder.SetFeeAmount(fees)
 	txBuilder.SetGasLimit(gas)
 
