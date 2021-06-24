@@ -10,8 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
@@ -565,6 +568,9 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
+
+	key := log.TxHash
+
 	if len(k.ctx.TxBytes()) > 0 {
 		tx := &ethtypes.Transaction{}
 		if err := tx.UnmarshalBinary(k.ctx.TxBytes()); err != nil {
@@ -574,6 +580,10 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 			)
 			return
 		}
+
+		// NOTE: we set up the transaction hash from tendermint as it is the format expected by the application:
+		// Remove once hashing is fixed on Tendermint. See https://github.com/tendermint/tendermint/issues/6539
+		key = common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
 
 		log.TxHash = tx.Hash()
 	}
@@ -585,11 +595,13 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 
 	log.Index = uint(len(logs))
 	logs = append(logs, log)
-	k.SetLogs(log.TxHash, logs)
+
+	k.SetLogs(key, logs)
 
 	k.Logger(k.ctx).Debug(
 		"log added",
-		"tx-hash", log.TxHash.Hex(),
+		"tx-hash-tendermint", key.Hex(),
+		"tx-hash-ethereum", log.TxHash.Hex(),
 		"log-index", int(log.Index),
 	)
 }

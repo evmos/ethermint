@@ -79,7 +79,7 @@ func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber
 		From:     from,
 		Gas:      hexutil.Uint64(tx.Gas()),
 		GasPrice: (*hexutil.Big)(tx.GasPrice()),
-		Hash:     tx.Hash(),
+		Hash:     tx.Hash(), // NOTE: transaction hash here uses the ethereum format for compatibility
 		Input:    hexutil.Bytes(tx.Data()),
 		Nonce:    hexutil.Uint64(tx.Nonce()),
 		To:       tx.To(),
