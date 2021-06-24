@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -459,14 +460,17 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	txBz, err := tx.MarshalBinary()
 	suite.Require().NoError(err)
 	txHash := tx.Hash()
+	tmHash := common.BytesToHash(tmtypes.Tx(txBz).Hash())
 
 	testCases := []struct {
 		name        string
+		hash        common.Hash
 		log, expLog *ethtypes.Log // pre and post populating log fields
 		malleate    func()
 	}{
 		{
 			"block hash not found",
+			common.Hash{},
 			&ethtypes.Log{
 				Address: addr,
 			},
@@ -477,6 +481,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 		},
 		{
 			"tx hash from message",
+			tmHash,
 			&ethtypes.Log{
 				Address: addr,
 			},
@@ -494,11 +499,11 @@ func (suite *KeeperTestSuite) TestAddLog() {
 		suite.Run(tc.name, func() {
 			tc.malleate()
 
-			prev := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
+			prev := suite.app.EvmKeeper.GetTxLogs(tc.hash)
 			suite.app.EvmKeeper.AddLog(tc.log)
-			post := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
+			post := suite.app.EvmKeeper.GetTxLogs(tc.hash)
 
-			suite.Require().NotZero(len(post), tc.expLog.TxHash.Hex())
+			suite.Require().NotZero(len(post), tc.hash.Hex())
 			suite.Require().Equal(len(prev)+1, len(post))
 			suite.Require().NotNil(post[len(post)-1])
 			suite.Require().Equal(tc.log, post[len(post)-1])
