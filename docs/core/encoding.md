@@ -23,8 +23,7 @@ client and state serialization. All the EVM module structs that are used for sta
 ### Amino
 
 The Cosmos SDK also supports the legacy Amino encoding format for backwards compatibility with
-previous versions, specially for client encoding. Ethermint will not support Amino in the EVM module
-once the migration to SDK `v0.40` is finalized.
+previous versions, specially for client encoding. Ethermint does not support Amino in the EVM module.
 
 ### RLP
 
@@ -33,9 +32,9 @@ allows for quick reconstruction of encoded data. Ethermint uses RLP to encode/de
 messages for JSON-RPC handling to conform messages to the proper Ethereum format. This allows
 messages to be encoded and decoded in the exact format as Ethereum's.
 
-Each message type defined on the EVM module define the `EncodeRLP` and `DecodeRLP` methods which
+<!-- Each message type defined on the EVM module define the `EncodeRLP` and `DecodeRLP` methods which
 implement the `rlp.Encoder` and `rlp.Decoder` interfaces respectively. The RLP encode method is used
-to sign bytes and transactions in `RLPSignBytes` and `Sign`.
+to sign bytes and transactions in `RLPSignBytes` and `Sign`. -->
 
 ## Next {hide}
 

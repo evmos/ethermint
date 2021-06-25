@@ -90,7 +90,7 @@ To start a connection with the Tendermint websocket you need to define the addre
 flag when initializing the REST server (default `tcp://localhost:26657`):
 
 ```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --node "tcp://localhost:8080" --unlock-key <my_key> --chain-id <chain_id>
+ethermintd rest-server --laddr "tcp://localhost:8545" --node "tcp://localhost:8080" --unlock-key <my_key> --chain-id <chain_id>
 ```
 
 Then, start a websocket subscription with [ws](https://github.com/hashrocket/ws)
@@ -115,7 +115,7 @@ You can start a connection with the Ethereum websocket using the `--wsport` flag
 the REST server (default `8546`):
 
 ```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --wsport 8546 --unlock-key <my_key> --chain-id <chain_id>
+ethermintd rest-server --laddr "tcp://localhost:8545" --wsport 8546 --unlock-key <my_key> --chain-id <chain_id>
 ```
 
 Then, start a websocket subscription with [ws](https://github.com/hashrocket/ws)

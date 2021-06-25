@@ -2,7 +2,7 @@
 order: 4
 -->
 
-# Photon
+# Tokens
 
 Learn about the Photon, Ethermint's staking token. {synopsis}
 

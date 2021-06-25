@@ -18,10 +18,10 @@ Ethermint is integrated with a CLI client that can be used to send transactions 
 
 ```bash
 # available query commands
-ethermintcli query -h
+ethermintd query -h
 
 # available transaction commands
-ethermintcli tx -h
+ethermintd tx -h
 ```
 
 ### Client Servers
@@ -36,7 +36,7 @@ To run the REST Server, you need to run the Ethermint daemon (`ethermintd`) and 
 process):
 
 ```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key $KEY --chain-id $CHAINID --trace
+ethermintd rest-server --laddr "tcp://localhost:8545" --unlock-key $KEY --chain-id $CHAINID --trace
 ```
 
 You should see the logs from the REST and the RPC server.

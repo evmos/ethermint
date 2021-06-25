@@ -32,7 +32,7 @@ ethermintd tendermint show-validator
 To create your validator, just use the following command:
 
 ```bash
-ethermintcli tx staking create-validator \
+ethermintd tx staking create-validator \
   --amount=1000000aphoton \
   --pubkey=$(ethermintd tendermint show-validator) \
   --moniker=<ethermint_validator> \
@@ -96,7 +96,7 @@ For more on `gentx`, use the help flag: `ethermintd gentx -h`
 Your validator is active if the following command returns anything:
 
 ```bash
-ethermintcli query tendermint-validator-set | grep "$(ethermintd tendermint show-validator)"
+ethermintd query tendermint-validator-set | grep "$(ethermintd tendermint show-validator)"
 ```
 
 You should now see your validator in one of the block explorers. You are looking for the `bech32`
