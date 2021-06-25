@@ -543,15 +543,15 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	return next(ctx, tx, simulate)
 }
 
-// SetUpEthContextDecorator is adapted from SetUpContextDecorator from cosmos-sdk, it ignores gas consumption
+// EthSetupContextDecorator is adapted from SetUpContextDecorator from cosmos-sdk, it ignores gas consumption
 // by setting the gas meter to infinite
-type SetUpEthContextDecorator struct{}
+type EthSetupContextDecorator struct{}
 
-func NewSetEthUpContextDecorator() SetUpEthContextDecorator {
-	return SetUpEthContextDecorator{}
+func NewEthSetUpContextDecorator() EthSetupContextDecorator {
+	return EthSetupContextDecorator{}
 }
 
-func (sud SetUpEthContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	// all transactions must implement GasTx
 	_, ok := tx.(authante.GasTx)
 	if !ok {
