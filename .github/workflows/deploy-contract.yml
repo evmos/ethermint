@@ -23,7 +23,7 @@ jobs:
           node-version: '12.x'
       - name: Install dependencies
         run: npm install
-      - uses: technote-space/get-diff-action@v4.1.1
+      - uses: technote-space/get-diff-action@v4.1.2
         id: git_diff
         with:
           SUFFIX_FILTER: |
