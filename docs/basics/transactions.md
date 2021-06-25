@@ -31,10 +31,12 @@ formats: [Protobuf](./../core/encoding.md#protocol-buffers) and [Amino](./../cor
 - Cosmos transactions
 - Ethereum transaction
 
-## Signatures
+## Signers
+
+<!-- TODO: add all the other supported signers from Ethereum (Homestead, EIP155, Berlin, etc) -->
 
 Ethermint supports [EIP-155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md)
-signatures. A `Transaction` is expected to have a single signature for Ethereum routed transactions.
+signers. A `Transaction` is expected to have a single signature for Ethereum routed transactions.
 However, just as in Cosmos, Ethermint will support multiple signers for non-Ethereum transactions.
 Signatures over the `Transaction` type are identical to Ethereum and the signatures will not be
 duplicated in the embedding

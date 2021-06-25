@@ -17,13 +17,14 @@ Learn about the encoding formats used on Ethermint. {synopsis}
 
 The Cosmos [Stargate](https://stargate.cosmos.network/) release introduces
 [protobuf](https://developers.google.com/protocol-buffers) as the main encoding format for both
-client and state serialization. All the EVM module structs that are used for state and clients
+client and state serialization. All the EVM module types that are used for state and clients
 (transaction messages, genesis, query services, etc) will be implemented as protocol buffer messages.
 
 ### Amino
 
 The Cosmos SDK also supports the legacy Amino encoding format for backwards compatibility with
-previous versions, specially for client encoding. Ethermint does not support Amino in the EVM module.
+previous versions, specially for client encoding and signing with Ledger devices. Ethermint does not
+support Amino in the EVM module, but it is supported for all other Cosmos SDK modules that enable it.
 
 ### RLP
 
@@ -32,9 +33,7 @@ allows for quick reconstruction of encoded data. Ethermint uses RLP to encode/de
 messages for JSON-RPC handling to conform messages to the proper Ethereum format. This allows
 messages to be encoded and decoded in the exact format as Ethereum's.
 
-<!-- Each message type defined on the EVM module define the `EncodeRLP` and `DecodeRLP` methods which
-implement the `rlp.Encoder` and `rlp.Decoder` interfaces respectively. The RLP encode method is used
-to sign bytes and transactions in `RLPSignBytes` and `Sign`. -->
+<!-- TODO: explain how the encoding is performed by casting the MsgEthereumTx into a geth Transaction and then Marshaling -->
 
 ## Next {hide}
 
