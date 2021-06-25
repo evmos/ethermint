@@ -24,7 +24,6 @@ import (
 	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
 	"github.com/tendermint/tendermint/rpc/client/local"
-	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -42,6 +41,7 @@ import (
 
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/ethereum/rpc"
+	ethsrv "github.com/tharsis/ethermint/server"
 )
 
 // Tendermint full-node start flags
@@ -230,6 +230,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		grpcSrv, err = servergrpc.StartGRPCServer(clientCtx, app, config.GRPC.Address)
 		if err != nil {
 			log.WithError(err).Errorln("failed to boot GRPC server")
+			return err
 		}
 	}
 
@@ -242,7 +243,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
 		log.Infoln("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
-		tmWsClient := connectTmWS(tmRPCAddr, tmEndpoint)
+		tmWsClient := ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		rpcServer := ethrpc.NewServer()
 		apis := rpc.GetRPCAPIs(clientCtx, tmWsClient)
@@ -253,6 +254,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 					"namespace": api.Namespace,
 					"service":   api.Service,
 				}).WithError(err).Fatalln("failed to register service in EVM RPC namespace")
+				return err
 			}
 		}
 
@@ -260,7 +262,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
 		if grpcSrv != nil {
 			grpcWeb := grpcweb.WrapServer(grpcSrv)
-			mountGrpcWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv))
+			ethsrv.MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv))
 		}
 
 		handlerWithCors := cors.New(cors.Options{
@@ -308,7 +310,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
 
 		// allocate separate WS connection to Tendermint
-		tmWsClient = connectTmWS(tmRPCAddr, tmEndpoint)
+		tmWsClient = ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint)
 		wsSrv = rpc.NewWebsocketsServer(tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
 		go wsSrv.Start()
 	}
@@ -389,50 +391,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	closer.Hold()
 
 	return nil
-}
-
-func connectTmWS(tmRPCAddr, tmEndpoint string) *rpcclient.WSClient {
-	tmWsClient, err := rpcclient.NewWS(tmRPCAddr, tmEndpoint,
-		rpcclient.MaxReconnectAttempts(256),
-		rpcclient.ReadWait(120*time.Second),
-		rpcclient.WriteWait(120*time.Second),
-		rpcclient.PingPeriod(50*time.Second),
-		rpcclient.OnReconnect(func() {
-			log.WithField("tendermint_rpc", tmRPCAddr+tmEndpoint).
-				Debugln("EVM RPC reconnects to Tendermint WS")
-		}),
-	)
-
-	if err != nil {
-		log.WithError(err).Fatalln("Tendermint WS client could not be created for ", tmRPCAddr+tmEndpoint)
-	} else if err := tmWsClient.OnStart(); err != nil {
-		log.WithError(err).Fatalln("Tendermint WS client could not start for ", tmRPCAddr+tmEndpoint)
-	}
-
-	return tmWsClient
-}
-
-func mountGrpcWebServices(
-	router *mux.Router,
-	grpcWeb *grpcweb.WrappedGrpcServer,
-	grpcResources []string,
-) {
-	for _, res := range grpcResources {
-		log.Printf("[GRPC Web] HTTP POST mounted on %s", res)
-
-		s := router.Methods("POST").Subrouter()
-		s.HandleFunc(res, func(resp http.ResponseWriter, req *http.Request) {
-			if grpcWeb.IsGrpcWebSocketRequest(req) {
-				grpcWeb.HandleGrpcWebsocketRequest(resp, req)
-				return
-			}
-
-			if grpcWeb.IsGrpcWebRequest(req) {
-				grpcWeb.HandleGrpcWebRequest(resp, req)
-				return
-			}
-		})
-	}
 }
 
 func openDB(rootDir string) (dbm.DB, error) {
