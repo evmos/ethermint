@@ -62,16 +62,16 @@ func addTxFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&logJSON, "log-json", false, "Use JSON as the output format of the own logger (default: text)")
 	cmd.PersistentFlags().BoolVar(&evmDebug, "evm-debug", false, "Enable EVM debug traces")
 	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Sets the level of the own logger (error, warn, info, debug)")
-	//cmd.PersistentFlags().Bool(flags.FlagTrustNode, true, "Trust connected full node (don't verify proofs for responses)")
+	// cmd.PersistentFlags().Bool(flags.FlagTrustNode, true, "Trust connected full node (don't verify proofs for responses)")
 	cmd.PersistentFlags().String(flags.FlagKeyringBackend, keyring.BackendFile, "Select keyring's backend")
 
 	// --gas can accept integers and "simulate"
-	//cmd.PersistentFlags().Var(&flags.GasFlagVar, "gas", fmt.Sprintf(
+	// cmd.PersistentFlags().Var(&flags.GasFlagVar, "gas", fmt.Sprintf(
 	//	"gas limit to set per-transaction; set to %q to calculate required gas automatically (default %d)",
 	//	flags.GasFlagAuto, flags.DefaultGasLimit,
-	//))
+	// ))
 
-	//viper.BindPFlag(flags.FlagTrustNode, cmd.Flags().Lookup(flags.FlagTrustNode))
+	// viper.BindPFlag(flags.FlagTrustNode, cmd.Flags().Lookup(flags.FlagTrustNode))
 
 	// TODO: we need to handle the errors for these, decide if we should return error upward and handle
 	// nolint: errcheck

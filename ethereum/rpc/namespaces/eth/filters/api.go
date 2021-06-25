@@ -22,8 +22,8 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
-// FiltersBackend defines the methods requided by the PublicFilterAPI backend
-type FiltersBackend interface {
+// Backend defines the methods requided by the PublicFilterAPI backend
+type Backend interface {
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
@@ -51,14 +51,14 @@ type filter struct {
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
 // information related to the Ethereum protocol such as blocks, transactions and logs.
 type PublicFilterAPI struct {
-	backend   FiltersBackend
+	backend   Backend
 	events    *EventSystem
 	filtersMu sync.Mutex
 	filters   map[rpc.ID]*filter
 }
 
 // NewPublicAPI returns a new PublicFilterAPI instance.
-func NewPublicAPI(tmWSClient *rpcclient.WSClient, backend FiltersBackend) *PublicFilterAPI {
+func NewPublicAPI(tmWSClient *rpcclient.WSClient, backend Backend) *PublicFilterAPI {
 	api := &PublicFilterAPI{
 		backend: backend,
 		filters: make(map[rpc.ID]*filter),
