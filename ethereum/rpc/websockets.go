@@ -9,6 +9,10 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/eth/filters"
+
+	rpcfilters "github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
@@ -19,7 +23,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
@@ -262,7 +265,7 @@ func (s *websocketsServer) tcpGetAndSendResponse(wsConn *wsConn, mb []byte) erro
 }
 
 type wsSubscription struct {
-	sub          *Subscription
+	sub          *rpcfilters.Subscription
 	unsubscribed chan struct{} // closed when unsubscribing
 	wsConn       *wsConn
 	query        string
@@ -270,7 +273,7 @@ type wsSubscription struct {
 
 // pubSubAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec
 type pubSubAPI struct {
-	events    *EventSystem
+	events    *rpcfilters.EventSystem
 	filtersMu *sync.RWMutex
 	filters   map[rpc.ID]*wsSubscription
 	logger    log.Logger
@@ -279,7 +282,7 @@ type pubSubAPI struct {
 // newPubSubAPI creates an instance of the ethereum PubSub API.
 func newPubSubAPI(tmWSClient *rpcclient.WSClient) *pubSubAPI {
 	return &pubSubAPI{
-		events:    NewEventSystem(tmWSClient),
+		events:    rpcfilters.NewEventSystem(tmWSClient),
 		filtersMu: new(sync.RWMutex),
 		filters:   make(map[rpc.ID]*wsSubscription),
 		logger:    log.WithField("module", "websocket-client"),
@@ -414,7 +417,7 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 				return
 			}
 		}
-	}(sub.eventCh, sub.Err())
+	}(sub.Event(), sub.Err())
 
 	return subID, nil
 }
@@ -604,7 +607,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 					return
 				}
 
-				logs := filterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
+				logs := rpcfilters.FilterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
 				if len(logs) == 0 {
 					continue
 				}
@@ -653,7 +656,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 				return
 			}
 		}
-	}(sub.eventCh, sub.Err(), subID)
+	}(sub.Event(), sub.Err(), subID)
 
 	return subID, nil
 }
@@ -730,7 +733,7 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 				return
 			}
 		}
-	}(sub.eventCh, sub.Err())
+	}(sub.Event(), sub.Err())
 
 	return subID, nil
 }

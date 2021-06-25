@@ -5,6 +5,13 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/tharsis/ethermint/ethereum/rpc/backend"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/personal"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/web3"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -24,14 +31,14 @@ const (
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	backend := NewEVMBackend(clientCtx)
-	ethAPI := NewPublicEthAPI(clientCtx, backend, nonceLock)
+	backend := backend.NewEVMBackend(clientCtx)
+	ethAPI := eth.NewPublicAPI(clientCtx, backend, nonceLock)
 
 	return []rpc.API{
 		{
 			Namespace: Web3Namespace,
 			Version:   apiVersion,
-			Service:   NewPublicWeb3API(),
+			Service:   web3.NewPublicAPI(),
 			Public:    true,
 		},
 		{
@@ -43,25 +50,25 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicFilterAPI(tmWSClient, backend),
+			Service:   filters.NewPublicAPI(tmWSClient, backend),
 			Public:    true,
 		},
 		{
 			Namespace: NetNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicNetAPI(clientCtx),
+			Service:   net.NewPublicAPI(clientCtx),
 			Public:    true,
 		},
 		{
 			Namespace: PersonalNamespace,
 			Version:   apiVersion,
-			Service:   NewPersonalAPI(ethAPI),
+			Service:   personal.NewAPI(ethAPI),
 			Public:    true,
 		},
 		{
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
-			Service:   NewPublicTxPoolAPI(),
+			Service:   txpool.NewPublicAPI(),
 			Public:    true,
 		},
 	}

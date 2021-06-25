@@ -29,7 +29,7 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		IstanbulBlock:       getBlockValue(cc.IstanbulBlock),
 		MuirGlacierBlock:    getBlockValue(cc.MuirGlacierBlock),
 		BerlinBlock:         getBlockValue(cc.BerlinBlock),
-		//TODO(xlab): after upgrading ethereum to newer version, this should be set to YoloV2Block
+		// TODO(xlab): after upgrading ethereum to newer version, this should be set to YoloV2Block
 		YoloV3Block:   getBlockValue(cc.YoloV3Block),
 		EWASMBlock:    getBlockValue(cc.EWASMBlock),
 		CatalystBlock: getBlockValue(cc.CatalystBlock),

@@ -162,7 +162,7 @@ var (
 
 var _ simapp.App = (*EthermintApp)(nil)
 
-//var _ server.Application (*EthermintApp)(nil)
+// var _ server.Application (*EthermintApp)(nil)
 
 // EthermintApp implements an extended ABCI application. It is an application
 // that may process transactions through Ethereum's EVM running atop of
@@ -358,7 +358,7 @@ func NewEthermintApp(
 	// TODO: do properly
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
-	//var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	// var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 	skipGenesisInvariants := true
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -425,10 +425,10 @@ func NewEthermintApp(
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
 	app.mm.RegisterServices(module.NewConfigurator(app.MsgServiceRouter(), app.GRPCQueryRouter()))
 
-	//add test gRPC service for testing gRPC queries in isolation
+	// add test gRPC service for testing gRPC queries in isolation
 	// testdata.RegisterTestServiceServer(app.GRPCQueryRouter(), testdata.TestServiceImpl{})
 
-	//create the simulation manager and define the order of the modules for deterministic simulations
+	// create the simulation manager and define the order of the modules for deterministic simulations
 
 	//NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions

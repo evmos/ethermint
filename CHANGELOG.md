@@ -54,6 +54,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (rpc) [tharsis#181](https://github.com/tharsis/ethermint/pull/181) Use evm denomination for params on tx fee.
 * (deps) [tharsis#165](https://github.com/tharsis/ethermint/pull/165) Bump Cosmos SDK and Tendermint versions to [v0.42.6](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.42.6) and [v0.34.11](https://github.com/tendermint/tendermint/releases/tag/v0.34.11), respectively.
 * (evm) [tharsis#66](https://github.com/tharsis/ethermint/issues/66) Support legacy transaction types for signing.
 * (evm) [tharsis#24](https://github.com/tharsis/ethermint/pull/24) Implement metrics for `MsgEthereumTx`, state transitions, `BeginBlock` and `EndBlock`.

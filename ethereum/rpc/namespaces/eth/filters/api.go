@@ -1,4 +1,4 @@
-package rpc
+package filters
 
 import (
 	"context"
@@ -22,8 +22,8 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
-// FiltersBackend defines the methods requided by the PublicFilterAPI backend
-type FiltersBackend interface {
+// Backend defines the methods requided by the PublicFilterAPI backend
+type Backend interface {
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
@@ -51,14 +51,14 @@ type filter struct {
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
 // information related to the Ethereum protocol such as blocks, transactions and logs.
 type PublicFilterAPI struct {
-	backend   FiltersBackend
+	backend   Backend
 	events    *EventSystem
 	filtersMu sync.Mutex
 	filters   map[rpc.ID]*filter
 }
 
-// NewPublicFilterAPI returns a new PublicFilterAPI instance.
-func NewPublicFilterAPI(tmWSClient *rpcclient.WSClient, backend FiltersBackend) *PublicFilterAPI {
+// NewPublicAPI returns a new PublicFilterAPI instance.
+func NewPublicAPI(tmWSClient *rpcclient.WSClient, backend Backend) *PublicFilterAPI {
 	api := &PublicFilterAPI{
 		backend: backend,
 		filters: make(map[rpc.ID]*filter),
@@ -371,7 +371,7 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 					return
 				}
 
-				logs := filterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
+				logs := FilterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
 
 				for _, log := range logs {
 					err = notifier.Notify(rpcSub.ID, log)
@@ -448,7 +448,7 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 					return
 				}
 
-				logs := filterLogs(evmtypes.LogsToEthereum(txResponse.Logs), criteria.FromBlock, criteria.ToBlock, criteria.Addresses, criteria.Topics)
+				logs := FilterLogs(evmtypes.LogsToEthereum(txResponse.Logs), criteria.FromBlock, criteria.ToBlock, criteria.Addresses, criteria.Topics)
 
 				api.filtersMu.Lock()
 				if f, found := api.filters[filterID]; found {
@@ -594,22 +594,4 @@ func (api *PublicFilterAPI) GetFilterChanges(id rpc.ID) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("invalid filter %s type %d", id, f.typ)
 	}
-}
-
-// returnHashes is a helper that will return an empty hash array case the given hash array is nil,
-// otherwise the given hashes array is returned.
-func returnHashes(hashes []common.Hash) []common.Hash {
-	if hashes == nil {
-		return []common.Hash{}
-	}
-	return hashes
-}
-
-// returnLogs is a helper that will return an empty log array in case the given logs array is nil,
-// otherwise the given logs array is returned.
-func returnLogs(logs []*ethtypes.Log) []*ethtypes.Log {
-	if logs == nil {
-		return []*ethtypes.Log{}
-	}
-	return logs
 }
