@@ -33,7 +33,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 		reCheckTx bool
 		expPass   bool
 	}{
-		{"ReCheckTx", nil, true, true},
+		{"ReCheckTx", nil, true, false},
 		{"invalid transaction type", &invalidTx{}, false, false},
 		{
 			"invalid sender",
