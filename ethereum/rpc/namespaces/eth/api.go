@@ -198,7 +198,7 @@ func (e *PublicAPI) Accounts() ([]common.Address, error) {
 
 // BlockNumber returns the current block number.
 func (e *PublicAPI) BlockNumber() (hexutil.Uint64, error) {
-	//e.logger.Debugln("eth_blockNumber")
+	// e.logger.Debugln("eth_blockNumber")
 	return e.backend.BlockNumber()
 }
 
