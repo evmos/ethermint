@@ -19,8 +19,7 @@ paths:
                 description: balance is the balance of the EVM denomination.
               code_hash:
                 type: string
-                format: byte
-                description: code_hash is the code bytes from the EOA.
+                description: code hash is the hex-formatted code bytes from the EOA.
               nonce:
                 type: string
                 format: uint64
@@ -147,12 +146,6 @@ paths:
                     value:
                       type: string
                       format: byte
-      parameters:
-        - name: height
-          in: query
-          required: false
-          type: string
-          format: int64
       tags:
         - Query
   '/ethermint/evm/v1alpha1/block_logs/{hash}':
@@ -238,6 +231,24 @@ paths:
                 description: >-
                   logs represents the ethereum logs generated at the given block
                   hash.
+              pagination:
+                description: pagination defines the pagination in the response.
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    title: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
             description: >-
               QueryTxLogs is the response type for the Query/BlockLogs RPC
               method.
@@ -269,6 +280,52 @@ paths:
           in: path
           required: true
           type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
       tags:
         - Query
   '/ethermint/evm/v1alpha1/codes/{address}':
@@ -320,7 +377,7 @@ paths:
         - Query
   '/ethermint/evm/v1alpha1/cosmos_account/{address}':
     get:
-      summary: Account queries an Ethereum account's Cosmos Address.
+      summary: CosmosAccount queries an Ethereum account's Cosmos Address.
       operationId: CosmosAccount
       responses:
         '200':
@@ -641,198 +698,34 @@ paths:
           type: string
       tags:
         - Query
-  '/ethermint/evm/v1alpha1/tx_receipt/{hash}':
+  '/ethermint/evm/v1alpha1/validator_account/{cons_address}':
     get:
-      summary: TxReceipt queries a receipt by a transaction hash.
-      operationId: TxReceipt
+      summary: >-
+        ValidatorAccount queries an Ethereum account's from a validator
+        consensus Address.
+      operationId: ValidatorAccount
       responses:
         '200':
           description: A successful response.
           schema:
             type: object
             properties:
-              receipt:
+              account_address:
+                type: string
                 description: >-
-                  receipt represents the ethereum receipt for the given
-                  transaction.
-                type: object
-                properties:
-                  hash:
-                    type: string
-                    format: byte
-                  from:
-                    type: string
-                    format: byte
-                  data:
-                    type: object
-                    properties:
-                      nonce:
-                        type: string
-                        format: uint64
-                        description: >-
-                          nonce corresponds to the account nonce (transaction
-                          sequence).
-                      price:
-                        type: string
-                        format: byte
-                        description: >-
-                          price defines the unsigned integer value of the gas
-                          price in bytes.
-                      gas:
-                        type: string
-                        format: uint64
-                        description: gas defines the gas limit defined for the transaction.
-                      to:
-                        type: string
-                        format: byte
-                      value:
-                        type: string
-                        format: byte
-                        description: >-
-                          value defines the unsigned integer value of the
-                          transaction amount.
-                      input:
-                        type: string
-                        format: byte
-                        description: >-
-                          input defines the data payload bytes of the
-                          transaction.
-                      v:
-                        type: string
-                        format: byte
-                        title: v defines the signature value
-                      r:
-                        type: string
-                        format: byte
-                        title: r defines the signature value
-                      s:
-                        type: string
-                        format: byte
-                        title: s define the signature value
-                      hash:
-                        type: string
-                        description: >-
-                          hash defines the tx data hash, which is only used when
-                          marshaling to JSON.
-                    description: >-
-                      TxData implements the Ethereum transaction data structure.
-                      It is used
-
-                      solely as intended in Ethereum abiding by the protocol.
-                  result:
-                    type: object
-                    properties:
-                      contract_address:
-                        type: string
-                        description: >-
-                          contract_address contains the ethereum address of the
-                          created contract (if
-
-                          any). If the state transition is an evm.Call, the
-                          contract address will be
-
-                          empty.
-                      bloom:
-                        type: string
-                        format: byte
-                        title: bloom represents the bloom filter bytes
-                      tx_logs:
-                        description: >-
-                          tx_logs contains the transaction hash and the
-                          proto-compatible ethereum
-
-                          logs.
-                        type: object
-                        properties:
-                          hash:
-                            type: string
-                          logs:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                address:
-                                  type: string
-                                  title: >-
-                                    address of the contract that generated the
-                                    event
-                                topics:
-                                  type: array
-                                  items:
-                                    type: string
-                                  description: list of topics provided by the contract.
-                                data:
-                                  type: string
-                                  format: byte
-                                  title: >-
-                                    supplied by the contract, usually
-                                    ABI-encoded
-                                block_number:
-                                  type: string
-                                  format: uint64
-                                  title: block in which the transaction was included
-                                tx_hash:
-                                  type: string
-                                  title: hash of the transaction
-                                tx_index:
-                                  type: string
-                                  format: uint64
-                                  title: index of the transaction in the block
-                                block_hash:
-                                  type: string
-                                  title: >-
-                                    hash of the block in which the transaction
-                                    was included
-                                index:
-                                  type: string
-                                  format: uint64
-                                  title: index of the log in the block
-                                removed:
-                                  type: boolean
-                                  description: >-
-                                    The Removed field is true if this log was
-                                    reverted due to a chain
-
-                                    reorganisation. You must pay attention to
-                                    this field if you receive logs
-
-                                    through a filter query.
-                              description: >-
-                                Log represents an protobuf compatible Ethereum
-                                Log that defines a contract
-
-                                log event. These events are generated by the LOG
-                                opcode and stored/indexed by
-
-                                the node.
-                      ret:
-                        type: string
-                        format: byte
-                        description: ret defines the bytes from the execution.
-                      reverted:
-                        type: boolean
-                        title: >-
-                          reverted flag is set to true when the call has been
-                          reverted
-                      gas_used:
-                        type: string
-                        format: uint64
-                        title: >-
-                          gas_used notes the amount of gas consumed while
-                          execution
-                    description: TxResult stores results of Tx execution.
-                  index:
-                    type: string
-                    format: uint64
-                  blockHeight:
-                    type: string
-                    format: uint64
-                  blockHash:
-                    type: string
-                    format: byte
+                  account_address is the cosmos address of the account in bech32
+                  format.
+              sequence:
+                type: string
+                format: uint64
+                description: sequence is the account's sequence number.
+              account_number:
+                type: string
+                format: uint64
+                title: account_number is the account number
             description: >-
-              QueryTxReceiptResponse is the response type for the
-              Query/TxReceipt RPC method.
+              QueryValidatorAccountResponse is the response type for the
+              Query/ValidatorAccount RPC method.
         default:
           description: An unexpected error response.
           schema:
@@ -856,467 +749,8 @@ paths:
                       type: string
                       format: byte
       parameters:
-        - name: hash
-          description: hash is the ethereum transaction hex hash to query the receipt for.
-          in: path
-          required: true
-          type: string
-      tags:
-        - Query
-  '/ethermint/evm/v1alpha1/tx_receipts_block/{height}':
-    get:
-      summary: TxReceiptsByBlockHeight queries tx receipts by a block height.
-      operationId: TxReceiptsByBlockHeight
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              receipts:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    hash:
-                      type: string
-                      format: byte
-                    from:
-                      type: string
-                      format: byte
-                    data:
-                      type: object
-                      properties:
-                        nonce:
-                          type: string
-                          format: uint64
-                          description: >-
-                            nonce corresponds to the account nonce (transaction
-                            sequence).
-                        price:
-                          type: string
-                          format: byte
-                          description: >-
-                            price defines the unsigned integer value of the gas
-                            price in bytes.
-                        gas:
-                          type: string
-                          format: uint64
-                          description: >-
-                            gas defines the gas limit defined for the
-                            transaction.
-                        to:
-                          type: string
-                          format: byte
-                        value:
-                          type: string
-                          format: byte
-                          description: >-
-                            value defines the unsigned integer value of the
-                            transaction amount.
-                        input:
-                          type: string
-                          format: byte
-                          description: >-
-                            input defines the data payload bytes of the
-                            transaction.
-                        v:
-                          type: string
-                          format: byte
-                          title: v defines the signature value
-                        r:
-                          type: string
-                          format: byte
-                          title: r defines the signature value
-                        s:
-                          type: string
-                          format: byte
-                          title: s define the signature value
-                        hash:
-                          type: string
-                          description: >-
-                            hash defines the tx data hash, which is only used
-                            when marshaling to JSON.
-                      description: >-
-                        TxData implements the Ethereum transaction data
-                        structure. It is used
-
-                        solely as intended in Ethereum abiding by the protocol.
-                    result:
-                      type: object
-                      properties:
-                        contract_address:
-                          type: string
-                          description: >-
-                            contract_address contains the ethereum address of
-                            the created contract (if
-
-                            any). If the state transition is an evm.Call, the
-                            contract address will be
-
-                            empty.
-                        bloom:
-                          type: string
-                          format: byte
-                          title: bloom represents the bloom filter bytes
-                        tx_logs:
-                          description: >-
-                            tx_logs contains the transaction hash and the
-                            proto-compatible ethereum
-
-                            logs.
-                          type: object
-                          properties:
-                            hash:
-                              type: string
-                            logs:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  address:
-                                    type: string
-                                    title: >-
-                                      address of the contract that generated the
-                                      event
-                                  topics:
-                                    type: array
-                                    items:
-                                      type: string
-                                    description: list of topics provided by the contract.
-                                  data:
-                                    type: string
-                                    format: byte
-                                    title: >-
-                                      supplied by the contract, usually
-                                      ABI-encoded
-                                  block_number:
-                                    type: string
-                                    format: uint64
-                                    title: >-
-                                      block in which the transaction was
-                                      included
-                                  tx_hash:
-                                    type: string
-                                    title: hash of the transaction
-                                  tx_index:
-                                    type: string
-                                    format: uint64
-                                    title: index of the transaction in the block
-                                  block_hash:
-                                    type: string
-                                    title: >-
-                                      hash of the block in which the transaction
-                                      was included
-                                  index:
-                                    type: string
-                                    format: uint64
-                                    title: index of the log in the block
-                                  removed:
-                                    type: boolean
-                                    description: >-
-                                      The Removed field is true if this log was
-                                      reverted due to a chain
-
-                                      reorganisation. You must pay attention to
-                                      this field if you receive logs
-
-                                      through a filter query.
-                                description: >-
-                                  Log represents an protobuf compatible Ethereum
-                                  Log that defines a contract
-
-                                  log event. These events are generated by the
-                                  LOG opcode and stored/indexed by
-
-                                  the node.
-                        ret:
-                          type: string
-                          format: byte
-                          description: ret defines the bytes from the execution.
-                        reverted:
-                          type: boolean
-                          title: >-
-                            reverted flag is set to true when the call has been
-                            reverted
-                        gas_used:
-                          type: string
-                          format: uint64
-                          title: >-
-                            gas_used notes the amount of gas consumed while
-                            execution
-                      description: TxResult stores results of Tx execution.
-                    index:
-                      type: string
-                      format: uint64
-                    blockHeight:
-                      type: string
-                      format: uint64
-                    blockHash:
-                      type: string
-                      format: byte
-                  description: >-
-                    TxReceipt defines the receipt type stored in KV for each EVM
-                    transaction.
-                title: tx receipts list for the block
-            description: >-
-              QueryTxReceiptsByBlockHeightResponse is the response type for the
-              Query/TxReceiptsByBlockHeight RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: height
-          description: height is the block height to query tx receipts for
-          in: path
-          required: true
-          type: string
-          format: int64
-      tags:
-        - Query
-  '/ethermint/evm/v1alpha1/tx_receipts_block_hash/{hash}':
-    get:
-      summary: TxReceiptsByBlockHash queries tx receipts by a block hash.
-      operationId: TxReceiptsByBlockHash
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              receipts:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    hash:
-                      type: string
-                      format: byte
-                    from:
-                      type: string
-                      format: byte
-                    data:
-                      type: object
-                      properties:
-                        nonce:
-                          type: string
-                          format: uint64
-                          description: >-
-                            nonce corresponds to the account nonce (transaction
-                            sequence).
-                        price:
-                          type: string
-                          format: byte
-                          description: >-
-                            price defines the unsigned integer value of the gas
-                            price in bytes.
-                        gas:
-                          type: string
-                          format: uint64
-                          description: >-
-                            gas defines the gas limit defined for the
-                            transaction.
-                        to:
-                          type: string
-                          format: byte
-                        value:
-                          type: string
-                          format: byte
-                          description: >-
-                            value defines the unsigned integer value of the
-                            transaction amount.
-                        input:
-                          type: string
-                          format: byte
-                          description: >-
-                            input defines the data payload bytes of the
-                            transaction.
-                        v:
-                          type: string
-                          format: byte
-                          title: v defines the signature value
-                        r:
-                          type: string
-                          format: byte
-                          title: r defines the signature value
-                        s:
-                          type: string
-                          format: byte
-                          title: s define the signature value
-                        hash:
-                          type: string
-                          description: >-
-                            hash defines the tx data hash, which is only used
-                            when marshaling to JSON.
-                      description: >-
-                        TxData implements the Ethereum transaction data
-                        structure. It is used
-
-                        solely as intended in Ethereum abiding by the protocol.
-                    result:
-                      type: object
-                      properties:
-                        contract_address:
-                          type: string
-                          description: >-
-                            contract_address contains the ethereum address of
-                            the created contract (if
-
-                            any). If the state transition is an evm.Call, the
-                            contract address will be
-
-                            empty.
-                        bloom:
-                          type: string
-                          format: byte
-                          title: bloom represents the bloom filter bytes
-                        tx_logs:
-                          description: >-
-                            tx_logs contains the transaction hash and the
-                            proto-compatible ethereum
-
-                            logs.
-                          type: object
-                          properties:
-                            hash:
-                              type: string
-                            logs:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  address:
-                                    type: string
-                                    title: >-
-                                      address of the contract that generated the
-                                      event
-                                  topics:
-                                    type: array
-                                    items:
-                                      type: string
-                                    description: list of topics provided by the contract.
-                                  data:
-                                    type: string
-                                    format: byte
-                                    title: >-
-                                      supplied by the contract, usually
-                                      ABI-encoded
-                                  block_number:
-                                    type: string
-                                    format: uint64
-                                    title: >-
-                                      block in which the transaction was
-                                      included
-                                  tx_hash:
-                                    type: string
-                                    title: hash of the transaction
-                                  tx_index:
-                                    type: string
-                                    format: uint64
-                                    title: index of the transaction in the block
-                                  block_hash:
-                                    type: string
-                                    title: >-
-                                      hash of the block in which the transaction
-                                      was included
-                                  index:
-                                    type: string
-                                    format: uint64
-                                    title: index of the log in the block
-                                  removed:
-                                    type: boolean
-                                    description: >-
-                                      The Removed field is true if this log was
-                                      reverted due to a chain
-
-                                      reorganisation. You must pay attention to
-                                      this field if you receive logs
-
-                                      through a filter query.
-                                description: >-
-                                  Log represents an protobuf compatible Ethereum
-                                  Log that defines a contract
-
-                                  log event. These events are generated by the
-                                  LOG opcode and stored/indexed by
-
-                                  the node.
-                        ret:
-                          type: string
-                          format: byte
-                          description: ret defines the bytes from the execution.
-                        reverted:
-                          type: boolean
-                          title: >-
-                            reverted flag is set to true when the call has been
-                            reverted
-                        gas_used:
-                          type: string
-                          format: uint64
-                          title: >-
-                            gas_used notes the amount of gas consumed while
-                            execution
-                      description: TxResult stores results of Tx execution.
-                    index:
-                      type: string
-                      format: uint64
-                    blockHeight:
-                      type: string
-                      format: uint64
-                    blockHash:
-                      type: string
-                      format: byte
-                  description: >-
-                    TxReceipt defines the receipt type stored in KV for each EVM
-                    transaction.
-                title: tx receipts list for the block
-            description: >-
-              QueryTxReceiptsByBlockHashResponse is the response type for the
-              Query/TxReceiptsByBlockHash RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: hash
-          description: hash is the ethereum transaction hex hash to query the receipt for.
+        - name: cons_address
+          description: cons_address is the validator cons address to query the account for.
           in: path
           required: true
           type: string
@@ -10998,6 +10432,74 @@ paths:
       tags:
         - Query
 definitions:
+  cosmos.base.query.v1beta1.PageRequest:
+    type: object
+    properties:
+      key:
+        type: string
+        format: byte
+        description: |-
+          key is a value returned in PageResponse.next_key to begin
+          querying the next page most efficiently. Only one of offset or key
+          should be set.
+      offset:
+        type: string
+        format: uint64
+        description: |-
+          offset is a numeric offset that can be used when key is unavailable.
+          It is less efficient than using key. Only one of offset or key should
+          be set.
+      limit:
+        type: string
+        format: uint64
+        description: >-
+          limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.
+      count_total:
+        type: boolean
+        description: >-
+          count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when
+          key
+
+          is set.
+    description: |-
+      message SomeRequest {
+               Foo some_parameter = 1;
+               PageRequest pagination = 2;
+       }
+    title: |-
+      PageRequest is to be embedded in gRPC request messages for efficient
+      pagination. Ex:
+  cosmos.base.query.v1beta1.PageResponse:
+    type: object
+    properties:
+      next_key:
+        type: string
+        format: byte
+        title: |-
+          next_key is the key to be passed to PageRequest.key to
+          query the next page most efficiently
+      total:
+        type: string
+        format: uint64
+        title: |-
+          total is total number of results available if PageRequest.count_total
+          was set, its value is undefined otherwise
+    description: |-
+      PageResponse is to be embedded in gRPC response messages where the
+      corresponding request message has used PageRequest.
+
+       message SomeResponse {
+               repeated Bar results = 1;
+               PageResponse page = 2;
+       }
   ethermint.evm.v1alpha1.Log:
     type: object
     properties:
@@ -11078,8 +10580,7 @@ definitions:
         description: balance is the balance of the EVM denomination.
       code_hash:
         type: string
-        format: byte
-        description: code_hash is the code bytes from the EOA.
+        description: code hash is the hex-formatted code bytes from the EOA.
       nonce:
         type: string
         format: uint64
@@ -11178,6 +10679,24 @@ definitions:
 
             persisted on blockchain state after an upgrade.
         description: logs represents the ethereum logs generated at the given block hash.
+      pagination:
+        description: pagination defines the pagination in the response.
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            title: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
     description: QueryTxLogs is the response type for the Query/BlockLogs RPC method.
   ethermint.evm.v1alpha1.QueryCodeResponse:
     type: object
@@ -11318,533 +10837,23 @@ definitions:
           logs represents the ethereum logs generated from the given
           transaction.
     description: QueryTxLogs is the response type for the Query/TxLogs RPC method.
-  ethermint.evm.v1alpha1.QueryTxReceiptResponse:
+  ethermint.evm.v1alpha1.QueryValidatorAccountResponse:
     type: object
     properties:
-      receipt:
-        description: receipt represents the ethereum receipt for the given transaction.
-        type: object
-        properties:
-          hash:
-            type: string
-            format: byte
-          from:
-            type: string
-            format: byte
-          data:
-            type: object
-            properties:
-              nonce:
-                type: string
-                format: uint64
-                description: nonce corresponds to the account nonce (transaction sequence).
-              price:
-                type: string
-                format: byte
-                description: >-
-                  price defines the unsigned integer value of the gas price in
-                  bytes.
-              gas:
-                type: string
-                format: uint64
-                description: gas defines the gas limit defined for the transaction.
-              to:
-                type: string
-                format: byte
-              value:
-                type: string
-                format: byte
-                description: >-
-                  value defines the unsigned integer value of the transaction
-                  amount.
-              input:
-                type: string
-                format: byte
-                description: input defines the data payload bytes of the transaction.
-              v:
-                type: string
-                format: byte
-                title: v defines the signature value
-              r:
-                type: string
-                format: byte
-                title: r defines the signature value
-              s:
-                type: string
-                format: byte
-                title: s define the signature value
-              hash:
-                type: string
-                description: >-
-                  hash defines the tx data hash, which is only used when
-                  marshaling to JSON.
-            description: >-
-              TxData implements the Ethereum transaction data structure. It is
-              used
-
-              solely as intended in Ethereum abiding by the protocol.
-          result:
-            type: object
-            properties:
-              contract_address:
-                type: string
-                description: >-
-                  contract_address contains the ethereum address of the created
-                  contract (if
-
-                  any). If the state transition is an evm.Call, the contract
-                  address will be
-
-                  empty.
-              bloom:
-                type: string
-                format: byte
-                title: bloom represents the bloom filter bytes
-              tx_logs:
-                description: >-
-                  tx_logs contains the transaction hash and the proto-compatible
-                  ethereum
-
-                  logs.
-                type: object
-                properties:
-                  hash:
-                    type: string
-                  logs:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        address:
-                          type: string
-                          title: address of the contract that generated the event
-                        topics:
-                          type: array
-                          items:
-                            type: string
-                          description: list of topics provided by the contract.
-                        data:
-                          type: string
-                          format: byte
-                          title: 'supplied by the contract, usually ABI-encoded'
-                        block_number:
-                          type: string
-                          format: uint64
-                          title: block in which the transaction was included
-                        tx_hash:
-                          type: string
-                          title: hash of the transaction
-                        tx_index:
-                          type: string
-                          format: uint64
-                          title: index of the transaction in the block
-                        block_hash:
-                          type: string
-                          title: >-
-                            hash of the block in which the transaction was
-                            included
-                        index:
-                          type: string
-                          format: uint64
-                          title: index of the log in the block
-                        removed:
-                          type: boolean
-                          description: >-
-                            The Removed field is true if this log was reverted
-                            due to a chain
-
-                            reorganisation. You must pay attention to this field
-                            if you receive logs
-
-                            through a filter query.
-                      description: >-
-                        Log represents an protobuf compatible Ethereum Log that
-                        defines a contract
-
-                        log event. These events are generated by the LOG opcode
-                        and stored/indexed by
-
-                        the node.
-              ret:
-                type: string
-                format: byte
-                description: ret defines the bytes from the execution.
-              reverted:
-                type: boolean
-                title: reverted flag is set to true when the call has been reverted
-              gas_used:
-                type: string
-                format: uint64
-                title: gas_used notes the amount of gas consumed while execution
-            description: TxResult stores results of Tx execution.
-          index:
-            type: string
-            format: uint64
-          blockHeight:
-            type: string
-            format: uint64
-          blockHash:
-            type: string
-            format: byte
+      account_address:
+        type: string
+        description: account_address is the cosmos address of the account in bech32 format.
+      sequence:
+        type: string
+        format: uint64
+        description: sequence is the account's sequence number.
+      account_number:
+        type: string
+        format: uint64
+        title: account_number is the account number
     description: >-
-      QueryTxReceiptResponse is the response type for the Query/TxReceipt RPC
-      method.
-  ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHashResponse:
-    type: object
-    properties:
-      receipts:
-        type: array
-        items:
-          type: object
-          properties:
-            hash:
-              type: string
-              format: byte
-            from:
-              type: string
-              format: byte
-            data:
-              type: object
-              properties:
-                nonce:
-                  type: string
-                  format: uint64
-                  description: >-
-                    nonce corresponds to the account nonce (transaction
-                    sequence).
-                price:
-                  type: string
-                  format: byte
-                  description: >-
-                    price defines the unsigned integer value of the gas price in
-                    bytes.
-                gas:
-                  type: string
-                  format: uint64
-                  description: gas defines the gas limit defined for the transaction.
-                to:
-                  type: string
-                  format: byte
-                value:
-                  type: string
-                  format: byte
-                  description: >-
-                    value defines the unsigned integer value of the transaction
-                    amount.
-                input:
-                  type: string
-                  format: byte
-                  description: input defines the data payload bytes of the transaction.
-                v:
-                  type: string
-                  format: byte
-                  title: v defines the signature value
-                r:
-                  type: string
-                  format: byte
-                  title: r defines the signature value
-                s:
-                  type: string
-                  format: byte
-                  title: s define the signature value
-                hash:
-                  type: string
-                  description: >-
-                    hash defines the tx data hash, which is only used when
-                    marshaling to JSON.
-              description: >-
-                TxData implements the Ethereum transaction data structure. It is
-                used
-
-                solely as intended in Ethereum abiding by the protocol.
-            result:
-              type: object
-              properties:
-                contract_address:
-                  type: string
-                  description: >-
-                    contract_address contains the ethereum address of the
-                    created contract (if
-
-                    any). If the state transition is an evm.Call, the contract
-                    address will be
-
-                    empty.
-                bloom:
-                  type: string
-                  format: byte
-                  title: bloom represents the bloom filter bytes
-                tx_logs:
-                  description: >-
-                    tx_logs contains the transaction hash and the
-                    proto-compatible ethereum
-
-                    logs.
-                  type: object
-                  properties:
-                    hash:
-                      type: string
-                    logs:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          address:
-                            type: string
-                            title: address of the contract that generated the event
-                          topics:
-                            type: array
-                            items:
-                              type: string
-                            description: list of topics provided by the contract.
-                          data:
-                            type: string
-                            format: byte
-                            title: 'supplied by the contract, usually ABI-encoded'
-                          block_number:
-                            type: string
-                            format: uint64
-                            title: block in which the transaction was included
-                          tx_hash:
-                            type: string
-                            title: hash of the transaction
-                          tx_index:
-                            type: string
-                            format: uint64
-                            title: index of the transaction in the block
-                          block_hash:
-                            type: string
-                            title: >-
-                              hash of the block in which the transaction was
-                              included
-                          index:
-                            type: string
-                            format: uint64
-                            title: index of the log in the block
-                          removed:
-                            type: boolean
-                            description: >-
-                              The Removed field is true if this log was reverted
-                              due to a chain
-
-                              reorganisation. You must pay attention to this
-                              field if you receive logs
-
-                              through a filter query.
-                        description: >-
-                          Log represents an protobuf compatible Ethereum Log
-                          that defines a contract
-
-                          log event. These events are generated by the LOG
-                          opcode and stored/indexed by
-
-                          the node.
-                ret:
-                  type: string
-                  format: byte
-                  description: ret defines the bytes from the execution.
-                reverted:
-                  type: boolean
-                  title: reverted flag is set to true when the call has been reverted
-                gas_used:
-                  type: string
-                  format: uint64
-                  title: gas_used notes the amount of gas consumed while execution
-              description: TxResult stores results of Tx execution.
-            index:
-              type: string
-              format: uint64
-            blockHeight:
-              type: string
-              format: uint64
-            blockHash:
-              type: string
-              format: byte
-          description: >-
-            TxReceipt defines the receipt type stored in KV for each EVM
-            transaction.
-        title: tx receipts list for the block
-    description: >-
-      QueryTxReceiptsByBlockHashResponse is the response type for the
-      Query/TxReceiptsByBlockHash RPC method.
-  ethermint.evm.v1alpha1.QueryTxReceiptsByBlockHeightResponse:
-    type: object
-    properties:
-      receipts:
-        type: array
-        items:
-          type: object
-          properties:
-            hash:
-              type: string
-              format: byte
-            from:
-              type: string
-              format: byte
-            data:
-              type: object
-              properties:
-                nonce:
-                  type: string
-                  format: uint64
-                  description: >-
-                    nonce corresponds to the account nonce (transaction
-                    sequence).
-                price:
-                  type: string
-                  format: byte
-                  description: >-
-                    price defines the unsigned integer value of the gas price in
-                    bytes.
-                gas:
-                  type: string
-                  format: uint64
-                  description: gas defines the gas limit defined for the transaction.
-                to:
-                  type: string
-                  format: byte
-                value:
-                  type: string
-                  format: byte
-                  description: >-
-                    value defines the unsigned integer value of the transaction
-                    amount.
-                input:
-                  type: string
-                  format: byte
-                  description: input defines the data payload bytes of the transaction.
-                v:
-                  type: string
-                  format: byte
-                  title: v defines the signature value
-                r:
-                  type: string
-                  format: byte
-                  title: r defines the signature value
-                s:
-                  type: string
-                  format: byte
-                  title: s define the signature value
-                hash:
-                  type: string
-                  description: >-
-                    hash defines the tx data hash, which is only used when
-                    marshaling to JSON.
-              description: >-
-                TxData implements the Ethereum transaction data structure. It is
-                used
-
-                solely as intended in Ethereum abiding by the protocol.
-            result:
-              type: object
-              properties:
-                contract_address:
-                  type: string
-                  description: >-
-                    contract_address contains the ethereum address of the
-                    created contract (if
-
-                    any). If the state transition is an evm.Call, the contract
-                    address will be
-
-                    empty.
-                bloom:
-                  type: string
-                  format: byte
-                  title: bloom represents the bloom filter bytes
-                tx_logs:
-                  description: >-
-                    tx_logs contains the transaction hash and the
-                    proto-compatible ethereum
-
-                    logs.
-                  type: object
-                  properties:
-                    hash:
-                      type: string
-                    logs:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          address:
-                            type: string
-                            title: address of the contract that generated the event
-                          topics:
-                            type: array
-                            items:
-                              type: string
-                            description: list of topics provided by the contract.
-                          data:
-                            type: string
-                            format: byte
-                            title: 'supplied by the contract, usually ABI-encoded'
-                          block_number:
-                            type: string
-                            format: uint64
-                            title: block in which the transaction was included
-                          tx_hash:
-                            type: string
-                            title: hash of the transaction
-                          tx_index:
-                            type: string
-                            format: uint64
-                            title: index of the transaction in the block
-                          block_hash:
-                            type: string
-                            title: >-
-                              hash of the block in which the transaction was
-                              included
-                          index:
-                            type: string
-                            format: uint64
-                            title: index of the log in the block
-                          removed:
-                            type: boolean
-                            description: >-
-                              The Removed field is true if this log was reverted
-                              due to a chain
-
-                              reorganisation. You must pay attention to this
-                              field if you receive logs
-
-                              through a filter query.
-                        description: >-
-                          Log represents an protobuf compatible Ethereum Log
-                          that defines a contract
-
-                          log event. These events are generated by the LOG
-                          opcode and stored/indexed by
-
-                          the node.
-                ret:
-                  type: string
-                  format: byte
-                  description: ret defines the bytes from the execution.
-                reverted:
-                  type: boolean
-                  title: reverted flag is set to true when the call has been reverted
-                gas_used:
-                  type: string
-                  format: uint64
-                  title: gas_used notes the amount of gas consumed while execution
-              description: TxResult stores results of Tx execution.
-            index:
-              type: string
-              format: uint64
-            blockHeight:
-              type: string
-              format: uint64
-            blockHash:
-              type: string
-              format: byte
-          description: >-
-            TxReceipt defines the receipt type stored in KV for each EVM
-            transaction.
-        title: tx receipts list for the block
-    description: >-
-      QueryTxReceiptsByBlockHeightResponse is the response type for the
-      Query/TxReceiptsByBlockHeight RPC method.
+      QueryValidatorAccountResponse is the response type for the
+      Query/ValidatorAccount RPC method.
   ethermint.evm.v1alpha1.TransactionLogs:
     type: object
     properties:
@@ -11910,305 +10919,6 @@ definitions:
       not
 
       persisted on blockchain state after an upgrade.
-  ethermint.evm.v1alpha1.TxData:
-    type: object
-    properties:
-      nonce:
-        type: string
-        format: uint64
-        description: nonce corresponds to the account nonce (transaction sequence).
-      price:
-        type: string
-        format: byte
-        description: price defines the unsigned integer value of the gas price in bytes.
-      gas:
-        type: string
-        format: uint64
-        description: gas defines the gas limit defined for the transaction.
-      to:
-        type: string
-        format: byte
-      value:
-        type: string
-        format: byte
-        description: value defines the unsigned integer value of the transaction amount.
-      input:
-        type: string
-        format: byte
-        description: input defines the data payload bytes of the transaction.
-      v:
-        type: string
-        format: byte
-        title: v defines the signature value
-      r:
-        type: string
-        format: byte
-        title: r defines the signature value
-      s:
-        type: string
-        format: byte
-        title: s define the signature value
-      hash:
-        type: string
-        description: >-
-          hash defines the tx data hash, which is only used when marshaling to
-          JSON.
-    description: |-
-      TxData implements the Ethereum transaction data structure. It is used
-      solely as intended in Ethereum abiding by the protocol.
-  ethermint.evm.v1alpha1.TxReceipt:
-    type: object
-    properties:
-      hash:
-        type: string
-        format: byte
-      from:
-        type: string
-        format: byte
-      data:
-        type: object
-        properties:
-          nonce:
-            type: string
-            format: uint64
-            description: nonce corresponds to the account nonce (transaction sequence).
-          price:
-            type: string
-            format: byte
-            description: >-
-              price defines the unsigned integer value of the gas price in
-              bytes.
-          gas:
-            type: string
-            format: uint64
-            description: gas defines the gas limit defined for the transaction.
-          to:
-            type: string
-            format: byte
-          value:
-            type: string
-            format: byte
-            description: >-
-              value defines the unsigned integer value of the transaction
-              amount.
-          input:
-            type: string
-            format: byte
-            description: input defines the data payload bytes of the transaction.
-          v:
-            type: string
-            format: byte
-            title: v defines the signature value
-          r:
-            type: string
-            format: byte
-            title: r defines the signature value
-          s:
-            type: string
-            format: byte
-            title: s define the signature value
-          hash:
-            type: string
-            description: >-
-              hash defines the tx data hash, which is only used when marshaling
-              to JSON.
-        description: |-
-          TxData implements the Ethereum transaction data structure. It is used
-          solely as intended in Ethereum abiding by the protocol.
-      result:
-        type: object
-        properties:
-          contract_address:
-            type: string
-            description: >-
-              contract_address contains the ethereum address of the created
-              contract (if
-
-              any). If the state transition is an evm.Call, the contract address
-              will be
-
-              empty.
-          bloom:
-            type: string
-            format: byte
-            title: bloom represents the bloom filter bytes
-          tx_logs:
-            description: >-
-              tx_logs contains the transaction hash and the proto-compatible
-              ethereum
-
-              logs.
-            type: object
-            properties:
-              hash:
-                type: string
-              logs:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    address:
-                      type: string
-                      title: address of the contract that generated the event
-                    topics:
-                      type: array
-                      items:
-                        type: string
-                      description: list of topics provided by the contract.
-                    data:
-                      type: string
-                      format: byte
-                      title: 'supplied by the contract, usually ABI-encoded'
-                    block_number:
-                      type: string
-                      format: uint64
-                      title: block in which the transaction was included
-                    tx_hash:
-                      type: string
-                      title: hash of the transaction
-                    tx_index:
-                      type: string
-                      format: uint64
-                      title: index of the transaction in the block
-                    block_hash:
-                      type: string
-                      title: hash of the block in which the transaction was included
-                    index:
-                      type: string
-                      format: uint64
-                      title: index of the log in the block
-                    removed:
-                      type: boolean
-                      description: >-
-                        The Removed field is true if this log was reverted due
-                        to a chain
-
-                        reorganisation. You must pay attention to this field if
-                        you receive logs
-
-                        through a filter query.
-                  description: >-
-                    Log represents an protobuf compatible Ethereum Log that
-                    defines a contract
-
-                    log event. These events are generated by the LOG opcode and
-                    stored/indexed by
-
-                    the node.
-          ret:
-            type: string
-            format: byte
-            description: ret defines the bytes from the execution.
-          reverted:
-            type: boolean
-            title: reverted flag is set to true when the call has been reverted
-          gas_used:
-            type: string
-            format: uint64
-            title: gas_used notes the amount of gas consumed while execution
-        description: TxResult stores results of Tx execution.
-      index:
-        type: string
-        format: uint64
-      blockHeight:
-        type: string
-        format: uint64
-      blockHash:
-        type: string
-        format: byte
-    description: TxReceipt defines the receipt type stored in KV for each EVM transaction.
-  ethermint.evm.v1alpha1.TxResult:
-    type: object
-    properties:
-      contract_address:
-        type: string
-        description: >-
-          contract_address contains the ethereum address of the created contract
-          (if
-
-          any). If the state transition is an evm.Call, the contract address
-          will be
-
-          empty.
-      bloom:
-        type: string
-        format: byte
-        title: bloom represents the bloom filter bytes
-      tx_logs:
-        description: >-
-          tx_logs contains the transaction hash and the proto-compatible
-          ethereum
-
-          logs.
-        type: object
-        properties:
-          hash:
-            type: string
-          logs:
-            type: array
-            items:
-              type: object
-              properties:
-                address:
-                  type: string
-                  title: address of the contract that generated the event
-                topics:
-                  type: array
-                  items:
-                    type: string
-                  description: list of topics provided by the contract.
-                data:
-                  type: string
-                  format: byte
-                  title: 'supplied by the contract, usually ABI-encoded'
-                block_number:
-                  type: string
-                  format: uint64
-                  title: block in which the transaction was included
-                tx_hash:
-                  type: string
-                  title: hash of the transaction
-                tx_index:
-                  type: string
-                  format: uint64
-                  title: index of the transaction in the block
-                block_hash:
-                  type: string
-                  title: hash of the block in which the transaction was included
-                index:
-                  type: string
-                  format: uint64
-                  title: index of the log in the block
-                removed:
-                  type: boolean
-                  description: >-
-                    The Removed field is true if this log was reverted due to a
-                    chain
-
-                    reorganisation. You must pay attention to this field if you
-                    receive logs
-
-                    through a filter query.
-              description: >-
-                Log represents an protobuf compatible Ethereum Log that defines
-                a contract
-
-                log event. These events are generated by the LOG opcode and
-                stored/indexed by
-
-                the node.
-      ret:
-        type: string
-        format: byte
-        description: ret defines the bytes from the execution.
-      reverted:
-        type: boolean
-        title: reverted flag is set to true when the call has been reverted
-      gas_used:
-        type: string
-        format: uint64
-        title: gas_used notes the amount of gas consumed while execution
-    description: TxResult stores results of Tx execution.
   google.protobuf.Any:
     type: object
     properties:
@@ -13019,74 +11729,6 @@ definitions:
     description: |-
       SendEnabled maps coin denom to a send_enabled status (whether a denom is
       sendable).
-  cosmos.base.query.v1beta1.PageRequest:
-    type: object
-    properties:
-      key:
-        type: string
-        format: byte
-        description: |-
-          key is a value returned in PageResponse.next_key to begin
-          querying the next page most efficiently. Only one of offset or key
-          should be set.
-      offset:
-        type: string
-        format: uint64
-        description: |-
-          offset is a numeric offset that can be used when key is unavailable.
-          It is less efficient than using key. Only one of offset or key should
-          be set.
-      limit:
-        type: string
-        format: uint64
-        description: >-
-          limit is the total number of results to be returned in the result
-          page.
-
-          If left empty it will default to a value to be set by each app.
-      count_total:
-        type: boolean
-        description: >-
-          count_total is set to true  to indicate that the result set should
-          include
-
-          a count of the total number of items available for pagination in UIs.
-
-          count_total is only respected when offset is used. It is ignored when
-          key
-
-          is set.
-    description: |-
-      message SomeRequest {
-               Foo some_parameter = 1;
-               PageRequest pagination = 2;
-       }
-    title: |-
-      PageRequest is to be embedded in gRPC request messages for efficient
-      pagination. Ex:
-  cosmos.base.query.v1beta1.PageResponse:
-    type: object
-    properties:
-      next_key:
-        type: string
-        format: byte
-        title: |-
-          next_key is the key to be passed to PageRequest.key to
-          query the next page most efficiently
-      total:
-        type: string
-        format: uint64
-        title: |-
-          total is total number of results available if PageRequest.count_total
-          was set, its value is undefined otherwise
-    description: |-
-      PageResponse is to be embedded in gRPC response messages where the
-      corresponding request message has used PageRequest.
-
-       message SomeResponse {
-               repeated Bar results = 1;
-               PageResponse page = 2;
-       }
   cosmos.base.v1beta1.Coin:
     type: object
     properties:
