@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/cosmos/ethermint/testutil/network"
-	ethermint "github.com/cosmos/ethermint/types"
+	"github.com/tharsis/ethermint/testutil/network"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 type IntegrationTestSuite struct {

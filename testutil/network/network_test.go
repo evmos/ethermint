@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/cosmos/ethermint/testutil/network"
+	"github.com/tharsis/ethermint/testutil/network"
 )
 
 type IntegrationTestSuite struct {
