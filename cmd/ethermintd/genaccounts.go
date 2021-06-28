@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -22,7 +22,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/tharsis/ethermint/crypto/hd"
-	chain "github.com/tharsis/ethermint/types"
+	ethermint "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 const (
@@ -127,9 +128,9 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 					return errors.New("invalid vesting parameters; must supply start and end time or end time")
 				}
 			} else {
-				genAccount = &chain.EthAccount{
+				genAccount = &ethermint.EthAccount{
 					BaseAccount: baseAccount,
-					CodeHash:    ethcrypto.Keccak256(nil),
+					CodeHash:    common.BytesToHash(evmtypes.EmptyCodeHash).Hex(),
 				}
 			}
 

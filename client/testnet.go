@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/ethereum/go-ethereum/common"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -245,7 +245,7 @@ func InitTestnet(
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins})
 		genAccounts = append(genAccounts, &ethermint.EthAccount{
 			BaseAccount: authtypes.NewBaseAccount(addr, nil, 0, 0),
-			CodeHash:    ethcrypto.Keccak256(nil),
+			CodeHash:    common.BytesToHash(evmtypes.EmptyCodeHash).Hex(),
 		})
 
 		valTokens := sdk.TokensFromConsensusPower(100, ethermint.PowerReduction)
