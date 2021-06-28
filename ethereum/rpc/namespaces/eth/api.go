@@ -256,9 +256,11 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctype
 		return &n, nil
 	}
 
-	_, nonce, err := accRet.GetAccountNumberSequence(e.clientCtx, from)
-	if err != nil {
-		return nil, err
+	includePending := blockNum == rpctypes.EthPendingBlockNumber
+
+	nonce, error := getAccountNonce(e.clientCtx, e.backend, address, includePending)
+	if error != nil {
+		return nil, error
 	}
 
 	n := hexutil.Uint64(nonce)
@@ -565,16 +567,11 @@ func (e *PublicAPI) doCall(
 		accessList = args.AccessList
 	}
 
-	// Set destination address for call
-	var fromAddr sdk.AccAddress
-	if args.From != nil {
-		fromAddr = sdk.AccAddress(args.From.Bytes())
-	} else {
-		fromAddr = sdk.AccAddress(common.Address{}.Bytes())
+	if args.From == nil {
 		args.From = &common.Address{}
 	}
 
-	_, seq, err := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, fromAddr)
+	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1018,9 +1015,6 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 // provided on the args
 func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
 
-	// Get nonce (sequence) from sender account
-	from := sdk.AccAddress(args.From.Bytes())
-
 	if args.GasPrice == nil {
 		// TODO: Change to either:
 		// - min gas price from context once available through server/daemon, or
@@ -1031,7 +1025,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
-		_, nonce, _ := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, from)
+		nonce, _ := getAccountNonce(e.clientCtx, e.backend, args.From, true)
 		args.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 
@@ -1083,4 +1077,36 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	}
 
 	return args, nil
+}
+
+// getAccountNonce return the account nonce
+// Todo: include the ability to specify a blockNumber
+func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common.Address, pending bool) (uint64, error) {
+	_, nonce, err := ctx.AccountRetriever.GetAccountNumberSequence(ctx, accAddr.Bytes())
+	if err != nil {
+		return 0, err
+	}
+
+	if pending {
+		// the account retriever doesn't include the uncommitted transactions on the nonce so we need to
+		// to manually add them.
+		pendingTxs, err := backend.PendingTransactions()
+		if err != nil {
+			return 0, err
+		}
+
+		// add the uncommitted txs to the nonce counter
+		if len(pendingTxs) != 0 {
+			for i := range pendingTxs {
+				if pendingTxs[i] == nil {
+					continue
+				}
+				if pendingTxs[i].From == accAddr {
+					nonce++
+				}
+			}
+		}
+	}
+
+	return nonce, nil
 }
