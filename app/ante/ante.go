@@ -31,7 +31,6 @@ type AccountKeeper interface {
 type BankKeeper interface {
 	authtypes.BankKeeper
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-	SetBalance(ctx sdk.Context, addr sdk.AccAddress, balance sdk.Coin) error
 }
 
 // NewAnteHandler returns an ante handler responsible for attempting to route an
@@ -42,6 +41,7 @@ func NewAnteHandler(
 	ak AccountKeeper,
 	bankKeeper BankKeeper,
 	evmKeeper EVMKeeper,
+	feeGrantKeeper authante.FeegrantKeeper,
 	signModeHandler authsigning.SignModeHandler,
 ) sdk.AnteHandler {
 	return func(
@@ -62,7 +62,7 @@ func NewAnteHandler(
 					anteHandler = sdk.ChainAnteDecorators(
 						authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 						authante.NewMempoolFeeDecorator(),
-						authante.TxTimeoutHeightDecorator{},
+						authante.NewTxTimeoutHeightDecorator(),
 						authante.NewValidateMemoDecorator(ak),
 						NewEthValidateBasicDecorator(),
 						NewEthSigVerificationDecorator(evmKeeper),
@@ -94,13 +94,12 @@ func NewAnteHandler(
 				authante.NewRejectExtensionOptionsDecorator(),
 				authante.NewMempoolFeeDecorator(),
 				authante.NewValidateBasicDecorator(),
-				authante.TxTimeoutHeightDecorator{},
+				authante.NewTxTimeoutHeightDecorator(),
 				authante.NewValidateMemoDecorator(ak),
 				authante.NewConsumeGasForTxSizeDecorator(ak),
-				authante.NewRejectFeeGranterDecorator(),
 				authante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
 				authante.NewValidateSigCountDecorator(ak),
-				authante.NewDeductFeeDecorator(ak, bankKeeper),
+				authante.NewDeductFeeDecorator(ak, bankKeeper, feeGrantKeeper),
 				authante.NewSigGasConsumeDecorator(ak, DefaultSigVerificationGasConsumer),
 				authante.NewSigVerificationDecorator(ak, signModeHandler),
 				authante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator

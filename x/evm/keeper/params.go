@@ -26,13 +26,13 @@ func (k Keeper) GetChainConfig(ctx sdk.Context) (types.ChainConfig, bool) {
 	}
 
 	var config types.ChainConfig
-	k.cdc.MustUnmarshalBinaryBare(bz, &config)
+	k.cdc.MustUnmarshal(bz, &config)
 	return config, true
 }
 
 // SetChainConfig sets the mapping from block consensus hash to block height
 func (k Keeper) SetChainConfig(ctx sdk.Context, config types.ChainConfig) {
 	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshalBinaryBare(&config)
+	bz := k.cdc.MustMarshal(&config)
 	store.Set(types.KeyPrefixChainConfig, bz)
 }

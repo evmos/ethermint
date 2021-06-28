@@ -246,7 +246,7 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
 		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshalBinaryBare(value, &txLog)
+		k.cdc.MustUnmarshal(value, &txLog)
 
 		if len(txLog.Logs) > 0 && txLog.Logs[0].BlockHash == req.Hash {
 			if accumulate {

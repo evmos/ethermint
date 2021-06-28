@@ -27,7 +27,7 @@ type AccountTestSuite struct {
 	suite.Suite
 
 	account *types.EthAccount
-	cdc     codec.JSONMarshaler
+	cdc     codec.JSONCodec
 }
 
 func (suite *AccountTestSuite) SetupTest() {

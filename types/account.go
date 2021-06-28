@@ -61,7 +61,7 @@ func (acc EthAccount) MarshalYAML() (interface{}, error) {
 	var err error
 
 	if acc.PubKey != nil {
-		alias.PubKey, err = sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, acc.GetPubKey())
+		alias.PubKey, err = sdk.Bech32ifyPubKey(sdk.Bech32PrefixAccPub, acc.GetPubKey())
 		if err != nil {
 			return nil, err
 		}

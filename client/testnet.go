@@ -320,11 +320,11 @@ func initGenFiles(
 	numValidators int,
 ) error {
 
-	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
+	appGenState := mbm.DefaultGenesis(clientCtx.JSONCodec)
 
 	// set the accounts in the genesis state
 	var authGenState authtypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[authtypes.ModuleName], &authGenState)
+	clientCtx.JSONCodec.MustUnmarshalJSON(appGenState[authtypes.ModuleName], &authGenState)
 
 	accounts, err := authtypes.PackAccounts(genAccounts)
 	if err != nil {
@@ -332,44 +332,44 @@ func initGenFiles(
 	}
 
 	authGenState.Accounts = accounts
-	appGenState[authtypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&authGenState)
+	appGenState[authtypes.ModuleName] = clientCtx.JSONCodec.MustMarshalJSON(&authGenState)
 
 	// set the balances in the genesis state
 	var bankGenState banktypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[banktypes.ModuleName], &bankGenState)
+	clientCtx.JSONCodec.MustUnmarshalJSON(appGenState[banktypes.ModuleName], &bankGenState)
 
 	bankGenState.Balances = genBalances
-	appGenState[banktypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&bankGenState)
+	appGenState[banktypes.ModuleName] = clientCtx.JSONCodec.MustMarshalJSON(&bankGenState)
 
 	var stakingGenState stakingtypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[stakingtypes.ModuleName], &stakingGenState)
+	clientCtx.JSONCodec.MustUnmarshalJSON(appGenState[stakingtypes.ModuleName], &stakingGenState)
 
 	stakingGenState.Params.BondDenom = coinDenom
-	appGenState[stakingtypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&stakingGenState)
+	appGenState[stakingtypes.ModuleName] = clientCtx.JSONCodec.MustMarshalJSON(&stakingGenState)
 
 	var govGenState govtypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[govtypes.ModuleName], &govGenState)
+	clientCtx.JSONCodec.MustUnmarshalJSON(appGenState[govtypes.ModuleName], &govGenState)
 
 	govGenState.DepositParams.MinDeposit[0].Denom = coinDenom
-	appGenState[govtypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&govGenState)
+	appGenState[govtypes.ModuleName] = clientCtx.JSONCodec.MustMarshalJSON(&govGenState)
 
 	var mintGenState mintypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[mintypes.ModuleName], &mintGenState)
+	clientCtx.JSONCodec.MustUnmarshalJSON(appGenState[mintypes.ModuleName], &mintGenState)
 
 	mintGenState.Params.MintDenom = coinDenom
-	appGenState[mintypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&mintGenState)
+	appGenState[mintypes.ModuleName] = clientCtx.JSONCodec.MustMarshalJSON(&mintGenState)
 
 	var crisisGenState crisistypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[crisistypes.ModuleName], &crisisGenState)
+	clientCtx.JSONCodec.MustUnmarshalJSON(appGenState[crisistypes.ModuleName], &crisisGenState)
 
 	crisisGenState.ConstantFee.Denom = coinDenom
-	appGenState[crisistypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&crisisGenState)
+	appGenState[crisistypes.ModuleName] = clientCtx.JSONCodec.MustMarshalJSON(&crisisGenState)
 
 	var evmGenState evmtypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[evmtypes.ModuleName], &evmGenState)
+	clientCtx.JSONCodec.MustUnmarshalJSON(appGenState[evmtypes.ModuleName], &evmGenState)
 
 	evmGenState.Params.EvmDenom = coinDenom
-	appGenState[evmtypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&evmGenState)
+	appGenState[evmtypes.ModuleName] = clientCtx.JSONCodec.MustMarshalJSON(&evmGenState)
 
 	appGenStateJSON, err := json.MarshalIndent(appGenState, "", "  ")
 	if err != nil {
@@ -416,7 +416,7 @@ func collectGenFiles(
 			return err
 		}
 
-		nodeAppState, err := genutil.GenAppStateFromConfig(clientCtx.JSONMarshaler, clientCtx.TxConfig, nodeConfig, initCfg, *genDoc, genBalIterator)
+		nodeAppState, err := genutil.GenAppStateFromConfig(clientCtx.JSONCodec, clientCtx.TxConfig, nodeConfig, initCfg, *genDoc, genBalIterator)
 		if err != nil {
 			return err
 		}

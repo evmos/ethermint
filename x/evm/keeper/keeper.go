@@ -20,7 +20,7 @@ import (
 // to the StateDB interface.
 type Keeper struct {
 	// Protobuf codec
-	cdc codec.BinaryMarshaler
+	cdc codec.BinaryCodec
 	// Store key required for the EVM Prefix KVStore. It is required by:
 	// - storing Account's Storage State
 	// - storing Account's Code
@@ -44,7 +44,7 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	cdc codec.BinaryCodec, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
 ) *Keeper {
 	// set KeyTable if it has not already been set
@@ -177,7 +177,7 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	txsLogs := []types.TransactionLogs{}
 	for ; iterator.Valid(); iterator.Next() {
 		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &txLog)
+		k.cdc.MustUnmarshal(iterator.Value(), &txLog)
 
 		// add a new entry
 		txsLogs = append(txsLogs, txLog)
@@ -196,7 +196,7 @@ func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
 	}
 
 	var logs types.TransactionLogs
-	k.cdc.MustUnmarshalBinaryBare(bz, &logs)
+	k.cdc.MustUnmarshal(bz, &logs)
 
 	return logs.EthLogs()
 }
@@ -206,7 +206,7 @@ func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
 
 	txLogs := types.NewTransactionLogsFromEth(txHash, logs)
-	bz := k.cdc.MustMarshalBinaryBare(&txLogs)
+	bz := k.cdc.MustMarshal(&txLogs)
 
 	store.Set(txHash.Bytes(), bz)
 }
