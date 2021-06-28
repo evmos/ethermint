@@ -572,20 +572,20 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 	key := log.TxHash
 
 	if len(k.ctx.TxBytes()) > 0 {
-		tx := &ethtypes.Transaction{}
-		if err := tx.UnmarshalBinary(k.ctx.TxBytes()); err != nil {
-			k.Logger(k.ctx).Error(
-				"ethereum tx unmarshaling failed",
-				"error", err,
-			)
-			return
+		tx, err := k.txDecoder(k.ctx.TxBytes())
+		if err != nil {
+			panic(err)
+		}
+		ethTx, ok := tx.GetMsgs()[0].(*types.MsgEthereumTx)
+		if !ok {
+			panic("invalid ethereum tx")
 		}
 
 		// NOTE: we set up the transaction hash from tendermint as it is the format expected by the application:
 		// Remove once hashing is fixed on Tendermint. See https://github.com/tendermint/tendermint/issues/6539
 		key = common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
 
-		log.TxHash = tx.Hash()
+		log.TxHash = common.HexToHash(ethTx.Hash)
 	}
 
 	log.BlockHash = common.BytesToHash(k.ctx.HeaderHash())

@@ -20,7 +20,8 @@ import (
 // to the StateDB interface.
 type Keeper struct {
 	// Protobuf codec
-	cdc codec.BinaryMarshaler
+	cdc       codec.BinaryMarshaler
+	txDecoder sdk.TxDecoder
 	// Store key required for the EVM Prefix KVStore. It is required by:
 	// - storing Account's Storage State
 	// - storing Account's Code
@@ -37,6 +38,7 @@ type Keeper struct {
 	stakingKeeper types.StakingKeeper
 
 	ctx sdk.Context
+
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
 	debug         bool
@@ -44,7 +46,7 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	cdc codec.BinaryMarshaler, txDecoder sdk.TxDecoder, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
 ) *Keeper {
 	// set KeyTable if it has not already been set
@@ -55,6 +57,7 @@ func NewKeeper(
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
 		cdc:           cdc,
+		txDecoder:     txDecoder,
 		paramSpace:    paramSpace,
 		accountKeeper: ak,
 		bankKeeper:    bankKeeper,
