@@ -25,6 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -37,12 +38,10 @@ import (
 	mintypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/tharsis/ethermint/crypto/hd"
-	chaintypes "github.com/tharsis/ethermint/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
+	"github.com/tharsis/ethermint/crypto/hd"
+	ethermint "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 var (
@@ -106,7 +105,7 @@ Note, strict routability for addresses is turned off in the config file.`,
 	cmd.Flags().String(server.FlagMinGasPrices, "", "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01inj,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.EthSecp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().String(flagCoinDenom, chaintypes.AttoPhoton, "Coin denomination used for staking, governance, mint, crisis and evm parameters")
+	cmd.Flags().String(flagCoinDenom, ethermint.AttoPhoton, "Coin denomination used for staking, governance, mint, crisis and evm parameters")
 	return cmd
 }
 
@@ -133,7 +132,7 @@ func InitTestnet(
 		chainID = fmt.Sprintf("ethermint-%d", tmrand.Int63n(9999999999999)+1)
 	}
 
-	if !chaintypes.IsValidChainID(chainID) {
+	if !ethermint.IsValidChainID(chainID) {
 		return fmt.Errorf("invalid chain-id: %s", chainID)
 	}
 
@@ -238,18 +237,18 @@ func InitTestnet(
 			return err
 		}
 
-		accStakingTokens := sdk.TokensFromConsensusPower(5000)
+		accStakingTokens := sdk.TokensFromConsensusPower(5000, ethermint.PowerReduction)
 		coins := sdk.NewCoins(
 			sdk.NewCoin(coinDenom, accStakingTokens),
 		)
 
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins})
-		genAccounts = append(genAccounts, &chaintypes.EthAccount{
+		genAccounts = append(genAccounts, &ethermint.EthAccount{
 			BaseAccount: authtypes.NewBaseAccount(addr, nil, 0, 0),
 			CodeHash:    ethcrypto.Keccak256(nil),
 		})
 
-		valTokens := sdk.TokensFromConsensusPower(100)
+		valTokens := sdk.TokensFromConsensusPower(100, ethermint.PowerReduction)
 		createValMsg, err := stakingtypes.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
