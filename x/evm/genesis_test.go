@@ -1,11 +1,12 @@
 package evm_test
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
@@ -34,8 +35,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.Require().NotNil(acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, address.Bytes(), ethermint.NewPhotonCoinInt64(1))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(address, big.NewInt(1))
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 			},
 			&types.GenesisState{

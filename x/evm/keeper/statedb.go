@@ -69,9 +69,19 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
-	if err := k.bankKeeper.AddCoins(k.ctx, cosmosAddr, coins); err != nil {
+	if err := k.bankKeeper.MintCoins(k.ctx, types.ModuleName, coins); err != nil {
 		k.Logger(k.ctx).Error(
-			"failed to add balance",
+			"failed to mint coins when adding balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
+		return
+	}
+
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, types.ModuleName, cosmosAddr, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to send from module to account when adding balance",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
@@ -102,14 +112,24 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
-	if err := k.bankKeeper.SubtractCoins(k.ctx, cosmosAddr, coins); err != nil {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(k.ctx, cosmosAddr, types.ModuleName, coins); err != nil {
 		k.Logger(k.ctx).Error(
-			"failed to subtract balance",
+			"failed to send from account to module when subtracting balance",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
 
+		return
+	}
+
+	if err := k.bankKeeper.BurnCoins(k.ctx, types.ModuleName, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to burn coins when subtracting balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
 		return
 	}
 
