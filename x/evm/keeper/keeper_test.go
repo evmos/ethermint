@@ -1,9 +1,10 @@
 package keeper_test
 
 import (
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"testing"
 	"time"
+
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 
 	"github.com/stretchr/testify/suite"
 
@@ -52,14 +53,12 @@ func (suite *KeeperTestSuite) SetupTest() {
 	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
 	suite.queryClient = types.NewQueryClient(queryHelper)
 
-	balance := ethermint.NewPhotonCoin(sdk.ZeroInt())
 	acc := &ethermint.EthAccount{
 		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
 		CodeHash:    ethcrypto.Keccak256(nil),
 	}
 
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
-	suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), balance)
 
 	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)

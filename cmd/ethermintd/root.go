@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"io"
-	"math/big"
 	"os"
 	"path/filepath"
 
@@ -80,7 +79,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	// TODO: double-check
 	// authclient.Codec = encodingConfig.Marshaler
-	sdk.DefaultPowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
 	cfg := sdk.GetConfig()
 	cfg.Seal()

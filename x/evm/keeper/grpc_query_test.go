@@ -31,7 +31,6 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 	}{
 		{"zero address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "0",
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
@@ -46,7 +45,9 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 		{
 			"success",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(100))
+				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
+				suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
+				suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "100",
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
@@ -93,7 +94,6 @@ func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
 	}{
 		{"zero address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryCosmosAccountResponse{
 					CosmosAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
 				}
@@ -171,7 +171,6 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 	}{
 		{"zero address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expBalance = "0"
 				req = &types.QueryBalanceRequest{
 					Address: ethcmn.Address{}.String(),
@@ -182,7 +181,9 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 		{
 			"success",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(100))
+				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
+				suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
+				suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
 				expBalance = "100"
 				req = &types.QueryBalanceRequest{
 					Address: suite.address.String(),
@@ -599,7 +600,6 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 	}{
 		{"zero address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryValidatorAccountResponse{
 					AccountAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
 				}

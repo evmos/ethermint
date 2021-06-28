@@ -68,9 +68,6 @@ func (suite *AccountTestSuite) TestEthermintAccount_String() {
 	config := sdk.GetConfig()
 	types.SetBech32Prefixes(config)
 
-	bech32pubkey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, suite.account.GetPubKey())
-	suite.Require().NoError(err)
-
 	accountStr := fmt.Sprintf(`|
   address: %s
   eth_address: %s
@@ -78,7 +75,7 @@ func (suite *AccountTestSuite) TestEthermintAccount_String() {
   account_number: 10
   sequence: 50
   code_hash: "0000000000000000000000000000000000000000000000000000000000000102"
-`, suite.account.Address, suite.account.EthAddress().String(), bech32pubkey)
+`, suite.account.Address, suite.account.EthAddress().String(), "")
 
 	suite.Require().Equal(accountStr, suite.account.String())
 
@@ -89,7 +86,6 @@ func (suite *AccountTestSuite) TestEthermintAccount_String() {
 	accountStr, ok = i.(string)
 	suite.Require().True(ok)
 	suite.Require().Contains(accountStr, suite.account.Address)
-	suite.Require().Contains(accountStr, bech32pubkey)
 }
 
 func (suite *AccountTestSuite) TestEthermintAccount_MarshalJSON() {
@@ -104,13 +100,10 @@ func (suite *AccountTestSuite) TestEthermintAccount_MarshalJSON() {
 	suite.Require().NoError(json.Unmarshal(bz, &a))
 	suite.Require().Equal(suite.account.String(), a.String())
 
-	bech32pubkey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, suite.account.GetPubKey())
-	suite.Require().NoError(err)
-
 	// test that the sdk.AccAddress is populated from the hex address
 	jsonAcc := fmt.Sprintf(
 		`{"address":"","eth_address":"%s","public_key":"%s","account_number":10,"sequence":50,"code_hash":"0102"}`,
-		suite.account.EthAddress().String(), bech32pubkey,
+		suite.account.EthAddress().String(), "",
 	)
 
 	res := new(types.EthAccount)
@@ -120,7 +113,7 @@ func (suite *AccountTestSuite) TestEthermintAccount_MarshalJSON() {
 
 	jsonAcc = fmt.Sprintf(
 		`{"address":"","eth_address":"","public_key":"%s","account_number":10,"sequence":50,"code_hash":"0102"}`,
-		bech32pubkey,
+		"",
 	)
 
 	res = new(types.EthAccount)
@@ -130,7 +123,7 @@ func (suite *AccountTestSuite) TestEthermintAccount_MarshalJSON() {
 	// test that the sdk.AccAddress is populated from the hex address
 	jsonAcc = fmt.Sprintf(
 		`{"address": "%s","eth_address":"0x0000000000000000000000000000000000000000","public_key":"%s","account_number":10,"sequence":50,"code_hash":"0102"}`,
-		suite.account.Address, bech32pubkey,
+		suite.account.Address, "",
 	)
 
 	res = new(types.EthAccount)

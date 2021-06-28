@@ -53,18 +53,10 @@ func (acc EthAccount) MarshalYAML() (interface{}, error) {
 	alias := ethermintAccountPretty{
 		Address:       acc.Address,
 		EthAddress:    acc.EthAddress().String(),
+		PubKey:        getPKString(acc),
 		AccountNumber: acc.AccountNumber,
 		Sequence:      acc.Sequence,
 		CodeHash:      ethcmn.Bytes2Hex(acc.CodeHash),
-	}
-
-	var err error
-
-	if acc.PubKey != nil {
-		alias.PubKey, err = sdk.Bech32ifyPubKey(sdk.Bech32PrefixAccPub, acc.GetPubKey())
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	bz, err := yaml.Marshal(alias)
@@ -86,18 +78,10 @@ func (acc EthAccount) MarshalJSON() ([]byte, error) {
 	alias := ethermintAccountPretty{
 		Address:       acc.Address,
 		EthAddress:    ethAddress,
+		PubKey:        acc.PubKey,
 		AccountNumber: acc.AccountNumber,
 		Sequence:      acc.Sequence,
 		CodeHash:      ethcmn.Bytes2Hex(acc.CodeHash),
-	}
-
-	var err error
-
-	if acc.PubKey != nil {
-		alias.PubKey, err = sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, acc.GetPubKey())
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return json.Marshal(alias)
@@ -154,18 +138,9 @@ func (acc *EthAccount) UnmarshalJSON(bz []byte) error {
 
 	acc.BaseAccount = &authtypes.BaseAccount{
 		Address:       alias.Address,
+		PubKey:        alias.PubKey,
 		AccountNumber: alias.AccountNumber,
 		Sequence:      alias.Sequence,
-	}
-
-	if alias.PubKey != "" {
-		pubkey, err := sdk.GetPubKeyFromBech32(sdk.Bech32PubKeyTypeAccPub, alias.PubKey)
-		if err != nil {
-			return err
-		}
-		if err := acc.SetPubKey(pubkey); err != nil {
-			return err
-		}
 	}
 
 	acc.CodeHash = ethcmn.HexToHash(alias.CodeHash).Bytes()
