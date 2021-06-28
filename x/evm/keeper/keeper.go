@@ -303,6 +303,7 @@ func (k Keeper) ResetAccount(addr common.Address) {
 		k.Logger(k.ctx).Error(
 			"failed to clear balance during account reset",
 			"ethereum-address", addr.Hex(),
+			"error", err,
 		)
 	}
 }

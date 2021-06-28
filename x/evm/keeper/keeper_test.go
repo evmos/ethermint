@@ -17,6 +17,7 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
@@ -55,7 +56,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 	acc := &ethermint.EthAccount{
 		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
-		CodeHash:    ethcrypto.Keccak256(nil),
+		CodeHash:    common.BytesToHash(ethcrypto.Keccak256(nil)).String(),
 	}
 
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)

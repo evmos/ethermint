@@ -869,7 +869,7 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
-| `code_hash` | [bytes](#bytes) |  |  |
+| `code_hash` | [string](#string) |  |  |
 
 
 

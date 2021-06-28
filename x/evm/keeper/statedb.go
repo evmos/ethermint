@@ -224,7 +224,7 @@ func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
 		return common.BytesToHash(types.EmptyCodeHash)
 	}
 
-	return common.BytesToHash(ethAccount.CodeHash)
+	return common.HexToHash(ethAccount.CodeHash)
 }
 
 // GetCode calls CommitStateDB.GetCode using the passed in context
@@ -273,7 +273,7 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 		return
 	}
 
-	ethAccount.CodeHash = hash.Bytes()
+	ethAccount.CodeHash = hash.Hex()
 	k.accountKeeper.SetAccount(k.ctx, ethAccount)
 
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixCode)
@@ -481,7 +481,7 @@ func (k *Keeper) Empty(addr common.Address) bool {
 			return false
 		}
 
-		codeHash = ethAccount.CodeHash
+		codeHash = common.HexToHash(ethAccount.CodeHash).Bytes()
 	}
 
 	balance := k.GetBalance(addr)
