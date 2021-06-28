@@ -18,6 +18,9 @@ import (
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 )
 
+//Not valid Ethereum address
+const invalidAddress = "0x0000"
+
 func (suite *KeeperTestSuite) TestQueryAccount() {
 	var (
 		req        *types.QueryAccountRequest
@@ -29,7 +32,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryAccountResponse{
@@ -38,7 +41,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -91,14 +94,14 @@ func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryCosmosAccountResponse{
 					CosmosAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
 				}
 				req = &types.QueryCosmosAccountRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -169,12 +172,12 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expBalance = "0"
 				req = &types.QueryBalanceRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -223,10 +226,10 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				req = &types.QueryStorageRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -287,10 +290,10 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				req = &types.QueryCodeRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 				exp := &types.QueryCodeResponse{}
 				expCode = exp.Code
@@ -597,7 +600,7 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryValidatorAccountResponse{
