@@ -200,7 +200,7 @@ func collectGenFiles(cfg Config, vals []*Validator, outputDir string) error {
 			return fmt.Errorf("failed to create genesis doc: %w", err)
 		}
 
-		appState, err := genutil.GenAppStateFromConfig(cfg.JSONCodec, cfg.TxConfig,
+		appState, err := genutil.GenAppStateFromConfig(cfg.Codec, cfg.TxConfig,
 			tmCfg, initCfg, *genDoc, banktypes.GenesisBalancesIterator{})
 		if err != nil {
 			return fmt.Errorf("failed to create app state: %w", err)
@@ -219,7 +219,7 @@ func initGenFiles(cfg Config, genAccounts []authtypes.GenesisAccount, genBalance
 
 	// set the accounts in the genesis state
 	var authGenState authtypes.GenesisState
-	cfg.JSONCodec.MustUnmarshalJSON(cfg.GenesisState[authtypes.ModuleName], &authGenState)
+	cfg.Codec.MustUnmarshalJSON(cfg.GenesisState[authtypes.ModuleName], &authGenState)
 
 	accounts, err := authtypes.PackAccounts(genAccounts)
 	if err != nil {
@@ -227,20 +227,20 @@ func initGenFiles(cfg Config, genAccounts []authtypes.GenesisAccount, genBalance
 	}
 
 	authGenState.Accounts = accounts
-	cfg.GenesisState[authtypes.ModuleName] = cfg.JSONCodec.MustMarshalJSON(&authGenState)
+	cfg.GenesisState[authtypes.ModuleName] = cfg.Codec.MustMarshalJSON(&authGenState)
 
 	// set the balances in the genesis state
 	var bankGenState banktypes.GenesisState
-	cfg.JSONCodec.MustUnmarshalJSON(cfg.GenesisState[banktypes.ModuleName], &bankGenState)
+	cfg.Codec.MustUnmarshalJSON(cfg.GenesisState[banktypes.ModuleName], &bankGenState)
 
 	bankGenState.Balances = genBalances
-	cfg.GenesisState[banktypes.ModuleName] = cfg.JSONCodec.MustMarshalJSON(&bankGenState)
+	cfg.GenesisState[banktypes.ModuleName] = cfg.Codec.MustMarshalJSON(&bankGenState)
 
 	var stakingGenState stakingtypes.GenesisState
-	cfg.JSONCodec.MustUnmarshalJSON(cfg.GenesisState[stakingtypes.ModuleName], &stakingGenState)
+	cfg.Codec.MustUnmarshalJSON(cfg.GenesisState[stakingtypes.ModuleName], &stakingGenState)
 
 	stakingGenState.Params.BondDenom = ethermint.AttoPhoton
-	cfg.GenesisState[stakingtypes.ModuleName] = cfg.JSONCodec.MustMarshalJSON(&stakingGenState)
+	cfg.GenesisState[stakingtypes.ModuleName] = cfg.Codec.MustMarshalJSON(&stakingGenState)
 
 	appGenStateJSON, err := json.MarshalIndent(cfg.GenesisState, "", "  ")
 	if err != nil {

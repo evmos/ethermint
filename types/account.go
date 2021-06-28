@@ -32,7 +32,7 @@ func (acc EthAccount) EthAddress() common.Address {
 	return common.BytesToAddress(acc.GetAddress().Bytes())
 }
 
-// GetCodeHash returns the account code hash from the
+// GetCodeHash returns the account code hash in byte format
 func (acc EthAccount) GetCodeHash() common.Hash {
 	return common.HexToHash(acc.CodeHash)
 }
