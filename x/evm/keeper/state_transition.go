@@ -210,7 +210,8 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}
 
 	// refund gas prior to handling the vm error in order to set the updated gas meter
-	if err := k.RefundGas(msg, leftoverGas); err != nil {
+	leftoverGas, err = k.RefundGas(msg, leftoverGas)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
@@ -243,11 +244,11 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 
 // RefundGas transfers the leftover gas to the sender of the message, caped to half of the total gas
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
-// returned by the EVM execution, thus ignoring the previous intrinsic gas inconsumed during in the
+// returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
-func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
+func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error) {
 	if leftoverGas > msg.Gas() {
-		return stacktrace.Propagate(
+		return leftoverGas, stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
 			"failed to update gas consumed after refund of leftover gas",
 		)
@@ -265,7 +266,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 	leftoverGas += refund
 
 	if leftoverGas > msg.Gas() {
-		return stacktrace.Propagate(
+		return leftoverGas, stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
 			"failed to update gas consumed after refund of %d gas", refund,
 		)
@@ -277,7 +278,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 	switch remaining.Sign() {
 	case -1:
 		// negative refund errors
-		return sdkerrors.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
+		return leftoverGas, sdkerrors.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
 	case 1:
 		// positive amount refund
 		params := k.GetParams(k.ctx)
@@ -288,19 +289,19 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 		err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
 			err = sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
-			return stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
+			return leftoverGas, stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
 		}
 	default:
 		// no refund, consume gas and update the tx gas meter
 	}
 
-	return nil
+	return leftoverGas, nil
 }
 
+// setGasMeterAndConsumeGas set the gas consumed into the context with the new gas meter. This gas meter will have the
+// original gas limit defined in the msg and will consume the gas now that the amount has been
+// refunded
 func (k *Keeper) setGasMeterAndConsumeGas(msg core.Message, gasUsed uint64) {
-	// set the gas consumed into the context with the new gas meter. This gas meter will have the
-	// original gas limit defined in the msg and will consume the gas now that the amount has been
-	// refunded
 	gasMeter := sdk.NewGasMeter(msg.Gas())
 	// NOTE: gas consumed will always be less than the limit
 	gasMeter.ConsumeGas(gasUsed, "update gas consumption after refund")
