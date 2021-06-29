@@ -47,8 +47,10 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, txDecoder sdk.TxDecoder, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	cdc codec.BinaryCodec, txDecoder sdk.TxDecoder,
+	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
+	debug bool,
 ) *Keeper {
 
 	// ensure evm module account is set
@@ -71,6 +73,7 @@ func NewKeeper(
 		stakingKeeper: sk,
 		storeKey:      storeKey,
 		transientKey:  transientKey,
+		debug:         debug,
 	}
 }
 
