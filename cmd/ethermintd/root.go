@@ -34,6 +34,7 @@ import (
 
 	"github.com/tharsis/ethermint/app"
 	ethermintclient "github.com/tharsis/ethermint/client"
+	ethermintconfig "github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/server"
 )
@@ -71,10 +72,10 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
 				return err
 			}
-			//  TODO:
-			// 	customAppTemplate, customAppConfig := initAppConfig()
 
-			return InterceptConfigsPreRunHandler(cmd)
+			customAppTemplate, customAppConfig := ethermintconfig.AppConfig()
+
+			return sdkserver.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig)
 		},
 	}
 

@@ -1,15 +1,10 @@
 package config
 
 import (
-	"fmt"
-	"strings"
-
+	"github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/spf13/viper"
 
-	"github.com/cosmos/cosmos-sdk/telemetry"
-
-	"github.com/cosmos/cosmos-sdk/server/config"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 const (
@@ -23,6 +18,54 @@ const (
 	DefaultEVMWSAddress = "0.0.0.0:8546"
 )
 
+// AppConfig helps to override default appConfig template and configs.
+// return "", nil if no custom configuration is required for the application.
+func AppConfig() (string, interface{}) {
+	// Optionally allow the chain developer to overwrite the SDK's default
+	// server config.
+	srvCfg := config.DefaultConfig()
+
+	// The SDK's default minimum gas price is set to "" (empty value) inside
+	// app.toml. If left empty by validators, the node will halt on startup.
+	// However, the chain developer can set a default app.toml value for their
+	// validators here.
+	//
+	// In summary:
+	// - if you leave srvCfg.MinGasPrices = "", all validators MUST tweak their
+	//   own app.toml config,
+	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their
+	//   own app.toml to override, or use this default value.
+	//
+	// In ethermint, we set the min gas prices to 0.
+	srvCfg.MinGasPrices = "0" + ethermint.AttoPhoton
+
+	customAppConfig := Config{
+		Config: *srvCfg,
+		EVMRPC: *DefaultEVMConfig(),
+	}
+
+	customAppTemplate := config.DefaultConfigTemplate + DefaultConfigTemplate
+
+	return customAppTemplate, customAppConfig
+}
+
+// DefaultConfig returns server's default configuration.
+func DefaultConfig() *Config {
+	return &Config{
+		Config: *config.DefaultConfig(),
+		EVMRPC: *DefaultEVMConfig(),
+	}
+}
+
+// DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
+func DefaultEVMConfig() *EVMRPCConfig {
+	return &EVMRPCConfig{
+		Enable:     true,
+		RPCAddress: DefaultEVMAddress,
+		WsAddress:  DefaultEVMWSAddress,
+	}
+}
+
 // EVMRPCConfig defines configuration for the EVM RPC server.
 type EVMRPCConfig struct {
 	// Enable defines if the EVM RPC server should be enabled.
@@ -33,70 +76,12 @@ type EVMRPCConfig struct {
 	WsAddress string `mapstructure:"ws-address"`
 }
 
-// Config defines the server's top level configuration
+// Config defines the server's top level configuration. It includes the default app config
+// from the SDK as well as the EVM configuration to enable the JSON-RPC APIs.
 type Config struct {
-	config.BaseConfig `mapstructure:",squash"`
+	config.Config
 
-	// Telemetry defines the application telemetry configuration
-	Telemetry telemetry.Config       `mapstructure:"telemetry"`
-	API       config.APIConfig       `mapstructure:"api"`
-	GRPC      config.GRPCConfig      `mapstructure:"grpc"`
-	EVMRPC    EVMRPCConfig           `mapstructure:"evm-rpc"`
-	StateSync config.StateSyncConfig `mapstructure:"state-sync"`
-}
-
-func (c *Config) ToSDKConfig() *config.Config {
-	return &config.Config{
-		BaseConfig: c.BaseConfig,
-		Telemetry:  c.Telemetry,
-		API:        c.API,
-		GRPC:       c.GRPC,
-		StateSync:  c.StateSync,
-	}
-}
-
-// SetMinGasPrices sets the validator's minimum gas prices.
-func (c *Config) SetMinGasPrices(gasPrices sdk.DecCoins) {
-	c.MinGasPrices = gasPrices.String()
-}
-
-// GetMinGasPrices returns the validator's minimum gas prices based on the set
-// configuration.
-func (c *Config) GetMinGasPrices() sdk.DecCoins {
-	if c.MinGasPrices == "" {
-		return sdk.DecCoins{}
-	}
-
-	gasPricesStr := strings.Split(c.MinGasPrices, ";")
-	gasPrices := make(sdk.DecCoins, len(gasPricesStr))
-
-	for i, s := range gasPricesStr {
-		gasPrice, err := sdk.ParseDecCoin(s)
-		if err != nil {
-			panic(fmt.Errorf("failed to parse minimum gas price coin (%s): %s", s, err))
-		}
-
-		gasPrices[i] = gasPrice
-	}
-
-	return gasPrices
-}
-
-// DefaultConfig returns server's default configuration.
-func DefaultConfig() *Config {
-	cfg := config.DefaultConfig()
-	return &Config{
-		BaseConfig: cfg.BaseConfig,
-		Telemetry:  cfg.Telemetry,
-		API:        cfg.API,
-		GRPC:       cfg.GRPC,
-		EVMRPC: EVMRPCConfig{
-			Enable:     true,
-			RPCAddress: DefaultEVMAddress,
-			WsAddress:  DefaultEVMWSAddress,
-		},
-		StateSync: cfg.StateSync,
-	}
+	EVMRPC EVMRPCConfig `mapstructure:"evm-rpc"`
 }
 
 // GetConfig returns a fully parsed Config object.
@@ -105,15 +90,11 @@ func GetConfig(v *viper.Viper) Config {
 	cfg := config.GetConfig(v)
 
 	return Config{
-		BaseConfig: cfg.BaseConfig,
-		Telemetry:  cfg.Telemetry,
-		API:        cfg.API,
-		GRPC:       cfg.GRPC,
+		Config: cfg,
 		EVMRPC: EVMRPCConfig{
 			Enable:     v.GetBool("evm-rpc.enable"),
 			RPCAddress: v.GetString("evm-rpc.address"),
 			WsAddress:  v.GetString("evm-rpc.ws-address"),
 		},
-		StateSync: cfg.StateSync,
 	}
 }
