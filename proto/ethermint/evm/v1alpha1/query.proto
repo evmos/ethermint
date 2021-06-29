@@ -79,7 +79,10 @@ message QueryAccountRequest {
 // QueryAccountResponse is the response type for the Query/Account RPC method.
 message QueryAccountResponse {
   // balance is the balance of the EVM denomination.
-  string balance = 1;
+  string balance = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable)   = false
+  ];
   // code hash is the hex-formatted code bytes from the EOA.
   string code_hash = 2;
   // nonce is the account's sequence number.
@@ -136,7 +139,10 @@ message QueryBalanceRequest {
 // QueryBalanceResponse is the response type for the Query/Balance RPC method.
 message QueryBalanceResponse {
   // balance is the balance of the EVM denomination.
-  string balance = 1;
+  string balance = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable)   = false
+  ];
 }
 
 // QueryStorageRequest is the request type for the Query/Storage RPC method.

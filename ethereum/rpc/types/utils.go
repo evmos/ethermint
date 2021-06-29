@@ -270,14 +270,15 @@ func NewTransactionFromData(
 	}
 
 	rpcTx := &RPCTransaction{
+		Type:     hexutil.Uint64(txData.Type()),
 		From:     from,
 		Gas:      hexutil.Uint64(txData.GasLimit),
-		GasPrice: (*hexutil.Big)(new(big.Int).SetBytes(txData.GasPrice)),
+		GasPrice: (*hexutil.Big)(txData.GasPrice.BigInt()),
 		Hash:     txHash,
 		Input:    hexutil.Bytes(txData.Input),
 		Nonce:    hexutil.Uint64(txData.Nonce),
 		To:       to,
-		Value:    (*hexutil.Big)(new(big.Int).SetBytes(txData.Amount)),
+		Value:    (*hexutil.Big)(txData.Amount.BigInt()),
 		V:        (*hexutil.Big)(new(big.Int).SetBytes(txData.V)),
 		R:        (*hexutil.Big)(new(big.Int).SetBytes(txData.R)),
 		S:        (*hexutil.Big)(new(big.Int).SetBytes(txData.S)),
@@ -291,6 +292,11 @@ func NewTransactionFromData(
 		rpcTx.BlockHash = &blockHash
 		rpcTx.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
 		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
+	}
+
+	if txData.Type() == ethtypes.AccessListTxType {
+		rpcTx.Accesses = txData.Accesses.ToEthAccessList()
+		rpcTx.ChainID = (*hexutil.Big)(txData.ChainID.BigInt())
 	}
 
 	return rpcTx, nil

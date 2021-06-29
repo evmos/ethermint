@@ -66,10 +66,10 @@ func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
 		msg.Data.To = tx.To().Hex()
 	}
 	if tx.Value() != nil {
-		msg.Data.Amount = tx.Value().Bytes()
+		msg.Data.Amount = sdk.NewIntFromBigInt(tx.Value())
 	}
 	if tx.GasPrice() != nil {
-		msg.Data.GasPrice = tx.GasPrice().Bytes()
+		msg.Data.GasPrice = sdk.NewIntFromBigInt(tx.GasPrice())
 	}
 	if tx.AccessList() != nil {
 		al := tx.AccessList()

@@ -125,16 +125,9 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	k.WithContext(ctx)
 
 	balanceInt := k.GetBalance(ethcmn.HexToAddress(req.Address))
-	balance, err := ethermint.MarshalBigInt(balanceInt)
-	if err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			"failed to marshal big.Int to string",
-		)
-	}
 
 	return &types.QueryBalanceResponse{
-		Balance: balance,
+		Balance: sdk.NewIntFromBigInt(balanceInt).String(), // TODO: use sdk.Int
 	}, nil
 }
 

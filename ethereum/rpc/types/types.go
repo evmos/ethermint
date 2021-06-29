@@ -6,6 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
@@ -100,7 +103,7 @@ func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 	}
 
 	if args.ChainID != nil {
-		data.ChainID = args.ChainID.ToInt().Bytes()
+		data.ChainID = sdk.NewIntFromBigInt(args.ChainID.ToInt())
 	}
 
 	if args.Nonce != nil {
@@ -112,11 +115,11 @@ func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 	}
 
 	if args.GasPrice != nil {
-		data.GasPrice = args.GasPrice.ToInt().Bytes()
+		data.GasPrice = sdk.NewIntFromBigInt(args.GasPrice.ToInt())
 	}
 
 	if args.Value != nil {
-		data.Amount = args.Value.ToInt().Bytes()
+		data.Amount = sdk.NewIntFromBigInt(args.Value.ToInt())
 	}
 
 	if args.To != nil {

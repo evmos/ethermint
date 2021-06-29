@@ -4,8 +4,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/tharsis/ethermint/tests"
 )
 
@@ -16,7 +19,7 @@ func TestTxData_chainID(t *testing.T) {
 		expChainID *big.Int
 	}{
 		{
-			"access list tx", TxData{Accesses: AccessList{}, ChainID: big.NewInt(1).Bytes()}, big.NewInt(1),
+			"access list tx", TxData{Accesses: AccessList{}, ChainID: sdk.NewInt(1)}, big.NewInt(1),
 		},
 		{
 			"access list tx, nil chain ID", TxData{Accesses: AccessList{}}, nil,

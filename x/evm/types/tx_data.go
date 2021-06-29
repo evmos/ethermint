@@ -3,9 +3,12 @@ package types
 import (
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/tharsis/ethermint/types"
 )
 
@@ -31,20 +34,25 @@ func newTxData(
 
 		// NOTE: we don't populate chain id on LegacyTx type
 		if chainID != nil {
-			txData.ChainID = chainID.Bytes()
+			txData.ChainID = sdk.NewIntFromBigInt(chainID)
 		}
 	}
 
 	if amount != nil {
-		txData.Amount = amount.Bytes()
+		txData.Amount = sdk.NewIntFromBigInt(amount)
 	}
 	if gasPrice != nil {
-		txData.GasPrice = gasPrice.Bytes()
+		txData.GasPrice = sdk.NewIntFromBigInt(gasPrice)
 	}
 	return txData
 }
 
-func (data *TxData) txType() byte {
+// Type returns the tx type
+func (data TxData) Type() uint8 {
+	return data.txType()
+}
+
+func (data *TxData) txType() uint8 {
 	if data.Accesses == nil {
 		return ethtypes.LegacyTxType
 	}
@@ -57,11 +65,7 @@ func (data *TxData) chainID() *big.Int {
 		return DeriveChainID(v)
 	}
 
-	if data.ChainID == nil {
-		return nil
-	}
-
-	return new(big.Int).SetBytes(data.ChainID)
+	return data.ChainID.BigInt()
 }
 
 func (data *TxData) accessList() ethtypes.AccessList {
@@ -80,17 +84,11 @@ func (data *TxData) gas() uint64 {
 }
 
 func (data *TxData) gasPrice() *big.Int {
-	if data.GasPrice == nil {
-		return nil
-	}
-	return new(big.Int).SetBytes(data.GasPrice)
+	return data.GasPrice.BigInt()
 }
 
 func (data *TxData) amount() *big.Int {
-	if data.Amount == nil {
-		return nil
-	}
-	return new(big.Int).SetBytes(data.Amount)
+	return data.Amount.BigInt()
 }
 
 func (data *TxData) nonce() uint64 { return data.Nonce }
@@ -162,7 +160,7 @@ func (data *TxData) setSignatureValues(chainID, v, r, s *big.Int) {
 		data.S = s.Bytes()
 	}
 	if data.txType() == ethtypes.AccessListTxType && chainID != nil {
-		data.ChainID = chainID.Bytes()
+		data.ChainID = sdk.NewIntFromBigInt(chainID)
 	}
 }
 
