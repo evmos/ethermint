@@ -96,8 +96,6 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 
 		if tc.accessList != nil {
 			txData.Accesses = NewAccessList(tc.accessList)
-
-			// NOTE: we don't populate chain id on LegacyTx type
 			if tc.chainID != nil {
 				txData.ChainID = tc.chainID.Bytes()
 			}
@@ -106,6 +104,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		if tc.amount != nil {
 			txData.Amount = tc.amount.Bytes()
 		}
+
 		if tc.gasPrice != nil {
 			txData.GasPrice = tc.gasPrice.Bytes()
 		}
