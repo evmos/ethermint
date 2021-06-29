@@ -257,7 +257,6 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctype
 	}
 
 	includePending := blockNum == rpctypes.EthPendingBlockNumber
-
 	nonce, error := getAccountNonce(e.clientCtx, e.backend, address, includePending)
 	if error != nil {
 		return nil, error
@@ -571,7 +570,8 @@ func (e *PublicAPI) doCall(
 		args.From = &common.Address{}
 	}
 
-	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, true)
+	includePending := blockNr == rpctypes.EthPendingBlockNumber
+	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, includePending)
 	if err != nil {
 		return nil, err
 	}
