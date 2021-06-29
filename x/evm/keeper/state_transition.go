@@ -142,6 +142,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	res.Hash = txHash.Hex()
 	res.Logs = types.NewLogsFromEth(k.GetTxLogs(txHash))
 
+	k.resetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
 
@@ -295,4 +296,12 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 	}
 
 	return leftoverGas, nil
+}
+
+// resetGasMeterAndConsumeGas reset first the gas meter consumed value to zero and set it back to the new value
+// 'gasUsed'
+func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
+	// reset the gas count
+	k.ctx.GasMeter().RefundGas(k.ctx.GasMeter().GasConsumed(), "reset the gas count")
+	k.ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
 }
