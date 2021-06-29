@@ -568,25 +568,19 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
-
-	key := log.TxHash
-
-	if len(k.ctx.TxBytes()) > 0 {
-		tx, err := k.txDecoder(k.ctx.TxBytes())
-		if err != nil {
-			panic(err)
-		}
-		ethTx, ok := tx.GetMsgs()[0].(*types.MsgEthereumTx)
-		if !ok {
-			panic("invalid ethereum tx")
-		}
-
-		// NOTE: we set up the transaction hash from tendermint as it is the format expected by the application:
-		// Remove once hashing is fixed on Tendermint. See https://github.com/tendermint/tendermint/issues/6539
-		key = common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
-
-		log.TxHash = common.HexToHash(ethTx.Hash)
+	tx, err := k.txDecoder(k.ctx.TxBytes())
+	if err != nil {
+		panic(err)
 	}
+	ethTx, ok := tx.GetMsgs()[0].(*types.MsgEthereumTx)
+	if !ok {
+		panic("invalid ethereum tx")
+	}
+
+	// NOTE: we set up the transaction hash from tendermint as it is the format expected by the application:
+	// Remove once hashing is fixed on Tendermint. See https://github.com/tendermint/tendermint/issues/6539
+	key := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
+	log.TxHash = common.HexToHash(ethTx.Hash)
 
 	log.BlockHash = common.BytesToHash(k.ctx.HeaderHash())
 	log.TxIndex = uint(k.GetTxIndexTransient())

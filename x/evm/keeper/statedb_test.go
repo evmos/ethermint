@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"math/big"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -13,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestCreateAccount() {
@@ -453,14 +458,40 @@ func (suite *KeeperTestSuite) TestSnapshot() {
 	suite.app.EvmKeeper.RevertToSnapshot(revision) // no-op
 }
 
-func (suite *KeeperTestSuite) TestAddLog() {
-	addr := tests.GenerateAddress()
-	msg := types.NewMsgEthereumTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
-	tx := msg.AsTransaction()
-	txBz, err := tx.MarshalBinary()
+func (suite *KeeperTestSuite) CreateTestTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
+	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	suite.Require().NoError(err)
-	txHash := tx.Hash()
+
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
+	suite.Require().True(ok)
+
+	builder.SetExtensionOptions(option)
+
+	err = msg.Sign(suite.ethSigner, tests.NewSigner(priv))
+	suite.Require().NoError(err)
+
+	err = txBuilder.SetMsgs(msg)
+	suite.Require().NoError(err)
+
+	return txBuilder.GetTx()
+}
+
+func (suite *KeeperTestSuite) TestAddLog() {
+	addr, privKey := tests.NewAddrKey()
+	msg := types.NewMsgEthereumTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
+	msg.From = addr.Hex()
+
+	tx := suite.CreateTestTx(msg, privKey)
+	txBz, err := suite.clientCtx.TxConfig.TxEncoder()(tx)
+	suite.Require().NoError(err)
 	tmHash := common.BytesToHash(tmtypes.Tx(txBz).Hash())
+
+	msg, _ = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	ethTx := msg.AsTransaction()
+	txHash := ethTx.Hash()
+
+	suite.app.EvmKeeper.WithContext(suite.ctx.WithTxBytes(txBz))
 
 	testCases := []struct {
 		name        string
@@ -468,17 +499,6 @@ func (suite *KeeperTestSuite) TestAddLog() {
 		log, expLog *ethtypes.Log // pre and post populating log fields
 		malleate    func()
 	}{
-		{
-			"block hash not found",
-			common.Hash{},
-			&ethtypes.Log{
-				Address: addr,
-			},
-			&ethtypes.Log{
-				Address: addr,
-			},
-			func() {},
-		},
 		{
 			"tx hash from message",
 			tmHash,
@@ -489,9 +509,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 				Address: addr,
 				TxHash:  txHash,
 			},
-			func() {
-				suite.app.EvmKeeper.WithContext(suite.ctx.WithTxBytes(txBz))
-			},
+			func() {},
 		},
 	}
 
