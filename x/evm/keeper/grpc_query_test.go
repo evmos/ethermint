@@ -35,7 +35,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 		{"invalid address",
 			func() {
 				expAccount = &types.QueryAccountResponse{
-					Balance:  "0",
+					Balance:  sdk.ZeroInt(),
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
@@ -52,7 +52,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 				suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
 				suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
 				expAccount = &types.QueryAccountResponse{
-					Balance:  "100",
+					Balance:  sdk.NewInt(100),
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
