@@ -570,8 +570,10 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 func (k *Keeper) AddLog(log *ethtypes.Log) {
 	tx, err := k.txDecoder(k.ctx.TxBytes())
 	if err != nil {
+		// safety check, should be checked when processing the tx
 		panic(err)
 	}
+	// NOTE: tx length checked on AnteHandler
 	ethTx, ok := tx.GetMsgs()[0].(*types.MsgEthereumTx)
 	if !ok {
 		panic("invalid ethereum tx")
