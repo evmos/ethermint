@@ -257,7 +257,7 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctype
 	}
 
 	includePending := blockNum == rpctypes.EthPendingBlockNumber
-	nonce, error := getAccountNonce(e.clientCtx, e.backend, address, includePending)
+	nonce, error := getAccountNonce(e.clientCtx, e.backend, address, includePending, e.logger)
 	if error != nil {
 		return nil, error
 	}
@@ -571,7 +571,7 @@ func (e *PublicAPI) doCall(
 	}
 
 	includePending := blockNr == rpctypes.EthPendingBlockNumber
-	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, includePending)
+	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, includePending, e.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,7 +1025,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
-		nonce, _ := getAccountNonce(e.clientCtx, e.backend, args.From, true)
+		nonce, _ := getAccountNonce(e.clientCtx, e.backend, args.From, true, e.logger)
 		args.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 
@@ -1079,9 +1079,11 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	return args, nil
 }
 
-// getAccountNonce return the account nonce
+// getAccountNonce returns the account nonce for the given account address.
+// If the pending value is true, it will iterate over the mempool (pending)
+// txs in order to compute and return the pending tx sequence.
 // Todo: include the ability to specify a blockNumber
-func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common.Address, pending bool) (uint64, error) {
+func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common.Address, pending bool, logger log.Logger) (uint64, error) {
 	_, nonce, err := ctx.AccountRetriever.GetAccountNumberSequence(ctx, accAddr.Bytes())
 	if err != nil {
 		return 0, err
@@ -1092,7 +1094,8 @@ func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common
 		// to manually add them.
 		pendingTxs, err := backend.PendingTransactions()
 		if err != nil {
-			return 0, err
+			logger.Errorln("fails to fetch pending transactions")
+			return nonce, nil
 		}
 
 		// add the uncommitted txs to the nonce counter
