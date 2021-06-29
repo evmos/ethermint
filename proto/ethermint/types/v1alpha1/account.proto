@@ -18,5 +18,5 @@ message EthAccount {
 
   cosmos.auth.v1beta1.BaseAccount base_account = 1
       [(gogoproto.embed) = true, (gogoproto.moretags) = "yaml:\"base_account\""];
-  bytes code_hash = 2 [(gogoproto.moretags) = "yaml:\"code_hash\""];
+  string code_hash = 2 [(gogoproto.moretags) = "yaml:\"code_hash\""];
 }

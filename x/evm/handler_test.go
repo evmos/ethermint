@@ -28,7 +28,7 @@ type EvmTestSuite struct {
 	ctx     sdk.Context
 	handler sdk.Handler
 	app     *app.EthermintApp
-	codec   codec.BinaryMarshaler
+	codec   codec.Codec
 	chainID *big.Int
 
 	signer    keyring.Signer

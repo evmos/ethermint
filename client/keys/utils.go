@@ -8,7 +8,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
-
 	cryptokeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 )
 
@@ -53,9 +52,8 @@ func printKeyInfo(w io.Writer, keyInfo cryptokeyring.Info, bechKeyOut bechKeyOut
 	}
 }
 
-//nolint
 func printInfos(w io.Writer, infos []cryptokeyring.Info, output string) {
-	kos, err := cryptokeyring.Bech32KeysOutput(infos)
+	kos, err := cryptokeyring.MkAccKeysOutput(infos)
 	if err != nil {
 		panic(err)
 	}
@@ -82,22 +80,13 @@ func printTextInfos(w io.Writer, kos []cryptokeyring.KeyOutput) {
 	fmt.Fprintln(w, string(out))
 }
 
-//nolint
-func printKeyAddress(w io.Writer, info cryptokeyring.Info, bechKeyOut bechKeyOutFn) {
-	ko, err := bechKeyOut(info)
-	if err != nil {
-		panic(err)
+func validateMultisigThreshold(k, nKeys int) error {
+	if k <= 0 {
+		return fmt.Errorf("threshold must be a positive integer")
 	}
-
-	fmt.Fprintln(w, ko.Address)
-}
-
-//nolint
-func printPubKey(w io.Writer, info cryptokeyring.Info, bechKeyOut bechKeyOutFn) {
-	ko, err := bechKeyOut(info)
-	if err != nil {
-		panic(err)
+	if nKeys < k {
+		return fmt.Errorf(
+			"threshold k of n multisignature: %d < %d", nKeys, k)
 	}
-
-	fmt.Fprintln(w, ko.PubKey)
+	return nil
 }

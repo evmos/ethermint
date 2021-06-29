@@ -10,6 +10,7 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
 	ethermint "github.com/tharsis/ethermint/types"
@@ -20,7 +21,7 @@ import (
 // to the StateDB interface.
 type Keeper struct {
 	// Protobuf codec
-	cdc       codec.BinaryMarshaler
+	cdc       codec.BinaryCodec
 	txDecoder sdk.TxDecoder
 	// Store key required for the EVM Prefix KVStore. It is required by:
 	// - storing Account's Storage State
@@ -46,9 +47,17 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, txDecoder sdk.TxDecoder, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	cdc codec.BinaryCodec, txDecoder sdk.TxDecoder,
+	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
+	debug bool,
 ) *Keeper {
+
+	// ensure evm module account is set
+	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
+		panic("the EVM module account has not been set")
+	}
+
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
@@ -64,6 +73,7 @@ func NewKeeper(
 		stakingKeeper: sk,
 		storeKey:      storeKey,
 		transientKey:  transientKey,
+		debug:         debug,
 	}
 }
 
@@ -180,7 +190,7 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	txsLogs := []types.TransactionLogs{}
 	for ; iterator.Valid(); iterator.Next() {
 		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &txLog)
+		k.cdc.MustUnmarshal(iterator.Value(), &txLog)
 
 		// add a new entry
 		txsLogs = append(txsLogs, txLog)
@@ -199,7 +209,7 @@ func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
 	}
 
 	var logs types.TransactionLogs
-	k.cdc.MustUnmarshalBinaryBare(bz, &logs)
+	k.cdc.MustUnmarshal(bz, &logs)
 
 	return logs.EthLogs()
 }
@@ -209,7 +219,7 @@ func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
 
 	txLogs := types.NewTransactionLogsFromEth(txHash, logs)
-	bz := k.cdc.MustMarshalBinaryBare(&txLogs)
+	bz := k.cdc.MustMarshal(&txLogs)
 
 	store.Set(txHash.Bytes(), bz)
 }
@@ -277,9 +287,12 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 
 	prevBalance = k.bankKeeper.GetBalance(k.ctx, addr, params.EvmDenom)
 	if prevBalance.IsPositive() {
-		err := k.bankKeeper.SubtractCoins(k.ctx, addr, sdk.Coins{prevBalance})
-		if err != nil {
-			return sdk.Coin{}, err
+		if err := k.bankKeeper.SendCoinsFromAccountToModule(k.ctx, addr, types.ModuleName, sdk.Coins{prevBalance}); err != nil {
+			return sdk.Coin{}, stacktrace.Propagate(err, "failed to transfer to module account")
+		}
+
+		if err := k.bankKeeper.BurnCoins(k.ctx, types.ModuleName, sdk.Coins{prevBalance}); err != nil {
+			return sdk.Coin{}, stacktrace.Propagate(err, "failed to burn coins from evm module account")
 		}
 	}
 
@@ -296,6 +309,7 @@ func (k Keeper) ResetAccount(addr common.Address) {
 		k.Logger(k.ctx).Error(
 			"failed to clear balance during account reset",
 			"ethereum-address", addr.Hex(),
+			"error", err,
 		)
 	}
 }

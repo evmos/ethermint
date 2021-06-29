@@ -49,9 +49,9 @@ func NewEthSigVerificationDecorator(ek EVMKeeper) EthSigVerificationDecorator {
 // Failure in RecheckTx will prevent tx to be included into block, especially when CheckTx succeed, in which case user
 // won't see the error message.
 func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	if len(tx.GetMsgs()) != 1 {
+	if tx == nil || len(tx.GetMsgs()) != 1 {
 		return ctx, stacktrace.Propagate(
-			sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs())),
+			sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx"),
 			"",
 		)
 	}
@@ -566,7 +566,7 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	err := tx.ValidateBasic()
 	// ErrNoSignatures is fine with eth tx
 	if err != nil && err != sdkerrors.ErrNoSignatures {
-		return ctx, err
+		return ctx, stacktrace.Propagate(err, "tx basic validation failed")
 	}
 
 	return next(ctx, tx, simulate)

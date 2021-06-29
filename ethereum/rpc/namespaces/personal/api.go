@@ -109,7 +109,7 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 	name := "key_" + time.Now().UTC().Format(time.RFC3339)
 
 	// create the mnemonic and save the account
-	info, _, err := api.ethAPI.ClientCtx().Keyring.NewMnemonic(name, keyring.English, ethermint.BIP44HDPath, hd.EthSecp256k1)
+	info, _, err := api.ethAPI.ClientCtx().Keyring.NewMnemonic(name, keyring.English, ethermint.BIP44HDPath, password, hd.EthSecp256k1)
 	if err != nil {
 		return common.Address{}, err
 	}

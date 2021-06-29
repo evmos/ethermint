@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	clientkeys "github.com/tharsis/ethermint/client/keys"
 	"github.com/tharsis/ethermint/crypto/hd"
 )
 
@@ -101,5 +102,5 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return keys.RunAddCmd(clientCtx.WithKeyring(kr), cmd, args, buf)
+	return clientkeys.RunAddCmd(clientCtx.WithKeyring(kr), cmd, args, buf)
 }

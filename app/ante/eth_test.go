@@ -110,8 +110,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			"success new account",
 			tx,
 			func() {
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 			true,
@@ -123,8 +122,8 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+
 			},
 			true,
 			true,
@@ -260,8 +259,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			false, true,
 		},
@@ -272,8 +270,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1))
 			},
@@ -286,8 +283,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(10000000000000000000))
 			},
@@ -357,8 +353,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -410,8 +405,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -422,8 +416,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
