@@ -6,9 +6,43 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	"github.com/spf13/cobra"
 	log "github.com/xlab/suplog"
+
+	sdkserver "github.com/cosmos/cosmos-sdk/server"
+	"github.com/cosmos/cosmos-sdk/server/types"
+	"github.com/cosmos/cosmos-sdk/version"
+
+	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+
+	"github.com/tharsis/ethermint/app"
 )
+
+// add server commands
+func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator types.AppCreator, appExport types.AppExporter, addStartFlags types.ModuleInitFlags) {
+	tendermintCmd := &cobra.Command{
+		Use:   "tendermint",
+		Short: "Tendermint subcommands",
+	}
+
+	tendermintCmd.AddCommand(
+		sdkserver.ShowNodeIDCmd(),
+		sdkserver.ShowValidatorCmd(),
+		sdkserver.ShowAddressCmd(),
+		sdkserver.VersionCmd(),
+	)
+
+	startCmd := StartCmd(appCreator, defaultNodeHome)
+	addStartFlags(startCmd)
+
+	rootCmd.AddCommand(
+		startCmd,
+		sdkserver.UnsafeResetAllCmd(),
+		tendermintCmd,
+		sdkserver.ExportCmd(appExport, app.DefaultNodeHome),
+		version.NewVersionCommand(),
+	)
+}
 
 func ConnectTmWS(tmRPCAddr, tmEndpoint string) *rpcclient.WSClient {
 	tmWsClient, err := rpcclient.NewWS(tmRPCAddr, tmEndpoint,
