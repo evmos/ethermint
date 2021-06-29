@@ -142,7 +142,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	res.Hash = txHash.Hex()
 	res.Logs = types.NewLogsFromEth(k.GetTxLogs(txHash))
 
-	k.setGasMeterAndConsumeGas(msg, res.GasUsed)
 	return res, nil
 }
 
@@ -296,14 +295,4 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 	}
 
 	return leftoverGas, nil
-}
-
-// setGasMeterAndConsumeGas set the gas consumed into the context with the new gas meter. This gas meter will have the
-// original gas limit defined in the msg and will consume the gas now that the amount has been
-// refunded
-func (k *Keeper) setGasMeterAndConsumeGas(msg core.Message, gasUsed uint64) {
-	gasMeter := sdk.NewGasMeter(msg.Gas())
-	// NOTE: gas consumed will always be less than the limit
-	gasMeter.ConsumeGas(gasUsed, "update gas consumption after refund")
-	k.WithContext(k.ctx.WithGasMeter(gasMeter))
 }
