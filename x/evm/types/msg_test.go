@@ -17,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+const invalidFromAddress = "0x0000"
+
 type MsgsTestSuite struct {
 	suite.Suite
 
@@ -63,7 +65,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
 func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	testCases := []struct {
 		msg        string
-		to         *ethcmn.Address
+		to         string
 		amount     *big.Int
 		gasPrice   *big.Int
 		from       string
@@ -71,21 +73,46 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		chainID    *big.Int
 		expectPass bool
 	}{
-		{msg: "pass with recipient - Legacy Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "pass with recipient - AccessList Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: big.NewInt(1), expectPass: true},
-		{msg: "pass contract - Legacy Tx", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: false},
-		{msg: "nil amount", to: &suite.to, amount: nil, gasPrice: big.NewInt(1000), expectPass: true},
-		{msg: "negative amount", to: &suite.to, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
-		{msg: "nil gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: nil, expectPass: false},
-		{msg: "negative gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
-		{msg: "zero gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
-		{msg: "invalid from address", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), from: ethcmn.Address{}.Hex(), expectPass: false},
-		{msg: "chain ID not set on AccessListTx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "pass with recipient - Legacy Tx", to: suite.to.Hex(), amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "pass with recipient - AccessList Tx", to: suite.to.Hex(), amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: big.NewInt(1), expectPass: true},
+		{msg: "pass contract - Legacy Tx", to: "", amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
+		{msg: "invalid recipient", to: invalidFromAddress, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: false},
+		{msg: "nil amount", to: suite.to.Hex(), amount: nil, gasPrice: big.NewInt(1000), expectPass: true},
+		{msg: "negative amount", to: suite.to.Hex(), amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
+		{msg: "nil gas price", to: suite.to.Hex(), amount: big.NewInt(100), gasPrice: nil, expectPass: false},
+		{msg: "negative gas price", to: suite.to.Hex(), amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
+		{msg: "zero gas price", to: suite.to.Hex(), amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
+		{msg: "invalid from address", to: suite.to.Hex(), amount: big.NewInt(100), gasPrice: big.NewInt(0), from: invalidFromAddress, expectPass: false},
+		{msg: "chain ID not set on AccessListTx", to: suite.to.Hex(), amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
 	}
 
 	for i, tc := range testCases {
-		msg := NewMsgEthereumTx(tc.chainID, 0, tc.to, tc.amount, 0, tc.gasPrice, nil, tc.accessList)
+		// recreate txData
+		txData := TxData{
+			Nonce:    0,
+			GasLimit: 0,
+			To:       tc.to,
+		}
+
+		if tc.accessList != nil {
+			txData.Accesses = NewAccessList(tc.accessList)
+			if tc.chainID != nil {
+				txData.ChainID = tc.chainID.Bytes()
+			}
+		}
+
+		if tc.amount != nil {
+			txData.Amount = tc.amount.Bytes()
+		}
+
+		if tc.gasPrice != nil {
+			txData.GasPrice = tc.gasPrice.Bytes()
+		}
+
+		msg := MsgEthereumTx{
+			Data: &txData,
+		}
+
 		msg.From = tc.from
 		err := msg.ValidateBasic()
 
