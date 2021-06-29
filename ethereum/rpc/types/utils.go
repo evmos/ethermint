@@ -186,7 +186,7 @@ func FormatBlock(
 		"miner":            common.Address{},
 		"mixHash":          common.Hash{},
 		"difficulty":       (*hexutil.Big)(big.NewInt(0)),
-		"extraData":        hexutil.Uint64(0),
+		"extraData":        "",
 		"size":             hexutil.Uint64(size),
 		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
 		"gasUsed":          (*hexutil.Big)(gasUsed),
