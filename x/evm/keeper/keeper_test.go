@@ -4,21 +4,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/tharsis/ethermint/app"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/encoding"
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -39,6 +41,10 @@ type KeeperTestSuite struct {
 	queryClient types.QueryClient
 	address     ethcmn.Address
 	consAddress sdk.ConsAddress
+
+	// for generate test tx
+	clientCtx client.Context
+	ethSigner ethtypes.Signer
 }
 
 func (suite *KeeperTestSuite) SetupTest() {
@@ -68,6 +74,10 @@ func (suite *KeeperTestSuite) SetupTest() {
 	suite.app.StakingKeeper.SetValidatorByConsAddr(suite.ctx, validator)
 	suite.app.StakingKeeper.SetValidator(suite.ctx, validator)
 	suite.consAddress = sdk.ConsAddress(priv.PubKey().Address())
+
+	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
+	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
+	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 }
 
 func TestKeeperTestSuite(t *testing.T) {
