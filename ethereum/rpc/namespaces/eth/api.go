@@ -21,7 +21,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -415,10 +415,7 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, err
 	}
 
-	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-	// https://github.com/tendermint/tendermint/issues/6539
-	tmTx := tmtypes.Tx(txBytes)
-	txHash := common.BytesToHash(tmTx.Hash())
+	txHash := msg.AsTransaction().Hash()
 
 	// Broadcast transaction in sync mode (default)
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
@@ -488,10 +485,7 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-	// https://github.com/tendermint/tendermint/issues/6539
-	tmTx := tmtypes.Tx(txBytes)
-	txHash := common.BytesToHash(tmTx.Hash())
+	txHash := ethereumTx.AsTransaction().Hash()
 
 	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
 	rsp, err := syncCtx.BroadcastTx(txBytes)
@@ -686,11 +680,26 @@ func (e *PublicAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx bo
 	return e.backend.GetBlockByNumber(ethBlockNum, fullTx)
 }
 
+// GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
+// TODO: Don't need to convert once hashing is fixed on Tendermint
+// https://github.com/tendermint/tendermint/issues/6539
+func (e *PublicAPI) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
+	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
+	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resTxs.Txs) == 0 {
+		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
+	}
+	return resTxs.Txs[0], nil
+}
+
 // GetTransactionByHash returns the transaction identified by hash.
 func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHash", "hash", hash.Hex())
 
-	res, err := e.clientCtx.Client.Tx(e.ctx, hash.Bytes(), false)
+	res, err := e.GetTxByEthHash(hash)
 	if err != nil {
 		e.logger.WithError(err).Debugln("tx not found", "hash", hash.Hex())
 		return nil, nil
@@ -825,7 +834,7 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	e.logger.Debugln("eth_getTransactionReceipt", "hash", hash.Hex())
 
-	res, err := e.clientCtx.Client.Tx(e.ctx, hash.Bytes(), false)
+	res, err := e.GetTxByEthHash(hash)
 	if err != nil {
 		e.logger.WithError(err).Debugln("tx not found", "hash", hash.Hex())
 		return nil, nil
