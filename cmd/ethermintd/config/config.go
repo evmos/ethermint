@@ -17,10 +17,10 @@ const (
 	DefaultGRPCAddress = "0.0.0.0:9900"
 
 	// DefaultEVMAddress is the default address the EVM JSON-RPC server binds to.
-	DefaultEVMAddress = "0.0.0.0:1317"
+	DefaultEVMAddress = "0.0.0.0:8545"
 
 	// DefaultEVMWSAddress is the default address the EVM WebSocket server binds to.
-	DefaultEVMWSAddress = "0.0.0.0:1318"
+	DefaultEVMWSAddress = "0.0.0.0:8546"
 )
 
 // EVMRPCConfig defines configuration for the EVM RPC server.
