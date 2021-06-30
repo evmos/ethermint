@@ -215,7 +215,7 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNum rpctypes.BlockNu
 		return nil, err
 	}
 
-	return (*hexutil.Big)(res.Balance.BigInt()), nil
+	return (*hexutil.Big)(big.NewInt(res.Balance)), nil
 }
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
@@ -995,7 +995,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	return &rpctypes.AccountResult{
 		Address:      address,
 		AccountProof: []string{accProofStr},
-		Balance:      (*hexutil.Big)(res.Balance.BigInt()),
+		Balance:      (*hexutil.Big)(big.NewInt(res.Balance)),
 		CodeHash:     common.HexToHash(res.CodeHash),
 		Nonce:        hexutil.Uint64(res.Nonce),
 		StorageHash:  common.Hash{}, // NOTE: Ethermint doesn't have a storage hash. TODO: implement?
