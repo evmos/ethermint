@@ -530,3 +530,34 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		})
 	}
 }
+
+func (suite AnteTestSuite) TestEthSetupContextDecorator() {
+	dec := ante.NewEthSetUpContextDecorator()
+	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+
+	testCases := []struct {
+		name      string
+		tx        sdk.Tx
+		expPass   bool
+	}{
+		{"invalid transaction type - does not implement GasTx", &invalidTx{}, false},
+		{
+			"success - transaction implement GasTx",
+			tx,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+
+		})
+	}
+}
