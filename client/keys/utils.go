@@ -52,26 +52,6 @@ func printKeyInfo(w io.Writer, keyInfo cryptokeyring.Info, bechKeyOut bechKeyOut
 	}
 }
 
-func printInfos(w io.Writer, infos []cryptokeyring.Info, output string) {
-	kos, err := cryptokeyring.MkAccKeysOutput(infos)
-	if err != nil {
-		panic(err)
-	}
-
-	switch output {
-	case OutputFormatText:
-		printTextInfos(w, kos)
-
-	case OutputFormatJSON:
-		out, err := keys.KeysCdc.MarshalJSON(kos)
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Fprintf(w, "%s", out)
-	}
-}
-
 func printTextInfos(w io.Writer, kos []cryptokeyring.KeyOutput) {
 	out, err := yaml.Marshal(&kos)
 	if err != nil {
