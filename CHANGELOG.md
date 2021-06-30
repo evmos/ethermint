@@ -52,6 +52,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * The `ContractAddress`, `Bloom` have been removed from the `MsgEthereumTxResponse` and the
     response now contains the ethereum-formatted `Hash` in hex format.
 * (eth) [\#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
+* (evm) [#202](https://github.com/tharsis/ethermint/pull/202) Web3 api `SendTransaction`/`SendRawTransaction` returns ethereum compatible transaction hash, and query api `GetTransaction*` also accept that.
 
 ### Improvements
 
@@ -61,6 +62,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#24](https://github.com/tharsis/ethermint/pull/24) Implement metrics for `MsgEthereumTx`, state transitions, `BeginBlock` and `EndBlock`.
 * (rpc)  [#124](https://github.com/tharsis/ethermint/issues/124) Implement `txpool_content`, `txpool_inspect` and `txpool_status` RPC methods
 * (rpc) [tharsis#112](https://github.com/tharsis/ethermint/pull/153) Fix `eth_coinbase` to return the ethereum address of the validator
+* (rpc) [tharsis#176](https://github.com/tharsis/ethermint/issues/176) Support fetching pending nonce
 
 ### Bug Fixes
 

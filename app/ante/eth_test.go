@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 )
 
 func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
@@ -46,9 +45,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -133,10 +130,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			tc.malleate()
-
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -193,9 +187,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -303,11 +295,9 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				return
 			}
 
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 			if tc.expPass {
 				suite.Require().NoError(err)
-				suite.Require().Equal(int(params.TxGasContractCreation+params.TxAccessListAddressGas), int(ctx.GasMeter().GasConsumed()-consumed))
 			} else {
 				suite.Require().Error(err)
 			}
@@ -364,9 +354,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 
 			tc.malleate()
 
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -426,10 +414,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -503,7 +488,6 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-			consumed := suite.ctx.GasMeter().GasConsumed()
 
 			if tc.expPanic {
 				suite.Require().Panics(func() {
@@ -512,8 +496,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 				return
 			}
 
-			ctx, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -527,6 +510,37 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
+		})
+	}
+}
+
+func (suite AnteTestSuite) TestEthSetupContextDecorator() {
+	dec := ante.NewEthSetUpContextDecorator()
+	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+
+	testCases := []struct {
+		name    string
+		tx      sdk.Tx
+		expPass bool
+	}{
+		{"invalid transaction type - does not implement GasTx", &invalidTx{}, false},
+		{
+			"success - transaction implement GasTx",
+			tx,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+
 		})
 	}
 }

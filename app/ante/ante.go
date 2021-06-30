@@ -60,7 +60,7 @@ func NewAnteHandler(
 					// handle as *evmtypes.MsgEthereumTx
 
 					anteHandler = sdk.ChainAnteDecorators(
-						authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
+						NewEthSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 						authante.NewMempoolFeeDecorator(),
 						authante.NewTxTimeoutHeightDecorator(),
 						authante.NewValidateMemoDecorator(ak),

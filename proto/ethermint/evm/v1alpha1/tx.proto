@@ -52,4 +52,6 @@ message MsgEthereumTxResponse {
   bytes ret = 3;
   // reverted flag is set to true when the call has been reverted
   bool reverted = 4;
+  // gas consumed by the transaction
+  uint64 gas_used = 5;
 }

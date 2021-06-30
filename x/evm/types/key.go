@@ -42,6 +42,7 @@ const (
 	prefixTransientRefund
 	prefixTransientAccessListAddress
 	prefixTransientAccessListSlot
+	prefixTransientTxHash
 )
 
 // KVStore key prefixes
@@ -63,6 +64,7 @@ var (
 	KeyPrefixTransientRefund            = []byte{prefixTransientRefund}
 	KeyPrefixTransientAccessListAddress = []byte{prefixTransientAccessListAddress}
 	KeyPrefixTransientAccessListSlot    = []byte{prefixTransientAccessListSlot}
+	KeyPrefixTransientTxHash            = []byte{prefixTransientTxHash}
 )
 
 // BloomKey defines the store key for a block Bloom
