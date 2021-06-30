@@ -257,9 +257,9 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctype
 	}
 
 	includePending := blockNum == rpctypes.EthPendingBlockNumber
-	nonce, error := getAccountNonce(e.clientCtx, e.backend, address, includePending, e.logger)
-	if error != nil {
-		return nil, error
+	nonce, err := getAccountNonce(e.clientCtx, e.backend, address, includePending, e.logger)
+	if err != nil {
+		return nil, err
 	}
 
 	n := hexutil.Uint64(nonce)
@@ -1089,24 +1089,26 @@ func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common
 		return 0, err
 	}
 
-	if pending {
-		// the account retriever doesn't include the uncommitted transactions on the nonce so we need to
-		// to manually add them.
-		pendingTxs, err := backend.PendingTransactions()
-		if err != nil {
-			logger.Errorln("fails to fetch pending transactions")
-			return nonce, nil
-		}
+	if !pending {
+		return nonce, nil
+	}
 
-		// add the uncommitted txs to the nonce counter
-		if len(pendingTxs) != 0 {
-			for i := range pendingTxs {
-				if pendingTxs[i] == nil {
-					continue
-				}
-				if pendingTxs[i].From == accAddr {
-					nonce++
-				}
+	// the account retriever doesn't include the uncommitted transactions on the nonce so we need to
+	// to manually add them.
+	pendingTxs, err := backend.PendingTransactions()
+	if err != nil {
+		logger.Errorln("fails to fetch pending transactions")
+		return nonce, nil
+	}
+
+	// add the uncommitted txs to the nonce counter
+	if len(pendingTxs) != 0 {
+		for i := range pendingTxs {
+			if pendingTxs[i] == nil {
+				continue
+			}
+			if pendingTxs[i].From == accAddr {
+				nonce++
 			}
 		}
 	}
