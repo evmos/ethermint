@@ -45,9 +45,8 @@ require (
 	github.com/xlab/closer v0.0.0-20190328110542-03326addb7c2
 	github.com/xlab/suplog v1.3.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
-	google.golang.org/genproto v0.0.0-20210624195500-8bfb893ecb84
+	google.golang.org/genproto v0.0.0-20210629200056-84d6f6074151
 	google.golang.org/grpc v1.38.0
-	google.golang.org/protobuf v1.27.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	nhooyr.io/websocket v1.8.7 // indirect
 )

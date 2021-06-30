@@ -32,10 +32,11 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"invalid address",
+		{
+			"invalid address",
 			func() {
 				expAccount = &types.QueryAccountResponse{
-					Balance:  "0",
+					Balance:  0,
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
@@ -49,10 +50,13 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 			"success",
 			func() {
 				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
-				suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
-				suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
+				err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
+				suite.Require().NoError(err)
+				err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
+				suite.Require().NoError(err)
+
 				expAccount = &types.QueryAccountResponse{
-					Balance:  "100",
+					Balance:  100,
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
@@ -164,7 +168,7 @@ func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
 func (suite *KeeperTestSuite) TestQueryBalance() {
 	var (
 		req        *types.QueryBalanceRequest
-		expBalance string
+		expBalance int64
 	)
 
 	testCases := []struct {
@@ -174,7 +178,7 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 	}{
 		{"invalid address",
 			func() {
-				expBalance = "0"
+				expBalance = 0
 				req = &types.QueryBalanceRequest{
 					Address: invalidAddress,
 				}
@@ -185,9 +189,12 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 			"success",
 			func() {
 				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
-				suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
-				suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
-				expBalance = "100"
+				err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
+				suite.Require().NoError(err)
+				err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
+				suite.Require().NoError(err)
+
+				expBalance = 100
 				req = &types.QueryBalanceRequest{
 					Address: suite.address.String(),
 				}

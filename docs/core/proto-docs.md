@@ -10,14 +10,12 @@
   
 - [ethermint/evm/v1alpha1/evm.proto](#ethermint/evm/v1alpha1/evm.proto)
     - [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple)
-    - [BytesList](#ethermint.evm.v1alpha1.BytesList)
     - [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig)
     - [Log](#ethermint.evm.v1alpha1.Log)
     - [Params](#ethermint.evm.v1alpha1.Params)
     - [State](#ethermint.evm.v1alpha1.State)
     - [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs)
     - [TxData](#ethermint.evm.v1alpha1.TxData)
-    - [TxReceipt](#ethermint.evm.v1alpha1.TxReceipt)
     - [TxResult](#ethermint.evm.v1alpha1.TxResult)
   
 - [ethermint/evm/v1alpha1/genesis.proto](#ethermint/evm/v1alpha1/genesis.proto)
@@ -131,21 +129,6 @@ AccessTuple is the element type of an access list.
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  | hex formatted ethereum address |
 | `storage_keys` | [string](#string) | repeated | hex formatted hashes of the storage keys |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.BytesList"></a>
-
-### BytesList
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `bytes` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -278,38 +261,17 @@ solely as intended in Ethereum abiding by the protocol.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `chain_id` | [bytes](#bytes) |  | destination EVM chain ID |
+| `chain_id` | [string](#string) |  | destination EVM chain ID |
 | `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
-| `gas_price` | [bytes](#bytes) |  | price defines the unsigned integer value of the gas price in bytes. |
+| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
 | `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
 | `to` | [string](#string) |  | hex formatted address of the recipient |
-| `value` | [bytes](#bytes) |  | value defines the unsigned integer value of the transaction amount. |
+| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
 | `input` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
 | `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
 | `v` | [bytes](#bytes) |  | v defines the signature value |
 | `r` | [bytes](#bytes) |  | r defines the signature value |
 | `s` | [bytes](#bytes) |  | s define the signature value |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.TxReceipt"></a>
-
-### TxReceipt
-TxReceipt defines the receipt type stored in KV for each EVM transaction.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `hash` | [string](#string) |  |  |
-| `from` | [string](#string) |  |  |
-| `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  |  |
-| `result` | [TxResult](#ethermint.evm.v1alpha1.TxResult) |  |  |
-| `index` | [uint64](#uint64) |  |  |
-| `block_height` | [uint64](#uint64) |  |  |
-| `block_hash` | [string](#string) |  |  |
 
 
 
@@ -428,7 +390,7 @@ QueryAccountResponse is the response type for the Query/Account RPC method.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `balance` | [string](#string) |  | balance is the balance of the EVM denomination. |
+| `balance` | [int64](#int64) |  | balance is the balance of the EVM denomination. |
 | `code_hash` | [string](#string) |  | code hash is the hex-formatted code bytes from the EOA. |
 | `nonce` | [uint64](#uint64) |  | nonce is the account's sequence number. |
 
@@ -460,7 +422,7 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `balance` | [string](#string) |  | balance is the balance of the EVM denomination. |
+| `balance` | [int64](#int64) |  | balance is the balance of the EVM denomination. |
 
 
 
