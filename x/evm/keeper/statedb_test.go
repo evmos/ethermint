@@ -10,7 +10,6 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -483,15 +482,8 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	msg.From = addr.Hex()
 
 	tx := suite.CreateTestTx(msg, privKey)
-	txBz, err := suite.clientCtx.TxConfig.TxEncoder()(tx)
-	suite.Require().NoError(err)
-	tmHash := common.BytesToHash(tmtypes.Tx(txBz).Hash())
-
 	msg, _ = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-	ethTx := msg.AsTransaction()
-	txHash := ethTx.Hash()
-
-	suite.app.EvmKeeper.WithContext(suite.ctx.WithTxBytes(txBz))
+	txHash := msg.AsTransaction().Hash()
 
 	testCases := []struct {
 		name        string
@@ -501,7 +493,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	}{
 		{
 			"tx hash from message",
-			tmHash,
+			txHash,
 			&ethtypes.Log{
 				Address: addr,
 			},
@@ -518,6 +510,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 			tc.malleate()
 
 			prev := suite.app.EvmKeeper.GetTxLogs(tc.hash)
+			suite.app.EvmKeeper.SetTxHashTransient(tc.hash)
 			suite.app.EvmKeeper.AddLog(tc.log)
 			post := suite.app.EvmKeeper.GetTxLogs(tc.hash)
 

@@ -21,8 +21,7 @@ import (
 // to the StateDB interface.
 type Keeper struct {
 	// Protobuf codec
-	cdc       codec.BinaryCodec
-	txDecoder sdk.TxDecoder
+	cdc codec.BinaryCodec
 	// Store key required for the EVM Prefix KVStore. It is required by:
 	// - storing Account's Storage State
 	// - storing Account's Code
@@ -47,7 +46,7 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, txDecoder sdk.TxDecoder,
+	cdc codec.BinaryCodec,
 	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
 	debug bool,
@@ -66,7 +65,6 @@ func NewKeeper(
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
 		cdc:           cdc,
-		txDecoder:     txDecoder,
 		paramSpace:    paramSpace,
 		accountKeeper: ak,
 		bankKeeper:    bankKeeper,
@@ -131,14 +129,14 @@ func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloo
 }
 
 // GetBlockBloomTransient returns bloom bytes for the current block height
-func (k Keeper) GetBlockBloomTransient() (*big.Int, bool) {
+func (k Keeper) GetBlockBloomTransient() *big.Int {
 	store := k.ctx.TransientStore(k.transientKey)
 	bz := store.Get(types.KeyPrefixTransientBloom)
 	if len(bz) == 0 {
-		return nil, false
+		return big.NewInt(0)
 	}
 
-	return new(big.Int).SetBytes(bz), true
+	return new(big.Int).SetBytes(bz)
 }
 
 // SetBlockBloomTransient sets the given bloom bytes to the transient store. This value is reset on
@@ -152,10 +150,27 @@ func (k Keeper) SetBlockBloomTransient(bloom *big.Int) {
 // Tx
 // ----------------------------------------------------------------------------
 
+// GetTxHashTransient returns the hash of current processing transaction
+func (k Keeper) GetTxHashTransient() common.Hash {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientTxHash)
+	if len(bz) == 0 {
+		return common.Hash{}
+	}
+
+	return common.BytesToHash(bz)
+}
+
+// SetTxHashTransient set the hash of processing transaction
+func (k Keeper) SetTxHashTransient(hash common.Hash) {
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientTxHash, hash.Bytes())
+}
+
 // GetTxIndexTransient returns EVM transaction index on the current block.
 func (k Keeper) GetTxIndexTransient() uint64 {
 	store := k.ctx.TransientStore(k.transientKey)
-	bz := store.Get(types.KeyPrefixTransientBloom)
+	bz := store.Get(types.KeyPrefixTransientTxIndex)
 	if len(bz) == 0 {
 		return 0
 	}
@@ -168,7 +183,7 @@ func (k Keeper) GetTxIndexTransient() uint64 {
 func (k Keeper) IncreaseTxIndexTransient() {
 	txIndex := k.GetTxIndexTransient()
 	store := k.ctx.TransientStore(k.transientKey)
-	store.Set(types.KeyPrefixTransientBloom, sdk.Uint64ToBigEndian(txIndex+1))
+	store.Set(types.KeyPrefixTransientTxIndex, sdk.Uint64ToBigEndian(txIndex+1))
 }
 
 // ResetRefundTransient resets the available refund amount to 0
