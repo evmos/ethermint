@@ -128,6 +128,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	evm := k.NewEVM(msg, ethCfg)
 
+	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()
 
 	// create an ethereum StateTransition instance and run TransitionDb
@@ -136,9 +137,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
-	// NOTE: we set up the transaction hash from tendermint as it is the format expected by the application:
-	// Remove once hashing is fixed on Tendermint. See https://github.com/tendermint/tendermint/issues/6539
-	txHash := common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
+	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
 
 	logs := k.GetTxLogs(txHash)
