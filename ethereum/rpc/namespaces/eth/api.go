@@ -667,11 +667,7 @@ func (e *PublicAPI) EstimateGas(args rpctypes.CallArgs) (hexutil.Uint64, error) 
 		return 0, rpctypes.ErrRevertedWith(data.Ret)
 	}
 
-	// TODO: Add Gas Info from state transition to MsgEthereumTxResponse fields and return that instead
-	estimatedGas := simRes.GasInfo.GasUsed
-	gas := estimatedGas + 200000
-
-	return hexutil.Uint64(gas), nil
+	return hexutil.Uint64(data.GasUsed), nil
 }
 
 // GetBlockByHash returns the block identified by hash.

@@ -112,12 +112,7 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
-	gasMeter := k.ctx.GasMeter() // tx gas meter
-
-	// ignore gas consumption costs
-	infCtx := k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	cfg, found := k.GetChainConfig(infCtx)
+	cfg, found := k.GetChainConfig(k.ctx)
 	if !found {
 		return nil, stacktrace.Propagate(types.ErrChainConfigNotFound, "configuration not found")
 	}
@@ -135,9 +130,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	k.IncreaseTxIndexTransient()
 
-	// set the original gas meter to apply the message and perform the state transition
-
-	k.WithContext(k.ctx.WithGasMeter(gasMeter))
 	// create an ethereum StateTransition instance and run TransitionDb
 	res, err := k.ApplyMessage(evm, msg, ethCfg)
 	if err != nil {
@@ -157,6 +149,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
 	k.SetBlockBloomTransient(bloom)
 
+	k.resetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
 
@@ -209,24 +202,13 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
 
-	// transaction gas meter (tracks limit and usage)
-	gasConsumed := k.ctx.GasMeter().GasConsumed()
-	leftoverGas := k.ctx.GasMeter().Limit() - k.ctx.GasMeter().GasConsumedToLimit()
-
-	// NOTE: Since CRUD operations on the SDK store consume gas we need to set up an infinite gas meter so that we only consume
-	// the gas used by the Ethereum message execution.
-	// Not setting the infinite gas meter here would mean that we are incurring in additional gas costs
-	k.WithContext(k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
-
-	// NOTE: gas limit is the GasLimit defied in the message minus the Intrinsic Gas that has already been
-	// consumed on the AnteHandler.
-
-	// ensure gas is consistent during CheckTx
-	if k.ctx.IsCheckTx() {
-		if err := k.CheckGasConsumption(msg, cfg, gasConsumed, contractCreation); err != nil {
-			return nil, stacktrace.Propagate(err, "gas consumption check failed during CheckTx")
-		}
+	intrinsicGas, err := k.GetEthIntrinsicGas(msg, cfg, contractCreation)
+	if err != nil {
+		// should have already been checked on Ante Handler
+		return nil, stacktrace.Propagate(err, "intrinsic gas failed")
 	}
+	// should be > 0 as it is checked on Ante Handler
+	leftoverGas := msg.Gas() - intrinsicGas
 
 	if contractCreation {
 		ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
@@ -235,7 +217,8 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}
 
 	// refund gas prior to handling the vm error in order to set the updated gas meter
-	if err := k.RefundGas(msg, leftoverGas); err != nil {
+	leftoverGas, err = k.RefundGas(msg, leftoverGas)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
@@ -249,38 +232,30 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
 	}
 
+	gasUsed := msg.Gas() - leftoverGas
 	return &types.MsgEthereumTxResponse{
 		Ret:      ret,
 		Reverted: false,
+		GasUsed:  gasUsed,
 	}, nil
 }
 
-// CheckGasConsumption verifies that the amount of gas consumed so far matches the intrinsic gas value.
-func (k *Keeper) CheckGasConsumption(msg core.Message, cfg *params.ChainConfig, gasConsumed uint64, isContractCreation bool) error {
+// GetEthIntrinsicGas get the transaction intrinsic gas cost
+func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, isContractCreation bool) (uint64, error) {
 	height := big.NewInt(k.ctx.BlockHeight())
 	homestead := cfg.IsHomestead(height)
 	istanbul := cfg.IsIstanbul(height)
 
-	intrinsicGas, err := core.IntrinsicGas(msg.Data(), msg.AccessList(), isContractCreation, homestead, istanbul)
-	if err != nil {
-		// should have already been checked on Ante Handler
-		return stacktrace.Propagate(err, "intrinsic gas failed")
-	}
-
-	if intrinsicGas != gasConsumed {
-		return sdkerrors.Wrapf(types.ErrInconsistentGas, "expected gas consumption to be %d (intrinsic gas only), got %d", intrinsicGas, gasConsumed)
-	}
-
-	return nil
+	return core.IntrinsicGas(msg.Data(), msg.AccessList(), isContractCreation, homestead, istanbul)
 }
 
 // RefundGas transfers the leftover gas to the sender of the message, caped to half of the total gas
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
-// returned by the EVM execution, thus ignoring the previous intrinsic gas inconsumed during in the
+// returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
-func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
+func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error) {
 	if leftoverGas > msg.Gas() {
-		return stacktrace.Propagate(
+		return leftoverGas, stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
 			"failed to update gas consumed after refund of leftover gas",
 		)
@@ -298,47 +273,42 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) error {
 	leftoverGas += refund
 
 	if leftoverGas > msg.Gas() {
-		return stacktrace.Propagate(
+		return leftoverGas, stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
 			"failed to update gas consumed after refund of %d gas", refund,
 		)
 	}
 
-	gasConsumed = msg.Gas() - leftoverGas
-
 	// Return EVM tokens for remaining gas, exchanged at the original rate.
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(leftoverGas), msg.GasPrice())
-
-	// ignore gas consumption
-	infCtx := k.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	switch remaining.Sign() {
 	case -1:
 		// negative refund errors
-		return sdkerrors.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
+		return leftoverGas, sdkerrors.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
 	case 1:
 		// positive amount refund
-		params := k.GetParams(infCtx)
+		params := k.GetParams(k.ctx)
 		refundedCoins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(remaining))}
 
 		// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
 
-		err := k.bankKeeper.SendCoinsFromModuleToAccount(infCtx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
+		err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
 			err = sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
-			return stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
+			return leftoverGas, stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
 		}
 	default:
 		// no refund, consume gas and update the tx gas meter
 	}
 
-	// set the gas consumed into the context with the new gas meter. This gas meter will have the
-	// original gas limit defined in the msg and will consume the gas now that the amount has been
-	// refunded
-	gasMeter := sdk.NewGasMeter(msg.Gas())
-	// NOTE: gas consumed will always be less than the limit
-	gasMeter.ConsumeGas(gasConsumed, "update gas consumption after refund")
-	k.WithContext(k.ctx.WithGasMeter(gasMeter))
+	return leftoverGas, nil
+}
 
-	return nil
+// resetGasMeterAndConsumeGas reset first the gas meter consumed value to zero and set it back to the new value
+// 'gasUsed'
+func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
+	// reset the gas count
+	k.ctx.GasMeter().RefundGas(k.ctx.GasMeter().GasConsumed(), "reset the gas count")
+	k.ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
 }
