@@ -121,10 +121,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
 
-	msg, err := tx.AsMessage(signer)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
-	}
+	// Ignore the error because the signature and field from is not needed in case of simulate
+	// For non simulate tx, this should be already validated through the ante handler
+	msg, _ := tx.AsMessage(signer)
 
 	// create an ethereum StateTransition instance and run TransitionDb
 	// we use a ctx context to avoid modifying to state in case EVM msg is reverted

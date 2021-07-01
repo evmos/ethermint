@@ -49,6 +49,10 @@ func NewEthSigVerificationDecorator(ek EVMKeeper) EthSigVerificationDecorator {
 // Failure in RecheckTx will prevent tx to be included into block, especially when CheckTx succeed, in which case user
 // won't see the error message.
 func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	if simulate {
+		return next(ctx, tx, simulate)
+	}
+
 	if tx == nil || len(tx.GetMsgs()) != 1 {
 		return ctx, stacktrace.Propagate(
 			sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx"),
@@ -114,6 +118,10 @@ func NewEthAccountVerificationDecorator(ak AccountKeeper, bankKeeper BankKeeper,
 // - from address is empty
 // - account balance is lower than the transaction cost
 func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	if simulate {
+		return next(ctx, tx, simulate)
+	}
+
 	if !ctx.IsCheckTx() {
 		return next(ctx, tx, simulate)
 	}
@@ -194,6 +202,10 @@ func NewEthNonceVerificationDecorator(ak AccountKeeper) EthNonceVerificationDeco
 // AnteHandle validates that the transaction nonces are valid and equivalent to the sender account’s
 // current nonce.
 func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	if simulate {
+		return next(ctx, tx, simulate)
+	}
+
 	// no need to check the nonce on ReCheckTx
 	if ctx.IsReCheckTx() {
 		return next(ctx, tx, simulate)
@@ -268,6 +280,10 @@ func NewEthGasConsumeDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKe
 // - user doesn't have enough balance to deduct the transaction fees (gas_limit * gas_price)
 // - transaction or block gas meter runs out of gas
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	if simulate {
+		return next(ctx, tx, simulate)
+	}
+
 	// reset the refund gas value in the keeper for the current transaction
 	egcd.evmKeeper.ResetRefundTransient(ctx)
 
@@ -371,6 +387,10 @@ func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
 // AnteHandle creates an EVM from the message and calls the BlockContext CanTransfer function to
 // see if the address can execute the transaction.
 func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	if simulate {
+		return next(ctx, tx, simulate)
+	}
+
 	ctd.evmKeeper.WithContext(ctx)
 
 	config, found := ctd.evmKeeper.GetChainConfig(ctx)
@@ -497,6 +517,9 @@ func NewEthIncrementSenderSequenceDecorator(ak AccountKeeper) EthIncrementSender
 // contract creation, the nonce will be incremented during the transaction execution and not within
 // this AnteHandler decorator.
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	if simulate {
+		return next(ctx, tx, simulate)
+	}
 
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)

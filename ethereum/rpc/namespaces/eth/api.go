@@ -577,24 +577,27 @@ func (e *PublicAPI) doCall(
 		accessList = args.AccessList
 	}
 
-	if args.From == nil {
-		args.From = &common.Address{}
-	}
-
-	includePending := blockNr == rpctypes.EthPendingBlockNumber
-	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, includePending, e.logger)
-	if err != nil {
-		return nil, err
+	var nonce uint64
+	if args.From != nil {
+		includePending := blockNr == rpctypes.EthPendingBlockNumber
+		seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, includePending, e.logger)
+		if err != nil {
+			return nil, err
+		}
+		nonce = seq
 	}
 
 	// Create new call message
-	msg := evmtypes.NewTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
-	msg.From = args.From.String()
-
-	// TODO: get from chain config
-	signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
-	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
-		return nil, err
+	msg := evmtypes.NewTx(e.chainIDEpoch, nonce, args.To, value, gas, gasPrice, data, accessList)
+	if args.From != nil {
+		msg.From = args.From.String()
+		// TODO: get from chain config
+		signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
+		if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
+			return nil, err
+		}
+	} else {
+		msg.From = (&common.Address{}).String()
 	}
 
 	if err := msg.ValidateBasic(); err != nil {
