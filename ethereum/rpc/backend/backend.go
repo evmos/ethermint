@@ -157,7 +157,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 		hash := msg.AsTransaction().Hash()
 		if fullTx {
-			from, err := msg.ExtractFromAddress(e.chainID)
+			from, err := msg.GetSender(e.chainID)
 			if err != nil {
 				from = common.HexToAddress(msg.From)
 			}

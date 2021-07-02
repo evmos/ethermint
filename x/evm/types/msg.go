@@ -217,12 +217,13 @@ func (msg MsgEthereumTx) AsMessage(signer ethtypes.Signer) (core.Message, error)
 	return msg.AsTransaction().AsMessage(signer)
 }
 
-// ExtractFromAddress extract from address from signature
-func (msg MsgEthereumTx) ExtractFromAddress(chainId *big.Int) (common.Address, error) {
-	signer := ethtypes.LatestSignerForChainID(chainId)
+// GetSender extracts the sender address from the signature values using the latest signer for the given chainID.
+func (msg *MsgEthereumTx) GetSender(chainID *big.Int) (common.Address, error) {
+	signer := ethtypes.LatestSignerForChainID(chainID)
 	from, err := signer.Sender(msg.AsTransaction())
 	if err != nil {
 		return common.Address{}, err
 	}
+	msg.From = from.Hex()
 	return from, nil
 }

@@ -718,7 +718,7 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
-	from, err := msg.ExtractFromAddress(e.chainIDEpoch)
+	from, err := msg.GetSender(e.chainIDEpoch)
 	if err != nil {
 		return nil, err
 	}
@@ -879,7 +879,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	}
 
-	from, err := msg.ExtractFromAddress(e.chainIDEpoch)
+	from, err := msg.GetSender(e.chainIDEpoch)
 	if err != nil {
 		return nil, err
 	}
