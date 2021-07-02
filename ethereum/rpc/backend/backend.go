@@ -49,15 +49,21 @@ type EVMBackend struct {
 	clientCtx   client.Context
 	queryClient *types.QueryClient // gRPC query client
 	logger      log.Logger
+	chainID     *big.Int
 }
 
 // NewEVMBackend creates a new EVMBackend instance
 func NewEVMBackend(clientCtx client.Context) *EVMBackend {
+	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
+	if err != nil {
+		panic(err)
+	}
 	return &EVMBackend{
 		ctx:         context.Background(),
 		clientCtx:   clientCtx,
 		queryClient: types.NewQueryClient(clientCtx),
 		logger:      log.WithField("module", "evm-backend"),
+		chainID:     chainID,
 	}
 }
 
@@ -151,9 +157,13 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 		hash := msg.AsTransaction().Hash()
 		if fullTx {
+			from, err := msg.GetSender(e.chainID)
+			if err != nil {
+				from = common.HexToAddress(msg.From)
+			}
 			ethTx, err := types.NewTransactionFromData(
 				msg.Data,
-				common.HexToAddress(msg.From),
+				from,
 				hash,
 				common.BytesToHash(block.Hash()),
 				uint64(block.Height),
