@@ -97,8 +97,9 @@ func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 		input = *args.Data
 	}
 
-	data := &evmtypes.TxData{
-		Input:    input,
+	// TODO: create depending on fields
+	data := &evmtypes.AccessListTx{
+		Data:     input,
 		Accesses: evmtypes.NewAccessList(args.AccessList),
 	}
 
@@ -126,8 +127,13 @@ func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 		data.To = args.To.Hex()
 	}
 
+	anyTxData, err := evmtypes.PackTxData(data)
+	if err != nil {
+		panic(err)
+	}
+
 	return &evmtypes.MsgEthereumTx{
-		Data: data,
+		Data: anyTxData,
 		From: args.From.String(),
 	}
 }

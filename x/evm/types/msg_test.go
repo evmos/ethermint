@@ -88,7 +88,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 
 	for i, tc := range testCases {
 		// recreate txData
-		txData := TxData{
+		txData := &AccessListTx{
 			Nonce:    0,
 			GasLimit: 0,
 			To:       tc.to,

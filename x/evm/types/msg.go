@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -20,6 +21,8 @@ var (
 	_ sdk.Msg    = &MsgEthereumTx{}
 	_ sdk.Tx     = &MsgEthereumTx{}
 	_ ante.GasTx = &MsgEthereumTx{}
+
+	_ codectypes.UnpackInterfacesMessage = MsgEthereumTx{}
 )
 
 // message type and route constants
@@ -55,9 +58,9 @@ func newMsgEthereumTx(
 
 // fromEthereumTx populates the message fields from the given ethereum transaction
 func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
-	msg.Data = &TxData{
+	msg.Data = &AccessListTx{
 		Nonce:    tx.Nonce(),
-		Input:    tx.Data(),
+		Data:     tx.Data(),
 		GasLimit: tx.Gas(),
 	}
 
@@ -226,4 +229,9 @@ func (msg *MsgEthereumTx) GetSender(chainID *big.Int) (common.Address, error) {
 	}
 	msg.From = from.Hex()
 	return from, nil
+}
+
+// UnpackInterfaces implements UnpackInterfacesMesssage.UnpackInterfaces
+func (msg MsgEthereumTx) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	return unpacker.UnpackAny(msg.Data, new(TxData))
 }
