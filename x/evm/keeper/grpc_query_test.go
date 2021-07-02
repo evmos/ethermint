@@ -36,7 +36,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 			"invalid address",
 			func() {
 				expAccount = &types.QueryAccountResponse{
-					Balance:  0,
+					Balance:  "0",
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
@@ -56,7 +56,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 				suite.Require().NoError(err)
 
 				expAccount = &types.QueryAccountResponse{
-					Balance:  100,
+					Balance:  "100",
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
@@ -168,7 +168,7 @@ func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
 func (suite *KeeperTestSuite) TestQueryBalance() {
 	var (
 		req        *types.QueryBalanceRequest
-		expBalance int64
+		expBalance string
 	)
 
 	testCases := []struct {
@@ -178,7 +178,7 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 	}{
 		{"invalid address",
 			func() {
-				expBalance = 0
+				expBalance = "0"
 				req = &types.QueryBalanceRequest{
 					Address: invalidAddress,
 				}
@@ -194,7 +194,7 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 				err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
 				suite.Require().NoError(err)
 
-				expBalance = 100
+				expBalance = "100"
 				req = &types.QueryBalanceRequest{
 					Address: suite.address.String(),
 				}
