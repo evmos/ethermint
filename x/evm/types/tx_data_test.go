@@ -30,7 +30,7 @@ func TestTxData_chainID(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		chainID := tc.data.chainID()
+		chainID := tc.data.GetChainID()
 		require.Equal(t, chainID, tc.expChainID, tc.msg)
 	}
 }
@@ -60,7 +60,7 @@ func TestTxData_DeriveChainID(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		v, _, _ := tc.data.rawSignatureValues()
+		v, _, _ := tc.data.GetRawSignatureValues()
 
 		chainID := DeriveChainID(v)
 		require.Equal(t, tc.expChainID, chainID, tc.msg)

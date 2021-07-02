@@ -270,7 +270,7 @@ func NewTransactionFromData(
 	}
 
 	rpcTx := &RPCTransaction{
-		Type:     hexutil.Uint64(txData.Type()),
+		Type:     hexutil.Uint64(txData.TxType()),
 		From:     from,
 		Gas:      hexutil.Uint64(txData.GasLimit),
 		GasPrice: (*hexutil.Big)(txData.GasPrice.BigInt()),
@@ -294,7 +294,7 @@ func NewTransactionFromData(
 		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
 	}
 
-	if txData.Type() == ethtypes.AccessListTxType {
+	if txData.TxType() == ethtypes.AccessListTxType {
 		rpcTx.Accesses = txData.Accesses.ToEthAccessList()
 		rpcTx.ChainID = (*hexutil.Big)(txData.ChainID.BigInt())
 	}

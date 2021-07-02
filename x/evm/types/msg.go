@@ -76,7 +76,7 @@ func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
 		msg.Data.Accesses = NewAccessList(&al)
 	}
 
-	msg.Data.setSignatureValues(tx.ChainId(), v, r, s)
+	msg.Data.SetSignatureValues(tx.ChainId(), v, r, s)
 
 	msg.Size_ = float64(tx.Size())
 	msg.Hash = tx.Hash().Hex()
@@ -103,7 +103,7 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 // To returns the recipient address of the transaction. It returns nil if the
 // transaction is a contract creation.
 func (msg MsgEthereumTx) To() *common.Address {
-	return msg.Data.to()
+	return msg.Data.GetTo()
 }
 
 // GetMsgs returns a single MsgEthereumTx as an sdk.Msg.
@@ -167,26 +167,26 @@ func (msg *MsgEthereumTx) Sign(ethSigner ethtypes.Signer, keyringSigner keyring.
 
 // GetGas implements the GasTx interface. It returns the GasLimit of the transaction.
 func (msg MsgEthereumTx) GetGas() uint64 {
-	return msg.Data.gas()
+	return msg.Data.GetGas()
 }
 
 // Fee returns gasprice * gaslimit.
 func (msg MsgEthereumTx) Fee() *big.Int {
-	gasPrice := msg.Data.gasPrice()
-	gasLimit := new(big.Int).SetUint64(msg.Data.gas())
+	gasPrice := msg.Data.GetGasPrice()
+	gasLimit := new(big.Int).SetUint64(msg.Data.GetGas())
 	return new(big.Int).Mul(gasPrice, gasLimit)
 }
 
 // ChainID returns which chain id this transaction was signed for (if at all)
 func (msg *MsgEthereumTx) ChainID() *big.Int {
-	return msg.Data.chainID()
+	return msg.Data.GetChainID()
 }
 
 // Cost returns amount + gasprice * gaslimit.
 func (msg MsgEthereumTx) Cost() *big.Int {
 	total := msg.Fee()
-	if msg.Data.amount() != nil {
-		total.Add(total, msg.Data.amount())
+	if msg.Data.GetValue() != nil {
+		total.Add(total, msg.Data.GetValue())
 	}
 	return total
 }
@@ -194,7 +194,7 @@ func (msg MsgEthereumTx) Cost() *big.Int {
 // RawSignatureValues returns the V, R, S signature values of the transaction.
 // The return values should not be modified by the caller.
 func (msg MsgEthereumTx) RawSignatureValues() (v, r, s *big.Int) {
-	return msg.Data.rawSignatureValues()
+	return msg.Data.GetRawSignatureValues()
 }
 
 // GetFrom loads the ethereum sender address from the sigcache and returns an

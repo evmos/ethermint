@@ -12,7 +12,25 @@ import (
 	"github.com/tharsis/ethermint/types"
 )
 
-// var _ ethtypes.TxData = &TxData{}
+var _ TxDataI = &TxData{}
+
+type TxDataI interface {
+	TxType() byte
+	Copy() TxDataI
+	GetChainID() *big.Int
+	GetAccessList() ethtypes.AccessList
+	GetData() []byte
+	GetGas() uint64
+	GetGasPrice() *big.Int
+	GetValue() *big.Int
+	GetTo() *common.Address
+
+	GetRawSignatureValues() (v, r, s *big.Int)
+	SetSignatureValues(chainID, v, r, s *big.Int)
+
+	AsEthereumData() ethtypes.TxData
+	Validate() error
+}
 
 func newTxData(
 	chainID *big.Int, nonce uint64, to *common.Address, amount *big.Int,
@@ -47,53 +65,67 @@ func newTxData(
 	return txData
 }
 
-// Type returns the tx type
-func (data TxData) Type() uint8 {
-	return data.txType()
-}
-
-func (data *TxData) txType() uint8 {
+// TxType returns the tx type
+func (data *TxData) TxType() uint8 {
 	if data.Accesses == nil {
 		return ethtypes.LegacyTxType
 	}
 	return ethtypes.AccessListTxType
 }
 
-func (data *TxData) chainID() *big.Int {
-	if data.txType() == ethtypes.LegacyTxType {
-		v, _, _ := data.rawSignatureValues()
+// Copy returns an instance with the same field values
+func (data *TxData) Copy() TxDataI {
+	return &TxData{
+		ChainID:  data.ChainID,
+		Nonce:    data.Nonce,
+		GasPrice: data.GasPrice,
+		GasLimit: data.GasLimit,
+		To:       data.To,
+		Amount:   data.Amount,
+		Input:    common.CopyBytes(data.Input),
+		V:        common.CopyBytes(data.V),
+		R:        common.CopyBytes(data.R),
+		S:        common.CopyBytes(data.S),
+	}
+}
+
+// GetChainID
+func (data *TxData) GetChainID() *big.Int {
+	if data.TxType() == ethtypes.LegacyTxType {
+		v, _, _ := data.GetRawSignatureValues()
 		return DeriveChainID(v)
 	}
 
 	return data.ChainID.BigInt()
 }
 
-func (data *TxData) accessList() ethtypes.AccessList {
+// GetAccessList
+func (data *TxData) GetAccessList() ethtypes.AccessList {
 	if data.Accesses == nil {
 		return nil
 	}
 	return *data.Accesses.ToEthAccessList()
 }
 
-func (data *TxData) data() []byte {
+func (data *TxData) GetData() []byte {
 	return common.CopyBytes(data.Input)
 }
 
-func (data *TxData) gas() uint64 {
+func (data *TxData) GetGas() uint64 {
 	return data.GasLimit
 }
 
-func (data *TxData) gasPrice() *big.Int {
+func (data *TxData) GetGasPrice() *big.Int {
 	return data.GasPrice.BigInt()
 }
 
-func (data *TxData) amount() *big.Int {
+func (data *TxData) GetValue() *big.Int {
 	return data.Amount.BigInt()
 }
 
-func (data *TxData) nonce() uint64 { return data.Nonce }
+func (data *TxData) GetNonce() uint64 { return data.Nonce }
 
-func (data *TxData) to() *common.Address {
+func (data *TxData) GetTo() *common.Address {
 	if data.To == "" {
 		return nil
 	}
@@ -104,15 +136,15 @@ func (data *TxData) to() *common.Address {
 // AsEthereumData returns an AccessListTx transaction data from the proto-formatted
 // TxData defined on the Cosmos EVM.
 func (data *TxData) AsEthereumData() ethtypes.TxData {
-	v, r, s := data.rawSignatureValues()
+	v, r, s := data.GetRawSignatureValues()
 	if data.Accesses == nil {
 		return &ethtypes.LegacyTx{
-			Nonce:    data.nonce(),
-			GasPrice: data.gasPrice(),
-			Gas:      data.gas(),
-			To:       data.to(),
-			Value:    data.amount(),
-			Data:     data.data(),
+			Nonce:    data.GetNonce(),
+			GasPrice: data.GetGasPrice(),
+			Gas:      data.GetGas(),
+			To:       data.GetTo(),
+			Value:    data.GetValue(),
+			Data:     data.GetData(),
 			V:        v,
 			R:        r,
 			S:        s,
@@ -120,23 +152,23 @@ func (data *TxData) AsEthereumData() ethtypes.TxData {
 	}
 
 	return &ethtypes.AccessListTx{
-		ChainID:    data.chainID(),
-		Nonce:      data.nonce(),
-		GasPrice:   data.gasPrice(),
-		Gas:        data.gas(),
-		To:         data.to(),
-		Value:      data.amount(),
-		Data:       data.data(),
-		AccessList: data.accessList(),
+		ChainID:    data.GetChainID(),
+		Nonce:      data.GetNonce(),
+		GasPrice:   data.GetGasPrice(),
+		Gas:        data.GetGas(),
+		To:         data.GetTo(),
+		Value:      data.GetValue(),
+		Data:       data.GetData(),
+		AccessList: data.GetAccessList(),
 		V:          v,
 		R:          r,
 		S:          s,
 	}
 }
 
-// rawSignatureValues returns the V, R, S signature values of the transaction.
+// GetRawSignatureValues returns the V, R, S signature values of the transaction.
 // The return values should not be modified by the caller.
-func (data *TxData) rawSignatureValues() (v, r, s *big.Int) {
+func (data *TxData) GetRawSignatureValues() (v, r, s *big.Int) {
 	if len(data.V) > 0 {
 		v = new(big.Int).SetBytes(data.V)
 	}
@@ -149,7 +181,7 @@ func (data *TxData) rawSignatureValues() (v, r, s *big.Int) {
 	return v, r, s
 }
 
-func (data *TxData) setSignatureValues(chainID, v, r, s *big.Int) {
+func (data *TxData) SetSignatureValues(chainID, v, r, s *big.Int) {
 	if v != nil {
 		data.V = v.Bytes()
 	}
@@ -159,14 +191,14 @@ func (data *TxData) setSignatureValues(chainID, v, r, s *big.Int) {
 	if s != nil {
 		data.S = s.Bytes()
 	}
-	if data.txType() == ethtypes.AccessListTxType && chainID != nil {
+	if data.TxType() == ethtypes.AccessListTxType && chainID != nil {
 		data.ChainID = sdk.NewIntFromBigInt(chainID)
 	}
 }
 
 // Validate performs a basic validation of the tx data fields.
 func (data TxData) Validate() error {
-	gasPrice := data.gasPrice()
+	gasPrice := data.GetGasPrice()
 	if gasPrice == nil {
 		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
 	}
@@ -175,7 +207,7 @@ func (data TxData) Validate() error {
 		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
 
-	amount := data.amount()
+	amount := data.GetValue()
 	// Amount can be 0
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
@@ -187,7 +219,7 @@ func (data TxData) Validate() error {
 		}
 	}
 
-	if data.txType() == ethtypes.AccessListTxType && data.chainID() == nil {
+	if data.TxType() == ethtypes.AccessListTxType && data.GetChainID() == nil {
 		return sdkerrors.Wrap(
 			sdkerrors.ErrInvalidChainID,
 			"chain ID must be present on AccessList txs",
