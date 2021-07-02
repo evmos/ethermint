@@ -36,7 +36,7 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 	k.WithContext(ctx)
 
 	return &types.QueryAccountResponse{
-		Balance:  k.GetBalance(addr).Int64(),
+		Balance:  k.GetBalance(addr).String(),
 		CodeHash: k.GetCodeHash(addr).Hex(),
 		Nonce:    k.GetNonce(addr),
 	}, nil
@@ -127,7 +127,7 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	balanceInt := k.GetBalance(ethcmn.HexToAddress(req.Address))
 
 	return &types.QueryBalanceResponse{
-		Balance: balanceInt.Int64(),
+		Balance: balanceInt.String(),
 	}, nil
 }
 
