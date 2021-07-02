@@ -718,9 +718,13 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
+	from, err := msg.ExtractFromAddress(e.chainIDEpoch)
+	if err != nil {
+		return nil, err
+	}
 	return rpctypes.NewTransactionFromData(
 		msg.Data,
-		common.HexToAddress(msg.From),
+		from,
 		hash,
 		common.BytesToHash(resBlock.Block.Hash()),
 		uint64(res.Height),
@@ -875,7 +879,10 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	}
 
-	from := common.HexToAddress(msg.From)
+	from, err := msg.ExtractFromAddress(e.chainIDEpoch)
+	if err != nil {
+		return nil, err
+	}
 
 	resLogs, err := e.queryClient.TxLogs(e.ctx, &evmtypes.QueryTxLogsRequest{Hash: hash.Hex()})
 	if err != nil {

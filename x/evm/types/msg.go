@@ -216,3 +216,13 @@ func (msg MsgEthereumTx) AsTransaction() *ethtypes.Transaction {
 func (msg MsgEthereumTx) AsMessage(signer ethtypes.Signer) (core.Message, error) {
 	return msg.AsTransaction().AsMessage(signer)
 }
+
+// ExtractFromAddress extract from address from signature
+func (msg MsgEthereumTx) ExtractFromAddress(chainId *big.Int) (common.Address, error) {
+	signer := ethtypes.LatestSignerForChainID(chainId)
+	from, err := signer.Sender(msg.AsTransaction())
+	if err != nil {
+		return common.Address{}, err
+	}
+	return from, nil
+}
