@@ -58,29 +58,14 @@ func newMsgEthereumTx(
 
 // fromEthereumTx populates the message fields from the given ethereum transaction
 func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
-	msg.Data = &AccessListTx{
-		Nonce:    tx.Nonce(),
-		Data:     tx.Data(),
-		GasLimit: tx.Gas(),
+	txData := NewTxDataFromTx(tx)
+
+	anyTxData, err := PackTxData(txData)
+	if err != nil {
+		panic(err)
 	}
 
-	v, r, s := tx.RawSignatureValues()
-	if tx.To() != nil {
-		msg.Data.To = tx.To().Hex()
-	}
-	if tx.Value() != nil {
-		msg.Data.Amount = sdk.NewIntFromBigInt(tx.Value())
-	}
-	if tx.GasPrice() != nil {
-		msg.Data.GasPrice = sdk.NewIntFromBigInt(tx.GasPrice())
-	}
-	if tx.AccessList() != nil {
-		al := tx.AccessList()
-		msg.Data.Accesses = NewAccessList(&al)
-	}
-
-	msg.Data.SetSignatureValues(tx.ChainId(), v, r, s)
-
+	msg.Data = anyTxData
 	msg.Size_ = float64(tx.Size())
 	msg.Hash = tx.Hash().Hex()
 }
@@ -100,7 +85,12 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		}
 	}
 
-	return msg.Data.Validate()
+	txData, err := UnpackTxData(msg.Data)
+	if err != nil {
+		return sdkerrors.Wrap(err, "failed to unpack tx data")
+	}
+
+	return txData.Validate()
 }
 
 // To returns the recipient address of the transaction. It returns nil if the
@@ -212,7 +202,12 @@ func (msg *MsgEthereumTx) GetFrom() sdk.AccAddress {
 
 // AsTransaction creates an Ethereum Transaction type from the msg fields
 func (msg MsgEthereumTx) AsTransaction() *ethtypes.Transaction {
-	return ethtypes.NewTx(msg.Data.AsEthereumData())
+	txData, err := UnpackTxData(msg.Data)
+	if err != nil {
+		return nil
+	}
+
+	return ethtypes.NewTx(txData.AsEthereumData())
 }
 
 // AsMessage creates an Ethereum core.Message from the msg fields
@@ -227,6 +222,7 @@ func (msg *MsgEthereumTx) GetSender(chainID *big.Int) (common.Address, error) {
 	if err != nil {
 		return common.Address{}, err
 	}
+
 	msg.From = from.Hex()
 	return from, nil
 }

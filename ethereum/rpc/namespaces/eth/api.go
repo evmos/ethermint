@@ -727,8 +727,14 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 	if err != nil {
 		return nil, err
 	}
+
+	data, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
 	return rpctypes.NewTransactionFromData(
-		msg.Data,
+		data,
 		from,
 		hash,
 		common.BytesToHash(resBlock.Block.Hash()),
@@ -772,8 +778,14 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 
 	txHash := msg.AsTransaction().Hash()
 
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
 	return rpctypes.NewTransactionFromData(
-		msg.Data,
+		txData,
 		common.HexToAddress(msg.From),
 		txHash,
 		hash,
@@ -817,8 +829,14 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 
 	txHash := msg.AsTransaction().Hash()
 
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
 	return rpctypes.NewTransactionFromData(
-		msg.Data,
+		txData,
 		common.HexToAddress(msg.From),
 		txHash,
 		common.BytesToHash(resBlock.Block.Hash()),

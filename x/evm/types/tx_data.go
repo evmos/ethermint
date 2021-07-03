@@ -37,44 +37,68 @@ type TxData interface {
 	Validate() error
 }
 
-func newTxData(
-	chainID *big.Int, nonce uint64, to *common.Address, amount *big.Int,
-	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
-) TxData {
+func NewTxDataFromTx(tx *ethtypes.Transaction) TxData {
+	var txData TxData
+	switch tx.Type() {
+	case ethtypes.AccessListTxType:
+		txData = newAccessListTx(tx)
+	default:
+		txData = newLegacyTx(tx)
+	}
+
+	return txData
+}
+
+func newAccessListTx(tx *ethtypes.Transaction) *AccessListTx {
 	txData := &AccessListTx{
-		Nonce:    nonce,
-		GasLimit: gasLimit,
+		Nonce:    tx.Nonce(),
+		Data:     tx.Data(),
+		GasLimit: tx.Gas(),
 	}
 
-	txData.Data = common.CopyBytes(input)
-
-	if to != nil {
-		txData.To = to.Hex()
+	v, r, s := tx.RawSignatureValues()
+	if tx.To() != nil {
+		txData.To = tx.To().Hex()
+	}
+	if tx.Value() != nil {
+		txData.Amount = sdk.NewIntFromBigInt(tx.Value())
+	}
+	if tx.GasPrice() != nil {
+		txData.GasPrice = sdk.NewIntFromBigInt(tx.GasPrice())
+	}
+	if tx.AccessList() != nil {
+		al := tx.AccessList()
+		txData.Accesses = NewAccessList(&al)
 	}
 
-	if accesses != nil {
-		txData.Accesses = NewAccessList(accesses)
+	txData.SetSignatureValues(tx.ChainId(), v, r, s)
+	return txData
+}
 
-		// NOTE: we don't populate chain id on LegacyTx type
-		if chainID != nil {
-			txData.ChainID = sdk.NewIntFromBigInt(chainID)
-		}
+func newLegacyTx(tx *ethtypes.Transaction) *LegacyTx {
+	txData := &LegacyTx{
+		Nonce:    tx.Nonce(),
+		Data:     tx.Data(),
+		GasLimit: tx.Gas(),
 	}
 
-	if amount != nil {
-		txData.Amount = sdk.NewIntFromBigInt(amount)
+	v, r, s := tx.RawSignatureValues()
+	if tx.To() != nil {
+		txData.To = tx.To().Hex()
 	}
-	if gasPrice != nil {
-		txData.GasPrice = sdk.NewIntFromBigInt(gasPrice)
+	if tx.Value() != nil {
+		txData.Amount = sdk.NewIntFromBigInt(tx.Value())
 	}
+	if tx.GasPrice() != nil {
+		txData.GasPrice = sdk.NewIntFromBigInt(tx.GasPrice())
+	}
+
+	txData.SetSignatureValues(tx.ChainId(), v, r, s)
 	return txData
 }
 
 // TxType returns the tx type
 func (tx *AccessListTx) TxType() uint8 {
-	if tx.Accesses == nil {
-		return ethtypes.LegacyTxType
-	}
 	return ethtypes.AccessListTxType
 }
 
@@ -88,6 +112,7 @@ func (tx *AccessListTx) Copy() TxData {
 		To:       tx.To,
 		Amount:   tx.Amount,
 		Data:     common.CopyBytes(tx.Data),
+		Accesses: tx.Accesses,
 		V:        common.CopyBytes(tx.V),
 		R:        common.CopyBytes(tx.R),
 		S:        common.CopyBytes(tx.S),
@@ -96,11 +121,6 @@ func (tx *AccessListTx) Copy() TxData {
 
 // GetChainID
 func (tx *AccessListTx) GetChainID() *big.Int {
-	if tx.TxType() == ethtypes.LegacyTxType {
-		v, _, _ := tx.GetRawSignatureValues()
-		return DeriveChainID(v)
-	}
-
 	return tx.ChainID.BigInt()
 }
 
@@ -142,20 +162,6 @@ func (tx *AccessListTx) GetTo() *common.Address {
 // TxData defined on the Cosmos EVM.
 func (tx *AccessListTx) AsEthereumData() ethtypes.TxData {
 	v, r, s := tx.GetRawSignatureValues()
-	if tx.Accesses == nil {
-		return &ethtypes.LegacyTx{
-			Nonce:    tx.GetNonce(),
-			GasPrice: tx.GetGasPrice(),
-			Gas:      tx.GetGas(),
-			To:       tx.GetTo(),
-			Value:    tx.GetValue(),
-			Data:     tx.GetData(),
-			V:        v,
-			R:        r,
-			S:        s,
-		}
-	}
-
 	return &ethtypes.AccessListTx{
 		ChainID:    tx.GetChainID(),
 		Nonce:      tx.GetNonce(),
@@ -174,14 +180,18 @@ func (tx *AccessListTx) AsEthereumData() ethtypes.TxData {
 // GetRawSignatureValues returns the V, R, S signature values of the transaction.
 // The return values should not be modified by the caller.
 func (tx *AccessListTx) GetRawSignatureValues() (v, r, s *big.Int) {
-	if len(tx.V) > 0 {
-		v = new(big.Int).SetBytes(tx.V)
+	return rawSignatureValues(tx.V, tx.R, tx.S)
+}
+
+func rawSignatureValues(vBz, rBz, sBz []byte) (v, r, s *big.Int) {
+	if len(vBz) > 0 {
+		v = new(big.Int).SetBytes(vBz)
 	}
-	if len(tx.R) > 0 {
-		r = new(big.Int).SetBytes(tx.R)
+	if len(rBz) > 0 {
+		r = new(big.Int).SetBytes(rBz)
 	}
-	if len(tx.S) > 0 {
-		s = new(big.Int).SetBytes(tx.S)
+	if len(sBz) > 0 {
+		s = new(big.Int).SetBytes(sBz)
 	}
 	return v, r, s
 }
@@ -224,11 +234,129 @@ func (tx AccessListTx) Validate() error {
 		}
 	}
 
-	if tx.TxType() == ethtypes.AccessListTxType && tx.GetChainID() == nil {
+	if tx.GetChainID() == nil {
 		return sdkerrors.Wrap(
 			sdkerrors.ErrInvalidChainID,
 			"chain ID must be present on AccessList txs",
 		)
+	}
+
+	return nil
+}
+
+// TxType returns the tx type
+func (tx *LegacyTx) TxType() uint8 {
+	return ethtypes.LegacyTxType
+}
+
+// Copy returns an instance with the same field values
+func (tx *LegacyTx) Copy() TxData {
+	return &LegacyTx{
+		Nonce:    tx.Nonce,
+		GasPrice: tx.GasPrice,
+		GasLimit: tx.GasLimit,
+		To:       tx.To,
+		Amount:   tx.Amount,
+		Data:     common.CopyBytes(tx.Data),
+		V:        common.CopyBytes(tx.V),
+		R:        common.CopyBytes(tx.R),
+		S:        common.CopyBytes(tx.S),
+	}
+}
+
+// GetChainID
+func (tx *LegacyTx) GetChainID() *big.Int {
+	v, _, _ := tx.GetRawSignatureValues()
+	return DeriveChainID(v)
+}
+
+// GetAccessList
+func (tx *LegacyTx) GetAccessList() ethtypes.AccessList {
+	return nil
+}
+
+func (tx *LegacyTx) GetData() []byte {
+	return common.CopyBytes(tx.Data)
+}
+
+func (tx *LegacyTx) GetGas() uint64 {
+	return tx.GasLimit
+}
+
+func (tx *LegacyTx) GetGasPrice() *big.Int {
+	return tx.GasPrice.BigInt()
+}
+
+func (tx *LegacyTx) GetValue() *big.Int {
+	return tx.Amount.BigInt()
+}
+
+func (tx *LegacyTx) GetNonce() uint64 { return tx.Nonce }
+
+func (tx *LegacyTx) GetTo() *common.Address {
+	if tx.To == "" {
+		return nil
+	}
+	to := common.HexToAddress(tx.To)
+	return &to
+}
+
+// AsEthereumData returns an AccessListTx transaction tx from the proto-formatted
+// TxData defined on the Cosmos EVM.
+func (tx *LegacyTx) AsEthereumData() ethtypes.TxData {
+	v, r, s := tx.GetRawSignatureValues()
+	return &ethtypes.LegacyTx{
+		Nonce:    tx.GetNonce(),
+		GasPrice: tx.GetGasPrice(),
+		Gas:      tx.GetGas(),
+		To:       tx.GetTo(),
+		Value:    tx.GetValue(),
+		Data:     tx.GetData(),
+		V:        v,
+		R:        r,
+		S:        s,
+	}
+}
+
+// GetRawSignatureValues returns the V, R, S signature values of the transaction.
+// The return values should not be modified by the caller.
+func (tx *LegacyTx) GetRawSignatureValues() (v, r, s *big.Int) {
+	return rawSignatureValues(tx.V, tx.R, tx.S)
+}
+
+func (tx *LegacyTx) SetSignatureValues(_, v, r, s *big.Int) {
+	if v != nil {
+		tx.V = v.Bytes()
+	}
+	if r != nil {
+		tx.R = r.Bytes()
+	}
+	if s != nil {
+		tx.S = s.Bytes()
+	}
+}
+
+// Validate performs a basic validation of the tx tx fields.
+func (tx LegacyTx) Validate() error {
+	gasPrice := tx.GetGasPrice()
+	if gasPrice == nil {
+		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
+	}
+
+	if gasPrice.Sign() == -1 {
+		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
+	}
+
+	amount := tx.GetValue()
+	// Amount can be 0
+	if amount != nil && amount.Sign() == -1 {
+		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+	}
+
+	if tx.To != "" {
+		if err := types.ValidateAddress(tx.To); err != nil {
+			return sdkerrors.Wrap(err, "invalid to address")
+		}
 	}
 
 	return nil
