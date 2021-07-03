@@ -178,7 +178,7 @@ func FormatBlock(
 	return map[string]interface{}{
 		"number":           hexutil.Uint64(header.Height),
 		"hash":             hexutil.Bytes(header.Hash()),
-		"parentHash":       hexutil.Bytes(header.LastBlockID.Hash),
+		"parentHash":       common.BytesToHash(header.LastBlockID.Hash.Bytes()),
 		"nonce":            ethtypes.BlockNonce{},   // PoW specific
 		"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
 		"logsBloom":        bloom,
