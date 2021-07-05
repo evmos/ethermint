@@ -501,11 +501,15 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 			if tc.expPass {
 				suite.Require().NoError(err)
 				msg := tc.tx.(*evmtypes.MsgEthereumTx)
+
+				txData, err := evmtypes.UnpackTxData(msg.Data)
+				suite.Require().NoError(err)
+
 				nonce := suite.app.EvmKeeper.GetNonce(addr)
-				if msg.To() == nil {
-					suite.Require().Equal(msg.Data.Nonce, nonce)
+				if txData.GetTo() == nil {
+					suite.Require().Equal(txData.GetNonce(), nonce)
 				} else {
-					suite.Require().Equal(msg.Data.Nonce+1, nonce)
+					suite.Require().Equal(txData.GetNonce()+1, nonce)
 				}
 			} else {
 				suite.Require().Error(err)
