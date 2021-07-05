@@ -56,25 +56,28 @@ func (tx *LegacyTx) Copy() TxData {
 	}
 }
 
-// GetChainID
+// GetChainID returns the chain id field from the derived signature values
 func (tx *LegacyTx) GetChainID() *big.Int {
 	v, _, _ := tx.GetRawSignatureValues()
 	return DeriveChainID(v)
 }
 
-// GetAccessList
+// GetAccessList returns nil
 func (tx *LegacyTx) GetAccessList() ethtypes.AccessList {
 	return nil
 }
 
+// GetData returns the a copy of the input data bytes.
 func (tx *LegacyTx) GetData() []byte {
 	return common.CopyBytes(tx.Data)
 }
 
+// GetGas returns the gas limit.
 func (tx *LegacyTx) GetGas() uint64 {
 	return tx.GasLimit
 }
 
+// GetGasPrice returns the gas price field.
 func (tx *LegacyTx) GetGasPrice() *big.Int {
 	if tx.GasPrice == nil {
 		return nil
@@ -82,6 +85,7 @@ func (tx *LegacyTx) GetGasPrice() *big.Int {
 	return tx.GasPrice.BigInt()
 }
 
+// GetValue returns the tx amount.
 func (tx *LegacyTx) GetValue() *big.Int {
 	if tx.Amount == nil {
 		return nil
@@ -89,8 +93,10 @@ func (tx *LegacyTx) GetValue() *big.Int {
 	return tx.Amount.BigInt()
 }
 
+// GetNonce returns the account sequence for the transaction.
 func (tx *LegacyTx) GetNonce() uint64 { return tx.Nonce }
 
+// GetTo returns the pointer to the recipient address.
 func (tx *LegacyTx) GetTo() *common.Address {
 	if tx.To == "" {
 		return nil
@@ -122,6 +128,7 @@ func (tx *LegacyTx) GetRawSignatureValues() (v, r, s *big.Int) {
 	return rawSignatureValues(tx.V, tx.R, tx.S)
 }
 
+// SetSignatureValues sets the signature values to the transaction.
 func (tx *LegacyTx) SetSignatureValues(_, v, r, s *big.Int) {
 	if v != nil {
 		tx.V = v.Bytes()
@@ -134,7 +141,7 @@ func (tx *LegacyTx) SetSignatureValues(_, v, r, s *big.Int) {
 	}
 }
 
-// Validate performs a basic validation of the tx tx fields.
+// Validate performs a stateless validation of the tx fields.
 func (tx LegacyTx) Validate() error {
 	gasPrice := tx.GetGasPrice()
 	if gasPrice == nil {

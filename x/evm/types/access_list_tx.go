@@ -63,7 +63,7 @@ func (tx *AccessListTx) Copy() TxData {
 	}
 }
 
-// GetChainID
+// GetChainID returns the chain id field from the AccessListTx
 func (tx *AccessListTx) GetChainID() *big.Int {
 	if tx.ChainID == nil {
 		return nil
@@ -72,7 +72,7 @@ func (tx *AccessListTx) GetChainID() *big.Int {
 	return tx.ChainID.BigInt()
 }
 
-// GetAccessList
+// GetAccessList returns the AccessList field.
 func (tx *AccessListTx) GetAccessList() ethtypes.AccessList {
 	if tx.Accesses == nil {
 		return nil
@@ -80,14 +80,17 @@ func (tx *AccessListTx) GetAccessList() ethtypes.AccessList {
 	return *tx.Accesses.ToEthAccessList()
 }
 
+// GetData returns the a copy of the input data bytes.
 func (tx *AccessListTx) GetData() []byte {
 	return common.CopyBytes(tx.Data)
 }
 
+// GetGas returns the gas limit.
 func (tx *AccessListTx) GetGas() uint64 {
 	return tx.GasLimit
 }
 
+// GetGasPrice returns the gas price field.
 func (tx *AccessListTx) GetGasPrice() *big.Int {
 	if tx.GasPrice == nil {
 		return nil
@@ -95,6 +98,7 @@ func (tx *AccessListTx) GetGasPrice() *big.Int {
 	return tx.GasPrice.BigInt()
 }
 
+// GetValue returns the tx amount.
 func (tx *AccessListTx) GetValue() *big.Int {
 	if tx.Amount == nil {
 		return nil
@@ -103,8 +107,10 @@ func (tx *AccessListTx) GetValue() *big.Int {
 	return tx.Amount.BigInt()
 }
 
+// GetNonce returns the account sequence for the transaction.
 func (tx *AccessListTx) GetNonce() uint64 { return tx.Nonce }
 
+// GetTo returns the pointer to the recipient address.
 func (tx *AccessListTx) GetTo() *common.Address {
 	if tx.To == "" {
 		return nil
@@ -138,6 +144,7 @@ func (tx *AccessListTx) GetRawSignatureValues() (v, r, s *big.Int) {
 	return rawSignatureValues(tx.V, tx.R, tx.S)
 }
 
+// SetSignatureValues sets the signature values to the transaction.
 func (tx *AccessListTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 	if v != nil {
 		tx.V = v.Bytes()
@@ -154,7 +161,7 @@ func (tx *AccessListTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 	}
 }
 
-// Validate performs a basic validation of the tx tx fields.
+// Validate performs a stateless validation of the tx fields.
 func (tx AccessListTx) Validate() error {
 	gasPrice := tx.GetGasPrice()
 	if gasPrice == nil {
