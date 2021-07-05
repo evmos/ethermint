@@ -24,20 +24,20 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	k.WithContext(ctx)
 
+	sender := msg.From
+	tx := msg.AsTransaction()
+
 	var labels []metrics.Label
-	if msg.To() == nil {
+	if tx.To() == nil {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "create"),
 		}
 	} else {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "call"),
-			telemetry.NewLabel("to", msg.Data.To), // recipient address (contract or account)
+			telemetry.NewLabel("to", tx.To().Hex()), // recipient address (contract or account)
 		}
 	}
-
-	sender := msg.From
-	tx := msg.AsTransaction()
 
 	response, err := k.ApplyTransaction(tx)
 	if err != nil {
@@ -71,8 +71,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyTxHash, hash.String()))
 	}
 
-	if len(msg.Data.To) > 0 {
-		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, msg.Data.To))
+	if tx.To() != nil {
+		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, tx.To().Hex()))
 	}
 
 	// emit events
