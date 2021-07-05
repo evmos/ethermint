@@ -27,7 +27,7 @@ func TestTxData_chainID(t *testing.T) {
 			"access list tx, nil chain ID", &AccessListTx{Accesses: AccessList{}}, nil,
 		},
 		{
-			"legacy tx, derived", &AccessListTx{}, nil,
+			"legacy tx, derived", &LegacyTx{}, nil,
 		},
 	}
 
