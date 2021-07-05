@@ -28,7 +28,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	tx := msg.AsTransaction()
 
 	var labels []metrics.Label
-	if msg.To() == nil {
+	if tx.To() == nil {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "create"),
 		}

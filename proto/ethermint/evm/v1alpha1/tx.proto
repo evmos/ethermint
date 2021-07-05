@@ -41,8 +41,7 @@ message LegacyTx {
   uint64 nonce = 1;
   // gas price defines the value for each gas unit
   string gas_price = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable)   = false
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"
   ];
   // gas defines the gas limit defined for the transaction.
   uint64 gas = 3 [(gogoproto.customname) = "GasLimit"];
@@ -51,8 +50,7 @@ message LegacyTx {
   // value defines the unsigned integer value of the transaction amount.
   string value = 5 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.customname) = "Amount",
-    (gogoproto.nullable)   = false
+    (gogoproto.customname) = "Amount"
   ];
   // input defines the data payload bytes of the transaction.
   bytes                data    = 6;
@@ -74,15 +72,13 @@ message AccessListTx {
   string chain_id = 1 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.customname) = "ChainID",
-    (gogoproto.jsontag)    = "chainID",
-    (gogoproto.nullable)   = false
+    (gogoproto.jsontag)    = "chainID"
   ];
   // nonce corresponds to the account nonce (transaction sequence).
   uint64 nonce = 2;
   // gas price defines the value for each gas unit
   string gas_price = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable)   = false
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"
   ];
   // gas defines the gas limit defined for the transaction.
   uint64 gas = 4 [(gogoproto.customname) = "GasLimit"];
@@ -91,8 +87,7 @@ message AccessListTx {
   // value defines the unsigned integer value of the transaction amount.
   string value = 6 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.customname) = "Amount",
-    (gogoproto.nullable)   = false
+    (gogoproto.customname) = "Amount"
   ];
   // input defines the data payload bytes of the transaction.
   bytes                data    = 7;

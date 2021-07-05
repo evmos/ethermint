@@ -571,7 +571,7 @@ func (e *PublicAPI) doCall(
 	}
 
 	// Create new call message
-	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
+	msg := evmtypes.NewTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
 	msg.From = args.From.String()
 	signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
@@ -871,10 +871,16 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
+
 	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
 	}
 
 	cumulativeGasUsed := uint64(0)
@@ -927,7 +933,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		"transactionHash": hash,
 		"contractAddress": nil,
 		"gasUsed":         hexutil.Uint64(res.TxResult.GasUsed),
-		"type":            hexutil.Uint(ethtypes.AccessListTxType), // TODO: support legacy type
+		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
@@ -946,7 +952,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
 	if msg.To() == nil {
-		receipt["contractAddress"] = crypto.CreateAddress(from, msg.Data.Nonce)
+		receipt["contractAddress"] = crypto.CreateAddress(from, txData.GetNonce())
 	}
 
 	return receipt, nil
@@ -979,6 +985,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 
 	// query storage proofs
 	storageProofs := make([]rpctypes.StorageResult, len(storageKeys))
+
 	for i, key := range storageKeys {
 		hexKey := common.HexToHash(key)
 		valueBz, proof, err := e.queryClient.GetProof(clientCtx, evmtypes.StoreKey, evmtypes.StateKey(address, hexKey.Bytes()))

@@ -139,8 +139,14 @@ func EthTransactionsFromTendermint(clientCtx client.Context, txs []tmtypes.Tx) (
 			// continue to next transaction in case it's not a MsgEthereumTx
 			continue
 		}
+
+		data, err := evmtypes.UnpackTxData(ethTx.Data)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unpack tx data: %w", err)
+		}
+
 		// TODO: Remove gas usage calculation if saving gasUsed per block
-		gasUsed.Add(gasUsed, ethTx.Fee())
+		gasUsed.Add(gasUsed, data.Fee())
 		transactionHashes = append(transactionHashes, common.BytesToHash(tx.Hash()))
 	}
 

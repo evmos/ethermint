@@ -31,17 +31,17 @@ const (
 	TypeMsgEthereumTx = "ethereum_tx"
 )
 
-// NewMsgEthereumTx returns a reference to a new Ethereum transaction message.
-func NewMsgEthereumTx(
+// NewTx returns a reference to a new Ethereum transaction message.
+func NewTx(
 	chainID *big.Int, nonce uint64, to *common.Address, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
 	return newMsgEthereumTx(chainID, nonce, to, amount, gasLimit, gasPrice, input, accesses)
 }
 
-// NewMsgEthereumTxContract returns a reference to a new Ethereum transaction
+// NewTxContract returns a reference to a new Ethereum transaction
 // message designated for contract creation.
-func NewMsgEthereumTxContract(
+func NewTxContract(
 	chainID *big.Int, nonce uint64, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
@@ -52,8 +52,59 @@ func newMsgEthereumTx(
 	chainID *big.Int, nonce uint64, to *common.Address, amount *big.Int,
 	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
-	txData := newTxData(chainID, nonce, to, amount, gasLimit, gasPrice, input, accesses)
-	return &MsgEthereumTx{Data: txData}
+	var (
+		cid, amt, gp *sdk.Int
+		toAddr       string
+		txData       TxData
+	)
+
+	if to != nil {
+		toAddr = to.Hex()
+	}
+
+	if amount != nil {
+		amountInt := sdk.NewIntFromBigInt(amount)
+		amt = &amountInt
+	}
+
+	if chainID != nil {
+		chainIDInt := sdk.NewIntFromBigInt(chainID)
+		cid = &chainIDInt
+	}
+
+	if gasPrice != nil {
+		gasPriceInt := sdk.NewIntFromBigInt(gasPrice)
+		gp = &gasPriceInt
+	}
+
+	if accesses == nil {
+		txData = &LegacyTx{
+			Nonce:    nonce,
+			To:       toAddr,
+			Amount:   amt,
+			GasLimit: gasLimit,
+			GasPrice: gp,
+			Data:     input,
+		}
+	} else {
+		txData = &AccessListTx{
+			ChainID:  cid,
+			Nonce:    nonce,
+			To:       toAddr,
+			Amount:   amt,
+			GasLimit: gasLimit,
+			GasPrice: gp,
+			Data:     input,
+			Accesses: NewAccessList(accesses),
+		}
+	}
+
+	dataAny, err := PackTxData(txData)
+	if err != nil {
+		panic(err)
+	}
+
+	return &MsgEthereumTx{Data: dataAny}
 }
 
 // fromEthereumTx populates the message fields from the given ethereum transaction
@@ -93,12 +144,6 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 	return txData.Validate()
 }
 
-// To returns the recipient address of the transaction. It returns nil if the
-// transaction is a contract creation.
-func (msg MsgEthereumTx) To() *common.Address {
-	return msg.Data.GetTo()
-}
-
 // GetMsgs returns a single MsgEthereumTx as an sdk.Msg.
 func (msg *MsgEthereumTx) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
@@ -108,14 +153,18 @@ func (msg *MsgEthereumTx) GetMsgs() []sdk.Msg {
 // For such a message, there should exist only a single 'signer'.
 //
 // NOTE: This method panics if 'Sign' hasn't been called first.
-func (msg MsgEthereumTx) GetSigners() []sdk.AccAddress {
-	v, r, s := msg.RawSignatureValues()
-
-	if msg.From == "" || v == nil || r == nil || s == nil {
-		panic("must use 'Sign' to get the signer address")
+func (msg *MsgEthereumTx) GetSigners() []sdk.AccAddress {
+	data, err := UnpackTxData(msg.Data)
+	if err != nil {
+		panic(err)
 	}
 
-	signer := sdk.AccAddress(common.HexToAddress(msg.From).Bytes())
+	sender, err := msg.GetSender(data.GetChainID())
+	if err != nil {
+		panic(err)
+	}
+
+	signer := sdk.AccAddress(sender.Bytes())
 	return []sdk.AccAddress{signer}
 }
 
@@ -160,34 +209,11 @@ func (msg *MsgEthereumTx) Sign(ethSigner ethtypes.Signer, keyringSigner keyring.
 
 // GetGas implements the GasTx interface. It returns the GasLimit of the transaction.
 func (msg MsgEthereumTx) GetGas() uint64 {
-	return msg.Data.GetGas()
-}
-
-// Fee returns gasprice * gaslimit.
-func (msg MsgEthereumTx) Fee() *big.Int {
-	gasPrice := msg.Data.GetGasPrice()
-	gasLimit := new(big.Int).SetUint64(msg.Data.GetGas())
-	return new(big.Int).Mul(gasPrice, gasLimit)
-}
-
-// ChainID returns which chain id this transaction was signed for (if at all)
-func (msg *MsgEthereumTx) ChainID() *big.Int {
-	return msg.Data.GetChainID()
-}
-
-// Cost returns amount + gasprice * gaslimit.
-func (msg MsgEthereumTx) Cost() *big.Int {
-	total := msg.Fee()
-	if msg.Data.GetValue() != nil {
-		total.Add(total, msg.Data.GetValue())
+	txData, err := UnpackTxData(msg.Data)
+	if err != nil {
+		return 0
 	}
-	return total
-}
-
-// RawSignatureValues returns the V, R, S signature values of the transaction.
-// The return values should not be modified by the caller.
-func (msg MsgEthereumTx) RawSignatureValues() (v, r, s *big.Int) {
-	return msg.Data.GetRawSignatureValues()
+	return txData.GetGas()
 }
 
 // GetFrom loads the ethereum sender address from the sigcache and returns an

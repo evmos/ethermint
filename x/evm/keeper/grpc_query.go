@@ -314,7 +314,7 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 	// so := k.GetOrNewStateObject(*recipient)
 	// sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
 
-	// msg := types.NewMsgEthereumTx(
+	// msg := types.NewTx(
 	// 	chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
 	// )
 	// msg.From = sender.Hex()

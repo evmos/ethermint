@@ -478,7 +478,7 @@ func (suite *KeeperTestSuite) CreateTestTx(msg *evmtypes.MsgEthereumTx, priv cry
 
 func (suite *KeeperTestSuite) TestAddLog() {
 	addr, privKey := tests.NewAddrKey()
-	msg := types.NewMsgEthereumTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
+	msg := types.NewTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
 	msg.From = addr.Hex()
 
 	tx := suite.CreateTestTx(msg, privKey)

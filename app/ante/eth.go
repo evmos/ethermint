@@ -207,14 +207,19 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 			return ctx, stacktrace.Propagate(err, "sequence not found for address %s", msgEthTx.From)
 		}
 
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
+		}
+
 		// if multiple transactions are submitted in succession with increasing nonces,
 		// all will be rejected except the first, since the first needs to be included in a block
 		// before the sequence increments
-		if msgEthTx.Data.Nonce != seq {
+		if txData.GetNonce() != seq {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrapf(
 					sdkerrors.ErrInvalidSequence,
-					"invalid nonce; got %d, expected %d", msgEthTx.Data.Nonce, seq,
+					"invalid nonce; got %d, expected %d", txData.GetNonce(), seq,
 				),
 				"",
 			)
@@ -279,7 +284,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			)
 		}
 
-		isContractCreation := msgEthTx.To() == nil
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
+		}
+
+		isContractCreation := txData.GetTo() == nil
 
 		// fetch sender account from signature
 		signerAcc, err := authante.GetSignerAcc(ctx, egcd.ak, msgEthTx.GetFrom())
@@ -287,14 +297,14 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
 		}
 
-		gasLimit := msgEthTx.GetGas()
+		gasLimit := txData.GetGas()
 
 		var accessList ethtypes.AccessList
-		if msgEthTx.Data.Accesses != nil {
-			accessList = *msgEthTx.Data.Accesses.ToEthAccessList()
+		if txData.GetAccessList() != nil {
+			accessList = txData.GetAccessList()
 		}
 
-		intrinsicGas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, isContractCreation, homestead, istanbul)
+		intrinsicGas, err := core.IntrinsicGas(txData.GetData(), accessList, isContractCreation, homestead, istanbul)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrap(err, "failed to compute intrinsic gas cost"),
@@ -451,7 +461,12 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 		sender := common.BytesToAddress(msgEthTx.GetFrom())
 
-		ald.evmKeeper.PrepareAccessList(sender, msgEthTx.To(), vm.ActivePrecompiles(rules), *msgEthTx.Data.Accesses.ToEthAccessList())
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
+		}
+
+		ald.evmKeeper.PrepareAccessList(sender, msgEthTx.To(), vm.ActivePrecompiles(rules), txData.GetAccessList())
 	}
 
 	// set the original gas meter

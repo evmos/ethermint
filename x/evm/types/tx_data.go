@@ -35,6 +35,8 @@ type TxData interface {
 
 	AsEthereumData() ethtypes.TxData
 	Validate() error
+	Fee() *big.Int
+	Cost() *big.Int
 }
 
 func NewTxDataFromTx(tx *ethtypes.Transaction) TxData {
@@ -60,12 +62,17 @@ func newAccessListTx(tx *ethtypes.Transaction) *AccessListTx {
 	if tx.To() != nil {
 		txData.To = tx.To().Hex()
 	}
+
 	if tx.Value() != nil {
-		txData.Amount = sdk.NewIntFromBigInt(tx.Value())
+		amountInt := sdk.NewIntFromBigInt(tx.Value())
+		txData.Amount = &amountInt
 	}
+
 	if tx.GasPrice() != nil {
-		txData.GasPrice = sdk.NewIntFromBigInt(tx.GasPrice())
+		gasPriceInt := sdk.NewIntFromBigInt(tx.GasPrice())
+		txData.GasPrice = &gasPriceInt
 	}
+
 	if tx.AccessList() != nil {
 		al := tx.AccessList()
 		txData.Accesses = NewAccessList(&al)
@@ -86,11 +93,15 @@ func newLegacyTx(tx *ethtypes.Transaction) *LegacyTx {
 	if tx.To() != nil {
 		txData.To = tx.To().Hex()
 	}
+
 	if tx.Value() != nil {
-		txData.Amount = sdk.NewIntFromBigInt(tx.Value())
+		amountInt := sdk.NewIntFromBigInt(tx.Value())
+		txData.Amount = &amountInt
 	}
+
 	if tx.GasPrice() != nil {
-		txData.GasPrice = sdk.NewIntFromBigInt(tx.GasPrice())
+		gasPriceInt := sdk.NewIntFromBigInt(tx.GasPrice())
+		txData.GasPrice = &gasPriceInt
 	}
 
 	txData.SetSignatureValues(tx.ChainId(), v, r, s)
@@ -121,6 +132,10 @@ func (tx *AccessListTx) Copy() TxData {
 
 // GetChainID
 func (tx *AccessListTx) GetChainID() *big.Int {
+	if tx.ChainID == nil {
+		return nil
+	}
+
 	return tx.ChainID.BigInt()
 }
 
@@ -141,10 +156,17 @@ func (tx *AccessListTx) GetGas() uint64 {
 }
 
 func (tx *AccessListTx) GetGasPrice() *big.Int {
+	if tx.GasPrice == nil {
+		return nil
+	}
 	return tx.GasPrice.BigInt()
 }
 
 func (tx *AccessListTx) GetValue() *big.Int {
+	if tx.Amount == nil {
+		return nil
+	}
+
 	return tx.Amount.BigInt()
 }
 
@@ -206,8 +228,9 @@ func (tx *AccessListTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 	if s != nil {
 		tx.S = s.Bytes()
 	}
-	if tx.TxType() == ethtypes.AccessListTxType && chainID != nil {
-		tx.ChainID = sdk.NewIntFromBigInt(chainID)
+	if chainID != nil {
+		chainIDInt := sdk.NewIntFromBigInt(chainID)
+		tx.ChainID = &chainIDInt
 	}
 }
 
@@ -242,6 +265,16 @@ func (tx AccessListTx) Validate() error {
 	}
 
 	return nil
+}
+
+// Fee returns gasprice * gaslimit.
+func (tx AccessListTx) Fee() *big.Int {
+	return fee(tx.GetGasPrice(), tx.GetGas())
+}
+
+// Cost returns amount + gasprice * gaslimit.
+func (tx AccessListTx) Cost() *big.Int {
+	return cost(tx.Fee(), tx.GetValue())
 }
 
 // TxType returns the tx type
@@ -284,10 +317,16 @@ func (tx *LegacyTx) GetGas() uint64 {
 }
 
 func (tx *LegacyTx) GetGasPrice() *big.Int {
+	if tx.GasPrice == nil {
+		return nil
+	}
 	return tx.GasPrice.BigInt()
 }
 
 func (tx *LegacyTx) GetValue() *big.Int {
+	if tx.Amount == nil {
+		return nil
+	}
 	return tx.Amount.BigInt()
 }
 
@@ -362,6 +401,16 @@ func (tx LegacyTx) Validate() error {
 	return nil
 }
 
+// Fee returns gasprice * gaslimit.
+func (tx LegacyTx) Fee() *big.Int {
+	return fee(tx.GetGasPrice(), tx.GetGas())
+}
+
+// Cost returns amount + gasprice * gaslimit.
+func (tx LegacyTx) Cost() *big.Int {
+	return cost(tx.Fee(), tx.GetValue())
+}
+
 // DeriveChainID derives the chain id from the given v parameter
 func DeriveChainID(v *big.Int) *big.Int {
 	if v == nil {
@@ -377,4 +426,16 @@ func DeriveChainID(v *big.Int) *big.Int {
 	}
 	v = new(big.Int).Sub(v, big.NewInt(35))
 	return v.Div(v, big.NewInt(2))
+}
+
+func fee(gasPrice *big.Int, gas uint64) *big.Int {
+	gasLimit := new(big.Int).SetUint64(gas)
+	return new(big.Int).Mul(gasPrice, gasLimit)
+}
+
+func cost(fee, value *big.Int) *big.Int {
+	if value != nil {
+		return new(big.Int).Add(fee, value)
+	}
+	return fee
 }

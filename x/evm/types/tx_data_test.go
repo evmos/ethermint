@@ -13,13 +13,15 @@ import (
 )
 
 func TestTxData_chainID(t *testing.T) {
+	chainID := sdk.NewInt(1)
+
 	testCases := []struct {
 		msg        string
 		data       TxData
 		expChainID *big.Int
 	}{
 		{
-			"access list tx", &AccessListTx{Accesses: AccessList{}, ChainID: sdk.NewInt(1)}, big.NewInt(1),
+			"access list tx", &AccessListTx{Accesses: AccessList{}, ChainID: &chainID}, big.NewInt(1),
 		},
 		{
 			"access list tx, nil chain ID", &AccessListTx{Accesses: AccessList{}}, nil,
