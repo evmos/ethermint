@@ -6,8 +6,8 @@ services:
     image: "ethermintd/node"
     ports:
       - "26657:26657"
-      - "1317:1317"
-      - "1318:1318"
+      - "8545:8545"
+      - "8546:8546"
       - "8125:8125"
     environment:
       - ID=0
@@ -24,8 +24,8 @@ services:
     image: "ethermintd/node"
     ports:
       - "26658:26657"
-      - "1327:1317"
-      - "1328:1318"
+      - "8555:8545"
+      - "8556:8546"
       - "8126:8125"
     environment:
       - ID=1
@@ -45,8 +45,8 @@ services:
       - LOG=${LOG:-ethermintd.log}
     ports:
       - "26659:26657"
-      - "1337:1317"
-      - "1338:1318"
+      - "8565:8545"
+      - "8566:8546"
       - "8127:8125"
     volumes:
       - ./build:/ethermint:Z
@@ -63,8 +63,8 @@ services:
       - LOG=${LOG:-ethermintd.log}
     ports:
       - "26660:26657"
-      - "1347:1317"
-      - "1348:1318"
+      - "8575:8545"
+      - "8576:8546"
       - "8128:8125"
     volumes:
       - ./build:/ethermint:Z

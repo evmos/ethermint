@@ -18,21 +18,21 @@ import (
 
 // Filter can be used to retrieve and filter logs.
 type Filter struct {
-	backend  FiltersBackend
+	backend  Backend
 	criteria filters.FilterCriteria
 	matcher  *bloombits.Matcher
 }
 
 // NewBlockFilter creates a new filter which directly inspects the contents of
 // a block to figure out whether it is interesting or not.
-func NewBlockFilter(backend FiltersBackend, criteria filters.FilterCriteria) *Filter {
+func NewBlockFilter(backend Backend, criteria filters.FilterCriteria) *Filter {
 	// Create a generic filter and convert it into a block filter
 	return newFilter(backend, criteria, nil)
 }
 
 // NewRangeFilter creates a new filter which uses a bloom filter on blocks to
 // figure out whether a particular block is interesting or not.
-func NewRangeFilter(backend FiltersBackend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
+func NewRangeFilter(backend Backend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
 	// Flatten the address and topic filter clauses into a single bloombits filter
 	// system. Since the bloombits are not positional, nil topics are permitted,
 	// which get flattened into a nil byte slice.
@@ -67,7 +67,7 @@ func NewRangeFilter(backend FiltersBackend, begin, end int64, addresses []common
 }
 
 // newFilter returns a new Filter
-func newFilter(backend FiltersBackend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
+func newFilter(backend Backend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
 	return &Filter{
 		backend:  backend,
 		criteria: criteria,

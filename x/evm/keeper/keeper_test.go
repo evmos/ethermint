@@ -1,22 +1,26 @@
 package keeper_test
 
 import (
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/tharsis/ethermint/app"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/encoding"
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -37,6 +41,10 @@ type KeeperTestSuite struct {
 	queryClient types.QueryClient
 	address     ethcmn.Address
 	consAddress sdk.ConsAddress
+
+	// for generate test tx
+	clientCtx client.Context
+	ethSigner ethtypes.Signer
 }
 
 func (suite *KeeperTestSuite) SetupTest() {
@@ -52,14 +60,12 @@ func (suite *KeeperTestSuite) SetupTest() {
 	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
 	suite.queryClient = types.NewQueryClient(queryHelper)
 
-	balance := ethermint.NewPhotonCoin(sdk.ZeroInt())
 	acc := &ethermint.EthAccount{
 		BaseAccount: authtypes.NewBaseAccount(sdk.AccAddress(suite.address.Bytes()), nil, 0, 0),
-		CodeHash:    ethcrypto.Keccak256(nil),
+		CodeHash:    common.BytesToHash(ethcrypto.Keccak256(nil)).String(),
 	}
 
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
-	suite.app.BankKeeper.SetBalance(suite.ctx, acc.GetAddress(), balance)
 
 	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)
@@ -68,6 +74,10 @@ func (suite *KeeperTestSuite) SetupTest() {
 	suite.app.StakingKeeper.SetValidatorByConsAddr(suite.ctx, validator)
 	suite.app.StakingKeeper.SetValidator(suite.ctx, validator)
 	suite.consAddress = sdk.ConsAddress(priv.PubKey().Address())
+
+	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
+	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
+	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 }
 
 func TestKeeperTestSuite(t *testing.T) {

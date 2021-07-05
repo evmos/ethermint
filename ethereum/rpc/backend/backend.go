@@ -49,15 +49,21 @@ type EVMBackend struct {
 	clientCtx   client.Context
 	queryClient *types.QueryClient // gRPC query client
 	logger      log.Logger
+	chainID     *big.Int
 }
 
 // NewEVMBackend creates a new EVMBackend instance
 func NewEVMBackend(clientCtx client.Context) *EVMBackend {
+	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
+	if err != nil {
+		panic(err)
+	}
 	return &EVMBackend{
 		ctx:         context.Background(),
 		clientCtx:   clientCtx,
 		queryClient: types.NewQueryClient(clientCtx),
 		logger:      log.WithField("module", "evm-backend"),
+		chainID:     chainID,
 	}
 }
 
@@ -138,32 +144,33 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	ethRPCTxs := []interface{}{}
 
 	for i, txBz := range block.Txs {
-		// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-		// https://github.com/tendermint/tendermint/issues/6539
-		hash := common.BytesToHash(txBz.Hash())
-
 		tx, gas := types.DecodeTx(e.clientCtx, txBz)
 
 		gasUsed += gas
 
 		msg, isEthTx := tx.(*evmtypes.MsgEthereumTx)
 
-		if fullTx {
-			if !isEthTx {
-				// TODO: eventually support Cosmos txs in the block
-				continue
-			}
+		if !isEthTx {
+			// TODO: eventually support Cosmos txs in the block
+			continue
+		}
 
-			tx, err := types.NewTransactionFromData(
+		hash := msg.AsTransaction().Hash()
+		if fullTx {
+			from, err := msg.GetSender(e.chainID)
+			if err != nil {
+				from = common.HexToAddress(msg.From)
+			}
+			ethTx, err := types.NewTransactionFromData(
 				msg.Data,
-				common.HexToAddress(msg.From),
+				from,
 				hash,
 				common.BytesToHash(block.Hash()),
 				uint64(block.Height),
 				uint64(i),
 			)
 
-			ethRPCTxs = append(ethRPCTxs, tx)
+			ethRPCTxs = append(ethRPCTxs, ethTx)
 
 			if err != nil {
 				e.logger.WithError(err).Debugln("NewTransactionFromData for receipt failed", "hash", hash.Hex)

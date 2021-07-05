@@ -66,10 +66,10 @@ func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
 		msg.Data.To = tx.To().Hex()
 	}
 	if tx.Value() != nil {
-		msg.Data.Amount = tx.Value().Bytes()
+		msg.Data.Amount = sdk.NewIntFromBigInt(tx.Value())
 	}
 	if tx.GasPrice() != nil {
-		msg.Data.GasPrice = tx.GasPrice().Bytes()
+		msg.Data.GasPrice = sdk.NewIntFromBigInt(tx.GasPrice())
 	}
 	if tx.AccessList() != nil {
 		al := tx.AccessList()
@@ -215,4 +215,15 @@ func (msg MsgEthereumTx) AsTransaction() *ethtypes.Transaction {
 // AsMessage creates an Ethereum core.Message from the msg fields
 func (msg MsgEthereumTx) AsMessage(signer ethtypes.Signer) (core.Message, error) {
 	return msg.AsTransaction().AsMessage(signer)
+}
+
+// GetSender extracts the sender address from the signature values using the latest signer for the given chainID.
+func (msg *MsgEthereumTx) GetSender(chainID *big.Int) (common.Address, error) {
+	signer := ethtypes.LatestSignerForChainID(chainID)
+	from, err := signer.Sender(msg.AsTransaction())
+	if err != nil {
+		return common.Address{}, err
+	}
+	msg.From = from.Hex()
+	return from, nil
 }

@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 )
 
 func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
@@ -33,7 +32,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 		reCheckTx bool
 		expPass   bool
 	}{
-		{"ReCheckTx", nil, true, true},
+		{"ReCheckTx", nil, true, false},
 		{"invalid transaction type", &invalidTx{}, false, false},
 		{
 			"invalid sender",
@@ -46,9 +45,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -110,8 +107,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			"success new account",
 			tx,
 			func() {
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 			true,
@@ -123,8 +119,8 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+
 			},
 			true,
 			true,
@@ -134,10 +130,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			tc.malleate()
-
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -194,9 +187,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -260,8 +251,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			false, true,
 		},
@@ -272,8 +262,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1))
 			},
@@ -286,8 +275,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(10000000000000000000))
 			},
@@ -307,11 +295,9 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				return
 			}
 
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 			if tc.expPass {
 				suite.Require().NoError(err)
-				suite.Require().Equal(int(params.TxGasContractCreation+params.TxAccessListAddressGas), int(ctx.GasMeter().GasConsumed()-consumed))
 			} else {
 				suite.Require().Error(err)
 			}
@@ -357,8 +343,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -369,9 +354,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 
 			tc.malleate()
 
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -410,8 +393,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -422,8 +404,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -433,10 +414,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -510,7 +488,6 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-			consumed := suite.ctx.GasMeter().GasConsumed()
 
 			if tc.expPanic {
 				suite.Require().Panics(func() {
@@ -519,8 +496,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 				return
 			}
 
-			ctx, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -534,6 +510,37 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
+		})
+	}
+}
+
+func (suite AnteTestSuite) TestEthSetupContextDecorator() {
+	dec := ante.NewEthSetUpContextDecorator()
+	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+
+	testCases := []struct {
+		name    string
+		tx      sdk.Tx
+		expPass bool
+	}{
+		{"invalid transaction type - does not implement GasTx", &invalidTx{}, false},
+		{
+			"success - transaction implement GasTx",
+			tx,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+
 		})
 	}
 }

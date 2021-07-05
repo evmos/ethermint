@@ -17,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+const invalidFromAddress = "0x0000"
+
 type MsgsTestSuite struct {
 	suite.Suite
 
@@ -63,29 +65,54 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
 func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	testCases := []struct {
 		msg        string
-		to         *ethcmn.Address
-		amount     *big.Int
-		gasPrice   *big.Int
+		to         string
+		amount     sdk.Int
+		gasPrice   sdk.Int
 		from       string
 		accessList *ethtypes.AccessList
-		chainID    *big.Int
+		chainID    sdk.Int
 		expectPass bool
 	}{
-		{msg: "pass with recipient - Legacy Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "pass with recipient - AccessList Tx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: big.NewInt(1), expectPass: true},
-		{msg: "pass contract - Legacy Tx", to: nil, amount: big.NewInt(100), gasPrice: big.NewInt(100000), expectPass: true},
-		{msg: "invalid recipient", to: &ethcmn.Address{}, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: false},
-		{msg: "nil amount", to: &suite.to, amount: nil, gasPrice: big.NewInt(1000), expectPass: true},
-		{msg: "negative amount", to: &suite.to, amount: big.NewInt(-1), gasPrice: big.NewInt(1000), expectPass: true},
-		{msg: "nil gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: nil, expectPass: false},
-		{msg: "negative gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(-1), expectPass: true},
-		{msg: "zero gas price", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), expectPass: true},
-		{msg: "invalid from address", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), from: ethcmn.Address{}.Hex(), expectPass: false},
-		{msg: "chain ID not set on AccessListTx", to: &suite.to, amount: big.NewInt(100), gasPrice: big.NewInt(0), accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "pass with recipient - Legacy Tx", to: suite.to.Hex(), amount: sdk.NewInt(100), gasPrice: sdk.NewInt(100000), expectPass: true},
+		{msg: "pass with recipient - AccessList Tx", to: suite.to.Hex(), amount: sdk.NewInt(100), gasPrice: sdk.ZeroInt(), accessList: &ethtypes.AccessList{}, chainID: sdk.OneInt(), expectPass: true},
+		{msg: "pass contract - Legacy Tx", to: "", amount: sdk.NewInt(100), gasPrice: sdk.NewInt(100000), expectPass: true},
+		{msg: "invalid recipient", to: invalidFromAddress, amount: sdk.NewInt(-1), gasPrice: sdk.NewInt(1000), expectPass: false},
+		{msg: "nil amount", to: suite.to.Hex(), amount: sdk.Int{}, gasPrice: sdk.NewInt(1000), expectPass: true},
+		{msg: "negative amount", to: suite.to.Hex(), amount: sdk.NewInt(-1), gasPrice: sdk.NewInt(1000), expectPass: false},
+		{msg: "nil gas price", to: suite.to.Hex(), amount: sdk.NewInt(100), gasPrice: sdk.Int{}, expectPass: false},
+		{msg: "negative gas price", to: suite.to.Hex(), amount: sdk.NewInt(100), gasPrice: sdk.NewInt(-1), expectPass: false},
+		{msg: "zero gas price", to: suite.to.Hex(), amount: sdk.NewInt(100), gasPrice: sdk.ZeroInt(), expectPass: true},
+		{msg: "invalid from address", to: suite.to.Hex(), amount: sdk.NewInt(100), gasPrice: sdk.ZeroInt(), from: invalidFromAddress, expectPass: false},
+		{msg: "chain ID not set on AccessListTx", to: suite.to.Hex(), amount: sdk.NewInt(100), gasPrice: sdk.ZeroInt(), accessList: &ethtypes.AccessList{}, chainID: sdk.Int{}, expectPass: false},
 	}
 
 	for i, tc := range testCases {
-		msg := NewMsgEthereumTx(tc.chainID, 0, tc.to, tc.amount, 0, tc.gasPrice, nil, tc.accessList)
+		// recreate txData
+		txData := TxData{
+			Nonce:    0,
+			GasLimit: 0,
+			To:       tc.to,
+		}
+
+		if tc.accessList != nil {
+			txData.Accesses = NewAccessList(tc.accessList)
+			if !tc.chainID.IsNil() {
+				txData.ChainID = tc.chainID
+			}
+		}
+
+		if !tc.amount.IsNil() {
+			txData.Amount = tc.amount
+		}
+
+		if !tc.gasPrice.IsNil() {
+			txData.GasPrice = tc.gasPrice
+		}
+
+		msg := MsgEthereumTx{
+			Data: &txData,
+		}
+
 		msg.From = tc.from
 		err := msg.ValidateBasic()
 
@@ -156,9 +183,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 		if tc.expectPass {
 			suite.Require().NoError(err, "valid test %d failed: %s", i, tc.msg)
 
-			tx := tc.tx.AsTransaction()
-
-			sender, err := ethtypes.Sender(tc.ethSigner, tx)
+			sender, err := tc.tx.GetSender(suite.chainID)
 			suite.Require().NoError(err, tc.msg)
 			suite.Require().Equal(tc.tx.From, sender.Hex(), tc.msg)
 		} else {

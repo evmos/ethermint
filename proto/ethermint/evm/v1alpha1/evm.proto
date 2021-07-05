@@ -176,19 +176,6 @@ message Log {
   bool removed = 9;
 }
 
-// TxReceipt defines the receipt type stored in KV for each EVM transaction.
-message TxReceipt {
-  option (gogoproto.goproto_getters) = false;
-
-  string   hash         = 1;
-  string   from         = 2;
-  TxData   data         = 3;
-  TxResult result       = 4;
-  uint64   index        = 5;
-  uint64   block_height = 6;
-  string   block_hash   = 7;
-}
-
 // TxResult stores results of Tx execution.
 message TxResult {
   option (gogoproto.goproto_getters) = false;
@@ -216,17 +203,29 @@ message TxData {
   option (gogoproto.goproto_getters) = false;
 
   // destination EVM chain ID
-  bytes chain_id = 1 [(gogoproto.customname) = "ChainID", (gogoproto.jsontag) = "chainID"];
+  string chain_id = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customname) = "ChainID",
+    (gogoproto.jsontag)    = "chainID",
+    (gogoproto.nullable)   = false
+  ];
   // nonce corresponds to the account nonce (transaction sequence).
   uint64 nonce = 2;
-  // price defines the unsigned integer value of the gas price in bytes.
-  bytes gas_price = 3 [(gogoproto.customname) = "GasPrice"];
+  // gas price defines the value for each gas unit
+  string gas_price = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable)   = false
+  ];
   // gas defines the gas limit defined for the transaction.
   uint64 gas = 4 [(gogoproto.customname) = "GasLimit"];
   // hex formatted address of the recipient
   string to = 5;
   // value defines the unsigned integer value of the transaction amount.
-  bytes value = 6 [(gogoproto.customname) = "Amount"];
+  string value = 6 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customname) = "Amount",
+    (gogoproto.nullable)   = false
+  ];
   // input defines the data payload bytes of the transaction.
   bytes                input    = 7;
   repeated AccessTuple accesses = 8
@@ -237,12 +236,6 @@ message TxData {
   bytes r = 10;
   // s define the signature value
   bytes s = 11;
-}
-
-message BytesList {
-  option (gogoproto.goproto_getters) = false;
-
-  repeated bytes bytes = 1;
 }
 
 // AccessTuple is the element type of an access list.

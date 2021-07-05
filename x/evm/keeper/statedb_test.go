@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"math/big"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -12,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestCreateAccount() {
@@ -452,31 +457,43 @@ func (suite *KeeperTestSuite) TestSnapshot() {
 	suite.app.EvmKeeper.RevertToSnapshot(revision) // no-op
 }
 
-func (suite *KeeperTestSuite) TestAddLog() {
-	addr := tests.GenerateAddress()
-	msg := types.NewMsgEthereumTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
-	tx := msg.AsTransaction()
-	txBz, err := tx.MarshalBinary()
+func (suite *KeeperTestSuite) CreateTestTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
+	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	suite.Require().NoError(err)
-	txHash := tx.Hash()
+
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
+	suite.Require().True(ok)
+
+	builder.SetExtensionOptions(option)
+
+	err = msg.Sign(suite.ethSigner, tests.NewSigner(priv))
+	suite.Require().NoError(err)
+
+	err = txBuilder.SetMsgs(msg)
+	suite.Require().NoError(err)
+
+	return txBuilder.GetTx()
+}
+
+func (suite *KeeperTestSuite) TestAddLog() {
+	addr, privKey := tests.NewAddrKey()
+	msg := types.NewMsgEthereumTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
+	msg.From = addr.Hex()
+
+	tx := suite.CreateTestTx(msg, privKey)
+	msg, _ = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	txHash := msg.AsTransaction().Hash()
 
 	testCases := []struct {
 		name        string
+		hash        common.Hash
 		log, expLog *ethtypes.Log // pre and post populating log fields
 		malleate    func()
 	}{
 		{
-			"block hash not found",
-			&ethtypes.Log{
-				Address: addr,
-			},
-			&ethtypes.Log{
-				Address: addr,
-			},
-			func() {},
-		},
-		{
 			"tx hash from message",
+			txHash,
 			&ethtypes.Log{
 				Address: addr,
 			},
@@ -484,9 +501,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 				Address: addr,
 				TxHash:  txHash,
 			},
-			func() {
-				suite.app.EvmKeeper.WithContext(suite.ctx.WithTxBytes(txBz))
-			},
+			func() {},
 		},
 	}
 
@@ -494,11 +509,12 @@ func (suite *KeeperTestSuite) TestAddLog() {
 		suite.Run(tc.name, func() {
 			tc.malleate()
 
-			prev := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
+			prev := suite.app.EvmKeeper.GetTxLogs(tc.hash)
+			suite.app.EvmKeeper.SetTxHashTransient(tc.hash)
 			suite.app.EvmKeeper.AddLog(tc.log)
-			post := suite.app.EvmKeeper.GetTxLogs(tc.expLog.TxHash)
+			post := suite.app.EvmKeeper.GetTxLogs(tc.hash)
 
-			suite.Require().NotZero(len(post), tc.expLog.TxHash.Hex())
+			suite.Require().NotZero(len(post), tc.hash.Hex())
 			suite.Require().Equal(len(prev)+1, len(post))
 			suite.Require().NotNil(post[len(post)-1])
 			suite.Require().Equal(tc.log, post[len(post)-1])

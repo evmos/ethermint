@@ -52,6 +52,9 @@ issues:
     - text: "ST1003:"
       linters:
         - stylecheck
+    - text: "SA1019:"
+      linters:
+        - staticcheck
   max-issues-per-linter: 10000
   max-same-issues: 10000
 

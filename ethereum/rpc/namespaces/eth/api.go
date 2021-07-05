@@ -21,7 +21,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -198,7 +198,7 @@ func (e *PublicAPI) Accounts() ([]common.Address, error) {
 
 // BlockNumber returns the current block number.
 func (e *PublicAPI) BlockNumber() (hexutil.Uint64, error) {
-	//e.logger.Debugln("eth_blockNumber")
+	// e.logger.Debugln("eth_blockNumber")
 	return e.backend.BlockNumber()
 }
 
@@ -215,12 +215,12 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNum rpctypes.BlockNu
 		return nil, err
 	}
 
-	val, err := ethermint.UnmarshalBigInt(res.Balance)
-	if err != nil {
-		return nil, err
+	val, ok := sdk.NewIntFromString(res.Balance)
+	if !ok {
+		return nil, errors.New("invalid balance")
 	}
 
-	return (*hexutil.Big)(val), nil
+	return (*hexutil.Big)(val.BigInt()), nil
 }
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
@@ -256,7 +256,8 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctype
 		return &n, nil
 	}
 
-	_, nonce, err := accRet.GetAccountNumberSequence(e.clientCtx, from)
+	includePending := blockNum == rpctypes.EthPendingBlockNumber
+	nonce, err := getAccountNonce(e.clientCtx, e.backend, address, includePending, e.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +348,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 
 // SendTransaction sends an Ethereum transaction.
 func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, error) {
-	e.logger.Debugln("eth_sendTransaction", "args", args)
+	e.logger.Debugln("eth_sendTransaction", "args", args.String())
 
 	// Look up the wallet containing the requested signer
 	_, err := e.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
@@ -395,7 +396,14 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(msg.Fee())))
+	// Query params to use the EVM denomination
+	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to query evm params")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
 
@@ -407,10 +415,7 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, err
 	}
 
-	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-	// https://github.com/tendermint/tendermint/issues/6539
-	tmTx := tmtypes.Tx(txBytes)
-	txHash := common.BytesToHash(tmTx.Hash())
+	txHash := msg.AsTransaction().Hash()
 
 	// Broadcast transaction in sync mode (default)
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
@@ -462,7 +467,14 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		e.logger.WithError(err).Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(ethereumTx.Fee())))
+	// Query params to use the EVM denomination
+	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to query evm params")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(ethereumTx.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethereumTx.GetGas())
 
@@ -473,10 +485,7 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-	// https://github.com/tendermint/tendermint/issues/6539
-	tmTx := tmtypes.Tx(txBytes)
-	txHash := common.BytesToHash(tmTx.Hash())
+	txHash := ethereumTx.AsTransaction().Hash()
 
 	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
 	rsp, err := syncCtx.BroadcastTx(txBytes)
@@ -493,7 +502,7 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 
 // Call performs a raw contract call.
 func (e *PublicAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
-	e.logger.Debugln("eth_call", "args", args, "block number", blockNr)
+	e.logger.Debugln("eth_call", "args", args.String(), "block number", blockNr)
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
 		return []byte{}, err
@@ -551,16 +560,12 @@ func (e *PublicAPI) doCall(
 		accessList = args.AccessList
 	}
 
-	// Set destination address for call
-	var fromAddr sdk.AccAddress
-	if args.From != nil {
-		fromAddr = sdk.AccAddress(args.From.Bytes())
-	} else {
-		fromAddr = sdk.AccAddress(common.Address{}.Bytes())
+	if args.From == nil {
 		args.From = &common.Address{}
 	}
 
-	_, seq, err := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, fromAddr)
+	includePending := blockNr == rpctypes.EthPendingBlockNumber
+	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, includePending, e.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -593,7 +598,14 @@ func (e *PublicAPI) doCall(
 		log.Panicln("builder.SetMsgs failed")
 	}
 
-	fees := sdk.NewCoins(ethermint.NewPhotonCoin(sdk.NewIntFromBigInt(msg.Fee())))
+	// Query params to use the EVM denomination
+	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to query evm params")
+		return nil, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
 	txBuilder.SetFeeAmount(fees)
 	txBuilder.SetGasLimit(gas)
 
@@ -649,11 +661,7 @@ func (e *PublicAPI) EstimateGas(args rpctypes.CallArgs) (hexutil.Uint64, error) 
 		return 0, rpctypes.ErrRevertedWith(data.Ret)
 	}
 
-	// TODO: Add Gas Info from state transition to MsgEthereumTxResponse fields and return that instead
-	estimatedGas := simRes.GasInfo.GasUsed
-	gas := estimatedGas + 200000
-
-	return hexutil.Uint64(gas), nil
+	return hexutil.Uint64(data.GasUsed), nil
 }
 
 // GetBlockByHash returns the block identified by hash.
@@ -668,11 +676,26 @@ func (e *PublicAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx bo
 	return e.backend.GetBlockByNumber(ethBlockNum, fullTx)
 }
 
+// GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
+// TODO: Don't need to convert once hashing is fixed on Tendermint
+// https://github.com/tendermint/tendermint/issues/6539
+func (e *PublicAPI) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
+	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
+	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resTxs.Txs) == 0 {
+		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
+	}
+	return resTxs.Txs[0], nil
+}
+
 // GetTransactionByHash returns the transaction identified by hash.
 func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getTransactionByHash", "hash", hash.Hex())
 
-	res, err := e.clientCtx.Client.Tx(e.ctx, hash.Bytes(), false)
+	res, err := e.GetTxByEthHash(hash)
 	if err != nil {
 		e.logger.WithError(err).Debugln("tx not found", "hash", hash.Hex())
 		return nil, nil
@@ -700,12 +723,13 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
-	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-	// https://github.com/tendermint/tendermint/issues/6539
-
+	from, err := msg.GetSender(e.chainIDEpoch)
+	if err != nil {
+		return nil, err
+	}
 	return rpctypes.NewTransactionFromData(
 		msg.Data,
-		common.HexToAddress(msg.From),
+		from,
 		hash,
 		common.BytesToHash(resBlock.Block.Hash()),
 		uint64(res.Height),
@@ -736,15 +760,17 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		e.logger.Debugln("invalid tx")
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
-	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-	// https://github.com/tendermint/tendermint/issues/6539
-	txHash := common.BytesToHash(txBz.Hash())
+	txHash := msg.AsTransaction().Hash()
 
 	return rpctypes.NewTransactionFromData(
 		msg.Data,
@@ -789,9 +815,7 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
 
-	// TODO: use msg.AsTransaction.Hash() for txHash once hashing is fixed on Tendermint
-	// https://github.com/tendermint/tendermint/issues/6539
-	txHash := common.BytesToHash(txBz.Hash())
+	txHash := msg.AsTransaction().Hash()
 
 	return rpctypes.NewTransactionFromData(
 		msg.Data,
@@ -807,7 +831,7 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	e.logger.Debugln("eth_getTransactionReceipt", "hash", hash.Hex())
 
-	res, err := e.clientCtx.Client.Tx(e.ctx, hash.Bytes(), false)
+	res, err := e.GetTxByEthHash(hash)
 	if err != nil {
 		e.logger.WithError(err).Debugln("tx not found", "hash", hash.Hex())
 		return nil, nil
@@ -860,7 +884,10 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	}
 
-	from := common.HexToAddress(msg.From)
+	from, err := msg.GetSender(e.chainIDEpoch)
+	if err != nil {
+		return nil, err
+	}
 
 	resLogs, err := e.queryClient.TxLogs(e.ctx, &evmtypes.QueryTxLogsRequest{Hash: hash.Hex()})
 	if err != nil {
@@ -977,15 +1004,15 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 		accProofStr = proof.String()
 	}
 
-	balance, err := ethermint.UnmarshalBigInt(res.Balance)
-	if err != nil {
-		return nil, err
+	balance, ok := sdk.NewIntFromString(res.Balance)
+	if !ok {
+		return nil, errors.New("invalid balance")
 	}
 
 	return &rpctypes.AccountResult{
 		Address:      address,
 		AccountProof: []string{accProofStr},
-		Balance:      (*hexutil.Big)(balance),
+		Balance:      (*hexutil.Big)(balance.BigInt()),
 		CodeHash:     common.HexToHash(res.CodeHash),
 		Nonce:        hexutil.Uint64(res.Nonce),
 		StorageHash:  common.Hash{}, // NOTE: Ethermint doesn't have a storage hash. TODO: implement?
@@ -997,9 +1024,6 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 // provided on the args
 func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
 
-	// Get nonce (sequence) from sender account
-	from := sdk.AccAddress(args.From.Bytes())
-
 	if args.GasPrice == nil {
 		// TODO: Change to either:
 		// - min gas price from context once available through server/daemon, or
@@ -1010,7 +1034,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
-		_, nonce, _ := e.clientCtx.AccountRetriever.GetAccountNumberSequence(e.clientCtx, from)
+		nonce, _ := getAccountNonce(e.clientCtx, e.backend, args.From, true, e.logger)
 		args.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 
@@ -1062,4 +1086,41 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	}
 
 	return args, nil
+}
+
+// getAccountNonce returns the account nonce for the given account address.
+// If the pending value is true, it will iterate over the mempool (pending)
+// txs in order to compute and return the pending tx sequence.
+// Todo: include the ability to specify a blockNumber
+func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common.Address, pending bool, logger log.Logger) (uint64, error) {
+	_, nonce, err := ctx.AccountRetriever.GetAccountNumberSequence(ctx, accAddr.Bytes())
+	if err != nil {
+		return 0, err
+	}
+
+	if !pending {
+		return nonce, nil
+	}
+
+	// the account retriever doesn't include the uncommitted transactions on the nonce so we need to
+	// to manually add them.
+	pendingTxs, err := backend.PendingTransactions()
+	if err != nil {
+		logger.Errorln("fails to fetch pending transactions")
+		return nonce, nil
+	}
+
+	// add the uncommitted txs to the nonce counter
+	if len(pendingTxs) != 0 {
+		for i := range pendingTxs {
+			if pendingTxs[i] == nil {
+				continue
+			}
+			if pendingTxs[i].From == accAddr {
+				nonce++
+			}
+		}
+	}
+
+	return nonce, nil
 }

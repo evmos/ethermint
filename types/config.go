@@ -1,6 +1,8 @@
 package types
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethaccounts "github.com/ethereum/go-ethereum/accounts"
@@ -30,6 +32,9 @@ const (
 var (
 	// BIP44HDPath is the BIP44 HD path used on Ethereum.
 	BIP44HDPath = ethaccounts.DefaultBaseDerivationPath.String()
+
+	// PowerReduction defines the default power reduction value for staking
+	PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 )
 
 // SetBech32Prefixes sets the global prefixes to be used when serializing addresses and public keys to Bech32 strings.

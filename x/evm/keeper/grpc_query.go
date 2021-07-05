@@ -125,16 +125,9 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	k.WithContext(ctx)
 
 	balanceInt := k.GetBalance(ethcmn.HexToAddress(req.Address))
-	balance, err := ethermint.MarshalBigInt(balanceInt)
-	if err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			"failed to marshal big.Int to string",
-		)
-	}
 
 	return &types.QueryBalanceResponse{
-		Balance: balance,
+		Balance: balanceInt.String(),
 	}, nil
 }
 
@@ -246,7 +239,7 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
 		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshalBinaryBare(value, &txLog)
+		k.cdc.MustUnmarshal(value, &txLog)
 
 		if len(txLog.Logs) > 0 && txLog.Logs[0].BlockHash == req.Hash {
 			if accumulate {

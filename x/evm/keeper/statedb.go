@@ -12,6 +12,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
@@ -66,9 +67,19 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
-	if err := k.bankKeeper.AddCoins(k.ctx, cosmosAddr, coins); err != nil {
+	if err := k.bankKeeper.MintCoins(k.ctx, types.ModuleName, coins); err != nil {
 		k.Logger(k.ctx).Error(
-			"failed to add balance",
+			"failed to mint coins when adding balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
+		return
+	}
+
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, types.ModuleName, cosmosAddr, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to send from module to account when adding balance",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
@@ -99,14 +110,24 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
-	if err := k.bankKeeper.SubtractCoins(k.ctx, cosmosAddr, coins); err != nil {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(k.ctx, cosmosAddr, types.ModuleName, coins); err != nil {
 		k.Logger(k.ctx).Error(
-			"failed to subtract balance",
+			"failed to send from account to module when subtracting balance",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
 
+		return
+	}
+
+	if err := k.bankKeeper.BurnCoins(k.ctx, types.ModuleName, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to burn coins when subtracting balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
 		return
 	}
 
@@ -201,7 +222,7 @@ func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
 		return common.BytesToHash(types.EmptyCodeHash)
 	}
 
-	return common.BytesToHash(ethAccount.CodeHash)
+	return common.HexToHash(ethAccount.CodeHash)
 }
 
 // GetCode calls CommitStateDB.GetCode using the passed in context
@@ -250,7 +271,7 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 		return
 	}
 
-	ethAccount.CodeHash = hash.Bytes()
+	ethAccount.CodeHash = hash.Hex()
 	k.accountKeeper.SetAccount(k.ctx, ethAccount)
 
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixCode)
@@ -285,7 +306,7 @@ func (k *Keeper) GetCodeSize(addr common.Address) int {
 
 // NOTE: gas refunded needs to be tracked and stored in a separate variable in
 // order to add it subtract/add it from/to the gas used value after the EVM
-// execution has finalised. The refund value is cleared on every transaction and
+// execution has finalized. The refund value is cleared on every transaction and
 // at the end of every block.
 
 // AddRefund adds the given amount of gas to the refund cached value.
@@ -458,7 +479,7 @@ func (k *Keeper) Empty(addr common.Address) bool {
 			return false
 		}
 
-		codeHash = ethAccount.CodeHash
+		codeHash = common.HexToHash(ethAccount.CodeHash).Bytes()
 	}
 
 	balance := k.GetBalance(addr)
@@ -565,31 +586,20 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
-	if len(k.ctx.TxBytes()) > 0 {
-		tx := &ethtypes.Transaction{}
-		if err := tx.UnmarshalBinary(k.ctx.TxBytes()); err != nil {
-			k.Logger(k.ctx).Error(
-				"ethereum tx unmarshaling failed",
-				"error", err,
-			)
-			return
-		}
-
-		log.TxHash = tx.Hash()
-	}
-
 	log.BlockHash = common.BytesToHash(k.ctx.HeaderHash())
 	log.TxIndex = uint(k.GetTxIndexTransient())
+	log.TxHash = k.GetTxHashTransient()
 
 	logs := k.GetTxLogs(log.TxHash)
 
 	log.Index = uint(len(logs))
 	logs = append(logs, log)
+
 	k.SetLogs(log.TxHash, logs)
 
 	k.Logger(k.ctx).Debug(
 		"log added",
-		"tx-hash", log.TxHash.Hex(),
+		"tx-hash-ethereum", log.TxHash.Hex(),
 		"log-index", int(log.Index),
 	)
 }

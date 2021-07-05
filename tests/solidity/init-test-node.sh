@@ -40,4 +40,4 @@ ethermintd collect-gentxs
 ethermintd validate-genesis
 
 # Start the node (remove the --pruning=nothing flag if historical queries are not needed)
-ethermintd start --pruning=nothing --rpc.unsafe --evm-rpc.address "0.0.0.0:8545" --keyring-backend test --trace --log_level "info"
+ethermintd start --pruning=nothing --rpc.unsafe --keyring-backend test --trace --log_level "info"

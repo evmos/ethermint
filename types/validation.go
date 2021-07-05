@@ -19,7 +19,6 @@ func IsZeroAddress(address string) bool {
 }
 
 // ValidateAddress returns an error if the provided string is either not a hex formatted string address
-// the it matches the zero address 0x00000000000000000000.
 func ValidateAddress(address string) error {
 	if !ethcmn.IsHexAddress(address) {
 		return sdkerrors.Wrapf(
@@ -27,10 +26,5 @@ func ValidateAddress(address string) error {
 			address,
 		)
 	}
-
-	if IsZeroAddress(address) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "provided address cannot be the zero address")
-	}
-
 	return nil
 }
