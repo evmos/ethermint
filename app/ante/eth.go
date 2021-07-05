@@ -130,6 +130,11 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 			)
 		}
 
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data any for tx %d", i)
+		}
+
 		// sender address should be in the tx cache from the previous AnteHandle call
 		from := msgEthTx.GetFrom()
 		if from.Empty() {
@@ -155,13 +160,15 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 
 		// validate sender has enough funds to pay for tx cost
 		balance := avd.bankKeeper.GetBalance(ctx, from, evmDenom)
-		if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
+		cost := txData.Cost()
+
+		if balance.Amount.BigInt().Cmp(cost) < 0 {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrapf(
 					sdkerrors.ErrInsufficientFunds,
-					"sender balance < tx cost (%s < %s%s)", balance, msgEthTx.Cost(), evmDenom,
+					"sender balance < tx cost (%s < %s%s)", balance, txData.Cost(), evmDenom,
 				),
-				"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + amount)", msgEthTx.Cost(), msgEthTx.Fee(),
+				"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + %s)", cost, txData.Fee(), txData.GetValue(),
 			)
 		}
 
@@ -317,7 +324,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		}
 
 		// calculate the fees paid to validators based on gas limit and price
-		feeAmt := msgEthTx.Fee() // fee = gas limit * gas price
+		feeAmt := txData.Fee() // fee = gas limit * gas price
 
 		evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
 		fees := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(feeAmt))}
@@ -466,7 +473,7 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
-		ald.evmKeeper.PrepareAccessList(sender, msgEthTx.To(), vm.ActivePrecompiles(rules), txData.GetAccessList())
+		ald.evmKeeper.PrepareAccessList(sender, txData.GetTo(), vm.ActivePrecompiles(rules), txData.GetAccessList())
 	}
 
 	// set the original gas meter
@@ -500,9 +507,14 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 			)
 		}
 
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
+		}
+
 		// NOTE: on contract creation, the nonce is incremented within the EVM Create function during tx execution
 		// and not previous to the state transition ¯\_(ツ)_/¯
-		if msgEthTx.To() == nil {
+		if txData.GetTo() == nil {
 			// contract creation, don't increment sequence on AnteHandler but on tx execution
 			// continue to the next item
 			continue

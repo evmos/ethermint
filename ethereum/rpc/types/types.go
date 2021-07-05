@@ -2,12 +2,11 @@ package types
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -90,52 +89,42 @@ func (args *SendTxArgs) String() string {
 // ToTransaction converts the arguments to an ethereum transaction.
 // This assumes that setTxDefaults has been called.
 func (args *SendTxArgs) ToTransaction() *evmtypes.MsgEthereumTx {
-	var input []byte
+	var (
+		input                    []byte
+		chainID, value, gasPrice *big.Int
+		gas, nonce               uint64
+	)
+
 	if args.Input != nil {
 		input = *args.Input
 	} else if args.Data != nil {
 		input = *args.Data
 	}
 
-	// TODO: create depending on fields
-	data := &evmtypes.AccessListTx{
-		Data:     input,
-		Accesses: evmtypes.NewAccessList(args.AccessList),
-	}
-
 	if args.ChainID != nil {
-		data.ChainID = sdk.NewIntFromBigInt(args.ChainID.ToInt())
+		chainID = args.ChainID.ToInt()
 	}
 
 	if args.Nonce != nil {
-		data.Nonce = uint64(*args.Nonce)
+		nonce = uint64(*args.Nonce)
 	}
 
 	if args.Gas != nil {
-		data.GasLimit = uint64(*args.Gas)
+		gas = uint64(*args.Gas)
 	}
 
 	if args.GasPrice != nil {
-		data.GasPrice = sdk.NewIntFromBigInt(args.GasPrice.ToInt())
+		gasPrice = args.GasPrice.ToInt()
 	}
 
 	if args.Value != nil {
-		data.Amount = sdk.NewIntFromBigInt(args.Value.ToInt())
+		value = args.Value.ToInt()
 	}
 
-	if args.To != nil {
-		data.To = args.To.Hex()
-	}
+	tx := evmtypes.NewTx(chainID, nonce, args.To, value, gas, gasPrice, input, args.AccessList)
+	tx.From = args.From.Hex()
 
-	anyTxData, err := evmtypes.PackTxData(data)
-	if err != nil {
-		panic(err)
-	}
-
-	return &evmtypes.MsgEthereumTx{
-		Data: anyTxData,
-		From: args.From.String(),
-	}
+	return tx
 }
 
 // CallArgs represents the arguments for a call.

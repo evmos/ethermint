@@ -369,9 +369,9 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, err
 	}
 
-	// creates a new EIP2929 signer
-	// TODO: support legacy txs
+	// TODO: get from chain config
 	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+
 	// Sign transaction
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
 		e.logger.Debugln("failed to sign tx", "error", err)
@@ -403,7 +403,13 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
 
@@ -451,6 +457,11 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, fmt.Errorf("invalid transaction type %T", tx)
 	}
 
+	if err := ethereumTx.ValidateBasic(); err != nil {
+		e.logger.WithError(err).Debugln("tx failed basic validation")
+		return common.Hash{}, err
+	}
+
 	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
 	if !ok {
 		e.logger.Panicln("clientCtx.TxConfig.NewTxBuilder returns unsupported builder")
@@ -474,7 +485,13 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(ethereumTx.Fee()))}
+	txData, err := evmtypes.UnpackTxData(ethereumTx.Data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethereumTx.GetGas())
 
@@ -573,6 +590,8 @@ func (e *PublicAPI) doCall(
 	// Create new call message
 	msg := evmtypes.NewTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
 	msg.From = args.From.String()
+
+	// TODO: get from chain config
 	signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
 		return nil, err
@@ -605,7 +624,13 @@ func (e *PublicAPI) doCall(
 		return nil, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return nil, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
 	txBuilder.SetFeeAmount(fees)
 	txBuilder.SetGasLimit(gas)
 
@@ -880,7 +905,8 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	txData, err := evmtypes.UnpackTxData(msg.Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return nil, err
 	}
 
 	cumulativeGasUsed := uint64(0)
@@ -943,7 +969,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 		// sender and receiver (contract or EOA) addreses
 		"from": from,
-		"to":   msg.To(),
+		"to":   txData.GetTo(),
 	}
 
 	if logs == nil {
@@ -951,7 +977,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
-	if msg.To() == nil {
+	if txData.GetTo() == nil {
 		receipt["contractAddress"] = crypto.CreateAddress(from, txData.GetNonce())
 	}
 
