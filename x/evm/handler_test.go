@@ -78,7 +78,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 			"passed",
 // 			func() {
 // 				to := ethcmn.BytesToAddress(suite.to)
-// 				tx = types.NewMsgEthereumTx(suite.chainID, 0, &to, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
+// 				tx = types.NewTx(suite.chainID, 0, &to, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 // 				tx.From = suite.from.String()
 
 // 				// sign transaction
@@ -90,7 +90,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 		{
 // 			"insufficient balance",
 // 			func() {
-// 				tx = types.NewMsgEthereumTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
+// 				tx = types.NewTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 // 				tx.From = suite.from.Hex()
 // 				// sign transaction
 // 				err := tx.Sign(suite.ethSigner, suite.signer)
@@ -101,7 +101,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 		{
 // 			"tx encoding failed",
 // 			func() {
-// 				tx = types.NewMsgEthereumTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
+// 				tx = types.NewTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 // 			},
 // 			false,
 // 		},
@@ -115,7 +115,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 		{
 // 			"VerifySig failed",
 // 			func() {
-// 				tx = types.NewMsgEthereumTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
+// 				tx = types.NewTxContract(suite.chainID, 0, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 // 			},
 // 			false,
 // 		},
@@ -165,7 +165,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 	gasPrice := big.NewInt(1000000)
 
 // 	bytecode := common.FromHex("0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029")
-// 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
+// 	tx := types.NewTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 // 	tx.From = suite.from.String()
 
 // 	err := tx.Sign(suite.ethSigner, suite.signer)
@@ -249,7 +249,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 	gasPrice := big.NewInt(10000)
 
 // 	bytecode := common.FromHex("0x608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16600073ffffffffffffffffffffffffffffffffffffffff167f342827c97908e5e2f71151c08502a66d44b6f758e3ac2f1de95f02eb95f0a73560405160405180910390a36102c4806100dc6000396000f3fe608060405234801561001057600080fd5b5060043610610053576000357c010000000000000000000000000000000000000000000000000000000090048063893d20e814610058578063a6f9dae1146100a2575b600080fd5b6100606100e6565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100e4600480360360208110156100b857600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919050505061010f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146101d1576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260138152602001807f43616c6c6572206973206e6f74206f776e65720000000000000000000000000081525060200191505060405180910390fd5b8073ffffffffffffffffffffffffffffffffffffffff166000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f342827c97908e5e2f71151c08502a66d44b6f758e3ac2f1de95f02eb95f0a73560405160405180910390a3806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72315820f397f2733a89198bc7fed0764083694c5b828791f39ebcbc9e414bccef14b48064736f6c63430005100032")
-// 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
+// 	tx := types.NewTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 // 	tx.From = suite.from.String()
 
 // 	err := tx.Sign(suite.ethSigner, suite.signer)
@@ -268,7 +268,7 @@ func TestEvmTestSuite(t *testing.T) {
 
 // 	storeAddr := "0xa6f9dae10000000000000000000000006a82e4a67715c8412a9114fbd2cbaefbc8181424"
 // 	bytecode = common.FromHex(storeAddr)
-// 	tx = types.NewMsgEthereumTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
+// 	tx = types.NewTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 // 	tx.From = suite.from.String()
 
 // 	err = tx.Sign(suite.ethSigner, suite.signer)
@@ -282,7 +282,7 @@ func TestEvmTestSuite(t *testing.T) {
 
 // 	// query - getOwner
 // 	bytecode = common.FromHex("0x893d20e8")
-// 	tx = types.NewMsgEthereumTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
+// 	tx = types.NewTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 // 	tx.From = suite.from.String()
 // 	err = tx.Sign(suite.ethSigner, suite.signer)
 // 	suite.Require().NoError(err)
@@ -302,7 +302,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 	gasPrice := big.NewInt(0x55ae82600)
 
 // 	// send simple value transfer with gasLimit=21000
-// 	tx := types.NewMsgEthereumTx(suite.chainID, 1, &ethcmn.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil, nil)
+// 	tx := types.NewTx(suite.chainID, 1, &ethcmn.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil, nil)
 // 	tx.From = suite.from.String()
 // 	err := tx.Sign(suite.ethSigner, suite.signer)
 // 	suite.Require().NoError(err)
@@ -373,7 +373,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 	gasPrice := big.NewInt(10000)
 
 // 	bytecode := common.FromHex("0x608060405234801561001057600080fd5b50336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16600073ffffffffffffffffffffffffffffffffffffffff167f342827c97908e5e2f71151c08502a66d44b6f758e3ac2f1de95f02eb95f0a73560405160405180910390a36102c4806100dc6000396000f3fe608060405234801561001057600080fd5b5060043610610053576000357c010000000000000000000000000000000000000000000000000000000090048063893d20e814610058578063a6f9dae1146100a2575b600080fd5b6100606100e6565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100e4600480360360208110156100b857600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919050505061010f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146101d1576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260138152602001807f43616c6c6572206973206e6f74206f776e65720000000000000000000000000081525060200191505060405180910390fd5b8073ffffffffffffffffffffffffffffffffffffffff166000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f342827c97908e5e2f71151c08502a66d44b6f758e3ac2f1de95f02eb95f0a73560405160405180910390a3806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72315820f397f2733a89198bc7fed0764083694c5b828791f39ebcbc9e414bccef14b48064736f6c63430005100032")
-// 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
+// 	tx := types.NewTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 // 	tx.From = suite.from.String()
 
 // 	err := tx.Sign(suite.ethSigner, suite.signer)
@@ -402,7 +402,7 @@ func TestEvmTestSuite(t *testing.T) {
 
 // 	bytecode := common.FromHex("0xa6f9dae10000000000000000000000006a82e4a67715c8412a9114fbd2cbaefbc8181424")
 
-// 	tx := types.NewMsgEthereumTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
+// 	tx := types.NewTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, bytecode, nil)
 // 	tx.From = suite.from.String()
 
 // 	err := tx.Sign(suite.ethSigner, suite.signer)

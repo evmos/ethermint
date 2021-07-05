@@ -369,9 +369,9 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, err
 	}
 
-	// creates a new EIP2929 signer
-	// TODO: support legacy txs
+	// TODO: get from chain config
 	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+
 	// Sign transaction
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
 		e.logger.Debugln("failed to sign tx", "error", err)
@@ -403,7 +403,13 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
 
@@ -451,6 +457,11 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, fmt.Errorf("invalid transaction type %T", tx)
 	}
 
+	if err := ethereumTx.ValidateBasic(); err != nil {
+		e.logger.WithError(err).Debugln("tx failed basic validation")
+		return common.Hash{}, err
+	}
+
 	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
 	if !ok {
 		e.logger.Panicln("clientCtx.TxConfig.NewTxBuilder returns unsupported builder")
@@ -474,7 +485,13 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(ethereumTx.Fee()))}
+	txData, err := evmtypes.UnpackTxData(ethereumTx.Data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethereumTx.GetGas())
 
@@ -571,8 +588,10 @@ func (e *PublicAPI) doCall(
 	}
 
 	// Create new call message
-	msg := evmtypes.NewMsgEthereumTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
+	msg := evmtypes.NewTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
 	msg.From = args.From.String()
+
+	// TODO: get from chain config
 	signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
 		return nil, err
@@ -605,7 +624,13 @@ func (e *PublicAPI) doCall(
 		return nil, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(msg.Fee()))}
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return nil, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
 	txBuilder.SetFeeAmount(fees)
 	txBuilder.SetGasLimit(gas)
 
@@ -727,8 +752,14 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 	if err != nil {
 		return nil, err
 	}
+
+	data, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
 	return rpctypes.NewTransactionFromData(
-		msg.Data,
+		data,
 		from,
 		hash,
 		common.BytesToHash(resBlock.Block.Hash()),
@@ -772,8 +803,14 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 
 	txHash := msg.AsTransaction().Hash()
 
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
 	return rpctypes.NewTransactionFromData(
-		msg.Data,
+		txData,
 		common.HexToAddress(msg.From),
 		txHash,
 		hash,
@@ -817,8 +854,14 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 
 	txHash := msg.AsTransaction().Hash()
 
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Debugln("decoding failed")
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
 	return rpctypes.NewTransactionFromData(
-		msg.Data,
+		txData,
 		common.HexToAddress(msg.From),
 		txHash,
 		common.BytesToHash(resBlock.Block.Hash()),
@@ -853,10 +896,17 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
 	}
+
 	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		e.logger.Debugln("invalid tx")
 		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.WithError(err).Errorln("failed to unpack tx data")
+		return nil, err
 	}
 
 	cumulativeGasUsed := uint64(0)
@@ -909,7 +959,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		"transactionHash": hash,
 		"contractAddress": nil,
 		"gasUsed":         hexutil.Uint64(res.TxResult.GasUsed),
-		"type":            hexutil.Uint(ethtypes.AccessListTxType), // TODO: support legacy type
+		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
@@ -919,7 +969,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 		// sender and receiver (contract or EOA) addreses
 		"from": from,
-		"to":   msg.To(),
+		"to":   txData.GetTo(),
 	}
 
 	if logs == nil {
@@ -927,8 +977,8 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
-	if msg.To() == nil {
-		receipt["contractAddress"] = crypto.CreateAddress(from, msg.Data.Nonce)
+	if txData.GetTo() == nil {
+		receipt["contractAddress"] = crypto.CreateAddress(from, txData.GetNonce())
 	}
 
 	return receipt, nil
@@ -961,6 +1011,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 
 	// query storage proofs
 	storageProofs := make([]rpctypes.StorageResult, len(storageKeys))
+
 	for i, key := range storageKeys {
 		hexKey := common.HexToHash(key)
 		valueBz, proof, err := e.queryClient.GetProof(clientCtx, evmtypes.StoreKey, evmtypes.StateKey(address, hexKey.Bytes()))
