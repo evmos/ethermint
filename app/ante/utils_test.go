@@ -78,7 +78,6 @@ func (suite *AnteTestSuite) CreateTestTx(
 func (suite *AnteTestSuite) CreateTestTxBuilder(
 	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
 ) client.TxBuilder {
-
 	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
 	suite.Require().NoError(err)
 
@@ -93,7 +92,11 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 
 	err = builder.SetMsgs(msg)
 	suite.Require().NoError(err)
-	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(msg.Fee())))
+
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	suite.Require().NoError(err)
+
+	fees := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(txData.Fee())))
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msg.GetGas())
 
@@ -106,7 +109,7 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 				SignMode:  suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(),
 				Signature: nil,
 			},
-			Sequence: msg.Data.Nonce,
+			Sequence: txData.GetNonce(),
 		}
 
 		sigsV2 := []signing.SignatureV2{sigV2}
@@ -119,11 +122,11 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 		signerData := authsigning.SignerData{
 			ChainID:       suite.ctx.ChainID(),
 			AccountNumber: accNum,
-			Sequence:      msg.Data.Nonce,
+			Sequence:      txData.GetNonce(),
 		}
 		sigV2, err = tx.SignWithPrivKey(
 			suite.clientCtx.TxConfig.SignModeHandler().DefaultMode(), signerData,
-			txBuilder, priv, suite.clientCtx.TxConfig, msg.Data.Nonce,
+			txBuilder, priv, suite.clientCtx.TxConfig, txData.GetNonce(),
 		)
 		suite.Require().NoError(err)
 
