@@ -148,9 +148,13 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 		gasUsed += gas
 
-		msg, isEthTx := tx.(*evmtypes.MsgEthereumTx)
+		if len(tx.GetMsgs()) != 1 {
+			// TODO: eventually support Cosmos txs in the block
+			continue
+		}
+		msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 
-		if !isEthTx {
+		if !ok {
 			// TODO: eventually support Cosmos txs in the block
 			continue
 		}
