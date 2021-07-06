@@ -210,16 +210,16 @@ func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
 	}
 
 	if len(tx.GetMsgs()) == 1 {
-		msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		ethMsg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 		if ok {
-			gasUsed = msg.GetGas() // NOTE: this doesn't include the gas refunded
+			gasUsed = ethMsg.GetGas() // NOTE: this doesn't include the gas refunded
 			return tx, gasUsed
 		}
 	}
 
-	switch tx := tx.(type) {
-	case sdk.FeeTx:
-		gasUsed = tx.GetGas()
+	feeTx, ok := tx.(sdk.FeeTx)
+	if ok {
+		gasUsed = feeTx.GetGas()
 	}
 
 	return tx, gasUsed
