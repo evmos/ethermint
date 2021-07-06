@@ -140,13 +140,14 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
 
-	logs := k.GetTxLogs(txHash)
-	res.Logs = types.NewLogsFromEth(logs)
-
-	// update block bloom filter
-	bloom := k.GetBlockBloomTransient()
-	bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
-	k.SetBlockBloomTransient(bloom)
+	if !res.Reverted {
+		logs := k.GetTxLogs(txHash)
+		res.Logs = types.NewLogsFromEth(logs)
+		// update block bloom filter
+		bloom := k.GetBlockBloomTransient()
+		bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
+		k.SetBlockBloomTransient(bloom)
+	}
 
 	k.resetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
@@ -221,20 +222,19 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
+	var reverted bool
 	if vmErr != nil {
-		if errors.Is(vmErr, vm.ErrExecutionReverted) {
-			// unpack the return data bytes from the err if the execution has been "reverted" on the VM
-			return nil, stacktrace.Propagate(types.NewExecErrorWithReson(ret), "transaction reverted")
+		if !errors.Is(vmErr, vm.ErrExecutionReverted) {
+			// wrap the VM error
+			return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
 		}
-
-		// wrap the VM error
-		return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
+		reverted = true
 	}
 
 	gasUsed := msg.Gas() - leftoverGas
 	return &types.MsgEthereumTxResponse{
 		Ret:      ret,
-		Reverted: false,
+		Reverted: reverted,
 		GasUsed:  gasUsed,
 	}, nil
 }
