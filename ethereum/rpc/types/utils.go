@@ -200,7 +200,7 @@ func FormatBlock(
 	}
 }
 
-func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
+func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Msg, uint64) {
 	var gasUsed uint64
 	txDecoder := clientCtx.TxConfig.TxDecoder()
 
@@ -209,14 +209,19 @@ func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
 		return nil, 0
 	}
 
-	switch tx := tx.(type) {
+	if len(tx.GetMsgs()) != 1 {
+		return nil, 0
+	}
+
+	msg := tx.GetMsgs()[0]
+	switch tx := msg.(type) {
 	case *evmtypes.MsgEthereumTx:
 		gasUsed = tx.GetGas() // NOTE: this doesn't include the gas refunded
 	case sdk.FeeTx:
 		gasUsed = tx.GetGas()
 	}
 
-	return tx, gasUsed
+	return msg, gasUsed
 }
 
 type DataError interface {
