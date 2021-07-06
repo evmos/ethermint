@@ -140,6 +140,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
 
+	// We need to ignore the log in case transaction is reverted
 	if !res.Reverted {
 		logs := k.GetTxLogs(txHash)
 		res.Logs = types.NewLogsFromEth(logs)
