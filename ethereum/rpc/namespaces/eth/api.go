@@ -347,7 +347,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 }
 
 // SendTransaction sends an Ethereum transaction.
-func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, error) {
+func (e *PublicAPI) SendTransaction(args rpctypes.TransactionArgs) (common.Hash, error) {
 	e.logger.Debugln("eth_sendTransaction", "args", args.String())
 
 	// Look up the wallet containing the requested signer
@@ -518,7 +518,7 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 }
 
 // Call performs a raw contract call.
-func (e *PublicAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
+func (e *PublicAPI) Call(args rpctypes.TransactionArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
 	e.logger.Debugln("eth_call", "args", args.String(), "block number", blockNr)
 	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
 	if err != nil {
@@ -541,7 +541,7 @@ func (e *PublicAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
 func (e *PublicAPI) doCall(
-	args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, globalGasCap *big.Int,
+	args rpctypes.TransactionArgs, blockNr rpctypes.BlockNumber, globalGasCap *big.Int,
 ) (*sdk.SimulationResponse, error) {
 	// Set default gas & gas price if none were set
 	// Change this to uint64(math.MaxUint64 / 2) if gas cap can be configured
@@ -665,7 +665,7 @@ func (e *PublicAPI) doCall(
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
 // It adds 1,000 gas to the returned value instead of using the gas adjustment
 // param from the SDK.
-func (e *PublicAPI) EstimateGas(args rpctypes.CallArgs) (hexutil.Uint64, error) {
+func (e *PublicAPI) EstimateGas(args rpctypes.TransactionArgs) (hexutil.Uint64, error) {
 	e.logger.Debugln("eth_estimateGas")
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -1073,7 +1073,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 
 // setTxDefaults populates tx message with default values in case they are not
 // provided on the args
-func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
+func (e *PublicAPI) setTxDefaults(args rpctypes.TransactionArgs) (rpctypes.TransactionArgs, error) {
 
 	if args.GasPrice == nil {
 		// TODO: Change to either:
@@ -1115,7 +1115,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 			input = args.Data
 		}
 
-		callArgs := rpctypes.CallArgs{
+		TransactionArgs := rpctypes.TransactionArgs{
 			From:       &args.From, // From shouldn't be nil
 			To:         args.To,
 			Gas:        args.Gas,
@@ -1124,7 +1124,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 			Data:       input,
 			AccessList: args.AccessList,
 		}
-		estimated, err := e.EstimateGas(callArgs)
+		estimated, err := e.EstimateGas(TransactionArgs)
 		if err != nil {
 			return args, err
 		}

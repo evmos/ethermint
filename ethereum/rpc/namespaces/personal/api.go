@@ -133,7 +133,7 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 // SendTransaction will create a transaction from the given arguments and
 // tries to sign it with the key associated with args.To. If the given password isn't
 // able to decrypt the key it fails.
-func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.SendTxArgs, pwrd string) (common.Hash, error) {
+func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.TransactionArgs, pwrd string) (common.Hash, error) {
 
 	return api.ethAPI.SendTransaction(args)
 }

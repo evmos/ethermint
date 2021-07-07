@@ -131,6 +131,21 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	evm := k.NewEVM(msg, ethCfg)
 
+	// TODO: move to AnteHandler after setting base fee
+	if !evm.Config.NoBaseFee && evm.Context.BaseFee == nil {
+		return nil, stacktrace.Propagate(
+			sdkerrors.Wrap(types.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
+			"address %s", msg.From(),
+		)
+	}
+
+	if !evm.Config.NoBaseFee && evm.Context.BaseFee != nil && tx.GasFeeCap().Cmp(evm.Context.BaseFee) < 0 {
+		return nil, stacktrace.Propagate(
+			sdkerrors.Wrapf(types.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", tx.GasFeeCap(), evm.Context.BaseFee),
+			"address %s", msg.From(),
+		)
+	}
+
 	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()
 
@@ -203,6 +218,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
+	isLondon := cfg.IsLondon(evm.Context.BlockNumber)
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(msg, cfg, contractCreation)
 	if err != nil {
@@ -218,8 +234,15 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
 
+	refundQuotient := params.RefundQuotient
+
+	// After EIP-3529: refunds are capped to gasUsed / 5
+	if isLondon {
+		refundQuotient = params.RefundQuotientEIP3529
+	}
+
 	// refund gas prior to handling the vm error in order to set the updated gas meter
-	leftoverGas, err = k.RefundGas(msg, leftoverGas)
+	leftoverGas, err = k.RefundGas(msg, leftoverGas, refundQuotient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
@@ -233,6 +256,13 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		// wrap the VM error
 		return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
 	}
+
+	// TODO: gas price should be recalculated for London on AnteHandler:
+	// effectiveTip := st.gasPrice
+	// if st.evm.ChainConfig().IsLondon(st.evm.Context.BlockNumber) {
+	// 	effectiveTip = cmath.BigMin(st.gasTipCap, new(big.Int).Sub(st.gasFeeCap, st.evm.Context.BaseFee))
+	// }
+	// st.state.AddBalance(st.evm.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), effectiveTip))
 
 	gasUsed := msg.Gas() - leftoverGas
 	return &types.MsgEthereumTxResponse{
@@ -255,7 +285,7 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
-func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error) {
+func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64) (uint64, error) {
 	if leftoverGas > msg.Gas() {
 		return leftoverGas, stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
@@ -266,7 +296,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 	gasConsumed := msg.Gas() - leftoverGas
 
 	// Apply refund counter, capped to half of the used gas.
-	refund := gasConsumed / 2
+	refund := gasConsumed / refundQuotient
 	availableRefund := k.GetRefund()
 	if refund > availableRefund {
 		refund = availableRefund
