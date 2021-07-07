@@ -206,29 +206,16 @@ func FormatBlock(
 	}
 }
 
-func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
-	var gasUsed uint64
+//DecodeTx decode tendermint tx to a cosmos tx
+func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) sdk.Tx {
 	txDecoder := clientCtx.TxConfig.TxDecoder()
 
 	tx, err := txDecoder(txBz)
 	if err != nil {
-		return nil, 0
+		return nil
 	}
 
-	if len(tx.GetMsgs()) == 1 {
-		ethMsg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-		if ok {
-			gasUsed = ethMsg.GetGas() // NOTE: this doesn't include the gas refunded
-			return tx, gasUsed
-		}
-	}
-
-	feeTx, ok := tx.(sdk.FeeTx)
-	if ok {
-		gasUsed = feeTx.GetGas()
-	}
-
-	return tx, gasUsed
+	return tx
 }
 
 type DataError interface {

@@ -145,55 +145,49 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	ethRPCTxs := []interface{}{}
 
 	for i, txBz := range block.Txs {
-		tx, gas := types.DecodeTx(e.clientCtx, txBz)
+		tx := types.DecodeTx(e.clientCtx, txBz)
 
-		gasUsed += gas
+		for _, msg := range tx.GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
 
-		if len(tx.GetMsgs()) != 1 {
-			// TODO: eventually support Cosmos txs in the block
-			continue
+			if !ok {
+				continue
+			}
+
+			// Todo: gasUsed does not consider the refund gas so it is incorrect, we need to extract it from the result
+			gasUsed += ethMsg.GetGas()
+			hash := ethMsg.AsTransaction().Hash()
+			if !fullTx {
+				ethRPCTxs = append(ethRPCTxs, hash)
+				continue
+			}
+
+			// get full transaction from message data
+			from, err := ethMsg.GetSender(e.chainID)
+			if err != nil {
+				from = common.HexToAddress(ethMsg.From)
+			}
+
+			txData, err := evmtypes.UnpackTxData(ethMsg.Data)
+			if err != nil {
+				e.logger.WithError(err).Debugln("decoding failed")
+				return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+			}
+
+			ethTx, err := types.NewTransactionFromData(
+				txData,
+				from,
+				hash,
+				common.BytesToHash(block.Hash()),
+				uint64(block.Height),
+				uint64(i),
+			)
+			if err != nil {
+				e.logger.WithError(err).Debugln("NewTransactionFromData for receipt failed", "hash", hash.Hex)
+				continue
+			}
+			ethRPCTxs = append(ethRPCTxs, ethTx)
 		}
-		msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-
-		if !ok {
-			// TODO: eventually support Cosmos txs in the block
-			continue
-		}
-
-		hash := msg.AsTransaction().Hash()
-		if !fullTx {
-			ethRPCTxs = append(ethRPCTxs, hash)
-			continue
-		}
-
-		// get full transaction from message data
-
-		from, err := msg.GetSender(e.chainID)
-		if err != nil {
-			from = common.HexToAddress(msg.From)
-		}
-
-		txData, err := evmtypes.UnpackTxData(msg.Data)
-		if err != nil {
-			e.logger.WithError(err).Debugln("decoding failed")
-			return nil, fmt.Errorf("failed to unpack tx data: %w", err)
-		}
-
-		ethTx, err := types.NewTransactionFromData(
-			txData,
-			from,
-			hash,
-			common.BytesToHash(block.Hash()),
-			uint64(block.Height),
-			uint64(i),
-		)
-
-		if err != nil {
-			e.logger.WithError(err).Debugln("NewTransactionFromData for receipt failed", "hash", hash.Hex)
-			continue
-		}
-
-		ethRPCTxs = append(ethRPCTxs, ethTx)
 	}
 
 	blockBloomResp, err := queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
