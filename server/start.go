@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -41,7 +41,6 @@ import (
 
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/ethereum/rpc"
-	ethsrv "github.com/tharsis/ethermint/server"
 )
 
 // Tendermint full-node start flags
@@ -243,7 +242,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
 		log.Infoln("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
-		tmWsClient := ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint)
+		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		rpcServer := ethrpc.NewServer()
 		apis := rpc.GetRPCAPIs(clientCtx, tmWsClient)
@@ -262,7 +261,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
 		if grpcSrv != nil {
 			grpcWeb := grpcweb.WrapServer(grpcSrv)
-			ethsrv.MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv))
+			MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv))
 		}
 
 		handlerWithCors := cors.New(cors.Options{
@@ -310,7 +309,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
 
 		// allocate separate WS connection to Tendermint
-		tmWsClient = ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint)
+		tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint)
 		wsSrv = rpc.NewWebsocketsServer(tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
 		go wsSrv.Start()
 	}

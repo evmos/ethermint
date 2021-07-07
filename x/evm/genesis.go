@@ -25,6 +25,11 @@ func InitGenesis(
 
 	k.SetParams(ctx, data.Params)
 
+	// ensure evm module account is set
+	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
+		panic("the EVM module account has not been set")
+	}
+
 	for _, account := range data.Accounts {
 		address := ethcmn.HexToAddress(account.Address)
 		accAddress := sdk.AccAddress(address.Bytes())

@@ -139,8 +139,14 @@ func EthTransactionsFromTendermint(clientCtx client.Context, txs []tmtypes.Tx) (
 			// continue to next transaction in case it's not a MsgEthereumTx
 			continue
 		}
+
+		data, err := evmtypes.UnpackTxData(ethTx.Data)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unpack tx data: %w", err)
+		}
+
 		// TODO: Remove gas usage calculation if saving gasUsed per block
-		gasUsed.Add(gasUsed, ethTx.Fee())
+		gasUsed.Add(gasUsed, data.Fee())
 		transactionHashes = append(transactionHashes, common.BytesToHash(tx.Hash()))
 	}
 
@@ -178,7 +184,7 @@ func FormatBlock(
 	return map[string]interface{}{
 		"number":           hexutil.Uint64(header.Height),
 		"hash":             hexutil.Bytes(header.Hash()),
-		"parentHash":       hexutil.Bytes(header.LastBlockID.Hash),
+		"parentHash":       common.BytesToHash(header.LastBlockID.Hash.Bytes()),
 		"nonce":            ethtypes.BlockNonce{},   // PoW specific
 		"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
 		"logsBloom":        bloom,
@@ -186,7 +192,7 @@ func FormatBlock(
 		"miner":            common.Address{},
 		"mixHash":          common.Hash{},
 		"difficulty":       (*hexutil.Big)(big.NewInt(0)),
-		"extraData":        hexutil.Uint64(0),
+		"extraData":        "",
 		"size":             hexutil.Uint64(size),
 		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
 		"gasUsed":          (*hexutil.Big)(gasUsed),
@@ -253,34 +259,31 @@ func ErrRevertedWith(data []byte) DataError {
 // NewTransactionFromData returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func NewTransactionFromData(
-	txData *evmtypes.TxData,
+	txData evmtypes.TxData,
 	from common.Address,
 	txHash, blockHash common.Hash,
 	blockNumber, index uint64,
 ) (*RPCTransaction, error) {
 
-	var to *common.Address
-	if len(txData.To) > 0 {
-		recipient := common.HexToAddress(txData.To)
-		to = &recipient
-	}
-
 	if txHash == (common.Hash{}) {
 		txHash = ethtypes.EmptyRootHash
 	}
 
+	v, r, s := txData.GetRawSignatureValues()
+
 	rpcTx := &RPCTransaction{
+		Type:     hexutil.Uint64(txData.TxType()),
 		From:     from,
-		Gas:      hexutil.Uint64(txData.GasLimit),
-		GasPrice: (*hexutil.Big)(new(big.Int).SetBytes(txData.GasPrice)),
+		Gas:      hexutil.Uint64(txData.GetGas()),
+		GasPrice: (*hexutil.Big)(txData.GetGasPrice()),
 		Hash:     txHash,
-		Input:    hexutil.Bytes(txData.Input),
-		Nonce:    hexutil.Uint64(txData.Nonce),
-		To:       to,
-		Value:    (*hexutil.Big)(new(big.Int).SetBytes(txData.Amount)),
-		V:        (*hexutil.Big)(new(big.Int).SetBytes(txData.V)),
-		R:        (*hexutil.Big)(new(big.Int).SetBytes(txData.R)),
-		S:        (*hexutil.Big)(new(big.Int).SetBytes(txData.S)),
+		Input:    hexutil.Bytes(txData.GetData()),
+		Nonce:    hexutil.Uint64(txData.GetNonce()),
+		To:       txData.GetTo(),
+		Value:    (*hexutil.Big)(txData.GetValue()),
+		V:        (*hexutil.Big)(v),
+		R:        (*hexutil.Big)(r),
+		S:        (*hexutil.Big)(s),
 	}
 	if rpcTx.To == nil {
 		addr := common.Address{}
@@ -291,6 +294,12 @@ func NewTransactionFromData(
 		rpcTx.BlockHash = &blockHash
 		rpcTx.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
 		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
+	}
+
+	if txData.TxType() == ethtypes.AccessListTxType {
+		accesses := txData.GetAccessList()
+		rpcTx.Accesses = &accesses
+		rpcTx.ChainID = (*hexutil.Big)(txData.GetChainID())
 	}
 
 	return rpcTx, nil

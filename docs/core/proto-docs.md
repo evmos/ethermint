@@ -10,14 +10,11 @@
   
 - [ethermint/evm/v1alpha1/evm.proto](#ethermint/evm/v1alpha1/evm.proto)
     - [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple)
-    - [BytesList](#ethermint.evm.v1alpha1.BytesList)
     - [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig)
     - [Log](#ethermint.evm.v1alpha1.Log)
     - [Params](#ethermint.evm.v1alpha1.Params)
     - [State](#ethermint.evm.v1alpha1.State)
     - [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs)
-    - [TxData](#ethermint.evm.v1alpha1.TxData)
-    - [TxReceipt](#ethermint.evm.v1alpha1.TxReceipt)
     - [TxResult](#ethermint.evm.v1alpha1.TxResult)
   
 - [ethermint/evm/v1alpha1/genesis.proto](#ethermint/evm/v1alpha1/genesis.proto)
@@ -51,8 +48,10 @@
     - [Query](#ethermint.evm.v1alpha1.Query)
   
 - [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
+    - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
     - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
     - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
+    - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
     - [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx)
     - [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse)
   
@@ -131,21 +130,6 @@ AccessTuple is the element type of an access list.
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  | hex formatted ethereum address |
 | `storage_keys` | [string](#string) | repeated | hex formatted hashes of the storage keys |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.BytesList"></a>
-
-### BytesList
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `bytes` | [bytes](#bytes) | repeated |  |
 
 
 
@@ -263,53 +247,6 @@ persisted on blockchain state after an upgrade.
 | ----- | ---- | ----- | ----------- |
 | `hash` | [string](#string) |  |  |
 | `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated |  |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.TxData"></a>
-
-### TxData
-TxData implements the Ethereum transaction data structure. It is used
-solely as intended in Ethereum abiding by the protocol.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain_id` | [bytes](#bytes) |  | destination EVM chain ID |
-| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
-| `gas_price` | [bytes](#bytes) |  | price defines the unsigned integer value of the gas price in bytes. |
-| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
-| `to` | [string](#string) |  | hex formatted address of the recipient |
-| `value` | [bytes](#bytes) |  | value defines the unsigned integer value of the transaction amount. |
-| `input` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
-| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
-| `v` | [bytes](#bytes) |  | v defines the signature value |
-| `r` | [bytes](#bytes) |  | r defines the signature value |
-| `s` | [bytes](#bytes) |  | s define the signature value |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.TxReceipt"></a>
-
-### TxReceipt
-TxReceipt defines the receipt type stored in KV for each EVM transaction.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `hash` | [string](#string) |  |  |
-| `from` | [string](#string) |  |  |
-| `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  |  |
-| `result` | [TxResult](#ethermint.evm.v1alpha1.TxResult) |  |  |
-| `index` | [uint64](#uint64) |  |  |
-| `block_height` | [uint64](#uint64) |  |  |
-| `block_hash` | [string](#string) |  |  |
 
 
 
@@ -775,6 +712,31 @@ Query defines the gRPC querier service.
 
 
 
+<a name="ethermint.evm.v1alpha1.AccessListTx"></a>
+
+### AccessListTx
+AccessListTx is the data of EIP-2930 access list transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_id` | [string](#string) |  | destination EVM chain ID |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx"></a>
 
 ### ExtensionOptionsEthereumTx
@@ -795,6 +757,29 @@ Query defines the gRPC querier service.
 
 
 
+<a name="ethermint.evm.v1alpha1.LegacyTx"></a>
+
+### LegacyTx
+LegacyTx is the transaction data of regular Ethereum transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.MsgEthereumTx"></a>
 
 ### MsgEthereumTx
@@ -803,7 +788,7 @@ MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  | inner transaction data
+| `data` | [google.protobuf.Any](#google.protobuf.Any) |  | inner transaction data
 
 caches |
 | `size` | [double](#double) |  | encoded storage size of the transaction |
@@ -827,6 +812,7 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 | `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
 | `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
 | `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
+| `gas_used` | [uint64](#uint64) |  | gas consumed by the transaction |
 
 
 
@@ -869,7 +855,7 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
-| `code_hash` | [bytes](#bytes) |  |  |
+| `code_hash` | [string](#string) |  |  |
 
 
 

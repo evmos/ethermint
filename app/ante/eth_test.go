@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 )
 
 func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
@@ -22,7 +21,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
 	addr, privKey := newTestAddrKey()
 
-	signedTx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	signedTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	signedTx.From = addr.Hex()
 	err := signedTx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
@@ -33,11 +32,11 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 		reCheckTx bool
 		expPass   bool
 	}{
-		{"ReCheckTx", nil, true, true},
+		{"ReCheckTx", nil, true, false},
 		{"invalid transaction type", &invalidTx{}, false, false},
 		{
 			"invalid sender",
-			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
 			false,
 			false,
 		},
@@ -46,9 +45,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -67,7 +64,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 
 	addr, _ := newTestAddrKey()
 
-	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx.From = addr.Hex()
 
 	testCases := []struct {
@@ -81,7 +78,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 		{"invalid transaction type", &invalidTx{}, func() {}, true, false},
 		{
 			"sender not set to msg",
-			evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
 			func() {},
 			true,
 			false,
@@ -110,8 +107,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			"success new account",
 			tx,
 			func() {
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 			true,
@@ -123,8 +119,8 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+
 			},
 			true,
 			true,
@@ -134,10 +130,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			tc.malleate()
-
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -154,7 +147,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 
 	addr, _ := newTestAddrKey()
 
-	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx.From = addr.Hex()
 
 	testCases := []struct {
@@ -194,9 +187,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -215,10 +206,10 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 
 	addr, _ := newTestAddrKey()
 
-	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx.From = addr.Hex()
 
-	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000000, big.NewInt(1), nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
+	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000000, big.NewInt(1), nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
 	tx2.From = addr.Hex()
 
 	testCases := []struct {
@@ -231,7 +222,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		{"invalid transaction type", &invalidTx{}, func() {}, false, false},
 		{
 			"sender not found",
-			evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
 			func() {},
 			false, false,
 		},
@@ -260,8 +251,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			false, true,
 		},
@@ -272,8 +262,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1))
 			},
@@ -286,8 +275,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(10000000000000000000))
 			},
@@ -307,11 +295,9 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				return
 			}
 
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 			if tc.expPass {
 				suite.Require().NoError(err)
-				suite.Require().Equal(int(params.TxGasContractCreation+params.TxAccessListAddressGas), int(ctx.GasMeter().GasConsumed()-consumed))
 			} else {
 				suite.Require().Error(err)
 			}
@@ -325,8 +311,8 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 
 	addr, privKey := newTestAddrKey()
 
-	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
-	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
+	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
 
 	tx.From = addr.Hex()
 
@@ -357,8 +343,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -369,9 +354,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 
 			tc.malleate()
 
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -390,8 +373,8 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 		{Address: addr, StorageKeys: []common.Hash{{}}},
 	}
 
-	tx := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
-	tx2 := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, al)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, al)
 
 	tx.From = addr.Hex()
 	tx2.From = addr.Hex()
@@ -410,8 +393,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -422,8 +404,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				err := suite.app.BankKeeper.SetBalance(suite.ctx, addr.Bytes(), sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(10000000000)))
-				suite.Require().NoError(err)
+				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -433,10 +414,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-
-			consumed := suite.ctx.GasMeter().GasConsumed()
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -451,11 +429,11 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 	dec := ante.NewEthIncrementSenderSequenceDecorator(suite.app.AccountKeeper)
 	addr, privKey := newTestAddrKey()
 
-	contract := evmtypes.NewMsgEthereumTxContract(suite.app.EvmKeeper.ChainID(), 0, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	contract := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 0, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	contract.From = addr.Hex()
 
 	to := tests.GenerateAddress()
-	tx := evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 0, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 0, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx.From = addr.Hex()
 
 	err := contract.Sign(suite.ethSigner, tests.NewSigner(privKey))
@@ -479,7 +457,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		},
 		{
 			"no signers",
-			evmtypes.NewMsgEthereumTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
 			func() {},
 			false, true,
 		},
@@ -510,7 +488,6 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		suite.Run(tc.name, func() {
 
 			tc.malleate()
-			consumed := suite.ctx.GasMeter().GasConsumed()
 
 			if tc.expPanic {
 				suite.Require().Panics(func() {
@@ -519,21 +496,55 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 				return
 			}
 
-			ctx, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
-			suite.Require().Equal(consumed, ctx.GasMeter().GasConsumed())
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
 				msg := tc.tx.(*evmtypes.MsgEthereumTx)
+
+				txData, err := evmtypes.UnpackTxData(msg.Data)
+				suite.Require().NoError(err)
+
 				nonce := suite.app.EvmKeeper.GetNonce(addr)
-				if msg.To() == nil {
-					suite.Require().Equal(msg.Data.Nonce, nonce)
+				if txData.GetTo() == nil {
+					suite.Require().Equal(txData.GetNonce(), nonce)
 				} else {
-					suite.Require().Equal(msg.Data.Nonce+1, nonce)
+					suite.Require().Equal(txData.GetNonce()+1, nonce)
 				}
 			} else {
 				suite.Require().Error(err)
 			}
+		})
+	}
+}
+
+func (suite AnteTestSuite) TestEthSetupContextDecorator() {
+	dec := ante.NewEthSetUpContextDecorator()
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+
+	testCases := []struct {
+		name    string
+		tx      sdk.Tx
+		expPass bool
+	}{
+		{"invalid transaction type - does not implement GasTx", &invalidTx{}, false},
+		{
+			"success - transaction implement GasTx",
+			tx,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+
 		})
 	}
 }

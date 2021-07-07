@@ -18,6 +18,9 @@ import (
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 )
 
+//Not valid Ethereum address
+const invalidAddress = "0x0000"
+
 func (suite *KeeperTestSuite) TestQueryAccount() {
 	var (
 		req        *types.QueryAccountRequest
@@ -29,16 +32,16 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{
+			"invalid address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "0",
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -46,7 +49,12 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 		{
 			"success",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(100))
+				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
+				err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
+				suite.Require().NoError(err)
+				err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
+				suite.Require().NoError(err)
+
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "100",
 					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
@@ -91,14 +99,13 @@ func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryCosmosAccountResponse{
 					CosmosAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
 				}
 				req = &types.QueryCosmosAccountRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -169,12 +176,11 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expBalance = "0"
 				req = &types.QueryBalanceRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -182,7 +188,12 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 		{
 			"success",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(100))
+				amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
+				err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
+				suite.Require().NoError(err)
+				err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
+				suite.Require().NoError(err)
+
 				expBalance = "100"
 				req = &types.QueryBalanceRequest{
 					Address: suite.address.String(),
@@ -223,10 +234,10 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				req = &types.QueryStorageRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 			},
 			false,
@@ -287,10 +298,10 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
 				req = &types.QueryCodeRequest{
-					Address: ethcmn.Address{}.String(),
+					Address: invalidAddress,
 				}
 				exp := &types.QueryCodeResponse{}
 				expCode = exp.Code
@@ -597,9 +608,8 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"zero address",
+		{"invalid address",
 			func() {
-				suite.app.BankKeeper.SetBalance(suite.ctx, suite.address.Bytes(), ethermint.NewPhotonCoinInt64(0))
 				expAccount = &types.QueryValidatorAccountResponse{
 					AccountAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
 				}

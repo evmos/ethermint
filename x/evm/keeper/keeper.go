@@ -10,6 +10,7 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
 	ethermint "github.com/tharsis/ethermint/types"
@@ -20,7 +21,7 @@ import (
 // to the StateDB interface.
 type Keeper struct {
 	// Protobuf codec
-	cdc codec.BinaryMarshaler
+	cdc codec.BinaryCodec
 	// Store key required for the EVM Prefix KVStore. It is required by:
 	// - storing Account's Storage State
 	// - storing Account's Code
@@ -37,6 +38,7 @@ type Keeper struct {
 	stakingKeeper types.StakingKeeper
 
 	ctx sdk.Context
+
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
 	debug         bool
@@ -44,9 +46,17 @@ type Keeper struct {
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+	cdc codec.BinaryCodec,
+	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
+	debug bool,
 ) *Keeper {
+
+	// ensure evm module account is set
+	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
+		panic("the EVM module account has not been set")
+	}
+
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
@@ -61,6 +71,7 @@ func NewKeeper(
 		stakingKeeper: sk,
 		storeKey:      storeKey,
 		transientKey:  transientKey,
+		debug:         debug,
 	}
 }
 
@@ -118,14 +129,14 @@ func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloo
 }
 
 // GetBlockBloomTransient returns bloom bytes for the current block height
-func (k Keeper) GetBlockBloomTransient() (*big.Int, bool) {
+func (k Keeper) GetBlockBloomTransient() *big.Int {
 	store := k.ctx.TransientStore(k.transientKey)
 	bz := store.Get(types.KeyPrefixTransientBloom)
 	if len(bz) == 0 {
-		return nil, false
+		return big.NewInt(0)
 	}
 
-	return new(big.Int).SetBytes(bz), true
+	return new(big.Int).SetBytes(bz)
 }
 
 // SetBlockBloomTransient sets the given bloom bytes to the transient store. This value is reset on
@@ -139,10 +150,27 @@ func (k Keeper) SetBlockBloomTransient(bloom *big.Int) {
 // Tx
 // ----------------------------------------------------------------------------
 
+// GetTxHashTransient returns the hash of current processing transaction
+func (k Keeper) GetTxHashTransient() common.Hash {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientTxHash)
+	if len(bz) == 0 {
+		return common.Hash{}
+	}
+
+	return common.BytesToHash(bz)
+}
+
+// SetTxHashTransient set the hash of processing transaction
+func (k Keeper) SetTxHashTransient(hash common.Hash) {
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientTxHash, hash.Bytes())
+}
+
 // GetTxIndexTransient returns EVM transaction index on the current block.
 func (k Keeper) GetTxIndexTransient() uint64 {
 	store := k.ctx.TransientStore(k.transientKey)
-	bz := store.Get(types.KeyPrefixTransientBloom)
+	bz := store.Get(types.KeyPrefixTransientTxIndex)
 	if len(bz) == 0 {
 		return 0
 	}
@@ -155,7 +183,7 @@ func (k Keeper) GetTxIndexTransient() uint64 {
 func (k Keeper) IncreaseTxIndexTransient() {
 	txIndex := k.GetTxIndexTransient()
 	store := k.ctx.TransientStore(k.transientKey)
-	store.Set(types.KeyPrefixTransientBloom, sdk.Uint64ToBigEndian(txIndex+1))
+	store.Set(types.KeyPrefixTransientTxIndex, sdk.Uint64ToBigEndian(txIndex+1))
 }
 
 // ResetRefundTransient resets the available refund amount to 0
@@ -177,7 +205,7 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	txsLogs := []types.TransactionLogs{}
 	for ; iterator.Valid(); iterator.Next() {
 		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &txLog)
+		k.cdc.MustUnmarshal(iterator.Value(), &txLog)
 
 		// add a new entry
 		txsLogs = append(txsLogs, txLog)
@@ -196,7 +224,7 @@ func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
 	}
 
 	var logs types.TransactionLogs
-	k.cdc.MustUnmarshalBinaryBare(bz, &logs)
+	k.cdc.MustUnmarshal(bz, &logs)
 
 	return logs.EthLogs()
 }
@@ -206,7 +234,7 @@ func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
 
 	txLogs := types.NewTransactionLogsFromEth(txHash, logs)
-	bz := k.cdc.MustMarshalBinaryBare(&txLogs)
+	bz := k.cdc.MustMarshal(&txLogs)
 
 	store.Set(txHash.Bytes(), bz)
 }
@@ -274,9 +302,12 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 
 	prevBalance = k.bankKeeper.GetBalance(k.ctx, addr, params.EvmDenom)
 	if prevBalance.IsPositive() {
-		err := k.bankKeeper.SubtractCoins(k.ctx, addr, sdk.Coins{prevBalance})
-		if err != nil {
-			return sdk.Coin{}, err
+		if err := k.bankKeeper.SendCoinsFromAccountToModule(k.ctx, addr, types.ModuleName, sdk.Coins{prevBalance}); err != nil {
+			return sdk.Coin{}, stacktrace.Propagate(err, "failed to transfer to module account")
+		}
+
+		if err := k.bankKeeper.BurnCoins(k.ctx, types.ModuleName, sdk.Coins{prevBalance}); err != nil {
+			return sdk.Coin{}, stacktrace.Propagate(err, "failed to burn coins from evm module account")
 		}
 	}
 
@@ -293,6 +324,7 @@ func (k Keeper) ResetAccount(addr common.Address) {
 		k.Logger(k.ctx).Error(
 			"failed to clear balance during account reset",
 			"ethereum-address", addr.Hex(),
+			"error", err,
 		)
 	}
 }

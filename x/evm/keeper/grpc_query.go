@@ -125,16 +125,9 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	k.WithContext(ctx)
 
 	balanceInt := k.GetBalance(ethcmn.HexToAddress(req.Address))
-	balance, err := ethermint.MarshalBigInt(balanceInt)
-	if err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			"failed to marshal big.Int to string",
-		)
-	}
 
 	return &types.QueryBalanceResponse{
-		Balance: balance,
+		Balance: balanceInt.String(),
 	}, nil
 }
 
@@ -246,7 +239,7 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
 		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshalBinaryBare(value, &txLog)
+		k.cdc.MustUnmarshal(value, &txLog)
 
 		if len(txLog.Logs) > 0 && txLog.Logs[0].BlockHash == req.Hash {
 			if accumulate {
@@ -321,7 +314,7 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 	// so := k.GetOrNewStateObject(*recipient)
 	// sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
 
-	// msg := types.NewMsgEthereumTx(
+	// msg := types.NewTx(
 	// 	chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
 	// )
 	// msg.From = sender.Hex()

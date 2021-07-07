@@ -10,8 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	tmtypes "github.com/tendermint/tendermint/types"
-
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -69,9 +67,19 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
-	if err := k.bankKeeper.AddCoins(k.ctx, cosmosAddr, coins); err != nil {
+	if err := k.bankKeeper.MintCoins(k.ctx, types.ModuleName, coins); err != nil {
 		k.Logger(k.ctx).Error(
-			"failed to add balance",
+			"failed to mint coins when adding balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
+		return
+	}
+
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, types.ModuleName, cosmosAddr, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to send from module to account when adding balance",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
@@ -102,14 +110,24 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 	params := k.GetParams(k.ctx)
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
-	if err := k.bankKeeper.SubtractCoins(k.ctx, cosmosAddr, coins); err != nil {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(k.ctx, cosmosAddr, types.ModuleName, coins); err != nil {
 		k.Logger(k.ctx).Error(
-			"failed to subtract balance",
+			"failed to send from account to module when subtracting balance",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
 
+		return
+	}
+
+	if err := k.bankKeeper.BurnCoins(k.ctx, types.ModuleName, coins); err != nil {
+		k.Logger(k.ctx).Error(
+			"failed to burn coins when subtracting balance",
+			"ethereum-address", addr.Hex(),
+			"cosmos-address", cosmosAddr.String(),
+			"error", err,
+		)
 		return
 	}
 
@@ -204,7 +222,7 @@ func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
 		return common.BytesToHash(types.EmptyCodeHash)
 	}
 
-	return common.BytesToHash(ethAccount.CodeHash)
+	return common.HexToHash(ethAccount.CodeHash)
 }
 
 // GetCode calls CommitStateDB.GetCode using the passed in context
@@ -253,7 +271,7 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 		return
 	}
 
-	ethAccount.CodeHash = hash.Bytes()
+	ethAccount.CodeHash = hash.Hex()
 	k.accountKeeper.SetAccount(k.ctx, ethAccount)
 
 	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.KeyPrefixCode)
@@ -461,7 +479,7 @@ func (k *Keeper) Empty(addr common.Address) bool {
 			return false
 		}
 
-		codeHash = ethAccount.CodeHash
+		codeHash = common.HexToHash(ethAccount.CodeHash).Bytes()
 	}
 
 	balance := k.GetBalance(addr)
@@ -568,39 +586,19 @@ func (k *Keeper) RevertToSnapshot(_ int) {}
 // context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
-
-	key := log.TxHash
-
-	if len(k.ctx.TxBytes()) > 0 {
-		tx := &ethtypes.Transaction{}
-		if err := tx.UnmarshalBinary(k.ctx.TxBytes()); err != nil {
-			k.Logger(k.ctx).Error(
-				"ethereum tx unmarshaling failed",
-				"error", err,
-			)
-			return
-		}
-
-		// NOTE: we set up the transaction hash from tendermint as it is the format expected by the application:
-		// Remove once hashing is fixed on Tendermint. See https://github.com/tendermint/tendermint/issues/6539
-		key = common.BytesToHash(tmtypes.Tx(k.ctx.TxBytes()).Hash())
-
-		log.TxHash = tx.Hash()
-	}
-
 	log.BlockHash = common.BytesToHash(k.ctx.HeaderHash())
 	log.TxIndex = uint(k.GetTxIndexTransient())
+	log.TxHash = k.GetTxHashTransient()
 
 	logs := k.GetTxLogs(log.TxHash)
 
 	log.Index = uint(len(logs))
 	logs = append(logs, log)
 
-	k.SetLogs(key, logs)
+	k.SetLogs(log.TxHash, logs)
 
 	k.Logger(k.ctx).Debug(
 		"log added",
-		"tx-hash-tendermint", key.Hex(),
 		"tx-hash-ethereum", log.TxHash.Hex(),
 		"log-index", int(log.Index),
 	)

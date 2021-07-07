@@ -45,26 +45,20 @@ func NewEthSigVerificationDecorator(ek EVMKeeper) EthSigVerificationDecorator {
 
 // AnteHandle validates checks that the registered chain id is the same as the one on the message, and
 // that the signer address matches the one defined on the message.
+// It's not skipped for RecheckTx, because it set `From` address which is critical from other ante handler to work.
+// Failure in RecheckTx will prevent tx to be included into block, especially when CheckTx succeed, in which case user
+// won't see the error message.
 func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	// no need to verify signatures on recheck tx
-	if ctx.IsReCheckTx() {
-		return next(ctx, tx, simulate)
-	}
-
-	if len(tx.GetMsgs()) != 1 {
+	if tx == nil || len(tx.GetMsgs()) != 1 {
 		return ctx, stacktrace.Propagate(
-			sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx, got %d", len(tx.GetMsgs())),
+			sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx"),
 			"",
 		)
 	}
 
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
-	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
 	chainID := esvd.evmKeeper.ChainID()
 
-	config, found := esvd.evmKeeper.GetChainConfig(infCtx)
+	config, found := esvd.evmKeeper.GetChainConfig(ctx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
@@ -124,11 +118,8 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		return next(ctx, tx, simulate)
 	}
 
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
-	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-	avd.evmKeeper.WithContext(infCtx)
-	evmDenom := avd.evmKeeper.GetParams(infCtx).EvmDenom
+	avd.evmKeeper.WithContext(ctx)
+	evmDenom := avd.evmKeeper.GetParams(ctx).EvmDenom
 
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -137,6 +128,11 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
 				"failed to cast transaction %d", i,
 			)
+		}
+
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data any for tx %d", i)
 		}
 
 		// sender address should be in the tx cache from the previous AnteHandle call
@@ -156,21 +152,23 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 				"the sender is not EOA: address <%v>, codeHash <%s>", fromAddr, codeHash), "")
 		}
 
-		acc := avd.ak.GetAccount(infCtx, from)
+		acc := avd.ak.GetAccount(ctx, from)
 		if acc == nil {
-			acc = avd.ak.NewAccountWithAddress(infCtx, from)
-			avd.ak.SetAccount(infCtx, acc)
+			acc = avd.ak.NewAccountWithAddress(ctx, from)
+			avd.ak.SetAccount(ctx, acc)
 		}
 
 		// validate sender has enough funds to pay for tx cost
-		balance := avd.bankKeeper.GetBalance(infCtx, from, evmDenom)
-		if balance.Amount.BigInt().Cmp(msgEthTx.Cost()) < 0 {
+		balance := avd.bankKeeper.GetBalance(ctx, from, evmDenom)
+		cost := txData.Cost()
+
+		if balance.Amount.BigInt().Cmp(cost) < 0 {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrapf(
 					sdkerrors.ErrInsufficientFunds,
-					"sender balance < tx cost (%s < %s%s)", balance, msgEthTx.Cost(), evmDenom,
+					"sender balance < tx cost (%s < %s%s)", balance, txData.Cost(), evmDenom,
 				),
-				"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + amount)", msgEthTx.Cost(), msgEthTx.Fee(),
+				"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + %s)", cost, txData.Fee(), txData.GetValue(),
 			)
 		}
 
@@ -201,10 +199,6 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 		return next(ctx, tx, simulate)
 	}
 
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
-	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -215,19 +209,24 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 		}
 
 		// sender address should be in the tx cache from the previous AnteHandle call
-		seq, err := nvd.ak.GetSequence(infCtx, msgEthTx.GetFrom())
+		seq, err := nvd.ak.GetSequence(ctx, msgEthTx.GetFrom())
 		if err != nil {
 			return ctx, stacktrace.Propagate(err, "sequence not found for address %s", msgEthTx.From)
+		}
+
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
 		// if multiple transactions are submitted in succession with increasing nonces,
 		// all will be rejected except the first, since the first needs to be included in a block
 		// before the sequence increments
-		if msgEthTx.Data.Nonce != seq {
+		if txData.GetNonce() != seq {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrapf(
 					sdkerrors.ErrInvalidSequence,
-					"invalid nonce; got %d, expected %d", msgEthTx.Data.Nonce, seq,
+					"invalid nonce; got %d, expected %d", txData.GetNonce(), seq,
 				),
 				"",
 			)
@@ -269,14 +268,10 @@ func NewEthGasConsumeDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKe
 // - user doesn't have enough balance to deduct the transaction fees (gas_limit * gas_price)
 // - transaction or block gas meter runs out of gas
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
-	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
 	// reset the refund gas value in the keeper for the current transaction
-	egcd.evmKeeper.ResetRefundTransient(infCtx)
+	egcd.evmKeeper.ResetRefundTransient(ctx)
 
-	config, found := egcd.evmKeeper.GetChainConfig(infCtx)
+	config, found := egcd.evmKeeper.GetChainConfig(ctx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
@@ -296,22 +291,27 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			)
 		}
 
-		isContractCreation := msgEthTx.To() == nil
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
+		}
+
+		isContractCreation := txData.GetTo() == nil
 
 		// fetch sender account from signature
-		signerAcc, err := authante.GetSignerAcc(infCtx, egcd.ak, msgEthTx.GetFrom())
+		signerAcc, err := authante.GetSignerAcc(ctx, egcd.ak, msgEthTx.GetFrom())
 		if err != nil {
 			return ctx, stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
 		}
 
-		gasLimit := msgEthTx.GetGas()
+		gasLimit := txData.GetGas()
 
 		var accessList ethtypes.AccessList
-		if msgEthTx.Data.Accesses != nil {
-			accessList = *msgEthTx.Data.Accesses.ToEthAccessList()
+		if txData.GetAccessList() != nil {
+			accessList = txData.GetAccessList()
 		}
 
-		intrinsicGas, err := core.IntrinsicGas(msgEthTx.Data.Input, accessList, isContractCreation, homestead, istanbul)
+		intrinsicGas, err := core.IntrinsicGas(txData.GetData(), accessList, isContractCreation, homestead, istanbul)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrap(err, "failed to compute intrinsic gas cost"),
@@ -324,22 +324,18 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		}
 
 		// calculate the fees paid to validators based on gas limit and price
-		feeAmt := msgEthTx.Fee() // fee = gas limit * gas price
+		feeAmt := txData.Fee() // fee = gas limit * gas price
 
-		evmDenom := egcd.evmKeeper.GetParams(infCtx).EvmDenom
+		evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
 		fees := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(feeAmt))}
 
 		// deduct the full gas cost from the user balance
-		if err := authante.DeductFees(egcd.bankKeeper, infCtx, signerAcc, fees); err != nil {
+		if err := authante.DeductFees(egcd.bankKeeper, ctx, signerAcc, fees); err != nil {
 			return ctx, stacktrace.Propagate(
 				err,
 				"failed to deduct full gas cost %s from the user %s balance", fees, msgEthTx.From,
 			)
 		}
-
-		// consume intrinsic gas for the current transaction. After runTx is executed on Baseapp, the
-		// application will consume gas from the block gas pool.
-		ctx.GasMeter().ConsumeGas(intrinsicGas, "intrinsic gas")
 	}
 
 	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
@@ -375,12 +371,9 @@ func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
 // AnteHandle creates an EVM from the message and calls the BlockContext CanTransfer function to
 // see if the address can execute the transaction.
 func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
-	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-	ctd.evmKeeper.WithContext(infCtx)
+	ctd.evmKeeper.WithContext(ctx)
 
-	config, found := ctd.evmKeeper.GetChainConfig(infCtx)
+	config, found := ctd.evmKeeper.GetChainConfig(ctx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
@@ -446,12 +439,8 @@ func NewAccessListDecorator(evmKeeper EVMKeeper) AccessListDecorator {
 //
 // The AnteHandler will only prepare the access list if Yolov3/Berlin/EIPs 2929 and 2930 are applicable at the current number.
 func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
 
-	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-
-	config, found := ald.evmKeeper.GetChainConfig(infCtx)
+	config, found := ald.evmKeeper.GetChainConfig(ctx)
 	if !found {
 		return ctx, evmtypes.ErrChainConfigNotFound
 	}
@@ -466,7 +455,7 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	}
 
 	// setup the keeper context before setting the access list
-	ald.evmKeeper.WithContext(infCtx)
+	ald.evmKeeper.WithContext(ctx)
 
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -479,7 +468,12 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 		sender := common.BytesToAddress(msgEthTx.GetFrom())
 
-		ald.evmKeeper.PrepareAccessList(sender, msgEthTx.To(), vm.ActivePrecompiles(rules), *msgEthTx.Data.Accesses.ToEthAccessList())
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
+		}
+
+		ald.evmKeeper.PrepareAccessList(sender, txData.GetTo(), vm.ActivePrecompiles(rules), txData.GetAccessList())
 	}
 
 	// set the original gas meter
@@ -503,9 +497,6 @@ func NewEthIncrementSenderSequenceDecorator(ak AccountKeeper) EthIncrementSender
 // contract creation, the nonce will be incremented during the transaction execution and not within
 // this AnteHandler decorator.
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	// get and set account must be called with an infinite gas meter in order to prevent
-	// additional gas from being deducted.
-	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -516,9 +507,14 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 			)
 		}
 
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
+		}
+
 		// NOTE: on contract creation, the nonce is incremented within the EVM Create function during tx execution
 		// and not previous to the state transition ¯\_(ツ)_/¯
-		if msgEthTx.To() == nil {
+		if txData.GetTo() == nil {
 			// contract creation, don't increment sequence on AnteHandler but on tx execution
 			// continue to the next item
 			continue
@@ -526,7 +522,7 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 
 		// increment sequence of all signers
 		for _, addr := range msg.GetSigners() {
-			acc := issd.ak.GetAccount(infCtx, addr)
+			acc := issd.ak.GetAccount(ctx, addr)
 
 			if acc == nil {
 				return ctx, stacktrace.Propagate(
@@ -542,7 +538,7 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 				return ctx, stacktrace.Propagate(err, "failed to set sequence to %d", acc.GetSequence()+1)
 			}
 
-			issd.ak.SetAccount(infCtx, acc)
+			issd.ak.SetAccount(ctx, acc)
 		}
 	}
 
@@ -568,8 +564,27 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	err := tx.ValidateBasic()
 	// ErrNoSignatures is fine with eth tx
 	if err != nil && err != sdkerrors.ErrNoSignatures {
-		return ctx, err
+		return ctx, stacktrace.Propagate(err, "tx basic validation failed")
 	}
 
 	return next(ctx, tx, simulate)
+}
+
+// EthSetupContextDecorator is adapted from SetUpContextDecorator from cosmos-sdk, it ignores gas consumption
+// by setting the gas meter to infinite
+type EthSetupContextDecorator struct{}
+
+func NewEthSetUpContextDecorator() EthSetupContextDecorator {
+	return EthSetupContextDecorator{}
+}
+
+func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	// all transactions must implement GasTx
+	_, ok := tx.(authante.GasTx)
+	if !ok {
+		return newCtx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
+	}
+
+	newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	return next(newCtx, tx, simulate)
 }
