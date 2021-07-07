@@ -7,7 +7,11 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-var _ TxData = &AccessListTx{}
+var (
+	_ TxData = &LegacyTx{}
+	_ TxData = &AccessListTx{}
+	_ TxData = &DynamicFeeTx{}
+)
 
 // TxData implements the Ethereum transaction tx structure. It is used
 // solely as intended in Ethereum abiding by the protocol.
@@ -22,6 +26,8 @@ type TxData interface {
 	GetNonce() uint64
 	GetGas() uint64
 	GetGasPrice() *big.Int
+	GetGasTipCap() *big.Int
+	GetGasFeeCap() *big.Int
 	GetValue() *big.Int
 	GetTo() *common.Address
 

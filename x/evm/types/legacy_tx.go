@@ -85,6 +85,16 @@ func (tx *LegacyTx) GetGasPrice() *big.Int {
 	return tx.GasPrice.BigInt()
 }
 
+// GetGasTipCap returns the gas price field.
+func (tx *LegacyTx) GetGasTipCap() *big.Int {
+	return tx.GetGasPrice()
+}
+
+// GetGasFeeCap returns the gas price field.
+func (tx *LegacyTx) GetGasFeeCap() *big.Int {
+	return tx.GetGasPrice()
+}
+
 // GetValue returns the tx amount.
 func (tx *LegacyTx) GetValue() *big.Int {
 	if tx.Amount == nil {

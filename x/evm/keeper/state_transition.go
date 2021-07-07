@@ -35,6 +35,7 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
+		BaseFee:     nil,           // TODO:
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
@@ -52,6 +53,7 @@ func (k Keeper) VMConfig() vm.Config {
 		Debug:       k.debug,
 		Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger too
 		NoRecursion: false,                                                      // TODO: consider disabling recursion though params
+		NoBaseFee:   true,                                                       // TODO: enable
 		ExtraEips:   params.EIPs(),
 	}
 }
@@ -121,7 +123,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
 
-	msg, err := tx.AsMessage(signer)
+	// TODO: header base fee
+	msg, err := tx.AsMessage(signer, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
 	}

@@ -390,7 +390,8 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		coreMsg, err := msgEthTx.AsMessage(signer)
+		// TODO: header base fee
+		coreMsg, err := msgEthTx.AsMessage(signer, nil)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
 				err,

@@ -10,8 +10,8 @@ import (
 	"github.com/tharsis/ethermint/types"
 )
 
-func newAccessListTx(tx *ethtypes.Transaction) *AccessListTx {
-	txData := &AccessListTx{
+func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
+	txData := &DynamicFeeTx{
 		Nonce:    tx.Nonce(),
 		Data:     tx.Data(),
 		GasLimit: tx.Gas(),
@@ -42,29 +42,30 @@ func newAccessListTx(tx *ethtypes.Transaction) *AccessListTx {
 }
 
 // TxType returns the tx type
-func (tx *AccessListTx) TxType() uint8 {
-	return ethtypes.AccessListTxType
+func (tx *DynamicFeeTx) TxType() uint8 {
+	return ethtypes.DynamicFeeTxType
 }
 
 // Copy returns an instance with the same field values
-func (tx *AccessListTx) Copy() TxData {
-	return &AccessListTx{
-		ChainID:  tx.ChainID,
-		Nonce:    tx.Nonce,
-		GasPrice: tx.GasPrice,
-		GasLimit: tx.GasLimit,
-		To:       tx.To,
-		Amount:   tx.Amount,
-		Data:     common.CopyBytes(tx.Data),
-		Accesses: tx.Accesses,
-		V:        common.CopyBytes(tx.V),
-		R:        common.CopyBytes(tx.R),
-		S:        common.CopyBytes(tx.S),
+func (tx *DynamicFeeTx) Copy() TxData {
+	return &DynamicFeeTx{
+		ChainID:   tx.ChainID,
+		Nonce:     tx.Nonce,
+		GasTipCap: tx.GasTipCap,
+		GasFeeCap: tx.GasFeeCap,
+		GasLimit:  tx.GasLimit,
+		To:        tx.To,
+		Amount:    tx.Amount,
+		Data:      common.CopyBytes(tx.Data),
+		Accesses:  tx.Accesses,
+		V:         common.CopyBytes(tx.V),
+		R:         common.CopyBytes(tx.R),
+		S:         common.CopyBytes(tx.S),
 	}
 }
 
-// GetChainID returns the chain id field from the AccessListTx
-func (tx *AccessListTx) GetChainID() *big.Int {
+// GetChainID returns the chain id field from the DynamicFeeTx
+func (tx *DynamicFeeTx) GetChainID() *big.Int {
 	if tx.ChainID == nil {
 		return nil
 	}
@@ -73,7 +74,7 @@ func (tx *AccessListTx) GetChainID() *big.Int {
 }
 
 // GetAccessList returns the AccessList field.
-func (tx *AccessListTx) GetAccessList() ethtypes.AccessList {
+func (tx *DynamicFeeTx) GetAccessList() ethtypes.AccessList {
 	if tx.Accesses == nil {
 		return nil
 	}
@@ -81,35 +82,38 @@ func (tx *AccessListTx) GetAccessList() ethtypes.AccessList {
 }
 
 // GetData returns the a copy of the input data bytes.
-func (tx *AccessListTx) GetData() []byte {
+func (tx *DynamicFeeTx) GetData() []byte {
 	return common.CopyBytes(tx.Data)
 }
 
 // GetGas returns the gas limit.
-func (tx *AccessListTx) GetGas() uint64 {
+func (tx *DynamicFeeTx) GetGas() uint64 {
 	return tx.GasLimit
 }
 
-// GetGasPrice returns the gas price field.
-func (tx *AccessListTx) GetGasPrice() *big.Int {
-	if tx.GasPrice == nil {
-		return nil
-	}
-	return tx.GasPrice.BigInt()
+// GetGasPrice returns the gas fee cap field.
+func (tx *DynamicFeeTx) GetGasPrice() *big.Int {
+	return tx.GetGasFeeCap()
 }
 
 // GetGasTipCap returns the gas price field.
-func (tx *AccessListTx) GetGasTipCap() *big.Int {
-	return tx.GetGasPrice()
+func (tx *DynamicFeeTx) GetGasTipCap() *big.Int {
+	if tx.GasTipCap == nil {
+		return nil
+	}
+	return tx.GasTipCap.BigInt()
 }
 
 // GetGasFeeCap returns the gas price field.
-func (tx *AccessListTx) GetGasFeeCap() *big.Int {
-	return tx.GetGasPrice()
+func (tx *DynamicFeeTx) GetGasFeeCap() *big.Int {
+	if tx.GasFeeCap == nil {
+		return nil
+	}
+	return tx.GasFeeCap.BigInt()
 }
 
 // GetValue returns the tx amount.
-func (tx *AccessListTx) GetValue() *big.Int {
+func (tx *DynamicFeeTx) GetValue() *big.Int {
 	if tx.Amount == nil {
 		return nil
 	}
@@ -118,10 +122,10 @@ func (tx *AccessListTx) GetValue() *big.Int {
 }
 
 // GetNonce returns the account sequence for the transaction.
-func (tx *AccessListTx) GetNonce() uint64 { return tx.Nonce }
+func (tx *DynamicFeeTx) GetNonce() uint64 { return tx.Nonce }
 
 // GetTo returns the pointer to the recipient address.
-func (tx *AccessListTx) GetTo() *common.Address {
+func (tx *DynamicFeeTx) GetTo() *common.Address {
 	if tx.To == "" {
 		return nil
 	}
@@ -129,14 +133,15 @@ func (tx *AccessListTx) GetTo() *common.Address {
 	return &to
 }
 
-// AsEthereumData returns an AccessListTx transaction tx from the proto-formatted
+// AsEthereumData returns an DynamicFeeTx transaction tx from the proto-formatted
 // TxData defined on the Cosmos EVM.
-func (tx *AccessListTx) AsEthereumData() ethtypes.TxData {
+func (tx *DynamicFeeTx) AsEthereumData() ethtypes.TxData {
 	v, r, s := tx.GetRawSignatureValues()
-	return &ethtypes.AccessListTx{
+	return &ethtypes.DynamicFeeTx{
 		ChainID:    tx.GetChainID(),
 		Nonce:      tx.GetNonce(),
-		GasPrice:   tx.GetGasPrice(),
+		GasTipCap:  tx.GetGasTipCap(),
+		GasFeeCap:  tx.GetGasFeeCap(),
 		Gas:        tx.GetGas(),
 		To:         tx.GetTo(),
 		Value:      tx.GetValue(),
@@ -150,12 +155,12 @@ func (tx *AccessListTx) AsEthereumData() ethtypes.TxData {
 
 // GetRawSignatureValues returns the V, R, S signature values of the transaction.
 // The return values should not be modified by the caller.
-func (tx *AccessListTx) GetRawSignatureValues() (v, r, s *big.Int) {
+func (tx *DynamicFeeTx) GetRawSignatureValues() (v, r, s *big.Int) {
 	return rawSignatureValues(tx.V, tx.R, tx.S)
 }
 
 // SetSignatureValues sets the signature values to the transaction.
-func (tx *AccessListTx) SetSignatureValues(chainID, v, r, s *big.Int) {
+func (tx *DynamicFeeTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 	if v != nil {
 		tx.V = v.Bytes()
 	}
@@ -172,7 +177,7 @@ func (tx *AccessListTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 }
 
 // Validate performs a stateless validation of the tx fields.
-func (tx AccessListTx) Validate() error {
+func (tx DynamicFeeTx) Validate() error {
 	gasPrice := tx.GetGasPrice()
 	if gasPrice == nil {
 		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
@@ -205,11 +210,11 @@ func (tx AccessListTx) Validate() error {
 }
 
 // Fee returns gasprice * gaslimit.
-func (tx AccessListTx) Fee() *big.Int {
+func (tx DynamicFeeTx) Fee() *big.Int {
 	return fee(tx.GetGasPrice(), tx.GetGas())
 }
 
 // Cost returns amount + gasprice * gaslimit.
-func (tx AccessListTx) Cost() *big.Int {
+func (tx DynamicFeeTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
 }

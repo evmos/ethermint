@@ -49,6 +49,7 @@
   
 - [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
     - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
+    - [DynamicFeeTx](#ethermint.evm.v1alpha1.DynamicFeeTx)
     - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
     - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
     - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
@@ -167,7 +168,7 @@ values, use an software upgrade procedure.
 | `istanbul_block` | [string](#string) |  | Istanbul switch block (< 0 no fork, 0 = already on istanbul) |
 | `muir_glacier_block` | [string](#string) |  | Eip-2384 (bomb delay) switch block (< 0 no fork, 0 = already activated) |
 | `berlin_block` | [string](#string) |  | Berlin switch block (< 0 = no fork, 0 = already on berlin) |
-| `yolo_v3_block` | [string](#string) |  | YOLO v3: Gas repricings |
+| `london_block` | [string](#string) |  | London switch block (< 0 = no fork, 0 = already on berlin) |
 | `ewasm_block` | [string](#string) |  | EWASM switch block (< 0 no fork, 0 = already activated) |
 | `catalyst_block` | [string](#string) |  | Catalyst switch block (< 0 = no fork, 0 = already on catalyst) |
 
@@ -726,6 +727,32 @@ AccessListTx is the data of EIP-2930 access list transactions.
 | `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
 | `to` | [string](#string) |  | hex formatted address of the recipient |
 | `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.DynamicFeeTx"></a>
+
+### DynamicFeeTx
+DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_id` | [string](#string) |  | destination EVM chain ID |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_tip_cap` | [string](#string) |  | gas tip cap defines the max value for the gas tip |
+| `gas_fee_cap` | [string](#string) |  | gas fee cap defines the max value for the gas fee |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the the transaction amount. |
 | `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
 | `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
 | `v` | [bytes](#bytes) |  | v defines the signature value |

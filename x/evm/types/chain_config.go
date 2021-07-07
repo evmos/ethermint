@@ -29,10 +29,9 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		IstanbulBlock:       getBlockValue(cc.IstanbulBlock),
 		MuirGlacierBlock:    getBlockValue(cc.MuirGlacierBlock),
 		BerlinBlock:         getBlockValue(cc.BerlinBlock),
-		// TODO(xlab): after upgrading ethereum to newer version, this should be set to YoloV2Block
-		YoloV3Block:   getBlockValue(cc.YoloV3Block),
-		EWASMBlock:    getBlockValue(cc.EWASMBlock),
-		CatalystBlock: getBlockValue(cc.CatalystBlock),
+		LondonBlock:         getBlockValue(cc.LondonBlock),
+		EWASMBlock:          getBlockValue(cc.EWASMBlock),
+		CatalystBlock:       getBlockValue(cc.CatalystBlock),
 	}
 }
 
@@ -52,7 +51,7 @@ func DefaultChainConfig() ChainConfig {
 		IstanbulBlock:       sdk.ZeroInt(),
 		MuirGlacierBlock:    sdk.ZeroInt(),
 		BerlinBlock:         sdk.ZeroInt(),
-		YoloV3Block:         sdk.ZeroInt(),
+		LondonBlock:         sdk.ZeroInt(),
 		EWASMBlock:          sdk.NewInt(-1),
 		CatalystBlock:       sdk.NewInt(-1),
 	}
@@ -102,8 +101,11 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.MuirGlacierBlock); err != nil {
 		return sdkerrors.Wrap(err, "muirGlacierBlock")
 	}
-	if err := validateBlock(cc.YoloV3Block); err != nil {
-		return sdkerrors.Wrap(err, "yoloV3Block")
+	if err := validateBlock(cc.BerlinBlock); err != nil {
+		return sdkerrors.Wrap(err, "berlinBlock")
+	}
+	if err := validateBlock(cc.LondonBlock); err != nil {
+		return sdkerrors.Wrap(err, "londonBlock")
 	}
 	if err := validateBlock(cc.EWASMBlock); err != nil {
 		return sdkerrors.Wrap(err, "eWASMBlock")

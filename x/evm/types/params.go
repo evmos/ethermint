@@ -46,7 +46,7 @@ func DefaultParams() Params {
 		EvmDenom:     DefaultEVMDenom,
 		EnableCreate: true,
 		EnableCall:   true,
-		ExtraEIPs:    []int64{2929, 2200, 1884, 1344},
+		ExtraEIPs:    []int64{3529, 3198, 2929, 2200, 1884, 1344},
 	}
 }
 

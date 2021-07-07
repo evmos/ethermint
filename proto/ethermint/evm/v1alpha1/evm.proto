@@ -108,10 +108,10 @@ message ChainConfig {
     (gogoproto.moretags)   = "yaml:\"berlin_block\"",
     (gogoproto.nullable)   = false
   ];
-  // YOLO v3: Gas repricings
-  string yolo_v3_block = 14 [
+   // London switch block (< 0 = no fork, 0 = already on berlin)
+  string london_block = 14 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"yolo_v3_block\"",
+    (gogoproto.moretags)   = "yaml:\"london_block\"",
     (gogoproto.nullable)   = false
   ];
   // EWASM switch block (< 0 no fork, 0 = already activated)
