@@ -27,9 +27,14 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 		txData.Amount = &amountInt
 	}
 
-	if tx.GasPrice() != nil {
-		gasPriceInt := sdk.NewIntFromBigInt(tx.GasPrice())
-		txData.GasPrice = &gasPriceInt
+	if tx.GasFeeCap() != nil {
+		gasFeeCapInt := sdk.NewIntFromBigInt(tx.GasFeeCap())
+		txData.GasFeeCap = &gasFeeCapInt
+	}
+
+	if tx.GasTipCap() != nil {
+		gasTipCapInt := sdk.NewIntFromBigInt(tx.GasTipCap())
+		txData.GasTipCap = &gasTipCapInt
 	}
 
 	if tx.AccessList() != nil {
@@ -178,6 +183,7 @@ func (tx *DynamicFeeTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 
 // Validate performs a stateless validation of the tx fields.
 func (tx DynamicFeeTx) Validate() error {
+	// TODO: Check if this can be nil or not
 	gasPrice := tx.GetGasPrice()
 	if gasPrice == nil {
 		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
