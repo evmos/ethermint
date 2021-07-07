@@ -565,6 +565,12 @@ curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc
 
 Returns the receipt of a transaction by transaction hash.
 
+Note: Tx Code from Tendermint and the Ethereum receipt status are switched:
+|         | Tendermint | Ethereum | 
+| ------- | ---------- | -------- |
+| Success | 0          | 1        |
+| Fail    | 1          | 0        |
+
 #### Parameters
 
 - Hash of a transaction
