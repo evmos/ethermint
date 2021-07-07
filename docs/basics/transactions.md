@@ -21,13 +21,6 @@ transactions will bypass this as the EVM handles the same business logic.
 
 All EVM transactions are [RLP](./../core/encoding.md#rlp) encoded using a custom tx encoder.
 
-## Transaction formats
-
-<!-- TODO: -->
-
-- Cosmos transactions
-- Ethereum transaction
-
 ## Signers
 
 The signature processing and verification in Ethereum is performed by the `Signer` interface. The

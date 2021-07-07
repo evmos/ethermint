@@ -8,7 +8,7 @@ Learn about the the different types of tokens available in Ethermint. {synopsis}
 
 ## Introduction
 
-Ethermint is a Cosmos SDK-based chain with full EVM support. Because of this architecture, tokens and assets in the network may come from different independent sources: the `bank` module and the `evm` module. 
+Ethermint is a Cosmos SDK-based chain with full EVM support. Because of this architecture, tokens and assets in the network may come from different independent sources: the `bank` module and the `evm` module.
 
 ## Cosmos Coins
 
@@ -32,7 +32,8 @@ This matches Ethereum denomination of:
 
 ### EVM Tokens
 
-<!-- TODO: ERC20 tokens and NFTs that live in the EVM environment -->
+Ethermint is compatible with ERC20 tokens and other non-fungible token standards (EIP721, EIP1155)
+that are natively supported by the EVM. One important remark is that these tokens don't interact with the Cosmos modules and other Cosmos SDK coins.
 
 ## Next {hide}
 

@@ -33,7 +33,36 @@ allows for quick reconstruction of encoded data. Ethermint uses RLP to encode/de
 messages for JSON-RPC handling to conform messages to the proper Ethereum format. This allows
 messages to be encoded and decoded in the exact format as Ethereum's.
 
-<!-- TODO: explain how the encoding is performed by casting the MsgEthereumTx into a geth Transaction and then Marshaling -->
+The `x/evm` transactions (`MsgEthereumTx`) encoding is performed by casting the message to a go-ethereum's `Transaction` and then marshaling the transaction data using RLP:
+
+```go
+// TxEncoder overwrites sdk.TxEncoder to support MsgEthereumTx
+func (g txConfig) TxEncoder() sdk.TxEncoder {
+  return func(tx sdk.Tx) ([]byte, error) {
+    msg, ok := tx.(*evmtypes.MsgEthereumTx)
+    if ok {
+      return msg.AsTransaction().MarshalBinary()
+   }
+    return g.TxConfig.TxEncoder()(tx)
+  }
+}
+
+// TxDecoder overwrites sdk.TxDecoder to support MsgEthereumTx
+func (g txConfig) TxDecoder() sdk.TxDecoder {
+  return func(txBytes []byte) (sdk.Tx, error) {
+    tx := &ethtypes.Transaction{}
+
+    err := tx.UnmarshalBinary(txBytes)
+    if err == nil {
+      msg := &evmtypes.MsgEthereumTx{}
+      msg.FromEthereumTx(tx)
+      return msg, nil
+    }
+
+    return g.TxConfig.TxDecoder()(txBytes)
+  }
+}
+```
 
 ## Next {hide}
 
