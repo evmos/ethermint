@@ -58,7 +58,9 @@ The Cosmos SDK [`AnteHandler`](https://docs.cosmos.network/master/basics/gas-fee
 performs basic checks prior to transaction execution. These checks are usually signature
 verification, transaction field validation, transaction fees, etc.
 
-Regarding gas consumption and fees, the `AnteHandler` checks that the user has enough balance to cover for the tx cost (amount plus fees) as well as checking that the gas limit is greater or equal than the computed intrinsic gas for the message.
+Regarding gas consumption and fees, the `AnteHandler` checks that the user has enough balance to
+cover for the tx cost (amount plus fees) as well as checking that the gas limit defined in the
+message is greater or equal than the computed intrinsic gas for the message.
 
 ## Gas Refunds
 
@@ -69,14 +71,14 @@ the user if any gas is left over. The same logic applies to Ethermint, where the
 
 In Cosmos, a minimum gas price is not enforced by the `AnteHandler` as the `min-gas-prices` is
 checked against the local node/validator. In other words, the minimum fees accepted are determined
-by the validators of the network, and each validator can specify a different value for their fees.
+by the validators of the network, and each validator can specify a different minimum value for their fees.
 This potentially allows end users to submit 0 fee transactions if there is at least one single
 validator that is willing to include transactions with `0` gas price in their blocks proposed.
 
 For this same reason, in Ethermint it is possible to send transactions with `0` fees for transaction
 types other than the ones defined by the `evm` module. EVM module transactions cannot have `0` fees
-as gas is required inherently by Ethereum. This check is done by the evm transactions
-`ValidateBasic` function as well as on the custom `AnteHandler` defined by Ethermint.
+as gas is required inherently by the EVM. This check is done by the EVM transactions stateless validation
+(i.e `ValidateBasic`) function as well as on the custom `AnteHandler` defined by Ethermint.
 
 ## Next {hide}
 

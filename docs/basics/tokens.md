@@ -4,17 +4,19 @@ order: 4
 
 # Tokens
 
-Learn about the Photon, Ethermint's staking token. {synopsis}
+Learn about the the different types of tokens available in Ethermint. {synopsis}
 
 ## Introduction
 
-::: tip
-The photon's initial distribution and supply is still TBD and will be announced in the future.
-:::
+Ethermint is a Cosmos SDK-based chain with full EVM support. Because of this architecture, tokens and assets in the network may come from different independent sources: the `bank` module and the `evm` module. 
 
-The photon is the staking token used in Ethermint.
+## Cosmos Coins
 
-## Base Denomination
+Accounts can own SDK coins in their balance, which are used for operations with other Cosmos modules and transactions. Examples of these are using the coins for staking, IBC transfers, governance deposits and EVM  
+
+### Photon
+
+The denomination used for staking, governance and gas consumption on the EVM is the Photon. The Photon provides the utility of: securing the Proof-of-Stake chain, token used for governance proposals, fee distribution and as a mean of gas for running smart contracts on the EVM.
 
 Ethermint uses [Atto](https://en.wikipedia.org/wiki/Atto-) Photon as the base denomination to maintain parity with Ethereum.
 
@@ -27,6 +29,10 @@ This matches Ethereum denomination of:
 ```
 1 ETH = 1x10⁻¹⁸ wei
 ```
+
+### EVM Tokens
+
+<!-- TODO: ERC20 tokens and NFTs that live in the EVM environment -->
 
 ## Next {hide}
 
