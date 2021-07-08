@@ -532,7 +532,7 @@ func (e *PublicAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _
 	}
 
 	if data.Reverted {
-		return []byte{}, rpctypes.ErrRevertedWith(data.Ret)
+		return []byte{}, evmtypes.NewExecErrorWithReason(data.Ret)
 	}
 
 	return (hexutil.Bytes)(data.Ret), nil
@@ -683,7 +683,7 @@ func (e *PublicAPI) EstimateGas(args rpctypes.CallArgs) (hexutil.Uint64, error) 
 	}
 
 	if data.Reverted {
-		return 0, rpctypes.ErrRevertedWith(data.Ret)
+		return 0, evmtypes.NewExecErrorWithReason(data.Ret)
 	}
 
 	return hexutil.Uint64(data.GasUsed), nil
@@ -920,18 +920,12 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
 	}
 
+	// Get the transaction result from the log
 	var status hexutil.Uint
-
-	// NOTE: Response{Deliver/Check}Tx Code from Tendermint and the Ethereum receipt status are switched:
-	// |         | Tendermint | Ethereum |
-	// | ------- | ---------- | -------- |
-	// | Success | 0          | 1        |
-	// | Fail    | 1          | 0        |
-
-	if res.TxResult.Code == 0 {
-		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
-	} else {
+	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxReverted) {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
+	} else {
+		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
 	}
 
 	from, err := msg.GetSender(e.chainIDEpoch)

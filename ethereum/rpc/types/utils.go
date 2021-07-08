@@ -10,7 +10,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -204,25 +203,6 @@ func FormatBlock(
 		"transactions":    transactions,
 		"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
 	}
-}
-
-func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
-	var gasUsed uint64
-	txDecoder := clientCtx.TxConfig.TxDecoder()
-
-	tx, err := txDecoder(txBz)
-	if err != nil {
-		return nil, 0
-	}
-
-	switch tx := tx.(type) {
-	case *evmtypes.MsgEthereumTx:
-		gasUsed = tx.GetGas() // NOTE: this doesn't include the gas refunded
-	case sdk.FeeTx:
-		gasUsed = tx.GetGas()
-	}
-
-	return tx, gasUsed
 }
 
 type DataError interface {
