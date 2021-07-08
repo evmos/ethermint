@@ -10,7 +10,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -204,18 +203,6 @@ func FormatBlock(
 		"transactions":    transactions,
 		"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
 	}
-}
-
-//DecodeTx decode tendermint tx to a cosmos tx
-func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) sdk.Tx {
-	txDecoder := clientCtx.TxConfig.TxDecoder()
-
-	tx, err := txDecoder(txBz)
-	if err != nil {
-		return nil
-	}
-
-	return tx
 }
 
 type DataError interface {

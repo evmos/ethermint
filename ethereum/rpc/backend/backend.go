@@ -145,7 +145,11 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	ethRPCTxs := []interface{}{}
 
 	for i, txBz := range block.Txs {
-		tx := types.DecodeTx(e.clientCtx, txBz)
+		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
+		if err != nil {
+			e.logger.WithError(err).Warningln("failed to decode transaction in block at height ", block.Height)
+			continue
+		}
 
 		for _, msg := range tx.GetMsgs() {
 			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
