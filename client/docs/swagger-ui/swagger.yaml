@@ -328,6 +328,113 @@ paths:
           type: boolean
       tags:
         - Query
+  /ethermint/evm/v1alpha1/chain_config:
+    get:
+      summary: ChainConfig queries the chain configuration values of EVM.
+      operationId: ChainConfig
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              config:
+                description: ChainConfig define the evm chain configuration.
+                type: object
+                properties:
+                  homestead_block:
+                    type: string
+                    title: >-
+                      Homestead switch block (< 0 no fork, 0 = already
+                      homestead)
+                  dao_fork_block:
+                    type: string
+                    title: TheDAO hard-fork switch block (< 0 no fork)
+                  dao_fork_support:
+                    type: boolean
+                    title: Whether the nodes supports or opposes the DAO hard-fork
+                  eip150_block:
+                    type: string
+                    title: >-
+                      EIP150 implements the Gas price changes
+
+                      (https://github.com/ethereum/EIPs/issues/150) EIP150 HF
+                      block (< 0 no fork)
+                  eip150_hash:
+                    type: string
+                    title: >-
+                      EIP150 HF hash (needed for header only clients as only gas
+                      pricing changed)
+                  eip155_block:
+                    type: string
+                    title: EIP155Block HF block
+                  eip158_block:
+                    type: string
+                    title: EIP158 HF block
+                  byzantium_block:
+                    type: string
+                    title: >-
+                      Byzantium switch block (< 0 no fork, 0 = already on
+                      byzantium)
+                  constantinople_block:
+                    type: string
+                    title: >-
+                      Constantinople switch block (< 0 no fork, 0 = already
+                      activated)
+                  petersburg_block:
+                    type: string
+                    title: Petersburg switch block (< 0 same as Constantinople)
+                  istanbul_block:
+                    type: string
+                    title: >-
+                      Istanbul switch block (< 0 no fork, 0 = already on
+                      istanbul)
+                  muir_glacier_block:
+                    type: string
+                    title: >-
+                      Eip-2384 (bomb delay) switch block (< 0 no fork, 0 =
+                      already activated)
+                  berlin_block:
+                    type: string
+                    title: 'Berlin switch block (< 0 = no fork, 0 = already on berlin)'
+                  yolo_v3_block:
+                    type: string
+                    title: 'YOLO v3: Gas repricings'
+                  ewasm_block:
+                    type: string
+                    title: 'EWASM switch block (< 0 no fork, 0 = already activated)'
+                  catalyst_block:
+                    type: string
+                    title: >-
+                      Catalyst switch block (< 0 = no fork, 0 = already on
+                      catalyst)
+            description: >-
+              QueryChainConfigResponse defines the response type for querying
+              x/evm chain configuration.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - Query
   '/ethermint/evm/v1alpha1/codes/{address}':
     get:
       summary: Code queries the balance of all coins for a single account.
@@ -10500,6 +10607,87 @@ definitions:
                repeated Bar results = 1;
                PageResponse page = 2;
        }
+  ethermint.evm.v1alpha1.ChainConfig:
+    type: object
+    properties:
+      homestead_block:
+        type: string
+        title: 'Homestead switch block (< 0 no fork, 0 = already homestead)'
+      dao_fork_block:
+        type: string
+        title: TheDAO hard-fork switch block (< 0 no fork)
+      dao_fork_support:
+        type: boolean
+        title: Whether the nodes supports or opposes the DAO hard-fork
+      eip150_block:
+        type: string
+        title: >-
+          EIP150 implements the Gas price changes
+
+          (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (< 0 no
+          fork)
+      eip150_hash:
+        type: string
+        title: >-
+          EIP150 HF hash (needed for header only clients as only gas pricing
+          changed)
+      eip155_block:
+        type: string
+        title: EIP155Block HF block
+      eip158_block:
+        type: string
+        title: EIP158 HF block
+      byzantium_block:
+        type: string
+        title: 'Byzantium switch block (< 0 no fork, 0 = already on byzantium)'
+      constantinople_block:
+        type: string
+        title: 'Constantinople switch block (< 0 no fork, 0 = already activated)'
+      petersburg_block:
+        type: string
+        title: Petersburg switch block (< 0 same as Constantinople)
+      istanbul_block:
+        type: string
+        title: 'Istanbul switch block (< 0 no fork, 0 = already on istanbul)'
+      muir_glacier_block:
+        type: string
+        title: >-
+          Eip-2384 (bomb delay) switch block (< 0 no fork, 0 = already
+          activated)
+      berlin_block:
+        type: string
+        title: 'Berlin switch block (< 0 = no fork, 0 = already on berlin)'
+      yolo_v3_block:
+        type: string
+        title: 'YOLO v3: Gas repricings'
+      ewasm_block:
+        type: string
+        title: 'EWASM switch block (< 0 no fork, 0 = already activated)'
+      catalyst_block:
+        type: string
+        title: 'Catalyst switch block (< 0 = no fork, 0 = already on catalyst)'
+    description: >-
+      ChainConfig defines the Ethereum ChainConfig parameters using sdk.Int
+      values
+
+      instead of big.Int.
+
+
+      NOTE 1: Since empty/uninitialized Ints (i.e with a nil big.Int value) are
+
+      parsed to zero, we need to manually specify that negative Int values will
+      be
+
+      considered as nil. See getBlockValue for reference.
+
+
+      NOTE 2: This type is not a configurable Param since the SDK does not allow
+
+      for validation against a previous stored parameter values or the current
+
+      block height (retrieved from context). If you want to update the config
+
+      values, use an software upgrade procedure.
   ethermint.evm.v1alpha1.Log:
     type: object
     properties:
@@ -10698,6 +10886,72 @@ definitions:
 
               was set, its value is undefined otherwise
     description: QueryTxLogs is the response type for the Query/BlockLogs RPC method.
+  ethermint.evm.v1alpha1.QueryChainConfigResponse:
+    type: object
+    properties:
+      config:
+        description: ChainConfig define the evm chain configuration.
+        type: object
+        properties:
+          homestead_block:
+            type: string
+            title: 'Homestead switch block (< 0 no fork, 0 = already homestead)'
+          dao_fork_block:
+            type: string
+            title: TheDAO hard-fork switch block (< 0 no fork)
+          dao_fork_support:
+            type: boolean
+            title: Whether the nodes supports or opposes the DAO hard-fork
+          eip150_block:
+            type: string
+            title: >-
+              EIP150 implements the Gas price changes
+
+              (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (< 0
+              no fork)
+          eip150_hash:
+            type: string
+            title: >-
+              EIP150 HF hash (needed for header only clients as only gas pricing
+              changed)
+          eip155_block:
+            type: string
+            title: EIP155Block HF block
+          eip158_block:
+            type: string
+            title: EIP158 HF block
+          byzantium_block:
+            type: string
+            title: 'Byzantium switch block (< 0 no fork, 0 = already on byzantium)'
+          constantinople_block:
+            type: string
+            title: 'Constantinople switch block (< 0 no fork, 0 = already activated)'
+          petersburg_block:
+            type: string
+            title: Petersburg switch block (< 0 same as Constantinople)
+          istanbul_block:
+            type: string
+            title: 'Istanbul switch block (< 0 no fork, 0 = already on istanbul)'
+          muir_glacier_block:
+            type: string
+            title: >-
+              Eip-2384 (bomb delay) switch block (< 0 no fork, 0 = already
+              activated)
+          berlin_block:
+            type: string
+            title: 'Berlin switch block (< 0 = no fork, 0 = already on berlin)'
+          yolo_v3_block:
+            type: string
+            title: 'YOLO v3: Gas repricings'
+          ewasm_block:
+            type: string
+            title: 'EWASM switch block (< 0 no fork, 0 = already activated)'
+          catalyst_block:
+            type: string
+            title: 'Catalyst switch block (< 0 = no fork, 0 = already on catalyst)'
+    description: >-
+      QueryChainConfigResponse defines the response type for querying x/evm
+      chain configuration.
   ethermint.evm.v1alpha1.QueryCodeResponse:
     type: object
     properties:
