@@ -165,6 +165,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 			// get full transaction from message data
 			from, err := ethMsg.GetSender(e.chainID)
 			if err != nil {
+				e.logger.WithError(err).Warningln("failed to get sender from already included transaction ", hash)
 				from = common.HexToAddress(ethMsg.From)
 			}
 
