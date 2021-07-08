@@ -30,6 +30,8 @@
     - [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse)
     - [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest)
     - [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse)
+    - [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest)
+    - [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse)
     - [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest)
     - [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse)
     - [QueryCosmosAccountRequest](#ethermint.evm.v1alpha1.QueryCosmosAccountRequest)
@@ -463,6 +465,31 @@ QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 
 
 
+<a name="ethermint.evm.v1alpha1.QueryChainConfigRequest"></a>
+
+### QueryChainConfigRequest
+QueryChainConfigRequest defines the request type for querying x/evm chain configuration.
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryChainConfigResponse"></a>
+
+### QueryChainConfigResponse
+QueryChainConfigResponse defines the response type for querying x/evm chain configuration.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `config` | [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig) |  | ChainConfig define the evm chain configuration. |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.QueryCodeRequest"></a>
 
 ### QueryCodeRequest
@@ -699,6 +726,7 @@ Query defines the gRPC querier service.
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
+| `ChainConfig` | [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest) | [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse) | ChainConfig queries the chain configuration values of EVM. | GET|/ethermint/evm/v1alpha1/chain_config|
 | `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1alpha1/static_call|
 
  <!-- end services -->
