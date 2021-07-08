@@ -61,9 +61,9 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/params";
   }
 
-  // StaticCall queries the static call value of x/evm module.
-  rpc StaticCall(QueryStaticCallRequest) returns (QueryStaticCallResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/static_call";
+  // ChainConfig queries the parameters of x/evm module.
+  rpc ChainConfig(QueryChainConfigRequest) returns (QueryChainConfigResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/chain_config";
   }
 }
 
@@ -228,15 +228,11 @@ message QueryParamsResponse {
   Params params = 1 [(gogoproto.nullable) = false];
 }
 
-// QueryStaticCallRequest defines static call request
-message QueryStaticCallRequest {
-  // address is the ethereum contract hex address to for static call.
-  string address = 1;
-  // static call input generated from abi
-  bytes input = 2;
-}
+// QueryChainConfigRequest defines the request type for querying x/evm chain configuration.
+message QueryChainConfigRequest {}
 
-// // QueryStaticCallRequest defines static call response
-message QueryStaticCallResponse {
-  bytes data = 1;
+// QueryChainConfigResponse defines the response type for querying x/evm chain configuration.
+message QueryChainConfigResponse {
+  // ChainConfig define the evm chain configuration.
+  ChainConfig config = 1 [(gogoproto.nullable) = false];
 }

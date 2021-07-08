@@ -98,9 +98,9 @@ func (args *TransactionArgs) String() string {
 // This assumes that setTxDefaults has been called.
 func (args *TransactionArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 	var (
-		input                    []byte
-		chainID, value, gasPrice *big.Int
-		gas, nonce               uint64
+		input                                                        []byte
+		chainID, value, gasPrice, maxFeePerGas, maxPriorityFeePerGas *big.Int
+		gas, nonce                                                   uint64
 	)
 
 	if args.Input != nil {
@@ -125,11 +125,23 @@ func (args *TransactionArgs) ToTransaction() *evmtypes.MsgEthereumTx {
 		gasPrice = args.GasPrice.ToInt()
 	}
 
+	if args.MaxFeePerGas != nil {
+		maxFeePerGas = args.MaxFeePerGas.ToInt()
+	}
+
+	if args.MaxPriorityFeePerGas != nil {
+		maxPriorityFeePerGas = args.MaxPriorityFeePerGas.ToInt()
+	}
+
+	if args.GasPrice != nil {
+		gasPrice = args.GasPrice.ToInt()
+	}
+
 	if args.Value != nil {
 		value = args.Value.ToInt()
 	}
 
-	tx := evmtypes.NewTx(chainID, nonce, args.To, value, gas, gasPrice, input, args.AccessList)
+	tx := evmtypes.NewTx(chainID, nonce, args.To, value, gas, gasPrice, maxFeePerGas, maxPriorityFeePerGas, input, args.AccessList)
 	tx.From = args.From.Hex()
 
 	return tx

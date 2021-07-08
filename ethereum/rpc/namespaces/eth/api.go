@@ -1074,6 +1074,9 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 // setTxDefaults populates tx message with default values in case they are not
 // provided on the args
 func (e *PublicAPI) setTxDefaults(args rpctypes.TransactionArgs) (rpctypes.TransactionArgs, error) {
+	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
+		return args, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
+	}
 
 	if args.GasPrice == nil {
 		// TODO: Change to either:
@@ -1116,7 +1119,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.TransactionArgs) (rpctypes.Trans
 		}
 
 		TransactionArgs := rpctypes.TransactionArgs{
-			From:       &args.From, // From shouldn't be nil
+			From:       args.From,
 			To:         args.To,
 			Gas:        args.Gas,
 			GasPrice:   args.GasPrice,

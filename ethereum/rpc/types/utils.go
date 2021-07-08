@@ -199,6 +199,7 @@ func FormatBlock(
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
 		"transactionsRoot": hexutil.Bytes(header.DataHash),
 		"receiptsRoot":     ethtypes.EmptyRootHash,
+		"baseFeePerGas":    (*hexutil.Big)(nil), // TODO: include
 
 		"uncles":          []common.Hash{},
 		"transactions":    transactions,

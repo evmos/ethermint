@@ -53,7 +53,7 @@ func (k Keeper) VMConfig() vm.Config {
 		Debug:       k.debug,
 		Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger too
 		NoRecursion: false,                                                      // TODO: consider disabling recursion though params
-		NoBaseFee:   true,                                                       // TODO: enable
+		NoBaseFee:   true,                                                       // TODO: set as param                                                       // TODO: enable
 		ExtraEips:   params.EIPs(),
 	}
 }

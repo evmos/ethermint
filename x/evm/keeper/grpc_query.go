@@ -287,67 +287,15 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 	}, nil
 }
 
-// StaticCall implements Query/StaticCall gRPCP method
-func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest) (*types.QueryStaticCallResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
+// ChainConfig implements the Query/ChainConfig gRPC method
+func (k Keeper) ChainConfig(c context.Context, _ *types.QueryChainConfigRequest) (*types.QueryChainConfigResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	cfg, found := k.GetChainConfig(ctx)
+	if !found {
+		return nil, status.Error(codes.NotFound, types.ErrChainConfigNotFound.Error())
 	}
 
-	// ctx := sdk.UnwrapSDKContext(c)
-	// k.WithContext(ctx)
-
-	// // parse the chainID from a string to a base-10 integer
-	// chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-	// ethHash := ethcmn.BytesToHash(txHash)
-
-	// var recipient *ethcmn.Address
-	// if len(req.Address) > 0 {
-	// 	addr := ethcmn.HexToAddress(req.Address)
-	// 	recipient = &addr
-	// }
-
-	// so := k.GetOrNewStateObject(*recipient)
-	// sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
-
-	// msg := types.NewTx(
-	// 	chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
-	// )
-	// msg.From = sender.Hex()
-
-	// if err := msg.ValidateBasic(); err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// ethMsg, err := msg.AsMessage()
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// st := &types.StateTransition{
-	// 	Message:  ethMsg,
-	// 	Csdb:     k.WithContext(ctx),
-	// 	ChainID:  chainIDEpoch,
-	// 	TxHash:   &ethHash,
-	// 	Simulate: ctx.IsCheckTx(),
-	// 	Debug:    false,
-	// }
-
-	// config, found := k.GetChainConfig(ctx)
-	// if !found {
-	// 	return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
-	// }
-
-	// ret, err := st.StaticCall(ctx, config)
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// return &types.QueryStaticCallResponse{Data: ret}, nil
-
-	return nil, nil
+	return &types.QueryChainConfigResponse{
+		Config: cfg,
+	}, nil
 }
