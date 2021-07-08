@@ -202,12 +202,8 @@ func NewEthNonceVerificationDecorator(ak AccountKeeper) EthNonceVerificationDeco
 // AnteHandle validates that the transaction nonces are valid and equivalent to the sender account’s
 // current nonce.
 func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	if simulate {
-		return next(ctx, tx, simulate)
-	}
-
-	// no need to check the nonce on ReCheckTx
-	if ctx.IsReCheckTx() {
+	// no need to check the nonce on ReCheckTx or simulation
+	if simulate || ctx.IsReCheckTx() {
 		return next(ctx, tx, simulate)
 	}
 
