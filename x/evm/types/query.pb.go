@@ -1167,7 +1167,7 @@ type QueryClient interface {
 	BlockBloom(ctx context.Context, in *QueryBlockBloomRequest, opts ...grpc.CallOption) (*QueryBlockBloomResponse, error)
 	// Params queries the parameters of x/evm module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// ChainConfig queries the parameters of x/evm module.
+	// ChainConfig queries the chain configuration values of EVM.
 	ChainConfig(ctx context.Context, in *QueryChainConfigRequest, opts ...grpc.CallOption) (*QueryChainConfigResponse, error)
 }
 
@@ -1301,7 +1301,7 @@ type QueryServer interface {
 	BlockBloom(context.Context, *QueryBlockBloomRequest) (*QueryBlockBloomResponse, error)
 	// Params queries the parameters of x/evm module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// ChainConfig queries the parameters of x/evm module.
+	// ChainConfig queries the chain configuration values of EVM.
 	ChainConfig(context.Context, *QueryChainConfigRequest) (*QueryChainConfigResponse, error)
 }
 

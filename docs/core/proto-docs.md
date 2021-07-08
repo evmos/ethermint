@@ -694,7 +694,7 @@ Query defines the gRPC querier service.
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
-| `ChainConfig` | [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest) | [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse) | ChainConfig queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/chain_config|
+| `ChainConfig` | [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest) | [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse) | ChainConfig queries the chain configuration values of EVM. | GET|/ethermint/evm/v1alpha1/chain_config|
 
  <!-- end services -->
 

@@ -61,7 +61,7 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/params";
   }
 
-  // ChainConfig queries the parameters of x/evm module.
+  // ChainConfig queries the chain configuration values of EVM.
   rpc ChainConfig(QueryChainConfigRequest) returns (QueryChainConfigResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/chain_config";
   }
