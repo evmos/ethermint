@@ -39,6 +39,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (evm) [tharsis#175](https://github.com/tharsis/ethermint/issues/175) The msg `TxData` field is now represented as a `*proto.Any`.
 * (evm) [tharsis#84](https://github.com/tharsis/ethermint/pull/84) Remove `journal`, `CommitStateDB` and `stateObjects`.
 * (rpc, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Remove tx `Receipt` from store and replace it with fields obtained from the Tendermint RPC client.
 * (evm) [tharsis#72](https://github.com/tharsis/ethermint/issues/72) Update `AccessList` to use `TransientStore` instead of map.
