@@ -67,7 +67,7 @@ func (args *CallArgs) ToMessage(globalGasCap uint64) ethtypes.Message {
 // String return the struct in a string format
 func (args *CallArgs) String() string {
 	// Todo: There is currently a bug with hexutil.Big when the value its nil, printing would trigger an exception
-	return fmt.Sprintf("SendTxArgs{From:%v, To:%v, Gas:%v,"+
+	return fmt.Sprintf("CallArgs{From:%v, To:%v, Gas:%v,"+
 		" Data:%v, AccessList:%v}",
 		args.From,
 		args.To,
