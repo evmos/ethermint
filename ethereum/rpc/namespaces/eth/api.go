@@ -5,21 +5,18 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	log "github.com/xlab/suplog"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -260,7 +257,7 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctype
 	}
 
 	includePending := blockNum == rpctypes.EthPendingBlockNumber
-	nonce, err := e.getAccountNonce(address, includePending, blockNum.TmHeight(), e.logger)
+	nonce, err := e.getAccountNonce(address, includePending, blockNum.Int64(), e.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -585,7 +582,7 @@ func (e *PublicAPI) doCall(
 	}
 
 	includePending := blockNr == rpctypes.EthPendingBlockNumber
-	seq, err := e.getAccountNonce(*args.From, includePending, blockNr.TmHeight(), e.logger)
+	seq, err := e.getAccountNonce(*args.From, includePending, 0, e.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -985,7 +982,9 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 // and have a from address that is one of the accounts this node manages.
 func (e *PublicAPI) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getPendingTransactions")
-	return e.backend.PendingTransactions()
+
+	// FIXME https://github.com/tharsis/ethermint/issues/244
+	return []*rpctypes.RPCTransaction{}, nil
 }
 
 // GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.
@@ -1082,7 +1081,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
-		nonce, _ := e.getAccountNonce(args.From, true, nil, e.logger)
+		nonce, _ := e.getAccountNonce(args.From, true, 0, e.logger)
 		args.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 
@@ -1140,13 +1139,9 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 // If the pending value is true, it will iterate over the mempool (pending)
 // txs in order to compute and return the pending tx sequence.
 // Todo: include the ability to specify a blockNumber
-func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height *int64, logger log.Logger) (uint64, error) {
-	ctx := e.ctx
-	if height != nil {
-		ctx = metadata.AppendToOutgoingContext(e.ctx, grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(*height, 10))
-	}
+func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height int64, logger log.Logger) (uint64, error) {
 	queryClient := authtypes.NewQueryClient(e.clientCtx)
-	res, err := queryClient.Account(ctx, &authtypes.QueryAccountRequest{Address: sdk.AccAddress(accAddr.Bytes()).String()})
+	res, err := queryClient.Account(rpctypes.ContextWithHeight(height), &authtypes.QueryAccountRequest{Address: sdk.AccAddress(accAddr.Bytes()).String()})
 	if err != nil {
 		return 0, err
 	}
@@ -1165,19 +1160,29 @@ func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height
 	// to manually add them.
 	pendingTxs, err := e.backend.PendingTransactions()
 	if err != nil {
-		logger.Errorln("fails to fetch pending transactions")
+		logger.WithError(err).Errorln("fails to fetch pending transactions")
 		return nonce, nil
 	}
 
 	// add the uncommitted txs to the nonce counter
-	if len(pendingTxs) != 0 {
-		for i := range pendingTxs {
-			if pendingTxs[i] == nil {
-				continue
-			}
-			if pendingTxs[i].From == accAddr {
-				nonce++
-			}
+	// only supports `MsgEthereumTx` style tx
+	for _, tx := range pendingTxs {
+		if tx == nil {
+			continue
+		}
+		if len((*tx).GetMsgs()) != 1 {
+			continue
+		}
+		msg, ok := (*tx).GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			continue
+		}
+		sender, err := msg.GetSender(e.chainIDEpoch)
+		if err != nil {
+			continue
+		}
+		if sender == accAddr {
+			nonce++
 		}
 	}
 
