@@ -5,18 +5,21 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	log "github.com/xlab/suplog"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -257,7 +260,7 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctype
 	}
 
 	includePending := blockNum == rpctypes.EthPendingBlockNumber
-	nonce, err := getAccountNonce(e.clientCtx, e.backend, address, includePending, e.logger)
+	nonce, err := e.getAccountNonce(address, includePending, blockNum.TmHeight(), e.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -582,7 +585,7 @@ func (e *PublicAPI) doCall(
 	}
 
 	includePending := blockNr == rpctypes.EthPendingBlockNumber
-	seq, err := getAccountNonce(e.clientCtx, e.backend, *args.From, includePending, e.logger)
+	seq, err := e.getAccountNonce(*args.From, includePending, blockNr.TmHeight(), e.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -1079,7 +1082,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
-		nonce, _ := getAccountNonce(e.clientCtx, e.backend, args.From, true, e.logger)
+		nonce, _ := e.getAccountNonce(args.From, true, nil, e.logger)
 		args.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 
@@ -1137,11 +1140,22 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 // If the pending value is true, it will iterate over the mempool (pending)
 // txs in order to compute and return the pending tx sequence.
 // Todo: include the ability to specify a blockNumber
-func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common.Address, pending bool, logger log.Logger) (uint64, error) {
-	_, nonce, err := ctx.AccountRetriever.GetAccountNumberSequence(ctx, accAddr.Bytes())
+func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height *int64, logger log.Logger) (uint64, error) {
+	ctx := e.ctx
+	if height != nil {
+		ctx = metadata.AppendToOutgoingContext(e.ctx, grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(*height, 10))
+	}
+	queryClient := authtypes.NewQueryClient(e.clientCtx)
+	res, err := queryClient.Account(ctx, &authtypes.QueryAccountRequest{Address: sdk.AccAddress(accAddr.Bytes()).String()})
 	if err != nil {
 		return 0, err
 	}
+	var acc authtypes.AccountI
+	if err := e.clientCtx.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
+		return 0, err
+	}
+
+	nonce := acc.GetSequence()
 
 	if !pending {
 		return nonce, nil
@@ -1149,7 +1163,7 @@ func getAccountNonce(ctx client.Context, backend backend.Backend, accAddr common
 
 	// the account retriever doesn't include the uncommitted transactions on the nonce so we need to
 	// to manually add them.
-	pendingTxs, err := backend.PendingTransactions()
+	pendingTxs, err := e.backend.PendingTransactions()
 	if err != nil {
 		logger.Errorln("fails to fetch pending transactions")
 		return nonce, nil
