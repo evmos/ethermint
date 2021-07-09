@@ -287,6 +287,19 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 	}, nil
 }
 
+// ChainConfig implements the Query/ChainConfig gRPC method
+func (k Keeper) ChainConfig(c context.Context, _ *types.QueryChainConfigRequest) (*types.QueryChainConfigResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	cfg, found := k.GetChainConfig(ctx)
+	if !found {
+		return nil, status.Error(codes.NotFound, types.ErrChainConfigNotFound.Error())
+	}
+
+	return &types.QueryChainConfigResponse{
+		Config: cfg,
+	}, nil
+}
+
 // StaticCall implements Query/StaticCall gRPCP method
 func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest) (*types.QueryStaticCallResponse, error) {
 	if req == nil {
@@ -314,7 +327,7 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 	// so := k.GetOrNewStateObject(*recipient)
 	// sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
 
-	// msg := types.NewMsgEthereumTx(
+	// msg := types.NewTx(
 	// 	chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
 	// )
 	// msg.From = sender.Hex()

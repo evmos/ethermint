@@ -73,9 +73,9 @@ var (
 	ErrInconsistentGas = sdkerrors.Register(ModuleName, codeErrInconsistentGas, "inconsistent gas")
 )
 
-// NewExecErrorWithReson unpacks the revert return bytes and returns a wrapped error
+// NewExecErrorWithReason unpacks the revert return bytes and returns a wrapped error
 // with the return reason.
-func NewExecErrorWithReson(revertReason []byte) error {
+func NewExecErrorWithReason(revertReason []byte) error {
 	hexValue := hexutil.Encode(revertReason)
 	reason, errUnpack := abi.UnpackRevert(revertReason)
 	if errUnpack == nil {

@@ -23,13 +23,8 @@ for dir in $proto_dirs; do
   buf protoc \
   -I "proto" \
   -I "third_party/proto" \
-  --gocosmos_out=plugins=interfacetype+grpc:. \
-  $(find "${dir}" -maxdepth 1 -name '*.proto')
-
-  # command to generate gRPC gateway (*.pb.gw.go in respective modules) files
-  buf protoc \
-  -I "proto" \
-  -I "third_party/proto" \
+  --gocosmos_out=plugins=interfacetype+grpc,\
+Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:. \
   --grpc-gateway_out=logtostderr=true:. \
   $(find "${dir}" -maxdepth 1 -name '*.proto')
 
@@ -42,7 +37,7 @@ buf protoc \
 --doc_out=./docs/core \
 --doc_opt=./docs/protodoc-markdown.tmpl,proto-docs.md \
 $(find "$(pwd)/proto" -maxdepth 5 -name '*.proto')
-go mod tidy
+# go mod tidy
 
 # move proto files to the right places
 cp -r github.com/tharsis/ethermint/* ./

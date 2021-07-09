@@ -13,24 +13,26 @@ import (
 )
 
 func TestTxData_chainID(t *testing.T) {
+	chainID := sdk.NewInt(1)
+
 	testCases := []struct {
 		msg        string
 		data       TxData
 		expChainID *big.Int
 	}{
 		{
-			"access list tx", TxData{Accesses: AccessList{}, ChainID: sdk.NewInt(1)}, big.NewInt(1),
+			"access list tx", &AccessListTx{Accesses: AccessList{}, ChainID: &chainID}, big.NewInt(1),
 		},
 		{
-			"access list tx, nil chain ID", TxData{Accesses: AccessList{}}, nil,
+			"access list tx, nil chain ID", &AccessListTx{Accesses: AccessList{}}, nil,
 		},
 		{
-			"legacy tx, derived", TxData{}, nil,
+			"legacy tx, derived", &LegacyTx{}, nil,
 		},
 	}
 
 	for _, tc := range testCases {
-		chainID := tc.data.chainID()
+		chainID := tc.data.GetChainID()
 		require.Equal(t, chainID, tc.expChainID, tc.msg)
 	}
 }
@@ -43,24 +45,24 @@ func TestTxData_DeriveChainID(t *testing.T) {
 		from       common.Address
 	}{
 		{
-			"v = 0", TxData{V: big.NewInt(0).Bytes()}, nil, tests.GenerateAddress(),
+			"v = 0", &AccessListTx{V: big.NewInt(0).Bytes()}, nil, tests.GenerateAddress(),
 		},
 		{
-			"v = 1", TxData{V: big.NewInt(1).Bytes()}, big.NewInt(9223372036854775791), tests.GenerateAddress(),
+			"v = 1", &AccessListTx{V: big.NewInt(1).Bytes()}, big.NewInt(9223372036854775791), tests.GenerateAddress(),
 		},
 		{
-			"v = 27", TxData{V: big.NewInt(27).Bytes()}, new(big.Int), tests.GenerateAddress(),
+			"v = 27", &AccessListTx{V: big.NewInt(27).Bytes()}, new(big.Int), tests.GenerateAddress(),
 		},
 		{
-			"v = 28", TxData{V: big.NewInt(28).Bytes()}, new(big.Int), tests.GenerateAddress(),
+			"v = 28", &AccessListTx{V: big.NewInt(28).Bytes()}, new(big.Int), tests.GenerateAddress(),
 		},
 		{
-			"v = nil ", TxData{V: nil}, nil, tests.GenerateAddress(),
+			"v = nil ", &AccessListTx{V: nil}, nil, tests.GenerateAddress(),
 		},
 	}
 
 	for _, tc := range testCases {
-		v, _, _ := tc.data.rawSignatureValues()
+		v, _, _ := tc.data.GetRawSignatureValues()
 
 		chainID := DeriveChainID(v)
 		require.Equal(t, tc.expChainID, chainID, tc.msg)

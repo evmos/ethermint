@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"regexp"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -39,6 +41,8 @@ type Backend interface {
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
+
+	ChainConfig() *params.ChainConfig
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -144,40 +148,53 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	ethRPCTxs := []interface{}{}
 
 	for i, txBz := range block.Txs {
-		tx, gas := types.DecodeTx(e.clientCtx, txBz)
-
-		gasUsed += gas
-
-		msg, isEthTx := tx.(*evmtypes.MsgEthereumTx)
-
-		if !isEthTx {
-			// TODO: eventually support Cosmos txs in the block
+		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
+		if err != nil {
+			e.logger.WithError(err).Warningln("failed to decode transaction in block at height ", block.Height)
 			continue
 		}
 
-		hash := msg.AsTransaction().Hash()
-		if fullTx {
-			from, err := msg.GetSender(e.chainID)
-			if err != nil {
-				from = common.HexToAddress(msg.From)
+		for _, msg := range tx.GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+
+			if !ok {
+				continue
 			}
+
+			// Todo: gasUsed does not consider the refund gas so it is incorrect, we need to extract it from the result
+			gasUsed += ethMsg.GetGas()
+			hash := ethMsg.AsTransaction().Hash()
+			if !fullTx {
+				ethRPCTxs = append(ethRPCTxs, hash)
+				continue
+			}
+
+			// get full transaction from message data
+			from, err := ethMsg.GetSender(e.chainID)
+			if err != nil {
+				e.logger.WithError(err).Warningln("failed to get sender from already included transaction ", hash)
+				from = common.HexToAddress(ethMsg.From)
+			}
+
+			txData, err := evmtypes.UnpackTxData(ethMsg.Data)
+			if err != nil {
+				e.logger.WithError(err).Debugln("decoding failed")
+				return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+			}
+
 			ethTx, err := types.NewTransactionFromData(
-				msg.Data,
+				txData,
 				from,
 				hash,
 				common.BytesToHash(block.Hash()),
 				uint64(block.Height),
 				uint64(i),
 			)
-
-			ethRPCTxs = append(ethRPCTxs, ethTx)
-
 			if err != nil {
 				e.logger.WithError(err).Debugln("NewTransactionFromData for receipt failed", "hash", hash.Hex)
 				continue
 			}
-		} else {
-			ethRPCTxs = append(ethRPCTxs, hash)
+			ethRPCTxs = append(ethRPCTxs, ethTx)
 		}
 	}
 
@@ -344,4 +361,15 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 // by the chain indexer.
 func (e *EVMBackend) BloomStatus() (uint64, uint64) {
 	return 4096, 0
+}
+
+// ChainConfig returns the chain configuration for the chain. This method returns a nil pointer if
+// the query fails.
+func (e *EVMBackend) ChainConfig() *params.ChainConfig {
+	res, err := e.queryClient.QueryClient.ChainConfig(e.ctx, &evmtypes.QueryChainConfigRequest{})
+	if err != nil {
+		return nil
+	}
+
+	return res.Config.EthereumConfig(e.chainID)
 }

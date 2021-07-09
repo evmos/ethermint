@@ -15,7 +15,6 @@
     - [Params](#ethermint.evm.v1alpha1.Params)
     - [State](#ethermint.evm.v1alpha1.State)
     - [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs)
-    - [TxData](#ethermint.evm.v1alpha1.TxData)
     - [TxResult](#ethermint.evm.v1alpha1.TxResult)
   
 - [ethermint/evm/v1alpha1/genesis.proto](#ethermint/evm/v1alpha1/genesis.proto)
@@ -31,6 +30,8 @@
     - [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse)
     - [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest)
     - [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse)
+    - [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest)
+    - [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse)
     - [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest)
     - [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse)
     - [QueryCosmosAccountRequest](#ethermint.evm.v1alpha1.QueryCosmosAccountRequest)
@@ -49,8 +50,10 @@
     - [Query](#ethermint.evm.v1alpha1.Query)
   
 - [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
+    - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
     - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
     - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
+    - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
     - [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx)
     - [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse)
   
@@ -246,32 +249,6 @@ persisted on blockchain state after an upgrade.
 | ----- | ---- | ----- | ----------- |
 | `hash` | [string](#string) |  |  |
 | `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated |  |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.TxData"></a>
-
-### TxData
-TxData implements the Ethereum transaction data structure. It is used
-solely as intended in Ethereum abiding by the protocol.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain_id` | [string](#string) |  | destination EVM chain ID |
-| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
-| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
-| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
-| `to` | [string](#string) |  | hex formatted address of the recipient |
-| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
-| `input` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
-| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
-| `v` | [bytes](#bytes) |  | v defines the signature value |
-| `r` | [bytes](#bytes) |  | r defines the signature value |
-| `s` | [bytes](#bytes) |  | s define the signature value |
 
 
 
@@ -482,6 +459,31 @@ QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 | ----- | ---- | ----- | ----------- |
 | `tx_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) | repeated | logs represents the ethereum logs generated at the given block hash. |
 | `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryChainConfigRequest"></a>
+
+### QueryChainConfigRequest
+QueryChainConfigRequest defines the request type for querying x/evm chain configuration.
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryChainConfigResponse"></a>
+
+### QueryChainConfigResponse
+QueryChainConfigResponse defines the response type for querying x/evm chain configuration.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `config` | [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig) |  | ChainConfig define the evm chain configuration. |
 
 
 
@@ -724,6 +726,7 @@ Query defines the gRPC querier service.
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
+| `ChainConfig` | [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest) | [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse) | ChainConfig queries the chain configuration values of EVM. | GET|/ethermint/evm/v1alpha1/chain_config|
 | `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1alpha1/static_call|
 
  <!-- end services -->
@@ -734,6 +737,31 @@ Query defines the gRPC querier service.
 <p align="right"><a href="#top">Top</a></p>
 
 ## ethermint/evm/v1alpha1/tx.proto
+
+
+
+<a name="ethermint.evm.v1alpha1.AccessListTx"></a>
+
+### AccessListTx
+AccessListTx is the data of EIP-2930 access list transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_id` | [string](#string) |  | destination EVM chain ID |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
 
 
 
@@ -757,6 +785,29 @@ Query defines the gRPC querier service.
 
 
 
+<a name="ethermint.evm.v1alpha1.LegacyTx"></a>
+
+### LegacyTx
+LegacyTx is the transaction data of regular Ethereum transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.MsgEthereumTx"></a>
 
 ### MsgEthereumTx
@@ -765,7 +816,7 @@ MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `data` | [TxData](#ethermint.evm.v1alpha1.TxData) |  | inner transaction data
+| `data` | [google.protobuf.Any](#google.protobuf.Any) |  | inner transaction data
 
 caches |
 | `size` | [double](#double) |  | encoded storage size of the transaction |
