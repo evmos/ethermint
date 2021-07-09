@@ -3,11 +3,11 @@ package eth
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
 
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	log "github.com/xlab/suplog"
@@ -20,7 +20,6 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	abci "github.com/tendermint/tendermint/abci/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -518,16 +517,10 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 }
 
 // Call performs a raw contract call.
-func (e *PublicAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
+func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
 	e.logger.Debugln("eth_call", "args", args.String(), "block number", blockNr)
-	simRes, err := e.doCall(args, blockNr, big.NewInt(ethermint.DefaultRPCGasLimit))
+	data, err := e.doCall(args, blockNr)
 	if err != nil {
-		return []byte{}, err
-	}
-
-	data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
-	if err != nil {
-		e.logger.WithError(err).Warningln("call result decoding failed")
 		return []byte{}, err
 	}
 
@@ -541,144 +534,32 @@ func (e *PublicAPI) Call(args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, _
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
 func (e *PublicAPI) doCall(
-	args rpctypes.CallArgs, blockNr rpctypes.BlockNumber, globalGasCap *big.Int,
-) (*sdk.SimulationResponse, error) {
-	// Set default gas & gas price if none were set
-	// Change this to uint64(math.MaxUint64 / 2) if gas cap can be configured
-	gas := uint64(ethermint.DefaultRPCGasLimit)
-	if args.Gas != nil {
-		gas = uint64(*args.Gas)
+	args evmtypes.CallArgs, blockNr rpctypes.BlockNumber,
+) (*evmtypes.MsgEthereumTxResponse, error) {
+	bz, err := json.Marshal(&args)
+	if err != nil {
+		return nil, err
 	}
-	if globalGasCap != nil && globalGasCap.Uint64() < gas {
-		e.logger.Debugln("Caller gas above allowance, capping", "requested", gas, "cap", globalGasCap)
-		gas = globalGasCap.Uint64()
-	}
-
-	// Set gas price using default or parameter if passed in
-	gasPrice := new(big.Int).SetUint64(ethermint.DefaultGasPrice)
-	if args.GasPrice != nil {
-		gasPrice = args.GasPrice.ToInt()
-	}
-
-	// Set value for transaction
-	value := new(big.Int)
-	if args.Value != nil {
-		value = args.Value.ToInt()
-	}
-
-	// Set Data if provided
-	var data []byte
-	if args.Data != nil {
-		data = []byte(*args.Data)
-	}
-
-	var accessList *ethtypes.AccessList
-	if args.AccessList != nil {
-		accessList = args.AccessList
-	}
-
-	if args.From == nil {
-		args.From = &common.Address{}
-	}
-
-	includePending := blockNr == rpctypes.EthPendingBlockNumber
-	seq, err := e.getAccountNonce(*args.From, includePending, 0, e.logger)
+	req := evmtypes.EthCallRequest{Args: bz}
+	res, err := e.queryClient.EthCall(rpctypes.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create new call message
-	msg := evmtypes.NewTx(e.chainIDEpoch, seq, args.To, value, gas, gasPrice, data, accessList)
-	msg.From = args.From.String()
-
-	// TODO: get from chain config
-	signer := ethtypes.LatestSignerForChainID(e.chainIDEpoch)
-	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
-		return nil, err
-	}
-
-	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
-	}
-
-	// Create a TxBuilder
-	txBuilder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
-	if !ok {
-		log.Panicln("clientCtx.TxConfig.NewTxBuilder returns unsupported builder")
-	}
-
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	if err != nil {
-		log.Panicln("codectypes.NewAnyWithValue failed to pack an obvious value")
-	}
-	txBuilder.SetExtensionOptions(option)
-
-	if err := txBuilder.SetMsgs(msg); err != nil {
-		log.Panicln("builder.SetMsgs failed")
-	}
-
-	// Query params to use the EVM denomination
-	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
-	if err != nil {
-		e.logger.WithError(err).Errorln("failed to query evm params")
-		return nil, err
-	}
-
-	txData, err := evmtypes.UnpackTxData(msg.Data)
-	if err != nil {
-		e.logger.WithError(err).Errorln("failed to unpack tx data")
-		return nil, err
-	}
-
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
-	txBuilder.SetFeeAmount(fees)
-	txBuilder.SetGasLimit(gas)
-
-	// doc about generate and transform tx into json, protobuf bytes
-	// https://github.com/cosmos/cosmos-sdk/blob/master/docs/run-node/txs.md
-	txBytes, err := e.clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
-	if err != nil {
-		return nil, err
-	}
-
-	// simulate by calling ABCI Query
-	query := abci.RequestQuery{
-		Path:   "/app/simulate",
-		Data:   txBytes,
-		Height: blockNr.Int64(),
-	}
-
-	queryResult, err := e.clientCtx.QueryABCI(query)
-	if err != nil {
-		return nil, err
-	}
-
-	var simResponse sdk.SimulationResponse
-	err = jsonpb.Unmarshal(strings.NewReader(string(queryResult.Value)), &simResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return &simResponse, nil
+	return res, nil
 }
 
-// EstimateGas returns an estimate of gas usage for the given smart contract call.
+//EstimateGas returns an estimate of gas usage for the given smart contract call.
 // It adds 1,000 gas to the returned value instead of using the gas adjustment
 // param from the SDK.
-func (e *PublicAPI) EstimateGas(args rpctypes.CallArgs) (hexutil.Uint64, error) {
+func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs) (hexutil.Uint64, error) {
 	e.logger.Debugln("eth_estimateGas")
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	simRes, err := e.doCall(args, 0, big.NewInt(ethermint.DefaultRPCGasLimit))
+	data, err := e.doCall(args, 0)
 	if err != nil {
-		return 0, err
-	}
-
-	data, err := evmtypes.DecodeTxResponse(simRes.Result.Data)
-	if err != nil {
-		e.logger.WithError(err).Warningln("call result decoding failed")
 		return 0, err
 	}
 
@@ -1111,7 +992,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 			input = args.Data
 		}
 
-		callArgs := rpctypes.CallArgs{
+		callArgs := evmtypes.CallArgs{
 			From:       &args.From, // From shouldn't be nil
 			To:         args.To,
 			Gas:        args.Gas,
