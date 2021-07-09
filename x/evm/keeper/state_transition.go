@@ -136,6 +136,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	k.ctx = cacheCtx
 
 	evm := k.NewEVM(msg, ethCfg)
+	isLondon := ethCfg.IsLondon(evm.Context.BlockNumber)
 
 	// TODO: move to AnteHandler after setting base fee
 	if !evm.Config.NoBaseFee && evm.Context.BaseFee == nil {
@@ -174,10 +175,17 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		commit()
 	}
 
+	refundQuotient := params.RefundQuotient
+
+	// After EIP-3529: refunds are capped to gasUsed / 5
+	if isLondon {
+		refundQuotient = params.RefundQuotientEIP3529
+	}
+
 	// refund gas prior to handling the vm error in order to set the updated gas meter
 	k.ctx = originalCtx
 	leftoverGas := msg.Gas() - res.GasUsed
-	leftoverGas, err = k.RefundGas(msg, leftoverGas)
+	leftoverGas, err = k.RefundGas(msg, leftoverGas, refundQuotient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
@@ -235,7 +243,6 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
-	isLondon := cfg.IsLondon(evm.Context.BlockNumber)
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(msg, cfg, contractCreation)
 	if err != nil {
@@ -249,19 +256,6 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
 	} else {
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
-	}
-
-	refundQuotient := params.RefundQuotient
-
-	// After EIP-3529: refunds are capped to gasUsed / 5
-	if isLondon {
-		refundQuotient = params.RefundQuotientEIP3529
-	}
-
-	// refund gas prior to handling the vm error in order to set the updated gas meter
-	leftoverGas, err = k.RefundGas(msg, leftoverGas, refundQuotient)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
 	var reverted bool
