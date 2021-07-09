@@ -305,8 +305,7 @@ func (e *EVMBackend) PendingTransactions() ([]*sdk.Tx, error) {
 	for _, txBz := range res.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
-			result = append(result, nil)
-			continue
+			return nil, err
 		}
 		result = append(result, &tx)
 	}

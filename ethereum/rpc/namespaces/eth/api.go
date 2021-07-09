@@ -1160,7 +1160,7 @@ func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height
 	// to manually add them.
 	pendingTxs, err := e.backend.PendingTransactions()
 	if err != nil {
-		logger.Errorln("fails to fetch pending transactions")
+		logger.WithError(err).Errorln("fails to fetch pending transactions")
 		return nonce, nil
 	}
 
