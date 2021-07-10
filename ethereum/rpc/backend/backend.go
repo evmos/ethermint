@@ -116,6 +116,10 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 		}
 	}
 
+	if resBlock.Block == nil {
+		return nil, nil
+	}
+
 	res, err := e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
 	if err != nil {
 		e.logger.WithError(err).Debugf("EthBlockFromTendermint failed with block %s", resBlock.Block.String())
@@ -130,6 +134,10 @@ func (e *EVMBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]i
 	if err != nil {
 		e.logger.Warningf("BlockByHash failed for %s", hash.Hex())
 		return nil, err
+	}
+
+	if resBlock.Block == nil {
+		return nil, nil
 	}
 
 	return e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
