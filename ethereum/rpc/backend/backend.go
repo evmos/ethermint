@@ -13,6 +13,7 @@ import (
 	log "github.com/xlab/suplog"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -36,7 +37,7 @@ type Backend interface {
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 
 	// Used by pending transaction filter
-	PendingTransactions() ([]*types.RPCTransaction, error)
+	PendingTransactions() ([]*sdk.Tx, error)
 
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
@@ -294,8 +295,22 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
-func (e *EVMBackend) PendingTransactions() ([]*types.RPCTransaction, error) {
-	return []*types.RPCTransaction{}, nil
+func (e *EVMBackend) PendingTransactions() ([]*sdk.Tx, error) {
+	res, err := e.clientCtx.Client.UnconfirmedTxs(e.ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*sdk.Tx, 0, len(res.Txs))
+	for _, txBz := range res.Txs {
+		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, &tx)
+	}
+
+	return result, nil
 }
 
 // GetLogs returns all the logs from all the ethereum transactions in a block.
