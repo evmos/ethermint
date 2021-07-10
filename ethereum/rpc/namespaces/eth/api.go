@@ -275,6 +275,10 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 		return nil
 	}
 
+	if resBlock.Block == nil {
+		return nil
+	}
+
 	n := hexutil.Uint(len(resBlock.Block.Txs))
 	return &n
 }
@@ -284,6 +288,10 @@ func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumb
 	e.logger.Debugln("eth_getBlockTransactionCountByNumber", "block number", blockNum)
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
+		return nil
+	}
+
+	if resBlock.Block == nil {
 		return nil
 	}
 
