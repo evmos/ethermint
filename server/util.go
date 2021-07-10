@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/version"
 
-	httprpcclient "github.com/tendermint/tendermint/rpc/client/http"
 	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 
 	"github.com/tharsis/ethermint/app"
@@ -43,16 +42,6 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 		sdkserver.ExportCmd(appExport, app.DefaultNodeHome),
 		version.NewVersionCommand(),
 	)
-}
-
-func ConnectTmHTTP(tmRPCAddr, wsEndpoint string) *httprpcclient.HTTP {
-	tmHttpClient, err := httprpcclient.New(tmRPCAddr, wsEndpoint)
-
-	if err != nil {
-		log.WithError(err).Fatalln("Tendermint HTTP client could not be created for ", tmRPCAddr+wsEndpoint)
-	}
-
-	return tmHttpClient
 }
 
 func ConnectTmWS(tmRPCAddr, tmEndpoint string) *jsonrpcclient.WSClient {
