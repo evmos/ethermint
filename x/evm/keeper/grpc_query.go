@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/json"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -363,4 +364,35 @@ func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest)
 	// return &types.QueryStaticCallResponse{Data: ret}, nil
 
 	return nil, nil
+}
+
+// EthCall implements eth_call rpc api.
+func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.MsgEthereumTxResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
+
+	var args types.CallArgs
+	err := json.Unmarshal(req.Args, &args)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	msg := args.ToMessage(uint64(ethermint.DefaultRPCGasLimit))
+
+	cfg, found := k.GetChainConfig(ctx)
+	if !found {
+		return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
+	}
+	ethCfg := cfg.EthereumConfig(k.eip155ChainID)
+	evm := k.NewEVM(msg, ethCfg)
+	res, err := k.ApplyMessage(evm, msg, ethCfg)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// ApplyMessage don't handle gas refund, let's do it here
+	refund := k.GasToRefund(res.GasUsed)
+	res.GasUsed -= refund
+
+	return res, nil
 }
