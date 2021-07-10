@@ -14,7 +14,6 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/web3"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
 
@@ -30,7 +29,7 @@ const (
 )
 
 // GetRPCAPIs returns the list of all APIs
-func GetRPCAPIs(clientCtx client.Context, tmClient rpcclient.Client, tmWSClient *jsonrpcclient.WSClient) []rpc.API {
+func GetRPCAPIs(clientCtx client.Context, tmWSClient *jsonrpcclient.WSClient) []rpc.API {
 	nonceLock := new(types.AddrLocker)
 	backend := backend.NewEVMBackend(clientCtx)
 	ethAPI := eth.NewPublicAPI(clientCtx, backend, nonceLock)
@@ -57,7 +56,7 @@ func GetRPCAPIs(clientCtx client.Context, tmClient rpcclient.Client, tmWSClient 
 		{
 			Namespace: NetNamespace,
 			Version:   apiVersion,
-			Service:   net.NewPublicAPI(clientCtx, tmClient),
+			Service:   net.NewPublicAPI(clientCtx),
 			Public:    true,
 		},
 		{

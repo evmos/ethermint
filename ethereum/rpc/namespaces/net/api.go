@@ -12,11 +12,11 @@ import (
 // PublicAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicAPI struct {
 	networkVersion uint64
-	tmNetworkClient rpcclient.NetworkClient
+	tmClient rpcclient.Client
 }
 
 // NewPublicAPI creates an instance of the public Net Web3 API.
-func NewPublicAPI(clientCtx client.Context, tmNetworkClient rpcclient.NetworkClient) *PublicAPI {
+func NewPublicAPI(clientCtx client.Context) *PublicAPI {
 	// parse the chainID from a integer string
 	chainIDEpoch, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
@@ -25,7 +25,7 @@ func NewPublicAPI(clientCtx client.Context, tmNetworkClient rpcclient.NetworkCli
 
 	return &PublicAPI{
 		networkVersion: chainIDEpoch.Uint64(),
-		tmNetworkClient: tmNetworkClient,
+		tmClient: clientCtx.Client,
 	}
 }
 
@@ -37,7 +37,7 @@ func (s *PublicAPI) Version() string {
 // Listening returns if client is actively listening for network connections.
 func (s *PublicAPI) Listening() bool {
     ctx := context.Background()
-	netInfo, err := s.tmNetworkClient.NetInfo(ctx)
+	netInfo, err := s.tmClient.NetInfo(ctx)
 	if err != nil {
 		return false
 	}
@@ -47,7 +47,7 @@ func (s *PublicAPI) Listening() bool {
 // PeerCount returns the number of peers currently connected to the client.
 func (s *PublicAPI) PeerCount() int {
 	ctx := context.Background()
-	netInfo, err := s.tmNetworkClient.NetInfo(ctx)
+	netInfo, err := s.tmClient.NetInfo(ctx)
 	if err != nil {
 		return 0
 	}

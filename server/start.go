@@ -241,12 +241,11 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if config.EVMRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
-		tmHttpClient := ConnectTmHTTP(tmRPCAddr, tmEndpoint)
 		log.Infoln("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
 		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		rpcServer := ethrpc.NewServer()
-		apis := rpc.GetRPCAPIs(clientCtx, tmHttpClient, tmWsClient)
+		apis := rpc.GetRPCAPIs(clientCtx, tmWsClient)
 
 		for _, api := range apis {
 			if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
