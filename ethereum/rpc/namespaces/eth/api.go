@@ -786,6 +786,11 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, nil
 	}
 
+	if resBlock.Block == nil {
+		e.logger.WithError(err).Debugln("block not found", "hash", hash.Hex())
+		return nil, nil
+	}
+
 	i := int(idx)
 	if i >= len(resBlock.Block.Txs) {
 		e.logger.Debugln("block txs index out of bound", "index", i)
@@ -833,6 +838,11 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
+		e.logger.WithError(err).Debugln("block not found", "height", blockNum.Int64())
+		return nil, nil
+	}
+
+	if resBlock.Block == nil {
 		e.logger.WithError(err).Debugln("block not found", "height", blockNum.Int64())
 		return nil, nil
 	}
