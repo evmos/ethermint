@@ -117,11 +117,12 @@ func startInProcess(cfg Config, val *Validator) error {
 	if val.AppConfig.EVMRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := val.Ctx.Config.RPC.ListenAddress
+		tmHttpClient := ethsrv.ConnectTmHTTP(tmRPCAddr, tmEndpoint)
 		tmWsClient := ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		val.jsonRPC = jsonrpc.NewServer()
 
-		apis := rpc.GetRPCAPIs(val.ClientCtx, tmWsClient)
+		apis := rpc.GetRPCAPIs(val.ClientCtx, tmHttpClient, tmWsClient)
 		for _, api := range apis {
 			if err := val.jsonRPC.RegisterName(api.Namespace, api.Service); err != nil {
 				return fmt.Errorf("failed to register JSON-RPC namespace %s: %w", api.Namespace, err)
