@@ -13,7 +13,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/version"
 
-	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	httprpcclient "github.com/tendermint/tendermint/rpc/client/http"
+	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 
 	"github.com/tharsis/ethermint/app"
 )
@@ -44,13 +45,23 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 	)
 }
 
-func ConnectTmWS(tmRPCAddr, tmEndpoint string) *rpcclient.WSClient {
-	tmWsClient, err := rpcclient.NewWS(tmRPCAddr, tmEndpoint,
-		rpcclient.MaxReconnectAttempts(256),
-		rpcclient.ReadWait(120*time.Second),
-		rpcclient.WriteWait(120*time.Second),
-		rpcclient.PingPeriod(50*time.Second),
-		rpcclient.OnReconnect(func() {
+func ConnectTmHTTP(tmRPCAddr, wsEndpoint string) *httprpcclient.HTTP {
+	tmHttpClient, err := httprpcclient.New(tmRPCAddr, wsEndpoint)
+
+	if err != nil {
+		log.WithError(err).Fatalln("Tendermint HTTP client could not be created for ", tmRPCAddr+wsEndpoint)
+	}
+
+	return tmHttpClient
+}
+
+func ConnectTmWS(tmRPCAddr, tmEndpoint string) *jsonrpcclient.WSClient {
+	tmWsClient, err := jsonrpcclient.NewWS(tmRPCAddr, tmEndpoint,
+		jsonrpcclient.MaxReconnectAttempts(256),
+		jsonrpcclient.ReadWait(120*time.Second),
+		jsonrpcclient.WriteWait(120*time.Second),
+		jsonrpcclient.PingPeriod(50*time.Second),
+		jsonrpcclient.OnReconnect(func() {
 			log.WithField("tendermint_rpc", tmRPCAddr+tmEndpoint).
 				Debugln("EVM RPC reconnects to Tendermint WS")
 		}),
