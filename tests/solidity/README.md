@@ -14,18 +14,16 @@ Increasingly difficult tests are provided:
 
 **Prerequisite**: install the individual solidity packages. They're set up as individual reops in a yarn monorepo workspace. Install them all via `yarn install`.
 
-To run the tests, start three terminals (or two, if you run `ethermintd` with `&`).
+To run the tests, you can use the `test-helper.js` utility to test all suites under `ganache` or `ethermint` network. The `test-helper.js` will help you spawn an `ethermintd` process before running the tests.
 
-In the first, run `ethermintd`:
+You can simply run `yarn test --network ethermint` to run all tests with ethermint network, or you can run `yarn test --network ganache` to use ganache shipped with truffle. In most cases, there two networks should produce identical test results. 
+
+If you only want to run a few test cases, append the name of tests following by the command line. For example, use `yarn test --network ethermint basic` to run the `basic` test under `ethermint` network.
+
+If you need to take more control, you can also run `ethermintd` using:
 
 ```sh
 ./init-test-node.sh
-```
-
-In the second, run `ethermintd` as mentioned in the script's output:
-
-```sh
-ethermintd rest-server --laddr "tcp://localhost:8545" --unlock-key localkey,user1,user2 --chain-id "ethermint-1337" --trace --wsport 8546
 ```
 
 You will now have three ethereum accounts unlocked in the test node:
@@ -34,11 +32,13 @@ You will now have three ethereum accounts unlocked in the test node:
 - `0xddd64b4712f7c8f1ace3c145c950339eddaf221d` (User 1)
 - `0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0` (user 2)
 
-From here, in your other available terminal, go into any of the tests and run `yarn test-ethermint`. You should see `ethermintd` accepting transactions and producing blocks. You should be able to query for any transaction via:
+
+Keep the terminal window open, go into any of the tests and run `yarn test-ethermint`. You should see `ethermintd` accepting transactions and producing blocks. You should be able to query for any transaction via:
 
 - `ethermintd query tx <cosmos-sdk tx>`
 - `curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["<ethereum tx>"],"id":1}'`
 
+From here, in your other available terminal, 
 And obviously more, via the Ethereum JSON-RPC API).
 
 When in doubt, you can also run the tests against a Ganache instance via `yarn test-ganache`, to make sure they are behaving correctly.
