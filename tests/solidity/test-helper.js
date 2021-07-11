@@ -172,13 +172,16 @@ function setupNetwork({ runConfig, timeout }) {
 
 async function main() {
 
-  // console.log(argv);
   const runConfig = checkTestEnv();
   const allTests = loadTests(runConfig);
 
   const proc = await setupNetwork({ runConfig, timeout: 50000 });
   await performTests({ allTests, runConfig });
 
+  if (proc) {
+    proc.kill();
+  }
+  process.exit(0);
 }
 
 main();
