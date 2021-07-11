@@ -14,5 +14,8 @@
   },
   "dependencies": {
     "yargs": "^17.0.1"
+  },
+  "scripts": {
+    "test": "node test-helper.js"
   }
 }

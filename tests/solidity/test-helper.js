@@ -1,9 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { exec, spawn } = require('child_process');
 const yargs = require('yargs/yargs')
 const { hideBin } = require('yargs/helpers')
-const argv = yargs(hideBin(process.argv)).argv
 
 
 const logger = {
@@ -18,6 +17,16 @@ function panic(errMsg) {
 }
 
 function checkTestEnv() {
+  
+  const argv = yargs(hideBin(process.argv))
+    .usage('Usage: $0 [options] <tests>')
+    .example('$0 --network ethermint', 'run all tests using ethermint network')
+    .example('$0 --network ethermint test1 test2', 'run only test1 and test2 using ethermint network')
+    .help('h').alias('h', 'help')
+    .describe('network', 'set which network to use: ganache|ethermint')
+    .boolean('verbose-log').describe('verbose-log', 'print ethermintd output, default false')
+    .argv;
+
   if (!fs.existsSync(path.join(__dirname, './node_modules'))) {
     panic('node_modules not existed. Please run `yarn install` before running tests.');
   }
@@ -38,6 +47,9 @@ function checkTestEnv() {
 
   // only test
   runConfig.onlyTest = argv['_'];
+  runConfig.verboseLog = !!argv['verbose-log'];
+
+  logger.info(`Running on network: ${runConfig.network}`);
   return runConfig;
 
 }
@@ -79,14 +91,29 @@ function loadTests() {
   return validTests;
 }
 
-function performTestSuite(testName) {
-  execSync(`yarn test-ganache`, {
-    cwd: path.join(__dirname, 'suites', testName),
-    stdio: 'inherit',
+function performTestSuite({ testName, network }) {
+  const cmd = network === 'ganache' ? 'test-ganache' : 'test-ethermint';
+  return new Promise((resolve, reject) => {
+    const testProc = spawn('yarn', [cmd], {
+      cwd: path.join(__dirname, 'suites', testName)
+    });
+  
+    testProc.stdout.pipe(process.stdout);
+    testProc.stderr.pipe(process.stderr);
+  
+    testProc.on('close', code => {
+      if (code === 0) {
+        console.log("end");
+        resolve();
+      }
+      else {
+        reject(new Error(`Test: ${testName} exited with error code ${code}`));
+      }
+    });
   });
 }
 
-function performTests({ allTests, runConfig }) {
+async function performTests({ allTests, runConfig }) {
 
   if (allTests.length === 0) {
     panic('No tests are found or all invalid!');
@@ -96,16 +123,51 @@ function performTests({ allTests, runConfig }) {
   }
   else {
     allTests = allTests.filter(t => runConfig.onlyTest.indexOf(t) !== -1);
-    logger.info('Only run tests:');
+    logger.info(`Only run tests: (${allTests.join(', ')})`);
   }
-  console.log(allTests);
 
   for (const currentTestName of allTests) {
     logger.info(`Start test: ${currentTestName}`);
-    performTestSuite(currentTestName);
+    await performTestSuite({ testName: currentTestName, network: runConfig.network });
   }
 
   logger.info(`${allTests.length} test suites passed!`);
+}
+
+function setupNetwork({ runConfig, timeout }) {
+  if (runConfig.network !== 'ethermint') {
+    // no need to start ganache. Truffle will start it
+    return;
+  }
+
+  // Spawn the ethermint process
+
+  const spawnPromise = new Promise((resolve, reject) => {
+    const ethermintdProc = spawn('./init-test-node.sh', {
+      cwd: __dirname,
+      stdio: ['ignore', runConfig.verboseLog ? 'pipe' : 'ignore', 'pipe'],
+    });
+
+    logger.info(`Starting Ethermintd process... timeout: ${timeout}ms`);
+    if (runConfig.verboseLog) {
+      ethermintdProc.stdout.pipe(process.stdout);
+    }
+    ethermintdProc.stderr.on('data', d => {
+      const oLine = d.toString();
+      if (runConfig.verboseLog) {
+        process.stdout.write(oLine);
+      }
+      if (oLine.indexOf('Starting EVM RPC server') !== -1) {
+        logger.info('Ethermintd started');
+        resolve(ethermintdProc);
+      }
+    });
+  });
+
+  const timeoutPromise = new Promise((resolve, reject) => {
+    setTimeout(() => reject(new Error('Start ethermintd timeout!')), timeout);
+  });
+  return Promise.race([spawnPromise, timeoutPromise]);
 }
 
 async function main() {
@@ -114,7 +176,8 @@ async function main() {
   const runConfig = checkTestEnv();
   const allTests = loadTests(runConfig);
 
-  performTests({allTests, runConfig});
+  const proc = await setupNetwork({ runConfig, timeout: 50000 });
+  await performTests({ allTests, runConfig });
 
 }
 
