@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "google/api/annotations.proto";
 import "ethermint/evm/v1alpha1/evm.proto";
+import "ethermint/evm/v1alpha1/tx.proto";
 
 option go_package = "github.com/tharsis/ethermint/x/evm/types";
 
@@ -69,6 +70,11 @@ service Query {
   // StaticCall queries the static call value of x/evm module.
   rpc StaticCall(QueryStaticCallRequest) returns (QueryStaticCallResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/static_call";
+  }
+
+  // EthCall implements the `eth_call` rpc api
+  rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/eth_call";
   }
 }
 
@@ -250,7 +256,13 @@ message QueryStaticCallRequest {
   bytes input = 2;
 }
 
-// // QueryStaticCallRequest defines static call response
+// QueryStaticCallRequest defines static call response
 message QueryStaticCallResponse {
   bytes data = 1;
+}
+
+// EthCallRequest defines EthCall request
+message EthCallRequest {
+  // same json format as the json rpc api.
+  bytes args = 1;
 }
