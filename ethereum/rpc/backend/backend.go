@@ -134,12 +134,12 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 func (e *EVMBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
-		e.logger.WithError(err).Warningf("BlockByHash block not found", "hash", hash.Hex())
+		e.logger.WithError(err).Debugln("BlockByHash block not found", "hash", hash.Hex())
 		return nil, err
 	}
 
 	if resBlock.Block == nil {
-		e.logger.Debugf("BlockByHash block not found", "hash", hash.Hex())
+		e.logger.Debugln("BlockByHash block not found", "hash", hash.Hex())
 		return nil, nil
 	}
 
