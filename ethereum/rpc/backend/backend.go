@@ -112,9 +112,14 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 	if err != nil {
 		// e.logger.Debugf("GetBlockByNumber safely bumping down from %d to latest", height)
 		if resBlock, err = e.clientCtx.Client.Block(e.ctx, nil); err != nil {
-			e.logger.Debugln("GetBlockByNumber failed to get latest block")
+			e.logger.WithError(err).Debugln("GetBlockByNumber failed to get latest block")
 			return nil, nil
 		}
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debugln("GetBlockByNumber block not found", "height", height)
+		return nil, nil
 	}
 
 	res, err := e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
@@ -129,8 +134,13 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 func (e *EVMBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
-		e.logger.Warningf("BlockByHash failed for %s", hash.Hex())
+		e.logger.WithError(err).Debugln("BlockByHash block not found", "hash", hash.Hex())
 		return nil, err
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debugln("BlockByHash block not found", "hash", hash.Hex())
+		return nil, nil
 	}
 
 	return e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
