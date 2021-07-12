@@ -38,6 +38,7 @@ import (
 
 func TestEth_Pending_GetBalance(t *testing.T) {
 	var res hexutil.Big
+	var resTxHash common.Hash
 	rpcRes := Call(t, "eth_getBalance", []string{addrA, "latest"})
 	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
@@ -63,6 +64,12 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 	require.Nil(t, txRes.Error)
 
 	rpcRes = Call(t, "eth_sendTransaction", param)
+	require.Nil(t, rpcRes.Error)
+
+	err = resTxHash.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	rpcRes = Call(t, "eth_getTransactionByHash", []string{resTxHash.Hex()})
 	require.Nil(t, rpcRes.Error)
 
 	rpcRes = Call(t, "eth_getBalance", []string{addrA, "pending"})
