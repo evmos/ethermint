@@ -9,9 +9,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -268,9 +270,17 @@ func (k Keeper) BlockBloom(c context.Context, _ *types.QueryBlockBloomRequest) (
 
 	bloom, found := k.GetBlockBloom(ctx, ctx.BlockHeight())
 	if !found {
-		return nil, status.Error(
-			codes.NotFound, types.ErrBloomNotFound.Error(),
-		)
+		// if the bloom is not found, query the transient store at the current height
+		k.ctx = ctx
+		bloomInt := k.GetBlockBloomTransient()
+
+		if bloomInt.Sign() == 0 {
+			return nil, status.Error(
+				codes.NotFound, sdkerrors.Wrapf(types.ErrBloomNotFound, "height: %d", ctx.BlockHeight()).Error(),
+			)
+		}
+
+		bloom = ethtypes.BytesToBloom(bloomInt.Bytes())
 	}
 
 	return &types.QueryBlockBloomResponse{
