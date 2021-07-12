@@ -722,7 +722,7 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 
 	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
 	if err != nil {
-		e.logger.Debugln("invalid tx")
+		e.logger.WithError(err).Debugln("invalid tx")
 		return nil, err
 	}
 
