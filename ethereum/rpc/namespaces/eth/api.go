@@ -604,7 +604,54 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 	res, err := e.GetTxByEthHash(hash)
 	if err != nil {
 		e.logger.WithError(err).Debugln("tx not found", "hash", hash.Hex())
-		return nil, nil
+
+		// try to find tx in mempool
+		txs, err := e.backend.PendingTransactions()
+		if err != nil {
+			return nil, nil
+		}
+
+		for _, tx := range txs {
+			if tx == nil {
+				return nil, fmt.Errorf("invalid tx in mempool")
+			}
+
+			if len((*tx).GetMsgs()) != 1 {
+				continue
+			}
+			msg, ok := (*tx).GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+			if !ok {
+				continue
+			}
+
+			txhash := msg.AsTransaction().Hash()
+			if txhash != hash {
+				continue
+			}
+
+			from, err := msg.GetSender(e.chainIDEpoch)
+			if err != nil {
+				return nil, err
+			}
+
+			data, err := evmtypes.UnpackTxData(msg.Data)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+			}
+
+			rpctx, err := rpctypes.NewTransactionFromData(
+				data,
+				from,
+				hash,
+				common.Hash{},
+				uint64(0),
+				uint64(0),
+			)
+			if err != nil {
+				return nil, err
+			}
+			return rpctx, nil
+		}
 	}
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
