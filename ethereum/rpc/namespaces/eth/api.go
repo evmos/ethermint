@@ -198,7 +198,7 @@ func (e *PublicAPI) Accounts() ([]common.Address, error) {
 
 // BlockNumber returns the current block number.
 func (e *PublicAPI) BlockNumber() (hexutil.Uint64, error) {
-	// e.logger.Debug("eth_blockNumber")
+	e.logger.Debug("eth_blockNumber")
 	return e.backend.BlockNumber()
 }
 
@@ -338,7 +338,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 	// Sign the requested hash with the wallet
 	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, data)
 	if err != nil {
-		e.logger.Error("keyring.SignByAddress failed")
+		e.logger.Error("keyring.SignByAddress failed", "address", address.Hex())
 		return nil, err
 	}
 
@@ -374,7 +374,7 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 
 	// Sign transaction
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
-		e.logger.Debug("failed to sign tx", "error", err)
+		e.logger.Debug("failed to sign tx", "error", err.Error())
 		return common.Hash{}, err
 	}
 
@@ -441,7 +441,7 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 
 // SendRawTransaction send a raw Ethereum transaction.
 func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) {
-	e.logger.Debug("eth_sendRawTransaction", "data_len", len(data))
+	e.logger.Debug("eth_sendRawTransaction", "length", len(data))
 
 	// RLP decode raw transaction bytes
 	tx, err := e.clientCtx.TxConfig.TxDecoder()(data)
@@ -550,9 +550,7 @@ func (e *PublicAPI) doCall(
 	return res, nil
 }
 
-//EstimateGas returns an estimate of gas usage for the given smart contract call.
-// It adds 1,000 gas to the returned value instead of using the gas adjustment
-// param from the SDK.
+// EstimateGas returns an estimate of gas usage for the given smart contract call.
 func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs) (hexutil.Uint64, error) {
 	e.logger.Debug("eth_estimateGas")
 
@@ -1089,7 +1087,7 @@ func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height
 	// to manually add them.
 	pendingTxs, err := e.backend.PendingTransactions()
 	if err != nil {
-		logger.Error("fails to fetch pending transactions", "error", err.Error())
+		logger.Error("failed to fetch pending transactions", "error", err.Error())
 		return nonce, nil
 	}
 

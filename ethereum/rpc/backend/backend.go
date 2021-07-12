@@ -239,8 +239,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		height = 1
 	default:
 		if blockNum < 0 {
-			err := errors.Errorf("incorrect block height: %d", height)
-			return nil, err
+			return nil, errors.Errorf("incorrect block height: %d", height)
 		}
 	}
 
@@ -254,7 +253,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 
 	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
-		e.logger.Debug("HeaderByNumber BlockBloom fail", "height", resBlock.Block.Height)
+		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
 		return nil, err
 	}
 
@@ -294,7 +293,7 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 
 	res, err := e.queryClient.TxLogs(e.ctx, req)
 	if err != nil {
-		e.logger.Debug("TxLogs fail")
+		e.logger.Debug("TxLogs failed", "tx-hash", req.Hash)
 		return nil, err
 	}
 
@@ -330,7 +329,7 @@ func (e *EVMBackend) GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error) {
 
 	res, err := e.queryClient.BlockLogs(e.ctx, req)
 	if err != nil {
-		e.logger.Debug("BlockLogs failed", "hash", blockHash.Hex())
+		e.logger.Debug("BlockLogs failed", "hash", req.Hash)
 		return nil, err
 	}
 

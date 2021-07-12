@@ -65,6 +65,7 @@ func NewEventSystem(logger log.Logger, tmWSClient *rpcclient.WSClient) *EventSys
 	}
 
 	es := &EventSystem{
+		logger:     logger,
 		ctx:        context.Background(),
 		tmWSClient: tmWSClient,
 		lightMode:  false,
