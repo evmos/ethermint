@@ -37,6 +37,24 @@ func NewTx(
 	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
 	return newMsgEthereumTx(chainID, nonce, to, amount, gasLimit, gasPrice, input, accesses)
+
+}
+
+// UnwrapEthereumMsg extract MsgEthereumTx from wrapping sdk.Tx
+func UnwrapEthereumMsg(tx *sdk.Tx) (*MsgEthereumTx, error) {
+	if tx == nil {
+		return nil, fmt.Errorf("invalid tx: nil")
+	}
+
+	if len((*tx).GetMsgs()) != 1 {
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := (*tx).GetMsgs()[0].(*MsgEthereumTx)
+	if !ok {
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+
+	return msg, nil
 }
 
 // NewTxContract returns a reference to a new Ethereum transaction
