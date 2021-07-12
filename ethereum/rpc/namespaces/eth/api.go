@@ -911,8 +911,48 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 func (e *PublicAPI) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getPendingTransactions")
 
-	// FIXME https://github.com/tharsis/ethermint/issues/244
-	return []*rpctypes.RPCTransaction{}, nil
+	txs, err := e.backend.PendingTransactions()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*rpctypes.RPCTransaction, 0, len(txs))
+	for _, tx := range txs {
+		if tx == nil {
+			return nil, fmt.Errorf("invalid tx: %T", tx)
+		}
+
+		if len((*tx).GetMsgs()) != 1 {
+			continue
+		}
+		msg, ok := (*tx).GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			continue
+		}
+
+		from, err := msg.GetSender(e.chainIDEpoch)
+		if err != nil {
+			return nil, err
+		}
+		data, err := evmtypes.UnpackTxData(msg.Data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+		}
+		rpctx, err := rpctypes.NewTransactionFromData(
+			data,
+			from,
+			msg.AsTransaction().Hash(),
+			common.Hash{},
+			uint64(0),
+			uint64(0),
+		)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, rpctx)
+	}
+
+	return result, nil
 }
 
 // GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.
