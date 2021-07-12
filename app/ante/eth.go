@@ -24,10 +24,9 @@ type EVMKeeper interface {
 
 	ChainID() *big.Int
 	GetParams(ctx sdk.Context) evmtypes.Params
-	GetChainConfig(ctx sdk.Context) (evmtypes.ChainConfig, bool)
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM
+	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
 }
 
@@ -58,12 +57,9 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 
 	chainID := esvd.evmKeeper.ChainID()
 
-	config, found := esvd.evmKeeper.GetChainConfig(ctx)
-	if !found {
-		return ctx, evmtypes.ErrChainConfigNotFound
-	}
+	params := esvd.evmKeeper.GetParams(ctx)
 
-	ethCfg := config.EthereumConfig(chainID)
+	ethCfg := params.ChainConfig.EthereumConfig(chainID)
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
 
@@ -271,12 +267,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// reset the refund gas value in the keeper for the current transaction
 	egcd.evmKeeper.ResetRefundTransient(ctx)
 
-	config, found := egcd.evmKeeper.GetChainConfig(ctx)
-	if !found {
-		return ctx, evmtypes.ErrChainConfigNotFound
-	}
+	params := egcd.evmKeeper.GetParams(ctx)
 
-	ethCfg := config.EthereumConfig(egcd.evmKeeper.ChainID())
+	ethCfg := params.ChainConfig.EthereumConfig(egcd.evmKeeper.ChainID())
 
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
@@ -373,12 +366,9 @@ func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
 func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	ctd.evmKeeper.WithContext(ctx)
 
-	config, found := ctd.evmKeeper.GetChainConfig(ctx)
-	if !found {
-		return ctx, evmtypes.ErrChainConfigNotFound
-	}
+	params := ctd.evmKeeper.GetParams(ctx)
 
-	ethCfg := config.EthereumConfig(ctd.evmKeeper.ChainID())
+	ethCfg := params.ChainConfig.EthereumConfig(ctd.evmKeeper.ChainID())
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
 	for i, msg := range tx.GetMsgs() {
@@ -398,7 +388,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg)
+		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params)
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
@@ -440,12 +430,8 @@ func NewAccessListDecorator(evmKeeper EVMKeeper) AccessListDecorator {
 // The AnteHandler will only prepare the access list if Yolov3/Berlin/EIPs 2929 and 2930 are applicable at the current number.
 func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 
-	config, found := ald.evmKeeper.GetChainConfig(ctx)
-	if !found {
-		return ctx, evmtypes.ErrChainConfigNotFound
-	}
-
-	ethCfg := config.EthereumConfig(ald.evmKeeper.ChainID())
+	params := ald.evmKeeper.GetParams(ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(ald.evmKeeper.ChainID())
 
 	rules := ethCfg.Rules(big.NewInt(ctx.BlockHeight()))
 

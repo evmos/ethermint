@@ -25,7 +25,7 @@ import (
 )
 
 // NewEVM generates an ethereum VM from the provided Message fields and the ChainConfig.
-func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
+func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
@@ -38,16 +38,14 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
-	vmConfig := k.VMConfig()
+	vmConfig := k.VMConfig(params)
 
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
 }
 
 // VMConfig creates an EVM configuration from the module parameters and the debug setting.
 // The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig() vm.Config {
-	params := k.GetParams(k.ctx)
-
+func (k Keeper) VMConfig(params types.Params) vm.Config {
 	return vm.Config{
 		Debug:       k.debug,
 		Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger too
@@ -112,11 +110,8 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
-	cfg, found := k.GetChainConfig(k.ctx)
-	if !found {
-		return nil, stacktrace.Propagate(types.ErrChainConfigNotFound, "configuration not found")
-	}
-	ethCfg := cfg.EthereumConfig(k.eip155ChainID)
+	params := k.GetParams(k.ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
@@ -132,7 +127,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	cacheCtx, commit := k.ctx.CacheContext()
 	k.ctx = cacheCtx
 
-	evm := k.NewEVM(msg, ethCfg)
+	evm := k.NewEVM(msg, ethCfg, params)
 
 	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()

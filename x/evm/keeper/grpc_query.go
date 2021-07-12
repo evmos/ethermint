@@ -298,19 +298,6 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 	}, nil
 }
 
-// ChainConfig implements the Query/ChainConfig gRPC method
-func (k Keeper) ChainConfig(c context.Context, _ *types.QueryChainConfigRequest) (*types.QueryChainConfigResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	cfg, found := k.GetChainConfig(ctx)
-	if !found {
-		return nil, status.Error(codes.NotFound, types.ErrChainConfigNotFound.Error())
-	}
-
-	return &types.QueryChainConfigResponse{
-		Config: cfg,
-	}, nil
-}
-
 // StaticCall implements Query/StaticCall gRPCP method
 func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest) (*types.QueryStaticCallResponse, error) {
 	if req == nil {
@@ -389,12 +376,10 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 
 	msg := args.ToMessage(uint64(ethermint.DefaultRPCGasLimit))
 
-	cfg, found := k.GetChainConfig(ctx)
-	if !found {
-		return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
-	}
-	ethCfg := cfg.EthereumConfig(k.eip155ChainID)
-	evm := k.NewEVM(msg, ethCfg)
+	params := k.GetParams(ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+
+	evm := k.NewEVM(msg, ethCfg, params)
 	res, err := k.ApplyMessage(evm, msg, ethCfg)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
