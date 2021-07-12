@@ -9,22 +9,20 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/eth/filters"
-
-	rpcfilters "github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
-
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
-	log "github.com/xlab/suplog"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/eth/filters"
+	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/tendermint/tendermint/libs/log"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rpc"
-
+	rpcfilters "github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -68,12 +66,13 @@ type websocketsServer struct {
 	logger  log.Logger
 }
 
-func NewWebsocketsServer(tmWSClient *rpcclient.WSClient, rpcAddr, wsAddr string) WebsocketsServer {
+func NewWebsocketsServer(logger log.Logger, tmWSClient *rpcclient.WSClient, rpcAddr, wsAddr string) WebsocketsServer {
+	logger = logger.With("module", "websocket-server")
 	return &websocketsServer{
 		rpcAddr: rpcAddr,
 		wsAddr:  wsAddr,
-		api:     newPubSubAPI(tmWSClient),
-		logger:  log.WithField("module", "websocket-server"),
+		api:     newPubSubAPI(logger, tmWSClient),
+		logger:  logger,
 	}
 }
 
@@ -88,7 +87,7 @@ func (s *websocketsServer) Start() {
 				return
 			}
 
-			s.logger.WithError(err).Errorln("failed to start HTTP server for WS")
+			s.logger.Error("failed to start HTTP server for WS", "error", err.Error())
 		}
 	}()
 }
@@ -102,7 +101,7 @@ func (s *websocketsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		s.logger.WithError(err).Warningln("websocket upgrade failed")
+		s.logger.Debug("websocket upgrade failed", "error", err.Error())
 		return
 	}
 
@@ -280,12 +279,13 @@ type pubSubAPI struct {
 }
 
 // newPubSubAPI creates an instance of the ethereum PubSub API.
-func newPubSubAPI(tmWSClient *rpcclient.WSClient) *pubSubAPI {
+func newPubSubAPI(logger log.Logger, tmWSClient *rpcclient.WSClient) *pubSubAPI {
+	logger = logger.With("module", "websocket-client")
 	return &pubSubAPI{
-		events:    rpcfilters.NewEventSystem(tmWSClient),
+		events:    rpcfilters.NewEventSystem(logger, tmWSClient),
 		filtersMu: new(sync.RWMutex),
 		filters:   make(map[rpc.ID]*wsSubscription),
-		logger:    log.WithField("module", "websocket-client"),
+		logger:    logger,
 	}
 }
 
@@ -358,10 +358,7 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 
 				data, ok := event.Data.(tmtypes.EventDataNewBlockHeader)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataNewBlockHeader",
-						"actual":   fmt.Sprintf("%T", event.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", event.Data))
 					continue
 				}
 
@@ -386,7 +383,7 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 
 					err = wsSub.wsConn.WriteJSON(res)
 					if err != nil {
-						api.logger.WithError(err).Error("error writing header, will drop peer")
+						api.logger.Error("error writing header, will drop peer", "error", err.Error())
 
 						try(func() {
 							api.filtersMu.RUnlock()
@@ -411,7 +408,7 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 					api.unsubscribe(subID)
 					return
 				}
-				log.WithError(err).Debugln("dropping NewHeads WebSocket subscription", subID)
+				api.logger.Debug("dropping NewHeads WebSocket subscription", "subscription-id", subID, "error", err.Error())
 				api.unsubscribe(subID)
 			case <-unsubscribed:
 				return
@@ -423,20 +420,15 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 }
 
 func try(fn func(), l log.Logger, desc string) {
-	if l == nil {
-		l = log.DefaultLogger
-	}
-
 	defer func() {
 		if x := recover(); x != nil {
 			if err, ok := x.(error); ok {
 				// debug.PrintStack()
-				l.WithError(err).Debugln("panic during", desc)
+				l.Debug("panic during "+desc, "error", err.Error())
 				return
 			}
 
-			// debug.PrintStack()
-			l.Debugf("panic during %s: %+v", desc, x)
+			l.Debug(fmt.Sprintf("panic during %s: %+v", desc, x))
 			return
 		}
 	}()
@@ -451,9 +443,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 		params, ok := extra.(map[string]interface{})
 		if !ok {
 			err := errors.New("invalid criteria")
-			log.WithFields(log.Fields{
-				"criteria": fmt.Sprintf("expected: map[string]interface{}, got %T", extra),
-			}).Errorln(err)
+			api.logger.Debug("invalid criteria", "type", fmt.Sprintf("%T", extra))
 			return "", err
 		}
 
@@ -461,12 +451,8 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 			address, ok := params["address"].(string)
 			addresses, sok := params["address"].([]interface{})
 			if !ok && !sok {
-				err := errors.New("invalid address; must be address or array of addresses")
-				log.WithFields(log.Fields{
-					"address":   ok,
-					"addresses": sok,
-					"type":      fmt.Sprintf("%T", params["address"]),
-				}).Errorln(err)
+				err := errors.New("invalid addresses; must be address or array of addresses")
+				api.logger.Debug("invalid addresses", "type", fmt.Sprintf("%T", params["address"]))
 				return "", err
 			}
 
@@ -480,7 +466,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 					address, ok := addr.(string)
 					if !ok {
 						err := errors.New("invalid address")
-						log.WithField("type", fmt.Sprintf("%T", addr)).Errorln(err)
+						api.logger.Debug("invalid address", "type", fmt.Sprintf("%T", addr))
 						return "", err
 					}
 
@@ -492,12 +478,8 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 		if params["topics"] != nil {
 			topics, ok := params["topics"].([]interface{})
 			if !ok {
-				err := errors.New("invalid topics")
-
-				log.WithFields(log.Fields{
-					"type": fmt.Sprintf("expected []interface{}, got %T", params["topics"]),
-				}).Errorln(err)
-
+				err := errors.Errorf("invalid topics: %s", topics)
+				api.logger.Error("invalid topics", "type", fmt.Sprintf("%T", topics))
 				return "", err
 			}
 
@@ -507,7 +489,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 				tstr, ok := topic.(string)
 				if !ok {
 					err := errors.Errorf("invalid topic: %s", topic)
-					log.WithField("type", fmt.Sprintf("expected string, got %T", topic)).Errorln(err)
+					api.logger.Error("invalid topic", "type", fmt.Sprintf("%T", topic))
 					return err
 				}
 
@@ -533,11 +515,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 				subtopicsList, ok := subtopics.([]interface{})
 				if !ok {
 					err := errors.New("invalid subtopics")
-
-					log.WithFields(log.Fields{
-						"type": fmt.Sprintf("expected []interface{}, got %T", subtopics),
-					}).Errorln(err)
-
+					api.logger.Error("invalid subtopic", "type", fmt.Sprintf("%T", subtopics))
 					return "", err
 				}
 
@@ -546,7 +524,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 					tstr, ok := subtopic.(string)
 					if !ok {
 						err := errors.Errorf("invalid subtopic: %s", subtopic)
-						log.WithField("type", fmt.Sprintf("expected string, got %T", subtopic)).Errorln(err)
+						api.logger.Error("invalid subtopic", "type", fmt.Sprintf("%T", subtopic))
 						return "", err
 					}
 
@@ -560,7 +538,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 
 	critBz, err := json.Marshal(crit)
 	if err != nil {
-		log.WithError(err).Errorln("failed to JSON marshal criteria")
+		api.logger.Error("failed to JSON marshal criteria", "error", err.Error())
 		return rpc.ID(""), err
 	}
 
@@ -569,7 +547,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 
 	sub, _, err := api.events.SubscribeLogs(crit)
 	if err != nil {
-		log.WithError(err).Errorln("failed to subscribe logs")
+		api.logger.Error("failed to subscribe logs", "error", err.Error())
 		return rpc.ID(""), err
 	}
 
@@ -594,16 +572,13 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 
 				dataTx, ok := event.Data.(tmtypes.EventDataTx)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataTx",
-						"actual":   fmt.Sprintf("%T", event.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", event.Data))
 					continue
 				}
 
 				txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
 				if err != nil {
-					log.WithError(err).Errorln("failed to decode tx response")
+					api.logger.Error("failed to decode tx response", "error", err.Error())
 					return
 				}
 
@@ -615,7 +590,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 				api.filtersMu.RLock()
 				wsSub, ok := api.filters[subID]
 				if !ok {
-					log.Warningln("subID not in filters", subID)
+					api.logger.Debug("subID not in filters", subID)
 					return
 				}
 				api.filtersMu.RUnlock()
@@ -650,7 +625,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 					api.unsubscribe(subID)
 					return
 				}
-				log.WithError(err).Warningln("dropping Logs WebSocket subscription", subID)
+				api.logger.Debug("dropping Logs WebSocket subscription", "subscription-id", subID, "error", err.Error())
 				api.unsubscribe(subID)
 			case <-unsubscribed:
 				return
@@ -706,7 +681,7 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 
 					err = wsSub.wsConn.WriteJSON(res)
 					if err != nil {
-						api.logger.WithError(err).Warningln("error writing header, will drop peer")
+						api.logger.Debug("error writing header, will drop peer", "error", err.Error())
 
 						try(func() {
 							api.filtersMu.Lock()
@@ -727,7 +702,7 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 					api.unsubscribe(subID)
 					return
 				}
-				log.WithError(err).Warningln("dropping PendingTransactions WebSocket subscription", subID)
+				api.logger.Debug("dropping PendingTransactions WebSocket subscription", subID, "error", err.Error())
 				api.unsubscribe(subID)
 			case <-unsubscribed:
 				return

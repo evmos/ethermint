@@ -8,7 +8,7 @@ import (
 
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
-	log "github.com/xlab/suplog"
+	"github.com/tendermint/tendermint/libs/log"
 
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -51,6 +51,7 @@ type filter struct {
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
 // information related to the Ethereum protocol such as blocks, transactions and logs.
 type PublicFilterAPI struct {
+	logger    log.Logger
 	backend   Backend
 	events    *EventSystem
 	filtersMu sync.Mutex
@@ -58,11 +59,13 @@ type PublicFilterAPI struct {
 }
 
 // NewPublicAPI returns a new PublicFilterAPI instance.
-func NewPublicAPI(tmWSClient *rpcclient.WSClient, backend Backend) *PublicFilterAPI {
+func NewPublicAPI(logger log.Logger, tmWSClient *rpcclient.WSClient, backend Backend) *PublicFilterAPI {
+	logger = logger.With("api", "filter")
 	api := &PublicFilterAPI{
+		logger:  logger,
 		backend: backend,
 		filters: make(map[rpc.ID]*filter),
-		events:  NewEventSystem(tmWSClient),
+		events:  NewEventSystem(logger, tmWSClient),
 	}
 
 	go api.timeoutLoop()
@@ -125,10 +128,7 @@ func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {
 
 				data, ok := ev.Data.(tmtypes.EventDataTx)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataTx",
-						"actual":   fmt.Sprintf("%T", ev.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
 
@@ -185,10 +185,7 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 
 				data, ok := ev.Data.(tmtypes.EventDataTx)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataTx",
-						"actual":   fmt.Sprintf("%T", ev.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
 
@@ -243,10 +240,7 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 
 				data, ok := ev.Data.(tmtypes.EventDataNewBlockHeader)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataNewBlockHeader",
-						"actual":   fmt.Sprintf("%T", ev.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
 
@@ -296,10 +290,7 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 
 				data, ok := ev.Data.(tmtypes.EventDataNewBlockHeader)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataNewBlockHeader",
-						"actual":   fmt.Sprintf("%T", ev.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
 
@@ -359,10 +350,7 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 				// get transaction result data
 				dataTx, ok := ev.Data.(tmtypes.EventDataTx)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataTx",
-						"actual":   fmt.Sprintf("%T", ev.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
 
@@ -436,10 +424,7 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 				}
 				dataTx, ok := ev.Data.(tmtypes.EventDataTx)
 				if !ok {
-					log.WithFields(log.Fields{
-						"expected": "tmtypes.EventDataTx",
-						"actual":   fmt.Sprintf("%T", ev.Data),
-					}).Warningln("event Data type mismatch")
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
 
@@ -474,7 +459,7 @@ func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit filters.FilterCrit
 	var filter *Filter
 	if crit.BlockHash != nil {
 		// Block filter requested, construct a single-shot filter
-		filter = NewBlockFilter(api.backend, crit)
+		filter = NewBlockFilter(api.logger, api.backend, crit)
 	} else {
 		// Convert the RPC block numbers into internal representations
 		begin := rpc.LatestBlockNumber.Int64()
@@ -486,7 +471,7 @@ func (api *PublicFilterAPI) GetLogs(ctx context.Context, crit filters.FilterCrit
 			end = crit.ToBlock.Int64()
 		}
 		// Construct the range filter
-		filter = NewRangeFilter(api.backend, begin, end, crit.Addresses, crit.Topics)
+		filter = NewRangeFilter(api.logger, api.backend, begin, end, crit.Addresses, crit.Topics)
 	}
 
 	// Run the filter and return all the logs
@@ -536,7 +521,7 @@ func (api *PublicFilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*et
 	var filter *Filter
 	if f.crit.BlockHash != nil {
 		// Block filter requested, construct a single-shot filter
-		filter = NewBlockFilter(api.backend, f.crit)
+		filter = NewBlockFilter(api.logger, api.backend, f.crit)
 	} else {
 		// Convert the RPC block numbers into internal representations
 		begin := rpc.LatestBlockNumber.Int64()
@@ -548,7 +533,7 @@ func (api *PublicFilterAPI) GetFilterLogs(ctx context.Context, id rpc.ID) ([]*et
 			end = f.crit.ToBlock.Int64()
 		}
 		// Construct the range filter
-		filter = NewRangeFilter(api.backend, begin, end, f.crit.Addresses, f.crit.Topics)
+		filter = NewRangeFilter(api.logger, api.backend, begin, end, f.crit.Addresses, f.crit.Topics)
 	}
 	// Run the filter and return all the logs
 	logs, err := filter.Logs(ctx)

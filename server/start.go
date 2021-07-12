@@ -15,7 +15,6 @@ import (
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/xlab/closer"
-	log "github.com/xlab/suplog"
 	"google.golang.org/grpc"
 
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -168,17 +167,18 @@ which accepts a path for the resulting pprof file.
 func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) error {
 	cfg := ctx.Config
 	home := cfg.RootDir
+	logger := ctx.Logger
 
 	traceWriterFile := ctx.Viper.GetString(flagTraceStore)
 	db, err := openDB(home)
 	if err != nil {
-		log.WithError(err).Errorln("failed to open DB")
+		logger.Error("failed to open DB", "error", err.Error())
 		return err
 	}
 
 	traceWriter, err := openTraceWriter(traceWriterFile)
 	if err != nil {
-		log.WithError(err).Errorln("failed to open trace writer")
+		logger.Error("failed to open trace writer", "error", err.Error())
 		return err
 	}
 
@@ -186,7 +186,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
 	if err != nil {
-		log.WithError(err).Errorln("failed load or gen node key")
+		logger.Error("failed load or gen node key", "error", err.Error())
 		return err
 	}
 
@@ -202,12 +202,12 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		ctx.Logger.With("module", "node"),
 	)
 	if err != nil {
-		log.WithError(err).Errorln("failed init node")
+		logger.Error("failed init node", "error", err.Error())
 		return err
 	}
 
 	if err := tmNode.Start(); err != nil {
-		log.WithError(err).Errorln("failed start tendermint server")
+		logger.Error("failed start tendermint server", "error", err.Error())
 		return err
 	}
 
@@ -228,7 +228,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if config.GRPC.Enable {
 		grpcSrv, err = servergrpc.StartGRPCServer(clientCtx, app, config.GRPC.Address)
 		if err != nil {
-			log.WithError(err).Errorln("failed to boot GRPC server")
+			logger.Error("failed to boot GRPC server", "error", err.Error())
 			return err
 		}
 	}
@@ -241,18 +241,19 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if config.EVMRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
-		log.Infoln("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
+		logger.Info("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
 		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		rpcServer := ethrpc.NewServer()
-		apis := rpc.GetRPCAPIs(clientCtx, tmWsClient)
+		apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient)
 
 		for _, api := range apis {
 			if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
-				log.WithFields(log.Fields{
-					"namespace": api.Namespace,
-					"service":   api.Service,
-				}).WithError(err).Fatalln("failed to register service in EVM RPC namespace")
+				logger.Error(
+					"failed to register service in EVM RPC namespace",
+					"namespace", api.Namespace,
+					"service", api.Service,
+				)
 				return err
 			}
 		}
@@ -286,31 +287,31 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 		errCh := make(chan error)
 		go func() {
-			log.Infoln("Starting EVM RPC server on", config.EVMRPC.RPCAddress)
+			logger.Info("Starting EVM RPC server", "address", config.EVMRPC.RPCAddress)
 			if err := httpSrv.ListenAndServe(); err != nil {
 				if err == http.ErrServerClosed {
 					close(httpSrvDone)
 					return
 				}
 
-				log.WithError(err).Errorln("failed to start EVM RPC server")
+				logger.Error("failed to start EVM RPC server", "error", err.Error())
 				errCh <- err
 			}
 		}()
 
 		select {
 		case err := <-errCh:
-			log.WithError(err).Errorln("failed to boot EVM RPC server")
+			logger.Error("failed to boot EVM RPC server", "error", err.Error())
 			return err
 		case <-time.After(1 * time.Second): // assume EVM RPC server started successfully
 		}
 
-		log.Infoln("Starting EVM WebSocket server on", config.EVMRPC.WsAddress)
+		logger.Info("Starting EVM WebSocket server", "address", config.EVMRPC.WsAddress)
 		_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
 
 		// allocate separate WS connection to Tendermint
 		tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint)
-		wsSrv = rpc.NewWebsocketsServer(tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
+		wsSrv = rpc.NewWebsocketsServer(logger, tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
 		go wsSrv.Start()
 	}
 
@@ -329,7 +330,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 		select {
 		case err := <-errCh:
-			log.WithError(err).Errorln("failed to boot API server")
+			logger.Error("failed to boot API server", "error", err.Error())
 			return err
 		case <-time.After(5 * time.Second): // assume server started successfully
 		}
@@ -340,17 +341,17 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if cpuProfile := ctx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
 		f, err := os.Create(cpuProfile)
 		if err != nil {
-			log.WithError(err).Errorln("failed to create CP profile")
+			logger.Error("failed to create CP profile", "error", err.Error())
 			return err
 		}
 
-		log.WithField("profile", cpuProfile).Infoln("starting CPU profiler")
+		logger.Info("starting CPU profiler", "profile", cpuProfile)
 		if err := pprof.StartCPUProfile(f); err != nil {
 			return err
 		}
 
 		cpuProfileCleanup = func() {
-			log.WithField("profile", cpuProfile).Infoln("stopping CPU profiler")
+			logger.Info("stopping CPU profiler", "profile", cpuProfile)
 			pprof.StopCPUProfile()
 			f.Close()
 		}
@@ -370,9 +371,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			defer cancelFn()
 
 			if err := httpSrv.Shutdown(shutdownCtx); err != nil {
-				log.WithError(err).Warningln("HTTP server shutdown produced a warning")
+				logger.Error("HTTP server shutdown produced a warning", "error", err.Error())
 			} else {
-				log.Infoln("HTTP server shut down, waiting 5 sec")
+				logger.Info("HTTP server shut down, waiting 5 sec")
 				select {
 				case <-time.Tick(5 * time.Second):
 				case <-httpSrvDone:
@@ -384,7 +385,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			grpcSrv.Stop()
 		}
 
-		log.Infoln("Bye!")
+		logger.Info("Bye!")
 	})
 
 	closer.Hold()
