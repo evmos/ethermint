@@ -612,40 +612,18 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 		}
 
 		for _, tx := range txs {
-			if tx == nil {
-				return nil, fmt.Errorf("invalid tx in mempool")
-			}
-
-			if len((*tx).GetMsgs()) != 1 {
-				continue
-			}
-			msg, ok := (*tx).GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-			if !ok {
-				continue
-			}
-
-			txhash := msg.AsTransaction().Hash()
-			if txhash != hash {
-				continue
-			}
-
-			from, err := msg.GetSender(e.chainIDEpoch)
+			msg, err := evmtypes.UnwrapEthereumMsg(tx)
 			if err != nil {
-				return nil, err
+				// not ethereum tx
+				continue
 			}
 
-			data, err := evmtypes.UnpackTxData(msg.Data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unpack tx data: %w", err)
-			}
-
-			rpctx, err := rpctypes.NewTransactionFromData(
-				data,
-				from,
-				hash,
+			rpctx, err := rpctypes.NewTransactionFromMsg(
+				msg,
 				common.Hash{},
 				uint64(0),
 				uint64(0),
+				e.chainIDEpoch,
 			)
 			if err != nil {
 				return nil, err
@@ -666,33 +644,18 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	if len(tx.GetMsgs()) != 1 {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
-	}
-	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-	if !ok {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
-	}
-
-	from, err := msg.GetSender(e.chainIDEpoch)
+	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
 	if err != nil {
+		e.logger.WithError(err).Debugln("invalid tx")
 		return nil, err
 	}
 
-	data, err := evmtypes.UnpackTxData(msg.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
-	}
-
-	return rpctypes.NewTransactionFromData(
-		data,
-		from,
-		hash,
+	return rpctypes.NewTransactionFromMsg(
+		msg,
 		common.BytesToHash(resBlock.Block.Hash()),
 		uint64(res.Height),
 		uint64(res.Index),
+		e.chainIDEpoch,
 	)
 }
 
@@ -719,31 +682,18 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	if len(tx.GetMsgs()) != 1 {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
-	}
-	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-	if !ok {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
-	}
-
-	txHash := msg.AsTransaction().Hash()
-
-	txData, err := evmtypes.UnpackTxData(msg.Data)
+	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
 	if err != nil {
-		e.logger.WithError(err).Debugln("decoding failed")
-		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+		e.logger.WithError(err).Debugln("invalid tx")
+		return nil, err
 	}
 
-	return rpctypes.NewTransactionFromData(
-		txData,
-		common.HexToAddress(msg.From),
-		txHash,
+	return rpctypes.NewTransactionFromMsg(
+		msg,
 		hash,
 		uint64(resBlock.Block.Height),
 		uint64(idx),
+		e.chainIDEpoch,
 	)
 }
 
@@ -770,31 +720,18 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	if len(tx.GetMsgs()) != 1 {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
-	}
-	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-	if !ok {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
-	}
-
-	txHash := msg.AsTransaction().Hash()
-
-	txData, err := evmtypes.UnpackTxData(msg.Data)
+	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
 	if err != nil {
-		e.logger.WithError(err).Debugln("decoding failed")
-		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+		e.logger.WithError(err).Debugln("invalid tx")
+		return nil, err
 	}
 
-	return rpctypes.NewTransactionFromData(
-		txData,
-		common.HexToAddress(msg.From),
-		txHash,
+	return rpctypes.NewTransactionFromMsg(
+		msg,
 		common.BytesToHash(resBlock.Block.Hash()),
 		uint64(resBlock.Block.Height),
 		uint64(idx),
+		e.chainIDEpoch,
 	)
 }
 
@@ -820,15 +757,10 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	if len(tx.GetMsgs()) != 1 {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
-	}
-
-	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-	if !ok {
-		e.logger.Debugln("invalid tx")
-		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
+	if err != nil {
+		e.logger.WithError(err).Debugln("invalid tx")
+		return nil, err
 	}
 
 	txData, err := evmtypes.UnpackTxData(msg.Data)
@@ -911,8 +843,34 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 func (e *PublicAPI) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	e.logger.Debugln("eth_getPendingTransactions")
 
-	// FIXME https://github.com/tharsis/ethermint/issues/244
-	return []*rpctypes.RPCTransaction{}, nil
+	txs, err := e.backend.PendingTransactions()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*rpctypes.RPCTransaction, 0, len(txs))
+	for _, tx := range txs {
+		msg, err := evmtypes.UnwrapEthereumMsg(tx)
+		if err != nil {
+			// not valid ethereum tx
+			continue
+		}
+
+		rpctx, err := rpctypes.NewTransactionFromMsg(
+			msg,
+			common.Hash{},
+			uint64(0),
+			uint64(0),
+			e.chainIDEpoch,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, rpctx)
+	}
+
+	return result, nil
 }
 
 // GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.
@@ -1095,16 +1053,12 @@ func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height
 	// add the uncommitted txs to the nonce counter
 	// only supports `MsgEthereumTx` style tx
 	for _, tx := range pendingTxs {
-		if tx == nil {
+		msg, err := evmtypes.UnwrapEthereumMsg(tx)
+		if err != nil {
+			// not ethereum tx
 			continue
 		}
-		if len((*tx).GetMsgs()) != 1 {
-			continue
-		}
-		msg, ok := (*tx).GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-		if !ok {
-			continue
-		}
+
 		sender, err := msg.GetSender(e.chainIDEpoch)
 		if err != nil {
 			continue
