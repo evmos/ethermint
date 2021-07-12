@@ -130,8 +130,9 @@ func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloo
 
 // GetBlockBloomTransient returns bloom bytes for the current block height
 func (k Keeper) GetBlockBloomTransient() *big.Int {
-	store := k.ctx.TransientStore(k.transientKey)
-	bz := store.Get(types.KeyPrefixTransientBloom)
+	store := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientBloom)
+	heightBz := sdk.Uint64ToBigEndian(uint64(k.ctx.BlockHeight()))
+	bz := store.Get(heightBz)
 	if len(bz) == 0 {
 		return big.NewInt(0)
 	}
@@ -142,8 +143,9 @@ func (k Keeper) GetBlockBloomTransient() *big.Int {
 // SetBlockBloomTransient sets the given bloom bytes to the transient store. This value is reset on
 // every block.
 func (k Keeper) SetBlockBloomTransient(bloom *big.Int) {
-	store := k.ctx.TransientStore(k.transientKey)
-	store.Set(types.KeyPrefixTransientBloom, bloom.Bytes())
+	store := prefix.NewStore(k.ctx.TransientStore(k.transientKey), types.KeyPrefixTransientBloom)
+	heightBz := sdk.Uint64ToBigEndian(uint64(k.ctx.BlockHeight()))
+	store.Set(heightBz, bloom.Bytes())
 }
 
 // ----------------------------------------------------------------------------
