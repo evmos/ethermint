@@ -291,6 +291,17 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 	return core.IntrinsicGas(msg.Data(), msg.AccessList(), isContractCreation, homestead, istanbul)
 }
 
+// GasToRefund calculate the amount of gas should refund to sender
+func (k *Keeper) GasToRefund(gasConsumed, refundQuotient uint64) uint64 {
+	// Apply refund counter
+	refund := gasConsumed / refundQuotient
+	availableRefund := k.GetRefund()
+	if refund > availableRefund {
+		return availableRefund
+	}
+	return refund
+}
+
 // RefundGas transfers the leftover gas to the sender of the message, caped to half of the total gas
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
@@ -304,13 +315,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64)
 	}
 
 	gasConsumed := msg.Gas() - leftoverGas
-
-	// Apply refund counter, capped to half of the used gas.
-	refund := gasConsumed / refundQuotient
-	availableRefund := k.GetRefund()
-	if refund > availableRefund {
-		refund = availableRefund
-	}
+	refund := k.GasToRefund(gasConsumed, refundQuotient)
 
 	leftoverGas += refund
 

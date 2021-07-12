@@ -2,15 +2,18 @@ package keeper
 
 import (
 	"context"
+	"encoding/json"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -267,9 +270,17 @@ func (k Keeper) BlockBloom(c context.Context, _ *types.QueryBlockBloomRequest) (
 
 	bloom, found := k.GetBlockBloom(ctx, ctx.BlockHeight())
 	if !found {
-		return nil, status.Error(
-			codes.NotFound, types.ErrBloomNotFound.Error(),
-		)
+		// if the bloom is not found, query the transient store at the current height
+		k.ctx = ctx
+		bloomInt := k.GetBlockBloomTransient()
+
+		if bloomInt.Sign() == 0 {
+			return nil, status.Error(
+				codes.NotFound, sdkerrors.Wrapf(types.ErrBloomNotFound, "height: %d", ctx.BlockHeight()).Error(),
+			)
+		}
+
+		bloom = ethtypes.BytesToBloom(bloomInt.Bytes())
 	}
 
 	return &types.QueryBlockBloomResponse{
@@ -298,4 +309,35 @@ func (k Keeper) ChainConfig(c context.Context, _ *types.QueryChainConfigRequest)
 	return &types.QueryChainConfigResponse{
 		Config: cfg,
 	}, nil
+}
+
+// EthCall implements eth_call rpc api.
+func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.MsgEthereumTxResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
+
+	var args types.CallArgs
+	err := json.Unmarshal(req.Args, &args)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	msg := args.ToMessage(uint64(ethermint.DefaultRPCGasLimit))
+
+	cfg, found := k.GetChainConfig(ctx)
+	if !found {
+		return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
+	}
+	ethCfg := cfg.EthereumConfig(k.eip155ChainID)
+	evm := k.NewEVM(msg, ethCfg)
+	res, err := k.ApplyMessage(evm, msg, ethCfg)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// ApplyMessage don't handle gas refund, let's do it here
+	refund := k.GasToRefund(res.GasUsed)
+	res.GasUsed -= refund
+
+	return res, nil
 }
