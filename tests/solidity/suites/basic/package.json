@@ -9,9 +9,7 @@
   },
   "devDependencies": {
     "truffle": "^5.1.42",
+    "truffle-assertions": "^0.9.2",
     "web3": "^1.2.11"
-  },
-  "dependencies": {
-    "truffle": "^5.1.43"
   }
 }
