@@ -759,7 +759,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
 	if err != nil {
-		e.logger.Debugln("invalid tx")
+		e.logger.WithError(err).Debugln("invalid tx")
 		return nil, err
 	}
 
