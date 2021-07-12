@@ -18,8 +18,8 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 | [`web3_clientVersion`](#web3-clientversion)                                       | Web3      | ✔           |                           |
 | [`web3_sha3`](#web3-sha3)                                                         | Web3      | ✔           |                           |
 | [`net_version`](#net-version)                                                     | Net       | ✔           |                           |
-| `net_peerCount`                                                                   | Net       |             |                           |
-| `net_listening`                                                                   | Net       |             |                           |
+| [`net_peerCount`](#net-peerCount)                                                 | Net       | ✔           |                           |
+| [`net_listening`](#net-listening)                                                 | Net       | ✔           |                           |
 | [`eth_protocolVersion`](#eth-protocolversion)                                     | Eth       | ✔           |                           |
 | [`eth_syncing`](#eth-syncing)                                                     | Eth       | ✔           |                           |
 | [`eth_gasPrice`](#eth-gasprice)                                                   | Eth       | ✔           |                           |
@@ -197,6 +197,29 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}
 
 // Result
 {"jsonrpc":"2.0","id":1,"result":"8"}
+```
+
+### net_peerCount
+
+Returns the number of peers currently connected to the client.
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":23}
+```
+
+### net_listening
+
+Returns if client is actively listening for network connections.
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"net_listening","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":true}
 ```
 
 ## Eth Methods
