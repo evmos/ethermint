@@ -236,6 +236,27 @@ func ErrRevertedWith(data []byte) DataError {
 	}
 }
 
+// NewTransactionFromMsg returns a transaction that will serialize to the RPC
+// representation, with the given location metadata set (if available).
+func NewTransactionFromMsg(
+	msg *evmtypes.MsgEthereumTx,
+	blockHash common.Hash,
+	blockNumber, index uint64,
+	chainID *big.Int,
+) (*RPCTransaction, error) {
+	from, err := msg.GetSender(chainID)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
+	return NewTransactionFromData(data, from, msg.AsTransaction().Hash(), blockHash, blockNumber, index)
+}
+
 // NewTransactionFromData returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func NewTransactionFromData(
