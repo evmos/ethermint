@@ -248,7 +248,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 
 	req := &evmtypes.QueryBlockBloomRequest{}
 
-	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
+	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height+1), req)
 	if err != nil {
 		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
 		return nil, err
