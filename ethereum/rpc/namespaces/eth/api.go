@@ -567,7 +567,9 @@ func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs) (hexutil.Uint64, error) 
 		return 0, evmtypes.NewExecErrorWithReason(data.Ret)
 	}
 
-	return hexutil.Uint64(data.GasUsed), nil
+	// estimate for ethereum
+	// example: computed 21204 , ethereum 41646
+	return hexutil.Uint64(data.GasUsed + 40000), nil
 }
 
 // GetBlockByHash returns the block identified by hash.
