@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/cosmos"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
@@ -21,6 +22,7 @@ import (
 
 // RPC namespaces and API version
 const (
+	CosmosNamespace   = "cosmos"
 	Web3Namespace     = "web3"
 	EthNamespace      = "eth"
 	PersonalNamespace = "personal"
@@ -37,6 +39,12 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, backend, nonceLock)
 
 	return []rpc.API{
+		{
+			Namespace: CosmosNamespace,
+			Version:   apiVersion,
+			Service:   cosmos.NewAPI(clientCtx, ctx.Logger),
+			Public:    true,
+		},
 		{
 			Namespace: Web3Namespace,
 			Version:   apiVersion,
