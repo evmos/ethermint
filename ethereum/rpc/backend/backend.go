@@ -248,14 +248,14 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 
 	req := &evmtypes.QueryBlockBloomRequest{}
 
-	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height+1), req)
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
 		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
-		return nil, err
+		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
 	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
-	ethHeader.Bloom = ethtypes.BytesToBloom(res.Bloom)
+	ethHeader.Bloom = ethtypes.BytesToBloom(blockBloomResp.Bloom)
 	return ethHeader, nil
 }
 
