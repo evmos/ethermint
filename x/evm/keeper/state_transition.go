@@ -138,23 +138,25 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
-
-	// Set the bloom filter and commit only if transaction is NOT reverted
 	logs := k.GetTxLogs(txHash)
+
 	// Commit and switch to original context
 	if !res.Reverted {
 		commit()
 	}
 	k.ctx = originalCtx
 
-	// refund gas prior to handling the vm error in order to set the updated gas meter
+	// Logs needs to be ignored when tx is reverted
+	// Set the log and bloom filter only when the tx is NOT REVERTED
 	if !res.Reverted {
 		res.Logs = types.NewLogsFromEth(logs)
-		// update block bloom filter in the original context
+		// Update block bloom filter in the original context because blockbloom is set in EndBlock
 		bloom := k.GetBlockBloomTransient()
 		bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
 		k.SetBlockBloomTransient(bloom)
 	}
+
+	// refund gas prior to handling the vm error in order to set the updated gas meter
 	leftoverGas := msg.Gas() - res.GasUsed
 	leftoverGas, err = k.RefundGas(msg, leftoverGas)
 	if err != nil {
