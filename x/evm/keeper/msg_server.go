@@ -75,8 +75,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, tx.To().Hex()))
 	}
 
-	if response.Reverted {
-		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyEthereumTxReverted, "true"))
+	if response.Failed() {
+		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyEthereumTxFailed, response.VmError))
 	}
 
 	// emit events

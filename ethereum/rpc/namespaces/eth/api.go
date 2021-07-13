@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/hd"
@@ -525,10 +526,6 @@ func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNr rpctypes.BlockNumber, _
 		return []byte{}, err
 	}
 
-	if data.Reverted {
-		return []byte{}, evmtypes.NewExecErrorWithReason(data.Ret)
-	}
-
 	return (hexutil.Bytes)(data.Ret), nil
 }
 
@@ -547,6 +544,13 @@ func (e *PublicAPI) doCall(
 		return nil, err
 	}
 
+	if res.Failed() {
+		if res.VmError == vm.ErrExecutionReverted.Error() {
+			return nil, evmtypes.NewExecErrorWithReason(res.Ret)
+		}
+		return nil, errors.New(res.VmError)
+	}
+
 	return res, nil
 }
 
@@ -560,10 +564,6 @@ func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs) (hexutil.Uint64, error) 
 	data, err := e.doCall(args, 0)
 	if err != nil {
 		return 0, err
-	}
-
-	if data.Reverted {
-		return 0, evmtypes.NewExecErrorWithReason(data.Ret)
 	}
 
 	return hexutil.Uint64(data.GasUsed), nil
@@ -781,7 +781,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	// Get the transaction result from the log
 	var status hexutil.Uint
-	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxReverted) {
+	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxFailed) {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)

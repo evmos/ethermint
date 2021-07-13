@@ -385,14 +385,11 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	}
 
 	evm := k.NewEVM(msg, ethCfg, params, coinbase)
-	res, err := k.ApplyMessage(evm, msg, ethCfg)
+	// pass true means execute in query mode, which don't do actual gas refund.
+	res, err := k.ApplyMessage(evm, msg, ethCfg, true)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
-	// ApplyMessage don't handle gas refund, let's do it here
-	refund := k.GasToRefund(res.GasUsed)
-	res.GasUsed -= refund
 
 	return res, nil
 }
