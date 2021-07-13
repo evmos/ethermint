@@ -476,6 +476,7 @@ EthCallRequest defines EthCall request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `args` | [bytes](#bytes) |  | same json format as the json rpc api. |
+| `gas_cap` | [uint64](#uint64) |  | the default gas cap to be used |
 
 
 

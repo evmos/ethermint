@@ -1721,6 +1721,12 @@ paths:
           required: false
           type: string
           format: byte
+        - name: gas_cap
+          description: the default gas cap to be used.
+          in: query
+          required: false
+          type: string
+          format: uint64
       tags:
         - Query
   /ethermint/evm/v1alpha1/params:
