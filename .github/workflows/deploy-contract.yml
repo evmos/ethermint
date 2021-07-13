@@ -34,5 +34,5 @@ jobs:
       - name: Test contract
         run: |
           sudo make contract-tools
-          sudo make test-contract
+          sudo make test-solidity
         if: "env.GIT_DIFF != ''"

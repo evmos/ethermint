@@ -184,4 +184,10 @@ async function main() {
   process.exit(0);
 }
 
+// Add handler to exit the program when UnhandledPromiseRejection
+
+process.on('unhandledRejection', () => {
+  process.exit(-1);
+});
+
 main();
