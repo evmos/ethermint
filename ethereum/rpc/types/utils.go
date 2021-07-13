@@ -47,12 +47,12 @@ func EthBlockFromTendermint(clientCtx client.Context, queryClient *QueryClient, 
 
 	req := &evmtypes.QueryBlockBloomRequest{}
 
-	res, err := queryClient.BlockBloom(ContextWithHeight(block.Height), req)
+	blockBloomResp, err := queryClient.BlockBloom(ContextWithHeight(block.Height), req)
 	if err != nil {
-		return nil, err
+		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
-	bloom := ethtypes.BytesToBloom(res.Bloom)
+	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
 
 	return FormatBlock(block.Header, block.Size(), gasLimit, gasUsed, transactions, bloom), nil
 }
