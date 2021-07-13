@@ -1,9 +1,11 @@
 package txpool
 
 import (
+	"github.com/tendermint/tendermint/libs/log"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
-	log "github.com/xlab/suplog"
 )
 
 // PublicAPI offers and API for the transaction pool. It only operates on data that is non-confidential.
@@ -13,9 +15,9 @@ type PublicAPI struct {
 }
 
 // NewPublicAPI creates a new tx pool service that gives information about the transaction pool.
-func NewPublicAPI() *PublicAPI {
+func NewPublicAPI(logger log.Logger) *PublicAPI {
 	return &PublicAPI{
-		logger: log.WithField("module", "txpool"),
+		logger: logger.With("module", "txpool"),
 	}
 }
 

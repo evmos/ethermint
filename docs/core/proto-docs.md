@@ -21,7 +21,18 @@
     - [GenesisAccount](#ethermint.evm.v1alpha1.GenesisAccount)
     - [GenesisState](#ethermint.evm.v1alpha1.GenesisState)
   
+- [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
+    - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
+    - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
+    - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
+    - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
+    - [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx)
+    - [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse)
+  
+    - [Msg](#ethermint.evm.v1alpha1.Msg)
+  
 - [ethermint/evm/v1alpha1/query.proto](#ethermint/evm/v1alpha1/query.proto)
+    - [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest)
     - [QueryAccountRequest](#ethermint.evm.v1alpha1.QueryAccountRequest)
     - [QueryAccountResponse](#ethermint.evm.v1alpha1.QueryAccountResponse)
     - [QueryBalanceRequest](#ethermint.evm.v1alpha1.QueryBalanceRequest)
@@ -48,16 +59,6 @@
     - [QueryValidatorAccountResponse](#ethermint.evm.v1alpha1.QueryValidatorAccountResponse)
   
     - [Query](#ethermint.evm.v1alpha1.Query)
-  
-- [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
-    - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
-    - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
-    - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
-    - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
-    - [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx)
-    - [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse)
-  
-    - [Msg](#ethermint.evm.v1alpha1.Msg)
   
 - [ethermint/types/v1alpha1/account.proto](#ethermint/types/v1alpha1/account.proto)
     - [EthAccount](#ethermint.types.v1alpha1.EthAccount)
@@ -337,10 +338,158 @@ GenesisState defines the evm module's genesis state.
 
 
 
+<a name="ethermint/evm/v1alpha1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethermint/evm/v1alpha1/tx.proto
+
+
+
+<a name="ethermint.evm.v1alpha1.AccessListTx"></a>
+
+### AccessListTx
+AccessListTx is the data of EIP-2930 access list transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_id` | [string](#string) |  | destination EVM chain ID |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx"></a>
+
+### ExtensionOptionsEthereumTx
+
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx"></a>
+
+### ExtensionOptionsWeb3Tx
+
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.LegacyTx"></a>
+
+### LegacyTx
+LegacyTx is the transaction data of regular Ethereum transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.MsgEthereumTx"></a>
+
+### MsgEthereumTx
+MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [google.protobuf.Any](#google.protobuf.Any) |  | inner transaction data
+
+caches |
+| `size` | [double](#double) |  | encoded storage size of the transaction |
+| `hash` | [string](#string) |  | transaction hash in hex format |
+| `from` | [string](#string) |  | ethereum signer address in hex format. This address value is checked against the address derived from the signature (V, R, S) using the secp256k1 elliptic curve |
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.MsgEthereumTxResponse"></a>
+
+### MsgEthereumTxResponse
+MsgEthereumTxResponse defines the Msg/EthereumTx response type.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `hash` | [string](#string) |  | ethereum transaction hash in hex format. This hash differs from the Tendermint sha256 hash of the transaction bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference |
+| `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
+| `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
+| `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
+| `gas_used` | [uint64](#uint64) |  | gas consumed by the transaction |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="ethermint.evm.v1alpha1.Msg"></a>
+
+### Msg
+Msg defines the evm Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | |
+
+ <!-- end services -->
+
+
+
 <a name="ethermint/evm/v1alpha1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## ethermint/evm/v1alpha1/query.proto
+
+
+
+<a name="ethermint.evm.v1alpha1.EthCallRequest"></a>
+
+### EthCallRequest
+EthCallRequest defines EthCall request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `args` | [bytes](#bytes) |  | same json format as the json rpc api. |
+
+
+
 
 
 
@@ -728,139 +877,7 @@ Query defines the gRPC querier service.
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
 | `ChainConfig` | [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest) | [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse) | ChainConfig queries the chain configuration values of EVM. | GET|/ethermint/evm/v1alpha1/chain_config|
 | `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1alpha1/static_call|
-
- <!-- end services -->
-
-
-
-<a name="ethermint/evm/v1alpha1/tx.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## ethermint/evm/v1alpha1/tx.proto
-
-
-
-<a name="ethermint.evm.v1alpha1.AccessListTx"></a>
-
-### AccessListTx
-AccessListTx is the data of EIP-2930 access list transactions.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chain_id` | [string](#string) |  | destination EVM chain ID |
-| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
-| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
-| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
-| `to` | [string](#string) |  | hex formatted address of the recipient |
-| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
-| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
-| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
-| `v` | [bytes](#bytes) |  | v defines the signature value |
-| `r` | [bytes](#bytes) |  | r defines the signature value |
-| `s` | [bytes](#bytes) |  | s define the signature value |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx"></a>
-
-### ExtensionOptionsEthereumTx
-
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx"></a>
-
-### ExtensionOptionsWeb3Tx
-
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.LegacyTx"></a>
-
-### LegacyTx
-LegacyTx is the transaction data of regular Ethereum transactions.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
-| `gas_price` | [string](#string) |  | gas price defines the value for each gas unit |
-| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
-| `to` | [string](#string) |  | hex formatted address of the recipient |
-| `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
-| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
-| `v` | [bytes](#bytes) |  | v defines the signature value |
-| `r` | [bytes](#bytes) |  | r defines the signature value |
-| `s` | [bytes](#bytes) |  | s define the signature value |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.MsgEthereumTx"></a>
-
-### MsgEthereumTx
-MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `data` | [google.protobuf.Any](#google.protobuf.Any) |  | inner transaction data
-
-caches |
-| `size` | [double](#double) |  | encoded storage size of the transaction |
-| `hash` | [string](#string) |  | transaction hash in hex format |
-| `from` | [string](#string) |  | ethereum signer address in hex format. This address value is checked against the address derived from the signature (V, R, S) using the secp256k1 elliptic curve |
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.MsgEthereumTxResponse"></a>
-
-### MsgEthereumTxResponse
-MsgEthereumTxResponse defines the Msg/EthereumTx response type.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `hash` | [string](#string) |  | ethereum transaction hash in hex format. This hash differs from the Tendermint sha256 hash of the transaction bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference |
-| `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
-| `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
-| `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
-| `gas_used` | [uint64](#uint64) |  | gas consumed by the transaction |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="ethermint.evm.v1alpha1.Msg"></a>
-
-### Msg
-Msg defines the evm Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | |
+| `EthCall` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1alpha1/eth_call|
 
  <!-- end services -->
 
