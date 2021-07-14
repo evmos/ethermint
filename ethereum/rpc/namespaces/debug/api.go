@@ -2,10 +2,12 @@ package debug
 
 import (
 	"context"
+	"encoding/hex"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tharsis/ethermint/crypto/hd"
@@ -19,6 +21,7 @@ import (
 // DebugAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
 type DebugAPI struct {
 	ctx         context.Context
+	clientCtx   client.Context
 	queryClient *rpctypes.QueryClient
 	backend     backend.Backend
 	logger      log.Logger
@@ -56,6 +59,7 @@ func NewDebugAPI(
 
 	return &DebugAPI{
 		ctx:         context.Background(),
+		clientCtx:   clientCtx,
 		queryClient: rpctypes.NewQueryClient(clientCtx),
 		logger:      logger.With("module", "debug"),
 		backend:     backend,
@@ -86,18 +90,9 @@ func (a *DebugAPI) DumpBlock() string {
 }
 
 func (a *DebugAPI) GcStats() string {
-	// s := new(debug.GCStats)
-	// debug.ReadGCStats(s)
-	// return s
-
+	// This is blocked because we don't have go-ethereum/metrics/debug.go runing on the background
 	return "TO BE IMPLEMENTED"
 }
-
-// func (ec *Client) GCStats(ctx context.Context) (*debug.GCStats, error) {
-// 	var result debug.GCStats
-// 	err := ec.c.CallContext(ctx, &result, "debug_gcStats")
-// 	return &result, err
-// }
 
 func (a *DebugAPI) GetBlockRlp() string {
 	return "TO BE IMPLEMENTED"
@@ -169,8 +164,44 @@ func (a *DebugAPI) StandardTraceBadBlockToFile() string {
 }
 
 // We need this for etherscan
-func (a *DebugAPI) TraceTransaction() string {
-	return "TO BE IMPLEMENTED"
+// $ curl -X POST --data '{"jsonrpc":"2.0","method":"debug_traceTransaction","params":["735C9268FCFBC944DE61376637FD522CFF447A221D64B744C6BBC72D67420372"],"id":67}' -H "Content-Type: application/json" http://localhost:8545
+func (a *DebugAPI) TraceTransaction(hashHex string) (string, error) {
+
+	hash, err := hex.DecodeString(hashHex)
+	if err != nil {
+		return "", err
+	}
+	node, err := a.clientCtx.GetNode()
+	if err != nil {
+		return "", err
+	}
+
+	tx, err := node.Tx(context.Background(), hash, false)
+	if err != nil {
+		return "", err
+	}
+
+	// Can either cache or just leave this out if not necessary
+	block, err := node.Block(context.Background(), &tx.Height)
+	if err != nil {
+		return "", err
+	}
+
+	blockHash := common.BytesToHash(block.Block.Header.Hash())
+
+	ethTx, err := rpctypes.RawTxToEthTx(a.clientCtx, tx.Tx)
+	if err != nil {
+		return "", err
+	}
+
+	// height := uint64(tx.Height)
+	// rpcTx := rpctypes.NewTransaction(ethTx.AsTransaction(), blockHash, height, uint64(tx.Index))
+
+	a.logger.Info(blockHash.Hex())
+
+	return blockHash.Hex() + " " + ethTx.AsTransaction().Hash().Hex(), nil
+
+	// return "TO BE IMPLEMENTED"
 }
 
 func (a *DebugAPI) TraceCall() string {
