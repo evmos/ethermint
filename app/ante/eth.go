@@ -26,7 +26,8 @@ type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params) *vm.EVM
+	GetCoinbaseAddress() (common.Address, error)
+	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
 }
 
@@ -388,7 +389,8 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params)
+		// NOTE: pass in an empty coinbase address as we don't need it for the check below
+		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params, common.Address{})
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
