@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -42,8 +41,6 @@ type Backend interface {
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
-
-	ChainConfig() *params.ChainConfig
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -251,14 +248,14 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 
 	req := &evmtypes.QueryBlockBloomRequest{}
 
-	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
 		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
-		return nil, err
+		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
 	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
-	ethHeader.Bloom = ethtypes.BytesToBloom(res.Bloom)
+	ethHeader.Bloom = ethtypes.BytesToBloom(blockBloomResp.Bloom)
 	return ethHeader, nil
 }
 
@@ -272,14 +269,14 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 
 	req := &evmtypes.QueryBlockBloomRequest{}
 
-	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
 		e.logger.Debug("HeaderByHash BlockBloom failed", "height", resBlock.Block.Height)
-		return nil, err
+		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
 	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
-	ethHeader.Bloom = ethtypes.BytesToBloom(res.Bloom)
+	ethHeader.Bloom = ethtypes.BytesToBloom(blockBloomResp.Bloom)
 	return ethHeader, nil
 }
 
@@ -382,15 +379,4 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 // by the chain indexer.
 func (e *EVMBackend) BloomStatus() (uint64, uint64) {
 	return 4096, 0
-}
-
-// ChainConfig returns the chain configuration for the chain. This method returns a nil pointer if
-// the query fails.
-func (e *EVMBackend) ChainConfig() *params.ChainConfig {
-	res, err := e.queryClient.QueryClient.ChainConfig(e.ctx, &evmtypes.QueryChainConfigRequest{})
-	if err != nil {
-		return nil
-	}
-
-	return res.Config.EthereumConfig(e.chainID)
 }

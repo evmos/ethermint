@@ -10,8 +10,6 @@ option go_package = "github.com/tharsis/ethermint/x/evm/types";
 message GenesisState {
   // accounts is an array containing the ethereum genesis accounts.
   repeated GenesisAccount accounts = 1 [(gogoproto.nullable) = false];
-  // chain_config defines the Ethereum chain configuration.
-  ChainConfig chain_config = 2 [(gogoproto.moretags) = "yaml:\"chain_config\"", (gogoproto.nullable) = false];
   // params defines all the paramaters of the module.
   Params params = 3 [(gogoproto.nullable) = false];
 

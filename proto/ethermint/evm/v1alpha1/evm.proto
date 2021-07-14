@@ -9,52 +9,42 @@ option go_package = "github.com/tharsis/ethermint/x/evm/types";
 message Params {
   option (gogoproto.goproto_stringer) = false;
 
-  // evm_denom represents the token denomination used to run the EVM state
+  // evm denom represents the token denomination used to run the EVM state
   // transitions.
   string evm_denom = 1 [(gogoproto.moretags) = "yaml:\"evm_denom\""];
-  // enable_create toggles state transitions that use the vm.Create function
+  // enable create toggles state transitions that use the vm.Create function
   bool enable_create = 2 [(gogoproto.moretags) = "yaml:\"enable_create\""];
-  // enable_call toggles state transitions that use the vm.Call function
+  // enable call toggles state transitions that use the vm.Call function
   bool enable_call = 3 [(gogoproto.moretags) = "yaml:\"enable_call\""];
-  // extra_eips defines the additional EIPs for the vm.Config
+  // extra eips defines the additional EIPs for the vm.Config
   repeated int64 extra_eips = 4 [(gogoproto.customname) = "ExtraEIPs", (gogoproto.moretags) = "yaml:\"extra_eips\""];
+  // chain config defines the EVM chain configuration parameters
+  ChainConfig chain_config = 5 [(gogoproto.moretags) = "yaml:\"chain_config\"", (gogoproto.nullable) = false];
 }
 
-// ChainConfig defines the Ethereum ChainConfig parameters using sdk.Int values
-// instead of big.Int.
-//
-// NOTE 1: Since empty/uninitialized Ints (i.e with a nil big.Int value) are
-// parsed to zero, we need to manually specify that negative Int values will be
-// considered as nil. See getBlockValue for reference.
-//
-// NOTE 2: This type is not a configurable Param since the SDK does not allow
-// for validation against a previous stored parameter values or the current
-// block height (retrieved from context). If you want to update the config
-// values, use an software upgrade procedure.
+// ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
+// instead of *big.Int.
 message ChainConfig {
-  // Homestead switch block (< 0 no fork, 0 = already homestead)
+  // Homestead switch block (nil no fork, 0 = already homestead)
   string homestead_block = 1 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"homestead_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"homestead_block\""
   ];
-  // TheDAO hard-fork switch block (< 0 no fork)
+  // TheDAO hard-fork switch block (nil no fork)
   string dao_fork_block = 2 [
     (gogoproto.customname) = "DAOForkBlock",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"dao_fork_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"dao_fork_block\""
   ];
   // Whether the nodes supports or opposes the DAO hard-fork
   bool dao_fork_support = 3
       [(gogoproto.customname) = "DAOForkSupport", (gogoproto.moretags) = "yaml:\"dao_fork_support\""];
   // EIP150 implements the Gas price changes
-  // (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (< 0 no fork)
+  // (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil no fork)
   string eip150_block = 4 [
     (gogoproto.customname) = "EIP150Block",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"eip150_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"eip150_block\""
   ];
   // EIP150 HF hash (needed for header only clients as only gas pricing changed)
   string eip150_hash = 5 [(gogoproto.customname) = "EIP150Hash", (gogoproto.moretags) = "yaml:\"byzantium_block\""];
@@ -62,70 +52,59 @@ message ChainConfig {
   string eip155_block = 6 [
     (gogoproto.customname) = "EIP155Block",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"eip155_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"eip155_block\""
   ];
   // EIP158 HF block
   string eip158_block = 7 [
     (gogoproto.customname) = "EIP158Block",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"eip158_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"eip158_block\""
   ];
-  // Byzantium switch block (< 0 no fork, 0 = already on byzantium)
+  // Byzantium switch block (nil no fork, 0 = already on byzantium)
   string byzantium_block = 8 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"byzantium_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"byzantium_block\""
   ];
-  // Constantinople switch block (< 0 no fork, 0 = already activated)
+  // Constantinople switch block (nil no fork, 0 = already activated)
   string constantinople_block = 9 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"constantinople_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"constantinople_block\""
   ];
-  // Petersburg switch block (< 0 same as Constantinople)
+  // Petersburg switch block (nil same as Constantinople)
   string petersburg_block = 10 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"petersburg_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"petersburg_block\""
   ];
-  // Istanbul switch block (< 0 no fork, 0 = already on istanbul)
+  // Istanbul switch block (nil no fork, 0 = already on istanbul)
   string istanbul_block = 11 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"istanbul_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"istanbul_block\""
   ];
-  // Eip-2384 (bomb delay) switch block (< 0 no fork, 0 = already activated)
+  // Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated)
   string muir_glacier_block = 12 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"muir_glacier_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"muir_glacier_block\""
   ];
-  // Berlin switch block (< 0 = no fork, 0 = already on berlin)
+  // Berlin switch block (nil = no fork, 0 = already on berlin)
   string berlin_block = 13 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"berlin_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"berlin_block\""
   ];
   // YOLO v3: Gas repricings
   string yolo_v3_block = 14 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"yolo_v3_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"yolo_v3_block\""
   ];
-  // EWASM switch block (< 0 no fork, 0 = already activated)
+  // EWASM switch block (nil no fork, 0 = already activated)
   string ewasm_block = 15 [
     (gogoproto.customname) = "EWASMBlock",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"ewasm_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"ewasm_block\""
   ];
-  // Catalyst switch block (< 0 = no fork, 0 = already on catalyst)
+  // Catalyst switch block (nil = no fork, 0 = already on catalyst)
   string catalyst_block = 16 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags)   = "yaml:\"catalyst_block\"",
-    (gogoproto.nullable)   = false
+    (gogoproto.moretags)   = "yaml:\"catalyst_block\""
   ];
 }
 

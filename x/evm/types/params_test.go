@@ -15,7 +15,7 @@ func TestParamsValidate(t *testing.T) {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams("ara", true, true, 2929, 1884, 1344),
+			NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344),
 			false,
 		},
 		{
@@ -37,6 +37,11 @@ func TestParamsValidate(t *testing.T) {
 				ExtraEIPs: []int64{1},
 			},
 			true,
+		},
+		{
+			"invalid chain config",
+			NewParams("ara", true, true, ChainConfig{}, 2929, 1884, 1344),
+			false,
 		},
 	}
 
