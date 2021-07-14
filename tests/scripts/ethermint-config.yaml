@@ -1,0 +1,22 @@
+chainmaind-1:
+  cmd: ethermintd
+  start-flags: "--keyring-backend test --trace"
+  validators:
+    - coins: 1000000000000000000stake,1000000000000000000aphoton
+      staked: 1000000000000000000stake
+      mnemonic: visit craft resemble online window solution west chuckle music diesel vital settle comic tribe project blame bulb armed flower region sausage mercy arrive release
+      app-config:
+        evm-rpc:
+          address: "0.0.0.0:1317"
+          ws-address: "0.0.0.0:1318"
+    - coins: 1000000000000000000stake,1000000000000000000aphoton
+      staked: 1000000000000000000stake
+      mnemonic: direct travel shrug hand twice agent sail sell jump phone velvet pilot mango charge usual multiply orient garment bleak virtual action mention panda vast
+      app-config:
+        evm-rpc:
+          address: "0.0.0.0:1319"
+          ws-address: "0.0.0.0:1320"
+  accounts:
+    - name: community
+      coins: 10000000000000000000000aphoton
+      mnemonic: "notable error gospel wave pair ugly measure elite toddler cost various fly make eye ketchup despair slab throw tribe swarm word fruit into inmate"
