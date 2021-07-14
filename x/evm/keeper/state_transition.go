@@ -342,7 +342,7 @@ func (k Keeper) GetCoinbaseAddress() (common.Address, error) {
 	if !found {
 		return common.Address{}, stacktrace.Propagate(
 			sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, consAddr.String()),
-			"failed to retrieve validator from proposer address",
+			"failed to retrieve validator from block proposer address",
 		)
 	}
 
