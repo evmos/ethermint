@@ -41,8 +41,6 @@
     - [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse)
     - [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest)
     - [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse)
-    - [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest)
-    - [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse)
     - [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest)
     - [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse)
     - [QueryCosmosAccountRequest](#ethermint.evm.v1alpha1.QueryCosmosAccountRequest)
@@ -142,37 +140,28 @@ AccessTuple is the element type of an access list.
 <a name="ethermint.evm.v1alpha1.ChainConfig"></a>
 
 ### ChainConfig
-ChainConfig defines the Ethereum ChainConfig parameters using sdk.Int values
-instead of big.Int.
-
-NOTE 1: Since empty/uninitialized Ints (i.e with a nil big.Int value) are
-parsed to zero, we need to manually specify that negative Int values will be
-considered as nil. See getBlockValue for reference.
-
-NOTE 2: This type is not a configurable Param since the SDK does not allow
-for validation against a previous stored parameter values or the current
-block height (retrieved from context). If you want to update the config
-values, use an software upgrade procedure.
+ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
+instead of *big.Int.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `homestead_block` | [string](#string) |  | Homestead switch block (< 0 no fork, 0 = already homestead) |
-| `dao_fork_block` | [string](#string) |  | TheDAO hard-fork switch block (< 0 no fork) |
+| `homestead_block` | [string](#string) |  | Homestead switch block (nil no fork, 0 = already homestead) |
+| `dao_fork_block` | [string](#string) |  | TheDAO hard-fork switch block (nil no fork) |
 | `dao_fork_support` | [bool](#bool) |  | Whether the nodes supports or opposes the DAO hard-fork |
-| `eip150_block` | [string](#string) |  | EIP150 implements the Gas price changes (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (< 0 no fork) |
+| `eip150_block` | [string](#string) |  | EIP150 implements the Gas price changes (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil no fork) |
 | `eip150_hash` | [string](#string) |  | EIP150 HF hash (needed for header only clients as only gas pricing changed) |
 | `eip155_block` | [string](#string) |  | EIP155Block HF block |
 | `eip158_block` | [string](#string) |  | EIP158 HF block |
-| `byzantium_block` | [string](#string) |  | Byzantium switch block (< 0 no fork, 0 = already on byzantium) |
-| `constantinople_block` | [string](#string) |  | Constantinople switch block (< 0 no fork, 0 = already activated) |
-| `petersburg_block` | [string](#string) |  | Petersburg switch block (< 0 same as Constantinople) |
-| `istanbul_block` | [string](#string) |  | Istanbul switch block (< 0 no fork, 0 = already on istanbul) |
-| `muir_glacier_block` | [string](#string) |  | Eip-2384 (bomb delay) switch block (< 0 no fork, 0 = already activated) |
-| `berlin_block` | [string](#string) |  | Berlin switch block (< 0 = no fork, 0 = already on berlin) |
+| `byzantium_block` | [string](#string) |  | Byzantium switch block (nil no fork, 0 = already on byzantium) |
+| `constantinople_block` | [string](#string) |  | Constantinople switch block (nil no fork, 0 = already activated) |
+| `petersburg_block` | [string](#string) |  | Petersburg switch block (nil same as Constantinople) |
+| `istanbul_block` | [string](#string) |  | Istanbul switch block (nil no fork, 0 = already on istanbul) |
+| `muir_glacier_block` | [string](#string) |  | Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated) |
+| `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
 | `yolo_v3_block` | [string](#string) |  | YOLO v3: Gas repricings |
-| `ewasm_block` | [string](#string) |  | EWASM switch block (< 0 no fork, 0 = already activated) |
-| `catalyst_block` | [string](#string) |  | Catalyst switch block (< 0 = no fork, 0 = already on catalyst) |
+| `ewasm_block` | [string](#string) |  | EWASM switch block (nil no fork, 0 = already activated) |
+| `catalyst_block` | [string](#string) |  | Catalyst switch block (nil = no fork, 0 = already on catalyst) |
 
 
 
@@ -212,10 +201,11 @@ Params defines the EVM module parameters
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `evm_denom` | [string](#string) |  | evm_denom represents the token denomination used to run the EVM state transitions. |
-| `enable_create` | [bool](#bool) |  | enable_create toggles state transitions that use the vm.Create function |
-| `enable_call` | [bool](#bool) |  | enable_call toggles state transitions that use the vm.Call function |
-| `extra_eips` | [int64](#int64) | repeated | extra_eips defines the additional EIPs for the vm.Config |
+| `evm_denom` | [string](#string) |  | evm denom represents the token denomination used to run the EVM state transitions. |
+| `enable_create` | [bool](#bool) |  | enable create toggles state transitions that use the vm.Create function |
+| `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
+| `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
+| `chain_config` | [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
 
 
 
@@ -320,7 +310,6 @@ GenesisState defines the evm module's genesis state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `accounts` | [GenesisAccount](#ethermint.evm.v1alpha1.GenesisAccount) | repeated | accounts is an array containing the ethereum genesis accounts. |
-| `chain_config` | [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig) |  | chain_config defines the Ethereum chain configuration. |
 | `params` | [Params](#ethermint.evm.v1alpha1.Params) |  | params defines all the paramaters of the module. |
 | `txs_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) | repeated |  |
 
@@ -614,31 +603,6 @@ QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryChainConfigRequest"></a>
-
-### QueryChainConfigRequest
-QueryChainConfigRequest defines the request type for querying x/evm chain configuration.
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.QueryChainConfigResponse"></a>
-
-### QueryChainConfigResponse
-QueryChainConfigResponse defines the response type for querying x/evm chain configuration.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `config` | [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig) |  | ChainConfig define the evm chain configuration. |
-
-
-
-
-
-
 <a name="ethermint.evm.v1alpha1.QueryCodeRequest"></a>
 
 ### QueryCodeRequest
@@ -875,7 +839,6 @@ Query defines the gRPC querier service.
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
-| `ChainConfig` | [QueryChainConfigRequest](#ethermint.evm.v1alpha1.QueryChainConfigRequest) | [QueryChainConfigResponse](#ethermint.evm.v1alpha1.QueryChainConfigResponse) | ChainConfig queries the chain configuration values of EVM. | GET|/ethermint/evm/v1alpha1/chain_config|
 | `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1alpha1/static_call|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1alpha1/eth_call|
 
