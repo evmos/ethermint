@@ -24,10 +24,9 @@ func (ga GenesisAccount) Validate() error {
 // chain config values.
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		Accounts:    []GenesisAccount{},
-		TxsLogs:     []TransactionLogs{},
-		ChainConfig: DefaultChainConfig(),
-		Params:      DefaultParams(),
+		Accounts: []GenesisAccount{},
+		TxsLogs:  []TransactionLogs{},
+		Params:   DefaultParams(),
 	}
 }
 
@@ -56,10 +55,6 @@ func (gs GenesisState) Validate() error {
 		}
 
 		seenTxs[tx.Hash] = true
-	}
-
-	if err := gs.ChainConfig.Validate(); err != nil {
-		return err
 	}
 
 	return gs.Params.Validate()

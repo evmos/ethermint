@@ -33,30 +33,6 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEther
 	return ethTx, nil
 }
 
-// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum blockfrom a given Tendermint block.
-func EthBlockFromTendermint(clientCtx client.Context, queryClient *QueryClient, block *tmtypes.Block) (map[string]interface{}, error) {
-	gasLimit, err := BlockMaxGasFromConsensusParams(context.Background(), clientCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	transactions, gasUsed, err := EthTransactionsFromTendermint(clientCtx, block.Txs)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &evmtypes.QueryBlockBloomRequest{}
-
-	res, err := queryClient.BlockBloom(ContextWithHeight(block.Height), req)
-	if err != nil {
-		return nil, err
-	}
-
-	bloom := ethtypes.BytesToBloom(res.Bloom)
-
-	return FormatBlock(block.Header, block.Size(), gasLimit, gasUsed, transactions, bloom), nil
-}
-
 // NewTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
@@ -175,6 +151,7 @@ func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Contex
 func FormatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
 	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
+	validatorAddr common.Address,
 ) map[string]interface{} {
 	if len(header.DataHash) == 0 {
 		header.DataHash = tmbytes.HexBytes(common.Hash{}.Bytes())
@@ -188,7 +165,7 @@ func FormatBlock(
 		"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
 		"logsBloom":        bloom,
 		"stateRoot":        hexutil.Bytes(header.AppHash),
-		"miner":            common.Address{},
+		"miner":            validatorAddr,
 		"mixHash":          common.Hash{},
 		"difficulty":       (*hexutil.Big)(big.NewInt(0)),
 		"extraData":        "",

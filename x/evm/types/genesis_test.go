@@ -120,8 +120,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 						},
 					},
 				},
-				ChainConfig: DefaultChainConfig(),
-				Params:      DefaultParams(),
+				Params: DefaultParams(),
 			},
 			expPass: true,
 		},
@@ -235,16 +234,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 		{
 			name: "invalid params",
 			genState: &GenesisState{
-				ChainConfig: DefaultChainConfig(),
-				Params:      Params{},
-			},
-			expPass: false,
-		},
-		{
-			name: "invalid chain config",
-			genState: &GenesisState{
-				ChainConfig: ChainConfig{},
-				Params:      DefaultParams(),
+				Params: Params{},
 			},
 			expPass: false,
 		},
