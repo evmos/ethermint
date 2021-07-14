@@ -379,7 +379,12 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
-	evm := k.NewEVM(msg, ethCfg, params)
+	coinbase, err := k.GetCoinbaseAddress()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase)
 	res, err := k.ApplyMessage(evm, msg, ethCfg)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

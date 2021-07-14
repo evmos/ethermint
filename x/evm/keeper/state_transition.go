@@ -13,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -24,13 +25,15 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// NewEVM generates an ethereum VM from the provided Message fields and the ChainConfig.
-func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params) *vm.EVM {
+// NewEVM generates an ethereum VM from the provided Message fields and the chain parameters
+// (config). It sets the validator operator address as the coinbase address to make it available for
+// the COINBASE opcode, even though there is no beneficiary (since we're not mining).
+func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params, coinbase common.Address) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     k.GetHashFn(),
-		Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
+		Coinbase:    coinbase,
 		GasLimit:    ethermint.BlockGasLimit(k.ctx),
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
@@ -127,7 +130,13 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	cacheCtx, commit := k.ctx.CacheContext()
 	k.ctx = cacheCtx
 
-	evm := k.NewEVM(msg, ethCfg, params)
+	// get the coinbase address from the block proposer
+	coinbase, err := k.GetCoinbaseAddress()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
+	}
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase)
 
 	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()
@@ -324,4 +333,19 @@ func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
 	// reset the gas count
 	k.ctx.GasMeter().RefundGas(k.ctx.GasMeter().GasConsumed(), "reset the gas count")
 	k.ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
+}
+
+// GetCoinbaseAddress returns the block proposer's validator operator address.
+func (k Keeper) GetCoinbaseAddress() (common.Address, error) {
+	consAddr := sdk.ConsAddress(k.ctx.BlockHeader().ProposerAddress)
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(k.ctx, consAddr)
+	if !found {
+		return common.Address{}, stacktrace.Propagate(
+			sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, consAddr.String()),
+			"failed to retrieve validator from block proposer address",
+		)
+	}
+
+	coinbase := common.BytesToAddress(validator.GetOperator())
+	return coinbase, nil
 }
