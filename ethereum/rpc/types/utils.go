@@ -164,7 +164,7 @@ func FormatBlock(
 		"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
 		"logsBloom":        bloom,
 		"stateRoot":        hexutil.Bytes(header.AppHash),
-		"miner":            common.Address{},
+		"miner":            common.BytesToAddress(header.ProposerAddress),
 		"mixHash":          common.Hash{},
 		"difficulty":       (*hexutil.Big)(big.NewInt(0)),
 		"extraData":        "",
