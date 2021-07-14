@@ -59,8 +59,6 @@ func InitGenesis(
 		k.SetLogs(ethcmn.HexToHash(txLog.Hash), txLog.EthLogs())
 	}
 
-	k.SetChainConfig(ctx, data.ChainConfig)
-
 	return []abci.ValidatorUpdate{}
 }
 
@@ -94,12 +92,9 @@ func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *t
 		return false
 	})
 
-	config, _ := k.GetChainConfig(ctx)
-
 	return &types.GenesisState{
-		Accounts:    ethGenAccounts,
-		TxsLogs:     k.GetAllTxLogs(ctx),
-		ChainConfig: config,
-		Params:      k.GetParams(ctx),
+		Accounts: ethGenAccounts,
+		TxsLogs:  k.GetAllTxLogs(ctx),
+		Params:   k.GetParams(ctx),
 	}
 }

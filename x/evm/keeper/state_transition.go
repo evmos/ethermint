@@ -25,7 +25,7 @@ import (
 )
 
 // NewEVM generates an ethereum VM from the provided Message fields and the ChainConfig.
-func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
+func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
@@ -38,16 +38,14 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
-	vmConfig := k.VMConfig()
+	vmConfig := k.VMConfig(params)
 
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
 }
 
 // VMConfig creates an EVM configuration from the module parameters and the debug setting.
 // The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig() vm.Config {
-	params := k.GetParams(k.ctx)
-
+func (k Keeper) VMConfig(params types.Params) vm.Config {
 	return vm.Config{
 		Debug:       k.debug,
 		Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger too
@@ -112,11 +110,8 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
-	cfg, found := k.GetChainConfig(k.ctx)
-	if !found {
-		return nil, stacktrace.Propagate(types.ErrChainConfigNotFound, "configuration not found")
-	}
-	ethCfg := cfg.EthereumConfig(k.eip155ChainID)
+	params := k.GetParams(k.ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
@@ -126,12 +121,16 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
 	}
 
-	evm := k.NewEVM(msg, ethCfg)
+	// create an ethereum StateTransition instance and run TransitionDb
+	// we use a ctx context to avoid modifying to state in case EVM msg is reverted
+	originalCtx := k.ctx
+	cacheCtx, commit := k.ctx.CacheContext()
+	k.ctx = cacheCtx
+
+	evm := k.NewEVM(msg, ethCfg, params)
 
 	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()
-
-	// create an ethereum StateTransition instance and run TransitionDb
 	res, err := k.ApplyMessage(evm, msg, ethCfg)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
@@ -140,14 +139,27 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
 
-	logs := k.GetTxLogs(txHash)
-	res.Logs = types.NewLogsFromEth(logs)
+	// Set the bloom filter and commit only if transaction is NOT reverted
+	if !res.Reverted {
+		logs := k.GetTxLogs(txHash)
+		res.Logs = types.NewLogsFromEth(logs)
+		// update block bloom filter
+		bloom := k.GetBlockBloomTransient()
+		bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
+		k.SetBlockBloomTransient(bloom)
 
-	// update block bloom filter
-	bloom := k.GetBlockBloomTransient()
-	bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
-	k.SetBlockBloomTransient(bloom)
+		commit()
+	}
 
+	// refund gas prior to handling the vm error in order to set the updated gas meter
+	k.ctx = originalCtx
+	leftoverGas := msg.Gas() - res.GasUsed
+	leftoverGas, err = k.RefundGas(msg, leftoverGas)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
+	}
+	// update the gas used after refund
+	res.GasUsed = msg.Gas() - leftoverGas
 	k.resetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
@@ -215,26 +227,19 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
 
-	// refund gas prior to handling the vm error in order to set the updated gas meter
-	leftoverGas, err = k.RefundGas(msg, leftoverGas)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
-	}
-
+	var reverted bool
 	if vmErr != nil {
-		if errors.Is(vmErr, vm.ErrExecutionReverted) {
-			// unpack the return data bytes from the err if the execution has been "reverted" on the VM
-			return nil, stacktrace.Propagate(types.NewExecErrorWithReson(ret), "transaction reverted")
+		if !errors.Is(vmErr, vm.ErrExecutionReverted) {
+			// wrap the VM error
+			return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
 		}
-
-		// wrap the VM error
-		return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
+		reverted = true
 	}
 
 	gasUsed := msg.Gas() - leftoverGas
 	return &types.MsgEthereumTxResponse{
 		Ret:      ret,
-		Reverted: false,
+		Reverted: reverted,
 		GasUsed:  gasUsed,
 	}, nil
 }
@@ -246,6 +251,17 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 	istanbul := cfg.IsIstanbul(height)
 
 	return core.IntrinsicGas(msg.Data(), msg.AccessList(), isContractCreation, homestead, istanbul)
+}
+
+// GasToRefund calculate the amount of gas should refund to sender
+func (k *Keeper) GasToRefund(gasConsumed uint64) uint64 {
+	// Apply refund counter, capped to half of the used gas.
+	refund := gasConsumed / 2
+	availableRefund := k.GetRefund()
+	if refund > availableRefund {
+		return availableRefund
+	}
+	return refund
 }
 
 // RefundGas transfers the leftover gas to the sender of the message, caped to half of the total gas
@@ -261,13 +277,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 	}
 
 	gasConsumed := msg.Gas() - leftoverGas
-
-	// Apply refund counter, capped to half of the used gas.
-	refund := gasConsumed / 2
-	availableRefund := k.GetRefund()
-	if refund > availableRefund {
-		refund = availableRefund
-	}
+	refund := k.GasToRefund(gasConsumed)
 
 	leftoverGas += refund
 

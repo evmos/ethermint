@@ -38,6 +38,7 @@ import (
 
 func TestEth_Pending_GetBalance(t *testing.T) {
 	var res hexutil.Big
+	var resTxHash common.Hash
 	rpcRes := Call(t, "eth_getBalance", []string{addrA, "latest"})
 	err := res.UnmarshalJSON(rpcRes.Result)
 	require.NoError(t, err)
@@ -63,6 +64,12 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 	require.Nil(t, txRes.Error)
 
 	rpcRes = Call(t, "eth_sendTransaction", param)
+	require.Nil(t, rpcRes.Error)
+
+	err = resTxHash.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	rpcRes = Call(t, "eth_getTransactionByHash", []string{resTxHash.Hex()})
 	require.Nil(t, rpcRes.Error)
 
 	rpcRes = Call(t, "eth_getBalance", []string{addrA, "pending"})
@@ -274,6 +281,12 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 	var pendingBlockTx map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &pendingBlockTx)
 	require.NoError(t, err)
+
+	txsRes := Call(t, "eth_getPendingTransactions", []interface{}{})
+	var pendingTxs []map[string]interface{}
+	err = json.Unmarshal(txsRes.Result, &pendingTxs)
+	require.NoError(t, err)
+	require.NotEmpty(t, pendingTxs)
 
 	// verify the pending tx has all the correct fields from the tx sent.
 	require.NotEmpty(t, pendingBlockTx)

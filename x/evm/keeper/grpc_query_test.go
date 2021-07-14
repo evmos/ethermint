@@ -544,12 +544,23 @@ func (suite *KeeperTestSuite) TestQueryBlockBloom() {
 			func() {},
 			false,
 		},
+		{
+			"bloom from transient store",
+			func() {
+				req = &types.QueryBlockBloomRequest{}
+				bloom := ethtypes.BytesToBloom([]byte("bloom"))
+				expBloom = bloom.Bytes()
+				suite.app.EvmKeeper.WithContext(suite.ctx.WithBlockHeight(1))
+				suite.app.EvmKeeper.SetBlockBloomTransient(bloom.Big())
+			},
+			true,
+		},
 		{"bloom not found for height",
 			func() {
 				req = &types.QueryBlockBloomRequest{}
 				bloom := ethtypes.BytesToBloom([]byte("bloom"))
 				expBloom = bloom.Bytes()
-				suite.ctx = suite.ctx.WithBlockHeight(10)
+				suite.ctx = suite.ctx.WithBlockHeight(100)
 				suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 2, bloom)
 			},
 			false,

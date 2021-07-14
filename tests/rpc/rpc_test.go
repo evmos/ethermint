@@ -799,6 +799,33 @@ func TestEth_ExportAccount_WithStorage(t *testing.T) {
 	require.NotEqual(t, evmtypes.Storage(nil), account.Storage)
 }
 
+func TestEth_GetBlockByHash(t *testing.T) {
+	param := []interface{}{"0x1", false}
+	rpcRes := call(t, "eth_getBlockByNumber", param)
+
+	block := make(map[string]interface{})
+	err := json.Unmarshal(rpcRes.Result, &block)
+	blockHash := block["hash"].(string)
+
+	param = []interface{}{blockHash, false}
+	rpcRes = call(t, "eth_getBlockByHash", param)
+	block = make(map[string]interface{})
+	err = json.Unmarshal(rpcRes.Result, &block)
+	require.NoError(t, err)
+	require.Equal(t, "0x1", block["number"].(string))
+}
+
+func TestEth_GetBlockByHash_BlockHashNotFound(t *testing.T) {
+	anyBlockHash := "0xb3b20624f8f0f86eb50dd04688409e5cea4bd02d700bf6e79e9384d47d6a5a35"
+	param := []interface{}{anyBlockHash, false}
+	rpcRes := call(t, "eth_getBlockByHash", param)
+
+	var result interface{}
+	err := json.Unmarshal(rpcRes.Result, &result)
+	require.NoError(t, err)
+	require.Nil(t, result)
+}
+
 func TestEth_GetBlockByNumber(t *testing.T) {
 	param := []interface{}{"0x1", false}
 	rpcRes := call(t, "eth_getBlockByNumber", param)

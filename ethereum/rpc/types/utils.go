@@ -10,7 +10,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -206,25 +205,6 @@ func FormatBlock(
 	}
 }
 
-func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
-	var gasUsed uint64
-	txDecoder := clientCtx.TxConfig.TxDecoder()
-
-	tx, err := txDecoder(txBz)
-	if err != nil {
-		return nil, 0
-	}
-
-	switch tx := tx.(type) {
-	case *evmtypes.MsgEthereumTx:
-		gasUsed = tx.GetGas() // NOTE: this doesn't include the gas refunded
-	case sdk.FeeTx:
-		gasUsed = tx.GetGas()
-	}
-
-	return tx, gasUsed
-}
-
 type DataError interface {
 	Error() string          // returns the message
 	ErrorData() interface{} // returns the error data
@@ -254,6 +234,27 @@ func ErrRevertedWith(data []byte) DataError {
 		msg:  "VM execution error.",
 		data: fmt.Sprintf("0x%s", hex.EncodeToString(data)),
 	}
+}
+
+// NewTransactionFromMsg returns a transaction that will serialize to the RPC
+// representation, with the given location metadata set (if available).
+func NewTransactionFromMsg(
+	msg *evmtypes.MsgEthereumTx,
+	blockHash common.Hash,
+	blockNumber, index uint64,
+	chainID *big.Int,
+) (*RPCTransaction, error) {
+	from, err := msg.GetSender(chainID)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
+	return NewTransactionFromData(data, from, msg.AsTransaction().Hash(), blockHash, blockNumber, index)
 }
 
 // NewTransactionFromData returns a transaction that will serialize to the RPC

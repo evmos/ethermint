@@ -35,7 +35,7 @@ message MsgEthereumTx {
 // LegacyTx is the transaction data of regular Ethereum transactions.
 message LegacyTx {
   option (gogoproto.goproto_getters) = false;
-  option (cosmos_proto.implements_interface) = "TxDataI";
+  option (cosmos_proto.implements_interface) = "TxData";
 
   // nonce corresponds to the account nonce (transaction sequence).
   uint64 nonce = 1;
@@ -66,7 +66,7 @@ message LegacyTx {
 // AccessListTx is the data of EIP-2930 access list transactions.
 message AccessListTx {
   option (gogoproto.goproto_getters) = false;
-  option (cosmos_proto.implements_interface) = "TxDataI";
+  option (cosmos_proto.implements_interface) = "TxData";
 
   // destination EVM chain ID
   string chain_id = 1 [

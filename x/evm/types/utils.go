@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	log "github.com/xlab/suplog"
 
 	"github.com/gogo/protobuf/proto"
@@ -49,4 +51,21 @@ func DecodeTransactionLogs(data []byte) (TransactionLogs, error) {
 		return TransactionLogs{}, err
 	}
 	return logs, nil
+}
+
+// UnwrapEthereumMsg extract MsgEthereumTx from wrapping sdk.Tx
+func UnwrapEthereumMsg(tx *sdk.Tx) (*MsgEthereumTx, error) {
+	if tx == nil {
+		return nil, fmt.Errorf("invalid tx: nil")
+	}
+
+	if len((*tx).GetMsgs()) != 1 {
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+	msg, ok := (*tx).GetMsgs()[0].(*MsgEthereumTx)
+	if !ok {
+		return nil, fmt.Errorf("invalid tx type: %T", tx)
+	}
+
+	return msg, nil
 }

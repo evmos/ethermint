@@ -8,7 +8,7 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	"github.com/pkg/errors"
-	log "github.com/xlab/suplog"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/bloombits"
@@ -18,6 +18,7 @@ import (
 
 // Filter can be used to retrieve and filter logs.
 type Filter struct {
+	logger   log.Logger
 	backend  Backend
 	criteria filters.FilterCriteria
 	matcher  *bloombits.Matcher
@@ -25,14 +26,14 @@ type Filter struct {
 
 // NewBlockFilter creates a new filter which directly inspects the contents of
 // a block to figure out whether it is interesting or not.
-func NewBlockFilter(backend Backend, criteria filters.FilterCriteria) *Filter {
+func NewBlockFilter(logger log.Logger, backend Backend, criteria filters.FilterCriteria) *Filter {
 	// Create a generic filter and convert it into a block filter
-	return newFilter(backend, criteria, nil)
+	return newFilter(logger, backend, criteria, nil)
 }
 
 // NewRangeFilter creates a new filter which uses a bloom filter on blocks to
 // figure out whether a particular block is interesting or not.
-func NewRangeFilter(backend Backend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
+func NewRangeFilter(logger log.Logger, backend Backend, begin, end int64, addresses []common.Address, topics [][]common.Hash) *Filter {
 	// Flatten the address and topic filter clauses into a single bloombits filter
 	// system. Since the bloombits are not positional, nil topics are permitted,
 	// which get flattened into a nil byte slice.
@@ -63,12 +64,13 @@ func NewRangeFilter(backend Backend, begin, end int64, addresses []common.Addres
 		Topics:    topics,
 	}
 
-	return newFilter(backend, criteria, bloombits.NewMatcher(size, filtersBz))
+	return newFilter(logger, backend, criteria, bloombits.NewMatcher(size, filtersBz))
 }
 
 // newFilter returns a new Filter
-func newFilter(backend Backend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
+func newFilter(logger log.Logger, backend Backend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
 	return &Filter{
+		logger:   logger,
 		backend:  backend,
 		criteria: criteria,
 		matcher:  matcher,
@@ -90,13 +92,11 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	if f.criteria.BlockHash != nil && *f.criteria.BlockHash != (common.Hash{}) {
 		header, err := f.backend.HeaderByHash(*f.criteria.BlockHash)
 		if err != nil {
-			err = errors.Wrap(err, "failed to fetch header by hash")
-			return nil, err
+			return nil, errors.Wrap(err, "failed to fetch header by hash")
 		}
 
 		if header == nil {
-			err := errors.Errorf("unknown block header %s", f.criteria.BlockHash.String())
-			return nil, err
+			return nil, errors.Errorf("unknown block header %s", f.criteria.BlockHash.String())
 		}
 
 		return f.blockLogs(header)
@@ -105,12 +105,11 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	// Figure out the limits of the filter range
 	header, err := f.backend.HeaderByNumber(types.EthLatestBlockNumber)
 	if err != nil {
-		err = errors.Wrap(err, "failed to fetch header by number (latest)")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch header by number (latest)")
 	}
 
 	if header == nil || header.Number == nil {
-		log.Warningln("header not found or has no number")
+		f.logger.Debug("header not found or has no number")
 		return nil, nil
 	}
 
@@ -123,8 +122,7 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	}
 
 	if f.criteria.ToBlock.Int64()-f.criteria.FromBlock.Int64() > maxFilterBlocks {
-		err := errors.Errorf("maximum [from, to] blocks distance: %d", maxFilterBlocks)
-		return nil, err
+		return nil, errors.Errorf("maximum [from, to] blocks distance: %d", maxFilterBlocks)
 	}
 
 	// check bounds
@@ -137,9 +135,10 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	for i := f.criteria.FromBlock.Int64(); i <= f.criteria.ToBlock.Int64(); i++ {
 		block, err := f.backend.GetBlockByNumber(types.BlockNumber(i), false)
 		if err != nil {
-			err = errors.Wrapf(err, "failed to fetch block by number %d", i)
-			return logs, err
-		} else if block["transactions"] == nil {
+			return logs, errors.Wrapf(err, "failed to fetch block by number %d", i)
+		}
+
+		if block["transactions"] == nil {
 			continue
 		}
 
@@ -147,28 +146,32 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 
 		txs, ok := block["transactions"].([]interface{})
 		if !ok {
-			txHashes, ok = block["transactions"].([]common.Hash)
+			_, ok = block["transactions"].([]common.Hash)
 			if !ok {
-				log.WithField(
-					"transactions",
-					fmt.Sprintf("%T", block["transactions"]),
-				).Errorln("reading transactions from block data: bad field type")
-				continue
+				f.logger.Error(
+					"reading transactions from block data failed",
+					"type", fmt.Sprintf("%T", block["transactions"]),
+				)
 			}
-		} else if len(txs) == 0 && len(txHashes) == 0 {
+
+			continue
+		}
+
+		if len(txs) == 0 {
 			continue
 		}
 
 		for _, tx := range txs {
 			txHash, ok := tx.(common.Hash)
 			if !ok {
-				log.WithField(
-					"tx",
-					fmt.Sprintf("%T", tx),
-				).Errorln("transactions list contains non-hash element")
-			} else {
-				txHashes = append(txHashes, txHash)
+				f.logger.Error(
+					"transactions list contains non-hash element",
+					"type", fmt.Sprintf("%T", tx),
+				)
+				continue
 			}
+
+			txHashes = append(txHashes, txHash)
 		}
 
 		logsMatched := f.checkMatches(txHashes)
@@ -188,9 +191,7 @@ func (f *Filter) blockLogs(header *ethtypes.Header) ([]*ethtypes.Log, error) {
 	// eth header's hash doesn't match tm block hash
 	logsList, err := f.backend.GetLogsByNumber(types.BlockNumber(header.Number.Int64()))
 	if err != nil {
-		err = errors.Wrapf(err, "failed to fetch logs block number %d", header.Number.Int64())
-
-		return []*ethtypes.Log{}, err
+		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", header.Number.Int64())
 	}
 
 	var unfiltered []*ethtypes.Log // nolint: prealloc
