@@ -288,7 +288,7 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
-  e.logger.Debug("eth_getBlockTransactionCountByNumber", "block number", blockNum.Int64())
+	e.logger.Debug("eth_getBlockTransactionCountByNumber", "block number", blockNum.Int64())
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
 		e.logger.WithError(err).Debugln("block not found", "height", blockNum.Int64())
