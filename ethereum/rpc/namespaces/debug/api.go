@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 	"runtime/pprof"
+	"sync"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -20,15 +21,27 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 )
 
+type CPUProfileData struct {
+	fileName  string
+	file      os.File
+	activated bool
+	mu        sync.Mutex
+}
+
+func NewCPUProfileData() *CPUProfileData {
+	return &CPUProfileData{
+		activated: false,
+	}
+}
+
 // DebugAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
 type DebugAPI struct {
-	ctx         	context.Context
-	clientCtx   	client.Context
-	queryClient 	*rpctypes.QueryClient
-	backend     	backend.Backend
-	logger     		log.Logger
-	cpuProfileFile 	os.File
-	cpuProfileActivated bool
+	ctx         context.Context
+	clientCtx   client.Context
+	queryClient *rpctypes.QueryClient
+	backend     backend.Backend
+	logger      log.Logger
+	cpuProfile  *CPUProfileData
 }
 
 // NewPublicAPI creates an instance of the Web3 API.
@@ -67,8 +80,7 @@ func NewDebugAPI(
 		queryClient: rpctypes.NewQueryClient(clientCtx),
 		logger:      logger.With("module", "debug"),
 		backend:     backend,
-		cpuProfileActivated: false,
-
+		cpuProfile:  NewCPUProfileData(),
 	}
 }
 
@@ -128,20 +140,24 @@ func (a *DebugAPI) Stacks() string {
 	return "TO BE IMPLEMENTED"
 }
 
-func (a *DebugAPI) StartCPUProfile() string {
+func (a *DebugAPI) StartCPUProfile(file string) string {
+	a.cpuProfile.mu.Lock()
+	defer a.cpuProfile.mu.Unlock()
+
 	const flagCPUProfile = "cpu-profile"
 	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
 		return "Already running using configuration file"
-	} else if a.cpuProfileActivated {
+	} else if a.cpuProfile.activated {
 		return "Already running using RPC call"
 	} else {
-		f, err := os.Create("/tmp/cpu-profile")
+		f, err := os.Create(file)
 		if err != nil {
 			a.logger.Error("failed to create CP profile", "error", err.Error())
 			return "Failed to create cpu profile file."
 		}
-		a.cpuProfileFile = *f
-		a.cpuProfileActivated = true
+		a.cpuProfile.file = *f
+		a.cpuProfile.fileName = file
+		a.cpuProfile.activated = true
 
 		a.logger.Info("starting CPU profiler", "profile", cpuProfile)
 		if err := pprof.StartCPUProfile(f); err != nil {
@@ -156,19 +172,22 @@ func (a *DebugAPI) StartGoTrace() string {
 }
 
 func (a *DebugAPI) StopCPUProfile() string {
+	a.cpuProfile.mu.Lock()
+	defer a.cpuProfile.mu.Unlock()
+
 	const flagCPUProfile = "cpu-profile"
 	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
 		return "Already running using configuration file"
-	} else if a.cpuProfileActivated == true {
+	} else if a.cpuProfile.activated == true {
 		a.logger.Info("stopping CPU profiler", "profile", cpuProfile)
 		pprof.StopCPUProfile()
-		a.cpuProfileFile.Close()
-		a.cpuProfileActivated = false
+		a.cpuProfile.file.Close()
+		a.cpuProfile.activated = false
+		a.cpuProfile.fileName = ""
 		return "Closed"
 	} else {
 		return "Already Closed"
 	}
-	
 }
 
 func (a *DebugAPI) StopGoTrace() string {
