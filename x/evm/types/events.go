@@ -4,12 +4,13 @@ package types
 const (
 	EventTypeEthereumTx = TypeMsgEthereumTx
 
-	AttributeKeyContractAddress    = "contract"
-	AttributeKeyRecipient          = "recipient"
-	AttributeKeyTxHash             = "txHash"
-	AttributeKeyEthereumTxHash     = "ethereumTxHash"
-	AttributeKeyEthereumTxReverted = "ethereumTxReverted"
-	AttributeValueCategory         = ModuleName
+	AttributeKeyContractAddress = "contract"
+	AttributeKeyRecipient       = "recipient"
+	AttributeKeyTxHash          = "txHash"
+	AttributeKeyEthereumTxHash  = "ethereumTxHash"
+	// tx failed in eth vm execution
+	AttributeKeyEthereumTxFailed = "ethereumTxFailed"
+	AttributeValueCategory       = ModuleName
 
 	MetricKeyTransitionDB = "transition_db"
 	MetricKeyStaticCall   = "static_call"
