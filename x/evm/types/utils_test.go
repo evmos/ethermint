@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"errors"
 	"math/big"
 	"testing"
 
@@ -78,4 +79,22 @@ func TestUnwrapEthererumMsg(t *testing.T) {
 	msg_, err := evmtypes.UnwrapEthereumMsg(&tx)
 	require.Nil(t, err)
 	require.Equal(t, msg_, msg)
+}
+
+func TestBinSearch(t *testing.T) {
+	success_executable := func(gas uint64) (bool, *evmtypes.MsgEthereumTxResponse, error) {
+		target := uint64(21000)
+		return gas < target, nil, nil
+	}
+	failed_executable := func(gas uint64) (bool, *evmtypes.MsgEthereumTxResponse, error) {
+		return true, nil, errors.New("contract failed")
+	}
+
+	gas, err := evmtypes.BinSearch(20000, 21001, success_executable)
+	require.NoError(t, err)
+	require.Equal(t, gas, uint64(21000))
+
+	gas, err = evmtypes.BinSearch(20000, 21001, failed_executable)
+	require.Error(t, err)
+	require.Equal(t, gas, uint64(0))
 }

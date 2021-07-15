@@ -643,22 +643,11 @@ func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs, blockNrOptional *rpctype
 	}
 
 	// Execute the binary search and hone in on an executable gas limit
-	for lo+1 < hi {
-		mid := (hi + lo) / 2
-		failed, _, err := executable(mid)
-
-		// If the error is not nil(consensus error), it means the provided message
-		// call or transaction will never be accepted no matter how much gas it is
-		// assigned. Return the error directly, don't struggle any more.
-		if err != nil {
-			return 0, err
-		}
-		if failed {
-			lo = mid
-		} else {
-			hi = mid
-		}
+	hi, err := evmtypes.BinSearch(lo, hi, executable)
+	if err != nil {
+		return 0, err
 	}
+
 	// Reject the transaction as invalid if it still fails at the highest allowance
 	if hi == cap {
 		failed, result, err := executable(hi)
