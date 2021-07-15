@@ -3,9 +3,13 @@ package debug
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"os"
+	"runtime"
+	"runtime/debug"
 	"runtime/pprof"
 	"sync"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -99,17 +103,24 @@ func (a *DebugAPI) BlockProfile() string {
 	return "TO BE IMPLEMENTED"
 }
 
-func (a *DebugAPI) CpuProfile() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) CpuProfile(file string, nsec uint) error {
+	if err := a.StartCPUProfile(file); err != nil {
+		return err
+	}
+	time.Sleep(time.Duration(nsec) * time.Second)
+	a.StopCPUProfile()
+	return nil
 }
 
 func (a *DebugAPI) DumpBlock() string {
 	return "TO BE IMPLEMENTED"
 }
 
-func (a *DebugAPI) GcStats() string {
-	// This is blocked because we don't have go-ethereum/metrics/debug.go runing on the background
-	return "TO BE IMPLEMENTED"
+// GcStats returns GC statistics.
+func (a *DebugAPI) GcStats() *debug.GCStats {
+	s := new(debug.GCStats)
+	debug.ReadGCStats(s)
+	return s
 }
 
 func (a *DebugAPI) GetBlockRlp() string {
@@ -120,8 +131,11 @@ func (a *DebugAPI) GoTrace() string {
 	return "TO BE IMPLEMENTED"
 }
 
-func (a *DebugAPI) MemStats() string {
-	return "TO BE IMPLEMENTED"
+// MemStats returns detailed runtime memory statistics.
+func (a *DebugAPI) MemStats() *runtime.MemStats {
+	s := new(runtime.MemStats)
+	runtime.ReadMemStats(s)
+	return s
 }
 
 func (a *DebugAPI) SeedHash() string {
@@ -140,20 +154,20 @@ func (a *DebugAPI) Stacks() string {
 	return "TO BE IMPLEMENTED"
 }
 
-func (a *DebugAPI) StartCPUProfile(file string) string {
+func (a *DebugAPI) StartCPUProfile(file string) error {
 	a.cpuProfile.mu.Lock()
 	defer a.cpuProfile.mu.Unlock()
 
 	const flagCPUProfile = "cpu-profile"
 	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
-		return "Already running using configuration file"
+		return errors.New("Already running using configuration file")
 	} else if a.cpuProfile.activated {
-		return "Already running using RPC call"
+		return errors.New("Already running using RPC call")
 	} else {
 		f, err := os.Create(file)
 		if err != nil {
 			a.logger.Error("failed to create CP profile", "error", err.Error())
-			return "Failed to create cpu profile file."
+			return errors.New("Failed to create cpu profile file.")
 		}
 		a.cpuProfile.file = *f
 		a.cpuProfile.fileName = file
@@ -161,9 +175,9 @@ func (a *DebugAPI) StartCPUProfile(file string) string {
 
 		a.logger.Info("starting CPU profiler", "profile", cpuProfile)
 		if err := pprof.StartCPUProfile(f); err != nil {
-			return "Failed to start cpu profile."
+			return errors.New("Failed to start cpu profile.")
 		}
-		return "Started"
+		return nil
 	}
 }
 
@@ -171,22 +185,22 @@ func (a *DebugAPI) StartGoTrace() string {
 	return "TO BE IMPLEMENTED"
 }
 
-func (a *DebugAPI) StopCPUProfile() string {
+func (a *DebugAPI) StopCPUProfile() error {
 	a.cpuProfile.mu.Lock()
 	defer a.cpuProfile.mu.Unlock()
 
 	const flagCPUProfile = "cpu-profile"
 	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
-		return "Already running using configuration file"
+		return errors.New("Already running using configuration file")
 	} else if a.cpuProfile.activated == true {
 		a.logger.Info("stopping CPU profiler", "profile", cpuProfile)
 		pprof.StopCPUProfile()
 		a.cpuProfile.file.Close()
 		a.cpuProfile.activated = false
 		a.cpuProfile.fileName = ""
-		return "Closed"
+		return nil
 	} else {
-		return "Already Closed"
+		return errors.New("Already Closed")
 	}
 }
 
