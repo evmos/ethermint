@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	log "github.com/xlab/suplog"
 
 	tmjson "github.com/tendermint/tendermint/libs/json"
+	"github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -35,6 +35,7 @@ var (
 // EventSystem creates subscriptions, processes events and broadcasts them to the
 // subscription which match the subscription criteria using the Tendermint's RPC client.
 type EventSystem struct {
+	logger     log.Logger
 	ctx        context.Context
 	tmWSClient *rpcclient.WSClient
 
@@ -57,13 +58,14 @@ type EventSystem struct {
 //
 // The returned manager has a loop that needs to be stopped with the Stop function
 // or by stopping the given mux.
-func NewEventSystem(tmWSClient *rpcclient.WSClient) *EventSystem {
+func NewEventSystem(logger log.Logger, tmWSClient *rpcclient.WSClient) *EventSystem {
 	index := make(filterIndex)
 	for i := filters.UnknownSubscription; i < filters.LastIndexSubscription; i++ {
 		index[i] = make(map[rpc.ID]*Subscription)
 	}
 
 	es := &EventSystem{
+		logger:     logger,
 		ctx:        context.Background(),
 		tmWSClient: tmWSClient,
 		lightMode:  false,
@@ -222,7 +224,7 @@ func (es *EventSystem) eventLoop() {
 			ch := make(chan coretypes.ResultEvent)
 			es.topicChans[f.event] = ch
 			if err := es.eventBus.AddTopic(f.event, ch); err != nil {
-				log.WithField("topic", f.event).WithError(err).Errorln("failed to add event topic to event bus")
+				es.logger.Error("failed to add event topic to event bus", "topic", f.event, "error", err.Error())
 			}
 			es.indexMux.Unlock()
 			close(f.installed)
@@ -241,7 +243,7 @@ func (es *EventSystem) eventLoop() {
 			// remove topic only when channel is not used by other subscriptions
 			if !channelInUse {
 				if err := es.tmWSClient.Unsubscribe(es.ctx, f.event); err != nil {
-					log.WithError(err).WithField("query", f.event).Errorln("failed to unsubscribe from query")
+					es.logger.Error("failed to unsubscribe from query", "query", f.event, "error", err.Error())
 				}
 
 				ch, ok := es.topicChans[f.event]
@@ -267,7 +269,7 @@ func (es *EventSystem) consumeEvents() {
 				time.Sleep(5 * time.Second)
 				continue
 			} else if err := tmjson.Unmarshal(rpcResp.Result, &ev); err != nil {
-				log.WithError(err).Warningln("failed to JSON unmarshal ResponsesCh result event")
+				es.logger.Error("failed to JSON unmarshal ResponsesCh result event", "error", err.Error())
 				continue
 			}
 
@@ -280,8 +282,8 @@ func (es *EventSystem) consumeEvents() {
 			ch, ok := es.topicChans[ev.Query]
 			es.indexMux.RUnlock()
 			if !ok {
-				log.WithField("topic", ev.Query).Warningln("channel for subscription not found, lol")
-				log.Infoln("available channels:", es.eventBus.Topics())
+				es.logger.Debug("channel for subscription not found", "topic", ev.Query)
+				es.logger.Debug("list of available channels", "channels", es.eventBus.Topics())
 				continue
 			}
 
@@ -289,7 +291,7 @@ func (es *EventSystem) consumeEvents() {
 			t := time.NewTimer(time.Second)
 			select {
 			case <-t.C:
-				log.WithField("topic", ev.Query).Warningln("dropped event during lagging subscription")
+				es.logger.Debug("dropped event during lagging subscription", "topic", ev.Query)
 			case ch <- ev:
 			}
 		}

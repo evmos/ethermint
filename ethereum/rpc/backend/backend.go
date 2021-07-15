@@ -9,15 +9,14 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
-	log "github.com/xlab/suplog"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -42,8 +41,6 @@ type Backend interface {
 	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
-
-	ChainConfig() *params.ChainConfig
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -58,7 +55,7 @@ type EVMBackend struct {
 }
 
 // NewEVMBackend creates a new EVMBackend instance
-func NewEVMBackend(clientCtx client.Context) *EVMBackend {
+func NewEVMBackend(logger log.Logger, clientCtx client.Context) *EVMBackend {
 	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
@@ -67,7 +64,7 @@ func NewEVMBackend(clientCtx client.Context) *EVMBackend {
 		ctx:         context.Background(),
 		clientCtx:   clientCtx,
 		queryClient: types.NewQueryClient(clientCtx),
-		logger:      log.WithField("module", "evm-backend"),
+		logger:      logger.With("module", "evm-backend"),
 		chainID:     chainID,
 	}
 }
@@ -110,16 +107,21 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &height)
 	if err != nil {
-		// e.logger.Debugf("GetBlockByNumber safely bumping down from %d to latest", height)
+		// e.logger.Debug("GetBlockByNumber safely bumping down from %d to latest", height)
 		if resBlock, err = e.clientCtx.Client.Block(e.ctx, nil); err != nil {
-			e.logger.Debugln("GetBlockByNumber failed to get latest block")
+			e.logger.Debug("GetBlockByNumber failed to get latest block", "error", err.Error())
 			return nil, nil
 		}
 	}
 
-	res, err := e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
+	if resBlock.Block == nil {
+		e.logger.Debug("GetBlockByNumber block not found", "height", height)
+		return nil, nil
+	}
+
+	res, err := e.EthBlockFromTendermint(resBlock.Block, fullTx)
 	if err != nil {
-		e.logger.WithError(err).Debugf("EthBlockFromTendermint failed with block %s", resBlock.Block.String())
+		e.logger.Debug("EthBlockFromTendermint failed", "height", height, "error", err.Error())
 	}
 
 	return res, err
@@ -129,17 +131,20 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 func (e *EVMBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
-		e.logger.Warningf("BlockByHash failed for %s", hash.Hex())
+		e.logger.Debug("BlockByHash block not found", "hash", hash.Hex(), "error", err.Error())
 		return nil, err
 	}
 
-	return e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
+	if resBlock.Block == nil {
+		e.logger.Debug("BlockByHash block not found", "hash", hash.Hex())
+		return nil, nil
+	}
+
+	return e.EthBlockFromTendermint(resBlock.Block, fullTx)
 }
 
 // EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block.
 func (e *EVMBackend) EthBlockFromTendermint(
-	clientCtx client.Context,
-	queryClient evmtypes.QueryClient,
 	block *tmtypes.Block,
 	fullTx bool,
 ) (map[string]interface{}, error) {
@@ -151,7 +156,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
-			e.logger.WithError(err).Warningln("failed to decode transaction in block at height ", block.Height)
+			e.logger.Debug("failed to decode transaction in block", "height", block.Height, "error", err.Error())
 			continue
 		}
 
@@ -173,13 +178,13 @@ func (e *EVMBackend) EthBlockFromTendermint(
 			// get full transaction from message data
 			from, err := ethMsg.GetSender(e.chainID)
 			if err != nil {
-				e.logger.WithError(err).Warningln("failed to get sender from already included transaction ", hash)
+				e.logger.Debug("failed to get sender from already included transaction", "hash", hash.Hex(), "error", err.Error())
 				from = common.HexToAddress(ethMsg.From)
 			}
 
 			txData, err := evmtypes.UnpackTxData(ethMsg.Data)
 			if err != nil {
-				e.logger.WithError(err).Debugln("decoding failed")
+				e.logger.Debug("decoding failed", "error", err.Error())
 				return nil, fmt.Errorf("failed to unpack tx data: %w", err)
 			}
 
@@ -192,24 +197,39 @@ func (e *EVMBackend) EthBlockFromTendermint(
 				uint64(i),
 			)
 			if err != nil {
-				e.logger.WithError(err).Debugln("NewTransactionFromData for receipt failed", "hash", hash.Hex)
+				e.logger.Debug("NewTransactionFromData for receipt failed", "hash", hash.Hex(), "error", err.Error())
 				continue
 			}
 			ethRPCTxs = append(ethRPCTxs, ethTx)
 		}
 	}
 
-	blockBloomResp, err := queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
 	if err != nil {
-		e.logger.WithError(err).Debugln("failed to query BlockBloom", "height", block.Height)
+		e.logger.Debug("failed to query BlockBloom", "height", block.Height, "error", err.Error())
 
 		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
-	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom)
+	req := &evmtypes.QueryValidatorAccountRequest{
+		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
+	}
 
-	e.logger.Infoln(formattedBlock)
+	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
+	if err != nil {
+		e.logger.Debug("failed to query validator operator address", "cons-address", req.ConsAddress, "error", err.Error())
+		return nil, err
+	}
+
+	addr, err := sdk.AccAddressFromBech32(res.AccountAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	validatorAddr := common.BytesToAddress(addr)
+
+	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
+	formattedBlock := types.FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
 	return formattedBlock, nil
 }
 
@@ -231,27 +251,26 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		height = 1
 	default:
 		if blockNum < 0 {
-			err := errors.Errorf("incorrect block height: %d", height)
-			return nil, err
+			return nil, errors.Errorf("incorrect block height: %d", height)
 		}
 	}
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &height)
 	if err != nil {
-		e.logger.Warningf("HeaderByNumber failed")
+		e.logger.Debug("HeaderByNumber failed")
 		return nil, err
 	}
 
 	req := &evmtypes.QueryBlockBloomRequest{}
 
-	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
-		e.logger.Warningf("HeaderByNumber BlockBloom fail %d", resBlock.Block.Height)
-		return nil, err
+		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
+		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
 	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
-	ethHeader.Bloom = ethtypes.BytesToBloom(res.Bloom)
+	ethHeader.Bloom = ethtypes.BytesToBloom(blockBloomResp.Bloom)
 	return ethHeader, nil
 }
 
@@ -259,20 +278,20 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error) {
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, blockHash.Bytes())
 	if err != nil {
-		e.logger.Warningf("HeaderByHash fail")
+		e.logger.Debug("HeaderByHash failed", "hash", blockHash.Hex())
 		return nil, err
 	}
 
 	req := &evmtypes.QueryBlockBloomRequest{}
 
-	res, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
-		e.logger.Warningf("HeaderByHash BlockBloom fail %d", resBlock.Block.Height)
-		return nil, err
+		e.logger.Debug("HeaderByHash BlockBloom failed", "height", resBlock.Block.Height)
+		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
 	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
-	ethHeader.Bloom = ethtypes.BytesToBloom(res.Bloom)
+	ethHeader.Bloom = ethtypes.BytesToBloom(blockBloomResp.Bloom)
 	return ethHeader, nil
 }
 
@@ -286,7 +305,7 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 
 	res, err := e.queryClient.TxLogs(e.ctx, req)
 	if err != nil {
-		e.logger.Warningf("TxLogs fail")
+		e.logger.Debug("TxLogs failed", "tx-hash", req.Hash)
 		return nil, err
 	}
 
@@ -322,7 +341,7 @@ func (e *EVMBackend) GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error) {
 
 	res, err := e.queryClient.BlockLogs(e.ctx, req)
 	if err != nil {
-		e.logger.Warningf("BlockLogs fail")
+		e.logger.Debug("BlockLogs failed", "hash", req.Hash)
 		return nil, err
 	}
 
@@ -354,8 +373,7 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 		height = 1
 	default:
 		if blockNum < 0 {
-			err := errors.Errorf("incorrect block height: %d", height)
-			return nil, err
+			return nil, errors.Errorf("incorrect block height: %d", height)
 		}
 	}
 
@@ -365,7 +383,7 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 			return [][]*ethtypes.Log{}, nil
 		}
 
-		e.logger.Warningf("failed to query block at %d", height)
+		e.logger.Debug("failed to query block", "height", height)
 		return nil, err
 	}
 
@@ -376,15 +394,4 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 // by the chain indexer.
 func (e *EVMBackend) BloomStatus() (uint64, uint64) {
 	return 4096, 0
-}
-
-// ChainConfig returns the chain configuration for the chain. This method returns a nil pointer if
-// the query fails.
-func (e *EVMBackend) ChainConfig() *params.ChainConfig {
-	res, err := e.queryClient.QueryClient.ChainConfig(e.ctx, &evmtypes.QueryChainConfigRequest{})
-	if err != nil {
-		return nil
-	}
-
-	return res.Config.EthereumConfig(e.chainID)
 }

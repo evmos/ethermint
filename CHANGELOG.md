@@ -44,6 +44,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Remove tx `Receipt` from store and replace it with fields obtained from the Tendermint RPC client.
 * (evm) [tharsis#72](https://github.com/tharsis/ethermint/issues/72) Update `AccessList` to use `TransientStore` instead of map.
 * (evm) [tharsis#68](https://github.com/tharsis/ethermint/issues/68) Replace block hash storage map to use staking `HistoricalInfo`.
+* (evm) [tharsis#276](https://github.com/tharsis/ethermint/pull/276) Vm errors don't result in cosmos tx failure, just
+  different tx state and events.
 
 ### API Breaking
 
@@ -54,6 +56,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
     response now contains the ethereum-formatted `Hash` in hex format.
 * (eth) [\#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
 * (evm) [#202](https://github.com/tharsis/ethermint/pull/202) Web3 api `SendTransaction`/`SendRawTransaction` returns ethereum compatible transaction hash, and query api `GetTransaction*` also accept that.
+* (rpc) [tharsis#258](https://github.com/tharsis/ethermint/pull/258) Return empty `BloomFilter` instead of throwing an error when it cannot be found (`nil` or empty).
 
 ### Improvements
 
@@ -68,6 +71,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (evm) [tharsis#291](https://github.com/tharsis/ethermint/pull/291) Use block proposer address (validator operator) for `COINBASE` opcode.
 * (rpc) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Fix transaction hashing and decoding on `eth_sendTransaction`.
 * (rpc) [tharsis#45](https://github.com/tharsis/ethermint/pull/45) Use `EmptyUncleHash` and `EmptyRootHash` for empty ethereum `Header` fields.
 

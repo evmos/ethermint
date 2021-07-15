@@ -83,15 +83,3 @@ func (suite *KeeperTestSuite) SetupTest() {
 func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
 }
-
-func (suite *KeeperTestSuite) TestChainConfig() {
-	config, found := suite.app.EvmKeeper.GetChainConfig(suite.ctx)
-	suite.Require().True(found)
-	suite.Require().Equal(types.DefaultChainConfig(), config)
-
-	config.EIP150Block = sdk.NewInt(100)
-	suite.app.EvmKeeper.SetChainConfig(suite.ctx, config)
-	newConfig, found := suite.app.EvmKeeper.GetChainConfig(suite.ctx)
-	suite.Require().True(found)
-	suite.Require().Equal(config, newConfig)
-}

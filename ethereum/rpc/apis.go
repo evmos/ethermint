@@ -4,6 +4,8 @@ package rpc
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/server"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
@@ -29,10 +31,10 @@ const (
 )
 
 // GetRPCAPIs returns the list of all APIs
-func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
+func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	backend := backend.NewEVMBackend(clientCtx)
-	ethAPI := eth.NewPublicAPI(clientCtx, backend, nonceLock)
+	backend := backend.NewEVMBackend(ctx.Logger, clientCtx)
+	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, backend, nonceLock)
 
 	return []rpc.API{
 		{
@@ -50,7 +52,7 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   filters.NewPublicAPI(tmWSClient, backend),
+			Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, backend),
 			Public:    true,
 		},
 		{
@@ -62,13 +64,13 @@ func GetRPCAPIs(clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.
 		{
 			Namespace: PersonalNamespace,
 			Version:   apiVersion,
-			Service:   personal.NewAPI(ethAPI),
+			Service:   personal.NewAPI(ctx.Logger, ethAPI),
 			Public:    true,
 		},
 		{
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
-			Service:   txpool.NewPublicAPI(),
+			Service:   txpool.NewPublicAPI(ctx.Logger),
 			Public:    true,
 		},
 	}

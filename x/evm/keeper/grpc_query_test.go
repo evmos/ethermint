@@ -608,15 +608,6 @@ func (suite *KeeperTestSuite) TestQueryParams() {
 	suite.Require().Equal(expParams, res.Params)
 }
 
-func (suite *KeeperTestSuite) TestQueryChainConfig() {
-	ctx := sdk.WrapSDKContext(suite.ctx)
-	expChainConfig := types.DefaultChainConfig()
-
-	res, err := suite.queryClient.ChainConfig(ctx, &types.QueryChainConfigRequest{})
-	suite.Require().NoError(err)
-	suite.Require().Equal(expChainConfig, res.Config)
-}
-
 func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 	var (
 		req        *types.QueryValidatorAccountRequest
