@@ -3,6 +3,8 @@ package debug
 import (
 	"context"
 	"encoding/hex"
+	"os"
+	"runtime/pprof"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -20,11 +22,13 @@ import (
 
 // DebugAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
 type DebugAPI struct {
-	ctx         context.Context
-	clientCtx   client.Context
-	queryClient *rpctypes.QueryClient
-	backend     backend.Backend
-	logger      log.Logger
+	ctx         	context.Context
+	clientCtx   	client.Context
+	queryClient 	*rpctypes.QueryClient
+	backend     	backend.Backend
+	logger     		log.Logger
+	cpuProfileFile 	os.File
+	cpuProfileActivated bool
 }
 
 // NewPublicAPI creates an instance of the Web3 API.
@@ -63,6 +67,8 @@ func NewDebugAPI(
 		queryClient: rpctypes.NewQueryClient(clientCtx),
 		logger:      logger.With("module", "debug"),
 		backend:     backend,
+		cpuProfileActivated: false,
+
 	}
 }
 
@@ -123,7 +129,26 @@ func (a *DebugAPI) Stacks() string {
 }
 
 func (a *DebugAPI) StartCPUProfile() string {
-	return "TO BE IMPLEMENTED"
+	const flagCPUProfile = "cpu-profile"
+	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
+		return "Already running using configuration file"
+	} else if a.cpuProfileActivated {
+		return "Already running using RPC call"
+	} else {
+		f, err := os.Create("/tmp/cpu-profile")
+		if err != nil {
+			a.logger.Error("failed to create CP profile", "error", err.Error())
+			return "Failed to create cpu profile file."
+		}
+		a.cpuProfileFile = *f
+		a.cpuProfileActivated = true
+
+		a.logger.Info("starting CPU profiler", "profile", cpuProfile)
+		if err := pprof.StartCPUProfile(f); err != nil {
+			return "Failed to start cpu profile."
+		}
+		return "Started"
+	}
 }
 
 func (a *DebugAPI) StartGoTrace() string {
@@ -131,7 +156,19 @@ func (a *DebugAPI) StartGoTrace() string {
 }
 
 func (a *DebugAPI) StopCPUProfile() string {
-	return "TO BE IMPLEMENTED"
+	const flagCPUProfile = "cpu-profile"
+	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
+		return "Already running using configuration file"
+	} else if a.cpuProfileActivated == true {
+		a.logger.Info("stopping CPU profiler", "profile", cpuProfile)
+		pprof.StopCPUProfile()
+		a.cpuProfileFile.Close()
+		a.cpuProfileActivated = false
+		return "Closed"
+	} else {
+		return "Already Closed"
+	}
+	
 }
 
 func (a *DebugAPI) StopGoTrace() string {
