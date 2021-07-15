@@ -158,6 +158,7 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 	a.cpuProfile.mu.Lock()
 	defer a.cpuProfile.mu.Unlock()
 
+	// This is different from go-eth because its possible to start the node with cpuprofile running
 	const flagCPUProfile = "cpu-profile"
 	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
 		return errors.New("Already running using configuration file")
