@@ -1842,6 +1842,11 @@ paths:
                       using *sdk.Int values
 
                       instead of *big.Int.
+                  no_base_fee:
+                    type: boolean
+                    title: >-
+                      no base fee forces the EIP-1559 base fee to 0 (needed for
+                      0 price calls)
                 title: Params defines the EVM module parameters
             description: >-
               QueryParamsResponse defines the response type for querying x/evm
@@ -12775,6 +12780,11 @@ definitions:
           values
 
           instead of *big.Int.
+      no_base_fee:
+        type: boolean
+        title: >-
+          no base fee forces the EIP-1559 base fee to 0 (needed for 0 price
+          calls)
     title: Params defines the EVM module parameters
   ethermint.evm.v1alpha1.QueryAccountResponse:
     type: object
@@ -13026,6 +13036,11 @@ definitions:
               *sdk.Int values
 
               instead of *big.Int.
+          no_base_fee:
+            type: boolean
+            title: >-
+              no base fee forces the EIP-1559 base fee to 0 (needed for 0 price
+              calls)
         title: Params defines the EVM module parameters
     description: >-
       QueryParamsResponse defines the response type for querying x/evm
