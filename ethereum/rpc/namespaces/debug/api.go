@@ -88,19 +88,12 @@ func NewDebugAPI(
 	}
 }
 
-// Return hello world as string
-// Example call $ curl -X POST --data '{"jsonrpc":"2.0","method":"debug_test","params":[],"id":67}' -H "Content-Type: application/json" http://localhost:8545
-func (a *DebugAPI) Test() string {
-	a.logger.Debug("Hello world debug")
-	return "Hello World"
+func (a *DebugAPI) BacktraceAt() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) BacktraceAt() string {
-	return "TO BE IMPLEMENTED"
-}
-
-func (a *DebugAPI) BlockProfile() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) BlockProfile() error {
+	return errors.New("Currently not supported.")
 }
 
 func (a *DebugAPI) CpuProfile(file string, nsec uint) error {
@@ -112,8 +105,8 @@ func (a *DebugAPI) CpuProfile(file string, nsec uint) error {
 	return nil
 }
 
-func (a *DebugAPI) DumpBlock() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) DumpBlock() error {
+	return errors.New("Currently not supported.")
 }
 
 // GcStats returns GC statistics.
@@ -123,12 +116,12 @@ func (a *DebugAPI) GcStats() *debug.GCStats {
 	return s
 }
 
-func (a *DebugAPI) GetBlockRlp() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) GetBlockRlp() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) GoTrace() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) GoTrace() error {
+	return errors.New("Currently not supported.")
 }
 
 // MemStats returns detailed runtime memory statistics.
@@ -138,20 +131,20 @@ func (a *DebugAPI) MemStats() *runtime.MemStats {
 	return s
 }
 
-func (a *DebugAPI) SeedHash() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) SeedHash() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) SetHead() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) SetHead() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) SetBlockProfileRate() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) SetBlockProfileRate() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) Stacks() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) Stacks() error {
+	return errors.New("Currently not supported.")
 }
 
 func (a *DebugAPI) StartCPUProfile(file string) error {
@@ -182,8 +175,8 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 	}
 }
 
-func (a *DebugAPI) StartGoTrace() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) StartGoTrace() error {
+	return errors.New("Currently not supported.")
 }
 
 func (a *DebugAPI) StopCPUProfile() error {
@@ -205,33 +198,33 @@ func (a *DebugAPI) StopCPUProfile() error {
 	}
 }
 
-func (a *DebugAPI) StopGoTrace() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) StopGoTrace() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) TraceBlock() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) TraceBlock() error {
+	return errors.New("Currently not supported.")
 }
 
 // We need this for etherscan
-func (a *DebugAPI) TraceBlockByNumber() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) TraceBlockByNumber() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) TraceBlockByHash() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) TraceBlockByHash() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) TraceBlockFromFile() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) TraceBlockFromFile() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) StandardTraceBlockToFile() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) StandardTraceBlockToFile() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) StandardTraceBadBlockToFile() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) StandardTraceBadBlockToFile() error {
+	return errors.New("Currently not supported.")
 }
 
 // We need this for etherscan
@@ -272,25 +265,25 @@ func (a *DebugAPI) TraceTransaction(hashHex string) (string, error) {
 
 	return blockHash.Hex() + " " + ethTx.AsTransaction().Hash().Hex(), nil
 
-	// return "TO BE IMPLEMENTED"
+	// return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) TraceCall() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) TraceCall() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) Verbosity() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) Verbosity() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) Vmodule() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) Vmodule() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) WriteBlockProfile() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) WriteBlockProfile() error {
+	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) WriteMemProfile() string {
-	return "TO BE IMPLEMENTED"
+func (a *DebugAPI) WriteMemProfile() error {
+	return errors.New("Currently not supported.")
 }
