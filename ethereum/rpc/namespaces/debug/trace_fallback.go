@@ -20,12 +20,14 @@
 
 package debug
 
-import "errors"
+import (
+	"errors"
+)
 
-func (*DebugAPI) StartGoTrace(string) error {
+func (*InternalAPI) StartGoTrace(string) error {
 	return errors.New("tracing is not supported on Go < 1.5")
 }
 
-func (*DebugAPI) StopGoTrace() error {
+func (*InternalAPI) StopGoTrace() error {
 	return errors.New("tracing is not supported on Go < 1.5")
 }
