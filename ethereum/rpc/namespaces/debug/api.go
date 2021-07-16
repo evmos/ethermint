@@ -4,9 +4,12 @@ import (
 	"errors"
 	"io"
 	"os"
+	"os/user"
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,11 +17,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
-// CPUProfileData keeps track of the cpu profiler execution
-type CPUProfileData struct {
-	fileName string
-	file     io.WriteCloser
-	mu       sync.Mutex
+// HandlerT keeps track of the cpu profiler and trace execution
+type HandlerT struct {
+	cpuFilename   string
+	cpuFile       io.WriteCloser
+	mu            sync.Mutex
+	traceFilename string
+	traceFile     io.WriteCloser
 }
 
 func isCPUProfileConfigurationActivated(ctx *server.Context) bool {
@@ -29,11 +34,28 @@ func isCPUProfileConfigurationActivated(ctx *server.Context) bool {
 	return false
 }
 
+// expands home directory in file paths.
+// ~someuser/tmp will not be expanded.
+func expandHome(p string) string {
+	if strings.HasPrefix(p, "~/") || strings.HasPrefix(p, "~\\") {
+		home := os.Getenv("HOME")
+		if home == "" {
+			if usr, err := user.Current(); err == nil {
+				home = usr.HomeDir
+			}
+		}
+		if home != "" {
+			p = home + p[1:]
+		}
+	}
+	return filepath.Clean(p)
+}
+
 // DebugAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
 type DebugAPI struct {
-	ctx        *server.Context
-	logger     log.Logger
-	cpuProfile *CPUProfileData
+	ctx     *server.Context
+	logger  log.Logger
+	handler *HandlerT
 }
 
 // NewPublicAPI creates an instance of the Debug API.
@@ -42,9 +64,9 @@ func NewDebugAPI(
 ) *DebugAPI {
 
 	return &DebugAPI{
-		ctx:        ctx,
-		logger:     ctx.Logger.With("module", "debug"),
-		cpuProfile: new(CPUProfileData),
+		ctx:     ctx,
+		logger:  ctx.Logger.With("module", "debug"),
+		handler: new(HandlerT),
 	}
 }
 
@@ -80,8 +102,15 @@ func (a *DebugAPI) GetBlockRlp() error {
 	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) GoTrace() error {
-	return errors.New("Currently not supported.")
+// GoTrace turns on tracing for nsec seconds and writes
+// trace data to file.
+func (a *DebugAPI) GoTrace(file string, nsec uint) error {
+	if err := a.StartGoTrace(file); err != nil {
+		return err
+	}
+	time.Sleep(time.Duration(nsec) * time.Second)
+	a.StopGoTrace()
+	return nil
 }
 
 // MemStats returns detailed runtime memory statistics.
@@ -108,15 +137,15 @@ func (a *DebugAPI) Stacks() error {
 }
 
 func (a *DebugAPI) StartCPUProfile(file string) error {
-	a.cpuProfile.mu.Lock()
-	defer a.cpuProfile.mu.Unlock()
+	a.handler.mu.Lock()
+	defer a.handler.mu.Unlock()
 
 	if isCPUProfileConfigurationActivated(a.ctx) {
 		return errors.New("CPU profiling already in progress using the configuration file")
-	} else if a.cpuProfile.file != nil {
+	} else if a.handler.cpuFile != nil {
 		return errors.New("CPU profiling already in progress")
 	} else {
-		f, err := os.Create(file)
+		f, err := os.Create(expandHome(file))
 		if err != nil {
 			a.logger.Error("failed to create CPU profile file", "error", err.Error())
 			return err
@@ -129,36 +158,28 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 		}
 
 		a.logger.Info("CPU profiling started", "profile", file)
-		a.cpuProfile.file = f
-		a.cpuProfile.fileName = file
+		a.handler.cpuFile = f
+		a.handler.cpuFilename = file
 		return nil
 	}
 }
 
-func (a *DebugAPI) StartGoTrace() error {
-	return errors.New("Currently not supported.")
-}
-
 func (a *DebugAPI) StopCPUProfile() error {
-	a.cpuProfile.mu.Lock()
-	defer a.cpuProfile.mu.Unlock()
+	a.handler.mu.Lock()
+	defer a.handler.mu.Unlock()
 
 	if isCPUProfileConfigurationActivated(a.ctx) {
 		return errors.New("CPU profiling already in progress using the configuration file")
-	} else if a.cpuProfile.file != nil {
-		a.logger.Info("Done writing CPU profile", "profile", a.cpuProfile.fileName)
+	} else if a.handler.cpuFile != nil {
+		a.logger.Info("Done writing CPU profile", "profile", a.handler.cpuFilename)
 		pprof.StopCPUProfile()
-		a.cpuProfile.file.Close()
-		a.cpuProfile.file = nil
-		a.cpuProfile.fileName = ""
+		a.handler.cpuFile.Close()
+		a.handler.cpuFile = nil
+		a.handler.cpuFilename = ""
 		return nil
 	} else {
 		return errors.New("CPU profiling not in progress")
 	}
-}
-
-func (a *DebugAPI) StopGoTrace() error {
-	return errors.New("Currently not supported.")
 }
 
 func (a *DebugAPI) TraceBlock() error {
