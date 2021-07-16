@@ -28,7 +28,7 @@ paths:
               QueryAccountResponse is the response type for the Query/Account
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -243,7 +243,7 @@ paths:
               QueryBalanceResponse is the response type for the Query/Balance
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -459,7 +459,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -705,6 +705,7 @@ paths:
                             title: index of the log in the block
                           removed:
                             type: boolean
+                            format: boolean
                             description: >-
                               The Removed field is true if this log was reverted
                               due to a chain
@@ -754,7 +755,7 @@ paths:
               QueryTxLogs is the response type for the Query/BlockLogs RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -994,6 +995,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/ethermint/evm/v1alpha1/codes/{address}':
@@ -1014,7 +1016,7 @@ paths:
               QueryCodeResponse is the response type for the Query/Code RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -1235,7 +1237,7 @@ paths:
               QueryCosmosAccountResponse is the response type for the
               Query/CosmosAccount RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -1487,6 +1489,7 @@ paths:
                       title: index of the log in the block
                     removed:
                       type: boolean
+                      format: boolean
                       description: >-
                         The Removed field is true if this log was reverted due
                         to a chain
@@ -1514,16 +1517,16 @@ paths:
                 title: >-
                   returned data from evm function (result or data supplied with
                   revert opcode)
-              reverted:
-                type: boolean
-                title: reverted flag is set to true when the call has been reverted
+              vm_error:
+                type: string
+                title: vm error is the error returned by vm execution
               gas_used:
                 type: string
                 format: uint64
                 title: gas consumed by the transaction
             description: MsgEthereumTxResponse defines the Msg/EthereumTx response type.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -1743,11 +1746,13 @@ paths:
                       transitions.
                   enable_create:
                     type: boolean
+                    format: boolean
                     title: >-
                       enable create toggles state transitions that use the
                       vm.Create function
                   enable_call:
                     type: boolean
+                    format: boolean
                     title: >-
                       enable call toggles state transitions that use the vm.Call
                       function
@@ -1773,6 +1778,7 @@ paths:
                         title: TheDAO hard-fork switch block (nil no fork)
                       dao_fork_support:
                         type: boolean
+                        format: boolean
                         title: >-
                           Whether the nodes supports or opposes the DAO
                           hard-fork
@@ -1845,7 +1851,7 @@ paths:
               QueryParamsResponse defines the response type for querying x/evm
               parameters.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -2050,7 +2056,7 @@ paths:
                 format: byte
             title: QueryStaticCallRequest defines static call response
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -2273,7 +2279,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -2523,6 +2529,7 @@ paths:
                       title: index of the log in the block
                     removed:
                       type: boolean
+                      format: boolean
                       description: >-
                         The Removed field is true if this log was reverted due
                         to a chain
@@ -2544,7 +2551,7 @@ paths:
                   transaction.
             description: QueryTxLogs is the response type for the Query/TxLogs RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -2769,7 +2776,7 @@ paths:
               QueryValidatorAccountResponse is the response type for the
               Query/ValidatorAccount RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -3046,7 +3053,7 @@ paths:
               QueryAccountResponse is the response type for the Query/Account
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -3275,7 +3282,7 @@ paths:
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -3517,7 +3524,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -3590,6 +3597,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/bank/v1beta1/balances/{address}/{denom}':
@@ -3603,18 +3611,25 @@ paths:
             type: object
             properties:
               balance:
-                description: balance is the balance of the coin.
                 type: object
                 properties:
                   denom:
                     type: string
                   amount:
                     type: string
+                description: >-
+                  Coin defines a token with a denomination and an amount.
+
+
+                  NOTE: The amount field is an Int which implements the custom
+                  method
+
+                  signatures required by gogoproto.
             description: >-
               QueryBalanceResponse is the response type for the Query/Balance
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -3746,7 +3761,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -3814,6 +3829,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/bank/v1beta1/denoms_metadata/{denom}':
@@ -3827,9 +3843,6 @@ paths:
             type: object
             properties:
               metadata:
-                description: >-
-                  metadata describes and provides all the client information for
-                  the requested token.
                 type: object
                 properties:
                   description:
@@ -3883,13 +3896,16 @@ paths:
                     description: |-
                       display indicates the suggested denom that should be
                       displayed in clients.
+                description: |-
+                  Metadata represents a struct that describes
+                  a basic token.
             description: >-
               QueryDenomMetadataResponse is the response type for the
               Query/DenomMetadata RPC
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -3940,6 +3956,7 @@ paths:
                           type: string
                         enabled:
                           type: boolean
+                          format: boolean
                       description: >-
                         SendEnabled maps coin denom to a send_enabled status
                         (whether a denom is
@@ -3947,12 +3964,13 @@ paths:
                         sendable).
                   default_send_enabled:
                     type: boolean
+                    format: boolean
                 description: Params defines the parameters for the bank module.
             description: >-
               QueryParamsResponse defines the response type for querying x/bank
               parameters.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4009,7 +4027,7 @@ paths:
 
               method
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4043,18 +4061,25 @@ paths:
             type: object
             properties:
               amount:
-                description: amount is the supply of the coin.
                 type: object
                 properties:
                   denom:
                     type: string
                   amount:
                     type: string
+                description: >-
+                  Coin defines a token with a denomination and an amount.
+
+
+                  NOTE: The amount field is an Int which implements the custom
+                  method
+
+                  signatures required by gogoproto.
             description: >-
               QuerySupplyOfResponse is the response type for the Query/SupplyOf
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4118,7 +4143,7 @@ paths:
 
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4205,7 +4230,7 @@ paths:
               QueryDelegationTotalRewardsResponse is the response type for the
               Query/DelegationTotalRewards RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4267,7 +4292,7 @@ paths:
               QueryDelegationRewardsResponse is the response type for the
               Query/DelegationRewards RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4322,7 +4347,7 @@ paths:
               QueryDelegatorValidatorsResponse is the response type for the
               Query/DelegatorValidators RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4368,7 +4393,7 @@ paths:
               QueryDelegatorWithdrawAddressResponse is the response type for the
               Query/DelegatorWithdrawAddress RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4419,11 +4444,12 @@ paths:
                     type: string
                   withdraw_addr_enabled:
                     type: boolean
+                    format: boolean
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4482,7 +4508,7 @@ paths:
               QueryValidatorCommissionResponse is the response type for the
               Query/ValidatorCommission RPC method
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4554,7 +4580,7 @@ paths:
 
               Query/ValidatorOutstandingRewards RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4636,7 +4662,7 @@ paths:
               QueryValidatorSlashesResponse is the response type for the
               Query/ValidatorSlashes RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4725,6 +4751,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   /cosmos/mint/v1beta1/annual_provisions:
@@ -4747,7 +4774,7 @@ paths:
               QueryAnnualProvisionsResponse is the response type for the
               Query/AnnualProvisions RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4790,7 +4817,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4850,7 +4877,7 @@ paths:
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -4946,7 +4973,7 @@ paths:
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -5437,7 +5464,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -5708,6 +5735,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/gov/v1beta1/proposals/{proposal_id}':
@@ -5976,7 +6004,7 @@ paths:
               QueryProposalResponse is the response type for the Query/Proposal
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -6238,7 +6266,7 @@ paths:
               QueryDepositsResponse is the response type for the Query/Deposits
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -6479,6 +6507,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/gov/v1beta1/proposals/{proposal_id}/deposits/{depositor}':
@@ -6494,7 +6523,6 @@ paths:
             type: object
             properties:
               deposit:
-                description: deposit defines the requested deposit.
                 type: object
                 properties:
                   proposal_id:
@@ -6519,11 +6547,16 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
+                description: >-
+                  Deposit defines an amount deposited by an account address to
+                  an active
+
+                  proposal.
             description: >-
               QueryDepositResponse is the response type for the Query/Deposit
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -6736,7 +6769,6 @@ paths:
             type: object
             properties:
               tally:
-                description: tally defines the requested tally.
                 type: object
                 properties:
                   'yes':
@@ -6747,11 +6779,14 @@ paths:
                     type: string
                   no_with_veto:
                     type: string
+                description: >-
+                  TallyResult defines a standard tally for a governance
+                  proposal.
             description: >-
               QueryTallyResultResponse is the response type for the Query/Tally
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -7014,7 +7049,7 @@ paths:
               QueryVotesResponse is the response type for the Query/Votes RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -7255,6 +7290,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/gov/v1beta1/proposals/{proposal_id}/votes/{voter}':
@@ -7268,7 +7304,6 @@ paths:
             type: object
             properties:
               vote:
-                description: vote defined the queried vote.
                 type: object
                 properties:
                   proposal_id:
@@ -7294,11 +7329,16 @@ paths:
                        - VOTE_OPTION_ABSTAIN: VOTE_OPTION_ABSTAIN defines an abstain vote option.
                        - VOTE_OPTION_NO: VOTE_OPTION_NO defines a no vote option.
                        - VOTE_OPTION_NO_WITH_VETO: VOTE_OPTION_NO_WITH_VETO defines a no with veto vote option.
+                description: >-
+                  Vote defines a vote on a governance proposal.
+
+                  A Vote consists of a proposal ID, the voter, and the vote
+                  option.
             description: >-
               QueryVoteResponse is the response type for the Query/Vote RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -7580,7 +7620,7 @@ paths:
               QueryDelegatorDelegationsResponse is response type for the
               Query/DelegatorDelegations RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -7820,6 +7860,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/staking/v1beta1/delegators/{delegator_addr}/redelegations':
@@ -7933,7 +7974,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -8183,6 +8224,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/staking/v1beta1/delegators/{delegator_addr}/unbonding_delegations':
@@ -8255,7 +8297,7 @@ paths:
 
               Query/UnbondingDelegatorDelegations RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -8495,6 +8537,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/staking/v1beta1/delegators/{delegator_addr}/validators':
@@ -8695,6 +8738,7 @@ paths:
                             }
                     jailed:
                       type: boolean
+                      format: boolean
                     status:
                       type: string
                       enum:
@@ -8805,7 +8849,7 @@ paths:
               QueryDelegatorValidatorsResponse is response type for the
               Query/DelegatorValidators RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -9045,6 +9089,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/staking/v1beta1/delegators/{delegator_addr}/validators/{validator_addr}':
@@ -9060,7 +9105,6 @@ paths:
             type: object
             properties:
               validator:
-                description: validator defines the the validator info.
                 type: object
                 properties:
                   operator_address:
@@ -9242,6 +9286,7 @@ paths:
                           }
                   jailed:
                     type: boolean
+                    format: boolean
                   status:
                     type: string
                     enum:
@@ -9306,11 +9351,34 @@ paths:
                       validator.
                   min_self_delegation:
                     type: string
+                description: >-
+                  Validator defines a validator, together with the total amount
+                  of the
+
+                  Validator's bond shares and their exchange rate to coins.
+                  Slashing results in
+
+                  a decrease in the exchange rate, allowing correct calculation
+                  of future
+
+                  undelegations without iterating over delegators. When coins
+                  are delegated to
+
+                  this validator, the validator is credited with a delegation
+                  whose number of
+
+                  bond shares is based on the amount of coins delegated divided
+                  by the current
+
+                  exchange rate. Voting power can be calculated as total bonded
+                  shares
+
+                  multiplied by exchange rate.
             description: |-
               QueryDelegatorValidatorResponse response type for the
               Query/DelegatorValidator RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -9789,6 +9857,7 @@ paths:
                                 }
                         jailed:
                           type: boolean
+                          format: boolean
                         status:
                           type: string
                           enum:
@@ -9882,7 +9951,7 @@ paths:
 
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -10110,7 +10179,7 @@ paths:
               QueryParamsResponse is response type for the Query/Params RPC
               method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -10320,7 +10389,7 @@ paths:
                     type: string
             description: QueryPoolResponse is response type for the Query/Pool RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -10706,6 +10775,7 @@ paths:
                             }
                     jailed:
                       type: boolean
+                      format: boolean
                     status:
                       type: string
                       enum:
@@ -10816,7 +10886,7 @@ paths:
               QueryValidatorsResponse is response type for the Query/Validators
               RPC method
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -11056,6 +11126,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/staking/v1beta1/validators/{validator_addr}':
@@ -11069,7 +11140,6 @@ paths:
             type: object
             properties:
               validator:
-                description: validator defines the the validator info.
                 type: object
                 properties:
                   operator_address:
@@ -11251,6 +11321,7 @@ paths:
                           }
                   jailed:
                     type: boolean
+                    format: boolean
                   status:
                     type: string
                     enum:
@@ -11315,11 +11386,34 @@ paths:
                       validator.
                   min_self_delegation:
                     type: string
+                description: >-
+                  Validator defines a validator, together with the total amount
+                  of the
+
+                  Validator's bond shares and their exchange rate to coins.
+                  Slashing results in
+
+                  a decrease in the exchange rate, allowing correct calculation
+                  of future
+
+                  undelegations without iterating over delegators. When coins
+                  are delegated to
+
+                  this validator, the validator is credited with a delegation
+                  whose number of
+
+                  bond shares is based on the amount of coins delegated divided
+                  by the current
+
+                  exchange rate. Voting power can be calculated as total bonded
+                  shares
+
+                  multiplied by exchange rate.
             title: >-
               QueryValidatorResponse is response type for the Query/Validator
               RPC method
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -11590,7 +11684,7 @@ paths:
               QueryValidatorDelegationsResponse is response type for the
               Query/ValidatorDelegations RPC method
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -11830,6 +11924,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
   '/cosmos/staking/v1beta1/validators/{validator_addr}/delegations/{delegator_addr}':
@@ -11843,9 +11938,6 @@ paths:
             type: object
             properties:
               delegation_response:
-                description: >-
-                  delegation_responses defines the delegation info of a
-                  delegation.
                 type: object
                 properties:
                   delegation:
@@ -11880,11 +11972,17 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
+                description: >-
+                  DelegationResponse is equivalent to Delegation except that it
+                  contains a
+
+                  balance in addition to shares which is more suitable for
+                  client responses.
             description: >-
               QueryDelegationResponse is response type for the Query/Delegation
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -12098,7 +12196,6 @@ paths:
             type: object
             properties:
               unbond:
-                description: unbond defines the unbonding information of a delegation.
                 type: object
                 properties:
                   delegator_address:
@@ -12123,13 +12220,18 @@ paths:
                       description: >-
                         UnbondingDelegationEntry defines an unbonding object
                         with relevant metadata.
+                description: >-
+                  UnbondingDelegation stores all of a single delegator's
+                  unbonding bonds
+
+                  for a single validator in an time-ordered list.
             description: >-
               QueryDelegationResponse is response type for the
               Query/UnbondingDelegation
 
               RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -12398,7 +12500,7 @@ paths:
 
               Query/ValidatorUnbondingDelegations RPC method.
         default:
-          description: An unexpected error response.
+          description: An unexpected error response
           schema:
             type: object
             properties:
@@ -12638,6 +12740,7 @@ paths:
           in: query
           required: false
           type: boolean
+          format: boolean
       tags:
         - Query
 definitions:
@@ -12668,6 +12771,7 @@ definitions:
           If left empty it will default to a value to be set by each app.
       count_total:
         type: boolean
+        format: boolean
         description: >-
           count_total is set to true  to indicate that the result set should
           include
@@ -12720,6 +12824,7 @@ definitions:
         title: TheDAO hard-fork switch block (nil no fork)
       dao_fork_support:
         type: boolean
+        format: boolean
         title: Whether the nodes supports or opposes the DAO hard-fork
       eip150_block:
         type: string
@@ -12808,6 +12913,7 @@ definitions:
         title: index of the log in the block
       removed:
         type: boolean
+        format: boolean
         description: >-
           The Removed field is true if this log was reverted due to a chain
 
@@ -12870,6 +12976,7 @@ definitions:
               title: index of the log in the block
             removed:
               type: boolean
+              format: boolean
               description: >-
                 The Removed field is true if this log was reverted due to a
                 chain
@@ -12895,9 +13002,9 @@ definitions:
         title: >-
           returned data from evm function (result or data supplied with revert
           opcode)
-      reverted:
-        type: boolean
-        title: reverted flag is set to true when the call has been reverted
+      vm_error:
+        type: string
+        title: vm error is the error returned by vm execution
       gas_used:
         type: string
         format: uint64
@@ -12913,11 +13020,13 @@ definitions:
           transitions.
       enable_create:
         type: boolean
+        format: boolean
         title: >-
           enable create toggles state transitions that use the vm.Create
           function
       enable_call:
         type: boolean
+        format: boolean
         title: enable call toggles state transitions that use the vm.Call function
       extra_eips:
         type: array
@@ -12937,6 +13046,7 @@ definitions:
             title: TheDAO hard-fork switch block (nil no fork)
           dao_fork_support:
             type: boolean
+            format: boolean
             title: Whether the nodes supports or opposes the DAO hard-fork
           eip150_block:
             type: string
@@ -13073,6 +13183,7 @@ definitions:
                     title: index of the log in the block
                   removed:
                     type: boolean
+                    format: boolean
                     description: >-
                       The Removed field is true if this log was reverted due to
                       a chain
@@ -13160,11 +13271,13 @@ definitions:
               transitions.
           enable_create:
             type: boolean
+            format: boolean
             title: >-
               enable create toggles state transitions that use the vm.Create
               function
           enable_call:
             type: boolean
+            format: boolean
             title: >-
               enable call toggles state transitions that use the vm.Call
               function
@@ -13186,6 +13299,7 @@ definitions:
                 title: TheDAO hard-fork switch block (nil no fork)
               dao_fork_support:
                 type: boolean
+                format: boolean
                 title: Whether the nodes supports or opposes the DAO hard-fork
               eip150_block:
                 type: string
@@ -13303,6 +13417,7 @@ definitions:
               title: index of the log in the block
             removed:
               type: boolean
+              format: boolean
               description: >-
                 The Removed field is true if this log was reverted due to a
                 chain
@@ -13382,6 +13497,7 @@ definitions:
               title: index of the log in the block
             removed:
               type: boolean
+              format: boolean
               description: >-
                 The Removed field is true if this log was reverted due to a
                 chain
@@ -13936,6 +14052,7 @@ definitions:
               type: string
             enabled:
               type: boolean
+              format: boolean
           description: >-
             SendEnabled maps coin denom to a send_enabled status (whether a
             denom is
@@ -13943,6 +14060,7 @@ definitions:
             sendable).
       default_send_enabled:
         type: boolean
+        format: boolean
     description: Params defines the parameters for the bank module.
   cosmos.bank.v1beta1.QueryAllBalancesResponse:
     type: object
@@ -13989,13 +14107,17 @@ definitions:
     type: object
     properties:
       balance:
-        description: balance is the balance of the coin.
         type: object
         properties:
           denom:
             type: string
           amount:
             type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
     description: >-
       QueryBalanceResponse is the response type for the Query/Balance RPC
       method.
@@ -14003,9 +14125,6 @@ definitions:
     type: object
     properties:
       metadata:
-        description: >-
-          metadata describes and provides all the client information for the
-          requested token.
         type: object
         properties:
           description:
@@ -14054,6 +14173,9 @@ definitions:
             description: |-
               display indicates the suggested denom that should be
               displayed in clients.
+        description: |-
+          Metadata represents a struct that describes
+          a basic token.
     description: >-
       QueryDenomMetadataResponse is the response type for the
       Query/DenomMetadata RPC
@@ -14157,6 +14279,7 @@ definitions:
                   type: string
                 enabled:
                   type: boolean
+                  format: boolean
               description: >-
                 SendEnabled maps coin denom to a send_enabled status (whether a
                 denom is
@@ -14164,6 +14287,7 @@ definitions:
                 sendable).
           default_send_enabled:
             type: boolean
+            format: boolean
         description: Params defines the parameters for the bank module.
     description: >-
       QueryParamsResponse defines the response type for querying x/bank
@@ -14172,13 +14296,17 @@ definitions:
     type: object
     properties:
       amount:
-        description: amount is the supply of the coin.
         type: object
         properties:
           denom:
             type: string
           amount:
             type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
     description: >-
       QuerySupplyOfResponse is the response type for the Query/SupplyOf RPC
       method.
@@ -14212,6 +14340,7 @@ definitions:
         type: string
       enabled:
         type: boolean
+        format: boolean
     description: |-
       SendEnabled maps coin denom to a send_enabled status (whether a denom is
       sendable).
@@ -14272,6 +14401,7 @@ definitions:
         type: string
       withdraw_addr_enabled:
         type: boolean
+        format: boolean
     description: Params defines the set of params for the distribution module.
   cosmos.distribution.v1beta1.QueryCommunityPoolResponse:
     type: object
@@ -14402,6 +14532,7 @@ definitions:
             type: string
           withdraw_addr_enabled:
             type: boolean
+            format: boolean
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
   cosmos.distribution.v1beta1.QueryValidatorCommissionResponse:
     type: object
@@ -14932,7 +15063,6 @@ definitions:
     type: object
     properties:
       deposit:
-        description: deposit defines the requested deposit.
         type: object
         properties:
           proposal_id:
@@ -14957,6 +15087,9 @@ definitions:
                 method
 
                 signatures required by gogoproto.
+        description: |-
+          Deposit defines an amount deposited by an account address to an active
+          proposal.
     description: >-
       QueryDepositResponse is the response type for the Query/Deposit RPC
       method.
@@ -15593,7 +15726,6 @@ definitions:
     type: object
     properties:
       tally:
-        description: tally defines the requested tally.
         type: object
         properties:
           'yes':
@@ -15604,6 +15736,7 @@ definitions:
             type: string
           no_with_veto:
             type: string
+        description: TallyResult defines a standard tally for a governance proposal.
     description: >-
       QueryTallyResultResponse is the response type for the Query/Tally RPC
       method.
@@ -15611,7 +15744,6 @@ definitions:
     type: object
     properties:
       vote:
-        description: vote defined the queried vote.
         type: object
         properties:
           proposal_id:
@@ -15637,6 +15769,9 @@ definitions:
                - VOTE_OPTION_ABSTAIN: VOTE_OPTION_ABSTAIN defines an abstain vote option.
                - VOTE_OPTION_NO: VOTE_OPTION_NO defines a no vote option.
                - VOTE_OPTION_NO_WITH_VETO: VOTE_OPTION_NO_WITH_VETO defines a no with veto vote option.
+        description: |-
+          Vote defines a vote on a governance proposal.
+          A Vote consists of a proposal ID, the voter, and the vote option.
     description: QueryVoteResponse is the response type for the Query/Vote RPC method.
   cosmos.gov.v1beta1.QueryVotesResponse:
     type: object
@@ -16146,6 +16281,7 @@ definitions:
                     }
             jailed:
               type: boolean
+              format: boolean
             status:
               type: string
               enum:
@@ -16270,7 +16406,6 @@ definitions:
     type: object
     properties:
       delegation_response:
-        description: delegation_responses defines the delegation info of a delegation.
         type: object
         properties:
           delegation:
@@ -16305,6 +16440,12 @@ definitions:
               method
 
               signatures required by gogoproto.
+        description: >-
+          DelegationResponse is equivalent to Delegation except that it contains
+          a
+
+          balance in addition to shares which is more suitable for client
+          responses.
     description: >-
       QueryDelegationResponse is response type for the Query/Delegation RPC
       method.
@@ -16436,7 +16577,6 @@ definitions:
     type: object
     properties:
       validator:
-        description: validator defines the the validator info.
         type: object
         properties:
           operator_address:
@@ -16608,6 +16748,7 @@ definitions:
                   }
           jailed:
             type: boolean
+            format: boolean
           status:
             type: string
             enum:
@@ -16670,6 +16811,27 @@ definitions:
             description: Commission defines commission parameters for a given validator.
           min_self_delegation:
             type: string
+        description: >-
+          Validator defines a validator, together with the total amount of the
+
+          Validator's bond shares and their exchange rate to coins. Slashing
+          results in
+
+          a decrease in the exchange rate, allowing correct calculation of
+          future
+
+          undelegations without iterating over delegators. When coins are
+          delegated to
+
+          this validator, the validator is credited with a delegation whose
+          number of
+
+          bond shares is based on the amount of coins delegated divided by the
+          current
+
+          exchange rate. Voting power can be calculated as total bonded shares
+
+          multiplied by exchange rate.
     description: |-
       QueryDelegatorValidatorResponse response type for the
       Query/DelegatorValidator RPC method.
@@ -16854,6 +17016,7 @@ definitions:
                     }
             jailed:
               type: boolean
+              format: boolean
             status:
               type: string
               enum:
@@ -17227,6 +17390,7 @@ definitions:
                         }
                 jailed:
                   type: boolean
+                  format: boolean
                 status:
                   type: string
                   enum:
@@ -17459,7 +17623,6 @@ definitions:
     type: object
     properties:
       unbond:
-        description: unbond defines the unbonding information of a delegation.
         type: object
         properties:
           delegator_address:
@@ -17484,6 +17647,9 @@ definitions:
               description: >-
                 UnbondingDelegationEntry defines an unbonding object with
                 relevant metadata.
+        description: |-
+          UnbondingDelegation stores all of a single delegator's unbonding bonds
+          for a single validator in an time-ordered list.
     description: |-
       QueryDelegationResponse is response type for the Query/UnbondingDelegation
       RPC method.
@@ -17558,7 +17724,6 @@ definitions:
     type: object
     properties:
       validator:
-        description: validator defines the the validator info.
         type: object
         properties:
           operator_address:
@@ -17730,6 +17895,7 @@ definitions:
                   }
           jailed:
             type: boolean
+            format: boolean
           status:
             type: string
             enum:
@@ -17792,6 +17958,27 @@ definitions:
             description: Commission defines commission parameters for a given validator.
           min_self_delegation:
             type: string
+        description: >-
+          Validator defines a validator, together with the total amount of the
+
+          Validator's bond shares and their exchange rate to coins. Slashing
+          results in
+
+          a decrease in the exchange rate, allowing correct calculation of
+          future
+
+          undelegations without iterating over delegators. When coins are
+          delegated to
+
+          this validator, the validator is credited with a delegation whose
+          number of
+
+          bond shares is based on the amount of coins delegated divided by the
+          current
+
+          exchange rate. Voting power can be calculated as total bonded shares
+
+          multiplied by exchange rate.
     title: QueryValidatorResponse is response type for the Query/Validator RPC method
   cosmos.staking.v1beta1.QueryValidatorUnbondingDelegationsResponse:
     type: object
@@ -18030,6 +18217,7 @@ definitions:
                     }
             jailed:
               type: boolean
+              format: boolean
             status:
               type: string
               enum:
@@ -18493,6 +18681,7 @@ definitions:
               }
       jailed:
         type: boolean
+        format: boolean
       status:
         type: string
         enum:

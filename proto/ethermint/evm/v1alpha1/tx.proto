@@ -121,8 +121,8 @@ message MsgEthereumTxResponse {
   repeated Log logs = 2;
   // returned data from evm function (result or data supplied with revert opcode)
   bytes ret = 3;
-  // reverted flag is set to true when the call has been reverted
-  bool reverted = 4;
+  // vm error is the error returned by vm execution
+  string vm_error = 4;
   // gas consumed by the transaction
   uint64 gas_used = 5;
 }
