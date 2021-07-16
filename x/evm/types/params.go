@@ -23,6 +23,12 @@ var (
 	ParamStoreKeyEnableCreate = []byte("EnableCreate")
 	ParamStoreKeyEnableCall   = []byte("EnableCall")
 	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
+	ParamStoreKeyChainConfig  = []byte("ChainConfig")
+
+	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the EVM interpreter. These EIPs are applied in
+	// order and can override the instruction sets from the latest hard fork enabled by the ChainConfig. For more info
+	// check: https://github.com/ethereum/go-ethereum/blob/v1.10.4/core/vm/interpreter.go#L122
+	AvailableExtraEIPs = []int64{1344, 1884, 2200, 2929, 3198, 3529}
 )
 
 // ParamKeyTable returns the parameter key table.
@@ -31,22 +37,25 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
 	return Params{
 		EvmDenom:     evmDenom,
 		EnableCreate: enableCreate,
 		EnableCall:   enableCall,
 		ExtraEIPs:    extraEIPs,
+		ChainConfig:  config,
 	}
 }
 
 // DefaultParams returns default evm parameters
+// ExtraEIPs is empty to prevent overriding the latest hard fork instruction set
 func DefaultParams() Params {
 	return Params{
 		EvmDenom:     DefaultEVMDenom,
 		EnableCreate: true,
 		EnableCall:   true,
-		ExtraEIPs:    []int64{3529, 3198, 2929, 2200, 1884, 1344},
+		ChainConfig:  DefaultChainConfig(),
+		ExtraEIPs:    nil,
 	}
 }
 
@@ -63,6 +72,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
+		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
 	}
 }
 
@@ -72,7 +82,11 @@ func (p Params) Validate() error {
 		return err
 	}
 
-	return validateEIPs(p.ExtraEIPs)
+	if err := validateEIPs(p.ExtraEIPs); err != nil {
+		return err
+	}
+
+	return p.ChainConfig.Validate()
 }
 
 // EIPs returns the ExtraEips as a int slice
@@ -114,4 +128,13 @@ func validateEIPs(i interface{}) error {
 	}
 
 	return nil
+}
+
+func validateChainConfig(i interface{}) error {
+	cfg, ok := i.(ChainConfig)
+	if !ok {
+		return fmt.Errorf("invalid chain config type: %T", i)
+	}
+
+	return cfg.Validate()
 }

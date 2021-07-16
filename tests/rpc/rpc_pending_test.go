@@ -282,6 +282,12 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 	err = json.Unmarshal(rpcRes.Result, &pendingBlockTx)
 	require.NoError(t, err)
 
+	txsRes := Call(t, "eth_getPendingTransactions", []interface{}{})
+	var pendingTxs []map[string]interface{}
+	err = json.Unmarshal(txsRes.Result, &pendingTxs)
+	require.NoError(t, err)
+	require.NotEmpty(t, pendingTxs)
+
 	// verify the pending tx has all the correct fields from the tx sent.
 	require.NotEmpty(t, pendingBlockTx)
 	require.NotEmpty(t, pendingBlockTx["hash"])

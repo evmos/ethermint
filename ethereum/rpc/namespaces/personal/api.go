@@ -9,7 +9,7 @@ import (
 	"github.com/tharsis/ethermint/crypto/hd"
 	ethermint "github.com/tharsis/ethermint/types"
 
-	log "github.com/xlab/suplog"
+	"github.com/tendermint/tendermint/libs/log"
 
 	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -32,10 +32,10 @@ type PrivateAccountAPI struct {
 }
 
 // NewAPI creates an instance of the public Personal Eth API.
-func NewAPI(ethAPI *eth.PublicAPI) *PrivateAccountAPI {
+func NewAPI(logger log.Logger, ethAPI *eth.PublicAPI) *PrivateAccountAPI {
 	return &PrivateAccountAPI{
 		ethAPI: ethAPI,
-		logger: log.WithField("module", "personal"),
+		logger: logger.With("api", "personal"),
 	}
 }
 
@@ -96,7 +96,7 @@ func (api *PrivateAccountAPI) ListAccounts() ([]common.Address, error) {
 // LockAccount will lock the account associated with the given address when it's unlocked.
 // It removes the key corresponding to the given address from the API's local keys.
 func (api *PrivateAccountAPI) LockAccount(address common.Address) bool { // nolint: interfacer
-	api.logger.Debugln("personal_lockAccount", "address", address.String())
+	api.logger.Debug("personal_lockAccount", "address", address.String())
 	api.logger.Info("personal_lockAccount not supported")
 	// TODO: Not supported. See underlying issue  https://github.com/99designs/keyring/issues/85
 	return false
@@ -115,9 +115,9 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 	}
 
 	addr := common.BytesToAddress(info.GetPubKey().Address().Bytes())
-	api.logger.Infoln("Your new key was generated", "address", addr.String())
-	api.logger.Infoln("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermint/"+name)
-	api.logger.Infoln("Please remember your password!")
+	api.logger.Info("Your new key was generated", "address", addr.String())
+	api.logger.Info("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermint/"+name)
+	api.logger.Info("Please remember your password!")
 	return addr, nil
 }
 
@@ -125,7 +125,7 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 // the given password for duration seconds. If duration is nil it will use a
 // default of 300 seconds. It returns an indication if the account was unlocked.
 func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Address, _ string, _ *uint64) (bool, error) { // nolint: interfacer
-	api.logger.Debugln("personal_unlockAccount", "address", addr.String())
+	api.logger.Debug("personal_unlockAccount", "address", addr.String())
 	// TODO: Not supported. See underlying issue  https://github.com/99designs/keyring/issues/85
 	return false, nil
 }
@@ -154,7 +154,7 @@ func (api *PrivateAccountAPI) Sign(_ context.Context, data hexutil.Bytes, addr c
 
 	sig, _, err := api.ethAPI.ClientCtx().Keyring.SignByAddress(cosmosAddr, accounts.TextHash(data))
 	if err != nil {
-		api.logger.WithError(err).Debugln("failed to sign with key", "data", data, "address", addr.String())
+		api.logger.Error("failed to sign with key", "data", data, "address", addr.String(), "error", err.Error())
 		return nil, err
 	}
 

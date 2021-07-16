@@ -37,28 +37,41 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 
 // DefaultChainConfig returns default evm parameters.
 func DefaultChainConfig() ChainConfig {
+	homesteadBlock := sdk.ZeroInt()
+	daoForkBlock := sdk.ZeroInt()
+	eip150Block := sdk.ZeroInt()
+	eip155Block := sdk.ZeroInt()
+	eip158Block := sdk.ZeroInt()
+	byzantiumBlock := sdk.ZeroInt()
+	constantinopleBlock := sdk.ZeroInt()
+	petersburgBlock := sdk.ZeroInt()
+	istanbulBlock := sdk.ZeroInt()
+	muirGlacierBlock := sdk.ZeroInt()
+	berlinBlock := sdk.ZeroInt()
+	londonBlock := sdk.ZeroInt()
+
 	return ChainConfig{
-		HomesteadBlock:      sdk.ZeroInt(),
-		DAOForkBlock:        sdk.ZeroInt(),
+		HomesteadBlock:      &homesteadBlock,
+		DAOForkBlock:        &daoForkBlock,
 		DAOForkSupport:      true,
-		EIP150Block:         sdk.ZeroInt(),
+		EIP150Block:         &eip150Block,
 		EIP150Hash:          common.Hash{}.String(),
-		EIP155Block:         sdk.ZeroInt(),
-		EIP158Block:         sdk.ZeroInt(),
-		ByzantiumBlock:      sdk.ZeroInt(),
-		ConstantinopleBlock: sdk.ZeroInt(),
-		PetersburgBlock:     sdk.ZeroInt(),
-		IstanbulBlock:       sdk.ZeroInt(),
-		MuirGlacierBlock:    sdk.ZeroInt(),
-		BerlinBlock:         sdk.ZeroInt(),
-		LondonBlock:         sdk.ZeroInt(),
-		EWASMBlock:          sdk.NewInt(-1),
-		CatalystBlock:       sdk.NewInt(-1),
+		EIP155Block:         &eip155Block,
+		EIP158Block:         &eip158Block,
+		ByzantiumBlock:      &byzantiumBlock,
+		ConstantinopleBlock: &constantinopleBlock,
+		PetersburgBlock:     &petersburgBlock,
+		IstanbulBlock:       &istanbulBlock,
+		MuirGlacierBlock:    &muirGlacierBlock,
+		BerlinBlock:         &berlinBlock,
+		LondonBlock:         &londonBlock,
+		EWASMBlock:          nil,
+		CatalystBlock:       nil,
 	}
 }
 
-func getBlockValue(block sdk.Int) *big.Int {
-	if block.IsNegative() {
+func getBlockValue(block *sdk.Int) *big.Int {
+	if block == nil || block.IsNegative() {
 		return nil
 	}
 
@@ -125,11 +138,15 @@ func validateHash(hex string) error {
 	return nil
 }
 
-func validateBlock(block sdk.Int) error {
-	if block == (sdk.Int{}) || block.BigInt() == nil {
+func validateBlock(block *sdk.Int) error {
+	// nil value means that the fork has not yet been applied
+	if block == nil {
+		return nil
+	}
+
+	if block.IsNegative() {
 		return sdkerrors.Wrapf(
-			ErrInvalidChainConfig,
-			"cannot use uninitialized or nil values for Int, set a negative Int value if you want to define a nil Ethereum block",
+			ErrInvalidChainConfig, "block value cannot be negative: %s", block,
 		)
 	}
 
