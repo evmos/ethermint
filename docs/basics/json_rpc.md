@@ -104,19 +104,19 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 | `clique_status`                                                                   | Clique    |             |                           |
 | `debug_backtraceAt`                                                               | Debug     |             |                           |
 | `debug_blockProfile`                                                              | Debug     |             |                           |
-| `debug_cpuProfile`                                                                | Debug     |             |                           |
+| `debug_cpuProfile`                                                                | Debug     | ✔           |                           |
 | `debug_dumpBlock`                                                                 | Debug     |             |                           |
-| `debug_gcStats`                                                                   | Debug     |             |                           |
+| `debug_gcStats`                                                                   | Debug     | ✔           |                           |
 | `debug_getBlockRlp`                                                               | Debug     |             |                           |
 | `debug_goTrace`                                                                   | Debug     |             |                           |
-| `debug_memStats`                                                                  | Debug     |             |                           |
+| `debug_memStats`                                                                  | Debug     | ✔           |                           |
 | `debug_seedHash`                                                                  | Debug     |             |                           |
 | `debug_setHead`                                                                   | Debug     |             |                           |
 | `debug_setBlockProfileRate`                                                       | Debug     |             |                           |
 | `debug_stacks`                                                                    | Debug     |             |                           |
-| `debug_startCPUProfile`                                                           | Debug     |             |                           |
+| `debug_startCPUProfile`                                                           | Debug     | ✔           |                           |
 | `debug_startGoTrace`                                                              | Debug     |             |                           |
-| `debug_stopCPUProfile`                                                            | Debug     |             |                           |
+| `debug_stopCPUProfile`                                                            | Debug     | ✔           |                           |
 | `debug_stopGoTrace`                                                               | Debug     |             |                           |
 | `debug_traceBlock`                                                                | Debug     |             |                           |
 | `debug_traceBlockByNumber`                                                        | Debug     |             |                           |
