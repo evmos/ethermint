@@ -11,7 +11,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
+// isCPUProfileConfigurationActivated checks if cpuprofile was configured via flag
 func isCPUProfileConfigurationActivated(ctx *server.Context) bool {
+	// TODO: use same constants as server/start.go
+	// constant declared in start.go cannot be imported (cyclical dependency)
 	const flagCPUProfile = "cpu-profile"
 	if cpuProfile := ctx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
 		return true
