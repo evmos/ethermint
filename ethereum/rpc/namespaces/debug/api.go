@@ -2,6 +2,7 @@ package debug
 
 import (
 	"errors"
+	"io"
 	"os"
 	"runtime"
 	"runtime/debug"
@@ -15,17 +16,9 @@ import (
 
 // CPUProfileData keeps track of the cpu profiler execution
 type CPUProfileData struct {
-	fileName  string
-	file      os.File
-	activated bool
-	mu        sync.Mutex
-}
-
-// NewCPUProfileData creates an instance of the CpuProfileData
-func NewCPUProfileData() *CPUProfileData {
-	return &CPUProfileData{
-		activated: false,
-	}
+	fileName string
+	file     io.WriteCloser
+	mu       sync.Mutex
 }
 
 func isCPUProfileConfigurationActivated(ctx *server.Context) bool {
@@ -51,7 +44,7 @@ func NewDebugAPI(
 	return &DebugAPI{
 		ctx:        ctx,
 		logger:     ctx.Logger.With("module", "debug"),
-		cpuProfile: NewCPUProfileData(),
+		cpuProfile: new(CPUProfileData),
 	}
 }
 
@@ -120,7 +113,7 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 
 	if isCPUProfileConfigurationActivated(a.ctx) {
 		return errors.New("CPU profiling already in progress using the configuration file")
-	} else if a.cpuProfile.activated {
+	} else if a.cpuProfile.file != nil {
 		return errors.New("CPU profiling already in progress")
 	} else {
 		f, err := os.Create(file)
@@ -136,9 +129,8 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 		}
 
 		a.logger.Info("CPU profiling started", "profile", file)
-		a.cpuProfile.file = *f
+		a.cpuProfile.file = f
 		a.cpuProfile.fileName = file
-		a.cpuProfile.activated = true
 		return nil
 	}
 }
@@ -153,11 +145,11 @@ func (a *DebugAPI) StopCPUProfile() error {
 
 	if isCPUProfileConfigurationActivated(a.ctx) {
 		return errors.New("CPU profiling already in progress using the configuration file")
-	} else if a.cpuProfile.activated == true {
+	} else if a.cpuProfile.file != nil {
 		a.logger.Info("Done writing CPU profile", "profile", a.cpuProfile.fileName)
 		pprof.StopCPUProfile()
 		a.cpuProfile.file.Close()
-		a.cpuProfile.activated = false
+		a.cpuProfile.file = nil
 		a.cpuProfile.fileName = ""
 		return nil
 	} else {
