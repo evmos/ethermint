@@ -103,7 +103,7 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 | `clique_discard`                                                                  | Clique    |             |                           |
 | `clique_status`                                                                   | Clique    |             |                           |
 | `debug_backtraceAt`                                                               | Debug     |             |                           |
-| `debug_blockProfile`                                                              | Debug     |             |                           |
+| `debug_blockProfile`                                                              | Debug     | ✔           |                           |
 | `debug_cpuProfile`                                                                | Debug     | ✔           |                           |
 | `debug_dumpBlock`                                                                 | Debug     |             |                           |
 | `debug_gcStats`                                                                   | Debug     | ✔           |                           |

@@ -51,6 +51,18 @@ func expandHome(p string) string {
 	return filepath.Clean(p)
 }
 
+// writeProfile writes the data to a file
+func writeProfile(name, file string, log log.Logger) error {
+	p := pprof.Lookup(name)
+	log.Info("Writing profile records", "count", p.Count(), "type", name, "dump", file)
+	f, err := os.Create(expandHome(file))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return p.WriteTo(f, 0)
+}
+
 // DebugAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
 type DebugAPI struct {
 	ctx     *server.Context
@@ -74,10 +86,19 @@ func (a *DebugAPI) BacktraceAt() error {
 	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) BlockProfile() error {
-	return errors.New("Currently not supported.")
+// BlockProfile turns on goroutine profiling for nsec seconds and writes profile data to
+// file. It uses a profile rate of 1 for most accurate information. If a different rate is
+// desired, set the rate and write the profile manually.
+func (a *DebugAPI) BlockProfile(file string, nsec uint) error {
+	runtime.SetBlockProfileRate(1)
+	defer runtime.SetBlockProfileRate(0)
+
+	time.Sleep(time.Duration(nsec) * time.Second)
+	return writeProfile("block", file, a.logger)
 }
 
+// CpuProfile turns on CPU profiling for nsec seconds and writes
+// profile data to file.
 func (a *DebugAPI) CpuProfile(file string, nsec uint) error {
 	if err := a.StartCPUProfile(file); err != nil {
 		return err
@@ -136,6 +157,7 @@ func (a *DebugAPI) Stacks() error {
 	return errors.New("Currently not supported.")
 }
 
+// StartCPUProfile turns on CPU profiling, writing to the given file.
 func (a *DebugAPI) StartCPUProfile(file string) error {
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
@@ -164,6 +186,7 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 	}
 }
 
+// StopCPUProfile stops an ongoing CPU profile.
 func (a *DebugAPI) StopCPUProfile() error {
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
