@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"errors"
 	"math/big"
 	"os"
 	"time"
@@ -13,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -24,13 +24,15 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// NewEVM generates an ethereum VM from the provided Message fields and the ChainConfig.
-func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params) *vm.EVM {
+// NewEVM generates an ethereum VM from the provided Message fields and the chain parameters
+// (config). It sets the validator operator address as the coinbase address to make it available for
+// the COINBASE opcode, even though there is no beneficiary (since we're not mining).
+func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params, coinbase common.Address) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     k.GetHashFn(),
-		Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
+		Coinbase:    coinbase,
 		GasLimit:    ethermint.BlockGasLimit(k.ctx),
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
@@ -127,39 +129,43 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	cacheCtx, commit := k.ctx.CacheContext()
 	k.ctx = cacheCtx
 
-	evm := k.NewEVM(msg, ethCfg, params)
+	// get the coinbase address from the block proposer
+	coinbase, err := k.GetCoinbaseAddress()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
+	}
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase)
 
 	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()
-	res, err := k.ApplyMessage(evm, msg, ethCfg)
+	// pass false to execute in real mode, which do actual gas refunding
+	res, err := k.ApplyMessage(evm, msg, ethCfg, false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
 	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
+	logs := k.GetTxLogs(txHash)
 
-	// Set the bloom filter and commit only if transaction is NOT reverted
-	if !res.Reverted {
-		logs := k.GetTxLogs(txHash)
+	// Commit and switch to original context
+	if !res.Failed() {
+		commit()
+	}
+	k.ctx = originalCtx
+
+	// Logs needs to be ignored when tx is reverted
+	// Set the log and bloom filter only when the tx is NOT REVERTED
+	if !res.Failed() {
 		res.Logs = types.NewLogsFromEth(logs)
-		// update block bloom filter
+		// Update block bloom filter in the original context because blockbloom is set in EndBlock
 		bloom := k.GetBlockBloomTransient()
 		bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
 		k.SetBlockBloomTransient(bloom)
-
-		commit()
 	}
 
-	// refund gas prior to handling the vm error in order to set the updated gas meter
-	k.ctx = originalCtx
-	leftoverGas := msg.Gas() - res.GasUsed
-	leftoverGas, err = k.RefundGas(msg, leftoverGas)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
-	}
 	// update the gas used after refund
-	res.GasUsed = msg.Gas() - leftoverGas
 	k.resetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
@@ -204,7 +210,12 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 // The preprocessing steps performed by the AnteHandler are:
 //
 // 1. set up the initial access list (iff fork > Berlin)
-func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainConfig) (*types.MsgEthereumTxResponse, error) {
+//
+// Query mode
+//
+// The grpc query endpoint EthCall calls this in query mode, and since the query handler don't call AnteHandler,
+// so we don't do real gas refund in that case.
+func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainConfig, query bool) (*types.MsgEthereumTxResponse, error) {
 	var (
 		ret   []byte // return bytes from evm execution
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
@@ -218,7 +229,11 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		// should have already been checked on Ante Handler
 		return nil, stacktrace.Propagate(err, "intrinsic gas failed")
 	}
-	// should be > 0 as it is checked on Ante Handler
+	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
+	if msg.Gas() < intrinsicGas {
+		// eth_estimateGas will check for this exact error
+		return nil, stacktrace.Propagate(core.ErrIntrinsicGas, "intrinsic gas too low")
+	}
 	leftoverGas := msg.Gas() - intrinsicGas
 
 	if contractCreation {
@@ -227,20 +242,28 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
 
-	var reverted bool
-	if vmErr != nil {
-		if !errors.Is(vmErr, vm.ErrExecutionReverted) {
-			// wrap the VM error
-			return nil, stacktrace.Propagate(sdkerrors.Wrap(types.ErrVMExecution, vmErr.Error()), "vm execution failed")
+	if query {
+		// query handlers don't call ante handler to deduct gas fee, so don't do actual refund here, because the
+		// module account balance might not be enough
+		leftoverGas += k.GasToRefund(msg.Gas() - leftoverGas)
+	} else {
+		// refund gas prior to handling the vm error in order to set the updated gas meter
+		leftoverGas, err = k.RefundGas(msg, leftoverGas)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 		}
-		reverted = true
+	}
+
+	var vmError string
+	if vmErr != nil {
+		vmError = vmErr.Error()
 	}
 
 	gasUsed := msg.Gas() - leftoverGas
 	return &types.MsgEthereumTxResponse{
-		Ret:      ret,
-		Reverted: reverted,
-		GasUsed:  gasUsed,
+		GasUsed: gasUsed,
+		VmError: vmError,
+		Ret:     ret,
 	}, nil
 }
 
@@ -320,4 +343,19 @@ func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
 	// reset the gas count
 	k.ctx.GasMeter().RefundGas(k.ctx.GasMeter().GasConsumed(), "reset the gas count")
 	k.ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
+}
+
+// GetCoinbaseAddress returns the block proposer's validator operator address.
+func (k Keeper) GetCoinbaseAddress() (common.Address, error) {
+	consAddr := sdk.ConsAddress(k.ctx.BlockHeader().ProposerAddress)
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(k.ctx, consAddr)
+	if !found {
+		return common.Address{}, stacktrace.Propagate(
+			sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, consAddr.String()),
+			"failed to retrieve validator from block proposer address",
+		)
+	}
+
+	coinbase := common.BytesToAddress(validator.GetOperator())
+	return coinbase, nil
 }

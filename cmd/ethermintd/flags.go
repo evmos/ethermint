@@ -39,8 +39,6 @@ var (
 	statsdAddress   string
 	statsdStuckFunc string
 	evmDebug        bool
-	logJSON         bool
-	logLevel        string
 )
 
 // addTxFlags adds common flags for commands to post tx
@@ -59,10 +57,7 @@ func addTxFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().String(flags.FlagNode, "tcp://localhost:26657", "<host>:<port> to tendermint rpc interface for this chain")
 	cmd.PersistentFlags().Float64(flags.FlagGasAdjustment, flags.DefaultGasAdjustment, "adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored ")
 	cmd.PersistentFlags().StringP(flags.FlagBroadcastMode, "b", flags.BroadcastSync, "Transaction broadcasting mode (sync|async|block)")
-	cmd.PersistentFlags().BoolVar(&logJSON, "log-json", false, "Use JSON as the output format of the own logger (default: text)")
 	cmd.PersistentFlags().BoolVar(&evmDebug, "evm-debug", false, "Enable EVM debug traces")
-	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Sets the level of the own logger (error, warn, info, debug)")
-	// cmd.PersistentFlags().Bool(flags.FlagTrustNode, true, "Trust connected full node (don't verify proofs for responses)")
 	cmd.PersistentFlags().String(flags.FlagKeyringBackend, keyring.BackendFile, "Select keyring's backend")
 
 	// --gas can accept integers and "simulate"
