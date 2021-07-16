@@ -31,11 +31,10 @@ type InternalAPI struct {
 	handler *HandlerT
 }
 
-// NewPublicAPI creates an instance of the Debug API.
+// NewInternalAPI creates an instance of the Debug API.
 func NewInternalAPI(
 	ctx *server.Context,
 ) *InternalAPI {
-
 	return &InternalAPI{
 		ctx:     ctx,
 		logger:  ctx.Logger.With("module", "debug"),
@@ -48,7 +47,6 @@ func NewInternalAPI(
 // desired, set the rate and write the profile manually.
 func (a *InternalAPI) BlockProfile(file string, nsec uint) error {
 	a.logger.Debug("debug_blockProfile", "file", file, "nsec", nsec)
-
 	runtime.SetBlockProfileRate(1)
 	defer runtime.SetBlockProfileRate(0)
 

@@ -29,6 +29,7 @@ func (a *InternalAPI) StartGoTrace(file string) error {
 	a.logger.Debug("debug_stopGoTrace", "file", file)
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
+
 	if a.handler.traceFile != nil {
 		a.logger.Debug("trace already in progress")
 		return errors.New("trace already in progress")
@@ -49,11 +50,12 @@ func (a *InternalAPI) StartGoTrace(file string) error {
 	return nil
 }
 
-// StopTrace stops an ongoing trace.
+// StopGoTrace stops an ongoing trace.
 func (a *InternalAPI) StopGoTrace() error {
 	a.logger.Debug("debug_stopGoTrace")
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
+
 	trace.Stop()
 	if a.handler.traceFile == nil {
 		a.logger.Debug("trace not in progress")

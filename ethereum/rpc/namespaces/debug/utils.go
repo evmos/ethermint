@@ -22,7 +22,7 @@ func isCPUProfileConfigurationActivated(ctx *server.Context) bool {
 	return false
 }
 
-// expands home directory in file paths.
+// ExpandHome expands home directory in file paths.
 // ~someuser/tmp will not be expanded.
 func ExpandHome(p string) string {
 	if strings.HasPrefix(p, "~/") || strings.HasPrefix(p, "~\\") {
@@ -48,5 +48,6 @@ func writeProfile(name, file string, log log.Logger) error {
 		return err
 	}
 	defer f.Close()
+
 	return p.WriteTo(f, 0)
 }
