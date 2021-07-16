@@ -1,6 +1,7 @@
 package debug
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"os"
@@ -149,12 +150,17 @@ func (a *DebugAPI) SetHead() error {
 	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) SetBlockProfileRate() error {
-	return errors.New("Currently not supported.")
+// SetBlockProfileRate sets the rate of goroutine block profile data collection.
+// rate 0 disables block profiling.
+func (a *DebugAPI) SetBlockProfileRate(rate int) {
+	runtime.SetBlockProfileRate(rate)
 }
 
-func (a *DebugAPI) Stacks() error {
-	return errors.New("Currently not supported.")
+// Stacks returns a printed representation of the stacks of all goroutines.
+func (*DebugAPI) Stacks() string {
+	buf := new(bytes.Buffer)
+	pprof.Lookup("goroutine").WriteTo(buf, 2)
+	return buf.String()
 }
 
 // StartCPUProfile turns on CPU profiling, writing to the given file.
@@ -245,10 +251,45 @@ func (a *DebugAPI) Vmodule() error {
 	return errors.New("Currently not supported.")
 }
 
-func (a *DebugAPI) WriteBlockProfile() error {
-	return errors.New("Currently not supported.")
+// WriteBlockProfile writes a goroutine blocking profile to the given file.
+func (a *DebugAPI) WriteBlockProfile(file string) error {
+	return writeProfile("block", file, a.logger)
 }
 
-func (a *DebugAPI) WriteMemProfile() error {
-	return errors.New("Currently not supported.")
+// WriteMemProfile writes an allocation profile to the given file.
+// Note that the profiling rate cannot be set through the API,
+// it must be set on the command line.
+func (a *DebugAPI) WriteMemProfile(file string) error {
+	return writeProfile("heap", file, a.logger)
+}
+
+// MutexProfile turns on mutex profiling for nsec seconds and writes profile data to file.
+// It uses a profile rate of 1 for most accurate information. If a different rate is
+// desired, set the rate and write the profile manually.
+func (a *DebugAPI) MutexProfile(file string, nsec uint) error {
+	runtime.SetMutexProfileFraction(1)
+	time.Sleep(time.Duration(nsec) * time.Second)
+	defer runtime.SetMutexProfileFraction(0)
+	return writeProfile("mutex", file, a.logger)
+}
+
+// SetMutexProfileFraction sets the rate of mutex profiling.
+func (a *DebugAPI) SetMutexProfileFraction(rate int) {
+	runtime.SetMutexProfileFraction(rate)
+}
+
+// WriteMutexProfile writes a goroutine blocking profile to the given file.
+func (a *DebugAPI) WriteMutexProfile(file string) error {
+	return writeProfile("mutex", file, a.logger)
+}
+
+// FreeOSMemory forces a garbage collection.
+func (*DebugAPI) FreeOSMemory() {
+	debug.FreeOSMemory()
+}
+
+// SetGCPercent sets the garbage collection target percentage. It returns the previous
+// setting. A negative value disables GC.
+func (*DebugAPI) SetGCPercent(v int) int {
+	return debug.SetGCPercent(v)
 }
