@@ -8,10 +8,10 @@ import (
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/palantir/stacktrace"
 
-	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
+	cmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -275,6 +275,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
+	london := ethCfg.IsLondon(blockHeight)
 
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -317,8 +318,17 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas)
 		}
 
-		// calculate the fees paid to validators based on gas limit and price
-		feeAmt := txData.Fee() // fee = gas limit * gas price
+		// calculate the fees paid to validators based on the effective tip and price
+
+		effectiveTip := txData.GetGasPrice()
+		if london {
+			// TODO: fetch base fee from header
+			baseFee := big.NewInt(0)
+			effectiveTip = cmath.BigMin(txData.GetGasTipCap(), new(big.Int).Sub(txData.GetGasFeeCap(), baseFee))
+		}
+
+		gasUsed := new(big.Int).SetUint64(txData.GetGas())
+		feeAmt := new(big.Int).Mul(gasUsed, effectiveTip)
 
 		evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
 		fees := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(feeAmt))}
@@ -332,14 +342,11 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		}
 	}
 
-	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
-	blockGasLimit := ethermint.BlockGasLimit(ctx)
-
 	// NOTE: safety check
-	if blockGasLimit > 0 {
+	if ctx.BlockGasMeter() != nil && ctx.BlockGasMeter().Limit() > 0 {
 		// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
 		// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
-		gasPool := sdk.NewGasMeter(blockGasLimit)
+		gasPool := sdk.NewGasMeter(ctx.BlockGasMeter().Limit())
 		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
 	}
 
@@ -381,7 +388,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		// TODO: header base fee
+		// TODO: get header base fee
 		coreMsg, err := msgEthTx.AsMessage(signer, nil)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
@@ -399,6 +406,21 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", coreMsg.From()),
 				"failed to transfer %s using the EVM block context transfer function", coreMsg.Value(),
+			)
+		}
+
+		// TODO: move to separate AnteHandler Decorator after setting base fee
+		if !evm.Config.NoBaseFee && evm.Context.BaseFee == nil {
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrap(evmtypes.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
+				"address %s", coreMsg.From(),
+			)
+		}
+
+		if !evm.Config.NoBaseFee && evm.Context.BaseFee != nil && coreMsg.GasFeeCap().Cmp(evm.Context.BaseFee) < 0 {
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), evm.Context.BaseFee),
+				"address %s", coreMsg.From(),
 			)
 		}
 	}

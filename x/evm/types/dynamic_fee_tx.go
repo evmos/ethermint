@@ -220,12 +220,12 @@ func (tx DynamicFeeTx) Validate() error {
 	return nil
 }
 
-// Fee returns gasprice * gaslimit.
+// Fee panics as it requires the base fee amount to calculate
 func (tx DynamicFeeTx) Fee() *big.Int {
-	return fee(tx.GetGasPrice(), tx.GetGas())
+	panic("fee can only be called manually by providing the base fee")
 }
 
 // Cost returns amount + gasprice * gaslimit.
 func (tx DynamicFeeTx) Cost() *big.Int {
-	return cost(tx.Fee(), tx.GetValue())
+	panic("cost can only be called manually by providing the base fee")
 }

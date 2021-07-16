@@ -68,9 +68,9 @@ func NewAnteHandler(
 						NewEthSigVerificationDecorator(evmKeeper),
 						NewEthAccountVerificationDecorator(ak, bankKeeper, evmKeeper),
 						NewEthNonceVerificationDecorator(ak),
-						NewEthGasConsumeDecorator(ak, bankKeeper, evmKeeper),
 						NewCanTransferDecorator(evmKeeper),
 						NewAccessListDecorator(evmKeeper),
+						NewEthGasConsumeDecorator(ak, bankKeeper, evmKeeper),
 						NewEthIncrementSenderSequenceDecorator(ak), // innermost AnteDecorator.
 					)
 

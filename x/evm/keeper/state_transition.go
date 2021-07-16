@@ -14,7 +14,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -33,7 +32,7 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params typ
 		Transfer:    core.Transfer,
 		GetHash:     k.GetHashFn(),
 		Coinbase:    coinbase,
-		GasLimit:    ethermint.BlockGasLimit(k.ctx),
+		GasLimit:    k.ctx.BlockGasMeter().Limit(),
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
@@ -139,21 +138,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	}
 
 	evm := k.NewEVM(msg, ethCfg, params, coinbase)
-
-	// TODO: move to AnteHandler after setting base fee
-	if !evm.Config.NoBaseFee && evm.Context.BaseFee == nil {
-		return nil, stacktrace.Propagate(
-			sdkerrors.Wrap(types.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
-			"address %s", msg.From(),
-		)
-	}
-
-	if !evm.Config.NoBaseFee && evm.Context.BaseFee != nil && tx.GasFeeCap().Cmp(evm.Context.BaseFee) < 0 {
-		return nil, stacktrace.Propagate(
-			sdkerrors.Wrapf(types.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", tx.GasFeeCap(), evm.Context.BaseFee),
-			"address %s", msg.From(),
-		)
-	}
 
 	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()
