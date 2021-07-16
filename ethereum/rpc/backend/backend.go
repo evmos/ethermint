@@ -88,7 +88,7 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 	switch blockNum {
 	case types.EthLatestBlockNumber:
 		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber - 1)
+			height = int64(currentBlockNumber)
 		}
 	case types.EthPendingBlockNumber:
 		if currentBlockNumber > 0 {
@@ -241,7 +241,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 	switch blockNum {
 	case types.EthLatestBlockNumber:
 		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber - 1)
+			height = int64(currentBlockNumber)
 		}
 	case types.EthPendingBlockNumber:
 		if currentBlockNumber > 0 {
@@ -363,7 +363,7 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 	switch blockNum {
 	case types.EthLatestBlockNumber:
 		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber - 1)
+			height = int64(currentBlockNumber)
 		}
 	case types.EthPendingBlockNumber:
 		if currentBlockNumber > 0 {
