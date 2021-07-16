@@ -81,11 +81,5 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 			Service:   debug.NewInternalAPI(ctx),
 			Public:    true,
 		},
-		{
-			Namespace: DebugNamespace,
-			Version:   apiVersion,
-			Service:   debug.NewDebugAPI(),
-			Public:    true,
-		},
 	}
 }
