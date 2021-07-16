@@ -19,4 +19,4 @@ else
     yarn install
 fi
 
-yarn test --network ethermint --verbose-log
+yarn test --network ethermint
