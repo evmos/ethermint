@@ -360,7 +360,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 }
 
 // SendTransaction sends an Ethereum transaction.
-func (e *PublicAPI) SendTransaction(args rpctypes.TransactionArgs) (common.Hash, error) {
+func (e *PublicAPI) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error) {
 	e.logger.Debug("eth_sendTransaction", "args", args.String())
 
 	// Look up the wallet containing the requested signer
@@ -544,7 +544,7 @@ func (e *PublicAPI) Call(args evmtypes.TransactionArgs, blockNr rpctypes.BlockNu
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
 func (e *PublicAPI) doCall(
-	args evmtypes.CallArgs, blockNr rpctypes.BlockNumber,
+	args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber,
 ) (*evmtypes.MsgEthereumTxResponse, error) {
 	bz, err := json.Marshal(&args)
 	if err != nil {
@@ -567,7 +567,7 @@ func (e *PublicAPI) doCall(
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
-func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs) (hexutil.Uint64, error) {
+func (e *PublicAPI) EstimateGas(args evmtypes.TransactionArgs) (hexutil.Uint64, error) {
 	e.logger.Debug("eth_estimateGas")
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -976,7 +976,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 
 // setTxDefaults populates tx message with default values in case they are not
 // provided on the args
-func (e *PublicAPI) setTxDefaults(args rpctypes.TransactionArgs) (rpctypes.TransactionArgs, error) {
+func (e *PublicAPI) setTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error) {
 	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
 		return args, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
@@ -988,10 +988,10 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.TransactionArgs) (rpctypes.Trans
 		args.GasPrice = (*hexutil.Big)(big.NewInt(ethermint.DefaultGasPrice))
 	}
 
-	if args.Nonce == nil {
+	if args.Nonce == nil && args.From != nil {
 		// get the nonce from the account retriever
-		// ignore error in case tge account doesn't exist yet
-		nonce, _ := e.getAccountNonce(args.From, true, 0, e.logger)
+		// ignore error in case the account doesn't exist yet
+		nonce, _ := e.getAccountNonce(*args.From, true, 0, e.logger)
 		args.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 
@@ -1016,21 +1016,7 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.TransactionArgs) (rpctypes.Trans
 	if args.Gas == nil {
 		// For backwards-compatibility reason, we try both input and data
 		// but input is preferred.
-		input := args.Input
-		if input == nil {
-			input = args.Data
-		}
-
-		TransactionArgs := rpctypes.TransactionArgs{
-			From:       args.From,
-			To:         args.To,
-			Gas:        args.Gas,
-			GasPrice:   args.GasPrice,
-			Value:      args.Value,
-			Data:       input,
-			AccessList: args.AccessList,
-		}
-		estimated, err := e.EstimateGas(TransactionArgs)
+		estimated, err := e.EstimateGas(args)
 		if err != nil {
 			return args, err
 		}
@@ -1055,6 +1041,7 @@ func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height
 	if err != nil {
 		return 0, err
 	}
+
 	var acc authtypes.AccountI
 	if err := e.clientCtx.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
 		return 0, err

@@ -271,10 +271,11 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	if query {
 		// query handlers don't call ante handler to deduct gas fee, so don't do actual refund here, because the
 		// module account balance might not be enough
-		leftoverGas += k.GasToRefund(msg.Gas() - leftoverGas)
+		gasConsumed := msg.Gas() - leftoverGas
+		leftoverGas += k.GasToRefund(gasConsumed, refundQuotient)
 	} else {
 		// refund gas prior to handling the vm error in order to set the updated gas meter
-		leftoverGas, err = k.RefundGas(msg, leftoverGas)
+		leftoverGas, err = k.RefundGas(msg, leftoverGas, refundQuotient)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 		}

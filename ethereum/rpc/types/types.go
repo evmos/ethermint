@@ -1,14 +1,9 @@
 package types
 
 import (
-	"fmt"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // Copied the Account and StorageResult types since they are registered under an
@@ -53,98 +48,6 @@ type RPCTransaction struct {
 	V                *hexutil.Big         `json:"v"`
 	R                *hexutil.Big         `json:"r"`
 	S                *hexutil.Big         `json:"s"`
-}
-
-// TransactionArgs represents the arguments to construct a new transaction
-// or a message call.
-// Duplicate struct definition since geth struct is in internal package
-// Ref: https://github.com/ethereum/go-ethereum/blob/release/1.10.4/internal/ethapi/transaction_args.go#L36
-type TransactionArgs struct {
-	From                 *common.Address `json:"from"`
-	To                   *common.Address `json:"to"`
-	Gas                  *hexutil.Uint64 `json:"gas"`
-	GasPrice             *hexutil.Big    `json:"gasPrice"`
-	MaxFeePerGas         *hexutil.Big    `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas *hexutil.Big    `json:"maxPriorityFeePerGas"`
-	Value                *hexutil.Big    `json:"value"`
-	Nonce                *hexutil.Uint64 `json:"nonce"`
-
-	// We accept "data" and "input" for backwards-compatibility reasons.
-	// "input" is the newer name and should be preferred by clients.
-	// Issue detail: https://github.com/ethereum/go-ethereum/issues/15628
-	Data  *hexutil.Bytes `json:"data"`
-	Input *hexutil.Bytes `json:"input"`
-
-	// For non-legacy transactions
-	AccessList *ethtypes.AccessList `json:"accessList,omitempty"`
-	ChainID    *hexutil.Big         `json:"chainId,omitempty"`
-}
-
-// String return the struct in a string format
-func (args *TransactionArgs) String() string {
-	// Todo: There is currently a bug with hexutil.Big when the value its nil, printing would trigger an exception
-	return fmt.Sprintf("TransactionArgs{From:%v, To:%v, Gas:%v,"+
-		" Nonce:%v, Data:%v, Input:%v, AccessList:%v}",
-		args.From,
-		args.To,
-		args.Gas,
-		args.Nonce,
-		args.Data,
-		args.Input,
-		args.AccessList)
-}
-
-// ToTransaction converts the arguments to an ethereum transaction.
-// This assumes that setTxDefaults has been called.
-func (args *TransactionArgs) ToTransaction() *evmtypes.MsgEthereumTx {
-	var (
-		input                                                        []byte
-		chainID, value, gasPrice, maxFeePerGas, maxPriorityFeePerGas *big.Int
-		gas, nonce                                                   uint64
-	)
-
-	if args.Input != nil {
-		input = *args.Input
-	} else if args.Data != nil {
-		input = *args.Data
-	}
-
-	if args.ChainID != nil {
-		chainID = args.ChainID.ToInt()
-	}
-
-	if args.Nonce != nil {
-		nonce = uint64(*args.Nonce)
-	}
-
-	if args.Gas != nil {
-		gas = uint64(*args.Gas)
-	}
-
-	if args.GasPrice != nil {
-		gasPrice = args.GasPrice.ToInt()
-	}
-
-	if args.MaxFeePerGas != nil {
-		maxFeePerGas = args.MaxFeePerGas.ToInt()
-	}
-
-	if args.MaxPriorityFeePerGas != nil {
-		maxPriorityFeePerGas = args.MaxPriorityFeePerGas.ToInt()
-	}
-
-	if args.GasPrice != nil {
-		gasPrice = args.GasPrice.ToInt()
-	}
-
-	if args.Value != nil {
-		value = args.Value.ToInt()
-	}
-
-	tx := evmtypes.NewTx(chainID, nonce, args.To, value, gas, gasPrice, maxFeePerGas, maxPriorityFeePerGas, input, args.AccessList)
-	tx.From = args.From.Hex()
-
-	return tx
 }
 
 // StateOverride is the collection of overridden accounts.
