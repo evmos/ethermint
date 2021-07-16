@@ -3,11 +3,13 @@ package ante
 import (
 	"math/big"
 
+	"github.com/palantir/stacktrace"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/palantir/stacktrace"
 
+	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -341,12 +343,14 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			)
 		}
 	}
+	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
+	blockGasLimit := ethermint.BlockGasLimit(ctx)
 
 	// NOTE: safety check
-	if ctx.BlockGasMeter() != nil && ctx.BlockGasMeter().Limit() > 0 {
+	if blockGasLimit > 0 {
 		// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
 		// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
-		gasPool := sdk.NewGasMeter(ctx.BlockGasMeter().Limit())
+		gasPool := sdk.NewGasMeter(blockGasLimit)
 		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
 	}
 

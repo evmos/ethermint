@@ -14,6 +14,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -32,7 +33,7 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params typ
 		Transfer:    core.Transfer,
 		GetHash:     k.GetHashFn(),
 		Coinbase:    coinbase,
-		GasLimit:    k.ctx.BlockGasMeter().Limit(),
+		GasLimit:    ethermint.BlockGasLimit(k.ctx),
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
