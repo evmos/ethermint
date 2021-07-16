@@ -24,6 +24,7 @@ const (
 	RouterKey = ModuleName
 )
 
+// prefix bytes for the EVM persistent store
 const (
 	prefixHeightToHeaderHash = iota + 1
 	prefixBloom
@@ -32,11 +33,13 @@ const (
 	prefixStorage
 	prefixChainConfig
 	prefixHashTxReceipt
-	prefixBlockHeightTxs
+	prefixBlockGasUsed
+	prefixBaseFee
 )
 
+// prefix bytes for the EVM transient store
 const (
-	prefixTransientSuicided = iota + 1
+	prefixTransientSuicided = iota + 100 // start at 100 to prevent collisions
 	prefixTransientBloom
 	prefixTransientTxIndex
 	prefixTransientRefund
@@ -54,7 +57,8 @@ var (
 	KeyPrefixStorage            = []byte{prefixStorage}
 	KeyPrefixChainConfig        = []byte{prefixChainConfig}
 	KeyPrefixHashTxReceipt      = []byte{prefixHashTxReceipt}
-	KeyPrefixBlockHeightTxs     = []byte{prefixBlockHeightTxs}
+	KeyPrefixBlockGasUsed       = []byte{prefixBlockGasUsed}
+	KeyPrefixBaseFee            = []byte{prefixBaseFee}
 )
 
 var (
@@ -86,12 +90,6 @@ func StateKey(address ethcmn.Address, key []byte) []byte {
 // KeyHashTxReceipt returns a key for accessing tx receipt data by hash.
 func KeyHashTxReceipt(hash ethcmn.Hash) []byte {
 	return append(KeyPrefixHashTxReceipt, hash.Bytes()...)
-}
-
-// KeyBlockHeightTxs returns a key for accessing tx hash list by block height.
-func KeyBlockHeightTxs(height uint64) []byte {
-	heightBytes := sdk.Uint64ToBigEndian(height)
-	return append(KeyPrefixBlockHeightTxs, heightBytes...)
 }
 
 // KeyAddressStorage returns the key hash to access a given account state. The composite key
