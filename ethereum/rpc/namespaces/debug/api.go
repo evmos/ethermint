@@ -118,25 +118,24 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 	a.cpuProfile.mu.Lock()
 	defer a.cpuProfile.mu.Unlock()
 
-	// This is different from go-eth because its possible to start the node with cpuprofile running
 	if isCPUProfileConfigurationActivated(a.ctx) {
-		return errors.New("Already running using configuration file")
+		return errors.New("CPU profiling already in progress using the configuration file")
 	} else if a.cpuProfile.activated {
-		return errors.New("Already running using RPC call")
+		return errors.New("CPU profiling already in progress")
 	} else {
 		f, err := os.Create(file)
 		if err != nil {
-			a.logger.Error("failed to create CP profile", "error", err.Error())
-			return errors.New("Failed to create cpu profile file.")
-		}
-
-		a.logger.Info("starting CPU profiler", "profile", cpuProfile)
-		if err := pprof.StartCPUProfile(f); err != nil {
-			// cpu profiling already in use
-			os.Remove(file)
+			a.logger.Error("failed to create CPU profile file", "error", err.Error())
 			return err
 		}
 
+		if err := pprof.StartCPUProfile(f); err != nil {
+			a.logger.Error("cpu profiling already in use", "error", err.Error())
+			f.Close()
+			return err
+		}
+
+		a.logger.Info("CPU profiling started", "profile", file)
 		a.cpuProfile.file = *f
 		a.cpuProfile.fileName = file
 		a.cpuProfile.activated = true
@@ -153,16 +152,16 @@ func (a *DebugAPI) StopCPUProfile() error {
 	defer a.cpuProfile.mu.Unlock()
 
 	if isCPUProfileConfigurationActivated(a.ctx) {
-		return errors.New("Already running using configuration file")
+		return errors.New("CPU profiling already in progress using the configuration file")
 	} else if a.cpuProfile.activated == true {
-		a.logger.Info("stopping CPU profiler", "profile", a.cpuProfile.fileName)
+		a.logger.Info("Done writing CPU profile", "profile", a.cpuProfile.fileName)
 		pprof.StopCPUProfile()
 		a.cpuProfile.file.Close()
 		a.cpuProfile.activated = false
 		a.cpuProfile.fileName = ""
 		return nil
 	} else {
-		return errors.New("Already Closed")
+		return errors.New("CPU profiling not in progress")
 	}
 }
 
