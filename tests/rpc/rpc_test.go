@@ -214,6 +214,81 @@ func TestEth_GetTransactionCount(t *testing.T) {
 	require.Equal(t, prev, post-1)
 }
 
+func TestETH_GetBlockTransactionCountByHash(t *testing.T) {
+	txHash := sendTestTransaction(t)
+
+	time.Sleep(time.Second * 5)
+
+	param := []string{txHash.String()}
+	rpcRes := call(t, "eth_getTransactionReceipt", param)
+	require.Nil(t, rpcRes.Error)
+
+	receipt := make(map[string]interface{})
+	err := json.Unmarshal(rpcRes.Result, &receipt)
+	require.NoError(t, err)
+	require.NotEmpty(t, receipt)
+
+	blockHash := receipt["blockHash"].(string)
+
+	param = []string{blockHash}
+	rpcRes = call(t, "eth_getBlockTransactionCountByHash", param)
+
+	var res hexutil.Uint
+	err = res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+	require.Equal(t, "0x1", res.String())
+}
+
+func TestETH_GetBlockTransactionCountByHash_BlockHashNotFound(t *testing.T) {
+	anyBlockHash := "0xb3b20624f8f0f86eb50dd04688409e5cea4bd02d700bf6e79e9384d47d6a5a35"
+	param := []string{anyBlockHash}
+	rpcRes := call(t, "eth_getBlockTransactionCountByHash", param)
+
+	var result interface{}
+	err := json.Unmarshal(rpcRes.Result, &result)
+	require.NoError(t, err)
+	require.Nil(t, result)
+}
+
+func TestETH_GetTransactionByBlockHashAndIndex(t *testing.T) {
+	txHash := sendTestTransaction(t)
+
+	time.Sleep(time.Second * 5)
+
+	param := []string{txHash.String()}
+	rpcRes := call(t, "eth_getTransactionReceipt", param)
+	require.Nil(t, rpcRes.Error)
+
+	receipt := make(map[string]interface{})
+	err := json.Unmarshal(rpcRes.Result, &receipt)
+	require.NoError(t, err)
+	require.NotEmpty(t, receipt)
+
+	blockHash := receipt["blockHash"].(string)
+
+	param = []string{blockHash, "0x0"}
+	rpcRes = call(t, "eth_getTransactionByBlockHashAndIndex", param)
+
+	tx := make(map[string]interface{})
+	err = json.Unmarshal(rpcRes.Result, &tx)
+	require.NoError(t, err)
+	require.NotNil(t, tx)
+	require.Equal(t, blockHash, tx["blockHash"].(string))
+	require.Equal(t, "0x0", tx["transactionIndex"].(string))
+}
+
+func TestETH_GetTransactionByBlockHashAndIndex_BlockHashNotFound(t *testing.T) {
+	anyBlockHash := "0xb3b20624f8f0f86eb50dd04688409e5cea4bd02d700bf6e79e9384d47d6a5a35"
+
+	param := []string{anyBlockHash, "0x0"}
+	rpcRes := call(t, "eth_getTransactionByBlockHashAndIndex", param)
+
+	var result interface{}
+	err := json.Unmarshal(rpcRes.Result, &result)
+	require.NoError(t, err)
+	require.Nil(t, result)
+}
+
 func TestEth_GetTransactionLogs(t *testing.T) {
 	// TODO: this test passes on when run on its own, but fails when run with the other tests
 	if testing.Short() {
