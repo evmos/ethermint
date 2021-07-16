@@ -1,10 +1,25 @@
 const Counter = artifacts.require("Counter")
+const truffleAssert = require('truffle-assertions');
 
-contract('Counter', ([one, two, three]) => {
-  console.log(one, two, three)
+async function expectRevert(promise) {
+  try {
+    await promise;
+  } catch (error) {
+    if (error.message.indexOf('revert') === -1) {
+      expect('revert').to.equal(error.message, 'Wrong kind of exception received');
+    }
+    return;
+  }
+  expect.fail('Expected an exception but none was received');
+}
+
+contract('Counter', (accounts) => {
+  console.log(`Using Accounts (${accounts.length}): \n${accounts.join('\n')}`);
+  console.log('==========================\n');
+  const [one, two, three] = accounts;
   let counter
 
-  beforeEach(async() => {
+  beforeEach(async () => {
     counter = await Counter.new()
     console.log('Counter:', counter.address)
 
@@ -15,7 +30,7 @@ contract('Counter', ([one, two, three]) => {
     console.log('')
   })
 
-  it('should add', async() => {
+  it('should add', async () => {
     const balanceOne = await web3.eth.getBalance(one)
     const balanceTwo = await web3.eth.getBalance(two)
     const balanceThree = await web3.eth.getBalance(three)
@@ -41,7 +56,7 @@ contract('Counter', ([one, two, three]) => {
     assert.notEqual(balanceThree, await web3.eth.getBalance(three), `${three}'s balance should be different`)
   })
 
-  it('should subtract', async() => {
+  it('should subtract', async () => {
     let count
 
     await counter.add()
@@ -68,13 +83,7 @@ contract('Counter', ([one, two, three]) => {
     assert.equal(allEvents.length, 3)
     assert.equal(changedEvents.length, 2)
 
-    try {
-      await counter.subtract()
-      assert.fail('Subtracting past 0 should have reverted')
-    } catch (err) {
-      console.log()
-      console.log('Passed -- was expecting error')
-      console.log('Error:', err)
-    }
+    await expectRevert(counter.subtract());
+
   })
 })

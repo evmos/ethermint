@@ -8,7 +8,9 @@ const (
 	AttributeKeyRecipient       = "recipient"
 	AttributeKeyTxHash          = "txHash"
 	AttributeKeyEthereumTxHash  = "ethereumTxHash"
-	AttributeValueCategory      = ModuleName
+	// tx failed in eth vm execution
+	AttributeKeyEthereumTxFailed = "ethereumTxFailed"
+	AttributeValueCategory       = ModuleName
 
 	MetricKeyTransitionDB = "transition_db"
 	MetricKeyStaticCall   = "static_call"

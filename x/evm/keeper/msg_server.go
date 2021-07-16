@@ -75,6 +75,10 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, tx.To().Hex()))
 	}
 
+	if response.Failed() {
+		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyEthereumTxFailed, response.VmError))
+	}
+
 	// emit events
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(

@@ -16,6 +16,11 @@ DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bu
 
 export GO111MODULE = on
 
+# Default target executed when no arguments are given to make.
+default_target: all
+
+.PHONY: default_target
+
 # process build tags
 
 build_tags = netgo
@@ -92,8 +97,6 @@ ifeq (,$(findstring nostrip,$(COSMOS_BUILD_OPTIONS)))
   BUILD_FLAGS += -trimpath
 endif
 
-all: tools build lint test
-
 # # The below include contains the tools and runsim targets.
 # include contrib/devtools/Makefile
 
@@ -113,9 +116,6 @@ $(BUILD_TARGETS): go.sum $(BUILDDIR)/
 $(BUILDDIR)/:
 	mkdir -p $(BUILDDIR)/
 
-
-
-
 docker-build:
 	# TODO replace with kaniko
 	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
@@ -132,7 +132,6 @@ docker-build:
 docker-localnet:
 	docker build -f ./networks/local/ethermintnode/Dockerfile . -t ethermintd/node
 
-
 $(MOCKS_DIR):
 	mkdir -p $(MOCKS_DIR)
 
@@ -144,7 +143,11 @@ clean:
     artifacts/ \
     tmp-swagger-gen/
 
-.PHONY: distclean clean
+all: build
+
+build-all: tools build lint test
+
+.PHONY: distclean clean build-all
 
 ###############################################################################
 ###                          Tools & Dependencies                           ###
@@ -516,3 +519,36 @@ else
 endif
 
 .PHONY: build-docker-local-ethermint localnet-start localnet-stop
+
+# release
+PACKAGE_NAME:=github.com/tharsis/ethermint
+GOLANG_CROSS_VERSION  = v1.16.4
+release-dry-run:
+	docker run \
+		--rm \
+		--privileged \
+		-e CGO_ENABLED=1 \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PACKAGE_NAME) \
+		-v ${GOPATH}/pkg:/go/pkg \
+		-w /go/src/$(PACKAGE_NAME) \
+		troian/golang-cross:${GOLANG_CROSS_VERSION} \
+		--rm-dist --skip-validate --skip-publish
+
+release:
+	@if [ ! -f ".release-env" ]; then \
+		echo "\033[91m.release-env is required for release\033[0m";\
+		exit 1;\
+	fi
+	docker run \
+		--rm \
+		--privileged \
+		-e CGO_ENABLED=1 \
+		--env-file .release-env \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PACKAGE_NAME) \
+		-w /go/src/$(PACKAGE_NAME) \
+		troian/golang-cross:${GOLANG_CROSS_VERSION} \
+		release --rm-dist --skip-validate
+
+.PHONY: release-dry-run release

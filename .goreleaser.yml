@@ -1,0 +1,109 @@
+before:
+  hooks:
+  - go mod download
+
+builds:
+  - id: "ethermintd-darwin"
+    main: ./cmd/ethermintd
+    binary: bin/ethermintd
+    env:
+      - CGO_ENABLED=1
+      - CC=o64-clang
+      - CXX=o64-clang++
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    flags:
+        - -tags=cgo
+    ldflags:
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "ethermintd-darwin-arm64"
+    main: ./cmd/ethermintd
+    binary: bin/ethermintd
+    env:
+      - CGO_ENABLED=1
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    flags:
+      - -tags=cgo
+    ldflags:
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "ethermintd-linux"
+    main: ./cmd/ethermintd
+    binary: bin/ethermintd
+    env:
+      - CGO_ENABLED=1
+      - CC=gcc
+      - CXX=g++
+    goos:
+      - linux
+    goarch:
+      - amd64
+    flags:
+      - -tags=cgo
+    ldflags:
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "ethermintd-linux-arm64"
+    main: ./cmd/ethermintd
+    binary: bin/ethermintd
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    goos:
+      - linux
+    goarch:
+      - arm64
+    flags:
+      - -tags=cgo
+    ldflags:
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "ethermintd-windows"
+    main: ./cmd/ethermintd
+    binary: bin/ethermintd
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+    goos:
+      - windows
+    goarch:
+      - amd64
+    flags:
+      - -tags=cgo
+      - -buildmode=exe
+    ldflags:
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+
+archives:
+- name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+  replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    amd64: x86_64
+  format_overrides:
+    - goos: windows
+      format: zip
+  builds:
+  - ethermintd-darwin
+  - ethermintd-darwin-arm64
+  - ethermintd-windows
+  - ethermintd-linux
+  - ethermintd-linux-arm64
+  
+checksum:
+  name_template: 'checksums.txt'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+snapshot:
+  name_template: "{{ .Tag }}-next"

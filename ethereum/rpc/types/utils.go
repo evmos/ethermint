@@ -10,7 +10,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -32,30 +31,6 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEther
 		return nil, fmt.Errorf("invalid transaction type %T, expected %T", tx, evmtypes.MsgEthereumTx{})
 	}
 	return ethTx, nil
-}
-
-// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum blockfrom a given Tendermint block.
-func EthBlockFromTendermint(clientCtx client.Context, queryClient *QueryClient, block *tmtypes.Block) (map[string]interface{}, error) {
-	gasLimit, err := BlockMaxGasFromConsensusParams(context.Background(), clientCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	transactions, gasUsed, err := EthTransactionsFromTendermint(clientCtx, block.Txs)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &evmtypes.QueryBlockBloomRequest{}
-
-	res, err := queryClient.BlockBloom(ContextWithHeight(block.Height), req)
-	if err != nil {
-		return nil, err
-	}
-
-	bloom := ethtypes.BytesToBloom(res.Bloom)
-
-	return FormatBlock(block.Header, block.Size(), gasLimit, gasUsed, transactions, bloom), nil
 }
 
 // NewTransaction returns a transaction that will serialize to the RPC
@@ -176,6 +151,7 @@ func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Contex
 func FormatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
 	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
+	validatorAddr common.Address,
 ) map[string]interface{} {
 	if len(header.DataHash) == 0 {
 		header.DataHash = tmbytes.HexBytes(common.Hash{}.Bytes())
@@ -189,7 +165,7 @@ func FormatBlock(
 		"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
 		"logsBloom":        bloom,
 		"stateRoot":        hexutil.Bytes(header.AppHash),
-		"miner":            common.Address{},
+		"miner":            validatorAddr,
 		"mixHash":          common.Hash{},
 		"difficulty":       (*hexutil.Big)(big.NewInt(0)),
 		"extraData":        "",
@@ -204,25 +180,6 @@ func FormatBlock(
 		"transactions":    transactions,
 		"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
 	}
-}
-
-func DecodeTx(clientCtx client.Context, txBz tmtypes.Tx) (sdk.Tx, uint64) {
-	var gasUsed uint64
-	txDecoder := clientCtx.TxConfig.TxDecoder()
-
-	tx, err := txDecoder(txBz)
-	if err != nil {
-		return nil, 0
-	}
-
-	switch tx := tx.(type) {
-	case *evmtypes.MsgEthereumTx:
-		gasUsed = tx.GetGas() // NOTE: this doesn't include the gas refunded
-	case sdk.FeeTx:
-		gasUsed = tx.GetGas()
-	}
-
-	return tx, gasUsed
 }
 
 type DataError interface {
@@ -254,6 +211,27 @@ func ErrRevertedWith(data []byte) DataError {
 		msg:  "VM execution error.",
 		data: fmt.Sprintf("0x%s", hex.EncodeToString(data)),
 	}
+}
+
+// NewTransactionFromMsg returns a transaction that will serialize to the RPC
+// representation, with the given location metadata set (if available).
+func NewTransactionFromMsg(
+	msg *evmtypes.MsgEthereumTx,
+	blockHash common.Hash,
+	blockNumber, index uint64,
+	chainID *big.Int,
+) (*RPCTransaction, error) {
+	from, err := msg.GetSender(chainID)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
+	}
+
+	return NewTransactionFromData(data, from, msg.AsTransaction().Hash(), blockHash, blockNumber, index)
 }
 
 // NewTransactionFromData returns a transaction that will serialize to the RPC
