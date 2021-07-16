@@ -31,7 +31,7 @@ func (a *InternalAPI) StartGoTrace(file string) error {
 	if a.handler.traceFile != nil {
 		return errors.New("trace already in progress")
 	}
-	f, err := os.Create(expandHome(file))
+	f, err := os.Create(ExpandHome(file))
 	if err != nil {
 		return err
 	}
