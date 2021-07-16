@@ -1,8 +1,6 @@
 package debug
 
 import (
-	"context"
-	"encoding/hex"
 	"errors"
 	"os"
 	"runtime"
@@ -11,20 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/spf13/viper"
+	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tharsis/ethermint/crypto/hd"
-	"github.com/tharsis/ethermint/ethereum/rpc/backend"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
-	ethermint "github.com/tharsis/ethermint/types"
 )
 
+// CPUProfileData keeps track of the cpu profiler execution
 type CPUProfileData struct {
 	fileName  string
 	file      os.File
@@ -32,59 +21,37 @@ type CPUProfileData struct {
 	mu        sync.Mutex
 }
 
+// NewCPUProfileData creates an instance of the CpuProfileData
 func NewCPUProfileData() *CPUProfileData {
 	return &CPUProfileData{
 		activated: false,
 	}
 }
 
-// DebugAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
-type DebugAPI struct {
-	ctx         context.Context
-	clientCtx   client.Context
-	queryClient *rpctypes.QueryClient
-	backend     backend.Backend
-	logger      log.Logger
-	cpuProfile  *CPUProfileData
+func isCPUProfileConfigurationActivated(ctx *server.Context) bool {
+	const flagCPUProfile = "cpu-profile"
+	if cpuProfile := ctx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
+		return true
+	}
+	return false
 }
 
-// NewPublicAPI creates an instance of the Web3 API.
+// DebugAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
+type DebugAPI struct {
+	ctx        *server.Context
+	logger     log.Logger
+	cpuProfile *CPUProfileData
+}
+
+// NewPublicAPI creates an instance of the Debug API.
 func NewDebugAPI(
-	logger log.Logger,
-	clientCtx client.Context,
-	backend backend.Backend,
+	ctx *server.Context,
 ) *DebugAPI {
 
-	_, err := ethermint.ParseChainID(clientCtx.ChainID)
-	if err != nil {
-		panic(err)
-	}
-
-	algos, _ := clientCtx.Keyring.SupportedAlgorithms()
-
-	if !algos.Contains(hd.EthSecp256k1) {
-		kr, err := keyring.New(
-			sdk.KeyringServiceName(),
-			viper.GetString(flags.FlagKeyringBackend),
-			clientCtx.KeyringDir,
-			clientCtx.Input,
-			hd.EthSecp256k1Option(),
-		)
-
-		if err != nil {
-			panic(err)
-		}
-
-		clientCtx = clientCtx.WithKeyring(kr)
-	}
-
 	return &DebugAPI{
-		ctx:         context.Background(),
-		clientCtx:   clientCtx,
-		queryClient: rpctypes.NewQueryClient(clientCtx),
-		logger:      logger.With("module", "debug"),
-		backend:     backend,
-		cpuProfile:  NewCPUProfileData(),
+		ctx:        ctx,
+		logger:     ctx.Logger.With("module", "debug"),
+		cpuProfile: NewCPUProfileData(),
 	}
 }
 
@@ -152,8 +119,7 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 	defer a.cpuProfile.mu.Unlock()
 
 	// This is different from go-eth because its possible to start the node with cpuprofile running
-	const flagCPUProfile = "cpu-profile"
-	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
+	if isCPUProfileConfigurationActivated(a.ctx) {
 		return errors.New("Already running using configuration file")
 	} else if a.cpuProfile.activated {
 		return errors.New("Already running using RPC call")
@@ -163,14 +129,17 @@ func (a *DebugAPI) StartCPUProfile(file string) error {
 			a.logger.Error("failed to create CP profile", "error", err.Error())
 			return errors.New("Failed to create cpu profile file.")
 		}
-		a.cpuProfile.file = *f
-		a.cpuProfile.fileName = file
-		a.cpuProfile.activated = true
 
 		a.logger.Info("starting CPU profiler", "profile", cpuProfile)
 		if err := pprof.StartCPUProfile(f); err != nil {
-			return errors.New("Failed to start cpu profile.")
+			// cpu profiling already in use
+			os.Remove(file)
+			return err
 		}
+
+		a.cpuProfile.file = *f
+		a.cpuProfile.fileName = file
+		a.cpuProfile.activated = true
 		return nil
 	}
 }
@@ -183,11 +152,10 @@ func (a *DebugAPI) StopCPUProfile() error {
 	a.cpuProfile.mu.Lock()
 	defer a.cpuProfile.mu.Unlock()
 
-	const flagCPUProfile = "cpu-profile"
-	if cpuProfile := a.clientCtx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
+	if isCPUProfileConfigurationActivated(a.ctx) {
 		return errors.New("Already running using configuration file")
 	} else if a.cpuProfile.activated == true {
-		a.logger.Info("stopping CPU profiler", "profile", cpuProfile)
+		a.logger.Info("stopping CPU profiler", "profile", a.cpuProfile.fileName)
 		pprof.StopCPUProfile()
 		a.cpuProfile.file.Close()
 		a.cpuProfile.activated = false
@@ -206,7 +174,6 @@ func (a *DebugAPI) TraceBlock() error {
 	return errors.New("Currently not supported.")
 }
 
-// We need this for etherscan
 func (a *DebugAPI) TraceBlockByNumber() error {
 	return errors.New("Currently not supported.")
 }
@@ -227,45 +194,8 @@ func (a *DebugAPI) StandardTraceBadBlockToFile() error {
 	return errors.New("Currently not supported.")
 }
 
-// We need this for etherscan
-// $ curl -X POST --data '{"jsonrpc":"2.0","method":"debug_traceTransaction","params":["735C9268FCFBC944DE61376637FD522CFF447A221D64B744C6BBC72D67420372"],"id":67}' -H "Content-Type: application/json" http://localhost:8545
-func (a *DebugAPI) TraceTransaction(hashHex string) (string, error) {
-
-	hash, err := hex.DecodeString(hashHex)
-	if err != nil {
-		return "", err
-	}
-	node, err := a.clientCtx.GetNode()
-	if err != nil {
-		return "", err
-	}
-
-	tx, err := node.Tx(context.Background(), hash, false)
-	if err != nil {
-		return "", err
-	}
-
-	// Can either cache or just leave this out if not necessary
-	block, err := node.Block(context.Background(), &tx.Height)
-	if err != nil {
-		return "", err
-	}
-
-	blockHash := common.BytesToHash(block.Block.Header.Hash())
-
-	ethTx, err := rpctypes.RawTxToEthTx(a.clientCtx, tx.Tx)
-	if err != nil {
-		return "", err
-	}
-
-	// height := uint64(tx.Height)
-	// rpcTx := rpctypes.NewTransaction(ethTx.AsTransaction(), blockHash, height, uint64(tx.Index))
-
-	a.logger.Info(blockHash.Hex())
-
-	return blockHash.Hex() + " " + ethTx.AsTransaction().Hash().Hex(), nil
-
-	// return errors.New("Currently not supported.")
+func (a *DebugAPI) TraceTransaction(hashHex string) error {
+	return errors.New("Currently not supported.")
 }
 
 func (a *DebugAPI) TraceCall() error {
