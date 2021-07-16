@@ -130,7 +130,7 @@ docker-build:
 	docker cp ethermint:/usr/bin/ethermintd ./build/
 
 docker-localnet:
-	docker build -f ./networks/local/ethermintnode/Dockerfile . -t ethermintd/node
+	@$(MAKE) -C networks/local
 
 $(MOCKS_DIR):
 	mkdir -p $(MOCKS_DIR)
@@ -477,21 +477,21 @@ proto-update-deps:
 
 # Run a 4-node testnet locally
 build-docker-local-ethermint:
-	@$(MAKE) -C networks/local
+	@$(MAKE) docker-localnet
 
 # Run a 4-node testnet locally
 localnet-start: localnet-stop
 ifeq ($(OS),Windows_NT)
-	mkdir build &
+	mkdir localnet-setup &
 	@$(MAKE) docker-localnet
 
-	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --keyring-backend=test"
+	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "./ethermintd testnet --v 4 -o /ethermint --keyring-backend=test --ip-addresses 192.168.10.2,192.168.10.3,192.168.10.4,192.168.10.5"
 	docker-compose up -d
 else
-	mkdir -p ./build/
+	mkdir -p localnet-setup
 	@$(MAKE) docker-localnet
 
-	if ! [ -f build/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --keyring-backend=test"; fi
+	if ! [ -f localnet-setup/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/localnet-setup:/ethermint:Z ethermintd/node "./ethermintd testnet --v 4 -o /ethermint --keyring-backend=test --ip-addresses 192.168.10.2,192.168.10.3,192.168.10.4,192.168.10.5"; fi
 	docker-compose up -d
 endif
 

@@ -13,7 +13,7 @@ services:
       - ID=0
       - LOG=${LOG:-ethermintd.log}
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node0/ethermintd:/ethermint:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.2
@@ -31,7 +31,7 @@ services:
       - ID=1
       - LOG=${LOG:-ethermintd.log}
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node1/ethermintd:/ethermint:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.3
@@ -49,7 +49,7 @@ services:
       - "8566:8546"
       - "8127:8125"
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node2/ethermintd:/ethermint:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.4
@@ -67,7 +67,7 @@ services:
       - "8576:8546"
       - "8128:8125"
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node3/ethermintd:/ethermint:Z
     networks:
       localnet:
         ipv4_address: 192.168.10.5
