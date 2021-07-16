@@ -67,7 +67,15 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 		case k.ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
-			return common.BytesToHash(k.ctx.HeaderHash())
+			// Note: we cannot use k.ctx.HeaderHash() because the headerHash it set only at begin block
+			// so it won't be set in case of simulated context
+			contextBlockHeader := k.ctx.BlockHeader()
+			header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
+			if err != nil {
+				k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
+				return common.Hash{}
+			}
+			return common.BytesToHash(header.Hash())
 
 		case k.ctx.BlockHeight() > h:
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the

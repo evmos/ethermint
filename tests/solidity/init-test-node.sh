@@ -25,6 +25,9 @@ echo $USER2_MNEMONIC | ethermintd keys add $USER2_KEY --recover --keyring-backen
 
 ethermintd init $MONIKER --chain-id $CHAINID
 
+# Set gas limit in genesis
+cat $HOME/.ethermintd/config/genesis.json | jq '.consensus_params["block"]["max_gas"]="10000000"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
+
 # Allocate genesis accounts (cosmos formatted addresses)
 ethermintd add-genesis-account "$(ethermintd keys show $VAL_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
 ethermintd add-genesis-account "$(ethermintd keys show $USER1_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
