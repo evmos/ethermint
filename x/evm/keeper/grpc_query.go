@@ -3,7 +3,10 @@ package keeper
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 
+	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -13,7 +16,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	ethparams "github.com/ethereum/go-ethereum/params"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -374,7 +381,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	msg := args.ToMessage(uint64(ethermint.DefaultRPCGasLimit))
+	msg := args.ToMessage(req.GasCap)
 
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
@@ -392,4 +399,101 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	}
 
 	return res, nil
+}
+
+// EstimateGas implements eth_estimateGas rpc api.
+func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*types.EstimateGasResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
+
+	var args types.CallArgs
+	err := json.Unmarshal(req.Args, &args)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Binary search the gas requirement, as it may be higher than the amount used
+	var (
+		lo  uint64 = ethparams.TxGas - 1
+		hi  uint64
+		cap uint64
+	)
+
+	// Determine the highest gas limit can be used during the estimation.
+	if args.Gas != nil && uint64(*args.Gas) >= ethparams.TxGas {
+		hi = uint64(*args.Gas)
+	} else {
+		// Query block gas limit
+		params := ctx.ConsensusParams()
+		if params != nil && params.Block != nil && params.Block.MaxGas > 0 {
+			hi = uint64(params.Block.MaxGas)
+		} else {
+			hi = req.GasCap
+		}
+	}
+
+	// TODO Recap the highest gas limit with account's available balance.
+
+	// Recap the highest gas allowance with specified gascap.
+	if req.GasCap != 0 && hi > req.GasCap {
+		hi = req.GasCap
+	}
+	cap = hi
+
+	params := k.GetParams(ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+
+	coinbase, err := k.GetCoinbaseAddress()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// Create a helper to check if a gas allowance results in an executable transaction
+	executable := func(gas uint64) (bool, *types.MsgEthereumTxResponse, error) {
+		args.Gas = (*hexutil.Uint64)(&gas)
+
+		// Execute the call in an isolated context
+		sandboxCtx, _ := ctx.CacheContext()
+		k.WithContext(sandboxCtx)
+
+		msg := args.ToMessage(req.GasCap)
+		evm := k.NewEVM(msg, ethCfg, params, coinbase)
+		// pass true means execute in query mode, which don't do actual gas refund.
+		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
+
+		k.WithContext(ctx)
+
+		if err != nil {
+			if errors.Is(stacktrace.RootCause(err), core.ErrIntrinsicGas) {
+				return true, nil, nil // Special case, raise gas limit
+			}
+			return true, nil, err // Bail out
+		}
+		return len(rsp.VmError) > 0, rsp, nil
+	}
+
+	// Execute the binary search and hone in on an executable gas limit
+	hi, err = types.BinSearch(lo, hi, executable)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// Reject the transaction as invalid if it still fails at the highest allowance
+	if hi == cap {
+		failed, result, err := executable(hi)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		if failed {
+			if result != nil && result.VmError != vm.ErrOutOfGas.Error() {
+				if result.VmError == vm.ErrExecutionReverted.Error() {
+					return nil, status.Error(codes.Internal, types.NewExecErrorWithReason(result.Ret).Error())
+				}
+				return nil, status.Error(codes.Internal, result.VmError)
+			}
+			// Otherwise, the specified gas cap is too low
+			return nil, status.Error(codes.Internal, fmt.Sprintf("gas required exceeds allowance (%d)", cap))
+		}
+	}
+	return &types.EstimateGasResponse{Gas: hi}, nil
 }
