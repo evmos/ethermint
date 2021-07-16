@@ -29,13 +29,16 @@ func (a *InternalAPI) StartGoTrace(file string) error {
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
 	if a.handler.traceFile != nil {
+		a.logger.Debug("trace already in progress")
 		return errors.New("trace already in progress")
 	}
 	f, err := os.Create(ExpandHome(file))
 	if err != nil {
+		a.logger.Debug("failed to create go trace file", "error", err.Error())
 		return err
 	}
 	if err := trace.Start(f); err != nil {
+		a.logger.Debug("Go tracing already started", "error", err.Error())
 		f.Close()
 		return err
 	}
@@ -51,6 +54,7 @@ func (a *InternalAPI) StopGoTrace() error {
 	defer a.handler.mu.Unlock()
 	trace.Stop()
 	if a.handler.traceFile == nil {
+		a.logger.Debug("trace not in progress")
 		return errors.New("trace not in progress")
 	}
 	a.logger.Info("Done writing Go trace", "dump", a.handler.traceFilename)
