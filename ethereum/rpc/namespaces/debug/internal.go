@@ -43,10 +43,6 @@ func NewInternalAPI(
 	}
 }
 
-func (a *InternalAPI) BacktraceAt() error {
-	return errors.New("Currently not supported.")
-}
-
 // BlockProfile turns on goroutine profiling for nsec seconds and writes profile data to
 // file. It uses a profile rate of 1 for most accurate information. If a different rate is
 // desired, set the rate and write the profile manually.
@@ -130,12 +126,12 @@ func (a *InternalAPI) StartCPUProfile(file string) error {
 	} else {
 		f, err := os.Create(ExpandHome(file))
 		if err != nil {
-			a.logger.Error("failed to create CPU profile file", "error", err.Error())
+			a.logger.Debug("failed to create CPU profile file", "error", err.Error())
 			return err
 		}
 
 		if err := pprof.StartCPUProfile(f); err != nil {
-			a.logger.Error("cpu profiling already in use", "error", err.Error())
+			a.logger.Debug("cpu profiling already in use", "error", err.Error())
 			f.Close()
 			return err
 		}
@@ -167,14 +163,6 @@ func (a *InternalAPI) StopCPUProfile() error {
 		a.logger.Debug("CPU profiling not in progress")
 		return errors.New("CPU profiling not in progress")
 	}
-}
-
-func (a *InternalAPI) Verbosity() error {
-	return errors.New("Currently not supported.")
-}
-
-func (a *InternalAPI) Vmodule() error {
-	return errors.New("Currently not supported.")
 }
 
 // WriteBlockProfile writes a goroutine blocking profile to the given file.
