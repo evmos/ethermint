@@ -3,14 +3,13 @@ package types
 import (
 	"fmt"
 
-	log "github.com/xlab/suplog"
-
 	"github.com/gogo/protobuf/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	mintlog "github.com/tharsis/ethermint/log"
 )
 
 var EmptyCodeHash = crypto.Keccak256(nil)
@@ -19,7 +18,7 @@ var EmptyCodeHash = crypto.Keccak256(nil)
 func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 	var txMsgData sdk.TxMsgData
 	if err := proto.Unmarshal(in, &txMsgData); err != nil {
-		log.WithError(err).Errorln("failed to unmarshal TxMsgData")
+		(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("failed to unmarshal TxMsgData %v", err))
 		return nil, err
 	}
 

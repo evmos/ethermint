@@ -1,13 +1,14 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/spf13/cobra"
-	log "github.com/xlab/suplog"
+	mintlog "github.com/tharsis/ethermint/log"
 
 	sdkserver "github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/types"
@@ -51,15 +52,14 @@ func ConnectTmWS(tmRPCAddr, tmEndpoint string) *rpcclient.WSClient {
 		rpcclient.WriteWait(120*time.Second),
 		rpcclient.PingPeriod(50*time.Second),
 		rpcclient.OnReconnect(func() {
-			log.WithField("tendermint_rpc", tmRPCAddr+tmEndpoint).
-				Debugln("EVM RPC reconnects to Tendermint WS")
+			(*mintlog.EthermintLoggerInstance.TendermintLogger).Debug(fmt.Sprintf("EVM RPC reconnects to Tendermint WS %s", tmRPCAddr+tmEndpoint))
 		}),
 	)
 
 	if err != nil {
-		log.WithError(err).Fatalln("Tendermint WS client could not be created for ", tmRPCAddr+tmEndpoint)
+		(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("Tendermint WS client could not be created for %s, Error %v", tmRPCAddr+tmEndpoint, err))
 	} else if err := tmWsClient.OnStart(); err != nil {
-		log.WithError(err).Fatalln("Tendermint WS client could not start for ", tmRPCAddr+tmEndpoint)
+		(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("Tendermint WS client could not start for %s, Error %v", tmRPCAddr+tmEndpoint, err))
 	}
 
 	return tmWsClient
@@ -71,7 +71,8 @@ func MountGRPCWebServices(
 	grpcResources []string,
 ) {
 	for _, res := range grpcResources {
-		log.Printf("[GRPC Web] HTTP POST mounted on %s", res)
+
+		(*mintlog.EthermintLoggerInstance.TendermintLogger).Info(fmt.Sprintf("[GRPC Web] HTTP POST mounted on %s", res))
 
 		s := router.Methods("POST").Subrouter()
 		s.HandleFunc(res, func(resp http.ResponseWriter, req *http.Request) {

@@ -1,10 +1,10 @@
 package ante
 
 import (
+	"fmt"
 	"runtime/debug"
 
 	"github.com/palantir/stacktrace"
-	log "github.com/xlab/suplog"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -14,6 +14,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	mintlog "github.com/tharsis/ethermint/log"
 )
 
 const (
@@ -120,10 +121,10 @@ func Recover(err *error) {
 		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
-			log.WithError(e).Errorln("ante handler panicked with an error")
-			log.Debugln(string(debug.Stack()))
+			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("ante handler panicked with an error %v", e))
+			(*mintlog.EthermintLoggerInstance.TendermintLogger).Debug(string(debug.Stack()))
 		} else {
-			log.Errorln(r)
+			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("%v", r))
 		}
 	}
 }

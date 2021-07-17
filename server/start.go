@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"github.com/xlab/closer"
+
 	"google.golang.org/grpc"
 
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -35,12 +37,13 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethlog "github.com/ethereum/go-ethereum/log"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
+	ethlog "github.com/ethereum/go-ethereum/log"
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/ethereum/rpc"
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
+	mintlog "github.com/tharsis/ethermint/log"
 )
 
 // Tendermint full-node start flags
@@ -170,6 +173,10 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	home := cfg.RootDir
 	logger := ctx.Logger
 
+	mintlog.EthermintLoggerInstance.TendermintLogger = &logger
+
+	(*mintlog.EthermintLoggerInstance.TendermintLogger).Info(fmt.Sprintf("startInProcess ~~~~~~~~ %s", ctx.Config.LogLevel))
+
 	traceWriterFile := ctx.Viper.GetString(flagTraceStore)
 	db, err := openDB(home)
 	if err != nil {
@@ -238,7 +245,10 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var httpSrvDone = make(chan struct{}, 1)
 	var wsSrv rpc.WebsocketsServer
 
-	ethlog.Root().SetHandler(ethlog.StdoutHandler)
+	if ctx.Config.LogLevel == "debug" {
+		ethlog.Root().SetHandler(ethlog.StdoutHandler)
+	}
+
 	if config.EVMRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress

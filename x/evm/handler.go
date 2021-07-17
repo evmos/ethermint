@@ -1,9 +1,10 @@
 package evm
 
 import (
+	"fmt"
 	"runtime/debug"
 
-	log "github.com/xlab/suplog"
+	mintlog "github.com/tharsis/ethermint/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -36,10 +37,11 @@ func Recover(err *error) {
 		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
-			log.WithError(e).Errorln("evm msg handler panicked with an error")
-			log.Debugln(string(debug.Stack()))
+
+			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("evm msg handler panicked with an error %v", e))
+			(*mintlog.EthermintLoggerInstance.TendermintLogger).Debug(string(debug.Stack()))
 		} else {
-			log.Errorln(r)
+			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("%v", r))
 		}
 	}
 }
