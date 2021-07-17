@@ -69,15 +69,18 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 			// hash directly from the context.
 			// Note: The headerHash is only set at begin block, it will be nil in case of a query context
 			headerHash := k.ctx.HeaderHash()
-			if len(headerHash) == 0 {
-				contextBlockHeader := k.ctx.BlockHeader()
-				header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
-				if err != nil {
-					k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
-					return common.Hash{}
-				}
-				headerHash = header.Hash()
+			if len(headerHash) != 0 {
+				return common.BytesToHash(headerHash)
 			}
+			
+			// only recompute the hash if not set
+			contextBlockHeader := k.ctx.BlockHeader()
+			header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
+			if err != nil {
+				k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
+				return common.Hash{}
+			}
+			headerHash = header.Hash()
 			return common.BytesToHash(headerHash)
 
 		case k.ctx.BlockHeight() > h:
