@@ -273,6 +273,12 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
+		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
+		return nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "hash", hash.Hex())
 		return nil
 	}
 
@@ -282,9 +288,15 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
-	e.logger.Debug("eth_getBlockTransactionCountByNumber", "block number", blockNum)
+	e.logger.Debug("eth_getBlockTransactionCountByNumber", "height", blockNum.Int64())
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil
 	}
 
@@ -668,6 +680,11 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, nil
 	}
 
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "hash", hash.Hex())
+		return nil, nil
+	}
+
 	i := int(idx)
 	if i >= len(resBlock.Block.Txs) {
 		e.logger.Debug("block txs index out of bound", "index", i)
@@ -703,6 +720,11 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil, nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil, nil
 	}
 
