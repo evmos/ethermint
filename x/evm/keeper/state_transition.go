@@ -72,7 +72,7 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 			if len(headerHash) != 0 {
 				return common.BytesToHash(headerHash)
 			}
-			
+
 			// only recompute the hash if not set
 			contextBlockHeader := k.ctx.BlockHeader()
 			header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
