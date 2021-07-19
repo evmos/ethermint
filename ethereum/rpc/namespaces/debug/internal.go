@@ -81,8 +81,7 @@ func (a *InternalAPI) GoTrace(file string, nsec uint) error {
 		return err
 	}
 	time.Sleep(time.Duration(nsec) * time.Second)
-	a.StopGoTrace()
-	return nil
+	return a.StopGoTrace()
 }
 
 // MemStats returns detailed runtime memory statistics.
