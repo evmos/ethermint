@@ -204,7 +204,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		}
 	}
 
-	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{Height: block.Height})
 	if err != nil {
 		e.logger.Debug("failed to query BlockBloom", "height", block.Height, "error", err.Error())
 
@@ -266,7 +266,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{}
+	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
@@ -287,7 +287,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{}
+	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {

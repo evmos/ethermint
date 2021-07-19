@@ -222,7 +222,10 @@ message QueryBlockLogsResponse {
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest {}
+message QueryBlockBloomRequest {
+  // height of the block which we want to query the bloom filter
+  int64 height = 1;
+}
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.

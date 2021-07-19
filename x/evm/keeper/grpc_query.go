@@ -272,10 +272,10 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 }
 
 // BlockBloom implements the Query/BlockBloom gRPC method
-func (k Keeper) BlockBloom(c context.Context, _ *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
+func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	bloom, found := k.GetBlockBloom(ctx, ctx.BlockHeight())
+	bloom, found := k.GetBlockBloom(ctx, req.Height)
 	if !found {
 		// if the bloom is not found, query the transient store at the current height
 		k.ctx = ctx
@@ -283,7 +283,7 @@ func (k Keeper) BlockBloom(c context.Context, _ *types.QueryBlockBloomRequest) (
 
 		if bloomInt.Sign() == 0 {
 			return nil, status.Error(
-				codes.NotFound, sdkerrors.Wrapf(types.ErrBloomNotFound, "height: %d", ctx.BlockHeight()).Error(),
+				codes.NotFound, sdkerrors.Wrapf(types.ErrBloomNotFound, "height: %d", req.Height).Error(),
 			)
 		}
 

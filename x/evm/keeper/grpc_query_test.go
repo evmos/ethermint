@@ -540,14 +540,16 @@ func (suite *KeeperTestSuite) TestQueryBlockBloom() {
 		malleate func()
 		expPass  bool
 	}{
-		{"marshal error",
-			func() {},
+		{"bad height",
+			func() {
+				req = &types.QueryBlockBloomRequest{Height: -2}
+			},
 			false,
 		},
 		{
 			"bloom from transient store",
 			func() {
-				req = &types.QueryBlockBloomRequest{}
+				req = &types.QueryBlockBloomRequest{Height: 1}
 				bloom := ethtypes.BytesToBloom([]byte("bloom"))
 				expBloom = bloom.Bytes()
 				suite.app.EvmKeeper.WithContext(suite.ctx.WithBlockHeight(1))
@@ -557,7 +559,7 @@ func (suite *KeeperTestSuite) TestQueryBlockBloom() {
 		},
 		{"bloom not found for height",
 			func() {
-				req = &types.QueryBlockBloomRequest{}
+				req = &types.QueryBlockBloomRequest{Height: 100}
 				bloom := ethtypes.BytesToBloom([]byte("bloom"))
 				expBloom = bloom.Bytes()
 				suite.ctx = suite.ctx.WithBlockHeight(100)
@@ -568,11 +570,11 @@ func (suite *KeeperTestSuite) TestQueryBlockBloom() {
 		{
 			"success",
 			func() {
-				req = &types.QueryBlockBloomRequest{}
+				req = &types.QueryBlockBloomRequest{Height: 3}
 				bloom := ethtypes.BytesToBloom([]byte("bloom"))
 				expBloom = bloom.Bytes()
-				suite.ctx = suite.ctx.WithBlockHeight(1)
-				suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 1, bloom)
+				suite.ctx = suite.ctx.WithBlockHeight(3)
+				suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 3, bloom)
 			},
 			true,
 		},

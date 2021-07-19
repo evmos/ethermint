@@ -568,6 +568,11 @@ QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 method.
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  | height of the block which we want to query the bloom filter |
+
+
 
 
 
