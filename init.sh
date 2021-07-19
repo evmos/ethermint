@@ -5,6 +5,10 @@ MONIKER="localtestnet"
 KEYRING="test"
 KEYALGO="eth_secp256k1"
 LOGLEVEL="info"
+# to trace evm
+#TRACE="--trace"
+TRACE=""
+
 
 # remove existing daemon and client
 rm -rf ~/.ethermintd*
@@ -80,4 +84,4 @@ if [[ $1 == "pending" ]]; then
 fi
 
 # Start the node (remove the --pruning=nothing flag if historical queries are not needed)
-ethermintd start --pruning=nothing --trace --log_level $LOGLEVEL --minimum-gas-prices=0.0001aphoton
+ethermintd start --pruning=nothing $TRACE --log_level $LOGLEVEL --minimum-gas-prices=0.0001aphoton
