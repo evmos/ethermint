@@ -215,9 +215,14 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
 	}
 
-	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
+	res, err := e.queryClient.ValidatorAccount(types.ContextWithHeight(block.Height), req)
 	if err != nil {
-		e.logger.Debug("failed to query validator operator address", "cons-address", req.ConsAddress, "error", err.Error())
+		e.logger.Debug(
+			"failed to query validator operator address",
+			"height", block.Height,
+			"cons-address", req.ConsAddress,
+			"error", err.Error(),
+		)
 		return nil, err
 	}
 
@@ -228,13 +233,24 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	validatorAddr := common.BytesToAddress(addr)
 
+	bfRes, err := e.queryClient.BaseFee(types.ContextWithHeight(block.Height), &evmtypes.QueryBaseFeeRequest{})
+	if err != nil {
+		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
+		return nil, err
+	}
+
 	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
 
 	gasLimit, err := types.BlockMaxGasFromConsensusParams(types.ContextWithHeight(block.Height), e.clientCtx)
 	if err != nil {
 		e.logger.Error("failed to query consensus params", "error", err.Error())
 	}
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
+
+	formattedBlock := types.FormatBlock(
+		block.Header, block.Size(),
+		gasLimit, new(big.Int).SetUint64(gasUsed),
+		ethRPCTxs, bloom, validatorAddr, bfRes.BaseFee.BigInt(),
+	)
 	return formattedBlock, nil
 }
 
