@@ -132,7 +132,7 @@ func EthTransactionsFromTendermint(clientCtx client.Context, txs []tmtypes.Tx) (
 func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Context) (int64, error) {
 	resConsParams, err := clientCtx.Client.ConsensusParams(ctx, nil)
 	if err != nil {
-		return 0, err
+		return int64(^uint32(0)), err
 	}
 
 	gasLimit := resConsParams.ConsensusParams.Block.MaxGas
