@@ -27,7 +27,11 @@ import (
 // NewEVM generates an ethereum VM from the provided Message fields and the chain parameters
 // (config). It sets the validator operator address as the coinbase address to make it available for
 // the COINBASE opcode, even though there is no beneficiary (since we're not mining).
-func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params, coinbase common.Address) *vm.EVM {
+func (k *Keeper) NewEVM(
+	msg core.Message,
+	config *params.ChainConfig, params types.Params,
+	coinbase common.Address, baseFee *big.Int,
+) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
@@ -37,7 +41,7 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params typ
 		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
 		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
-		BaseFee:     nil,           // TODO:
+		BaseFee:     baseFee,
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
@@ -134,8 +138,10 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
 
+	baseFee := k.GetBaseFee(k.ctx)
+
 	// TODO: header base fee
-	msg, err := tx.AsMessage(signer, nil)
+	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
 	}
@@ -152,7 +158,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee)
 
 	k.SetTxHashTransient(tx.Hash())
 	k.IncreaseTxIndexTransient()
@@ -284,13 +290,6 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	if vmErr != nil {
 		vmError = vmErr.Error()
 	}
-
-	// TODO: gas price should be recalculated for London on AnteHandler:
-	// effectiveTip := st.gasPrice
-	// if st.evm.ChainConfig().IsLondon(st.evm.Context.BlockNumber) {
-	// 	effectiveTip = cmath.BigMin(st.gasTipCap, new(big.Int).Sub(st.gasFeeCap, st.evm.Context.BaseFee))
-	// }
-	// st.state.AddBalance(st.evm.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), effectiveTip))
 
 	gasUsed := msg.Gas() - leftoverGas
 	return &types.MsgEthereumTxResponse{

@@ -39,7 +39,7 @@ const (
 
 // prefix bytes for the EVM transient store
 const (
-	prefixTransientSuicided = iota + 100 // start at 100 to prevent collisions
+	prefixTransientSuicided = iota + 1
 	prefixTransientBloom
 	prefixTransientTxIndex
 	prefixTransientRefund

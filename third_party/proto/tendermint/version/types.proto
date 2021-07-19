@@ -13,12 +13,12 @@ message App {
   string software = 2;
 }
 
-// Consensus captures the consensus rules for processing a block in the blockchain,
-// including all blockchain data structures and the rules of the application's
-// state transition machine.
+// Consensus captures the consensus rules for processing a block in the
+// blockchain, including all blockchain data structures and the rules of the
+// application's state transition machine.
 message Consensus {
   option (gogoproto.equal) = true;
 
   uint64 block = 1;
-  uint64 app   = 2;
+  uint64 app = 2;
 }

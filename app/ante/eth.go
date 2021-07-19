@@ -31,6 +31,7 @@ type EVMKeeper interface {
 	GetCoinbaseAddress() (common.Address, error)
 	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
+	GetBaseFee(ctx sdk.Context) *big.Int
 }
 
 // EthSigVerificationDecorator validates an ethereum signatures
@@ -324,8 +325,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		effectiveTip := txData.GetGasPrice()
 		if london {
-			// TODO: fetch base fee from header
-			baseFee := big.NewInt(0)
+			baseFee := egcd.evmKeeper.GetBaseFee(ctx)
 			effectiveTip = cmath.BigMin(txData.GetGasTipCap(), new(big.Int).Sub(txData.GetGasFeeCap(), baseFee))
 		}
 
@@ -392,8 +392,8 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		// TODO: get header base fee
-		coreMsg, err := msgEthTx.AsMessage(signer, nil)
+		baseFee := ctd.evmKeeper.GetBaseFee(ctx)
+		coreMsg, err := msgEthTx.AsMessage(signer, baseFee)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
 				err,

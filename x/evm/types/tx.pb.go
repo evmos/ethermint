@@ -40,9 +40,9 @@ type MsgEthereumTx struct {
 	Size_ float64 `protobuf:"fixed64,2,opt,name=size,proto3" json:"-"`
 	// transaction hash in hex format
 	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty" rlp:"-"`
-	// ethereum signer address in hex format. This address value is checked against
-	// the address derived from the signature (V, R, S) using the secp256k1
-	// elliptic curve
+	// ethereum signer address in hex format. This address value is checked
+	// against the address derived from the signature (V, R, S) using the
+	// secp256k1 elliptic curve
 	From string `protobuf:"bytes,4,opt,name=from,proto3" json:"from,omitempty"`
 }
 
@@ -326,13 +326,15 @@ var xxx_messageInfo_ExtensionOptionsWeb3Tx proto.InternalMessageInfo
 
 // MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 type MsgEthereumTxResponse struct {
-	// ethereum transaction hash in hex format. This hash differs from the Tendermint sha256 hash of the transaction
-	// bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference
+	// ethereum transaction hash in hex format. This hash differs from the
+	// Tendermint sha256 hash of the transaction bytes. See
+	// https://github.com/tendermint/tendermint/issues/6539 for reference
 	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	// logs contains the transaction hash and the proto-compatible ethereum
 	// logs.
 	Logs []*Log `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
-	// returned data from evm function (result or data supplied with revert opcode)
+	// returned data from evm function (result or data supplied with revert
+	// opcode)
 	Ret []byte `protobuf:"bytes,3,opt,name=ret,proto3" json:"ret,omitempty"`
 	// vm error is the error returned by vm execution
 	VmError string `protobuf:"bytes,4,opt,name=vm_error,json=vmError,proto3" json:"vm_error,omitempty"`

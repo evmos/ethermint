@@ -38,6 +38,8 @@
     - [QueryAccountResponse](#ethermint.evm.v1alpha1.QueryAccountResponse)
     - [QueryBalanceRequest](#ethermint.evm.v1alpha1.QueryBalanceRequest)
     - [QueryBalanceResponse](#ethermint.evm.v1alpha1.QueryBalanceResponse)
+    - [QueryBaseFeeRequest](#ethermint.evm.v1alpha1.QueryBaseFeeRequest)
+    - [QueryBaseFeeResponse](#ethermint.evm.v1alpha1.QueryBaseFeeResponse)
     - [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest)
     - [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse)
     - [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest)
@@ -571,6 +573,31 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 
 
 
+<a name="ethermint.evm.v1alpha1.QueryBaseFeeRequest"></a>
+
+### QueryBaseFeeRequest
+QueryBaseFeeRequest defines the request type for querying the EIP1559 base fee.
+
+
+
+
+
+
+<a name="ethermint.evm.v1alpha1.QueryBaseFeeResponse"></a>
+
+### QueryBaseFeeResponse
+BaseFeeResponse returns the EIP1559 base fee.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `base_fee` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.QueryBlockBloomRequest"></a>
 
 ### QueryBlockBloomRequest
@@ -664,7 +691,8 @@ method.
 <a name="ethermint.evm.v1alpha1.QueryCosmosAccountRequest"></a>
 
 ### QueryCosmosAccountRequest
-QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC method.
+QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC
+method.
 
 
 | Field | Type | Label | Description |
@@ -679,7 +707,8 @@ QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC me
 <a name="ethermint.evm.v1alpha1.QueryCosmosAccountResponse"></a>
 
 ### QueryCosmosAccountResponse
-QueryCosmosAccountResponse is the response type for the Query/CosmosAccount RPC method.
+QueryCosmosAccountResponse is the response type for the Query/CosmosAccount
+RPC method.
 
 
 | Field | Type | Label | Description |
@@ -798,7 +827,8 @@ QueryTxLogs is the response type for the Query/TxLogs RPC method.
 <a name="ethermint.evm.v1alpha1.QueryValidatorAccountRequest"></a>
 
 ### QueryValidatorAccountRequest
-QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
+QueryValidatorAccountRequest is the request type for the
+Query/ValidatorAccount RPC method.
 
 
 | Field | Type | Label | Description |
@@ -813,7 +843,8 @@ QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount 
 <a name="ethermint.evm.v1alpha1.QueryValidatorAccountResponse"></a>
 
 ### QueryValidatorAccountResponse
-QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
+QueryValidatorAccountResponse is the response type for the
+Query/ValidatorAccount RPC method.
 
 
 | Field | Type | Label | Description |
@@ -850,6 +881,7 @@ Query defines the gRPC querier service.
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
+| `BaseFee` | [QueryBaseFeeRequest](#ethermint.evm.v1alpha1.QueryBaseFeeRequest) | [QueryBaseFeeResponse](#ethermint.evm.v1alpha1.QueryBaseFeeResponse) | BaseFee queries the base fee of the parent block of the current block. | GET|/ethermint/evm/v1alpha1/base_fee|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1alpha1/eth_call|
 
  <!-- end services -->
