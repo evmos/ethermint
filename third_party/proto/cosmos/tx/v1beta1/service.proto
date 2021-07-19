@@ -14,8 +14,8 @@ service Service {
   // Simulate simulates executing a transaction for estimating gas usage.
   rpc Simulate(SimulateRequest) returns (SimulateResponse) {
     option (google.api.http) = {
-      post : "/cosmos/tx/v1beta1/simulate"
-      body : "*"
+      post: "/cosmos/tx/v1beta1/simulate"
+      body: "*"
     };
   }
   // GetTx fetches a tx by hash.
@@ -25,8 +25,8 @@ service Service {
   // BroadcastTx broadcast transaction.
   rpc BroadcastTx(BroadcastTxRequest) returns (BroadcastTxResponse) {
     option (google.api.http) = {
-      post : "/cosmos/tx/v1beta1/txs"
-      body : "*"
+      post: "/cosmos/tx/v1beta1/txs"
+      body: "*"
     };
   }
   // GetTxsEvent fetches txs by event.
@@ -59,23 +59,22 @@ message GetTxsEventResponse {
 // RPC method.
 message BroadcastTxRequest {
   // tx_bytes is the raw transaction.
-  bytes tx_bytes = 1;
-  BroadcastMode mode = 2;
+  bytes         tx_bytes = 1;
+  BroadcastMode mode     = 2;
 }
 
-// BroadcastMode specifies the broadcast mode for the TxService.Broadcast RPC
-// method.
+// BroadcastMode specifies the broadcast mode for the TxService.Broadcast RPC method.
 enum BroadcastMode {
   // zero-value for mode ordering
   BROADCAST_MODE_UNSPECIFIED = 0;
-  // BROADCAST_MODE_BLOCK defines a tx broadcasting mode where the client waits
-  // for the tx to be committed in a block.
+  // BROADCAST_MODE_BLOCK defines a tx broadcasting mode where the client waits for
+  // the tx to be committed in a block.
   BROADCAST_MODE_BLOCK = 1;
-  // BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits
-  // for a CheckTx execution response only.
+  // BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits for
+  // a CheckTx execution response only.
   BROADCAST_MODE_SYNC = 2;
-  // BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client
-  // returns immediately.
+  // BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client returns
+  // immediately.
   BROADCAST_MODE_ASYNC = 3;
 }
 

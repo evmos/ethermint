@@ -6,10 +6,10 @@ option go_package = "github.com/tendermint/tendermint/proto/tendermint/crypto";
 import "gogoproto/gogo.proto";
 
 message Proof {
-  int64 total = 1;
-  int64 index = 2;
-  bytes leaf_hash = 3;
-  repeated bytes aunts = 4;
+  int64          total     = 1;
+  int64          index     = 2;
+  bytes          leaf_hash = 3;
+  repeated bytes aunts     = 4;
 }
 
 message ValueOp {
@@ -21,8 +21,8 @@ message ValueOp {
 }
 
 message DominoOp {
-  string key = 1;
-  string input = 2;
+  string key    = 1;
+  string input  = 2;
   string output = 3;
 }
 
@@ -31,9 +31,11 @@ message DominoOp {
 // for example neighbouring node hash
 message ProofOp {
   string type = 1;
-  bytes key = 2;
-  bytes data = 3;
+  bytes  key  = 2;
+  bytes  data = 3;
 }
 
 // ProofOps is Merkle proof defined by the list of ProofOps
-message ProofOps { repeated ProofOp ops = 1 [ (gogoproto.nullable) = false ]; }
+message ProofOps {
+  repeated ProofOp ops = 1 [(gogoproto.nullable) = false];
+}

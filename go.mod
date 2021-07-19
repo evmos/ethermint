@@ -20,7 +20,11 @@ require (
 	github.com/cosmos/ibc-go v1.0.0-beta1
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.1 // indirect
+<<<<<<< Updated upstream
 	github.com/ethereum/go-ethereum v1.10.4
+=======
+	github.com/ethereum/go-ethereum v1.10.3
+>>>>>>> Stashed changes
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
@@ -33,7 +37,11 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/improbable-eng/grpc-web v0.14.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
+<<<<<<< Updated upstream
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.0
+=======
+	github.com/miguelmota/go-ethereum-hdwallet v0.0.1
+>>>>>>> Stashed changes
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
