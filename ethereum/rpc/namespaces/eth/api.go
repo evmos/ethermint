@@ -550,10 +550,20 @@ func (e *PublicAPI) doCall(
 	if err != nil {
 		return nil, err
 	}
-	req := evmtypes.EthCallRequest{Args: bz}
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
+
+	// From ContextWithHeight: if the provided height is 0,
+	// it will return an empty context and the gRPC query will use
+	// the latest block height for querying.
 	res, err := e.queryClient.EthCall(rpctypes.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return nil, err
+	}
+	if len(res.VmError) > 0 {
+		if res.VmError == vm.ErrExecutionReverted.Error() {
+			return nil, evmtypes.NewExecErrorWithReason(res.Ret)
+		}
+		return nil, errors.New(res.VmError)
 	}
 
 	if res.Failed() {
@@ -567,18 +577,28 @@ func (e *PublicAPI) doCall(
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
-func (e *PublicAPI) EstimateGas(args evmtypes.TransactionArgs) (hexutil.Uint64, error) {
+func (e *PublicAPI) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error) {
 	e.logger.Debug("eth_estimateGas")
+
+	blockNr := rpctypes.EthPendingBlockNumber
+	if blockNrOptional != nil {
+		blockNr = *blockNrOptional
+	}
+
+	bz, err := json.Marshal(&args)
+	if err != nil {
+		return 0, err
+	}
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	data, err := e.doCall(args, 0)
+	res, err := e.queryClient.EstimateGas(rpctypes.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return 0, err
 	}
-
-	return hexutil.Uint64(data.GasUsed), nil
+	return hexutil.Uint64(res.Gas), nil
 }
 
 // GetBlockByHash returns the block identified by hash.
@@ -1016,7 +1036,8 @@ func (e *PublicAPI) setTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Trans
 	if args.Gas == nil {
 		// For backwards-compatibility reason, we try both input and data
 		// but input is preferred.
-		estimated, err := e.EstimateGas(args)
+		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))
+		estimated, err := e.EstimateGas(args, &blockNr)
 		if err != nil {
 			return args, err
 		}
