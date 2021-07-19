@@ -71,6 +71,12 @@ service Query {
   rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/eth_call";
   }
+
+  // EstimateGas implements the `eth_estimateGas` rpc api
+  rpc EstimateGas(EthCallRequest) returns (EstimateGasResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/estimate_gas";
+  }
+
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -251,4 +257,12 @@ message QueryStaticCallResponse {
 message EthCallRequest {
   // same json format as the json rpc api.
   bytes args = 1;
+  // the default gas cap to be used
+  uint64 gas_cap = 2;
+}
+
+// EstimateGasResponse defines EstimateGas response
+message EstimateGasResponse {
+  // the estimated gas
+  uint64 gas = 1;
 }
