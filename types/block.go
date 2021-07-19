@@ -7,10 +7,13 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 // NOTE: see https://github.com/cosmos/cosmos-sdk/issues/9514 for full reference
 func BlockGasLimit(ctx sdk.Context) uint64 {
 	blockGasMeter := ctx.BlockGasMeter()
-	if blockGasMeter != nil {
+
+	// Get the limit from the gas meter only if its not null and not an InfiniteGasMeter
+	if blockGasMeter != nil && blockGasMeter.Limit() != 0 {
 		return blockGasMeter.Limit()
 	}
 
+	// Otherwise get from the consensus parameters
 	cp := ctx.ConsensusParams()
 	if cp == nil || cp.Block == nil {
 		return 0

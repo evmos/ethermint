@@ -229,7 +229,12 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	validatorAddr := common.BytesToAddress(addr)
 
 	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
+
+	gasLimit, err := types.BlockMaxGasFromConsensusParams(types.ContextWithHeight(block.Height), e.clientCtx)
+	if err != nil {
+		e.logger.Error("failed to query consensus params", "error", err.Error())
+	}
+	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
 	return formattedBlock, nil
 }
 

@@ -67,7 +67,21 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 		case k.ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
-			return common.BytesToHash(k.ctx.HeaderHash())
+			// Note: The headerHash is only set at begin block, it will be nil in case of a query context
+			headerHash := k.ctx.HeaderHash()
+			if len(headerHash) != 0 {
+				return common.BytesToHash(headerHash)
+			}
+
+			// only recompute the hash if not set
+			contextBlockHeader := k.ctx.BlockHeader()
+			header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
+			if err != nil {
+				k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
+				return common.Hash{}
+			}
+			headerHash = header.Hash()
+			return common.BytesToHash(headerHash)
 
 		case k.ctx.BlockHeight() > h:
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
@@ -232,7 +246,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
 	if msg.Gas() < intrinsicGas {
 		// eth_estimateGas will check for this exact error
-		return nil, stacktrace.Propagate(core.ErrIntrinsicGas, "intrinsic gas too low")
+		return nil, stacktrace.Propagate(core.ErrIntrinsicGas, "apply message")
 	}
 	leftoverGas := msg.Gas() - intrinsicGas
 
