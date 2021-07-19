@@ -353,7 +353,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	var args types.CallArgs
+	var args types.TransactionArgs
 	err := json.Unmarshal(req.Args, &args)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -379,7 +379,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		}
 	}
 
-	// TODO Recap the highest gas limit with account's available balance.
+	// TODO: Recap the highest gas limit with account's available balance.
 
 	// Recap the highest gas allowance with specified gascap.
 	if req.GasCap != 0 && hi > req.GasCap {
@@ -395,6 +395,8 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	baseFee := k.GetBaseFee(ctx)
+
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (bool, *types.MsgEthereumTxResponse, error) {
 		args.Gas = (*hexutil.Uint64)(&gas)
@@ -404,7 +406,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		k.WithContext(sandboxCtx)
 
 		msg := args.ToMessage(req.GasCap)
-		evm := k.NewEVM(msg, ethCfg, params, coinbase)
+		evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee)
 		// pass true means execute in query mode, which don't do actual gas refund.
 		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
 
