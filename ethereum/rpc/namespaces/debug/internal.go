@@ -62,8 +62,7 @@ func (a *InternalAPI) CpuProfile(file string, nsec uint) error { // nolint: goli
 		return err
 	}
 	time.Sleep(time.Duration(nsec) * time.Second)
-	a.StopCPUProfile()
-	return nil
+	return a.StopCPUProfile()
 }
 
 // GcStats returns GC statistics.
