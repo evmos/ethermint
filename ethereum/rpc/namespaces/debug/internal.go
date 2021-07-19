@@ -103,7 +103,10 @@ func (a *InternalAPI) SetBlockProfileRate(rate int) {
 func (a *InternalAPI) Stacks() string {
 	a.logger.Debug("debug_stacks")
 	buf := new(bytes.Buffer)
-	pprof.Lookup("goroutine").WriteTo(buf, 2)
+	err := pprof.Lookup("goroutine").WriteTo(buf, 2)
+	if err != nil {
+		a.logger.Error("Failed to create stacks", "error", err.Error())
+	}
 	return buf.String()
 }
 
@@ -113,19 +116,19 @@ func (a *InternalAPI) StartCPUProfile(file string) error {
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
 
-	if isCPUProfileConfigurationActivated(a.ctx) {
+	switch {
+	case isCPUProfileConfigurationActivated(a.ctx):
 		a.logger.Debug("CPU profiling already in progress using the configuration file")
 		return errors.New("CPU profiling already in progress using the configuration file")
-	} else if a.handler.cpuFile != nil {
+	case a.handler.cpuFile != nil:
 		a.logger.Debug("CPU profiling already in progress")
 		return errors.New("CPU profiling already in progress")
-	} else {
+	default:
 		f, err := os.Create(ExpandHome(file))
 		if err != nil {
 			a.logger.Debug("failed to create CPU profile file", "error", err.Error())
 			return err
 		}
-
 		if err := pprof.StartCPUProfile(f); err != nil {
 			a.logger.Debug("cpu profiling already in use", "error", err.Error())
 			f.Close()
@@ -145,17 +148,18 @@ func (a *InternalAPI) StopCPUProfile() error {
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
 
-	if isCPUProfileConfigurationActivated(a.ctx) {
+	switch {
+	case isCPUProfileConfigurationActivated(a.ctx):
 		a.logger.Debug("CPU profiling already in progress using the configuration file")
 		return errors.New("CPU profiling already in progress using the configuration file")
-	} else if a.handler.cpuFile != nil {
+	case a.handler.cpuFile != nil:
 		a.logger.Info("Done writing CPU profile", "profile", a.handler.cpuFilename)
 		pprof.StopCPUProfile()
 		a.handler.cpuFile.Close()
 		a.handler.cpuFile = nil
 		a.handler.cpuFilename = ""
 		return nil
-	} else {
+	default:
 		a.logger.Debug("CPU profiling not in progress")
 		return errors.New("CPU profiling not in progress")
 	}
