@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/hd"
@@ -272,6 +273,12 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
+		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
+		return nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "hash", hash.Hex())
 		return nil
 	}
 
@@ -281,9 +288,15 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
-	e.logger.Debug("eth_getBlockTransactionCountByNumber", "block number", blockNum)
+	e.logger.Debug("eth_getBlockTransactionCountByNumber", "height", blockNum.Int64())
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil
 	}
 
@@ -525,10 +538,6 @@ func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNr rpctypes.BlockNumber, _
 		return []byte{}, err
 	}
 
-	if data.Reverted {
-		return []byte{}, evmtypes.NewExecErrorWithReason(data.Ret)
-	}
-
 	return (hexutil.Bytes)(data.Ret), nil
 }
 
@@ -547,6 +556,13 @@ func (e *PublicAPI) doCall(
 		return nil, err
 	}
 
+	if res.Failed() {
+		if res.VmError == vm.ErrExecutionReverted.Error() {
+			return nil, evmtypes.NewExecErrorWithReason(res.Ret)
+		}
+		return nil, errors.New(res.VmError)
+	}
+
 	return res, nil
 }
 
@@ -560,10 +576,6 @@ func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs) (hexutil.Uint64, error) 
 	data, err := e.doCall(args, 0)
 	if err != nil {
 		return 0, err
-	}
-
-	if data.Reverted {
-		return 0, evmtypes.NewExecErrorWithReason(data.Ret)
 	}
 
 	return hexutil.Uint64(data.GasUsed), nil
@@ -668,6 +680,11 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, nil
 	}
 
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "hash", hash.Hex())
+		return nil, nil
+	}
+
 	i := int(idx)
 	if i >= len(resBlock.Block.Txs) {
 		e.logger.Debug("block txs index out of bound", "index", i)
@@ -703,6 +720,11 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil, nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil, nil
 	}
 
@@ -781,7 +803,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	// Get the transaction result from the log
 	var status hexutil.Uint
-	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxReverted) {
+	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxFailed) {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)

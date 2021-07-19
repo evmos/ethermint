@@ -29,37 +29,49 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		IstanbulBlock:       getBlockValue(cc.IstanbulBlock),
 		MuirGlacierBlock:    getBlockValue(cc.MuirGlacierBlock),
 		BerlinBlock:         getBlockValue(cc.BerlinBlock),
-		// TODO(xlab): after upgrading ethereum to newer version, this should be set to YoloV2Block
-		YoloV3Block:   getBlockValue(cc.YoloV3Block),
-		EWASMBlock:    getBlockValue(cc.EWASMBlock),
-		CatalystBlock: getBlockValue(cc.CatalystBlock),
+		YoloV3Block:         getBlockValue(cc.YoloV3Block),
+		EWASMBlock:          getBlockValue(cc.EWASMBlock),
+		CatalystBlock:       getBlockValue(cc.CatalystBlock),
 	}
 }
 
 // DefaultChainConfig returns default evm parameters.
 func DefaultChainConfig() ChainConfig {
+	homesteadBlock := sdk.ZeroInt()
+	daoForkBlock := sdk.ZeroInt()
+	eip150Block := sdk.ZeroInt()
+	eip155Block := sdk.ZeroInt()
+	eip158Block := sdk.ZeroInt()
+	byzantiumBlock := sdk.ZeroInt()
+	constantinopleBlock := sdk.ZeroInt()
+	petersburgBlock := sdk.ZeroInt()
+	istanbulBlock := sdk.ZeroInt()
+	muirGlacierBlock := sdk.ZeroInt()
+	berlinBlock := sdk.ZeroInt()
+	yoloV3Block := sdk.ZeroInt()
+
 	return ChainConfig{
-		HomesteadBlock:      sdk.ZeroInt(),
-		DAOForkBlock:        sdk.ZeroInt(),
+		HomesteadBlock:      &homesteadBlock,
+		DAOForkBlock:        &daoForkBlock,
 		DAOForkSupport:      true,
-		EIP150Block:         sdk.ZeroInt(),
+		EIP150Block:         &eip150Block,
 		EIP150Hash:          common.Hash{}.String(),
-		EIP155Block:         sdk.ZeroInt(),
-		EIP158Block:         sdk.ZeroInt(),
-		ByzantiumBlock:      sdk.ZeroInt(),
-		ConstantinopleBlock: sdk.ZeroInt(),
-		PetersburgBlock:     sdk.ZeroInt(),
-		IstanbulBlock:       sdk.ZeroInt(),
-		MuirGlacierBlock:    sdk.ZeroInt(),
-		BerlinBlock:         sdk.ZeroInt(),
-		YoloV3Block:         sdk.ZeroInt(),
-		EWASMBlock:          sdk.NewInt(-1),
-		CatalystBlock:       sdk.NewInt(-1),
+		EIP155Block:         &eip155Block,
+		EIP158Block:         &eip158Block,
+		ByzantiumBlock:      &byzantiumBlock,
+		ConstantinopleBlock: &constantinopleBlock,
+		PetersburgBlock:     &petersburgBlock,
+		IstanbulBlock:       &istanbulBlock,
+		MuirGlacierBlock:    &muirGlacierBlock,
+		BerlinBlock:         &berlinBlock,
+		YoloV3Block:         &yoloV3Block,
+		EWASMBlock:          nil,
+		CatalystBlock:       nil,
 	}
 }
 
-func getBlockValue(block sdk.Int) *big.Int {
-	if block.IsNegative() {
+func getBlockValue(block *sdk.Int) *big.Int {
+	if block == nil || block.IsNegative() {
 		return nil
 	}
 
@@ -102,6 +114,9 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.MuirGlacierBlock); err != nil {
 		return sdkerrors.Wrap(err, "muirGlacierBlock")
 	}
+	if err := validateBlock(cc.BerlinBlock); err != nil {
+		return sdkerrors.Wrap(err, "berlinBlock")
+	}
 	if err := validateBlock(cc.YoloV3Block); err != nil {
 		return sdkerrors.Wrap(err, "yoloV3Block")
 	}
@@ -123,11 +138,15 @@ func validateHash(hex string) error {
 	return nil
 }
 
-func validateBlock(block sdk.Int) error {
-	if block == (sdk.Int{}) || block.BigInt() == nil {
+func validateBlock(block *sdk.Int) error {
+	// nil value means that the fork has not yet been applied
+	if block == nil {
+		return nil
+	}
+
+	if block.IsNegative() {
 		return sdkerrors.Wrapf(
-			ErrInvalidChainConfig,
-			"cannot use uninitialized or nil values for Int, set a negative Int value if you want to define a nil Ethereum block",
+			ErrInvalidChainConfig, "block value cannot be negative: %s", block,
 		)
 	}
 
