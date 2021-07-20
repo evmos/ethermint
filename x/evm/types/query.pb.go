@@ -782,7 +782,10 @@ func (m *QueryBlockLogsResponse) GetPagination() *query.PageResponse {
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
 type QueryBlockBloomRequest struct {
-	// height of the block which we want to query the bloom filter
+	// height of the block which we want to query the bloom filter.
+	// Tendermint always replace the query request header by the current context
+	// header, height cannot be extracted from there, so we need to explicitly pass
+	// it in parameter.
 	Height int64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
 }
 
