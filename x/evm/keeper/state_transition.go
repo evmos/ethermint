@@ -246,7 +246,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
 	if msg.Gas() < intrinsicGas {
 		// eth_estimateGas will check for this exact error
-		return nil, stacktrace.Propagate(core.ErrIntrinsicGas, "intrinsic gas too low")
+		return nil, stacktrace.Propagate(core.ErrIntrinsicGas, "apply message")
 	}
 	leftoverGas := msg.Gas() - intrinsicGas
 

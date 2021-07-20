@@ -32,6 +32,7 @@
     - [Msg](#ethermint.evm.v1alpha1.Msg)
   
 - [ethermint/evm/v1alpha1/query.proto](#ethermint/evm/v1alpha1/query.proto)
+    - [EstimateGasResponse](#ethermint.evm.v1alpha1.EstimateGasResponse)
     - [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest)
     - [QueryAccountRequest](#ethermint.evm.v1alpha1.QueryAccountRequest)
     - [QueryAccountResponse](#ethermint.evm.v1alpha1.QueryAccountResponse)
@@ -467,6 +468,21 @@ Msg defines the evm Msg service.
 
 
 
+<a name="ethermint.evm.v1alpha1.EstimateGasResponse"></a>
+
+### EstimateGasResponse
+EstimateGasResponse defines EstimateGas response
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `gas` | [uint64](#uint64) |  | the estimated gas |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.EthCallRequest"></a>
 
 ### EthCallRequest
@@ -476,6 +492,7 @@ EthCallRequest defines EthCall request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `args` | [bytes](#bytes) |  | same json format as the json rpc api. |
+| `gas_cap` | [uint64](#uint64) |  | the default gas cap to be used |
 
 
 
@@ -841,6 +858,7 @@ Query defines the gRPC querier service.
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
 | `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1alpha1/static_call|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1alpha1/eth_call|
+| `EstimateGas` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1alpha1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1alpha1/estimate_gas|
 
  <!-- end services -->
 
