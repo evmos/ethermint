@@ -241,7 +241,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if config.EVMRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
-		logger.Info("EVM RPC Connecting to Tendermint WebSocket at", tmRPCAddr+tmEndpoint)
+		logger.Info("EVM RPC Connecting to Tendermint WebSocket at", "address", tmRPCAddr+tmEndpoint)
 		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		rpcServer := ethrpc.NewServer()
