@@ -406,6 +406,10 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
+	if req.GasCap < ethparams.TxGas {
+		return nil, status.Error(codes.InvalidArgument, "gas cap cannot be lower than 21,000")
+	}
+
 	var args types.CallArgs
 	err := json.Unmarshal(req.Args, &args)
 	if err != nil {
