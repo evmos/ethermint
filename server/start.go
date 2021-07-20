@@ -40,6 +40,7 @@ import (
 
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/ethereum/rpc"
+	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 )
 
 // Tendermint full-node start flags
@@ -339,9 +340,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var cpuProfileCleanup func()
 
 	if cpuProfile := ctx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
-		f, err := os.Create(cpuProfile)
+		f, err := os.Create(ethdebug.ExpandHome(cpuProfile))
 		if err != nil {
-			logger.Error("failed to create CP profile", "error", err.Error())
+			logger.Error("failed to create CPU profile", "error", err.Error())
 			return err
 		}
 
