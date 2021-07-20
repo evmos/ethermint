@@ -222,7 +222,13 @@ message QueryBlockLogsResponse {
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest {}
+message QueryBlockBloomRequest {
+  // height of the block which we want to query the bloom filter.
+  // Tendermint always replace the query request header by the current context
+  // header, height cannot be extracted from there, so we need to explicitly pass
+  // it in parameter.
+  int64 height = 1;
+}
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.

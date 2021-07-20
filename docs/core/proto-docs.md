@@ -568,6 +568,11 @@ QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 method.
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  | height of the block which we want to query the bloom filter. Tendermint always replace the query request header by the current context header, height cannot be extracted from there, so we need to explicitly pass it in parameter. |
+
+
 
 
 
