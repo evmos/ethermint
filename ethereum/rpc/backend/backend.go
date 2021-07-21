@@ -73,7 +73,9 @@ func NewEVMBackend(logger log.Logger, clientCtx client.Context) *EVMBackend {
 	}
 }
 
-// BlockNumber returns the current block number in chain state.
+// BlockNumber returns the current block number in abci app state.
+// Because abci app state could lag behind from tendermint latest block, it's more stable
+// for the client to use the latest block number in abci app state than tendermint rpc.
 func (e *EVMBackend) BlockNumber() (hexutil.Uint64, error) {
 	// do any grpc query, ignore the response and use the returned block height
 	var header metadata.MD
@@ -87,12 +89,12 @@ func (e *EVMBackend) BlockNumber() (hexutil.Uint64, error) {
 		return 0, fmt.Errorf("unexpected '%s' gRPC header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, headerLen, 1)
 	}
 
-	height, err := strconv.FormatUint64(blockHeight[0], 10, 64)
+	height, err := strconv.ParseUint(blockHeightHeader[0], 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse block height: %w", err)
 	}
 
-	return height, nil
+	return hexutil.Uint64(height), nil
 }
 
 // GetBlockByNumber returns the block identified by number.
