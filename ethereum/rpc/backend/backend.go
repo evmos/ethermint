@@ -82,17 +82,17 @@ func (e *EVMBackend) BlockNumber() (hexutil.Uint64, error) {
 		return hexutil.Uint64(0), err
 	}
 
-	blockHeight := header.Get(grpctypes.GRPCBlockHeightHeader)
-	if l := len(blockHeight); l != 1 {
-		return 0, fmt.Errorf("unexpected '%s' header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, l, 1)
+	blockHeightHeader := header.Get(grpctypes.GRPCBlockHeightHeader)
+	if headerLen := len(blockHeightHeader); headerLen != 1 {
+		return 0, fmt.Errorf("unexpected '%s' gRPC header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, headerLen, 1)
 	}
 
-	nBlockHeight, err := strconv.Atoi(blockHeight[0])
+	height, err := strconv.FormatUint64(blockHeight[0], 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse block height: %w", err)
 	}
 
-	return hexutil.Uint64(nBlockHeight), nil
+	return height, nil
 }
 
 // GetBlockByNumber returns the block identified by number.
