@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"math/big"
 	"regexp"
+	"strconv"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -14,10 +16,12 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -69,15 +73,26 @@ func NewEVMBackend(logger log.Logger, clientCtx client.Context) *EVMBackend {
 	}
 }
 
-// BlockNumber returns the current block number.
+// BlockNumber returns the current block number in chain state.
 func (e *EVMBackend) BlockNumber() (hexutil.Uint64, error) {
-	// NOTE: using 0 as min and max height returns the blockchain info up to the latest block.
-	info, err := e.clientCtx.Client.BlockchainInfo(e.ctx, 0, 0)
+	// do any grpc query, ignore the response and use the returned block height
+	var header metadata.MD
+	_, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	if err != nil {
 		return hexutil.Uint64(0), err
 	}
 
-	return hexutil.Uint64(info.LastHeight), nil
+	blockHeight := header.Get(grpctypes.GRPCBlockHeightHeader)
+	if l := len(blockHeight); l != 1 {
+		return 0, fmt.Errorf("unexpected '%s' header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, l, 1)
+	}
+
+	nBlockHeight, err := strconv.Atoi(blockHeight[0])
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse block height: %w", err)
+	}
+
+	return hexutil.Uint64(nBlockHeight), nil
 }
 
 // GetBlockByNumber returns the block identified by number.
