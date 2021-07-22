@@ -74,6 +74,8 @@ type EVMRPCConfig struct {
 	RPCAddress string `mapstructure:"address"`
 	// Address defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
+	// EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
+	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
 }
 
 // Config defines the server's top level configuration. It includes the default app config
