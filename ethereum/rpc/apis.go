@@ -35,8 +35,8 @@ const (
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	backend := backend.NewEVMBackend(ctx.Logger, clientCtx)
-	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, backend, nonceLock)
+	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
+	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock)
 
 	return []rpc.API{
 		{
@@ -54,7 +54,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 		{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
-			Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, backend),
+			Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, evmBackend),
 			Public:    true,
 		},
 		{
