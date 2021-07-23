@@ -2,22 +2,22 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime/pprof"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"github.com/rs/cors"
+	"github.com/cosmos/cosmos-sdk/codec"
+
 	"github.com/spf13/cobra"
-	"github.com/xlab/closer"
 	"google.golang.org/grpc"
 
+	abciserver "github.com/tendermint/tendermint/abci/server"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
+	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
@@ -25,26 +25,28 @@ import (
 	"github.com/tendermint/tendermint/rpc/client/local"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/cosmos/cosmos-sdk/server/rosetta"
+	crgserver "github.com/cosmos/cosmos-sdk/server/rosetta/lib/server"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
-	sdkconfig "github.com/cosmos/cosmos-sdk/server/config"
+	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servergrpc "github.com/cosmos/cosmos-sdk/server/grpc"
 	"github.com/cosmos/cosmos-sdk/server/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethlog "github.com/ethereum/go-ethereum/log"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
-	"github.com/tharsis/ethermint/ethereum/rpc"
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 )
 
 // Tendermint full-node start flags
 const (
+	flagWithTendermint     = "with-tendermint"
 	flagAddress            = "address"
 	flagTransport          = "transport"
 	flagTraceStore         = "trace-store"
@@ -61,16 +63,20 @@ const (
 	FlagPruningKeepRecent = "pruning-keep-recent"
 	FlagPruningKeepEvery  = "pruning-keep-every"
 	FlagPruningInterval   = "pruning-interval"
+	FlagIndexEvents       = "index-events"
 	FlagMinRetainBlocks   = "min-retain-blocks"
 )
 
 // GRPC-related flags.
 const (
-	flagGRPCEnable    = "grpc.enable"
-	flagGRPCAddress   = "grpc.address"
-	flagEVMRPCEnable  = "evm-rpc.enable"
-	flagEVMRPCAddress = "evm-rpc.address"
-	flagEVMWSAddress  = "evm-rpc.ws-address"
+	flagGRPCEnable          = "grpc.enable"
+	flagGRPCAddress         = "grpc.address"
+	flagEVMRPCEnable        = "evm-rpc.enable"
+	flagEVMRPCAddress       = "evm-rpc.address"
+	flagEVMWSAddress        = "evm-rpc.ws-address"
+	flagEVMEnableUnsafeCORS = "evm-rpc.enable-unsafe-cors"
+	flagGRPCWebEnable       = "grpc-web.enable"
+	flagGRPCWebAddress      = "grpc-web.address"
 )
 
 // State sync-related flags.
@@ -122,17 +128,33 @@ which accepts a path for the resulting pprof file.
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			clientCtx := client.GetClientContextFromCmd(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			withTM, _ := cmd.Flags().GetBool(flagWithTendermint)
+			if !withTM {
+				serverCtx.Logger.Info("starting ABCI without Tendermint")
+				return startStandAlone(serverCtx, appCreator)
+			}
 
 			serverCtx.Logger.Info("starting ABCI with Tendermint")
 
 			// amino is needed here for backwards compatibility of REST routes
-			err := startInProcess(serverCtx, clientCtx, appCreator)
-			return err
+			err = startInProcess(serverCtx, clientCtx, appCreator)
+			errCode, ok := err.(server.ErrorCode)
+			if !ok {
+				return err
+			}
+
+			serverCtx.Logger.Debug(fmt.Sprintf("received quit signal: %d", errCode.Code))
+			return nil
 		},
 	}
 
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "The application home directory")
+	cmd.Flags().Bool(flagWithTendermint, true, "Run abci app embedded in-process with tendermint")
 	cmd.Flags().String(flagAddress, "tcp://0.0.0.0:26658", "Listen address")
 	cmd.Flags().String(flagTransport, "socket", "Transport protocol: socket, grpc")
 	cmd.Flags().String(flagTraceStore, "", "Enable KVStore tracing to an output file")
@@ -151,11 +173,15 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Uint64(FlagMinRetainBlocks, 0, "Minimum block height offset during ABCI commit to prune Tendermint blocks")
 
 	cmd.Flags().Bool(flagGRPCEnable, true, "Define if the gRPC server should be enabled")
-	cmd.Flags().String(flagGRPCAddress, config.DefaultGRPCAddress, "the gRPC server address to listen on")
+	cmd.Flags().String(flagGRPCAddress, serverconfig.DefaultGRPCAddress, "the gRPC server address to listen on")
+
+	cmd.Flags().Bool(flagGRPCWebEnable, true, "Define if the gRPC-Web server should be enabled. (Note: gRPC must also be enabled.)")
+	cmd.Flags().String(flagGRPCWebAddress, serverconfig.DefaultGRPCWebAddress, "The gRPC-Web server address to listen on")
 
 	cmd.Flags().Bool(flagEVMRPCEnable, true, "Define if the gRPC server should be enabled")
 	cmd.Flags().String(flagEVMRPCAddress, config.DefaultEVMAddress, "the EVM RPC server address to listen on")
 	cmd.Flags().String(flagEVMWSAddress, config.DefaultEVMWSAddress, "the EVM WS server address to listen on")
+	cmd.Flags().Bool(flagEVMEnableUnsafeCORS, false, "Define if the EVM RPC server should enabled CORS (unsafe - use it at your own risk)")
 
 	cmd.Flags().Uint64(FlagStateSyncSnapshotInterval, 0, "State sync snapshot interval")
 	cmd.Flags().Uint32(FlagStateSyncSnapshotKeepRecent, 2, "State sync snapshot to keep")
@@ -165,10 +191,70 @@ which accepts a path for the resulting pprof file.
 	return cmd
 }
 
+func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
+	addr := ctx.Viper.GetString(flagAddress)
+	transport := ctx.Viper.GetString(flagTransport)
+	home := ctx.Viper.GetString(flags.FlagHome)
+
+	db, err := openDB(home)
+	if err != nil {
+		return err
+	}
+
+	traceWriterFile := ctx.Viper.GetString(flagTraceStore)
+	traceWriter, err := openTraceWriter(traceWriterFile)
+	if err != nil {
+		return err
+	}
+
+	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
+
+	svr, err := abciserver.NewServer(addr, transport, app)
+	if err != nil {
+		return fmt.Errorf("error creating listener: %v", err)
+	}
+
+	svr.SetLogger(ctx.Logger.With("server", "abci"))
+
+	err = svr.Start()
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	defer func() {
+		if err = svr.Stop(); err != nil {
+			tmos.Exit(err.Error())
+		}
+	}()
+
+	// Wait for SIGINT or SIGTERM signal
+	return server.WaitForQuitSignals()
+}
+
+// legacyAminoCdc is used for the legacy REST API
 func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) error {
 	cfg := ctx.Config
 	home := cfg.RootDir
 	logger := ctx.Logger
+	var cpuProfileCleanup func()
+
+	if cpuProfile := ctx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
+		f, err := os.Create(ethdebug.ExpandHome(cpuProfile))
+		if err != nil {
+			return err
+		}
+
+		ctx.Logger.Info("starting CPU profiler", "profile", cpuProfile)
+		if err := pprof.StartCPUProfile(f); err != nil {
+			return err
+		}
+
+		cpuProfileCleanup = func() {
+			ctx.Logger.Info("stopping CPU profiler", "profile", cpuProfile)
+			pprof.StopCPUProfile()
+			f.Close()
+		}
+	}
 
 	traceWriterFile := ctx.Viper.GetString(flagTraceStore)
 	db, err := openDB(home)
@@ -181,6 +267,13 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if err != nil {
 		logger.Error("failed to open trace writer", "error", err.Error())
 		return err
+	}
+
+	config := config.GetConfig(ctx.Viper)
+	if err := config.ValidateBasic(); err != nil {
+		ctx.Logger.Error("WARNING: The minimum-gas-prices config in app.toml is set to the empty string. " +
+			"This defaults to 0 in the current version, but will error in the next version " +
+			"(SDK v0.44). Please explicitly put the desired minimum-gas-prices in your app.toml.")
 	}
 
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
@@ -200,7 +293,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		genDocProvider,
 		node.DefaultDBProvider,
 		node.DefaultMetricsProvider(cfg.Instrumentation),
-		ctx.Logger.With("module", "node"),
+		ctx.Logger.With("server", "node"),
 	)
 	if err != nil {
 		logger.Error("failed init node", "error", err.Error())
@@ -212,159 +305,138 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		return err
 	}
 
-	genDoc, err := genDocProvider()
-	if err != nil {
-		return err
+	// Add the tx service to the gRPC router. We only need to register this
+	// service if API or gRPC is enabled, and avoid doing so in the general
+	// case, because it spawns a new local tendermint RPC client.
+	if config.API.Enable || config.GRPC.Enable {
+		clientCtx = clientCtx.WithClient(local.New(tmNode))
+
+		app.RegisterTxService(clientCtx)
+		app.RegisterTendermintService(clientCtx)
 	}
 
-	clientCtx = clientCtx.
-		WithHomeDir(home).
-		WithChainID(genDoc.ChainID).
-		WithClient(local.New(tmNode))
-
 	var apiSrv *api.Server
-	config := config.GetConfig(ctx.Viper)
+	if config.API.Enable {
+		genDoc, err := genDocProvider()
+		if err != nil {
+			return err
+		}
 
-	var grpcSrv *grpc.Server
+		clientCtx := clientCtx.
+			WithHomeDir(home).
+			WithChainID(genDoc.ChainID)
+
+		apiSrv = api.New(clientCtx, ctx.Logger.With("server", "api"))
+		app.RegisterAPIRoutes(apiSrv, config.API)
+		errCh := make(chan error)
+
+		go func() {
+			if err := apiSrv.Start(config.Config); err != nil {
+				errCh <- err
+			}
+		}()
+
+		select {
+		case err := <-errCh:
+			return err
+		case <-time.After(types.ServerStartTime): // assume server started successfully
+		}
+	}
+
+	var (
+		grpcSrv    *grpc.Server
+		grpcWebSrv *http.Server
+	)
 	if config.GRPC.Enable {
 		grpcSrv, err = servergrpc.StartGRPCServer(clientCtx, app, config.GRPC.Address)
 		if err != nil {
-			logger.Error("failed to boot GRPC server", "error", err.Error())
 			return err
 		}
-	}
-
-	var httpSrv *http.Server
-	var httpSrvDone = make(chan struct{}, 1)
-	var wsSrv rpc.WebsocketsServer
-
-	ethlog.Root().SetHandler(ethlog.StdoutHandler)
-	if config.EVMRPC.Enable {
-		tmEndpoint := "/websocket"
-		tmRPCAddr := cfg.RPC.ListenAddress
-		logger.Info("EVM RPC Connecting to Tendermint WebSocket at", "address", tmRPCAddr+tmEndpoint)
-		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
-
-		rpcServer := ethrpc.NewServer()
-		apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient)
-
-		for _, api := range apis {
-			if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
-				logger.Error(
-					"failed to register service in EVM RPC namespace",
-					"namespace", api.Namespace,
-					"service", api.Service,
-				)
+		if config.GRPCWeb.Enable {
+			grpcWebSrv, err = servergrpc.StartGRPCWeb(grpcSrv, config.Config)
+			if err != nil {
+				ctx.Logger.Error("failed to start grpc-web http server: ", err)
 				return err
 			}
 		}
-
-		r := mux.NewRouter()
-		r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
-		if grpcSrv != nil {
-			grpcWeb := grpcweb.WrapServer(grpcSrv)
-			MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv))
-		}
-
-		handlerWithCors := cors.New(cors.Options{
-			AllowedOrigins: []string{"*"},
-			AllowedMethods: []string{
-				http.MethodHead,
-				http.MethodGet,
-				http.MethodPost,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-			},
-			AllowedHeaders:     []string{"*"},
-			AllowCredentials:   false,
-			OptionsPassthrough: false,
-		})
-
-		httpSrv = &http.Server{
-			Addr:    config.EVMRPC.RPCAddress,
-			Handler: handlerWithCors.Handler(r),
-		}
-
-		errCh := make(chan error)
-		go func() {
-			logger.Info("Starting EVM RPC server", "address", config.EVMRPC.RPCAddress)
-			if err := httpSrv.ListenAndServe(); err != nil {
-				if err == http.ErrServerClosed {
-					close(httpSrvDone)
-					return
-				}
-
-				logger.Error("failed to start EVM RPC server", "error", err.Error())
-				errCh <- err
-			}
-		}()
-
-		select {
-		case err := <-errCh:
-			logger.Error("failed to boot EVM RPC server", "error", err.Error())
-			return err
-		case <-time.After(1 * time.Second): // assume EVM RPC server started successfully
-		}
-
-		logger.Info("Starting EVM WebSocket server", "address", config.EVMRPC.WsAddress)
-		_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
-
-		// allocate separate WS connection to Tendermint
-		tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint)
-		wsSrv = rpc.NewWebsocketsServer(logger, tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
-		go wsSrv.Start()
 	}
 
-	sdkcfg := sdkconfig.GetConfig(ctx.Viper)
-	sdkcfg.API = config.API
-	if sdkcfg.API.Enable {
-		apiSrv = api.New(clientCtx, ctx.Logger.With("module", "api-server"))
-		app.RegisterAPIRoutes(apiSrv, sdkcfg.API)
-		errCh := make(chan error)
-
-		go func() {
-			if err := apiSrv.Start(sdkcfg); err != nil {
-				errCh <- err
-			}
-		}()
-
-		select {
-		case err := <-errCh:
-			logger.Error("failed to boot API server", "error", err.Error())
-			return err
-		case <-time.After(5 * time.Second): // assume server started successfully
+	var rosettaSrv crgserver.Server
+	if config.Rosetta.Enable {
+		offlineMode := config.Rosetta.Offline
+		if !config.GRPC.Enable { // If GRPC is not enabled rosetta cannot work in online mode, so it works in offline mode.
+			offlineMode = true
 		}
-	}
 
-	var cpuProfileCleanup func()
+		conf := &rosetta.Config{
+			Blockchain:    config.Rosetta.Blockchain,
+			Network:       config.Rosetta.Network,
+			TendermintRPC: ctx.Config.RPC.ListenAddress,
+			GRPCEndpoint:  config.GRPC.Address,
+			Addr:          config.Rosetta.Address,
+			Retries:       config.Rosetta.Retries,
+			Offline:       offlineMode,
+		}
+		conf.WithCodec(clientCtx.InterfaceRegistry, clientCtx.Codec.(*codec.ProtoCodec))
 
-	if cpuProfile := ctx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
-		f, err := os.Create(ethdebug.ExpandHome(cpuProfile))
+		rosettaSrv, err = rosetta.ServerFromConfig(conf)
 		if err != nil {
-			logger.Error("failed to create CPU profile", "error", err.Error())
 			return err
 		}
+		errCh := make(chan error)
+		go func() {
+			if err := rosettaSrv.Start(); err != nil {
+				errCh <- err
+			}
+		}()
 
-		logger.Info("starting CPU profiler", "profile", cpuProfile)
-		if err := pprof.StartCPUProfile(f); err != nil {
+		select {
+		case err := <-errCh:
 			return err
-		}
-
-		cpuProfileCleanup = func() {
-			logger.Info("stopping CPU profiler", "profile", cpuProfile)
-			pprof.StopCPUProfile()
-			f.Close()
+		case <-time.After(types.ServerStartTime): // assume server started successfully
 		}
 	}
 
-	closer.Bind(func() {
+	ethlog.Root().SetHandler(ethlog.StdoutHandler)
+
+	var (
+		httpSrv     *http.Server
+		httpSrvDone chan struct{}
+	)
+	if config.EVMRPC.Enable {
+		genDoc, err := genDocProvider()
+		if err != nil {
+			return err
+		}
+
+		clientCtx := clientCtx.WithChainID(genDoc.ChainID)
+
+		tmEndpoint := "/websocket"
+		tmRPCAddr := cfg.RPC.ListenAddress
+		httpSrv, httpSrvDone, err = StartEVMRPC(ctx, clientCtx, tmRPCAddr, tmEndpoint, config)
+		if err != nil {
+			return err
+		}
+	}
+
+	defer func() {
 		if tmNode.IsRunning() {
 			_ = tmNode.Stop()
 		}
 
 		if cpuProfileCleanup != nil {
 			cpuProfileCleanup()
+		}
+
+		if apiSrv != nil {
+			_ = apiSrv.Close()
+		}
+
+		if grpcSrv != nil {
+			grpcSrv.Stop()
+			if grpcWebSrv != nil {
+				grpcWebSrv.Close()
+			}
 		}
 
 		if httpSrv != nil {
@@ -382,16 +454,11 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			}
 		}
 
-		if grpcSrv != nil {
-			grpcSrv.Stop()
-		}
-
 		logger.Info("Bye!")
-	})
+	}()
 
-	closer.Hold()
-
-	return nil
+	// Wait for SIGINT or SIGTERM signal
+	return server.WaitForQuitSignals()
 }
 
 func openDB(rootDir string) (dbm.DB, error) {
