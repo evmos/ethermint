@@ -2,17 +2,24 @@
 KEY="mykey"
 CHAINID="ethermint-2"
 MONIKER="localtestnet"
+KEYRING="test"
+KEYALGO="eth_secp256k1"
+LOGLEVEL="info"
+# to trace evm
+#TRACE="--trace"
+TRACE=""
+
 
 # remove existing daemon and client
 rm -rf ~/.ethermintd*
 
 make install
 
-ethermintd config keyring-backend test
+ethermintd config keyring-backend $KEYRING
 ethermintd config chain-id $CHAINID
 
 # if $KEY exists it should be deleted
-ethermintd keys add $KEY --keyring-backend test --algo "eth_secp256k1"
+ethermintd keys add $KEY --keyring-backend $KEYRING --algo $KEYALGO
 
 # Set moniker and chain-id for Ethermint (Moniker can be anything, chain-id must be an integer)
 ethermintd init $MONIKER --chain-id $CHAINID 
@@ -25,6 +32,9 @@ cat $HOME/.ethermintd/config/genesis.json | jq '.app_state["mint"]["params"]["mi
 
 # increase block time (?)
 cat $HOME/.ethermintd/config/genesis.json | jq '.consensus_params["block"]["time_iota_ms"]="30000"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
+
+# Set gas limit in genesis
+cat $HOME/.ethermintd/config/genesis.json | jq '.consensus_params["block"]["max_gas"]="10000000"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
 
 # disable produce empty block
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -58,10 +68,10 @@ if [[ $1 == "pending" ]]; then
 fi
 
 # Allocate genesis accounts (cosmos formatted addresses)
-ethermintd add-genesis-account $KEY 100000000000000000000000000aphoton --keyring-backend test
+ethermintd add-genesis-account $KEY 100000000000000000000000000aphoton --keyring-backend $KEYRING
 
 # Sign genesis transaction
-ethermintd gentx $KEY 1000000000000000000000aphoton --keyring-backend test --chain-id $CHAINID
+ethermintd gentx $KEY 1000000000000000000000aphoton --keyring-backend $KEYRING --chain-id $CHAINID
 
 # Collect genesis tx
 ethermintd collect-gentxs
@@ -74,4 +84,4 @@ if [[ $1 == "pending" ]]; then
 fi
 
 # Start the node (remove the --pruning=nothing flag if historical queries are not needed)
-ethermintd start --pruning=nothing --trace --log_level info --minimum-gas-prices=0.0001aphoton
+ethermintd start --pruning=nothing $TRACE --log_level $LOGLEVEL --minimum-gas-prices=0.0001aphoton

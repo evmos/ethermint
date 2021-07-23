@@ -29,7 +29,7 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 
 	// Gas costs are handled within msg handler so costs should be ignored
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-	k.WithContext(ctx)
+	k.WithContext(infCtx)
 
 	k.SetBlockBloom(infCtx, req.Height, ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes()))
 	k.WithContext(ctx)
