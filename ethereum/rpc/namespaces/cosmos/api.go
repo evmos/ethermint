@@ -2,6 +2,7 @@ package cosmos
 
 import (
 	"encoding/hex"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -77,12 +78,42 @@ func (api *WalletConnectAPI) GetAccounts() ([]AccountsResponse, error) {
 }
 
 type SignDirectRequest struct {
-	SignerAddress sdk.AccAddress  `json:"signerAddress"`
-	SignDoc       txtypes.SignDoc `json:"signDoc"`
+	SignerAddress sdk.AccAddress `json:"signerAddress"`
+	SignDoc       SignDoc        `json:"signDoc"`
 }
 type SignDirectResponse struct {
-	Signature string          `json:"signature"`
-	SignDoc   txtypes.SignDoc `json:"signDoc"`
+	Signature string  `json:"signature"`
+	SignDoc   SignDoc `json:"signDoc"`
+}
+
+// SignDoc -> Convert to txtypes.SignDoc
+type SignDoc struct {
+	// BodyBytes is protobuf serialization of a TxBody that matches the
+	// representation in TxRaw.
+	BodyBytes string `json:"bodyBytes,omitempty"`
+	// AuthInfoBytes is a protobuf serialization of an AuthInfo that matches the
+	// representation in TxRaw.
+	AuthInfoBytes string `json:"authInfoBytes,omitempty"`
+	// ChainId is the unique identifier of the chain this transaction targets.
+	// It prevents signed transactions from being used on another chain by an
+	// attacker
+	ChainId string `json:"chainId,omitempty"`
+	// AccountNumber is the account number of the account in state
+	AccountNumber string `json:"accountNumber,omitempty"`
+}
+
+func (api *WalletConnectAPI) convertToTxType(signDoc SignDoc) (txtypes.SignDoc, error) {
+	accountNumber, err := strconv.ParseUint(signDoc.AccountNumber, 10, 64)
+	if err != nil {
+		api.logger.Error("failed to parse account number: %s, err: %s", signDoc.AccountNumber, err.Error())
+		return txtypes.SignDoc{}, err
+	}
+	return txtypes.SignDoc{
+		BodyBytes:     []byte(signDoc.BodyBytes),
+		AuthInfoBytes: []byte(signDoc.AuthInfoBytes),
+		ChainId:       signDoc.ChainId,
+		AccountNumber: accountNumber,
+	}, nil
 }
 
 // This method returns a signature for the provided document to be signed
@@ -96,8 +127,12 @@ func (api *WalletConnectAPI) SignDirect(req SignDirectRequest) (SignDirectRespon
 		api.logger.Error("failed to find key in keyring", "address", req.SignerAddress.String())
 		return SignDirectResponse{}, err
 	}
-
-	signBytes, err := req.SignDoc.Marshal()
+	signDoc, err := api.convertToTxType(req.SignDoc)
+	if err != nil {
+		api.logger.Error("failed to convert signDoc to txType")
+		return SignDirectResponse{}, err
+	}
+	signBytes, err := signDoc.Marshal()
 	if err != nil {
 		api.logger.Error("failed to unpack tx data")
 		return SignDirectResponse{}, err
@@ -109,9 +144,7 @@ func (api *WalletConnectAPI) SignDirect(req SignDirectRequest) (SignDirectRespon
 	}
 	return SignDirectResponse{
 		Signature: hex.EncodeToString(signature),
-		SignDoc: txtypes.SignDoc{
-			ChainId: "test",
-		},
+		SignDoc:   req.SignDoc,
 	}, nil
 }
 
