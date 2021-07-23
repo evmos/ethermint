@@ -6,8 +6,8 @@ KEYRING="test"
 KEYALGO="eth_secp256k1"
 LOGLEVEL="info"
 # to trace evm
-#TRACE="--trace"
-TRACE=""
+TRACE="--trace"
+# TRACE=""
 
 
 # remove existing daemon and client

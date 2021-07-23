@@ -6,6 +6,8 @@ import (
 
 	"github.com/palantir/stacktrace"
 
+	tmlog "github.com/tendermint/tendermint/libs/log"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -14,7 +16,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	mintlog "github.com/tharsis/ethermint/log"
 )
 
 const (
@@ -50,7 +51,7 @@ func NewAnteHandler(
 	) (newCtx sdk.Context, err error) {
 		var anteHandler sdk.AnteHandler
 
-		defer Recover(&err)
+		defer Recover(ctx.Logger(), &err)
 
 		txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx)
 		if ok {
@@ -116,15 +117,21 @@ func NewAnteHandler(
 	}
 }
 
-func Recover(err *error) {
+func Recover(logger tmlog.Logger, err *error) {
 	if r := recover(); r != nil {
 		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
-			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("ante handler panicked with an error %v", e))
-			(*mintlog.EthermintLoggerInstance.TendermintLogger).Debug(string(debug.Stack()))
+			logger.Error(
+				"ante handler panicked",
+				"error", e,
+				"stack trace", string(debug.Stack()),
+			)
 		} else {
-			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("%v", r))
+			logger.Error(
+				"ante handler panicked",
+				"recover", fmt.Sprintf("%v", r),
+			)
 		}
 	}
 }

@@ -9,7 +9,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	mintlog "github.com/tharsis/ethermint/log"
 )
 
 var EmptyCodeHash = crypto.Keccak256(nil)
@@ -18,7 +17,6 @@ var EmptyCodeHash = crypto.Keccak256(nil)
 func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 	var txMsgData sdk.TxMsgData
 	if err := proto.Unmarshal(in, &txMsgData); err != nil {
-		(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("failed to unmarshal TxMsgData %v", err))
 		return nil, err
 	}
 

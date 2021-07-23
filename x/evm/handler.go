@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	mintlog "github.com/tharsis/ethermint/log"
+	tmlog "github.com/tendermint/tendermint/libs/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -15,7 +15,7 @@ import (
 // NewHandler returns a handler for Ethermint type messages.
 func NewHandler(server types.MsgServer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (result *sdk.Result, err error) {
-		defer Recover(&err)
+		defer Recover(ctx.Logger(), &err)
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
@@ -32,16 +32,21 @@ func NewHandler(server types.MsgServer) sdk.Handler {
 	}
 }
 
-func Recover(err *error) {
+func Recover(logger tmlog.Logger, err *error) {
 	if r := recover(); r != nil {
 		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
-
-			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("evm msg handler panicked with an error %v", e))
-			(*mintlog.EthermintLoggerInstance.TendermintLogger).Debug(string(debug.Stack()))
+			logger.Error(
+				"message handler panicked",
+				"error", e,
+				"stack trace", string(debug.Stack()),
+			)
 		} else {
-			(*mintlog.EthermintLoggerInstance.TendermintLogger).Error(fmt.Sprintf("%v", r))
+			logger.Error(
+				"message handler panicked",
+				"recover", fmt.Sprintf("%v", r),
+			)
 		}
 	}
 }

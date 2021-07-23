@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -43,7 +42,7 @@ import (
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/ethereum/rpc"
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
-	mintlog "github.com/tharsis/ethermint/log"
+	"github.com/tharsis/ethermint/log"
 )
 
 // Tendermint full-node start flags
@@ -173,10 +172,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	home := cfg.RootDir
 	logger := ctx.Logger
 
-	mintlog.EthermintLoggerInstance.TendermintLogger = &logger
-
-	(*mintlog.EthermintLoggerInstance.TendermintLogger).Info(fmt.Sprintf("startInProcess ~~~~~~~~ %s", ctx.Config.LogLevel))
-
 	traceWriterFile := ctx.Viper.GetString(flagTraceStore)
 	db, err := openDB(home)
 	if err != nil {
@@ -245,15 +240,13 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var httpSrvDone = make(chan struct{}, 1)
 	var wsSrv rpc.WebsocketsServer
 
-	if ctx.Config.LogLevel == "debug" {
-		ethlog.Root().SetHandler(ethlog.StdoutHandler)
-	}
+	ethlog.Root().SetHandler(log.NewHandler(ctx.Logger))
 
 	if config.EVMRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
 		logger.Info("EVM RPC Connecting to Tendermint WebSocket at", "address", tmRPCAddr+tmEndpoint)
-		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
+		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
 
 		rpcServer := ethrpc.NewServer()
 		apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient)
@@ -273,7 +266,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
 		if grpcSrv != nil {
 			grpcWeb := grpcweb.WrapServer(grpcSrv)
-			MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv))
+			MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv), ctx.Logger)
 		}
 
 		handlerWithCors := cors.New(cors.Options{
@@ -321,7 +314,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
 
 		// allocate separate WS connection to Tendermint
-		tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint)
+		tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
 		wsSrv = rpc.NewWebsocketsServer(logger, tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
 		go wsSrv.Start()
 	}

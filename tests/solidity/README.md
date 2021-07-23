@@ -56,7 +56,7 @@ The [`init-test-node.sh`](./init-test-node.sh) script sets up ethermint with the
 
 Each with roughly 100 ETH available (1e18 photon).
 
-Running `ethermintd list keys` should output:
+Running `ethermintd keys list --keyring-backend=test` should output:
 
 ```json
 [
