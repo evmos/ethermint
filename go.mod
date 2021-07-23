@@ -1,6 +1,6 @@
 module github.com/tharsis/ethermint
 
-go 1.15
+go 1.16
 
 require (
 	github.com/armon/go-metrics v0.3.9

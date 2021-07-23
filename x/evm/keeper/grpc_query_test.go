@@ -1,13 +1,19 @@
 package keeper_test
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"google.golang.org/grpc/metadata"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,6 +26,29 @@ import (
 
 //Not valid Ethereum address
 const invalidAddress = "0x0000"
+
+var (
+	//go:embed ERC20Contract.json
+	compiledContractJSON []byte
+	contractBin          []byte
+	contractABI          abi.ABI
+)
+
+func init() {
+	var tmp struct {
+		Abi string
+		Bin string
+	}
+	err := json.Unmarshal(compiledContractJSON, &tmp)
+	if err != nil {
+		panic(err)
+	}
+	contractBin = common.FromHex(tmp.Bin)
+	err = json.Unmarshal([]byte(tmp.Abi), &contractABI)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func (suite *KeeperTestSuite) TestQueryAccount() {
 	var (
@@ -680,6 +709,125 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 				suite.Require().NotNil(res)
 
 				suite.Require().Equal(expAccount, res)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+// DeployTestContract deploy a test erc20 contract and returns the contract address
+func (suite *KeeperTestSuite) deployTestContract(owner common.Address, supply *big.Int) common.Address {
+	ctx := sdk.WrapSDKContext(suite.ctx)
+	chainID := suite.app.EvmKeeper.ChainID()
+
+	ctorArgs, err := contractABI.Pack("", owner, supply)
+	suite.Require().NoError(err)
+
+	data := append(contractBin, ctorArgs...)
+	args, err := json.Marshal(&types.CallArgs{
+		From: &suite.address,
+		Data: (*hexutil.Bytes)(&data),
+	})
+	suite.Require().NoError(err)
+
+	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
+		Args:   args,
+		GasCap: uint64(ethermint.DefaultRPCGasLimit),
+	})
+	suite.Require().NoError(err)
+
+	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
+	erc20DeployTx := types.NewTxContract(
+		chainID,
+		nonce,
+		nil,     // amount
+		res.Gas, // gasLimit
+		nil,     // gasPrice
+		data,    // input
+		nil,     // accesses
+	)
+	erc20DeployTx.From = suite.address.Hex()
+	err = erc20DeployTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
+	suite.Require().NoError(err)
+	rsp, err := suite.app.EvmKeeper.EthereumTx(ctx, erc20DeployTx)
+	suite.Require().NoError(err)
+	suite.Require().Empty(rsp.VmError)
+	return crypto.CreateAddress(suite.address, nonce)
+}
+
+func (suite *KeeperTestSuite) TestEstimateGas() {
+	ctx := sdk.WrapSDKContext(suite.ctx)
+	gasHelper := hexutil.Uint64(20000)
+
+	var (
+		args   types.CallArgs
+		gasCap uint64
+	)
+	testCases := []struct {
+		msg      string
+		malleate func()
+		expPass  bool
+		expGas   uint64
+	}{
+		// should success, because transfer value is zero
+		{"default args", func() {
+			args = types.CallArgs{To: &common.Address{}}
+		}, true, 21000},
+		// should fail, because the default From address(zero address) don't have fund
+		{"not enough balance", func() {
+			args = types.CallArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
+		}, false, 0},
+		// should success, enough balance now
+		{"enough balance", func() {
+			args = types.CallArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
+		}, false, 0},
+		// should success, because gas limit lower than 21000 is ignored
+		{"gas exceed allowance", func() {
+			args = types.CallArgs{To: &common.Address{}, Gas: &gasHelper}
+		}, true, 21000},
+		// should fail, invalid gas cap
+		{"gas exceed global allowance", func() {
+			args = types.CallArgs{To: &common.Address{}}
+			gasCap = 20000
+		}, false, 0},
+		// estimate gas of an erc20 contract deployment, the exact gas number is checked with geth
+		{"contract deployment", func() {
+			ctorArgs, err := contractABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+			suite.Require().NoError(err)
+			data := append(contractBin, ctorArgs...)
+			args = types.CallArgs{
+				From: &suite.address,
+				Data: (*hexutil.Bytes)(&data),
+			}
+		}, true, 1144643},
+		// estimate gas of an erc20 transfer, the exact gas number is checked with geth
+		{"erc20 transfer", func() {
+			contractAddr := suite.deployTestContract(suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+			suite.Commit()
+			transferData, err := contractABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
+			suite.Require().NoError(err)
+			args = types.CallArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
+		}, true, 51880},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.SetupTest()
+			gasCap = ethermint.DefaultRPCGasLimit
+			tc.malleate()
+
+			args, err := json.Marshal(&args)
+			suite.Require().NoError(err)
+			req := types.EthCallRequest{
+				Args:   args,
+				GasCap: gasCap,
+			}
+
+			rsp, err := suite.queryClient.EstimateGas(ctx, &req)
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().Equal(tc.expGas, rsp.Gas)
 			} else {
 				suite.Require().Error(err)
 			}
