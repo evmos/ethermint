@@ -10,13 +10,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
-// API is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
+// API is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec
 type WalletConnectAPI struct {
 	clientCtx client.Context
 	logger    log.Logger
 }
 
-// NewAPI creates an instance of the public cosmos WalletConnect API v2.
+// NewAPI creates an instance of the public cosmos WalletConnect API v2
 func NewAPI(clientCtx client.Context, logger log.Logger) *WalletConnectAPI {
 	return &WalletConnectAPI{
 		clientCtx: clientCtx,
@@ -24,37 +24,14 @@ func NewAPI(clientCtx client.Context, logger log.Logger) *WalletConnectAPI {
 	}
 }
 
-// This method returns an array of key pairs available to sign from the wallet
-// mapped with an associated algorithm and address on the blockchain.
-
-// //
-// // Request
-// {
-// 	"id": 1,
-// 	"jsonrpc": "2.0",
-// 	"method": "cosmos_getAccounts",
-// 	"params": {}
-//   }
-
-//   // Result
-//   {
-// 	"id": 1,
-// 	"jsonrpc": "2.0",
-// 	"result":  [
-// 		{
-// 		  "algo": "secp256k1",
-// 		  "address": "cosmos1sguafvgmel6f880ryvq8efh9522p8zvmrzlcrq",
-// 		  "pubkey": "0204848ceb8eafdf754251c2391466744e5a85529ec81ae6b60a187a90a9406396"
-// 		}
-// 	  ]
-//   }
-
 type AccountsResponse struct {
 	Algo    string `json:"algo"`
 	Address string `json:"address"`
 	PubKey  string `json:"pubkey"`
 }
 
+// GetAccounts returns an array of key pairs available to sign from the wallet
+// mapped with an associated algorithm and address on the blockchain
 func (api *WalletConnectAPI) GetAccounts() ([]AccountsResponse, error) {
 	api.logger.Debug("cosmos_getAccounts")
 	accs := []AccountsResponse{}
@@ -77,17 +54,8 @@ func (api *WalletConnectAPI) GetAccounts() ([]AccountsResponse, error) {
 	return accs, nil
 }
 
-type SignDirectRequest struct {
-	SignerAddress sdk.AccAddress `json:"signerAddress"`
-	SignDoc       SignDoc        `json:"signDoc"`
-}
-type SignDirectResponse struct {
-	Signature string  `json:"signature"`
-	SignDoc   SignDoc `json:"signDoc"`
-}
-
-// SignDoc -> Convert to txtypes.SignDoc
-type SignDoc struct {
+// SignDocDirect gets converted to txtypes.SignDoc
+type SignDocDirect struct {
 	// BodyBytes is protobuf serialization of a TxBody that matches the
 	// representation in TxRaw.
 	BodyBytes string `json:"bodyBytes,omitempty"`
@@ -102,7 +70,7 @@ type SignDoc struct {
 	AccountNumber string `json:"accountNumber,omitempty"`
 }
 
-func (api *WalletConnectAPI) convertToTxType(signDoc SignDoc) (txtypes.SignDoc, error) {
+func (api *WalletConnectAPI) convertToTxType(signDoc SignDocDirect) (txtypes.SignDoc, error) {
 	accountNumber, err := strconv.ParseUint(signDoc.AccountNumber, 10, 64)
 	if err != nil {
 		api.logger.Error("failed to parse account number: %s, err: %s", signDoc.AccountNumber, err.Error())
@@ -114,6 +82,15 @@ func (api *WalletConnectAPI) convertToTxType(signDoc SignDoc) (txtypes.SignDoc, 
 		ChainId:       signDoc.ChainId,
 		AccountNumber: accountNumber,
 	}, nil
+}
+
+type SignDirectRequest struct {
+	SignerAddress sdk.AccAddress `json:"signerAddress"`
+	SignDoc       SignDocDirect  `json:"signDoc"`
+}
+type SignDirectResponse struct {
+	Signature string        `json:"signature"`
+	SignDoc   SignDocDirect `json:"signDoc"`
 }
 
 // This method returns a signature for the provided document to be signed
@@ -146,6 +123,40 @@ func (api *WalletConnectAPI) SignDirect(req SignDirectRequest) (SignDirectRespon
 		Signature: hex.EncodeToString(signature),
 		SignDoc:   req.SignDoc,
 	}, nil
+}
+
+// SignDocAmino gets converted to txtypes.SignDoc
+type SignDocAmino struct {
+}
+
+func (api *WalletConnectAPI) convertToTxType(signDoc SignDocDirect) (txtypes.SignDoc, error) {
+	accountNumber, err := strconv.ParseUint(signDoc.AccountNumber, 10, 64)
+	if err != nil {
+		api.logger.Error("failed to parse account number: %s, err: %s", signDoc.AccountNumber, err.Error())
+		return txtypes.SignDoc{}, err
+	}
+	return txtypes.SignDoc{
+		BodyBytes:     []byte(signDoc.BodyBytes),
+		AuthInfoBytes: []byte(signDoc.AuthInfoBytes),
+		ChainId:       signDoc.ChainId,
+		AccountNumber: accountNumber,
+	}, nil
+}
+
+type SignAminoRequest struct {
+	SignerAddress sdk.AccAddress `json:"signerAddress"`
+	SignDoc       SignDocAmino   `json:"signDoc"`
+}
+type SignAminoResponse struct {
+	Signature string       `json:"signature"`
+	SignDoc   SignDocAmino `json:"signDoc"`
+}
+
+// This method returns a signature for the provided document to be signed
+// targetting the requested signer address corresponding to the keypair returned
+// by the account data.
+func (api *WalletConnectAPI) SignAmino(req SignAminoRequest) (SignAminoResponse, error) {
+
 }
 
 // // Sign signs the provided data using the private key of address via Geth's signature standard.
