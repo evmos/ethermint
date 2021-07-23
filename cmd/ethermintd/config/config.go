@@ -57,23 +57,26 @@ func DefaultConfig() *Config {
 	}
 }
 
-// DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
-func DefaultEVMConfig() *EVMRPCConfig {
-	return &EVMRPCConfig{
-		Enable:     true,
-		RPCAddress: DefaultEVMAddress,
-		WsAddress:  DefaultEVMWSAddress,
-	}
-}
-
 // EVMRPCConfig defines configuration for the EVM RPC server.
 type EVMRPCConfig struct {
 	// Enable defines if the EVM RPC server should be enabled.
 	Enable bool `mapstructure:"enable"`
+	// Api defines the api namespaces that should be enabled
+	API string `mapstructure:"api"`
 	// Address defines the HTTP server to listen on
 	RPCAddress string `mapstructure:"address"`
 	// Address defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
+}
+
+// DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
+func DefaultEVMConfig() *EVMRPCConfig {
+	return &EVMRPCConfig{
+		Enable:     true,
+		API:        "",
+		RPCAddress: DefaultEVMAddress,
+		WsAddress:  DefaultEVMWSAddress,
+	}
 }
 
 // Config defines the server's top level configuration. It includes the default app config
@@ -93,6 +96,7 @@ func GetConfig(v *viper.Viper) Config {
 		Config: cfg,
 		EVMRPC: EVMRPCConfig{
 			Enable:     v.GetBool("evm-rpc.enable"),
+			API:        v.GetString("evm-rpc.api"),
 			RPCAddress: v.GetString("evm-rpc.address"),
 			WsAddress:  v.GetString("evm-rpc.ws-address"),
 		},

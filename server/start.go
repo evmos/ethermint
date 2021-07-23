@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -69,6 +70,7 @@ const (
 	flagGRPCEnable    = "grpc.enable"
 	flagGRPCAddress   = "grpc.address"
 	flagEVMRPCEnable  = "evm-rpc.enable"
+	flagEVMRPCAPI     = "evm-rpc.api"
 	flagEVMRPCAddress = "evm-rpc.address"
 	flagEVMWSAddress  = "evm-rpc.ws-address"
 )
@@ -151,6 +153,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Uint64(FlagMinRetainBlocks, 0, "Minimum block height offset during ABCI commit to prune Tendermint blocks")
 
 	cmd.Flags().Bool(flagGRPCEnable, true, "Define if the gRPC server should be enabled")
+	cmd.Flags().String(flagEVMRPCAPI, "", "Defined which gRPC namespace should be enabled")
 	cmd.Flags().String(flagGRPCAddress, config.DefaultGRPCAddress, "the gRPC server address to listen on")
 
 	cmd.Flags().Bool(flagEVMRPCEnable, true, "Define if the gRPC server should be enabled")
@@ -246,7 +249,12 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
 
 		rpcServer := ethrpc.NewServer()
-		apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient)
+
+		rpcApi := config.EVMRPC.API
+		rpcApi = strings.ReplaceAll(rpcApi, " ", "")
+		rpcApiArr := strings.Split(rpcApi, ",")
+
+		apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient, rpcApiArr)
 
 		for _, api := range apis {
 			if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {

@@ -5,7 +5,6 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
@@ -33,53 +32,80 @@ const (
 )
 
 // GetRPCAPIs returns the list of all APIs
-func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
+func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedApis []string) []rpc.API {
 	nonceLock := new(types.AddrLocker)
 	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
 	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock)
 
-	return []rpc.API{
-		{
-			Namespace: Web3Namespace,
-			Version:   apiVersion,
-			Service:   web3.NewPublicAPI(),
-			Public:    true,
-		},
-		{
+	var apis []rpc.API
+
+	//Eth apis will be set by default
+	apis = append(apis,
+		rpc.API{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
 			Service:   ethAPI,
 			Public:    true,
 		},
-		{
+	)
+	apis = append(apis,
+		rpc.API{
 			Namespace: EthNamespace,
 			Version:   apiVersion,
 			Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, evmBackend),
 			Public:    true,
 		},
-		{
-			Namespace: NetNamespace,
-			Version:   apiVersion,
-			Service:   net.NewPublicAPI(clientCtx),
-			Public:    true,
-		},
-		{
-			Namespace: PersonalNamespace,
-			Version:   apiVersion,
-			Service:   personal.NewAPI(ctx.Logger, ethAPI),
-			Public:    true,
-		},
-		{
-			Namespace: TxPoolNamespace,
-			Version:   apiVersion,
-			Service:   txpool.NewPublicAPI(ctx.Logger),
-			Public:    true,
-		},
-		{
-			Namespace: DebugNamespace,
-			Version:   apiVersion,
-			Service:   debug.NewInternalAPI(ctx),
-			Public:    true,
-		},
+	)
+
+	for _, api := range selectedApis {
+		switch api {
+		case Web3Namespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: Web3Namespace,
+					Version:   apiVersion,
+					Service:   web3.NewPublicAPI(),
+					Public:    true,
+				},
+			)
+		case NetNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: NetNamespace,
+					Version:   apiVersion,
+					Service:   net.NewPublicAPI(clientCtx),
+					Public:    true,
+				},
+			)
+		case PersonalNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: PersonalNamespace,
+					Version:   apiVersion,
+					Service:   personal.NewAPI(ctx.Logger, ethAPI),
+					Public:    true,
+				},
+			)
+		case TxPoolNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: TxPoolNamespace,
+					Version:   apiVersion,
+					Service:   txpool.NewPublicAPI(ctx.Logger),
+					Public:    true,
+				},
+			)
+		case DebugNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: DebugNamespace,
+					Version:   apiVersion,
+					Service:   debug.NewInternalAPI(ctx),
+					Public:    true,
+				},
+			)
+		}
 	}
+
+	return apis
 }
