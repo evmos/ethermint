@@ -404,6 +404,13 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		httpSrvDone chan struct{}
 	)
 	if config.EVMRPC.Enable {
+		genDoc, err := genDocProvider()
+		if err != nil {
+			return err
+		}
+
+		clientCtx := clientCtx.WithChainID(genDoc.ChainID)
+
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
 		httpSrv, httpSrvDone, err = StartEVMRPC(ctx, clientCtx, tmRPCAddr, tmEndpoint, config)
