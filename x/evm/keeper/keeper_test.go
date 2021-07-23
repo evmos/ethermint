@@ -108,8 +108,6 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 	err = simapp.FundAccount(bankKeeper, suite.ctx, acc.GetAddress(), initCoin)
 	suite.Require().NoError(err)
-
-	suite.Commit()
 }
 
 // Commit and begin new block
