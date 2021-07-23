@@ -41,6 +41,7 @@ import (
 	ethlog "github.com/ethereum/go-ethereum/log"
 
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
+	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 )
 
 // Tendermint full-node start flags
@@ -213,7 +214,7 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 		return fmt.Errorf("error creating listener: %v", err)
 	}
 
-	svr.SetLogger(ctx.Logger.With("module", "abci-server"))
+	svr.SetLogger(ctx.Logger.With("server", "abci"))
 
 	err = svr.Start()
 	if err != nil {
@@ -238,7 +239,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var cpuProfileCleanup func()
 
 	if cpuProfile := ctx.Viper.GetString(flagCPUProfile); cpuProfile != "" {
-		f, err := os.Create(cpuProfile)
+		f, err := os.Create(ethdebug.ExpandHome(cpuProfile))
 		if err != nil {
 			return err
 		}
@@ -292,7 +293,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		genDocProvider,
 		node.DefaultDBProvider,
 		node.DefaultMetricsProvider(cfg.Instrumentation),
-		ctx.Logger.With("module", "node"),
+		ctx.Logger.With("server", "node"),
 	)
 	if err != nil {
 		logger.Error("failed init node", "error", err.Error())
@@ -325,7 +326,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			WithHomeDir(home).
 			WithChainID(genDoc.ChainID)
 
-		apiSrv = api.New(clientCtx, ctx.Logger.With("module", "api-server"))
+		apiSrv = api.New(clientCtx, ctx.Logger.With("server", "api"))
 		app.RegisterAPIRoutes(apiSrv, config.API)
 		errCh := make(chan error)
 

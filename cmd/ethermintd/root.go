@@ -40,6 +40,8 @@ import (
 	"github.com/tharsis/ethermint/server"
 )
 
+const EnvPrefix = "ETHERMINT"
+
 // NewRootCmd creates a new root command for simd. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
@@ -54,7 +56,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithBroadcastMode(flags.BroadcastBlock).
 		WithHomeDir(app.DefaultNodeHome).
 		WithKeyringOptions(hd.EthSecp256k1Option()).
-		WithViper("ETHERMINT")
+		WithViper(EnvPrefix)
 
 	rootCmd := &cobra.Command{
 		Use:   "ethermintd",
