@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
@@ -26,6 +27,7 @@ const (
 	PersonalNamespace = "personal"
 	NetNamespace      = "net"
 	TxPoolNamespace   = "txpool"
+	DebugNamespace    = "debug"
 
 	apiVersion = "1.0"
 )
@@ -71,6 +73,12 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 			Namespace: TxPoolNamespace,
 			Version:   apiVersion,
 			Service:   txpool.NewPublicAPI(ctx.Logger),
+			Public:    true,
+		},
+		{
+			Namespace: DebugNamespace,
+			Version:   apiVersion,
+			Service:   debug.NewInternalAPI(ctx),
 			Public:    true,
 		},
 	}

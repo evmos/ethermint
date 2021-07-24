@@ -103,21 +103,25 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 | `clique_discard`                                                                  | Clique    |             |                           |
 | `clique_status`                                                                   | Clique    |             |                           |
 | `debug_backtraceAt`                                                               | Debug     |             |                           |
-| `debug_blockProfile`                                                              | Debug     |             |                           |
-| `debug_cpuProfile`                                                                | Debug     |             |                           |
+| `debug_blockProfile`                                                              | Debug     | ✔           |                           |
+| `debug_cpuProfile`                                                                | Debug     | ✔           |                           |
 | `debug_dumpBlock`                                                                 | Debug     |             |                           |
-| `debug_gcStats`                                                                   | Debug     |             |                           |
+| `debug_gcStats`                                                                   | Debug     | ✔           |                           |
 | `debug_getBlockRlp`                                                               | Debug     |             |                           |
-| `debug_goTrace`                                                                   | Debug     |             |                           |
-| `debug_memStats`                                                                  | Debug     |             |                           |
+| `debug_goTrace`                                                                   | Debug     | ✔           |                           |
+| `debug_freeOSMemory`                                                              | Debug     | ✔           |                           |
+| `debug_memStats`                                                                  | Debug     | ✔           |                           |
+| `debug_mutexProfile`                                                              | Debug     | ✔           |                           |
 | `debug_seedHash`                                                                  | Debug     |             |                           |
 | `debug_setHead`                                                                   | Debug     |             |                           |
-| `debug_setBlockProfileRate`                                                       | Debug     |             |                           |
-| `debug_stacks`                                                                    | Debug     |             |                           |
-| `debug_startCPUProfile`                                                           | Debug     |             |                           |
-| `debug_startGoTrace`                                                              | Debug     |             |                           |
-| `debug_stopCPUProfile`                                                            | Debug     |             |                           |
-| `debug_stopGoTrace`                                                               | Debug     |             |                           |
+| `debug_setBlockProfileRate`                                                       | Debug     | ✔           |                           |
+| `debug_setGCPercent`                                                              | Debug     | ✔           |                           |
+| `debug_setMutexProfileFraction`                                                   | Debug     | ✔           |                           |
+| `debug_stacks`                                                                    | Debug     | ✔           |                           |
+| `debug_startCPUProfile`                                                           | Debug     | ✔           |                           |
+| `debug_startGoTrace`                                                              | Debug     | ✔           |                           |
+| `debug_stopCPUProfile`                                                            | Debug     | ✔           |                           |
+| `debug_stopGoTrace`                                                               | Debug     | ✔           |                           |
 | `debug_traceBlock`                                                                | Debug     |             |                           |
 | `debug_traceBlockByNumber`                                                        | Debug     |             |                           |
 | `debug_traceBlockByHash`                                                          | Debug     |             |                           |
@@ -127,8 +131,9 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 | `debug_traceTransaction`                                                          | Debug     |             |                           |
 | `debug_verbosity`                                                                 | Debug     |             |                           |
 | `debug_vmodule`                                                                   | Debug     |             |                           |
-| `debug_writeBlockProfile`                                                         | Debug     |             |                           |
-| `debug_writeMemProfile`                                                           | Debug     |             |                           |
+| `debug_writeBlockProfile`                                                         | Debug     | ✔           |                           |
+| `debug_writeMemProfile`                                                           | Debug     | ✔           |                           |
+| `debug_writeMutexProfile`                                                         | Debug     | ✔           |                           |
 | `les_serverInfo`                                                                  | Les       |             |                           |
 | `les_clientInfo`                                                                  | Les       |             |                           |
 | `les_priorityClientInfo`                                                          | Les       |             |                           |

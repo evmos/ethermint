@@ -35,9 +35,12 @@ import (
 	"github.com/tharsis/ethermint/app"
 	ethermintclient "github.com/tharsis/ethermint/client"
 	ethermintconfig "github.com/tharsis/ethermint/cmd/ethermintd/config"
+	"github.com/tharsis/ethermint/crypto/hd"
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/server"
 )
+
+const EnvPrefix = "ETHERMINT"
 
 // NewRootCmd creates a new root command for simd. It is called once in the
 // main function.
@@ -52,7 +55,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
 		WithHomeDir(app.DefaultNodeHome).
-		WithViper("") // In simapp, we don't use any prefix for env variables.
+		WithKeyringOptions(hd.EthSecp256k1Option()).
+		WithViper(EnvPrefix)
 
 	rootCmd := &cobra.Command{
 		Use:   "ethermintd",

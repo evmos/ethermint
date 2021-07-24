@@ -71,6 +71,12 @@ service Query {
   rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/eth_call";
   }
+
+  // EstimateGas implements the `eth_estimateGas` rpc api
+  rpc EstimateGas(EthCallRequest) returns (EstimateGasResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1alpha1/estimate_gas";
+  }
+
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -216,7 +222,13 @@ message QueryBlockLogsResponse {
 
 // QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 // method.
-message QueryBlockBloomRequest {}
+message QueryBlockBloomRequest {
+  // height of the block which we want to query the bloom filter.
+  // Tendermint always replace the query request header by the current context
+  // header, height cannot be extracted from there, so we need to explicitly pass
+  // it in parameter.
+  int64 height = 1;
+}
 
 // QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
 // method.
@@ -251,4 +263,12 @@ message QueryStaticCallResponse {
 message EthCallRequest {
   // same json format as the json rpc api.
   bytes args = 1;
+  // the default gas cap to be used
+  uint64 gas_cap = 2;
+}
+
+// EstimateGasResponse defines EstimateGas response
+message EstimateGasResponse {
+  // the estimated gas
+  uint64 gas = 1;
 }
