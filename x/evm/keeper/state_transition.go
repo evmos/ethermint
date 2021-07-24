@@ -242,6 +242,10 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}
 	leftoverGas := msg.Gas() - intrinsicGas
 
+	if rules := cfg.Rules(big.NewInt(k.ctx.BlockHeight())); rules.IsBerlin {
+		k.PrepareAccessList(msg.From(), msg.To(), vm.ActivePrecompiles(rules), msg.AccessList())
+	}
+
 	if contractCreation {
 		ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
 	} else {
