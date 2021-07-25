@@ -20,7 +20,12 @@ func (suite *KeeperTestSuite) TestGetCoinbaseAddress() {
 	}{
 		{
 			"validator not found",
-			func() {},
+			func() {
+				header := suite.ctx.BlockHeader()
+				header.ProposerAddress = []byte{}
+				suite.ctx = suite.ctx.WithBlockHeader(header)
+				suite.app.EvmKeeper.WithContext(suite.ctx)
+			},
 			false,
 		},
 		{
