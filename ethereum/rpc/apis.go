@@ -32,7 +32,7 @@ const (
 )
 
 // GetRPCAPIs returns the list of all APIs
-func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedApis []string) []rpc.API {
+func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
 	nonceLock := new(types.AddrLocker)
 	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
 	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock)
@@ -57,7 +57,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 		},
 	)
 
-	for _, api := range selectedApis {
+	for _, api := range selectedAPIs {
 		switch api {
 		case Web3Namespace:
 			apis = append(apis,
