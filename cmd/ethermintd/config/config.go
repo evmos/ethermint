@@ -59,14 +59,16 @@ func DefaultConfig() *Config {
 
 // EVMRPCConfig defines configuration for the EVM RPC server.
 type EVMRPCConfig struct {
+	// RPCAddress defines the HTTP server to listen on
+	RPCAddress string `mapstructure:"address"`
+	// WsAddress defines the WebSocket server to listen on
+	WsAddress string `mapstructure:"ws-address"`
 	// Enable defines if the EVM RPC server should be enabled.
 	Enable bool `mapstructure:"enable"`
 	// Api defines the api namespaces that should be enabled
 	API string `mapstructure:"api"`
-	// Address defines the HTTP server to listen on
-	RPCAddress string `mapstructure:"address"`
-	// Address defines the WebSocket server to listen on
-	WsAddress string `mapstructure:"ws-address"`
+	// EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
+	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
 }
 
 // DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
