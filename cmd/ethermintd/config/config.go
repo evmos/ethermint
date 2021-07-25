@@ -63,10 +63,10 @@ type EVMRPCConfig struct {
 	RPCAddress string `mapstructure:"address"`
 	// WsAddress defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
-	// Enable defines if the EVM RPC server should be enabled.
-	Enable bool `mapstructure:"enable"`
 	// Api defines the api namespaces that should be enabled
 	API string `mapstructure:"api"`
+	// Enable defines if the EVM RPC server should be enabled.
+	Enable bool `mapstructure:"enable"`
 	// EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
 	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
 }
