@@ -3,7 +3,6 @@ package server
 import (
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -24,9 +23,7 @@ func StartEVMRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr string
 	rpcServer := ethrpc.NewServer()
 
 	rpcAPI := config.EVMRPC.API
-	rpcAPI = strings.ReplaceAll(rpcAPI, " ", "")
-	rpcAPIArr := strings.Split(rpcAPI, ",")
-	apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient, rpcAPIArr)
+	apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient, rpcAPI)
 
 	for _, api := range apis {
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {

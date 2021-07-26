@@ -122,10 +122,8 @@ func startInProcess(cfg Config, val *Validator) error {
 		val.jsonRPC = jsonrpc.NewServer()
 
 		rpcAPI := val.AppConfig.EVMRPC.API
-		rpcAPI = strings.ReplaceAll(rpcAPI, " ", "")
-		rpcAPIArr := strings.Split(rpcAPI, ",")
 
-		apis := rpc.GetRPCAPIs(val.Ctx, val.ClientCtx, tmWsClient, rpcAPIArr)
+		apis := rpc.GetRPCAPIs(val.Ctx, val.ClientCtx, tmWsClient, rpcAPI)
 		for _, api := range apis {
 			if err := val.jsonRPC.RegisterName(api.Namespace, api.Service); err != nil {
 				return fmt.Errorf("failed to register JSON-RPC namespace %s: %w", api.Namespace, err)
