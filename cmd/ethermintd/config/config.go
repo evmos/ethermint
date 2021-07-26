@@ -7,6 +7,11 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 )
 
+// GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
+func GetDefaultAPINamespaces() []string {
+	return []string{"eth"}
+}
+
 const (
 	// DefaultGRPCAddress is the default address the gRPC server binds to.
 	DefaultGRPCAddress = "0.0.0.0:9900"
@@ -75,7 +80,7 @@ type EVMRPCConfig struct {
 func DefaultEVMConfig() *EVMRPCConfig {
 	return &EVMRPCConfig{
 		Enable:     true,
-		API:        "eth",
+		API:        GetDefaultAPINamespaces(),
 		RPCAddress: DefaultEVMAddress,
 		WsAddress:  DefaultEVMWSAddress,
 	}
