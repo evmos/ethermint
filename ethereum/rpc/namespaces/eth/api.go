@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"math/big"
 	"strings"
 
@@ -560,7 +563,10 @@ func (e *PublicAPI) doCall(
 	}
 
 	if res.Failed() {
-		return nil, evmtypes.NewExecErrorWithReason(res.Ret, res.VmError)
+		if res.VmError != vm.ErrExecutionReverted.Error() {
+			return nil, status.Error(codes.Internal, res.VmError)
+		}
+		return nil, evmtypes.NewExecErrorWithReason(res.Ret)
 	}
 
 	return res, nil

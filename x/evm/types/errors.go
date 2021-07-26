@@ -78,13 +78,8 @@ var (
 
 // NewExecErrorWithReason unpacks the revert return bytes and returns a wrapped error
 // with the return reason.
-func NewExecErrorWithReason(revertReason []byte, vmError string) *revertError {
-	var result []byte
-	result = nil
-	if vmError == vm.ErrExecutionReverted.Error() {
-		result = common.CopyBytes(revertReason)
-	}
-
+func NewExecErrorWithReason(revertReason []byte) *revertError {
+	var result = common.CopyBytes(revertReason)
 	reason, errUnpack := abi.UnpackRevert(result)
 	err := errors.New("execution reverted")
 	if errUnpack == nil {
