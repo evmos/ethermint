@@ -26,7 +26,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/hd"
@@ -559,18 +558,9 @@ func (e *PublicAPI) doCall(
 	if err != nil {
 		return nil, err
 	}
-	if len(res.VmError) > 0 {
-		if res.VmError == vm.ErrExecutionReverted.Error() {
-			return nil, evmtypes.NewExecErrorWithReason(res.Ret)
-		}
-		return nil, errors.New(res.VmError)
-	}
 
 	if res.Failed() {
-		if res.VmError == vm.ErrExecutionReverted.Error() {
-			return nil, evmtypes.NewExecErrorWithReason(res.Ret)
-		}
-		return nil, errors.New(res.VmError)
+		return nil, evmtypes.NewExecErrorWithReason(res.Ret, res.VmError)
 	}
 
 	return res, nil

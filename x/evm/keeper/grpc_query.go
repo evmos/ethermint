@@ -491,7 +491,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		if failed {
 			if result != nil && result.VmError != vm.ErrOutOfGas.Error() {
 				if result.VmError == vm.ErrExecutionReverted.Error() {
-					return nil, status.Error(codes.Internal, types.NewExecErrorWithReason(result.Ret).Error())
+					return nil, status.Error(codes.Internal, types.NewExecErrorWithReason(result.Ret, result.VmError).Error())
 				}
 				return nil, status.Error(codes.Internal, result.VmError)
 			}
