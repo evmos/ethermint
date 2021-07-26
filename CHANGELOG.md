@@ -64,6 +64,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (deps) [tharsis#360](https://github.com/tharsis/ethermint/pull/360) Bump ibc-go to [`v1.0.0-rc2`](https://github.com/cosmos/ibc-go/releases/tag/v1.0.0-rc2)
 * (gRPC) [tharsis#239](https://github.com/tharsis/ethermint/pull/239) Query `ChainConfig` via gRPC.
 * (rpc) [tharsis#181](https://github.com/tharsis/ethermint/pull/181) Use evm denomination for params on tx fee.
 * (deps) [tharsis#165](https://github.com/tharsis/ethermint/pull/165), [tharsis#298](https://github.com/tharsis/ethermint/pull/298) Bump Cosmos SDK and Tendermint versions to [v0.43.0-rc1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.43.0-rc1) and [v0.34.11](https://github.com/tendermint/tendermint/releases/tag/v0.34.11), respectively.
