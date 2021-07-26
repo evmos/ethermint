@@ -75,7 +75,7 @@ type EVMRPCConfig struct {
 func DefaultEVMConfig() *EVMRPCConfig {
 	return &EVMRPCConfig{
 		Enable:     true,
-		API:        "",
+		API:        "eth",
 		RPCAddress: DefaultEVMAddress,
 		WsAddress:  DefaultEVMWSAddress,
 	}

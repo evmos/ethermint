@@ -39,26 +39,17 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 
 	var apis []rpc.API
 
-	//Eth apis will be set by default
-	apis = append(apis,
-		rpc.API{
-			Namespace: EthNamespace,
-			Version:   apiVersion,
-			Service:   ethAPI,
-			Public:    true,
-		},
-	)
-	apis = append(apis,
-		rpc.API{
-			Namespace: EthNamespace,
-			Version:   apiVersion,
-			Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, evmBackend),
-			Public:    true,
-		},
-	)
-
 	for index := range selectedAPIs {
 		switch selectedAPIs[index] {
+		case EthNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: EthNamespace,
+					Version:   apiVersion,
+					Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, evmBackend),
+					Public:    true,
+				},
+			)
 		case Web3Namespace:
 			apis = append(apis,
 				rpc.API{
