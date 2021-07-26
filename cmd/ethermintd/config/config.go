@@ -98,7 +98,7 @@ func GetConfig(v *viper.Viper) Config {
 		Config: cfg,
 		EVMRPC: EVMRPCConfig{
 			Enable:     v.GetBool("evm-rpc.enable"),
-			API:        v.GetString("evm-rpc.api"),
+			API:        v.GetStringSlice("evm-rpc.api"),
 			RPCAddress: v.GetString("evm-rpc.address"),
 			WsAddress:  v.GetString("evm-rpc.ws-address"),
 		},
