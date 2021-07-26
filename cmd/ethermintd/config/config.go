@@ -63,8 +63,8 @@ type EVMRPCConfig struct {
 	RPCAddress string `mapstructure:"address"`
 	// WsAddress defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
-	// Api defines the api namespaces that should be enabled
-	API string `mapstructure:"api"`
+	// API defines a list of JSON-RPC namespaces that should be enabled
+	API []string `mapstructure:"api"`
 	// Enable defines if the EVM RPC server should be enabled.
 	Enable bool `mapstructure:"enable"`
 	// EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
@@ -98,7 +98,7 @@ func GetConfig(v *viper.Viper) Config {
 		Config: cfg,
 		EVMRPC: EVMRPCConfig{
 			Enable:     v.GetBool("evm-rpc.enable"),
-			API:        v.GetString("evm-rpc.api"),
+			API:        v.GetStringSlice("evm-rpc.api"),
 			RPCAddress: v.GetString("evm-rpc.address"),
 			WsAddress:  v.GetString("evm-rpc.ws-address"),
 		},
