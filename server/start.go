@@ -72,6 +72,7 @@ const (
 	flagGRPCEnable          = "grpc.enable"
 	flagGRPCAddress         = "grpc.address"
 	flagEVMRPCEnable        = "evm-rpc.enable"
+	flagEVMRPCAPI           = "evm-rpc.api"
 	flagEVMRPCAddress       = "evm-rpc.address"
 	flagEVMWSAddress        = "evm-rpc.ws-address"
 	flagEVMEnableUnsafeCORS = "evm-rpc.enable-unsafe-cors"
@@ -179,6 +180,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(flagGRPCWebAddress, serverconfig.DefaultGRPCWebAddress, "The gRPC-Web server address to listen on")
 
 	cmd.Flags().Bool(flagEVMRPCEnable, true, "Define if the gRPC server should be enabled")
+	cmd.Flags().StringSlice(flagEVMRPCAPI, config.GetDefaultAPINamespaces(), "Defines a list of JSON-RPC namespaces that should be enabled")
 	cmd.Flags().String(flagEVMRPCAddress, config.DefaultEVMAddress, "the EVM RPC server address to listen on")
 	cmd.Flags().String(flagEVMWSAddress, config.DefaultEVMWSAddress, "the EVM WS server address to listen on")
 	cmd.Flags().Bool(flagEVMEnableUnsafeCORS, false, "Define if the EVM RPC server should enabled CORS (unsafe - use it at your own risk)")

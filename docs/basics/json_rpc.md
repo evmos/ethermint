@@ -11,6 +11,20 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 - [Ethereum JSON-RPC](https://eth.wiki/json-rpc/API) {prereq}
 - [Geth JSON-RPC APIs](https://geth.ethereum.org/docs/rpc/server) {prereq}
 
+## JSON-RPC Server
+
+To enable RPC server use the following flag (set to true by default).
+
+```
+ethermintd start --evm-rpc.enable
+```
+
+By default, only `eth` namespace is enabled. In order to enable other namespaces use flag `--evm-rpc.api`.
+
+```
+ethermintd start --evm-rpc.api eth,txpool,personal,net,debug,web3
+```
+
 ## JSON-RPC Methods
 
 | Method                                                                            | Namespace | Implemented | Notes                     |

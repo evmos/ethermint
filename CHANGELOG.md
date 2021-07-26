@@ -74,6 +74,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#176](https://github.com/tharsis/ethermint/issues/176) Support fetching pending nonce
 * (rpc) [tharsis#272](https://github.com/tharsis/ethermint/pull/272) do binary search to estimate gas accurately
 * (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
+* (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
 
 ### Bug Fixes
 

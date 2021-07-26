@@ -18,6 +18,11 @@ const (
 	DefaultEVMWSAddress = "0.0.0.0:8546"
 )
 
+// GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
+func GetDefaultAPINamespaces() []string {
+	return []string{"eth"}
+}
+
 // AppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
 func AppConfig() (string, interface{}) {
@@ -57,25 +62,28 @@ func DefaultConfig() *Config {
 	}
 }
 
-// DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
-func DefaultEVMConfig() *EVMRPCConfig {
-	return &EVMRPCConfig{
-		Enable:     true,
-		RPCAddress: DefaultEVMAddress,
-		WsAddress:  DefaultEVMWSAddress,
-	}
-}
-
 // EVMRPCConfig defines configuration for the EVM RPC server.
 type EVMRPCConfig struct {
 	// RPCAddress defines the HTTP server to listen on
 	RPCAddress string `mapstructure:"address"`
 	// WsAddress defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
+	// API defines a list of JSON-RPC namespaces that should be enabled
+	API []string `mapstructure:"api"`
 	// Enable defines if the EVM RPC server should be enabled.
 	Enable bool `mapstructure:"enable"`
 	// EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
 	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
+}
+
+// DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
+func DefaultEVMConfig() *EVMRPCConfig {
+	return &EVMRPCConfig{
+		Enable:     true,
+		API:        GetDefaultAPINamespaces(),
+		RPCAddress: DefaultEVMAddress,
+		WsAddress:  DefaultEVMWSAddress,
+	}
 }
 
 // Config defines the server's top level configuration. It includes the default app config
@@ -95,6 +103,7 @@ func GetConfig(v *viper.Viper) Config {
 		Config: cfg,
 		EVMRPC: EVMRPCConfig{
 			Enable:     v.GetBool("evm-rpc.enable"),
+			API:        v.GetStringSlice("evm-rpc.api"),
 			RPCAddress: v.GetString("evm-rpc.address"),
 			WsAddress:  v.GetString("evm-rpc.ws-address"),
 		},
