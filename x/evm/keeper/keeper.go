@@ -316,17 +316,9 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 	return prevBalance, nil
 }
 
-// ResetAccount removes the code, storage state and evm denom balance coins stored
+// ResetAccount removes the code, storage state, but keep all the native tokens stored
 // with the given address.
 func (k Keeper) ResetAccount(addr common.Address) {
 	k.DeleteCode(addr)
 	k.DeleteAccountStorage(addr)
-	_, err := k.ClearBalance(addr.Bytes())
-	if err != nil {
-		k.Logger(k.ctx).Error(
-			"failed to clear balance during account reset",
-			"ethereum-address", addr.Hex(),
-			"error", err,
-		)
-	}
 }
