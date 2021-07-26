@@ -47,6 +47,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#276](https://github.com/tharsis/ethermint/pull/276) Vm errors don't result in cosmos tx failure, just
   different tx state and events.
 * (evm) [tharsis#342](https://github.com/tharsis/ethermint/issues/342) Don't clear balance when resetting the account.
+* (evm) [tharsis#334](https://github.com/tharsis/ethermint/pull/334) Log index changed to the index in block rather than
+  tx.
 
 ### API Breaking
 
