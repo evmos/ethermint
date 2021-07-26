@@ -95,6 +95,8 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 					Public:    true,
 				},
 			)
+		default:
+			ctx.Logger.Error("Invalid namespace value", "namespace", selectedAPIs[index])
 		}
 	}
 
