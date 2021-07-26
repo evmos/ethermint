@@ -24,6 +24,7 @@ import (
 
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 var _ types.QueryServer = Keeper{}
@@ -490,8 +491,8 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		}
 		if failed {
 			if result != nil && result.VmError != vm.ErrOutOfGas.Error() {
-				if result.VmError == vm.ErrExecutionReverted.Error() {
-					return nil, status.Error(codes.Internal, types.NewExecErrorWithReason(result.Ret, result.VmError).Error())
+				if result.Failed() {
+					return nil, evmtypes.NewExecErrorWithReason(result.Ret, result.VmError)
 				}
 				return nil, status.Error(codes.Internal, result.VmError)
 			}

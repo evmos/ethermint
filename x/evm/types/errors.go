@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -81,7 +82,7 @@ func NewExecErrorWithReason(revertReason []byte, vmError string) *revertError {
 	var result []byte
 	result = nil
 	if vmError == vm.ErrExecutionReverted.Error() {
-		result = revertReason
+		result = common.CopyBytes(revertReason)
 	}
 
 	reason, errUnpack := abi.UnpackRevert(result)
