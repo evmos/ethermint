@@ -39,10 +39,19 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 
 	var apis []rpc.API
 
+	// remove duplicates
+	selectedAPIs = unique(selectedAPIs)
+
 	for index := range selectedAPIs {
 		switch selectedAPIs[index] {
 		case EthNamespace:
 			apis = append(apis,
+				rpc.API{
+					Namespace: EthNamespace,
+					Version:   apiVersion,
+					Service:   ethAPI,
+					Public:    true,
+				},
 				rpc.API{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
@@ -101,4 +110,16 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 	}
 
 	return apis
+}
+
+func unique(intSlice []string) []string {
+	keys := make(map[string]bool)
+	var list []string
+	for _, entry := range intSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }

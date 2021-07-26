@@ -7,11 +7,6 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 )
 
-// GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
-func GetDefaultAPINamespaces() []string {
-	return []string{"eth"}
-}
-
 const (
 	// DefaultGRPCAddress is the default address the gRPC server binds to.
 	DefaultGRPCAddress = "0.0.0.0:9900"
@@ -22,6 +17,11 @@ const (
 	// DefaultEVMWSAddress is the default address the EVM WebSocket server binds to.
 	DefaultEVMWSAddress = "0.0.0.0:8546"
 )
+
+// GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
+func GetDefaultAPINamespaces() []string {
+	return []string{"eth"}
+}
 
 // AppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
