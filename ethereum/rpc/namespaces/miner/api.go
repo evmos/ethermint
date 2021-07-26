@@ -1,27 +1,42 @@
 package miner
 
 import (
+	"math/big"
+
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/tendermint/tendermint/libs/log"
+	ethapi "github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // API is the miner prefixed set of APIs in the Miner JSON-RPC spec.
 type API struct {
-	ctx    *server.Context
-	logger log.Logger
+	ctx          *server.Context
+	logger       log.Logger
+	chainIDEpoch *big.Int
+	clientCtx    client.Context
 }
 
 // NewMinerAPI creates an instance of the Miner API.
 func NewMinerAPI(
 	ctx *server.Context,
+	clientCtx client.Context,
 ) *API {
+	epoch, err := ethermint.ParseChainID(clientCtx.ChainID)
+	if err != nil {
+		panic(err)
+	}
+
 	return &API{
-		ctx:    ctx,
-		logger: ctx.Logger.With("module", "miner"),
+		ctx:          ctx,
+		clientCtx:    *ethapi.AddKeyringToClientCtx(clientCtx),
+		chainIDEpoch: epoch,
+		logger:       ctx.Logger.With("module", "miner"),
 	}
 }
 
