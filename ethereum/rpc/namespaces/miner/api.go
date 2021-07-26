@@ -36,17 +36,16 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.logger.Info(api.ctx.Viper.ConfigFileUsed())
 	appConf, err := config.ParseConfig(api.ctx.Viper)
 	if err != nil {
-		// TODO: fix this error format
-		api.logger.Error("failed to parse %s: %w", api.ctx.Viper.ConfigFileUsed(), err)
+		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
 		return false
 	}
-	// TODO: should this value be wei?
+	// NOTE: To allow values less that 1 aphoton, we need to divide the gasPrice here using some constant
+	// If we want to work the same as go-eth we should just use the gasPrice as an int without converting it
 	coinsValue := gasPrice.ToInt().String()
 	unit := "aphoton"
 	c, err := sdk.ParseDecCoins(coinsValue + unit)
 	if err != nil {
-		// TODO: fix this error format
-		api.logger.Error("failed to parse coins %s, %s: %w", coinsValue, unit, err)
+		api.logger.Error("failed to parse coins", "coins", coinsValue, "error", err.Error())
 		return false
 	}
 	appConf.SetMinGasPrices(c)
