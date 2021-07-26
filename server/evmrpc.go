@@ -22,8 +22,8 @@ func StartEVMRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr string
 
 	rpcServer := ethrpc.NewServer()
 
-	rpcAPI := config.EVMRPC.API
-	apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient, rpcAPI)
+	rpcAPIArr := config.EVMRPC.API
+	apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient, rpcAPIArr)
 
 	for _, api := range apis {
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
