@@ -485,6 +485,13 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	msg, _ = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	txHash := msg.AsTransaction().Hash()
 
+	msg2 := types.NewTx(big.NewInt(1), 1, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
+	msg2.From = addr.Hex()
+
+	tx2 := suite.CreateTestTx(msg2, privKey)
+	msg2, _ = tx2.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	txHash2 := msg2.AsTransaction().Hash()
+
 	testCases := []struct {
 		name        string
 		hash        common.Hash
@@ -503,21 +510,38 @@ func (suite *KeeperTestSuite) TestAddLog() {
 			},
 			func() {},
 		},
+		{
+			"log index keep increasing in new tx",
+			txHash2,
+			&ethtypes.Log{
+				Address: addr,
+			},
+			&ethtypes.Log{
+				Address: addr,
+				TxHash:  txHash2,
+				TxIndex: 1,
+				Index:   1,
+			},
+			func() {
+				suite.app.EvmKeeper.SetTxHashTransient(txHash)
+				suite.app.EvmKeeper.AddLog(&ethtypes.Log{
+					Address: addr,
+				})
+				suite.app.EvmKeeper.IncreaseTxIndexTransient()
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.SetupTest()
 			tc.malleate()
 
-			prev := suite.app.EvmKeeper.GetTxLogs(tc.hash)
 			suite.app.EvmKeeper.SetTxHashTransient(tc.hash)
 			suite.app.EvmKeeper.AddLog(tc.log)
-			post := suite.app.EvmKeeper.GetTxLogs(tc.hash)
-
-			suite.Require().NotZero(len(post), tc.hash.Hex())
-			suite.Require().Equal(len(prev)+1, len(post))
-			suite.Require().NotNil(post[len(post)-1])
-			suite.Require().Equal(tc.log, post[len(post)-1])
+			logs := suite.app.EvmKeeper.GetTxLogs(tc.hash)
+			suite.Require().Equal(1, len(logs))
+			suite.Require().Equal(tc.expLog, logs[0])
 		})
 	}
 }

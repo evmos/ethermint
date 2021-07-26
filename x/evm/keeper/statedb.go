@@ -590,9 +590,10 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 	log.TxIndex = uint(k.GetTxIndexTransient())
 	log.TxHash = k.GetTxHashTransient()
 
-	logs := k.GetTxLogs(log.TxHash)
+	log.Index = uint(k.GetLogSizeTransient())
+	k.IncreaseLogSizeTransient()
 
-	log.Index = uint(len(logs))
+	logs := k.GetTxLogs(log.TxHash)
 	logs = append(logs, log)
 
 	k.SetLogs(log.TxHash, logs)

@@ -247,6 +247,25 @@ func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
 	store.Delete(txHash.Bytes())
 }
 
+// GetLogSizeTransient returns EVM log index on the current block.
+func (k Keeper) GetLogSizeTransient() uint64 {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientLogSize)
+	if len(bz) == 0 {
+		return 0
+	}
+
+	return sdk.BigEndianToUint64(bz)
+}
+
+// IncreaseLogSizeTransient fetches the current EVM log index from the transient store, increases its
+// value by one and then sets the new index back to the transient store.
+func (k Keeper) IncreaseLogSizeTransient() {
+	logSize := k.GetLogSizeTransient()
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientLogSize, sdk.Uint64ToBigEndian(logSize+1))
+}
+
 // ----------------------------------------------------------------------------
 // Storage
 // ----------------------------------------------------------------------------
