@@ -247,6 +247,25 @@ func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
 	store.Delete(txHash.Bytes())
 }
 
+// GetLogSizeTransient returns EVM log index on the current block.
+func (k Keeper) GetLogSizeTransient() uint64 {
+	store := k.ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientLogSize)
+	if len(bz) == 0 {
+		return 0
+	}
+
+	return sdk.BigEndianToUint64(bz)
+}
+
+// IncreaseLogSizeTransient fetches the current EVM log index from the transient store, increases its
+// value by one and then sets the new index back to the transient store.
+func (k Keeper) IncreaseLogSizeTransient() {
+	logSize := k.GetLogSizeTransient()
+	store := k.ctx.TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientLogSize, sdk.Uint64ToBigEndian(logSize+1))
+}
+
 // ----------------------------------------------------------------------------
 // Storage
 // ----------------------------------------------------------------------------
@@ -316,17 +335,9 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 	return prevBalance, nil
 }
 
-// ResetAccount removes the code, storage state and evm denom balance coins stored
+// ResetAccount removes the code, storage state, but keep all the native tokens stored
 // with the given address.
 func (k Keeper) ResetAccount(addr common.Address) {
 	k.DeleteCode(addr)
 	k.DeleteAccountStorage(addr)
-	_, err := k.ClearBalance(addr.Bytes())
-	if err != nil {
-		k.Logger(k.ctx).Error(
-			"failed to clear balance during account reset",
-			"ethereum-address", addr.Hex(),
-			"error", err,
-		)
-	}
 }
