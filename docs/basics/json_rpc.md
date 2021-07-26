@@ -321,7 +321,7 @@ Returns the storage address for a given account address.
 
 ```json
 // Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getStorageAt","params":["0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0", "0"  "latest"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getStorageAt","params":["0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0", "0", "latest"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
 
 // Result
 {"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}
