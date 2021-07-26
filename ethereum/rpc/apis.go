@@ -57,8 +57,8 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 		},
 	)
 
-	for _, api := range selectedAPIs {
-		switch api {
+	for index := range selectedAPIs {
+		switch selectedAPIs[index] {
 		case Web3Namespace:
 			apis = append(apis,
 				rpc.API{
