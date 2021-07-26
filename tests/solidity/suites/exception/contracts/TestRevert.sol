@@ -17,10 +17,12 @@ contract State {
 
 contract TestRevert {
     State state;
+    uint256 b = 0;
     constructor() {
         state = new State();
     }
     function try_set(uint256 input) public {
+        b = input;
         try state.set(input) {
         } catch (bytes memory) {
         }
@@ -28,7 +30,10 @@ contract TestRevert {
     function set(uint256 input) public {
         state.force_set(input);
     }
-    function query() public view returns(uint256) { 
+    function query_a() public view returns(uint256) {
         return state.query();
+    }
+    function query_b() public view returns(uint256) {
+        return b;
     }
 }
