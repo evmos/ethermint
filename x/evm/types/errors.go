@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 
@@ -78,33 +79,33 @@ var (
 
 // NewExecErrorWithReason unpacks the revert return bytes and returns a wrapped error
 // with the return reason.
-func NewExecErrorWithReason(revertReason []byte) *revertError {
+func NewExecErrorWithReason(revertReason []byte) *RevertError {
 	var result = common.CopyBytes(revertReason)
 	reason, errUnpack := abi.UnpackRevert(result)
 	err := errors.New("execution reverted")
 	if errUnpack == nil {
 		err = fmt.Errorf("execution reverted: %v", reason)
 	}
-	return &revertError{
+	return &RevertError{
 		error:  err,
 		reason: hexutil.Encode(result),
 	}
 }
 
-// revertError is an API error that encompass an EVM revert with JSON error
+// RevertError is an API error that encompass an EVM revert with JSON error
 // code and a binary data blob.
-type revertError struct {
+type RevertError struct {
 	error
 	reason string // revert reason hex encoded
 }
 
 // ErrorCode returns the JSON error code for a revert.
 // See: https://github.com/ethereum/wiki/wiki/JSON-RPC-Error-Codes-Improvement-Proposal
-func (e *revertError) ErrorCode() int {
+func (e *RevertError) ErrorCode() int {
 	return 3
 }
 
 // ErrorData returns the hex encoded revert reason.
-func (e *revertError) ErrorData() interface{} {
+func (e *RevertError) ErrorData() interface{} {
 	return e.reason
 }
