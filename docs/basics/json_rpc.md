@@ -15,7 +15,7 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 
 To enable RPC server use the following flag (set to true by default).
 
-```ethermintd start --grpc.enable```
+```ethermintd start --evm-rpc.enable```
 
 By default, only `eth` namespace is enabled. In order to enable other namespaces use flag `--evm-rpc.api`.
 
