@@ -27,14 +27,14 @@ func (suite *KeeperTestSuite) TestCreateAccount() {
 		callback func(common.Address)
 	}{
 		{
-			"reset account",
+			"reset account (keep balance)",
 			suite.address,
 			func(addr common.Address) {
 				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(100))
 				suite.Require().NotZero(suite.app.EvmKeeper.GetBalance(addr).Int64())
 			},
 			func(addr common.Address) {
-				suite.Require().Zero(suite.app.EvmKeeper.GetBalance(addr).Int64())
+				suite.Require().Equal(suite.app.EvmKeeper.GetBalance(addr).Int64(), int64(100))
 			},
 		},
 		{
