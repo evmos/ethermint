@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -65,7 +66,7 @@ type SignDocDirect struct {
 	// ChainId is the unique identifier of the chain this transaction targets.
 	// It prevents signed transactions from being used on another chain by an
 	// attacker
-	ChainId string `json:"chainId,omitempty"`
+	ChainID string `json:"chainId,omitempty"`
 	// AccountNumber is the account number of the account in state
 	AccountNumber string `json:"accountNumber,omitempty"`
 }
@@ -79,7 +80,7 @@ func (api *WalletConnectAPI) convertToTxType(signDoc SignDocDirect) (txtypes.Sig
 	return txtypes.SignDoc{
 		BodyBytes:     []byte(signDoc.BodyBytes),
 		AuthInfoBytes: []byte(signDoc.AuthInfoBytes),
-		ChainId:       signDoc.ChainId,
+		ChainId:       signDoc.ChainID,
 		AccountNumber: accountNumber,
 	}, nil
 }
@@ -127,20 +128,26 @@ func (api *WalletConnectAPI) SignDirect(req SignDirectRequest) (SignDirectRespon
 
 // SignDocAmino gets converted to txtypes.SignDoc
 type SignDocAmino struct {
+	AccountNumber string `json:"account_number"`
+	ChainID       string `json:"chain_id"`
+	Sequence      string `json:"sequence"`
+	Memo          string `json:"memo"`
 }
 
-func (api *WalletConnectAPI) convertToTxType(signDoc SignDocDirect) (txtypes.SignDoc, error) {
+func (api *WalletConnectAPI) convertToLegacyTx(signDoc SignDocAmino) (txtypes.SignDoc, error) {
 	accountNumber, err := strconv.ParseUint(signDoc.AccountNumber, 10, 64)
 	if err != nil {
 		api.logger.Error("failed to parse account number: %s, err: %s", signDoc.AccountNumber, err.Error())
 		return txtypes.SignDoc{}, err
 	}
-	return txtypes.SignDoc{
-		BodyBytes:     []byte(signDoc.BodyBytes),
-		AuthInfoBytes: []byte(signDoc.AuthInfoBytes),
-		ChainId:       signDoc.ChainId,
-		AccountNumber: accountNumber,
-	}, nil
+	// TODO
+	return legacytx.StdSignDoc{}
+	// return txtypes.SignDoc{
+	// 	BodyBytes:     []byte(signDoc.BodyBytes),
+	// 	AuthInfoBytes: []byte(signDoc.AuthInfoBytes),
+	// 	ChainId:       signDoc.ChainId,
+	// 	AccountNumber: accountNumber,
+	// }, nil
 }
 
 type SignAminoRequest struct {
