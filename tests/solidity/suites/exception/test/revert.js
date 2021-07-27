@@ -25,6 +25,8 @@ contract('TestRevert', (accounts) => {
       assert.equal(no, '0', 'The modification on a should be reverted')
       no = await revert.query_b()
       assert.equal(no, '10', 'The modification on b should not be reverted')
+      no = await revert.query_c()
+      assert.equal(no, '10', 'The modification on c should not be reverted')
 
       await revert.set(10)
       no = await revert.query_a()
