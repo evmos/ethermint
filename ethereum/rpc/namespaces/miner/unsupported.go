@@ -19,7 +19,7 @@ func (api *API) GetHashrate() uint64 {
 func (api *API) SetExtra(extra string) (bool, error) {
 	api.logger.Debug("miner_setExtra")
 	api.logger.Info("Unsupported rpc function: miner_setExtra")
-	return false, errors.New("Unsupported rpc function: miner_setExtra")
+	return false, errors.New("unsupported rpc function: miner_setExtra")
 }
 
 // SetGasLimit sets the gaslimit to target towards during mining.
@@ -39,7 +39,7 @@ func (api *API) SetGasLimit(gasLimit hexutil.Uint64) bool {
 func (api *API) Start(threads *int) error {
 	api.logger.Debug("miner_start")
 	api.logger.Info("Unsupported rpc function: miner_start")
-	return errors.New("Unsupported rpc function: miner_start")
+	return errors.New("unsupported rpc function: miner_start")
 }
 
 // Stop terminates the miner, both at the consensus engine level as well as at
