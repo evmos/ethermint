@@ -42,7 +42,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	api.logger.Debug("miner_setEtherbase")
 
 	list, err := api.ethAPI.ClientCtx().Keyring.List()
-	if err != nil && len(list) > 0 {
+	if err != nil || len(list) < 1 {
 		api.logger.Debug("Could not get list of addresses")
 		return false
 	}
