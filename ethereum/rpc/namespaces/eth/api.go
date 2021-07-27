@@ -95,6 +95,14 @@ func (e *PublicAPI) ClientCtx() client.Context {
 	return e.clientCtx
 }
 
+func (e *PublicAPI) QueryClient() *rpctypes.QueryClient {
+	return e.queryClient
+}
+
+func (e *PublicAPI) Ctx() context.Context {
+	return e.ctx
+}
+
 // ProtocolVersion returns the supported Ethereum protocol version.
 func (e *PublicAPI) ProtocolVersion() hexutil.Uint {
 	e.logger.Debug("eth_protocolVersion")
@@ -370,7 +378,7 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
-	args, err = e.setTxDefaults(args)
+	args, err = e.SetTxDefaults(args)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -994,9 +1002,9 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	}, nil
 }
 
-// setTxDefaults populates tx message with default values in case they are not
+// SetTxDefaults populates tx message with default values in case they are not
 // provided on the args
-func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
+func (e *PublicAPI) SetTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
 
 	if args.GasPrice == nil {
 		// TODO: Change to either:
