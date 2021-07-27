@@ -40,7 +40,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethlog "github.com/ethereum/go-ethereum/log"
-
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/log"
 	"github.com/tharsis/ethermint/server/config"
