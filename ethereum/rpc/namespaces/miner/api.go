@@ -34,7 +34,7 @@ func NewMinerAPI(
 
 	return &API{
 		ctx:          ctx,
-		clientCtx:    *ethapi.AddKeyringToClientCtx(clientCtx),
+		clientCtx:    ethapi.AddKeyringToClientCtx(clientCtx),
 		chainIDEpoch: epoch,
 		logger:       ctx.Logger.With("module", "miner"),
 	}

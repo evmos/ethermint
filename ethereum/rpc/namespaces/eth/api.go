@@ -47,7 +47,7 @@ type PublicAPI struct {
 	nonceLock    *rpctypes.AddrLocker
 }
 
-func AddKeyringToClientCtx(clientCtx client.Context) *client.Context {
+func AddKeyringToClientCtx(clientCtx client.Context) client.Context {
 	algos, _ := clientCtx.Keyring.SupportedAlgorithms()
 
 	if !algos.Contains(hd.EthSecp256k1) {
@@ -65,7 +65,7 @@ func AddKeyringToClientCtx(clientCtx client.Context) *client.Context {
 
 		clientCtx = clientCtx.WithKeyring(kr)
 	}
-	return &clientCtx
+	return clientCtx
 }
 
 // NewPublicAPI creates an instance of the public ETH Web3 API.
@@ -80,7 +80,7 @@ func NewPublicAPI(
 		panic(err)
 	}
 
-	clientCtx = *AddKeyringToClientCtx(clientCtx)
+	clientCtx = AddKeyringToClientCtx(clientCtx)
 
 	api := &PublicAPI{
 		ctx:          context.Background(),
