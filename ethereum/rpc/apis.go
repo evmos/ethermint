@@ -5,7 +5,6 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
-
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
@@ -33,53 +32,94 @@ const (
 )
 
 // GetRPCAPIs returns the list of all APIs
-func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
+func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	backend := backend.NewEVMBackend(ctx.Logger, clientCtx)
-	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, backend, nonceLock)
+	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
+	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock)
 
-	return []rpc.API{
-		{
-			Namespace: Web3Namespace,
-			Version:   apiVersion,
-			Service:   web3.NewPublicAPI(),
-			Public:    true,
-		},
-		{
-			Namespace: EthNamespace,
-			Version:   apiVersion,
-			Service:   ethAPI,
-			Public:    true,
-		},
-		{
-			Namespace: EthNamespace,
-			Version:   apiVersion,
-			Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, backend),
-			Public:    true,
-		},
-		{
-			Namespace: NetNamespace,
-			Version:   apiVersion,
-			Service:   net.NewPublicAPI(clientCtx),
-			Public:    true,
-		},
-		{
-			Namespace: PersonalNamespace,
-			Version:   apiVersion,
-			Service:   personal.NewAPI(ctx.Logger, ethAPI),
-			Public:    true,
-		},
-		{
-			Namespace: TxPoolNamespace,
-			Version:   apiVersion,
-			Service:   txpool.NewPublicAPI(ctx.Logger),
-			Public:    true,
-		},
-		{
-			Namespace: DebugNamespace,
-			Version:   apiVersion,
-			Service:   debug.NewInternalAPI(ctx),
-			Public:    true,
-		},
+	var apis []rpc.API
+
+	// remove duplicates
+	selectedAPIs = unique(selectedAPIs)
+
+	for index := range selectedAPIs {
+		switch selectedAPIs[index] {
+		case EthNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: EthNamespace,
+					Version:   apiVersion,
+					Service:   ethAPI,
+					Public:    true,
+				},
+				rpc.API{
+					Namespace: EthNamespace,
+					Version:   apiVersion,
+					Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, evmBackend),
+					Public:    true,
+				},
+			)
+		case Web3Namespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: Web3Namespace,
+					Version:   apiVersion,
+					Service:   web3.NewPublicAPI(),
+					Public:    true,
+				},
+			)
+		case NetNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: NetNamespace,
+					Version:   apiVersion,
+					Service:   net.NewPublicAPI(clientCtx),
+					Public:    true,
+				},
+			)
+		case PersonalNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: PersonalNamespace,
+					Version:   apiVersion,
+					Service:   personal.NewAPI(ctx.Logger, ethAPI),
+					Public:    true,
+				},
+			)
+		case TxPoolNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: TxPoolNamespace,
+					Version:   apiVersion,
+					Service:   txpool.NewPublicAPI(ctx.Logger),
+					Public:    true,
+				},
+			)
+		case DebugNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: DebugNamespace,
+					Version:   apiVersion,
+					Service:   debug.NewInternalAPI(ctx),
+					Public:    true,
+				},
+			)
+		default:
+			ctx.Logger.Error("invalid namespace value", "namespace", selectedAPIs[index])
+		}
 	}
+
+	return apis
+}
+
+func unique(intSlice []string) []string {
+	keys := make(map[string]bool)
+	var list []string
+	for _, entry := range intSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }

@@ -15,6 +15,9 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	channelkeeper "github.com/cosmos/ibc-go/modules/core/04-channel/keeper"
+	ibcante "github.com/cosmos/ibc-go/modules/core/ante"
+
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 )
 
@@ -44,6 +47,7 @@ func NewAnteHandler(
 	bankKeeper BankKeeper,
 	evmKeeper EVMKeeper,
 	feeGrantKeeper authante.FeegrantKeeper,
+	channelKeeper channelkeeper.Keeper,
 	signModeHandler authsigning.SignModeHandler,
 ) sdk.AnteHandler {
 	return func(
@@ -98,6 +102,7 @@ func NewAnteHandler(
 				authante.NewValidateBasicDecorator(),
 				authante.NewTxTimeoutHeightDecorator(),
 				authante.NewValidateMemoDecorator(ak),
+				ibcante.NewAnteDecorator(channelKeeper),
 				authante.NewConsumeGasForTxSizeDecorator(ak),
 				authante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
 				authante.NewValidateSigCountDecorator(ak),
