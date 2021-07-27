@@ -18,7 +18,7 @@ import (
 
 // StartEVMRPC start evm rpc server
 func StartEVMRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr string, tmEndpoint string, config config.Config) (*http.Server, chan struct{}, error) {
-	tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint)
+	tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
 
 	rpcServer := ethrpc.NewServer()
 
@@ -75,7 +75,6 @@ func StartEVMRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr string
 	_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
 
 	// allocate separate WS connection to Tendermint
-	tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint)
 	wsSrv := rpc.NewWebsocketsServer(ctx.Logger, tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
 	wsSrv.Start()
 	return httpSrv, httpSrvDone, nil

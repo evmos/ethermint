@@ -13,11 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/spf13/cobra"
-<<<<<<< HEAD
-	"github.com/xlab/closer"
 
-=======
->>>>>>> 0d055294613411af571742856d989ddbf287febe
 	"google.golang.org/grpc"
 
 	abciserver "github.com/tendermint/tendermint/abci/server"
@@ -43,13 +39,8 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-<<<<<<< HEAD
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
-=======
 	ethlog "github.com/ethereum/go-ethereum/log"
->>>>>>> 0d055294613411af571742856d989ddbf287febe
 
-	ethlog "github.com/ethereum/go-ethereum/log"
 	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/log"
@@ -335,60 +326,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			return err
 		}
 
-<<<<<<< HEAD
-	ethlog.Root().SetHandler(log.NewHandler(ctx.Logger))
-
-	if config.EVMRPC.Enable {
-		tmEndpoint := "/websocket"
-		tmRPCAddr := cfg.RPC.ListenAddress
-		logger.Info("EVM RPC Connecting to Tendermint WebSocket at", "address", tmRPCAddr+tmEndpoint)
-		tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
-
-		rpcServer := ethrpc.NewServer()
-		apis := rpc.GetRPCAPIs(ctx, clientCtx, tmWsClient)
-
-		for _, api := range apis {
-			if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
-				logger.Error(
-					"failed to register service in EVM RPC namespace",
-					"namespace", api.Namespace,
-					"service", api.Service,
-				)
-				return err
-			}
-		}
-
-		r := mux.NewRouter()
-		r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
-		if grpcSrv != nil {
-			grpcWeb := grpcweb.WrapServer(grpcSrv)
-			MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(grpcSrv), ctx.Logger)
-		}
-
-		handlerWithCors := cors.New(cors.Options{
-			AllowedOrigins: []string{"*"},
-			AllowedMethods: []string{
-				http.MethodHead,
-				http.MethodGet,
-				http.MethodPost,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-			},
-			AllowedHeaders:     []string{"*"},
-			AllowCredentials:   false,
-			OptionsPassthrough: false,
-		})
-
-		httpSrv = &http.Server{
-			Addr:    config.EVMRPC.RPCAddress,
-			Handler: handlerWithCors.Handler(r),
-		}
-=======
 		clientCtx := clientCtx.
 			WithHomeDir(home).
 			WithChainID(genDoc.ChainID)
->>>>>>> 0d055294613411af571742856d989ddbf287febe
 
 		apiSrv = api.New(clientCtx, ctx.Logger.With("server", "api"))
 		app.RegisterAPIRoutes(apiSrv, config.API)
@@ -407,15 +347,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-<<<<<<< HEAD
-		logger.Info("Starting EVM WebSocket server", "address", config.EVMRPC.WsAddress)
-		_, port, _ := net.SplitHostPort(config.EVMRPC.RPCAddress)
-
-		// allocate separate WS connection to Tendermint
-		tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
-		wsSrv = rpc.NewWebsocketsServer(logger, tmWsClient, "localhost:"+port, config.EVMRPC.WsAddress)
-		go wsSrv.Start()
-=======
 	var (
 		grpcSrv    *grpc.Server
 		grpcWebSrv *http.Server
@@ -432,7 +363,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 				return err
 			}
 		}
->>>>>>> 0d055294613411af571742856d989ddbf287febe
 	}
 
 	var rosettaSrv crgserver.Server
@@ -471,7 +401,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-	ethlog.Root().SetHandler(ethlog.StdoutHandler)
+	ethlog.Root().SetHandler(log.NewHandler(logger))
 
 	var (
 		httpSrv     *http.Server
