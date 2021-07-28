@@ -18,6 +18,7 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // API is the miner prefixed set of APIs in the Miner JSON-RPC spec.
@@ -83,7 +84,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	value := big.NewInt(10000)
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
 	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(80000)
+	builder.SetGasLimit(ethermint.DefaultRPCGasLimit)
 
 	delCommonAddr := common.BytesToAddress(delAddr.Bytes())
 	nonce, err := api.ethAPI.GetTransactionCount(delCommonAddr, rpctypes.EthPendingBlockNumber)
