@@ -271,15 +271,6 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 			},
 			false,
 		},
-		{"empty hash",
-			func() {
-				req = &types.QueryStorageRequest{
-					Address: suite.address.String(),
-					Key:     ethcmn.Hash{}.String(),
-				}
-			},
-			false,
-		},
 		{
 			"success",
 			func() {

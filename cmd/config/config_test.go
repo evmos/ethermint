@@ -1,9 +1,10 @@
-package types
+package config
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	ethermint "github.com/tharsis/ethermint/types"
 
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -41,14 +42,14 @@ func TestSetCoinType(t *testing.T) {
 	require.Equal(t, sdk.FullFundraiserPath, config.GetFullFundraiserPath())
 
 	SetBip44CoinType(config)
-	require.Equal(t, Bip44CoinType, int(config.GetCoinType()))
+	require.Equal(t, int(ethermint.Bip44CoinType), int(config.GetCoinType()))
 	require.Equal(t, sdk.GetConfig().GetCoinType(), config.GetCoinType())
 	require.Equal(t, sdk.GetConfig().GetFullFundraiserPath(), config.GetFullFundraiserPath())
 }
 
 func TestHDPath(t *testing.T) {
-	params := *hd.NewFundraiserParams(0, Bip44CoinType, 0)
+	params := *hd.NewFundraiserParams(0, ethermint.Bip44CoinType, 0)
 	hdPath := params.String()
 	require.Equal(t, "m/44'/60'/0'/0/0", hdPath)
-	require.Equal(t, hdPath, BIP44HDPath)
+	require.Equal(t, hdPath, ethermint.BIP44HDPath)
 }

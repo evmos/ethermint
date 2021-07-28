@@ -3,8 +3,6 @@ package config
 import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/spf13/viper"
-
-	ethermint "github.com/tharsis/ethermint/types"
 )
 
 const (
@@ -25,7 +23,7 @@ func GetDefaultAPINamespaces() []string {
 
 // AppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
-func AppConfig() (string, interface{}) {
+func AppConfig(denom string) (string, interface{}) {
 	// Optionally allow the chain developer to overwrite the SDK's default
 	// server config.
 	srvCfg := config.DefaultConfig()
@@ -42,7 +40,9 @@ func AppConfig() (string, interface{}) {
 	//   own app.toml to override, or use this default value.
 	//
 	// In ethermint, we set the min gas prices to 0.
-	srvCfg.MinGasPrices = "0" + ethermint.AttoPhoton
+	if denom != "" {
+		srvCfg.MinGasPrices = "0" + denom
+	}
 
 	customAppConfig := Config{
 		Config: *srvCfg,
@@ -79,10 +79,11 @@ type EVMRPCConfig struct {
 // DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
 func DefaultEVMConfig() *EVMRPCConfig {
 	return &EVMRPCConfig{
-		Enable:     true,
-		API:        GetDefaultAPINamespaces(),
-		RPCAddress: DefaultEVMAddress,
-		WsAddress:  DefaultEVMWSAddress,
+		Enable:           true,
+		API:              GetDefaultAPINamespaces(),
+		RPCAddress:       DefaultEVMAddress,
+		WsAddress:        DefaultEVMWSAddress,
+		EnableUnsafeCORS: false,
 	}
 }
 
@@ -96,16 +97,16 @@ type Config struct {
 
 // GetConfig returns a fully parsed Config object.
 func GetConfig(v *viper.Viper) Config {
-
 	cfg := config.GetConfig(v)
 
 	return Config{
 		Config: cfg,
 		EVMRPC: EVMRPCConfig{
-			Enable:     v.GetBool("evm-rpc.enable"),
-			API:        v.GetStringSlice("evm-rpc.api"),
-			RPCAddress: v.GetString("evm-rpc.address"),
-			WsAddress:  v.GetString("evm-rpc.ws-address"),
+			Enable:           v.GetBool("evm-rpc.enable"),
+			API:              v.GetStringSlice("evm-rpc.api"),
+			RPCAddress:       v.GetString("evm-rpc.address"),
+			WsAddress:        v.GetString("evm-rpc.ws-address"),
+			EnableUnsafeCORS: v.GetBool("evm-rpc.enable-unsafe-cors"),
 		},
 	}
 }
