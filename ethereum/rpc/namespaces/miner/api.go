@@ -2,6 +2,7 @@ package miner
 
 import (
 	"errors"
+	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -71,15 +72,19 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		api.logger.Error("builder.SetMsgs failed", "error", err.Error())
 	}
 
-	// fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
-	// builder.SetFeeAmount(fees)
-	// builder.SetGasLimit(msg.GetGas())
+	// TODO: do not hardcode the value
+	value := big.NewInt(10120)
+	fees := sdk.Coins{sdk.NewCoin("aphoton", sdk.NewIntFromBigInt(value))}
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(100000000)
 
 	txFactory := tx.Factory{}
 	txFactory = txFactory.
 		WithChainID(api.ethAPI.ClientCtx().ChainID).
 		WithKeybase(api.ethAPI.ClientCtx().Keyring).
-		WithTxConfig(api.ethAPI.ClientCtx().TxConfig)
+		WithTxConfig(api.ethAPI.ClientCtx().TxConfig).
+		// TODO: set current nonce
+		WithSequence(1)
 
 	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(delAddr)
 	if err != nil {
