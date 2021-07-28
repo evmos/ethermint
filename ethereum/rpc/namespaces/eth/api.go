@@ -144,7 +144,7 @@ func (e *PublicAPI) Coinbase() (string, error) {
 
 	toAddr, err := e.backend.GetCoinbase()
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	ethAddr := common.BytesToAddress(toAddr.Bytes())
 	return ethAddr.Hex(), nil

@@ -50,7 +50,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	api.logger.Info("Etherbase account ", delAddr.String())
+	api.logger.Debug("Etherbase account ", delAddr.String())
 
 	withdrawAddr := sdk.AccAddress(etherbase.Bytes())
 	msg := distributiontypes.NewMsgSetWithdrawAddress(delAddr, withdrawAddr)
@@ -71,6 +71,10 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		api.logger.Error("builder.SetMsgs failed", "error", err.Error())
 	}
 
+	// fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
+	// builder.SetFeeAmount(fees)
+	// builder.SetGasLimit(msg.GetGas())
+
 	txFactory := tx.Factory{}
 	txFactory = txFactory.
 		WithChainID(api.ethAPI.ClientCtx().ChainID).
@@ -86,10 +90,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		api.logger.Error("failed to sign tx", "error", err.Error())
 		return false
 	}
-
-	// fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
-	// builder.SetFeeAmount(fees)
-	// builder.SetGasLimit(msg.GetGas())
 
 	// Encode transaction by default Tx encoder
 	txEncoder := api.ethAPI.ClientCtx().TxConfig.TxEncoder()
