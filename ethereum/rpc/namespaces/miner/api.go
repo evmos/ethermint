@@ -65,7 +65,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	// Assemble transaction from fields
 	builder, ok := api.ethAPI.ClientCtx().TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
 	if !ok {
-		api.logger.Error("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
+		api.logger.Debug("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
 	}
 
 	err = builder.SetMsgs(msg)
@@ -73,16 +73,22 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		api.logger.Error("builder.SetMsgs failed", "error", err.Error())
 	}
 
-	// TODO: do not hardcode the value
-	value := big.NewInt(10120)
-	fees := sdk.Coins{sdk.NewCoin("aphoton", sdk.NewIntFromBigInt(value))}
+	denom, err := sdk.GetBaseDenom()
+	if err != nil {
+		api.logger.Debug("Could not get the denom of smallest unit registered.")
+		return false
+	}
+
+	// TODO: is there a way to calculate this message fee and gas limit?
+	value := big.NewInt(10000)
+	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
 	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(100000000)
+	builder.SetGasLimit(80000)
 
 	delCommonAddr := common.BytesToAddress(delAddr.Bytes())
 	nonce, err := api.ethAPI.GetTransactionCount(delCommonAddr, rpctypes.EthPendingBlockNumber)
 	if err != nil {
-		api.logger.Error("failed to get nonce", "error", err.Error())
+		api.logger.Debug("failed to get nonce", "error", err.Error())
 		return false
 	}
 
@@ -91,7 +97,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		WithChainID(api.ethAPI.ClientCtx().ChainID).
 		WithKeybase(api.ethAPI.ClientCtx().Keyring).
 		WithTxConfig(api.ethAPI.ClientCtx().TxConfig).
-		// TODO: set current nonce
 		WithSequence(uint64(*nonce))
 
 	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(delAddr)
@@ -100,7 +105,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	}
 
 	if err := tx.Sign(txFactory, keyInfo.GetName(), builder, false); err != nil {
-		api.logger.Error("failed to sign tx", "error", err.Error())
+		api.logger.Debug("failed to sign tx", "error", err.Error())
 		return false
 	}
 
@@ -108,7 +113,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	txEncoder := api.ethAPI.ClientCtx().TxConfig.TxEncoder()
 	txBytes, err := txEncoder(builder.GetTx())
 	if err != nil {
-		api.logger.Error("failed to encode eth tx using default encoder", "error", err.Error())
+		api.logger.Debug("failed to encode eth tx using default encoder", "error", err.Error())
 		return false
 	}
 
@@ -122,11 +127,11 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		if err == nil {
 			err = errors.New(rsp.RawLog)
 		}
-		api.logger.Error("failed to broadcast tx", "error", err.Error())
+		api.logger.Debug("failed to broadcast tx", "error", err.Error())
 		return false
 	}
 
-	api.logger.Info("Broadcasting tx...", "hash", tmHash)
+	api.logger.Info("Broadcasted tx to set delegator's withdraw address.", "hash", tmHash)
 	return true
 }
 
@@ -139,9 +144,13 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 		return false
 	}
 	// NOTE: To allow values less that 1 aphoton, we need to divide the gasPrice here using some constant
-	// If we want to work the same as go-eth we should just use the gasPrice as an int without converting it
+	// If we want to function the same as go-eth we should just use the gasPrice as an int without converting it
 	coinsValue := gasPrice.ToInt().String()
-	unit := "aphoton"
+	unit, err := sdk.GetBaseDenom()
+	if err != nil {
+		api.logger.Debug("Could not get the denom of smallest unit registered.")
+		return false
+	}
 	c, err := sdk.ParseDecCoins(coinsValue + unit)
 	if err != nil {
 		api.logger.Error("failed to parse coins", "coins", coinsValue, "error", err.Error())
