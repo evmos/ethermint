@@ -104,11 +104,6 @@ import (
 )
 
 func init() {
-	// set the address prefixes
-	config := sdk.GetConfig()
-	ethermint.SetBech32Prefixes(config)
-	ethermint.SetBip44CoinType(config)
-
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
