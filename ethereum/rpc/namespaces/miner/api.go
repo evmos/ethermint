@@ -17,6 +17,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
+	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 )
 
 // API is the miner prefixed set of APIs in the Miner JSON-RPC spec.
@@ -78,13 +79,20 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(100000000)
 
+	delCommonAddr := common.BytesToAddress(delAddr.Bytes())
+	nonce, err := api.ethAPI.GetTransactionCount(delCommonAddr, rpctypes.EthPendingBlockNumber)
+	if err != nil {
+		api.logger.Error("failed to get nonce", "error", err.Error())
+		return false
+	}
+
 	txFactory := tx.Factory{}
 	txFactory = txFactory.
 		WithChainID(api.ethAPI.ClientCtx().ChainID).
 		WithKeybase(api.ethAPI.ClientCtx().Keyring).
 		WithTxConfig(api.ethAPI.ClientCtx().TxConfig).
 		// TODO: set current nonce
-		WithSequence(1)
+		WithSequence(uint64(*nonce))
 
 	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(delAddr)
 	if err != nil {
