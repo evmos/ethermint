@@ -44,16 +44,16 @@ func NewMinerAPI(
 func (api *API) SetEtherbase(etherbase common.Address) bool {
 	api.logger.Debug("miner_setEtherbase")
 
-	addr, err := api.backend.GetCoinbase()
+	delAddr, err := api.backend.GetCoinbase()
 	if err != nil {
 		api.logger.Debug("failed to get address")
 		return false
 	}
 
-	api.logger.Info("Etherbase account ", addr.String())
+	api.logger.Info("Etherbase account ", delAddr.String())
 
 	withdrawAddr := sdk.AccAddress(etherbase.Bytes())
-	msg := distributiontypes.NewMsgSetWithdrawAddress(addr, withdrawAddr)
+	msg := distributiontypes.NewMsgSetWithdrawAddress(delAddr, withdrawAddr)
 
 	if err := msg.ValidateBasic(); err != nil {
 		api.logger.Debug("tx failed basic validation", "error", err.Error())
@@ -77,12 +77,13 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		WithKeybase(api.ethAPI.ClientCtx().Keyring).
 		WithTxConfig(api.ethAPI.ClientCtx().TxConfig)
 
-	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(addr)
+	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(delAddr)
 	if err != nil {
 		return false
 	}
 
 	if err := tx.Sign(txFactory, keyInfo.GetName(), builder, false); err != nil {
+		api.logger.Error("failed to sign tx", "error", err.Error())
 		return false
 	}
 
