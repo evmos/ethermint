@@ -120,6 +120,7 @@ func NewLogFromEth(log *ethtypes.Log) *Log {
 		BlockNumber: log.BlockNumber,
 		TxHash:      log.TxHash.String(),
 		TxIndex:     uint64(log.TxIndex),
+		Index:       uint64(log.Index),
 		BlockHash:   log.BlockHash.String(),
 		Removed:     log.Removed,
 	}

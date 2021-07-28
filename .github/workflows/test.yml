@@ -82,12 +82,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -121,12 +121,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -160,12 +160,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -199,12 +199,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
