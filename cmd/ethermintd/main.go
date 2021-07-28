@@ -5,11 +5,14 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/tharsis/ethermint/app"
+	cmdcfg "github.com/tharsis/ethermint/cmd/config"
 )
 
 func main() {
+	setupConfig()
 	rootCmd, _ := NewRootCmd()
 
 	if err := svrcmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
@@ -21,4 +24,12 @@ func main() {
 			os.Exit(1)
 		}
 	}
+}
+
+func setupConfig() {
+	// set the address prefixes
+	config := sdk.GetConfig()
+	cmdcfg.SetBech32Prefixes(config)
+	cmdcfg.SetBip44CoinType(config)
+	config.Seal()
 }

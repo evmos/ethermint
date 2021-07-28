@@ -1,11 +1,9 @@
-package types
+package config
 
 import (
-	"math/big"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethaccounts "github.com/ethereum/go-ethereum/accounts"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 const (
@@ -24,17 +22,6 @@ const (
 	Bech32PrefixConsAddr = EthBech32Prefix + sdk.PrefixValidator + sdk.PrefixConsensus
 	// Bech32PrefixConsPub defines the Bech32 prefix of a consensus node public key
 	Bech32PrefixConsPub = EthBech32Prefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic
-
-	// Bip44CoinType satisfies EIP84. See https://github.com/ethereum/EIPs/issues/84 for more info.
-	Bip44CoinType = 60
-)
-
-var (
-	// BIP44HDPath is the BIP44 HD path used on Ethereum.
-	BIP44HDPath = ethaccounts.DefaultBaseDerivationPath.String()
-
-	// PowerReduction defines the default power reduction value for staking
-	PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 )
 
 // SetBech32Prefixes sets the global prefixes to be used when serializing addresses and public keys to Bech32 strings.
@@ -46,6 +33,6 @@ func SetBech32Prefixes(config *sdk.Config) {
 
 // SetBip44CoinType sets the global coin type to be used in hierarchical deterministic wallets.
 func SetBip44CoinType(config *sdk.Config) {
-	config.SetCoinType(Bip44CoinType)
-	config.SetFullFundraiserPath(BIP44HDPath)
+	config.SetCoinType(ethermint.Bip44CoinType)
+	config.SetFullFundraiserPath(ethermint.BIP44HDPath)
 }

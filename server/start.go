@@ -40,8 +40,8 @@ import (
 
 	ethlog "github.com/ethereum/go-ethereum/log"
 
-	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
+	"github.com/tharsis/ethermint/server/config"
 )
 
 // Tendermint full-node start flags

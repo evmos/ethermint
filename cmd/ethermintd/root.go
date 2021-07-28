@@ -34,10 +34,11 @@ import (
 
 	"github.com/tharsis/ethermint/app"
 	ethermintclient "github.com/tharsis/ethermint/client"
-	ethermintconfig "github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/crypto/hd"
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/server"
+	servercfg "github.com/tharsis/ethermint/server/config"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 const EnvPrefix = "ETHERMINT"
@@ -77,7 +78,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			customAppTemplate, customAppConfig := ethermintconfig.AppConfig()
+			customAppTemplate, customAppConfig := servercfg.AppConfig(ethermint.AttoPhoton)
 
 			return sdkserver.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig)
 		},

@@ -12,8 +12,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/types"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
-	"github.com/tharsis/ethermint/cmd/ethermintd/config"
 	"github.com/tharsis/ethermint/ethereum/rpc"
+
+	"github.com/tharsis/ethermint/server/config"
 )
 
 // StartEVMRPC start evm rpc server
