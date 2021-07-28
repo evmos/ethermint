@@ -16,4 +16,10 @@ address = "{{ .EVMRPC.RPCAddress }}"
 
 # Address defines the EVM WebSocket server address to bind to.
 ws-address = "{{ .EVMRPC.WsAddress }}"
+
+# API defines a list of JSON-RPC namespaces that should be enabled
+api = "{{ .EVMRPC.API }}"
+
+# EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
+enable-unsafe-cors = "{{ .EVMRPC.EnableUnsafeCORS }}"
 `
