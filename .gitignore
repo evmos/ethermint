@@ -36,6 +36,9 @@ keyring_test_cosmos
 secret.yml
 # vue/
 
+# Local docker volume mappings
+localnet-setup
+
 # Testing
 coverage.txt
 *.out
