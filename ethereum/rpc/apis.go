@@ -111,7 +111,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: MinerNamespace,
 					Version:   apiVersion,
-					Service:   miner.NewMinerAPI(ctx, ethAPI),
+					Service:   miner.NewMinerAPI(ctx, ethAPI, evmBackend),
 					Public:    true,
 				},
 			)

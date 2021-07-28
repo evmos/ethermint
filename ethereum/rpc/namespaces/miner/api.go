@@ -4,36 +4,39 @@ import (
 	"errors"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
-	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // API is the miner prefixed set of APIs in the Miner JSON-RPC spec.
 type API struct {
-	ctx    *server.Context
-	logger log.Logger
-	ethAPI *eth.PublicAPI
+	ctx     *server.Context
+	logger  log.Logger
+	ethAPI  *eth.PublicAPI
+	backend backend.Backend
 }
 
 // NewMinerAPI creates an instance of the Miner API.
 func NewMinerAPI(
 	ctx *server.Context,
 	ethAPI *eth.PublicAPI,
+	backend backend.Backend,
 ) *API {
 	return &API{
-		ctx:    ctx,
-		ethAPI: ethAPI,
-		logger: ctx.Logger.With("module", "miner"),
+		ctx:     ctx,
+		ethAPI:  ethAPI,
+		logger:  ctx.Logger.With("module", "miner"),
+		backend: backend,
 	}
 }
 
@@ -41,40 +44,19 @@ func NewMinerAPI(
 func (api *API) SetEtherbase(etherbase common.Address) bool {
 	api.logger.Debug("miner_setEtherbase")
 
-	list, err := api.ethAPI.ClientCtx().Keyring.List()
-	if err != nil || len(list) < 1 {
-		api.logger.Debug("Could not get list of addresses")
-		return false
-	}
-
-	addr := common.BytesToAddress(list[0].GetPubKey().Address())
-
-	api.logger.Info(addr.String())
-
-	args := rpctypes.SendTxArgs{}
-	args.From = addr
-	// TODO: set this as the message info
-	// delegatorAddress := addr
-	// withdrawAddress := etherbase
-	args.Data = &hexutil.Bytes{}
-	args, err = api.ethAPI.SetTxDefaults(args)
+	addr, err := api.backend.GetCoinbase()
 	if err != nil {
-		api.logger.Debug("Unable to parse transaction args", "error", err.Error())
+		api.logger.Debug("failed to get address")
 		return false
 	}
 
-	msg := args.ToTransaction()
+	api.logger.Info("Etherbase account ", addr.String())
+
+	withdrawAddr := sdk.AccAddress(etherbase.Bytes())
+	msg := distributiontypes.NewMsgSetWithdrawAddress(addr, withdrawAddr)
 
 	if err := msg.ValidateBasic(); err != nil {
 		api.logger.Debug("tx failed basic validation", "error", err.Error())
-		return false
-	}
-
-	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
-
-	// Sign transaction
-	if err := msg.Sign(signer, api.ethAPI.ClientCtx().Keyring); err != nil {
-		api.logger.Debug("failed to sign tx", "error", err.Error())
 		return false
 	}
 
@@ -84,34 +66,29 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		api.logger.Error("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
 	}
 
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	if err != nil {
-		api.logger.Error("codectypes.NewAnyWithValue failed to pack an obvious value", "error", err.Error())
-		return false
-	}
-
-	builder.SetExtensionOptions(option)
 	err = builder.SetMsgs(msg)
 	if err != nil {
 		api.logger.Error("builder.SetMsgs failed", "error", err.Error())
 	}
 
-	// Query params to use the EVM denomination
-	res, err := api.ethAPI.QueryClient().QueryClient.Params(api.ethAPI.Ctx(), &evmtypes.QueryParamsRequest{})
+	txFactory := tx.Factory{}
+	txFactory = txFactory.
+		WithChainID(api.ethAPI.ClientCtx().ChainID).
+		WithKeybase(api.ethAPI.ClientCtx().Keyring).
+		WithTxConfig(api.ethAPI.ClientCtx().TxConfig)
+
+	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(addr)
 	if err != nil {
-		api.logger.Error("failed to query evm params", "error", err.Error())
 		return false
 	}
 
-	txData, err := evmtypes.UnpackTxData(msg.Data)
-	if err != nil {
-		api.logger.Error("failed to unpack tx data", "error", err.Error())
+	if err := tx.Sign(txFactory, keyInfo.GetName(), builder, false); err != nil {
 		return false
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
-	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(msg.GetGas())
+	// fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
+	// builder.SetFeeAmount(fees)
+	// builder.SetGasLimit(msg.GetGas())
 
 	// Encode transaction by default Tx encoder
 	txEncoder := api.ethAPI.ClientCtx().TxConfig.TxEncoder()
@@ -121,7 +98,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	txHash := msg.AsTransaction().Hash()
+	tmHash := common.BytesToHash(tmtypes.Tx(txBytes).Hash())
 
 	// Broadcast transaction in sync mode (default)
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
@@ -135,7 +112,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	api.logger.Info("Broadcasting tx...", "hash", txHash)
+	api.logger.Info("Broadcasting tx...", "hash", tmHash)
 	return true
 }
 
