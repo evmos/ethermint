@@ -851,6 +851,22 @@ paths:
                           "@type": "type.googleapis.com/google.protobuf.Duration",
                           "value": "1.212s"
                         }
+      parameters:
+        - name: height
+          description: >-
+            height of the block which we want to query the bloom filter.
+
+            Tendermint always replace the query request header by the current
+            context
+
+            header, height cannot be extracted from there, so we need to
+            explicitly pass
+
+            it in parameter.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   '/ethermint/evm/v1alpha1/block_logs/{hash}':
@@ -3876,7 +3892,7 @@ paths:
         - Query
   /cosmos/bank/v1beta1/denoms_metadata:
     get:
-      summary: |-
+      summary: >-
         DenomsMetadata queries the client metadata for all registered coin
         denominations.
       operationId: DenomsMetadata
@@ -3968,9 +3984,9 @@ paths:
                       was set, its value is undefined otherwise
             description: >-
               QueryDenomsMetadataResponse is the response type for the
-              Query/DenomsMetadata
+              Query/DenomsMetadata RPC
 
-              RPC method.
+              method.
         default:
           description: An unexpected error response.
           schema:
@@ -4055,9 +4071,7 @@ paths:
               metadata:
                 description: >-
                   metadata describes and provides all the client information for
-                  the
-
-                  requested token.
+                  the requested token.
                 type: object
                 properties:
                   description:
@@ -4113,9 +4127,9 @@ paths:
                       displayed in clients.
             description: >-
               QueryDenomMetadataResponse is the response type for the
-              Query/DenomMetadata
+              Query/DenomMetadata RPC
 
-              RPC method.
+              method.
         default:
           description: An unexpected error response.
           schema:
@@ -9768,12 +9782,12 @@ paths:
                             format: uint64
                         description: >-
                           Consensus captures the consensus rules for processing
-                          a block in the
+                          a block in the blockchain,
 
-                          blockchain, including all blockchain data structures
-                          and the rules of the
+                          including all blockchain data structures and the rules
+                          of the application's
 
-                          application's state transition machine.
+                          state transition machine.
                       chain_id:
                         type: string
                       height:
@@ -14248,7 +14262,7 @@ definitions:
     type: object
     properties:
       metadata:
-        description: |-
+        description: >-
           metadata describes and provides all the client information for the
           requested token.
         type: object
@@ -14301,9 +14315,9 @@ definitions:
               displayed in clients.
     description: >-
       QueryDenomMetadataResponse is the response type for the
-      Query/DenomMetadata
+      Query/DenomMetadata RPC
 
-      RPC method.
+      method.
   cosmos.bank.v1beta1.QueryDenomsMetadataResponse:
     type: object
     properties:
@@ -14384,9 +14398,9 @@ definitions:
               was set, its value is undefined otherwise
     description: >-
       QueryDenomsMetadataResponse is the response type for the
-      Query/DenomsMetadata
+      Query/DenomsMetadata RPC
 
-      RPC method.
+      method.
   cosmos.bank.v1beta1.QueryParamsResponse:
     type: object
     properties:
@@ -16151,12 +16165,12 @@ definitions:
                 format: uint64
             description: >-
               Consensus captures the consensus rules for processing a block in
-              the
+              the blockchain,
 
-              blockchain, including all blockchain data structures and the rules
-              of the
+              including all blockchain data structures and the rules of the
+              application's
 
-              application's state transition machine.
+              state transition machine.
           chain_id:
             type: string
           height:
@@ -17226,12 +17240,12 @@ definitions:
                     format: uint64
                 description: >-
                   Consensus captures the consensus rules for processing a block
-                  in the
+                  in the blockchain,
 
-                  blockchain, including all blockchain data structures and the
-                  rules of the
+                  including all blockchain data structures and the rules of the
+                  application's
 
-                  application's state transition machine.
+                  state transition machine.
               chain_id:
                 type: string
               height:
@@ -18852,11 +18866,12 @@ definitions:
             format: uint64
         description: >-
           Consensus captures the consensus rules for processing a block in the
+          blockchain,
 
-          blockchain, including all blockchain data structures and the rules of
-          the
+          including all blockchain data structures and the rules of the
+          application's
 
-          application's state transition machine.
+          state transition machine.
       chain_id:
         type: string
       height:
@@ -18932,7 +18947,11 @@ definitions:
       app:
         type: string
         format: uint64
-    description: |-
+    description: >-
       Consensus captures the consensus rules for processing a block in the
-      blockchain, including all blockchain data structures and the rules of the
-      application's state transition machine.
+      blockchain,
+
+      including all blockchain data structures and the rules of the
+      application's
+
+      state transition machine.

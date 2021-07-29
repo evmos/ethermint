@@ -27,15 +27,25 @@ import (
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PrivateAccountAPI struct {
-	ethAPI *eth.PublicAPI
-	logger log.Logger
+	ethAPI     *eth.PublicAPI
+	logger     log.Logger
+	hdPathIter ethermint.HDPathIterator
 }
 
 // NewAPI creates an instance of the public Personal Eth API.
 func NewAPI(logger log.Logger, ethAPI *eth.PublicAPI) *PrivateAccountAPI {
+	cfg := sdk.GetConfig()
+	basePath := cfg.GetFullFundraiserPath()
+
+	iterator, err := ethermint.NewHDPathIterator(basePath, true)
+	if err != nil {
+		panic(err)
+	}
+
 	return &PrivateAccountAPI{
-		ethAPI: ethAPI,
-		logger: logger.With("api", "personal"),
+		ethAPI:     ethAPI,
+		logger:     logger.With("api", "personal"),
+		hdPathIter: iterator,
 	}
 }
 
@@ -109,14 +119,16 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 	name := "key_" + time.Now().UTC().Format(time.RFC3339)
 
 	// create the mnemonic and save the account
-	info, _, err := api.ethAPI.ClientCtx().Keyring.NewMnemonic(name, keyring.English, ethermint.BIP44HDPath, password, hd.EthSecp256k1)
+	hdPath := api.hdPathIter()
+
+	info, _, err := api.ethAPI.ClientCtx().Keyring.NewMnemonic(name, keyring.English, hdPath.String(), password, hd.EthSecp256k1)
 	if err != nil {
 		return common.Address{}, err
 	}
 
 	addr := common.BytesToAddress(info.GetPubKey().Address().Bytes())
 	api.logger.Info("Your new key was generated", "address", addr.String())
-	api.logger.Info("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermint/"+name)
+	api.logger.Info("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermint/"+name) // TODO: pass the correct binary
 	api.logger.Info("Please remember your password!")
 	return addr, nil
 }
