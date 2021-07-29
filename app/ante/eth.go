@@ -324,7 +324,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		// calculate the fees paid to validators based on the effective tip and price
 
 		effectiveTip := txData.GetGasPrice()
-		if london {
+		if london && txData.TxType() == ethtypes.DynamicFeeTxType {
 			baseFee := egcd.evmKeeper.GetBaseFee(ctx)
 			effectiveTip = cmath.BigMin(txData.GetGasTipCap(), new(big.Int).Sub(txData.GetGasFeeCap(), baseFee))
 		}

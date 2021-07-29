@@ -183,15 +183,23 @@ func (tx *DynamicFeeTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 
 // Validate performs a stateless validation of the tx fields.
 func (tx DynamicFeeTx) Validate() error {
-	if tx.GasTipCap != nil && tx.GasTipCap.IsNegative() {
+	if tx.GasTipCap == nil {
+		return sdkerrors.Wrap(ErrInvalidGasCap, "gas tip cap cannot nil")
+	}
+
+	if tx.GasFeeCap == nil {
+		return sdkerrors.Wrap(ErrInvalidGasCap, "gas fee cap cannot nil")
+	}
+
+	if tx.GasTipCap.IsNegative() {
 		return sdkerrors.Wrapf(ErrInvalidGasCap, "gas tip cap cannot be negative %s", tx.GasTipCap)
 	}
 
-	if tx.GasFeeCap != nil && tx.GasFeeCap.IsNegative() {
+	if tx.GasFeeCap.IsNegative() {
 		return sdkerrors.Wrapf(ErrInvalidGasCap, "gas fee cap cannot be negative %s", tx.GasFeeCap)
 	}
 
-	if tx.GasTipCap != nil && tx.GasFeeCap != nil && tx.GasFeeCap.LT(*tx.GasTipCap) {
+	if tx.GasFeeCap.LT(*tx.GasTipCap) {
 		return sdkerrors.Wrapf(
 			ErrInvalidGasCap, "max priority fee per gas higher than max fee per gas (%s > %s)",
 			tx.GasTipCap, tx.GasFeeCap,
