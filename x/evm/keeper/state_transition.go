@@ -140,7 +140,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	baseFee := k.GetBaseFee(k.ctx)
 
-	// TODO: header base fee
 	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
