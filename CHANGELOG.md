@@ -46,6 +46,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#68](https://github.com/tharsis/ethermint/issues/68) Replace block hash storage map to use staking `HistoricalInfo`.
 * (evm) [tharsis#276](https://github.com/tharsis/ethermint/pull/276) Vm errors don't result in cosmos tx failure, just
   different tx state and events.
+* (evm) [tharsis#342](https://github.com/tharsis/ethermint/issues/342) Don't clear balance when resetting the account.
+* (evm) [tharsis#334](https://github.com/tharsis/ethermint/pull/334) Log index changed to the index in block rather than
+  tx.
 
 ### API Breaking
 
@@ -61,6 +64,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (deps) [tharsis#374](https://github.com/tharsis/ethermint/pull/374) Bump ibc-go to [`v1.0.0-rc3`](https://github.com/cosmos/ibc-go/releases/tag/v1.0.0-rc3)
 * (gRPC) [tharsis#239](https://github.com/tharsis/ethermint/pull/239) Query `ChainConfig` via gRPC.
 * (rpc) [tharsis#181](https://github.com/tharsis/ethermint/pull/181) Use evm denomination for params on tx fee.
 * (deps) [tharsis#165](https://github.com/tharsis/ethermint/pull/165), [tharsis#298](https://github.com/tharsis/ethermint/pull/298) Bump Cosmos SDK and Tendermint versions to [v0.43.0-rc1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.43.0-rc1) and [v0.34.11](https://github.com/tendermint/tendermint/releases/tag/v0.34.11), respectively.
@@ -71,9 +75,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#176](https://github.com/tharsis/ethermint/issues/176) Support fetching pending nonce
 * (rpc) [tharsis#272](https://github.com/tharsis/ethermint/pull/272) do binary search to estimate gas accurately
 * (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
+* (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
 
 ### Bug Fixes
 
+* (keys) [tharsis#346](https://github.com/tharsis/ethermint/pull/346) Fix `keys add` command with `--ledger` flag for the `secp256k1` signing algorithm.
 * (evm) [tharsis#291](https://github.com/tharsis/ethermint/pull/291) Use block proposer address (validator operator) for `COINBASE` opcode.
 * (rpc) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Fix transaction hashing and decoding on `eth_sendTransaction`.
 * (rpc) [tharsis#45](https://github.com/tharsis/ethermint/pull/45) Use `EmptyUncleHash` and `EmptyRootHash` for empty ethereum `Header` fields.
