@@ -145,11 +145,11 @@ func (e *PublicAPI) Syncing() (interface{}, error) {
 func (e *PublicAPI) Coinbase() (string, error) {
 	e.logger.Debug("eth_coinbase")
 
-	toAddr, err := e.backend.GetCoinbase()
+	coinbase, err := e.backend.GetCoinbase()
 	if err != nil {
 		return "", err
 	}
-	ethAddr := common.BytesToAddress(toAddr.Bytes())
+	ethAddr := common.BytesToAddress(coinbase.Bytes())
 	return ethAddr.Hex(), nil
 }
 

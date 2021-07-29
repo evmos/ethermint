@@ -49,11 +49,10 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 
 	delAddr, err := api.backend.GetCoinbase()
 	if err != nil {
-		api.logger.Debug("failed to get address")
+		api.logger.Debug("failed to get coinbase address", "error", err.Error())
 		return false
 	}
 
-	api.logger.Debug("Etherbase account ", delAddr.String())
 
 	withdrawAddr := sdk.AccAddress(etherbase.Bytes())
 	msg := distributiontypes.NewMsgSetWithdrawAddress(delAddr, withdrawAddr)
@@ -132,7 +131,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	api.logger.Info("Broadcasted tx to set delegator's withdraw address.", "hash", tmHash)
+	api.logger.Debug("broadcasted tx to set miner withdraw address (etherbase)", "hash", tmHash.String())
 	return true
 }
 
