@@ -9,12 +9,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	// txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
+
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
@@ -53,7 +58,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-
 	withdrawAddr := sdk.AccAddress(etherbase.Bytes())
 	msg := distributiontypes.NewMsgSetWithdrawAddress(delAddr, withdrawAddr)
 
@@ -79,8 +83,21 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
+	// req := &txtypes.SimulateRequest{
+	// 	TxBytes: nil,
+	// }
+
+	// res, err := api.ethAPI.QueryClient().Simulate(api.ethAPI.Ctx(), req)
+	// if err != nil {
+	// 	api.logger.Debug("failed to simulate transaction to obtain gas estimation", "error", err.Error())
+	// 	return false
+	// }
+
+	// res.GasInfo.GasUsed
+
 	// TODO: is there a way to calculate this message fee and gas limit?
 	value := big.NewInt(10000)
+
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethermint.DefaultRPCGasLimit)
@@ -131,11 +148,14 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
+	// ethermintd tx distribution withdraw-all-rewards
+
 	api.logger.Debug("broadcasted tx to set miner withdraw address (etherbase)", "hash", tmHash.String())
 	return true
 }
 
 // SetGasPrice sets the minimum accepted gas price for the miner.
+// NOTE: explicar que solo recibe enteros
 func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.logger.Info(api.ctx.Viper.ConfigFileUsed())
 	appConf, err := config.ParseConfig(api.ctx.Viper)
@@ -143,21 +163,28 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
 		return false
 	}
+
 	// NOTE: To allow values less that 1 aphoton, we need to divide the gasPrice here using some constant
 	// If we want to function the same as go-eth we should just use the gasPrice as an int without converting it
-	coinsValue := gasPrice.ToInt().String()
-	unit, err := sdk.GetBaseDenom()
-	if err != nil {
-		api.logger.Debug("Could not get the denom of smallest unit registered.")
-		return false
+
+	var unit string
+	minGasPrices := appConf.GetMinGasPrices()
+
+	// fetch the base denom from the sdk Config in case it's not currently defined on the node config
+	if len(minGasPrices) == 0 || minGasPrices.Empty() {
+		unit, err = sdk.GetBaseDenom()
+		if err != nil {
+			api.logger.Debug("Could not get the denom of smallest unit registered.")
+			return false
+		}
+	} else {
+		unit = minGasPrices[0].Denom
 	}
-	c, err := sdk.ParseDecCoins(coinsValue + unit)
-	if err != nil {
-		api.logger.Error("failed to parse coins", "coins", coinsValue, "error", err.Error())
-		return false
-	}
-	appConf.SetMinGasPrices(c)
+
+	c := sdk.NewDecCoin(unit, sdk.NewIntFromBigInt(gasPrice.ToInt()))
+
+	appConf.SetMinGasPrices(sdk.DecCoins{c})
 	config.WriteConfigFile(api.ctx.Viper.ConfigFileUsed(), appConf)
-	api.logger.Info("Your configuration file was modified. Please RESTART your node.", "value", coinsValue+unit)
+	api.logger.Info("Your configuration file was modified. Please RESTART your node.", "gas-price", c.String())
 	return true
 }
