@@ -137,11 +137,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
 	}
 
-	// create an ethereum StateTransition instance and run TransitionDb
-	// we use a ctx context to avoid modifying to state in case EVM msg is reverted
-	originalCtx := k.ctx
-	cacheCtx, commit := k.ctx.CacheContext()
-	k.ctx = cacheCtx
+	// we use a cached context to avoid modifying to state in case EVM msg is reverted
+	commit := k.BeginCachedContext()
 
 	// get the coinbase address from the block proposer
 	coinbase, err := k.GetCoinbaseAddress()
@@ -149,6 +146,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
+	// create an ethereum EVM instance and run the message
 	evm := k.NewEVM(msg, ethCfg, params, coinbase)
 
 	k.SetTxHashTransient(tx.Hash())
@@ -163,11 +161,12 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogs(txHash)
 
-	// Commit and switch to original context
+	// Commit and switch to committed context
 	if !res.Failed() {
 		commit()
 	}
-	k.ctx = originalCtx
+
+	k.EndCachedContext()
 
 	// Logs needs to be ignored when tx is reverted
 	// Set the log and bloom filter only when the tx is NOT REVERTED
@@ -372,4 +371,16 @@ func (k Keeper) GetCoinbaseAddress() (common.Address, error) {
 
 	coinbase := common.BytesToAddress(validator.GetOperator())
 	return coinbase, nil
+}
+
+// BeginCachedContext create the cached context
+func (k Keeper) BeginCachedContext() (commit func()) {
+	k.committedCtx = k.ctx
+	k.ctx, commit = k.ctx.CacheContext()
+	return
+}
+
+// EndCachedContext recover the committed context
+func (k Keeper) EndCachedContext() {
+	k.ctx = k.committedCtx
 }
