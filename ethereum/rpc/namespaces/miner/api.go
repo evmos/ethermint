@@ -94,14 +94,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	// }
 
 	// res.GasInfo.GasUsed
-
-	// TODO: is there a way to calculate this message fee and gas limit?
-	value := big.NewInt(10000)
-
-	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
-	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(ethermint.DefaultRPCGasLimit)
-
 	delCommonAddr := common.BytesToAddress(delAddr.Bytes())
 	nonce, err := api.ethAPI.GetTransactionCount(delCommonAddr, rpctypes.EthPendingBlockNumber)
 	if err != nil {
@@ -115,6 +107,18 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		WithKeybase(api.ethAPI.ClientCtx().Keyring).
 		WithTxConfig(api.ethAPI.ClientCtx().TxConfig).
 		WithSequence(uint64(*nonce))
+
+	_, gas, err := tx.CalculateGas(api.ethAPI.ClientCtx(), txFactory, msg)
+	if err != nil {
+		api.logger.Debug("failed to calculate gas", "error", err.Error())
+	}
+	//txFactory = txFactory.WithGas(gas)
+
+	// TODO: is there a way to calculate this message fee and gas limit?
+	value := big.NewInt(10000)
+	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(ethermint.DefaultRPCGasLimit)
 
 	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(delAddr)
 	if err != nil {
