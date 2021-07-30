@@ -6,10 +6,10 @@ import "gogoproto/gogo.proto";
 option go_package = "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1";
 
 // PubKey defines a secp256k1 public key
-// Key is the compressed form of the pubkey. The first byte depends is a 0x02
-// byte if the y-coordinate is the lexicographically largest of the two
-// associated with the x-coordinate. Otherwise the first byte is a 0x03. This
-// prefix is followed with the x-coordinate.
+// Key is the compressed form of the pubkey. The first byte depends is a 0x02 byte
+// if the y-coordinate is the lexicographically largest of the two associated with
+// the x-coordinate. Otherwise the first byte is a 0x03.
+// This prefix is followed with the x-coordinate.
 message PubKey {
   option (gogoproto.goproto_stringer) = false;
 
@@ -17,4 +17,6 @@ message PubKey {
 }
 
 // PrivKey defines a secp256k1 private key.
-message PrivKey { bytes key = 1; }
+message PrivKey {
+  bytes key = 1;
+}

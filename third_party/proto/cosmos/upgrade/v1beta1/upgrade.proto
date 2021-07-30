@@ -5,9 +5,9 @@ import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/cosmos/cosmos-sdk/x/upgrade/types";
+option go_package                       = "github.com/cosmos/cosmos-sdk/x/upgrade/types";
 option (gogoproto.goproto_stringer_all) = false;
-option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.goproto_getters_all)  = false;
 
 // Plan specifies information about a planned upgrade and when it should occur.
 message Plan {
@@ -24,8 +24,7 @@ message Plan {
 
   // The time after which the upgrade must be performed.
   // Leave set to its zero value to use a pre-defined Height instead.
-  google.protobuf.Timestamp time = 2
-      [ (gogoproto.stdtime) = true, (gogoproto.nullable) = false ];
+  google.protobuf.Timestamp time = 2 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
 
   // The height at which the upgrade must be performed.
   // Only used if Time is not set.
@@ -35,15 +34,12 @@ message Plan {
   // such as a git commit that validators could automatically upgrade to
   string info = 4;
 
-  // IBC-enabled chains can opt-in to including the upgraded client state in its
-  // upgrade plan This will make the chain commit to the correct upgraded (self)
-  // client state before the upgrade occurs, so that connecting chains can
-  // verify that the new upgraded client is valid by verifying a proof on the
+  // IBC-enabled chains can opt-in to including the upgraded client state in its upgrade plan
+  // This will make the chain commit to the correct upgraded (self) client state before the upgrade occurs,
+  // so that connecting chains can verify that the new upgraded client is valid by verifying a proof on the
   // previous version of the chain.
-  // This will allow IBC connections to persist smoothly across planned chain
-  // upgrades
-  google.protobuf.Any upgraded_client_state = 5
-      [ (gogoproto.moretags) = "yaml:\"upgraded_client_state\"" ];
+  // This will allow IBC connections to persist smoothly across planned chain upgrades
+  google.protobuf.Any upgraded_client_state = 5 [(gogoproto.moretags) = "yaml:\"upgraded_client_state\""];
 }
 
 // SoftwareUpgradeProposal is a gov Content type for initiating a software
@@ -51,9 +47,9 @@ message Plan {
 message SoftwareUpgradeProposal {
   option (gogoproto.equal) = true;
 
-  string title = 1;
+  string title       = 1;
   string description = 2;
-  Plan plan = 3 [ (gogoproto.nullable) = false ];
+  Plan   plan        = 3 [(gogoproto.nullable) = false];
 }
 
 // CancelSoftwareUpgradeProposal is a gov Content type for cancelling a software
@@ -61,6 +57,6 @@ message SoftwareUpgradeProposal {
 message CancelSoftwareUpgradeProposal {
   option (gogoproto.equal) = true;
 
-  string title = 1;
+  string title       = 1;
   string description = 2;
 }
