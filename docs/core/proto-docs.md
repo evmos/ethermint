@@ -593,7 +593,8 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 <a name="ethermint.evm.v1alpha1.QueryBaseFeeRequest"></a>
 
 ### QueryBaseFeeRequest
-QueryBaseFeeRequest defines the request type for querying the EIP1559 base fee.
+QueryBaseFeeRequest defines the request type for querying the EIP1559 base
+fee.
 
 
 

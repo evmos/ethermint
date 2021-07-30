@@ -82,7 +82,6 @@ service Query {
   rpc EstimateGas(EthCallRequest) returns (EstimateGasResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/estimate_gas";
   }
-
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -235,8 +234,8 @@ message QueryBlockLogsResponse {
 message QueryBlockBloomRequest {
   // height of the block which we want to query the bloom filter.
   // Tendermint always replace the query request header by the current context
-  // header, height cannot be extracted from there, so we need to explicitly pass
-  // it in parameter.
+  // header, height cannot be extracted from there, so we need to explicitly
+  // pass it in parameter.
   int64 height = 1;
 }
 
@@ -256,7 +255,8 @@ message QueryParamsResponse {
   Params params = 1 [ (gogoproto.nullable) = false ];
 }
 
-// QueryBaseFeeRequest defines the request type for querying the EIP1559 base fee.
+// QueryBaseFeeRequest defines the request type for querying the EIP1559 base
+// fee.
 message QueryBaseFeeRequest {}
 
 // BaseFeeResponse returns the EIP1559 base fee.
