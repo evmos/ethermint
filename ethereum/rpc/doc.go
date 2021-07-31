@@ -3,6 +3,7 @@
 //
 // The list of available namespaces are:
 //
+// * `rpc/namespaces/cosmos`: `cosmos` namespace. Exposes the API for WalletConnect v2.
 // * `rpc/namespaces/eth`: `eth` namespace. Exposes the `PublicEthereumAPI` and the `PublicFilterAPI`.
 // * `rpc/namespaces/personal`: `personal` namespace. Exposes the `PrivateAccountAPI`.
 // * `rpc/namespaces/net`: `net` namespace. Exposes the `PublicNetAPI`.
