@@ -115,7 +115,8 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	//txFactory = txFactory.WithGas(gas)
 
 	// TODO: is there a way to calculate this message fee and gas limit?
-	value := big.NewInt(10000)
+	// value := big.NewInt(gas)
+	value := new(big.Int).SetUint64(gas)
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethermint.DefaultRPCGasLimit)
@@ -159,7 +160,8 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 }
 
 // SetGasPrice sets the minimum accepted gas price for the miner.
-// NOTE: explicar que solo recibe enteros
+// NOTE: this function accepts only integers to have the same interface than go-eth
+// to use float values, the gas prices must be configured using the configuration file
 func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.logger.Info(api.ctx.Viper.ConfigFileUsed())
 	appConf, err := config.ParseConfig(api.ctx.Viper)
@@ -167,9 +169,6 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
 		return false
 	}
-
-	// NOTE: To allow values less that 1 aphoton, we need to divide the gasPrice here using some constant
-	// If we want to function the same as go-eth we should just use the gasPrice as an int without converting it
 
 	var unit string
 	minGasPrices := appConf.GetMinGasPrices()
