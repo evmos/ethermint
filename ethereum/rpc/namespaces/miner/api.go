@@ -2,6 +2,7 @@ package miner
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -10,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	// txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
@@ -23,7 +23,6 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
-	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // API is the miner prefixed set of APIs in the Miner JSON-RPC spec.
@@ -83,17 +82,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	// req := &txtypes.SimulateRequest{
-	// 	TxBytes: nil,
-	// }
-
-	// res, err := api.ethAPI.QueryClient().Simulate(api.ethAPI.Ctx(), req)
-	// if err != nil {
-	// 	api.logger.Debug("failed to simulate transaction to obtain gas estimation", "error", err.Error())
-	// 	return false
-	// }
-
-	// res.GasInfo.GasUsed
 	delCommonAddr := common.BytesToAddress(delAddr.Bytes())
 	nonce, err := api.ethAPI.GetTransactionCount(delCommonAddr, rpctypes.EthPendingBlockNumber)
 	if err != nil {
@@ -106,20 +94,36 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		WithChainID(api.ethAPI.ClientCtx().ChainID).
 		WithKeybase(api.ethAPI.ClientCtx().Keyring).
 		WithTxConfig(api.ethAPI.ClientCtx().TxConfig).
-		WithSequence(uint64(*nonce))
+		WithSequence(uint64(*nonce)).
+		WithGasAdjustment(1.11)
 
 	_, gas, err := tx.CalculateGas(api.ethAPI.ClientCtx(), txFactory, msg)
 	if err != nil {
 		api.logger.Debug("failed to calculate gas", "error", err.Error())
+		return false
 	}
-	//txFactory = txFactory.WithGas(gas)
 
-	// TODO: is there a way to calculate this message fee and gas limit?
-	// value := big.NewInt(gas)
-	value := new(big.Int).SetUint64(gas)
+	api.logger.Error("gas", "value", fmt.Sprintf("%d", gas))
+	txFactory = txFactory.WithGas(gas)
+
+	// Fetch minimun gas price to calculate fees using the configuration.
+	appConf, err := config.ParseConfig(api.ctx.Viper)
+	if err != nil {
+		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
+		return false
+	}
+
+	minGasPrices := appConf.GetMinGasPrices()
+	if len(minGasPrices) == 0 || minGasPrices.Empty() {
+		api.logger.Debug("the minimun fee is not set")
+		return false
+	}
+	minGasPriceValue := minGasPrices[0].Amount
+
+	value := new(big.Int).SetUint64(gas * minGasPriceValue.Ceil().TruncateInt().Uint64())
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
 	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(ethermint.DefaultRPCGasLimit)
+	builder.SetGasLimit(gas)
 
 	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(delAddr)
 	if err != nil {
