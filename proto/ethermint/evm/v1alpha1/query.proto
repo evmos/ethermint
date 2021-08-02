@@ -17,13 +17,18 @@ service Query {
   }
 
   // CosmosAccount queries an Ethereum account's Cosmos Address.
-  rpc CosmosAccount(QueryCosmosAccountRequest) returns (QueryCosmosAccountResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/cosmos_account/{address}";
+  rpc CosmosAccount(QueryCosmosAccountRequest)
+      returns (QueryCosmosAccountResponse) {
+    option (google.api.http).get =
+        "/ethermint/evm/v1alpha1/cosmos_account/{address}";
   }
 
-  // ValidatorAccount queries an Ethereum account's from a validator consensus Address.
-  rpc ValidatorAccount(QueryValidatorAccountRequest) returns (QueryValidatorAccountResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/validator_account/{cons_address}";
+  // ValidatorAccount queries an Ethereum account's from a validator consensus
+  // Address.
+  rpc ValidatorAccount(QueryValidatorAccountRequest)
+      returns (QueryValidatorAccountResponse) {
+    option (google.api.http).get =
+        "/ethermint/evm/v1alpha1/validator_account/{cons_address}";
   }
 
   // Balance queries the balance of a the EVM denomination for a single
@@ -34,7 +39,8 @@ service Query {
 
   // Storage queries the balance of all coins for a single account.
   rpc Storage(QueryStorageRequest) returns (QueryStorageResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/storage/{address}/{key}";
+    option (google.api.http).get =
+        "/ethermint/evm/v1alpha1/storage/{address}/{key}";
   }
 
   // Code queries the balance of all coins for a single account.
@@ -76,12 +82,11 @@ service Query {
   rpc EstimateGas(EthCallRequest) returns (EstimateGasResponse) {
     option (google.api.http).get = "/ethermint/evm/v1alpha1/estimate_gas";
   }
-
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
 message QueryAccountRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the account for.
@@ -98,16 +103,18 @@ message QueryAccountResponse {
   uint64 nonce = 3;
 }
 
-// QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC method.
+// QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC
+// method.
 message QueryCosmosAccountRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the account for.
   string address = 1;
 }
 
-// QueryCosmosAccountResponse is the response type for the Query/CosmosAccount RPC method.
+// QueryCosmosAccountResponse is the response type for the Query/CosmosAccount
+// RPC method.
 message QueryCosmosAccountResponse {
   // cosmos_address is the cosmos address of the account.
   string cosmos_address = 1;
@@ -117,16 +124,18 @@ message QueryCosmosAccountResponse {
   uint64 account_number = 3;
 }
 
-// QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
+// QueryValidatorAccountRequest is the request type for the
+// Query/ValidatorAccount RPC method.
 message QueryValidatorAccountRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // cons_address is the validator cons address to query the account for.
   string cons_address = 1;
 }
 
-// QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
+// QueryValidatorAccountResponse is the response type for the
+// Query/ValidatorAccount RPC method.
 message QueryValidatorAccountResponse {
   // account_address is the cosmos address of the account in bech32 format.
   string account_address = 1;
@@ -138,7 +147,7 @@ message QueryValidatorAccountResponse {
 
 // QueryBalanceRequest is the request type for the Query/Balance RPC method.
 message QueryBalanceRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the balance for.
@@ -153,7 +162,7 @@ message QueryBalanceResponse {
 
 // QueryStorageRequest is the request type for the Query/Storage RPC method.
 message QueryStorageRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   /// address is the ethereum hex address to query the storage state for.
@@ -172,7 +181,7 @@ message QueryStorageResponse {
 
 // QueryCodeRequest is the request type for the Query/Code RPC method.
 message QueryCodeRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the code for.
@@ -188,7 +197,7 @@ message QueryCodeResponse {
 
 // QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
 message QueryTxLogsRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // hash is the ethereum transaction hex hash to query the logs for.
@@ -203,7 +212,7 @@ message QueryTxLogsResponse {
 
 // QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
 message QueryBlockLogsRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // hash is the block hash to query the logs for.
@@ -215,7 +224,7 @@ message QueryBlockLogsRequest {
 // QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 message QueryBlockLogsResponse {
   // logs represents the ethereum logs generated at the given block hash.
-  repeated TransactionLogs tx_logs = 1 [(gogoproto.nullable) = false];
+  repeated TransactionLogs tx_logs = 1 [ (gogoproto.nullable) = false ];
   // pagination defines the pagination in the response.
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
@@ -225,8 +234,8 @@ message QueryBlockLogsResponse {
 message QueryBlockBloomRequest {
   // height of the block which we want to query the bloom filter.
   // Tendermint always replace the query request header by the current context
-  // header, height cannot be extracted from there, so we need to explicitly pass
-  // it in parameter.
+  // header, height cannot be extracted from there, so we need to explicitly
+  // pass it in parameter.
   int64 height = 1;
 }
 
@@ -243,7 +252,7 @@ message QueryParamsRequest {}
 // QueryParamsResponse defines the response type for querying x/evm parameters.
 message QueryParamsResponse {
   // params define the evm module parameters.
-  Params params = 1 [(gogoproto.nullable) = false];
+  Params params = 1 [ (gogoproto.nullable) = false ];
 }
 
 // QueryStaticCallRequest defines static call request
@@ -255,9 +264,7 @@ message QueryStaticCallRequest {
 }
 
 // QueryStaticCallRequest defines static call response
-message QueryStaticCallResponse {
-  bytes data = 1;
-}
+message QueryStaticCallResponse { bytes data = 1; }
 
 // EthCallRequest defines EthCall request
 message EthCallRequest {

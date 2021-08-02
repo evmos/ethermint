@@ -28,6 +28,8 @@ const (
 	codeErrVMExecution
 	codeErrInvalidRefund
 	codeErrInconsistentGas
+	codeErrInvalidGasCap
+	codeErrInvalidBaseFee
 )
 
 var (
@@ -75,6 +77,12 @@ var (
 
 	// ErrInconsistentGas returns an error if a the gas differs from the expected one.
 	ErrInconsistentGas = sdkerrors.Register(ModuleName, codeErrInconsistentGas, "inconsistent gas")
+
+	// ErrInvalidGasCap returns an error if a the gas cap value is negative or invalid
+	ErrInvalidGasCap = sdkerrors.Register(ModuleName, codeErrInvalidGasCap, "invalid gas cap")
+
+	// ErrInvalidBaseFee returns an error if a the base fee cap value is invalid
+	ErrInvalidBaseFee = sdkerrors.Register(ModuleName, codeErrInvalidBaseFee, "invalid base fee")
 )
 
 // NewExecErrorWithReason unpacks the revert return bytes and returns a wrapped error

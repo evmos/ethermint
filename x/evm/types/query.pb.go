@@ -133,7 +133,8 @@ func (m *QueryAccountResponse) GetNonce() uint64 {
 	return 0
 }
 
-// QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC method.
+// QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC
+// method.
 type QueryCosmosAccountRequest struct {
 	// address is the ethereum hex address to query the account for.
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
@@ -172,7 +173,8 @@ func (m *QueryCosmosAccountRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryCosmosAccountRequest proto.InternalMessageInfo
 
-// QueryCosmosAccountResponse is the response type for the Query/CosmosAccount RPC method.
+// QueryCosmosAccountResponse is the response type for the Query/CosmosAccount
+// RPC method.
 type QueryCosmosAccountResponse struct {
 	// cosmos_address is the cosmos address of the account.
 	CosmosAddress string `protobuf:"bytes,1,opt,name=cosmos_address,json=cosmosAddress,proto3" json:"cosmos_address,omitempty"`
@@ -236,7 +238,8 @@ func (m *QueryCosmosAccountResponse) GetAccountNumber() uint64 {
 	return 0
 }
 
-// QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
+// QueryValidatorAccountRequest is the request type for the
+// Query/ValidatorAccount RPC method.
 type QueryValidatorAccountRequest struct {
 	// cons_address is the validator cons address to query the account for.
 	ConsAddress string `protobuf:"bytes,1,opt,name=cons_address,json=consAddress,proto3" json:"cons_address,omitempty"`
@@ -275,7 +278,8 @@ func (m *QueryValidatorAccountRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryValidatorAccountRequest proto.InternalMessageInfo
 
-// QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
+// QueryValidatorAccountResponse is the response type for the
+// Query/ValidatorAccount RPC method.
 type QueryValidatorAccountResponse struct {
 	// account_address is the cosmos address of the account in bech32 format.
 	AccountAddress string `protobuf:"bytes,1,opt,name=account_address,json=accountAddress,proto3" json:"account_address,omitempty"`
@@ -784,8 +788,8 @@ func (m *QueryBlockLogsResponse) GetPagination() *query.PageResponse {
 type QueryBlockBloomRequest struct {
 	// height of the block which we want to query the bloom filter.
 	// Tendermint always replace the query request header by the current context
-	// header, height cannot be extracted from there, so we need to explicitly pass
-	// it in parameter.
+	// header, height cannot be extracted from there, so we need to explicitly
+	// pass it in parameter.
 	Height int64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
 }
 
@@ -1290,7 +1294,8 @@ type QueryClient interface {
 	Account(ctx context.Context, in *QueryAccountRequest, opts ...grpc.CallOption) (*QueryAccountResponse, error)
 	// CosmosAccount queries an Ethereum account's Cosmos Address.
 	CosmosAccount(ctx context.Context, in *QueryCosmosAccountRequest, opts ...grpc.CallOption) (*QueryCosmosAccountResponse, error)
-	// ValidatorAccount queries an Ethereum account's from a validator consensus Address.
+	// ValidatorAccount queries an Ethereum account's from a validator consensus
+	// Address.
 	ValidatorAccount(ctx context.Context, in *QueryValidatorAccountRequest, opts ...grpc.CallOption) (*QueryValidatorAccountResponse, error)
 	// Balance queries the balance of a the EVM denomination for a single
 	// EthAccount.
@@ -1446,7 +1451,8 @@ type QueryServer interface {
 	Account(context.Context, *QueryAccountRequest) (*QueryAccountResponse, error)
 	// CosmosAccount queries an Ethereum account's Cosmos Address.
 	CosmosAccount(context.Context, *QueryCosmosAccountRequest) (*QueryCosmosAccountResponse, error)
-	// ValidatorAccount queries an Ethereum account's from a validator consensus Address.
+	// ValidatorAccount queries an Ethereum account's from a validator consensus
+	// Address.
 	ValidatorAccount(context.Context, *QueryValidatorAccountRequest) (*QueryValidatorAccountResponse, error)
 	// Balance queries the balance of a the EVM denomination for a single
 	// EthAccount.

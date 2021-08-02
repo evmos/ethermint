@@ -23,6 +23,7 @@
   
 - [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
     - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
+    - [DynamicFeeTx](#ethermint.evm.v1alpha1.DynamicFeeTx)
     - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
     - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
     - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
@@ -360,6 +361,32 @@ AccessListTx is the data of EIP-2930 access list transactions.
 
 
 
+<a name="ethermint.evm.v1alpha1.DynamicFeeTx"></a>
+
+### DynamicFeeTx
+DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_id` | [string](#string) |  | destination EVM chain ID |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_tip_cap` | [string](#string) |  | gas tip cap defines the max value for the gas tip |
+| `gas_fee_cap` | [string](#string) |  | gas fee cap defines the max value for the gas fee |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx"></a>
 
 ### ExtensionOptionsEthereumTx
@@ -659,7 +686,8 @@ method.
 <a name="ethermint.evm.v1alpha1.QueryCosmosAccountRequest"></a>
 
 ### QueryCosmosAccountRequest
-QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC method.
+QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC
+method.
 
 
 | Field | Type | Label | Description |
@@ -674,7 +702,8 @@ QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC me
 <a name="ethermint.evm.v1alpha1.QueryCosmosAccountResponse"></a>
 
 ### QueryCosmosAccountResponse
-QueryCosmosAccountResponse is the response type for the Query/CosmosAccount RPC method.
+QueryCosmosAccountResponse is the response type for the Query/CosmosAccount
+RPC method.
 
 
 | Field | Type | Label | Description |
@@ -809,7 +838,8 @@ QueryTxLogs is the response type for the Query/TxLogs RPC method.
 <a name="ethermint.evm.v1alpha1.QueryValidatorAccountRequest"></a>
 
 ### QueryValidatorAccountRequest
-QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
+QueryValidatorAccountRequest is the request type for the
+Query/ValidatorAccount RPC method.
 
 
 | Field | Type | Label | Description |
@@ -824,7 +854,8 @@ QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount 
 <a name="ethermint.evm.v1alpha1.QueryValidatorAccountResponse"></a>
 
 ### QueryValidatorAccountResponse
-QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
+QueryValidatorAccountResponse is the response type for the
+Query/ValidatorAccount RPC method.
 
 
 | Field | Type | Label | Description |
