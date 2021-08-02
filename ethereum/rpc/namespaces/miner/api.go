@@ -2,7 +2,6 @@ package miner
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -103,7 +102,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	api.logger.Error("gas", "value", fmt.Sprintf("%d", gas))
 	txFactory = txFactory.WithGas(gas)
 
 	// Fetch minimun gas price to calculate fees using the configuration.
