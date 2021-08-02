@@ -18,7 +18,8 @@ address = "{{ .EVMRPC.RPCAddress }}"
 ws-address = "{{ .EVMRPC.WsAddress }}"
 
 # API defines a list of JSON-RPC namespaces that should be enabled
-api = "{{ .EVMRPC.API }}"
+# Example: "eth,txpool,personal,net,debug,web3"
+api = "{{range $index, $elmt := .EVMRPC.API}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
 
 # EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
 enable-unsafe-cors = "{{ .EVMRPC.EnableUnsafeCORS }}"
