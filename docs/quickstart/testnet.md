@@ -240,9 +240,9 @@ docker logs -f ethermintdnode0
 
 To interact with the testnet via WebSockets or RPC/API, you will send your request to the corresponding ports:
 
-| Eth JSON-RPC | Eth WS |
-|--------------|--------|
-| `8545`       | `8546` |
+| EVM JSON-RPC | Eth Websocket |
+|--------------|---------------|
+| `8545`       | `8546`        |
 
 You can send a curl command such as:
 

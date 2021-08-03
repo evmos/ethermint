@@ -14,10 +14,9 @@ cd ethermint
 make install
 ```
 
-Check that the binaries have been successfuly installed:
+Check that the binaries have been successfully installed:
 
 ```bash
-ethermintd -h
 ethermintd -h
 ```
 
@@ -30,10 +29,9 @@ make docker-build
 ```
 
 This will install the binaries on the `./build` directory. Now, check that the binaries have been
-successfuly installed:
+successfully installed:
 
 ```bash
-ethermintd -h
 ethermintd -h
 ```
 
