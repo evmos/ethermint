@@ -19,7 +19,7 @@ To enable RPC server use the following flag (set to true by default).
 ethermintd start --evm-rpc.enable
 ```
 
-By default, only `eth` namespace is enabled. In order to enable other namespaces use flag `--evm-rpc.api`.
+`Eth`,`Net` and `Web3` namespaces are enabled by default. In order to enable other namespaces use flag `--evm-rpc.api`.
 
 ```
 ethermintd start --evm-rpc.api eth,txpool,personal,net,debug,web3
