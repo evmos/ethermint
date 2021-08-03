@@ -157,12 +157,13 @@ ethermintd start --evm-rpc.api eth,txpool,personal,net,debug,web3
 | `les_latestCheckpoint`                                                            | Les       |             |                           |
 | `les_getCheckpoint`                                                               | Les       |             |                           |
 | `les_getCheckpointContractAddress`                                                | Les       |             |                           |
-| `miner_getHashrate`                                                               | Miner     |             |                           |
-| `miner_setExtra`                                                                  | Miner     |             |                           |
-| `miner_setGasPrice`                                                               | Miner     |             |                           |
-| `miner_start`                                                                     | Miner     |             |                           |
-| `miner_stop`                                                                      | Miner     |             |                           |
-| `miner_setEtherbase`                                                              | Miner     |             |                           |
+| `miner_getHashrate`                                                               | Miner     | N/A         | Not relevant to Ethermint |
+| `miner_setExtra`                                                                  | Miner     | N/A         | Not relevant to Ethermint |
+| `miner_setGasPrice`                                                               | Miner     | ✔           |                           |
+| `miner_start`                                                                     | Miner     | N/A         | Not relevant to Ethermint |
+| `miner_stop`                                                                      | Miner     | N/A         | Not relevant to Ethermint |
+| `miner_setGasLimit`                                                               | Miner     | N/A         | Not relevant to Ethermint |
+| `miner_setEtherbase`                                                              | Miner     | ✔           |                           |
 | `txpool_content`                                                                  | TXPool    | ✔           |                           |
 | `txpool_inspect`                                                                  | TXPool    | ✔           |                           |
 | `txpool_status`                                                                   | TXPool    | ✔           |                           |
