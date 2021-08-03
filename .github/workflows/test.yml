@@ -16,7 +16,7 @@ jobs:
   #     - uses: actions/setup-go@v2.1.3
   #       with:
   #         go-version: 1.16
-  #     - uses: technote-space/get-diff-action@v4.2
+  #     - uses: technote-space/get-diff-action@v5
   #       id: git_diff
   #       with:
   #         SUFFIX_FILTER: |
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.16
-      - uses: technote-space/get-diff-action@v4.2
+      - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -82,12 +82,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -102,7 +102,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.16
-      - uses: technote-space/get-diff-action@v4.2
+      - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -121,12 +121,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -141,7 +141,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.16
-      - uses: technote-space/get-diff-action@v4.2
+      - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -160,12 +160,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -180,7 +180,7 @@ jobs:
       - uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.16
-      - uses: technote-space/get-diff-action@v4.2
+      - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -199,12 +199,12 @@ jobs:
         run: |
           excludelist+=" $(find ./ -type f -name '*.pb.go')"
           for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/cosmos\/ethermint/g')
+            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
             echo "Excluding ${filename} from coverage report..."
             sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
           done
         if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.1
+      - uses: codecov/codecov-action@v2.0.2
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
@@ -219,7 +219,7 @@ jobs:
   #     - uses: actions/setup-go@v2.1.3
   #       with:
   #         go-version: 1.16
-  #     - uses: technote-space/get-diff-action@v4.2
+  #     - uses: technote-space/get-diff-action@v5
   #       id: git_diff
   #       with:
   #         SUFFIX_FILTER: |
@@ -236,7 +236,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: technote-space/get-diff-action@v4.2
+      - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
           SUFFIX_FILTER: |

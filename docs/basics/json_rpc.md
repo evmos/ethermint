@@ -11,6 +11,20 @@ Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
 - [Ethereum JSON-RPC](https://eth.wiki/json-rpc/API) {prereq}
 - [Geth JSON-RPC APIs](https://geth.ethereum.org/docs/rpc/server) {prereq}
 
+## JSON-RPC Server
+
+To enable RPC server use the following flag (set to true by default).
+
+```
+ethermintd start --evm-rpc.enable
+```
+
+`Eth`,`Net` and `Web3` namespaces are enabled by default. In order to enable other namespaces use flag `--evm-rpc.api`.
+
+```
+ethermintd start --evm-rpc.api eth,txpool,personal,net,debug,web3
+```
+
 ## JSON-RPC Methods
 
 | Method                                                                            | Namespace | Implemented | Notes                     |
@@ -321,7 +335,7 @@ Returns the storage address for a given account address.
 
 ```json
 // Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getStorageAt","params":["0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0", "0"  "latest"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getStorageAt","params":["0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0", "0", "latest"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
 
 // Result
 {"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}
