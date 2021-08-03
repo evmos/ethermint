@@ -13,13 +13,11 @@ Ethermint EVM and get the benefits of a fast-finality Proof-of-Stake (PoS) chain
 also benefit from highly-reliable clients from testnets can be used to test and deploy their
 contracts.
 
-Ethermint will also offer built-in interoperability functionalities with other Cosmos and BFT chains by using [IBC](https://cosmos.network/ibc). Developers can also benefit from using a bridge network (like
-[Chainbridge](https://github.com/ChainSafe/ChainBridge), or a [Peg
-Zone](https://github.com/cosmos/peggy)) to enable interoperability between mainnet Ethereum and Ethermint.
+Ethermint will also offer built-in interoperability functionalities with other Cosmos and BFT chains by using [IBC](https://cosmos.network/ibc). Developers can also benefit from using a bridge network to enable interoperability between mainnet Ethereum and Ethermint.
 
 ## EVM module dependency
 
-The EVM module ([x/evm](https://github.com/tharsis/ethermint/tree/main/x/evm)) packaged inside
+The EVM module (aka [x/evm](https://github.com/tharsis/ethermint/tree/main/x/evm)) packaged inside
 Ethermint can be used separately as its own standalone module. This can be added as a dependency to
 any Cosmos chain, which will allow for smart contract support.
 
@@ -44,6 +42,12 @@ Using Ethermint chain will allow for the direct deployment of smart contracts to
 network. Utilizing the Ethermint client will defer the chain maintenance to the Ethermint network
 and allow for the participation in a more mature blockchain. The Ethermint client will also offer
 (in the near future) IBC compatibility which allows for interoperability between different network.
+
+|                                         | Ethermint Chain | x/evm dependency |
+|-----------------------------------------|-----------------|------------------|
+| Maintenance                             | Lower           | Higher           |
+| Sovereignty (validator, config, params) | Lower           | Higher           |
+| Storage requirements                    | Lower           | Higher           |
 
 ## Next {hide}
 

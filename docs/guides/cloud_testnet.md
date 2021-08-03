@@ -60,11 +60,10 @@ Clone and build Ethermint in the droplet using `git`:
 go install https://github.com/tharsis/ethermint.git
 ```
 
-Check that the binaries have been successfuly installed:
+Check that the binaries have been successfully installed:
 
 ```bash
 ethermintd -h
-ethermintcli -h
 ```
 
 ### Copy the Genesis File
