@@ -68,11 +68,13 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	builder, ok := api.ethAPI.ClientCtx().TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
 	if !ok {
 		api.logger.Debug("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
+		return false
 	}
 
 	err = builder.SetMsgs(msg)
 	if err != nil {
 		api.logger.Error("builder.SetMsgs failed", "error", err.Error())
+		return false
 	}
 
 	denom, err := sdk.GetBaseDenom()
