@@ -365,7 +365,7 @@ func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, erro
 		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
-	args, err = e.SetTxDefaults(args)
+	args, err = e.setTxDefaults(args)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -983,9 +983,9 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	}, nil
 }
 
-// SetTxDefaults populates tx message with default values in case they are not
+// setTxDefaults populates tx message with default values in case they are not
 // provided on the args
-func (e *PublicAPI) SetTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
+func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
 
 	if args.GasPrice == nil {
 		// TODO: Change to either:

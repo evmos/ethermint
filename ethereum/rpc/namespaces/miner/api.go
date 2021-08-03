@@ -127,6 +127,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 
 	keyInfo, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(delAddr)
 	if err != nil {
+		api.logger.Debug("failed to get the wallet address using the keyring", "error", err.Error())
 		return false
 	}
 
