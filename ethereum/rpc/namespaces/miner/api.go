@@ -77,11 +77,20 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	denom, err := sdk.GetBaseDenom()
+	// Fetch minimun gas price to calculate fees using the configuration.
+	appConf, err := config.ParseConfig(api.ctx.Viper)
 	if err != nil {
-		api.logger.Debug("Could not get the denom of smallest unit registered.")
+		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
 		return false
 	}
+
+	minGasPrices := appConf.GetMinGasPrices()
+	if len(minGasPrices) == 0 || minGasPrices.Empty() {
+		api.logger.Debug("the minimun fee is not set")
+		return false
+	}
+	minGasPriceValue := minGasPrices[0].Amount
+	denom := minGasPrices[0].Denom
 
 	delCommonAddr := common.BytesToAddress(delAddr.Bytes())
 	nonce, err := api.ethAPI.GetTransactionCount(delCommonAddr, rpctypes.EthPendingBlockNumber)
@@ -105,20 +114,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	}
 
 	txFactory = txFactory.WithGas(gas)
-
-	// Fetch minimun gas price to calculate fees using the configuration.
-	appConf, err := config.ParseConfig(api.ctx.Viper)
-	if err != nil {
-		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
-		return false
-	}
-
-	minGasPrices := appConf.GetMinGasPrices()
-	if len(minGasPrices) == 0 || minGasPrices.Empty() {
-		api.logger.Debug("the minimun fee is not set")
-		return false
-	}
-	minGasPriceValue := minGasPrices[0].Amount
 
 	value := new(big.Int).SetUint64(gas * minGasPriceValue.Ceil().TruncateInt().Uint64())
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
@@ -157,7 +152,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		api.logger.Debug("failed to broadcast tx", "error", err.Error())
 		return false
 	}
-
 
 	api.logger.Debug("broadcasted tx to set miner withdraw address (etherbase)", "hash", tmHash.String())
 	return true
