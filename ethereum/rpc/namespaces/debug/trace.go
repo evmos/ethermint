@@ -26,7 +26,7 @@ import (
 
 // StartGoTrace turns on tracing, writing to the given file.
 func (a *InternalAPI) StartGoTrace(file string) error {
-	a.logger.Debug("debug_stopGoTrace", "file", file)
+	a.logger.Debug("debug_startGoTrace", "file", file)
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
 
