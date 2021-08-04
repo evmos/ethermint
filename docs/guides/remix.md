@@ -20,7 +20,7 @@ First, follow the steps in the [Metamask guide](./metamask.md) to import your Et
 
 Once that is complete, go to [Remix](http://remix.ethereum.org/). There are some contracts in the File Explorer. Select any of these contracts.  In this example, we use `Counter.sol` from the [Truffle](./truffle.md) guide. On the left-most bar, select the Solidity Compiler and compile the contract.
 
-Next, select the `Deploy and Run` option. Select `injected web3` as the environment. This will open a metamask popup for you to confirm connecting your Metamask to Remix. Hit confirm. 
+Next, select the `Deploy and Run` option. Select `injected web3` as the environment. This will open a metamask popup for you to confirm connecting your Metamask to Remix. Hit confirm.
 
 You should see your account show up in the left-hand panel.
 

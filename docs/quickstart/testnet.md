@@ -58,12 +58,12 @@ minimum-gas-prices = ""
 
 ```bash
 # Create a key to hold your account
-ethermintcli keys add $KEY
+ethermintd keys add $KEY
 
 # Add that key into the genesis.app_state.accounts array in the genesis file
 # NOTE: this command lets you set the number of coins. Make sure this account has some coins
 # with the genesis.app_state.staking.params.bond_denom denom, the default is staking
-ethermintd add-genesis-account $(ethermintcli keys show validator -a) 1000000000stake,10000000000aphoton
+ethermintd add-genesis-account $(ethermintd keys show validator -a) 1000000000stake,10000000000aphoton
 
 # Generate the transaction that creates your validator
 ethermintd gentx --name $KEY
@@ -141,7 +141,7 @@ calling the `ethermintd testnet` command. This outputs a handful of files in the
 tree -L 3 build/
 
 build/
-├── ethermintcli
+├── ethermintd
 ├── ethermintd
 ├── gentxs
 │   ├── node0.json
@@ -149,7 +149,7 @@ build/
 │   ├── node2.json
 │   └── node3.json
 ├── node0
-│   ├── ethermintcli
+│   ├── ethermintd
 │   │   ├── key_seed.json
 │   │   └── keyring-test-cosmos
 │   └── ethermintd
@@ -157,7 +157,7 @@ build/
 │       ├── data
 │       └── ethermintd.log
 ├── node1
-│   ├── ethermintcli
+│   ├── ethermintd
 │   │   ├── key_seed.json
 │   │   └── keyring-test-cosmos
 │   └── ethermintd
@@ -165,7 +165,7 @@ build/
 │       ├── data
 │       └── ethermintd.log
 ├── node2
-│   ├── ethermintcli
+│   ├── ethermintd
 │   │   ├── key_seed.json
 │   │   └── keyring-test-cosmos
 │   └── ethermintd
@@ -173,7 +173,7 @@ build/
 │       ├── data
 │       └── ethermintd.log
 └── node3
-    ├── ethermintcli
+    ├── ethermintd
     │   ├── key_seed.json
     │   └── keyring-test-cosmos
     └── ethermintd
@@ -193,7 +193,7 @@ In order to see the logs of a particular node you can use the following command:
 docker exec ethermintdnode0 tail ethermintd.log
 
 # node 0: REST & RPC logs
-docker exec ethermintdnode0 tail ethermintcli.log
+docker exec ethermintdnode0 tail ethermintd.log
 ```
 
 The logs for the daemon will look like:
@@ -240,9 +240,9 @@ docker logs -f ethermintdnode0
 
 To interact with the testnet via WebSockets or RPC/API, you will send your request to the corresponding ports:
 
-| Eth JSON-RPC | Eth WS |
-|--------------|--------|
-| `8545`       | `8546` |
+| EVM JSON-RPC | Eth Websocket |
+|--------------|---------------|
+| `8545`       | `8546`        |
 
 You can send a curl command such as:
 
@@ -258,18 +258,18 @@ Additional instructions on how to interact with the WebSocket can be found on th
 
 ### Keys & Accounts
 
-To interact with `ethermintcli` and start querying state or creating txs, you use the
-`ethermintcli` directory of any given node as your `home`, for example:
+To interact with `ethermintd` and start querying state or creating txs, you use the
+`ethermintd` directory of any given node as your `home`, for example:
 
 ```bash
-ethermintcli keys list --home ./build/node0/ethermintcli
+ethermintd keys list --home ./build/node0/ethermintd
 ```
 
 Now that accounts exists, you may create new accounts and send those accounts
 funds!
 
 ::: tip
-**Note**: Each node's seed is located at `./build/nodeN/ethermintcli/key_seed.json` and can be restored to the CLI using the `ethermintcli keys add --restore` command
+**Note**: Each node's seed is located at `./build/nodeN/ethermintd/key_seed.json` and can be restored to the CLI using the `ethermintd keys add --restore` command
 :::
 
 ### Special Binaries

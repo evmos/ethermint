@@ -21,7 +21,7 @@ You can also start a node from scratch by running `./init.sh` from the Ethermint
 In another tab start the REST server. Here replace `mykey` with the name of the key that you want to use and set the `chain-id` the chain identifier of your application.
 
 ```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --chain-id 1
+ethermintd rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --chain-id 1
 ```
 
 ## Adding a custom Network for Ethermint
@@ -44,7 +44,7 @@ Now you can export your private key from the terminal using the following comman
 to replace `mykey` with the name of the key that you want to export:
 
 ```bash
-ethermintcli keys unsafe-export-eth-key mykey
+ethermintd keys unsafe-export-eth-key mykey
 ```
 
 Go back to the browser and select the `Private Key` option. Then paste the private key exported from

@@ -23,12 +23,6 @@ to keep your binaries and configuration files.
 ./init.sh
 ```
 
-In another terminal window or tab, run the Ethereum JSON-RPC server as well as the SDK REST server:
-
-```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --chain-id 8
-```
-
 ## Manual deployment
 
 The instructions for setting up a brand new full node from scratch are the the same as running a
@@ -39,15 +33,15 @@ The instructions for setting up a brand new full node from scratch are the the s
 To start your node, just type:
 
 ```bash
-ethermintd start
+ethermintd start --evm-rpc.enable=true --evm-rpc.api="eth,web3,net,txpool,debug"
 ```
 
 ## Key Management
 
-To run a node with the same key every time: replace `ethermintcli keys add $KEY` in `./init.sh` with:
+To run a node with the same key every time: replace `ethermintd keys add $KEY` in `./init.sh` with:
 
 ```bash
-echo "your mnemonic here" | ethermintcli keys add $KEY --recover
+echo "your mnemonic here" | ethermintd keys add $KEY --recover
 ```
 
 ::: tip
@@ -57,19 +51,19 @@ Ethermint currently only supports 24 word mnemonics.
 You can generate a new key/mnemonic with:
 
 ```bash
-ethermintcli keys add $KEY
+ethermintd keys add $KEY
 ```
 
 To export your ethermint key as an ethereum private key (for use with Metamask for example):
 
 ```bash
-ethermintcli keys unsafe-export-eth-key $KEY
+ethermintd keys unsafe-export-eth-key $KEY
 ```
 
 For more about the available key commands, use the `--help` flag
 
 ```bash
-ethermintcli keys -h
+ethermintd keys -h
 ```
 
 ### Keyring backend options
@@ -82,7 +76,7 @@ relevant command and the password prompt will occur through the command line. Th
 as a CLI config option with:
 
 ```bash
-ethermintcli config keyring-backend file
+ethermintd config keyring-backend file
 ```
 
 ## Clearing data from chain
@@ -110,10 +104,10 @@ Your node is now in a pristine state while keeping the original `priv_validator.
 
 ### Delete Data
 
-Data for the Daemon and CLI binaries should be stored at `~/.ethermintd` and `~/.ethermintcli`, respectively by default. To **delete** the existing binaries and configuration, run:
+Data for the Daemon and CLI binaries should be stored at `~/.ethermintd`, respectively by default. To **delete** the existing binaries and configuration, run:
 
 ```bash
-rm -rf ~/.emint*
+rm -rf ~/.ethermintd
 ```
 
 To clear all data except key storage (if keyring backend chosen) and then you can rerun the full node installation commands from above to start the node again.

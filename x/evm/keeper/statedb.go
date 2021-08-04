@@ -352,10 +352,8 @@ func (k *Keeper) GetRefund() uint64 {
 // State
 // ----------------------------------------------------------------------------
 
-// GetCommittedState returns the value set in store for the given key hash. If the key is not registered
-// this function returns the empty hash.
-func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
-	store := prefix.NewStore(k.ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
+func doGetState(ctx sdk.Context, storeKey sdk.StoreKey, addr common.Address, hash common.Hash) common.Hash {
+	store := prefix.NewStore(ctx.KVStore(storeKey), types.AddressStoragePrefix(addr))
 
 	key := types.KeyAddressStorage(addr, hash)
 	value := store.Get(key.Bytes())
@@ -366,10 +364,16 @@ func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common
 	return common.BytesToHash(value)
 }
 
+// GetCommittedState returns the value set in store for the given key hash. If the key is not registered
+// this function returns the empty hash.
+func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
+	return doGetState(k.committedCtx, k.storeKey, addr, hash)
+}
+
 // GetState returns the committed state for the given key hash, as all changes are committed directly
 // to the KVStore.
 func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
-	return k.GetCommittedState(addr, hash)
+	return doGetState(k.ctx, k.storeKey, addr, hash)
 }
 
 // SetState sets the given hashes (key, value) to the KVStore. If the value hash is empty, this

@@ -444,15 +444,14 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		args.Gas = (*hexutil.Uint64)(&gas)
 
 		// Execute the call in an isolated context
-		sandboxCtx, _ := ctx.CacheContext()
-		k.WithContext(sandboxCtx)
+		k.BeginCachedContext()
 
 		msg := args.ToMessage(req.GasCap)
 		evm := k.NewEVM(msg, ethCfg, params, coinbase)
 		// pass true means execute in query mode, which don't do actual gas refund.
 		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
 
-		k.WithContext(ctx)
+		k.EndCachedContext()
 
 		if err != nil {
 			if errors.Is(stacktrace.RootCause(err), core.ErrIntrinsicGas) {

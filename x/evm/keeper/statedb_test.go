@@ -383,6 +383,30 @@ func (suite *KeeperTestSuite) TestState() {
 	}
 }
 
+func (suite *KeeperTestSuite) TestCommittedState() {
+	suite.SetupTest()
+
+	var key = common.BytesToHash([]byte("key"))
+	var value1 = common.BytesToHash([]byte("value1"))
+	var value2 = common.BytesToHash([]byte("value2"))
+
+	suite.app.EvmKeeper.SetState(suite.address, key, value1)
+
+	commit := suite.app.EvmKeeper.BeginCachedContext()
+
+	suite.app.EvmKeeper.SetState(suite.address, key, value2)
+	tmp := suite.app.EvmKeeper.GetState(suite.address, key)
+	suite.Require().Equal(value2, tmp)
+	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
+	suite.Require().Equal(value1, tmp)
+
+	commit()
+	suite.app.EvmKeeper.EndCachedContext()
+
+	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
+	suite.Require().Equal(value2, tmp)
+}
+
 func (suite *KeeperTestSuite) TestSuicide() {
 	testCases := []struct {
 		name     string

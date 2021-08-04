@@ -36,7 +36,7 @@ computational power to complete and as a way to deter bad-acting users from spam
 
 In the Cosmos SDK, gas is tracked in the main `GasMeter` and the `BlockGasMeter`:
 
-- `GasMeter`: keeps track of the gas consumed during executions that lead to state transitions. It is reset on every transaction  execution.
+- `GasMeter`: keeps track of the gas consumed during executions that lead to state transitions. It is reset on every transaction execution.
 - `BlockGasMeter`: keeps track of the gas consumed in a block and enforces that the gas does not go over a predefined limit. This limit is defined in the Tendermint consensus parameters and can be changed via governance parameter change proposals.
 
 More information regarding gas in Cosmos SDK can be found [here](https://docs.cosmos.network/master/basics/gas-fees.html).
@@ -44,14 +44,13 @@ More information regarding gas in Cosmos SDK can be found [here](https://docs.co
 ## Matching EVM Gas consumption
 
 Ethermint is an EVM-compatible chain that supports Ethereum Web3 tooling. For this reason, gas
-consumption must be equitable in order to accurately calculate the state transition hashes and exact
-the behaviour that would be seen on the main Ethereum network (main net).
+consumption must be equitable with other EVMs, most importantly Ethereum.
 
-In Cosmos, there are types of operations that are not triggered by transactions that can also result in state transitions. Concrete examples are the  `BeginBlock` and `EndBlock` operations and the `AnteHandler` checks, which might also read and write to the store before running the state transition from a transaction.
+The main difference between EVM and Cosmos state transitions, is that the EVM uses a [gas table](https://github.com/ethereum/go-ethereum/blob/master/params/protocol_params.go) for each OPCODE, whereas Cosmos uses a `GasConfig` that charges gas for each CRUD operation by setting a flat and per-byte cost for accessing the database.
 
-### `BeginBlock` and `EndBlock`
++++ https://github.com/cosmos/cosmos-sdk/blob/3fd376bd5659f076a4dc79b644573299fd1ec1bf/store/types/gas.go#L187-L196
 
-These operations are defined by the Tendermint Core's Application Blockchain Interface (ABCI) and are defined by each Cosmos SDK module. As their name suggest, they are executed at the beginning and at the end of each block processing respectively (i.e pre and post transaction execution). Since these operations are not reflected on Ethereum, to match the the gas consumption we reset the main `GasMeter` to 0 on Ethermint's EVM module.
+In order to match the the gas consumed by the EVM, the gas consumption logic from the SDK is ignored, and instead the gas consumed is calculated by subtracting the state transition leftover gas from the gas limit defined on the message.
 
 ### `AnteHandler`
 
@@ -59,36 +58,28 @@ The Cosmos SDK [`AnteHandler`](https://docs.cosmos.network/master/basics/gas-fee
 performs basic checks prior to transaction execution. These checks are usually signature
 verification, transaction field validation, transaction fees, etc.
 
-Because the gas calculated in Ethermint is done by the `IntrinsicGas` method from go-ethereum, a
-special `AnteHandler` that is customized for EVM transaction fee verification is required. This
-allows Ethermint to generate the expected gas costs for operations done in the network and scale the
-gas costs as it would in the Ethereum network.
+Regarding gas consumption and fees, the `AnteHandler` checks that the user has enough balance to
+cover for the tx cost (amount plus fees) as well as checking that the gas limit defined in the
+message is greater or equal than the computed intrinsic gas for the message.
 
 ## Gas Refunds
 
-In Ethereum, gas can be specified prior to execution and the remaining gas will be refunded back to
-the user if any gas is left over - should fail with out of gas if not enough gas was provided. In
-Ethermint, the concept of gas refunds does not exist and the fees paid is not refunded in part back
-to the user. The fees exacted on a transaction will be collected by the validator and no refunds are
-issued. Thus, it is extremely important to use the correct gas.
-
-To prevent overspending on fees, providing the `--gas-adjustment` flag for a cosmos transactions
-will determine the fees automatically. Also the `eth_estimateGas` rpc call can be used to manually
-get the correct gas costs for a transaction.
+In The EVM, gas can be specified prior to execution and the remaining gas will be refunded back to
+the user if any gas is left over. The same logic applies to Ethermint, where the gas refunded will be capped to a fraction of the used gas depending on the fork/version being used.
 
 ## 0 Fee Transactions
 
 In Cosmos, a minimum gas price is not enforced by the `AnteHandler` as the `min-gas-prices` is
 checked against the local node/validator. In other words, the minimum fees accepted are determined
-by the validators of the network, and each validator can specify a different value for their fees.
+by the validators of the network, and each validator can specify a different minimum value for their fees.
 This potentially allows end users to submit 0 fee transactions if there is at least one single
 validator that is willing to include transactions with `0` gas price in their blocks proposed.
 
 For this same reason, in Ethermint it is possible to send transactions with `0` fees for transaction
 types other than the ones defined by the `evm` module. EVM module transactions cannot have `0` fees
-as gas is required inherently by Ethereum. This check is done by the evm transactions
-`ValidateBasic` function as well as on the custom `AnteHandler` defined by Ethermint.
+as gas is required inherently by the EVM. This check is done by the EVM transactions stateless validation
+(i.e `ValidateBasic`) function as well as on the custom `AnteHandler` defined by Ethermint.
 
 ## Next {hide}
 
-Learn about the [Photon](./photon.md) token {hide}
+Learn about the different types of [tokens](./tokens.md) available {hide}
