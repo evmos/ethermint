@@ -401,6 +401,9 @@ func (suite *KeeperTestSuite) TestCommittedState() {
 	suite.Require().Equal(value1, tmp)
 
 	suite.app.EvmKeeper.EndCachedContext()
+
+	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
+	suite.Require().Equal(value1, tmp)
 }
 
 func (suite *KeeperTestSuite) TestSuicide() {
