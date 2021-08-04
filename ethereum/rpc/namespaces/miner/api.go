@@ -158,7 +158,6 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	// ethermintd tx distribution withdraw-all-rewards
 
 	api.logger.Debug("broadcasted tx to set miner withdraw address (etherbase)", "hash", tmHash.String())
 	return true
