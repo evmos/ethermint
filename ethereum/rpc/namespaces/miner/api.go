@@ -181,7 +181,7 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 	if len(minGasPrices) == 0 || minGasPrices.Empty() {
 		unit, err = sdk.GetBaseDenom()
 		if err != nil {
-			api.logger.Debug("Could not get the denom of smallest unit registered.")
+			api.logger.Debug("could not get the denom of smallest unit registered", "error", err.Error())
 			return false
 		}
 	} else {
