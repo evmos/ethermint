@@ -98,6 +98,14 @@ func (e *PublicAPI) ClientCtx() client.Context {
 	return e.clientCtx
 }
 
+func (e *PublicAPI) QueryClient() *rpctypes.QueryClient {
+	return e.queryClient
+}
+
+func (e *PublicAPI) Ctx() context.Context {
+	return e.ctx
+}
+
 // ProtocolVersion returns the supported Ethereum protocol version.
 func (e *PublicAPI) ProtocolVersion() hexutil.Uint {
 	e.logger.Debug("eth_protocolVersion")
@@ -137,27 +145,11 @@ func (e *PublicAPI) Syncing() (interface{}, error) {
 func (e *PublicAPI) Coinbase() (string, error) {
 	e.logger.Debug("eth_coinbase")
 
-	node, err := e.clientCtx.GetNode()
+	coinbase, err := e.backend.GetCoinbase()
 	if err != nil {
 		return "", err
 	}
-
-	status, err := node.Status(e.ctx)
-	if err != nil {
-		return "", err
-	}
-
-	req := &evmtypes.QueryValidatorAccountRequest{
-		ConsAddress: sdk.ConsAddress(status.ValidatorInfo.Address).String(),
-	}
-
-	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
-	if err != nil {
-		return "", err
-	}
-
-	toAddr, _ := sdk.AccAddressFromBech32(res.AccountAddress)
-	ethAddr := common.BytesToAddress(toAddr.Bytes())
+	ethAddr := common.BytesToAddress(coinbase.Bytes())
 	return ethAddr.Hex(), nil
 }
 
