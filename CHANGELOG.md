@@ -76,6 +76,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#272](https://github.com/tharsis/ethermint/pull/272) do binary search to estimate gas accurately
 * (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
 * (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
+* (rpc) [#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
 
 ### Bug Fixes
 

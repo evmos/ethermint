@@ -12,7 +12,7 @@ WORKDIR /go/src/github.com/tharsis/ethermint
 COPY . .
 
 # build Ethermint
-RUN make build-ethermint-linux
+RUN make build-linux
 
 # Final image
 FROM golang:1.14 as final

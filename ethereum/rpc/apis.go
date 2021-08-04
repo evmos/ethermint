@@ -10,6 +10,7 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/miner"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/personal"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
@@ -27,6 +28,7 @@ const (
 	NetNamespace      = "net"
 	TxPoolNamespace   = "txpool"
 	DebugNamespace    = "debug"
+	MinerNamespace    = "miner"
 
 	apiVersion = "1.0"
 )
@@ -101,6 +103,15 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
 					Service:   debug.NewInternalAPI(ctx),
+					Public:    true,
+				},
+			)
+		case MinerNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: MinerNamespace,
+					Version:   apiVersion,
+					Service:   miner.NewMinerAPI(ctx, ethAPI, evmBackend),
 					Public:    true,
 				},
 			)
