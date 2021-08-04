@@ -170,7 +170,7 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.logger.Info(api.ctx.Viper.ConfigFileUsed())
 	appConf, err := config.ParseConfig(api.ctx.Viper)
 	if err != nil {
-		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
+		api.logger.Debug("failed to parse config file", "file", api.ctx.Viper.ConfigFileUsed(), "error", err.Error())
 		return false
 	}
 
