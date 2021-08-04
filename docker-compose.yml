@@ -13,10 +13,9 @@ services:
       - ID=0
       - LOG=${LOG:-ethermintd.log}
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node0/ethermintd:/ethermint:Z
     networks:
-      localnet:
-        ipv4_address: 192.168.10.2
+      - localnet
     entrypoint: "bash start-docker.sh"
 
   ethermintdnode1:
@@ -31,10 +30,9 @@ services:
       - ID=1
       - LOG=${LOG:-ethermintd.log}
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node1/ethermintd:/ethermint:Z
     networks:
-      localnet:
-        ipv4_address: 192.168.10.3
+      - localnet
     entrypoint: "bash start-docker.sh"
 
   ethermintdnode2:
@@ -49,10 +47,9 @@ services:
       - "8566:8546"
       - "8127:8125"
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node2/ethermintd:/ethermint:Z
     networks:
-      localnet:
-        ipv4_address: 192.168.10.4
+      - localnet
     entrypoint: "bash start-docker.sh"
 
   ethermintdnode3:
@@ -67,16 +64,10 @@ services:
       - "8576:8546"
       - "8128:8125"
     volumes:
-      - ./build:/ethermint:Z
+      - ./localnet-setup/node3/ethermintd:/ethermint:Z
     networks:
-      localnet:
-        ipv4_address: 192.168.10.5
+      - localnet
     entrypoint: "bash start-docker.sh"
 
 networks:
   localnet:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 192.168.10.0/16
