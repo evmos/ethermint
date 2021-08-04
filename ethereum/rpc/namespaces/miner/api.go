@@ -41,7 +41,7 @@ func NewMinerAPI(
 	return &API{
 		ctx:     ctx,
 		ethAPI:  ethAPI,
-		logger:  ctx.Logger.With("module", "miner"),
+		logger:  ctx.Logger.With("api", "miner"),
 		backend: backend,
 	}
 }
