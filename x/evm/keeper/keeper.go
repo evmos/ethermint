@@ -38,6 +38,8 @@ type Keeper struct {
 	stakingKeeper types.StakingKeeper
 
 	ctx sdk.Context
+	// set in `BeginCachedContext`, used by `GetCommittedState` api.
+	committedCtx sdk.Context
 
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
@@ -75,6 +77,11 @@ func NewKeeper(
 	}
 }
 
+// CommittedCtx returns the committed context
+func (k Keeper) CommittedCtx() sdk.Context {
+	return k.committedCtx
+}
+
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", types.ModuleName)
@@ -83,6 +90,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 // WithContext sets an updated SDK context to the keeper
 func (k *Keeper) WithContext(ctx sdk.Context) {
 	k.ctx = ctx
+	k.committedCtx = ctx
 }
 
 // WithChainID sets the chain id to the local variable in the keeper
@@ -340,4 +348,16 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 func (k Keeper) ResetAccount(addr common.Address) {
 	k.DeleteCode(addr)
 	k.DeleteAccountStorage(addr)
+}
+
+// BeginCachedContext create the cached context
+func (k *Keeper) BeginCachedContext() (commit func()) {
+	k.committedCtx = k.ctx
+	k.ctx, commit = k.ctx.CacheContext()
+	return
+}
+
+// EndCachedContext recover the committed context
+func (k *Keeper) EndCachedContext() {
+	k.ctx = k.committedCtx
 }
