@@ -392,7 +392,7 @@ func (suite *KeeperTestSuite) TestCommittedState() {
 
 	suite.app.EvmKeeper.SetState(suite.address, key, value1)
 
-	suite.app.EvmKeeper.BeginCachedContext()
+	commit := suite.app.EvmKeeper.BeginCachedContext()
 
 	suite.app.EvmKeeper.SetState(suite.address, key, value2)
 	tmp := suite.app.EvmKeeper.GetState(suite.address, key)
@@ -400,10 +400,11 @@ func (suite *KeeperTestSuite) TestCommittedState() {
 	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
 	suite.Require().Equal(value1, tmp)
 
+	commit()
 	suite.app.EvmKeeper.EndCachedContext()
 
 	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
-	suite.Require().Equal(value1, tmp)
+	suite.Require().Equal(value2, tmp)
 }
 
 func (suite *KeeperTestSuite) TestSuicide() {
