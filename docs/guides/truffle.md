@@ -103,7 +103,7 @@ Open `truffle-config.js` and uncomment the `development` section in `networks`:
 
 This will allow your contract to connect to your Ethermint local node.
 
-## Start Node and REST server
+## Start Node
 
 Start your local node using the following command on the Terminal
 
@@ -116,12 +116,6 @@ init.sh
 For further information on how to run a node, please refer to [this](./../quickstart/run_node.md) quickstart document.
 :::
 
-In another Terminal wintdow/tab, start the [REST and JSON-RPC server](./../quickstart/clients.md#rest-and-tendermint-rpc.md):
-
-```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key mykey--chain-id 8 --trace
-```
-
 ## Deploy contract
 
 Back in the Truffle terminal, migrate the contract using
@@ -130,7 +124,7 @@ Back in the Truffle terminal, migrate the contract using
 truffle migrate --network development
 ```
 
-You should see incoming deployment logs in the Ethermint daemon Terminal tab for each transaction (one to deploy `Migrations.sol` and the oether to deploy `Counter.sol`).
+You should see incoming deployment logs in the Ethermint daemon Terminal tab for each transaction (one to deploy `Migrations.sol` and the other to deploy `Counter.sol`).
 
 ```bash
 I[2020-07-15|17:35:59.934] Added good transaction                       module=mempool tx=22245B935689918D332F58E82690F02073F0453D54D5944B6D64AAF1F21974E2 res="&{CheckTx:log:\"[]\" gas_wanted:6721975 }" height=3 total=1

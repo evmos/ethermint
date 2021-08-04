@@ -256,7 +256,7 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig) *vm.EVM {
     Transfer:    core.Transfer,
     GetHash:     k.GetHashFn(),
     Coinbase:    common.Address{}, // there's no beneficiary since we're not mining
-    GasLimit:    blockGasMeter.Limit(),
+    GasLimit:    gasLimit,
     BlockNumber: blockHeight,
     Time:        blockTime,
     Difficulty:  0, // unused. Only required in PoW context

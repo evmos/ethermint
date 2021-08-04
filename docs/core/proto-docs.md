@@ -23,6 +23,7 @@
   
 - [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
     - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
+    - [DynamicFeeTx](#ethermint.evm.v1alpha1.DynamicFeeTx)
     - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
     - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
     - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
@@ -32,6 +33,7 @@
     - [Msg](#ethermint.evm.v1alpha1.Msg)
   
 - [ethermint/evm/v1alpha1/query.proto](#ethermint/evm/v1alpha1/query.proto)
+    - [EstimateGasResponse](#ethermint.evm.v1alpha1.EstimateGasResponse)
     - [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest)
     - [QueryAccountRequest](#ethermint.evm.v1alpha1.QueryAccountRequest)
     - [QueryAccountResponse](#ethermint.evm.v1alpha1.QueryAccountResponse)
@@ -359,6 +361,32 @@ AccessListTx is the data of EIP-2930 access list transactions.
 
 
 
+<a name="ethermint.evm.v1alpha1.DynamicFeeTx"></a>
+
+### DynamicFeeTx
+DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain_id` | [string](#string) |  | destination EVM chain ID |
+| `nonce` | [uint64](#uint64) |  | nonce corresponds to the account nonce (transaction sequence). |
+| `gas_tip_cap` | [string](#string) |  | gas tip cap defines the max value for the gas tip |
+| `gas_fee_cap` | [string](#string) |  | gas fee cap defines the max value for the gas fee |
+| `gas` | [uint64](#uint64) |  | gas defines the gas limit defined for the transaction. |
+| `to` | [string](#string) |  | hex formatted address of the recipient |
+| `value` | [string](#string) |  | value defines the the transaction amount. |
+| `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
+| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `v` | [bytes](#bytes) |  | v defines the signature value |
+| `r` | [bytes](#bytes) |  | r defines the signature value |
+| `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx"></a>
 
 ### ExtensionOptionsEthereumTx
@@ -433,7 +461,7 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 | `hash` | [string](#string) |  | ethereum transaction hash in hex format. This hash differs from the Tendermint sha256 hash of the transaction bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference |
 | `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
 | `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
-| `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
+| `vm_error` | [string](#string) |  | vm error is the error returned by vm execution |
 | `gas_used` | [uint64](#uint64) |  | gas consumed by the transaction |
 
 
@@ -467,6 +495,21 @@ Msg defines the evm Msg service.
 
 
 
+<a name="ethermint.evm.v1alpha1.EstimateGasResponse"></a>
+
+### EstimateGasResponse
+EstimateGasResponse defines EstimateGas response
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `gas` | [uint64](#uint64) |  | the estimated gas |
+
+
+
+
+
+
 <a name="ethermint.evm.v1alpha1.EthCallRequest"></a>
 
 ### EthCallRequest
@@ -476,6 +519,7 @@ EthCallRequest defines EthCall request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `args` | [bytes](#bytes) |  | same json format as the json rpc api. |
+| `gas_cap` | [uint64](#uint64) |  | the default gas cap to be used |
 
 
 
@@ -549,6 +593,11 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 ### QueryBlockBloomRequest
 QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
 method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  | height of the block which we want to query the bloom filter. Tendermint always replace the query request header by the current context header, height cannot be extracted from there, so we need to explicitly pass it in parameter. |
 
 
 
@@ -637,7 +686,8 @@ method.
 <a name="ethermint.evm.v1alpha1.QueryCosmosAccountRequest"></a>
 
 ### QueryCosmosAccountRequest
-QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC method.
+QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC
+method.
 
 
 | Field | Type | Label | Description |
@@ -652,7 +702,8 @@ QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC me
 <a name="ethermint.evm.v1alpha1.QueryCosmosAccountResponse"></a>
 
 ### QueryCosmosAccountResponse
-QueryCosmosAccountResponse is the response type for the Query/CosmosAccount RPC method.
+QueryCosmosAccountResponse is the response type for the Query/CosmosAccount
+RPC method.
 
 
 | Field | Type | Label | Description |
@@ -787,7 +838,8 @@ QueryTxLogs is the response type for the Query/TxLogs RPC method.
 <a name="ethermint.evm.v1alpha1.QueryValidatorAccountRequest"></a>
 
 ### QueryValidatorAccountRequest
-QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount RPC method.
+QueryValidatorAccountRequest is the request type for the
+Query/ValidatorAccount RPC method.
 
 
 | Field | Type | Label | Description |
@@ -802,7 +854,8 @@ QueryValidatorAccountRequest is the request type for the Query/ValidatorAccount 
 <a name="ethermint.evm.v1alpha1.QueryValidatorAccountResponse"></a>
 
 ### QueryValidatorAccountResponse
-QueryValidatorAccountResponse is the response type for the Query/ValidatorAccount RPC method.
+QueryValidatorAccountResponse is the response type for the
+Query/ValidatorAccount RPC method.
 
 
 | Field | Type | Label | Description |
@@ -841,6 +894,7 @@ Query defines the gRPC querier service.
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
 | `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1alpha1/static_call|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1alpha1/eth_call|
+| `EstimateGas` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1alpha1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1alpha1/estimate_gas|
 
  <!-- end services -->
 

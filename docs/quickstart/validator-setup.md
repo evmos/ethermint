@@ -32,7 +32,7 @@ ethermintd tendermint show-validator
 To create your validator, just use the following command:
 
 ```bash
-ethermintcli tx staking create-validator \
+ethermintd tx staking create-validator \
   --amount=1000000aphoton \
   --pubkey=$(ethermintd tendermint show-validator) \
   --moniker=<ethermint_validator> \
@@ -51,7 +51,7 @@ When specifying commission parameters, the `commission-max-change-rate` is used 
 :::
 
 ::: tip
-`Min-self-delegation` is a stritly positive integer that represents the minimum amount of self-delegated voting power your validator must always have. A `min-self-delegation` of 1 means your validator will never have a self-delegation lower than `1000000aphoton`
+`Min-self-delegation` is a strictly positive integer that represents the minimum amount of self-delegated voting power your validator must always have. A `min-self-delegation` of 1 means your validator will never have a self-delegation lower than `1000000aphoton`
 :::
 
 You can confirm that you are in the validator set by using a third party explorer.
@@ -69,7 +69,7 @@ A `gentx` does three things:
 If you want to participate in genesis as a validator, you need to justify that
 you have some stake at genesis, create one (or multiple) transactions to bond this stake to your validator address, and include this transaction in the genesis file.
 
-Your `cosmosvalconspub`, as shown on the section above, can be used to create a validator transaction on genesis as well.
+Your `ethvalconspub`, as shown on the section above, can be used to create a validator transaction on genesis as well.
 
 Next, craft your `ethermintd gentx` command:
 
@@ -96,7 +96,7 @@ For more on `gentx`, use the help flag: `ethermintd gentx -h`
 Your validator is active if the following command returns anything:
 
 ```bash
-ethermintcli query tendermint-validator-set | grep "$(ethermintd tendermint show-validator)"
+ethermintd query tendermint-validator-set | grep "$(ethermintd tendermint show-validator)"
 ```
 
 You should now see your validator in one of the block explorers. You are looking for the `bech32`

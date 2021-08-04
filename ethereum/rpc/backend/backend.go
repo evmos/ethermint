@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"math/big"
 	"regexp"
+	"strconv"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -14,10 +16,12 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -69,15 +73,28 @@ func NewEVMBackend(logger log.Logger, clientCtx client.Context) *EVMBackend {
 	}
 }
 
-// BlockNumber returns the current block number.
+// BlockNumber returns the current block number in abci app state.
+// Because abci app state could lag behind from tendermint latest block, it's more stable
+// for the client to use the latest block number in abci app state than tendermint rpc.
 func (e *EVMBackend) BlockNumber() (hexutil.Uint64, error) {
-	// NOTE: using 0 as min and max height returns the blockchain info up to the latest block.
-	info, err := e.clientCtx.Client.BlockchainInfo(e.ctx, 0, 0)
+	// do any grpc query, ignore the response and use the returned block height
+	var header metadata.MD
+	_, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	if err != nil {
 		return hexutil.Uint64(0), err
 	}
 
-	return hexutil.Uint64(info.LastHeight), nil
+	blockHeightHeader := header.Get(grpctypes.GRPCBlockHeightHeader)
+	if headerLen := len(blockHeightHeader); headerLen != 1 {
+		return 0, fmt.Errorf("unexpected '%s' gRPC header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, headerLen, 1)
+	}
+
+	height, err := strconv.ParseUint(blockHeightHeader[0], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse block height: %w", err)
+	}
+
+	return hexutil.Uint64(height), nil
 }
 
 // GetBlockByNumber returns the block identified by number.
@@ -88,7 +105,7 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 	switch blockNum {
 	case types.EthLatestBlockNumber:
 		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber - 1)
+			height = int64(currentBlockNumber)
 		}
 	case types.EthPendingBlockNumber:
 		if currentBlockNumber > 0 {
@@ -119,7 +136,7 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 		return nil, nil
 	}
 
-	res, err := e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
+	res, err := e.EthBlockFromTendermint(resBlock.Block, fullTx)
 	if err != nil {
 		e.logger.Debug("EthBlockFromTendermint failed", "height", height, "error", err.Error())
 	}
@@ -140,13 +157,11 @@ func (e *EVMBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]i
 		return nil, nil
 	}
 
-	return e.EthBlockFromTendermint(e.clientCtx, e.queryClient, resBlock.Block, fullTx)
+	return e.EthBlockFromTendermint(resBlock.Block, fullTx)
 }
 
 // EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block.
 func (e *EVMBackend) EthBlockFromTendermint(
-	clientCtx client.Context,
-	queryClient evmtypes.QueryClient,
 	block *tmtypes.Block,
 	fullTx bool,
 ) (map[string]interface{}, error) {
@@ -206,15 +221,37 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		}
 	}
 
-	blockBloomResp, err := queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{Height: block.Height})
 	if err != nil {
 		e.logger.Debug("failed to query BlockBloom", "height", block.Height, "error", err.Error())
 
 		blockBloomResp = &evmtypes.QueryBlockBloomResponse{Bloom: ethtypes.Bloom{}.Bytes()}
 	}
 
+	req := &evmtypes.QueryValidatorAccountRequest{
+		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
+	}
+
+	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
+	if err != nil {
+		e.logger.Debug("failed to query validator operator address", "cons-address", req.ConsAddress, "error", err.Error())
+		return nil, err
+	}
+
+	addr, err := sdk.AccAddressFromBech32(res.AccountAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	validatorAddr := common.BytesToAddress(addr)
+
 	bloom := ethtypes.BytesToBloom(blockBloomResp.Bloom)
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), ethermint.DefaultRPCGasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom)
+
+	gasLimit, err := types.BlockMaxGasFromConsensusParams(types.ContextWithHeight(block.Height), e.clientCtx)
+	if err != nil {
+		e.logger.Error("failed to query consensus params", "error", err.Error())
+	}
+	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
 	return formattedBlock, nil
 }
 
@@ -226,7 +263,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 	switch blockNum {
 	case types.EthLatestBlockNumber:
 		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber - 1)
+			height = int64(currentBlockNumber)
 		}
 	case types.EthPendingBlockNumber:
 		if currentBlockNumber > 0 {
@@ -246,7 +283,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{}
+	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
@@ -267,7 +304,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{}
+	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
@@ -348,7 +385,7 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 	switch blockNum {
 	case types.EthLatestBlockNumber:
 		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber - 1)
+			height = int64(currentBlockNumber)
 		}
 	case types.EthPendingBlockNumber:
 		if currentBlockNumber > 0 {

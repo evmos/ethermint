@@ -104,11 +104,6 @@ import (
 )
 
 func init() {
-	// set the address prefixes
-	config := sdk.GetConfig()
-	ethermint.SetBech32Prefixes(config)
-	ethermint.SetBip44CoinType(config)
-
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
@@ -499,7 +494,7 @@ func NewEthermintApp(
 	// use Ethermint's custom AnteHandler
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
-			app.AccountKeeper, app.BankKeeper, app.EvmKeeper, app.FeeGrantKeeper,
+			app.AccountKeeper, app.BankKeeper, app.EvmKeeper, app.FeeGrantKeeper, app.IBCKeeper.ChannelKeeper,
 			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)

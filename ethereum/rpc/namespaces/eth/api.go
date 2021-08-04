@@ -8,6 +8,10 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/core/vm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
@@ -272,6 +276,12 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
+		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
+		return nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "hash", hash.Hex())
 		return nil
 	}
 
@@ -281,9 +291,15 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
-	e.logger.Debug("eth_getBlockTransactionCountByNumber", "block number", blockNum)
+	e.logger.Debug("eth_getBlockTransactionCountByNumber", "height", blockNum.Int64())
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil
 	}
 
@@ -525,10 +541,6 @@ func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNr rpctypes.BlockNumber, _
 		return []byte{}, err
 	}
 
-	if data.Reverted {
-		return []byte{}, evmtypes.NewExecErrorWithReason(data.Ret)
-	}
-
 	return (hexutil.Bytes)(data.Ret), nil
 }
 
@@ -541,32 +553,49 @@ func (e *PublicAPI) doCall(
 	if err != nil {
 		return nil, err
 	}
-	req := evmtypes.EthCallRequest{Args: bz}
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
+
+	// From ContextWithHeight: if the provided height is 0,
+	// it will return an empty context and the gRPC query will use
+	// the latest block height for querying.
 	res, err := e.queryClient.EthCall(rpctypes.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.Failed() {
+		if res.VmError != vm.ErrExecutionReverted.Error() {
+			return nil, status.Error(codes.Internal, res.VmError)
+		}
+		return nil, evmtypes.NewExecErrorWithReason(res.Ret)
 	}
 
 	return res, nil
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
-func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs) (hexutil.Uint64, error) {
+func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error) {
 	e.logger.Debug("eth_estimateGas")
+
+	blockNr := rpctypes.EthPendingBlockNumber
+	if blockNrOptional != nil {
+		blockNr = *blockNrOptional
+	}
+
+	bz, err := json.Marshal(&args)
+	if err != nil {
+		return 0, err
+	}
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	data, err := e.doCall(args, 0)
+	res, err := e.queryClient.EstimateGas(rpctypes.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return 0, err
 	}
-
-	if data.Reverted {
-		return 0, evmtypes.NewExecErrorWithReason(data.Ret)
-	}
-
-	return hexutil.Uint64(data.GasUsed), nil
+	return hexutil.Uint64(res.Gas), nil
 }
 
 // GetBlockByHash returns the block identified by hash.
@@ -668,6 +697,11 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, nil
 	}
 
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "hash", hash.Hex())
+		return nil, nil
+	}
+
 	i := int(idx)
 	if i >= len(resBlock.Block.Txs) {
 		e.logger.Debug("block txs index out of bound", "index", i)
@@ -703,6 +737,11 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil, nil
+	}
+
+	if resBlock.Block == nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil, nil
 	}
 
@@ -781,7 +820,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	// Get the transaction result from the log
 	var status hexutil.Uint
-	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxReverted) {
+	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxFailed) {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
@@ -1005,7 +1044,8 @@ func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs
 			Data:       input,
 			AccessList: args.AccessList,
 		}
-		estimated, err := e.EstimateGas(callArgs)
+		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))
+		estimated, err := e.EstimateGas(callArgs, &blockNr)
 		if err != nil {
 			return args, err
 		}
