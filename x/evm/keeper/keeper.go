@@ -349,3 +349,15 @@ func (k Keeper) ResetAccount(addr common.Address) {
 	k.DeleteCode(addr)
 	k.DeleteAccountStorage(addr)
 }
+
+// BeginCachedContext create the cached context
+func (k *Keeper) BeginCachedContext() (commit func()) {
+	k.committedCtx = k.ctx
+	k.ctx, commit = k.ctx.CacheContext()
+	return
+}
+
+// EndCachedContext recover the committed context
+func (k *Keeper) EndCachedContext() {
+	k.ctx = k.committedCtx
+}
