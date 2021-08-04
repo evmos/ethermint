@@ -2,25 +2,22 @@
 order: 5
 -->
 
-# JoiningTestnet
+# Joining a Testnet
 
-This document outlines the steps to join the public testnet
+This document outlines the steps to join an existing testnet
 
 ## Steps
 
-1. Install the Ethermint binaries (ethermintd & ethermint cli)
+1. Install the Ethermint binary ethermintd
 
     ```bash
-    git clone https://github.com/tharsis/ethermint
-    cd ethermint
-    git checkout v0.4.1
-    make install
+    go install https://github.com/tharsis/ethermint
     ```
 
 2. Create an Ethermint account
 
     ```bash
-    ethermintcli keys add <keyname>
+    ethermintd keys add <keyname>
     ```
 
 3. Copy genesis file
@@ -42,40 +39,3 @@ This document outlines the steps to join the public testnet
 
     ethermintd start --pruning=nothing --rpc.unsafe --log_level "main:info,state:info,mempool:info" --trace
     ```
-
-    (we recommend running the command in the background for convenience)
-
-6. Start the RPC server
-
-    ```bash
-    ethermintcli rest-server --laddr "tcp://localhost:8545" --unlock-key $KEY --chain-id etherminttestnet-777 --trace --rpc-api "web3,eth,net"
-    ```
-
-    where `$KEY` is the key name that was used in step 2.
-    (we recommend running the command in the background for convenience)
-
-7. Request funds from the faucet
-
-    You will need to know the Ethereum hex address, and it can be found with the following command:
-
-    ```bash
-    curl -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
-    ```
-
-    Using the output of the above command, you will then send the command with your valid Ethereum address
-
-    ```bash
-    curl --header "Content-Type: application/json" --request POST --data '{"address":"0xYourEthereumHexAddress"}' 3.95.21.91:3000
-    ```
-
-## Public Testnet Node RPC Endpoints
-
-- **Node0**: `54.210.246.165:8545`
-- **Node1**: `3.86.104.251:8545`
-- **Node2**: `18.204.206.179:8545`
-
-example:
-
-```bash
-curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' -H "Content-Type: application/json" 54.210.246.165:8545
-```

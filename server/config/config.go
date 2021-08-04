@@ -18,7 +18,7 @@ const (
 
 // GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
 func GetDefaultAPINamespaces() []string {
-	return []string{"eth"}
+	return []string{"eth", "net", "web3"}
 }
 
 // AppConfig helps to override default appConfig template and configs.

@@ -86,17 +86,17 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getFilterChanges","params":[
 
 ### Tendermint Websocket
 
-To start a connection with the Tendermint websocket you need to define the address with the `--node`
-flag when initializing the REST server (default `tcp://localhost:26657`):
+To start a connection with the Tendermint websocket you need to define the address with the `--rpc.laddr`
+flag when starting the node (default `tcp://127.0.0.1:26657`):
 
 ```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --node "tcp://localhost:8080" --unlock-key <my_key> --chain-id <chain_id>
+ethermintd start --rpc.laddr="tcp://127.0.0.1:26657"
 ```
 
 Then, start a websocket subscription with [ws](https://github.com/hashrocket/ws)
 
 ```bash
-# connect to tendermint websocet at port 8080 as defined above
+# connect to tendermint websocket at port 8080 as defined above
 ws ws://localhost:8080/websocket
 
 # subscribe to new Tendermint block headers
@@ -111,11 +111,11 @@ compatibility for websockets of the [Ethereum's
 PubSubAPI](https://geth.ethereum.org/docs/rpc/pubsub), Ethermint needs to cast the Tendermint
 responses retreived into the Ethereum types.
 
-You can start a connection with the Ethereum websocket using the `--wsport` flag when initializing
-the REST server (default `8546`):
+You can start a connection with the Ethereum websocket using the `--evm-rpc.ws-address` flag when starting
+the node (default `"0.0.0.0:8546"`):
 
 ```bash
-ethermintcli rest-server --laddr "tcp://localhost:8545" --wsport 8546 --unlock-key <my_key> --chain-id <chain_id>
+ethermintd start  --evm-rpc.address"0.0.0.0:8545" --evm-rpc.ws-address="0.0.0.0:8546" --evm.rpc.api="eth,web3,net,txpool,debug" --evm-rpc.enable
 ```
 
 Then, start a websocket subscription with [ws](https://github.com/hashrocket/ws)
