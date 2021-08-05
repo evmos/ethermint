@@ -41,7 +41,8 @@ type Keeper struct {
 	stakingKeeper types.StakingKeeper
 
 	// Context for accessing the store, emit events and log info.
-	// The context is
+	// It is kept as a field to make is accessible by the StateDb
+	// functions. Resets on every transaction/block.
 	ctx sdk.Context
 	// Context of the committed state (before transaction execution).
 	// Required for StateDB.CommitedState. Set in `BeginCachedContext`.
