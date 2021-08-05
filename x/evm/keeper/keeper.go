@@ -17,33 +17,42 @@ import (
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
-// Keeper wraps the CommitStateDB, allowing us to pass in SDK context while adhering
-// to the StateDB interface.
+// Keeper grants access to the EVM module state and implements the go-ethereum StateDB interface.
 type Keeper struct {
 	// Protobuf codec
 	cdc codec.BinaryCodec
 	// Store key required for the EVM Prefix KVStore. It is required by:
-	// - storing Account's Storage State
-	// - storing Account's Code
+	// - storing account's Storage State
+	// - storing account's Code
 	// - storing transaction Logs
-	// - storing block height -> bloom filter map. Needed for the Web3 API.
+	// - storing Bloom filters by block height. Needed for the Web3 API.
 	storeKey sdk.StoreKey
 
 	// key to access the transient store, which is reset on every block during Commit
 	transientKey sdk.StoreKey
 
-	paramSpace    paramtypes.Subspace
+	// module specific parameter space that can be configured through governance
+	paramSpace paramtypes.Subspace
+	// access to account state
 	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
+	// update balance and accounting operations with coins
+	bankKeeper types.BankKeeper
+	// access historical headers for EVM state transition execution
 	stakingKeeper types.StakingKeeper
 
+	// Context for accessing the store, emit events and log info.
+	// It is kept as a field to make is accessible by the StateDb
+	// functions. Resets on every transaction/block.
 	ctx sdk.Context
-	// set in `BeginCachedContext`, used by `GetCommittedState` api.
+	// Context of the committed state (before transaction execution).
+	// Required for StateDB.CommitedState. Set in `BeginCachedContext`.
 	committedCtx sdk.Context
 
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
-	debug         bool
+	// trace EVM state transition execution. This value is obtained from the `--trace` flag.
+	// For more info check https://geth.ethereum.org/docs/dapp/tracing
+	debug bool
 }
 
 // NewKeeper generates new evm module keeper
