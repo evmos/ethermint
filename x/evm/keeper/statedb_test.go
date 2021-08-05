@@ -392,7 +392,7 @@ func (suite *KeeperTestSuite) TestCommittedState() {
 
 	suite.app.EvmKeeper.SetState(suite.address, key, value1)
 
-	commit := suite.app.EvmKeeper.BeginCachedContext()
+	suite.app.EvmKeeper.Snapshot()
 
 	suite.app.EvmKeeper.SetState(suite.address, key, value2)
 	tmp := suite.app.EvmKeeper.GetState(suite.address, key)
@@ -400,8 +400,7 @@ func (suite *KeeperTestSuite) TestCommittedState() {
 	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
 	suite.Require().Equal(value1, tmp)
 
-	commit()
-	suite.app.EvmKeeper.EndCachedContext()
+	suite.app.EvmKeeper.CommitCachedContexts()
 
 	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
 	suite.Require().Equal(value2, tmp)
@@ -476,9 +475,60 @@ func (suite *KeeperTestSuite) TestEmpty() {
 }
 
 func (suite *KeeperTestSuite) TestSnapshot() {
-	revision := suite.app.EvmKeeper.Snapshot()
-	suite.Require().Zero(revision)
-	suite.app.EvmKeeper.RevertToSnapshot(revision) // no-op
+
+	var key = common.BytesToHash([]byte("key"))
+	var value1 = common.BytesToHash([]byte("value1"))
+	var value2 = common.BytesToHash([]byte("value2"))
+
+	// set to the initial context
+	suite.Run("simple revert", func() {
+		suite.SetupTest()
+
+		revision := suite.app.EvmKeeper.Snapshot()
+		suite.Require().Zero(revision)
+
+		suite.app.EvmKeeper.SetState(suite.address, key, value1)
+		suite.Require().Equal(value1, suite.app.EvmKeeper.GetState(suite.address, key))
+
+		suite.app.EvmKeeper.RevertToSnapshot(revision)
+		suite.Require().True(suite.app.EvmKeeper.CachedContextsEmpty())
+
+		// reverted
+		suite.Require().Equal(common.Hash{}, suite.app.EvmKeeper.GetState(suite.address, key))
+	})
+
+	suite.Run("nested snapshot/revert", func() {
+		suite.SetupTest()
+
+		revision1 := suite.app.EvmKeeper.Snapshot()
+		suite.Require().Zero(revision1)
+
+		suite.app.EvmKeeper.SetState(suite.address, key, value1)
+
+		revision2 := suite.app.EvmKeeper.Snapshot()
+
+		suite.app.EvmKeeper.SetState(suite.address, key, value2)
+		suite.Require().Equal(value2, suite.app.EvmKeeper.GetState(suite.address, key))
+
+		suite.app.EvmKeeper.RevertToSnapshot(revision2)
+		suite.Require().Equal(value1, suite.app.EvmKeeper.GetState(suite.address, key))
+
+		suite.app.EvmKeeper.RevertToSnapshot(revision1)
+		suite.Require().Equal(common.Hash{}, suite.app.EvmKeeper.GetState(suite.address, key))
+
+		suite.Require().True(suite.app.EvmKeeper.CachedContextsEmpty())
+	})
+
+	suite.Run("jump revert", func() {
+		suite.SetupTest()
+		revision1 := suite.app.EvmKeeper.Snapshot()
+		suite.app.EvmKeeper.SetState(suite.address, key, value1)
+		suite.app.EvmKeeper.Snapshot()
+		suite.app.EvmKeeper.SetState(suite.address, key, value2)
+		suite.app.EvmKeeper.RevertToSnapshot(revision1)
+		suite.Require().Equal(common.Hash{}, suite.app.EvmKeeper.GetState(suite.address, key))
+		suite.Require().True(suite.app.EvmKeeper.CachedContextsEmpty())
+	})
 }
 
 func (suite *KeeperTestSuite) CreateTestTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
