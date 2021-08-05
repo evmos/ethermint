@@ -24,9 +24,10 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// NewEVM generates an ethereum VM from the provided Message fields and the chain parameters
-// (config). It sets the validator operator address as the coinbase address to make it available for
-// the COINBASE opcode, even though there is no beneficiary (since we're not mining).
+// NewEVM generates a go-ethereum VM from the provided Message fields and the chain parameters
+// (ChainConfig and module Params). It additionally sets the validator operator address as the
+// coinbase address to make it available for the COINBASE opcode, even though there is no
+// beneficiary of the coinbase transaction (since we're not mining).
 func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params, coinbase common.Address) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
@@ -45,8 +46,8 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params typ
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
 }
 
-// VMConfig creates an EVM configuration from the module parameters and the debug setting.
-// The config generated uses the default JumpTable from the EVM.
+// VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
+// module parameters. The config generated uses the default JumpTable from the EVM.
 func (k Keeper) VMConfig(params types.Params) vm.Config {
 	return vm.Config{
 		Debug:       k.debug,
@@ -73,13 +74,14 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 				return common.BytesToHash(headerHash)
 			}
 
-			// only recompute the hash if not set
+			// only recompute the hash if not set (eg: checkTxState)
 			contextBlockHeader := k.ctx.BlockHeader()
 			header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
 			if err != nil {
 				k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
 				return common.Hash{}
 			}
+
 			headerHash = header.Hash()
 			return common.BytesToHash(headerHash)
 
@@ -107,7 +109,7 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 }
 
 // ApplyTransaction runs and attempts to perform a state transition with the given transaction (i.e Message), that will
-// only be persisted to the underlying KVStore if the transaction does not error.
+// only be persisted (committed) to the underlying KVStore if the transaction does not fail.
 //
 // Gas tracking
 //
@@ -149,15 +151,19 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// create an ethereum EVM instance and run the message
 	evm := k.NewEVM(msg, ethCfg, params, coinbase)
 
-	k.SetTxHashTransient(tx.Hash())
+	txHash := tx.Hash()
+
+	// set the transaction hash and index to the impermanent (transient) block state so that it's also
+	// available on the StateDB functions (eg: AddLog)
+	k.SetTxHashTransient(txHash)
 	k.IncreaseTxIndexTransient()
+
 	// pass false to execute in real mode, which do actual gas refunding
 	res, err := k.ApplyMessage(evm, msg, ethCfg, false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
-	txHash := tx.Hash()
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogs(txHash)
 
@@ -226,7 +232,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 //
 // Query mode
 //
-// The grpc query endpoint EthCall calls this in query mode, and since the query handler don't call AnteHandler,
+// The gRPC query endpoint from 'eth_call' calls this method in query mode, and since the query handler don't call AnteHandler,
 // so we don't do real gas refund in that case.
 func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainConfig, query bool) (*types.MsgEthereumTxResponse, error) {
 	var (
@@ -256,17 +262,19 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}
 
 	if query {
-		// query handlers don't call ante handler to deduct gas fee, so don't do actual refund here, because the
-		// module account balance might not be enough
+		// gRPC query handlers don't go through the AnteHandler to deduct the gas fee from the sender or have access historical state.
+		// We don't refund gas to the sender.
+		// For more info, see: https://github.com/tharsis/ethermint/issues/229 and https://github.com/cosmos/cosmos-sdk/issues/9636
 		leftoverGas += k.GasToRefund(msg.Gas() - leftoverGas)
 	} else {
-		// refund gas prior to handling the vm error in order to set the updated gas meter
+		// refund gas prior to handling the vm error in order to match the Ethereum gas consumption instead of the default SDK one.
 		leftoverGas, err = k.RefundGas(msg, leftoverGas)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 		}
 	}
 
+	// EVM execution error needs to be available for the JSON-RPC client
 	var vmError string
 	if vmErr != nil {
 		vmError = vmErr.Error()
@@ -280,7 +288,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}, nil
 }
 
-// GetEthIntrinsicGas get the transaction intrinsic gas cost
+// GetEthIntrinsicGas returns the intrinsic gas cost for the transaction
 func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, isContractCreation bool) (uint64, error) {
 	height := big.NewInt(k.ctx.BlockHeight())
 	homestead := cfg.IsHomestead(height)
@@ -289,7 +297,8 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 	return core.IntrinsicGas(msg.Data(), msg.AccessList(), isContractCreation, homestead, istanbul)
 }
 
-// GasToRefund calculate the amount of gas should refund to sender
+// GasToRefund calculates the amount of gas the state machine should refund to the sender. It is
+// capped by half of the gas consumed.
 func (k *Keeper) GasToRefund(gasConsumed uint64) uint64 {
 	// Apply refund counter, capped to half of the used gas.
 	refund := gasConsumed / 2
@@ -305,6 +314,7 @@ func (k *Keeper) GasToRefund(gasConsumed uint64) uint64 {
 // returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
 func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error) {
+	// safety check: leftover gas after execution should never exceed the gas limit defined on the message
 	if leftoverGas > msg.Gas() {
 		return leftoverGas, stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
@@ -313,10 +323,12 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 	}
 
 	gasConsumed := msg.Gas() - leftoverGas
-	refund := k.GasToRefund(gasConsumed)
 
+	// calculate available gas to refund and add it to the leftover gas amount
+	refund := k.GasToRefund(gasConsumed)
 	leftoverGas += refund
 
+	// safety check: leftover gas after refund should never exceed the gas limit defined on the message
 	if leftoverGas > msg.Gas() {
 		return leftoverGas, stacktrace.Propagate(
 			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
