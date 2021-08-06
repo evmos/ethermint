@@ -72,10 +72,6 @@ message is greater or equal than the computed intrinsic gas for the message.
 In the EVM, gas can be specified prior to execution. The totality of the gas specified is consumed at the beginning of the execution and the remaining gas are refunded back to
 the user if any gas is left over after the execution. Additionally the EVM can also define gas to be refunded back to the user but those will be capped to a fraction of the used gas depending on the fork/version being used.
 
-
-
-
-
 ## 0 Fee Transactions
 
 In Cosmos, a minimum gas price is not enforced by the `AnteHandler` as the `min-gas-prices` is
