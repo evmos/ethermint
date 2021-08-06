@@ -89,13 +89,14 @@ as gas is required inherently by the EVM. This check is done by the EVM transact
 
 Ethereum provides a JSON-RPC endpoint `eth_estimateGas` to help users set up a correct gas limit in their transactions. 
 
-Unfortunately we cannot make use of the SDK `tx simulation` for gas estimation because the pre-check in the Ante Handlers would require a valid signature, and the sender balance to be enough to pay for the gas. But in Ethereum, this endpoint can be called without specifying any sender address.
+Unfortunately, we cannot make use of the SDK `tx simulation` for gas estimation because the pre-check in the Ante Handlers would require a valid signature, and the sender balance to be enough to pay for the gas. But in Ethereum, this endpoint can be called without specifying any sender address.
 
-For that reason, a specific query api `EstimateGas` is implemented in Ethermint. It will apply the transaction against the current block/state and perform a binary search in order to find the optimal gas value to return to the user (the same transaction will be applied over and over until we find the minimum gas needed before it fails). The reason we need to use a binary search is that the gas requirement for the
+For that reason, a specific query API `EstimateGas` is implemented in Ethermint. It will apply the transaction against the current block/state and perform a binary search in order to find the optimal gas value to return to the user (the same transaction will be applied over and over until we find the minimum gas needed before it fails). The reason we need to use a binary search is that the gas required for the
 transaction might be higher than the value returned by the EVM after applying the transaction, so we need to try until we find the optimal value.
 
-A cache context will be used during the whole exection to avoid changes be persisted in the state.
+A cache context will be used during the whole execution to avoid changes be persisted in the state.
 
++++
 https://github.com/tharsis/ethermint/blob/098da6d0cc0e0c4cefbddf632df1057383973e4a/x/evm/keeper/grpc_query.go#L392
 
 ## Next {hide}
