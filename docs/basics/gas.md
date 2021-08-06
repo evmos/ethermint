@@ -50,7 +50,12 @@ The main difference between EVM and Cosmos state transitions, is that the EVM us
 
 +++ https://github.com/cosmos/cosmos-sdk/blob/3fd376bd5659f076a4dc79b644573299fd1ec1bf/store/types/gas.go#L187-L196
 
-In order to match the the gas consumed by the EVM, the gas consumption logic from the SDK is ignored, and instead the gas consumed is calculated by subtracting the state transition leftover gas from the gas limit defined on the message.
+In order to match the the gas consumed by the EVM, the gas consumption logic from the SDK is ignored, and instead the gas consumed is calculated by subtracting the state transition leftover gas plus refund from the gas limit defined on the message.
+
+To ignore the SDK gas consumption, we are resetting the GasMeter count to 0 and manually setting it to the `gasUsed` value computed by the EVM module at the end of the execution.
+
++++ https://github.com/tharsis/ethermint/blob/main/x/evm/keeper/state_transition.go#L188
+
 
 ### `AnteHandler`
 
@@ -64,8 +69,12 @@ message is greater or equal than the computed intrinsic gas for the message.
 
 ## Gas Refunds
 
-In The EVM, gas can be specified prior to execution and the remaining gas will be refunded back to
-the user if any gas is left over. The same logic applies to Ethermint, where the gas refunded will be capped to a fraction of the used gas depending on the fork/version being used.
+In the EVM, gas can be specified prior to execution. The totality of the gas specified is consumed at the beginning of the execution and the remaining gas are refunded back to
+the user if any gas is left over after the execution. Additionally the EVM can also define gas to be refunded back to the user but those will be capped to a fraction of the used gas depending on the fork/version being used.
+
+
+
+
 
 ## 0 Fee Transactions
 
@@ -79,6 +88,11 @@ For this same reason, in Ethermint it is possible to send transactions with `0` 
 types other than the ones defined by the `evm` module. EVM module transactions cannot have `0` fees
 as gas is required inherently by the EVM. This check is done by the EVM transactions stateless validation
 (i.e `ValidateBasic`) function as well as on the custom `AnteHandler` defined by Ethermint.
+
+## Gas estimation
+
+Ethereum provides an rpc endpoint `eth_estimateGas` to help users setting up a correct gas limit in their transactions. In Ethermint, a query request is made to the EVM module and the optimal gas limit is evaluated using a binary search on `applyTransaction` to the EVM using a cache context.
+
 
 ## Next {hide}
 
