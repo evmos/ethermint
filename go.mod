@@ -11,9 +11,9 @@ require (
 	github.com/bugsnag/bugsnag-go v2.1.0+incompatible // indirect
 	github.com/bugsnag/panicwrap v1.3.2 // indirect
 	github.com/cespare/cp v1.1.1 // indirect
-	github.com/cosmos/cosmos-sdk v0.43.0-rc2
+	github.com/cosmos/cosmos-sdk v0.43.0-rc3
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/ibc-go v1.0.0-rc3
+	github.com/cosmos/ibc-go v1.0.0-rc4
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/ethereum/go-ethereum v1.10.3
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
