@@ -7,6 +7,7 @@
     "preserve": "./pre.sh",
     "serve": "vuepress dev",
     "build": "vuepress build",
+    "docs:build": "vuepress build docs",
     "postserve": "./post.sh",
     "prebuild": "./pre.sh",
     "postbuild": "./post.sh"
@@ -16,7 +17,8 @@
     "cosmos",
     "ethereum",
     "blockchain",
-    "cryptocurrency"
+    "cryptocurrency",
+    "evm"
   ],
   "author": "Tharsis",
   "license": "ISC",

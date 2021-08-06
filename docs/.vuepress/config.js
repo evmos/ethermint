@@ -38,7 +38,7 @@ module.exports = {
     editLinks: true,
     custom: true,
     logo: {
-      src: '/ethermint-logo-horizontal-complex-alpha.svg',
+      src: '/ethermint-logo-horizontal-alpha.svg',
     },
     algolia: {
       id: 'BH4D9OD16A',
