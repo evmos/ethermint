@@ -52,9 +52,9 @@ The main difference between EVM and Cosmos state transitions, is that the EVM us
 
 In order to match the the gas consumed by the EVM, the gas consumption logic from the SDK is ignored, and instead the gas consumed is calculated by subtracting the state transition leftover gas plus refund from the gas limit defined on the message.
 
-To ignore the SDK gas consumption, we are resetting the GasMeter count to 0 and manually setting it to the `gasUsed` value computed by the EVM module at the end of the execution.
+To ignore the SDK gas consumption, we reset the transaction `GasMeter` count to 0 and manually set it to the `gasUsed` value computed by the EVM module at the end of the execution.
 
-+++ https://github.com/tharsis/ethermint/blob/main/x/evm/keeper/state_transition.go#L188
++++ https://github.com/tharsis/ethermint/blob/098da6d0cc0e0c4cefbddf632df1057383973e4a/x/evm/keeper/state_transition.go#L188
 
 
 ### `AnteHandler`
@@ -69,7 +69,7 @@ message is greater or equal than the computed intrinsic gas for the message.
 
 ## Gas Refunds
 
-In the EVM, gas can be specified prior to execution. The totality of the gas specified is consumed at the beginning of the execution and the remaining gas are refunded back to
+In the EVM, gas can be specified prior to execution. The totality of the gas specified is consumed at the beginning of the execution (during the `AnteHandler` step) and the remaining gas is refunded back to
 the user if any gas is left over after the execution. Additionally the EVM can also define gas to be refunded back to the user but those will be capped to a fraction of the used gas depending on the fork/version being used.
 
 ## 0 Fee Transactions
@@ -87,8 +87,16 @@ as gas is required inherently by the EVM. This check is done by the EVM transact
 
 ## Gas estimation
 
-Ethereum provides an rpc endpoint `eth_estimateGas` to help users setting up a correct gas limit in their transactions. In Ethermint, a query request is made to the EVM module and the optimal gas limit is evaluated using a binary search on `applyTransaction` to the EVM using a cache context.
+Ethereum provides a JSON-RPC endpoint `eth_estimateGas` to help users set up a correct gas limit in their transactions. 
 
+Unfortunately we cannot make use of the SDK `tx simulation` for gas estimation because the pre-check in the Ante Handlers would require a valid signature, and the sender balance to be enough to pay for the gas. But in Ethereum, this endpoint can be called without specifying any sender address.
+
+For that reason, a specific query api `EstimateGas` is implemented in Ethermint. It will apply the transaction against the current block/state and perform a binary search in order to find the optimal gas value to return to the user (the same transaction will be applied over and over until we find the minimum gas needed before it fails). The reason we need to use a binary search is that the gas requirement for the
+transaction might be higher than the value returned by the EVM after applying the transaction, so we need to try until we find the optimal value.
+
+A cache context will be used during the whole exection to avoid changes be persisted in the state.
+
+https://github.com/tharsis/ethermint/blob/098da6d0cc0e0c4cefbddf632df1057383973e4a/x/evm/keeper/grpc_query.go#L392
 
 ## Next {hide}
 
