@@ -4,11 +4,16 @@ order: 2
 
 # Run a Node
 
-Run a local node and start the REST and JSON-RPC clients {synopsis}
+Configure and run an Ethermint node {synopsis}
 
 ## Pre-requisite Readings
 
 - [Installation](./installation.md) {prereq}
+
+
+## Configure the node daemon
+
+Before kick-starting your node, we will have to configure your node so that it connects to the testnet:
 
 ## Automated deployment
 

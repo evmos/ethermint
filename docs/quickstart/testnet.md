@@ -12,7 +12,19 @@ Learn how to deploy a local testnet or connect to an existing public one {synops
 - [Install Docker](https://docs.docker.com/engine/installation/)  {prereq}
 - [Install docker-compose](https://docs.docker.com/compose/install/)  {prereq}
 
-<!-- - [Install `jq`](https://stedolan.github.io/jq/download/) {prereq} -->
+### Supported OS
+
+We officially support macOS, Windows and Linux only. Other platforms may work but there is no
+guarantee. We will extend our support to other platforms after we have stabilized our current
+architecture.
+
+### Minimum Requirements
+
+To run testnet nodes, you will need a machine with the following minimum requirements:
+
+- 4-core, x86_64 architecture processor;
+- 16 GB RAM;
+- 1 TB of storage space.
 
 ## Single-node, Local, Manual Testnet
 

@@ -50,9 +50,11 @@ module.exports = {
     },
     sidebar: {
       auto: false,
-      nav: [{
+      nav: [
+        {
           title: 'Reference',
-          children: [{
+          children: [
+            {
               title: 'Introduction',
               directory: true,
               path: '/intro'
@@ -72,11 +74,31 @@ module.exports = {
               directory: true,
               path: '/core'
             },
+          ]
+        },
+        {
+          title: 'Guides',
+          children: [
             {
-              title: 'Guides',
+              title: 'Wallets',
               directory: true,
-              path: '/guides'
-            }
+              path: '/guides/wallets'
+            },
+            {
+              title: 'Ethereum Tooling',
+              directory: true,
+              path: '/guides/tools'
+            },
+          ]
+        },
+        {
+          title: 'Testnet',
+          children: [
+            {
+              title: 'Guide',
+              directory: true,
+              path: '/testnet'
+            },
           ]
         },
         {

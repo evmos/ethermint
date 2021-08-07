@@ -8,7 +8,7 @@ Learn how Ethermint's architecture leverages the Cosmos SDK Proof-of-Stake funct
 
 ## Cosmos SDK
 
-Ethermint enables the full composability and modularity of the [Cosmos SDK](https://docs.cosmos.network/) 
+Ethermint enables the full composability and modularity of the [Cosmos SDK](https://docs.cosmos.network/).
 
 ## Tendermint Core & the Application Blockchain Interface (ABCI)
 
