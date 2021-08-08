@@ -24,7 +24,9 @@ var _ vm.StateDB = &Keeper{}
 // ----------------------------------------------------------------------------
 
 // CreateAccount creates a new EthAccount instance from the provided address and
-// sets the value to store.
+// sets the value to store. If an account with the given address already exists,
+// this function also resets any preexisting code and storage associated with that
+// address.
 func (k *Keeper) CreateAccount(addr common.Address) {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
@@ -51,7 +53,9 @@ func (k *Keeper) CreateAccount(addr common.Address) {
 // Balance
 // ----------------------------------------------------------------------------
 
-// AddBalance calls CommitStateDB.AddBalance using the passed in context
+// AddBalance adds the given amount to the address balance coin by minting new
+// coins and transferring them to the address. The coin denomination is obtained
+// from the module parameters.
 func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() != 1 {
 		k.Logger(k.ctx).Debug(
@@ -94,7 +98,10 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 	)
 }
 
-// SubBalance calls CommitStateDB.SubBalance using the passed in context
+// SubBalance subtracts the given amount from the address balance by transferring the
+// coins to an escrow account and then burning them. The coin denomination is obtained
+// from the module parameters. This function performs a no-op if the amount is negative
+// or the user doesn't have enough funds for the transfer.
 func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() != 1 {
 		k.Logger(k.ctx).Debug(
@@ -111,7 +118,7 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 	coins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(amount))}
 
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(k.ctx, cosmosAddr, types.ModuleName, coins); err != nil {
-		k.Logger(k.ctx).Error(
+		k.Logger(k.ctx).Debug(
 			"failed to send from account to module when subtracting balance",
 			"ethereum-address", addr.Hex(),
 			"cosmos-address", cosmosAddr.String(),
@@ -138,7 +145,8 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 	)
 }
 
-// GetBalance calls CommitStateDB.GetBalance using the passed in context
+// GetBalance returns the EVM denomination balance of the provided address. The
+// denomination is obtained from the module parameters.
 func (k *Keeper) GetBalance(addr common.Address) *big.Int {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	params := k.GetParams(k.ctx)
@@ -151,7 +159,8 @@ func (k *Keeper) GetBalance(addr common.Address) *big.Int {
 // Nonce
 // ----------------------------------------------------------------------------
 
-// GetNonce calls CommitStateDB.GetNonce using the passed in context
+// GetNonce retrieves the account with the given address and returns the tx
+// sequence (i.e nonce). The function performs a no-op if the account is not found.
 func (k *Keeper) GetNonce(addr common.Address) uint64 {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	nonce, err := k.accountKeeper.GetSequence(k.ctx, cosmosAddr)
@@ -209,7 +218,8 @@ func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 // Code
 // ----------------------------------------------------------------------------
 
-// GetCodeHash calls CommitStateDB.GetCodeHash using the passed in context
+// GetCodeHash fetches the account from the store and returns its code hash. If the account doesn't
+// exist or is not an EthAccount type, GetCodeHash returns the empty code hash value.
 func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	account := k.accountKeeper.GetAccount(k.ctx, cosmosAddr)
@@ -225,7 +235,8 @@ func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
 	return common.HexToHash(ethAccount.CodeHash)
 }
 
-// GetCode calls CommitStateDB.GetCode using the passed in context
+// GetCode returns the code byte array associated with the given address.
+// If the code hash from the account is empty, this function returns nil.
 func (k *Keeper) GetCode(addr common.Address) []byte {
 	hash := k.GetCodeHash(addr)
 
@@ -247,7 +258,8 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 	return code
 }
 
-// SetCode calls CommitStateDB.SetCode using the passed in context
+// SetCode stores the code byte array to the application KVStore and sets the
+// code hash to the given account. The code is deleted from the store if it is empty.
 func (k *Keeper) SetCode(addr common.Address, code []byte) {
 	if bytes.Equal(code, types.EmptyCodeHash) {
 		k.Logger(k.ctx).Debug("passed in EmptyCodeHash, but expected empty code")
@@ -309,7 +321,7 @@ func (k *Keeper) GetCodeSize(addr common.Address) int {
 // execution has finalized. The refund value is cleared on every transaction and
 // at the end of every block.
 
-// AddRefund adds the given amount of gas to the refund cached value.
+// AddRefund adds the given amount of gas to the refund transient value.
 func (k *Keeper) AddRefund(gas uint64) {
 	refund := k.GetRefund()
 
@@ -319,7 +331,7 @@ func (k *Keeper) AddRefund(gas uint64) {
 	store.Set(types.KeyPrefixTransientRefund, sdk.Uint64ToBigEndian(refund))
 }
 
-// SubRefund subtracts the given amount of gas from the refund value. This function
+// SubRefund subtracts the given amount of gas from the transient refund value. This function
 // will panic if gas amount is greater than the stored refund.
 func (k *Keeper) SubRefund(gas uint64) {
 	refund := k.GetRefund()
@@ -336,7 +348,7 @@ func (k *Keeper) SubRefund(gas uint64) {
 }
 
 // GetRefund returns the amount of gas available for return after the tx execution
-// finalises. This value is reset to 0 on every transaction.
+// finalizes. This value is reset to 0 on every transaction.
 func (k *Keeper) GetRefund() uint64 {
 	store := k.ctx.TransientStore(k.transientKey)
 
@@ -622,7 +634,8 @@ func (k *Keeper) AddPreimage(_ common.Hash, _ []byte) {}
 // Iterator
 // ----------------------------------------------------------------------------
 
-// ForEachStorage calls CommitStateDB.ForEachStorage using passed in context
+// ForEachStorage uses the store iterator to iterate over all the state keys and perform a callback
+// function on each of them.
 func (k *Keeper) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) error {
 	store := k.ctx.KVStore(k.storeKey)
 	prefix := types.AddressStoragePrefix(addr)
