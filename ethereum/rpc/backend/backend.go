@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
@@ -47,6 +49,10 @@ type Backend interface {
 	BloomStatus() (uint64, uint64)
 
 	GetCoinbase() (sdk.AccAddress, error)
+
+	// Implemented by Eth and debug namespace
+	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
+	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -443,4 +449,79 @@ func (e *EVMBackend) GetCoinbase() (sdk.AccAddress, error) {
 
 	address, _ := sdk.AccAddressFromBech32(res.AccountAddress)
 	return address, nil
+}
+
+// GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
+func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
+	res, err := e.GetTxByEthHash(txHash)
+	if err != nil {
+		e.logger.Debug("tx not found", "hash", txHash.Hex(), "error", err.Error())
+
+		// try to find tx in mempool
+		txs, err := e.PendingTransactions()
+		if err != nil {
+			return nil, nil
+		}
+
+		for _, tx := range txs {
+			msg, err := evmtypes.UnwrapEthereumMsg(tx)
+			if err != nil {
+				// not ethereum tx
+				continue
+			}
+
+			rpctx, err := types.NewTransactionFromMsg(
+				msg,
+				common.Hash{},
+				uint64(0),
+				uint64(0),
+				e.chainID,
+			)
+			if err != nil {
+				return nil, err
+			}
+			return rpctx, nil
+		}
+	}
+
+	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
+	if err != nil {
+		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
+		return nil, nil
+	}
+
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+	if err != nil {
+		e.logger.Debug("decoding failed", "error", err.Error())
+		return nil, fmt.Errorf("failed to decode tx: %w", err)
+	}
+
+	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
+	if err != nil {
+		e.logger.Debug("invalid tx", "error", err.Error())
+		return nil, err
+	}
+
+	return types.NewTransactionFromMsg(
+		msg,
+		common.BytesToHash(resBlock.Block.Hash()),
+		uint64(res.Height),
+		uint64(res.Index),
+		e.chainID,
+	)
+}
+
+// GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
+// TODO: Don't need to convert once hashing is fixed on Tendermint
+// https://github.com/tendermint/tendermint/issues/6539
+func (e *EVMBackend) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
+	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
+	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resTxs.Txs) == 0 {
+		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
+	}
+	return resTxs.Txs[0], nil
 }
