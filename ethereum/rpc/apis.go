@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug/tracers"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/miner"
@@ -99,6 +100,12 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 			)
 		case DebugNamespace:
 			apis = append(apis,
+				rpc.API{
+					Namespace: DebugNamespace,
+					Version:   apiVersion,
+					Service:   tracers.NewAPI(ctx),
+					Public:    true,
+				},
 				rpc.API{
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
