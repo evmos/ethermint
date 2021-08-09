@@ -151,7 +151,7 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 // tries to sign it with the key associated with args.To. If the given password isn't
 // able to decrypt the key it fails.
 func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.SendTxArgs, pwrd string) (common.Hash, error) {
-	api.logger.Debug("personal_SendTransaction", "address", args.To.String())
+	api.logger.Debug("personal_sendTransaction", "address", args.To.String())
 	return api.backend.SendTransaction(args)
 }
 
