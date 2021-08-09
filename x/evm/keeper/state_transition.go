@@ -169,6 +169,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	// Commit and switch to committed context
 	if !res.Failed() {
+		// keep the cosmos events emitted in the cache context
+		k.committedCtx.EventManager().EmitEvents(k.ctx.EventManager().Events())
 		commit()
 	}
 
