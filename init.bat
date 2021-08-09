@@ -14,8 +14,8 @@ set MONIKER="localtestnet"
 set KEYRING="test"
 set KEYALGO="eth_secp256k1"
 set LOGLEVEL="info"
-# to trace evm
-#TRACE="--trace"
+rem to trace evm
+rem TRACE="--trace"
 set TRACE=""
 set HOME=%USERPROFILE%\.ethermintd
 echo %HOME%

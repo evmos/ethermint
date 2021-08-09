@@ -4,7 +4,15 @@ order: 1
 
 # Installation
 
-## Binaries
+## Pre-requisites
+
+### Install [`jq`](https://stedolan.github.io/jq)
+
+On Mac `brew install jq` or download the official binaries on the project [website](https://stedolan.github.io/jq/download/).
+
+## Install Binaries
+
+### GitHub
 
 Clone and build Ethermint using `git`:
 
@@ -17,7 +25,7 @@ make install
 Check that the binaries have been successfully installed:
 
 ```bash
-ethermintd -h
+ethermintd version
 ```
 
 ## Docker
@@ -32,7 +40,7 @@ This will install the binaries on the `./build` directory. Now, check that the b
 successfully installed:
 
 ```bash
-ethermintd -h
+ethermintd version
 ```
 
 ## Releases
@@ -41,7 +49,11 @@ ethermintd -h
 Ethermint is under VERY ACTIVE DEVELOPMENT and should be treated as pre-alpha software. This means it is not meant to be run in production, its APIs are subject to change without warning and should not be relied upon, and it should not be used to hold any value. We will remove this warning when we have a release that is stable, secure, and properly tested.
 :::
 
-You can also download a specific release available on the [Ethermint repository](https://github.com/tharsis/ethermint/releases)
+You can also download a specific release available on the Ethermint [repository](https://github.com/tharsis/ethermint/releases) or via command line:
+
+```bash
+go install github.com/tharsis/ethermint@latest
+```
 
 ## Next {hide}
 
