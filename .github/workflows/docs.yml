@@ -3,7 +3,8 @@ name: Documentation
 on:
   # trigger deployment on every push to main branch
   push:
-    branches: [main, fedekunze/docs-updates]
+    branches:
+      - main
   # trigger deployment manually
   workflow_dispatch:
 
