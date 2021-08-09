@@ -81,7 +81,3 @@ scp -3 root@<TESTNET_IP_ADDRESS>:$HOME/.ethermintd/config/genesis.json root@<NOD
 ### Start the Node
 
 Once the genesis file is copied over run `ethermind start` inside the node droplet.
-
-## Next {hide}
-
-Follow [Deploy node to public testnet](./deploy_node_on_public_testnet.md)

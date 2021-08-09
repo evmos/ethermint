@@ -4,7 +4,7 @@ order: 1
 
 # JSON-RPC Server
 
-Check the JSON-RPC methods and namespaces supported on Ethermint. {synopsis}
+Check the JSON-RPC methods supported on Ethermint. {synopsis}
 
 ## Pre-requisite Readings
 

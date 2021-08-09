@@ -97,7 +97,12 @@ module.exports = {
             {
               title: 'JSON-RPC',
               directory: true,
-              path: '/api'
+              path: '/api/json-rpc'
+            },
+            {
+              title: 'Protobuf Reference',
+              directory: false,
+              path: '/api/proto-docs'
             },
           ]
         },
@@ -131,7 +136,7 @@ module.exports = {
             },
             {
               title: 'JSON-RPC API Reference',
-              path: '/api/json_rpc'
+              path: '/api/json-rpc/endpoints'
             }
           ]
         }
