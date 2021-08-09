@@ -21,7 +21,7 @@ First, install the latest Truffle version on your machine globally.
 yarn install truffle -g
 ```
 
-You will also need to install Ethermint. Check this [document](./../quickstart/installation.md) for the full instructions.
+You will also need to install Ethermint. Check this [document](./../../quickstart/installation.md) for the full instructions.
 
 ## Create Truffle Project
 
@@ -113,7 +113,7 @@ init.sh
 ```
 
 ::: tip
-For further information on how to run a node, please refer to [this](./../quickstart/run_node.md) quickstart document.
+For further information on how to run a node, please refer to [this](./../../quickstart/run_node.md) quickstart document.
 :::
 
 ## Deploy contract
@@ -158,4 +158,4 @@ Compiling your contracts...
 
 ## Next {hide}
 
-Learn how to connect Ethermint to [Metamask](./../guides/metamask.md) {hide}
+Learn how to connect Ethermint to [Metamask](./../wallets/metamask.md) {hide}

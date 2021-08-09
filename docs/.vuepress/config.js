@@ -92,10 +92,20 @@ module.exports = {
           ]
         },
         {
+          title: 'APIs',
+          children: [
+            {
+              title: 'JSON-RPC',
+              directory: true,
+              path: '/api'
+            },
+          ]
+        },
+        {
           title: 'Testnet',
           children: [
             {
-              title: 'Guide',
+              title: 'Guides',
               directory: true,
               path: '/testnet'
             },
@@ -121,7 +131,7 @@ module.exports = {
             },
             {
               title: 'JSON-RPC API Reference',
-              path: '/basics/json_rpc'
+              path: '/api/json_rpc'
             }
           ]
         }
