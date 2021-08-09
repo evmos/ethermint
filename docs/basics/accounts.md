@@ -41,17 +41,40 @@ There are 3 main types of HRP for the `Addresses`/`PubKeys` available by default
 
 ## Address formats for clients
 
-`EthAccount` can be represented in both [Bech32](https://en.bitcoin.it/wiki/Bech32) and hex format for Ethereum's Web3 tooling compatibility.
+`EthAccount` can be represented in both [Bech32](https://en.bitcoin.it/wiki/Bech32) (`eth1...`) and hex (`0x...`) formats for Ethereum's Web3 tooling compatibility.
 
 The Bech32 format is the default format for Cosmos-SDK queries and transactions through CLI and REST
 clients. The hex format on the other hand, is the Ethereum `common.Address` representation of a
 Cosmos `sdk.AccAddress`.
 
-- Address (Bech32): `eth14au322k9munkmx5wrchz9q30juf5wjgz2cfqku`
-- Address ([EIP55](https://eips.ethereum.org/EIPS/eip-55) Hex): `0xAF79152AC5dF276D9A8e1E2E22822f9713474902`
-- Compressed Public Key: `{"@type":"/ethermint.crypto.v1beta1.ethsecp256k1.PubKey","key":"ApNNebT58zlZxO2yjHiRTJ7a7ufjIzeq5HhLrbmtg9Y/"}`
+- **Address (Bech32)**: `eth14au322k9munkmx5wrchz9q30juf5wjgz2cfqku`
+- **Address ([EIP55](https://eips.ethereum.org/EIPS/eip-55) Hex)**: `0xAF79152AC5dF276D9A8e1E2E22822f9713474902`
+- **Compressed Public Key**: `{"@type":"/ethermint.crypto.v1beta1.ethsecp256k1.PubKey","key":"ApNNebT58zlZxO2yjHiRTJ7a7ufjIzeq5HhLrbmtg9Y/"}`
 
-### Key information
+### Address conversion
+
+The `ethermintd debug addr <address>` can be used to convert an address between hex and bech32 formats. For example:
+
+```bash
+ethermintd debug addr eth12uqc42yj77hk64cdr3vsnpkfs6k0pllln7rudt
+    Address: [87 1 138 168 146 247 175 109 87 13 28 89 9 134 201 134 172 240 255 255]
+    Address (hex): 57018AA892F7AF6D570D1C590986C986ACF0FFFF
+    Bech32 Acc: eth12uqc42yj77hk64cdr3vsnpkfs6k0pllln7rudt
+    Bech32 Val: ethvaloper12uqc42yj77hk64cdr3vsnpkfs6k0pllldvagr4
+
+ethermintd debug addr 57018AA892F7af6D570D1c590986c986aCf0fFff
+    Address: [87 1 138 168 146 247 175 109 87 13 28 89 9 134 201 134 172 240 255 255]
+    Address (hex): 57018AA892F7AF6D570D1C590986C986ACF0FFFF
+    Bech32 Acc: eth12uqc42yj77hk64cdr3vsnpkfs6k0pllln7rudt
+    Bech32 Val: ethvaloper12uqc42yj77hk64cdr3vsnpkfs6k0pllldvagr4
+```
+
+::: tip
+Add the `0x` prefix to the returned hex address above to represent the Ethereum hex address format. For example:
+`Address (hex): 57018AA892F7AF6D570D1C590986C986ACF0FFFF` implies that `0x57018AA892F7AF6D570D1C590986C986ACF0FFFF` is the Ethereum hex address.
+:::
+
+### Key output
 
 ::: tip
 The Cosmos SDK Keyring output (i.e `ethermintd keys`) only supports addresses and public keys in Bech32 format.

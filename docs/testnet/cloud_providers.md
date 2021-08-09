@@ -2,13 +2,9 @@
 order: 4
 -->
 
-# Deploy Testnet on Cloud Provider
+# Deploy Node on Cloud
 
-Learn how to deploy testnet to different cloud providers. {synopsis}
-
-## Pre-requisite Readings
-
-- [Testnet Quickstart](./../quickstart/testnet.md) {prereq}
+Learn how to deploy a node to different cloud providers. {synopsis}
 
 ## Digital Ocean
 

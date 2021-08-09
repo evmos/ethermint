@@ -80,6 +80,11 @@ module.exports = {
           title: 'Guides',
           children: [
             {
+              title: 'Localnet',
+              directory: true,
+              path: '/guides/localnet'
+            },
+            {
               title: 'Wallets',
               directory: true,
               path: '/guides/wallets'
