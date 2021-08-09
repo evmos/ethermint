@@ -32,6 +32,10 @@ There is also a `-h`, `--help` command available
 ethermintd -h
 ```
 
+::: tip
+You can also enable auto-completion with the `ethermintd completion` command. For example, at the start of a bash session, run `. <(ethermintd completion)`, and all `ethermintd` subcommands will be auto-completed.
+:::
+
 ### Config and data directory
 
 By default, your config and data are stored in the folder located at the `~/.ethermintd` directory.

@@ -6,9 +6,9 @@ parent:
 
 # Guides
 
-This section contains different guides to use popular Ethereum tools with Ethermint.
+This section contains different guides to use wallets and popular Ethereum tools with Ethermint.
 
-1. [Truffle](./truffle)
-2. [Metamask](./metamask)
-3. [Remix](./remix)
-4. [Deploy Testnet on Cloud Provider](./cloud_testnet)
+1. [Keyring](./wallets/keyring)
+1. [Metamask](./wallets/metamask)
+1. [Truffle](./tools/truffle)
+1. [Remix](./tools/remix)

@@ -1,28 +1,10 @@
 <!--
-order: 1
+order: 2
 -->
 
 # Metamask
 
 Connect your Metamask wallet with Ethermint on a localnet mode. {synopsis}
-
-## Start node and REST server
-
-Start the Ethermint node using your terminal:
-
-```bash
-ethermintd start --pruning=nothing --rpc.unsafe --log_level "main:info,state:info,mempool:info"
-```
-
-::: tip
-You can also start a node from scratch by running `./init.sh` from the Ethermint repository directory. This will generate a key called `mykey` that you can use on the next step.
-:::
-
-In another tab start the REST server. Here replace `mykey` with the name of the key that you want to use and set the `chain-id` the chain identifier of your application.
-
-```bash
-ethermintd rest-server --laddr "tcp://localhost:8545" --unlock-key mykey --chain-id 1
-```
 
 ## Adding a custom Network for Ethermint
 
