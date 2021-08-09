@@ -1,0 +1,33 @@
+package keeper
+
+import (
+	"reflect"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/tharsis/ethermint/x/evm/types"
+)
+
+var (
+	_ types.EvmHooks = MultiEvmHooks{}
+)
+
+// MultiEvmHooks combine multiple evm hooks, all hook functions are run in array sequence
+type MultiEvmHooks []types.EvmHooks
+
+// NewMultiEvmHooks combine multiple evm hooks
+func NewMultiEvmHooks(hooks ...types.EvmHooks) MultiEvmHooks {
+	return hooks
+}
+
+// PostTxProcessing delegate the call to underlying hooks
+func (mh MultiEvmHooks) PostTxProcessing(ctx sdk.Context, txHash ethcmn.Hash, logs []*ethtypes.Log) error {
+	for i := range mh {
+		if err := mh[i].PostTxProcessing(ctx, txHash, logs); err != nil {
+			return sdkerrors.Wrapf(err, "EVM hook %s failed", reflect.TypeOf(mh[i]))
+		}
+	}
+	return nil
+}
