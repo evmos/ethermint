@@ -10,6 +10,5 @@ This repository contains reference documentation on the core concepts of Ethermi
 
 1. [Encoding](./encoding.md)
 2. [Pending State](./pending_state.md)
-3. [Protobuf Docs](./proto-docs.md)
 
 After reading the core concepts, head on to the [guides](../guides/README.md) to learn how to use Ethereum tooling with Ethermint.
