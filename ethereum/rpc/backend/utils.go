@@ -12,14 +12,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
-	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // setTxDefaults populates tx message with default values in case they are not
 // provided on the args
-func (e *EVMBackend) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
+func (e *EVMBackend) setTxDefaults(args types.SendTxArgs) (types.SendTxArgs, error) {
 
 	if args.GasPrice == nil {
 		// TODO: Change to either:
@@ -70,7 +69,7 @@ func (e *EVMBackend) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArg
 			Data:       input,
 			AccessList: args.AccessList,
 		}
-		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))
+		blockNr := types.NewBlockNumber(big.NewInt(0))
 		estimated, err := e.EstimateGas(callArgs, &blockNr)
 		if err != nil {
 			return args, err
