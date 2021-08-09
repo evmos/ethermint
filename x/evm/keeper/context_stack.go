@@ -49,6 +49,8 @@ func (cs *ContextStack) IsEmpty() bool {
 func (cs *ContextStack) Commit() {
 	// commit in order from top to bottom
 	for i := len(cs.cachedContexts) - 1; i >= 0; i-- {
+		// keep all the cosmos events
+		cs.initialCtx.EventManager().EmitEvents(cs.cachedContexts[i].ctx.EventManager().Events())
 		cs.cachedContexts[i].commit()
 	}
 	cs.cachedContexts = []cachedContext{}
