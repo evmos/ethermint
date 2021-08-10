@@ -49,6 +49,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#342](https://github.com/tharsis/ethermint/issues/342) Don't clear balance when resetting the account.
 * (evm) [tharsis#334](https://github.com/tharsis/ethermint/pull/334) Log index changed to the index in block rather than
   tx.
+* (evm) [tharsis#399](https://github.com/tharsis/ethermint/pull/399) Exception in sub-message call reverts the call if it's not propagated.
 
 ### API Breaking
 
