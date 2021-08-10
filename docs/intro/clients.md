@@ -1,5 +1,5 @@
 <!--
-order: 6
+order: 3
 -->
 
 # Clients
@@ -29,7 +29,7 @@ APIs](https://eth.wiki/json-rpc/API) to connect with existing web3 tooling.
 See the list of supported JSON-RPC API [namespaces](https://geth.ethereum.org/docs/rpc/server) and endpoints.
 :::
 
-To connect to the JSON-PRC server, use the `rest-server` command as shown on the section above. Then, you can point any Ethereum development tooling to `http://localhost:8545` or whatever port you choose with the listen address flag (`--evm-rpc.address`).
+To connect to the JSON-PRC server, start the node with the `--evm-rpc.enable=true` flag and define the namespaces that you would like to run using the `--evm.rpc.api` flag (e.g. `"txpool,eth,web3,net,personal"`. Then, you can point any Ethereum development tooling to `http://localhost:8545` or whatever port you choose with the listen address flag (`--evm-rpc.address`).
 
 ## Next {hide}
 
