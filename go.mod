@@ -10,7 +10,7 @@ require (
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/bugsnag/bugsnag-go v2.1.0+incompatible // indirect
-	github.com/bugsnag/panicwrap v1.3.2 // indirect
+	github.com/bugsnag/panicwrap v1.3.4 // indirect
 	github.com/cespare/cp v1.1.1 // indirect
 	github.com/cosmos/cosmos-sdk v0.43.0
 	github.com/cosmos/go-bip39 v1.0.0
@@ -62,6 +62,3 @@ require (
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-// FIXME: update after PR merged: https://github.com/bugsnag/panicwrap/pull/23
-replace github.com/bugsnag/panicwrap => github.com/yihuang/panicwrap v1.3.4-0.20210716032932-61c0a7c0cd05
