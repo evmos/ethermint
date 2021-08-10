@@ -52,7 +52,7 @@ func (cs *ContextStack) Commit() {
 		// keep all the cosmos events
 		cs.initialCtx.EventManager().EmitEvents(cs.cachedContexts[i].ctx.EventManager().Events())
 		if cs.cachedContexts[i].commit == nil {
-			panic("commit function should not be nil")
+			panic(fmt.Sprintf("commit function at index %d should not be nil", i))
 		} else {
 			cs.cachedContexts[i].commit()
 		}
