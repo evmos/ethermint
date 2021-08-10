@@ -51,7 +51,11 @@ func (cs *ContextStack) Commit() {
 	for i := len(cs.cachedContexts) - 1; i >= 0; i-- {
 		// keep all the cosmos events
 		cs.initialCtx.EventManager().EmitEvents(cs.cachedContexts[i].ctx.EventManager().Events())
-		cs.cachedContexts[i].commit()
+		if cs.cachedContexts[i].commit == nil {
+			panic("commit function should not be nil")
+		} else {
+			cs.cachedContexts[i].commit()
+		}
 	}
 	cs.cachedContexts = []cachedContext{}
 }
