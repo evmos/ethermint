@@ -33,7 +33,7 @@ This matches Ethereum denomination of:
 ### EVM Tokens
 
 Ethermint is compatible with ERC20 tokens and other non-fungible token standards (EIP721, EIP1155)
-that are natively supported by the EVM. One important remark is that these tokens don't interact with the Cosmos modules and other Cosmos SDK coins.
+that are natively supported by the EVM.
 
 ## Next {hide}
 

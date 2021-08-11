@@ -84,6 +84,10 @@ as a CLI config option with:
 ethermintd config keyring-backend file
 ```
 
+:::tip
+For more information about the Keyring and its backend options, click [here](./../guides/keys-wallets/keyring).
+:::
+
 ## Clearing data from chain
 
 ### Reset Data
