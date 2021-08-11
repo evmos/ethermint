@@ -141,7 +141,7 @@ module.exports = {
             },
             {
               title: 'JSON-RPC API Reference',
-              path: '/api/json-rpc/endpoints'
+              path: '/api/JSON-RPC/endpoints'
             }
           ]
         }
