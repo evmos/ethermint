@@ -6,6 +6,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/tharsis/ethermint/ethereum/rpc/backend"
+
+	"github.com/cosmos/cosmos-sdk/client"
+
 	"github.com/tharsis/ethermint/crypto/hd"
 	ethermint "github.com/tharsis/ethermint/types"
 
@@ -21,21 +25,32 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 )
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PrivateAccountAPI struct {
-	ethAPI *eth.PublicAPI
-	logger log.Logger
+	clientCtx  client.Context
+	backend    backend.Backend
+	logger     log.Logger
+	hdPathIter ethermint.HDPathIterator
 }
 
 // NewAPI creates an instance of the public Personal Eth API.
-func NewAPI(logger log.Logger, ethAPI *eth.PublicAPI) *PrivateAccountAPI {
+func NewAPI(logger log.Logger, clientCtx client.Context, backend backend.Backend) *PrivateAccountAPI {
+	cfg := sdk.GetConfig()
+	basePath := cfg.GetFullFundraiserPath()
+
+	iterator, err := ethermint.NewHDPathIterator(basePath, true)
+	if err != nil {
+		panic(err)
+	}
+
 	return &PrivateAccountAPI{
-		ethAPI: ethAPI,
-		logger: logger.With("api", "personal"),
+		clientCtx:  clientCtx,
+		logger:     logger.With("api", "personal"),
+		hdPathIter: iterator,
+		backend:    backend,
 	}
 }
 
@@ -57,17 +72,17 @@ func (api *PrivateAccountAPI) ImportRawKey(privkey, password string) (common.Add
 	ethereumAddr := common.BytesToAddress(addr)
 
 	// return if the key has already been imported
-	if _, err := api.ethAPI.ClientCtx().Keyring.KeyByAddress(addr); err == nil {
+	if _, err := api.clientCtx.Keyring.KeyByAddress(addr); err == nil {
 		return ethereumAddr, nil
 	}
 
 	// ignore error as we only care about the length of the list
-	list, _ := api.ethAPI.ClientCtx().Keyring.List()
+	list, _ := api.clientCtx.Keyring.List()
 	privKeyName := fmt.Sprintf("personal_%d", len(list))
 
 	armor := sdkcrypto.EncryptArmorPrivKey(privKey, password, ethsecp256k1.KeyType)
 
-	if err := api.ethAPI.ClientCtx().Keyring.ImportPrivKey(privKeyName, armor, password); err != nil {
+	if err := api.clientCtx.Keyring.ImportPrivKey(privKeyName, armor, password); err != nil {
 		return common.Address{}, err
 	}
 
@@ -81,7 +96,7 @@ func (api *PrivateAccountAPI) ListAccounts() ([]common.Address, error) {
 	api.logger.Debug("personal_listAccounts")
 	addrs := []common.Address{}
 
-	list, err := api.ethAPI.ClientCtx().Keyring.List()
+	list, err := api.clientCtx.Keyring.List()
 	if err != nil {
 		return nil, err
 	}
@@ -109,14 +124,16 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 	name := "key_" + time.Now().UTC().Format(time.RFC3339)
 
 	// create the mnemonic and save the account
-	info, _, err := api.ethAPI.ClientCtx().Keyring.NewMnemonic(name, keyring.English, ethermint.BIP44HDPath, password, hd.EthSecp256k1)
+	hdPath := api.hdPathIter()
+
+	info, _, err := api.clientCtx.Keyring.NewMnemonic(name, keyring.English, hdPath.String(), password, hd.EthSecp256k1)
 	if err != nil {
 		return common.Address{}, err
 	}
 
 	addr := common.BytesToAddress(info.GetPubKey().Address().Bytes())
 	api.logger.Info("Your new key was generated", "address", addr.String())
-	api.logger.Info("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermint/"+name)
+	api.logger.Info("Please backup your key file!", "path", os.Getenv("HOME")+"/.ethermint/"+name) // TODO: pass the correct binary
 	api.logger.Info("Please remember your password!")
 	return addr, nil
 }
@@ -134,8 +151,8 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 // tries to sign it with the key associated with args.To. If the given password isn't
 // able to decrypt the key it fails.
 func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.SendTxArgs, pwrd string) (common.Hash, error) {
-
-	return api.ethAPI.SendTransaction(args)
+	api.logger.Debug("personal_sendTransaction", "address", args.To.String())
+	return api.backend.SendTransaction(args)
 }
 
 // Sign calculates an Ethereum ECDSA signature for:
@@ -152,7 +169,7 @@ func (api *PrivateAccountAPI) Sign(_ context.Context, data hexutil.Bytes, addr c
 
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
-	sig, _, err := api.ethAPI.ClientCtx().Keyring.SignByAddress(cosmosAddr, accounts.TextHash(data))
+	sig, _, err := api.clientCtx.Keyring.SignByAddress(cosmosAddr, accounts.TextHash(data))
 	if err != nil {
 		api.logger.Error("failed to sign with key", "data", data, "address", addr.String(), "error", err.Error())
 		return nil, err

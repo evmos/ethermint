@@ -6,6 +6,29 @@ module.exports = {
       lang: 'en-US'
     },
   },
+  markdown: {
+    extendMarkdown: (md) => {
+      md.use(require("markdown-it-katex"));
+    },
+  },
+  head: [
+      [
+          "link",
+          {
+              rel: "stylesheet",
+              href:
+                  "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css",
+          },
+      ],
+      [
+          "link",
+          {
+              rel: "stylesheet",
+              href:
+                  "https://cdn.jsdelivr.net/github-markdown-css/2.2.1/github-markdown.css",
+          },
+      ],
+  ],
   base: process.env.VUEPRESS_BASE || '/',
   themeConfig: {
     repo: 'tharsis/ethermint',
@@ -15,7 +38,7 @@ module.exports = {
     editLinks: true,
     custom: true,
     logo: {
-      src: '/logo.svg',
+      src: '/ethermint-logo-horizontal-alpha.svg',
     },
     algolia: {
       id: 'BH4D9OD16A',
@@ -27,9 +50,11 @@ module.exports = {
     },
     sidebar: {
       auto: false,
-      nav: [{
+      nav: [
+        {
           title: 'Reference',
-          children: [{
+          children: [
+            {
               title: 'Introduction',
               directory: true,
               path: '/intro'
@@ -49,11 +74,51 @@ module.exports = {
               directory: true,
               path: '/core'
             },
+          ]
+        },
+        {
+          title: 'Guides',
+          children: [
+            {
+              title: 'Localnet',
+              directory: true,
+              path: '/guides/localnet'
+            },
+            {
+              title: 'Wallets',
+              directory: true,
+              path: '/guides/wallets'
+            },
+            {
+              title: 'Ethereum Tooling',
+              directory: true,
+              path: '/guides/tools'
+            },
+          ]
+        },
+        {
+          title: 'APIs',
+          children: [
+            {
+              title: 'JSON-RPC',
+              directory: true,
+              path: '/api/json-rpc'
+            },
+            {
+              title: 'Protobuf Reference',
+              directory: false,
+              path: '/api/proto-docs'
+            },
+          ]
+        },
+        {
+          title: 'Testnet',
+          children: [
             {
               title: 'Guides',
               directory: true,
-              path: '/guides'
-            }
+              path: '/testnet'
+            },
           ]
         },
         {
@@ -65,17 +130,18 @@ module.exports = {
           }]
         }, {
           title: 'Resources',
-          children: [{
+          children: [
+            {
               title: 'Ethermint API Reference',
-              path: 'https://godoc.org/github.com/tharsis/ethermint'
+              path: 'https://pkg.go.dev/github.com/tharsis/ethermint'
             },
             {
               title: 'Cosmos REST API Spec',
               path: 'https://cosmos.network/rpc/'
             },
             {
-              title: 'Ethereum JSON RPC API Reference',
-              path: 'https://eth.wiki/json-rpc/API'
+              title: 'JSON-RPC API Reference',
+              path: '/api/json-rpc/endpoints'
             }
           ]
         }
@@ -86,13 +152,13 @@ module.exports = {
       chat: {
         title: 'Developer Chat',
         text: 'Chat with Ethermint developers on Discord.',
-        url: 'https://discordapp.com/channels/669268347736686612',
+        url: 'https://discord.gg/3ZbxEq4KDu',
         bg: 'linear-gradient(103.75deg, #1B1E36 0%, #22253F 100%)'
       },
       forum: {
         title: 'Ethermint Developer Forum',
         text: 'Join the Ethermint Developer Forum to learn more.',
-        url: 'https://forum.cosmos.network/',
+        url: 'https://forum.cosmos.network/c/ethermint',
         bg: 'linear-gradient(221.79deg, #3D6B99 -1.08%, #336699 95.88%)',
         logo: 'ethereum-white'
       },
@@ -105,20 +171,33 @@ module.exports = {
     footer: {
       logo: '/logo-bw.svg',
       textLink: {
-        text: 'tharsis.finance/ethermint',
-        url: 'https://tharsis.finance/ethermint'
+        text: 'ethermint.dev',
+        url: 'https://ethermint.dev'
       },
-      services: [{
+      services: [
+        {
           service: 'github',
           url: 'https://github.com/tharsis/ethermint'
-        }
+        },
+        {
+          service: "twitter",
+          url: "https://twitter.com/ethermint",
+        },
+        {
+          service: "linkedin",
+          url: "https://www.linkedin.com/company/tharsis-finance/",
+      },
+      {
+          service: "medium",
+          url: "https://medium.com/@tharsis_labs",
+      },
       ],
-      smallprint: 'This website is maintained by Tharsis.',
+      smallprint: 'This website is maintained by Tharsis Labs Ltd.',
       links: [{
           title: 'Documentation',
           children: [{
               title: 'Cosmos SDK Docs',
-              url: 'https://docs.cosmos.network'
+              url: 'https://docs.cosmos.network/master/'
             },
             {
               title: 'Ethereum Docs',
@@ -133,8 +212,8 @@ module.exports = {
         {
           title: 'Community',
           children: [{
-              title: 'Cosmos Community',
-              url: 'https://discord.gg/W8trcGV'
+              title: 'Ethermint Community',
+              url: 'https://discord.gg/3ZbxEq4KDu'
             },
             {
               title: 'Ethermint Forum',
@@ -143,14 +222,11 @@ module.exports = {
           ]
         },
         {
-          title: 'Contributing',
-          children: [{
-              title: 'Contributing to the docs',
-              url: 'https://github.com/tharsis/ethermint/tree/main/docs'
-            },
+          title: 'Tharsis',
+          children: [
             {
-              title: 'Source code on GitHub',
-              url: 'https://github.com/tharsis/ethermint/blob/main/docs/DOCS_README.md'
+              title: 'Jobs at Tharsis',
+              url: 'https://tharsis.notion.site/Jobs-at-Tharsis-5a1642eb89b34747ae6f2db2d356fc0d'
             }
           ]
         }

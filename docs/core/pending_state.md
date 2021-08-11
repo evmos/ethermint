@@ -34,7 +34,7 @@ transaction mempool. A pending state query made will be subjective and the query
 target node's mempool. Thus, the pending state will not be the same for the same query to two
 different nodes.
 
-### RPC Calls on Pending Transactions
+### JSON-RPC Calls on Pending Transactions
 
 - [`eth_getBalance`](./../basics/json_rpc.md#eth_getbalance)
 - [`eth_getTransactionCount`](./../basics/json_rpc.md#eth-gettransactioncount)

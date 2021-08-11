@@ -803,9 +803,10 @@ func TestEth_EstimateGas(t *testing.T) {
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
 	param[0]["value"] = "0x1"
+	param[0]["gas"] = "0x5209"
 	rpcRes := call(t, "eth_estimateGas", param)
 	require.NotNil(t, rpcRes)
-	require.NotEmpty(t, rpcRes.Result)
+	require.Equal(t, rpcRes.Result, "0x5208")
 
 	var gas string
 	err := json.Unmarshal(rpcRes.Result, &gas)
@@ -908,6 +909,6 @@ func TestEth_GetBlockByNumber(t *testing.T) {
 	block := make(map[string]interface{})
 	err := json.Unmarshal(rpcRes.Result, &block)
 	require.NoError(t, err)
-	require.Equal(t, "0x0", block["extraData"].(string))
+	require.Equal(t, "0x", block["extraData"].(string))
 	require.Equal(t, []interface{}{}, block["uncles"].([]interface{}))
 }

@@ -2,11 +2,19 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"regexp"
+	"strconv"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
@@ -14,33 +22,32 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/tharsis/ethermint/ethereum/rpc/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
-// Backend implements the functionality needed to filter changes.
+// Backend implements the functionality shared within namespaces.
 // Implemented by EVMBackend.
 type Backend interface {
-	// Used by block filter; also used for polling
 	BlockNumber() (hexutil.Uint64, error)
-	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
-	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
-
-	// returns the logs of a given block
-	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
-
-	// Used by pending transaction filter
+	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
+	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
-
-	// Used by log filter
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
+	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
+	SendTransaction(args types.SendTxArgs) (common.Hash, error)
+	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
+	GetCoinbase() (sdk.AccAddress, error)
+	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -69,15 +76,28 @@ func NewEVMBackend(logger log.Logger, clientCtx client.Context) *EVMBackend {
 	}
 }
 
-// BlockNumber returns the current block number.
+// BlockNumber returns the current block number in abci app state.
+// Because abci app state could lag behind from tendermint latest block, it's more stable
+// for the client to use the latest block number in abci app state than tendermint rpc.
 func (e *EVMBackend) BlockNumber() (hexutil.Uint64, error) {
-	// NOTE: using 0 as min and max height returns the blockchain info up to the latest block.
-	info, err := e.clientCtx.Client.BlockchainInfo(e.ctx, 0, 0)
+	// do any grpc query, ignore the response and use the returned block height
+	var header metadata.MD
+	_, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	if err != nil {
 		return hexutil.Uint64(0), err
 	}
 
-	return hexutil.Uint64(info.LastHeight), nil
+	blockHeightHeader := header.Get(grpctypes.GRPCBlockHeightHeader)
+	if headerLen := len(blockHeightHeader); headerLen != 1 {
+		return 0, fmt.Errorf("unexpected '%s' gRPC header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, headerLen, 1)
+	}
+
+	height, err := strconv.ParseUint(blockHeightHeader[0], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse block height: %w", err)
+	}
+
+	return hexutil.Uint64(height), nil
 }
 
 // GetBlockByNumber returns the block identified by number.
@@ -204,7 +224,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		}
 	}
 
-	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{})
+	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(block.Height), &evmtypes.QueryBlockBloomRequest{Height: block.Height})
 	if err != nil {
 		e.logger.Debug("failed to query BlockBloom", "height", block.Height, "error", err.Error())
 
@@ -266,7 +286,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{}
+	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
@@ -287,7 +307,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
-	req := &evmtypes.QueryBlockBloomRequest{}
+	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
 	if err != nil {
@@ -399,4 +419,165 @@ func (e *EVMBackend) GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.
 // by the chain indexer.
 func (e *EVMBackend) BloomStatus() (uint64, uint64) {
 	return 4096, 0
+}
+
+// GetCoinbase is the address that staking rewards will be send to (alias for Etherbase).
+func (e *EVMBackend) GetCoinbase() (sdk.AccAddress, error) {
+	node, err := e.clientCtx.GetNode()
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := node.Status(e.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &evmtypes.QueryValidatorAccountRequest{
+		ConsAddress: sdk.ConsAddress(status.ValidatorInfo.Address).String(),
+	}
+
+	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	address, _ := sdk.AccAddressFromBech32(res.AccountAddress)
+	return address, nil
+}
+
+func (e *EVMBackend) SendTransaction(args types.SendTxArgs) (common.Hash, error) {
+	// Look up the wallet containing the requested signer
+	_, err := e.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
+	if err != nil {
+		e.logger.Error("failed to find key in keyring", "address", args.From, "error", err.Error())
+		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
+	}
+
+	args, err = e.setTxDefaults(args)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	msg := args.ToTransaction()
+
+	if err := msg.ValidateBasic(); err != nil {
+		e.logger.Debug("tx failed basic validation", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	// TODO: get from chain config
+	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+
+	// Sign transaction
+	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
+		e.logger.Debug("failed to sign tx", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	// Assemble transaction from fields
+	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
+	if !ok {
+		e.logger.Error("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
+	}
+
+	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+	if err != nil {
+		e.logger.Error("codectypes.NewAnyWithValue failed to pack an obvious value", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	builder.SetExtensionOptions(option)
+	err = builder.SetMsgs(msg)
+	if err != nil {
+		e.logger.Error("builder.SetMsgs failed", "error", err.Error())
+	}
+
+	// Query params to use the EVM denomination
+	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		e.logger.Error("failed to query evm params", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	txData, err := evmtypes.UnpackTxData(msg.Data)
+	if err != nil {
+		e.logger.Error("failed to unpack tx data", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(msg.GetGas())
+
+	// Encode transaction by default Tx encoder
+	txEncoder := e.clientCtx.TxConfig.TxEncoder()
+	txBytes, err := txEncoder(builder.GetTx())
+	if err != nil {
+		e.logger.Error("failed to encode eth tx using default encoder", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	txHash := msg.AsTransaction().Hash()
+
+	// Broadcast transaction in sync mode (default)
+	// NOTE: If error is encountered on the node, the broadcast will not return an error
+	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
+	rsp, err := syncCtx.BroadcastTx(txBytes)
+	if err != nil || rsp.Code != 0 {
+		if err == nil {
+			err = errors.New(rsp.RawLog)
+		}
+		e.logger.Error("failed to broadcast tx", "error", err.Error())
+		return txHash, err
+	}
+
+	// Return transaction hash
+	return txHash, nil
+}
+
+// EstimateGas returns an estimate of gas usage for the given smart contract call.
+func (e *EVMBackend) EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error) {
+	blockNr := types.EthPendingBlockNumber
+	if blockNrOptional != nil {
+		blockNr = *blockNrOptional
+	}
+
+	bz, err := json.Marshal(&args)
+	if err != nil {
+		return 0, err
+	}
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
+
+	// From ContextWithHeight: if the provided height is 0,
+	// it will return an empty context and the gRPC query will use
+	// the latest block height for querying.
+	res, err := e.queryClient.EstimateGas(types.ContextWithHeight(blockNr.Int64()), &req)
+	if err != nil {
+		return 0, err
+	}
+	return hexutil.Uint64(res.Gas), nil
+}
+
+// GetTransactionCount returns the number of transactions at the given address up to the given block number.
+func (e *EVMBackend) GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error) {
+	// Get nonce (sequence) from account
+	from := sdk.AccAddress(address.Bytes())
+	accRet := e.clientCtx.AccountRetriever
+
+	err := accRet.EnsureExists(e.clientCtx, from)
+	if err != nil {
+		// account doesn't exist yet, return 0
+		n := hexutil.Uint64(0)
+		return &n, nil
+	}
+
+	includePending := blockNum == types.EthPendingBlockNumber
+	nonce, err := e.getAccountNonce(address, includePending, blockNum.Int64(), e.logger)
+	if err != nil {
+		return nil, err
+	}
+
+	n := hexutil.Uint64(nonce)
+	return &n, nil
 }

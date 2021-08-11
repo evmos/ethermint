@@ -8,11 +8,9 @@ parent:
 
 This repository contains reference documentation on the basic concepts of Ethermint.
 
-1. [Accounts](./accounts.md)
-2. [Gas and Fees](./gas.md)
-3. [Lifecycle of a transaction](./transactions.md)
-4. [Photon](./photon.md)
-5. [JSON-RPC Server](./json_rpc.md)
-6. [Hard Spoon](./hard_spoon.md)
+1. [Accounts](./accounts)
+2. [Gas and Fees](./gas)
+3. [Lifecycle of a transaction](./transactions)
+4. [Tokens](./tokens)
 
-After reading the basics, head on to the [Core Reference](../core/README.md) for more advanced material.
+After reading the basics, head on to the [Core Reference](../core/README) for more advanced material.

@@ -27,14 +27,14 @@ func (suite *KeeperTestSuite) TestCreateAccount() {
 		callback func(common.Address)
 	}{
 		{
-			"reset account",
+			"reset account (keep balance)",
 			suite.address,
 			func(addr common.Address) {
 				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(100))
 				suite.Require().NotZero(suite.app.EvmKeeper.GetBalance(addr).Int64())
 			},
 			func(addr common.Address) {
-				suite.Require().Zero(suite.app.EvmKeeper.GetBalance(addr).Int64())
+				suite.Require().Equal(suite.app.EvmKeeper.GetBalance(addr).Int64(), int64(100))
 			},
 		},
 		{
@@ -383,6 +383,29 @@ func (suite *KeeperTestSuite) TestState() {
 	}
 }
 
+func (suite *KeeperTestSuite) TestCommittedState() {
+	suite.SetupTest()
+
+	var key = common.BytesToHash([]byte("key"))
+	var value1 = common.BytesToHash([]byte("value1"))
+	var value2 = common.BytesToHash([]byte("value2"))
+
+	suite.app.EvmKeeper.SetState(suite.address, key, value1)
+
+	suite.app.EvmKeeper.Snapshot()
+
+	suite.app.EvmKeeper.SetState(suite.address, key, value2)
+	tmp := suite.app.EvmKeeper.GetState(suite.address, key)
+	suite.Require().Equal(value2, tmp)
+	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
+	suite.Require().Equal(value1, tmp)
+
+	suite.app.EvmKeeper.CommitCachedContexts()
+
+	tmp = suite.app.EvmKeeper.GetCommittedState(suite.address, key)
+	suite.Require().Equal(value2, tmp)
+}
+
 func (suite *KeeperTestSuite) TestSuicide() {
 	testCases := []struct {
 		name     string
@@ -452,9 +475,62 @@ func (suite *KeeperTestSuite) TestEmpty() {
 }
 
 func (suite *KeeperTestSuite) TestSnapshot() {
-	revision := suite.app.EvmKeeper.Snapshot()
-	suite.Require().Zero(revision)
-	suite.app.EvmKeeper.RevertToSnapshot(revision) // no-op
+
+	var key = common.BytesToHash([]byte("key"))
+	var value1 = common.BytesToHash([]byte("value1"))
+	var value2 = common.BytesToHash([]byte("value2"))
+
+	testCases := []struct {
+		name     string
+		malleate func()
+	}{
+		{"simple revert", func() {
+			revision := suite.app.EvmKeeper.Snapshot()
+			suite.Require().Zero(revision)
+
+			suite.app.EvmKeeper.SetState(suite.address, key, value1)
+			suite.Require().Equal(value1, suite.app.EvmKeeper.GetState(suite.address, key))
+
+			suite.app.EvmKeeper.RevertToSnapshot(revision)
+
+			// reverted
+			suite.Require().Equal(common.Hash{}, suite.app.EvmKeeper.GetState(suite.address, key))
+		}},
+		{"nested snapshot/revert", func() {
+			revision1 := suite.app.EvmKeeper.Snapshot()
+			suite.Require().Zero(revision1)
+
+			suite.app.EvmKeeper.SetState(suite.address, key, value1)
+
+			revision2 := suite.app.EvmKeeper.Snapshot()
+
+			suite.app.EvmKeeper.SetState(suite.address, key, value2)
+			suite.Require().Equal(value2, suite.app.EvmKeeper.GetState(suite.address, key))
+
+			suite.app.EvmKeeper.RevertToSnapshot(revision2)
+			suite.Require().Equal(value1, suite.app.EvmKeeper.GetState(suite.address, key))
+
+			suite.app.EvmKeeper.RevertToSnapshot(revision1)
+			suite.Require().Equal(common.Hash{}, suite.app.EvmKeeper.GetState(suite.address, key))
+		}},
+		{"jump revert", func() {
+			revision1 := suite.app.EvmKeeper.Snapshot()
+			suite.app.EvmKeeper.SetState(suite.address, key, value1)
+			suite.app.EvmKeeper.Snapshot()
+			suite.app.EvmKeeper.SetState(suite.address, key, value2)
+			suite.app.EvmKeeper.RevertToSnapshot(revision1)
+			suite.Require().Equal(common.Hash{}, suite.app.EvmKeeper.GetState(suite.address, key))
+		}},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.SetupTest()
+			tc.malleate()
+			// the test case should finish in clean state
+			suite.Require().True(suite.app.EvmKeeper.CachedContextsEmpty())
+		})
+	}
 }
 
 func (suite *KeeperTestSuite) CreateTestTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
@@ -485,6 +561,13 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	msg, _ = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	txHash := msg.AsTransaction().Hash()
 
+	msg2 := types.NewTx(big.NewInt(1), 1, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
+	msg2.From = addr.Hex()
+
+	tx2 := suite.CreateTestTx(msg2, privKey)
+	msg2, _ = tx2.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	txHash2 := msg2.AsTransaction().Hash()
+
 	testCases := []struct {
 		name        string
 		hash        common.Hash
@@ -503,21 +586,38 @@ func (suite *KeeperTestSuite) TestAddLog() {
 			},
 			func() {},
 		},
+		{
+			"log index keep increasing in new tx",
+			txHash2,
+			&ethtypes.Log{
+				Address: addr,
+			},
+			&ethtypes.Log{
+				Address: addr,
+				TxHash:  txHash2,
+				TxIndex: 1,
+				Index:   1,
+			},
+			func() {
+				suite.app.EvmKeeper.SetTxHashTransient(txHash)
+				suite.app.EvmKeeper.AddLog(&ethtypes.Log{
+					Address: addr,
+				})
+				suite.app.EvmKeeper.IncreaseTxIndexTransient()
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.SetupTest()
 			tc.malleate()
 
-			prev := suite.app.EvmKeeper.GetTxLogs(tc.hash)
 			suite.app.EvmKeeper.SetTxHashTransient(tc.hash)
 			suite.app.EvmKeeper.AddLog(tc.log)
-			post := suite.app.EvmKeeper.GetTxLogs(tc.hash)
-
-			suite.Require().NotZero(len(post), tc.hash.Hex())
-			suite.Require().Equal(len(prev)+1, len(post))
-			suite.Require().NotNil(post[len(post)-1])
-			suite.Require().Equal(tc.log, post[len(post)-1])
+			logs := suite.app.EvmKeeper.GetTxLogs(tc.hash)
+			suite.Require().Equal(1, len(logs))
+			suite.Require().Equal(tc.expLog, logs[0])
 		})
 	}
 }
