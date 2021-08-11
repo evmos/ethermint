@@ -6,9 +6,9 @@ order: 4
 
 Learn about Ethermint with the list of official resources. {synopsis}
 
-- Official Documentation: [https://docs.ethermint.zone/](https://docs.ethermint.zone/)
+- Official Documentation: [https://ethermint.dev/](https://ethermint.dev/)
 - Official Codebase: [https://github.com/tharsis/ethermint](https://github.com/tharsis/ethermint)
-- Official Website: [https://ethermint.zone/](https://ethermint.zone/)
+- Official Website: [https://ethermint.dev/](https://ethermint.dev/)
 
 ## Workshops and Videos
 

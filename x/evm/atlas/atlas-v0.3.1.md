@@ -174,8 +174,8 @@ type Params struct {
 
 ### JSON-RPC
 
-See the Ethermint [JSON-RPC docs](https://docs.ethermint.zone/basics/json_rpc.html) for reference.
+See the Ethermint [JSON-RPC docs](https://ethermint.dev/basics/json_rpc.html) for reference.
 
 ## Documentation and Specification
 
-* Ethermint documentation: [https://docs.ethermint.zone](https://docs.ethermint.zone)
+* Ethermint documentation: [https://ethermint.dev](https://ethermint.dev)
