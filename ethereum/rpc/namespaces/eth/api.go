@@ -497,11 +497,10 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 
 	res, err := e.GetTxByEthHash(hash)
 	if err != nil {
-		e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
-
 		// try to find tx in mempool
 		txs, err := e.backend.PendingTransactions()
 		if err != nil {
+			e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
 			return nil, nil
 		}
 
@@ -512,18 +511,23 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 				continue
 			}
 
-			rpctx, err := rpctypes.NewTransactionFromMsg(
-				msg,
-				common.Hash{},
-				uint64(0),
-				uint64(0),
-				e.chainIDEpoch,
-			)
-			if err != nil {
-				return nil, err
+			if msg.Hash == hash.Hex() {
+				rpctx, err := rpctypes.NewTransactionFromMsg(
+					msg,
+					common.Hash{},
+					uint64(0),
+					uint64(0),
+					e.chainIDEpoch,
+				)
+				if err != nil {
+					return nil, err
+				}
+				return rpctx, nil
 			}
-			return rpctx, nil
 		}
+
+		e.logger.Debug("tx not found", "hash", hash.Hex())
+		return nil, nil
 	}
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
