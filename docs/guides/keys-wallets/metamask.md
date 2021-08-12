@@ -14,10 +14,10 @@ Open the Metamask extension on your browser, you may have to log in to your Meta
 are not already. Then click the top right circle and go to `Settings` > `Networks`. Press the `Add
 Network` button and fill the form as shown below with your application `ChainID`.
 
-Note: To find your `ChainID`, take a look at your genesis.json file. To get the Ethereum ChainId from the Cosmos ChainId, you need to consider only the digit in the string value. For example
+::: tip
+To find your full `ChainID`, got your genesis.json file. To get the Ethereum chain ID from the Cosmos chain ID, you need to consider only the last digit in the string value. For example
 if your chain id on ethermint is `"chain_id": "ethermint-1337"`, then you will have to use the value `1337` on Metamask.
-
-
+:::
 
 ![metamask networks settings](./../img/metamask_network_settings.png)
 

@@ -453,11 +453,10 @@ func (e *EVMBackend) GetCoinbase() (sdk.AccAddress, error) {
 func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
 	res, err := e.GetTxByEthHash(txHash)
 	if err != nil {
-		e.logger.Debug("tx not found", "hash", txHash.Hex(), "error", err.Error())
-
 		// try to find tx in mempool
 		txs, err := e.PendingTransactions()
 		if err != nil {
+			e.logger.Debug("tx not found", "hash", txHash.Hex(), "error", err.Error())
 			return nil, nil
 		}
 
@@ -468,18 +467,23 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 				continue
 			}
 
-			rpctx, err := types.NewTransactionFromMsg(
-				msg,
-				common.Hash{},
-				uint64(0),
-				uint64(0),
-				e.chainID,
-			)
-			if err != nil {
-				return nil, err
+			if msg.Hash == txHash.Hex() {
+				rpctx, err := types.NewTransactionFromMsg(
+					msg,
+					common.Hash{},
+					uint64(0),
+					uint64(0),
+					e.chainID,
+				)
+				if err != nil {
+					return nil, err
+				}
+				return rpctx, nil
 			}
-			return rpctx, nil
 		}
+
+		e.logger.Debug("tx not found", "hash", txHash.Hex())
+		return nil, nil
 	}
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)

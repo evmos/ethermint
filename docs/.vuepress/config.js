@@ -85,9 +85,9 @@ module.exports = {
               path: '/guides/localnet'
             },
             {
-              title: 'Wallets',
+              title: 'Keys and Wallets',
               directory: true,
-              path: '/guides/wallets'
+              path: '/guides/keys-wallets'
             },
             {
               title: 'Ethereum Tooling',
@@ -102,7 +102,7 @@ module.exports = {
             {
               title: 'JSON-RPC',
               directory: true,
-              path: '/api/json-rpc'
+              path: '/api/JSON-RPC'
             },
             {
               title: 'Protobuf Reference',
@@ -141,7 +141,7 @@ module.exports = {
             },
             {
               title: 'JSON-RPC API Reference',
-              path: '/api/json-rpc/endpoints'
+              path: '/api/JSON-RPC/endpoints'
             }
           ]
         }

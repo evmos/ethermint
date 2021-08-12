@@ -1,5 +1,5 @@
 <!--
-order: 4
+order: 2
 -->
 
 # Deploy Node on Cloud

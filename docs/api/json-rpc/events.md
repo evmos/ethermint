@@ -1,5 +1,5 @@
 <!--
-order: 6
+order: 4
 -->
 
 # Events
@@ -118,7 +118,7 @@ the node (default `"0.0.0.0:8546"`):
 ethermintd start  --evm-rpc.address"0.0.0.0:8545" --evm-rpc.ws-address="0.0.0.0:8546" --evm.rpc.api="eth,web3,net,txpool,debug" --evm-rpc.enable
 ```
 
-Then, start a websocket subscription with [ws](https://github.com/hashrocket/ws)
+Then, start a websocket subscription with [`ws`](https://github.com/hashrocket/ws)
 
 ```bash
 # connect to tendermint websocet at port 8546 as defined above
@@ -128,7 +128,3 @@ ws ws://localhost:8546/
 > {"id": 1, "method": "eth_subscribe", "params": ["newHeads", {}]}
 < {"jsonrpc":"2.0","result":"0x44e010cb2c3161e9c02207ff172166ef","id":1}
 ```
-
-## Next {hide}
-
-Learn about Ethermint [accounts](./../basic/accounts.md) {hide}

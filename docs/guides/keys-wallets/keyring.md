@@ -23,7 +23,7 @@ MY_VALIDATOR_ADDRESS=$(ethermintd keys show mykey -a --keyring-backend test)
 
 This command generates a new 24-word mnemonic phrase, persists it to the relevant backend, and outputs information about the keypair. If this keypair will be used to hold value-bearing tokens, be sure to write down the mnemonic phrase somewhere safe!
 
-By default, the keyring generates a `eth_secp256k1` keypair. The keyring also supports `ed25519` keys, which may be created by passing the `--algo ed25519` flag. A keyring can of course hold both types of keys simultaneously.
+By default, the keyring generates a `eth_secp256k1` keypair. The keyring also supports `ed25519` and `secp256k1` keys, which may be created by passing the `--algo` flag. A keyring can of course hold both types of keys simultaneously.
 
 ## Keyring Backends
 

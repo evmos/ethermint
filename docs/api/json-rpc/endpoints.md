@@ -1,8 +1,8 @@
 <!--
-order: 1
+order: 3
 -->
 
-# JSON-RPC Server
+# JSON-RPC Methods
 
 Check the JSON-RPC methods supported on Ethermint. {synopsis}
 
@@ -10,20 +10,6 @@ Check the JSON-RPC methods supported on Ethermint. {synopsis}
 
 - [Ethereum JSON-RPC](https://eth.wiki/json-rpc/API) {prereq}
 - [Geth JSON-RPC APIs](https://geth.ethereum.org/docs/rpc/server) {prereq}
-
-## Running the server
-
-To enable RPC server use the following flag (set to true by default).
-
-```bash
-ethermintd start --evm-rpc.enable
-```
-
-`Eth`,`Net` and `Web3` namespaces are enabled by default. In order to enable other namespaces use flag `--evm-rpc.api`.
-
-```bash
-ethermintd start --evm-rpc.api eth,txpool,personal,net,debug,web3,miner
-```
 
 ## Endpoints
 
@@ -177,7 +163,7 @@ Below is a list of the RPC methods, the parameters and an example response from 
 
 ## Web3 Methods
 
-### web3_clientVersion
+### `web3_clientVersion`
 
 Get the web3 client version.
 
@@ -189,7 +175,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],
  {"jsonrpc":"2.0","id":1,"result":"Ethermint/0.0.0+/linux/go1.14"}
 ```
 
-### web3_sha3
+### `web3_sha3`
 
 Returns Keccak-256 (not the standardized SHA3-256) of the given data.
 
@@ -207,7 +193,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"web3_sha3","params":["0x67656c6c
 
 ## Net Methods
 
-### net_version
+### `net_version`
 
 Returns the current network id.
 
@@ -219,9 +205,10 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}
 {"jsonrpc":"2.0","id":1,"result":"8"}
 ```
 
-### net_peerCount
+### `net_peerCount`
 
 Returns the number of peers currently connected to the client.
+
 ```json
 // Request
 curl -X POST --data '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
@@ -230,7 +217,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":
 {"jsonrpc":"2.0","id":1,"result":23}
 ```
 
-### net_listening
+### `net_listening`
 
 Returns if client is actively listening for network connections.
 
@@ -244,7 +231,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"net_listening","params":[],"id":
 
 ## Eth Methods
 
-### eth_protocolVersion
+### `eth_protocolVersion`
 
 Returns the current ethereum protocol version.
 
@@ -256,7 +243,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_protocolVersion","params":[]
 {"jsonrpc":"2.0","id":1,"result":"0x3f"}
 ```
 
-### eth_syncing
+### `eth_syncing`
 
 The sync status object may need to be different depending on the details of Tendermint's sync protocol. However, the 'synced' result is simply a boolean, and can easily be derived from Tendermint's internal sync state.
 
@@ -268,7 +255,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}
 {"jsonrpc":"2.0","id":1,"result":false}
 ```
 
-### eth_gasPrice
+### `eth_gasPrice`
 
 Returns the current gas price in aphotons.
 
@@ -280,7 +267,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1
 {"jsonrpc":"2.0","id":1,"result":"0x0"}
 ```
 
-### eth_accounts
+### `eth_accounts`
 
 Returns array of all eth accounts.
 
@@ -292,7 +279,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1
 {"jsonrpc":"2.0","id":1,"result":["0x3b7252d007059ffc82d16d022da3cbf9992d2f70","0xddd64b4712f7c8f1ace3c145c950339eddaf221d","0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0"]}
 ```
 
-### eth_blockNumber
+### `eth_blockNumber`
 
 Returns the current block height.
 
@@ -304,7 +291,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id
 {"jsonrpc":"2.0","id":1,"result":"0x66"}
 ```
 
-### eth_getBalance
+### `eth_getBalance`
 
 Returns the account balance for a given account address and Block Number.
 
@@ -322,7 +309,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["0x0f5
 {"jsonrpc":"2.0","id":1,"result":"0x36354d5575577c8000"}
 ```
 
-### eth_getStorageAt
+### `eth_getStorageAt`
 
 Returns the storage address for a given account address.
 
@@ -342,7 +329,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getStorageAt","params":["0x0
 {"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}
 ```
 
-### eth_getTransactionCount
+### `eth_getTransactionCount`
 
 Returns the total transaction for a given account address and Block Number.
 
@@ -360,7 +347,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params
 {"jsonrpc":"2.0","id":1,"result":"0x8"}
 ```
 
-### eth_getBlockTransactionCountByNumber
+### `eth_getBlockTransactionCountByNumber`
 
 Returns the total transaction count for a given block number.
 
@@ -376,7 +363,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockTransactionCountByNu
  {"jsonrpc":"2.0","id":1,"result":{"difficulty":null,"extraData":"0x0","gasLimit":"0xffffffff","gasUsed":"0x0","hash":"0x8101cc04aea3341a6d4b3ced715e3f38de1e72867d6c0db5f5247d1a42fbb085","logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","miner":"0x0000000000000000000000000000000000000000","nonce":null,"number":"0x17d","parentHash":"0x70445488069d2584fea7d18c829e179322e2b2185b25430850deced481ca2e77","sha3Uncles":null,"size":"0x1df","stateRoot":"0x269bb17fe7adb8dd5f15f57b717979f82078d6b7a675c1ba1b0da2d27e415fcc","timestamp":"0x5f5ba97c","totalDifficulty":null,"transactions":[],"transactionsRoot":"0x","uncles":[]}}
 ```
 
-### eth_getBlockTransactionCountByHash
+### `eth_getBlockTransactionCountByHash`
 
 Returns the total transaction count for a given block hash.
 
@@ -392,7 +379,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockTransactionCountByHa
 {"jsonrpc":"2.0","id":1,"result":"0x3"}
 ```
 
-### eth_getCode
+### `eth_getCode`
 
 Returns the code for a given account address and Block Number.
 
@@ -410,19 +397,19 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getCode","params":["0x7bf7b1
 {"jsonrpc":"2.0","id":1,"result":"0xef616c92f3cfc9e92dc270d6acff9cea213cecc7020a76ee4395af09bdceb4837a1ebdb5735e11e7d3adb6104e0c3ac55180b4ddf5e54d022cc5e8837f6a4f971b"}
 ```
 
-### eth_sign
+### `eth_sign`
 
 The sign method calculates an Ethereum specific signature with: sign(keccak256("\x19Ethereum Signed Message:\n" + len(message) + message))).
 
 By adding a prefix to the message makes the calculated signature recognisable as an Ethereum specific signature. This prevents misuse where a malicious DApp can sign arbitrary data (e.g. transaction) and use the signature to impersonate the victim.
 
-::: warning 
+::: warning
 the address to sign with must be unlocked.
 :::
 
 #### Parameters
 
-- Account Address 
+- Account Address
 
 - Message to sign
 
@@ -434,13 +421,13 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_sign","params":["0x3b7252d00
 {"jsonrpc":"2.0","id":1,"result":"0x909809c76ed2a5d38733de39207d0f411222b9b49c64a192bf649cb13f63f37b45acb4f6939facb4f1c277bc70fb00407564140c0f18600ac44388f2c1dfd1dc1b"}
 ```
 
-### eth_sendTransaction
+### `eth_sendTransaction`
 
 Sends transaction from given account to a given account.
 
 #### Parameters
 
- - Object containing: 
+- Object containing:
 
     from: DATA, 20 Bytes - The address the transaction is send from.
 
@@ -456,7 +443,6 @@ Sends transaction from given account to a given account.
 
     nonce: QUANTITY - (optional) Integer of a nonce. This allows to overwrite your own pending transactions that use the same nonce.
 
-
 ```json
 // Request
 curl -X POST --data '{"jsonrpc":"2.0","method":"eth_sendTransaction","params":[{"from":"0x3b7252d007059ffc82d16d022da3cbf9992d2f70", "to":"0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0", "value":"0x16345785d8a0000", "gasLimit":"0x5208", "gasPrice":"0x55ae82600"}],"id":1}'  -H "Content-Type: application/json" http://localhost:8545
@@ -465,7 +451,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_sendTransaction","params":[{
 {"jsonrpc":"2.0","id":1,"result":"0x33653249db68ebe5c7ae36d93c9b2abc10745c80a72f591e296f598e2d4709f6"}
 ```
 
-### eth_sendRawTransaction
+### `eth_sendRawTransaction`
 
 Creates new message call transaction or a contract creation for signed transactions.
 
@@ -473,7 +459,7 @@ You can get signed transaction data using the personal_sign method
 
 #### Parameters
 
--  The signed transaction data
+- The signed transaction data
 
 ```json
 // Request
@@ -483,7 +469,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params"
 {"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}
 ```
 
-### eth_call
+### `eth_call`
 
 Executes a new message call immediately without creating a transaction on the block chain.
 
@@ -513,13 +499,13 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_call","params":[{"from":"0x3
 {"jsonrpc":"2.0","id":1,"result":"0x"}
 ```
 
-### eth_estimateGas
+### `eth_estimateGas`
 
 Returns an estimate value of the gas required to send the transaction.
 
 #### Parameters
 
-- Object containing: 
+- Object containing:
 
     from: DATA, 20 Bytes - The address the transaction is send from.
 
@@ -535,7 +521,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_estimateGas","params":[{"fro
 {"jsonrpc":"2.0","id":1,"result":"0x1199b"}
 ```
 
-### eth_getBlockByNumber
+### `eth_getBlockByNumber`
 
 Returns information about a block by block number.
 
@@ -553,11 +539,12 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":[
 {"jsonrpc":"2.0","id":1,"result":{"difficulty":null,"extraData":"0x0","gasLimit":"0xffffffff","gasUsed":null,"hash":"0xabac6416f737a0eb54f47495b60246d405d138a6a64946458cf6cbeae0d48465","logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","miner":"0x0000000000000000000000000000000000000000","nonce":null,"number":"0x1","parentHash":"0x","sha3Uncles":null,"size":"0x9b","stateRoot":"0x","timestamp":"0x5f5bd3e5","totalDifficulty":null,"transactions":[],"transactionsRoot":"0x","uncles":[]}}
 ```
 
-### eth_getBlockByHash
+### `eth_getBlockByHash`
 
 Returns the block info given the hash found in the command above and a bool.
 
 #### Parameters 
+
 - Hash of a block.
 
 - If true it returns the full transaction objects, if false only the hashes of the transactions.
@@ -570,7 +557,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByHash","params":["0
 {"jsonrpc":"2.0","id":1,"result":{"difficulty":null,"extraData":"0x0","gasLimit":"0xffffffff","gasUsed":null,"hash":"0x1b9911f57c13e5160d567ea6cf5b545413f96b95e43ec6e02787043351fb2cc4","logsBloom":"0x00000000100000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000002000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000","miner":"0x0000000000000000000000000000000000000000","nonce":null,"number":"0xc","parentHash":"0x404e58f31a9ede1b614b98701d6b0fbf1450f186842dbcf6426dd16811a5ca0d","sha3Uncles":null,"size":"0x307","stateRoot":"0x599ccdb111fc62c6398dc39be957df8e97bf8ab72ce6c06ff10641a92b754627","timestamp":"0x5f5fdbbd","totalDifficulty":null,"transactions":["0xae64961cb206a9773a6e5efeb337773a6fd0a2085ce480a174135a029afea615"],"transactionsRoot":"0x4764dba431128836fa919b83d314ba9cc000e75f38e1c31a60484409acea777b","uncles":[]}}
 ```
 
-### eth_getTransactionByHash
+### `eth_getTransactionByHash`
 
 Returns transaction details given the ethereum tx something.
 
@@ -586,9 +573,9 @@ curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc
 {"jsonrpc":"2.0","id":1,"result":{"blockHash":"0x7a7398cc11d9c4c8e6f53e0c73824297aceafdab62db9e4b867a0da694384864","blockNumber":"0x188","from":"0x3b7252d007059ffc82d16d022da3cbf9992d2f70","gas":"0x147ee","gasPrice":"0x3b9aca00","hash":"0xec5fa15e1368d6ac314f9f64118c5794f076f63c02e66f97ea5fe1de761a8973","input":"0x6dba746c","nonce":"0x18","to":"0xa655256f589060437e5ffe2246dec385d040f148","transactionIndex":"0x0","value":"0x0","v":"0xa96","r":"0x6db399d694a452fb4106419140a6e5dbbe6817743a0f6f695a651e6576e59a5e","s":"0x25dd6ab1f936d0280d2fed0caeb0ebe5b9a46de6d8cb08ad8fd2c88deb55fc31"}}
 ```
 
-### eth_getTransactionByBlockHashAndIndex
+### `eth_getTransactionByBlockHashAndIndex`
 
-Returns transaction details given the block hash and the transaction index. 
+Returns transaction details given the block hash and the transaction index.
 
 #### Parameters
 
@@ -604,12 +591,12 @@ curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc
 {"jsonrpc":"2.0","id":1,"result":{"blockHash":"0x1b9911f57c13e5160d567ea6cf5b545413f96b95e43ec6e02787043351fb2cc4","blockNumber":"0xc","from":"0xddd64b4712f7c8f1ace3c145c950339eddaf221d","gas":"0x4c4b40","gasPrice":"0x3b9aca00","hash":"0xae64961cb206a9773a6e5efeb337773a6fd0a2085ce480a174135a029afea615","input":"0x4f2be91f","nonce":"0x0","to":"0x439c697e0742a0ddb124a376efd62a72a94ac35a","transactionIndex":"0x0","value":"0x0","v":"0xa96","r":"0xced57d973e58b0f634f776d57daf41d3d3387ceb347a3a72ca0746e5ec2b709e","s":"0x384e89e209a5eb147a2bac3a4e399507400ac7b29cd155531f9d6203a89db3f2"}}
 ```
 
-### eth_getTransactionReceipt
+### `eth_getTransactionReceipt`
 
 Returns the receipt of a transaction by transaction hash.
 
 Note: Tx Code from Tendermint and the Ethereum receipt status are switched:
-|         | Tendermint | Ethereum | 
+|         | Tendermint | Ethereum |
 | ------- | ---------- | -------- |
 | Success | 0          | 1        |
 | Fail    | 1          | 0        |
@@ -626,7 +613,7 @@ curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc
 {"jsonrpc":"2.0","id":1,"result":{"blockHash":"0x1b9911f57c13e5160d567ea6cf5b545413f96b95e43ec6e02787043351fb2cc4","blockNumber":"0xc","contractAddress":"0x0000000000000000000000000000000000000000","cumulativeGasUsed":null,"from":"0xddd64b4712f7c8f1ace3c145c950339eddaf221d","gasUsed":"0x5289","logs":[{"address":"0x439c697e0742a0ddb124a376efd62a72a94ac35a","topics":["0x64a55044d1f2eddebe1b90e8e2853e8e96931cefadbfa0b2ceb34bee36061941"],"data":"0x0000000000000000000000000000000000000000000000000000000000000002","blockNumber":"0xc","transactionHash":"0xae64961cb206a9773a6e5efeb337773a6fd0a2085ce480a174135a029afea615","transactionIndex":"0x0","blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000","logIndex":"0x0","removed":false},{"address":"0x439c697e0742a0ddb124a376efd62a72a94ac35a","topics":["0x938d2ee5be9cfb0f7270ee2eff90507e94b37625d9d2b3a61c97d30a4560b829"],"data":"0x0000000000000000000000000000000000000000000000000000000000000002","blockNumber":"0xc","transactionHash":"0xae64961cb206a9773a6e5efeb337773a6fd0a2085ce480a174135a029afea615","transactionIndex":"0x0","blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000","logIndex":"0x1","removed":false}],"logsBloom":"0x00000000100000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000002000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000","status":"0x1","to":"0x439c697e0742a0ddb124a376efd62a72a94ac35a","transactionHash":"0xae64961cb206a9773a6e5efeb337773a6fd0a2085ce480a174135a029afea615","transactionIndex":"0x0"}}
 ```
 
-### eth_newFilter
+### `eth_newFilter`
 
 Create new filter using topics of some kind.
 
@@ -642,11 +629,10 @@ curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc
 {"jsonrpc":"2.0","id":1,"result":"0xdc714a4a2e3c39dc0b0b84d66a3ccb00"}
 ```
 
-### eth_newBlockFilter
+### `eth_newBlockFilter`
 
 Creates a filter in the node, to notify when a new block arrives.
  
-
 ```json
 // Request
 curl -X POST --data '{"jsonrpc":"2.0","method":"eth_newBlockFilter","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
@@ -655,7 +641,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_newBlockFilter","params":[],
 {"jsonrpc":"2.0","id":1,"result":"0x3503de5f0c766c68f78a03a3b05036a5"}
 ```
 
-### eth_newPendingTransactionFilter
+### `eth_newPendingTransactionFilter`
 
 Creates a filter in the node, to notify when new pending transactions arrive.
 
@@ -667,7 +653,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_newPendingTransactionFilter"
 {"jsonrpc":"2.0","id":1,"result":"0x9daacfb5893d946997d3801ea18e9902"}
 ```
 
-### eth_uninstallFilter
+### `eth_uninstallFilter`
 
 Removes the filter with the given filter id. Returns true if the filter was successfully uninstalled, otherwise false.
 
@@ -683,7 +669,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_uninstallFilter","params":["
 {"jsonrpc":"2.0","id":1,"result":true}
 ```
 
-### eth_getFilterChanges
+### `eth_getFilterChanges`
 
 Polling method for a filter, which returns an array of logs which occurred since last poll.
 
@@ -716,7 +702,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getFilterLogs","params":["0x
 {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"filter 0x35b64c227ce30e84fc5c7bd347be380e doesn't have a LogsSubscription type: got 5"}} 
 ``` -->
 
-### eth_getLogs
+### `eth_getLogs`
 
 Returns an array of all logs matching a given filter object.
 
@@ -731,7 +717,7 @@ Returns an array of all logs matching a given filter object.
     address: DATA|Array, 20 Bytes - (optional) Contract address or a list of addresses from which logs should originate.
 
     topics: Array of DATA, - (optional) Array of 32 Bytes DATA topics. Topics are order-dependent. Each topic can also be an array of DATA with “or” options.
-    
+
     blockhash: (optional, future) With the addition of EIP-234, blockHash will be a new filter option which restricts the logs returned to the single block with the 32-byte hash blockHash. Using blockHash is equivalent to fromBlock = toBlock = the block number with hash blockHash. If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.
 
 ```json
@@ -744,7 +730,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getLogs","params":[{"topics"
 
 ## TxPool Methods
 
-### txpool_content
+### `txpool_content`
 
 Returns a list of the exact details of all the transactions currently pending for inclusion in the next block(s), as well as the ones that are being scheduled for future execution only.
 
@@ -756,7 +742,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"txpool_content","params":[],"id"
 {"jsonrpc":"2.0","id":1,"result":{"pending":{},"queued":{}}
 ```
 
-### txpool_inspect
+### `txpool_inspect`
 
 Returns a list on text format to summarize all the transactions currently pending for inclusion in the next block(s), as well as the ones that are being scheduled for future execution only. This is a method specifically tailored to developers to quickly see the transactions in the pool and find any potential issues.
 
@@ -766,9 +752,9 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"txpool_inspect","params":[],"id"
 
 // Result
 {"jsonrpc":"2.0","id":1,"result":{"pending":{},"queued":{}}
-```        
+```
 
-### txpool_status
+### `txpool_status`
 
 Returns the number of transactions currently pending for inclusion in the next block(s), as well as the ones that are being scheduled for future execution only.
 
@@ -778,12 +764,11 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"txpool_status","params":[],"id":
 
 // Result
 {"jsonrpc":"2.0","id":1,"result":{"pending":"0x0","queued":"0x0"}}
-```        
+```
 
 ### eth_coinbase
 
 Returns the account the mining rewards will be send to.
-
 
 ```json
 // Request
@@ -797,7 +782,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_coinbase","params":[],"id":1
 
 Read about websockets in [events](./../quickstart/events.md) {hide}
 
-### eth_subscribe
+### `eth_subscribe`
 
 subscribe using JSON-RPC notifications. This allows clients to wait for events instead of polling for them.
 
@@ -817,7 +802,7 @@ It works by subscribing to particular events. The node will return a subscriptio
 < {"jsonrpc":"2.0","result":"0x34da6f29e3e953af4d0c7c58658fd525","id":1}
 ```
 
-### eth_unsubscribe
+### `eth_unsubscribe`
 
 Unsubscribe from an event using the subscription id
 
@@ -835,7 +820,7 @@ Unsubscribe from an event using the subscription id
 
 ## Personal Methods
 
-### personal_importRawKey
+### `personal_importRawKey`
 
 Imports the given unencrypted private key (hex string) into the key store, encrypting it with the passphrase.
 
@@ -857,7 +842,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_importRawKey","params":
 
 ```
 
-### personal_listAccounts
+### `personal_listAccounts`
 
 Returns a list of addresses for accounts this node manages.
 
@@ -869,7 +854,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_listAccounts","params":
 {"jsonrpc":"2.0","id":1,"result":["0x3b7252d007059ffc82d16d022da3cbf9992d2f70","0xddd64b4712f7c8f1ace3c145c950339eddaf221d","0x0f54f47bf9b8e317b214ccd6a7c3e38b893cd7f0"]}
 ```
 
-### personal_lockAccount
+### `personal_lockAccount`
 
 Removes the private key with given address from memory. The account can no longer be used to send transactions.
 
@@ -885,7 +870,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_lockAccount","params":[
 {"jsonrpc":"2.0","id":1,"result":true}
 ```
 
-### personal_newAccount
+### `personal_newAccount`
 
 Generates a new private key and stores it in the key store directory. The key file is encrypted with the given passphrase. Returns the address of the new account.
 
@@ -901,7 +886,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_newAccount","params":["
 {"jsonrpc":"2.0","id":1,"result":"0xf0e4086ad1c6aab5d42161d5baaae2f9ad0571c0"}
 ```
 
-### personal_unlockAccount
+### `personal_unlockAccount`
 
 Decrypts the key with the given address from the key store.
 
@@ -925,11 +910,11 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_unlockAccount","params"
 {"jsonrpc":"2.0","id":1,"result":true}
 ```
 
-### personal_sendTransaction
+### `personal_sendTransaction`
 
 Validate the given passphrase and submit transaction.
 
-The transaction is the same argument as for eth_sendTransaction and contains the from address. If the passphrase can be used to decrypt the private key belogging to tx.from the transaction is verified, signed and send onto the network. 
+The transaction is the same argument as for eth_sendTransaction and contains the from address. If the passphrase can be used to decrypt the private key belonging to tx.from the transaction is verified, signed and send onto the network.
 
 :::warning
 The account is not unlocked globally in the node and cannot be used in other RPC calls.
@@ -937,7 +922,7 @@ The account is not unlocked globally in the node and cannot be used in other RPC
 
 #### Parameters
 
- - Object containing:
+- Object containing:
 
     from: DATA, 20 Bytes - The address the transaction is send from.
 
@@ -955,7 +940,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_sendTransaction","param
 {"jsonrpc":"2.0","id":1,"result":"0xd2a31ec1b89615c8d1f4d08fe4e4182efa4a9c0d5758ace6676f485ea60e154c"}
 ```
 
-### personal_sign
+### `personal_sign`
 
 The sign method calculates an Ethereum specific signature with: sign(keccack256("\x19Ethereum Signed Message:\n" + len(message) + message))).
 
@@ -975,7 +960,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_sign","params":["0xdead
 {"jsonrpc":"2.0","id":1,"result":"0xf9ff74c86aefeb5f6019d77280bbb44fb695b4d45cfe97e6eed7acd62905f4a85034d5c68ed25a2e7a8eeb9baf1b8401e4f865d92ec48c1763bf649e354d900b1c"}
 ```
 
-### personal_ecRecover
+### `personal_ecRecover`
 
 ecRecover returns the address associated with the private key that was used to calculate the signature in personal_sign.
 
@@ -992,7 +977,3 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_ecRecover","params":["0
 // Result
 {"jsonrpc":"2.0","id":1,"result":"0x3b7252d007059ffc82d16d022da3cbf9992d2f70"}
 ```
-
-## Next {hide}
-
-Learn about the Ethermint [Hard Spoon](./hard_spoon.md) functionality {hide}

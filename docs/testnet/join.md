@@ -1,5 +1,5 @@
 <!--
-order: 5
+order: 1
 -->
 
 # Joining a Testnet
@@ -8,13 +8,13 @@ This document outlines the steps to join an existing testnet
 
 ## Steps
 
-1. Install the Ethermint binary ethermintd
+1. [Install](./../quickstart/installation) the Ethermint binary `ethermintd`
 
     ```bash
     go install https://github.com/tharsis/ethermint
     ```
 
-2. Create an Ethermint account
+2. Create an Ethermint [account](./../basics/accounts)
 
     ```bash
     ethermintd keys add <keyname> --keyring-backend=test
@@ -39,7 +39,3 @@ This document outlines the steps to join an existing testnet
 
     ethermintd start --pruning=nothing --rpc.unsafe --log_level "main:info,state:info,mempool:info"
     ```
-
-## Next {hide}
-
-Learn how to deploy a testnet node on a [cloud provider](./cloud_providers) {hide}

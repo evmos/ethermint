@@ -4,7 +4,7 @@ parent:
   order: 5
 -->
 
-# API
+# Testnet
 
 This section contains different client and API reference document.
 

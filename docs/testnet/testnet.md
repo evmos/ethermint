@@ -8,7 +8,7 @@ Learn how to deploy a local testnet or connect to an existing public one {synops
 
 ## Pre-requisite Readings
 
-- [Install Ethermint](./installation.md) {prereq}
+- [Install Ethermint](./installation) {prereq}
 
 ### Supported OS
 
@@ -33,7 +33,7 @@ If you are looking to connect to a persistent public testnet. You will need to m
 #### Copy the Genesis File
 
 ::: tip
-If you want to start a network from scratch, you will need to start the [genesis procedure](#genesis-procedure) by creating a `genesis.json` and submit + collect the genesis transactions from the [validators](./validator-setup.md).
+If you want to start a network from scratch, you will need to start the [genesis procedure](#genesis-procedure) by creating a `genesis.json` and submit + collect the genesis transactions from the [validators](./validator-setup).
 :::
 
 If you want to connect to an existing testnet, fetch the testnet's `genesis.json` file and copy it into the `ethermintd`'s config directory (i.e `$HOME/.ethermintd/config/genesis.json`).
@@ -52,8 +52,8 @@ For more information on seeds and peers, you can the Tendermint [P2P documentati
 
 #### Start testnet
 
-The final step is to [start the nodes](./run_node.md#start-node). Once enough voting power (+2/3) from the genesis validators is up-and-running, the testnet will start producing blocks.
+The final step is to [start the nodes](./../quickstart/run_node#start-node). Once enough voting power (+2/3) from the genesis validators is up-and-running, the testnet will start producing blocks.
 
 ## Next {hide}
 
-Learn about how to setup a [validator](./validator-setup.md) node on Ethermint {hide}
+Learn about how to setup a [validator](./validator-setup) node on Ethermint {hide}
