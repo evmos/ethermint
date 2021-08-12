@@ -71,11 +71,11 @@ const (
 const (
 	flagGRPCEnable          = "grpc.enable"
 	flagGRPCAddress         = "grpc.address"
-	flagEVMRPCEnable        = "evm-rpc.enable"
-	flagEVMRPCAPI           = "evm-rpc.api"
-	flagEVMRPCAddress       = "evm-rpc.address"
-	flagEVMWSAddress        = "evm-rpc.ws-address"
-	flagEVMEnableUnsafeCORS = "evm-rpc.enable-unsafe-cors"
+	flagEVMRPCEnable        = "json-rpc.enable"
+	flagEVMRPCAPI           = "json-rpc.api"
+	flagEVMRPCAddress       = "json-rpc.address"
+	flagEVMWSAddress        = "json-rpc.ws-address"
+	flagEVMEnableUnsafeCORS = "json-rpc.enable-unsafe-cors"
 	flagGRPCWebEnable       = "grpc-web.enable"
 	flagGRPCWebAddress      = "grpc-web.address"
 )
@@ -405,7 +405,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		httpSrv     *http.Server
 		httpSrvDone chan struct{}
 	)
-	if config.EVMRPC.Enable {
+	if config.JSONRPC.Enable {
 		genDoc, err := genDocProvider()
 		if err != nil {
 			return err
@@ -415,7 +415,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
-		httpSrv, httpSrvDone, err = StartEVMRPC(ctx, clientCtx, tmRPCAddr, tmEndpoint, config)
+		httpSrv, httpSrvDone, err = StartJSONRPC(ctx, clientCtx, tmRPCAddr, tmEndpoint, config)
 		if err != nil {
 			return err
 		}

@@ -45,8 +45,8 @@ func AppConfig(denom string) (string, interface{}) {
 	}
 
 	customAppConfig := Config{
-		Config: *srvCfg,
-		EVMRPC: *DefaultEVMConfig(),
+		Config:  *srvCfg,
+		JSONRPC: *DefaultEVMConfig(),
 	}
 
 	customAppTemplate := config.DefaultConfigTemplate + DefaultConfigTemplate
@@ -57,15 +57,22 @@ func AppConfig(denom string) (string, interface{}) {
 // DefaultConfig returns server's default configuration.
 func DefaultConfig() *Config {
 	return &Config{
-		Config: *config.DefaultConfig(),
-		EVMRPC: *DefaultEVMConfig(),
+		Config:  *config.DefaultConfig(),
+		JSONRPC: *DefaultEVMConfig(),
 	}
 }
 
-// EVMRPCConfig defines configuration for the EVM RPC server.
-type EVMRPCConfig struct {
-	// RPCAddress defines the HTTP server to listen on
-	RPCAddress string `mapstructure:"address"`
+// EVMConfig defines the application configuration values for the EVM.
+type EVMConfig struct {
+	// Tracer defines vm.Tracer type that the EVM will use if the node is run in
+	// trace mode. Default 'json'
+	Tracer string `mapstructure:"tracer"`
+}
+
+// JSONRPCConfig defines configuration for the EVM RPC server.
+type JSONRPCConfig struct {
+	// Address defines the HTTP server to listen on
+	Address string `mapstructure:"address"`
 	// WsAddress defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
 	// API defines a list of JSON-RPC namespaces that should be enabled
@@ -77,11 +84,11 @@ type EVMRPCConfig struct {
 }
 
 // DefaultEVMConfig returns an EVM config with the JSON-RPC API enabled by default
-func DefaultEVMConfig() *EVMRPCConfig {
-	return &EVMRPCConfig{
+func DefaultEVMConfig() *JSONRPCConfig {
+	return &JSONRPCConfig{
 		Enable:           true,
 		API:              GetDefaultAPINamespaces(),
-		RPCAddress:       DefaultEVMAddress,
+		Address:          DefaultEVMAddress,
 		WsAddress:        DefaultEVMWSAddress,
 		EnableUnsafeCORS: false,
 	}
@@ -92,7 +99,7 @@ func DefaultEVMConfig() *EVMRPCConfig {
 type Config struct {
 	config.Config
 
-	EVMRPC EVMRPCConfig `mapstructure:"evm-rpc"`
+	JSONRPC JSONRPCConfig `mapstructure:"json-rpc"`
 }
 
 // GetConfig returns a fully parsed Config object.
@@ -101,12 +108,12 @@ func GetConfig(v *viper.Viper) Config {
 
 	return Config{
 		Config: cfg,
-		EVMRPC: EVMRPCConfig{
-			Enable:           v.GetBool("evm-rpc.enable"),
-			API:              v.GetStringSlice("evm-rpc.api"),
-			RPCAddress:       v.GetString("evm-rpc.address"),
-			WsAddress:        v.GetString("evm-rpc.ws-address"),
-			EnableUnsafeCORS: v.GetBool("evm-rpc.enable-unsafe-cors"),
+		JSONRPC: JSONRPCConfig{
+			Enable:           v.GetBool("json-rpc.enable"),
+			API:              v.GetStringSlice("json-rpc.api"),
+			Address:          v.GetString("json-rpc.address"),
+			WsAddress:        v.GetString("json-rpc.ws-address"),
+			EnableUnsafeCORS: v.GetBool("json-rpc.enable-unsafe-cors"),
 		},
 	}
 }

@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"math/big"
-	"os"
 	"time"
 
 	"github.com/palantir/stacktrace"
@@ -49,10 +48,11 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params typ
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
 func (k Keeper) VMConfig(params types.Params) vm.Config {
+
 	return vm.Config{
 		Debug:       k.debug,
-		Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger too
-		NoRecursion: false,                                                      // TODO: consider disabling recursion though params
+		Tracer:      k.tracer,
+		NoRecursion: false, // TODO: consider disabling recursion though params
 		ExtraEips:   params.EIPs(),
 	}
 }
