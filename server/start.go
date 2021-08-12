@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -42,48 +43,6 @@ import (
 
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/server/config"
-)
-
-// Tendermint full-node start flags
-const (
-	flagWithTendermint     = "with-tendermint"
-	flagAddress            = "address"
-	flagTransport          = "transport"
-	flagTraceStore         = "trace-store"
-	flagCPUProfile         = "cpu-profile"
-	FlagMinGasPrices       = "minimum-gas-prices"
-	FlagHaltHeight         = "halt-height"
-	FlagHaltTime           = "halt-time"
-	FlagInterBlockCache    = "inter-block-cache"
-	FlagUnsafeSkipUpgrades = "unsafe-skip-upgrades"
-	FlagTrace              = "trace"
-	FlagInvCheckPeriod     = "inv-check-period"
-
-	FlagPruning           = "pruning"
-	FlagPruningKeepRecent = "pruning-keep-recent"
-	FlagPruningKeepEvery  = "pruning-keep-every"
-	FlagPruningInterval   = "pruning-interval"
-	FlagIndexEvents       = "index-events"
-	FlagMinRetainBlocks   = "min-retain-blocks"
-)
-
-// GRPC-related flags.
-const (
-	flagGRPCEnable          = "grpc.enable"
-	flagGRPCAddress         = "grpc.address"
-	flagEVMRPCEnable        = "json-rpc.enable"
-	flagEVMRPCAPI           = "json-rpc.api"
-	flagEVMRPCAddress       = "json-rpc.address"
-	flagEVMWSAddress        = "json-rpc.ws-address"
-	flagEVMEnableUnsafeCORS = "json-rpc.enable-unsafe-cors"
-	flagGRPCWebEnable       = "grpc-web.enable"
-	flagGRPCWebAddress      = "grpc-web.address"
-)
-
-// State sync-related flags.
-const (
-	FlagStateSyncSnapshotInterval   = "state-sync.snapshot-interval"
-	FlagStateSyncSnapshotKeepRecent = "state-sync.snapshot-keep-recent"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -159,34 +118,35 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(flagAddress, "tcp://0.0.0.0:26658", "Listen address")
 	cmd.Flags().String(flagTransport, "socket", "Transport protocol: socket, grpc")
 	cmd.Flags().String(flagTraceStore, "", "Enable KVStore tracing to an output file")
-	cmd.Flags().String(FlagMinGasPrices, "", "Minimum gas prices to accept for transactions; Any fee in a tx must meet this minimum (e.g. 0.01photino;0.0001stake)")
-	cmd.Flags().IntSlice(FlagUnsafeSkipUpgrades, []int{}, "Skip a set of upgrade heights to continue the old binary")
-	cmd.Flags().Uint64(FlagHaltHeight, 0, "Block height at which to gracefully halt the chain and shutdown the node")
-	cmd.Flags().Uint64(FlagHaltTime, 0, "Minimum block time (in Unix seconds) at which to gracefully halt the chain and shutdown the node")
-	cmd.Flags().Bool(FlagInterBlockCache, true, "Enable inter-block caching")
+	cmd.Flags().String(server.FlagMinGasPrices, "", "Minimum gas prices to accept for transactions; Any fee in a tx must meet this minimum (e.g. 0.01photino;0.0001stake)")
+	cmd.Flags().IntSlice(server.FlagUnsafeSkipUpgrades, []int{}, "Skip a set of upgrade heights to continue the old binary")
+	cmd.Flags().Uint64(server.FlagHaltHeight, 0, "Block height at which to gracefully halt the chain and shutdown the node")
+	cmd.Flags().Uint64(server.FlagHaltTime, 0, "Minimum block time (in Unix seconds) at which to gracefully halt the chain and shutdown the node")
+	cmd.Flags().Bool(server.FlagInterBlockCache, true, "Enable inter-block caching")
 	cmd.Flags().String(flagCPUProfile, "", "Enable CPU profiling and write to the provided file")
-	cmd.Flags().Bool(FlagTrace, false, "Provide full stack traces for errors in ABCI Log")
-	cmd.Flags().String(FlagPruning, storetypes.PruningOptionDefault, "Pruning strategy (default|nothing|everything|custom)")
-	cmd.Flags().Uint64(FlagPruningKeepRecent, 0, "Number of recent heights to keep on disk (ignored if pruning is not 'custom')")
-	cmd.Flags().Uint64(FlagPruningKeepEvery, 0, "Offset heights to keep on disk after 'keep-every' (ignored if pruning is not 'custom')")
-	cmd.Flags().Uint64(FlagPruningInterval, 0, "Height interval at which pruned heights are removed from disk (ignored if pruning is not 'custom')")
-	cmd.Flags().Uint(FlagInvCheckPeriod, 0, "Assert registered invariants every N blocks")
-	cmd.Flags().Uint64(FlagMinRetainBlocks, 0, "Minimum block height offset during ABCI commit to prune Tendermint blocks")
+	cmd.Flags().Bool(server.FlagTrace, false, "Provide full stack traces for errors in ABCI Log")
+	cmd.Flags().String(server.FlagPruning, storetypes.PruningOptionDefault, "Pruning strategy (default|nothing|everything|custom)")
+	cmd.Flags().Uint64(server.FlagPruningKeepRecent, 0, "Number of recent heights to keep on disk (ignored if pruning is not 'custom')")
+	cmd.Flags().Uint64(server.FlagPruningKeepEvery, 0, "Offset heights to keep on disk after 'keep-every' (ignored if pruning is not 'custom')")
+	cmd.Flags().Uint64(server.FlagPruningInterval, 0, "Height interval at which pruned heights are removed from disk (ignored if pruning is not 'custom')")
+	cmd.Flags().Uint(server.FlagInvCheckPeriod, 0, "Assert registered invariants every N blocks")
+	cmd.Flags().Uint64(server.FlagMinRetainBlocks, 0, "Minimum block height offset during ABCI commit to prune Tendermint blocks")
 
 	cmd.Flags().Bool(flagGRPCEnable, true, "Define if the gRPC server should be enabled")
 	cmd.Flags().String(flagGRPCAddress, serverconfig.DefaultGRPCAddress, "the gRPC server address to listen on")
-
 	cmd.Flags().Bool(flagGRPCWebEnable, true, "Define if the gRPC-Web server should be enabled. (Note: gRPC must also be enabled.)")
 	cmd.Flags().String(flagGRPCWebAddress, serverconfig.DefaultGRPCWebAddress, "The gRPC-Web server address to listen on")
 
-	cmd.Flags().Bool(flagEVMRPCEnable, true, "Define if the gRPC server should be enabled")
-	cmd.Flags().StringSlice(flagEVMRPCAPI, config.GetDefaultAPINamespaces(), "Defines a list of JSON-RPC namespaces that should be enabled")
-	cmd.Flags().String(flagEVMRPCAddress, config.DefaultEVMAddress, "the EVM RPC server address to listen on")
-	cmd.Flags().String(flagEVMWSAddress, config.DefaultEVMWSAddress, "the EVM WS server address to listen on")
-	cmd.Flags().Bool(flagEVMEnableUnsafeCORS, false, "Define if the EVM RPC server should enabled CORS (unsafe - use it at your own risk)")
+	cmd.Flags().Bool(flagJSONRPCEnable, true, "Define if the gRPC server should be enabled")
+	cmd.Flags().StringSlice(flagJSONRPCAPI, config.GetDefaultAPINamespaces(), "Defines a list of JSON-RPC namespaces that should be enabled")
+	cmd.Flags().String(flagJSONRPCAddress, config.DefaultJSONRPCAddress, "the JSON-RPC server address to listen on")
+	cmd.Flags().String(flagJSONWsAddress, config.DefaultJSONRPCWsAddress, "the JSON-RPC WS server address to listen on")
+	cmd.Flags().Bool(flagJSONEnableUnsafeCORS, false, "Define if the JSON-RPC server should enabled CORS (unsafe - use it at your own risk)")
 
-	cmd.Flags().Uint64(FlagStateSyncSnapshotInterval, 0, "State sync snapshot interval")
-	cmd.Flags().Uint32(FlagStateSyncSnapshotKeepRecent, 2, "State sync snapshot to keep")
+	cmd.Flags().String(flagEVMTracer, config.DefaultEVMTracer, "the EVM tracer type to collect execution traces from the EVM transaction execution (json|struct|access_list|markdown)")
+
+	cmd.Flags().Uint64(server.FlagStateSyncSnapshotInterval, 0, "State sync snapshot interval")
+	cmd.Flags().Uint32(server.FlagStateSyncSnapshotKeepRecent, 2, "State sync snapshot to keep")
 
 	// add support for all Tendermint-specific command line options
 	tcmd.AddNodeFlags(cmd)
@@ -272,10 +232,17 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	}
 
 	config := config.GetConfig(ctx.Viper)
+
 	if err := config.ValidateBasic(); err != nil {
-		ctx.Logger.Error("WARNING: The minimum-gas-prices config in app.toml is set to the empty string. " +
-			"This defaults to 0 in the current version, but will error in the next version " +
-			"(SDK v0.44). Please explicitly put the desired minimum-gas-prices in your app.toml.")
+		if strings.Contains(err.Error(), "set min gas price in app.toml or flag or env variable") {
+			ctx.Logger.Error(
+				"WARNING: The minimum-gas-prices config in app.toml is set to the empty string. " +
+					"This defaults to 0 in the current version, but will error in the next version " +
+					"(SDK v0.44). Please explicitly put the desired minimum-gas-prices in your app.toml.",
+			)
+		} else {
+			return err
+		}
 	}
 
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
