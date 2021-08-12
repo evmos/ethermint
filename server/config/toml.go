@@ -6,10 +6,12 @@ const DefaultConfigTemplate = `
 ###                             EVM Configuration                           ###
 ###############################################################################
 
-[json-rpc]
+[evm]
 
-# tracer defines the tracer.
-enable = {{ .EVMRPC.Enable }}
+# Tracer defines the 'vm.Tracer' type that the EVM will use when the node is run in
+# debug mode. To enable tracing use the '--trace' flag when starting your node.
+# Valid types are: json|struct|access_list|markdown
+tracer = {{ .EVM.Tracer }}
 
 ###############################################################################
 ###                           JSON RPC Configuration                        ###

@@ -3,7 +3,6 @@ package keeper
 import (
 	"bytes"
 	"math/big"
-	"os"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -11,7 +10,6 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -52,7 +50,7 @@ type Keeper struct {
 	eip155ChainID *big.Int
 
 	// Tracer used to collect execution traces from the EVM transaction execution
-	tracer vm.Tracer
+	tracer string
 	// trace EVM state transition execution. This value is obtained from the `--trace` flag.
 	// For more info check https://geth.ethereum.org/docs/dapp/tracing
 	debug bool
@@ -63,7 +61,7 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
-	debug bool,
+	tracer string, debug bool,
 ) *Keeper {
 
 	// ensure evm module account is set
@@ -75,9 +73,6 @@ func NewKeeper(
 	if !paramSpace.HasKeyTable() {
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
 	}
-
-	// TODO: consider using the Struct Logger too
-	tracer := vm.NewJSONLogger(&vm.LogConfig{Debug: debug}, os.Stderr)
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{

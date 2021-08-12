@@ -1,4 +1,4 @@
-package server
+package flags
 
 import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -9,33 +9,33 @@ import (
 
 // Tendermint full-node start flags
 const (
-	flagWithTendermint = "with-tendermint"
-	flagAddress        = "address"
-	flagTransport      = "transport"
-	flagTraceStore     = "trace-store"
-	flagCPUProfile     = "cpu-profile"
+	WithTendermint = "with-tendermint"
+	Address        = "address"
+	Transport      = "transport"
+	TraceStore     = "trace-store"
+	CPUProfile     = "cpu-profile"
 )
 
 // GRPC-related flags.
 const (
-	flagGRPCEnable     = "grpc.enable"
-	flagGRPCAddress    = "grpc.address"
-	flagGRPCWebEnable  = "grpc-web.enable"
-	flagGRPCWebAddress = "grpc-web.address"
+	GRPCEnable     = "grpc.enable"
+	GRPCAddress    = "grpc.address"
+	GRPCWebEnable  = "grpc-web.enable"
+	GRPCWebAddress = "grpc-web.address"
 )
 
 // JSON-RPC flags
 const (
-	flagJSONRPCEnable        = "json-rpc.enable"
-	flagJSONRPCAPI           = "json-rpc.api"
-	flagJSONRPCAddress       = "json-rpc.address"
-	flagJSONWsAddress        = "json-rpc.ws-address"
-	flagJSONEnableUnsafeCORS = "json-rpc.enable-unsafe-cors"
+	JSONRPCEnable        = "json-rpc.enable"
+	JSONRPCAPI           = "json-rpc.api"
+	JSONRPCAddress       = "json-rpc.address"
+	JSONWsAddress        = "json-rpc.ws-address"
+	JSONEnableUnsafeCORS = "json-rpc.enable-unsafe-cors"
 )
 
 // EVM flags
 const (
-	flagEVMTracer = "evm.tracer"
+	EVMTracer = "evm.tracer"
 )
 
 // AddTxFlags adds common flags for commands to post tx

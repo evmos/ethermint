@@ -40,18 +40,19 @@ func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params typ
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
-	vmConfig := k.VMConfig(params)
+	vmConfig := k.VMConfig(msg, params)
 
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
 }
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(params types.Params) vm.Config {
+func (k Keeper) VMConfig(msg core.Message, params types.Params) vm.Config {
+	cfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	return vm.Config{
 		Debug:       k.debug,
-		Tracer:      k.tracer,
+		Tracer:      types.NewTracer(k.tracer, msg, cfg, k.Ctx().BlockHeight(), k.debug),
 		NoRecursion: false, // TODO: consider disabling recursion though params
 		ExtraEips:   params.EIPs(),
 	}
