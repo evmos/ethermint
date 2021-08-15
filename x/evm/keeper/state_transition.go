@@ -129,6 +129,14 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
 	params := k.GetParams(k.Ctx())
+
+	// return error if contract creation or call are disabled through governance
+	if !params.EnableCreate && tx.To() == nil {
+		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
+	} else if !params.EnableCall && tx.To() != nil {
+		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+	}
+
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the latest signer according to the chain rules from the config
@@ -183,22 +191,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	k.resetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
-
-// Gas consumption notes (write doc from this)
-
-// gas = remaining gas = limit - consumed
-
-// Gas consumption in ethereum:
-// 0. Buy gas -> deduct gasLimit * gasPrice from user account
-// 		0.1 leftover gas = gas limit
-// 1. consume intrinsic gas
-//   1.1 leftover gas = leftover gas - intrinsic gas
-// 2. Exec vm functions by passing the gas (i.e remaining gas)
-//   2.1 final leftover gas returned after spending gas from the opcodes jump tables
-// 3. Refund amount =  max(gasConsumed / 2, gas refund), where gas refund is a local variable
-
-// TODO: (@fedekunze) currently we consume the entire gas limit in the ante handler, so if a transaction fails
-// the amount spent will be grater than the gas spent in an Ethereum tx (i.e here the leftover gas won't be refunded).
 
 // ApplyMessage computes the new state by applying the given message against the existing state.
 // If the message fails, the VM execution error with the reason will be returned to the client
