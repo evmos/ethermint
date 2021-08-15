@@ -133,9 +133,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// return error if contract creation or call are disabled through governance
 	if !params.EnableCreate && tx.To() == nil {
 		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
-	}
-
-	if !params.EnableCall && tx.To() != nil {
+	} else if !params.EnableCall && tx.To() != nil {
 		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
 	}
 
