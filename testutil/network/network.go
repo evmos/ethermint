@@ -230,7 +230,7 @@ func New(t *testing.T, cfg Config) *Network {
 		jsonRPCAddr := ""
 		tmCfg.RPC.ListenAddress = ""
 		appCfg.GRPC.Enable = false
-		appCfg.EVMRPC.Enable = false
+		appCfg.JSONRPC.Enable = false
 
 		if i == 0 {
 			apiListenAddr, _, err := server.FreeTCPAddr()
@@ -244,8 +244,8 @@ func New(t *testing.T, cfg Config) *Network {
 			jsonRPCListenAddr, _, err := server.FreeTCPAddr()
 			require.NoError(t, err)
 			t.Log(jsonRPCListenAddr)
-			appCfg.EVMRPC.RPCAddress = jsonRPCListenAddr
-			appCfg.EVMRPC.Enable = true
+			appCfg.JSONRPC.Address = jsonRPCListenAddr
+			appCfg.JSONRPC.Enable = true
 
 			jsonRPCAPIURL, err := url.Parse(jsonRPCListenAddr)
 			require.NoError(t, err)

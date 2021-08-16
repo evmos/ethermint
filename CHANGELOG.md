@@ -39,6 +39,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (app, evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) EVM `Keeper` struct and `NewEVM` function now have a new `trace` field to define
+the Tracer type used to collect execution traces from the EVM transaction execution.
 * (evm) [tharsis#175](https://github.com/tharsis/ethermint/issues/175) The msg `TxData` field is now represented as a `*proto.Any`.
 * (evm) [tharsis#84](https://github.com/tharsis/ethermint/pull/84) Remove `journal`, `CommitStateDB` and `stateObjects`.
 * (rpc, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Remove tx `Receipt` from store and replace it with fields obtained from the Tendermint RPC client.
@@ -53,6 +55,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (server) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) `evm-rpc` flags and app config have been renamed to `json-rpc`.
 * (proto, evm) [tharsis#207](https://github.com/tharsis/ethermint/issues/207) Replace `big.Int` in favor of `sdk.Int` for `TxData` fields
 * (proto, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) gRPC Query and Tx service changes:
   * The `TxReceipt`, `TxReceiptsByBlockHeight` endpoints have been removed from the Query service.
@@ -65,6 +68,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) Support different `Tracer` types for the EVM.
 * (deps) [tharsis#427](https://github.com/tharsis/ethermint/pull/427) Bump ibc-go to [`v1.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v1.0.0)
 * (gRPC) [tharsis#239](https://github.com/tharsis/ethermint/pull/239) Query `ChainConfig` via gRPC.
 * (rpc) [tharsis#181](https://github.com/tharsis/ethermint/pull/181) Use evm denomination for params on tx fee.
