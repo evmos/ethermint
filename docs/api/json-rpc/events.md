@@ -111,11 +111,11 @@ compatibility for websockets of the [Ethereum's
 PubSubAPI](https://geth.ethereum.org/docs/rpc/pubsub), Ethermint needs to cast the Tendermint
 responses retreived into the Ethereum types.
 
-You can start a connection with the Ethereum websocket using the `--evm-rpc.ws-address` flag when starting
+You can start a connection with the Ethereum websocket using the `--json-rpc.ws-address` flag when starting
 the node (default `"0.0.0.0:8546"`):
 
 ```bash
-ethermintd start  --evm-rpc.address"0.0.0.0:8545" --evm-rpc.ws-address="0.0.0.0:8546" --evm.rpc.api="eth,web3,net,txpool,debug" --evm-rpc.enable
+ethermintd start  --json-rpc.address"0.0.0.0:8545" --json-rpc.ws-address="0.0.0.0:8546" --evm.rpc.api="eth,web3,net,txpool,debug" --json-rpc.enable
 ```
 
 Then, start a websocket subscription with [`ws`](https://github.com/hashrocket/ws)

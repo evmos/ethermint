@@ -11,15 +11,15 @@ Learn how to run and setup the JSON-RPC server on Ethermint. {synopsis}
 To enable RPC server use the following flag (set to true by default).
 
 ```bash
-ethermintd start --evm-rpc.enable
+ethermintd start --json-rpc.enable
 ```
 
 ## Defining Namespaces
 
-`Eth`,`Net` and `Web3` [namespaces](./namespaces) are enabled by default. In order to enable other namespaces use flag `--evm-rpc.api`.
+`Eth`,`Net` and `Web3` [namespaces](./namespaces) are enabled by default. In order to enable other namespaces use flag `--json-rpc.api`.
 
 ```bash
-ethermintd start --evm-rpc.api eth,txpool,personal,net,debug,web3,miner
+ethermintd start --json-rpc.api eth,txpool,personal,net,debug,web3,miner
 ```
 
 ### CORS
@@ -27,5 +27,5 @@ ethermintd start --evm-rpc.api eth,txpool,personal,net,debug,web3,miner
 If accessing the RPC from a browser, CORS will need to be enabled with the appropriate domain set. Otherwise, JavaScript calls are limit by the same-origin policy and requests will fail:
 
 ```bash
-ethermintd start --evm-rpc.enable-unsafe-cors
+ethermintd start --json-rpc.enable-unsafe-cors
 ```

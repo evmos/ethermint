@@ -1,10 +1,41 @@
-package server
+package flags
 
 import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+// Tendermint full-node start flags
+const (
+	WithTendermint = "with-tendermint"
+	Address        = "address"
+	Transport      = "transport"
+	TraceStore     = "trace-store"
+	CPUProfile     = "cpu-profile"
+)
+
+// GRPC-related flags.
+const (
+	GRPCEnable     = "grpc.enable"
+	GRPCAddress    = "grpc.address"
+	GRPCWebEnable  = "grpc-web.enable"
+	GRPCWebAddress = "grpc-web.address"
+)
+
+// JSON-RPC flags
+const (
+	JSONRPCEnable        = "json-rpc.enable"
+	JSONRPCAPI           = "json-rpc.api"
+	JSONRPCAddress       = "json-rpc.address"
+	JSONWsAddress        = "json-rpc.ws-address"
+	JSONEnableUnsafeCORS = "json-rpc.enable-unsafe-cors"
+)
+
+// EVM flags
+const (
+	EVMTracer = "evm.tracer"
 )
 
 // AddTxFlags adds common flags for commands to post tx
