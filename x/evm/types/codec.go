@@ -15,7 +15,6 @@ var (
 
 type (
 	ExtensionOptionsEthereumTxI interface{}
-	ExtensionOptionsWeb3TxI     interface{}
 )
 
 // RegisterInterfaces registers the client interfaces to protobuf Any.
@@ -25,17 +24,12 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgEthereumTx{},
 	)
 	registry.RegisterInterface(
-		"ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx",
+		"ethermint.evm.v1.ExtensionOptionsEthereumTx",
 		(*ExtensionOptionsEthereumTxI)(nil),
 		&ExtensionOptionsEthereumTx{},
 	)
 	registry.RegisterInterface(
-		"ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx",
-		(*ExtensionOptionsWeb3TxI)(nil),
-		&ExtensionOptionsWeb3Tx{},
-	)
-	registry.RegisterInterface(
-		"ethermint.evm.v1alpha1.TxData",
+		"ethermint.evm.v1.TxData",
 		(*TxData)(nil),
 		&DynamicFeeTx{},
 		&AccessListTx{},

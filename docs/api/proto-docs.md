@@ -4,77 +4,79 @@
 
 ## Table of Contents
 
-- [ethermint/crypto/v1alpha1/ethsecp256k1/keys.proto](#ethermint/crypto/v1alpha1/ethsecp256k1/keys.proto)
-    - [PrivKey](#ethermint.crypto.v1alpha1.ethsecp256k1.PrivKey)
-    - [PubKey](#ethermint.crypto.v1alpha1.ethsecp256k1.PubKey)
+- [ethermint/crypto/v1/ethsecp256k1/keys.proto](#ethermint/crypto/v1/ethsecp256k1/keys.proto)
+    - [PrivKey](#ethermint.crypto.v1.ethsecp256k1.PrivKey)
+    - [PubKey](#ethermint.crypto.v1.ethsecp256k1.PubKey)
   
-- [ethermint/evm/v1alpha1/evm.proto](#ethermint/evm/v1alpha1/evm.proto)
-    - [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple)
-    - [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig)
-    - [Log](#ethermint.evm.v1alpha1.Log)
-    - [Params](#ethermint.evm.v1alpha1.Params)
-    - [State](#ethermint.evm.v1alpha1.State)
-    - [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs)
-    - [TxResult](#ethermint.evm.v1alpha1.TxResult)
+- [ethermint/evm/v1/evm.proto](#ethermint/evm/v1/evm.proto)
+    - [AccessTuple](#ethermint.evm.v1.AccessTuple)
+    - [ChainConfig](#ethermint.evm.v1.ChainConfig)
+    - [Log](#ethermint.evm.v1.Log)
+    - [Params](#ethermint.evm.v1.Params)
+    - [State](#ethermint.evm.v1.State)
+    - [TransactionLogs](#ethermint.evm.v1.TransactionLogs)
+    - [TxResult](#ethermint.evm.v1.TxResult)
   
-- [ethermint/evm/v1alpha1/genesis.proto](#ethermint/evm/v1alpha1/genesis.proto)
-    - [GenesisAccount](#ethermint.evm.v1alpha1.GenesisAccount)
-    - [GenesisState](#ethermint.evm.v1alpha1.GenesisState)
+- [ethermint/evm/v1/genesis.proto](#ethermint/evm/v1/genesis.proto)
+    - [GenesisAccount](#ethermint.evm.v1.GenesisAccount)
+    - [GenesisState](#ethermint.evm.v1.GenesisState)
   
-- [ethermint/evm/v1alpha1/tx.proto](#ethermint/evm/v1alpha1/tx.proto)
-    - [AccessListTx](#ethermint.evm.v1alpha1.AccessListTx)
-    - [DynamicFeeTx](#ethermint.evm.v1alpha1.DynamicFeeTx)
-    - [ExtensionOptionsEthereumTx](#ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx)
-    - [ExtensionOptionsWeb3Tx](#ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx)
-    - [LegacyTx](#ethermint.evm.v1alpha1.LegacyTx)
-    - [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx)
-    - [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse)
+- [ethermint/evm/v1/tx.proto](#ethermint/evm/v1/tx.proto)
+    - [AccessListTx](#ethermint.evm.v1.AccessListTx)
+    - [DynamicFeeTx](#ethermint.evm.v1.DynamicFeeTx)
+    - [ExtensionOptionsEthereumTx](#ethermint.evm.v1.ExtensionOptionsEthereumTx)
+    - [LegacyTx](#ethermint.evm.v1.LegacyTx)
+    - [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx)
+    - [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse)
   
-    - [Msg](#ethermint.evm.v1alpha1.Msg)
+    - [Msg](#ethermint.evm.v1.Msg)
   
-- [ethermint/evm/v1alpha1/query.proto](#ethermint/evm/v1alpha1/query.proto)
-    - [EstimateGasResponse](#ethermint.evm.v1alpha1.EstimateGasResponse)
-    - [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest)
-    - [QueryAccountRequest](#ethermint.evm.v1alpha1.QueryAccountRequest)
-    - [QueryAccountResponse](#ethermint.evm.v1alpha1.QueryAccountResponse)
-    - [QueryBalanceRequest](#ethermint.evm.v1alpha1.QueryBalanceRequest)
-    - [QueryBalanceResponse](#ethermint.evm.v1alpha1.QueryBalanceResponse)
-    - [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest)
-    - [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse)
-    - [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest)
-    - [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse)
-    - [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest)
-    - [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse)
-    - [QueryCosmosAccountRequest](#ethermint.evm.v1alpha1.QueryCosmosAccountRequest)
-    - [QueryCosmosAccountResponse](#ethermint.evm.v1alpha1.QueryCosmosAccountResponse)
-    - [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest)
-    - [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse)
-    - [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest)
-    - [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse)
-    - [QueryStorageRequest](#ethermint.evm.v1alpha1.QueryStorageRequest)
-    - [QueryStorageResponse](#ethermint.evm.v1alpha1.QueryStorageResponse)
-    - [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest)
-    - [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse)
-    - [QueryValidatorAccountRequest](#ethermint.evm.v1alpha1.QueryValidatorAccountRequest)
-    - [QueryValidatorAccountResponse](#ethermint.evm.v1alpha1.QueryValidatorAccountResponse)
+- [ethermint/evm/v1/query.proto](#ethermint/evm/v1/query.proto)
+    - [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse)
+    - [EthCallRequest](#ethermint.evm.v1.EthCallRequest)
+    - [QueryAccountRequest](#ethermint.evm.v1.QueryAccountRequest)
+    - [QueryAccountResponse](#ethermint.evm.v1.QueryAccountResponse)
+    - [QueryBalanceRequest](#ethermint.evm.v1.QueryBalanceRequest)
+    - [QueryBalanceResponse](#ethermint.evm.v1.QueryBalanceResponse)
+    - [QueryBlockBloomRequest](#ethermint.evm.v1.QueryBlockBloomRequest)
+    - [QueryBlockBloomResponse](#ethermint.evm.v1.QueryBlockBloomResponse)
+    - [QueryBlockLogsRequest](#ethermint.evm.v1.QueryBlockLogsRequest)
+    - [QueryBlockLogsResponse](#ethermint.evm.v1.QueryBlockLogsResponse)
+    - [QueryCodeRequest](#ethermint.evm.v1.QueryCodeRequest)
+    - [QueryCodeResponse](#ethermint.evm.v1.QueryCodeResponse)
+    - [QueryCosmosAccountRequest](#ethermint.evm.v1.QueryCosmosAccountRequest)
+    - [QueryCosmosAccountResponse](#ethermint.evm.v1.QueryCosmosAccountResponse)
+    - [QueryParamsRequest](#ethermint.evm.v1.QueryParamsRequest)
+    - [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse)
+    - [QueryStaticCallRequest](#ethermint.evm.v1.QueryStaticCallRequest)
+    - [QueryStaticCallResponse](#ethermint.evm.v1.QueryStaticCallResponse)
+    - [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest)
+    - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
+    - [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest)
+    - [QueryTxLogsResponse](#ethermint.evm.v1.QueryTxLogsResponse)
+    - [QueryValidatorAccountRequest](#ethermint.evm.v1.QueryValidatorAccountRequest)
+    - [QueryValidatorAccountResponse](#ethermint.evm.v1.QueryValidatorAccountResponse)
   
-    - [Query](#ethermint.evm.v1alpha1.Query)
+    - [Query](#ethermint.evm.v1.Query)
   
-- [ethermint/types/v1alpha1/account.proto](#ethermint/types/v1alpha1/account.proto)
-    - [EthAccount](#ethermint.types.v1alpha1.EthAccount)
+- [ethermint/types/v1/account.proto](#ethermint/types/v1/account.proto)
+    - [EthAccount](#ethermint.types.v1.EthAccount)
+  
+- [ethermint/types/web3.proto](#ethermint/types/web3.proto)
+    - [ExtensionOptionsWeb3Tx](#ethermint.types.v1.ExtensionOptionsWeb3Tx)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="ethermint/crypto/v1alpha1/ethsecp256k1/keys.proto"></a>
+<a name="ethermint/crypto/v1/ethsecp256k1/keys.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethermint/crypto/v1alpha1/ethsecp256k1/keys.proto
+## ethermint/crypto/v1/ethsecp256k1/keys.proto
 
 
 
-<a name="ethermint.crypto.v1alpha1.ethsecp256k1.PrivKey"></a>
+<a name="ethermint.crypto.v1.ethsecp256k1.PrivKey"></a>
 
 ### PrivKey
 PrivKey defines a type alias for an ecdsa.PrivateKey that implements
@@ -90,7 +92,7 @@ Tendermint's PrivateKey interface.
 
 
 
-<a name="ethermint.crypto.v1alpha1.ethsecp256k1.PubKey"></a>
+<a name="ethermint.crypto.v1.ethsecp256k1.PubKey"></a>
 
 ### PubKey
 PubKey defines a type alias for an ecdsa.PublicKey that implements
@@ -116,14 +118,14 @@ key format.
 
 
 
-<a name="ethermint/evm/v1alpha1/evm.proto"></a>
+<a name="ethermint/evm/v1/evm.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethermint/evm/v1alpha1/evm.proto
+## ethermint/evm/v1/evm.proto
 
 
 
-<a name="ethermint.evm.v1alpha1.AccessTuple"></a>
+<a name="ethermint.evm.v1.AccessTuple"></a>
 
 ### AccessTuple
 AccessTuple is the element type of an access list.
@@ -139,7 +141,7 @@ AccessTuple is the element type of an access list.
 
 
 
-<a name="ethermint.evm.v1alpha1.ChainConfig"></a>
+<a name="ethermint.evm.v1.ChainConfig"></a>
 
 ### ChainConfig
 ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
@@ -170,7 +172,7 @@ instead of *big.Int.
 
 
 
-<a name="ethermint.evm.v1alpha1.Log"></a>
+<a name="ethermint.evm.v1.Log"></a>
 
 ### Log
 Log represents an protobuf compatible Ethereum Log that defines a contract
@@ -195,7 +197,7 @@ the node.
 
 
 
-<a name="ethermint.evm.v1alpha1.Params"></a>
+<a name="ethermint.evm.v1.Params"></a>
 
 ### Params
 Params defines the EVM module parameters
@@ -207,14 +209,14 @@ Params defines the EVM module parameters
 | `enable_create` | [bool](#bool) |  | enable create toggles state transitions that use the vm.Create function |
 | `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
 | `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
-| `chain_config` | [ChainConfig](#ethermint.evm.v1alpha1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
+| `chain_config` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
 
 
 
 
 
 
-<a name="ethermint.evm.v1alpha1.State"></a>
+<a name="ethermint.evm.v1.State"></a>
 
 ### State
 State represents a single Storage key value pair item.
@@ -230,7 +232,7 @@ State represents a single Storage key value pair item.
 
 
 
-<a name="ethermint.evm.v1alpha1.TransactionLogs"></a>
+<a name="ethermint.evm.v1.TransactionLogs"></a>
 
 ### TransactionLogs
 TransactionLogs define the logs generated from a transaction execution
@@ -241,14 +243,14 @@ persisted on blockchain state after an upgrade.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `hash` | [string](#string) |  |  |
-| `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated |  |
+| `logs` | [Log](#ethermint.evm.v1.Log) | repeated |  |
 
 
 
 
 
 
-<a name="ethermint.evm.v1alpha1.TxResult"></a>
+<a name="ethermint.evm.v1.TxResult"></a>
 
 ### TxResult
 TxResult stores results of Tx execution.
@@ -258,7 +260,7 @@ TxResult stores results of Tx execution.
 | ----- | ---- | ----- | ----------- |
 | `contract_address` | [string](#string) |  | contract_address contains the ethereum address of the created contract (if any). If the state transition is an evm.Call, the contract address will be empty. |
 | `bloom` | [bytes](#bytes) |  | bloom represents the bloom filter bytes |
-| `tx_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) |  | tx_logs contains the transaction hash and the proto-compatible ethereum logs. |
+| `tx_logs` | [TransactionLogs](#ethermint.evm.v1.TransactionLogs) |  | tx_logs contains the transaction hash and the proto-compatible ethereum logs. |
 | `ret` | [bytes](#bytes) |  | ret defines the bytes from the execution. |
 | `reverted` | [bool](#bool) |  | reverted flag is set to true when the call has been reverted |
 | `gas_used` | [uint64](#uint64) |  | gas_used notes the amount of gas consumed while execution |
@@ -277,14 +279,14 @@ TxResult stores results of Tx execution.
 
 
 
-<a name="ethermint/evm/v1alpha1/genesis.proto"></a>
+<a name="ethermint/evm/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethermint/evm/v1alpha1/genesis.proto
+## ethermint/evm/v1/genesis.proto
 
 
 
-<a name="ethermint.evm.v1alpha1.GenesisAccount"></a>
+<a name="ethermint.evm.v1.GenesisAccount"></a>
 
 ### GenesisAccount
 GenesisAccount defines an account to be initialized in the genesis state.
@@ -296,14 +298,14 @@ custom storage type and that it doesn't contain the private key field.
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  | address defines an ethereum hex formated address of an account |
 | `code` | [string](#string) |  | code defines the hex bytes of the account code. |
-| `storage` | [State](#ethermint.evm.v1alpha1.State) | repeated | storage defines the set of state key values for the account. |
+| `storage` | [State](#ethermint.evm.v1.State) | repeated | storage defines the set of state key values for the account. |
 
 
 
 
 
 
-<a name="ethermint.evm.v1alpha1.GenesisState"></a>
+<a name="ethermint.evm.v1.GenesisState"></a>
 
 ### GenesisState
 GenesisState defines the evm module's genesis state.
@@ -311,9 +313,9 @@ GenesisState defines the evm module's genesis state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `accounts` | [GenesisAccount](#ethermint.evm.v1alpha1.GenesisAccount) | repeated | accounts is an array containing the ethereum genesis accounts. |
-| `params` | [Params](#ethermint.evm.v1alpha1.Params) |  | params defines all the paramaters of the module. |
-| `txs_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) | repeated |  |
+| `accounts` | [GenesisAccount](#ethermint.evm.v1.GenesisAccount) | repeated | accounts is an array containing the ethereum genesis accounts. |
+| `params` | [Params](#ethermint.evm.v1.Params) |  | params defines all the paramaters of the module. |
+| `txs_logs` | [TransactionLogs](#ethermint.evm.v1.TransactionLogs) | repeated |  |
 
 
 
@@ -329,14 +331,14 @@ GenesisState defines the evm module's genesis state.
 
 
 
-<a name="ethermint/evm/v1alpha1/tx.proto"></a>
+<a name="ethermint/evm/v1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethermint/evm/v1alpha1/tx.proto
+## ethermint/evm/v1/tx.proto
 
 
 
-<a name="ethermint.evm.v1alpha1.AccessListTx"></a>
+<a name="ethermint.evm.v1.AccessListTx"></a>
 
 ### AccessListTx
 AccessListTx is the data of EIP-2930 access list transactions.
@@ -351,7 +353,7 @@ AccessListTx is the data of EIP-2930 access list transactions.
 | `to` | [string](#string) |  | hex formatted address of the recipient |
 | `value` | [string](#string) |  | value defines the unsigned integer value of the transaction amount. |
 | `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
-| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `accesses` | [AccessTuple](#ethermint.evm.v1.AccessTuple) | repeated |  |
 | `v` | [bytes](#bytes) |  | v defines the signature value |
 | `r` | [bytes](#bytes) |  | r defines the signature value |
 | `s` | [bytes](#bytes) |  | s define the signature value |
@@ -361,7 +363,7 @@ AccessListTx is the data of EIP-2930 access list transactions.
 
 
 
-<a name="ethermint.evm.v1alpha1.DynamicFeeTx"></a>
+<a name="ethermint.evm.v1.DynamicFeeTx"></a>
 
 ### DynamicFeeTx
 DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
@@ -377,7 +379,7 @@ DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 | `to` | [string](#string) |  | hex formatted address of the recipient |
 | `value` | [string](#string) |  | value defines the the transaction amount. |
 | `data` | [bytes](#bytes) |  | input defines the data payload bytes of the transaction. |
-| `accesses` | [AccessTuple](#ethermint.evm.v1alpha1.AccessTuple) | repeated |  |
+| `accesses` | [AccessTuple](#ethermint.evm.v1.AccessTuple) | repeated |  |
 | `v` | [bytes](#bytes) |  | v defines the signature value |
 | `r` | [bytes](#bytes) |  | r defines the signature value |
 | `s` | [bytes](#bytes) |  | s define the signature value |
@@ -387,7 +389,7 @@ DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 
 
 
-<a name="ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx"></a>
+<a name="ethermint.evm.v1.ExtensionOptionsEthereumTx"></a>
 
 ### ExtensionOptionsEthereumTx
 
@@ -397,17 +399,7 @@ DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 
 
 
-<a name="ethermint.evm.v1alpha1.ExtensionOptionsWeb3Tx"></a>
-
-### ExtensionOptionsWeb3Tx
-
-
-
-
-
-
-
-<a name="ethermint.evm.v1alpha1.LegacyTx"></a>
+<a name="ethermint.evm.v1.LegacyTx"></a>
 
 ### LegacyTx
 LegacyTx is the transaction data of regular Ethereum transactions.
@@ -430,7 +422,7 @@ LegacyTx is the transaction data of regular Ethereum transactions.
 
 
 
-<a name="ethermint.evm.v1alpha1.MsgEthereumTx"></a>
+<a name="ethermint.evm.v1.MsgEthereumTx"></a>
 
 ### MsgEthereumTx
 MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
@@ -450,7 +442,7 @@ caches |
 
 
 
-<a name="ethermint.evm.v1alpha1.MsgEthereumTxResponse"></a>
+<a name="ethermint.evm.v1.MsgEthereumTxResponse"></a>
 
 ### MsgEthereumTxResponse
 MsgEthereumTxResponse defines the Msg/EthereumTx response type.
@@ -459,7 +451,7 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `hash` | [string](#string) |  | ethereum transaction hash in hex format. This hash differs from the Tendermint sha256 hash of the transaction bytes. See https://github.com/tendermint/tendermint/issues/6539 for reference |
-| `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
+| `logs` | [Log](#ethermint.evm.v1.Log) | repeated | logs contains the transaction hash and the proto-compatible ethereum logs. |
 | `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
 | `vm_error` | [string](#string) |  | vm error is the error returned by vm execution |
 | `gas_used` | [uint64](#uint64) |  | gas consumed by the transaction |
@@ -475,27 +467,27 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
  <!-- end HasExtensions -->
 
 
-<a name="ethermint.evm.v1alpha1.Msg"></a>
+<a name="ethermint.evm.v1.Msg"></a>
 
 ### Msg
 Msg defines the evm Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1alpha1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | |
+| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | |
 
  <!-- end services -->
 
 
 
-<a name="ethermint/evm/v1alpha1/query.proto"></a>
+<a name="ethermint/evm/v1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethermint/evm/v1alpha1/query.proto
+## ethermint/evm/v1/query.proto
 
 
 
-<a name="ethermint.evm.v1alpha1.EstimateGasResponse"></a>
+<a name="ethermint.evm.v1.EstimateGasResponse"></a>
 
 ### EstimateGasResponse
 EstimateGasResponse defines EstimateGas response
@@ -510,7 +502,7 @@ EstimateGasResponse defines EstimateGas response
 
 
 
-<a name="ethermint.evm.v1alpha1.EthCallRequest"></a>
+<a name="ethermint.evm.v1.EthCallRequest"></a>
 
 ### EthCallRequest
 EthCallRequest defines EthCall request
@@ -526,7 +518,7 @@ EthCallRequest defines EthCall request
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryAccountRequest"></a>
+<a name="ethermint.evm.v1.QueryAccountRequest"></a>
 
 ### QueryAccountRequest
 QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -541,7 +533,7 @@ QueryAccountRequest is the request type for the Query/Account RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryAccountResponse"></a>
+<a name="ethermint.evm.v1.QueryAccountResponse"></a>
 
 ### QueryAccountResponse
 QueryAccountResponse is the response type for the Query/Account RPC method.
@@ -558,7 +550,7 @@ QueryAccountResponse is the response type for the Query/Account RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryBalanceRequest"></a>
+<a name="ethermint.evm.v1.QueryBalanceRequest"></a>
 
 ### QueryBalanceRequest
 QueryBalanceRequest is the request type for the Query/Balance RPC method.
@@ -573,7 +565,7 @@ QueryBalanceRequest is the request type for the Query/Balance RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryBalanceResponse"></a>
+<a name="ethermint.evm.v1.QueryBalanceResponse"></a>
 
 ### QueryBalanceResponse
 QueryBalanceResponse is the response type for the Query/Balance RPC method.
@@ -588,7 +580,7 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryBlockBloomRequest"></a>
+<a name="ethermint.evm.v1.QueryBlockBloomRequest"></a>
 
 ### QueryBlockBloomRequest
 QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
@@ -604,7 +596,7 @@ method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryBlockBloomResponse"></a>
+<a name="ethermint.evm.v1.QueryBlockBloomResponse"></a>
 
 ### QueryBlockBloomResponse
 QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
@@ -620,7 +612,7 @@ method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryBlockLogsRequest"></a>
+<a name="ethermint.evm.v1.QueryBlockLogsRequest"></a>
 
 ### QueryBlockLogsRequest
 QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
@@ -636,7 +628,7 @@ QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryBlockLogsResponse"></a>
+<a name="ethermint.evm.v1.QueryBlockLogsResponse"></a>
 
 ### QueryBlockLogsResponse
 QueryTxLogs is the response type for the Query/BlockLogs RPC method.
@@ -644,7 +636,7 @@ QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tx_logs` | [TransactionLogs](#ethermint.evm.v1alpha1.TransactionLogs) | repeated | logs represents the ethereum logs generated at the given block hash. |
+| `tx_logs` | [TransactionLogs](#ethermint.evm.v1.TransactionLogs) | repeated | logs represents the ethereum logs generated at the given block hash. |
 | `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
 
 
@@ -652,7 +644,7 @@ QueryTxLogs is the response type for the Query/BlockLogs RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryCodeRequest"></a>
+<a name="ethermint.evm.v1.QueryCodeRequest"></a>
 
 ### QueryCodeRequest
 QueryCodeRequest is the request type for the Query/Code RPC method.
@@ -667,7 +659,7 @@ QueryCodeRequest is the request type for the Query/Code RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryCodeResponse"></a>
+<a name="ethermint.evm.v1.QueryCodeResponse"></a>
 
 ### QueryCodeResponse
 QueryCodeResponse is the response type for the Query/Code RPC
@@ -683,7 +675,7 @@ method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryCosmosAccountRequest"></a>
+<a name="ethermint.evm.v1.QueryCosmosAccountRequest"></a>
 
 ### QueryCosmosAccountRequest
 QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC
@@ -699,7 +691,7 @@ method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryCosmosAccountResponse"></a>
+<a name="ethermint.evm.v1.QueryCosmosAccountResponse"></a>
 
 ### QueryCosmosAccountResponse
 QueryCosmosAccountResponse is the response type for the Query/CosmosAccount
@@ -717,7 +709,7 @@ RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryParamsRequest"></a>
+<a name="ethermint.evm.v1.QueryParamsRequest"></a>
 
 ### QueryParamsRequest
 QueryParamsRequest defines the request type for querying x/evm parameters.
@@ -727,7 +719,7 @@ QueryParamsRequest defines the request type for querying x/evm parameters.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryParamsResponse"></a>
+<a name="ethermint.evm.v1.QueryParamsResponse"></a>
 
 ### QueryParamsResponse
 QueryParamsResponse defines the response type for querying x/evm parameters.
@@ -735,14 +727,14 @@ QueryParamsResponse defines the response type for querying x/evm parameters.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#ethermint.evm.v1alpha1.Params) |  | params define the evm module parameters. |
+| `params` | [Params](#ethermint.evm.v1.Params) |  | params define the evm module parameters. |
 
 
 
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryStaticCallRequest"></a>
+<a name="ethermint.evm.v1.QueryStaticCallRequest"></a>
 
 ### QueryStaticCallRequest
 QueryStaticCallRequest defines static call request
@@ -758,7 +750,7 @@ QueryStaticCallRequest defines static call request
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryStaticCallResponse"></a>
+<a name="ethermint.evm.v1.QueryStaticCallResponse"></a>
 
 ### QueryStaticCallResponse
 QueryStaticCallRequest defines static call response
@@ -773,7 +765,7 @@ QueryStaticCallRequest defines static call response
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryStorageRequest"></a>
+<a name="ethermint.evm.v1.QueryStorageRequest"></a>
 
 ### QueryStorageRequest
 QueryStorageRequest is the request type for the Query/Storage RPC method.
@@ -789,7 +781,7 @@ QueryStorageRequest is the request type for the Query/Storage RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryStorageResponse"></a>
+<a name="ethermint.evm.v1.QueryStorageResponse"></a>
 
 ### QueryStorageResponse
 QueryStorageResponse is the response type for the Query/Storage RPC
@@ -805,7 +797,7 @@ method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryTxLogsRequest"></a>
+<a name="ethermint.evm.v1.QueryTxLogsRequest"></a>
 
 ### QueryTxLogsRequest
 QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
@@ -820,7 +812,7 @@ QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryTxLogsResponse"></a>
+<a name="ethermint.evm.v1.QueryTxLogsResponse"></a>
 
 ### QueryTxLogsResponse
 QueryTxLogs is the response type for the Query/TxLogs RPC method.
@@ -828,14 +820,14 @@ QueryTxLogs is the response type for the Query/TxLogs RPC method.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `logs` | [Log](#ethermint.evm.v1alpha1.Log) | repeated | logs represents the ethereum logs generated from the given transaction. |
+| `logs` | [Log](#ethermint.evm.v1.Log) | repeated | logs represents the ethereum logs generated from the given transaction. |
 
 
 
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryValidatorAccountRequest"></a>
+<a name="ethermint.evm.v1.QueryValidatorAccountRequest"></a>
 
 ### QueryValidatorAccountRequest
 QueryValidatorAccountRequest is the request type for the
@@ -851,7 +843,7 @@ Query/ValidatorAccount RPC method.
 
 
 
-<a name="ethermint.evm.v1alpha1.QueryValidatorAccountResponse"></a>
+<a name="ethermint.evm.v1.QueryValidatorAccountResponse"></a>
 
 ### QueryValidatorAccountResponse
 QueryValidatorAccountResponse is the response type for the
@@ -875,39 +867,39 @@ Query/ValidatorAccount RPC method.
  <!-- end HasExtensions -->
 
 
-<a name="ethermint.evm.v1alpha1.Query"></a>
+<a name="ethermint.evm.v1.Query"></a>
 
 ### Query
 Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Account` | [QueryAccountRequest](#ethermint.evm.v1alpha1.QueryAccountRequest) | [QueryAccountResponse](#ethermint.evm.v1alpha1.QueryAccountResponse) | Account queries an Ethereum account. | GET|/ethermint/evm/v1alpha1/account/{address}|
-| `CosmosAccount` | [QueryCosmosAccountRequest](#ethermint.evm.v1alpha1.QueryCosmosAccountRequest) | [QueryCosmosAccountResponse](#ethermint.evm.v1alpha1.QueryCosmosAccountResponse) | CosmosAccount queries an Ethereum account's Cosmos Address. | GET|/ethermint/evm/v1alpha1/cosmos_account/{address}|
-| `ValidatorAccount` | [QueryValidatorAccountRequest](#ethermint.evm.v1alpha1.QueryValidatorAccountRequest) | [QueryValidatorAccountResponse](#ethermint.evm.v1alpha1.QueryValidatorAccountResponse) | ValidatorAccount queries an Ethereum account's from a validator consensus Address. | GET|/ethermint/evm/v1alpha1/validator_account/{cons_address}|
-| `Balance` | [QueryBalanceRequest](#ethermint.evm.v1alpha1.QueryBalanceRequest) | [QueryBalanceResponse](#ethermint.evm.v1alpha1.QueryBalanceResponse) | Balance queries the balance of a the EVM denomination for a single EthAccount. | GET|/ethermint/evm/v1alpha1/balances/{address}|
-| `Storage` | [QueryStorageRequest](#ethermint.evm.v1alpha1.QueryStorageRequest) | [QueryStorageResponse](#ethermint.evm.v1alpha1.QueryStorageResponse) | Storage queries the balance of all coins for a single account. | GET|/ethermint/evm/v1alpha1/storage/{address}/{key}|
-| `Code` | [QueryCodeRequest](#ethermint.evm.v1alpha1.QueryCodeRequest) | [QueryCodeResponse](#ethermint.evm.v1alpha1.QueryCodeResponse) | Code queries the balance of all coins for a single account. | GET|/ethermint/evm/v1alpha1/codes/{address}|
-| `TxLogs` | [QueryTxLogsRequest](#ethermint.evm.v1alpha1.QueryTxLogsRequest) | [QueryTxLogsResponse](#ethermint.evm.v1alpha1.QueryTxLogsResponse) | TxLogs queries ethereum logs from a transaction. | GET|/ethermint/evm/v1alpha1/tx_logs/{hash}|
-| `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1alpha1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1alpha1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1alpha1/block_logs/{hash}|
-| `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1alpha1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1alpha1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1alpha1/block_bloom|
-| `Params` | [QueryParamsRequest](#ethermint.evm.v1alpha1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1alpha1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1alpha1/params|
-| `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1alpha1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1alpha1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1alpha1/static_call|
-| `EthCall` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1alpha1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1alpha1/eth_call|
-| `EstimateGas` | [EthCallRequest](#ethermint.evm.v1alpha1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1alpha1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1alpha1/estimate_gas|
+| `Account` | [QueryAccountRequest](#ethermint.evm.v1.QueryAccountRequest) | [QueryAccountResponse](#ethermint.evm.v1.QueryAccountResponse) | Account queries an Ethereum account. | GET|/ethermint/evm/v1/account/{address}|
+| `CosmosAccount` | [QueryCosmosAccountRequest](#ethermint.evm.v1.QueryCosmosAccountRequest) | [QueryCosmosAccountResponse](#ethermint.evm.v1.QueryCosmosAccountResponse) | CosmosAccount queries an Ethereum account's Cosmos Address. | GET|/ethermint/evm/v1/cosmos_account/{address}|
+| `ValidatorAccount` | [QueryValidatorAccountRequest](#ethermint.evm.v1.QueryValidatorAccountRequest) | [QueryValidatorAccountResponse](#ethermint.evm.v1.QueryValidatorAccountResponse) | ValidatorAccount queries an Ethereum account's from a validator consensus Address. | GET|/ethermint/evm/v1/validator_account/{cons_address}|
+| `Balance` | [QueryBalanceRequest](#ethermint.evm.v1.QueryBalanceRequest) | [QueryBalanceResponse](#ethermint.evm.v1.QueryBalanceResponse) | Balance queries the balance of a the EVM denomination for a single EthAccount. | GET|/ethermint/evm/v1/balances/{address}|
+| `Storage` | [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest) | [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse) | Storage queries the balance of all coins for a single account. | GET|/ethermint/evm/v1/storage/{address}/{key}|
+| `Code` | [QueryCodeRequest](#ethermint.evm.v1.QueryCodeRequest) | [QueryCodeResponse](#ethermint.evm.v1.QueryCodeResponse) | Code queries the balance of all coins for a single account. | GET|/ethermint/evm/v1/codes/{address}|
+| `TxLogs` | [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest) | [QueryTxLogsResponse](#ethermint.evm.v1.QueryTxLogsResponse) | TxLogs queries ethereum logs from a transaction. | GET|/ethermint/evm/v1/tx_logs/{hash}|
+| `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1/block_logs/{hash}|
+| `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1/block_bloom|
+| `Params` | [QueryParamsRequest](#ethermint.evm.v1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1/params|
+| `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1/static_call|
+| `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
+| `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
 
  <!-- end services -->
 
 
 
-<a name="ethermint/types/v1alpha1/account.proto"></a>
+<a name="ethermint/types/v1/account.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethermint/types/v1alpha1/account.proto
+## ethermint/types/v1/account.proto
 
 
 
-<a name="ethermint.types.v1alpha1.EthAccount"></a>
+<a name="ethermint.types.v1.EthAccount"></a>
 
 ### EthAccount
 EthAccount implements the authtypes.AccountI interface and embeds an
@@ -918,6 +910,39 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 | ----- | ---- | ----- | ----------- |
 | `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
 | `code_hash` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethermint/types/web3.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethermint/types/web3.proto
+
+
+
+<a name="ethermint.types.v1.ExtensionOptionsWeb3Tx"></a>
+
+### ExtensionOptionsWeb3Tx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `typedDataChainID` | [uint64](#uint64) |  | typedDataChainID used only in EIP712 Domain and should match Ethereum network ID in a Web3 provider (e.g. Metamask). |
+| `feePayer` | [string](#string) |  | feePayer is an account address for the fee payer. It will be validated during EIP712 signature checking. |
+| `feePayerSig` | [bytes](#bytes) |  | feePayerSig is a signature data from the fee paying account, allows to perform fee delegation when using EIP712 Domain. |
 
 
 
