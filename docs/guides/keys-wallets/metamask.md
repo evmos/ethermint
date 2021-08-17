@@ -54,5 +54,5 @@ Network` (or any other than `Localhost 8545` or `Ethermint`) and then switch bac
 
 ## Downloading State
 
-To see your Metamask logs, go to top right circle an`Settings` > `Advanced` > `Download State Logs`.
+To see your Metamask logs, click the top right circle and go to `Settings` > `Advanced` > `Download State Logs`.
 If you search through the JSON file for the account address you'll find the transaction history.
