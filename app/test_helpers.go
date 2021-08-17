@@ -48,7 +48,7 @@ func Setup(isCheckTx bool) *EthermintApp {
 		// Initialize the chain
 		app.InitChain(
 			abci.RequestInitChain{
-				ChainId:         "ethermint-1",
+				ChainId:         "ethermint_9000-1",
 				Validators:      []abci.ValidatorUpdate{},
 				ConsensusParams: DefaultConsensusParams,
 				AppStateBytes:   stateBytes,

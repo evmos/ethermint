@@ -1,6 +1,6 @@
 
 KEY="mykey"
-CHAINID="ethermint-2"
+CHAINID="ethermint_9000-1"
 MONIKER="localtestnet"
 KEYRING="test"
 KEYALGO="eth_secp256k1"

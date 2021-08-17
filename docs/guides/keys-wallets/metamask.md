@@ -15,8 +15,8 @@ are not already. Then click the top right circle and go to `Settings` > `Network
 Network` button and fill the form as shown below with your application `ChainID`.
 
 ::: tip
-To find your full `ChainID`, got your genesis.json file. To get the Ethereum chain ID from the Cosmos chain ID, you need to consider only the last digit in the string value. For example
-if your chain id on ethermint is `"chain_id": "ethermint-1337"`, then you will have to use the value `1337` on Metamask.
+To find your full `ChainID`, got your genesis.json file. To get the [EIP155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md) chain ID from the Cosmos chain ID, you need to consider only the second number in the string value. For example
+if your chain id on ethermint is `"chain_id": "ethermint_9000-1"`, then you will have to use the value `9000` on Metamask.
 :::
 
 ![metamask networks settings](./../img/metamask_network_settings.png)
