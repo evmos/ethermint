@@ -60,7 +60,7 @@ func NewAnteHandler(
 			opts := txWithExtensions.GetExtensionOptions()
 			if len(opts) > 0 {
 				switch typeURL := opts[0].GetTypeUrl(); typeURL {
-				case "/ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx":
+				case "/ethermint.evm.v1.ExtensionOptionsEthereumTx":
 					// handle as *evmtypes.MsgEthereumTx
 
 					anteHandler = sdk.ChainAnteDecorators(

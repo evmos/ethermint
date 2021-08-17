@@ -1,5 +1,5 @@
 syntax = "proto3";
-package ethermint.types.v1alpha1;
+package ethermint.types.v1;
 
 import "cosmos/auth/v1beta1/auth.proto";
 import "cosmos_proto/cosmos.proto";

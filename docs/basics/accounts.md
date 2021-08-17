@@ -88,21 +88,21 @@ ethermintd keys show mykey --bech acc
 - name: mykey
   type: local
   address: eth1qsklxwt77qrxur494uvw07zjynu03dq9alwh37
-  pubkey: '{"@type":"/ethermint.crypto.v1alpha1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
+  pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
   mnemonic: ""
 
 ethermintd keys show test --bech val
 - name: mykey
   type: local
   address: ethvaloper1qsklxwt77qrxur494uvw07zjynu03dq9rdsrlq
-  pubkey: '{"@type":"/ethermint.crypto.v1alpha1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
+  pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
   mnemonic: ""
 
 ethermintd keys show test --bech cons
 - name: mykey
   type: local
   address: ethvalcons1qsklxwt77qrxur494uvw07zjynu03dq9h7rlnp
-  pubkey: '{"@type":"/ethermint.crypto.v1alpha1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
+  pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
   mnemonic: ""
 ```
 
