@@ -4,22 +4,30 @@ order: 2
 
 # Metamask
 
-Connect your Metamask wallet with Ethermint on a localnet mode. {synopsis}
+Connect your Metamask wallet with Ethermint. {synopsis}
 
 ## Adding a custom Network for Ethermint
 
-One of the main limitations of using the default `Localhost 8545` network is that the tokens will be represented as `ETH`.
-
 Open the Metamask extension on your browser, you may have to log in to your Metamask account if you
-are not already. Then click the top right circle and go to `Settings` > `Networks`. Press the `Add
-Network` button and fill the form as shown below with your application `ChainID`.
+are not already. Then click the top right circle and go to `Settings` > `Networks` > `Add
+Network` and fill the form as shown below.
 
 ::: tip
-To find your full `ChainID`, got your genesis.json file. To get the [EIP155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md) chain ID from the Cosmos chain ID, you need to consider only the second number in the string value. For example
-if your chain id on ethermint is `"chain_id": "ethermint_9000-1"`, then you will have to use the value `9000` on Metamask.
+You can also find the full `ChainID` form the `genesis.json` file. To get the
+[EIP155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md) chain ID from the Cosmos
+chain ID, check the [Chain ID](./../../basics/chain_id) documentation page.
 :::
 
 ![metamask networks settings](./../img/metamask_network_settings.png)
+
+Here is the list of fields that you can use to paste on Metamask:
+
+- **Network Name**: Ethermint
+<!-- TODO: add RPC URL -->
+- **New RPC URL**: http://localhost:8545
+- **Chain ID**: 9000
+- **Currency Symbol (optional)**: PHOTON
+- **Block Explorer URL (optional)**:
 
 ## Import Account to Metamask
 
@@ -28,10 +36,10 @@ Then close the settings, and go to `My Accounts` (top right circle) and select `
 ![metamask import account page](./../img/metamask_import.png)
 
 Now you can export your private key from the terminal using the following command. Again, make sure
-to replace `mykey` with the name of the key that you want to export:
+to replace `mykey` with the name of the key that you want to export and use the correct `keyring-backend`:
 
 ```bash
-ethermintd keys unsafe-export-eth-key mykey
+ethermintd keys unsafe-export-eth-key mykey --keyring-backend test
 ```
 
 Go back to the browser and select the `Private Key` option. Then paste the private key exported from
@@ -46,4 +54,5 @@ Network` (or any other than `Localhost 8545` or `Ethermint`) and then switch bac
 
 ## Downloading State
 
-to see metamask logs, go to top right circle -> settings -> advanced -> download state logs. if you search through the json file for the account address you'll find the tx history
+To see your Metamask logs, click the top right circle and go to `Settings` > `Advanced` > `Download State Logs`.
+If you search through the JSON file for the account address you'll find the transaction history.

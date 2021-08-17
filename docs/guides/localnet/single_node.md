@@ -11,6 +11,29 @@ order: 1
 
 ## Automated Localnet (script)
 
+You can customize the localtestnet script by changing values for convinience for example:
+
+```bash
+# customize the name of your key, the chain-id, moniker of the node, keyring backend, and log level
+KEY="mykey"
+CHAINID="ethermint_9000-1"
+MONIKER="localtestnet"
+KEYRING="test"
+LOGLEVEL="info"
+
+
+# Allocate genesis accounts (cosmos formatted addresses)
+ethermintd add-genesis-account $KEY 100000000000000000000000000aphoton --keyring-backend $KEYRING
+
+# Sign genesis transaction
+ethermintd gentx $KEY 1000000000000000000000aphoton --keyring-backend $KEYRING --chain-id $CHAINID
+```
+
+The default configuration will generate a single validator localnet with the chain-id
+`ethermint_9000-1` and one predefined account (`mykey`) with some allocated funds at the genesis.
+
+You can start the local chain using:
+
 ```bash
 init.sh
 ```
