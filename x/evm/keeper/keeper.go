@@ -48,6 +48,9 @@ type Keeper struct {
 
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
+
+	// Tracer used to collect execution traces from the EVM transaction execution
+	tracer string
 	// trace EVM state transition execution. This value is obtained from the `--trace` flag.
 	// For more info check https://geth.ethereum.org/docs/dapp/tracing
 	debug bool
@@ -58,7 +61,7 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
-	debug bool,
+	tracer string, debug bool,
 ) *Keeper {
 
 	// ensure evm module account is set
@@ -80,6 +83,7 @@ func NewKeeper(
 		stakingKeeper: sk,
 		storeKey:      storeKey,
 		transientKey:  transientKey,
+		tracer:        tracer,
 		debug:         debug,
 	}
 }

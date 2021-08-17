@@ -14,7 +14,7 @@ build:
 init:
   home: "$HOME/.ethermintd"
   app:
-    evm-rpc:
+    json-rpc:
       address: "0.0.0.0:8545"     # change the JSON-RPC address and port
       ws-address: "0.0.0.0:8546"  # change the JSON-RPC websocket address and port
 genesis:

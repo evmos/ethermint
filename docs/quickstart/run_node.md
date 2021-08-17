@@ -38,7 +38,7 @@ The instructions for setting up a brand new full node from scratch are the the s
 To start your node, just type:
 
 ```bash
-ethermintd start --evm-rpc.enable=true --evm-rpc.api="eth,web3,net,txpool,debug"
+ethermintd start --json-rpc.enable=true --json-rpc.api="eth,web3,net,txpool,debug"
 ```
 
 ## Key Management
