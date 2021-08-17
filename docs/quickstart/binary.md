@@ -63,13 +63,13 @@ ethermintd config
 
 We can make changes to the default settings upon our choices, so it allows users to set the configuration beforehand all at once, so it would be ready with the same config afterward.
 
-For example, the chain identifier can be changed to `ethermint-777` from a blank name by using:
+For example, the chain identifier can be changed to `ethermint_9000-1` from a blank name by using:
 
 ```bash
-ethermintd config "chain-id" ethermint-777
+ethermintd config "chain-id" ethermint_9000-1
 ethermintd config
 {
- "chain-id": "ethermint-777",
+ "chain-id": "ethermint_9000-1",
  "keyring-backend": "os",
  "output": "text",
  "node": "tcp://localhost:26657",
@@ -89,7 +89,7 @@ Alternatively, we can directly make the changes to the config values in one plac
 
 # The network chain ID
 
-chain-id = "ethermint-777"
+chain-id = "ethermint_9000-1"
 
 # The keyring's backend, where the keys are stored (os|file|kwallet|pass|test|memory)
 
@@ -108,12 +108,12 @@ node = "tcp://localhost:26657"
 broadcast-mode = "sync"
 ```
 
-After the necessary changes are made in the `client.toml`, then save. For example, if we directly change the chain-id from `ethermint-0` to `etherminttest-1`, and output to number, it would change instantly as shown below.
+After the necessary changes are made in the `client.toml`, then save. For example, if we directly change the chain-id from `ethermint_9000-1` to `etherminttest_9000-1`, and output to number, it would change instantly as shown below.
 
 ```bash
 ethermintd config
 {
- "chain-id": "etherminttest-1",
+ "chain-id": "etherminttest_9000-1",
  "keyring-backend": "os",
  "output": "number",
  "node": "tcp://localhost:26657",
@@ -126,7 +126,7 @@ ethermintd config
 A list of commonly used flags of `ethermintd` is listed below:
 
 | Option              | Description                   | Type         | Default Value   |
-| ------------------- | ----------------------------- | ------------ | --------------- |
+|---------------------|-------------------------------|--------------|-----------------|
 | `--chain-id`        | Full Chain ID                 | String       | ---             |
 | `--home`            | Directory for config and data | string       | `~/.ethermintd` |
 | `--keyring-backend` | Select keyring's backend      | os/file/test | os              |
@@ -136,13 +136,13 @@ A list of commonly used flags of `ethermintd` is listed below:
 
 A list of commonly used `ethermintd` commands. You can obtain the full list by using the `ethermintd -h` command.
 
-| Command         | Description              | Subcommands (example)                                        |
-| --------------- | ------------------------ | ------------------------------------------------------------ |
-| `keys`          | Keys management          | `list`, `show`, `add`, `add  --recover`, `delete`                |
-| `tx`            | Transactions subcommands | `bank send`, `ibc-transfer transfer`, `distribution withdraw-all-rewards` |
-| `query`         | Query subcommands        | `bank balance`, `staking validators`, `gov proposals`                          |
-| `tendermint`    | Tendermint subcommands   | `show-address`, `show-node-id`, `version`                                |
-| `config` | Client configuration     |                                                              |
-| `init`  | Initialize full node     |                                                              |
-| `start` | Run full node            |                                                              |
-|     `version`            |     Ethermint version                     |                                                              |
+| Command      | Description              | Subcommands (example)                                                     |
+|--------------|--------------------------|---------------------------------------------------------------------------|
+| `keys`       | Keys management          | `list`, `show`, `add`, `add  --recover`, `delete`                         |
+| `tx`         | Transactions subcommands | `bank send`, `ibc-transfer transfer`, `distribution withdraw-all-rewards` |
+| `query`      | Query subcommands        | `bank balance`, `staking validators`, `gov proposals`                     |
+| `tendermint` | Tendermint subcommands   | `show-address`, `show-node-id`, `version`                                 |
+| `config`     | Client configuration     |                                                                           |
+| `init`       | Initialize full node     |                                                                           |
+| `start`      | Run full node            |                                                                           |
+| `version`    | Ethermint version        |                                                                           |

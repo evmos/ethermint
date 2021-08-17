@@ -17,7 +17,7 @@ RPC_PORT="854"
 IP_ADDR="0.0.0.0"
 
 KEY="mykey"
-CHAINID="ethermint-2"
+CHAINID="ethermint_9000-1"
 MONIKER="mymoniker"
 
 ## default port prefixes for ethermintd
