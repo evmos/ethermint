@@ -4,38 +4,61 @@ order: 1
 
 # Joining a Testnet
 
-This document outlines the steps to join an existing testnet
+This document outlines the steps to join an existing testnet {synopsis}
 
-## Steps
+## Install `ethermintd`
 
-1. [Install](./../quickstart/installation) the Ethermint binary `ethermintd`
+Follow the [installation](./../quickstart/installation) document to install the Ethermint binary `ethermintd`.
 
-    ```bash
-    go install https://github.com/tharsis/ethermint
-    ```
+:::warning
+Make sure you have the right version of `ethermintd` installed
+:::
 
-2. Create an Ethermint [account](./../basics/accounts)
+## Initialize Node
 
-    ```bash
-    ethermintd keys add <keyname> --keyring-backend=test
-    ```
+We need to initialize the node to create all the necessary validator and node configuration files:
 
-3. Copy genesis file
+```bash
+ethermintd init <your_custom_moniker>
+```
 
-    Follow this [link](https://gist.github.com/araskachoi/43f86f3edff23729b817e8b0bb86295a) and copy it over to the directory `~/.ethermintd/config/genesis.json`
+::: danger
+Monikers can contain only ASCII characters. Using Unicode characters will render your node unreachable.
+:::
 
-4. Add peers
+By default, the `init` command creates your `~/.ethermintd` directory with subfolders `config/` and `data/`.
+In the `config` directory, the most important files for configuration are `app.toml` and `config.toml`.
 
-    Edit the file located in `~/.ethermintd/config/config.toml` and the `persistent_peers` to the following:
+## Genesis & Seeds
 
-    ```toml
-    "05aa6587f07a0c6a9a8213f0138c4a76d476418a@18.204.206.179:26656,13d4a1c16d1f427988b7c499b6d150726aaf3aa0@3.86.104.251:26656,a00db749fa51e485c8376276d29d599258052f3e@54.210.246.165:26656"
-    ```
+### Copy the Genesis File
 
-5. Validate genesis and start the Ethermint network
+Check the genesis file from the [`testnets`](https://github.com/tharsis/testnets) repository and copy it over to the directory `~/.ethermintd/config/genesis.json`
 
-    ```bash
-    ethermintd validate-genesis
+### Add Seed Nodes
 
-    ethermintd start --pruning=nothing --rpc.unsafe --log_level "main:info,state:info,mempool:info"
-    ```
+Your node needs to know how to find peers. You'll need to add healthy seed nodes to `$HOME/.ethermintd/config/config.toml`. The [`testnets`](https://github.com/tharsis/testnets) repo contains links to some seed nodes.
+
+Edit the file located in `~/.ethermintd/config/config.toml` and the `seeds` to the following:
+
+```toml
+#######################################################
+###           P2P Configuration Options             ###
+#######################################################
+[p2p]
+
+# ...
+
+# Comma separated list of seed nodes to connect to
+seeds = ""
+```
+
+Validate genesis and start the Ethermint network
+
+```bash
+ethermintd validate-genesis
+```
+
+```bash
+ethermintd start
+```

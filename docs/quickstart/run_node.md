@@ -9,15 +9,11 @@ Configure and run an Ethermint node {synopsis}
 ## Pre-requisite Readings
 
 - [Installation](./installation.md) {prereq}
-
-
-## Configure the node daemon
-
-Before kick-starting your node, we will have to configure your node so that it connects to the testnet:
+- [`ethermintd`](./binary.md) {prereq}
 
 ## Automated deployment
 
-Run the local node
+Run the local node by running the `init.sh` script in the base directory of the repository.
 
 ::: warning
 The script below will remove any pre-existing binaries installed. Use the manual deploy if you want
@@ -31,14 +27,14 @@ to keep your binaries and configuration files.
 ## Manual deployment
 
 The instructions for setting up a brand new full node from scratch are the the same as running a
-[single node local testnet](./testnet.md#single-node-local-manual-testnet).
+[single node local testnet](./../guides/localnet/single_node.md#manual-localnet).
 
 ## Start node
 
 To start your node, just type:
 
 ```bash
-ethermintd start --json-rpc.enable=true --json-rpc.api="eth,web3,net,txpool,debug"
+ethermintd start --json-rpc.enable=true --json-rpc.api="eth,web3,net"
 ```
 
 ## Key Management
@@ -59,7 +55,7 @@ You can generate a new key/mnemonic with:
 ethermintd keys add $KEY
 ```
 
-To export your ethermint key as an ethereum private key (for use with Metamask for example):
+To export your ethermint key as an Ethereum private key (for use with [Metamask](./../guides/keys-wallets/metamask) for example):
 
 ```bash
 ethermintd keys unsafe-export-eth-key $KEY

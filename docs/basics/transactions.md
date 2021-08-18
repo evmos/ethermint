@@ -2,8 +2,15 @@
 order: 3
 -->
 
-# Transactions
+# Transaction Lifecycle
 
+This document describes the lifecycle of a transaction from creation to committed state changes on the EVM. {synopsis}
+
+### Pre-requisite Readings
+
+- [SDK transaction lifecycle](https://docs.cosmos.network/master/basics/tx-lifecycle.html) {prereq}
+
+<!-- TODO: rewrite. This is not a lifecycle doc -->
 ## Routing
 
 Ethermint needs to parse and handle transactions routed for both the EVM and for the Cosmos hub. We
@@ -31,7 +38,3 @@ protocol supports different signer types based on the chain configuration params
 Ethermint supports all Ethereum `Signer`s up to the latest go-ethereum version (London, Berlin,
 EIP155, Homestead and Frontier). The chain will generate the latest `Signer` type depending on the
 `ChainConfig`.
-
-## Next {hide}
-
-Learn about how [gas](./gas.md) is used on Ethermint {hide}
