@@ -36,5 +36,5 @@ api = "{{range $index, $elmt := .JSONRPC.API}}{{if $index}},{{$elmt}}{{else}}{{$
 enable-unsafe-cors = "{{ .JSONRPC.EnableUnsafeCORS }}"
 
 # GasCap sets a cap on gas that can be used in eth_call/estimateGas (0=infinite). Default: 25,000,000.
-gas-cap = "{{ .JSONRPC.GasCap }}"
+gas-cap = {{ .JSONRPC.GasCap }}
 `
