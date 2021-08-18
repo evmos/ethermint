@@ -12,7 +12,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
-	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
@@ -21,10 +20,8 @@ import (
 func (e *EVMBackend) setTxDefaults(args types.SendTxArgs) (types.SendTxArgs, error) {
 
 	if args.GasPrice == nil {
-		// TODO: Change to either:
-		// - min gas price from context once available through server/daemon, or
-		// - suggest a gas price based on the previous included txs
-		args.GasPrice = (*hexutil.Big)(big.NewInt(ethermint.DefaultGasPrice))
+		// TODO: Suggest a gas price based on the previous included txs
+		args.GasPrice = (*hexutil.Big)(new(big.Int).SetUint64(e.RPCGasCap()))
 	}
 
 	if args.Nonce == nil {

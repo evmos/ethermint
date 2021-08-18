@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -24,6 +25,8 @@ const (
 
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = "json"
+
+	DefaultGasCap uint64 = 25000000
 )
 
 var (
@@ -113,6 +116,27 @@ type JSONRPCConfig struct {
 	Enable bool `mapstructure:"enable"`
 	// EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
 	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
+	// GasCap is the global gas cap for eth-call variants.
+	GasCap uint64 `mapstructure:"gas-cap"`
+}
+
+// Validate returns an error if the JSON-RPC configuration fields are invalid.
+func (c JSONRPCConfig) Validate() error {
+	if c.Enable && len(c.API) == 0 {
+		return errors.New("cannot enable JSON-RPC without defining any API namespace")
+	}
+
+	// TODO: validate APIs
+	seenAPIs := make(map[string]bool)
+	for _, api := range c.API {
+		if seenAPIs[api] {
+			return fmt.Errorf("repeated API namespace '%s'", api)
+		}
+
+		seenAPIs[api] = true
+	}
+
+	return nil
 }
 
 // DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
@@ -123,6 +147,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		Address:          DefaultJSONRPCAddress,
 		WsAddress:        DefaultJSONRPCWsAddress,
 		EnableUnsafeCORS: false,
+		GasCap:           DefaultGasCap,
 	}
 }
 
@@ -150,8 +175,18 @@ func GetConfig(v *viper.Viper) Config {
 			Address:          v.GetString("json-rpc.address"),
 			WsAddress:        v.GetString("json-rpc.ws-address"),
 			EnableUnsafeCORS: v.GetBool("json-rpc.enable-unsafe-cors"),
+			GasCap:           v.GetUint64("json-rpc.gas-cap"),
 		},
 	}
+}
+
+// ParseConfig retrieves the default environment configuration for the
+// application.
+func ParseConfig(v *viper.Viper) (*Config, error) {
+	conf := DefaultConfig()
+	err := v.Unmarshal(conf)
+
+	return conf, err
 }
 
 // ValidateBasic returns an error any of the application configuration fields are invalid
@@ -160,7 +195,9 @@ func (c Config) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid evm config value: %s", err.Error())
 	}
 
-	// TODO: validate JSON-RPC APIs
+	if err := c.JSONRPC.Validate(); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid json-rpc config value: %s", err.Error())
+	}
 
 	return c.Config.ValidateBasic()
 }

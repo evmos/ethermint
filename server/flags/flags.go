@@ -31,6 +31,7 @@ const (
 	JSONRPCAddress       = "json-rpc.address"
 	JSONWsAddress        = "json-rpc.ws-address"
 	JSONEnableUnsafeCORS = "json-rpc.enable-unsafe-cors"
+	JSONRPCGasCap        = "json-rpc.gas-cap"
 )
 
 // EVM flags
