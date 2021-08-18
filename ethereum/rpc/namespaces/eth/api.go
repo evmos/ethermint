@@ -167,8 +167,7 @@ func (e *PublicAPI) Hashrate() hexutil.Uint64 {
 // GasPrice returns the current gas price based on Ethermint's gas price oracle.
 func (e *PublicAPI) GasPrice() *hexutil.Big {
 	e.logger.Debug("eth_gasPrice")
-	// TODO: use minimum value defined in config instead of default or implement oracle
-	out := big.NewInt(ethermint.DefaultGasPrice)
+	out := new(big.Int).SetUint64(e.backend.RPCGasCap())
 	return (*hexutil.Big)(out)
 }
 
