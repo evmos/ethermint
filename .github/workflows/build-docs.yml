@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - release/*
 
 jobs:
   check-docs-build:
@@ -17,11 +18,11 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Install dependencies and build docs 🧱
       - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
           SUFFIX_FILTER: |
             .md
-      - name: Install dependencies and build docs 🧱
         run: |
           make build-docs
