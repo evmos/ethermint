@@ -438,7 +438,7 @@ func (e *PublicAPI) doCall(
 	if err != nil {
 		return nil, err
 	}
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: e.backend.RPCGasCap()}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use

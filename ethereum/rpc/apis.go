@@ -36,7 +36,7 @@ const (
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
+	evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
 
 	var apis []rpc.API
 	// remove duplicates
