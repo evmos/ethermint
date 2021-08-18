@@ -15,7 +15,7 @@ IP_ADDR="0.0.0.0"
 MODE="rpc"
 
 KEY="mykey"
-CHAINID="ethermint-2"
+CHAINID="ethermint_9000-1"
 MONIKER="mymoniker"
 
 ## default port prefixes for ethermintd
@@ -47,14 +47,14 @@ done
 
 set -euxo pipefail
 
-DATA_DIR=$(mktemp -d -t ethermint-datadir.XXXXX)
+DATA_DIR=$(mktemp -d -t ethermint_9000-datadir.XXXXX)
 
 if [[ ! "$DATA_DIR" ]]; then
     echo "Could not create $DATA_DIR"
     exit 1
 fi
 
-DATA_CLI_DIR=$(mktemp -d -t ethermint-cli-datadir.XXXXX)
+DATA_CLI_DIR=$(mktemp -d -t ethermint_9000-cli-datadir.XXXXX)
 
 if [[ ! "$DATA_CLI_DIR" ]]; then
     echo "Could not create $DATA_CLI_DIR"
@@ -92,7 +92,7 @@ start_func() {
     echo "starting ethermint node $i in background ..."
     "$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe \
     --p2p.laddr tcp://$IP_ADDR:$NODE_P2P_PORT"$i" --address tcp://$IP_ADDR:$NODE_PORT"$i" --rpc.laddr tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
-    --evm-rpc.address=$IP_ADDR:$RPC_PORT"$i" \
+    --json-rpc.address=$IP_ADDR:$RPC_PORT"$i" \
     --keyring-backend test --home "$DATA_DIR$i" \
     >"$DATA_DIR"/node"$i".log 2>&1 & disown
     

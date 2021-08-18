@@ -1,4 +1,4 @@
 all:
-	docker build --tag ethermintd/node ethermintnode
+	docker build --no-cache --tag ethermintd/node ../.. -f ethermintnode/Dockerfile
 
 .PHONY: all

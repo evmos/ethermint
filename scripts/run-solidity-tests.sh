@@ -2,8 +2,8 @@
 export GOPATH=~/go
 export PATH=$PATH:$GOPATH/bin
 
-# remove existing daemon and client
-rm -rf ~/.ethermintd*
+# remove existing daemon
+rm -rf ~/.ethermintd
 
 # build ethermint binary
 make install

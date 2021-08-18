@@ -98,6 +98,16 @@ func (tx *AccessListTx) GetGasPrice() *big.Int {
 	return tx.GasPrice.BigInt()
 }
 
+// GetGasTipCap returns the gas price field.
+func (tx *AccessListTx) GetGasTipCap() *big.Int {
+	return tx.GetGasPrice()
+}
+
+// GetGasFeeCap returns the gas price field.
+func (tx *AccessListTx) GetGasFeeCap() *big.Int {
+	return tx.GetGasPrice()
+}
+
 // GetValue returns the tx amount.
 func (tx *AccessListTx) GetValue() *big.Int {
 	if tx.Amount == nil {

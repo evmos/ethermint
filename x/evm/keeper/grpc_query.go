@@ -265,7 +265,7 @@ func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest)
 	bloom, found := k.GetBlockBloom(ctx, req.Height)
 	if !found {
 		// if the bloom is not found, query the transient store at the current height
-		k.ctx = ctx
+		k.WithContext(ctx)
 		bloomInt := k.GetBlockBloomTransient()
 
 		if bloomInt.Sign() == 0 {
@@ -378,9 +378,11 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, k.tracer)
+
 	// pass true means execute in query mode, which don't do actual gas refund.
 	res, err := k.ApplyMessage(evm, msg, ethCfg, true)
+	k.ctxStack.RevertAll()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -443,16 +445,15 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	executable := func(gas uint64) (bool, *types.MsgEthereumTxResponse, error) {
 		args.Gas = (*hexutil.Uint64)(&gas)
 
-		// Execute the call in an isolated context
-		sandboxCtx, _ := ctx.CacheContext()
-		k.WithContext(sandboxCtx)
+		// Reset to the initial context
+		k.WithContext(ctx)
 
 		msg := args.ToMessage(req.GasCap)
-		evm := k.NewEVM(msg, ethCfg, params, coinbase)
+		evm := k.NewEVM(msg, ethCfg, params, coinbase, k.tracer)
 		// pass true means execute in query mode, which don't do actual gas refund.
 		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
 
-		k.WithContext(ctx)
+		k.ctxStack.RevertAll()
 
 		if err != nil {
 			if errors.Is(stacktrace.RootCause(err), core.ErrIntrinsicGas) {
