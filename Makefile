@@ -271,16 +271,27 @@ docs-serve:
 	yarn && \
 	yarn run serve
 
-# This builds a docs site for each branch/tag in `./docs/versions`
-# and copies each site to a version prefixed path. The last entry inside
-# the `versions` file will be the default root index.html.
-build-docs:
 # Build the site into docs/.vuepress/dist
+build-docs:
 	@$(MAKE) docs-tools-stamp && \
 	cd docs && \
 	yarn && \
 	yarn run build
-.PHONY: docs-serve build-docs
+
+# This builds a docs site for each branch/tag in `./docs/versions`
+# and copies each site to a version prefixed path. The last entry inside
+# the `versions` file will be the default root index.html.
+build-docs-versioned:
+	@$(MAKE) docs-tools-stamp && \
+	cd docs && \
+	while read -r branch path_prefix; do \
+		(git checkout $${branch} && npm install && VUEPRESS_BASE="/$${path_prefix}/" npm run build) ; \
+		mkdir -p ~/output/$${path_prefix} ; \
+		cp -r .vuepress/dist/* ~/output/$${path_prefix}/ ; \
+		cp ~/output/$${path_prefix}/index.html ~/output ; \
+	done < versions ;
+
+.PHONY: docs-serve build-docs build-docs-versioned
 
 ###############################################################################
 ###                           Tests & Simulation                            ###
