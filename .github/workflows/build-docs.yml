@@ -21,7 +21,7 @@ jobs:
         id: git_diff
         with:
           PATTERNS: |
-            docs/
+            docs/*
           SUFFIX_FILTER: |
             .md
       - name: Install dependencies and build docs 🧱
