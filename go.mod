@@ -52,7 +52,7 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
 	google.golang.org/genproto v0.0.0-20210816143620-e15ff196659d
 	google.golang.org/grpc v1.40.0
 	gopkg.in/yaml.v2 v2.4.0
