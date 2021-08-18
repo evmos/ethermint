@@ -724,7 +724,7 @@ func (suite *KeeperTestSuite) deployTestContract(owner common.Address, supply *b
 
 	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
 		Args:   args,
-		GasCap: uint64(ethermint.DefaultRPCGasLimit),
+		GasCap: 25_000_000,
 	})
 	suite.Require().NoError(err)
 
@@ -805,7 +805,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
 			suite.SetupTest()
-			gasCap = ethermint.DefaultRPCGasLimit
+			gasCap = 25_000_000
 			tc.malleate()
 
 			args, err := json.Marshal(&args)
