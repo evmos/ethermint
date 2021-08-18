@@ -13,16 +13,15 @@ jobs:
     name: Check docs build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 🛎️
       - uses: actions/checkout@v2.3.4
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Install dependencies and build docs 🧱
       - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
           SUFFIX_FILTER: |
             .md
+      - name: Install dependencies and build docs 🧱
         run: |
           make build-docs
