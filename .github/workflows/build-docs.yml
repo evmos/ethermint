@@ -7,8 +7,7 @@ on:
 
 jobs:
   check-docs-build:
-    if: ${{ github.event.label.name == 'Type: Docs' }}
-
+    if: contains(github.event.label.name, 'Docs' )
     name: Check docs build
     runs-on: ubuntu-latest
     steps:
