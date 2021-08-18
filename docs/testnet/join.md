@@ -33,7 +33,13 @@ In the `config` directory, the most important files for configuration are `app.t
 
 ### Copy the Genesis File
 
-Check the genesis file from the [`testnets`](https://github.com/tharsis/testnets) repository and copy it over to the directory `~/.ethermintd/config/genesis.json`
+Check the genesis file from the [`testnets`](https://github.com/tharsis/testnets) repository and copy it over to the `config` directory: `~/.ethermintd/config/genesis.json`.
+
+Then verify the correctness of the genesis configuration file:
+
+```bash
+ethermintd validate-genesis
+```
 
 ### Add Seed Nodes
 
@@ -53,11 +59,13 @@ Edit the file located in `~/.ethermintd/config/config.toml` and the `seeds` to t
 seeds = ""
 ```
 
-Validate genesis and start the Ethermint network
+:::tip
+For more information on seeds and peers, you can the Tendermint [P2P documentation](https://docs.tendermint.com/master/spec/p2p/peer.html).
+:::
 
-```bash
-ethermintd validate-genesis
-```
+#### Start testnet
+
+The final step is to [start the nodes](./../quickstart/run_node#start-node). Once enough voting power (+2/3) from the genesis validators is up-and-running, the testnet will start producing blocks.
 
 ```bash
 ethermintd start
