@@ -13,7 +13,7 @@ This document describes the lifecycle of a transaction from creation to committe
 <!-- TODO: rewrite. This is not a lifecycle doc -->
 ## Routing
 
-Ethermint needs to parse and handle transactions routed for both the EVM and for the Cosmos hub. We
+Ethermint needs to parse and handle transactions routed for both the EVM and for Cosmos SDK modules. We
 attempt to achieve this by mimicking [geth's](https://github.com/ethereum/go-ethereum) `Transaction`
 structure and treat it as a unique Cosmos SDK message type. An Ethereum transaction is a single
 [`sdk.Msg`](https://godoc.org/github.com/cosmos/cosmos-sdk/types#Msg). All relevant Ethereum

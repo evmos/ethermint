@@ -100,6 +100,13 @@ For more information on `gentx`, use the following command:
 ethermintd gentx --help
 ```
 
+### Collecting `gentx`
+
+By default, the genesis file do not contain any `gentxs`. A `gentx` is a transaction that bonds
+staking token present in the genesis file under `accounts` to a validator, essentially creating a
+validator at genesis. The chain will start as soon as more than 2/3rds of the validators (weighted
+by voting power) that are the recipient of a valid `gentx` come online after `genesis_time`.
+
 A `gentx` can be added manually to the genesis file, or via the following command:
 
 ```bash
@@ -107,7 +114,7 @@ A `gentx` can be added manually to the genesis file, or via the following comman
 ethermintd collect-gentxs
 ```
 
-This command will add all the `gentxs` stored in `~/.gaia/config/gentx` to the genesis file.
+This command will add all the `gentxs` stored in `~/.ethermintd/config/gentx` to the genesis file.
 
 ### Run Testnet
 

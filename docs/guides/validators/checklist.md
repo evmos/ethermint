@@ -1,11 +1,14 @@
-
 <!--
-order: 5
+order: 4
 -->
 
-# Validator Security
+# Validator Security Checklist
 
-## Checklist
+ Conduct a security checklist survey to go through the security measures of a validator {synopsis}
+
+## Pre-requisite Readings
+
+- [Validator Security](./security.md) {prereq}
 
 ## Conduct Survey on General Controls of Hosting Data Centre
 

@@ -63,9 +63,42 @@ seeds = ""
 For more information on seeds and peers, you can the Tendermint [P2P documentation](https://docs.tendermint.com/master/spec/p2p/peer.html).
 :::
 
-#### Start testnet
+### Start testnet
 
 The final step is to [start the nodes](./../quickstart/run_node#start-node). Once enough voting power (+2/3) from the genesis validators is up-and-running, the testnet will start producing blocks.
+
+```bash
+ethermintd start
+```
+
+## Upgrading Your Node
+
+> NOTE: These instructions are for full nodes that have ran on previous versions of and would like to upgrade to the latest testnet.
+
+### Reset Data
+
+:::warning
+If the version <new_version> you are upgrading to is not breaking from the previous one, you **should not** reset the data. If this is the case you can skip to [Restart](#restart)
+:::
+
+First, remove the outdated files and reset the data.
+
+```bash
+rm $HOME/.ethermintd/config/addrbook.json $HOME/.ethermintd/config/genesis.json
+ethermintd unsafe-reset-all
+```
+
+Your node is now in a pristine state while keeping the original `priv_validator.json` and `config.toml`. If you had any sentry nodes or full nodes setup before,
+your node will still try to connect to them, but may fail if they haven't also
+been upgraded.
+
+::: danger Warning
+Make sure that every node has a unique `priv_validator.json`. Do not copy the `priv_validator.json` from an old node to multiple new nodes. Running two nodes with the same `priv_validator.json` will cause you to double sign.
+:::
+
+### Restart
+
+To restart your node, just type:
 
 ```bash
 ethermintd start
