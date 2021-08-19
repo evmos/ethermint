@@ -378,7 +378,8 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, k.tracer)
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 
 	// pass true means execute in query mode, which don't do actual gas refund.
 	res, err := k.ApplyMessage(evm, msg, ethCfg, true)
@@ -449,7 +450,9 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		k.WithContext(ctx)
 
 		msg := args.ToMessage(req.GasCap)
-		evm := k.NewEVM(msg, ethCfg, params, coinbase, k.tracer)
+
+		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+		evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 		// pass true means execute in query mode, which don't do actual gas refund.
 		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
 
