@@ -10,7 +10,7 @@ localKeyAddr=0x7cb61d4117ae31a12e393a1cfa3bac666481d02e
 user1Addr=0xc6fe5d33615a1c52c08018c47e8bc53646a0e101
 user2Addr=0x963ebdf2e1f8db8707d05fc75bfeffba1b5bac17
 
-CHAINID="ethermint-1337"
+CHAINID="ethermint_9000-1"
 
 # build ethermint binary
 make install

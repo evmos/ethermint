@@ -8,6 +8,7 @@ const (
 	AttributeKeyRecipient       = "recipient"
 	AttributeKeyTxHash          = "txHash"
 	AttributeKeyEthereumTxHash  = "ethereumTxHash"
+	AttributeKeyTxType          = "txType"
 	// tx failed in eth vm execution
 	AttributeKeyEthereumTxFailed = "ethereumTxFailed"
 	AttributeValueCategory       = ModuleName

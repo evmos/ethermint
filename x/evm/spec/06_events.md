@@ -11,10 +11,13 @@ interface).
 
 ## MsgEthereumTx
 
-| Type     | Attribute Key | Attribute Value |
-|----------|---------------|-----------------|
-| ethereum | `"amount"`    | `{amount}`      |
-| ethereum | `"recipient"` | `{eth_address}` |
-| message  | `"sender"`    | `{eth_address}` |
-| message  | `"action"`    | `"ethereum"`    |
-| message  | `"module"`    | `"evm"`         |
+| Type        | Attribute Key      | Attribute Value         |
+|-------------|--------------------|-------------------------|
+| ethereum_tx | `"amount"`         | `{amount}`              |
+| ethereum_tx | `"recipient"`      | `{hex_address}`         |
+| ethereum_tx | `"contract"`       | `{hex_address}`         |
+| ethereum_tx | `"txHash"`         | `{tendermint_hex_hash}` |
+| ethereum_tx | `"ethereumTxHash"` | `{hex_hash}`            |
+| message     | `"sender"`         | `{eth_address}`         |
+| message     | `"action"`         | `"ethereum"`            |
+| message     | `"module"`         | `"evm"`                 |

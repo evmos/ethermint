@@ -21,7 +21,7 @@ FROM alpine
 
 # Install ca-certificates
 RUN apk add --update ca-certificates jq
-WORKDIR /root
+WORKDIR /
 
 # Copy over binaries from the build-env
 COPY --from=build-env /go/src/github.com/tharsis/ethermint/build/ethermintd /usr/bin/ethermintd

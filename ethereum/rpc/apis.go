@@ -10,6 +10,7 @@ import (
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/miner"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/net"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/personal"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/txpool"
@@ -27,6 +28,7 @@ const (
 	NetNamespace      = "net"
 	TxPoolNamespace   = "txpool"
 	DebugNamespace    = "debug"
+	MinerNamespace    = "miner"
 
 	apiVersion = "1.0"
 )
@@ -34,11 +36,9 @@ const (
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
-	ethAPI := eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock)
+	evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
 
 	var apis []rpc.API
-
 	// remove duplicates
 	selectedAPIs = unique(selectedAPIs)
 
@@ -49,7 +49,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
-					Service:   ethAPI,
+					Service:   eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock),
 					Public:    true,
 				},
 				rpc.API{
@@ -82,7 +82,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: PersonalNamespace,
 					Version:   apiVersion,
-					Service:   personal.NewAPI(ctx.Logger, ethAPI),
+					Service:   personal.NewAPI(ctx.Logger, clientCtx, evmBackend),
 					Public:    true,
 				},
 			)
@@ -101,6 +101,15 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
 					Service:   debug.NewInternalAPI(ctx),
+					Public:    true,
+				},
+			)
+		case MinerNamespace:
+			apis = append(apis,
+				rpc.API{
+					Namespace: MinerNamespace,
+					Version:   apiVersion,
+					Service:   miner.NewMinerAPI(ctx, clientCtx, evmBackend),
 					Public:    true,
 				},
 			)

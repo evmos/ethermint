@@ -38,6 +38,7 @@ import (
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/server"
 	servercfg "github.com/tharsis/ethermint/server/config"
+	srvflags "github.com/tharsis/ethermint/server/flags"
 	ethermint "github.com/tharsis/ethermint/types"
 )
 
@@ -115,7 +116,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		txCommand(),
 		ethermintclient.KeyCommands(app.DefaultNodeHome),
 	)
-	rootCmd = server.AddTxFlags(rootCmd)
+	rootCmd = srvflags.AddTxFlags(rootCmd)
 
 	// add rosetta
 	rootCmd.AddCommand(sdkserver.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Marshaler))

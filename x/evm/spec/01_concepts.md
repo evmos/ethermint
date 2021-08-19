@@ -15,14 +15,6 @@ The `StateDB` interface from geth represents an EVM database for full state quer
 contracts and accounts. The concrete type that fulfills this interface on Ethermint is the
 `CommitStateDB`.
 
-## State Object
-
-A `stateObject` represents an Ethereum account which is being modified.
-The usage pattern is as follows:
-
-* First you need to obtain a state object.
-* Account values can be accessed and modified through the object.
-
 ## Genesis State
 
 The `x/evm` module `GenesisState` defines the state necessary for initializing the chain from a previous exported height.
