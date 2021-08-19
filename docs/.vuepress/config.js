@@ -94,6 +94,16 @@ module.exports = {
               directory: true,
               path: '/guides/tools'
             },
+            {
+              title: 'Validators',
+              directory: true,
+              path: '/guides/validators'
+            },
+            {
+              title: 'Key Management System',
+              directory: true,
+              path: '/guides/kms'
+            },
           ]
         },
         {
@@ -115,9 +125,14 @@ module.exports = {
           title: 'Testnet',
           children: [
             {
-              title: 'Guides',
-              directory: true,
-              path: '/testnet'
+              title: 'Join Testnet',
+              directory: false,
+              path: '/testnet/join'
+            },
+            {
+              title: 'Deploy Node on Cloud',
+              directory: false,
+              path: '/testnet/cloud_providers'
             },
           ]
         },

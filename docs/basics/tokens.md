@@ -34,7 +34,3 @@ This matches Ethereum denomination of:
 
 Ethermint is compatible with ERC20 tokens and other non-fungible token standards (EIP721, EIP1155)
 that are natively supported by the EVM.
-
-## Next {hide}
-
-Learn about the supported [JSON-RPC](./json_rpc.md) methods on Ethermint {hide}

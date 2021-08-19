@@ -104,7 +104,7 @@ We are using [Algolia](https://www.algolia.com) to power full-text search. This 
    1. Directly Edit API docs manually: `client/lcd/swagger-ui/swagger.yaml`.
    2. Edit API docs within the [Swagger Editor](https://editor.swagger.io/). Please refer to this [document](https://swagger.io/docs/specification/2-0/basic-structure/) for the correct structure in `.yaml`.
 3. Download `swagger.yaml` and replace the old `swagger.yaml` under fold `client/lcd/swagger-ui`.
-4. Compile gaiacli
+4. Compile ethermintd
 
    ```bash
    make install
