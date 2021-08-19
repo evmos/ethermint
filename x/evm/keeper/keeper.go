@@ -229,16 +229,36 @@ func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
 // GetAllTxLogs return all the transaction logs from the store.
 func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.KeyPrefixLogs)
+	iterator := sdk.KVStorePrefixIterator(store, types.KeyPrefixTxLogNum)
 	defer iterator.Close()
 
 	txsLogs := []types.TransactionLogs{}
 	for ; iterator.Valid(); iterator.Next() {
-		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshal(iterator.Value(), &txLog)
+		logNum := new(big.Int).SetBytes(iterator.Value())
+		txHash := iterator.Key()
+
+		var txlogs types.TransactionLogs
+		txlogs.Hash = common.Bytes2Hex(txHash)
+
+		s := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+		for i := int64(0); i < logNum.Int64(); i++ {
+			var key []byte
+			key = append(key, txHash...)
+			key = append(key, new(big.Int).SetInt64(i).Bytes()...)
+
+			logbz := s.Get(key)
+			if logbz == nil {
+				// TODO: error handle?
+				continue
+			}
+
+			var txLog types.Log
+			k.cdc.MustUnmarshal(logbz, &txLog)
+			txlogs.Logs = append(txlogs.Logs, &txLog)
+		}
 
 		// add a new entry
-		txsLogs = append(txsLogs, txLog)
+		txsLogs = append(txsLogs, txlogs)
 	}
 	return txsLogs
 }
@@ -246,33 +266,87 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 // GetLogs returns the current logs for a given transaction hash from the KVStore.
 // This function returns an empty, non-nil slice if no logs are found.
 func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixTxLogNum)
 
 	bz := store.Get(txHash.Bytes())
-	if len(bz) == 0 {
+	if bz == nil {
 		return []*ethtypes.Log{}
 	}
 
-	var logs types.TransactionLogs
-	k.cdc.MustUnmarshal(bz, &logs)
+	logNum := new(big.Int).SetBytes(bz)
+	if logNum.Int64() == 0 {
+		return []*ethtypes.Log{}
+	}
 
-	return logs.EthLogs()
+	store = prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+	var logs []*ethtypes.Log
+	for i := 0; i < int(logNum.Int64()); i++ {
+		var key []byte
+		key = append(key, txHash.Bytes()...)
+
+		key = append(key, new(big.Int).SetInt64(int64(i)).Bytes()...)
+		logbz := store.Get(key)
+
+		if logbz == nil {
+			// TODO: how to handle this?
+			continue
+		}
+
+		var log types.Log
+		k.cdc.MustUnmarshal(logbz, &log)
+
+		logs = append(logs, log.ToEthereum())
+	}
+	return logs
 }
 
 // SetLogs sets the logs for a transaction in the KVStore.
 func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+	var s prefix.Store
+	len := len(logs)
+	if len > 0 {
+		s = prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixTxLogNum)
+		s.Set(txHash.Bytes(), new(big.Int).SetInt64(int64(len)).Bytes())
+	}
 
-	txLogs := types.NewTransactionLogsFromEth(txHash, logs)
-	bz := k.cdc.MustMarshal(&txLogs)
+	s = prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+	for index, log := range logs {
+		k.SetLog(txHash, log, s, int64(index))
+	}
+}
 
-	store.Set(txHash.Bytes(), bz)
+// SetLog sets the log for a transaction in the KVStore.
+func (k Keeper) SetLog(txHash common.Hash, log *ethtypes.Log, s prefix.Store, index int64) {
+	txIndexLog := types.NewLogFromEth(log)
+	bz := k.cdc.MustMarshal(txIndexLog)
+
+	var key []byte
+	key = append(key, txHash.Bytes()...)
+	key = append(key, new(big.Int).SetInt64(index).Bytes()...)
+	s.Set(key, bz)
 }
 
 // DeleteLogs removes the logs from the KVStore. It is used during journal.Revert.
 func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTxLogNum)
+
+	b := store.Get(txHash.Bytes())
+	if b == nil {
+		return
+	}
+
+	txLogCnt := new(big.Int).SetBytes(b)
+
 	store.Delete(txHash.Bytes())
+
+	store = prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
+	for i := int64(0); i < txLogCnt.Int64(); i++ {
+		var key []byte
+		key = append(key, txHash.Bytes()...)
+		key = append(key, new(big.Int).SetInt64(i).Bytes()...)
+
+		store.Delete(key)
+	}
 }
 
 // GetLogSizeTransient returns EVM log index on the current block.
