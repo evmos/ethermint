@@ -32,7 +32,7 @@ func (k *Keeper) NewEVM(
 	config *params.ChainConfig,
 	params types.Params,
 	coinbase common.Address,
-	tracer string,
+	tracer vm.Tracer,
 ) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
@@ -53,12 +53,10 @@ func (k *Keeper) NewEVM(
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer string) vm.Config {
-	cfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
-
+func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
 	return vm.Config{
 		Debug:       k.debug,
-		Tracer:      types.NewTracer(tracer, msg, cfg, k.Ctx().BlockHeight(), k.debug),
+		Tracer:      tracer,
 		NoRecursion: false, // TODO: consider disabling recursion though params
 		ExtraEips:   params.EIPs(),
 	}
@@ -161,7 +159,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	}
 
 	// create an ethereum EVM instance and run the message
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, k.tracer)
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 
 	txHash := tx.Hash()
 
