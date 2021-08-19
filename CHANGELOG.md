@@ -71,6 +71,7 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 
 ### Improvements
 
+* (server) [tharsis#343](https://github.com/tharsis/ethermint/pull/343) Define a wrap tendermint logger `Handler` go-ethereum's `root` logger.
 * (rpc) [tharsis#457](https://github.com/tharsis/ethermint/pull/457) Configure RPC gas cap through app config.
 * (evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) Support different `Tracer` types for the EVM.
 * (deps) [tharsis#427](https://github.com/tharsis/ethermint/pull/427) Bump ibc-go to [`v1.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v1.0.0)
