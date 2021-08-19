@@ -1,9 +1,10 @@
 package evm
 
 import (
+	"fmt"
 	"runtime/debug"
 
-	log "github.com/xlab/suplog"
+	tmlog "github.com/tendermint/tendermint/libs/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -14,7 +15,7 @@ import (
 // NewHandler returns a handler for Ethermint type messages.
 func NewHandler(server types.MsgServer) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (result *sdk.Result, err error) {
-		defer Recover(&err)
+		defer Recover(ctx.Logger(), &err)
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
@@ -31,15 +32,21 @@ func NewHandler(server types.MsgServer) sdk.Handler {
 	}
 }
 
-func Recover(err *error) {
+func Recover(logger tmlog.Logger, err *error) {
 	if r := recover(); r != nil {
 		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
-			log.WithError(e).Errorln("evm msg handler panicked with an error")
-			log.Debugln(string(debug.Stack()))
+			logger.Error(
+				"message handler panicked",
+				"error", e,
+				"stack trace", string(debug.Stack()),
+			)
 		} else {
-			log.Errorln(r)
+			logger.Error(
+				"message handler panicked",
+				"recover", fmt.Sprintf("%v", r),
+			)
 		}
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/spf13/cobra"
+
 	"google.golang.org/grpc"
 
 	abciserver "github.com/tendermint/tendermint/abci/server"
@@ -40,8 +41,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethlog "github.com/ethereum/go-ethereum/log"
-
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
+	"github.com/tharsis/ethermint/log"
 	"github.com/tharsis/ethermint/server/config"
 	srvflags "github.com/tharsis/ethermint/server/flags"
 )
@@ -368,7 +369,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-	ethlog.Root().SetHandler(ethlog.StdoutHandler)
+	ethlog.Root().SetHandler(log.NewHandler(logger))
 
 	var (
 		httpSrv     *http.Server
