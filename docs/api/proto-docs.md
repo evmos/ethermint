@@ -38,6 +38,8 @@
     - [QueryAccountResponse](#ethermint.evm.v1.QueryAccountResponse)
     - [QueryBalanceRequest](#ethermint.evm.v1.QueryBalanceRequest)
     - [QueryBalanceResponse](#ethermint.evm.v1.QueryBalanceResponse)
+    - [QueryBaseFeeRequest](#ethermint.evm.v1.QueryBaseFeeRequest)
+    - [QueryBaseFeeResponse](#ethermint.evm.v1.QueryBaseFeeResponse)
     - [QueryBlockBloomRequest](#ethermint.evm.v1.QueryBlockBloomRequest)
     - [QueryBlockBloomResponse](#ethermint.evm.v1.QueryBlockBloomResponse)
     - [QueryBlockLogsRequest](#ethermint.evm.v1.QueryBlockLogsRequest)
@@ -48,7 +50,6 @@
     - [QueryCosmosAccountResponse](#ethermint.evm.v1.QueryCosmosAccountResponse)
     - [QueryParamsRequest](#ethermint.evm.v1.QueryParamsRequest)
     - [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse)
-    - [QueryStaticCallRequest](#ethermint.evm.v1.QueryStaticCallRequest)
     - [QueryStaticCallResponse](#ethermint.evm.v1.QueryStaticCallResponse)
     - [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest)
     - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
@@ -163,9 +164,8 @@ instead of *big.Int.
 | `istanbul_block` | [string](#string) |  | Istanbul switch block (nil no fork, 0 = already on istanbul) |
 | `muir_glacier_block` | [string](#string) |  | Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated) |
 | `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
-| `yolo_v3_block` | [string](#string) |  | YOLO v3: Gas repricings |
-| `ewasm_block` | [string](#string) |  | EWASM switch block (nil no fork, 0 = already activated) |
 | `catalyst_block` | [string](#string) |  | Catalyst switch block (nil = no fork, 0 = already on catalyst) |
+| `london_block` | [string](#string) |  | London switch block (nil = no fork, 0 = already on london) |
 
 
 
@@ -210,6 +210,7 @@ Params defines the EVM module parameters
 | `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
 | `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
 | `chain_config` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
+| `no_base_fee` | [bool](#bool) |  | no base fee forces the EIP-1559 base fee to 0 (needed for 0 price calls) |
 
 
 
@@ -580,6 +581,32 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 
 
 
+<a name="ethermint.evm.v1.QueryBaseFeeRequest"></a>
+
+### QueryBaseFeeRequest
+QueryBaseFeeRequest defines the request type for querying the EIP1559 base
+fee.
+
+
+
+
+
+
+<a name="ethermint.evm.v1.QueryBaseFeeResponse"></a>
+
+### QueryBaseFeeResponse
+BaseFeeResponse returns the EIP1559 base fee.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `base_fee` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="ethermint.evm.v1.QueryBlockBloomRequest"></a>
 
 ### QueryBlockBloomRequest
@@ -734,22 +761,6 @@ QueryParamsResponse defines the response type for querying x/evm parameters.
 
 
 
-<a name="ethermint.evm.v1.QueryStaticCallRequest"></a>
-
-### QueryStaticCallRequest
-QueryStaticCallRequest defines static call request
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  | address is the ethereum contract hex address to for static call. |
-| `input` | [bytes](#bytes) |  | static call input generated from abi |
-
-
-
-
-
-
 <a name="ethermint.evm.v1.QueryStaticCallResponse"></a>
 
 ### QueryStaticCallResponse
@@ -884,7 +895,7 @@ Query defines the gRPC querier service.
 | `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1/block_logs/{hash}|
 | `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1/params|
-| `StaticCall` | [QueryStaticCallRequest](#ethermint.evm.v1.QueryStaticCallRequest) | [QueryStaticCallResponse](#ethermint.evm.v1.QueryStaticCallResponse) | StaticCall queries the static call value of x/evm module. | GET|/ethermint/evm/v1/static_call|
+| `BaseFee` | [QueryBaseFeeRequest](#ethermint.evm.v1.QueryBaseFeeRequest) | [QueryBaseFeeResponse](#ethermint.evm.v1.QueryBaseFeeResponse) | BaseFee queries the base fee of the parent block of the current block. | GET|/ethermint/evm/v1/base_fee|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
 
