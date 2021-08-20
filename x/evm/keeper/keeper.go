@@ -301,7 +301,12 @@ func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
 	len := len(logs)
 
 	if len > 65535 {
-		//TODO: to log a warning, but still allows to store the logs?
+		k.Logger(k.Ctx()).Error(
+			"cannot store more than 65535 logs in a transaction",
+			"txhash", txHash.String(),
+			"log-length", len,
+		)
+		return
 	} else if len > 0 {
 		s := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixTxLogCount)
 
