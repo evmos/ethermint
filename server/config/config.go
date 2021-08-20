@@ -114,8 +114,6 @@ type JSONRPCConfig struct {
 	API []string `mapstructure:"api"`
 	// Enable defines if the EVM RPC server should be enabled.
 	Enable bool `mapstructure:"enable"`
-	// EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
-	EnableUnsafeCORS bool `mapstructure:"enable-unsafe-cors"`
 	// GasCap is the global gas cap for eth-call variants.
 	GasCap uint64 `mapstructure:"gas-cap"`
 }
@@ -142,12 +140,11 @@ func (c JSONRPCConfig) Validate() error {
 // DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
 func DefaultJSONRPCConfig() *JSONRPCConfig {
 	return &JSONRPCConfig{
-		Enable:           true,
-		API:              GetDefaultAPINamespaces(),
-		Address:          DefaultJSONRPCAddress,
-		WsAddress:        DefaultJSONRPCWsAddress,
-		EnableUnsafeCORS: false,
-		GasCap:           DefaultGasCap,
+		Enable:    true,
+		API:       GetDefaultAPINamespaces(),
+		Address:   DefaultJSONRPCAddress,
+		WsAddress: DefaultJSONRPCWsAddress,
+		GasCap:    DefaultGasCap,
 	}
 }
 
@@ -170,12 +167,11 @@ func GetConfig(v *viper.Viper) Config {
 			Tracer: v.GetString("evm.tracer"),
 		},
 		JSONRPC: JSONRPCConfig{
-			Enable:           v.GetBool("json-rpc.enable"),
-			API:              v.GetStringSlice("json-rpc.api"),
-			Address:          v.GetString("json-rpc.address"),
-			WsAddress:        v.GetString("json-rpc.ws-address"),
-			EnableUnsafeCORS: v.GetBool("json-rpc.enable-unsafe-cors"),
-			GasCap:           v.GetUint64("json-rpc.gas-cap"),
+			Enable:    v.GetBool("json-rpc.enable"),
+			API:       v.GetStringSlice("json-rpc.api"),
+			Address:   v.GetString("json-rpc.address"),
+			WsAddress: v.GetString("json-rpc.ws-address"),
+			GasCap:    v.GetUint64("json-rpc.gas-cap"),
 		},
 	}
 }

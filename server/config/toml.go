@@ -32,9 +32,6 @@ ws-address = "{{ .JSONRPC.WsAddress }}"
 # Example: "eth,txpool,personal,net,debug,web3"
 api = "{{range $index, $elmt := .JSONRPC.API}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
 
-# EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk)
-enable-unsafe-cors = "{{ .JSONRPC.EnableUnsafeCORS }}"
-
 # GasCap sets a cap on gas that can be used in eth_call/estimateGas (0=infinite). Default: 25,000,000.
 gas-cap = {{ .JSONRPC.GasCap }}
 `

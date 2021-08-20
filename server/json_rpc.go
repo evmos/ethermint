@@ -41,7 +41,7 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr strin
 	r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
 
 	handlerWithCors := cors.Default()
-	if config.JSONRPC.EnableUnsafeCORS {
+	if config.API.EnableUnsafeCORS {
 		handlerWithCors = cors.AllowAll()
 	}
 
