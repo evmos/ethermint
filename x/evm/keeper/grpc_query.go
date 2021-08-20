@@ -240,10 +240,6 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 		if txLog.BlockHash == req.Hash {
 			if accumulate {
-				if logs[txLog.TxHash] == nil {
-					logs[txLog.TxHash] = []*types.Log{}
-				}
-
 				logs[txLog.TxHash] = append(logs[txLog.TxHash], &txLog)
 			}
 			return true, nil
