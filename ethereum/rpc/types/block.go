@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"math"
 	"math/big"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/spf13/cast"
