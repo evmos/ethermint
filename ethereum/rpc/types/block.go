@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"math"
 	"math/big"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
 
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/spf13/cast"
@@ -151,17 +152,17 @@ func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
 			}
 			bnh.BlockHash = &hash
 			return nil
-		} else {
-			blckNum, err := hexutil.DecodeUint64(input)
-			if err != nil {
-				return err
-			}
-			if blckNum > math.MaxInt64 {
-				return fmt.Errorf("blocknumber too high")
-			}
-			bn := BlockNumber(blckNum)
-			bnh.BlockNumber = &bn
-			return nil
 		}
+
+		blckNum, err := hexutil.DecodeUint64(input)
+		if err != nil {
+			return err
+		}
+		if blckNum > math.MaxInt64 {
+			return fmt.Errorf("blocknumber too high")
+		}
+		bn := BlockNumber(blckNum)
+		bnh.BlockNumber = &bn
+		return nil
 	}
 }
