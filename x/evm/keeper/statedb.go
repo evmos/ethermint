@@ -609,9 +609,17 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 	k.IncreaseLogSizeTransient()
 
 	s := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixTxLogCount)
-	bi := new(big.Int).SetBytes(s.Get(log.TxHash.Bytes()))
-	s.Set(log.TxHash.Bytes(), new(big.Int).SetInt64(bi.Int64()+1).Bytes())
-	k.SetLog(log.TxHash, log, prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs), bi.Int64())
+	txLogCount := types.BytesToUint16(s.Get(log.TxHash.Bytes()))
+	if txLogCount == 65535 {
+		k.Logger(k.Ctx()).Error(
+			"failed to add log due to the log size limit",
+			"tx-hash-ethereum", log.TxHash.Hex(),
+			"log-index", int(log.Index),
+		)
+		return
+	}
+	s.Set(log.TxHash.Bytes(), types.Uint16ToBytes(txLogCount+1))
+	k.SetLog(log.TxHash, log, prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs), txLogCount)
 
 	k.Logger(k.Ctx()).Debug(
 		"log added",
