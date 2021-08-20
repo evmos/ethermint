@@ -108,7 +108,7 @@ func BytesToUint16(bz []byte) uint16 {
 	if l == 0 {
 		return 0
 	} else if l == 1 {
-		return binary.BigEndian.Uint16([]byte{0x00, bz[0]})
+		return uint16(bz[0])
 	}
 
 	return binary.BigEndian.Uint16(bz)
