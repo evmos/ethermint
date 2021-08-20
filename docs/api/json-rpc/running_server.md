@@ -36,8 +36,19 @@ ethermintd start --json-rpc.gas-cap 0
 
 ## CORS
 
-If accessing the RPC from a browser, CORS will need to be enabled with the appropriate domain set. Otherwise, JavaScript calls are limit by the same-origin policy and requests will fail:
+If accessing the RPC from a browser, CORS will need to be enabled with the appropriate domain set. Otherwise, JavaScript calls are limit by the same-origin policy and requests will fail.
 
-```bash
-ethermintd start --json-rpc.enable-unsafe-cors
+The CORS setting can be updated from the `app.toml`
+
+```toml
+###############################################################################
+###                           API Configuration                             ###
+###############################################################################
+
+[api]
+
+# ...
+
+# EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk).
+enabled-unsafe-cors = true # default false
 ```
