@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
@@ -86,4 +87,29 @@ func BinSearch(lo uint64, hi uint64, executable func(uint64) (bool, *MsgEthereum
 		}
 	}
 	return hi, nil
+}
+
+// Uint16ToBytes transfer value to variable size []byte
+func Uint16ToBytes(v uint16) []byte {
+	bz := []byte{0x00, 0x00}
+	binary.BigEndian.PutUint16(bz, v)
+
+	if v < 256 {
+		return bz[1:]
+	}
+
+	return bz
+}
+
+// BytesToUint16 transfer []byte to uint16.
+// Note: If the bytes length greater than two, the value lower than 256 will be returned.
+func BytesToUint16(bz []byte) uint16 {
+	l := len(bz)
+	if l == 0 {
+		return 0
+	} else if l == 1 {
+		return binary.BigEndian.Uint16([]byte{0x00, bz[0]})
+	}
+
+	return binary.BigEndian.Uint16(bz)
 }
