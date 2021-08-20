@@ -69,7 +69,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 	suite.app = app.Setup(checkTx)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{
 		Height:          1,
-		ChainID:         "ethermint-1",
+		ChainID:         "ethermint_9000-1",
 		Time:            time.Now().UTC(),
 		ProposerAddress: suite.consAddress.Bytes(),
 	})

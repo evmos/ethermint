@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CHAINID="ethermint-1337"
+CHAINID="ethermint_9000-1"
 MONIKER="localtestnet"
 
 # localKey address 0x7cb61d4117ae31a12e393a1cfa3bac666481d02e
@@ -43,4 +43,4 @@ ethermintd collect-gentxs
 ethermintd validate-genesis
 
 # Start the node (remove the --pruning=nothing flag if historical queries are not needed)
-ethermintd start --pruning=nothing --rpc.unsafe --keyring-backend test --trace --log_level info --evm-rpc.api eth,txpool,personal,net,debug,web3
+ethermintd start --pruning=nothing --rpc.unsafe --keyring-backend test --trace --log_level info --json-rpc.api eth,txpool,personal,net,debug,web3

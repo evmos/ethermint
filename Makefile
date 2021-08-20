@@ -131,9 +131,6 @@ docker-build:
 	mkdir -p ./build/
 	docker cp ethermint:/usr/bin/ethermintd ./build/
 
-docker-localnet:
-	docker build -f ./networks/local/ethermintnode/Dockerfile . -t ethermintd/node
-
 $(MOCKS_DIR):
 	mkdir -p $(MOCKS_DIR)
 
@@ -268,18 +265,33 @@ godocs:
 	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/tharsis/ethermint/types"
 	godoc -http=:6060
 
+# Start docs site at localhost:8080
+docs-serve:
+	@cd docs && \
+	yarn && \
+	yarn run serve
+
+# Build the site into docs/.vuepress/dist
+build-docs:
+	@$(MAKE) docs-tools-stamp && \
+	cd docs && \
+	yarn && \
+	yarn run build
+
 # This builds a docs site for each branch/tag in `./docs/versions`
 # and copies each site to a version prefixed path. The last entry inside
 # the `versions` file will be the default root index.html.
-build-docs:
-	@cd docs && \
+build-docs-versioned:
+	@$(MAKE) docs-tools-stamp && \
+	cd docs && \
 	while read -r branch path_prefix; do \
 		(git checkout $${branch} && npm install && VUEPRESS_BASE="/$${path_prefix}/" npm run build) ; \
 		mkdir -p ~/output/$${path_prefix} ; \
 		cp -r .vuepress/dist/* ~/output/$${path_prefix}/ ; \
 		cp ~/output/$${path_prefix}/index.html ~/output ; \
 	done < versions ;
-.PHONY: build-docs
+
+.PHONY: docs-serve build-docs build-docs-versioned
 
 ###############################################################################
 ###                           Tests & Simulation                            ###
@@ -477,52 +489,60 @@ proto-update-deps:
 ###                                Localnet                                 ###
 ###############################################################################
 
-# Run a 4-node testnet locally
-build-docker-local-ethermint:
+# Build image for a local testnet
+localnet-build:
 	@$(MAKE) -C networks/local
 
-# Run a 4-node testnet locally
+# Start a 4-node testnet locally
 localnet-start: localnet-stop
 ifeq ($(OS),Windows_NT)
-	mkdir build &
-	@$(MAKE) docker-localnet
+	mkdir localnet-setup &
+	@$(MAKE) localnet-build
 
-	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --keyring-backend=test"
+	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "./ethermintd testnet --v 4 -o /ethermint --keyring-backend=test --ip-addresses ethermintdnode0,ethermintdnode1,ethermintdnode2,ethermintdnode3"
 	docker-compose up -d
 else
-	mkdir -p ./build/
-	@$(MAKE) docker-localnet
+	mkdir -p localnet-setup
+	@$(MAKE) localnet-build
 
-	if ! [ -f build/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd testnet --v 4 -o /ethermint --keyring-backend=test"; fi
+	if ! [ -f localnet-setup/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/localnet-setup:/ethermint:Z ethermintd/node "./ethermintd testnet --v 4 -o /ethermint --keyring-backend=test --ip-addresses ethermintdnode0,ethermintdnode1,ethermintdnode2,ethermintdnode3"; fi
 	docker-compose up -d
 endif
 
+# Stop testnet
 localnet-stop:
 	docker-compose down
 
-# clean testnet
+# Clean testnet
 localnet-clean:
 	docker-compose down
-	sudo rm -rf build/*
+	sudo rm -rf localnet-setup
 
- # reset testnet
+ # Reset testnet
 localnet-unsafe-reset:
 	docker-compose down
 ifeq ($(OS),Windows_NT)
-	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node0/ethermintd"
-	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node1/ethermintd"
-	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node2/ethermintd"
-	@docker run --rm -v $(CURDIR)/build\ethermint\Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node3/ethermintd"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node0\ethermitd:ethermint\Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node1\ethermitd:ethermint\Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node2\ethermitd:ethermint\Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node3\ethermitd:ethermint\Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
 else
-	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node0/ethermintd"
-	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node1/ethermintd"
-	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node2/ethermintd"
-	@docker run --rm -v $(CURDIR)/build:/ethermint:Z ethermintd/node "ethermintd unsafe-reset-all --home=/ethermint/node3/ethermintd"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node0/ethermitd:/ethermint:Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node1/ethermitd:/ethermint:Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node2/ethermitd:/ethermint:Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node3/ethermitd:/ethermint:Z ethermintd/node "./ethermintd unsafe-reset-all --home=/ethermint"
 endif
+
+# Clean testnet
+localnet-show-logstream:
+	docker-compose logs --tail=1000 -f
 
 .PHONY: build-docker-local-ethermint localnet-start localnet-stop
 
-# release
+###############################################################################
+###                                Releasing                                ###
+###############################################################################
+
 PACKAGE_NAME:=github.com/tharsis/ethermint
 GOLANG_CROSS_VERSION  = v1.16.4
 release-dry-run:

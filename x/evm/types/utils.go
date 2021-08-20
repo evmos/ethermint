@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 
-	log "github.com/xlab/suplog"
-
 	"github.com/gogo/protobuf/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,7 +17,6 @@ var EmptyCodeHash = crypto.Keccak256(nil)
 func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 	var txMsgData sdk.TxMsgData
 	if err := proto.Unmarshal(in, &txMsgData); err != nil {
-		log.WithError(err).Errorln("failed to unmarshal TxMsgData")
 		return nil, err
 	}
 

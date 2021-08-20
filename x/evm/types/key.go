@@ -89,11 +89,6 @@ func StateKey(address ethcmn.Address, key []byte) []byte {
 	return append(AddressStoragePrefix(address), key...)
 }
 
-// KeyHashTxReceipt returns a key for accessing tx receipt data by hash.
-func KeyHashTxReceipt(hash ethcmn.Hash) []byte {
-	return append(KeyPrefixHashTxReceipt, hash.Bytes()...)
-}
-
 // KeyAddressStorage returns the key hash to access a given account state. The composite key
 // (address + hash) is hashed using Keccak256.
 func KeyAddressStorage(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {

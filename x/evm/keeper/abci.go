@@ -13,17 +13,15 @@ import (
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
-// BeginBlock sets the block hash -> block height map for the previous block height
-// and resets the Bloom filter and the transaction count to 0.
+// BeginBlock sets the sdk Context and EIP155 chain id to the Keeper.
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 	k.WithContext(ctx)
 	k.WithChainID(ctx)
 }
 
-// EndBlock updates the accounts and commits state objects to the KV Store, while
-// deleting the empty ones. It also sets the bloom filers for the request block to
-// the store. The EVM end block logic doesn't update the validator set, thus it returns
+// EndBlock also retrieves the bloom filter value from the transient store and commits it to the
+// KVStore. The EVM end block logic doesn't update the validator set, thus it returns
 // an empty slice.
 func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
@@ -42,7 +40,7 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 
 	k.WithContext(ctx)
 
-	k.ctx.EventManager().EmitEvent(sdk.NewEvent(
+	k.Ctx().EventManager().EmitEvent(sdk.NewEvent(
 		"block_gas",
 		sdk.NewAttribute("height", fmt.Sprintf("%d", ctx.BlockHeight())),
 		sdk.NewAttribute("amount", fmt.Sprintf("%d", ctx.BlockGasMeter().GasConsumedToLimit())),

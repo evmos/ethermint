@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/armon/go-metrics"
@@ -18,6 +19,10 @@ import (
 
 var _ types.MsgServer = &Keeper{}
 
+// EthereumTx implements the gRPC MsgServer interface. It receives a transaction which is then
+// executed (i.e applied) against the go-ethereum EVM. The provided SDK Context is set to the Keeper
+// so that it can implements and call the StateDB methods without receiving it as a function
+// parameter.
 func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.TypeMsgEthereumTx)
 
@@ -27,7 +32,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	sender := msg.From
 	tx := msg.AsTransaction()
 
-	var labels []metrics.Label
+	labels := []metrics.Label{telemetry.NewLabel("tx_type", fmt.Sprintf("%d", tx.Type()))}
 	if tx.To() == nil {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "create"),
@@ -89,6 +94,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, sender),
+			sdk.NewAttribute(types.AttributeKeyTxType, fmt.Sprintf("%d", tx.Type())),
 		),
 	})
 

@@ -7,8 +7,8 @@ import (
 )
 
 func TestDefaultConfig(t *testing.T) {
-	cfg := DefaultEVMConfig()
-	require.True(t, cfg.Enable)
-	require.Equal(t, cfg.RPCAddress, DefaultEVMAddress)
-	require.Equal(t, cfg.WsAddress, DefaultEVMWSAddress)
+	cfg := DefaultConfig()
+	require.True(t, cfg.JSONRPC.Enable)
+	require.Equal(t, cfg.JSONRPC.Address, DefaultJSONRPCAddress)
+	require.Equal(t, cfg.JSONRPC.WsAddress, DefaultJSONRPCWsAddress)
 }
