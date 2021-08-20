@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,11 +23,69 @@ func (e *EVMBackend) setTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 		return args, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
 
-	if args.GasPrice == nil {
-		// TODO: Suggest a gas price based on the previous included txs
-		args.GasPrice = (*hexutil.Big)(new(big.Int).SetUint64(e.RPCGasCap()))
+	head := e.CurrentHeader()
+	if head == nil {
+		return args, errors.New("latest header is nil")
 	}
 
+	cfg := e.ChainConfig()
+
+	// If user specifies both maxPriorityfee and maxFee, then we do not
+	// need to consult the chain for defaults. It's definitely a London tx.
+	if args.MaxPriorityFeePerGas == nil || args.MaxFeePerGas == nil {
+		// In this clause, user left some fields unspecified.
+		if cfg.IsLondon(head.Number) && args.GasPrice == nil {
+			if args.MaxPriorityFeePerGas == nil {
+				tip, err := e.SuggestGasTipCap()
+				if err != nil {
+					return args, err
+				}
+
+				args.MaxPriorityFeePerGas = (*hexutil.Big)(tip)
+			}
+
+			if args.MaxFeePerGas == nil {
+				gasFeeCap := new(big.Int).Add(
+					(*big.Int)(args.MaxPriorityFeePerGas),
+					new(big.Int).Mul(head.BaseFee, big.NewInt(2)),
+				)
+				args.MaxFeePerGas = (*hexutil.Big)(gasFeeCap)
+			}
+
+			if args.MaxFeePerGas.ToInt().Cmp(args.MaxPriorityFeePerGas.ToInt()) < 0 {
+				return args, fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", args.MaxFeePerGas, args.MaxPriorityFeePerGas)
+			}
+
+		} else {
+			if args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil {
+				return args, errors.New("maxFeePerGas or maxPriorityFeePerGas specified but london is not active yet")
+			}
+
+			if args.GasPrice == nil {
+				price, err := e.SuggestGasTipCap()
+				if err != nil {
+					return args, err
+				}
+
+				if cfg.IsLondon(head.Number) {
+					// The legacy tx gas price suggestion should not add 2x base fee
+					// because all fees are consumed, so it would result in a spiral
+					// upwards.
+					price.Add(price, head.BaseFee)
+				}
+				args.GasPrice = (*hexutil.Big)(price)
+			}
+		}
+	} else {
+		// Both maxPriorityfee and maxFee set by caller. Sanity-check their internal relation
+		if args.MaxFeePerGas.ToInt().Cmp(args.MaxPriorityFeePerGas.ToInt()) < 0 {
+			return args, fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", args.MaxFeePerGas, args.MaxPriorityFeePerGas)
+		}
+	}
+
+	if args.Value == nil {
+		args.Value = new(hexutil.Big)
+	}
 	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
@@ -48,7 +107,7 @@ func (e *EVMBackend) setTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 		}
 
 		if len(input) == 0 {
-			return args, errors.New(`contract creation without any data provided`)
+			return args, errors.New("contract creation without any data provided")
 		}
 	}
 
@@ -61,13 +120,15 @@ func (e *EVMBackend) setTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 		}
 
 		callArgs := evmtypes.TransactionArgs{
-			From:       args.From,
-			To:         args.To,
-			Gas:        args.Gas,
-			GasPrice:   args.GasPrice,
-			Value:      args.Value,
-			Data:       input,
-			AccessList: args.AccessList,
+			From:                 args.From,
+			To:                   args.To,
+			Gas:                  args.Gas,
+			GasPrice:             args.GasPrice,
+			MaxFeePerGas:         args.MaxFeePerGas,
+			MaxPriorityFeePerGas: args.MaxPriorityFeePerGas,
+			Value:                args.Value,
+			Data:                 input,
+			AccessList:           args.AccessList,
 		}
 
 		blockNr := types.NewBlockNumber(big.NewInt(0))

@@ -313,7 +313,10 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	msg := args.ToMessage(req.GasCap)
+	msg, err := args.ToMessage(req.GasCap)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
@@ -392,20 +395,23 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	baseFee := k.GetBaseFee(ctx)
 
 	// Create a helper to check if a gas allowance results in an executable transaction
-	executable := func(gas uint64) (bool, *types.MsgEthereumTxResponse, error) {
+	executable := func(gas uint64) (vmerror bool, rsp *types.MsgEthereumTxResponse, err error) {
 		args.Gas = (*hexutil.Uint64)(&gas)
 
 		// Reset to the initial context
 		k.WithContext(ctx)
 
-		msg := args.ToMessage(req.GasCap)
+		msg, err := args.ToMessage(req.GasCap)
+		if err != nil {
+			return false, nil, err
+		}
 
 		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
 
 		evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
 
 		// pass true means execute in query mode, which don't do actual gas refund.
-		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
+		rsp, err = k.ApplyMessage(evm, msg, ethCfg, true)
 
 		k.ctxStack.RevertAll()
 

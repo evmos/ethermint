@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/params"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -40,6 +41,7 @@ type Backend interface {
 	BlockNumber() (hexutil.Uint64, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
+	CurrentHeader() *ethtypes.Header
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
@@ -51,6 +53,8 @@ type Backend interface {
 	GetCoinbase() (sdk.AccAddress, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	RPCGasCap() uint64
+	ChainConfig() *params.ChainConfig
+	SuggestGasTipCap() (*big.Int, error)
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -283,6 +287,12 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		ethRPCTxs, bloom, validatorAddr, bfRes.BaseFee.BigInt(),
 	)
 	return formattedBlock, nil
+}
+
+// CurrentHeader returns the latest block header
+func (e *EVMBackend) CurrentHeader() *ethtypes.Header {
+	header, _ := e.HeaderByNumber(types.EthLatestBlockNumber)
+	return header
 }
 
 // HeaderByNumber returns the block header identified by height.
@@ -613,4 +623,19 @@ func (e *EVMBackend) GetTransactionCount(address common.Address, blockNum types.
 // RPCGasCap is the global gas cap for eth-call variants.
 func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
+}
+
+// ChainConfig return the ethereum chain configuration
+func (e *EVMBackend) ChainConfig() *params.ChainConfig {
+	params, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		return nil
+	}
+
+	return params.Params.ChainConfig.EthereumConfig(e.chainID)
+}
+
+// SuggestGasTipCap returns the suggested tip cap
+func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
+	return big.NewInt(1), nil
 }

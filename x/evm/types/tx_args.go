@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	math "math"
 	"math/big"
@@ -30,7 +31,7 @@ type TransactionArgs struct {
 	Data  *hexutil.Bytes `json:"data"`
 	Input *hexutil.Bytes `json:"input"`
 
-	// For non-legacy transactions
+	// Introduced by AccessListTxType transaction.
 	AccessList *ethtypes.AccessList `json:"accessList,omitempty"`
 	ChainID    *hexutil.Big         `json:"chainId,omitempty"`
 }
@@ -110,13 +111,18 @@ func (args *TransactionArgs) ToTransaction() *MsgEthereumTx {
 
 // ToMessage converts the arguments to the Message type used by the core evm.
 // This assumes that setTxDefaults has been called.
-func (args *TransactionArgs) ToMessage(globalGasCap uint64) ethtypes.Message {
+func (args *TransactionArgs) ToMessage(globalGasCap uint64) (ethtypes.Message, error) {
 	var (
-		input                                               []byte
-		value, gasPrice, maxFeePerGas, maxPriorityFeePerGas *big.Int
-		addr                                                common.Address
-		gas, nonce                                          uint64
+		input                                 []byte
+		value, gasPrice, gasFeeCap, gasTipCap *big.Int
+		addr                                  common.Address
+		gas, nonce                            uint64
 	)
+
+	// Reject invalid combinations of pre- and post-1559 fee styles
+	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
+		return ethtypes.Message{}, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
+	}
 
 	// Set sender address or use zero address if none specified.
 	if args.From != nil {
@@ -132,7 +138,6 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64) ethtypes.Message {
 		gas = uint64(*args.Gas)
 	}
 	if globalGasCap != 0 && globalGasCap < gas {
-		// log.Warn("Caller gas above allowance, capping", "requested", gas, "cap", globalGasCap)
 		gas = globalGasCap
 	}
 
@@ -145,11 +150,11 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64) ethtypes.Message {
 	}
 
 	if args.MaxFeePerGas != nil {
-		maxFeePerGas = args.MaxFeePerGas.ToInt()
+		gasFeeCap = args.MaxFeePerGas.ToInt()
 	}
 
 	if args.MaxPriorityFeePerGas != nil {
-		maxPriorityFeePerGas = args.MaxPriorityFeePerGas.ToInt()
+		gasTipCap = args.MaxPriorityFeePerGas.ToInt()
 	}
 
 	if args.Data != nil {
@@ -160,6 +165,6 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64) ethtypes.Message {
 		accessList = *args.AccessList
 	}
 
-	msg := ethtypes.NewMessage(addr, args.To, nonce, value, gas, gasPrice, maxFeePerGas, maxPriorityFeePerGas, input, accessList, false)
-	return msg
+	msg := ethtypes.NewMessage(addr, args.To, nonce, value, gas, gasPrice, gasFeeCap, gasTipCap, input, accessList, false)
+	return msg, nil
 }
