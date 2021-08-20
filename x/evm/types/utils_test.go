@@ -98,3 +98,24 @@ func TestBinSearch(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, gas, uint64(0))
 }
+
+func TestUint16ToBytes(t *testing.T) {
+	require.Equal(t, []byte{0x00}, evmtypes.Uint16ToBytes(0))
+	require.Equal(t, []byte{0x01}, evmtypes.Uint16ToBytes(1))
+	require.Equal(t, []byte{0xff}, evmtypes.Uint16ToBytes(255))
+	require.Equal(t, []byte{0x01, 0x00}, evmtypes.Uint16ToBytes(256))
+	require.Equal(t, []byte{0xff, 0xff}, evmtypes.Uint16ToBytes(65535))
+}
+
+func TestBytesToUint16(t *testing.T) {
+	require.Equal(t, uint16(0), evmtypes.BytesToUint16([]byte{}))
+	require.Equal(t, uint16(0), evmtypes.BytesToUint16([]byte{0x00}))
+	require.Equal(t, uint16(0), evmtypes.BytesToUint16([]byte{0x00, 0x00}))
+	require.Equal(t, uint16(0), evmtypes.BytesToUint16([]byte{0x01, 0x00, 0x00}))
+	require.Equal(t, uint16(1), evmtypes.BytesToUint16([]byte{0x01}))
+	require.Equal(t, uint16(1), evmtypes.BytesToUint16([]byte{0x01, 0x00, 0x01}))
+	require.Equal(t, uint16(255), evmtypes.BytesToUint16([]byte{0xff}))
+	require.Equal(t, uint16(256), evmtypes.BytesToUint16([]byte{0x01, 0x00}))
+	require.Equal(t, uint16(65535), evmtypes.BytesToUint16([]byte{0xff, 0xff}))
+	require.Equal(t, uint16(65535), evmtypes.BytesToUint16([]byte{0x01, 0xff, 0xff}))
+}

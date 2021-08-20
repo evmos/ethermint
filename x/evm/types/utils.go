@@ -111,5 +111,5 @@ func BytesToUint16(bz []byte) uint16 {
 		return uint16(bz[0])
 	}
 
-	return binary.BigEndian.Uint16(bz)
+	return binary.BigEndian.Uint16(bz[l-2:])
 }
