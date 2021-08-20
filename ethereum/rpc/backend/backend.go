@@ -10,6 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/server"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -29,6 +30,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/server/config"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -51,6 +53,7 @@ type Backend interface {
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
+	RPCGasCap() uint64
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -62,20 +65,28 @@ type EVMBackend struct {
 	queryClient *types.QueryClient // gRPC query client
 	logger      log.Logger
 	chainID     *big.Int
+	cfg         config.Config
 }
 
 // NewEVMBackend creates a new EVMBackend instance
-func NewEVMBackend(logger log.Logger, clientCtx client.Context) *EVMBackend {
+func NewEVMBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context) *EVMBackend {
 	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
 	}
+
+	appConf, err := config.ParseConfig(ctx.Viper)
+	if err != nil {
+		panic(err)
+	}
+
 	return &EVMBackend{
 		ctx:         context.Background(),
 		clientCtx:   clientCtx,
 		queryClient: types.NewQueryClient(clientCtx),
 		logger:      logger.With("module", "evm-backend"),
 		chainID:     chainID,
+		cfg:         *appConf,
 	}
 }
 
@@ -629,7 +640,8 @@ func (e *EVMBackend) EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.
 	if err != nil {
 		return 0, err
 	}
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
+
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: e.RPCGasCap()}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
@@ -662,4 +674,9 @@ func (e *EVMBackend) GetTransactionCount(address common.Address, blockNum types.
 
 	n := hexutil.Uint64(nonce)
 	return &n, nil
+}
+
+// RPCGasCap is the global gas cap for eth-call variants.
+func (e *EVMBackend) RPCGasCap() uint64 {
+	return e.cfg.JSONRPC.GasCap
 }

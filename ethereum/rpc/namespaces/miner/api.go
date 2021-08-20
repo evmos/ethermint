@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/cosmos/cosmos-sdk/server/config"
+	sdkconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -23,6 +23,7 @@ import (
 
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/server/config"
 )
 
 // API is the miner prefixed set of APIs in the Miner JSON-RPC spec.
@@ -186,7 +187,7 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 	c := sdk.NewDecCoin(unit, sdk.NewIntFromBigInt(gasPrice.ToInt()))
 
 	appConf.SetMinGasPrices(sdk.DecCoins{c})
-	config.WriteConfigFile(api.ctx.Viper.ConfigFileUsed(), appConf)
+	sdkconfig.WriteConfigFile(api.ctx.Viper.ConfigFileUsed(), appConf)
 	api.logger.Info("Your configuration file was modified. Please RESTART your node.", "gas-price", c.String())
 	return true
 }

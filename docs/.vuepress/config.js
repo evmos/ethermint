@@ -94,6 +94,16 @@ module.exports = {
               directory: true,
               path: '/guides/tools'
             },
+            {
+              title: 'Validators',
+              directory: true,
+              path: '/guides/validators'
+            },
+            {
+              title: 'Key Management System',
+              directory: true,
+              path: '/guides/kms'
+            },
           ]
         },
         {
@@ -102,7 +112,7 @@ module.exports = {
             {
               title: 'JSON-RPC',
               directory: true,
-              path: '/api/JSON-RPC'
+              path: '/api/json-rpc'
             },
             {
               title: 'Protobuf Reference',
@@ -115,9 +125,14 @@ module.exports = {
           title: 'Testnet',
           children: [
             {
-              title: 'Guides',
-              directory: true,
-              path: '/testnet'
+              title: 'Join Testnet',
+              directory: false,
+              path: '/testnet/join'
+            },
+            {
+              title: 'Deploy Node on Cloud',
+              directory: false,
+              path: '/testnet/cloud_providers'
             },
           ]
         },
@@ -141,7 +156,7 @@ module.exports = {
             },
             {
               title: 'JSON-RPC API Reference',
-              path: '/api/JSON-RPC/endpoints'
+              path: '/api/json-rpc/endpoints'
             }
           ]
         }
@@ -236,6 +251,10 @@ module.exports = {
       {
         "label": "main",
         "key": "main"
+      },
+      {
+        "label": "v0.5",
+        "key": "v0.5"
       }
     ],
   }

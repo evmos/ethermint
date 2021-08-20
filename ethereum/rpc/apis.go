@@ -5,7 +5,9 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
+
 	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug/tracers"
@@ -37,7 +39,7 @@ const (
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
+	evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
 
 	var apis []rpc.API
 	// remove duplicates

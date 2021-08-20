@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/spf13/cobra"
+
 	"google.golang.org/grpc"
 
 	abciserver "github.com/tendermint/tendermint/abci/server"
@@ -40,8 +41,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethlog "github.com/ethereum/go-ethereum/log"
-
 	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
+	"github.com/tharsis/ethermint/log"
 	"github.com/tharsis/ethermint/server/config"
 	srvflags "github.com/tharsis/ethermint/server/flags"
 )
@@ -143,6 +144,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(srvflags.JSONRPCAddress, config.DefaultJSONRPCAddress, "the JSON-RPC server address to listen on")
 	cmd.Flags().String(srvflags.JSONWsAddress, config.DefaultJSONRPCWsAddress, "the JSON-RPC WS server address to listen on")
 	cmd.Flags().Bool(srvflags.JSONEnableUnsafeCORS, false, "Define if the JSON-RPC server should enabled CORS (unsafe - use it at your own risk)")
+	cmd.Flags().Uint64(srvflags.JSONRPCGasCap, config.DefaultGasCap, "Sets a cap on gas that can be used in eth_call/estimateGas (0=infinite)")
 
 	cmd.Flags().String(srvflags.EVMTracer, config.DefaultEVMTracer, "the EVM tracer type to collect execution traces from the EVM transaction execution (json|struct|access_list|markdown)")
 
@@ -367,7 +369,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-	ethlog.Root().SetHandler(ethlog.StdoutHandler)
+	ethlog.Root().SetHandler(log.NewHandler(logger))
 
 	var (
 		httpSrv     *http.Server

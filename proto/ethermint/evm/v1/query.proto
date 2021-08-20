@@ -1,11 +1,11 @@
 syntax = "proto3";
-package ethermint.evm.v1alpha1;
+package ethermint.evm.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "google/api/annotations.proto";
-import "ethermint/evm/v1alpha1/evm.proto";
-import "ethermint/evm/v1alpha1/tx.proto";
+import "ethermint/evm/v1/evm.proto";
+import "ethermint/evm/v1/tx.proto";
 
 option go_package = "github.com/tharsis/ethermint/x/evm/types";
 
@@ -13,14 +13,14 @@ option go_package = "github.com/tharsis/ethermint/x/evm/types";
 service Query {
   // Account queries an Ethereum account.
   rpc Account(QueryAccountRequest) returns (QueryAccountResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/account/{address}";
+    option (google.api.http).get = "/ethermint/evm/v1/account/{address}";
   }
 
   // CosmosAccount queries an Ethereum account's Cosmos Address.
   rpc CosmosAccount(QueryCosmosAccountRequest)
       returns (QueryCosmosAccountResponse) {
     option (google.api.http).get =
-        "/ethermint/evm/v1alpha1/cosmos_account/{address}";
+        "/ethermint/evm/v1/cosmos_account/{address}";
   }
 
   // ValidatorAccount queries an Ethereum account's from a validator consensus
@@ -28,59 +28,59 @@ service Query {
   rpc ValidatorAccount(QueryValidatorAccountRequest)
       returns (QueryValidatorAccountResponse) {
     option (google.api.http).get =
-        "/ethermint/evm/v1alpha1/validator_account/{cons_address}";
+        "/ethermint/evm/v1/validator_account/{cons_address}";
   }
 
   // Balance queries the balance of a the EVM denomination for a single
   // EthAccount.
   rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/balances/{address}";
+    option (google.api.http).get = "/ethermint/evm/v1/balances/{address}";
   }
 
   // Storage queries the balance of all coins for a single account.
   rpc Storage(QueryStorageRequest) returns (QueryStorageResponse) {
     option (google.api.http).get =
-        "/ethermint/evm/v1alpha1/storage/{address}/{key}";
+        "/ethermint/evm/v1/storage/{address}/{key}";
   }
 
   // Code queries the balance of all coins for a single account.
   rpc Code(QueryCodeRequest) returns (QueryCodeResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/codes/{address}";
+    option (google.api.http).get = "/ethermint/evm/v1/codes/{address}";
   }
 
   // TxLogs queries ethereum logs from a transaction.
   rpc TxLogs(QueryTxLogsRequest) returns (QueryTxLogsResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/tx_logs/{hash}";
+    option (google.api.http).get = "/ethermint/evm/v1/tx_logs/{hash}";
   }
 
   // BlockLogs queries all the ethereum logs for a given block hash.
   rpc BlockLogs(QueryBlockLogsRequest) returns (QueryBlockLogsResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/block_logs/{hash}";
+    option (google.api.http).get = "/ethermint/evm/v1/block_logs/{hash}";
   }
 
   // BlockBloom queries the block bloom filter bytes at a given height.
   rpc BlockBloom(QueryBlockBloomRequest) returns (QueryBlockBloomResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/block_bloom";
+    option (google.api.http).get = "/ethermint/evm/v1/block_bloom";
   }
 
   // Params queries the parameters of x/evm module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/params";
+    option (google.api.http).get = "/ethermint/evm/v1/params";
   }
 
   // StaticCall queries the static call value of x/evm module.
   rpc StaticCall(QueryStaticCallRequest) returns (QueryStaticCallResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/static_call";
+    option (google.api.http).get = "/ethermint/evm/v1/static_call";
   }
 
   // EthCall implements the `eth_call` rpc api
   rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/eth_call";
+    option (google.api.http).get = "/ethermint/evm/v1/eth_call";
   }
 
   // EstimateGas implements the `eth_estimateGas` rpc api
   rpc EstimateGas(EthCallRequest) returns (EstimateGasResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/estimate_gas";
+    option (google.api.http).get = "/ethermint/evm/v1/estimate_gas";
   }
 }
 
