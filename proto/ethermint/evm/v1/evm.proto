@@ -103,21 +103,18 @@ message ChainConfig {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags) = "yaml:\"berlin_block\""
   ];
-  // London switch block (< 0 = no fork, 0 = already on berlin)
-  string london_block = 14 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"london_block\""
-  ];
-  // EWASM switch block (nil no fork, 0 = already activated)
-  string ewasm_block = 15 [
-    (gogoproto.customname) = "EWASMBlock",
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"ewasm_block\""
-  ];
+  // DEPRECATED: EWASM and YOLOV3 block have been deprecated
+  reserved 14, 15;
+  reserved "yolo_v3_block", "ewasm_block";
   // Catalyst switch block (nil = no fork, 0 = already on catalyst)
   string catalyst_block = 16 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags) = "yaml:\"catalyst_block\""
+  ];
+  // London switch block (nil = no fork, 0 = already on london)
+  string london_block = 17 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"london_block\""
   ];
 }
 

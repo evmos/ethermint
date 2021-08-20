@@ -2272,21 +2272,16 @@ paths:
                         title: >-
                           Berlin switch block (nil = no fork, 0 = already on
                           berlin)
-                      london_block:
-                        type: string
-                        title: >-
-                          London switch block (< 0 = no fork, 0 = already on
-                          berlin)
-                      ewasm_block:
-                        type: string
-                        title: >-
-                          EWASM switch block (nil no fork, 0 = already
-                          activated)
                       catalyst_block:
                         type: string
                         title: >-
                           Catalyst switch block (nil = no fork, 0 = already on
                           catalyst)
+                      london_block:
+                        type: string
+                        title: >-
+                          London switch block (nil = no fork, 0 = already on
+                          london)
                     description: >-
                       ChainConfig defines the Ethereum ChainConfig parameters
                       using *sdk.Int values
@@ -13001,15 +12996,12 @@ definitions:
       berlin_block:
         type: string
         title: 'Berlin switch block (nil = no fork, 0 = already on berlin)'
-      london_block:
-        type: string
-        title: 'London switch block (< 0 = no fork, 0 = already on berlin)'
-      ewasm_block:
-        type: string
-        title: 'EWASM switch block (nil no fork, 0 = already activated)'
       catalyst_block:
         type: string
         title: 'Catalyst switch block (nil = no fork, 0 = already on catalyst)'
+      london_block:
+        type: string
+        title: 'London switch block (nil = no fork, 0 = already on london)'
     description: >-
       ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
       values
@@ -13224,15 +13216,12 @@ definitions:
           berlin_block:
             type: string
             title: 'Berlin switch block (nil = no fork, 0 = already on berlin)'
-          london_block:
-            type: string
-            title: 'London switch block (< 0 = no fork, 0 = already on berlin)'
-          ewasm_block:
-            type: string
-            title: 'EWASM switch block (nil no fork, 0 = already activated)'
           catalyst_block:
             type: string
             title: 'Catalyst switch block (nil = no fork, 0 = already on catalyst)'
+          london_block:
+            type: string
+            title: 'London switch block (nil = no fork, 0 = already on london)'
         description: >-
           ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
           values
@@ -13488,15 +13477,12 @@ definitions:
               berlin_block:
                 type: string
                 title: 'Berlin switch block (nil = no fork, 0 = already on berlin)'
-              london_block:
-                type: string
-                title: 'London switch block (< 0 = no fork, 0 = already on berlin)'
-              ewasm_block:
-                type: string
-                title: 'EWASM switch block (nil no fork, 0 = already activated)'
               catalyst_block:
                 type: string
                 title: 'Catalyst switch block (nil = no fork, 0 = already on catalyst)'
+              london_block:
+                type: string
+                title: 'London switch block (nil = no fork, 0 = already on london)'
             description: >-
               ChainConfig defines the Ethereum ChainConfig parameters using
               *sdk.Int values

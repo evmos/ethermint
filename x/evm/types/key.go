@@ -31,9 +31,6 @@ const (
 	prefixLogs
 	prefixCode
 	prefixStorage
-	prefixChainConfig
-	prefixHashTxReceipt
-	prefixBlockGasUsed
 	prefixBaseFee
 )
 
@@ -56,9 +53,6 @@ var (
 	KeyPrefixLogs               = []byte{prefixLogs}
 	KeyPrefixCode               = []byte{prefixCode}
 	KeyPrefixStorage            = []byte{prefixStorage}
-	KeyPrefixChainConfig        = []byte{prefixChainConfig}
-	KeyPrefixHashTxReceipt      = []byte{prefixHashTxReceipt}
-	KeyPrefixBlockGasUsed       = []byte{prefixBlockGasUsed}
 	KeyPrefixBaseFee            = []byte{prefixBaseFee}
 )
 
