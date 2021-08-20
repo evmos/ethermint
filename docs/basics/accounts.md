@@ -56,23 +56,20 @@ Cosmos `sdk.AccAddress`.
 The `ethermintd debug addr <address>` can be used to convert an address between hex and bech32 formats. For example:
 
 ```bash
-ethermintd debug addr eth12uqc42yj77hk64cdr3vsnpkfs6k0pllln7rudt
-    Address: [87 1 138 168 146 247 175 109 87 13 28 89 9 134 201 134 172 240 255 255]
-    Address (hex): 57018AA892F7AF6D570D1C590986C986ACF0FFFF
-    Bech32 Acc: eth12uqc42yj77hk64cdr3vsnpkfs6k0pllln7rudt
-    Bech32 Val: ethvaloper12uqc42yj77hk64cdr3vsnpkfs6k0pllldvagr4
+ethermintd debug addr eth10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
+  Address bytes:  [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
+  Address (hex): 7CB61D4117AE31A12E393A1CFA3BAC666481D02E
+  Address (EIP-55): 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
+  Bech32 Acc: eth10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
+  Bech32 Val: ethvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pw5wdauz
 
-ethermintd debug addr 57018AA892F7af6D570D1c590986c986aCf0fFff
-    Address: [87 1 138 168 146 247 175 109 87 13 28 89 9 134 201 134 172 240 255 255]
-    Address (hex): 57018AA892F7AF6D570D1C590986C986ACF0FFFF
-    Bech32 Acc: eth12uqc42yj77hk64cdr3vsnpkfs6k0pllln7rudt
-    Bech32 Val: ethvaloper12uqc42yj77hk64cdr3vsnpkfs6k0pllldvagr4
+ethermintd debug addr 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
+  Address bytes:  [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
+  Address (hex): 7CB61D4117AE31A12E393A1CFA3BAC666481D02E
+  Address (EIP-55): 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
+  Bech32 Acc: eth10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
+  Bech32 Val: ethvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pw5wdauz
 ```
-
-::: tip
-Add the `0x` prefix to the returned hex address above to represent the Ethereum hex address format. For example:
-`Address (hex): 57018AA892F7AF6D570D1C590986C986ACF0FFFF` implies that `0x57018AA892F7AF6D570D1C590986C986ACF0FFFF` is the Ethereum hex address.
-:::
 
 ### Key output
 
