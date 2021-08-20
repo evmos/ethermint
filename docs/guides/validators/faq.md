@@ -86,7 +86,7 @@ Self-delegation is delegation from a validator to themselves. This amount can be
 
 ### Is there a minimum amount of Photons that must be delegated to be an active (=bonded) validator?
 
-The minimum is `1 aphoton`.
+The minimum is `1 photon`.
 
 ### How will delegators choose their validators?
 
@@ -211,7 +211,7 @@ If a validator misbehaves, their delegated stake will be partially slashed. Ther
 
 ### Do validators need to self-delegate Photons?
 
-Yes, they do need to self-delegate at least `1 aphoton`. Even though there is no obligation for validators to self-delegate more than `1 aphoton`, delegators should want their validator to have more self-delegated Photons in their staking pool. In other words, validators should have skin in the game.
+Yes, they do need to self-delegate at least `1 photon`. Even though there is no obligation for validators to self-delegate more than `1 photon`, delegators should want their validator to have more self-delegated Photons in their staking pool. In other words, validators should have skin in the game.
 
 In order for delegators to have some guarantee about how much skin-in-the-game their validator has, the latter can signal a minimum amount of self-delegated Photons. If a validator's self-delegation goes below the limit that it predefined, this validator and all of its delegators will unbond.
 
