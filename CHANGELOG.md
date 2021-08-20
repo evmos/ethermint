@@ -71,6 +71,7 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 
 ### Improvements
 
+* (client) [tharsis#450](https://github.com/tharsis/ethermint/issues/450) Add EIP55 hex address support on `debug addr` command.
 * (server) [tharsis#343](https://github.com/tharsis/ethermint/pull/343) Define a wrap tendermint logger `Handler` go-ethereum's `root` logger.
 * (rpc) [tharsis#457](https://github.com/tharsis/ethermint/pull/457) Configure RPC gas cap through app config.
 * (evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) Support different `Tracer` types for the EVM.
