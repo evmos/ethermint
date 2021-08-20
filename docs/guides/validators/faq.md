@@ -26,7 +26,7 @@ Of course, it is possible and encouraged for users to run full-nodes even if the
 
 ### What is a delegator?
 
-Delegators are {Photon} holders who cannot, or do not want to run a validator themselves. {Photon} holders can delegate Photons to a validator and obtain a part of their revenue in exchange (for more detail on how revenue is distributed, see [**What is the incentive to stake?**](#what-is-the-incentive-to-stake?) and [**What are validators commission?**](#what-are-validators-commission?) sections below).
+Delegators are Photon holders who cannot, or do not want to run a validator themselves. Photon holders can delegate Photons to a validator and obtain a part of their revenue in exchange (for more detail on how revenue is distributed, see [**What is the incentive to stake?**](#what-is-the-incentive-to-stake?) and [**What are validators commission?**](#what-are-validators-commission?) sections below).
 
 Because they share revenue with their validators, delegators also share risks. Should a validator misbehave, each of their delegators will be partially slashed in proportion to their delegated stake. This is why delegators should perform due diligence on validators before delegating, as well as spreading their stake over multiple validators.
 
@@ -48,7 +48,7 @@ Any participant in the network can signal that they want to become a validator b
 - **Commission max change rate:** The maximum daily increase of the validator commission. This parameter cannot be changed after `create-validator` is processed.
 - **Minimum self-delegation:** Minimum amount of Photons the validator needs to have bonded at all time. If the validator's self-delegated stake falls below this limit, their entire staking pool will unbond.
 
-Once a validator is created, {Photon} holders can delegate {Photon}s to them, effectively adding stake to their pool. The total stake of an address is the combination of Photons bonded by delegators and Photons self-bonded by the entity which designated themselves.
+Once a validator is created, Photon holders can delegate Photons to them, effectively adding stake to their pool. The total stake of an address is the combination of Photons bonded by delegators and Photons self-bonded by the entity which designated themselves.
 
 Out of all validator candidates that signaled themselves, the 125 with the most total stake are the ones who are designated as validators. If a validator's total stake falls below the top 125 then that validator loses their validator privileges: they don't participate in consensus and generate rewards any more. Over time, the maximum number of validators may be increased via on-chain governance proposal.
 
@@ -146,8 +146,8 @@ Yes, they will. If governance decides so, validators of Ethermint may be require
 
 Each member of a validator's staking pool earns different types of revenue:
 
-- **Block rewards:** Native tokens of applications run by validators (e.g. Photons on Ethermint) are inflated to produce block provisions. These provisions exist to incentivize {Photon} holders to bond their stake, as non-bonded {Photon} will be diluted over time.
-- **Transaction fees:** Ethermint maintains a whitelist of token that are accepted as fee payment. The initial fee token is the `{photon}`.
+- **Block rewards:** Native tokens of applications run by validators (e.g. Photons on Ethermint) are inflated to produce block provisions. These provisions exist to incentivize Photon holders to bond their stake, as non-bonded Photon will be diluted over time.
+- **Transaction fees:** Ethermint maintains a whitelist of token that are accepted as fee payment. The initial fee token is the `photon`.
 
 This total revenue is divided among validators' staking pools according to each validator's weight. Then, within each validator's staking pool the revenue is divided among delegators in proportion to each delegator's stake. A commission on delegators' revenue is applied by the validator before it is distributed.
 
