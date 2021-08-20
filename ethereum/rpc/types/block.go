@@ -108,8 +108,8 @@ func (bn BlockNumber) TmHeight() *int64 {
 
 // BlockNumberOrHash represents a block number or a block hash.
 type BlockNumberOrHash struct {
-	BlockNumber      *BlockNumber `json:"blockNumber,omitempty"`
-	BlockHash        *common.Hash `json:"blockHash,omitempty"`
+	BlockNumber *BlockNumber `json:"blockNumber,omitempty"`
+	BlockHash   *common.Hash `json:"blockHash,omitempty"`
 }
 
 func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
