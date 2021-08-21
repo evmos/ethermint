@@ -24,14 +24,18 @@ const (
 	RouterKey = ModuleName
 )
 
+// prefix bytes for the EVM persistent store
 const (
 	prefixHeightToHeaderHash = iota + 1
 	prefixBloom
 	prefixLogs
 	prefixCode
 	prefixStorage
+	prefixBlockGasUsed
+	prefixBaseFee
 )
 
+// prefix bytes for the EVM transient store
 const (
 	prefixTransientSuicided = iota + 1
 	prefixTransientBloom
@@ -50,8 +54,11 @@ var (
 	KeyPrefixLogs               = []byte{prefixLogs}
 	KeyPrefixCode               = []byte{prefixCode}
 	KeyPrefixStorage            = []byte{prefixStorage}
+	KeyPrefixBlockGasUsed       = []byte{prefixBlockGasUsed}
+	KeyPrefixBaseFee            = []byte{prefixBaseFee}
 )
 
+// Transient Store key prefixes
 var (
 	KeyPrefixTransientSuicided          = []byte{prefixTransientSuicided}
 	KeyPrefixTransientBloom             = []byte{prefixTransientBloom}

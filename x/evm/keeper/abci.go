@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -29,8 +30,21 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	k.WithContext(infCtx)
 
-	k.SetBlockBloom(infCtx, req.Height, ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes()))
+	baseFee := k.CalculateBaseFee(ctx)
+
+	k.SetBaseFee(ctx, baseFee)
+	k.SetBlockGasUsed(ctx)
+
+	bloom := ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes())
+	k.SetBlockBloom(infCtx, req.Height, bloom)
+
 	k.WithContext(ctx)
+
+	k.Ctx().EventManager().EmitEvent(sdk.NewEvent(
+		"block_gas",
+		sdk.NewAttribute("height", fmt.Sprintf("%d", ctx.BlockHeight())),
+		sdk.NewAttribute("amount", fmt.Sprintf("%d", ctx.BlockGasMeter().GasConsumedToLimit())),
+	))
 
 	return []abci.ValidatorUpdate{}
 }

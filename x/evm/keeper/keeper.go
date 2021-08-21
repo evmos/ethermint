@@ -133,6 +133,58 @@ func (k Keeper) ChainID() *big.Int {
 }
 
 // ----------------------------------------------------------------------------
+// Parent Block Gas Used
+// Required by EIP1559 base fee calculation.
+// ----------------------------------------------------------------------------
+
+// GetBlockGasUsed returns the last block gas used value from the store.
+func (k Keeper) GetBlockGasUsed(ctx sdk.Context) uint64 {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.KeyPrefixBlockGasUsed)
+	if len(bz) == 0 {
+		return 0
+	}
+
+	return sdk.BigEndianToUint64(bz)
+}
+
+// SetBlockGasUsed gets the current block gas consumed to the store.
+// CONTRACT: this should be only called during EndBlock.
+func (k Keeper) SetBlockGasUsed(ctx sdk.Context) {
+	if ctx.BlockGasMeter() == nil {
+		k.Logger(ctx).Error("block gas meter is nil when setting block gas used")
+		return
+	}
+
+	store := ctx.KVStore(k.storeKey)
+	gasBz := sdk.Uint64ToBigEndian(ctx.BlockGasMeter().GasConsumedToLimit())
+	store.Set(types.KeyPrefixBlockGasUsed, gasBz)
+}
+
+// ----------------------------------------------------------------------------
+// Parent Base Fee
+// Required by EIP1559 base fee calculation.
+// ----------------------------------------------------------------------------
+
+// GetBlockGasUsed returns the last block gas used value from the store.
+func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.KeyPrefixBaseFee)
+	if len(bz) == 0 {
+		return new(big.Int).SetUint64(types.InitialBaseFee) // TODO: use geth params
+	}
+
+	return new(big.Int).SetBytes(bz)
+}
+
+// SetBlockGasUsed gets the current block gas consumed to the store.
+// CONTRACT: this should be only called during EndBlock.
+func (k Keeper) SetBaseFee(ctx sdk.Context, baseFee *big.Int) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.KeyPrefixBaseFee, baseFee.Bytes())
+}
+
+// ----------------------------------------------------------------------------
 // Block Bloom
 // Required by Web3 API.
 // ----------------------------------------------------------------------------

@@ -260,14 +260,17 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
 
+	refundQuotient := uint64(2)
+
 	if query {
 		// gRPC query handlers don't go through the AnteHandler to deduct the gas fee from the sender or have access historical state.
 		// We don't refund gas to the sender.
 		// For more info, see: https://github.com/tharsis/ethermint/issues/229 and https://github.com/cosmos/cosmos-sdk/issues/9636
-		leftoverGas += k.GasToRefund(msg.Gas() - leftoverGas)
+		gasConsumed := msg.Gas() - leftoverGas
+		leftoverGas += k.GasToRefund(gasConsumed, refundQuotient)
 	} else {
 		// refund gas prior to handling the vm error in order to match the Ethereum gas consumption instead of the default SDK one.
-		leftoverGas, err = k.RefundGas(msg, leftoverGas)
+		leftoverGas, err = k.RefundGas(msg, leftoverGas, refundQuotient)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 		}
@@ -297,10 +300,10 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 }
 
 // GasToRefund calculates the amount of gas the state machine should refund to the sender. It is
-// capped by half of the gas consumed.
-func (k *Keeper) GasToRefund(gasConsumed uint64) uint64 {
-	// Apply refund counter, capped to half of the used gas.
-	refund := gasConsumed / 2
+// capped by the refund quotient value.
+func (k *Keeper) GasToRefund(gasConsumed, refundQuotient uint64) uint64 {
+	// Apply refund counter
+	refund := gasConsumed / refundQuotient
 	availableRefund := k.GetRefund()
 	if refund > availableRefund {
 		return availableRefund
@@ -312,7 +315,7 @@ func (k *Keeper) GasToRefund(gasConsumed uint64) uint64 {
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
-func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error) {
+func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64) (uint64, error) {
 	// safety check: leftover gas after execution should never exceed the gas limit defined on the message
 	if leftoverGas > msg.Gas() {
 		return leftoverGas, stacktrace.Propagate(
@@ -324,7 +327,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 	gasConsumed := msg.Gas() - leftoverGas
 
 	// calculate available gas to refund and add it to the leftover gas amount
-	refund := k.GasToRefund(gasConsumed)
+	refund := k.GasToRefund(gasConsumed, refundQuotient)
 	leftoverGas += refund
 
 	// safety check: leftover gas after refund should never exceed the gas limit defined on the message
