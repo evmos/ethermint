@@ -11,11 +11,11 @@ Learn how to setup and run a validator node {synopsis}
 - [Validator Overview](./overview.md) {prereq}
 - [Full Node Setup](../localnet/single_node.md#manual-localnet) {prereq}
 
-If you plan to use a KMS (key management system), you should go through these steps first: [Using a KMS](./../kms/kms.md).
+If you plan to use a Key Management System (KMS), you should go through these steps first: [Using a KMS](./../kms/kms.md).
 
 ## What is a Validator?
 
-[Validators](./overview.md) are responsible for committing new blocks to the blockchain through voting. A validator's stake is slashed if they become unavailable or sign blocks at the same height. Please read about [Sentry Node Architecture](./validator-faq.md#how-can-validators-protect-themselves-from-denial-of-service-attacks) to protect your node from DDOS attacks and to ensure high-availability.
+[Validators](./overview.md) are responsible for committing new blocks to the blockchain through voting. A validator's stake is slashed if they become unavailable or sign blocks at the same height. Please read about [Sentry Node Architecture](./validator-faq.md#how-can-validators-protect-themselves-from-denial-of-service-attacks) to protect your node from DDoS attacks and to ensure high-availability.
 
 ::: danger Warning
 If you want to become a validator for the Hub's `mainnet`, you should [research security](./security.md).
@@ -70,16 +70,12 @@ When specifying commission parameters, the `commission-max-change-rate` is used 
 :::
 
 ::: tip
-`Min-self-delegation` is a strictly positive integer that represents the minimum amount of self-delegated voting power your validator must always have. A `min-self-delegation` of `1000000` means your validator will never have a self-delegation lower than `1atom`
+`Min-self-delegation` is a strictly positive integer that represents the minimum amount of self-delegated voting power your validator must always have. A `min-self-delegation` of `1000000` means your validator will never have a self-delegation lower than `1 aphoton`
 :::
 
 You can confirm that you are in the validator set by using a third party explorer.
 
 ## Participate in Genesis as a Validator
-
-::: warning
-The genesis ceremony for Ethermint mainnet is closed. Please skip to the next section.
-:::
 
 If you want to participate in genesis as a validator, you need to justify that
 you have some stake at genesis, create one (or multiple) transactions to bond this stake to your validator address, and include this transaction in the genesis file.
