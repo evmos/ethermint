@@ -12,7 +12,7 @@ Ethermint is based on [Tendermint](https://tendermint.com/docs/introduction/what
 
 ### What is 'staking'?
 
-Ethermint is a public Proof-Of-Stake (PoS) blockchain, meaning that the weight of validators is determined by the amount of staking tokens (Photons) bonded as collateral. These Photons can be self-delegated directly by the validator or delegated to them by other Atom holders.
+Ethermint is a public Proof-of-Stake (PoS) blockchain, meaning that the weight of validators is determined by the amount of staking tokens bonded as collateral. The **Photon** is Ethermint's native token. Photons can be self-delegated directly by the validator or delegated to them by other Photon holders.
 
 Any user in the system can declare their intention to become a validator by sending a `create-validator` transaction. From there, they become validator candidates.
 
@@ -26,11 +26,11 @@ Of course, it is possible and encouraged for users to run full-nodes even if the
 
 ### What is a delegator?
 
-Delegators are Atom holders who cannot, or do not want to run a validator themselves. Atom holders can delegate Photons to a validator and obtain a part of their revenue in exchange (for more detail on how revenue is distributed, see [**What is the incentive to stake?**](#what-is-the-incentive-to-stake?) and [**What are validators commission?**](#what-are-validators-commission?) sections below).
+Delegators are Photon holders who cannot, or do not want to run a validator themselves. Photon holders can delegate Photons to a validator and obtain a part of their revenue in exchange (for more detail on how revenue is distributed, see [**What is the incentive to stake?**](#what-is-the-incentive-to-stake?) and [**What are validators commission?**](#what-are-validators-commission?) sections below).
 
 Because they share revenue with their validators, delegators also share risks. Should a validator misbehave, each of their delegators will be partially slashed in proportion to their delegated stake. This is why delegators should perform due diligence on validators before delegating, as well as spreading their stake over multiple validators.
 
-Delegators play a critical role in the system, as they are responsible for choosing validators. Being a delegator is not a passive role: Delegators should actively monitor the actions of their validators and participate in governance. For more, read the [delegator's faq](https://hub.cosmos.network/main/delegators/delegator-faq.html).
+Delegators play a critical role in the system, as they are responsible for choosing validators. Being a delegator is not a passive role: delegators should actively monitor the actions of their validators and participate in governance. For more, read the Cosmos Hub's [delegator's faq](https://hub.cosmos.network/main/delegators/delegator-faq.html).
 
 ## Becoming a Validator
 
@@ -48,9 +48,9 @@ Any participant in the network can signal that they want to become a validator b
 - **Commission max change rate:** The maximum daily increase of the validator commission. This parameter cannot be changed after `create-validator` is processed.
 - **Minimum self-delegation:** Minimum amount of Photons the validator needs to have bonded at all time. If the validator's self-delegated stake falls below this limit, their entire staking pool will unbond.
 
-Once a validator is created, Atom holders can delegate atoms to them, effectively adding stake to their pool. The total stake of an address is the combination of Photons bonded by delegators and Photons self-bonded by the entity which designated themselves.
+Once a validator is created, Photon holders can delegate Photons to them, effectively adding stake to their pool. The total stake of an address is the combination of Photons bonded by delegators and Photons self-bonded by the entity which designated themselves.
 
-Out of all validator candidates that signaled themselves, the 125 with the most total stake are the ones who are designated as validators. They become **validators** If a validator's total stake falls below the top 125 then that validator loses their validator privileges: they don't participate in consensus and generate rewards any more. Over time, the maximum number of validators may be increased via on-chain governance proposal.
+Out of all validator candidates that signaled themselves, the 125 with the most total stake are the ones who are designated as validators. If a validator's total stake falls below the top 125 then that validator loses their validator privileges: they don't participate in consensus and generate rewards any more. Over time, the maximum number of validators may be increased via on-chain governance proposal.
 
 ## Testnet
 
@@ -86,7 +86,7 @@ Self-delegation is delegation from a validator to themselves. This amount can be
 
 ### Is there a minimum amount of Photons that must be delegated to be an active (=bonded) validator?
 
-The minimum is `1 aphoton`.
+The minimum is `1 photon`.
 
 ### How will delegators choose their validators?
 
@@ -109,7 +109,7 @@ No, they do not. Each delegator will value validators based on their own criteri
 
 Validators have two main responsibilities:
 
-- **Be able to constantly run a correct version of the software:**Validators need to make sure that their servers are always online and their private keys are not compromised.
+- **Be able to constantly run a correct version of the software:** Validators need to make sure that their servers are always online and their private keys are not compromised.
 - **Actively participate in governance:** Validators are required to vote on every proposal.
 
 Additionally, validators are expected to be active members of the community. They should always be up-to-date with the current state of the ecosystem so that they can easily adapt to any change.
@@ -146,8 +146,8 @@ Yes, they will. If governance decides so, validators of Ethermint may be require
 
 Each member of a validator's staking pool earns different types of revenue:
 
-- **Block rewards:** Native tokens of applications run by validators (e.g. Photons on Ethermint) are inflated to produce block provisions. These provisions exist to incentivize Atom holders to bond their stake, as non-bonded Atom will be diluted over time.
-- **Transaction fees:** Ethermint maintains a whitelist of token that are accepted as fee payment. The initial fee token is the `atom`.
+- **Block rewards:** Native tokens of applications run by validators (e.g. Photons on Ethermint) are inflated to produce block provisions. These provisions exist to incentivize Photon holders to bond their stake, as non-bonded Photon will be diluted over time.
+- **Transaction fees:** Ethermint maintains a whitelist of token that are accepted as fee payment. The initial fee token is the `photon`.
 
 This total revenue is divided among validators' staking pools according to each validator's weight. Then, within each validator's staking pool the revenue is divided among delegators in proportion to each delegator's stake. A commission on delegators' revenue is applied by the validator before it is distributed.
 
@@ -211,7 +211,7 @@ If a validator misbehaves, their delegated stake will be partially slashed. Ther
 
 ### Do validators need to self-delegate Photons?
 
-Yes, they do need to self-delegate at least `1 atom`. Even though there is no obligation for validators to self-delegate more than `1 atom`, delegators should want their validator to have more self-delegated Photons in their staking pool. In other words, validators should have skin in the game.
+Yes, they do need to self-delegate at least `1 photon`. Even though there is no obligation for validators to self-delegate more than `1 photon`, delegators should want their validator to have more self-delegated Photons in their staking pool. In other words, validators should have skin in the game.
 
 In order for delegators to have some guarantee about how much skin-in-the-game their validator has, the latter can signal a minimum amount of self-delegated Photons. If a validator's self-delegation goes below the limit that it predefined, this validator and all of its delegators will unbond.
 
