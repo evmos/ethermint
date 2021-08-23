@@ -57,7 +57,7 @@ Check the JSON-RPC methods supported on Ethermint. {synopsis}
 | `eth_compileSerpent`                                                              | Eth       |             |                           |
 | `eth_signTransaction`                                                             | Eth       |             |                           |
 | `eth_mining`                                                                      | Eth       | N/A         | Not relevant to Ethermint |
-| [`eth_coinbase`](#eth-coinbase)                                                                    | Eth       | ✔           |                           |
+| [`eth_coinbase`](#eth-coinbase)                                                   | Eth       | ✔           |                           |
 | `eth_hashrate`                                                                    | Eth       | N/A         | Not relevant to Ethermint |
 | `eth_getUncleCountByBlockHash`                                                    | Eth       | N/A         | Not relevant to Ethermint |
 | `eth_getUncleCountByBlockNumber`                                                  | Eth       | N/A         | Not relevant to Ethermint |
@@ -145,11 +145,11 @@ Check the JSON-RPC methods supported on Ethermint. {synopsis}
 | `les_getCheckpointContractAddress`                                                | Les       |             |                           |
 | `miner_getHashrate`                                                               | Miner     | N/A         | Not relevant to Ethermint |
 | `miner_setExtra`                                                                  | Miner     | N/A         | Not relevant to Ethermint |
-| `miner_setGasPrice`                                                               | Miner     | ✔           |                           |
+| [`miner_setGasPrice`](#miner-setgasprice)                                         | Miner     | ✔           |                           |
 | `miner_start`                                                                     | Miner     | N/A         | Not relevant to Ethermint |
 | `miner_stop`                                                                      | Miner     | N/A         | Not relevant to Ethermint |
 | `miner_setGasLimit`                                                               | Miner     | N/A         | Not relevant to Ethermint |
-| `miner_setEtherbase`                                                              | Miner     | ✔           |                           |
+| [`miner_setEtherbase`](#miner-setetherbase)                                       | Miner     | ✔           |                           |
 | `txpool_content`                                                                  | TXPool    | ✔           |                           |
 | `txpool_inspect`                                                                  | TXPool    | ✔           |                           |
 | `txpool_status`                                                                   | TXPool    | ✔           |                           |
@@ -597,7 +597,7 @@ Returns the receipt of a transaction by transaction hash.
 
 Note: Tx Code from Tendermint and the Ethereum receipt status are switched:
 |         | Tendermint | Ethereum |
-| ------- | ---------- | -------- |
+|---------|------------|----------|
 | Success | 0          | 1        |
 | Fail    | 1          | 0        |
 
@@ -992,7 +992,6 @@ Make sure your `ethermintd start` call is not using the flag `minimum-gas-prices
 
 - Hex Gas Price
 
-
 ```json
 // Request
 curl -X POST --data '{"jsonrpc":"2.0","method":"miner_setGasPrice","params":["0x0"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
@@ -1008,7 +1007,6 @@ Sets the etherbase. It changes the wallet where the validator rewards will be de
 #### Parameters
 
 - Account Address
-
 
 ```json
 // Request
