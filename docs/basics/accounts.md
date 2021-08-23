@@ -24,8 +24,8 @@ The root HD path for Ethermint-based accounts is `m/44'/60'/0'/0`.
 [BIP-0173](https://github.com/satoshilabs/slips/blob/master/slip-0173.md) defines a new format for segregated witness output addresses that contains a human-readable part that identifies the Bech32 usage. Ethermint uses the following HRP (human readable prefix) as the base HRP:
 
 | Network   | Mainnet | Testnet | Regtest |
-| --------- | ------- | ------- | ------- |
-| Ethermint | `eth`   | `eth`   |         |
+|-----------|---------|---------|---------|
+| Ethermint | `ethm`  | `ethm`  |         |
 
 There are 3 main types of HRP for the `Addresses`/`PubKeys` available by default on Ethermint:
 
@@ -35,19 +35,19 @@ There are 3 main types of HRP for the `Addresses`/`PubKeys` available by default
 
 |                    | Address bech32 Prefix | Pubkey bech32 Prefix | Curve           | Address byte length | Pubkey byte length |
 |--------------------|-----------------------|----------------------|-----------------|---------------------|--------------------|
-| Accounts           | `eth`                 | `ethpub`             | `eth_secp256k1` | `20`                | `33` (compressed)  |
-| Validator Operator | `ethvaloper`          | `ethvaloperpub`      | `eth_secp256k1` | `20`                | `33` (compressed)  |
-| Consensus Nodes    | `ethvalcons`          | `ethvalconspub`      | `ed25519`       | `20`                | `32`               |
+| Accounts           | `ethm`                | `ethpub`             | `eth_secp256k1` | `20`                | `33` (compressed)  |
+| Validator Operator | `ethmvaloper`         | `ethmvaloperpub`     | `eth_secp256k1` | `20`                | `33` (compressed)  |
+| Consensus Nodes    | `ethmvalcons`         | `ethmvalconspub`     | `ed25519`       | `20`                | `32`               |
 
 ## Address formats for clients
 
-`EthAccount` can be represented in both [Bech32](https://en.bitcoin.it/wiki/Bech32) (`eth1...`) and hex (`0x...`) formats for Ethereum's Web3 tooling compatibility.
+`EthAccount` can be represented in both [Bech32](https://en.bitcoin.it/wiki/Bech32) (`ethm1...`) and hex (`0x...`) formats for Ethereum's Web3 tooling compatibility.
 
 The Bech32 format is the default format for Cosmos-SDK queries and transactions through CLI and REST
 clients. The hex format on the other hand, is the Ethereum `common.Address` representation of a
 Cosmos `sdk.AccAddress`.
 
-- **Address (Bech32)**: `eth14au322k9munkmx5wrchz9q30juf5wjgz2cfqku`
+- **Address (Bech32)**: `ethm14au322k9munkmx5wrchz9q30juf5wjgz2cfqku`
 - **Address ([EIP55](https://eips.ethereum.org/EIPS/eip-55) Hex)**: `0xAF79152AC5dF276D9A8e1E2E22822f9713474902`
 - **Compressed Public Key**: `{"@type":"/ethermint.crypto.v1beta1.ethsecp256k1.PubKey","key":"ApNNebT58zlZxO2yjHiRTJ7a7ufjIzeq5HhLrbmtg9Y/"}`
 
@@ -56,18 +56,18 @@ Cosmos `sdk.AccAddress`.
 The `ethermintd debug addr <address>` can be used to convert an address between hex and bech32 formats. For example:
 
 ```bash
-ethermintd debug addr eth10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
+ethermintd debug addr ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
   Address bytes:  [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
   Address (hex): 7CB61D4117AE31A12E393A1CFA3BAC666481D02E
   Address (EIP-55): 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
-  Bech32 Acc: eth10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
+  Bech32 Acc: ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
   Bech32 Val: ethvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pw5wdauz
 
 ethermintd debug addr 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
   Address bytes:  [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
   Address (hex): 7CB61D4117AE31A12E393A1CFA3BAC666481D02E
   Address (EIP-55): 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
-  Bech32 Acc: eth10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
+  Bech32 Acc: ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
   Bech32 Val: ethvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pw5wdauz
 ```
 
@@ -84,7 +84,7 @@ obtain the addresses and keys as mentioned above,
 ethermintd keys show mykey --bech acc
 - name: mykey
   type: local
-  address: eth1qsklxwt77qrxur494uvw07zjynu03dq9alwh37
+  address: ethm1qsklxwt77qrxur494uvw07zjynu03dq9alwh37
   pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
   mnemonic: ""
 
@@ -126,7 +126,7 @@ ethermintd q auth account $(ethermintd keys show <MYKEY> -a) -o text
 
 ``` bash
 # GET /cosmos/auth/v1beta1/accounts/{address}
-curl -X GET "http://localhost:10337/cosmos/auth/v1beta1/accounts/eth14au322k9munkmx5wrchz9q30juf5wjgz2cfqku" -H "accept: application/json"
+curl -X GET "http://localhost:10337/cosmos/auth/v1beta1/accounts/ethm14au322k9munkmx5wrchz9q30juf5wjgz2cfqku" -H "accept: application/json"
 ```
 
 ### JSON-RPC

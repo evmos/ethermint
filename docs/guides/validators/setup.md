@@ -38,7 +38,7 @@ To run testnet nodes, you will need a machine with the following minimum require
 
 ## Create Your Validator
 
-Your `ethvalconspub` can be used to create a new validator by staking tokens. You can find your validator pubkey by running:
+Your `ethmvalconspub` can be used to create a new validator by staking tokens. You can find your validator pubkey by running:
 
 ```bash
 ethermintd tendermint show-validator
@@ -80,7 +80,7 @@ You can confirm that you are in the validator set by using a third party explore
 If you want to participate in genesis as a validator, you need to justify that
 you have some stake at genesis, create one (or multiple) transactions to bond this stake to your validator address, and include this transaction in the genesis file.
 
-Your `ethvalconspub` can be used to create a new validator by staking tokens. You can find your validator pubkey by running:
+Your `ethmvalconspub` can be used to create a new validator by staking tokens. You can find your validator pubkey by running:
 
 ```bash
 ethermintd tendermint show-validator
