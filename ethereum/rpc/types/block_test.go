@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"testing"
 )
+
 func TestUnmarshalBlockNumberOrHash(t *testing.T) {
 	bnh := new(BlockNumberOrHash)
 
@@ -99,6 +100,3 @@ func TestUnmarshalBlockNumberOrHash(t *testing.T) {
 	}
 
 }
-
-
-
