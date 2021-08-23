@@ -35,6 +35,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### State Machine Breaking
+
+* (app) [tharsis#476](https://github.com/tharsis/ethermint/pull/476) Update Bech32 HRP to `ethm`.
+
 ## [v0.5.0] - 2021-08-20
 
 ### State Machine Breaking
