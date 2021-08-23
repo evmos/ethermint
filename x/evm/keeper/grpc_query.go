@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc/codes"
@@ -491,4 +492,62 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		}
 	}
 	return &types.EstimateGasResponse{Gas: hi}, nil
+}
+
+// TraceTx configures a new tracer according to the provided configuration, and
+// executes the given message in the provided environment. The return value will
+// be tracer dependent.
+func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*types.QueryTraceTxResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
+	params := k.GetParams(ctx)
+
+	coinbase, err := k.GetCoinbaseAddress()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
+	coreMessage, err := req.Msg.AsMessage(signer)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	//Todo set switch statement for custom tracers configuration
+	tracer := types.NewTracer(types.TracerStruct, coreMessage, ethCfg, ctx.BlockHeight(), true)
+
+	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
+
+	k.SetTxHashTransient(ethcmn.HexToHash(req.Msg.Hash))
+	k.SetTxIndexTransient(uint64(req.Index))
+
+	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, false)
+
+	//result, err := core.ApplyMessage(evm, coreMessage, new(core.GasPool).AddGas(coreMessage.Gas()))
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	// Depending on the tracer type, format and return the output.
+	switch tracer := tracer.(type) {
+	case *vm.StructLogger:
+		//TODO Return proper returnValue
+		result := types.ExecutionResult{
+			Gas:         res.GasUsed,
+			Failed:      res.Failed(),
+			ReturnValue: "",
+			StructLogs:  types.FormatLogs(tracer.StructLogs()),
+		}
+		data, err := json.Marshal(result)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		return &types.QueryTraceTxResponse{
+			Data: data,
+		}, nil
+	default:
+		panic(fmt.Sprintf("bad tracer type %T", tracer))
+	}
 }
