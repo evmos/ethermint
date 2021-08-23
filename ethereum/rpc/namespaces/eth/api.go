@@ -905,5 +905,4 @@ func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rp
 	default:
 		return rpctypes.EthLatestBlockNumber, nil
 	}
-
 }
