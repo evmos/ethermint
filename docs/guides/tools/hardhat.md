@@ -45,9 +45,9 @@ $ npm -v
 ...
 ```
 
-:: tip
+::: tip
 If you haven't already, you will also need to install Ethermint if you plan on deploying your smart contracts locally. Check this [document](./../../quickstart/installation.md) for the full instructions.
-::
+:::
 
 ## Create Hardhat Project
 

@@ -21,9 +21,9 @@ First, install the latest Truffle version on your machine globally.
 $ yarn install truffle -g
 ```
 
-:: tip
+::: tip
 If you haven't already, you will also need to install Ethermint if you plan on deploying your smart contracts locally. Check this [document](./../../quickstart/installation.md) for the full instructions.
-::
+:::
 
 ## Create Truffle Project
 
