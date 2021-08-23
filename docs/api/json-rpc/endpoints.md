@@ -982,7 +982,11 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_ecRecover","params":["0
 
 ### `miner_setGasPrice`
 
-Sets the minimal accepted gas price when accepting transactions. Any transactions that are below this limit are excluded from the validator block proposal process.
+Sets the minimal gas price used to accept transactions. Any transaction below this limit is excluded from the validator block proposal process.
+
+This method requires a `node` restart after being called because it changes the configuration file.
+
+Make sure your `ethermintd start` call is not using the flag `minimum-gas-prices` because this value will be used instead of the one set on the configuration file.
 
 #### Parameters
 
@@ -999,7 +1003,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"miner_setGasPrice","params":["0x
 
 ### `miner_setEtherbase`
 
-Sets the etherbase, where validator rewards will go.
+Sets the etherbase. It changes the wallet where the validator rewards will be deposited.
 
 #### Parameters
 
