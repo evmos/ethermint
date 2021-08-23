@@ -29,18 +29,18 @@ The network details are as follows:
 
 :::: tabs
 ::: tab Local Node
-* Network Name: `{{ $themeConfig.project.name }} Local`
-* RPC URL: `{{ $themeConfig.project.rpc_url_local }}`
-* ChainID: `n/a`
-* Symbol (Optional): `{{ $themeConfig.project.ticker }}-LOCAL`
-* Block Explorer (Optional): `n/a`
+- Network Name: `{{ $themeConfig.project.name }} Local`
+- RPC URL: `{{ $themeConfig.project.rpc_url_local }}`
+- ChainID: `n/a`
+- Symbol (Optional): `{{ $themeConfig.project.ticker }}-LOCAL`
+- Block Explorer (Optional): `n/a`
 :::
 ::: tab Testnet
-* Network Name: `{{ $themeConfig.project.name }}`
-* RPC URL: `{{ $themeConfig.project.rpc_url }}`
-* ChainID: `{{ $themeConfig.project.chain_id }}`
-* Symbol (Optional): `{{ $themeConfig.project.ticker }}`
-* Block Explorer (Optional): `{{ $themeConfig.project.block_explorer_url }}`
+- Network Name: `{{ $themeConfig.project.name }}`
+- RPC URL: `{{ $themeConfig.project.rpc_url }}`
+- ChainID: `{{ $themeConfig.project.chain_id }}`
+- Symbol (Optional): `{{ $themeConfig.project.ticker }}`
+- Block Explorer (Optional): `{{ $themeConfig.project.block_explorer_url }}`
 :::
 ::::
 
@@ -53,9 +53,11 @@ MetaMask should now be connected to your local Ethermint node via its web3 RPC, 
 ## Import Existing Account into MetaMask
 
 If you would like to use an existing local account, you can export its private key using the following command:
+
 ```shell
 $ ethermintd keys unsafe-export-eth-key mykey --keyring-backend test
 ```
+
 You should be given the option to `Import Account` under MetaMask's `My Accounts` menu. Upon completing the import, you should see your account's balance.
 
 {IMAGE HERE}

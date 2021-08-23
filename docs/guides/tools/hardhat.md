@@ -19,6 +19,7 @@ Before proceeding, you need to install Node.js (we'll use v16.x) and the npm pac
 
 :::: tabs
 ::: tab Ubuntu
+
 ```shell
 $ curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 
@@ -26,6 +27,7 @@ $ sudo apt install -y nodejs
 ```
 :::
 ::: tab MacOS
+
 ```shell
 # You can use homebrew (https://docs.brew.sh/Installation)
 $ brew install node
@@ -33,10 +35,12 @@ $ brew install node
 # Or you can use nvm (https://github.com/nvm-sh/nvm)
 $ nvm install node
 ```
+
 :::
 ::::
 
 You can verify that everything is installed correctly by querying the version for each package:
+
 ```shell
 $ node -v
 ...
@@ -52,6 +56,7 @@ If you haven't already, you will also need to install Ethermint if you plan on d
 ## Create Hardhat Project
 
 To create a new project, navigate to your project directory and run:
+
 ```shell
 $ npx hardhat
 
@@ -75,6 +80,7 @@ Following the prompts should create a new project structure in your directory. C
 
 :::: tabs
 ::: tab Local Node
+
 ```javascript
 module.exports = {
   defaultNetwork: "local",
@@ -89,8 +95,10 @@ module.exports = {
   ...
 }
 ```
+
 :::
 ::: tab Testnet
+
 ```javascript
 module.exports = {
   defaultNetwork: "testnet",
@@ -105,6 +113,7 @@ module.exports = {
   ...
 }
 ```
+
 :::
 ::::
 
@@ -156,15 +165,19 @@ $ npx hardhat run scripts/sample-script.js
 Hardhat also lets you manually specify a target network via the `--network <your-network>` flag:
 
 :::: tabs
-::: Local Node
+::: tab Local Node
+
 ```shell
 $ npx hardhat run --network {{ $themeConfig.project.rpc_url_local }} scripts/sample-script.js
 ```
+
 :::
-::: Testnet
+::: tab Testnet
+
 ```shell
 $ npx hardhat run --network {{ $themeConfig.project.rpc_url }} scripts/sample-script.js
 ```
+
 :::
 ::::
 
