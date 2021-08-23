@@ -118,31 +118,41 @@ func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
 	e := erased{}
 	err := json.Unmarshal(data, &e)
 	if err == nil {
-		if e.BlockNumber != nil && e.BlockHash != nil {
-			return fmt.Errorf("cannot specify both BlockHash and BlockNumber, choose one or the other")
-		}
-		bnh.BlockNumber = e.BlockNumber
-		bnh.BlockHash = e.BlockHash
-		return nil
+		return bnh.checkUnmarshal(BlockNumberOrHash(e))
 	}
 	var input string
 	err = json.Unmarshal(data, &input)
 	if err != nil {
 		return err
 	}
+	err = bnh.decodeFromString(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bnh *BlockNumberOrHash) checkUnmarshal(e BlockNumberOrHash) error {
+	if e.BlockNumber != nil && e.BlockHash != nil {
+		return fmt.Errorf("cannot specify both BlockHash and BlockNumber, choose one or the other")
+	}
+	bnh.BlockNumber = e.BlockNumber
+	bnh.BlockHash = e.BlockHash
+	return nil
+}
+
+func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 	switch input {
 	case "earliest":
 		bn := EthEarliestBlockNumber
 		bnh.BlockNumber = &bn
-		return nil
 	case "latest":
 		bn := EthLatestBlockNumber
 		bnh.BlockNumber = &bn
-		return nil
 	case "pending":
 		bn := EthPendingBlockNumber
 		bnh.BlockNumber = &bn
-		return nil
 	default:
 		if len(input) == 66 {
 			hash := common.Hash{}
@@ -151,18 +161,18 @@ func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
 				return err
 			}
 			bnh.BlockHash = &hash
-			return nil
+			break
 		}
 
-		blckNum, err := hexutil.DecodeUint64(input)
+		blockNumber, err := hexutil.DecodeUint64(input)
 		if err != nil {
 			return err
 		}
-		if blckNum > math.MaxInt64 {
-			return fmt.Errorf("blocknumber too high")
+		if blockNumber > math.MaxInt64 {
+			return fmt.Errorf("blocknumber %d is too high", blockNumber)
 		}
-		bn := BlockNumber(blckNum)
+		bn := BlockNumber(blockNumber)
 		bnh.BlockNumber = &bn
-		return nil
 	}
+	return nil
 }
