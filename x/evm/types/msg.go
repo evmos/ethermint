@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
@@ -178,6 +179,59 @@ func (msg MsgEthereumTx) GetSignBytes() []byte {
 	panic("must use 'RLPSignBytes' with a chain ID to get the valid bytes to sign")
 }
 
+func ComputeSignBytes(chainID *big.Int, tx *ethtypes.Transaction) ([]byte, error) {
+	if chainID == nil {
+		txrlp, err := rlp.EncodeToBytes([]interface{}{tx.Nonce(), tx.GasPrice(), tx.Gas(), tx.To(), tx.Value(), tx.Data()})
+		if err != nil {
+			return []byte{}, fmt.Errorf("ComputeSignBytes error %v", err)
+		}
+		return txrlp, nil
+
+	}
+	switch tx.Type() {
+	case ethtypes.LegacyTxType:
+		txrlp, err := rlp.EncodeToBytes([]interface{}{
+			tx.Nonce(),
+			tx.GasPrice(),
+			tx.Gas(),
+			tx.To(),
+			tx.Value(),
+			tx.Data(),
+			chainID, uint(0), uint(0),
+		})
+		if err != nil {
+			return []byte{}, fmt.Errorf("ComputeSignBytes error %v", err)
+		}
+		return txrlp, nil
+
+	case ethtypes.AccessListTxType:
+		txrlp, err := rlp.EncodeToBytes([]interface{}{
+			chainID,
+			tx.Nonce(),
+			tx.GasPrice(),
+			tx.Gas(),
+			tx.To(),
+			tx.Value(),
+			tx.Data(),
+			tx.AccessList(),
+		})
+
+		ret := []byte{byte(ethtypes.AccessListTxType)}
+		ret = append(ret, txrlp...)
+		if err != nil {
+			return []byte{}, fmt.Errorf("ComputeSignBytes error %v", err)
+		}
+		return ret, nil
+
+	default:
+		// This _should_ not happen, but in case someone sends in a bad
+		// json struct via RPC, it's probably more prudent to return an
+		// empty hash instead of killing the node with a panic
+		//panic("Unsupported transaction type: %d", tx.typ)
+		return []byte{}, fmt.Errorf("invalid tx to sign")
+	}
+}
+
 // Sign calculates a secp256k1 ECDSA signature and signs the transaction. It
 // takes a keyring signer and the chainID to sign an Ethereum transaction according to
 // EIP155 standard.
@@ -186,15 +240,20 @@ func (msg MsgEthereumTx) GetSignBytes() []byte {
 // The function will fail if the sender address is not defined for the msg or if
 // the sender is not registered on the keyring
 func (msg *MsgEthereumTx) Sign(ethSigner ethtypes.Signer, keyringSigner keyring.Signer) error {
+
 	from := msg.GetFrom()
 	if from.Empty() {
 		return fmt.Errorf("sender address not defined for message")
 	}
 
 	tx := msg.AsTransaction()
-	txHash := ethSigner.Hash(tx)
 
-	sig, _, err := keyringSigner.SignByAddress(from, txHash.Bytes())
+	chainID := ethSigner.ChainID()
+	msgbytes, computesignbyteserr := ComputeSignBytes(chainID, tx)
+	if computesignbyteserr != nil {
+		return computesignbyteserr
+	}
+	sig, _, err := keyringSigner.SignByAddress(from, msgbytes)
 	if err != nil {
 		return err
 	}
