@@ -30,6 +30,9 @@ module.exports = {
       ],
   ],
   base: process.env.VUEPRESS_BASE || '/',
+  plugins: [
+    'vuepress-plugin-element-tabs'
+  ],
   themeConfig: {
     repo: 'tharsis/ethermint',
     docsRepo: 'tharsis/ethermint',

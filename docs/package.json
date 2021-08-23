@@ -29,6 +29,7 @@
     "vuepress-theme-cosmos": "^1.0.182"
   },
   "devDependencies": {
+    "vuepress-plugin-element-tabs": "^0.2.8",
     "watchpack": "^1.7.2"
   },
   "resolutions": {
