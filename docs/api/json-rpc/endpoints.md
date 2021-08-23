@@ -977,3 +977,43 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_ecRecover","params":["0
 // Result
 {"jsonrpc":"2.0","id":1,"result":"0x3b7252d007059ffc82d16d022da3cbf9992d2f70"}
 ```
+
+## Miner Methods
+
+### `miner_setGasPrice`
+
+Sets the minimal gas price used to accept transactions. Any transaction below this limit is excluded from the validator block proposal process.
+
+This method requires a `node` restart after being called because it changes the configuration file.
+
+Make sure your `ethermintd start` call is not using the flag `minimum-gas-prices` because this value will be used instead of the one set on the configuration file.
+
+#### Parameters
+
+- Hex Gas Price
+
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"miner_setGasPrice","params":["0x0"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":true}
+```
+
+### `miner_setEtherbase`
+
+Sets the etherbase. It changes the wallet where the validator rewards will be deposited.
+
+#### Parameters
+
+- Account Address
+
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"miner_setEtherbase","params":["0x3b7252d007059ffc82d16d022da3cbf9992d2f70"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":true}
+```
