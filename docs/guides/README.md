@@ -13,7 +13,9 @@ parent:
   * [Keyring](./keys-wallets/keyring)
   * [Metamask](./keys-wallets/metamask)
 3. Ethereum Tooling
-  * [Truffle](./tools/truffle)
+  * [MetaMask](./tools/metamask)
   * [Remix](./tools/remix)
+  * [Hardhat](./tools/hardhat)
+  * [Truffle](./tools/truffle)
 4. [Validators](./validators/overview)
 5. [Key Management System](./kms/kms)
