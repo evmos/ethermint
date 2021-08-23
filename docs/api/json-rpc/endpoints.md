@@ -977,3 +977,39 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"personal_ecRecover","params":["0
 // Result
 {"jsonrpc":"2.0","id":1,"result":"0x3b7252d007059ffc82d16d022da3cbf9992d2f70"}
 ```
+
+## Miner Methods
+
+### `miner_setGasPrice`
+
+Sets the minimal accepted gas price when accepting transactions. Any transactions that are below this limit are excluded from the validator block proposal process.
+
+#### Parameters
+
+- Hex Gas Price
+
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"miner_setGasPrice","params":["0x0"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":true}
+```
+
+### `miner_setEtherbase`
+
+Sets the etherbase, where validator rewards will go.
+
+#### Parameters
+
+- Account Address
+
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"miner_setEtherbase","params":["0x3b7252d007059ffc82d16d022da3cbf9992d2f70"],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+// Result
+{"jsonrpc":"2.0","id":1,"result":true}
+```
