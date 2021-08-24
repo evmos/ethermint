@@ -46,7 +46,7 @@ module.exports = {
       ticker: 'ETHM',
       rpc_url: '',
       rpc_url_local: 'http://localhost:8545/',
-      chain_id: '',
+      chain_id: '9000',
       block_explorer_url: '',
     },
     logo: {

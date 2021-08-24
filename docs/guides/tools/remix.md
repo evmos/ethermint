@@ -1,5 +1,5 @@
 <!--
-order: 2
+order: 1
 -->
 
 # Remix: Deploying a Smart Contract
@@ -10,7 +10,7 @@ Learn how to deploy a simple Solidity-based smart contract to Ethermint using th
 
 - [Installation](./../../quickstart/installation.md) {prereq}
 - [Run a node](./../../quickstart/run_node.md) {prereq}
-- [Metamask](./metamask.md) {prereq}
+- [MetaMask](../keys-wallets/metamask.md) {prereq}
 
 [Remix](http://remix.ethereum.org/) is an in-browser IDE for [Solidity](https://github.com/ethereum/solidity) smart contracts. In this guide, we will learn how to deploy a contract to a running Ethermint network through Remix and interact with it.
 

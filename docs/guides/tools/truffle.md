@@ -1,5 +1,5 @@
 <!--
-order: 4
+order: 3
 -->
 
 # Truffle: Deploying a Smart Contract
@@ -17,8 +17,8 @@ Learn how to deploy a simple Solidity-based smart contract to Ethermint using th
 
 First, install the latest Truffle version on your machine globally.
 
-```shell
-$ yarn install truffle -g
+```bash
+yarn install truffle -g
 ```
 
 ::: tip
@@ -31,15 +31,15 @@ In this step we will create a simple counter contract. Feel free to skip this st
 
 Create a new directory to host the contracts and initialize it:
 
-```shell
-$ mkdir ethermint-truffle
-$ cd ethermint-truffle
+```console
+mkdir ethermint-truffle
+cd ethermint-truffle
 ```
 
 Initialize the Truffle suite with:
 
-```shell
-$ truffle init
+```bash
+truffle init
 ```
 
 Create `contracts/Counter.sol` containing the following contract:
@@ -66,8 +66,8 @@ contract Counter {
 
 Compile the contract using the `compile` command:
 
-```shell
-$ truffle compile
+```bash
+truffle compile
 ```
 
 Create `test/counter_test.js` containing the following tests in Javascript using [Mocha](https://mochajs.org/):
@@ -109,7 +109,7 @@ This will allow your contract to connect to your Ethermint local node.
 
 Start your local node using the following command on the Terminal
 
-```shell
+```bash
 # from the ~/ethermint/ directory
 $ init.sh
 ```
@@ -122,13 +122,13 @@ For further information on how to run a node, please refer to the [quickstart gu
 
 In the Truffle terminal, migrate the contract using:
 
-```shell
-$ truffle migrate --network development
+```bash
+truffle migrate --network development
 ```
 
 You should see incoming deployment logs in the Ethermint daemon Terminal tab for each transaction (one to deploy `Migrations.sol` and the other to deploy `Counter.sol`).
 
-```shell
+```bash
 $ I[2020-07-15|17:35:59.934] Added good transaction                       module=mempool tx=22245B935689918D332F58E82690F02073F0453D54D5944B6D64AAF1F21974E2 res="&{CheckTx:log:\"[]\" gas_wanted:6721975 }" height=3 total=1
 I[2020-07-15|17:36:02.065] Executed block                               module=state height=4 validTxs=1 invalidTxs=0
 I[2020-07-15|17:36:02.068] Committed state                              module=state height=4 txs=1 appHash=76BA85365F10A59FE24ADCA87544191C2D72B9FB5630466C5B71E878F9C0A111
@@ -139,7 +139,7 @@ I[2020-07-15|17:36:02.981] Added good transaction                       module=m
 
 Now, you can run the Truffle tests using the Ethermint node using the `test` command:
 
-```shell
+```bash
 $ truffle test --network development
 
 Using network 'development'.

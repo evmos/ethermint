@@ -1,5 +1,5 @@
 <!--
-order: 3
+order: 2
 -->
 
 # Hardhat: Deploying a Smart Contract
@@ -20,15 +20,16 @@ Before proceeding, you need to install Node.js (we'll use v16.x) and the npm pac
 :::: tabs
 ::: tab Ubuntu
 
-```shell
-$ curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+```bash
+curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 
-$ sudo apt install -y nodejs
+sudo apt install -y nodejs
 ```
+
 :::
 ::: tab MacOS
 
-```shell
+```bash
 # You can use homebrew (https://docs.brew.sh/Installation)
 $ brew install node
 
@@ -41,7 +42,7 @@ $ nvm install node
 
 You can verify that everything is installed correctly by querying the version for each package:
 
-```shell
+```bash
 $ node -v
 ...
 
@@ -57,7 +58,7 @@ If you haven't already, you will also need to install Ethermint if you plan on d
 
 To create a new project, navigate to your project directory and run:
 
-```shell
+```bash
 $ npx hardhat
 
 888    888                      888 888               888
@@ -119,7 +120,7 @@ module.exports = {
 
 To ensure you are targeting the correct network, you can query for a list of accounts available to you from your default network provider:
 
-```shell
+```bash
 $ npx hardhat accounts
 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
@@ -158,8 +159,8 @@ contract Greeter {
 
 This contract allows you to set and query a string `greeting`. Hardhat also provides a script to deploy smart contracts to a target network; this can be invoked via the following command, targeting your default network:
 
-```shell
-$ npx hardhat run scripts/sample-script.js
+```bash
+npx hardhat run scripts/sample-script.js
 ```
 
 Hardhat also lets you manually specify a target network via the `--network <your-network>` flag:
@@ -167,15 +168,15 @@ Hardhat also lets you manually specify a target network via the `--network <your
 :::: tabs
 ::: tab Local Node
 
-```shell
-$ npx hardhat run --network {{ $themeConfig.project.rpc_url_local }} scripts/sample-script.js
+```bash
+npx hardhat run --network {{ $themeConfig.project.rpc_url_local }} scripts/sample-script.js
 ```
 
 :::
 ::: tab Testnet
 
-```shell
-$ npx hardhat run --network {{ $themeConfig.project.rpc_url }} scripts/sample-script.js
+```bash
+npx hardhat run --network {{ $themeConfig.project.rpc_url }} scripts/sample-script.js
 ```
 
 :::
@@ -183,7 +184,7 @@ $ npx hardhat run --network {{ $themeConfig.project.rpc_url }} scripts/sample-sc
 
 Finally, try running a Hardhat test:
 
-```shell
+```bash
 $ npx hardhat test
 Compiling 1 file with 0.8.4
 Compilation finished successfully
