@@ -160,7 +160,7 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 		bn := EthPendingBlockNumber
 		bnh.BlockNumber = &bn
 	default:
-		// check if the input is a transaction hash
+		// check if the input is a block hash
 		if len(input) == 66 {
 			hash := common.Hash{}
 			err := hash.UnmarshalText([]byte(input))
