@@ -893,16 +893,16 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
 	switch {
 	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
-		return rpctypes.EthLatestBlockNumber, fmt.Errorf("BlockHash and BlockNumber cannot be both nil")
+		return rpctypes.EthEarliestBlockNumber, fmt.Errorf("BlockHash and BlockNumber cannot be both nil")
 	case blockNrOrHash.BlockHash != nil:
 		blockHeader, err := e.backend.HeaderByHash(*blockNrOrHash.BlockHash)
 		if err != nil {
-			return rpctypes.EthLatestBlockNumber, err
+			return rpctypes.EthEarliestBlockNumber, err
 		}
 		return rpctypes.NewBlockNumber(blockHeader.Number), nil
 	case blockNrOrHash.BlockNumber != nil:
 		return *blockNrOrHash.BlockNumber, nil
 	default:
-		return rpctypes.EthLatestBlockNumber, nil
+		return rpctypes.EthEarliestBlockNumber, nil
 	}
 }
