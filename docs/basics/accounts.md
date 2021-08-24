@@ -35,7 +35,7 @@ There are 3 main types of HRP for the `Addresses`/`PubKeys` available by default
 
 |                    | Address bech32 Prefix | Pubkey bech32 Prefix | Curve           | Address byte length | Pubkey byte length |
 |--------------------|-----------------------|----------------------|-----------------|---------------------|--------------------|
-| Accounts           | `ethm`                | `ethpub`             | `eth_secp256k1` | `20`                | `33` (compressed)  |
+| Accounts           | `ethm`                | `ethmpub`             | `eth_secp256k1` | `20`                | `33` (compressed)  |
 | Validator Operator | `ethmvaloper`         | `ethmvaloperpub`     | `eth_secp256k1` | `20`                | `33` (compressed)  |
 | Consensus Nodes    | `ethmvalcons`         | `ethmvalconspub`     | `ed25519`       | `20`                | `32`               |
 
@@ -47,29 +47,40 @@ The Bech32 format is the default format for Cosmos-SDK queries and transactions 
 clients. The hex format on the other hand, is the Ethereum `common.Address` representation of a
 Cosmos `sdk.AccAddress`.
 
-- **Address (Bech32)**: `ethm14au322k9munkmx5wrchz9q30juf5wjgz2cfqku`
-- **Address ([EIP55](https://eips.ethereum.org/EIPS/eip-55) Hex)**: `0xAF79152AC5dF276D9A8e1E2E22822f9713474902`
-- **Compressed Public Key**: `{"@type":"/ethermint.crypto.v1beta1.ethsecp256k1.PubKey","key":"ApNNebT58zlZxO2yjHiRTJ7a7ufjIzeq5HhLrbmtg9Y/"}`
+- **Address (Bech32)**: `ethm1j800cll9vq7l4rxfke2u74mjgkdlzrr0r5mu97`
+- **Address ([EIP55](https://eips.ethereum.org/EIPS/eip-55) Hex)**: `0x91defC7fE5603DFA8CC9B655cF5772459BF10c6f`
+- **Compressed Public Key**: `{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"Aq9WtHGKtvX523b2ptvimGVfp3hZ1GDxVdINYWBM9+Gy"}`
 
 ### Address conversion
 
 The `ethermintd debug addr <address>` can be used to convert an address between hex and bech32 formats. For example:
 
-```bash
-ethermintd debug addr ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
-  Address bytes:  [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
-  Address (hex): 7CB61D4117AE31A12E393A1CFA3BAC666481D02E
-  Address (EIP-55): 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
-  Bech32 Acc: ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
-  Bech32 Val: ethvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pw5wdauz
+:::: tabs
+::: tab Bech32
 
-ethermintd debug addr 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
-  Address bytes:  [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
+```bash
+ethermintd debug addr ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pwtu750w
+  Address bytes: [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
   Address (hex): 7CB61D4117AE31A12E393A1CFA3BAC666481D02E
   Address (EIP-55): 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
-  Bech32 Acc: ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pw2unfju
-  Bech32 Val: ethvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pw5wdauz
+  Bech32 Acc: ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pwtu750w
+  Bech32 Val: ethmvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pwyv5chn
 ```
+
+:::
+::: tab Hex
+
+```bash
+ethermintd debug addr 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
+  Address bytes: [124 182 29 65 23 174 49 161 46 57 58 28 250 59 172 102 100 129 208 46]
+  Address (hex): 7CB61D4117AE31A12E393A1CFA3BAC666481D02E
+  Address (EIP-55): 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
+  Bech32 Acc: ethm10jmp6sgh4cc6zt3e8gw05wavvejgr5pwtu750w
+  Bech32 Val: ethmvaloper10jmp6sgh4cc6zt3e8gw05wavvejgr5pwyv5chn
+```
+
+:::
+::::
 
 ### Key output
 
@@ -80,6 +91,9 @@ The Cosmos SDK Keyring output (i.e `ethermintd keys`) only supports addresses an
 We can use the `keys show` command of `ethermintd` with the flag `--bech <type> (acc|val|cons)` to
 obtain the addresses and keys as mentioned above,
 
+:::: tabs
+::: tab Account
+
 ```bash
 ethermintd keys show mykey --bech acc
 - name: mykey
@@ -87,21 +101,34 @@ ethermintd keys show mykey --bech acc
   address: ethm1qsklxwt77qrxur494uvw07zjynu03dq9alwh37
   pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
   mnemonic: ""
+```
 
+:::
+::: tab Validator
+
+```bash
 ethermintd keys show test --bech val
 - name: mykey
   type: local
-  address: ethvaloper1qsklxwt77qrxur494uvw07zjynu03dq9rdsrlq
-  pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
-  mnemonic: ""
-
-ethermintd keys show test --bech cons
-- name: mykey
-  type: local
-  address: ethvalcons1qsklxwt77qrxur494uvw07zjynu03dq9h7rlnp
+  address: ethmvaloper1qsklxwt77qrxur494uvw07zjynu03dq9rdsrlq
   pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
   mnemonic: ""
 ```
+
+:::
+::: tab Consensus
+
+```bash
+ethermintd keys show test --bech cons
+- name: mykey
+  type: local
+  address: ethmvalcons1qsklxwt77qrxur494uvw07zjynu03dq9h7rlnp
+  pubkey: '{"@type":"/ethermint.crypto.v1.ethsecp256k1.PubKey","key":"A8nbJ3eW9oAb2RNZoS8L71jFMfjk6zVa1UISYgKK9HPm"}'
+  mnemonic: ""
+```
+
+:::
+::::
 
 ## Querying an Account
 
