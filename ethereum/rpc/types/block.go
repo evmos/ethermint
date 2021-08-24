@@ -154,6 +154,7 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 		bn := EthPendingBlockNumber
 		bnh.BlockNumber = &bn
 	default:
+		// check if the input is a transaction hash
 		if len(input) == 66 {
 			hash := common.Hash{}
 			err := hash.UnmarshalText([]byte(input))
@@ -163,7 +164,7 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 			bnh.BlockHash = &hash
 			break
 		}
-
+		// otherwise take the hex string has int64 value
 		blockNumber, err := hexutil.DecodeUint64(input)
 		if err != nil {
 			return err
