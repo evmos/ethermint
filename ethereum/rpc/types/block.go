@@ -26,6 +26,12 @@ const (
 	EthEarliestBlockNumber = BlockNumber(0)
 )
 
+const (
+	BlockParamEarliest = "earliest"
+	BlockParamLatest   = "latest"
+	BlockParamPending  = "pending"
+)
+
 // NewBlockNumber creates a new BlockNumber instance.
 func NewBlockNumber(n *big.Int) BlockNumber {
 	return BlockNumber(n.Int64())
@@ -55,13 +61,13 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	}
 
 	switch input {
-	case "earliest":
+	case BlockParamEarliest:
 		*bn = EthEarliestBlockNumber
 		return nil
-	case "latest":
+	case BlockParamLatest:
 		*bn = EthLatestBlockNumber
 		return nil
-	case "pending":
+	case BlockParamPending:
 		*bn = EthPendingBlockNumber
 		return nil
 	}
@@ -144,13 +150,13 @@ func (bnh *BlockNumberOrHash) checkUnmarshal(e BlockNumberOrHash) error {
 
 func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 	switch input {
-	case "earliest":
+	case BlockParamEarliest:
 		bn := EthEarliestBlockNumber
 		bnh.BlockNumber = &bn
-	case "latest":
+	case BlockParamLatest:
 		bn := EthLatestBlockNumber
 		bnh.BlockNumber = &bn
-	case "pending":
+	case BlockParamPending:
 		bn := EthPendingBlockNumber
 		bnh.BlockNumber = &bn
 	default:
