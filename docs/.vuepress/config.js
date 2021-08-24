@@ -12,24 +12,27 @@ module.exports = {
     },
   },
   head: [
-      [
-          "link",
-          {
-              rel: "stylesheet",
-              href:
-                  "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css",
-          },
-      ],
-      [
-          "link",
-          {
-              rel: "stylesheet",
-              href:
-                  "https://cdn.jsdelivr.net/github-markdown-css/2.2.1/github-markdown.css",
-          },
-      ],
+    [
+      "link",
+      {
+        rel: "stylesheet",
+        href:
+          "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css",
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "stylesheet",
+        href:
+          "https://cdn.jsdelivr.net/github-markdown-css/2.2.1/github-markdown.css",
+      },
+    ],
   ],
   base: process.env.VUEPRESS_BASE || '/',
+  plugins: [
+    'vuepress-plugin-element-tabs'
+  ],
   themeConfig: {
     repo: 'tharsis/ethermint',
     docsRepo: 'tharsis/ethermint',
@@ -37,6 +40,15 @@ module.exports = {
     docsDir: 'docs',
     editLinks: true,
     custom: true,
+    project: {
+      name: 'Ethermint',
+      denom: 'PHOTON',
+      ticker: 'ETHM',
+      rpc_url: '',
+      rpc_url_local: 'http://localhost:8545/',
+      chain_id: '9000',
+      block_explorer_url: '',
+    },
     logo: {
       src: '/ethermint-logo-horizontal-alpha.svg',
     },
@@ -201,50 +213,50 @@ module.exports = {
         {
           service: "linkedin",
           url: "https://www.linkedin.com/company/tharsis-finance/",
-      },
-      {
+        },
+        {
           service: "medium",
           url: "https://medium.com/@tharsis_labs",
-      },
+        },
       ],
       smallprint: 'This website is maintained by Tharsis Labs Ltd.',
       links: [{
-          title: 'Documentation',
-          children: [{
-              title: 'Cosmos SDK Docs',
-              url: 'https://docs.cosmos.network/master/'
-            },
-            {
-              title: 'Ethereum Docs',
-              url: 'https://ethereum.org/developers'
-            },
-            {
-              title: 'Tendermint Core Docs',
-              url: 'https://docs.tendermint.com'
-            }
-          ]
+        title: 'Documentation',
+        children: [{
+          title: 'Cosmos SDK Docs',
+          url: 'https://docs.cosmos.network/master/'
         },
         {
-          title: 'Community',
-          children: [{
-              title: 'Ethermint Community',
-              url: 'https://discord.gg/3ZbxEq4KDu'
-            },
-            {
-              title: 'Ethermint Forum',
-              url: 'https://forum.cosmos.network/c/ethermint'
-            }
-          ]
+          title: 'Ethereum Docs',
+          url: 'https://ethereum.org/developers'
         },
         {
-          title: 'Tharsis',
-          children: [
-            {
-              title: 'Jobs at Tharsis',
-              url: 'https://tharsis.notion.site/Jobs-at-Tharsis-5a1642eb89b34747ae6f2db2d356fc0d'
-            }
-          ]
+          title: 'Tendermint Core Docs',
+          url: 'https://docs.tendermint.com'
         }
+        ]
+      },
+      {
+        title: 'Community',
+        children: [{
+          title: 'Ethermint Community',
+          url: 'https://discord.gg/3ZbxEq4KDu'
+        },
+        {
+          title: 'Ethermint Forum',
+          url: 'https://forum.cosmos.network/c/ethermint'
+        }
+        ]
+      },
+      {
+        title: 'Tharsis',
+        children: [
+          {
+            title: 'Jobs at Tharsis',
+            url: 'https://tharsis.notion.site/Jobs-at-Tharsis-5a1642eb89b34747ae6f2db2d356fc0d'
+          }
+        ]
+      }
       ]
     },
     versions: [
