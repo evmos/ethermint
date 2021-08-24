@@ -63,7 +63,7 @@ Check the JSON-RPC methods supported on Ethermint. {synopsis}
 | `eth_getUncleCountByBlockNumber`                                                  | Eth       | N/A         | Not relevant to Ethermint |
 | `eth_getUncleByBlockHashAndIndex`                                                 | Eth       | N/A         | Not relevant to Ethermint |
 | `eth_getUncleByBlockNumberAndIndex`                                               | Eth       | N/A         | Not relevant to Ethermint |
-| `eth_getProof`                                                                    | Eth       | ✔           |                           |
+| [`eth_getProof`](#eth-getProof)                                                   | Eth       | ✔           |                           |
 | [`eth_subscribe`](#eth-subscribe)                                                 | Websocket | ✔           |                           |
 | [`eth_unsubscribe`](#eth-unsubscribe)                                             | Websocket | ✔           |                           |
 | [`personal_importRawKey`](#personal-importrawkey)                                 | Personal  | ✔           |                           |
