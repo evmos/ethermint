@@ -4,6 +4,8 @@ order: 1
 
 # Overview
 
+Learn about validating on Ethermint {synopsis}
+
 ## Introduction
 
 Ethermint is based on [Tendermint](https://github.com/tendermint/tendermint/blob/master/docs/introduction/what-is-tendermint.md), which relies on a set of validators that are responsible for committing new blocks in the blockchain. These validators participate in the consensus protocol by broadcasting votes which contain cryptographic signatures signed by each validator's private key.
