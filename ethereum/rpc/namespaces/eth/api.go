@@ -891,16 +891,19 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 
 // getBlockNumber returns the BlockNumber from BlockNumberOrHash
 func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
-	var blockNum = rpctypes.EthEarliestBlockNumber
-	if blockNrOrHash.BlockHash != nil {
+	switch {
+	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
+		return rpctypes.EthLatestBlockNumber, fmt.Errorf("BlockHash and BlockNumber cannot be both nil")
+	case blockNrOrHash.BlockHash != nil:
 		blockHeader, err := e.backend.HeaderByHash(*blockNrOrHash.BlockHash)
 		if err != nil {
-			return blockNum, err
+			return rpctypes.EthLatestBlockNumber, err
 		}
-		blockNum = rpctypes.NewBlockNumber(blockHeader.Number)
-	} else if blockNrOrHash.BlockNumber != nil {
-		blockNum = *blockNrOrHash.BlockNumber
+		return rpctypes.NewBlockNumber(blockHeader.Number), nil
+	case blockNrOrHash.BlockNumber != nil:
+		return *blockNrOrHash.BlockNumber, nil
+	default:
+		return rpctypes.EthLatestBlockNumber, nil
 	}
 
-	return blockNum, nil
 }
