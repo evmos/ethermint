@@ -8,16 +8,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 
-	// "github.com/ethereum/go-ethereum/params"
-
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // CalculateBaseFee calculates the base fee for the current block. This is only calculated once per
 // block during EndBlock. If the NoBaseFee parameter is enabled, this function returns nil.
 // NOTE: This code is inspired from the go-ethereum EIP1559 implementation and adapted to Cosmos SDK-based
 // chains. For the canonical code refer to: https://github.com/ethereum/go-ethereum/blob/master/consensus/misc/eip1559.go
-func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
+func (k Keeper) CalculateBaseFee(ctx sdk.Context, enableHeight int64) *big.Int {
 	consParams := ctx.ConsensusParams()
 	params := k.GetParams(ctx)
 
@@ -25,24 +23,17 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 		return nil
 	}
 
-	chainConfig := params.ChainConfig
-	cfg := chainConfig.EthereumConfig(k.eip155ChainID)
-
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
-	// if !chainConfig.EthereumConfig(k.eip155ChainID).IsLondon(big.NewInt(ctx.BlockHeight())) {
-	// 	return new(big.Int).SetUint64(types.InitialBaseFee)
-	// }
-
-	// FIXME: remove and uncomment line above
-	height := big.NewInt(ctx.BlockHeight())
-
-	rules := cfg.Rules(height)
-	if rules.IsBerlin || cfg.IsMuirGlacier(height) || rules.IsIstanbul || rules.IsByzantium || rules.IsConstantinople {
+	if !params.IsEnabledHeight(ctx.BlockHeight()) {
 		return new(big.Int).SetUint64(types.InitialBaseFee)
 	}
 
 	// get the block gas used and the base fee values for the parent block.
 	parentBaseFee := k.GetBaseFee(ctx)
+	if parentBaseFee == nil {
+		parentBaseFee = types.InitialBaseFee 
+	} 
+
 	parentGasUsed := k.GetBlockGasUsed(ctx)
 
 	gasLimit := new(big.Int).SetUint64(math.MaxUint64)
