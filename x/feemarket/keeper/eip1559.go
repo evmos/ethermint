@@ -31,8 +31,8 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context, enableHeight int64) *big.Int {
 	// get the block gas used and the base fee values for the parent block.
 	parentBaseFee := k.GetBaseFee(ctx)
 	if parentBaseFee == nil {
-		parentBaseFee = types.InitialBaseFee 
-	} 
+		parentBaseFee = new(big.Int).SetUint64(types.InitialBaseFee)
+	}
 
 	parentGasUsed := k.GetBlockGasUsed(ctx)
 
