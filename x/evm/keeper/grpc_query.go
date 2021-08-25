@@ -523,9 +523,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	k.SetTxHashTransient(ethcmn.HexToHash(req.Msg.Hash))
 	k.SetTxIndexTransient(uint64(req.Index))
 
-	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, false)
-
-	//result, err := core.ApplyMessage(evm, coreMessage, new(core.GasPool).AddGas(coreMessage.Gas()))
+	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
