@@ -10,6 +10,13 @@ import (
 	"github.com/tharsis/ethermint/types"
 )
 
+// TODO: remove once migrated to latest go-ethereum
+const (
+	BaseFeeChangeDenominator = 8          // Bounds the amount the base fee can change between blocks.
+	ElasticityMultiplier     = 2          // Bounds the maximum gas limit an EIP-1559 block may have.
+	InitialBaseFee           = 1000000000 // Initial base fee for EIP-1559 blocks.
+)
+
 // nolint: deadcode, unused
 func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 	txData := &DynamicFeeTx{

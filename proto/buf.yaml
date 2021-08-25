@@ -1,9 +1,4 @@
-build:
-  roots:
-    - proto
-    - third_party/proto
-  excludes:
-    - third_party/proto/google/protobuf
+version: v1
 lint:
   use:
     - DEFAULT
