@@ -318,6 +318,10 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
+	if resBlock.Block == nil {
+		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
+	}
+
 	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)

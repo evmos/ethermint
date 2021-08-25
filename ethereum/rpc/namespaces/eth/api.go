@@ -197,8 +197,13 @@ func (e *PublicAPI) BlockNumber() (hexutil.Uint64, error) {
 }
 
 // GetBalance returns the provided account's balance up to the provided block number.
-func (e *PublicAPI) GetBalance(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Big, error) { // nolint: interfacer
-	e.logger.Debug("eth_getBalance", "address", address.String(), "block number", blockNum)
+func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error) { // nolint: interfacer
+	e.logger.Debug("eth_getBalance", "address", address.String(), "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
 
 	req := &evmtypes.QueryBalanceRequest{
 		Address: address.String(),
@@ -218,8 +223,13 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNum rpctypes.BlockNu
 }
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
-func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNum rpctypes.BlockNumber) (hexutil.Bytes, error) { // nolint: interfacer
-	e.logger.Debug("eth_getStorageAt", "address", address.Hex(), "key", key, "block number", blockNum)
+func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) { // nolint: interfacer
+	e.logger.Debug("eth_getStorageAt", "address", address.Hex(), "key", key, "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
 
 	req := &evmtypes.QueryStorageRequest{
 		Address: address.String(),
@@ -236,8 +246,12 @@ func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNum rp
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
-func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error) {
-	e.logger.Debug("eth_getTransactionCount", "address", address.Hex(), "block number", blockNum)
+func (e *PublicAPI) GetTransactionCount(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error) {
+	e.logger.Debug("eth_getTransactionCount", "address", address.Hex(), "block number or hash", blockNrOrHash)
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
 	return e.backend.GetTransactionCount(address, blockNum)
 }
 
@@ -289,14 +303,19 @@ func (e *PublicAPI) GetUncleCountByBlockNumber(blockNum rpctypes.BlockNumber) he
 }
 
 // GetCode returns the contract code at the given address and block number.
-func (e *PublicAPI) GetCode(address common.Address, blockNumber rpctypes.BlockNumber) (hexutil.Bytes, error) { // nolint: interfacer
-	e.logger.Debug("eth_getCode", "address", address.Hex(), "block number", blockNumber)
+func (e *PublicAPI) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) { // nolint: interfacer
+	e.logger.Debug("eth_getCode", "address", address.Hex(), "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
 
 	req := &evmtypes.QueryCodeRequest{
 		Address: address.String(),
 	}
 
-	res, err := e.queryClient.Code(rpctypes.ContextWithHeight(blockNumber.Int64()), req)
+	res, err := e.queryClient.Code(rpctypes.ContextWithHeight(blockNum.Int64()), req)
 	if err != nil {
 		return nil, err
 	}
@@ -418,9 +437,14 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 }
 
 // Call performs a raw contract call.
-func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
-	e.logger.Debug("eth_call", "args", args.String(), "block number", blockNr)
-	data, err := e.doCall(args, blockNr)
+func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
+	e.logger.Debug("eth_call", "args", args.String(), "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+	data, err := e.doCall(args, blockNum)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -791,9 +815,14 @@ func (e *PublicAPI) GetUncleByBlockNumberAndIndex(number hexutil.Uint, idx hexut
 }
 
 // GetProof returns an account object with proof and any storage proofs
-func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, blockNumber rpctypes.BlockNumber) (*rpctypes.AccountResult, error) {
-	height := blockNumber.Int64()
-	e.logger.Debug("eth_getProof", "address", address.Hex(), "keys", storageKeys, "number", height)
+func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error) {
+	e.logger.Debug("eth_getProof", "address", address.Hex(), "keys", storageKeys, "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+	height := blockNum.Int64()
 
 	ctx := rpctypes.ContextWithHeight(height)
 	clientCtx := e.clientCtx.WithHeight(height)
@@ -858,4 +887,22 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 		StorageHash:  common.Hash{}, // NOTE: Ethermint doesn't have a storage hash. TODO: implement?
 		StorageProof: storageProofs,
 	}, nil
+}
+
+// getBlockNumber returns the BlockNumber from BlockNumberOrHash
+func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
+	switch {
+	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
+		return rpctypes.EthEarliestBlockNumber, fmt.Errorf("BlockHash and BlockNumber cannot be both nil")
+	case blockNrOrHash.BlockHash != nil:
+		blockHeader, err := e.backend.HeaderByHash(*blockNrOrHash.BlockHash)
+		if err != nil {
+			return rpctypes.EthEarliestBlockNumber, err
+		}
+		return rpctypes.NewBlockNumber(blockHeader.Number), nil
+	case blockNrOrHash.BlockNumber != nil:
+		return *blockNrOrHash.BlockNumber, nil
+	default:
+		return rpctypes.EthEarliestBlockNumber, nil
+	}
 }
