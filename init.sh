@@ -1,3 +1,4 @@
+#!/bin/bash
 
 KEY="mykey"
 CHAINID="ethermint_9000-1"
