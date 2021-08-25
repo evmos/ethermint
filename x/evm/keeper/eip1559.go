@@ -18,7 +18,7 @@ import (
 func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	consParams := ctx.ConsensusParams()
 	params := k.GetParams(ctx)
-	
+
 	if params.NoBaseFee {
 		return nil
 	}

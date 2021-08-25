@@ -49,6 +49,5 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 
 	k.WithContext(ctx)
 
-
 	return []abci.ValidatorUpdate{}
 }
