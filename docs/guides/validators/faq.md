@@ -4,141 +4,166 @@ order: 5
 
 # Validator FAQ
 
+Check the FAQ for running a validator on Ethermint {synopsis}
+
 ## General Concepts
 
 ### What is a validator?
 
-Ethermint is based on [Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html), which relies on a set of validators to secure the network. The role of validators is to run a full-node and participate in consensus by broadcasting votes which contain cryptographic signatures signed by their private key. Validators commit new blocks in the blockchain and receive revenue in exchange for their work. They must also participate in governance by voting on proposals. Validators are weighted according to their total stake.
+Ethermint is powered by [Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html) Core, which relies on a set of validators to secure the network. Validators run a full node and participate in consensus by broadcasting votes which contain cryptographic signatures signed by their private key. Validators commit new blocks in the blockchain and receive revenue in exchange for their work. They also participate in on-procotol treasury governance by voting on governance proposals. A validator's voting influence is weighted according to their total stake.
 
-### What is 'staking'?
+### What is "staking"?
 
-Ethermint is a public Proof-of-Stake (PoS) blockchain, meaning that the weight of validators is determined by the amount of staking tokens bonded as collateral. The **Photon** is Ethermint's native token. Photons can be self-delegated directly by the validator or delegated to them by other Photon holders.
+Ethermint is a public Proof-of-Stake (PoS) blockchain, meaning that validator's weight is determined by the amount of staking tokens (Photon) bonded as collateral. These staking tokens can be staked directly by the validator or delegated to them by Photon holders.
 
-Any user in the system can declare their intention to become a validator by sending a `create-validator` transaction. From there, they become validator candidates.
+Any user in the system can declare its intention to become a validator by sending a [`create-validator`](#how-to-become-a-validator) transaction. From there, they become validators.
 
-The weight (i.e. voting power) of a validator determines whether or not they are an active validator. Initially, only the top 125 validators with the most voting power will be active validators.
+The weight (i.e. total stake or voting power) of a validator determines wether or not it is an active validator, and also how frequently this node will have to propose a block and how much revenue it will obtain. Initially, only the top 125 validators with the most weight will be active validators. If validators double-sign, or are frequently offline, they risk their staked tokens (including Photons delegated by users) being "slashed" by the protocol to penalize negligence and misbehavior.
 
-### What is a full-node?
+### What is a full node?
 
-A full-node is a program that fully validates transactions and blocks of a blockchain. It is distinct from a light-node that only processes block headers and a small subset of transactions. Running a full-node requires more resources than a light-node but is necessary in order to be a validator. In practice, running a full-node only implies running a non-compromised and up-to-date version of the software with low network latency and without downtime.
+A full node is a program that fully validates transactions and blocks of a blockchain. It is distinct from a light client node that only processes block headers and a small subset of transactions. Running a full node requires more resources than a light client but is necessary in order to be a validator. In practice, running a full-node only implies running a non-compromised and up-to-date version of the software with low network latency and without downtime.
 
-Of course, it is possible and encouraged for users to run full-nodes even if they do not plan to be validators.
+Of course, it is possible and encouraged for any user to run full nodes even if they do not plan to be validators.
 
 ### What is a delegator?
 
-Delegators are Photon holders who cannot, or do not want to run a validator themselves. Photon holders can delegate Photons to a validator and obtain a part of their revenue in exchange (for more detail on how revenue is distributed, see [**What is the incentive to stake?**](#what-is-the-incentive-to-stake?) and [**What are validators commission?**](#what-are-validators-commission?) sections below).
+Delegators are Photon holders who cannot, or do not want to run validator operations themselves. Users can delegate Photons to a validator and obtain a part of its revenue in exchange (for more detail on how revenue is distributed, see [What is the incentive to stake?](#what-is-the-incentive-to-stake) and [What is a validator's commission?](#what-is-a-validators-commission) sections below).
 
-Because they share revenue with their validators, delegators also share risks. Should a validator misbehave, each of their delegators will be partially slashed in proportion to their delegated stake. This is why delegators should perform due diligence on validators before delegating, as well as spreading their stake over multiple validators.
+Because they share revenue with their validators, delegators also share responsibility. Should a validator misbehave, each of its delegators will be partially slashed in proportion to their stake. This is why delegators should perform due-diligence on validators before delegating, as well as diversifying by spreading their stake over multiple validators.
 
-Delegators play a critical role in the system, as they are responsible for choosing validators. Being a delegator is not a passive role: delegators should actively monitor the actions of their validators and participate in governance. For more, read the Cosmos Hub's [delegator's faq](https://hub.cosmos.network/main/delegators/delegator-faq.html).
+Delegators play a critical role in the system, as they are responsible for choosing validators. Be aware that being a delegator is not a passive role. Delegators are obligated to remain vigilant and actively monitor the actions of their validators, switching should they fail to act responsibly.
 
 ## Becoming a Validator
 
 ### How to become a validator?
 
-Any participant in the network can signal that they want to become a validator by sending a `create-validator` transaction, where they must fill out the following parameters:
+Any participant in the network can signal their intent to become a validator by creating a validator and registering its validator profile. To do so, the candidate broadcasts a `create-validator` transaction, in which they must submit the following information:
 
-- **Validator's `PubKey`:** The private key associated with this Tendermint `PubKey` is used to sign _prevotes_ and _precommits_.
-- **Validator's Address:** Application level address. This is the address used to identify your validator publicly. The private key associated with this address is used to delegate, unbond, claim rewards, and participate in governance.
-- **Validator's name (moniker)**
-- **Validator's website (Optional)**
-- **Validator's description (Optional)**
-- **Initial commission rate**: The commission rate on block rewards and fees charged to delegators.
-- **Maximum commission:** The maximum commission rate which this validator can charge. This parameter cannot be changed after `create-validator` is processed.
-- **Commission max change rate:** The maximum daily increase of the validator commission. This parameter cannot be changed after `create-validator` is processed.
-- **Minimum self-delegation:** Minimum amount of Photons the validator needs to have bonded at all time. If the validator's self-delegated stake falls below this limit, their entire staking pool will unbond.
+- **Validator's PubKey**: Validator operators can have different accounts for validating and holding liquid funds. The PubKey submitted must be associated with the private key with which the validator intends to sign _prevotes_ and _precommits_.
+- **Validator's Address**: `ethmvaloper1-` address. This is the address used to identify your validator publicly. The private key associated with this address is used to bond, unbond, and claim rewards.
+- **Validator's name** (also known as the **moniker**)
+- **Validator's website** _(optional)_
+- **Validator's description** _(optional)_
+- **Initial commission rate**: The commission rate on block provisions, block rewards and fees charged to delegators.
+- **Maximum commission**: The maximum commission rate which this validator will be allowed to charge.
+- **Commission change rate**: The maximum daily increase of the validator commission.
+- **Minimum self-bond amount**: Minimum amount of Photon the validator needs to have bonded at all times. If the validator's self-bonded stake falls below this limit, its entire staking pool will be unbonded.
+- **Initial self-bond amount**: Initial amount of Photon the validator wants to self-bond.
 
-Once a validator is created, Photon holders can delegate Photons to them, effectively adding stake to their pool. The total stake of an address is the combination of Photons bonded by delegators and Photons self-bonded by the entity which designated themselves.
+```bash
+ethermintd tx staking create-validator
+    --pubkey ethmvalconspub1zcjduepqs5s0vddx5m65h5ntjzwd0x8g3245rgrytpds4ds7vdtlwx06mcesmnkzly
+    --amount "2aphoton"
+    --from tmp
+    --commission-rate="0.20"
+    --commission-max-rate="1.00"
+    --commission-max-change-rate="0.01"
+    --min-self-delegation "1"
+    --moniker "validator"
+    --chain-id "ethermint_9000-1"
+    --gas auto
+    --node tcp://127.0.0.1:26647
+```
 
-Out of all validator candidates that signaled themselves, the 125 with the most total stake are the ones who are designated as validators. If a validator's total stake falls below the top 125 then that validator loses their validator privileges: they don't participate in consensus and generate rewards any more. Over time, the maximum number of validators may be increased via on-chain governance proposal.
+Once a validator is created and registered, Photon holders can delegate Photons to it, effectively adding stake to its pool. The total stake of a validator is the sum of the Photon self-bonded by the validator's operator and the Photon bonded by external delegators.
 
-## Testnet
+**Only the top 125 validators with the most stake are considered the active validators**, becoming **bonded validators**. If ever a validator's total stake dips below the top 125, the validator loses its validator privileges (meaning that it won't generate rewards) and no longer serves as part of the active set (i.e doesn't participate in consensus), entering **unbonding mode** and eventually becomes **unbonded**.
 
-### How can I join the testnet?
-
-The Testnet is a great environment to test your validator setup before launch.
-
-We view testnet participation as a great way to signal to the community that you are ready and able to operate a validator. You can find all relevant information about the testnet on the [documentation](../../testnet/join.md) and on the official [`testnets`](https://github.com/tharsis/testnets) repository.
+## Validator keys and states
 
 ### What are the different types of keys?
 
 In short, there are two types of keys:
 
-- **Tendermint Key**: This is a unique key used to sign consensus votes.
-  - It is associated with a public key `ethmvalconspub` (Get this value with `ethermintd tendermint show-validator`)
-  - It is generated when the node is created with `ethermintd init`.
-- **Application key**: This key is created from `ethermintd` and used to sign transactions. Application keys are associated with a public key prefixed by `ethpub` and an address prefixed by `ethm`. Both are derived from account keys generated by `ethermintd keys add`.
+- **Tendermint Key**: This is a unique key used to sign block hashes. It is associated with a public key `ethmvalconspub`.
 
-Note: A validator's operator key is directly tied to an application key, but
-uses reserved prefixes solely for this purpose: `ethmvaloper` and `ethmvaloperpub`
+  - Generated when the node is created with `ethermintd init`.
+  - Get this value with `ethermintd tendermint show-validator`
+    e.g. `ethmvalconspub1zcjduc3qcyj09qc03elte23zwshdx92jm6ce88fgc90rtqhjx8v0608qh5ssp0w94c`
+
+- **Application keys**: These keys are created from the application and used to sign transactions. As a validator, you will probably use one key to sign staking-related transactions, and another key to sign oracle-related transactions. Application keys are associated with a public key `ethmpub-` and an address `ethm-`. Both are derived from account keys generated by `ethermintd keys add`.
+
+::: warning
+A validator's operator key is directly tied to an application key, but uses reserved prefixes solely for this purpose: `ethmvaloper` and `ethmvaloperpub`
+:::
 
 ### What are the different states a validator can be in?
 
-After a validator is created with a `create-validator` transaction, they can be in three states:
+After a validator is created with a `create-validator` transaction, it can be in three states:
 
-- `in validator set`: Validator is in the active set and participates in consensus. Validator is earning rewards and can be slashed for misbehaviour.
-- `jailed`: Validator misbehaved and is in jail, i.e. outside of the validator set. If the jailing is due to being offline for too long, the validator can send an `unjail` transaction in order to re-enter the validator set. If the jailing is due to double signing, the validator cannot unjail.
-- `unbonded`: Validator is not in the active set, and therefore not signing blocs. Validator cannot be slashed, and does not earn any reward. It is still possible to delegate Photons to this validator. Un-delegating from an `unbonded` validator is immediate.
+- `bonded`: Validator is in the active set and participates in consensus. Validator is earning rewards and can be slashed for misbehaviour.
 
-### What is 'self-delegation'? How can I increase my 'self-delegation'?
+- `unbonding`: Validator is not in the active set and does not participate in consensus. Validator is not earning rewards, but can still be slashed for misbehaviour. This is a transition state from `bonded` to `unbonded`. If validator does not send a `rebond` transaction while in `unbonding` mode, it will take three weeks for the state transition to complete.
 
-Self-delegation is delegation from a validator to themselves. This amount can be increases by sending a `delegate` transaction from your validator's `application` application key.
+- `unbonded`: Validator is not in the active set, and therefore not signing blocks. Unbonded validators cannot be slashed, but do not earn any rewards from their operation. It is still possible to delegate Photon to this validator. Un-delegating from an `unbonded` validator is immediate.
 
-### Is there a minimum amount of Photons that must be delegated to be an active (=bonded) validator?
+Delegators have the same state as their validator.
 
-The minimum is `1 photon`.
+::: warning
+Delegations are not necessarily bonded. Photon can be delegated and bonded, delegated and unbonding, delegated and unbonded, or liquid.
+:::
+
+### What is "self-bond"? How can I increase my "self-bond"?
+
+The validator operator's "self-bond" refers to the amount of Photon stake delegated to itself. You can increase your self-bond by delegating more Photon to your validator account.
+
+### Is there a faucet?
+
+<!-- TODO: add link -->
+If you want to obtain coins for the testnet, you can do so by using the faucet (link to be announced).
+
+### Is there a minimum amount of Photon that must be staked to be an active (bonded) validator?
+
+There is no minimum. The top 125 validators with the highest total stake (where `total stake = self-bonded stake + delegators stake`) are the active validators.
 
 ### How will delegators choose their validators?
 
-Delegators are free to choose validators according to their own subjective criteria. This said, criteria anticipated to be important include:
+Delegators are free to choose validators according to their own subjective criteria. That said, criteria anticipated to be important include:
 
-- **Amount of self-delegated Photons:** Number of Photons a validator self-delegated to themselves. A validator with a higher amount of self-delegated Photons has more skin in the game, making them more liable for their actions.
-- **Amount of delegated Photons:** Total number of Photons delegated to a validator. A high voting power shows that the community trusts this validator, but it also means that this validator is a bigger target for hackers. Bigger validators also decrease the decentralization of the network.
-- **Commission rate:** Commission applied on revenue by validators before it is distributed to their delegators.
+- **Amount of self-bonded Photon:** Number of Photons a validator self-bonded to its staking pool. A validator with higher amount of self-bonded Photon has more skin in the game, making it more liable for its actions.
+
+- **Amount of delegated Photons:** Total number of Photon delegated to a validator. A high stake shows that the community trusts this validator, but it also means that this validator is a bigger target for hackers. Validators are expected to become less and less attractive as their amount of delegated Photon grows. Bigger validators also increase the centralization of the network.
+
+- **Commission rate:** Commission applied on revenue by validators before it is distributed to their delegators
+
 - **Track record:** Delegators will likely look at the track record of the validators they plan to delegate to. This includes seniority, past votes on proposals, historical average uptime and how often the node was compromised.
 
-Apart from these criteria, there will be a possibility for validators to signal a website address to complete their resume. Validators will need to build reputation one way or another to attract delegators. For example, it would be a good practice for validators to have their setup audited by third parties. Note though, that the Tendermint team will not approve or conduct any audit themselves. For more on due diligence, see [this blog post](https://medium.com/@interchain_io/3d0faf10ce6f)
+Apart from these criteria, there will be a possibility for validators to signal a website address to complete their resume. Validators will need to build reputation one way or another to attract delegators. For example, it would be a good practice for validators to have their setup audited by third parties. Note though, that the Ethermint team will not approve or conduct any audit itself.
 
-## Responsibilities
+## Responsibilites
 
 ### Do validators need to be publicly identified?
 
-No, they do not. Each delegator will value validators based on their own criteria. Validators will be able to register a website address when they nominate themselves so that they can advertise their operation as they see fit. Some delegators may prefer a website that clearly displays the team operating the validator and their resume, while others might prefer anonymous validators with positive track records.
+No, they do not. Each delegator will value validators based on their own criteria. Validators will be able(and are advised) to register a website address when they nominate themselves so that they can advertise their operation as they see fit. Some delegators may prefer a website that clearly displays the team running the validator and their resume, while others might prefer anonymous validators with positive track records. Most likely both identified and anonymous validators will coexist in the validator set.
 
-### What are the responsibilities of a validator?
+### What are the responsiblities of a validator?
 
-Validators have two main responsibilities:
+Validators have three main responsibilities:
 
-- **Be able to constantly run a correct version of the software:** Validators need to make sure that their servers are always online and their private keys are not compromised.
-- **Actively participate in governance:** Validators are required to vote on every proposal.
+- **Be able to constantly run a correct version of the software:** validators need to make sure that their servers are always online and their private keys are not compromised.
+
+- **Provide oversight and feedback on correct deployment of community pool funds:** the Ethermint protocol includes the a governance system for proposals to the facilitate adoption of its currencies. Validators are expected to hold budget executors to account to provide transparency and efficient use of funds.
 
 Additionally, validators are expected to be active members of the community. They should always be up-to-date with the current state of the ecosystem so that they can easily adapt to any change.
 
-### What does 'participate in governance' entail?
-
-Validators and delegators on Ethermint can vote on proposals to change operational parameters (such as the block gas limit), coordinate upgrades, or make a decision on any given matter.
-
-Validators play a special role in the governance system. Being the pillars of the system, they are required to vote on every proposal. It is especially important since delegators who do not vote will inherit the vote of their validator.
-
 ### What does staking imply?
 
-Staking Photons can be thought of as a safety deposit on validation activities. When a validator or a delegator wants to retrieve part or all of their deposit, they send an `unbonding` transaction. Then, Photons undergo a **3 weeks unbonding period** during which they are liable to being slashed for potential misbehavior committed by the validator before the unbonding process started.
+Staking Photon can be thought of as a safety deposit on validation activities. When a validator or a delegator wants to retrieve part or all of their deposit, they send an unbonding transaction. Then, Photon undergo a _three weeks unbonding period_ during which they are liable to being slashed for potential misbehaviors committed by the validator before the unbonding process started.
 
-Validators, and by association delegators, receive block rewards, fees, and have the right to participate in governance. If a validator misbehaves, a certain portion of their total stake is slashed. This means that every delegator that bonded Photons to this validator gets penalized in proportion to their bonded stake. Delegators are therefore incentivized to delegate to validators that they anticipate will function safely.
+Validators, and by association delegators, receive block provisions, block rewards, and fee rewards. If a validator misbehaves, a certain portion of its total stake is slashed (the severity of the penalty depends on the type of misbehavior). This means that every user that bonded Photon to this validator gets penalized in proportion to its stake. Delegators are therefore incentivized to delegate to validators that they anticipate will function safely.
 
-### Can a validator run away with their delegators' Photons?
+### Can a validator run away with its delegators' Photon?
 
-By delegating to a validator, a user delegates voting power. The more voting power a validator have, the more weight they have in the consensus and governance processes. This does not mean that the validator has custody of their delegators' Photons. **By no means can a validator run away with its delegator's funds**.
+By delegating to a validator, a user delegates staking power. The more staking power a validator has, the more weight it has in the consensus and processes. This does not mean that the validator has custody of its delegators' Photon. _By no means can a validator run away with its delegator's funds_.
 
-Even though delegated funds cannot be stolen by their validators, delegators are still liable if their validators misbehave.
+Even though delegated funds cannot be stolen by their validators, delegators are still liable if their validators misbehave. In such case, each delegators' stake will be partially slashed in proportion to their relative stake.
 
-### How often will a validator be chosen to propose the next block? Does it go up with the quantity of bonded Photons?
+### How often will a validator be chosen to propose the next block? Does it go up with the quantity of Photon staked?
 
-The validator that is selected to propose the next block is called proposer. Each proposer is selected deterministically, and the frequency of being chosen is proportional to the voting power (i.e. amount of bonded Photons) of the validator. For example, if the total bonded stake across all validators is 100 Photons and a validator's total stake is 10 Photons, then this validator will proposer ~10% of the blocks.
+The validator that is selected to mine the next block is called the **proposer**, the "leader" in the consensus for the round. Each proposer is selected deterministically, and the frequency of being chosen is equal to the relative total stake (where total stake = self-bonded stake + delegators stake) of the validator. For example, if the total bonded stake across all validators is 100 Photon, and a validator's total stake is 10 Photon, then this validator will be chosen 10% of the time as the proposer.
 
-### Will validators of Ethermint ever be required to validate other zones in the Cosmos ecosystem?
-
-Yes, they will. If governance decides so, validators of Ethermint may be required to validate additional zones in the Cosmos ecosystem.
+To understand more about the proposer selection process in Tendermint BFT consensus, read more [in their official docs](https://docs.tendermint.com/master/spec/reactors/consensus/proposer-selection.html).
 
 ## Incentives
 
@@ -157,67 +182,69 @@ Validators earn proportionally more revenue than their delegators because of com
 
 Validators also play a major role in governance. If a delegator does not vote, they inherit the vote from their validator. This gives validators a major responsibility in the ecosystem.
 
-### What are validators commission?
+### What is a validator's commission?
 
-Revenue received by a validator's pool is split between the validator and their delegators. The validator can apply a commission on the part of the revenue that goes to their delegators. This commission is set as a percentage. Each validator is free to set their initial commission, maximum daily commission change rate and maximum commission. Ethermint enforces the parameter that each validator sets. Only the commission rate can change after the validator is created.
+Revenue received by a validator's pool is split between the validator and its delegators. The validator can apply a commission on the part of the revenue that goes to its delegators. This commission is set as a percentage. Each validator is free to set its initial commission, maximum daily commission change rate and maximum commission. Ethermint enforces the parameter that each validator sets. These parameters can only be defined when initially declaring candidacy, and may only be constrained further after being declared.
 
-### How are block rewards distributed?
+### How are block provisions distributed?
 
-Block rewards are distributed proportionally to all validators relative to their voting power. This means that even though each validator gains atoms with each reward, all validators will maintain equal weight over time.
+Block provisions (rewards) are distributed proportionally to all validators relative to their total stake (voting power). This means that even though each validator gains Photons with each provision, all validators will still maintain equal weight.
 
-Let us take an example where we have 10 validators with equal voting power and a commission rate of 1%. Let us also assume that the reward for a block is 1000 Photons and that each validator has 20% of self-bonded Photons. These tokens do not go directly to the proposer. Instead, they are evenly spread among validators. So now each validator's pool has 100 Photons. These 100 Photons will be distributed according to each participant's stake:
+Let us take an example where we have 10 validators with equal staking power and a commission rate of 1%. Let us also assume that the provision for a block is 1000 Photons and that each validator has 20% of self-bonded Photon. These tokens do not go directly to the proposer. Instead, they are evenly spread among validators. So now each validator's pool has 100 Photons. These 100 Photons will be distributed according to each participant's stake:
 
 - Commission: `100*80%*1% = 0.8 Photons`
 - Validator gets: `100\*20% + Commission = 20.8 Photons`
 - All delegators get: `100\*80% - Commission = 79.2 Photons`
 
-Then, each delegator can claim their part of the 79.2 Photons in proportion to their stake in the validator's staking pool.
+Then, each delegator can claim its part of the 79.2 Photons in proportion to their stake in the validator's staking pool. Note that the validator's commission is not applied on block provisions. Note that block rewards (paid in Photons) are distributed according to the same mechanism.
 
 ### How are fees distributed?
 
-Fees are similarly distributed with the exception that the block proposer can get a bonus on the fees of the block they propose if they include more than the strict minimum of required precommits.
+Fees are similarly distributed with the exception that the block proposer can get a bonus on the fees of the block it proposes if it includes more than the strict minimum of required precommits.
 
-When a validator is selected to propose the next block, they must include at least 2/3 precommits of the previous block. However, there is an incentive to include more than 2/3 precommits in the form of a bonus. The bonus is linear: it ranges from 1% if the proposer includes 2/3rd precommits (minimum for the block to be valid) to 5% if the proposer includes 100% precommits. Of course the proposer should not wait too long or other validators may timeout and move on to the next proposer. As such, validators have to find a balance between wait-time to get the most signatures and risk of losing out on proposing the next block. This mechanism aims to incentivize non-empty block proposals, better networking between validators as well as to mitigate censorship.
+When a validator is selected to propose the next block, it must include at least ⅔ precommits for the previous block in the form of validator signatures. However, there is an incentive to include more than ⅔ precommits in the form of a bonus. The bonus is linear: it ranges from 1% if the proposer includes ⅔rd precommits (minimum for the block to be valid) to 5% if the proposer includes 100% precommits. Of course the proposer should not wait too long or other validators may timeout and move on to the next proposer. As such, validators have to find a balance between wait-time to get the most signatures and risk of losing out on proposing the next block. This mechanism aims to incentivize non-empty block proposals, better networking between validators as well as to mitigate censorship.
 
-Let's take a concrete example to illustrate the aforementioned concept. In this example, there are 10 validators with equal stake. Each of them applies a 1% commission rate and has 20% of self-delegated Photons. Now comes a successful block that collects a total of 1025.51020408 Photons in fees.
+Let's take a concrete example to illustrate the aforementioned concept. In this example, there are 10 validators with equal stake. Each of them applies a 1% commission and has 20% of self-bonded Photon. Now comes a successful block that collects a total of 1005 Photons in fees. Let's assume that the proposer included 100% of the signatures in its block. It thus obtains the full bonus of 5%.
 
-First, a 2% tax is applied. The corresponding Photons go to the reserve pool. Reserve pool's funds can be allocated through governance to fund bounties and upgrades.
+We have to solve this simple equation to find the reward $R$ for each validator:
 
-- `2% * 1025.51020408 = 20.51020408` Photons go to the reserve pool.
-
-1005 Photons now remain. Let's assume that the proposer included 100% of the signatures in its block. It thus obtains the full bonus of 5%.
-
-We have to solve this simple equation to find the reward R for each validator:
-
-`9*R + R + R*5% = 1005 ⇔ R = 1005/10.05 = 100`
+$$9R ~ + ~ R ~ + ~ 5\%(R) ~ = ~ 1005 ~ \Leftrightarrow ~ R ~ = ~ 1005 ~/ ~10.05 ~ = ~ 100$$
 
 - For the proposer validator:
-  - The pool obtains `R + R * 5%`: 105 Photons
-  - Commission: `105 * 80% * 1%` = 0.84 Photons
-  - Validator's reward: `105 * 20% + Commission` = 21.84 Photons
-  - Delegators' rewards: `105 * 80% - Commission` = 83.16 Photons (each delegator will be able to claim its portion of these rewards in proportion to their stake)
-- For each non-proposer validator:
-  - The pool obtains R: 100 Photons
-  - Commission: `100 * 80% * 1%` = 0.8 Photons
-  - Validator's reward: `100 * 20% + Commission` = 20.8 Photons
-  - Delegators' rewards: `100 * 80% - Commission` = 79.2 Photons (each delegator will be able to claim their portion of these rewards in proportion to their stake)
+
+  - The pool obtains $R ~ + ~ 5\%(R)$: 105 Photons
+  - Commission: $105 ~ * ~ 80\% ~ * ~ 1\%$ = 0.84 Photons
+  - Validator's reward: $105 ~ * ~ 20\% ~ + ~ Commission$ = 21.84 Photons
+  - Delegators' rewards: $105 ~ * ~ 80\% ~ - ~ Commission$ = 83.16 Photons \(each delegator will be able to claim its portion of these rewards in proportion to their stake\)
+
+  - The pool obtains $R$: 100 Photons
+  - Commission: $100 ~ * ~ 80\% ~ * ~ 1\%$ = 0.8 Photons
+  - Validator's reward: $100 ~ * ~ 20\% ~ + ~ Commission$ = 20.8 Photons
+  - Delegators' rewards: $100 ~ * ~ 80\% ~ - ~ Commission$ = 79.2 Photons \(each delegator will be able to claim its portion of these rewards in proportion to their stake\)
 
 ### What are the slashing conditions?
 
-If a validator misbehaves, their delegated stake will be partially slashed. There are currently two faults that can result in slashing of funds for a validator and their delegators:
+If a validator misbehaves, its bonded stake along with its delegators' stake and will be slashed. The severity of the punishment depends on the type of fault. There are 3 main faults that can result in slashing of funds for a validator and its delegators:
 
-- **Double signing:** If someone reports on chain A that a validator signed two blocks at the same height on chain A and chain B, and if chain A and chain B share a common ancestor, then this validator will get slashed by 5% on chain A.
+- **Double-signing:** If someone reports on chain A that a validator signed two blocks at the same height on chain A and chain B, and if chain A and chain B share a common ancestor, then this validator will get slashed on chain A.
+
 - **Downtime:** If a validator misses more than 95% of the last 10.000 blocks, they will get slashed by 0.01%.
+- **Unavailability:** If a validator's signature has not been included in the last X blocks, the validator will get slashed by a marginal amount proportional to X. If X is above a certain limit Y, then the validator will get unbonded.
+- **Non-voting:** If a validator did not vote on a proposal, its stake could receive a minor slash.
 
-### Do validators need to self-delegate Photons?
+Note that even if a validator does not intentionally misbehave, it can still be slashed if its node crashes, looses connectivity, gets DDoSed, or if its private key is compromised.
 
-Yes, they do need to self-delegate at least `1 photon`. Even though there is no obligation for validators to self-delegate more than `1 photon`, delegators should want their validator to have more self-delegated Photons in their staking pool. In other words, validators should have skin in the game.
+### Do validators need to self-bond Photons
 
-In order for delegators to have some guarantee about how much skin-in-the-game their validator has, the latter can signal a minimum amount of self-delegated Photons. If a validator's self-delegation goes below the limit that it predefined, this validator and all of its delegators will unbond.
+No, they do not. A validators total stake is equal to the sum of its own self-bonded stake and of its delegated stake. This means that a validator can compensate its low amount of self-bonded stake by attracting more delegators. This is why reputation is very important for validators.
+
+Even though there is no obligation for validators to self-bond Photon, delegators should want their validator to have self-bonded Photon in their staking pool. In other words, validators should have skin-in-the-game.
+
+In order for delegators to have some guarantee about how much skin-in-the-game their validator has, the latter can signal a minimum amount of self-bonded Photon. If a validator's self-bond goes below the limit that it predefined, this validator and all of its delegators will unbond.
 
 ### How to prevent concentration of stake in the hands of a few top validators?
 
-For now the community is expected to behave in a smart and self-preserving way. When a mining pool in Bitcoin gets too much mining power the community usually stops contributing to that pool. Ethermint will rely on the same effect initially. Other mechanisms are in place to smoothen this process as much as possible:
+For now the community is expected to behave in a smart and self-preserving way. When a mining pool in Bitcoin gets too much mining power the community usually stops contributing to that pool. Ethermint will rely on the same effect initially. In the future, other mechanisms will be deployed to smoothen this process as much as possible:
 
 - **Penalty-free re-delegation:** This is to allow delegators to easily switch from one validator to another, in order to reduce validator stickiness.
 - **UI warning:** Wallets can implement warnings that will be displayed to users if they want to delegate to a validator that already has a significant amount of staking power.
@@ -232,15 +259,15 @@ We expect that a modest level of hardware specifications will be needed initiall
 
 ### What are software requirements?
 
-In addition to running a Cosmos Hub node, validators should develop monitoring, alerting and management solutions.
+In addition to running an Ethermint node, validators should develop monitoring, alerting and management solutions.
 
 ### What are bandwidth requirements?
 
-The Cosmos network has the capacity for very high throughput relative to chains like Ethereum or Bitcoin.
+Ethermint has the capacity for very high throughput compared to chains like Ethereum or Bitcoin.
 
-We recommend that the data center nodes only connect to trusted full-nodes in the cloud or other validators that know each other socially. This relieves the data center node from the burden of mitigating denial-of-service attacks.
+As such, we recommend that the data center nodes only connect to trusted full nodes in the cloud or other validators that know each other socially. This relieves the data center node from the burden of mitigating denial-of-service attacks.
 
-Ultimately, as the network becomes more heavily used, multigigabyte per day bandwidth is very realistic.
+Ultimately, as the network becomes more used, one can realistically expect daily bandwidth on the order of several gigabytes.
 
 ### What does running a validator imply in terms of logistics?
 
@@ -254,8 +281,9 @@ Validators should expect to run an HSM that supports ed25519 keys. Here are pote
 - Ledger Nano S
 - Ledger BOLOS SGX enclave
 - Thales nShield support
+- [Strangelove Horocrux](https://github.com/strangelove-ventures/horcrux)
 
-We do not recommend one solution above the other. The community is encouraged to bolster the effort to improve HSMs and the security of key management.
+The Ethermint team does not recommend one solution above the other. The community is encouraged to bolster the effort to improve HSMs and the security of key management.
 
 ### What can validators expect in terms of operations?
 
@@ -265,7 +293,7 @@ Running effective operation is the key to avoiding unexpectedly unbonding or bei
 
 Validators should expect to perform regular software updates to accommodate upgrades and bug fixes. There will inevitably be issues with the network early in its bootstrapping phase that will require substantial vigilance.
 
-### How can validators protect themselves from denial-of-service attacks?
+### How can validators protect themselves from Denial-of-Service attacks?
 
 Denial-of-service attacks occur when an attacker sends a flood of internet traffic to an IP address to prevent the server at the IP address from connecting to the internet.
 
