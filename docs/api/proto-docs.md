@@ -63,7 +63,7 @@
 - [ethermint/types/v1/account.proto](#ethermint/types/v1/account.proto)
     - [EthAccount](#ethermint.types.v1.EthAccount)
   
-- [ethermint/types/web3.proto](#ethermint/types/web3.proto)
+- [ethermint/types/v1/web3.proto](#ethermint/types/v1/web3.proto)
     - [ExtensionOptionsWeb3Tx](#ethermint.types.v1.ExtensionOptionsWeb3Tx)
   
 - [Scalar Value Types](#scalar-value-types)
@@ -936,10 +936,10 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 
 
 
-<a name="ethermint/types/web3.proto"></a>
+<a name="ethermint/types/v1/web3.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## ethermint/types/web3.proto
+## ethermint/types/v1/web3.proto
 
 
 
@@ -951,9 +951,9 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `typedDataChainID` | [uint64](#uint64) |  | typedDataChainID used only in EIP712 Domain and should match Ethereum network ID in a Web3 provider (e.g. Metamask). |
-| `feePayer` | [string](#string) |  | feePayer is an account address for the fee payer. It will be validated during EIP712 signature checking. |
-| `feePayerSig` | [bytes](#bytes) |  | feePayerSig is a signature data from the fee paying account, allows to perform fee delegation when using EIP712 Domain. |
+| `typed_data_chain_id` | [uint64](#uint64) |  | typed data chain id used only in EIP712 Domain and should match Ethereum network ID in a Web3 provider (e.g. Metamask). |
+| `fee_payer` | [string](#string) |  | fee payer is an account address for the fee payer. It will be validated during EIP712 signature checking. |
+| `fee_payer_sig` | [bytes](#bytes) |  | fee payer sig is a signature data from the fee paying account, allows to perform fee delegation when using EIP712 Domain. |
 
 
 

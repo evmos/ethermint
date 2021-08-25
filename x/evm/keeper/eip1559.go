@@ -14,10 +14,16 @@ import (
 )
 
 // CalculateBaseFee calculates the base fee for the current block. This is only calculated once per
-// block during EndBlock.
+// block during EndBlock. If the NoBaseFee parameter is enabled, this function returns
 func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	consParams := ctx.ConsensusParams()
-	chainConfig := k.GetParams(ctx).ChainConfig
+	params := k.GetParams(ctx)
+	
+	if params.NoBaseFee {
+		return nil
+	}
+
+	chainConfig := params.ChainConfig
 	cfg := chainConfig.EthereumConfig(k.eip155ChainID)
 
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
@@ -27,7 +33,9 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 
 	// FIXME: remove and uncomment line above
 	height := big.NewInt(ctx.BlockHeight())
-	if cfg.IsBerlin(height) || cfg.IsMuirGlacier(height) || cfg.IsIstanbul(height) || cfg.IsByzantium(height) || cfg.IsConstantinople(height) {
+
+	rules := cfg.Rules(height)
+	if rules.IsBerlin || cfg.IsMuirGlacier(height) || rules.IsIstanbul || rules.IsByzantium || rules.IsConstantinople {
 		return new(big.Int).SetUint64(types.InitialBaseFee)
 	}
 

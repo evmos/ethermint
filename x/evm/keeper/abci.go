@@ -32,19 +32,23 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 
 	baseFee := k.CalculateBaseFee(ctx)
 
-	k.SetBaseFee(ctx, baseFee)
-	k.SetBlockGasUsed(ctx)
+	// only set base fee if the NoBaseFee param is false
+	if baseFee != nil {
+		k.SetBaseFee(ctx, baseFee)
+		k.SetBlockGasUsed(ctx)
+
+		k.Ctx().EventManager().EmitEvent(sdk.NewEvent(
+			"block_gas",
+			sdk.NewAttribute("height", fmt.Sprintf("%d", ctx.BlockHeight())),
+			sdk.NewAttribute("amount", fmt.Sprintf("%d", ctx.BlockGasMeter().GasConsumedToLimit())),
+		))
+	}
 
 	bloom := ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes())
 	k.SetBlockBloom(infCtx, req.Height, bloom)
 
 	k.WithContext(ctx)
 
-	k.Ctx().EventManager().EmitEvent(sdk.NewEvent(
-		"block_gas",
-		sdk.NewAttribute("height", fmt.Sprintf("%d", ctx.BlockHeight())),
-		sdk.NewAttribute("amount", fmt.Sprintf("%d", ctx.BlockGasMeter().GasConsumedToLimit())),
-	))
 
 	return []abci.ValidatorUpdate{}
 }
