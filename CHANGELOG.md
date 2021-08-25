@@ -41,6 +41,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (app) [tharsis#476](https://github.com/tharsis/ethermint/pull/476) Update Bech32 HRP to `ethm`.
 
+### API Breaking
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Deprecate `YoloV3Block` and `EWASMBlock` from `ChainConfig`
+
+### Features
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Support [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+
 ### Bug Fixes
 
 * (encoding) [tharsis#478](https://github.com/tharsis/ethermint/pull/478) Register `Evidence` to amino codec.
