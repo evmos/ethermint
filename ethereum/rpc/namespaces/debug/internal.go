@@ -56,7 +56,7 @@ func (a *InternalAPI) BlockProfile(file string, nsec uint) error {
 
 // CpuProfile turns on CPU profiling for nsec seconds and writes
 // profile data to file.
-func (a *InternalAPI) CpuProfile(file string, nsec uint) error { // nolint: golint
+func (a *InternalAPI) CpuProfile(file string, nsec uint) error { // nolint: golint, stylecheck
 	a.logger.Debug("debug_cpuProfile", "file", file, "nsec", nsec)
 	if err := a.StartCPUProfile(file); err != nil {
 		return err
