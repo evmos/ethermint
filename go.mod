@@ -47,7 +47,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
-	google.golang.org/genproto v0.0.0-20210824181836-a4879c3d0e89
+	google.golang.org/genproto v0.0.0-20210825212027-de86158e7fda
 	google.golang.org/grpc v1.40.0
 	gopkg.in/yaml.v2 v2.4.0
 	nhooyr.io/websocket v1.8.7 // indirect

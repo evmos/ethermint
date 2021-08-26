@@ -15,7 +15,7 @@ func TestParamsValidate(t *testing.T) {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams("ara", true, true, DefaultChainConfig(), true, 2929, 1884, 1344),
+			NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344),
 			false,
 		},
 		{
@@ -40,7 +40,7 @@ func TestParamsValidate(t *testing.T) {
 		},
 		{
 			"invalid chain config",
-			NewParams("ara", true, true, ChainConfig{}, true, 2929, 1884, 1344),
+			NewParams("ara", true, true, ChainConfig{}, 2929, 1884, 1344),
 			false,
 		},
 	}

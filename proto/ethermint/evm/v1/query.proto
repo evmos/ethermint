@@ -67,12 +67,7 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/params";
   }
-
-  // BaseFee queries the base fee of the parent block of the current block.
-  rpc BaseFee(QueryBaseFeeRequest) returns (QueryBaseFeeResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1/base_fee";
-  }
-
+  
   // EthCall implements the `eth_call` rpc api
   rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/eth_call";
