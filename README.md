@@ -78,8 +78,8 @@ The following chat channels and forums are a great spot to ask questions about E
 
 Looking for a good place to start contributing? Check out some [`good first issues`](https://github.com/tharsis/ethermint/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
-For additional instruction, standards and style guides, please refer to the [Contributing](./CONTRIBUTING.md) document.
+For additional instructions, standards and style guides, please refer to the [Contributing](./CONTRIBUTING.md) document.
 
 ## Careers
 
-See our open positions on [Cosmos Jobs](https://jobs.cosmos.network/project/ethermint-d0sk1uxuh-remote/), [Notion](https://tharsis.notion.site/Jobs-at-Tharsis-5a1642eb89b34747ae6f2db2d356fc0d) or feel free to [reach out](mailto:careers@thars.is) via email.
+See our open positions on [Cosmos Jobs](https://jobs.cosmos.network/project/ethermint-d0sk1uxuh-remote/), [Notion](https://tharsis.notion.site/Jobs-at-Tharsis-5a1642eb89b34747ae6f2db2d356fc0d), or feel free to [reach out](mailto:careers@thars.is) via email.
