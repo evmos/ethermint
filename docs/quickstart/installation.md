@@ -4,11 +4,12 @@ order: 1
 
 # Installation
 
+Build and install the Ethermint binaries from source or using Docker. {synopsis}
+
 ## Pre-requisites
 
-### Install [`jq`](https://stedolan.github.io/jq)
-
-On Mac `brew install jq` or download the official binaries on the project [website](https://stedolan.github.io/jq/download/).
+- [Install Go 1.16+](https://golang.org/dl/) {prereq}
+- [Install jq](https://stedolan.github.io/jq/download/) {prereq}
 
 ## Install Binaries
 
