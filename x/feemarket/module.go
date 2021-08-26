@@ -82,9 +82,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 }
 
 // RegisterInterfaces registers interfaces and implementations of the fee market module.
-func (AppModuleBasic) RegisterInterfaces(_ codectypes.InterfaceRegistry) {
-	return
-}
+func (AppModuleBasic) RegisterInterfaces(_ codectypes.InterfaceRegistry) {}
 
 // ____________________________________________________________________________
 
