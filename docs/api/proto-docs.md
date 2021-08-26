@@ -933,6 +933,9 @@ Params defines the EVM module parameters
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `no_base_fee` | [bool](#bool) |  | no base fee forces the EIP-1559 base fee to 0 (needed for 0 price calls) |
+| `base_fee_change_denominator` | [uint32](#uint32) |  | base fee change denominator bounds the amount the base fee can change between blocks. |
+| `elasticity_multiplier` | [uint32](#uint32) |  | elasticity multiplier bounds the maximum gas limit an EIP-1559 block may have. |
+| `initial_base_fee` | [int64](#int64) |  | initial base fee for EIP-1559 blocks. |
 
 
 

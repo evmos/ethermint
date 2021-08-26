@@ -7,8 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
-
-	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // CalculateBaseFee calculates the base fee for the current block. This is only calculated once per
@@ -25,13 +23,13 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context, enableHeight int64) *big.Int {
 
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
 	if ctx.BlockHeight() <= enableHeight {
-		return new(big.Int).SetUint64(types.InitialBaseFee)
+		return new(big.Int).SetInt64(params.InitialBaseFee)
 	}
 
 	// get the block gas used and the base fee values for the parent block.
 	parentBaseFee := k.GetBaseFee(ctx)
 	if parentBaseFee == nil {
-		parentBaseFee = new(big.Int).SetUint64(types.InitialBaseFee)
+		parentBaseFee = new(big.Int).SetInt64(params.InitialBaseFee)
 	}
 
 	parentGasUsed := k.GetBlockGasUsed(ctx)
@@ -41,13 +39,13 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context, enableHeight int64) *big.Int {
 		gasLimit = big.NewInt(consParams.Block.MaxGas)
 	}
 
-	parentGasTargetBig := new(big.Int).Div(gasLimit, big.NewInt(types.ElasticityMultiplier)) // TODO: update to geth
+	parentGasTargetBig := new(big.Int).Div(gasLimit, new(big.Int).SetUint64(uint64(params.ElasticityMultiplier)))
 	if !parentGasTargetBig.IsUint64() {
-		return new(big.Int).SetUint64(types.InitialBaseFee) // TODO: update to geth
+		return new(big.Int).SetInt64(params.InitialBaseFee)
 	}
 
 	parentGasTarget := parentGasTargetBig.Uint64()
-	baseFeeChangeDenominator := new(big.Int).SetUint64(types.BaseFeeChangeDenominator) // TODO: update to geth
+	baseFeeChangeDenominator := new(big.Int).SetUint64(uint64(params.BaseFeeChangeDenominator))
 
 	// If the parent gasUsed is the same as the target, the baseFee remains unchanged.
 	if parentGasUsed == parentGasTarget {
