@@ -21,18 +21,17 @@ type Keeper struct {
 	paramSpace paramtypes.Subspace
 }
 
-// NewKeeper generates new evm module keeper
+// NewKeeper generates new fee market module keeper
 func NewKeeper(
-	cdc codec.BinaryCodec,
-	storeKey sdk.StoreKey, paramSpace paramtypes.Subspace,
-) *Keeper {
+	cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace,
+) Keeper {
 
 	// set KeyTable if it has not already been set
 	if !paramSpace.HasKeyTable() {
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
 	}
 
-	return &Keeper{
+	return Keeper{
 		cdc:        cdc,
 		storeKey:   storeKey,
 		paramSpace: paramSpace,
