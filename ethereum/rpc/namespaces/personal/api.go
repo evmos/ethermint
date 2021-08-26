@@ -39,7 +39,7 @@ type PrivateAccountAPI struct {
 // NewAPI creates an instance of the public Personal Eth API.
 func NewAPI(logger log.Logger, clientCtx client.Context, backend backend.Backend) *PrivateAccountAPI {
 	cfg := sdk.GetConfig()
-	basePath := cfg.GetFullFundraiserPath()
+	basePath := cfg.GetFullBIP44Path()
 
 	iterator, err := ethermint.NewHDPathIterator(basePath, true)
 	if err != nil {

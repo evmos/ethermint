@@ -74,7 +74,7 @@ func Call(t *testing.T, method string, params interface{}) *Response {
 	if HOST == "" {
 		HOST = "http://localhost:8545"
 	}
-	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req)) //nolint:gosec
+	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req)) // nolint:gosec
 	require.NoError(t, err)
 
 	decoder := json.NewDecoder(res.Body)
@@ -102,7 +102,7 @@ func CallWithError(method string, params interface{}) (*Response, error) {
 	if HOST == "" {
 		HOST = "http://localhost:8545"
 	}
-	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req)) //nolint:gosec
+	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req)) // nolint:gosec
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,6 @@ func DeployTestContractWithFunction(t *testing.T, addr []byte) hexutil.Bytes {
 	return hash
 }
 
-//nolint
 func GetTransactionReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
 	param := []string{hash.String()}
 	rpcRes := Call(t, "eth_getTransactionReceipt", param)
