@@ -26,7 +26,15 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 
 	// only set base fee if the NoBaseFee param is false
 	k.SetBaseFee(ctx, baseFee)
-	k.SetBlockGasUsed(ctx)
+
+	if ctx.BlockGasMeter() == nil {
+		k.Logger(ctx).Error("block gas meter is nil when setting block gas used")
+		return
+	}
+
+	gasUsed := ctx.BlockGasMeter().GasConsumedToLimit()
+
+	k.SetBlockGasUsed(ctx, gasUsed)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		"block_gas",

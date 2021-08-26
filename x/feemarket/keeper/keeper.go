@@ -60,16 +60,11 @@ func (k Keeper) GetBlockGasUsed(ctx sdk.Context) uint64 {
 	return sdk.BigEndianToUint64(bz)
 }
 
-// SetBlockGasUsed gets the current block gas consumed to the store.
+// SetBlockGasUsed gets the block gas consumed to the store.
 // CONTRACT: this should be only called during EndBlock.
-func (k Keeper) SetBlockGasUsed(ctx sdk.Context) {
-	if ctx.BlockGasMeter() == nil {
-		k.Logger(ctx).Error("block gas meter is nil when setting block gas used")
-		return
-	}
-
+func (k Keeper) SetBlockGasUsed(ctx sdk.Context, gas uint64) {
 	store := ctx.KVStore(k.storeKey)
-	gasBz := sdk.Uint64ToBigEndian(ctx.BlockGasMeter().GasConsumedToLimit())
+	gasBz := sdk.Uint64ToBigEndian(gas)
 	store.Set(types.KeyPrefixBlockGasUsed, gasBz)
 }
 

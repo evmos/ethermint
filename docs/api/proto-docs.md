@@ -967,6 +967,8 @@ GenesisState defines the feemarket module's genesis state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#ethermint.feemarket.v1.Params) |  | params defines all the paramaters of the module. |
+| `base_fee` | [string](#string) |  | base fee is the exported value from previous software version. Zero by default. |
+| `block_gas` | [uint64](#uint64) |  | block gas is the amount of gas used on the last block before the upgrade. Zero by default. |
 
 
 
