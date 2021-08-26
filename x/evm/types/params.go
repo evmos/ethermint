@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 
-	yaml "gopkg.in/yaml.v2"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -24,7 +22,6 @@ var (
 	ParamStoreKeyEnableCall   = []byte("EnableCall")
 	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
 	ParamStoreKeyChainConfig  = []byte("ChainConfig")
-	ParamStoreKeyNoBaseFee    = []byte("NoBaseFee")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the EVM interpreter. These EIPs are applied in
 	// order and can override the instruction sets from the latest hard fork enabled by the ChainConfig. For more info
@@ -38,14 +35,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall, noBaseFee bool, config ChainConfig, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
 	return Params{
 		EvmDenom:     evmDenom,
 		EnableCreate: enableCreate,
 		EnableCall:   enableCall,
 		ExtraEIPs:    extraEIPs,
 		ChainConfig:  config,
-		NoBaseFee:    noBaseFee,
 	}
 }
 
@@ -58,14 +54,7 @@ func DefaultParams() Params {
 		EnableCall:   true,
 		ChainConfig:  DefaultChainConfig(),
 		ExtraEIPs:    nil,
-		NoBaseFee:    true,
 	}
-}
-
-// String implements the fmt.Stringer interface
-func (p Params) String() string {
-	out, _ := yaml.Marshal(p)
-	return string(out)
 }
 
 // ParamSetPairs returns the parameter set pairs.
@@ -76,7 +65,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
-		paramtypes.NewParamSetPair(ParamStoreKeyNoBaseFee, &p.NoBaseFee, validateBool),
 	}
 }
 

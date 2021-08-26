@@ -10,7 +10,6 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -40,6 +39,8 @@ type Keeper struct {
 	bankKeeper types.BankKeeper
 	// access historical headers for EVM state transition execution
 	stakingKeeper types.StakingKeeper
+	// fetch EIP1559 base fee and parameters
+	feeMarketKeeper types.FeeMarketKeeper
 
 	// Manage the initial context and cache context stack for accessing the store,
 	// emit events and log info.
@@ -62,6 +63,7 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
+	fmk types.FeeMarketKeeper,
 	tracer string, debug bool,
 ) *Keeper {
 
@@ -77,15 +79,16 @@ func NewKeeper(
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
-		cdc:           cdc,
-		paramSpace:    paramSpace,
-		accountKeeper: ak,
-		bankKeeper:    bankKeeper,
-		stakingKeeper: sk,
-		storeKey:      storeKey,
-		transientKey:  transientKey,
-		tracer:        tracer,
-		debug:         debug,
+		cdc:             cdc,
+		paramSpace:      paramSpace,
+		accountKeeper:   ak,
+		bankKeeper:      bankKeeper,
+		stakingKeeper:   sk,
+		feeMarketKeeper: fmk,
+		storeKey:        storeKey,
+		transientKey:    transientKey,
+		tracer:          tracer,
+		debug:           debug,
 	}
 }
 
@@ -131,53 +134,6 @@ func (k *Keeper) WithChainID(ctx sdk.Context) {
 // ChainID returns the EIP155 chain ID for the EVM context
 func (k Keeper) ChainID() *big.Int {
 	return k.eip155ChainID
-}
-
-// ----------------------------------------------------------------------------
-// Parent Block Gas Used
-// Required by EIP1559 base fee calculation.
-// ----------------------------------------------------------------------------
-
-// GetBlockGasUsed returns the last block gas used value from the store.
-func (k Keeper) GetBlockGasUsed(ctx sdk.Context) uint64 {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.KeyPrefixBlockGasUsed)
-	if len(bz) == 0 {
-		return 0
-	}
-
-	return sdk.BigEndianToUint64(bz)
-}
-
-// SetBlockGasUsed gets the current block gas consumed to the store.
-// CONTRACT: this should be only called during EndBlock.
-func (k Keeper) SetBlockGasUsed(ctx sdk.Context) {
-	store := ctx.KVStore(k.storeKey)
-	gasBz := sdk.Uint64ToBigEndian(ctx.BlockGasMeter().GasConsumedToLimit())
-	store.Set(types.KeyPrefixBlockGasUsed, gasBz)
-}
-
-// ----------------------------------------------------------------------------
-// Parent Base Fee
-// Required by EIP1559 base fee calculation.
-// ----------------------------------------------------------------------------
-
-// GetBlockGasUsed returns the last block gas used value from the store.
-func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.KeyPrefixBaseFee)
-	if len(bz) == 0 {
-		return new(big.Int).SetUint64(params.InitialBaseFee)
-	}
-
-	return new(big.Int).SetBytes(bz)
-}
-
-// SetBlockGasUsed gets the current block gas consumed to the store.
-// CONTRACT: this should be only called during EndBlock.
-func (k Keeper) SetBaseFee(ctx sdk.Context, baseFee *big.Int) {
-	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyPrefixBaseFee, baseFee.Bytes())
 }
 
 // ----------------------------------------------------------------------------

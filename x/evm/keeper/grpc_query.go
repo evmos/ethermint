@@ -316,7 +316,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	baseFee := k.GetBaseFee(ctx)
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
 
 	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
@@ -382,7 +382,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	baseFee := k.GetBaseFee(ctx)
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (vmerror bool, rsp *types.MsgEthereumTxResponse, err error) {

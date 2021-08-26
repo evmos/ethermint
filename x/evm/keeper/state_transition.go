@@ -56,11 +56,13 @@ func (k *Keeper) NewEVM(
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
 func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
+	fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
+
 	return vm.Config{
 		Debug:       k.debug,
 		Tracer:      tracer,
 		NoRecursion: false, // TODO: consider disabling recursion though params
-		NoBaseFee:   params.NoBaseFee,
+		NoBaseFee:   fmParams.NoBaseFee,
 		ExtraEips:   params.EIPs(),
 	}
 }
@@ -150,7 +152,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.Ctx().BlockHeight()))
 
-	baseFee := k.GetBaseFee(k.Ctx())
+	baseFee := k.feeMarketKeeper.GetBaseFee(k.Ctx())
 
 	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {

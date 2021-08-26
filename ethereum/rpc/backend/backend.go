@@ -268,7 +268,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	validatorAddr := common.BytesToAddress(addr)
 
-	bfRes, err := e.queryClient.BaseFee(types.ContextWithHeight(block.Height), &evmtypes.QueryBaseFeeRequest{})
+	bfRes, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(block.Height), &evmtypes.QueryBaseFeeRequest{})
 	if err != nil {
 		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
 		return nil, err

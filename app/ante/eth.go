@@ -31,6 +31,9 @@ type EVMKeeper interface {
 	GetCoinbaseAddress() (common.Address, error)
 	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address, baseFee *big.Int, tracer vm.Tracer) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
+}
+
+type FeeMarketKeeper interface {
 	GetBaseFee(ctx sdk.Context) *big.Int
 }
 
@@ -239,17 +242,21 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
-	ak         AccountKeeper
-	bankKeeper BankKeeper
-	evmKeeper  EVMKeeper
+	ak              AccountKeeper
+	bankKeeper      BankKeeper
+	evmKeeper       EVMKeeper
+	feeMarketKeeper FeeMarketKeeper
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
-func NewEthGasConsumeDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKeeper) EthGasConsumeDecorator {
+func NewEthGasConsumeDecorator(
+	ak AccountKeeper, bankKeeper BankKeeper, ek EVMKeeper, fmk FeeMarketKeeper,
+) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
-		ak:         ak,
-		bankKeeper: bankKeeper,
-		evmKeeper:  ek,
+		ak:              ak,
+		bankKeeper:      bankKeeper,
+		evmKeeper:       ek,
+		feeMarketKeeper: fmk,
 	}
 }
 
@@ -325,7 +332,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		effectiveTip := txData.GetGasPrice()
 		if london && txData.TxType() == ethtypes.DynamicFeeTxType {
-			baseFee := egcd.evmKeeper.GetBaseFee(ctx)
+			baseFee := egcd.feeMarketKeeper.GetBaseFee(ctx)
 			effectiveTip = cmath.BigMin(txData.GetGasTipCap(), new(big.Int).Sub(txData.GetGasFeeCap(), baseFee))
 		}
 
@@ -363,13 +370,15 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 // CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
 // context rules.
 type CanTransferDecorator struct {
-	evmKeeper EVMKeeper
+	evmKeeper       EVMKeeper
+	feemarketKeeper FeeMarketKeeper
 }
 
 // NewCanTransferDecorator creates a new CanTransferDecorator instance.
-func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
+func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk FeeMarketKeeper) CanTransferDecorator {
 	return CanTransferDecorator{
-		evmKeeper: evmKeeper,
+		evmKeeper:       evmKeeper,
+		feemarketKeeper: fmk,
 	}
 }
 
@@ -392,7 +401,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		baseFee := ctd.evmKeeper.GetBaseFee(ctx)
+		baseFee := ctd.feemarketKeeper.GetBaseFee(ctx)
 		coreMsg, err := msgEthTx.AsMessage(signer, baseFee)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
