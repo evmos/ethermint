@@ -49,15 +49,37 @@ interoperable with Ethereum. It's build using the the [Cosmos SDK](https://githu
 
 **Note**: Requires [Go 1.16+](https://golang.org/dl/)
 
+## Installation
+
+For prerequisites and detailed build instructions please read the [Installation](https://ethermint.dev/quickstart/installation.html) instructions. Once the dependencies are installed, run:
+
+```bash
+make install
+```
+
+Or check out the latest [release](https://github.com/tharsis/ethermint/releases).
+
 ## Quick Start
 
-To learn how the Ethermint works from a high-level perspective, go to the [Introduction](./docs/intro/overview.md) section from the documentation.
+To learn how the Ethermint works from a high-level perspective, go to the [Introduction](https://ethermint.dev/intro/overview.html) section from the documentation. You can also check the instructions to [Run a Node](https://ethermint.dev/quickstart/run_node.html).
 
 For more, please refer to the [Ethermint Docs](./docs/), which are also hosted on [ethermint.dev](https://ethermint.dev/).
 
-### Community
+## Community
 
 The following chat channels and forums are a great spot to ask questions about Ethermint:
 
+- [Ethermint Twitter](https://twitter.com/ethermint)
+- [Tharsis Twitter](https://twitter.com/ethermint)
 - [Ethermint Discord](https://discord.gg/3ZbxEq4KDu)
 - [Ethermint Forum](https://forum.cosmos.network/c/ethermint)
+
+## Contributing
+
+Looking for a good place to start contributing? Check out some [`good first issues`](https://github.com/tharsis/ethermint/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
+
+For additional instruction, standards and style guides, please refer to the [Contributing](./CONTRIBUTING.md) document.
+
+## Careers
+
+See our open positions on [Cosmos Jobs](https://jobs.cosmos.network/project/ethermint-d0sk1uxuh-remote/), [Notion](https://tharsis.notion.site/Jobs-at-Tharsis-5a1642eb89b34747ae6f2db2d356fc0d) or feel free to [reach out](mailto:careers@thars.is) via email.
