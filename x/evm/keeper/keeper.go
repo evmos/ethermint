@@ -229,126 +229,78 @@ func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
 // GetAllTxLogs return all the transaction logs from the store.
 func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.KeyPrefixTxLogCount)
-	defer iterator.Close()
+	iter := sdk.KVStorePrefixIterator(store, types.KeyPrefixLogs)
+	defer iter.Close()
+
+	var mapLogs = make(map[string][]*types.Log)
+	for ; iter.Valid(); iter.Next() {
+		var txLog types.Log
+		k.cdc.MustUnmarshal(iter.Value(), &txLog)
+
+		txlogs := mapLogs[txLog.TxHash]
+		txlogs = append(txlogs, &txLog)
+		mapLogs[txLog.TxHash] = txlogs
+	}
 
 	txsLogs := []types.TransactionLogs{}
-	for ; iterator.Valid(); iterator.Next() {
-		txLogCount := types.BytesToUint16(iterator.Value())
-		txHash := iterator.Key()
-
-		var txlogs types.TransactionLogs
-		txlogs.Hash = common.Bytes2Hex(txHash)
-
-		s := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
-		for i := uint16(0); i < txLogCount; i++ {
-			var key []byte
-			key = append(key, txHash...)
-			key = append(key, types.Uint16ToBytes(i)...)
-			logbz := s.Get(key)
-			if logbz == nil {
-				// TODO: error handle?
-				continue
-			}
-
-			var txLog types.Log
-			k.cdc.MustUnmarshal(logbz, &txLog)
-			txlogs.Logs = append(txlogs.Logs, &txLog)
-		}
-
-		// add a new entry
-		txsLogs = append(txsLogs, txlogs)
+	for txHash, logs := range mapLogs {
+		txLogs := types.TransactionLogs{Hash: txHash, Logs: logs}
+		txsLogs = append(txsLogs, txLogs)
 	}
+
 	return txsLogs
 }
 
 // GetLogs returns the current logs for a given transaction hash from the KVStore.
 // This function returns an empty, non-nil slice if no logs are found.
 func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixTxLogCount)
+	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
 
-	bz := store.Get(txHash.Bytes())
-	if len(bz) == 0 {
-		return []*ethtypes.Log{}
-	}
+	var end = txHash.Bytes()
+	end = append(end, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}...)
 
-	store = prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
-	txLogCount := types.BytesToUint16(bz)
+	iter := store.Iterator(txHash.Bytes(), end)
+	defer iter.Close()
 
 	logs := []*ethtypes.Log{}
-	for i := uint16(0); i < txLogCount; i++ {
-		var key []byte
-		key = append(key, txHash.Bytes()...)
-		key = append(key, types.Uint16ToBytes(i)...)
-		logbz := store.Get(key)
-
-		if logbz == nil {
-			// TODO: how to handle this?
-			continue
-		}
-
+	for ; iter.Valid(); iter.Next() {
 		var log types.Log
-		k.cdc.MustUnmarshal(logbz, &log)
-
+		k.cdc.MustUnmarshal(iter.Value(), &log)
 		logs = append(logs, log.ToEthereum())
 	}
+
 	return logs
 }
 
 // SetLogs sets the logs for a transaction in the KVStore.
 func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
-	var logStore prefix.Store
-	len := len(logs)
-
-	if len > 65535 {
-		k.Logger(k.Ctx()).Error(
-			"cannot store more than 65535 logs in a transaction",
-			"txhash", txHash.String(),
-			"log-length", len,
-		)
-		return
-	} else if len > 0 {
-		s := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixTxLogCount)
-
-		s.Set(txHash.Bytes(), types.Uint16ToBytes(uint16(len)))
-		logStore = prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
-	}
-
-	for index, log := range logs {
-		k.SetLog(txHash, log, logStore, uint16(index))
+	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+	for _, log := range logs {
+		var key = txHash.Bytes()
+		key = append(key, sdk.Uint64ToBigEndian(uint64(log.Index))...)
+		k.SetLog(store, key, log)
 	}
 }
 
 // SetLog sets the log for a transaction in the KVStore.
-func (k Keeper) SetLog(txHash common.Hash, log *ethtypes.Log, s prefix.Store, index uint16) {
+func (k Keeper) SetLog(s prefix.Store, key []byte, log *ethtypes.Log) {
 	txIndexLog := types.NewLogFromEth(log)
 	bz := k.cdc.MustMarshal(txIndexLog)
-
-	var key []byte
-	key = append(key, txHash.Bytes()...)
-	key = append(key, types.Uint16ToBytes(index)...)
 	s.Set(key, bz)
 }
 
 // DeleteLogs removes the logs from the KVStore. It is used during journal.Revert.
 func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTxLogCount)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
 
-	b := store.Get(txHash.Bytes())
-	if len(b) == 0 {
-		return
-	}
+	var end = txHash.Bytes()
+	end = append(end, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}...)
 
-	txLogCount := types.BytesToUint16(b)
-	store.Delete(txHash.Bytes())
+	iter := store.Iterator(txHash.Bytes(), end)
+	defer iter.Close()
 
-	store = prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
-	for i := uint16(0); i < txLogCount; i++ {
-		var key []byte
-		key = append(key, txHash.Bytes()...)
-		key = append(key, types.Uint16ToBytes(i)...)
-
-		store.Delete(key)
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.Key())
 	}
 }
 

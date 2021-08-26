@@ -53,7 +53,6 @@ var (
 	KeyPrefixLogs               = []byte{prefixLogs}
 	KeyPrefixCode               = []byte{prefixCode}
 	KeyPrefixStorage            = []byte{prefixStorage}
-	KeyPrefixTxLogCount         = []byte{prefixTxLogCount}
 )
 
 // Transient Store key prefixes
