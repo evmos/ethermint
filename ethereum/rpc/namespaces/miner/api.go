@@ -80,11 +80,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	}
 
 	// Fetch minimun gas price to calculate fees using the configuration.
-	appConf, err := config.ParseConfig(api.ctx.Viper)
-	if err != nil {
-		api.logger.Error("failed to parse file.", "file", api.ctx.Viper.ConfigFileUsed(), "error:", err.Error())
-		return false
-	}
+	appConf := config.GetConfig(api.ctx.Viper)
 
 	minGasPrices := appConf.GetMinGasPrices()
 	if len(minGasPrices) == 0 || minGasPrices.Empty() {
@@ -164,17 +160,14 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 // to use float values, the gas prices must be configured using the configuration file
 func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.logger.Info(api.ctx.Viper.ConfigFileUsed())
-	appConf, err := config.ParseConfig(api.ctx.Viper)
-	if err != nil {
-		api.logger.Debug("failed to parse config file", "file", api.ctx.Viper.ConfigFileUsed(), "error", err.Error())
-		return false
-	}
+	appConf := config.GetConfig(api.ctx.Viper)
 
 	var unit string
 	minGasPrices := appConf.GetMinGasPrices()
 
 	// fetch the base denom from the sdk Config in case it's not currently defined on the node config
 	if len(minGasPrices) == 0 || minGasPrices.Empty() {
+		var err error
 		unit, err = sdk.GetBaseDenom()
 		if err != nil {
 			api.logger.Debug("could not get the denom of smallest unit registered", "error", err.Error())

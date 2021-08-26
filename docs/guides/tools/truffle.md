@@ -1,19 +1,19 @@
 <!--
-order: 1
+order: 3
 -->
 
-# Truffle
+# Truffle: Deploying a Smart Contract
 
-Set up a Truffle Ethermint local development environment. {synopsis}
+Learn how to deploy a simple Solidity-based smart contract to Ethermint using the Truffle environment {synopsis}
 
 ## Pre-requisite Readings
 
 - [Installation](./../quickstart/installation.md) {prereq}
 - [Run a node](./../quickstart/run_node.md) {prereq}
 
-[Truffle](https://www.trufflesuite.com/truffle) is a development framework for deploying and managing [Solidity](https://github.com/ethereum/solidity) smart contracts. In this guide, we will learn how to deploy a contract to a running Ethermint network.
+[Truffle](https://www.trufflesuite.com/truffle) is a development framework for deploying and managing [Solidity](https://github.com/ethereum/solidity) smart contracts.
 
-## Install dependencies
+## Install Dependencies
 
 First, install the latest Truffle version on your machine globally.
 
@@ -21,15 +21,17 @@ First, install the latest Truffle version on your machine globally.
 yarn install truffle -g
 ```
 
-You will also need to install Ethermint. Check this [document](./../../quickstart/installation.md) for the full instructions.
+::: tip
+If you haven't already, you will also need to install Ethermint if you plan on deploying your smart contracts locally. Check this [document](./../../quickstart/installation.md) for the full instructions.
+:::
 
 ## Create Truffle Project
 
 In this step we will create a simple counter contract. Feel free to skip this step if you already have your own compiled contract.
 
-Create a new directory to host the contracts and initialize it
+Create a new directory to host the contracts and initialize it:
 
-```bash
+```console
 mkdir ethermint-truffle
 cd ethermint-truffle
 ```
@@ -43,7 +45,7 @@ truffle init
 Create `contracts/Counter.sol` containing the following contract:
 
 ```javascript
-pragma solidity ^0.5.11;
+pragma solidity >=0.7.0 <0.9.0;
 
 contract Counter {
   uint256 counter = 0;
@@ -95,9 +97,9 @@ Open `truffle-config.js` and uncomment the `development` section in `networks`:
 
 ```javascript
     development: {
-     host: "127.0.0.1",     // Localhost (default: none)
-     port: 8545,            // Standard Ethereum port (default: none)
-     network_id: "*",       // Any network (default: none)
+      host: "127.0.0.1",     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      network_id: "*",       // Any network (default: none)
     },
 ```
 
@@ -108,17 +110,17 @@ This will allow your contract to connect to your Ethermint local node.
 Start your local node using the following command on the Terminal
 
 ```bash
-# on the ~/ethermint/ directory
-init.sh
+# from the ~/ethermint/ directory
+$ init.sh
 ```
 
 ::: tip
-For further information on how to run a node, please refer to [this](./../../quickstart/run_node.md) quickstart document.
+For further information on how to run a node, please refer to the [quickstart guide](./../../quickstart/run_node.md).
 :::
 
 ## Deploy contract
 
-Back in the Truffle terminal, migrate the contract using
+In the Truffle terminal, migrate the contract using:
 
 ```bash
 truffle migrate --network development
@@ -127,7 +129,7 @@ truffle migrate --network development
 You should see incoming deployment logs in the Ethermint daemon Terminal tab for each transaction (one to deploy `Migrations.sol` and the other to deploy `Counter.sol`).
 
 ```bash
-I[2020-07-15|17:35:59.934] Added good transaction                       module=mempool tx=22245B935689918D332F58E82690F02073F0453D54D5944B6D64AAF1F21974E2 res="&{CheckTx:log:\"[]\" gas_wanted:6721975 }" height=3 total=1
+$ I[2020-07-15|17:35:59.934] Added good transaction                       module=mempool tx=22245B935689918D332F58E82690F02073F0453D54D5944B6D64AAF1F21974E2 res="&{CheckTx:log:\"[]\" gas_wanted:6721975 }" height=3 total=1
 I[2020-07-15|17:36:02.065] Executed block                               module=state height=4 validTxs=1 invalidTxs=0
 I[2020-07-15|17:36:02.068] Committed state                              module=state height=4 txs=1 appHash=76BA85365F10A59FE24ADCA87544191C2D72B9FB5630466C5B71E878F9C0A111
 I[2020-07-15|17:36:02.981] Added good transaction                       module=mempool tx=84516B4588CBB21E6D562A6A295F1F8876076A0CFF2EF1B0EC670AD8D8BB5425 res="&{CheckTx:log:\"[]\" gas_wanted:6721975 }" height=4 total=1
@@ -138,7 +140,7 @@ I[2020-07-15|17:36:02.981] Added good transaction                       module=m
 Now, you can run the Truffle tests using the Ethermint node using the `test` command:
 
 ```bash
-truffle test --network development
+$ truffle test --network development
 
 Using network 'development'.
 
@@ -155,7 +157,3 @@ Compiling your contracts...
 
   1 passing (10s)
 ```
-
-## Next {hide}
-
-Learn how to connect Ethermint to [Metamask](./../wallets/metamask.md) {hide}

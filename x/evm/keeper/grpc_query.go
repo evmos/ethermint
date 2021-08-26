@@ -292,16 +292,6 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 	}, nil
 }
 
-// BaseFee implements the Query/BaseFee gRPC method
-func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types.QueryBaseFeeResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	baseFee := k.GetBaseFee(ctx)
-	return &types.QueryBaseFeeResponse{
-		BaseFee: sdk.NewIntFromBigInt(baseFee),
-	}, nil
-}
-
 // EthCall implements eth_call rpc api.
 func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.MsgEthereumTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)

@@ -26,8 +26,6 @@ message Params {
     (gogoproto.moretags) = "yaml:\"chain_config\"",
     (gogoproto.nullable) = false
   ];
-  // no base fee forces the EIP-1559 base fee to 0 (needed for 0 price calls)
-  bool no_base_fee = 6 [ (gogoproto.moretags) = "yaml:\"no_base_fee\"" ];
 }
 
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values

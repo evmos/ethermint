@@ -64,7 +64,6 @@ func DefaultChainConfig() ChainConfig {
 		MuirGlacierBlock:    &muirGlacierBlock,
 		BerlinBlock:         &berlinBlock,
 		LondonBlock:         &londonBlock,
-		EWASMBlock:          nil,
 		CatalystBlock:       nil,
 	}
 }
@@ -119,13 +118,14 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.LondonBlock); err != nil {
 		return sdkerrors.Wrap(err, "londonBlock")
 	}
-	if err := validateBlock(cc.EWASMBlock); err != nil {
-		return sdkerrors.Wrap(err, "eWASMBlock")
-	}
 	if err := validateBlock(cc.CatalystBlock); err != nil {
-		return sdkerrors.Wrap(err, "calalystBlock")
+		return sdkerrors.Wrap(err, "catalystBlock")
 	}
 
+	// NOTE: chain ID is not needed to check config order
+	if err := cc.EthereumConfig(nil).CheckConfigForkOrder(); err != nil {
+		return sdkerrors.Wrap(err, "invalid config fork order")
+	}
 	return nil
 }
 

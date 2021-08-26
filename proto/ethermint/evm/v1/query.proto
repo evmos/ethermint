@@ -67,12 +67,7 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/params";
   }
-
-  // BaseFee queries the base fee of the parent block of the current block.
-  rpc BaseFee(QueryBaseFeeRequest) returns (QueryBaseFeeResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1/base_fee";
-  }
-
+  
   // EthCall implements the `eth_call` rpc api
   rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/eth_call";
@@ -254,21 +249,6 @@ message QueryParamsResponse {
   // params define the evm module parameters.
   Params params = 1 [ (gogoproto.nullable) = false ];
 }
-
-// QueryBaseFeeRequest defines the request type for querying the EIP1559 base
-// fee.
-message QueryBaseFeeRequest {}
-
-// BaseFeeResponse returns the EIP1559 base fee.
-message QueryBaseFeeResponse {
-  string base_fee = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
-}
-
-// QueryStaticCallRequest defines static call response
-message QueryStaticCallResponse { bytes data = 1; }
 
 // EthCallRequest defines EthCall request
 message EthCallRequest {

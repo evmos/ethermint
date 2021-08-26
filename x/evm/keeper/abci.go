@@ -30,11 +30,6 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	k.WithContext(infCtx)
 
-	baseFee := k.CalculateBaseFee(ctx)
-
-	k.SetBaseFee(ctx, baseFee)
-	k.SetBlockGasUsed(ctx)
-
 	bloom := ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes())
 	k.SetBlockBloom(infCtx, req.Height, bloom)
 
