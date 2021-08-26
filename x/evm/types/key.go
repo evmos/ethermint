@@ -31,8 +31,6 @@ const (
 	prefixLogs
 	prefixCode
 	prefixStorage
-	prefixBlockGasUsed
-	prefixBaseFee
 )
 
 // prefix bytes for the EVM transient store
@@ -54,8 +52,6 @@ var (
 	KeyPrefixLogs               = []byte{prefixLogs}
 	KeyPrefixCode               = []byte{prefixCode}
 	KeyPrefixStorage            = []byte{prefixStorage}
-	KeyPrefixBlockGasUsed       = []byte{prefixBlockGasUsed}
-	KeyPrefixBaseFee            = []byte{prefixBaseFee}
 )
 
 // Transient Store key prefixes

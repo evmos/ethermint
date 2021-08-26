@@ -1,214 +1,58 @@
-name: Tests / Code Coverage
-#  Tests / Code Coverage workflow runs unit tests and uploads a code coverage report
-#  This workflow is run on pushes to development & every Pull Requests where a .go, .mod, .sum have been changed
+name: Tests
 on:
   pull_request:
   push:
     branches:
       - main
+      - release/**
+
 jobs:
-  # TODO: refactor before enabling
-  # test-rpc:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 10
-  #   steps:
-  #     - uses: actions/checkout@v2.3.4
-  #     - uses: actions/setup-go@v2.1.3
-  #       with:
-  #         go-version: 1.16
-  #     - uses: technote-space/get-diff-action@v5
-  #       id: git_diff
-  #       with:
-  #         SUFFIX_FILTER: |
-  #           .go
-  #           .mod
-  #           .sum
-  #     - name: test-rpc
-  #       run: |
-  #         make test-rpc
-  #       if: "env.GIT_DIFF != ''"
-
-  split-test-files:
+  cleanup-runs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.4
-      - name: Create a file with all the pkgs
-        run: go list ./... | grep -Ev 'vendor|importer|rpc/tester' > pkgs.txt
-      - name: Split pkgs into 4 files
-        run: split -n l/4 --additional-suffix=.txt ./pkgs.txt
-      # cache multiple
-      - uses: actions/upload-artifact@v2
-        with:
-          name: "${{ github.sha }}-aa"
-          path: ./xaa.txt
-      - uses: actions/upload-artifact@v2
-        with:
-          name: "${{ github.sha }}-ab"
-          path: ./xab.txt
-      - uses: actions/upload-artifact@v2
-        with:
-          name: "${{ github.sha }}-ac"
-          path: ./xac.txt
-      - uses: actions/upload-artifact@v2
-        with:
-          name: "${{ github.sha }}-ad"
-          path: ./xad.txt
+      - uses: rokroskar/workflow-run-cleanup-action@master
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
 
-  test-coverage-run-1:
+  install-tparse:
     runs-on: ubuntu-latest
-    needs: split-test-files
-    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-go@v2.1.3
+      - uses: actions/setup-go@v2.1.4
         with:
           go-version: 1.16
+      - name: Display Go Version
+        run: go version
+      - name: Install tparse
+        run: |
+          export GO111MODULE="on" && go get github.com/mfridman/tparse@v0.8.3
+      - uses: actions/cache@v2.1.6
+        with:
+          path: ~/go/bin
+          key: ${{ runner.os }}-go-tparse-binary
+
+  test-unit-cover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2.1.4
+        with:
+          go-version: 1.16
+      - uses: actions/checkout@v2.3.4
       - uses: technote-space/get-diff-action@v5
-        id: git_diff
         with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
-      - uses: actions/download-artifact@v2
-        with:
-          name: "${{ github.sha }}-aa"
-        if: "env.GIT_DIFF != ''"
-      - name: test & coverage report creation
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: Test and Create Coverage Report
         run: |
-          cat xaa.txt | xargs go test -timeout 8m -coverprofile=coverage.txt -covermode=atomic
-        if: "env.GIT_DIFF != ''"
-      - name: filter out proto files
-        run: |
-          excludelist+=" $(find ./ -type f -name '*.pb.go')"
-          for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
-            echo "Excluding ${filename} from coverage report..."
-            sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
-          done
-        if: "env.GIT_DIFF != ''"
+          make test-unit-cover
+        if: env.GIT_DIFF
       - uses: codecov/codecov-action@v2.0.3
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
-        if: "env.GIT_DIFF != ''"
-
-  test-coverage-run-2:
-    runs-on: ubuntu-latest
-    needs: split-test-files
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-go@v2.1.3
-        with:
-          go-version: 1.16
-      - uses: technote-space/get-diff-action@v5
-        id: git_diff
-        with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
-      - uses: actions/download-artifact@v2
-        with:
-          name: "${{ github.sha }}-ab"
-        if: "env.GIT_DIFF != ''"
-      - name: test & coverage report creation
-        run: |
-          cat xab.txt | xargs go test -timeout 6m -coverprofile=coverage.txt -covermode=atomic
-        if: "env.GIT_DIFF != ''"
-      - name: filter out proto files
-        run: |
-          excludelist+=" $(find ./ -type f -name '*.pb.go')"
-          for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
-            echo "Excluding ${filename} from coverage report..."
-            sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
-          done
-        if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.3
-        with:
-          file: ./coverage.txt
-          fail_ci_if_error: true
-        if: "env.GIT_DIFF != ''"
-
-  test-coverage-run-3:
-    runs-on: ubuntu-latest
-    needs: split-test-files
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-go@v2.1.3
-        with:
-          go-version: 1.16
-      - uses: technote-space/get-diff-action@v5
-        id: git_diff
-        with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
-      - uses: actions/download-artifact@v2
-        with:
-          name: "${{ github.sha }}-ac"
-        if: "env.GIT_DIFF != ''"
-      - name: test & coverage report creation
-        run: |
-          cat xac.txt | xargs go test -timeout 6m -coverprofile=coverage.txt -covermode=atomic
-        if: "env.GIT_DIFF != ''"
-      - name: filter out proto files
-        run: |
-          excludelist+=" $(find ./ -type f -name '*.pb.go')"
-          for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
-            echo "Excluding ${filename} from coverage report..."
-            sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
-          done
-        if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.3
-        with:
-          file: ./coverage.txt
-          fail_ci_if_error: true
-        if: "env.GIT_DIFF != ''"
-
-  test-coverage-run-4:
-    runs-on: ubuntu-latest
-    needs: split-test-files
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-go@v2.1.3
-        with:
-          go-version: 1.16
-      - uses: technote-space/get-diff-action@v5
-        id: git_diff
-        with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
-      - uses: actions/download-artifact@v2
-        with:
-          name: "${{ github.sha }}-ad"
-        if: "env.GIT_DIFF != ''"
-      - name: test & coverage report creation
-        run: |
-          cat xad.txt | xargs go test -timeout 6m -coverprofile=coverage.txt -covermode=atomic
-        if: "env.GIT_DIFF != ''"
-      - name: filter out proto files
-        run: |
-          excludelist+=" $(find ./ -type f -name '*.pb.go')"
-          for filename in ${excludelist}; do
-            filename=$(echo $filename | sed 's/^./github.com\/tharsis\/ethermint/g')
-            echo "Excluding ${filename} from coverage report..."
-            sed -i.bak "/$(echo $filename | sed 's/\//\\\//g')/d" coverage.txt
-          done
-        if: "env.GIT_DIFF != ''"
-      - uses: codecov/codecov-action@v2.0.3
-        with:
-          file: ./coverage.txt
-          fail_ci_if_error: true
-        if: "env.GIT_DIFF != ''"
+        if: env.GIT_DIFF
 
   # TODO: refactor before enabling
   # test-importer:
@@ -216,7 +60,7 @@ jobs:
   #   timeout-minutes: 10
   #   steps:
   #     - uses: actions/checkout@v2.3.4
-  #     - uses: actions/setup-go@v2.1.3
+  #     - uses: actions/setup-go@v2.1.4
   #       with:
   #         go-version: 1.16
   #     - uses: technote-space/get-diff-action@v5
@@ -247,3 +91,33 @@ jobs:
         run: |
           make test-solidity
         if: "env.GIT_DIFF != ''"
+
+  liveness-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions/setup-go@v2.1.4
+        with:
+          go-version: 1.16
+      - uses: technote-space/get-diff-action@v5
+        id: git_diff
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: Install Starport
+        run: |
+          curl https://get.starport.network/starport! | bash
+        if: env.GIT_DIFF
+      - name: Start Local Network via Starport
+        run: |
+          starport chain serve --reset-once -v -c ./starport.yml > starport.out 2>&1 &
+        if: env.GIT_DIFF
+      - name: Test Local Network Liveness
+        run: |
+          sleep 2m
+          ./contrib/scripts/test_localnet_liveness.sh 100 5 50 localhost
+        if: env.GIT_DIFF
+      
