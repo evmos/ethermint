@@ -31,7 +31,6 @@ const (
 	prefixLogs
 	prefixCode
 	prefixStorage
-	prefixTxLogCount
 )
 
 // prefix bytes for the EVM transient store
