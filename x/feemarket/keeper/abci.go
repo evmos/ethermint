@@ -18,8 +18,7 @@ import (
 func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
 
-	// TODO: get enable height from EVM params
-	baseFee := k.CalculateBaseFee(ctx, 0)
+	baseFee := k.CalculateBaseFee(ctx)
 	if baseFee == nil {
 		return
 	}

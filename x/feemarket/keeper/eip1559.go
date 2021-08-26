@@ -13,16 +13,17 @@ import (
 // block during EndBlock. If the NoBaseFee parameter is enabled, this function returns nil.
 // NOTE: This code is inspired from the go-ethereum EIP1559 implementation and adapted to Cosmos SDK-based
 // chains. For the canonical code refer to: https://github.com/ethereum/go-ethereum/blob/master/consensus/misc/eip1559.go
-func (k Keeper) CalculateBaseFee(ctx sdk.Context, enableHeight int64) *big.Int {
-	consParams := ctx.ConsensusParams()
+func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	params := k.GetParams(ctx)
 
 	if params.NoBaseFee {
 		return nil
 	}
 
+	consParams := ctx.ConsensusParams()
+
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
-	if ctx.BlockHeight() <= enableHeight {
+	if ctx.BlockHeight() <= params.EnableHeight {
 		return new(big.Int).SetInt64(params.InitialBaseFee)
 	}
 

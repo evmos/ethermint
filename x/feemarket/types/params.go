@@ -1,7 +1,8 @@
 package types
 
 import (
-	fmt "fmt"
+	"fmt"
+	"math"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
@@ -20,6 +21,7 @@ var (
 	ParamStoreKeyBaseFeeChangeDenominator = []byte("BaseFeeChangeDenominator")
 	ParamStoreKeyElasticityMultiplier     = []byte("ElasticityMultiplier")
 	ParamStoreKeyInitialBaseFee           = []byte("InitialBaseFee")
+	ParamStoreKeyEnableHeight             = []byte("EnableHeight")
 )
 
 // ParamKeyTable returns the parameter key table.
@@ -28,12 +30,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, initialBaseFee int64) Params {
+func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, initialBaseFee, enableHeight int64) Params {
 	return Params{
 		NoBaseFee:                noBaseFee,
 		BaseFeeChangeDenominator: baseFeeChangeDenom,
 		ElasticityMultiplier:     elasticityMultiplier,
 		InitialBaseFee:           initialBaseFee,
+		EnableHeight:             enableHeight,
 	}
 }
 
@@ -45,6 +48,7 @@ func DefaultParams() Params {
 		BaseFeeChangeDenominator: DefaultBaseFeeChangeDenominator,
 		ElasticityMultiplier:     DefaultElasticityMultiplier,
 		InitialBaseFee:           DefaultInitialBaseFee,
+		EnableHeight:             math.MaxInt64,
 	}
 }
 
@@ -55,6 +59,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyBaseFeeChangeDenominator, &p.BaseFeeChangeDenominator, validateBaseFeeChangeDenominator),
 		paramtypes.NewParamSetPair(ParamStoreKeyElasticityMultiplier, &p.ElasticityMultiplier, validateElasticityMultiplier),
 		paramtypes.NewParamSetPair(ParamStoreKeyInitialBaseFee, &p.InitialBaseFee, validateInitialBaseFee),
+		paramtypes.NewParamSetPair(ParamStoreKeyEnableHeight, &p.EnableHeight, validateEnableHeight),
 	}
 }
 
@@ -66,6 +71,10 @@ func (p Params) Validate() error {
 
 	if p.InitialBaseFee < 0 {
 		return fmt.Errorf("initial base fee cannot be negative: %d", p.InitialBaseFee)
+	}
+
+	if p.EnableHeight < 0 {
+		return fmt.Errorf("enable height cannot be negative: %d", p.EnableHeight)
 	}
 
 	return nil
@@ -108,6 +117,19 @@ func validateInitialBaseFee(i interface{}) error {
 
 	if value < 0 {
 		return fmt.Errorf("initial base fee cannot be negative: %d", value)
+	}
+
+	return nil
+}
+
+func validateEnableHeight(i interface{}) error {
+	value, ok := i.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if value < 0 {
+		return fmt.Errorf("enable height cannot be negative: %d", value)
 	}
 
 	return nil

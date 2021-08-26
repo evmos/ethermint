@@ -15,4 +15,6 @@ message Params {
   uint32 elasticity_multiplier = 3;
   // initial base fee for EIP-1559 blocks.
   int64 initial_base_fee = 4;
+  // height at which the base fee calculation is enabled.
+  int64 enable_height = 5;
 }
