@@ -7,8 +7,6 @@ option go_package = "github.com/tharsis/ethermint/x/evm/types";
 
 // Params defines the EVM module parameters
 message Params {
-  option (gogoproto.goproto_stringer) = false;
-
   // evm denom represents the token denomination used to run the EVM state
   // transitions.
   string evm_denom = 1 [ (gogoproto.moretags) = "yaml:\"evm_denom\"" ];
