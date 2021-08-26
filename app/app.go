@@ -272,7 +272,7 @@ func NewEthermintApp(
 		// ibc keys
 		ibchost.StoreKey, ibctransfertypes.StoreKey,
 		// ethermint keys
-		evmtypes.StoreKey,
+		evmtypes.StoreKey, feemarkettypes.StoreKey,
 	)
 
 	// Add the EVM transient store key
