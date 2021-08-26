@@ -1,19 +1,13 @@
 package keeper
 
 import (
-	"bytes"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
-	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
@@ -39,9 +33,9 @@ func NewKeeper(
 	}
 
 	return &Keeper{
-		cdc:           cdc,
-		storeKey:      storeKey,
-		paramSpace:    paramSpace,
+		cdc:        cdc,
+		storeKey:   storeKey,
+		paramSpace: paramSpace,
 	}
 }
 

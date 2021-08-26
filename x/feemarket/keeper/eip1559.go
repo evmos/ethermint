@@ -24,7 +24,7 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context, enableHeight int64) *big.Int {
 	}
 
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
-	if !params.IsEnabledHeight(ctx.BlockHeight()) {
+	if ctx.BlockHeight() <= enableHeight {
 		return new(big.Int).SetUint64(types.InitialBaseFee)
 	}
 

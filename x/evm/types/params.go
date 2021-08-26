@@ -38,14 +38,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, noBaseFee bool, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
 	return Params{
 		EvmDenom:     evmDenom,
 		EnableCreate: enableCreate,
 		EnableCall:   enableCall,
 		ExtraEIPs:    extraEIPs,
 		ChainConfig:  config,
-		NoBaseFee:    noBaseFee,
 	}
 }
 
@@ -58,7 +57,6 @@ func DefaultParams() Params {
 		EnableCall:   true,
 		ChainConfig:  DefaultChainConfig(),
 		ExtraEIPs:    nil,
-		NoBaseFee:    true,
 	}
 }
 
@@ -76,7 +74,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
-		paramtypes.NewParamSetPair(ParamStoreKeyNoBaseFee, &p.NoBaseFee, validateBool),
 	}
 }
 
