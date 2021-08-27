@@ -79,19 +79,11 @@ func (api *API) TraceTransaction(hash common.Hash, _ *TraceConfig) (interface{},
 		return nil, err
 	}
 
-	//TODO Check if there is more than one tx
 	ethMessage, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		api.logger.Debug("invalid transaction type", "type", fmt.Sprintf("%T", tx))
 		return nil, fmt.Errorf("invalid transaction type %T", tx)
 	}
-
-	//Get block by number or hash
-	//block, err := api.backend.GetBlockByNumber(types.BlockNumber(transaction.Height), false)
-	//if err != nil {
-	//	api.logger.Debug("block number not found", "block", transaction.Height, "hash", hash)
-	//	return nil, err
-	//}
 
 	traceResult, err := api.queryClient.TraceTx(rpctypes.ContextWithHeight(transaction.Height), &evmtypes.QueryTraceTxRequest{
 		Msg:   ethMessage,

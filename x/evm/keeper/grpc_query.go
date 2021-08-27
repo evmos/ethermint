@@ -528,7 +528,9 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	// Depending on the tracer type, format and return the output.
+	// TODO support custom tracer param
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
 		//TODO Return proper returnValue
