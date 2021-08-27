@@ -232,22 +232,28 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	iter := sdk.KVStorePrefixIterator(store, types.KeyPrefixLogs)
 	defer iter.Close()
 
+	mapOrder := []string{}
 	var mapLogs = make(map[string][]*types.Log)
 	for ; iter.Valid(); iter.Next() {
 		var txLog types.Log
 		k.cdc.MustUnmarshal(iter.Value(), &txLog)
 
 		txlogs := mapLogs[txLog.TxHash]
+		if len(txlogs) == 0 {
+			mapOrder = append(mapOrder, txLog.TxHash)
+		}
+
 		txlogs = append(txlogs, &txLog)
 		mapLogs[txLog.TxHash] = txlogs
 	}
 
 	txsLogs := []types.TransactionLogs{}
-	for txHash, logs := range mapLogs {
-		txLogs := types.TransactionLogs{Hash: txHash, Logs: logs}
-		txsLogs = append(txsLogs, txLogs)
+	for _, txHash := range mapOrder {
+		if len(mapLogs[txHash]) > 0 {
+			txLogs := types.TransactionLogs{Hash: txHash, Logs: mapLogs[txHash]}
+			txsLogs = append(txsLogs, txLogs)
+		}
 	}
-
 	return txsLogs
 }
 

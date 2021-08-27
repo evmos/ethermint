@@ -232,6 +232,8 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
+
+	mapOrder := []string{}
 	logs := make(map[string][]*types.Log)
 
 	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
@@ -240,6 +242,10 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 		if txLog.BlockHash == req.Hash {
 			if accumulate {
+				if len(logs[txLog.TxHash]) == 0 {
+					mapOrder = append(mapOrder, txLog.TxHash)
+				}
+
 				logs[txLog.TxHash] = append(logs[txLog.TxHash], &txLog)
 			}
 			return true, nil
@@ -253,8 +259,10 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 	}
 
 	var txsLogs = []types.TransactionLogs{}
-	for hash, log := range logs {
-		txsLogs = append(txsLogs, types.TransactionLogs{Hash: hash, Logs: log})
+	for _, txHash := range mapOrder {
+		if len(logs[txHash]) > 0 {
+			txsLogs = append(txsLogs, types.TransactionLogs{Hash: txHash, Logs: logs[txHash]})
+		}
 	}
 
 	return &types.QueryBlockLogsResponse{
