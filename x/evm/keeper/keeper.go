@@ -275,18 +275,26 @@ func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
 // SetLogs sets the logs for a transaction in the KVStore.
 func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
 	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+
 	for _, log := range logs {
 		var key = txHash.Bytes()
 		key = append(key, sdk.Uint64ToBigEndian(uint64(log.Index))...)
-		k.SetLog(store, key, log)
+		txIndexLog := types.NewLogFromEth(log)
+		bz := k.cdc.MustMarshal(txIndexLog)
+		store.Set(key, bz)
 	}
 }
 
 // SetLog sets the log for a transaction in the KVStore.
-func (k Keeper) SetLog(s prefix.Store, key []byte, log *ethtypes.Log) {
+func (k Keeper) SetLog(log *ethtypes.Log) {
+	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+
+	var key = log.TxHash.Bytes()
+	key = append(key, sdk.Uint64ToBigEndian(uint64(log.Index))...)
+
 	txIndexLog := types.NewLogFromEth(log)
 	bz := k.cdc.MustMarshal(txIndexLog)
-	s.Set(key, bz)
+	store.Set(key, bz)
 }
 
 // DeleteLogs removes the logs from the KVStore. It is used during journal.Revert.

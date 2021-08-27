@@ -607,13 +607,7 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 
 	log.Index = uint(k.GetLogSizeTransient())
 	k.IncreaseLogSizeTransient()
-
-	s := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
-
-	var key = log.TxHash.Bytes()
-	key = append(key, sdk.Uint64ToBigEndian(uint64(log.Index))...)
-
-	k.SetLog(s, key, log)
+	k.SetLog(log)
 
 	k.Logger(k.Ctx()).Debug(
 		"log added",
