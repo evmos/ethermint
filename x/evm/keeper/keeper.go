@@ -262,6 +262,8 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
 	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
 
+	// We store the logs with key equal to txHash.Bytes() | sdk.Uint64ToBigEndian(uint64(log.Index)),
+	// therefore, we set the end boundary(excluded) to txHash.Bytes() | uint64.Max -> []byte
 	var end = txHash.Bytes()
 	end = append(end, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}...)
 
@@ -307,6 +309,8 @@ func (k Keeper) SetLog(log *ethtypes.Log) {
 func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
 
+	// We store the logs with key equal to txHash.Bytes() | sdk.Uint64ToBigEndian(uint64(log.Index)),
+	// therefore, we set the end boundary(excluded) to txHash.Bytes() | uint64.Max -> []byte
 	var end = txHash.Bytes()
 	end = append(end, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}...)
 
