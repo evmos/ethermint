@@ -67,12 +67,7 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/params";
   }
-
-  // StaticCall queries the static call value of x/evm module.
-  rpc StaticCall(QueryStaticCallRequest) returns (QueryStaticCallResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1/static_call";
-  }
-
+  
   // EthCall implements the `eth_call` rpc api
   rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/eth_call";
@@ -260,12 +255,16 @@ message QueryParamsResponse {
   Params params = 1 [ (gogoproto.nullable) = false ];
 }
 
-// QueryStaticCallRequest defines static call request
-message QueryStaticCallRequest {
-  // address is the ethereum contract hex address to for static call.
-  string address = 1;
-  // static call input generated from abi
-  bytes input = 2;
+// QueryBaseFeeRequest defines the request type for querying the EIP1559 base
+// fee.
+message QueryBaseFeeRequest {}
+
+// BaseFeeResponse returns the EIP1559 base fee.
+message QueryBaseFeeResponse {
+  string base_fee = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
 }
 
 // QueryStaticCallRequest defines static call response

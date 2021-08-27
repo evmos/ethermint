@@ -39,12 +39,12 @@ func TestSetBech32Prefixes(t *testing.T) {
 func TestSetCoinType(t *testing.T) {
 	config := sdk.GetConfig()
 	require.Equal(t, sdk.CoinType, int(config.GetCoinType()))
-	require.Equal(t, sdk.FullFundraiserPath, config.GetFullFundraiserPath())
+	require.Equal(t, sdk.FullFundraiserPath, config.GetFullBIP44Path())
 
 	SetBip44CoinType(config)
 	require.Equal(t, int(ethermint.Bip44CoinType), int(config.GetCoinType()))
 	require.Equal(t, sdk.GetConfig().GetCoinType(), config.GetCoinType())
-	require.Equal(t, sdk.GetConfig().GetFullFundraiserPath(), config.GetFullFundraiserPath())
+	require.Equal(t, sdk.GetConfig().GetFullBIP44Path(), config.GetFullBIP44Path())
 }
 
 func TestHDPath(t *testing.T) {

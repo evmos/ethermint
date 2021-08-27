@@ -29,9 +29,8 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		IstanbulBlock:       getBlockValue(cc.IstanbulBlock),
 		MuirGlacierBlock:    getBlockValue(cc.MuirGlacierBlock),
 		BerlinBlock:         getBlockValue(cc.BerlinBlock),
-		YoloV3Block:         getBlockValue(cc.YoloV3Block),
-		EWASMBlock:          getBlockValue(cc.EWASMBlock),
-		CatalystBlock:       getBlockValue(cc.CatalystBlock),
+		// LondonBlock:         getBlockValue(cc.LondonBlock), // TODO: uncomment
+		CatalystBlock: getBlockValue(cc.CatalystBlock),
 	}
 }
 
@@ -48,7 +47,7 @@ func DefaultChainConfig() ChainConfig {
 	istanbulBlock := sdk.ZeroInt()
 	muirGlacierBlock := sdk.ZeroInt()
 	berlinBlock := sdk.ZeroInt()
-	yoloV3Block := sdk.ZeroInt()
+	londonBlock := sdk.ZeroInt()
 
 	return ChainConfig{
 		HomesteadBlock:      &homesteadBlock,
@@ -64,8 +63,7 @@ func DefaultChainConfig() ChainConfig {
 		IstanbulBlock:       &istanbulBlock,
 		MuirGlacierBlock:    &muirGlacierBlock,
 		BerlinBlock:         &berlinBlock,
-		YoloV3Block:         &yoloV3Block,
-		EWASMBlock:          nil,
+		LondonBlock:         &londonBlock,
 		CatalystBlock:       nil,
 	}
 }
@@ -117,16 +115,17 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.BerlinBlock); err != nil {
 		return sdkerrors.Wrap(err, "berlinBlock")
 	}
-	if err := validateBlock(cc.YoloV3Block); err != nil {
-		return sdkerrors.Wrap(err, "yoloV3Block")
-	}
-	if err := validateBlock(cc.EWASMBlock); err != nil {
-		return sdkerrors.Wrap(err, "eWASMBlock")
+	if err := validateBlock(cc.LondonBlock); err != nil {
+		return sdkerrors.Wrap(err, "londonBlock")
 	}
 	if err := validateBlock(cc.CatalystBlock); err != nil {
-		return sdkerrors.Wrap(err, "calalystBlock")
+		return sdkerrors.Wrap(err, "catalystBlock")
 	}
 
+	// NOTE: chain ID is not needed to check config order
+	if err := cc.EthereumConfig(nil).CheckConfigForkOrder(); err != nil {
+		return sdkerrors.Wrap(err, "invalid config fork order")
+	}
 	return nil
 }
 
@@ -151,14 +150,4 @@ func validateBlock(block *sdk.Int) error {
 	}
 
 	return nil
-}
-
-// IsIstanbul returns whether the Istanbul version is enabled.
-func (cc ChainConfig) IsIstanbul() bool {
-	return getBlockValue(cc.IstanbulBlock) != nil
-}
-
-// IsHomestead returns whether the Homestead version is enabled.
-func (cc ChainConfig) IsHomestead() bool {
-	return getBlockValue(cc.HomesteadBlock) != nil
 }
