@@ -8,7 +8,7 @@ Check how to obtain testnet tokens from the Ethermint faucet website {synopsis}
 
 ## Requesting tokens
 
-You can request tokens for the testnet by using the Ethermint [faucet](https://ethermint.io/faucet). <!-- TODO: Add link-->
+You can request tokens for the testnet by using the Ethermint [faucet](https://ethermint.io/faucet).
 Simply fill in your address on the input field in bech32 (`ethm1...`) or hex (`0x...`) format.
 
 ::: warning
