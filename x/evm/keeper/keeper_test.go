@@ -84,6 +84,7 @@ type KeeperTestSuite struct {
 	EvmDenom string
 }
 
+/// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
 func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	checkTx := false
 
