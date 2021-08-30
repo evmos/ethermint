@@ -15,6 +15,7 @@ Simply fill in your address on the input field in bech32 (`ethm1...`) or hex (`0
 If you use your bech32 address, make sure you input the [account address](./../basics/accounts#addresses-and-public-keys) (`ethm1...`) and **NOT** the validator operator address (`ethmvaloper1...`)
 :::
 
+<!-- TODO: update with final website design -->
 ![faucet site](./img/faucet_web_page.png)
 
 ## Rate limits
@@ -23,6 +24,8 @@ To prevent the faucet account from draining the available funds, the Ethermint t
 imposes a maximum number of request for a period of time. By default the faucet service accepts 1
 request per day per address. All addresses **must** be authenticated using
 [Auth0](https://auth0.com/) before requesting tokens.
+
+<!-- TODO: add screenshots of authentication window -->
 
 ## Amount
 
