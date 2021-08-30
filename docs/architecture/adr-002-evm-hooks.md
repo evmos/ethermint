@@ -32,11 +32,11 @@ type EvmHooks interface {
   transaction execution, if `PostTxProcessing` returns an error, the whole EVM transaction is reverted.
 
   `PostTxProcessing` can be used to allow evm contract to call native module functionalities through logs, for example,
-a `BankSendHook` could implement the hook to convert a specific log and convert it to a call to the bank module's
-`SendCoinsFromAccountToAccount` method, so a contract could emit that specific log to transfer native tokens, like this:
+  a `BankSendHook` could implement the hook to convert a specific log and convert it to a call to the bank module's
+  `SendCoinsFromAccountToAccount` method, so a contract could emit that specific log to transfer native tokens, like this:
 
   ```solidity
-  function withdraw_to_native_token(amount uint256, eth_dest address) public {
+  function withdraw_to_native_token(amount uint256) public {
       _balances[msg.sender] -= amount;
       // send native tokens from contract address to msg.sender.
       emit __CosmosNativeBankSend(msg.sender, amount, "native_denom");
