@@ -20,15 +20,11 @@ The denomination used for staking, governance and gas consumption on the EVM is 
 
 Ethermint uses [Atto](https://en.wikipedia.org/wiki/Atto-) Photon as the base denomination to maintain parity with Ethereum.
 
-```
-1 photon = 1×10⁻¹⁸ aphoton
-```
+$$1 photon = 1 ~ * ~ 10^{18} aphoton$$
 
 This matches Ethereum denomination of:
 
-```
-1 ETH = 1x10⁻¹⁸ wei
-```
+$$1 ETH = 1 ~ * ~ 10^{18} wei$$
 
 ### EVM Tokens
 
