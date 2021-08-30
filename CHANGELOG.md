@@ -54,6 +54,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (encoding) [tharsis#478](https://github.com/tharsis/ethermint/pull/478) Register `Evidence` to amino codec.
 * (rpc) [tharsis#478](https://github.com/tharsis/ethermint/pull/481) Getting the node configuration when calling the `miner` rpc methods.
 
+### Improvements
+* (evm) [tharsis#461](https://github.com/tharsis/ethermint/issues/461) StateDB transaction log stores enhancement.
+
 ## [v0.5.0] - 2021-08-20
 
 ### State Machine Breaking
