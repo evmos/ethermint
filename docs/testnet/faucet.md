@@ -29,4 +29,4 @@ request per day per address. All addresses **must** be authenticated using
 
 ## Amount
 
-For each request, the faucet transfers `1000000000000000000 aphotons` (i.e `1 Photon`) to the given address.
+For each request, the faucet transfers $1 ~ * ~ 10^{18}$ aphotons (i.e 1 Photon) to the given address.
