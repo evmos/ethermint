@@ -50,7 +50,7 @@ func DoBenchmark(b *testing.B, txBuilder TxBuilder) {
 		txData, err := types.UnpackTxData(msg.Data)
 		require.NoError(b, err)
 
-		fees := sdk.Coins{sdk.NewCoin(suite.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
+		fees := sdk.Coins{sdk.NewCoin(suite.EvmDenom(), sdk.NewIntFromBigInt(txData.Fee()))}
 		err = authante.DeductFees(suite.app.BankKeeper, suite.ctx, suite.app.AccountKeeper.GetAccount(ctx, msg.GetFrom()), fees)
 		require.NoError(b, err)
 

@@ -81,8 +81,6 @@ type KeeperTestSuite struct {
 
 	appCodec codec.Codec
 	signer   keyring.Signer
-
-	EvmDenom string
 }
 
 /// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
@@ -133,20 +131,22 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 	suite.appCodec = encodingConfig.Marshaler
 
-	ctx := sdk.WrapSDKContext(suite.ctx)
-	rsp, err := suite.queryClient.Params(ctx, &types.QueryParamsRequest{})
-	suite.EvmDenom = rsp.Params.EvmDenom
-
 	// mint some tokens to coinbase address
 	_, bankKeeper := suite.initKeepersWithmAccPerms()
 	require.NoError(t, err)
-	initCoin := sdk.NewCoins(sdk.NewCoin(suite.EvmDenom, testTokens))
+	initCoin := sdk.NewCoins(sdk.NewCoin(suite.EvmDenom(), testTokens))
 	err = simapp.FundAccount(bankKeeper, suite.ctx, acc.GetAddress(), initCoin)
 	require.NoError(t, err)
 }
 
 func (suite *KeeperTestSuite) SetupTest() {
 	suite.DoSetupTest(suite.T())
+}
+
+func (suite *KeeperTestSuite) EvmDenom() string {
+	ctx := sdk.WrapSDKContext(suite.ctx)
+	rsp, _ := suite.queryClient.Params(ctx, &types.QueryParamsRequest{})
+	return rsp.Params.EvmDenom
 }
 
 // Commit and begin new block
