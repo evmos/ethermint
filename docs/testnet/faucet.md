@@ -14,7 +14,8 @@ Simply fill in your address on the input field in bech32 (`ethm1...`) or hex (`0
 ::: warning
 If you use your bech32 address, make sure you input the [account address](./../basics/accounts#addresses-and-public-keys) (`ethm1...`) and **NOT** the validator operator address (`ethmvaloper1...`)
 :::
-<!-- TODO: Screenshot of the faucet site -->
+
+![faucet site](./img/faucet_web_page.png)
 
 ## Rate limits
 
@@ -25,4 +26,4 @@ request per day per address. All addresses **must** be authenticated using
 
 ## Amount
 
-For each request, the faucet transfers `1000 aphotons` (i.e `0.0000000000000001 Photons`) to the given address.
+For each request, the faucet transfers `1000000000000000000 aphotons` (i.e `1 Photon`) to the given address.
