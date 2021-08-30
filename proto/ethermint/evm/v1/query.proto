@@ -80,7 +80,7 @@ service Query {
 
   // TraceTx implements the `debug_traceTransaction` rpc api
   rpc TraceTx(QueryTraceTxRequest) returns (QueryTraceTxResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1alpha1/trace_tx";
+    option (google.api.http).get = "/ethermint/evm/v1/trace_tx";
   }
 }
 
