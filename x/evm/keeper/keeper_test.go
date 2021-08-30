@@ -24,6 +24,7 @@ import (
 	"github.com/tharsis/ethermint/app"
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/encoding"
+	"github.com/tharsis/ethermint/server/config"
 	"github.com/tharsis/ethermint/tests"
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -201,7 +202,7 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 
 	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
 		Args:   args,
-		GasCap: uint64(ethermint.DefaultRPCGasLimit),
+		GasCap: uint64(config.DefaultGasCap),
 	})
 	require.NoError(t, err)
 
