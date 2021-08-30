@@ -725,7 +725,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 				From: &suite.address,
 				Data: (*hexutil.Bytes)(&data),
 			}
-		}, true, 1144643},
+		}, true, 1186778},
 		// estimate gas of an erc20 transfer, the exact gas number is checked with geth
 		{"erc20 transfer", func() {
 			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
