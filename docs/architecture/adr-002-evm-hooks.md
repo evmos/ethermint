@@ -180,3 +180,5 @@ Later, this section can optionally list ideas or improvements the author or revi
 ## References
 
 <!-- - {reference link} -->
+
+- [Hooks in staking module](https://docs.cosmos.network/v0.43/modules/staking/06_hooks.html)
