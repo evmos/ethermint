@@ -474,7 +474,7 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 								TxHash:      ethcmn.BytesToHash([]byte("tx_hash_1")).String(),
 								TxIndex:     1,
 								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
-								Index:       0,
+								Index:       1,
 								Removed:     false,
 							},
 							{
@@ -485,7 +485,7 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 								TxHash:      ethcmn.BytesToHash([]byte("tx_hash_1")).String(),
 								TxIndex:     1,
 								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
-								Index:       0,
+								Index:       2,
 								Removed:     false,
 							},
 						},
