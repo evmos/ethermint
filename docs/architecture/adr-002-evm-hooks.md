@@ -41,10 +41,35 @@ func (k *EvmKeeper) SetHooks(eh types.EvmHooks) *Keeper;
   as the EVM transaction, if it returns an error, the whole EVM transaction is reverted, if the hook implementor doesn't
   want to revert the tx, he can always return nil instead.
 
-  The errors returned by hooks are translated into a VM error `failed to process native logs`, the detailed error
-  the message is stored in the return value.
+  The error returned by the hooks is translated to a VM error `failed to process native logs`, the detailed error
+  message is stored in the return value.
 
-  The contract sends an asynchronous message to native modules, there's no way for it to catch and recover the error.
+  The message is sent to native modules asynchronously, there's no way for the caller to catch and recover the error.
+
+The EVM state transition method `ApplyTransaction` should be changed like this:
+
+```golang
+// Create cached context which convers both the tx processing and post processing
+revision := k.Snapshot()
+
+res, err := k.ApplyMessage(evm, msg, ethCfg, false)
+if err != nil {
+  return err
+}
+
+...
+
+if !res.Failed() {
+  // Only call hooks if tx executed successfully.
+  err = k.hooks.PostTxProcessing(k.ctx, txHash, logs)
+  if err != nil {
+    // If hooks return error, revert the whole tx.
+    k.RevertToSnapshot(revision)
+    res.VmError = "failed to process native logs"
+    res.Ret = []byte(err.Error())
+  }
+}
+```
 
 There are no default hooks implemented in the EVM module, so the proposal is backward compatible, only opens extra
 extensibility for certain use cases.
