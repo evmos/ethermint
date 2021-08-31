@@ -65,7 +65,7 @@ func (suite *KeeperTestSuite) TestGetCoinbaseAddress() {
 
 			tc.malleate()
 
-			coinbase, err := suite.app.EvmKeeper.GetCoinbaseAddress()
+			coinbase, err := suite.app.EvmKeeper.GetCoinbaseAddress(suite.ctx)
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(valOpAddr, coinbase)

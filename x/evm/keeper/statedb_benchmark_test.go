@@ -4,7 +4,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/tharsis/ethermint/tests"
 )
 
@@ -60,5 +65,64 @@ func BenchmarkSetCode(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		suite.app.EvmKeeper.SetCode(suite.address, hash)
+	}
+}
+
+func BenchmarkSetState(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	hash := crypto.Keccak256Hash([]byte("topic")).Bytes()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		suite.app.EvmKeeper.SetCode(suite.address, hash)
+	}
+}
+
+func BenchmarkAddLog(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	topic := crypto.Keccak256Hash([]byte("topic"))
+	txHash := crypto.Keccak256Hash([]byte("tx_hash"))
+	blockHash := crypto.Keccak256Hash([]byte("block_hash"))
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		suite.app.EvmKeeper.AddLog(&ethtypes.Log{
+			Address:     suite.address,
+			Topics:      []common.Hash{topic},
+			Data:        []byte("data"),
+			BlockNumber: 1,
+			TxHash:      txHash,
+			TxIndex:     1,
+			BlockHash:   blockHash,
+			Index:       1,
+			Removed:     false,
+		})
+	}
+}
+
+func BenchmarkSnapshot(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		target := suite.app.EvmKeeper.Snapshot()
+		require.Equal(b, i, target)
+	}
+
+	for i := b.N - 1; i >= 0; i-- {
+		require.NotPanics(b, func() {
+			suite.app.EvmKeeper.RevertToSnapshot(i)
+		})
 	}
 }

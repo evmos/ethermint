@@ -471,10 +471,7 @@ func (k *Keeper) Suicide(addr common.Address) bool {
 	}
 
 	// TODO: (@fedekunze) do we also need to delete the storage state and the code?
-
-	// Set a single byte to the transient store
-	store := prefix.NewStore(ctx.TransientStore(k.transientKey), types.KeyPrefixTransientSuicided)
-	store.Set(addr.Bytes(), []byte{1})
+	k.setSuicided(ctx, addr)
 
 	k.Logger(ctx).Debug(
 		"account suicided",
@@ -483,6 +480,13 @@ func (k *Keeper) Suicide(addr common.Address) bool {
 	)
 
 	return true
+}
+
+// setSuicided sets a single byte to the transient store and marks the address as suicided
+func (k Keeper) setSuicided(ctx sdk.Context, addr common.Address) {
+
+	store := prefix.NewStore(ctx.TransientStore(k.transientKey), types.KeyPrefixTransientSuicided)
+	store.Set(addr.Bytes(), []byte{1})
 }
 
 // HasSuicided queries the transient store to check if the account has been marked as suicided in the
