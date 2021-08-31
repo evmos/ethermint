@@ -607,11 +607,7 @@ func (k *Keeper) AddLog(log *ethtypes.Log) {
 
 	log.Index = uint(k.GetLogSizeTransient())
 	k.IncreaseLogSizeTransient()
-
-	logs := k.GetTxLogs(log.TxHash)
-	logs = append(logs, log)
-
-	k.SetLogs(log.TxHash, logs)
+	k.SetLog(log)
 
 	k.Logger(k.Ctx()).Debug(
 		"log added",
