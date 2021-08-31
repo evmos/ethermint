@@ -41,6 +41,9 @@ func (k *EvmKeeper) SetHooks(eh types.EvmHooks) *Keeper;
   as the EVM transaction, if it returns an error, the whole EVM transaction is reverted, if the hook implementor don't
   want to revert the tx, he can always return a nil instead.
 
+  The errors returned by hooks are translated into a vm error `failed to process native logs`, the detailed error
+  message is stored in the return value.
+
   Basically the contract sends an asynchronous message to native modules, there's no way for it to catch and recover the error.
 
 There are no default hooks implemented in evm module, so the proposal is totally backward compatible, only opens extra
