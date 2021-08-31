@@ -142,10 +142,15 @@ module.exports = {
               path: '/testnet/join'
             },
             {
+              title: 'Token Faucet',
+              directory: false,
+              path: '/testnet/faucet'
+            },
+            {
               title: 'Deploy Node on Cloud',
               directory: false,
               path: '/testnet/cloud_providers'
-            },
+            }
           ]
         },
         {
