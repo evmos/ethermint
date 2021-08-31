@@ -10,13 +10,13 @@ PROPOSED
 
 ## Abstract
 
-The current ADR proposes a hook interface to EVM module, with the goal of extending the tx processing externally,
-specifically to support communication from EVM contract to native modules through logs.
+The current ADR proposes a hook interface to EVM module, with the goal of extending the tx processing logic externally,
+specifically to support EVM contract calling native modules through logs.
 
 ## Context
 
 Currently there are no way for EVM smart contracts to call cosmos native modules, one way to do this is by emitting
-specific logs from contract, which get recognized by tx processing code and converted to native module calls.
+specific logs from contract, and recognize those logs in tx processing code and convert them to native module calls.
 
 To do this in an extensible way, we can add a post tx processing hook into the evm module, which allows third party to
 add custom logic to process transaction logs.
@@ -48,7 +48,7 @@ To support contract calling native module with this proposal, one can define a l
 from smart contract, native logic registers a `PostTxProcessing` hook which recognize the log and do the native module
 call.
 
-For example, to support smart contract to transfer native tokens, one can define and emit a `__CosmosNativeBankSend` log
+For example, to support smart contract to transfer native tokens, one can define and emit a `__CosmosNativeBankSend` log
 signature in smart contract like this:
 
 ```solidity
