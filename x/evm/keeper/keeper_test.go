@@ -19,6 +19,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/tharsis/ethermint/app"
@@ -193,13 +194,14 @@ func (suite *KeeperTestSuite) initKeepersWithmAccPerms() (authkeeper.AccountKeep
 
 	maccPerms[authtypes.Burner] = []string{authtypes.Burner}
 	maccPerms[authtypes.Minter] = []string{authtypes.Minter}
+
 	authKeeper := authkeeper.NewAccountKeeper(
-		suite.appCodec, suite.app.GetKey(types.StoreKey), suite.app.GetSubspace(types.ModuleName),
-		authtypes.ProtoBaseAccount, maccPerms,
+		suite.appCodec, suite.app.GetKey(authtypes.StoreKey), suite.app.GetSubspace(authtypes.ModuleName),
+		ethermint.ProtoAccount, maccPerms,
 	)
 	keeper := bankkeeper.NewBaseKeeper(
-		suite.appCodec, suite.app.GetKey(types.StoreKey), authKeeper,
-		suite.app.GetSubspace(types.ModuleName), map[string]bool{},
+		suite.appCodec, suite.app.GetKey(banktypes.StoreKey), authKeeper,
+		suite.app.GetSubspace(banktypes.ModuleName), map[string]bool{},
 	)
 
 	return authKeeper, keeper
