@@ -330,7 +330,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -394,7 +394,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

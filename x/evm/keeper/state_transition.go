@@ -69,39 +69,40 @@ func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer
 func (k Keeper) GetHashFn() vm.GetHashFunc {
 	return func(height uint64) common.Hash {
 		h := int64(height)
+		ctx := k.Ctx()
 		switch {
-		case k.Ctx().BlockHeight() == h:
+		case ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
 			// Note: The headerHash is only set at begin block, it will be nil in case of a query context
-			headerHash := k.Ctx().HeaderHash()
+			headerHash := ctx.HeaderHash()
 			if len(headerHash) != 0 {
 				return common.BytesToHash(headerHash)
 			}
 
 			// only recompute the hash if not set (eg: checkTxState)
-			contextBlockHeader := k.Ctx().BlockHeader()
+			contextBlockHeader := ctx.BlockHeader()
 			header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
 			if err != nil {
-				k.Logger(k.Ctx()).Error("failed to cast tendermint header from proto", "error", err)
+				k.Logger(ctx).Error("failed to cast tendermint header from proto", "error", err)
 				return common.Hash{}
 			}
 
 			headerHash = header.Hash()
 			return common.BytesToHash(headerHash)
 
-		case k.Ctx().BlockHeight() > h:
+		case ctx.BlockHeight() > h:
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
 			// current chain epoch. This only applies if the current height is greater than the requested height.
-			histInfo, found := k.stakingKeeper.GetHistoricalInfo(k.Ctx(), h)
+			histInfo, found := k.stakingKeeper.GetHistoricalInfo(ctx, h)
 			if !found {
-				k.Logger(k.Ctx()).Debug("historical info not found", "height", h)
+				k.Logger(ctx).Debug("historical info not found", "height", h)
 				return common.Hash{}
 			}
 
 			header, err := tmtypes.HeaderFromProto(&histInfo.Header)
 			if err != nil {
-				k.Logger(k.Ctx()).Error("failed to cast tendermint header from proto", "error", err)
+				k.Logger(ctx).Error("failed to cast tendermint header from proto", "error", err)
 				return common.Hash{}
 			}
 
@@ -133,7 +134,8 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
 
-	params := k.GetParams(k.Ctx())
+	ctx := k.Ctx()
+	params := k.GetParams(ctx)
 
 	// return error if contract creation or call are disabled through governance
 	if !params.EnableCreate && tx.To() == nil {
@@ -145,7 +147,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the latest signer according to the chain rules from the config
-	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.Ctx().BlockHeight()))
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
 	msg, err := tx.AsMessage(signer)
 	if err != nil {
@@ -153,13 +155,13 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	}
 
 	// get the coinbase address from the block proposer
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
 	// create an ethereum EVM instance and run the message
-	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight(), k.debug)
 	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 
 	txHash := tx.Hash()
@@ -368,14 +370,15 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64)
 // 'gasUsed'
 func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
 	// reset the gas count
-	k.Ctx().GasMeter().RefundGas(k.Ctx().GasMeter().GasConsumed(), "reset the gas count")
-	k.Ctx().GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
+	ctx := k.Ctx()
+	ctx.GasMeter().RefundGas(ctx.GasMeter().GasConsumed(), "reset the gas count")
+	ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
 }
 
 // GetCoinbaseAddress returns the block proposer's validator operator address.
-func (k Keeper) GetCoinbaseAddress() (common.Address, error) {
-	consAddr := sdk.ConsAddress(k.Ctx().BlockHeader().ProposerAddress)
-	validator, found := k.stakingKeeper.GetValidatorByConsAddr(k.Ctx(), consAddr)
+func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
+	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
 		return common.Address{}, stacktrace.Propagate(
 			sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, consAddr.String()),
