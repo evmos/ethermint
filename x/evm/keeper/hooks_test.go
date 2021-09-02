@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/keeper"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
@@ -31,43 +30,47 @@ func (dh FailureHook) PostTxProcessing(ctx sdk.Context, txHash common.Hash, logs
 }
 
 func (suite *KeeperTestSuite) TestEvmHooks() {
-	suite.SetupTest()
-	suite.Commit()
+	testCases := []struct {
+		msg       string
+		setupHook func() types.EvmHooks
+		expFunc   func(hook types.EvmHooks, result error)
+	}{
+		{
+			"log collect hook",
+			func() types.EvmHooks {
+				return &LogRecordHook{}
+			},
+			func(hook types.EvmHooks, result error) {
+				suite.Require().NoError(result)
+				suite.Require().Equal(1, len((hook.(*LogRecordHook).Logs)))
+			},
+		},
+		{
+			"always fail hook",
+			func() types.EvmHooks {
+				return &FailureHook{}
+			},
+			func(hook types.EvmHooks, result error) {
+				suite.Require().Error(result)
+			},
+		},
+	}
 
-	logRecordHook := LogRecordHook{}
-	suite.app.EvmKeeper.SetHooks(keeper.NewMultiEvmHooks(&logRecordHook))
+	for _, tc := range testCases {
+		suite.SetupTest()
+		hook := tc.setupHook()
+		suite.app.EvmKeeper.SetHooks(keeper.NewMultiEvmHooks(hook))
 
-	k := suite.app.EvmKeeper
+		k := suite.app.EvmKeeper
+		txHash := common.BigToHash(big.NewInt(1))
+		k.SetTxHashTransient(txHash)
+		k.AddLog(&ethtypes.Log{
+			Topics:  []common.Hash{},
+			Address: suite.address,
+		})
+		logs := k.GetTxLogs(txHash)
+		result := k.PostTxProcessing(txHash, logs)
 
-	txHash := common.BigToHash(big.NewInt(1))
-
-	amt := sdk.Coins{ethermint.NewPhotonCoinInt64(100)}
-	err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
-	suite.Require().NoError(err)
-	err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, types.ModuleName, suite.address.Bytes(), amt)
-	suite.Require().NoError(err)
-
-	k.SetTxHashTransient(txHash)
-	k.AddLog(&ethtypes.Log{
-		Topics:  []common.Hash{},
-		Address: suite.address,
-	})
-
-	logs := k.GetTxLogs(txHash)
-	suite.Require().Equal(1, len(logs))
-
-	err = k.PostTxProcessing(txHash, logs)
-	suite.Require().NoError(err)
-
-	suite.Require().Equal(1, len(logRecordHook.Logs))
-}
-
-func (suite *KeeperTestSuite) TestHookFailure() {
-	suite.SetupTest()
-	k := suite.app.EvmKeeper
-
-	// Test failure hook
-	suite.app.EvmKeeper.SetHooks(keeper.NewMultiEvmHooks(FailureHook{}))
-	err := k.PostTxProcessing(common.Hash{}, nil)
-	suite.Require().Error(err)
+		tc.expFunc(hook, result)
+	}
 }

@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"reflect"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ethcmn "github.com/ethereum/go-ethereum/common"
