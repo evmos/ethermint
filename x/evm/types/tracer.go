@@ -51,7 +51,7 @@ type ExecutionResult struct {
 }
 
 // StructLogRes stores a structured log emitted by the EVM while replaying a
-// transaction in debug mode
+// transaction in debug mode. Taken from go-ethereum
 type StructLogRes struct {
 	Pc      uint64             `json:"pc"`
 	Op      string             `json:"op"`
