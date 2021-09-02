@@ -49,7 +49,7 @@ func (k *EvmKeeper) SetHooks(eh types.EvmHooks) *Keeper;
 The EVM state transition method `ApplyTransaction` should be changed like this:
 
 ```golang
-// Create cached context which convers both the tx processing and post processing
+// Need to create a snapshot explicitly to cover both tx processing and post processing logic
 revision := k.Snapshot()
 
 res, err := k.ApplyMessage(evm, msg, ethCfg, false)
