@@ -29,6 +29,7 @@ type FailureHook struct{}
 func (dh FailureHook) PostTxProcessing(ctx sdk.Context, txHash common.Hash, logs []*ethtypes.Log) error {
 	return errors.New("post tx processing failed")
 }
+
 func (suite *KeeperTestSuite) TestEvmHooks() {
 	suite.SetupTest()
 	suite.Commit()
