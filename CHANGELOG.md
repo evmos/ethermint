@@ -48,7 +48,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Features
 
 * (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Support [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
-* (evm) [tharsis#417](https://github.com/tharsis/ethermint/pull/417) Add `EvmHooks`
+* (evm) [tharsis#417](https://github.com/tharsis/ethermint/pull/417) Add `EvmHooks` for tx post-processing
 
 ### Bug Fixes
 
