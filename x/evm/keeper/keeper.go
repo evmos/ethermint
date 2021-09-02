@@ -430,7 +430,7 @@ func (k *Keeper) SetHooks(eh types.EvmHooks) *Keeper {
 	return k
 }
 
-// PostTxProcessing delegate the call to the hooks
+// PostTxProcessing delegate the call to the hooks. If no hook has been registered, this function returns with a `nil` error
 func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) error {
 	if k.hooks == nil {
 		return nil
