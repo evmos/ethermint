@@ -275,6 +275,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
 
+	var events sdk.Events
+
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -329,7 +331,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 				"failed to deduct full gas cost %s from the user %s balance", fees, msgEthTx.From,
 			)
 		}
+
+		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))
 	}
+
+	// TODO: change to typed events
+	ctx.EventManager().EmitEvents(events)
 
 	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
 	blockGasLimit := ethermint.BlockGasLimit(ctx)
