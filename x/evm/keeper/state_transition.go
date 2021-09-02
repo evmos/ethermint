@@ -175,8 +175,11 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		panic("context stack shouldn't be dirty before apply message")
 	}
 
-	// Contains the tx processing and post processing in same scope
-	revision := k.Snapshot()
+	var revision int
+	if k.hooks != nil {
+		// snapshot to contain the tx processing and post processing in same scope
+		revision = k.Snapshot()
+	}
 
 	// pass false to execute in real mode, which do actual gas refunding
 	res, err := k.ApplyMessage(evm, msg, ethCfg, false)
