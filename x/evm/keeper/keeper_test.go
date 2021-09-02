@@ -14,7 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -148,12 +147,6 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 	suite.appCodec = encodingConfig.Marshaler
-
-	// mint some tokens to coinbase address
-	require.NoError(t, err)
-	initCoin := sdk.NewCoins(sdk.NewCoin(suite.EvmDenom(), testTokens))
-	err = simapp.FundAccount(suite.app.BankKeeper, suite.ctx, acc.GetAddress(), initCoin)
-	require.NoError(t, err)
 }
 
 func (suite *KeeperTestSuite) SetupTest() {
