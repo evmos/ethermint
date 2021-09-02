@@ -203,23 +203,23 @@ message TraceConfig {
   string tracer = 1;
   string timeout = 2;
   uint64 reexec  = 3;
-//  LogConfig log_config = 4 [ (gogoproto.jsontag) = "logConfig" ];
+  LogConfig log_config = 4 [ (gogoproto.jsontag) = "logConfig" ];
 }
 
-//// LogConfig are the configuration options for structured logger the EVM
-//message LogConfig {
-//  // disable memory capture
-//  bool disable_memory = 1 [ (gogoproto.jsontag) = "disableMemory" ];
-//    // disable stack capture
-//  bool disable_stack = 2 [ (gogoproto.jsontag) = "disableStack" ];
-//  // disable storage capture
-//  bool disable_storage = 3 [ (gogoproto.jsontag) = "disableStorage" ];
-//  // disable return data capture
-//  bool disable_return_data = 4 [ (gogoproto.jsontag) = "disableReturnData" ];
-//  // print output during capture end
-//  bool debug = 5;
-//  // maximum length of output, but zero means unlimited
-//  int32 limit = 6;
-//  // Chain overrides, can be used to execute a trace using future fork rules
-//  ChainConfig Overrides = 7;
-//}
+// LogConfig are the configuration options for structured logger the EVM
+message LogConfig {
+  // disable memory capture
+  bool disable_memory = 1 [ (gogoproto.jsontag) = "disableMemory" ];
+    // disable stack capture
+  bool disable_stack = 2 [ (gogoproto.jsontag) = "disableStack" ];
+  // disable storage capture
+  bool disable_storage = 3 [ (gogoproto.jsontag) = "disableStorage" ];
+  // disable return data capture
+  bool disable_return_data = 4 [ (gogoproto.jsontag) = "disableReturnData" ];
+  // print output during capture end
+  bool debug = 5;
+  // maximum length of output, but zero means unlimited
+  int32 limit = 6;
+  // Chain overrides, can be used to execute a trace using future fork rules
+  ChainConfig Overrides = 7;
+}

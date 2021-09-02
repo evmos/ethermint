@@ -747,6 +747,24 @@ func (suite *KeeperTestSuite) deployTestContract(owner common.Address, supply *b
 	return crypto.CreateAddress(suite.address, nonce)
 }
 
+func (suite *KeeperTestSuite) transferERC20Token(contractAddr common.Address, from common.Address, to common.Address) common.Hash {
+	ctx := sdk.WrapSDKContext(suite.ctx)
+	chainID := suite.app.EvmKeeper.ChainID()
+
+	transferData, err := contractABI.Pack("transfer", to, big.NewInt(1000))
+	suite.Require().NoError(err)
+	args, err := json.Marshal(&types.CallArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
+	suite.Require().NoError(err)
+	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
+		Args:   args,
+		GasCap: 25_000_000,
+	})
+	suite.Require().NoError(err)
+
+	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
+	types.ne
+}
+
 func (suite *KeeperTestSuite) TestEstimateGas() {
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	gasHelper := hexutil.Uint64(20000)
@@ -824,4 +842,20 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			}
 		})
 	}
+}
+
+func (suite *KeeperTestSuite) TestTraceTx() {
+	ctx := sdk.WrapSDKContext(suite.ctx)
+
+	var (
+		args   types.CallArgs
+		gasCap uint64
+	)
+	testCases := []struct {
+		msg      string
+		malleate func()
+		expPass  bool
+		expGas   uint64
+	}
+
 }

@@ -499,7 +499,14 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 			}
 		}()
 		defer cancel()
-
+	case req.TraceConfig != nil && req.TraceConfig.LogConfig != nil:
+		logConfig := vm.LogConfig{
+			DisableMemory:  req.TraceConfig.LogConfig.DisableMemory,
+			Debug:          req.TraceConfig.LogConfig.Debug,
+			DisableStorage: req.TraceConfig.LogConfig.DisableStorage,
+			DisableStack:   req.TraceConfig.LogConfig.DisableStack,
+		}
+		tracer = vm.NewStructLogger(&logConfig)
 	default:
 		tracer = types.NewTracer(types.TracerStruct, coreMessage, ethCfg, ctx.BlockHeight(), true)
 	}
