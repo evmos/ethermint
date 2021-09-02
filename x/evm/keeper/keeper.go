@@ -420,7 +420,7 @@ func (k Keeper) ResetAccount(addr common.Address) {
 	k.DeleteAccountStorage(addr)
 }
 
-// SetHooks sets the hooks for governance
+// SetHooks sets the hooks for the EVM module
 func (k *Keeper) SetHooks(eh types.EvmHooks) *Keeper {
 	if k.hooks != nil {
 		panic("cannot set evm hooks twice")
