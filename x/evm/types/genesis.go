@@ -1,10 +1,8 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethermint "github.com/tharsis/ethermint/types"
 )
 
@@ -13,10 +11,6 @@ func (ga GenesisAccount) Validate() error {
 	if err := ethermint.ValidateAddress(ga.Address); err != nil {
 		return err
 	}
-	if len(ethcmn.Hex2Bytes(ga.Code)) == 0 {
-		return errors.New("code cannot be empty")
-	}
-
 	return ga.Storage.Validate()
 }
 
