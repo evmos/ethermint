@@ -231,7 +231,6 @@ func (msg *MsgEthereumTx) GetFrom() sdk.AccAddress {
 func (msg MsgEthereumTx) AsTransaction() *ethtypes.Transaction {
 	txData, err := UnpackTxData(msg.Data)
 	if err != nil {
-		panic(err)
 		return nil
 	}
 
