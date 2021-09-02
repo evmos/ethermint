@@ -94,10 +94,10 @@ When you are pruning state you will not be able to query the heights that are no
 
 ### Client configuration
 
-We can view the default client config setting by using `ethermintd config` command:
+We can view the default client config setting by using `ethermintcli config` command:
 
 ```bash
-ethermintd config
+ethermintcli config
 {
  "chain-id": "",
  "keyring-backend": "os",
@@ -112,8 +112,8 @@ We can make changes to the default settings upon our choices, so it allows users
 For example, the chain identifier can be changed to `ethermint_9000-1` from a blank name by using:
 
 ```bash
-ethermintd config "chain-id" ethermint_9000-1
-ethermintd config
+ethermintcli config "chain-id" ethermint_9000-1
+ethermintcli config
 {
  "chain-id": "ethermint_9000-1",
  "keyring-backend": "os",
@@ -157,7 +157,7 @@ broadcast-mode = "sync"
 After the necessary changes are made in the `client.toml`, then save. For example, if we directly change the chain-id from `ethermint_9000-1` to `etherminttest_9000-1`, and output to number, it would change instantly as shown below.
 
 ```bash
-ethermintd config
+ethermintcli config
 {
  "chain-id": "etherminttest_9000-1",
  "keyring-backend": "os",

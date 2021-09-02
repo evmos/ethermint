@@ -39,10 +39,10 @@ ethermintd start --json-rpc.enable=true --json-rpc.api="eth,web3,net"
 
 ## Key Management
 
-To run a node with the same key every time: replace `ethermintd keys add $KEY` in `./init.sh` with:
+To run a node with the same key every time: replace `ethermintcli keys add $KEY` in `./init.sh` with:
 
 ```bash
-echo "your mnemonic here" | ethermintd keys add $KEY --recover
+echo "your mnemonic here" | ethermintcli keys add $KEY --recover
 ```
 
 ::: tip
@@ -52,19 +52,19 @@ Ethermint currently only supports 24 word mnemonics.
 You can generate a new key/mnemonic with:
 
 ```bash
-ethermintd keys add $KEY
+ethermintcli keys add $KEY
 ```
 
 To export your ethermint key as an Ethereum private key (for use with [Metamask](./../guides/keys-wallets/metamask) for example):
 
 ```bash
-ethermintd keys unsafe-export-eth-key $KEY
+ethermintcli keys unsafe-export-eth-key $KEY
 ```
 
 For more about the available key commands, use the `--help` flag
 
 ```bash
-ethermintd keys -h
+ethermintcli keys -h
 ```
 
 ### Keyring backend options
@@ -77,7 +77,7 @@ relevant command and the password prompt will occur through the command line. Th
 as a CLI config option with:
 
 ```bash
-ethermintd config keyring-backend file
+ethermintcli config keyring-backend file
 ```
 
 :::tip

@@ -35,7 +35,7 @@ You will now have three ethereum accounts unlocked in the test node:
 
 Keep the terminal window open, go into any of the tests and run `yarn test-ethermint`. You should see `ethermintd` accepting transactions and producing blocks. You should be able to query for any transaction via:
 
-- `ethermintd query tx <cosmos-sdk tx>`
+- `ethermintcli query tx <cosmos-sdk tx>`
 - `curl localhost:8545 -H "Content-Type:application/json" -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["<ethereum tx>"],"id":1}'`
 
 From here, in your other available terminal, 
@@ -56,7 +56,7 @@ The [`init-test-node.sh`](./init-test-node.sh) script sets up ethermint with the
 
 Each with roughly 100 ETH available (1e18 photon).
 
-Running `ethermintd keys list --keyring-backend=test` should output:
+Running `ethermintcli keys list --keyring-backend=test` should output:
 
 ```json
 [

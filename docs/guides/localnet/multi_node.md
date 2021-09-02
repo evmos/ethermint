@@ -194,14 +194,14 @@ To interact with `ethermintd` and start querying state or creating txs, you use 
 `ethermintd` directory of any given node as your `home`, for example:
 
 ```bash
-ethermintd keys list --home ./build/node0/ethermintd
+ethermintcli keys list --home ./build/node0/ethermintd
 ```
 
 Now that accounts exists, you may create new accounts and send those accounts
 funds!
 
 ::: tip
-**Note**: Each node's seed is located at `./build/nodeN/ethermintd/key_seed.json` and can be restored to the CLI using the `ethermintd keys add --restore` command
+**Note**: Each node's seed is located at `./build/nodeN/ethermintd/key_seed.json` and can be restored to the CLI using the `ethermintcli keys add --restore` command
 :::
 
 ### Special Binaries

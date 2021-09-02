@@ -51,7 +51,7 @@ Don't use more `aphoton` than you have!
 :::
 
 ```bash
-ethermintd tx staking create-validator \
+ethermintcli tx staking create-validator \
   --amount=1000000aphoton \
   --pubkey=$(ethermintd tendermint show-validator) \
   --moniker="choose a moniker" \
@@ -121,7 +121,7 @@ The <key_name> specifies which validator you are editing. If you choose to not i
 The `--identity` can be used as to verify identity with systems like Keybase or UPort. When using with Keybase `--identity` should be populated with a 16-digit string that is generated with a [keybase.io](https://keybase.io) account. It's a cryptographically secure method of verifying your identity across multiple online networks. The Keybase API allows us to retrieve your Keybase avatar. This is how you can add a logo to your validator profile.
 
 ```bash
-ethermintd tx staking edit-validator
+ethermintcli tx staking edit-validator
   --moniker="choose a moniker" \
   --website="https://ethermint.dev" \
   --identity=6A0D65E29A4CBC8E \
@@ -145,7 +145,7 @@ __Note__: The `commission-rate` value must adhere to the following invariants:
 View the validator's information with this command:
 
 ```bash
-ethermintd query staking validator <account_cosmos>
+ethermintcli query staking validator <account_cosmos>
 ```
 
 ## Track Validator Signing Information
@@ -153,7 +153,7 @@ ethermintd query staking validator <account_cosmos>
 In order to keep track of a validator's signatures in the past you can do so by using the `signing-info` command:
 
 ```bash
-ethermintd query slashing signing-info <validator-pubkey>\
+ethermintcli query slashing signing-info <validator-pubkey>\
   --chain-id=<chain_id>
 ```
 
@@ -162,7 +162,7 @@ ethermintd query slashing signing-info <validator-pubkey>\
 When a validator is "jailed" for downtime, you must submit an `Unjail` transaction from the operator account in order to be able to get block proposer rewards again (depends on the zone fee distribution).
 
 ```bash
-ethermintd tx slashing unjail \
+ethermintcli tx slashing unjail \
   --from=<key_name> \
   --chain-id=<chain_id>
 ```
@@ -172,7 +172,7 @@ ethermintd tx slashing unjail \
 Your validator is active if the following command returns anything:
 
 ```bash
-ethermintd query tendermint-validator-set | grep "$(ethermintd tendermint show-address)"
+ethermintcli query tendermint-validator-set | grep "$(ethermintd tendermint show-address)"
 ```
 
 You should now see your validator in one of Ethermint explorers. You are looking for the `bech32` encoded `address` in the `~/.ethermintd/config/priv_validator.json` file.
@@ -207,7 +207,7 @@ Wait for your full node to catch up to the latest block. Then, you can [unjail y
 Lastly, check your validator again to see if your voting power is back.
 
 ```bash
-ethermintd status
+ethermintcli status
 ```
 
 You may notice that your voting power is less than it used to be. That's because you got slashed for downtime!

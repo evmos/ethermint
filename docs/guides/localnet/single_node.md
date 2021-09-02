@@ -67,7 +67,7 @@ The command above creates all the configuration files needed for your node and v
 Before starting the chain, you need to populate the state with at least one account using the [keyring](./../keys-wallets/keyring.md#add-keys):
 
 ```bash
-ethermintd keys add my_validator --keyring-backend=test
+ethermintcli keys add my_validator --keyring-backend=test
 ```
 
 Once you have created a local account, go ahead and grant it some `aphoton` tokens in your chain's genesis file. Doing so will also make sure your chain is aware of this account's existence:

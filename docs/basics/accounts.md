@@ -85,7 +85,7 @@ ethermintd debug addr 0x7cB61D4117AE31a12E393a1Cfa3BaC666481D02E
 ### Key output
 
 ::: tip
-The Cosmos SDK Keyring output (i.e `ethermintd keys`) only supports addresses and public keys in Bech32 format.
+The Cosmos SDK Keyring output (i.e `ethermintcli keys`) only supports addresses and public keys in Bech32 format.
 :::
 
 We can use the `keys show` command of `ethermintd` with the flag `--bech <type> (acc|val|cons)` to
@@ -95,7 +95,7 @@ obtain the addresses and keys as mentioned above,
 ::: tab Account
 
 ```bash
-ethermintd keys show mykey --bech acc
+ethermintcli keys show mykey --bech acc
 - name: mykey
   type: local
   address: ethm1qsklxwt77qrxur494uvw07zjynu03dq9alwh37
@@ -107,7 +107,7 @@ ethermintd keys show mykey --bech acc
 ::: tab Validator
 
 ```bash
-ethermintd keys show test --bech val
+ethermintcli keys show test --bech val
 - name: mykey
   type: local
   address: ethmvaloper1qsklxwt77qrxur494uvw07zjynu03dq9rdsrlq
@@ -119,7 +119,7 @@ ethermintd keys show test --bech val
 ::: tab Consensus
 
 ```bash
-ethermintd keys show test --bech cons
+ethermintcli keys show test --bech cons
 - name: mykey
   type: local
   address: ethmvalcons1qsklxwt77qrxur494uvw07zjynu03dq9h7rlnp
@@ -138,7 +138,7 @@ You can query an account address using the CLI, gRPC or
 
 ```bash
 # NOTE: the --output (-o) flag will define the output format in JSON or YAML (text)
-ethermintd q auth account $(ethermintd keys show <MYKEY> -a) -o text
+ethermintd q auth account $(ethermintcli keys show <MYKEY> -a) -o text
 |
   '@type': /ethermint.types.v1beta1.EthAccount
   base_account:

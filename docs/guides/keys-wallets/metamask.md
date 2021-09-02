@@ -51,7 +51,7 @@ Then close the settings, and go to `My Accounts` (top right circle) and select `
 Now you can export your private key from the terminal using the following command. Again, make sure to replace `mykey` with the name of the key that you want to export and use the correct `keyring-backend`:
 
 ```bash
-ethermintd keys unsafe-export-eth-key mykey --keyring-backend test
+ethermintcli keys unsafe-export-eth-key mykey --keyring-backend test
 ```
 
 Go back to the browser and select the `Private Key` option. Then paste the private key exported from the `unsafe-export-eth-key` command.
