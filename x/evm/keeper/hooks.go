@@ -26,7 +26,7 @@ func NewMultiEvmHooks(hooks ...types.EvmHooks) MultiEvmHooks {
 func (mh MultiEvmHooks) PostTxProcessing(ctx sdk.Context, txHash ethcmn.Hash, logs []*ethtypes.Log) error {
 	for i := range mh {
 		if err := mh[i].PostTxProcessing(ctx, txHash, logs); err != nil {
-			return sdkerrors.Wrapf(err, "EVM hook %s failed", reflect.TypeOf(mh[i]))
+			return sdkerrors.Wrapf(err, "EVM hook %T failed", mh[i])
 		}
 	}
 	return nil
