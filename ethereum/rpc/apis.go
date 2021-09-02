@@ -105,12 +105,6 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 					Service:   debug.NewAPI(ctx, evmBackend, clientCtx),
 					Public:    true,
 				},
-				rpc.API{
-					Namespace: DebugNamespace,
-					Version:   apiVersion,
-					Service:   debug.NewInternalAPI(ctx),
-					Public:    true,
-				},
 			)
 		case MinerNamespace:
 			apis = append(apis,

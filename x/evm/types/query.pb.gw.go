@@ -1260,7 +1260,7 @@ var (
 
 	pattern_Query_EstimateGas_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"ethermint", "evm", "v1", "estimate_gas"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Query_TraceTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"ethermint", "evm", "v1alpha1", "trace_tx"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Query_TraceTx_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"ethermint", "evm", "v1", "trace_tx"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

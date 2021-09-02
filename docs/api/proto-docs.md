@@ -14,6 +14,7 @@
     - [Log](#ethermint.evm.v1.Log)
     - [Params](#ethermint.evm.v1.Params)
     - [State](#ethermint.evm.v1.State)
+    - [TraceConfig](#ethermint.evm.v1.TraceConfig)
     - [TransactionLogs](#ethermint.evm.v1.TransactionLogs)
     - [TxResult](#ethermint.evm.v1.TxResult)
   
@@ -244,6 +245,23 @@ State represents a single Storage key value pair item.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.TraceConfig"></a>
+
+### TraceConfig
+TraceConfig holds extra parameters to trace functions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tracer` | [string](#string) |  |  |
+| `timeout` | [string](#string) |  |  |
+| `reexec` | [uint64](#uint64) |  | LogConfig log_config = 4 [ (gogoproto.jsontag) = "logConfig" ]; |
 
 
 
@@ -834,7 +852,8 @@ QueryTraceTxRequest defines TraceTx request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `msg` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) |  | msgEthereumTx for the requested transaction |
-| `index` | [uint32](#uint32) |  | transaction index |
+| `tx_index` | [uint32](#uint32) |  | transaction index |
+| `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
 
 
 
@@ -945,7 +964,7 @@ Query defines the gRPC querier service.
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1/params|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
-| `TraceTx` | [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest) | [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1alpha1/trace_tx|
+| `TraceTx` | [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest) | [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_tx|
 
  <!-- end services -->
 

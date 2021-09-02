@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
+
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc/codes"
@@ -28,6 +31,10 @@ import (
 )
 
 var _ types.QueryServer = Keeper{}
+
+const (
+	defaultTraceTimeout = 5 * time.Second
+)
 
 // Account implements the Query/Account gRPC method
 func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*types.QueryAccountResponse, error) {
@@ -442,6 +449,13 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 // executes the given message in the provided environment. The return value will
 // be tracer dependent.
 func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*types.QueryTraceTxResponse, error) {
+	// Assemble the structured logger or the JavaScript tracer
+	var (
+		tracer     vm.Tracer
+		err        error
+		resultData []byte
+	)
+
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 	params := k.GetParams(ctx)
@@ -459,13 +473,41 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	//Todo set switch statement for custom tracers configuration
-	tracer := types.NewTracer(types.TracerStruct, coreMessage, ethCfg, ctx.BlockHeight(), true)
+	switch {
+	case req.TraceConfig != nil && req.TraceConfig.Tracer != "":
+		timeout := defaultTraceTimeout
+		//TODO change timeout to time.duration
+		//Used string to comply with go ethereum
+		if req.TraceConfig.Timeout != "" {
+			if timeout, err = time.ParseDuration(req.TraceConfig.Timeout); err != nil {
+				return nil, err
+			}
+		}
+
+		txContext := core.NewEVMTxContext(coreMessage)
+		// Constuct the JavaScript tracer to execute with
+		if tracer, err = tracers.New(req.TraceConfig.Tracer, txContext); err != nil {
+			return nil, err
+		}
+
+		// Handle timeouts and RPC cancellations
+		deadlineCtx, cancel := context.WithTimeout(c, timeout)
+		go func() {
+			<-deadlineCtx.Done()
+			if deadlineCtx.Err() == context.DeadlineExceeded {
+				tracer.(*tracers.Tracer).Stop(errors.New("execution timeout"))
+			}
+		}()
+		defer cancel()
+
+	default:
+		tracer = types.NewTracer(types.TracerStruct, coreMessage, ethCfg, ctx.BlockHeight(), true)
+	}
 
 	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
 
 	k.SetTxHashTransient(ethcmn.HexToHash(req.Msg.Hash))
-	k.SetTxIndexTransient(uint64(req.Index))
+	k.SetTxIndexTransient(uint64(req.TxIndex))
 
 	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
 
@@ -473,8 +515,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// Depending on the tracer type, format and return the output.
-	// TODO support custom tracer param
+	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
 		//TODO Return proper returnValue
@@ -484,14 +525,27 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 			ReturnValue: "",
 			StructLogs:  types.FormatLogs(tracer.StructLogs()),
 		}
-		data, err := json.Marshal(result)
+
+		resultData, err = json.Marshal(result)
+
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		return &types.QueryTraceTxResponse{
-			Data: data,
-		}, nil
+	case *tracers.Tracer:
+		result, err := tracer.GetResult()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		resultData, err = json.Marshal(result)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	default:
-		panic(fmt.Sprintf("bad tracer type %T", tracer))
+		return nil, status.Error(codes.InvalidArgument, "invalid tracer type")
 	}
+
+	return &types.QueryTraceTxResponse{
+		Data: resultData,
+	}, nil
 }
