@@ -55,7 +55,7 @@ type Keeper struct {
 	// For more info check https://geth.ethereum.org/docs/dapp/tracing
 	debug bool
 
-	// EvmHooks
+	// EVM Hooks for tx post-processing
 	hooks types.EvmHooks
 }
 
