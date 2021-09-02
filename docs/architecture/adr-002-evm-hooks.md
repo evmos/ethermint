@@ -186,12 +186,12 @@ The proposed ADR is backward compatible.
 
 ### Negative
 
-- It's possible that some contracts accidentally define a log with the same signature and cause an unintentional result.
+- On the use case of native call: It's possible that some contracts accidentally define a log with the same signature and cause an unintentional result.
   To mitigate this, the implementor could whitelist contracts that are allowed to invoke native calls.
 
 ### Neutral
 
-- The contract can only call native modules asynchronously, which means it can neither get the result nor handle the error.
+- On the use case of native call: The contract can only call native modules asynchronously, which means it can neither get the result nor handle the error.
 
 ## Further Discussions
 

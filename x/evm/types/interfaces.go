@@ -41,6 +41,6 @@ type StakingKeeper interface {
 
 // EvmHooks event hooks for evm tx processing
 type EvmHooks interface {
-	// Must be called after tx is processed, if failed, the whole evm transaction is reverted.
+	// Must be called after tx is processed successfully, if return an error, the whole transaction is reverted.
 	PostTxProcessing(ctx sdk.Context, txHash ethcmn.Hash, logs []*ethtypes.Log) error
 }
