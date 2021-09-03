@@ -4,6 +4,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // AccountKeeper defines the expected account keeper interface
@@ -32,4 +34,13 @@ type BankKeeper interface {
 type StakingKeeper interface {
 	GetHistoricalInfo(ctx sdk.Context, height int64) (stakingtypes.HistoricalInfo, bool)
 	GetValidatorByConsAddr(ctx sdk.Context, consAddr sdk.ConsAddress) (validator stakingtypes.Validator, found bool)
+}
+
+// Event Hooks
+// These can be utilized to customize evm transaction processing.
+
+// EvmHooks event hooks for evm tx processing
+type EvmHooks interface {
+	// Must be called after tx is processed successfully, if return an error, the whole transaction is reverted.
+	PostTxProcessing(ctx sdk.Context, txHash ethcmn.Hash, logs []*ethtypes.Log) error
 }

@@ -54,6 +54,9 @@ type Keeper struct {
 	// trace EVM state transition execution. This value is obtained from the `--trace` flag.
 	// For more info check https://geth.ethereum.org/docs/dapp/tracing
 	debug bool
+
+	// EVM Hooks for tx post-processing
+	hooks types.EvmHooks
 }
 
 // NewKeeper generates new evm module keeper
@@ -415,4 +418,22 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 func (k Keeper) ResetAccount(addr common.Address) {
 	k.DeleteCode(addr)
 	k.DeleteAccountStorage(addr)
+}
+
+// SetHooks sets the hooks for the EVM module
+func (k *Keeper) SetHooks(eh types.EvmHooks) *Keeper {
+	if k.hooks != nil {
+		panic("cannot set evm hooks twice")
+	}
+
+	k.hooks = eh
+	return k
+}
+
+// PostTxProcessing delegate the call to the hooks. If no hook has been registered, this function returns with a `nil` error
+func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) error {
+	if k.hooks == nil {
+		return nil
+	}
+	return k.hooks.PostTxProcessing(k.Ctx(), txHash, logs)
 }
