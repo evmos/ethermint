@@ -90,9 +90,7 @@ func CheckSenderBalance(
 				"sender balance < tx cost (%s < %s%s)", balance, txData.Cost(), denom,
 			),
 			"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + %s)",
-			cost,
-			txData.Fee(),
-			txData.GetValue(),
+			cost, txData.Fee(), txData.GetValue(),
 		)
 	}
 	return nil
