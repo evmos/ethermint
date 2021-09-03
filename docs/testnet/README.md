@@ -4,12 +4,10 @@ parent:
   order: 5
 -->
 
-# API
+# Testnet
 
-This section contains different client and API reference document.
+This section contains different documents for how to access and join the Ethermint testnets.
 
 1. [Join Testnet](./join)
+1. [Faucet](./faucet)
 1. [Cloud Providers](./cloud_providers)
-1. [Testnet](./testnet)
-1. [Validator Setup](./validator-setup)
-1. [Security Checklist](./security)

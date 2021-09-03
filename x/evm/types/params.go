@@ -24,6 +24,7 @@ var (
 	ParamStoreKeyEnableCall   = []byte("EnableCall")
 	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
 	ParamStoreKeyChainConfig  = []byte("ChainConfig")
+	ParamStoreKeyNoBaseFee    = []byte("NoBaseFee")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the EVM interpreter. These EIPs are applied in
 	// order and can override the instruction sets from the latest hard fork enabled by the ChainConfig. For more info

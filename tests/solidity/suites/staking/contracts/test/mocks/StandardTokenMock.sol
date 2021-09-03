@@ -212,4 +212,12 @@ contract StandardTokenMock is ERC20 {
     allowed[_account][msg.sender] = allowed[_account][msg.sender].sub(_amount);
     _burn(_account, _amount);
   }
+
+  // For benchmarks
+  event TestLog(address sender, uint i);
+  function benchmarkLogs(uint n) public {
+    for (uint i=0; i<n; i++) {
+      emit TestLog(msg.sender, i);
+    }
+  }
 }

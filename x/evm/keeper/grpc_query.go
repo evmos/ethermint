@@ -232,15 +232,21 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
-	txLogs := []types.TransactionLogs{}
+
+	mapOrder := []string{}
+	logs := make(map[string][]*types.Log)
 
 	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
-		var txLog types.TransactionLogs
+		var txLog types.Log
 		k.cdc.MustUnmarshal(value, &txLog)
 
-		if len(txLog.Logs) > 0 && txLog.Logs[0].BlockHash == req.Hash {
+		if txLog.BlockHash == req.Hash {
 			if accumulate {
-				txLogs = append(txLogs, txLog)
+				if len(logs[txLog.TxHash]) == 0 {
+					mapOrder = append(mapOrder, txLog.TxHash)
+				}
+
+				logs[txLog.TxHash] = append(logs[txLog.TxHash], &txLog)
 			}
 			return true, nil
 		}
@@ -252,8 +258,15 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	var txsLogs = []types.TransactionLogs{}
+	for _, txHash := range mapOrder {
+		if len(logs[txHash]) > 0 {
+			txsLogs = append(txsLogs, types.TransactionLogs{Hash: txHash, Logs: logs[txHash]})
+		}
+	}
+
 	return &types.QueryBlockLogsResponse{
-		TxLogs:     txLogs,
+		TxLogs:     txsLogs,
 		Pagination: pageRes,
 	}, nil
 }
@@ -292,69 +305,13 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 	}, nil
 }
 
-// StaticCall implements Query/StaticCall gRPCP method
-func (k Keeper) StaticCall(c context.Context, req *types.QueryStaticCallRequest) (*types.QueryStaticCallResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
+// BaseFee implements the Query/BaseFee gRPC method
+func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types.QueryBaseFeeResponse, error) {
+	_ = sdk.UnwrapSDKContext(c)
 
-	// ctx := sdk.UnwrapSDKContext(c)
-	// k.WithContext(ctx)
-
-	// // parse the chainID from a string to a base-10 integer
-	// chainIDEpoch, err := ethermint.ParseChainID(ctx.ChainID())
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// txHash := tmtypes.Tx(ctx.TxBytes()).Hash()
-	// ethHash := ethcmn.BytesToHash(txHash)
-
-	// var recipient *ethcmn.Address
-	// if len(req.Address) > 0 {
-	// 	addr := ethcmn.HexToAddress(req.Address)
-	// 	recipient = &addr
-	// }
-
-	// so := k.GetOrNewStateObject(*recipient)
-	// sender := ethcmn.HexToAddress("0xaDd00275E3d9d213654Ce5223f0FADE8b106b707")
-
-	// msg := types.NewTx(
-	// 	chainIDEpoch, so.Nonce(), recipient, big.NewInt(0), 100000000, big.NewInt(0), req.Input, nil,
-	// )
-	// msg.From = sender.Hex()
-
-	// if err := msg.ValidateBasic(); err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// ethMsg, err := msg.AsMessage()
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// st := &types.StateTransition{
-	// 	Message:  ethMsg,
-	// 	Csdb:     k.WithContext(ctx),
-	// 	ChainID:  chainIDEpoch,
-	// 	TxHash:   &ethHash,
-	// 	Simulate: ctx.IsCheckTx(),
-	// 	Debug:    false,
-	// }
-
-	// config, found := k.GetChainConfig(ctx)
-	// if !found {
-	// 	return nil, status.Error(codes.Internal, types.ErrChainConfigNotFound.Error())
-	// }
-
-	// ret, err := st.StaticCall(ctx, config)
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	// return &types.QueryStaticCallResponse{Data: ret}, nil
-
-	return nil, nil
+	return &types.QueryBaseFeeResponse{
+		BaseFee: sdk.OneInt(), // TODO: update
+	}, nil
 }
 
 // EthCall implements eth_call rpc api.
@@ -373,12 +330,14 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase)
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
+
 	// pass true means execute in query mode, which don't do actual gas refund.
 	res, err := k.ApplyMessage(evm, msg, ethCfg, true)
 	k.ctxStack.RevertAll()
@@ -435,7 +394,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -448,7 +407,9 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		k.WithContext(ctx)
 
 		msg := args.ToMessage(req.GasCap)
-		evm := k.NewEVM(msg, ethCfg, params, coinbase)
+
+		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+		evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 		// pass true means execute in query mode, which don't do actual gas refund.
 		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
 

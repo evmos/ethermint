@@ -1,10 +1,12 @@
 package ante
 
 import (
+	"fmt"
 	"runtime/debug"
 
 	"github.com/palantir/stacktrace"
-	log "github.com/xlab/suplog"
+
+	tmlog "github.com/tendermint/tendermint/libs/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -53,14 +55,14 @@ func NewAnteHandler(
 	) (newCtx sdk.Context, err error) {
 		var anteHandler sdk.AnteHandler
 
-		defer Recover(&err)
+		defer Recover(ctx.Logger(), &err)
 
 		txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx)
 		if ok {
 			opts := txWithExtensions.GetExtensionOptions()
 			if len(opts) > 0 {
 				switch typeURL := opts[0].GetTypeUrl(); typeURL {
-				case "/ethermint.evm.v1alpha1.ExtensionOptionsEthereumTx":
+				case "/ethermint.evm.v1.ExtensionOptionsEthereumTx":
 					// handle as *evmtypes.MsgEthereumTx
 
 					anteHandler = sdk.ChainAnteDecorators(
@@ -74,7 +76,6 @@ func NewAnteHandler(
 						NewEthNonceVerificationDecorator(ak),
 						NewEthGasConsumeDecorator(ak, bankKeeper, evmKeeper),
 						NewCanTransferDecorator(evmKeeper),
-						NewAccessListDecorator(evmKeeper),
 						NewEthIncrementSenderSequenceDecorator(ak), // innermost AnteDecorator.
 					)
 
@@ -120,15 +121,21 @@ func NewAnteHandler(
 	}
 }
 
-func Recover(err *error) {
+func Recover(logger tmlog.Logger, err *error) {
 	if r := recover(); r != nil {
 		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
-			log.WithError(e).Errorln("ante handler panicked with an error")
-			log.Debugln(string(debug.Stack()))
+			logger.Error(
+				"ante handler panicked",
+				"error", e,
+				"stack trace", string(debug.Stack()),
+			)
 		} else {
-			log.Errorln(r)
+			logger.Error(
+				"ante handler panicked",
+				"recover", fmt.Sprintf("%v", r),
+			)
 		}
 	}
 }

@@ -271,16 +271,27 @@ docs-serve:
 	yarn && \
 	yarn run serve
 
-# This builds a docs site for each branch/tag in `./docs/versions`
-# and copies each site to a version prefixed path. The last entry inside
-# the `versions` file will be the default root index.html.
-build-docs:
 # Build the site into docs/.vuepress/dist
+build-docs:
 	@$(MAKE) docs-tools-stamp && \
 	cd docs && \
 	yarn && \
 	yarn run build
-.PHONY: docs-serve build-docs
+
+# This builds a docs site for each branch/tag in `./docs/versions`
+# and copies each site to a version prefixed path. The last entry inside
+# the `versions` file will be the default root index.html.
+build-docs-versioned:
+	@$(MAKE) docs-tools-stamp && \
+	cd docs && \
+	while read -r branch path_prefix; do \
+		(git checkout $${branch} && npm install && VUEPRESS_BASE="/$${path_prefix}/" npm run build) ; \
+		mkdir -p ~/output/$${path_prefix} ; \
+		cp -r .vuepress/dist/* ~/output/$${path_prefix}/ ; \
+		cp ~/output/$${path_prefix}/index.html ~/output ; \
+	done < versions ;
+
+.PHONY: docs-serve build-docs build-docs-versioned
 
 ###############################################################################
 ###                           Tests & Simulation                            ###
@@ -288,18 +299,22 @@ build-docs:
 
 test: test-unit
 test-all: test-unit test-race
-
+PACKAGES_UNIT=$(shell go list ./...)
 TEST_PACKAGES=./...
-TEST_TARGETS := test-unit test-race
+TEST_TARGETS := test-unit test-unit-cover test-race
 
 # Test runs-specific rules. To add a new test target, just add
 # a new rule, customise ARGS or TEST_PACKAGES ad libitum, and
 # append the new rule to the TEST_TARGETS list.
-test-unit: ARGS=-tags='norace'
+test-unit: ARGS=-timeout=10m -race
+test-unit: TEST_PACKAGES=$(PACKAGES_UNIT)
+
 test-race: ARGS=-race
 test-race: TEST_PACKAGES=$(PACKAGES_NOSIMULATION)
 $(TEST_TARGETS): run-tests
 
+test-unit-cover: ARGS=-timeout=10m -race -coverprofile=coverage.txt -covermode=atomic
+test-unit-cover: TEST_PACKAGES=$(PACKAGES_UNIT)
 
 run-tests:
 ifneq (,$(shell which tparse 2>/dev/null))
@@ -380,10 +395,6 @@ test-sim-multi-seed-short \
 test-sim-multi-seed-long \
 test-sim-benchmark-invariants
 
-test-cover:
-	@export VERSION=$(VERSION); bash -x contrib/test_cover.sh
-.PHONY: test-cover
-
 benchmark:
 	@go test -mod=readonly -bench=. $(PACKAGES_NOSIMULATION)
 .PHONY: benchmark
@@ -430,15 +441,15 @@ proto-format:
 	find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
 
 proto-lint:
-	@$(DOCKER_BUF) check lint --error-format=json
+	@$(DOCKER_BUF) lint --error-format=json
 
 proto-check-breaking:
-	@$(DOCKER_BUF) check breaking --against-input $(HTTPS_GIT)#branch=main
+	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
 
-TM_URL              = https://raw.githubusercontent.com/tendermint/tendermint/v0.34.1/proto/tendermint
+TM_URL              = https://raw.githubusercontent.com/tendermint/tendermint/v0.34.12/proto/tendermint
 GOGO_PROTO_URL      = https://raw.githubusercontent.com/regen-network/protobuf/cosmos
-COSMOS_SDK_URL      = https://raw.githubusercontent.com/cosmos/cosmos-sdk/v0.42.5
+COSMOS_SDK_URL      = https://raw.githubusercontent.com/cosmos/cosmos-sdk/v0.43.0
 COSMOS_PROTO_URL    = https://raw.githubusercontent.com/regen-network/cosmos-proto/master
 
 TM_CRYPTO_TYPES     = third_party/proto/tendermint/crypto
@@ -528,7 +539,10 @@ localnet-show-logstream:
 
 .PHONY: build-docker-local-ethermint localnet-start localnet-stop
 
-# release
+###############################################################################
+###                                Releasing                                ###
+###############################################################################
+
 PACKAGE_NAME:=github.com/tharsis/ethermint
 GOLANG_CROSS_VERSION  = v1.16.4
 release-dry-run:

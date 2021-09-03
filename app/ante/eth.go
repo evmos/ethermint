@@ -26,8 +26,7 @@ type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	GetCoinbaseAddress() (common.Address, error)
-	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address) *vm.EVM
+	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address, tracer vm.Tracer) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
 }
 
@@ -276,6 +275,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
 
+	var events sdk.Events
+
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -330,7 +331,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 				"failed to deduct full gas cost %s from the user %s balance", fees, msgEthTx.From,
 			)
 		}
+
+		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))
 	}
+
+	// TODO: change to typed events
+	ctx.EventManager().EmitEvents(events)
 
 	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
 	blockGasLimit := ethermint.BlockGasLimit(ctx)
@@ -389,8 +395,8 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		// NOTE: pass in an empty coinbase address as we don't need it for the check below
-		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params, common.Address{})
+		// NOTE: pass in an empty coinbase address and nil tracer as we don't need them for the check below
+		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params, common.Address{}, nil)
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter

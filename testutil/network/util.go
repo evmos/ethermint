@@ -114,14 +114,14 @@ func startInProcess(cfg Config, val *Validator) error {
 		val.grpc = grpcSrv
 	}
 
-	if val.AppConfig.EVMRPC.Enable {
+	if val.AppConfig.JSONRPC.Enable {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := val.Ctx.Config.RPC.ListenAddress
-		tmWsClient := ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint)
+		tmWsClient := ethsrv.ConnectTmWS(tmRPCAddr, tmEndpoint, val.Ctx.Logger)
 
 		val.jsonRPC = jsonrpc.NewServer()
 
-		rpcAPIArr := val.AppConfig.EVMRPC.API
+		rpcAPIArr := val.AppConfig.JSONRPC.API
 		apis := rpc.GetRPCAPIs(val.Ctx, val.ClientCtx, tmWsClient, rpcAPIArr)
 
 		for _, api := range apis {
@@ -134,7 +134,7 @@ func startInProcess(cfg Config, val *Validator) error {
 		r.HandleFunc("/", val.jsonRPC.ServeHTTP).Methods("POST")
 		if val.grpc != nil {
 			grpcWeb := grpcweb.WrapServer(val.grpc)
-			ethsrv.MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(val.grpc))
+			ethsrv.MountGRPCWebServices(r, grpcWeb, grpcweb.ListGRPCResources(val.grpc), val.Ctx.Logger)
 		}
 
 		handlerWithCors := cors.New(cors.Options{
@@ -153,8 +153,8 @@ func startInProcess(cfg Config, val *Validator) error {
 		})
 
 		httpSrv := &http.Server{
-			Addr: strings.TrimPrefix(val.AppConfig.EVMRPC.RPCAddress, "tcp://"), // FIXME: timeouts
-			// Addr:    val.AppConfig.EVMRPC.RPCAddress, // FIXME: address has too many colons
+			Addr: strings.TrimPrefix(val.AppConfig.JSONRPC.Address, "tcp://"), // FIXME: timeouts
+			// Addr:    val.AppConfig.JSONRPC.RPCAddress, // FIXME: address has too many colons
 			Handler: handlerWithCors.Handler(r),
 		}
 

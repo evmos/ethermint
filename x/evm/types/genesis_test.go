@@ -52,7 +52,11 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 		{
 			"empty account address bytes",
 			GenesisAccount{
-				Address: ethcmn.Address{}.String(),
+				Address: "",
+				Code:    suite.code,
+				Storage: Storage{
+					NewState(suite.hash, suite.hash),
+				},
 			},
 			false,
 		},
@@ -61,8 +65,11 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 			GenesisAccount{
 				Address: suite.address,
 				Code:    "",
+				Storage: Storage{
+					NewState(suite.hash, suite.hash),
+				},
 			},
-			false,
+			true,
 		},
 	}
 

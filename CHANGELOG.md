@@ -39,6 +39,34 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (app) [tharsis#476](https://github.com/tharsis/ethermint/pull/476) Update Bech32 HRP to `ethm`.
+
+### API Breaking
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Deprecate `YoloV3Block` and `EWASMBlock` from `ChainConfig`
+
+### Features
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Support [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+* (evm) [tharsis#417](https://github.com/tharsis/ethermint/pull/417) Add `EvmHooks` for tx post-processing
+
+### Bug Fixes
+
+* (encoding) [tharsis#478](https://github.com/tharsis/ethermint/pull/478) Register `Evidence` to amino codec.
+* (rpc) [tharsis#478](https://github.com/tharsis/ethermint/pull/481) Getting the node configuration when calling the `miner` rpc methods.
+
+### Improvements
+
+* (evm) [tharsis#461](https://github.com/tharsis/ethermint/pull/461) Increase performance of `StateDB` transaction log storage (r/w).
+
+## [v0.5.0] - 2021-08-20
+
+### State Machine Breaking
+
+* (app, rpc) [tharsis#447](https://github.com/tharsis/ethermint/pull/447) Chain ID format has been changed from `<identifier>-<epoch>` to `<identifier>_<EIP155_number>-<epoch>`
+in order to clearly distinguish permanent vs impermanent components.
+* (app, evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) EVM `Keeper` struct and `NewEVM` function now have a new `trace` field to define
+the Tracer type used to collect execution traces from the EVM transaction execution.
 * (evm) [tharsis#175](https://github.com/tharsis/ethermint/issues/175) The msg `TxData` field is now represented as a `*proto.Any`.
 * (evm) [tharsis#84](https://github.com/tharsis/ethermint/pull/84) Remove `journal`, `CommitStateDB` and `stateObjects`.
 * (rpc, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) Remove tx `Receipt` from store and replace it with fields obtained from the Tendermint RPC client.
@@ -53,6 +81,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (proto) [tharsis#448](https://github.com/tharsis/ethermint/pull/448) Bump version for all Ethermint messages to `v1`
+* (server) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) `evm-rpc` flags and app config have been renamed to `json-rpc`.
 * (proto, evm) [tharsis#207](https://github.com/tharsis/ethermint/issues/207) Replace `big.Int` in favor of `sdk.Int` for `TxData` fields
 * (proto, evm) [tharsis#81](https://github.com/tharsis/ethermint/pull/81) gRPC Query and Tx service changes:
   * The `TxReceipt`, `TxReceiptsByBlockHeight` endpoints have been removed from the Query service.
@@ -65,6 +95,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (client) [tharsis#450](https://github.com/tharsis/ethermint/issues/450) Add EIP55 hex address support on `debug addr` command.
+* (server) [tharsis#343](https://github.com/tharsis/ethermint/pull/343) Define a wrap tendermint logger `Handler` go-ethereum's `root` logger.
+* (rpc) [tharsis#457](https://github.com/tharsis/ethermint/pull/457) Configure RPC gas cap through app config.
+* (evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) Support different `Tracer` types for the EVM.
 * (deps) [tharsis#427](https://github.com/tharsis/ethermint/pull/427) Bump ibc-go to [`v1.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v1.0.0)
 * (gRPC) [tharsis#239](https://github.com/tharsis/ethermint/pull/239) Query `ChainConfig` via gRPC.
 * (rpc) [tharsis#181](https://github.com/tharsis/ethermint/pull/181) Use evm denomination for params on tx fee.
@@ -78,6 +112,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
 * (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
 * (rpc) [#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
+* (eth) [tharsis#460](https://github.com/tharsis/ethermint/issues/460) Add support for EIP-1898.
 
 ### Bug Fixes
 

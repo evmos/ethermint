@@ -29,7 +29,9 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	k.WithContext(infCtx)
 
-	k.SetBlockBloom(infCtx, req.Height, ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes()))
+	bloom := ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes())
+	k.SetBlockBloom(infCtx, req.Height, bloom)
+
 	k.WithContext(ctx)
 
 	return []abci.ValidatorUpdate{}

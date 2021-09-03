@@ -1,15 +1,15 @@
 run:
   tests: false
-#   # timeout for analysis, e.g. 30s, 5m, default is 1m
-#   timeout: 5m
+  # timeout for analysis, e.g. 30s, 5m, default is 1m
+  # timeout: 5m
 
 linters:
-  disable-all: true
   enable:
     - bodyclose
     - deadcode
     - depguard
     - dogsled
+    - dupl
     - errcheck
     - goconst
     - gocritic
@@ -20,9 +20,9 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - interfacer
-    - maligned
+    # - lll TODO: enable
     - misspell
+    - maligned
     - nakedret
     - prealloc
     - scopelint
@@ -31,39 +31,33 @@ linters:
     - stylecheck
     - typecheck
     - unconvert
-    - unused
     - unparam
-    - misspell
-    # TODO: address these lint issues
+    - unused
+    - varcheck
+    - nolintlint
+    - asciicheck
+    # - whitespace
     # - wsl
-    # - nolintlint
 
 issues:
   exclude-rules:
-    - text: "Use of weak random number generator"
+    - path: _test\.go
       linters:
         - gosec
-    - text: "comment on exported var"
-      linters:
-        - golint
-    - text: "don't use an underscore in package name"
-      linters:
-        - golint
-    - text: "ST1003:"
-      linters:
-        - stylecheck
-    - text: "SA1019:"
-      linters:
-        - staticcheck
-  max-issues-per-linter: 10000
-  max-same-issues: 10000
+    - linters:
+        - lll
+      source: "https://"
+  max-same-issues: 50
 
 linters-settings:
   dogsled:
     max-blank-identifiers: 3
+  golint:
+    min-confidence: 0
   maligned:
-    # print struct with more effective memory layout or not, false by default
     suggest-new: true
+  misspell:
+    locale: US
   nolintlint:
     allow-unused: false
     allow-leading-space: true
