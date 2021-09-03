@@ -747,11 +747,11 @@ func (suite *KeeperTestSuite) deployTestContract(owner common.Address, supply *b
 	return crypto.CreateAddress(suite.address, nonce)
 }
 
-func (suite *KeeperTestSuite) transferERC20Token(contractAddr common.Address, from common.Address, to common.Address) common.Hash {
+func (suite *KeeperTestSuite) transferERC20Token(contractAddr common.Address, from common.Address, to common.Address, amount *big.Int) *types.MsgEthereumTx {
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	chainID := suite.app.EvmKeeper.ChainID()
 
-	transferData, err := contractABI.Pack("transfer", to, big.NewInt(1000))
+	transferData, err := contractABI.Pack("transfer", to, amount)
 	suite.Require().NoError(err)
 	args, err := json.Marshal(&types.CallArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
 	suite.Require().NoError(err)
@@ -762,7 +762,23 @@ func (suite *KeeperTestSuite) transferERC20Token(contractAddr common.Address, fr
 	suite.Require().NoError(err)
 
 	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
-	types.ne
+	ercTransferTx := types.NewTx(
+		chainID,
+		nonce,
+		&contractAddr,
+		nil,
+		res.Gas,
+		nil,
+		transferData,
+		nil,
+	)
+	ercTransferTx.From = suite.address.Hex()
+	err = ercTransferTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
+	suite.Require().NoError(err)
+	rsp, err := suite.app.EvmKeeper.EthereumTx(ctx, ercTransferTx)
+	suite.Require().NoError(err)
+	suite.Require().Empty(rsp.VmError)
+	return ercTransferTx
 }
 
 func (suite *KeeperTestSuite) TestEstimateGas() {
@@ -846,16 +862,67 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 
 func (suite *KeeperTestSuite) TestTraceTx() {
 	ctx := sdk.WrapSDKContext(suite.ctx)
-
+	//TODO deploy contract that triggers internal transactions
 	var (
-		args   types.CallArgs
-		gasCap uint64
+		txMsg       *types.MsgEthereumTx
+		traceConfig *types.TraceConfig
 	)
+
 	testCases := []struct {
-		msg      string
-		malleate func()
-		expPass  bool
-		expGas   uint64
+		msg           string
+		malleate      func()
+		expPass       bool
+		traceResponse []byte
+	}{
+		{
+			msg: "default trace",
+			malleate: func() {
+				//Deploy contract
+				contractAddr := suite.deployTestContract(suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+				suite.Commit()
+				//Transfer token
+				txMsg = suite.transferERC20Token(contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdk.NewIntWithDecimal(1, 18).BigInt())
+				suite.Commit()
+				traceConfig = nil
+			},
+			expPass:       true,
+			traceResponse: []byte{0x7b, 0x22, 0x67, 0x61, 0x73, 0x22, 0x3a, 0x33, 0x34, 0x38, 0x32, 0x38, 0x2c, 0x22, 0x66, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x22, 0x3a, 0x66, 0x61, 0x6c, 0x73, 0x65, 0x2c, 0x22, 0x72, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x3a, 0x22, 0x22, 0x2c, 0x22, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x4c, 0x6f, 0x67, 0x73, 0x22, 0x3a, 0x5b, 0x5d, 0x7d},
+		}, {
+			msg: "javascript tracer",
+			malleate: func() {
+				//Deploy contract
+				contractAddr := suite.deployTestContract(suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+				suite.Commit()
+				//Transfer token
+				txMsg = suite.transferERC20Token(contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdk.NewIntWithDecimal(1, 18).BigInt())
+				suite.Commit()
+				traceConfig = &types.TraceConfig{
+					Tracer: "{data: [], fault: function(log) {}, step: function(log) { if(log.op.toString() == \"CALL\") this.data.push(log.stack.peek(0)); }, result: function() { return this.data; }}",
+				}
+			},
+			expPass:       true,
+			traceResponse: []byte{0x5b, 0x5d},
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.SetupTest()
+			tc.malleate()
+			traceReq := types.QueryTraceTxRequest{
+				Msg:         txMsg,
+				TraceConfig: traceConfig,
+				TxIndex:     1, // Can be hardcoded as this will be the only tx included in the block
+			}
+			res, err := suite.queryClient.TraceTx(ctx, &traceReq)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().Equal(tc.traceResponse, res.Data)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
 	}
 
 }
