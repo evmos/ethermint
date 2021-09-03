@@ -24,8 +24,6 @@ func RegisterTxRoutes(clientCtx client.Context, rtr *mux.Router) {
 	r := clientrest.WithHTTPDeprecationHeaders(rtr)
 	r.HandleFunc("/txs/{hash}", QueryTxRequestHandlerFn(clientCtx)).Methods("GET")
 	r.HandleFunc("/txs", authrest.QueryTxsRequestHandlerFn(clientCtx)).Methods("GET")
-	r.HandleFunc("/txs", authrest.BroadcastTxRequest(clientCtx)).Methods("POST")
-	r.HandleFunc("/txs/encode", authrest.EncodeTxRequestHandlerFn(clientCtx)).Methods("POST")
 	r.HandleFunc("/txs/decode", authrest.DecodeTxRequestHandlerFn(clientCtx)).Methods("POST")
 }
 

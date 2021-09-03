@@ -1,19 +1,16 @@
 package keeper_test
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"math/big"
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -26,29 +23,6 @@ import (
 
 //Not valid Ethereum address
 const invalidAddress = "0x0000"
-
-var (
-	//go:embed ERC20Contract.json
-	compiledContractJSON []byte
-	contractBin          []byte
-	contractABI          abi.ABI
-)
-
-func init() {
-	var tmp struct {
-		Abi string
-		Bin string
-	}
-	err := json.Unmarshal(compiledContractJSON, &tmp)
-	if err != nil {
-		panic(err)
-	}
-	contractBin = common.FromHex(tmp.Bin)
-	err = json.Unmarshal([]byte(tmp.Abi), &contractABI)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func (suite *KeeperTestSuite) TestQueryAccount() {
 	var (
@@ -500,7 +474,7 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 								TxHash:      ethcmn.BytesToHash([]byte("tx_hash_1")).String(),
 								TxIndex:     1,
 								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
-								Index:       0,
+								Index:       1,
 								Removed:     false,
 							},
 							{
@@ -511,7 +485,7 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 								TxHash:      ethcmn.BytesToHash([]byte("tx_hash_1")).String(),
 								TxIndex:     1,
 								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
-								Index:       0,
+								Index:       2,
 								Removed:     false,
 							},
 						},
@@ -707,80 +681,6 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 	}
 }
 
-// DeployTestContract deploy a test erc20 contract and returns the contract address
-func (suite *KeeperTestSuite) deployTestContract(owner common.Address, supply *big.Int) common.Address {
-	ctx := sdk.WrapSDKContext(suite.ctx)
-	chainID := suite.app.EvmKeeper.ChainID()
-
-	ctorArgs, err := contractABI.Pack("", owner, supply)
-	suite.Require().NoError(err)
-
-	data := append(contractBin, ctorArgs...)
-	args, err := json.Marshal(&types.CallArgs{
-		From: &suite.address,
-		Data: (*hexutil.Bytes)(&data),
-	})
-	suite.Require().NoError(err)
-
-	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
-		Args:   args,
-		GasCap: 25_000_000,
-	})
-	suite.Require().NoError(err)
-
-	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
-	erc20DeployTx := types.NewTxContract(
-		chainID,
-		nonce,
-		nil,     // amount
-		res.Gas, // gasLimit
-		nil,     // gasPrice
-		data,    // input
-		nil,     // accesses
-	)
-	erc20DeployTx.From = suite.address.Hex()
-	err = erc20DeployTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
-	suite.Require().NoError(err)
-	rsp, err := suite.app.EvmKeeper.EthereumTx(ctx, erc20DeployTx)
-	suite.Require().NoError(err)
-	suite.Require().Empty(rsp.VmError)
-	return crypto.CreateAddress(suite.address, nonce)
-}
-
-func (suite *KeeperTestSuite) transferERC20Token(contractAddr common.Address, from common.Address, to common.Address, amount *big.Int) *types.MsgEthereumTx {
-	ctx := sdk.WrapSDKContext(suite.ctx)
-	chainID := suite.app.EvmKeeper.ChainID()
-
-	transferData, err := contractABI.Pack("transfer", to, amount)
-	suite.Require().NoError(err)
-	args, err := json.Marshal(&types.CallArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
-	suite.Require().NoError(err)
-	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
-		Args:   args,
-		GasCap: 25_000_000,
-	})
-	suite.Require().NoError(err)
-
-	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
-	ercTransferTx := types.NewTx(
-		chainID,
-		nonce,
-		&contractAddr,
-		nil,
-		res.Gas,
-		nil,
-		transferData,
-		nil,
-	)
-	ercTransferTx.From = suite.address.Hex()
-	err = ercTransferTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
-	suite.Require().NoError(err)
-	rsp, err := suite.app.EvmKeeper.EthereumTx(ctx, ercTransferTx)
-	suite.Require().NoError(err)
-	suite.Require().Empty(rsp.VmError)
-	return ercTransferTx
-}
-
 func (suite *KeeperTestSuite) TestEstimateGas() {
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	gasHelper := hexutil.Uint64(20000)
@@ -818,19 +718,19 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		}, false, 0},
 		// estimate gas of an erc20 contract deployment, the exact gas number is checked with geth
 		{"contract deployment", func() {
-			ctorArgs, err := contractABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+			ctorArgs, err := ContractABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Require().NoError(err)
-			data := append(contractBin, ctorArgs...)
+			data := append(ContractBin, ctorArgs...)
 			args = types.CallArgs{
 				From: &suite.address,
 				Data: (*hexutil.Bytes)(&data),
 			}
-		}, true, 1144643},
+		}, true, 1186778},
 		// estimate gas of an erc20 transfer, the exact gas number is checked with geth
 		{"erc20 transfer", func() {
-			contractAddr := suite.deployTestContract(suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Commit()
-			transferData, err := contractABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
+			transferData, err := ContractABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
 			suite.Require().NoError(err)
 			args = types.CallArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
 		}, true, 51880},
@@ -877,12 +777,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		{
 			msg: "default trace",
 			malleate: func() {
-				//Deploy contract
-				contractAddr := suite.deployTestContract(suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
-				suite.Commit()
-				//Transfer token
-				txMsg = suite.transferERC20Token(contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdk.NewIntWithDecimal(1, 18).BigInt())
-				suite.Commit()
 				traceConfig = nil
 			},
 			expPass:       true,
@@ -890,12 +784,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		}, {
 			msg: "javascript tracer",
 			malleate: func() {
-				//Deploy contract
-				contractAddr := suite.deployTestContract(suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
-				suite.Commit()
-				//Transfer token
-				txMsg = suite.transferERC20Token(contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdk.NewIntWithDecimal(1, 18).BigInt())
-				suite.Commit()
 				traceConfig = &types.TraceConfig{
 					Tracer: "{data: [], fault: function(log) {}, step: function(log) { if(log.op.toString() == \"CALL\") this.data.push(log.stack.peek(0)); }, result: function() { return this.data; }}",
 				}
@@ -908,6 +796,13 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
 			suite.SetupTest()
+			//Deploy contract
+			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+			suite.Commit()
+			//Generate token transfer transaction
+			txMsg = suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdk.NewIntWithDecimal(1, 18).BigInt())
+			suite.Commit()
+
 			tc.malleate()
 			traceReq := types.QueryTraceTxRequest{
 				Msg:         txMsg,

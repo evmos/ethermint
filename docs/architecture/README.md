@@ -34,7 +34,5 @@ Please add a entry below in your Pull Request for an ADR.
 
 ## ADR Table of Contents
 
-<!--
-Add an entry in the following format: 
-- [ADR XXX: ADR Title](./adr-XXX-adr-title.md)
--->
+- [ADR 001: State](adr-001-state.md)
+- [ADR 002: EVM Hooks](adr-002-evm-hooks.md)

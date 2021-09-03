@@ -35,7 +35,7 @@ There are 3 main types of HRP for the `Addresses`/`PubKeys` available by default
 
 |                    | Address bech32 Prefix | Pubkey bech32 Prefix | Curve           | Address byte length | Pubkey byte length |
 |--------------------|-----------------------|----------------------|-----------------|---------------------|--------------------|
-| Accounts           | `ethm`                | `ethmpub`             | `eth_secp256k1` | `20`                | `33` (compressed)  |
+| Accounts           | `ethm`                | `ethmpub`            | `eth_secp256k1` | `20`                | `33` (compressed)  |
 | Validator Operator | `ethmvaloper`         | `ethmvaloperpub`     | `eth_secp256k1` | `20`                | `33` (compressed)  |
 | Consensus Nodes    | `ethmvalcons`         | `ethmvalconspub`     | `ed25519`       | `20`                | `32`               |
 

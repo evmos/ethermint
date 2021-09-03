@@ -240,15 +240,21 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 	ctx := sdk.UnwrapSDKContext(c)
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
-	txLogs := []types.TransactionLogs{}
+
+	mapOrder := []string{}
+	logs := make(map[string][]*types.Log)
 
 	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
-		var txLog types.TransactionLogs
+		var txLog types.Log
 		k.cdc.MustUnmarshal(value, &txLog)
 
-		if len(txLog.Logs) > 0 && txLog.Logs[0].BlockHash == req.Hash {
+		if txLog.BlockHash == req.Hash {
 			if accumulate {
-				txLogs = append(txLogs, txLog)
+				if len(logs[txLog.TxHash]) == 0 {
+					mapOrder = append(mapOrder, txLog.TxHash)
+				}
+
+				logs[txLog.TxHash] = append(logs[txLog.TxHash], &txLog)
 			}
 			return true, nil
 		}
@@ -260,8 +266,15 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	var txsLogs = []types.TransactionLogs{}
+	for _, txHash := range mapOrder {
+		if len(logs[txHash]) > 0 {
+			txsLogs = append(txsLogs, types.TransactionLogs{Hash: txHash, Logs: logs[txHash]})
+		}
+	}
+
 	return &types.QueryBlockLogsResponse{
-		TxLogs:     txLogs,
+		TxLogs:     txsLogs,
 		Pagination: pageRes,
 	}, nil
 }
@@ -325,7 +338,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -389,7 +402,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -460,7 +473,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	k.WithContext(ctx)
 	params := k.GetParams(ctx)
 
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
