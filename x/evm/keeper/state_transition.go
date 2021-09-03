@@ -175,6 +175,12 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		panic("context stack shouldn't be dirty before apply message")
 	}
 
+	var revision int
+	if k.hooks != nil {
+		// snapshot to contain the tx processing and post processing in same scope
+		revision = k.Snapshot()
+	}
+
 	// pass false to execute in real mode, which do actual gas refunding
 	res, err := k.ApplyMessage(evm, msg, ethCfg, false)
 	if err != nil {
@@ -183,6 +189,17 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogs(txHash)
+
+	if !res.Failed() {
+		// Only call hooks if tx executed successfully.
+		if err = k.PostTxProcessing(txHash, logs); err != nil {
+			// If hooks return error, revert the whole tx.
+			k.RevertToSnapshot(revision)
+			res.VmError = types.ErrPostTxProcessing.Error()
+			k.Logger(ctx).Error("tx post processing failed", "error", err)
+		}
+	}
+
 	if len(logs) > 0 {
 		res.Logs = types.NewLogsFromEth(logs)
 		// Update transient block bloom filter

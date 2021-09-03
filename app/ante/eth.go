@@ -90,13 +90,13 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 
 // EthAccountVerificationDecorator validates an account balance checks
 type EthAccountVerificationDecorator struct {
-	ak         evmkeeper.AccountKeeper
-	bankKeeper evmkeeper.BankKeeper
+	ak         evmtypes.AccountKeeper
+	bankKeeper evmtypes.BankKeeper
 	evmKeeper  EVMKeeper
 }
 
 // NewEthAccountVerificationDecorator creates a new EthAccountVerificationDecorator
-func NewEthAccountVerificationDecorator(ak evmkeeper.AccountKeeper, bankKeeper evmkeeper.BankKeeper, ek EVMKeeper) EthAccountVerificationDecorator {
+func NewEthAccountVerificationDecorator(ak evmtypes.AccountKeeper, bankKeeper evmtypes.BankKeeper, ek EVMKeeper) EthAccountVerificationDecorator {
 	return EthAccountVerificationDecorator{
 		ak:         ak,
 		bankKeeper: bankKeeper,
@@ -156,7 +156,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		}
 
 		if err := evmkeeper.CheckSenderBalance(ctx, avd.bankKeeper, from, txData, evmDenom); err != nil {
-			return ctx, err
+			return ctx, stacktrace.Propagate(err, "failed to check sender balance")
 		}
 
 	}
@@ -168,11 +168,11 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 // EthNonceVerificationDecorator checks that the account nonce from the transaction matches
 // the sender account sequence.
 type EthNonceVerificationDecorator struct {
-	ak evmkeeper.AccountKeeper
+	ak evmtypes.AccountKeeper
 }
 
 // NewEthNonceVerificationDecorator creates a new EthNonceVerificationDecorator
-func NewEthNonceVerificationDecorator(ak evmkeeper.AccountKeeper) EthNonceVerificationDecorator {
+func NewEthNonceVerificationDecorator(ak evmtypes.AccountKeeper) EthNonceVerificationDecorator {
 	return EthNonceVerificationDecorator{
 		ak: ak,
 	}
@@ -226,13 +226,13 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
-	ak         evmkeeper.AccountKeeper
-	bankKeeper evmkeeper.BankKeeper
+	ak         evmtypes.AccountKeeper
+	bankKeeper evmtypes.BankKeeper
 	evmKeeper  EVMKeeper
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
-func NewEthGasConsumeDecorator(ak evmkeeper.AccountKeeper, bankKeeper evmkeeper.BankKeeper, ek EVMKeeper) EthGasConsumeDecorator {
+func NewEthGasConsumeDecorator(ak evmtypes.AccountKeeper, bankKeeper evmtypes.BankKeeper, ek EVMKeeper) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
 		ak:         ak,
 		bankKeeper: bankKeeper,
@@ -267,6 +267,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	istanbul := ethCfg.IsIstanbul(blockHeight)
 	evmDenom := params.EvmDenom
 
+	var events sdk.Events
+
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -281,10 +283,26 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
-		if err := evmkeeper.DeductTxCostsFromUserBalance(ctx, egcd.bankKeeper, egcd.ak, *msgEthTx, txData, evmDenom, homestead, istanbul); err != nil {
-			return ctx, err
+		fees, err := evmkeeper.DeductTxCostsFromUserBalance(
+			ctx,
+			egcd.bankKeeper,
+			egcd.ak,
+			*msgEthTx,
+			txData,
+			evmDenom,
+			homestead,
+			istanbul,
+		)
+
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to deduct transaction costs from user balance")
 		}
+
+		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))
 	}
+
+	// TODO: change to typed events
+	ctx.EventManager().EmitEvents(events)
 
 	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
 	blockGasLimit := ethermint.BlockGasLimit(ctx)
@@ -425,11 +443,11 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 // EthIncrementSenderSequenceDecorator increments the sequence of the signers.
 type EthIncrementSenderSequenceDecorator struct {
-	ak evmkeeper.AccountKeeper
+	ak evmtypes.AccountKeeper
 }
 
 // NewEthIncrementSenderSequenceDecorator creates a new EthIncrementSenderSequenceDecorator.
-func NewEthIncrementSenderSequenceDecorator(ak evmkeeper.AccountKeeper) EthIncrementSenderSequenceDecorator {
+func NewEthIncrementSenderSequenceDecorator(ak evmtypes.AccountKeeper) EthIncrementSenderSequenceDecorator {
 	return EthIncrementSenderSequenceDecorator{
 		ak: ak,
 	}
