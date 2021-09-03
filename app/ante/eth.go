@@ -9,6 +9,7 @@ import (
 	"github.com/palantir/stacktrace"
 
 	ethermint "github.com/tharsis/ethermint/types"
+	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -89,41 +90,18 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 
 // EthAccountVerificationDecorator validates an account balance checks
 type EthAccountVerificationDecorator struct {
-	ak         AccountKeeper
-	bankKeeper BankKeeper
+	ak         evmkeeper.AccountKeeper
+	bankKeeper evmkeeper.BankKeeper
 	evmKeeper  EVMKeeper
 }
 
 // NewEthAccountVerificationDecorator creates a new EthAccountVerificationDecorator
-func NewEthAccountVerificationDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKeeper) EthAccountVerificationDecorator {
+func NewEthAccountVerificationDecorator(ak evmkeeper.AccountKeeper, bankKeeper evmkeeper.BankKeeper, ek EVMKeeper) EthAccountVerificationDecorator {
 	return EthAccountVerificationDecorator{
 		ak:         ak,
 		bankKeeper: bankKeeper,
 		evmKeeper:  ek,
 	}
-}
-
-// ValidateSenderHasEnoughFounds validates sender has enough funds to pay for tx cost
-func ValidateSenderHasEnoughFounds(
-	ctx sdk.Context,
-	bankKeeper BankKeeper,
-	sender sdk.AccAddress,
-	txData evmtypes.TxData,
-	denom string,
-) error {
-	balance := bankKeeper.GetBalance(ctx, sender, denom)
-	cost := txData.Cost()
-
-	if balance.Amount.BigInt().Cmp(cost) < 0 {
-		return stacktrace.Propagate(
-			sdkerrors.Wrapf(
-				sdkerrors.ErrInsufficientFunds,
-				"sender balance < tx cost (%s < %s%s)", balance, txData.Cost(), denom,
-			),
-			"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + %s)", cost, txData.Fee(), txData.GetValue(),
-		)
-	}
-	return nil
 }
 
 // AnteHandle validates checks that the sender balance is greater than the total transaction cost.
@@ -177,8 +155,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 			avd.ak.SetAccount(ctx, acc)
 		}
 
-		err = ValidateSenderHasEnoughFounds(ctx, avd.bankKeeper, from, txData, evmDenom)
-		if err != nil {
+		if err := evmkeeper.CheckSenderBalance(ctx, avd.bankKeeper, from, txData, evmDenom); err != nil {
 			return ctx, err
 		}
 
@@ -191,11 +168,11 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 // EthNonceVerificationDecorator checks that the account nonce from the transaction matches
 // the sender account sequence.
 type EthNonceVerificationDecorator struct {
-	ak AccountKeeper
+	ak evmkeeper.AccountKeeper
 }
 
 // NewEthNonceVerificationDecorator creates a new EthNonceVerificationDecorator
-func NewEthNonceVerificationDecorator(ak AccountKeeper) EthNonceVerificationDecorator {
+func NewEthNonceVerificationDecorator(ak evmkeeper.AccountKeeper) EthNonceVerificationDecorator {
 	return EthNonceVerificationDecorator{
 		ak: ak,
 	}
@@ -249,13 +226,13 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
-	ak         AccountKeeper
-	bankKeeper BankKeeper
+	ak         evmkeeper.AccountKeeper
+	bankKeeper evmkeeper.BankKeeper
 	evmKeeper  EVMKeeper
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
-func NewEthGasConsumeDecorator(ak AccountKeeper, bankKeeper BankKeeper, ek EVMKeeper) EthGasConsumeDecorator {
+func NewEthGasConsumeDecorator(ak evmkeeper.AccountKeeper, bankKeeper evmkeeper.BankKeeper, ek EVMKeeper) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
 		ak:         ak,
 		bankKeeper: bankKeeper,
@@ -288,7 +265,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
-	evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
+	evmDenom := params.EvmDenom
 
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -304,8 +281,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
-		err = DeductTxCostsFromUserBalance(ctx, egcd.bankKeeper, egcd.ak, *msgEthTx, txData, evmDenom, homestead, istanbul)
-		if err != nil {
+		if err := evmkeeper.DeductTxCostsFromUserBalance(ctx, egcd.bankKeeper, egcd.ak, *msgEthTx, txData, evmDenom, homestead, istanbul); err != nil {
 			return ctx, err
 		}
 	}
@@ -325,59 +301,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// set up the updated context to the evm Keeper
 	egcd.evmKeeper.WithContext(ctx)
 	return next(ctx, tx, simulate)
-}
-
-// DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
-func DeductTxCostsFromUserBalance(
-	ctx sdk.Context,
-	bankKeeper BankKeeper,
-	accountKeeper AccountKeeper,
-	msgEthTx evmtypes.MsgEthereumTx,
-	txData evmtypes.TxData,
-	denom string,
-	homestead bool,
-	istanbul bool,
-) error {
-	isContractCreation := txData.GetTo() == nil
-
-	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, accountKeeper, msgEthTx.GetFrom())
-	if err != nil {
-		return stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
-	}
-
-	gasLimit := txData.GetGas()
-
-	var accessList ethtypes.AccessList
-	if txData.GetAccessList() != nil {
-		accessList = txData.GetAccessList()
-	}
-
-	intrinsicGas, err := core.IntrinsicGas(txData.GetData(), accessList, isContractCreation, homestead, istanbul)
-	if err != nil {
-		return stacktrace.Propagate(
-			sdkerrors.Wrap(err, "failed to compute intrinsic gas cost"),
-			"failed to retrieve intrinsic gas, contract creation = %t; homestead = %t, istanbul = %t", isContractCreation, homestead, istanbul)
-	}
-
-	// intrinsic gas verification during CheckTx
-	if ctx.IsCheckTx() && gasLimit < intrinsicGas {
-		return sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas)
-	}
-
-	// calculate the fees paid to validators based on gas limit and price
-	feeAmt := txData.Fee() // fee = gas limit * gas price
-
-	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(feeAmt))}
-
-	// deduct the full gas cost from the user balance
-	if err := authante.DeductFees(bankKeeper, ctx, signerAcc, fees); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"failed to deduct full gas cost %s from the user %s balance", fees, msgEthTx.From,
-		)
-	}
-	return nil
 }
 
 // CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
@@ -502,11 +425,11 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 // EthIncrementSenderSequenceDecorator increments the sequence of the signers.
 type EthIncrementSenderSequenceDecorator struct {
-	ak AccountKeeper
+	ak evmkeeper.AccountKeeper
 }
 
 // NewEthIncrementSenderSequenceDecorator creates a new EthIncrementSenderSequenceDecorator.
-func NewEthIncrementSenderSequenceDecorator(ak AccountKeeper) EthIncrementSenderSequenceDecorator {
+func NewEthIncrementSenderSequenceDecorator(ak evmkeeper.AccountKeeper) EthIncrementSenderSequenceDecorator {
 	return EthIncrementSenderSequenceDecorator{
 		ak: ak,
 	}
