@@ -8,7 +8,7 @@ Build and install the Ethermint binaries from source or using Docker. {synopsis}
 
 ## Pre-requisites
 
-- [Install Go 1.16+](https://golang.org/dl/) {prereq}
+- [Install Go 1.17+](https://golang.org/dl/) {prereq}
 - [Install jq](https://stedolan.github.io/jq/download/) {prereq}
 
 ## Install Binaries
