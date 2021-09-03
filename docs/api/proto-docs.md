@@ -231,7 +231,7 @@ LogConfig are the configuration options for structured logger the EVM
 | `disable_return_data` | [bool](#bool) |  | disable return data capture |
 | `debug` | [bool](#bool) |  | print output during capture end |
 | `limit` | [int32](#int32) |  | maximum length of output, but zero means unlimited |
-| `Overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
+| `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
 
 
 

@@ -221,5 +221,5 @@ message LogConfig {
   // maximum length of output, but zero means unlimited
   int32 limit = 6;
   // Chain overrides, can be used to execute a trace using future fork rules
-  ChainConfig Overrides = 7;
+  ChainConfig overrides = 7;
 }
