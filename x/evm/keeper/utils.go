@@ -8,29 +8,16 @@ import (
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // AccountKeeper defines an expected keeper interface for the auth module's AccountKeeper
-type AccountKeeper interface {
-	authante.AccountKeeper
-	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	GetSequence(sdk.Context, sdk.AccAddress) (uint64, error)
-}
-
-// BankKeeper defines an expected keeper interface for the bank module's Keeper
-type BankKeeper interface {
-	authtypes.BankKeeper
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-}
-
 // DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
 func DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
-	bankKeeper BankKeeper,
-	accountKeeper AccountKeeper,
+	bankKeeper evmtypes.BankKeeper,
+	accountKeeper evmtypes.AccountKeeper,
 	msgEthTx evmtypes.MsgEthereumTx,
 	txData evmtypes.TxData,
 	denom string,
@@ -88,7 +75,7 @@ func DeductTxCostsFromUserBalance(
 // CheckSenderBalance validates sender has enough funds to pay for tx cost
 func CheckSenderBalance(
 	ctx sdk.Context,
-	bankKeeper BankKeeper,
+	bankKeeper evmtypes.BankKeeper,
 	sender sdk.AccAddress,
 	txData evmtypes.TxData,
 	denom string,

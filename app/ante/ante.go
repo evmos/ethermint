@@ -19,7 +19,7 @@ import (
 	ibcante "github.com/cosmos/ibc-go/modules/core/ante"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 const (
@@ -31,8 +31,8 @@ const (
 // transaction-level processing (e.g. fee payment, signature verification) before
 // being passed onto it's respective handler.
 func NewAnteHandler(
-	ak evmkeeper.AccountKeeper,
-	bankKeeper evmkeeper.BankKeeper,
+	ak evmtypes.AccountKeeper,
+	bankKeeper evmtypes.BankKeeper,
 	evmKeeper EVMKeeper,
 	feeGrantKeeper authante.FeegrantKeeper,
 	channelKeeper channelkeeper.Keeper,
