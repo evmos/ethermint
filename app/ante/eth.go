@@ -156,7 +156,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		}
 
 		if err := evmkeeper.CheckSenderBalance(ctx, avd.bankKeeper, from, txData, evmDenom); err != nil {
-			return ctx, err
+			return ctx, stacktrace.Propagate(err, "failed to check sender balance")
 		}
 
 	}
@@ -283,8 +283,19 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
-		if err := evmkeeper.DeductTxCostsFromUserBalance(ctx, egcd.bankKeeper, egcd.ak, *msgEthTx, txData, evmDenom, homestead, istanbul); err != nil {
-			return ctx, err
+		fees, err := evmkeeper.DeductTxCostsFromUserBalance(
+			ctx,
+			egcd.bankKeeper,
+			egcd.ak,
+			*msgEthTx,
+			txData,
+			evmDenom,
+			homestead,
+			istanbul,
+		)
+
+		if err != nil {
+			return ctx, stacktrace.Propagate(err, "failed to deduct transaction costs from user balance")
 		}
 
 		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))

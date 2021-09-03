@@ -36,13 +36,13 @@ func DeductTxCostsFromUserBalance(
 	denom string,
 	homestead bool,
 	istanbul bool,
-) error {
+) (sdk.Coins, error) {
 	isContractCreation := txData.GetTo() == nil
 
 	// fetch sender account from signature
 	signerAcc, err := authante.GetSignerAcc(ctx, accountKeeper, msgEthTx.GetFrom())
 	if err != nil {
-		return stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
+		return nil, stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
 	}
 
 	gasLimit := txData.GetGas()
@@ -54,14 +54,19 @@ func DeductTxCostsFromUserBalance(
 
 	intrinsicGas, err := core.IntrinsicGas(txData.GetData(), accessList, isContractCreation, homestead, istanbul)
 	if err != nil {
-		return stacktrace.Propagate(
-			sdkerrors.Wrap(err, "failed to compute intrinsic gas cost"),
-			"failed to retrieve intrinsic gas, contract creation = %t; homestead = %t, istanbul = %t", isContractCreation, homestead, istanbul)
+		return nil, stacktrace.Propagate(sdkerrors.Wrap(
+			err,
+			"failed to compute intrinsic gas cost"), "failed to retrieve intrinsic gas, contract creation = %t; homestead = %t, istanbul = %t",
+			isContractCreation, homestead, istanbul,
+		)
 	}
 
 	// intrinsic gas verification during CheckTx
 	if ctx.IsCheckTx() && gasLimit < intrinsicGas {
-		return sdkerrors.Wrapf(sdkerrors.ErrOutOfGas, "gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas)
+		return nil, sdkerrors.Wrapf(
+			sdkerrors.ErrOutOfGas,
+			"gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas,
+		)
 	}
 
 	// calculate the fees paid to validators based on gas limit and price
@@ -71,12 +76,13 @@ func DeductTxCostsFromUserBalance(
 
 	// deduct the full gas cost from the user balance
 	if err := authante.DeductFees(bankKeeper, ctx, signerAcc, fees); err != nil {
-		return stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
-			"failed to deduct full gas cost %s from the user %s balance", fees, msgEthTx.From,
+			"failed to deduct full gas cost %s from the user %s balance",
+			fees, msgEthTx.From,
 		)
 	}
-	return nil
+	return fees, nil
 }
 
 // CheckSenderBalance validates sender has enough funds to pay for tx cost
@@ -96,7 +102,10 @@ func CheckSenderBalance(
 				sdkerrors.ErrInsufficientFunds,
 				"sender balance < tx cost (%s < %s%s)", balance, txData.Cost(), denom,
 			),
-			"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + %s)", cost, txData.Fee(), txData.GetValue(),
+			"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + %s)",
+			cost,
+			txData.Fee(),
+			txData.GetValue(),
 		)
 	}
 	return nil

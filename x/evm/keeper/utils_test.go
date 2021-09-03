@@ -226,7 +226,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 
-			err := evmkeeper.DeductTxCostsFromUserBalance(
+			fees, err := evmkeeper.DeductTxCostsFromUserBalance(
 				suite.app.EvmKeeper.Ctx(),
 				suite.app.BankKeeper,
 				suite.app.AccountKeeper,
@@ -239,8 +239,17 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 
 			if tc.expectPass {
 				suite.Require().NoError(err, "valid test %d failed", i)
+				suite.Require().Equal(
+					fees,
+					sdk.NewCoins(
+						sdk.NewCoin(evmtypes.DefaultEVMDenom, tc.gasPrice.Mul(sdk.NewIntFromUint64(tc.gasLimit))),
+					),
+					"valid test %d failed, fee value is wrong ", i,
+				)
+
 			} else {
 				suite.Require().Error(err, "invalid test %d passed", i)
+				suite.Require().Nil(fees, "invalid test %d passed. fees value must be nil", i)
 			}
 
 		})
