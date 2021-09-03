@@ -24,12 +24,6 @@ import (
 	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 )
 
-const (
-	// defaultTraceTimeout is the amount of time a single transaction can execute
-	// by default before being forcefully aborted.
-	defaultTraceTimeout = 5 * time.Second
-)
-
 // HandlerT keeps track of the cpu profiler and trace execution
 type HandlerT struct {
 	cpuFilename   string
