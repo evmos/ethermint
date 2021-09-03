@@ -23,7 +23,7 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -339,7 +339,7 @@ func TestEth_blockNumber(t *testing.T) {
 }
 
 func TestEth_coinbase(t *testing.T) {
-	zeroAddress := hexutil.Bytes(ethcmn.Address{}.Bytes())
+	zeroAddress := hexutil.Bytes(common.Address{}.Bytes())
 	rpcRes := call(t, "eth_coinbase", []string{})
 
 	var res hexutil.Bytes
@@ -470,7 +470,7 @@ func TestEth_GetFilterChanges_BlockFilter(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	changesRes := call(t, "eth_getFilterChanges", []string{ID})
-	var hashes []ethcmn.Hash
+	var hashes []common.Hash
 	err = json.Unmarshal(changesRes.Result, &hashes)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(hashes), 1)
@@ -579,7 +579,7 @@ func TestEth_GetTransactionReceipt_ContractDeployment(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "0x1", receipt["status"].(string))
 
-	require.NotEqual(t, ethcmn.Address{}.String(), receipt["contractAddress"].(string))
+	require.NotEqual(t, common.Address{}.String(), receipt["contractAddress"].(string))
 	require.NotNil(t, receipt["logs"])
 
 }

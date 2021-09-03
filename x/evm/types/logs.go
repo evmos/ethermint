@@ -4,14 +4,14 @@ import (
 	"errors"
 	"fmt"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // NewTransactionLogs creates a new NewTransactionLogs instance.
-func NewTransactionLogs(hash ethcmn.Hash, logs []*Log) TransactionLogs { // nolint: interfacer
+func NewTransactionLogs(hash common.Hash, logs []*Log) TransactionLogs { // nolint: interfacer
 	return TransactionLogs{
 		Hash: hash.String(),
 		Logs: logs,
@@ -19,7 +19,7 @@ func NewTransactionLogs(hash ethcmn.Hash, logs []*Log) TransactionLogs { // noli
 }
 
 // NewTransactionLogsFromEth creates a new NewTransactionLogs instance using []*ethtypes.Log.
-func NewTransactionLogsFromEth(hash ethcmn.Hash, ethlogs []*ethtypes.Log) TransactionLogs { // nolint: interfacer
+func NewTransactionLogsFromEth(hash common.Hash, ethlogs []*ethtypes.Log) TransactionLogs { // nolint: interfacer
 	return TransactionLogs{
 		Hash: hash.String(),
 		Logs: NewLogsFromEth(ethlogs),
@@ -70,20 +70,20 @@ func (log *Log) Validate() error {
 
 // ToEthereum returns the Ethereum type Log from a Ethermint proto compatible Log.
 func (log *Log) ToEthereum() *ethtypes.Log {
-	var topics []ethcmn.Hash // nolint: prealloc
+	var topics []common.Hash // nolint: prealloc
 	for i := range log.Topics {
-		topics = append(topics, ethcmn.HexToHash(log.Topics[i]))
+		topics = append(topics, common.HexToHash(log.Topics[i]))
 	}
 
 	return &ethtypes.Log{
-		Address:     ethcmn.HexToAddress(log.Address),
+		Address:     common.HexToAddress(log.Address),
 		Topics:      topics,
 		Data:        log.Data,
 		BlockNumber: log.BlockNumber,
-		TxHash:      ethcmn.HexToHash(log.TxHash),
+		TxHash:      common.HexToHash(log.TxHash),
 		TxIndex:     uint(log.TxIndex),
 		Index:       uint(log.Index),
-		BlockHash:   ethcmn.HexToHash(log.BlockHash),
+		BlockHash:   common.HexToHash(log.BlockHash),
 		Removed:     log.Removed,
 	}
 }

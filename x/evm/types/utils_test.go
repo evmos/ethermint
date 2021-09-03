@@ -17,18 +17,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // GenerateEthAddress generates an Ethereum address.
-func GenerateEthAddress() ethcmn.Address {
+func GenerateEthAddress() common.Address {
 	priv, err := ethsecp256k1.GenerateKey()
 	if err != nil {
 		panic(err)
 	}
 
-	return ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
+	return crypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
 }
 
 func TestEvmDataEncoding(t *testing.T) {
