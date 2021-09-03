@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -33,7 +33,7 @@ type EvmTestSuite struct {
 
 	signer    keyring.Signer
 	ethSigner ethtypes.Signer
-	from      ethcmn.Address
+	from      common.Address
 	to        sdk.AccAddress
 }
 
@@ -57,7 +57,7 @@ func (suite *EvmTestSuite) SetupTest() {
 
 	suite.signer = tests.NewSigner(privKey)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.chainID)
-	suite.from = ethcmn.BytesToAddress(privKey.PubKey().Address().Bytes())
+	suite.from = common.BytesToAddress(privKey.PubKey().Address().Bytes())
 
 }
 
@@ -77,7 +77,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 		{
 // 			"passed",
 // 			func() {
-// 				to := ethcmn.BytesToAddress(suite.to)
+// 				to := common.BytesToAddress(suite.to)
 // 				tx = types.NewTx(suite.chainID, 0, &to, big.NewInt(100), 0, big.NewInt(10000), nil, nil)
 // 				tx.From = suite.from.String()
 
@@ -181,10 +181,10 @@ func TestEvmTestSuite(t *testing.T) {
 // 	suite.Require().Equal(len(txResponse.Logs[0].Topics), 2)
 
 // 	hash := []byte{1}
-// 	suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash(hash), types.LogsToEthereum(txResponse.Logs))
+// 	suite.app.EvmKeeper.SetLogs(common.BytesToHash(hash), types.LogsToEthereum(txResponse.Logs))
 // 	suite.Require().NoError(err)
 
-// 	logs := suite.app.EvmKeeper.GetTxLogs(ethcmn.BytesToHash(hash))
+// 	logs := suite.app.EvmKeeper.GetTxLogs(common.BytesToHash(hash))
 
 // 	suite.Require().Equal(logs, txResponse.Logs)
 // }
@@ -302,7 +302,7 @@ func TestEvmTestSuite(t *testing.T) {
 // 	gasPrice := big.NewInt(0x55ae82600)
 
 // 	// send simple value transfer with gasLimit=21000
-// 	tx := types.NewTx(suite.chainID, 1, &ethcmn.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil, nil)
+// 	tx := types.NewTx(suite.chainID, 1, &common.Address{0x1}, big.NewInt(1), gasLimit, gasPrice, nil, nil)
 // 	tx.From = suite.from.String()
 // 	err := tx.Sign(suite.ethSigner, suite.signer)
 // 	suite.Require().NoError(err)

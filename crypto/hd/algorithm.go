@@ -5,8 +5,8 @@ import (
 	"github.com/btcsuite/btcutil/hdkeychain"
 	bip39 "github.com/tyler-smith/go-bip39"
 
-	ethaccounts "github.com/ethereum/go-ethereum/accounts"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -59,7 +59,7 @@ func (s ethSecp256k1Algo) Name() hd.PubKeyType {
 // Derive derives and returns the eth_secp256k1 private key for the given mnemonic and HD path.
 func (s ethSecp256k1Algo) Derive() hd.DeriveFn {
 	return func(mnemonic string, bip39Passphrase, path string) ([]byte, error) {
-		hdpath, err := ethaccounts.ParseDerivationPath(path)
+		hdpath, err := accounts.ParseDerivationPath(path)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +88,7 @@ func (s ethSecp256k1Algo) Derive() hd.DeriveFn {
 		}
 
 		privateKeyECDSA := privateKey.ToECDSA()
-		derivedKey := ethcrypto.FromECDSA(privateKeyECDSA)
+		derivedKey := crypto.FromECDSA(privateKeyECDSA)
 
 		return derivedKey, nil
 	}

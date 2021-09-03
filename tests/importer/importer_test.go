@@ -35,12 +35,12 @@ package importer
 // 	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
 // 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
-// 	ethcmn "github.com/ethereum/go-ethereum/common"
+// 	"github.com/ethereum/go-ethereum/common"
 // 	"github.com/ethereum/go-ethereum/consensus/ethash"
 // 	ethcore "github.com/ethereum/go-ethereum/core"
 // 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 // 	ethvm "github.com/ethereum/go-ethereum/core/vm"
-// 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+// 	"github.com/ethereum/go-ethereum/crypto"
 // 	ethparams "github.com/ethereum/go-ethereum/params"
 // 	ethrlp "github.com/ethereum/go-ethereum/rlp"
 
@@ -56,7 +56,7 @@ package importer
 // 	flagBlockchain string
 // 	flagCPUProfile string
 
-// 	genInvestor = ethcmn.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")
+// 	genInvestor = common.HexToAddress("0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0")
 
 // 	logger = tmlog.NewNopLogger()
 
@@ -125,7 +125,7 @@ package importer
 // 	sort.Strings(genAddrs)
 
 // 	for _, addrStr := range genAddrs {
-// 		addr := ethcmn.HexToAddress(addrStr)
+// 		addr := common.HexToAddress(addrStr)
 // 		acc := genBlock.Alloc[addr]
 
 // 		evmKeeper.AddBalance(addr, acc.Balance)
@@ -348,7 +348,7 @@ package importer
 // // Function is also pulled from go-ethereum 1.9 because of the incompatible usage
 // // Ref: https://github.com/ethereum/go-ethereum/blob/52f2461774bcb8cdd310f86b4bc501df5b783852/core/state_processor.go#L88
 // func applyTransaction(
-// 	config *ethparams.ChainConfig, bc ethcore.ChainContext, author *ethcmn.Address,
+// 	config *ethparams.ChainConfig, bc ethcore.ChainContext, author *common.Address,
 // 	gp *ethcore.GasPool, evmKeeper *evmkeeper.Keeper, header *ethtypes.Header,
 // 	tx *ethtypes.Transaction, usedGas *uint64, cfg ethvm.Config,
 // ) (*ethtypes.Receipt, uint64, error) {
@@ -376,7 +376,7 @@ package importer
 // 		return nil, execResult.UsedGas, err
 // 	}
 
-// 	root := ethcmn.Hash{}.Bytes()
+// 	root := common.Hash{}.Bytes()
 // 	*usedGas += execResult.UsedGas
 
 // 	// Create a new receipt for the transaction, storing the intermediate root and gas used by the tx
@@ -387,7 +387,7 @@ package importer
 
 // 	// if the transaction created a contract, store the creation address in the receipt.
 // 	if msg.To() == nil {
-// 		receipt.ContractAddress = ethcrypto.CreateAddress(vmenv.TxContext.Origin, tx.Nonce())
+// 		receipt.ContractAddress = crypto.CreateAddress(vmenv.TxContext.Origin, tx.Nonce())
 // 	}
 
 // 	// Set the receipt logs and create a bloom for filtering

@@ -4,10 +4,9 @@ import (
 	"fmt"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/tharsis/ethermint/types"
-
-	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 // Storage represents the account Storage map as a slice of single key value
@@ -59,7 +58,7 @@ func (s State) Validate() error {
 }
 
 // NewState creates a new State instance
-func NewState(key, value ethcmn.Hash) State { // nolint: interfacer
+func NewState(key, value common.Hash) State { // nolint: interfacer
 	return State{
 		Key:   key.String(),
 		Value: value.String(),

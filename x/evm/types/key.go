@@ -3,8 +3,8 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -73,18 +73,18 @@ func BloomKey(height int64) []byte {
 }
 
 // AddressStoragePrefix returns a prefix to iterate over a given account storage.
-func AddressStoragePrefix(address ethcmn.Address) []byte {
+func AddressStoragePrefix(address common.Address) []byte {
 	return append(KeyPrefixStorage, address.Bytes()...)
 }
 
 // StateKey defines the full key under which an account state is stored.
-func StateKey(address ethcmn.Address, key []byte) []byte {
+func StateKey(address common.Address, key []byte) []byte {
 	return append(AddressStoragePrefix(address), key...)
 }
 
 // KeyAddressStorage returns the key hash to access a given account state. The composite key
 // (address + hash) is hashed using Keccak256.
-func KeyAddressStorage(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
+func KeyAddressStorage(address common.Address, hash common.Hash) common.Hash {
 	prefix := address.Bytes()
 	key := hash.Bytes()
 
@@ -93,5 +93,5 @@ func KeyAddressStorage(address ethcmn.Address, hash ethcmn.Hash) ethcmn.Hash {
 	copy(compositeKey, prefix)
 	copy(compositeKey[len(prefix):], key)
 
-	return ethcrypto.Keccak256Hash(compositeKey)
+	return crypto.Keccak256Hash(compositeKey)
 }

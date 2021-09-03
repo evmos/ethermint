@@ -12,9 +12,7 @@ import (
 	"github.com/tharsis/ethermint/tests"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -24,8 +22,8 @@ type MsgsTestSuite struct {
 	suite.Suite
 
 	signer  keyring.Signer
-	from    ethcmn.Address
-	to      ethcmn.Address
+	from    common.Address
+	to      common.Address
 	chainID *big.Int
 }
 
@@ -74,12 +72,12 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		amount     *sdk.Int
 		gasPrice   *sdk.Int
 		from       string
-		accessList *ethtypes.AccessList
+		accessList *types.AccessList
 		chainID    *sdk.Int
 		expectPass bool
 	}{
 		{msg: "pass with recipient - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &hundredInt, expectPass: true},
-		{msg: "pass with recipient - AccessList Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: true},
+		{msg: "pass with recipient - AccessList Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: true},
 		{msg: "pass contract - Legacy Tx", to: "", amount: &hundredInt, gasPrice: &hundredInt, expectPass: true},
 		// {msg: "invalid recipient", to: invalidFromAddress, amount: &minusOneInt, gasPrice: &hundredInt, expectPass: false},
 		{msg: "nil amount - Legacy Tx", to: suite.to.Hex(), amount: nil, gasPrice: &hundredInt, expectPass: true},
@@ -88,13 +86,13 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		{msg: "negative gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &minusOneInt, expectPass: false},
 		{msg: "zero gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, expectPass: true},
 		{msg: "invalid from address - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, from: invalidFromAddress, expectPass: false},
-		{msg: "nil amount - AccessListTx", to: suite.to.Hex(), amount: nil, gasPrice: &hundredInt, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: true},
-		{msg: "negative amount - AccessListTx", to: suite.to.Hex(), amount: &minusOneInt, gasPrice: &hundredInt, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
-		{msg: "nil gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: nil, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: false},
-		{msg: "negative gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &minusOneInt, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
-		{msg: "zero gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: true},
-		{msg: "invalid from address - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, from: invalidFromAddress, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: false},
-		{msg: "chain ID not set on AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "nil amount - AccessListTx", to: suite.to.Hex(), amount: nil, gasPrice: &hundredInt, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: true},
+		{msg: "negative amount - AccessListTx", to: suite.to.Hex(), amount: &minusOneInt, gasPrice: &hundredInt, accessList: &types.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "nil gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: nil, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: false},
+		{msg: "negative gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &minusOneInt, accessList: &types.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "zero gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: true},
+		{msg: "invalid from address - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, from: invalidFromAddress, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: false},
+		{msg: "chain ID not set on AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, accessList: &types.AccessList{}, chainID: nil, expectPass: false},
 	}
 
 	for i, tc := range testCases {
@@ -128,49 +126,49 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 	testCases := []struct {
 		msg        string
 		tx         *MsgEthereumTx
-		ethSigner  ethtypes.Signer
+		ethSigner  types.Signer
 		malleate   func(tx *MsgEthereumTx)
 		expectPass bool
 	}{
 		{
 			"pass - EIP2930 signer",
 			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
-			ethtypes.NewEIP2930Signer(suite.chainID),
+			types.NewEIP2930Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"pass - EIP155 signer",
 			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
-			ethtypes.NewEIP155Signer(suite.chainID),
+			types.NewEIP155Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"pass - Homestead signer",
 			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
-			ethtypes.HomesteadSigner{},
+			types.HomesteadSigner{},
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"pass - Frontier signer",
 			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
-			ethtypes.FrontierSigner{},
+			types.FrontierSigner{},
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"no from address ",
 			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
-			ethtypes.NewEIP2930Signer(suite.chainID),
+			types.NewEIP2930Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = "" },
 			false,
 		},
 		{
 			"from address ≠ signer address",
 			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
-			ethtypes.NewEIP2930Signer(suite.chainID),
+			types.NewEIP2930Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = suite.to.Hex() },
 			false,
 		},

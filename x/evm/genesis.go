@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
@@ -31,7 +31,7 @@ func InitGenesis(
 	}
 
 	for _, account := range data.Accounts {
-		address := ethcmn.HexToAddress(account.Address)
+		address := common.HexToAddress(account.Address)
 		accAddress := sdk.AccAddress(address.Bytes())
 		// check that the EVM balance the matches the account balance
 		acc := accountKeeper.GetAccount(ctx, accAddress)
@@ -48,15 +48,15 @@ func InitGenesis(
 			)
 		}
 
-		k.SetCode(address, ethcmn.Hex2Bytes(account.Code))
+		k.SetCode(address, common.Hex2Bytes(account.Code))
 
 		for _, storage := range account.Storage {
-			k.SetState(address, ethcmn.HexToHash(storage.Key), ethcmn.HexToHash(storage.Value))
+			k.SetState(address, common.HexToHash(storage.Key), common.HexToHash(storage.Value))
 		}
 	}
 
 	for _, txLog := range data.TxsLogs {
-		k.SetLogs(ethcmn.HexToHash(txLog.Hash), txLog.EthLogs())
+		k.SetLogs(common.HexToHash(txLog.Hash), txLog.EthLogs())
 	}
 
 	return []abci.ValidatorUpdate{}
@@ -83,7 +83,7 @@ func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *t
 
 		genAccount := types.GenesisAccount{
 			Address: addr.String(),
-			Code:    ethcmn.Bytes2Hex(k.GetCode(addr)),
+			Code:    common.Bytes2Hex(k.GetCode(addr)),
 			Storage: storage,
 		}
 
