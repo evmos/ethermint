@@ -27,13 +27,76 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 		accessList *ethtypes.AccessList
 		expectPass bool
 	}{
-		{name: "Enough balance", to: suite.address.String(), gasLimit: 10, gasPrice: &oneInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true},
-		{name: "Equal balance", to: suite.address.String(), gasLimit: 99, gasPrice: &oneInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true},
-		{name: "Higher gas limit, not enough balance", to: suite.address.String(), gasLimit: 100, gasPrice: &oneInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: false},
-		{name: "Higher gas price, enough balance", to: suite.address.String(), gasLimit: 10, gasPrice: &fiveInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true},
-		{name: "Higher gas price, not enough balance", to: suite.address.String(), gasLimit: 20, gasPrice: &fiveInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: false},
-		{name: "Higher cost, enough balance", to: suite.address.String(), gasLimit: 10, gasPrice: &fiveInt, cost: &fiftyInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true},
-		{name: "Higher cost, not enough balance", to: suite.address.String(), gasLimit: 10, gasPrice: &fiveInt, cost: &hundredInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: false},
+		{
+			name:       "Enough balance",
+			to:         suite.address.String(),
+			gasLimit:   10,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
+		},
+		{
+			name:       "Equal balance",
+			to:         suite.address.String(),
+			gasLimit:   99,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
+		},
+		{
+			name:       "Higher gas limit, not enough balance",
+			to:         suite.address.String(),
+			gasLimit:   100,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
+		},
+		{
+			name:       "Higher gas price, enough balance",
+			to:         suite.address.String(),
+			gasLimit:   10,
+			gasPrice:   &fiveInt,
+			cost:       &oneInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
+		},
+		{
+			name:       "Higher gas price, not enough balance",
+			to:         suite.address.String(),
+			gasLimit:   20,
+			gasPrice:   &fiveInt,
+			cost:       &oneInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
+		},
+		{
+			name:       "Higher cost, enough balance",
+			to:         suite.address.String(),
+			gasLimit:   10,
+			gasPrice:   &fiveInt,
+			cost:       &fiftyInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
+		},
+		{
+			name:       "Higher cost, not enough balance",
+			to:         suite.address.String(),
+			gasLimit:   10,
+			gasPrice:   &fiveInt,
+			cost:       &hundredInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
+		},
 	}
 
 	suite.app.EvmKeeper.AddBalance(suite.address, hundredInt.BigInt())
@@ -57,7 +120,13 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 
-			err := evmkeeper.CheckSenderBalance(suite.app.EvmKeeper.Ctx(), suite.app.BankKeeper, suite.address[:], txData, evmtypes.DefaultEVMDenom)
+			err := evmkeeper.CheckSenderBalance(
+				suite.app.EvmKeeper.Ctx(),
+				suite.app.BankKeeper,
+				suite.address[:],
+				txData,
+				evmtypes.DefaultEVMDenom,
+			)
 
 			if tc.expectPass {
 				suite.Require().NoError(err, "valid test %d failed", i)
@@ -78,52 +147,71 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 
 	testCases := []struct {
 		name       string
-		to         string
 		gasLimit   uint64
 		gasPrice   *sdk.Int
 		cost       *sdk.Int
-		from       string
 		accessList *ethtypes.AccessList
 		expectPass bool
-		malleate   func()
 	}{
-		{name: "Enough balance", to: suite.address.String(), gasLimit: 10, gasPrice: &oneInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true, malleate: func() {
-			suite.app.EvmKeeper.AddBalance(suite.address, hundredInt.BigInt())
-			balance := suite.app.EvmKeeper.GetBalance(suite.address)
-			suite.Require().Equal(balance, hundredInt.BigInt())
+		{
+			name:       "Enough balance",
+			gasLimit:   10,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
 		},
+		{
+			name:       "Equal balance",
+			gasLimit:   100,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
 		},
-		{name: "Equal balance", to: suite.address.String(), gasLimit: 90, gasPrice: &oneInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true, malleate: func() {
-		}},
-		{name: "Higher gas limit, not enough balance", to: suite.address.String(), gasLimit: 105, gasPrice: &oneInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: false, malleate: func() {
-			suite.app.EvmKeeper.AddBalance(suite.address, hundredInt.BigInt())
-			balance := suite.app.EvmKeeper.GetBalance(suite.address)
-			suite.Require().Equal(balance, hundredInt.BigInt())
-		}},
-		{name: "Higher gas price, enough balance", to: suite.address.String(), gasLimit: 20, gasPrice: &fiveInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true, malleate: func() {
-		}},
-		{name: "Higher gas price, not enough balance", to: suite.address.String(), gasLimit: 20, gasPrice: &fiveInt, cost: &oneInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: false, malleate: func() {
-			suite.app.EvmKeeper.AddBalance(suite.address, fiftyInt.BigInt())
-			balance := suite.app.EvmKeeper.GetBalance(suite.address)
-			suite.Require().Equal(balance, fiftyInt.BigInt())
-		}},
-		{name: "Higher cost, enough balance", to: suite.address.String(), gasLimit: 50, gasPrice: &oneInt, cost: &fiftyInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: true, malleate: func() {
-		}},
-		{name: "Higher cost, not enough balance", to: suite.address.String(), gasLimit: 10, gasPrice: &oneInt, cost: &hundredInt, from: suite.address.String(), accessList: &ethtypes.AccessList{}, expectPass: false, malleate: func() {
-		}},
+		{
+			name:       "Higher gas limit, not enough balance",
+			gasLimit:   105,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
+		},
+		{
+			name:       "Higher gas price, enough balance",
+			gasLimit:   20,
+			gasPrice:   &fiveInt,
+			cost:       &oneInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
+		},
+		{
+			name:       "Higher gas price, not enough balance",
+			gasLimit:   20,
+			gasPrice:   &fiftyInt,
+			cost:       &oneInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
+		},
+		// This case is expected to be true because the fees can be deducted, but the tx
+		// execution is going to fail because there is no more balance to pay the cost
+		{
+			name:       "Higher cost, enough balance",
+			gasLimit:   100,
+			gasPrice:   &oneInt,
+			cost:       &fiftyInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: true,
+		},
 	}
 
 	for i, tc := range testCases {
 
 		suite.Run(tc.name, func() {
-			// TODO remove malleate and use setuptest
-			// suite.SetupTest()
-			// suite.app.EvmKeeper.AddBalance(suite.address, fiftyInt.BigInt())
-			// balance := suite.app.EvmKeeper.GetBalance(suite.address)
-			// suite.Require().Equal(balance, fiftyInt.BigInt())
-
-			tc.malleate()
-			to := common.HexToAddress(tc.from)
+			suite.SetupTest()
+			suite.app.EvmKeeper.AddBalance(suite.address, hundredInt.BigInt())
+			balance := suite.app.EvmKeeper.GetBalance(suite.address)
+			suite.Require().Equal(balance, hundredInt.BigInt())
 
 			var amount, gasPrice *big.Int
 			if tc.cost != nil {
@@ -133,12 +221,21 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				gasPrice = tc.gasPrice.BigInt()
 			}
 
-			tx := evmtypes.NewTx(zeroInt.BigInt(), 1, &to, amount, tc.gasLimit, gasPrice, nil, tc.accessList)
-			tx.From = tc.from
+			tx := evmtypes.NewTx(zeroInt.BigInt(), 1, &suite.address, amount, tc.gasLimit, gasPrice, nil, tc.accessList)
+			tx.From = suite.address.String()
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 
-			err := evmkeeper.DeductTxCostsFromUserBalance(suite.app.EvmKeeper.Ctx(), suite.app.BankKeeper, suite.app.AccountKeeper, *tx, txData, evmtypes.DefaultEVMDenom, false, false)
+			err := evmkeeper.DeductTxCostsFromUserBalance(
+				suite.app.EvmKeeper.Ctx(),
+				suite.app.BankKeeper,
+				suite.app.AccountKeeper,
+				*tx,
+				txData,
+				evmtypes.DefaultEVMDenom,
+				false,
+				false,
+			)
 
 			if tc.expectPass {
 				suite.Require().NoError(err, "valid test %d failed", i)
