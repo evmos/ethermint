@@ -18,6 +18,7 @@ type AccountKeeper interface {
 	GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
 	SetAccount(ctx sdk.Context, account authtypes.AccountI)
 	RemoveAccount(ctx sdk.Context, account authtypes.AccountI)
+	GetParams(ctx sdk.Context) (params authtypes.Params)
 }
 
 // BankKeeper defines the expected interface needed to retrieve account balances.

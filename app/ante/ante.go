@@ -19,32 +19,20 @@ import (
 	ibcante "github.com/cosmos/ibc-go/modules/core/ante"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 const (
 	secp256k1VerifyCost uint64 = 21000
 )
 
-// AccountKeeper defines an expected keeper interface for the auth module's AccountKeeper
-type AccountKeeper interface {
-	authante.AccountKeeper
-	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	GetSequence(sdk.Context, sdk.AccAddress) (uint64, error)
-}
-
-// BankKeeper defines an expected keeper interface for the bank module's Keeper
-type BankKeeper interface {
-	authtypes.BankKeeper
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-}
-
 // NewAnteHandler returns an ante handler responsible for attempting to route an
 // Ethereum or SDK transaction to an internal ante handler for performing
 // transaction-level processing (e.g. fee payment, signature verification) before
 // being passed onto it's respective handler.
 func NewAnteHandler(
-	ak AccountKeeper,
-	bankKeeper BankKeeper,
+	ak evmtypes.AccountKeeper,
+	bankKeeper evmtypes.BankKeeper,
 	evmKeeper EVMKeeper,
 	feeGrantKeeper authante.FeegrantKeeper,
 	channelKeeper channelkeeper.Keeper,
