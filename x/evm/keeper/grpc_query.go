@@ -493,7 +493,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		//Used string to comply with go ethereum
 		if req.TraceConfig.Timeout != "" {
 			if timeout, err = time.ParseDuration(req.TraceConfig.Timeout); err != nil {
-				return nil, err
+				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
 			}
 		}
 
