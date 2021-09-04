@@ -281,10 +281,10 @@ TraceConfig holds extra parameters to trace functions.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tracer` | [string](#string) |  |  |
-| `timeout` | [string](#string) |  |  |
-| `reexec` | [uint64](#uint64) |  |  |
-| `log_config` | [LogConfig](#ethermint.evm.v1.LogConfig) |  |  |
+| `tracer` | [string](#string) |  | custom javascript tracer |
+| `timeout` | [string](#string) |  | overrides the default timeout of 5 seconds for JavaScript-based tracing calls |
+| `reexec` | [uint64](#uint64) |  | number of blocks the tracer is willing to go back |
+| `log_config` | [LogConfig](#ethermint.evm.v1.LogConfig) |  | configuration options for structured logger the EVM |
 
 
 
