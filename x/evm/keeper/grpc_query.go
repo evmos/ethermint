@@ -493,14 +493,14 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		//Used string to comply with go ethereum
 		if req.TraceConfig.Timeout != "" {
 			if timeout, err = time.ParseDuration(req.TraceConfig.Timeout); err != nil {
-				return nil, err
+				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
 			}
 		}
 
 		txContext := core.NewEVMTxContext(coreMessage)
 		// Constuct the JavaScript tracer to execute with
 		if tracer, err = tracers.New(req.TraceConfig.Tracer, txContext); err != nil {
-			return nil, err
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 
 		// Handle timeouts and RPC cancellations
