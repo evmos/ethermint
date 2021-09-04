@@ -6,7 +6,7 @@ order: 3
 
 This document describes the lifecycle of a transaction from creation to committed state changes on the EVM. {synopsis}
 
-### Pre-requisite Readings
+## Pre-requisite Readings
 
 - [SDK transaction lifecycle](https://docs.cosmos.network/master/basics/tx-lifecycle.html) {prereq}
 

@@ -34,3 +34,5 @@ The following table provides an example where the second row corresponds to an u
 |--------------------|------------|---------------|----------------|
 | `ethermint_9000-1` | ethermint  | 9000          | 1              |
 | `ethermint_9000-2` | ethermint  | 9000          | 2              |
+| `...`              | ...        | ...           | ...            |
+| `ethermint_9000-N` | ethermint  | 9000          | N              |
