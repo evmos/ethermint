@@ -85,7 +85,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 					Namespace: PersonalNamespace,
 					Version:   apiVersion,
 					Service:   personal.NewAPI(ctx.Logger, clientCtx, evmBackend),
-					Public:    true,
+					Public:    false,
 				},
 			)
 		case TxPoolNamespace:
@@ -111,8 +111,8 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: MinerNamespace,
 					Version:   apiVersion,
-					Service:   miner.NewMinerAPI(ctx, clientCtx, evmBackend),
-					Public:    true,
+					Service:   miner.NewPrivateAPI(ctx, clientCtx, evmBackend),
+					Public:    false,
 				},
 			)
 		default:

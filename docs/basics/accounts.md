@@ -158,7 +158,7 @@ curl -X GET "http://localhost:10337/cosmos/auth/v1beta1/accounts/ethm14au322k9mu
 
 ### JSON-RPC
 
-To retrieve the Ethereum hex address using Web3, use the JSON-RPC [`eth_accounts`](./../api/json-rpc/endpoints#eth-accounts) or [`personal_listAccounts`](./../api/json-rpc/endpoints#personal-listAccounts) endpoints:
+To retrieve the Ethereum hex address using Web3, use the JSON-RPC [`eth_accounts`](./../api/json-rpc/endpoints.md#eth-accounts) or [`personal_listAccounts`](./../api/json-rpc/endpoints#personal-listAccounts.md) endpoints:
 
 ```bash
 # query against a local node
@@ -166,7 +166,3 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1
 
 curl -X POST --data '{"jsonrpc":"2.0","method":"personal_listAccounts","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:8545
 ```
-
-## Next {hide}
-
-Learn about Ethermint [transactions](./transactions.md) {hide}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -28,12 +28,12 @@ func TestPrivKey(t *testing.T) {
 
 	// validate Ethereum address equality
 	addr := privKey.PubKey().Address()
-	expectedAddr := ethcrypto.PubkeyToAddress(privKey.ToECDSA().PublicKey)
+	expectedAddr := crypto.PubkeyToAddress(privKey.ToECDSA().PublicKey)
 	require.Equal(t, expectedAddr.Bytes(), addr.Bytes())
 
 	// validate we can sign some bytes
 	msg := []byte("hello world")
-	sigHash := ethcrypto.Keccak256Hash(msg)
+	sigHash := crypto.Keccak256Hash(msg)
 	expectedSig, err := secp256k1.Sign(sigHash.Bytes(), privKey.Bytes())
 	require.NoError(t, err)
 

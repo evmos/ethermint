@@ -130,7 +130,7 @@ type GenesisAccount struct {
 
 
 type TransactionLogs struct {
-  Hash ethcmn.Hash     `json:"hash"`
+  Hash common.Hash     `json:"hash"`
   Logs []*ethtypes.Log `json:"logs"`
 }
 

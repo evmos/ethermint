@@ -8,10 +8,9 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -40,7 +39,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 			func() {
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "0",
-					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
+					CodeHash: common.BytesToHash(crypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
@@ -60,7 +59,7 @@ func (suite *KeeperTestSuite) TestQueryAccount() {
 
 				expAccount = &types.QueryAccountResponse{
 					Balance:  "100",
-					CodeHash: common.BytesToHash(ethcrypto.Keccak256(nil)).Hex(),
+					CodeHash: common.BytesToHash(crypto.Keccak256(nil)).Hex(),
 					Nonce:    0,
 				}
 				req = &types.QueryAccountRequest{
@@ -105,7 +104,7 @@ func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
 		{"invalid address",
 			func() {
 				expAccount = &types.QueryCosmosAccountResponse{
-					CosmosAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
+					CosmosAddress: sdk.AccAddress(common.Address{}.Bytes()).String(),
 				}
 				req = &types.QueryCosmosAccountRequest{
 					Address: invalidAddress,
@@ -248,8 +247,8 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 		{
 			"success",
 			func() {
-				key := ethcmn.BytesToHash([]byte("key"))
-				value := ethcmn.BytesToHash([]byte("value"))
+				key := common.BytesToHash([]byte("key"))
+				value := common.BytesToHash([]byte("value"))
 				expValue = value.String()
 				suite.app.EvmKeeper.SetState(suite.address, key, value)
 				req = &types.QueryStorageRequest{
@@ -350,14 +349,14 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 		{"empty hash",
 			func() {
 				req = &types.QueryTxLogsRequest{
-					Hash: ethcmn.Hash{}.String(),
+					Hash: common.Hash{}.String(),
 				}
 			},
 			false,
 		},
 		{"logs not found",
 			func() {
-				hash := ethcmn.BytesToHash([]byte("hash"))
+				hash := common.BytesToHash([]byte("hash"))
 				req = &types.QueryTxLogsRequest{
 					Hash: hash.String(),
 				}
@@ -367,17 +366,17 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 		{
 			"success",
 			func() {
-				hash := ethcmn.BytesToHash([]byte("tx_hash"))
+				hash := common.BytesToHash([]byte("tx_hash"))
 
 				expLogs = []*types.Log{
 					{
 						Address:     suite.address.String(),
-						Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
+						Topics:      []string{common.BytesToHash([]byte("topic")).String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
 						TxHash:      hash.String(),
 						TxIndex:     1,
-						BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+						BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 						Index:       0,
 						Removed:     false,
 					},
@@ -427,14 +426,14 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 		{"empty hash",
 			func() {
 				req = &types.QueryBlockLogsRequest{
-					Hash: ethcmn.Hash{}.String(),
+					Hash: common.Hash{}.String(),
 				}
 			},
 			false,
 		},
 		{"logs not found",
 			func() {
-				hash := ethcmn.BytesToHash([]byte("hash"))
+				hash := common.BytesToHash([]byte("hash"))
 				req = &types.QueryBlockLogsRequest{
 					Hash: hash.String(),
 				}
@@ -445,46 +444,46 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 			"success",
 			func() {
 
-				hash := ethcmn.BytesToHash([]byte("block_hash"))
+				hash := common.BytesToHash([]byte("block_hash"))
 				expLogs = []types.TransactionLogs{
 					{
-						Hash: ethcmn.BytesToHash([]byte("tx_hash_0")).String(),
+						Hash: common.BytesToHash([]byte("tx_hash_0")).String(),
 						Logs: []*types.Log{
 							{
 								Address:     suite.address.String(),
-								Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
+								Topics:      []string{common.BytesToHash([]byte("topic")).String()},
 								Data:        []byte("data"),
 								BlockNumber: 1,
-								TxHash:      ethcmn.BytesToHash([]byte("tx_hash_0")).String(),
+								TxHash:      common.BytesToHash([]byte("tx_hash_0")).String(),
 								TxIndex:     1,
-								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+								BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 								Index:       0,
 								Removed:     false,
 							},
 						},
 					},
 					{
-						Hash: ethcmn.BytesToHash([]byte("tx_hash_1")).String(),
+						Hash: common.BytesToHash([]byte("tx_hash_1")).String(),
 						Logs: []*types.Log{
 							{
 								Address:     suite.address.String(),
-								Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
+								Topics:      []string{common.BytesToHash([]byte("topic")).String()},
 								Data:        []byte("data"),
 								BlockNumber: 1,
-								TxHash:      ethcmn.BytesToHash([]byte("tx_hash_1")).String(),
+								TxHash:      common.BytesToHash([]byte("tx_hash_1")).String(),
 								TxIndex:     1,
-								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+								BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 								Index:       1,
 								Removed:     false,
 							},
 							{
 								Address:     suite.address.String(),
-								Topics:      []string{ethcmn.BytesToHash([]byte("topic_1")).String()},
+								Topics:      []string{common.BytesToHash([]byte("topic_1")).String()},
 								Data:        []byte("data_1"),
 								BlockNumber: 1,
-								TxHash:      ethcmn.BytesToHash([]byte("tx_hash_1")).String(),
+								TxHash:      common.BytesToHash([]byte("tx_hash_1")).String(),
 								TxIndex:     1,
-								BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+								BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 								Index:       2,
 								Removed:     false,
 							},
@@ -492,8 +491,8 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 					},
 				}
 
-				suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_0")), types.LogsToEthereum(expLogs[0].Logs))
-				suite.app.EvmKeeper.SetLogs(ethcmn.BytesToHash([]byte("tx_hash_1")), types.LogsToEthereum(expLogs[1].Logs))
+				suite.app.EvmKeeper.SetLogs(common.BytesToHash([]byte("tx_hash_0")), types.LogsToEthereum(expLogs[0].Logs))
+				suite.app.EvmKeeper.SetLogs(common.BytesToHash([]byte("tx_hash_1")), types.LogsToEthereum(expLogs[1].Logs))
 
 				req = &types.QueryBlockLogsRequest{
 					Hash: hash.String(),
@@ -618,7 +617,7 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 		{"invalid address",
 			func() {
 				expAccount = &types.QueryValidatorAccountResponse{
-					AccountAddress: sdk.AccAddress(ethcmn.Address{}.Bytes()).String(),
+					AccountAddress: sdk.AccAddress(common.Address{}.Bytes()).String(),
 				}
 				req = &types.QueryValidatorAccountRequest{
 					ConsAddress: "",

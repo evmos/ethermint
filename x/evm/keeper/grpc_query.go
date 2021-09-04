@@ -19,7 +19,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -48,7 +48,7 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 		)
 	}
 
-	addr := ethcmn.HexToAddress(req.Address)
+	addr := common.HexToAddress(req.Address)
 
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
@@ -74,7 +74,7 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	ethAddr := ethcmn.HexToAddress(req.Address)
+	ethAddr := common.HexToAddress(req.Address)
 	cosmosAddr := sdk.AccAddress(ethAddr.Bytes())
 
 	account := k.accountKeeper.GetAccount(ctx, cosmosAddr)
@@ -142,7 +142,7 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	balanceInt := k.GetBalance(ethcmn.HexToAddress(req.Address))
+	balanceInt := k.GetBalance(common.HexToAddress(req.Address))
 
 	return &types.QueryBalanceResponse{
 		Balance: balanceInt.String(),
@@ -165,8 +165,8 @@ func (k Keeper) Storage(c context.Context, req *types.QueryStorageRequest) (*typ
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	address := ethcmn.HexToAddress(req.Address)
-	key := ethcmn.HexToHash(req.Key)
+	address := common.HexToAddress(req.Address)
+	key := common.HexToHash(req.Key)
 
 	state := k.GetState(address, key)
 	stateHex := state.Hex()
@@ -192,7 +192,7 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	address := ethcmn.HexToAddress(req.Address)
+	address := common.HexToAddress(req.Address)
 	code := k.GetCode(address)
 
 	return &types.QueryCodeResponse{
@@ -216,7 +216,7 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	hash := ethcmn.HexToHash(req.Hash)
+	hash := common.HexToHash(req.Hash)
 	logs := k.GetTxLogs(hash)
 
 	return &types.QueryTxLogsResponse{
@@ -526,7 +526,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
 
-	k.SetTxHashTransient(ethcmn.HexToHash(req.Msg.Hash))
+	k.SetTxHashTransient(common.HexToHash(req.Msg.Hash))
 	k.SetTxIndexTransient(uint64(req.TxIndex))
 
 	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)

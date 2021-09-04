@@ -1,7 +1,7 @@
 package types
 
 import (
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -39,14 +39,14 @@ func (al AccessList) ToEthAccessList() *ethtypes.AccessList {
 	var ethAccessList ethtypes.AccessList
 
 	for _, tuple := range al {
-		storageKeys := make([]ethcmn.Hash, len(tuple.StorageKeys))
+		storageKeys := make([]common.Hash, len(tuple.StorageKeys))
 
 		for i := range tuple.StorageKeys {
-			storageKeys[i] = ethcmn.HexToHash(tuple.StorageKeys[i])
+			storageKeys[i] = common.HexToHash(tuple.StorageKeys[i])
 		}
 
 		ethAccessList = append(ethAccessList, ethtypes.AccessTuple{
-			Address:     ethcmn.HexToAddress(tuple.Address),
+			Address:     common.HexToAddress(tuple.Address),
 			StorageKeys: storageKeys,
 		})
 	}

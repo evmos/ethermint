@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestCreateAccount() {
@@ -533,8 +532,8 @@ func (suite *KeeperTestSuite) TestSnapshot() {
 	}
 }
 
-func (suite *KeeperTestSuite) CreateTestTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+func (suite *KeeperTestSuite) CreateTestTx(msg *types.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
+	option, err := codectypes.NewAnyWithValue(&types.ExtensionOptionsEthereumTx{})
 	suite.Require().NoError(err)
 
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
@@ -558,14 +557,14 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	msg.From = addr.Hex()
 
 	tx := suite.CreateTestTx(msg, privKey)
-	msg, _ = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	msg, _ = tx.GetMsgs()[0].(*types.MsgEthereumTx)
 	txHash := msg.AsTransaction().Hash()
 
 	msg2 := types.NewTx(big.NewInt(1), 1, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
 	msg2.From = addr.Hex()
 
 	tx2 := suite.CreateTestTx(msg2, privKey)
-	msg2, _ = tx2.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	msg2, _ = tx2.GetMsgs()[0].(*types.MsgEthereumTx)
 	txHash2 := msg2.AsTransaction().Hash()
 
 	testCases := []struct {

@@ -544,7 +544,7 @@ localnet-show-logstream:
 ###############################################################################
 
 PACKAGE_NAME:=github.com/tharsis/ethermint
-GOLANG_CROSS_VERSION  = v1.16.4
+GOLANG_CROSS_VERSION  = v1.17
 release-dry-run:
 	docker run \
 		--rm \

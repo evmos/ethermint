@@ -29,9 +29,9 @@ add custom logic to process transaction logs.
 
 This ADR proposes to add an `EvmHooks` interface and a method to register hooks in the `EvmKeeper`:
 
-```golang
+```go
 type EvmHooks interface {
-	  PostTxProcessing(ctx sdk.Context, txHash ethcmn.Hash, logs []*ethtypes.Log) error
+  PostTxProcessing(ctx sdk.Context, txHash common.Hash, logs []*ethtypes.Log) error
 }
 
 func (k *EvmKeeper) SetHooks(eh types.EvmHooks) *Keeper;
@@ -48,9 +48,13 @@ func (k *EvmKeeper) SetHooks(eh types.EvmHooks) *Keeper;
 
 The EVM state transition method `ApplyTransaction` should be changed like this:
 
-```golang
+```go
 // Need to create a snapshot explicitly to cover both tx processing and post processing logic
-revision := k.Snapshot()
+var revision int
+if k.hooks != nil {
+  revision = k.Snapshot()
+}
+
 
 res, err := k.ApplyMessage(evm, msg, ethCfg, false)
 if err != nil {
@@ -96,50 +100,50 @@ function withdraw_to_native_token(amount uint256) public {
 And the application registers a `BankSendHook` to `EvmKeeper`, it recognizes the log and converts it to a call to the bank
 module's `SendCoinsFromAccountToAccount` method:
 
-```golang
+```go
 var (
-	// BankSendEvent represent the signature of
-	// `event __CosmosNativeBankSend(address recipient, uint256 amount, string denom)`
-	BankSendEvent abi.Event
+  // BankSendEvent represent the signature of
+  // `event __CosmosNativeBankSend(address recipient, uint256 amount, string denom)`
+  BankSendEvent abi.Event
 )
 
 func init() {
-	addressType, _ := abi.NewType("address", "", nil)
-	uint256Type, _ := abi.NewType("uint256", "", nil)
-	stringType, _ := abi.NewType("string", "", nil)
-	BankSendEvent = abi.NewEvent(
-		"__CosmosNativeBankSend",
-		"__CosmosNativeBankSend",
-		false,
-		abi.Arguments{abi.Argument{
-			Name:    "recipient",
-			Type:    addressType,
-			Indexed: false,
-		}, abi.Argument{
-			Name:    "amount",
-			Type:    uint256Type,
-			Indexed: false,
-		}, abi.Argument{
-			Name:    "denom",
-			Type:    stringType,
-			Indexed: false,
-		}},
-	)
+  addressType, _ := abi.NewType("address", "", nil)
+  uint256Type, _ := abi.NewType("uint256", "", nil)
+  stringType, _ := abi.NewType("string", "", nil)
+  BankSendEvent = abi.NewEvent(
+    "__CosmosNativeBankSend",
+    "__CosmosNativeBankSend",
+    false,
+    abi.Arguments{abi.Argument{
+      Name:    "recipient",
+      Type:    addressType,
+      Indexed: false,
+    }, abi.Argument{
+      Name:    "amount",
+      Type:    uint256Type,
+      Indexed: false,
+    }, abi.Argument{
+      Name:    "denom",
+      Type:    stringType,
+      Indexed: false,
+    }},
+  )
 }
 
 type BankSendHook struct {
-	bankKeeper bankkeeper.Keeper
+  bankKeeper bankkeeper.Keeper
 }
 
 func NewBankSendHook(bankKeeper bankkeeper.Keeper) *BankSendHook {
-	return &BankSendHook{
-		bankKeeper: bankKeeper,
-	}
+  return &BankSendHook{
+    bankKeeper: bankKeeper,
+  }
 }
 
-func (h BankSendHook) PostTxProcessing(ctx sdk.Context, txHash ethcmn.Hash, logs []*ethtypes.Log) error {
-	for _, log := range logs {
-		if len(log.Topics) == 0 || log.Topics[0] != BankSendEvent.ID {
+func (h BankSendHook) PostTxProcessing(ctx sdk.Context, txHash common.Hash, logs []*ethtypes.Log) error {
+  for _, log := range logs {
+    if len(log.Topics) == 0 || log.Topics[0] != BankSendEvent.ID {
       continue
     }
     if !ContractAllowed(log.Address) {
@@ -152,21 +156,21 @@ func (h BankSendHook) PostTxProcessing(ctx sdk.Context, txHash ethcmn.Hash, logs
       continue
     }
     contract := sdk.AccAddress(log.Address.Bytes())
-    recipient := sdk.AccAddress(unpacked[0].(ethcmn.Address).Bytes())
+    recipient := sdk.AccAddress(unpacked[0].(common.Address).Bytes())
     coins := sdk.NewCoins(sdk.NewCoin(unpacked[2].(string), sdk.NewIntFromBigInt(unpacked[1].(*big.Int))))
     err = h.bankKeeper.SendCoins(ctx, contract, recipient, coins)
     if err != nil {
       return err
     }
-		}
-	}
-	return nil
+    }
+  }
+  return nil
 }
 ```
 
 Register the hook in `app.go`:
 
-```golang
+```go
 evmKeeper.SetHooks(NewBankSendHook(bankKeeper));
 ```
 
