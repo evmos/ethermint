@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
+	"time"
+
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc/codes"
@@ -27,6 +31,10 @@ import (
 )
 
 var _ types.QueryServer = Keeper{}
+
+const (
+	defaultTraceTimeout = 5 * time.Second
+)
 
 // Account implements the Query/Account gRPC method
 func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*types.QueryAccountResponse, error) {
@@ -448,4 +456,116 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		}
 	}
 	return &types.EstimateGasResponse{Gas: hi}, nil
+}
+
+// TraceTx configures a new tracer according to the provided configuration, and
+// executes the given message in the provided environment. The return value will
+// be tracer dependent.
+func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*types.QueryTraceTxResponse, error) {
+	// Assemble the structured logger or the JavaScript tracer
+	var (
+		tracer     vm.Tracer
+		err        error
+		resultData []byte
+	)
+
+	ctx := sdk.UnwrapSDKContext(c)
+	k.WithContext(ctx)
+	params := k.GetParams(ctx)
+
+	coinbase, err := k.GetCoinbaseAddress(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
+	coreMessage, err := req.Msg.AsMessage(signer)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	switch {
+	case req.TraceConfig != nil && req.TraceConfig.Tracer != "":
+		timeout := defaultTraceTimeout
+		//TODO change timeout to time.duration
+		//Used string to comply with go ethereum
+		if req.TraceConfig.Timeout != "" {
+			if timeout, err = time.ParseDuration(req.TraceConfig.Timeout); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
+			}
+		}
+
+		txContext := core.NewEVMTxContext(coreMessage)
+		// Constuct the JavaScript tracer to execute with
+		if tracer, err = tracers.New(req.TraceConfig.Tracer, txContext); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		// Handle timeouts and RPC cancellations
+		deadlineCtx, cancel := context.WithTimeout(c, timeout)
+		go func() {
+			<-deadlineCtx.Done()
+			if deadlineCtx.Err() == context.DeadlineExceeded {
+				tracer.(*tracers.Tracer).Stop(errors.New("execution timeout"))
+			}
+		}()
+		defer cancel()
+	case req.TraceConfig != nil && req.TraceConfig.LogConfig != nil:
+		logConfig := vm.LogConfig{
+			DisableMemory:  req.TraceConfig.LogConfig.DisableMemory,
+			Debug:          req.TraceConfig.LogConfig.Debug,
+			DisableStorage: req.TraceConfig.LogConfig.DisableStorage,
+			DisableStack:   req.TraceConfig.LogConfig.DisableStack,
+		}
+		tracer = vm.NewStructLogger(&logConfig)
+	default:
+		tracer = types.NewTracer(types.TracerStruct, coreMessage, ethCfg, ctx.BlockHeight(), true)
+	}
+
+	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
+
+	k.SetTxHashTransient(common.HexToHash(req.Msg.Hash))
+	k.SetTxIndexTransient(uint64(req.TxIndex))
+
+	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// Depending on the tracer type, format and return the trace result data.
+	switch tracer := tracer.(type) {
+	case *vm.StructLogger:
+		//TODO Return proper returnValue
+		result := types.ExecutionResult{
+			Gas:         res.GasUsed,
+			Failed:      res.Failed(),
+			ReturnValue: "",
+			StructLogs:  types.FormatLogs(tracer.StructLogs()),
+		}
+
+		resultData, err = json.Marshal(result)
+
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	case *tracers.Tracer:
+		result, err := tracer.GetResult()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		resultData, err = json.Marshal(result)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	default:
+		return nil, status.Error(codes.InvalidArgument, "invalid tracer type")
+	}
+
+	return &types.QueryTraceTxResponse{
+		Data: resultData,
+	}, nil
 }

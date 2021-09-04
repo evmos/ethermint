@@ -215,6 +215,40 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	return crypto.CreateAddress(suite.address, nonce)
 }
 
+func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAddr common.Address, from common.Address, to common.Address, amount *big.Int) *types.MsgEthereumTx {
+	ctx := sdk.WrapSDKContext(suite.ctx)
+	chainID := suite.app.EvmKeeper.ChainID()
+
+	transferData, err := ContractABI.Pack("transfer", to, amount)
+	require.NoError(t, err)
+	args, err := json.Marshal(&types.CallArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
+	require.NoError(t, err)
+	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
+		Args:   args,
+		GasCap: 25_000_000,
+	})
+	require.NoError(t, err)
+
+	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
+	ercTransferTx := types.NewTx(
+		chainID,
+		nonce,
+		&contractAddr,
+		nil,
+		res.Gas,
+		nil,
+		transferData,
+		nil,
+	)
+	ercTransferTx.From = suite.address.Hex()
+	err = ercTransferTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
+	require.NoError(t, err)
+	rsp, err := suite.app.EvmKeeper.EthereumTx(ctx, ercTransferTx)
+	require.NoError(t, err)
+	require.Empty(t, rsp.VmError)
+	return ercTransferTx
+}
+
 func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
 }

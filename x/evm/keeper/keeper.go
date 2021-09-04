@@ -200,6 +200,12 @@ func (k Keeper) SetTxHashTransient(hash common.Hash) {
 	store.Set(types.KeyPrefixTransientTxHash, hash.Bytes())
 }
 
+// SetTxIndexTransient set the index of processing transaction
+func (k Keeper) SetTxIndexTransient(index uint64) {
+	store := k.Ctx().TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientTxIndex, sdk.Uint64ToBigEndian(index))
+}
+
 // GetTxIndexTransient returns EVM transaction index on the current block.
 func (k Keeper) GetTxIndexTransient() uint64 {
 	store := k.Ctx().TransientStore(k.transientKey)
@@ -215,8 +221,7 @@ func (k Keeper) GetTxIndexTransient() uint64 {
 // value by one and then sets the new index back to the transient store.
 func (k Keeper) IncreaseTxIndexTransient() {
 	txIndex := k.GetTxIndexTransient()
-	store := k.Ctx().TransientStore(k.transientKey)
-	store.Set(types.KeyPrefixTransientTxIndex, sdk.Uint64ToBigEndian(txIndex+1))
+	k.SetTxIndexTransient(txIndex + 1)
 }
 
 // ResetRefundTransient resets the available refund amount to 0

@@ -25,8 +25,8 @@ import (
 )
 
 // StartGoTrace turns on tracing, writing to the given file.
-func (a *InternalAPI) StartGoTrace(file string) error {
-	a.logger.Debug("debug_stopGoTrace", "file", file)
+func (a *API) StartGoTrace(file string) error {
+	a.logger.Debug("debug_startGoTrace", "file", file)
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
 
@@ -51,7 +51,7 @@ func (a *InternalAPI) StartGoTrace(file string) error {
 }
 
 // StopGoTrace stops an ongoing trace.
-func (a *InternalAPI) StopGoTrace() error {
+func (a *API) StopGoTrace() error {
 	a.logger.Debug("debug_stopGoTrace")
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()

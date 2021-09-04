@@ -2,7 +2,9 @@ package debug
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"runtime"
@@ -11,8 +13,15 @@ import (
 	"sync"
 	"time"
 
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+
+	"github.com/cosmos/cosmos-sdk/client"
+
 	"github.com/cosmos/cosmos-sdk/server"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
+	"github.com/tharsis/ethermint/ethereum/rpc/backend"
+	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
 )
 
 // HandlerT keeps track of the cpu profiler and trace execution
@@ -24,28 +33,90 @@ type HandlerT struct {
 	traceFile     io.WriteCloser
 }
 
-// InternalAPI is the debug_ prefixed set of APIs in the Debug JSON-RPC spec.
-type InternalAPI struct {
-	ctx     *server.Context
-	logger  log.Logger
-	handler *HandlerT
+// API is the collection of tracing APIs exposed over the private debugging endpoint.
+type API struct {
+	ctx         *server.Context
+	logger      log.Logger
+	backend     backend.Backend
+	clientCtx   client.Context
+	queryClient *rpctypes.QueryClient
+	handler     *HandlerT
 }
 
-// NewInternalAPI creates an instance of the Debug API.
-func NewInternalAPI(
+// NewAPI creates a new API definition for the tracing methods of the Ethereum service.
+func NewAPI(
 	ctx *server.Context,
-) *InternalAPI {
-	return &InternalAPI{
-		ctx:     ctx,
-		logger:  ctx.Logger.With("module", "debug"),
-		handler: new(HandlerT),
+	backend backend.Backend,
+	clientCtx client.Context,
+) *API {
+	return &API{
+		ctx:         ctx,
+		logger:      ctx.Logger.With("module", "debug"),
+		backend:     backend,
+		clientCtx:   clientCtx,
+		queryClient: rpctypes.NewQueryClient(clientCtx),
+		handler:     new(HandlerT),
 	}
+}
+
+// TraceTransaction returns the structured logs created during the execution of EVM
+// and returns them as a JSON object.
+func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (interface{}, error) {
+	a.logger.Debug("debug_traceTransaction", "hash", hash)
+	//Get transaction by hash
+	transaction, err := a.backend.GetTxByEthHash(hash)
+	if err != nil {
+		a.logger.Debug("tx not found", "hash", hash)
+		return nil, err
+	}
+
+	//check if block number is 0
+	if transaction.Height == 0 {
+		return nil, errors.New("genesis is not traceable")
+	}
+
+	tx, err := a.clientCtx.TxConfig.TxDecoder()(transaction.Tx)
+	if err != nil {
+		a.logger.Debug("tx not found", "hash", hash)
+		return nil, err
+	}
+
+	ethMessage, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	if !ok {
+		a.logger.Debug("invalid transaction type", "type", fmt.Sprintf("%T", tx))
+		return nil, fmt.Errorf("invalid transaction type %T", tx)
+	}
+
+	traceTxRequest := evmtypes.QueryTraceTxRequest{
+		Msg:     ethMessage,
+		TxIndex: transaction.Index,
+	}
+
+	if config != nil {
+		traceTxRequest.TraceConfig = config
+	}
+
+	traceResult, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(transaction.Height), &traceTxRequest)
+
+	if err != nil {
+		return nil, err
+	}
+
+	//Response format is unknown due to custom tracer config param
+	//More information can be found here https://geth.ethereum.org/docs/dapp/tracing-filtered
+	var decodedResult interface{}
+	err = json.Unmarshal(traceResult.Data, &decodedResult)
+	if err != nil {
+		return nil, err
+	}
+
+	return decodedResult, nil
 }
 
 // BlockProfile turns on goroutine profiling for nsec seconds and writes profile data to
 // file. It uses a profile rate of 1 for most accurate information. If a different rate is
 // desired, set the rate and write the profile manually.
-func (a *InternalAPI) BlockProfile(file string, nsec uint) error {
+func (a *API) BlockProfile(file string, nsec uint) error {
 	a.logger.Debug("debug_blockProfile", "file", file, "nsec", nsec)
 	runtime.SetBlockProfileRate(1)
 	defer runtime.SetBlockProfileRate(0)
@@ -56,7 +127,7 @@ func (a *InternalAPI) BlockProfile(file string, nsec uint) error {
 
 // CpuProfile turns on CPU profiling for nsec seconds and writes
 // profile data to file.
-func (a *InternalAPI) CpuProfile(file string, nsec uint) error { // nolint: golint, stylecheck
+func (a *API) CpuProfile(file string, nsec uint) error { // nolint: golint, stylecheck
 	a.logger.Debug("debug_cpuProfile", "file", file, "nsec", nsec)
 	if err := a.StartCPUProfile(file); err != nil {
 		return err
@@ -66,7 +137,7 @@ func (a *InternalAPI) CpuProfile(file string, nsec uint) error { // nolint: goli
 }
 
 // GcStats returns GC statistics.
-func (a *InternalAPI) GcStats() *debug.GCStats {
+func (a *API) GcStats() *debug.GCStats {
 	a.logger.Debug("debug_gcStats")
 	s := new(debug.GCStats)
 	debug.ReadGCStats(s)
@@ -75,7 +146,7 @@ func (a *InternalAPI) GcStats() *debug.GCStats {
 
 // GoTrace turns on tracing for nsec seconds and writes
 // trace data to file.
-func (a *InternalAPI) GoTrace(file string, nsec uint) error {
+func (a *API) GoTrace(file string, nsec uint) error {
 	a.logger.Debug("debug_goTrace", "file", file, "nsec", nsec)
 	if err := a.StartGoTrace(file); err != nil {
 		return err
@@ -85,7 +156,7 @@ func (a *InternalAPI) GoTrace(file string, nsec uint) error {
 }
 
 // MemStats returns detailed runtime memory statistics.
-func (a *InternalAPI) MemStats() *runtime.MemStats {
+func (a *API) MemStats() *runtime.MemStats {
 	a.logger.Debug("debug_memStats")
 	s := new(runtime.MemStats)
 	runtime.ReadMemStats(s)
@@ -94,13 +165,13 @@ func (a *InternalAPI) MemStats() *runtime.MemStats {
 
 // SetBlockProfileRate sets the rate of goroutine block profile data collection.
 // rate 0 disables block profiling.
-func (a *InternalAPI) SetBlockProfileRate(rate int) {
+func (a *API) SetBlockProfileRate(rate int) {
 	a.logger.Debug("debug_setBlockProfileRate", "rate", rate)
 	runtime.SetBlockProfileRate(rate)
 }
 
 // Stacks returns a printed representation of the stacks of all goroutines.
-func (a *InternalAPI) Stacks() string {
+func (a *API) Stacks() string {
 	a.logger.Debug("debug_stacks")
 	buf := new(bytes.Buffer)
 	err := pprof.Lookup("goroutine").WriteTo(buf, 2)
@@ -111,7 +182,7 @@ func (a *InternalAPI) Stacks() string {
 }
 
 // StartCPUProfile turns on CPU profiling, writing to the given file.
-func (a *InternalAPI) StartCPUProfile(file string) error {
+func (a *API) StartCPUProfile(file string) error {
 	a.logger.Debug("debug_startCPUProfile", "file", file)
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
@@ -143,7 +214,7 @@ func (a *InternalAPI) StartCPUProfile(file string) error {
 }
 
 // StopCPUProfile stops an ongoing CPU profile.
-func (a *InternalAPI) StopCPUProfile() error {
+func (a *API) StopCPUProfile() error {
 	a.logger.Debug("debug_stopCPUProfile")
 	a.handler.mu.Lock()
 	defer a.handler.mu.Unlock()
@@ -166,7 +237,7 @@ func (a *InternalAPI) StopCPUProfile() error {
 }
 
 // WriteBlockProfile writes a goroutine blocking profile to the given file.
-func (a *InternalAPI) WriteBlockProfile(file string) error {
+func (a *API) WriteBlockProfile(file string) error {
 	a.logger.Debug("debug_writeBlockProfile", "file", file)
 	return writeProfile("block", file, a.logger)
 }
@@ -174,7 +245,7 @@ func (a *InternalAPI) WriteBlockProfile(file string) error {
 // WriteMemProfile writes an allocation profile to the given file.
 // Note that the profiling rate cannot be set through the API,
 // it must be set on the command line.
-func (a *InternalAPI) WriteMemProfile(file string) error {
+func (a *API) WriteMemProfile(file string) error {
 	a.logger.Debug("debug_writeMemProfile", "file", file)
 	return writeProfile("heap", file, a.logger)
 }
@@ -182,7 +253,7 @@ func (a *InternalAPI) WriteMemProfile(file string) error {
 // MutexProfile turns on mutex profiling for nsec seconds and writes profile data to file.
 // It uses a profile rate of 1 for most accurate information. If a different rate is
 // desired, set the rate and write the profile manually.
-func (a *InternalAPI) MutexProfile(file string, nsec uint) error {
+func (a *API) MutexProfile(file string, nsec uint) error {
 	a.logger.Debug("debug_mutexProfile", "file", file, "nsec", nsec)
 	runtime.SetMutexProfileFraction(1)
 	time.Sleep(time.Duration(nsec) * time.Second)
@@ -191,26 +262,26 @@ func (a *InternalAPI) MutexProfile(file string, nsec uint) error {
 }
 
 // SetMutexProfileFraction sets the rate of mutex profiling.
-func (a *InternalAPI) SetMutexProfileFraction(rate int) {
+func (a *API) SetMutexProfileFraction(rate int) {
 	a.logger.Debug("debug_setMutexProfileFraction", "rate", rate)
 	runtime.SetMutexProfileFraction(rate)
 }
 
 // WriteMutexProfile writes a goroutine blocking profile to the given file.
-func (a *InternalAPI) WriteMutexProfile(file string) error {
+func (a *API) WriteMutexProfile(file string) error {
 	a.logger.Debug("debug_writeMutexProfile", "file", file)
 	return writeProfile("mutex", file, a.logger)
 }
 
 // FreeOSMemory forces a garbage collection.
-func (a *InternalAPI) FreeOSMemory() {
+func (a *API) FreeOSMemory() {
 	a.logger.Debug("debug_freeOSMemory")
 	debug.FreeOSMemory()
 }
 
 // SetGCPercent sets the garbage collection target percentage. It returns the previous
 // setting. A negative value disables GC.
-func (a *InternalAPI) SetGCPercent(v int) int {
+func (a *API) SetGCPercent(v int) int {
 	a.logger.Debug("debug_setGCPercent", "percent", v)
 	return debug.SetGCPercent(v)
 }

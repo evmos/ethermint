@@ -24,12 +24,12 @@ import (
 	"errors"
 )
 
-func (*InternalAPI) StartGoTrace(string file) error {
+func (*API) StartGoTrace(string file) error {
 	a.logger.Debug("debug_stopGoTrace", "file", file)
 	return errors.New("tracing is not supported on Go < 1.5")
 }
 
-func (*InternalAPI) StopGoTrace() error {
+func (*API) StopGoTrace() error {
 	a.logger.Debug("debug_stopGoTrace")
 	return errors.New("tracing is not supported on Go < 1.5")
 }

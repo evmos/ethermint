@@ -23,8 +23,6 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
-
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -499,85 +497,10 @@ func (e *PublicAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx bo
 	return e.backend.GetBlockByNumber(ethBlockNum, fullTx)
 }
 
-// GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
-// TODO: Don't need to convert once hashing is fixed on Tendermint
-// https://github.com/tendermint/tendermint/issues/6539
-func (e *PublicAPI) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
-	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
-	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
-	if err != nil {
-		return nil, err
-	}
-	if len(resTxs.Txs) == 0 {
-		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
-	}
-	return resTxs.Txs[0], nil
-}
-
 // GetTransactionByHash returns the transaction identified by hash.
 func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getTransactionByHash", "hash", hash.Hex())
-
-	res, err := e.GetTxByEthHash(hash)
-	if err != nil {
-		// try to find tx in mempool
-		txs, err := e.backend.PendingTransactions()
-		if err != nil {
-			e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
-			return nil, nil
-		}
-
-		for _, tx := range txs {
-			msg, err := evmtypes.UnwrapEthereumMsg(tx)
-			if err != nil {
-				// not ethereum tx
-				continue
-			}
-
-			if msg.Hash == hash.Hex() {
-				rpctx, err := rpctypes.NewTransactionFromMsg(
-					msg,
-					common.Hash{},
-					uint64(0),
-					uint64(0),
-					e.chainIDEpoch,
-				)
-				if err != nil {
-					return nil, err
-				}
-				return rpctx, nil
-			}
-		}
-
-		e.logger.Debug("tx not found", "hash", hash.Hex())
-		return nil, nil
-	}
-
-	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
-	if err != nil {
-		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
-		return nil, nil
-	}
-
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
-	if err != nil {
-		e.logger.Debug("decoding failed", "error", err.Error())
-		return nil, fmt.Errorf("failed to decode tx: %w", err)
-	}
-
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
-	}
-
-	return rpctypes.NewTransactionFromMsg(
-		msg,
-		common.BytesToHash(resBlock.Block.Hash()),
-		uint64(res.Height),
-		uint64(res.Index),
-		e.chainIDEpoch,
-	)
+	return e.backend.GetTransactionByHash(hash)
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
@@ -670,7 +593,7 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	e.logger.Debug("eth_getTransactionReceipt", "hash", hash.Hex())
 
-	res, err := e.GetTxByEthHash(hash)
+	res, err := e.backend.GetTxByEthHash(hash)
 	if err != nil {
 		e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
 		return nil, nil

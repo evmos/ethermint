@@ -12,8 +12,10 @@
     - [AccessTuple](#ethermint.evm.v1.AccessTuple)
     - [ChainConfig](#ethermint.evm.v1.ChainConfig)
     - [Log](#ethermint.evm.v1.Log)
+    - [LogConfig](#ethermint.evm.v1.LogConfig)
     - [Params](#ethermint.evm.v1.Params)
     - [State](#ethermint.evm.v1.State)
+    - [TraceConfig](#ethermint.evm.v1.TraceConfig)
     - [TransactionLogs](#ethermint.evm.v1.TransactionLogs)
     - [TxResult](#ethermint.evm.v1.TxResult)
   
@@ -53,6 +55,8 @@
     - [QueryStaticCallResponse](#ethermint.evm.v1.QueryStaticCallResponse)
     - [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest)
     - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
+    - [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest)
+    - [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest)
     - [QueryTxLogsResponse](#ethermint.evm.v1.QueryTxLogsResponse)
     - [QueryValidatorAccountRequest](#ethermint.evm.v1.QueryValidatorAccountRequest)
@@ -213,6 +217,27 @@ the node.
 
 
 
+<a name="ethermint.evm.v1.LogConfig"></a>
+
+### LogConfig
+LogConfig are the configuration options for structured logger the EVM
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `disable_memory` | [bool](#bool) |  | disable memory capture |
+| `disable_stack` | [bool](#bool) |  | disable stack capture |
+| `disable_storage` | [bool](#bool) |  | disable storage capture |
+| `disable_return_data` | [bool](#bool) |  | disable return data capture |
+| `debug` | [bool](#bool) |  | print output during capture end |
+| `limit` | [int32](#int32) |  | maximum length of output, but zero means unlimited |
+| `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
+
+
+
+
+
+
 <a name="ethermint.evm.v1.Params"></a>
 
 ### Params
@@ -242,6 +267,24 @@ State represents a single Storage key value pair item.
 | ----- | ---- | ----- | ----------- |
 | `key` | [string](#string) |  |  |
 | `value` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.TraceConfig"></a>
+
+### TraceConfig
+TraceConfig holds extra parameters to trace functions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tracer` | [string](#string) |  | custom javascript tracer |
+| `timeout` | [string](#string) |  | overrides the default timeout of 5 seconds for JavaScript-based tracing calls |
+| `reexec` | [uint64](#uint64) |  | number of blocks the tracer is willing to go back |
+| `log_config` | [LogConfig](#ethermint.evm.v1.LogConfig) |  | configuration options for structured logger the EVM |
 
 
 
@@ -823,6 +866,38 @@ method.
 
 
 
+<a name="ethermint.evm.v1.QueryTraceTxRequest"></a>
+
+### QueryTraceTxRequest
+QueryTraceTxRequest defines TraceTx request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `msg` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) |  | msgEthereumTx for the requested transaction |
+| `tx_index` | [uint32](#uint32) |  | transaction index |
+| `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.QueryTraceTxResponse"></a>
+
+### QueryTraceTxResponse
+QueryTraceTxResponse defines TraceTx response
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [bytes](#bytes) |  | response serialized in bytes |
+
+
+
+
+
+
 <a name="ethermint.evm.v1.QueryTxLogsRequest"></a>
 
 ### QueryTxLogsRequest
@@ -912,6 +987,7 @@ Query defines the gRPC querier service.
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1/params|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
+| `TraceTx` | [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest) | [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_tx|
 
  <!-- end services -->
 

@@ -77,6 +77,11 @@ service Query {
   rpc EstimateGas(EthCallRequest) returns (EstimateGasResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/estimate_gas";
   }
+
+  // TraceTx implements the `debug_traceTransaction` rpc api
+  rpc TraceTx(QueryTraceTxRequest) returns (QueryTraceTxResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1/trace_tx";
+  }
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -277,4 +282,20 @@ message EthCallRequest {
 message EstimateGasResponse {
   // the estimated gas
   uint64 gas = 1;
+}
+
+// QueryTraceTxRequest defines TraceTx request
+message QueryTraceTxRequest {
+  // msgEthereumTx for the requested transaction
+  MsgEthereumTx msg = 1;
+  // transaction index
+  uint32 tx_index = 2;
+  // TraceConfig holds extra parameters to trace functions.
+  TraceConfig trace_config = 3;
+}
+
+// QueryTraceTxResponse defines TraceTx response
+message QueryTraceTxResponse {
+  // response serialized in bytes
+  bytes data = 1;
 }

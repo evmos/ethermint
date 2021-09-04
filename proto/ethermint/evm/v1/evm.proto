@@ -197,3 +197,33 @@ message AccessTuple {
   // hex formatted hashes of the storage keys
   repeated string storage_keys = 2 [ (gogoproto.jsontag) = "storageKeys" ];
 }
+
+// TraceConfig holds extra parameters to trace functions.
+message TraceConfig {
+  // custom javascript tracer
+  string tracer = 1;
+  // overrides the default timeout of 5 seconds for JavaScript-based tracing calls
+  string timeout = 2;
+  // number of blocks the tracer is willing to go back
+  uint64 reexec  = 3;
+  // configuration options for structured logger the EVM
+  LogConfig log_config = 4 [ (gogoproto.jsontag) = "logConfig" ];
+}
+
+// LogConfig are the configuration options for structured logger the EVM
+message LogConfig {
+  // disable memory capture
+  bool disable_memory = 1 [ (gogoproto.jsontag) = "disableMemory" ];
+    // disable stack capture
+  bool disable_stack = 2 [ (gogoproto.jsontag) = "disableStack" ];
+  // disable storage capture
+  bool disable_storage = 3 [ (gogoproto.jsontag) = "disableStorage" ];
+  // disable return data capture
+  bool disable_return_data = 4 [ (gogoproto.jsontag) = "disableReturnData" ];
+  // print output during capture end
+  bool debug = 5;
+  // maximum length of output, but zero means unlimited
+  int32 limit = 6;
+  // Chain overrides, can be used to execute a trace using future fork rules
+  ChainConfig overrides = 7;
+}

@@ -102,7 +102,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
-					Service:   debug.NewInternalAPI(ctx),
+					Service:   debug.NewAPI(ctx, evmBackend, clientCtx),
 					Public:    true,
 				},
 			)
