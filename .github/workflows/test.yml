@@ -25,7 +25,7 @@ jobs:
         run: go version
       - name: Install tparse
         run: |
-          export GO111MODULE="on" && go get github.com/mfridman/tparse@v0.8.3
+          export GO111MODULE="on" && go get github.com/mfridman/tparse@latest
       - uses: actions/cache@v2.1.6
         with:
           path: ~/go/bin
