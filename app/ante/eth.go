@@ -1,6 +1,7 @@
 package ante
 
 import (
+	"errors"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -293,7 +294,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			homestead,
 			istanbul,
 		)
-
 		if err != nil {
 			return ctx, stacktrace.Propagate(err, "failed to deduct transaction costs from user balance")
 		}
@@ -403,7 +403,6 @@ func NewAccessListDecorator(evmKeeper EVMKeeper) AccessListDecorator {
 //
 // The AnteHandler will only prepare the access list if Yolov3/Berlin/EIPs 2929 and 2930 are applicable at the current number.
 func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-
 	params := ald.evmKeeper.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(ald.evmKeeper.ChainID())
 
@@ -457,7 +456,6 @@ func NewEthIncrementSenderSequenceDecorator(ak evmtypes.AccountKeeper) EthIncrem
 // contract creation, the nonce will be incremented during the transaction execution and not within
 // this AnteHandler decorator.
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -523,7 +521,7 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 
 	err := tx.ValidateBasic()
 	// ErrNoSignatures is fine with eth tx
-	if err != nil && err != sdkerrors.ErrNoSignatures {
+	if err != nil && !errors.Is(err, sdkerrors.ErrNoSignatures) {
 		return ctx, stacktrace.Propagate(err, "tx basic validation failed")
 	}
 

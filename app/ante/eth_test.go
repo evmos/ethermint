@@ -52,7 +52,6 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
 }
@@ -120,7 +119,6 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
 				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
-
 			},
 			true,
 			true,
@@ -137,7 +135,6 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
 }
@@ -185,7 +182,6 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
 
@@ -194,7 +190,6 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
 }
@@ -285,7 +280,6 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 
 			if tc.expPanic {
@@ -301,7 +295,6 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
 }
@@ -351,7 +344,6 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 
 			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
@@ -412,7 +404,6 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
@@ -486,7 +477,6 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 
 			if tc.expPanic {
@@ -544,7 +534,6 @@ func (suite AnteTestSuite) TestEthSetupContextDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
 }

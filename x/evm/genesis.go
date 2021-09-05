@@ -17,7 +17,7 @@ import (
 func InitGenesis(
 	ctx sdk.Context,
 	k *keeper.Keeper,
-	accountKeeper types.AccountKeeper, // nolint: interfacer
+	accountKeeper types.AccountKeeper,
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
 	k.WithContext(ctx)

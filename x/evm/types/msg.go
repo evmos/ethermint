@@ -37,7 +37,6 @@ func NewTx(
 	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
 	return newMsgEthereumTx(chainID, nonce, to, amount, gasLimit, gasPrice, input, accesses)
-
 }
 
 // NewTxContract returns a reference to a new Ethereum transaction

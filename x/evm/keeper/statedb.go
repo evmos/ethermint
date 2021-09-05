@@ -484,7 +484,6 @@ func (k *Keeper) Suicide(addr common.Address) bool {
 
 // setSuicided sets a single byte to the transient store and marks the address as suicided
 func (k Keeper) setSuicided(ctx sdk.Context, addr common.Address) {
-
 	store := prefix.NewStore(ctx.TransientStore(k.transientKey), types.KeyPrefixTransientSuicided)
 	store.Set(addr.Bytes(), []byte{1})
 }
@@ -585,7 +584,7 @@ func (k *Keeper) AddressInAccessList(addr common.Address) bool {
 }
 
 // SlotInAccessList checks if the address and the slots are registered in the transient store
-func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
+func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk, slotOk bool) {
 	addressOk = k.AddressInAccessList(addr)
 	slotOk = k.addressSlotInAccessList(addr, slot)
 	return addressOk, slotOk

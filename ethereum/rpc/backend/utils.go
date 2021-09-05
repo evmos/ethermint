@@ -18,7 +18,6 @@ import (
 // setTxDefaults populates tx message with default values in case they are not
 // provided on the args
 func (e *EVMBackend) setTxDefaults(args types.SendTxArgs) (types.SendTxArgs, error) {
-
 	if args.GasPrice == nil {
 		// TODO: Suggest a gas price based on the previous included txs
 		args.GasPrice = (*hexutil.Big)(new(big.Int).SetUint64(e.RPCGasCap()))

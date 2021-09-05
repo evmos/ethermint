@@ -123,7 +123,6 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 	}
 
 	return &res, nil
-
 }
 
 // Balance implements the Query/Balance gRPC method
@@ -261,12 +260,11 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 		return false, nil
 	})
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	var txsLogs = []types.TransactionLogs{}
+	txsLogs := []types.TransactionLogs{}
 	for _, txHash := range mapOrder {
 		if len(logs[txHash]) > 0 {
 			txsLogs = append(txsLogs, types.TransactionLogs{Hash: txHash, Logs: logs[txHash]})
@@ -481,7 +479,6 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 	coreMessage, err := req.Msg.AsMessage(signer)
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -489,8 +486,8 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	switch {
 	case req.TraceConfig != nil && req.TraceConfig.Tracer != "":
 		timeout := defaultTraceTimeout
-		//TODO change timeout to time.duration
-		//Used string to comply with go ethereum
+		// TODO change timeout to time.duration
+		// Used string to comply with go ethereum
 		if req.TraceConfig.Timeout != "" {
 			if timeout, err = time.ParseDuration(req.TraceConfig.Timeout); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
@@ -530,7 +527,6 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	k.SetTxIndexTransient(uint64(req.TxIndex))
 
 	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -538,7 +534,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
-		//TODO Return proper returnValue
+		// TODO Return proper returnValue
 		result := types.ExecutionResult{
 			Gas:         res.GasUsed,
 			Failed:      res.Failed(),

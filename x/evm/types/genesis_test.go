@@ -31,7 +31,6 @@ func TestGenesisTestSuite(t *testing.T) {
 }
 
 func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
-
 	testCases := []struct {
 		name           string
 		genesisAccount GenesisAccount
@@ -84,7 +83,6 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 }
 
 func (suite *GenesisTestSuite) TestValidateGenesis() {
-
 	testCases := []struct {
 		name     string
 		genState *GenesisState

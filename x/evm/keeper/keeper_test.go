@@ -215,7 +215,7 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	return crypto.CreateAddress(suite.address, nonce)
 }
 
-func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAddr common.Address, from common.Address, to common.Address, amount *big.Int) *types.MsgEthereumTx {
+func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAddr, from, to common.Address, amount *big.Int) *types.MsgEthereumTx {
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	chainID := suite.app.EvmKeeper.ChainID()
 

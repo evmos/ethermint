@@ -29,9 +29,7 @@ const (
 	DefaultGasCap uint64 = 25000000
 )
 
-var (
-	evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
-)
+var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
 
 // GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
 func GetDefaultAPINamespaces() []string {

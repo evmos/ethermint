@@ -182,7 +182,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	block *tmtypes.Block,
 	fullTx bool,
 ) (map[string]interface{}, error) {
-
 	gasUsed := uint64(0)
 
 	ethRPCTxs := []interface{}{}
@@ -388,7 +387,7 @@ func (e *EVMBackend) GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error) {
 		return nil, err
 	}
 
-	var blockLogs = [][]*ethtypes.Log{}
+	blockLogs := [][]*ethtypes.Log{}
 	for _, txLog := range res.TxLogs {
 		blockLogs = append(blockLogs, txLog.EthLogs())
 	}

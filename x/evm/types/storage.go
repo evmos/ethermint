@@ -58,7 +58,7 @@ func (s State) Validate() error {
 }
 
 // NewState creates a new State instance
-func NewState(key, value common.Hash) State { // nolint: interfacer
+func NewState(key, value common.Hash) State {
 	return State{
 		Key:   key.String(),
 		Value: value.String(),

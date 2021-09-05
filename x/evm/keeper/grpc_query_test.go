@@ -20,7 +20,7 @@ import (
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 )
 
-//Not valid Ethereum address
+// Not valid Ethereum address
 const invalidAddress = "0x0000"
 
 func (suite *KeeperTestSuite) TestQueryAccount() {
@@ -101,7 +101,8 @@ func (suite *KeeperTestSuite) TestQueryCosmosAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"invalid address",
+		{
+			"invalid address",
 			func() {
 				expAccount = &types.QueryCosmosAccountResponse{
 					CosmosAddress: sdk.AccAddress(common.Address{}.Bytes()).String(),
@@ -178,7 +179,8 @@ func (suite *KeeperTestSuite) TestQueryBalance() {
 		malleate func()
 		expPass  bool
 	}{
-		{"invalid address",
+		{
+			"invalid address",
 			func() {
 				expBalance = "0"
 				req = &types.QueryBalanceRequest{
@@ -236,7 +238,8 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 		malleate func()
 		expPass  bool
 	}{
-		{"invalid address",
+		{
+			"invalid address",
 			func() {
 				req = &types.QueryStorageRequest{
 					Address: invalidAddress,
@@ -291,7 +294,8 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 		malleate func()
 		expPass  bool
 	}{
-		{"invalid address",
+		{
+			"invalid address",
 			func() {
 				req = &types.QueryCodeRequest{
 					Address: invalidAddress,
@@ -346,7 +350,8 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 		malleate func()
 		expPass  bool
 	}{
-		{"empty hash",
+		{
+			"empty hash",
 			func() {
 				req = &types.QueryTxLogsRequest{
 					Hash: common.Hash{}.String(),
@@ -354,7 +359,8 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 			},
 			false,
 		},
-		{"logs not found",
+		{
+			"logs not found",
 			func() {
 				hash := common.BytesToHash([]byte("hash"))
 				req = &types.QueryTxLogsRequest{
@@ -423,7 +429,8 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 		malleate func()
 		expPass  bool
 	}{
-		{"empty hash",
+		{
+			"empty hash",
 			func() {
 				req = &types.QueryBlockLogsRequest{
 					Hash: common.Hash{}.String(),
@@ -431,7 +438,8 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 			},
 			false,
 		},
-		{"logs not found",
+		{
+			"logs not found",
 			func() {
 				hash := common.BytesToHash([]byte("hash"))
 				req = &types.QueryBlockLogsRequest{
@@ -443,7 +451,6 @@ func (suite *KeeperTestSuite) TestQueryBlockLogs() {
 		{
 			"success",
 			func() {
-
 				hash := common.BytesToHash([]byte("block_hash"))
 				expLogs = []types.TransactionLogs{
 					{
@@ -533,7 +540,8 @@ func (suite *KeeperTestSuite) TestQueryBlockBloom() {
 		malleate func()
 		expPass  bool
 	}{
-		{"bad height",
+		{
+			"bad height",
 			func() {
 				req = &types.QueryBlockBloomRequest{Height: -2}
 			},
@@ -550,7 +558,8 @@ func (suite *KeeperTestSuite) TestQueryBlockBloom() {
 			},
 			true,
 		},
-		{"bloom not found for height",
+		{
+			"bloom not found for height",
 			func() {
 				req = &types.QueryBlockBloomRequest{Height: 100}
 				bloom := ethtypes.BytesToBloom([]byte("bloom"))
@@ -614,7 +623,8 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 		malleate func()
 		expPass  bool
 	}{
-		{"invalid address",
+		{
+			"invalid address",
 			func() {
 				expAccount = &types.QueryValidatorAccountResponse{
 					AccountAddress: sdk.AccAddress(common.Address{}.Bytes()).String(),
@@ -761,7 +771,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 
 func (suite *KeeperTestSuite) TestTraceTx() {
 	ctx := sdk.WrapSDKContext(suite.ctx)
-	//TODO deploy contract that triggers internal transactions
+	// TODO deploy contract that triggers internal transactions
 	var (
 		txMsg       *types.MsgEthereumTx
 		traceConfig *types.TraceConfig
@@ -795,10 +805,10 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
 			suite.SetupTest()
-			//Deploy contract
+			// Deploy contract
 			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Commit()
-			//Generate token transfer transaction
+			// Generate token transfer transaction
 			txMsg = suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdk.NewIntWithDecimal(1, 18).BigInt())
 			suite.Commit()
 
@@ -818,5 +828,4 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			}
 		})
 	}
-
 }

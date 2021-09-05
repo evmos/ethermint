@@ -8,9 +8,7 @@ import (
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
-var (
-	_ types.EvmHooks = MultiEvmHooks{}
-)
+var _ types.EvmHooks = MultiEvmHooks{}
 
 // MultiEvmHooks combine multiple evm hooks, all hook functions are run in array sequence
 type MultiEvmHooks []types.EvmHooks

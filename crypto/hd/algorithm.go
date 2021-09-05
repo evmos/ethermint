@@ -38,7 +38,6 @@ func EthSecp256k1Option() keyring.Option {
 		options.SupportedAlgos = SupportedAlgorithms
 		options.SupportedAlgosLedger = SupportedAlgorithmsLedger
 	}
-
 }
 
 var (
@@ -48,8 +47,7 @@ var (
 	EthSecp256k1 = ethSecp256k1Algo{}
 )
 
-type ethSecp256k1Algo struct {
-}
+type ethSecp256k1Algo struct{}
 
 // Name returns eth_secp256k1
 func (s ethSecp256k1Algo) Name() hd.PubKeyType {
@@ -58,7 +56,7 @@ func (s ethSecp256k1Algo) Name() hd.PubKeyType {
 
 // Derive derives and returns the eth_secp256k1 private key for the given mnemonic and HD path.
 func (s ethSecp256k1Algo) Derive() hd.DeriveFn {
-	return func(mnemonic string, bip39Passphrase, path string) ([]byte, error) {
+	return func(mnemonic, bip39Passphrase, path string) ([]byte, error) {
 		hdpath, err := accounts.ParseDerivationPath(path)
 		if err != nil {
 			return nil, err
@@ -97,7 +95,7 @@ func (s ethSecp256k1Algo) Derive() hd.DeriveFn {
 // Generate generates a eth_secp256k1 private key from the given bytes.
 func (s ethSecp256k1Algo) Generate() hd.GenerateFn {
 	return func(bz []byte) cryptotypes.PrivKey {
-		var bzArr = make([]byte, ethsecp256k1.PrivKeySize)
+		bzArr := make([]byte, ethsecp256k1.PrivKeySize)
 		copy(bzArr, bz)
 
 		return &ethsecp256k1.PrivKey{Key: bzArr}

@@ -194,7 +194,7 @@ func (pubKey *PubKey) UnmarshalAminoJSON(bz []byte) error {
 // prior to verification.
 //
 // CONTRACT: The signature should be in [R || S] format.
-func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
+func (pubKey PubKey) VerifySignature(msg, sig []byte) bool {
 	if len(sig) == crypto.SignatureLength {
 		// remove recovery ID (V) if contained in the signature
 		sig = sig[:len(sig)-1]

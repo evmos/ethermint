@@ -36,6 +36,14 @@ linters:
     - varcheck
     - nolintlint
     - asciicheck
+    # - exhaustive
+    - exportloopref
+    - gofumpt
+    - gomodguard
+    # - nestif
+    # - nlreturn
+    - noctx
+    - rowserrcheck
     # - whitespace
     # - wsl
 
@@ -63,3 +71,14 @@ linters-settings:
     allow-leading-space: true
     require-explanation: false
     require-specific: false
+  gofumpt:
+    lang-version: "1.17"
+  gomodguard:
+    blocked:
+      versions: # List of blocked module version constraints
+      - https://github.com/etcd-io/etcd:                            # Blocked module with version constraint
+          version: ">= 3.4.10 || ~3.3.23"                           # Version constraint, see https://github.com/Masterminds/semver#basic-comparisons
+          reason: "CVE-2020-15114; CVE-2020-15136; CVE-2020-15115"  # Reason why the version constraint exists. (Optional)
+      - https://github.com/dgrijalva/jwt-go:                      # Blocked module with version constraint
+          version: ">= 4.0.0-preview1"                           # Version constraint, see https://github.com/Masterminds/semver#basic-comparisons
+          reason: "CVE-2020-26160"  # Reason why the version constraint exists. (Optional)

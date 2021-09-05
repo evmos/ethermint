@@ -51,7 +51,6 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 			"case 1.3: hash calculated from Tendermint header",
 			uint64(suite.ctx.BlockHeight()),
 			func() {
-
 				suite.ctx = suite.ctx.WithBlockHeader(header)
 				suite.app.EvmKeeper.WithContext(suite.ctx)
 			},

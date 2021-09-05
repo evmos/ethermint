@@ -63,14 +63,14 @@ func NewAPI(
 // and returns them as a JSON object.
 func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (interface{}, error) {
 	a.logger.Debug("debug_traceTransaction", "hash", hash)
-	//Get transaction by hash
+	// Get transaction by hash
 	transaction, err := a.backend.GetTxByEthHash(hash)
 	if err != nil {
 		a.logger.Debug("tx not found", "hash", hash)
 		return nil, err
 	}
 
-	//check if block number is 0
+	// check if block number is 0
 	if transaction.Height == 0 {
 		return nil, errors.New("genesis is not traceable")
 	}
@@ -97,13 +97,12 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 	}
 
 	traceResult, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(transaction.Height), &traceTxRequest)
-
 	if err != nil {
 		return nil, err
 	}
 
-	//Response format is unknown due to custom tracer config param
-	//More information can be found here https://geth.ethereum.org/docs/dapp/tracing-filtered
+	// Response format is unknown due to custom tracer config param
+	// More information can be found here https://geth.ethereum.org/docs/dapp/tracing-filtered
 	var decodedResult interface{}
 	err = json.Unmarshal(traceResult.Data, &decodedResult)
 	if err != nil {
