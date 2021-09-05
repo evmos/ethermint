@@ -36,7 +36,6 @@ linters:
     - varcheck
     - nolintlint
     - asciicheck
-    - gci
     # - exhaustive
     - exportloopref
     - gofumpt
@@ -74,7 +73,6 @@ linters-settings:
     require-specific: false
   gofumpt:
     lang-version: "1.17"
-    extra-rules: false
   gomodguard:
     blocked:
       versions: # List of blocked module version constraints

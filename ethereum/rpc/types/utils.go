@@ -242,7 +242,6 @@ func NewTransactionFromData(
 	txHash, blockHash common.Hash,
 	blockNumber, index uint64,
 ) (*RPCTransaction, error) {
-
 	if txHash == (common.Hash{}) {
 		txHash = ethtypes.EmptyRootHash
 	}

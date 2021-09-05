@@ -14,7 +14,6 @@ func InitGenesis(
 	k keeper.Keeper,
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
-
 	k.SetParams(ctx, data.Params)
 	k.SetBaseFee(ctx, data.BaseFee.BigInt())
 	k.SetBlockGasUsed(ctx, data.BlockGas)

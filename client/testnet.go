@@ -128,7 +128,6 @@ func InitTestnet(
 	ipAddresses []string,
 	numValidators int,
 ) error {
-
 	if chainID == "" {
 		chainID = fmt.Sprintf("ethermint_%d-1", tmrand.Int63n(9999999999999)+1)
 	}
@@ -318,7 +317,6 @@ func initGenFiles(
 	genFiles []string,
 	numValidators int,
 ) error {
-
 	appGenState := mbm.DefaultGenesis(clientCtx.Codec)
 
 	// set the accounts in the genesis state
@@ -395,7 +393,6 @@ func collectGenFiles(
 	nodeIDs []string, valPubKeys []cryptotypes.PubKey, numValidators int,
 	outputDir, nodeDirPrefix, nodeDaemonHome string, genBalIterator banktypes.GenesisBalancesIterator,
 ) error {
-
 	var appState json.RawMessage
 	genTime := tmtime.Now()
 

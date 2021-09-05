@@ -182,7 +182,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	block *tmtypes.Block,
 	fullTx bool,
 ) (map[string]interface{}, error) {
-
 	gasUsed := uint64(0)
 
 	ethRPCTxs := []interface{}{}

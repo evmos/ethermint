@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -67,12 +68,11 @@ func Call(t *testing.T, method string, params interface{}) *Response {
 
 	var rpcRes *Response
 	time.Sleep(1 * time.Second)
-	/* #nosec */
 
 	if HOST == "" {
 		HOST = "http://localhost:8545"
 	}
-	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req)) // nolint:gosec
+	res, err := http.NewRequestWithContext(context.Background(), "POST", HOST, bytes.NewBuffer(req))
 	require.NoError(t, err)
 
 	decoder := json.NewDecoder(res.Body)
@@ -95,12 +95,11 @@ func CallWithError(method string, params interface{}) (*Response, error) {
 
 	var rpcRes *Response
 	time.Sleep(1 * time.Second)
-	/* #nosec */
 
 	if HOST == "" {
 		HOST = "http://localhost:8545"
 	}
-	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req)) // nolint:gosec
+	res, err := http.NewRequestWithContext(context.Background(), "POST", HOST, bytes.NewBuffer(req))
 	if err != nil {
 		return nil, err
 	}

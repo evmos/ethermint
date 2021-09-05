@@ -66,7 +66,6 @@ func NewKeeper(
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
 	tracer string, debug bool,
 ) *Keeper {
-
 	// ensure evm module account is set
 	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the EVM module account has not been set")
