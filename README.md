@@ -16,6 +16,7 @@ parent:
   <a href="https://github.com/tharsis/ethermint/blob/main/LICENSE">
     <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/tharsis/ethermint.svg" />
   </a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Ftharsis%2Fethermint?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftharsis%2Fethermint.svg?type=shield"/></a>
   <a href="https://pkg.go.dev/github.com/tharsis/ethermint">
     <img alt="GoDoc" src="https://godoc.org/github.com/tharsis/ethermint?status.svg" />
   </a>
@@ -48,6 +49,9 @@ Ethermint is a scalable, high-throughput Proof-of-Stake blockchain that is fully
 interoperable with Ethereum. It's build using the the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk/) which runs on top of [Tendermint Core](https://github.com/tendermint/tendermint) consensus engine.
 
 **Note**: Requires [Go 1.17+](https://golang.org/dl/)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftharsis%2Fethermint.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftharsis%2Fethermint?ref=badge_large)
 
 ## Installation
 
