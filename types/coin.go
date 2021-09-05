@@ -21,10 +21,8 @@ const (
 	BaseDenomUnit = 18
 )
 
-var (
-	// PowerReduction defines the default power reduction value for staking
-	PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(BaseDenomUnit), nil))
-)
+// PowerReduction defines the default power reduction value for staking
+var PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(BaseDenomUnit), nil))
 
 // NewPhotonCoin is a utility function that returns an "aphoton" coin with the given sdk.Int amount.
 // The function will panic if the provided amount is negative.

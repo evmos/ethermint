@@ -128,7 +128,6 @@ func (suite AnteTestSuite) TestAnteHandler() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			suite.ctx = suite.ctx.WithIsCheckTx(tc.reCheckTx).WithIsReCheckTx(tc.reCheckTx)
 
 			// expConsumed := params.TxGasContractCreation + params.TxGas
@@ -142,8 +141,6 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
-
 }

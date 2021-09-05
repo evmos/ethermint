@@ -2,9 +2,10 @@ package types
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestUnmarshalBlockNumberOrHash(t *testing.T) {
@@ -98,5 +99,4 @@ func TestUnmarshalBlockNumberOrHash(t *testing.T) {
 			require.Error(t, err)
 		}
 	}
-
 }

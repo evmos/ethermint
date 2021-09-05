@@ -35,9 +35,7 @@ type Response struct {
 	Result json.RawMessage `json:"result,omitempty"`
 }
 
-var (
-	HOST = os.Getenv("HOST")
-)
+var HOST = os.Getenv("HOST")
 
 func GetAddress() ([]byte, error) {
 	rpcRes, err := CallWithError("eth_accounts", []string{})

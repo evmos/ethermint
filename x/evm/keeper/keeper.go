@@ -241,7 +241,7 @@ func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
 	defer iter.Close()
 
 	mapOrder := []string{}
-	var mapLogs = make(map[string][]*types.Log)
+	mapLogs := make(map[string][]*types.Log)
 	for ; iter.Valid(); iter.Next() {
 		var txLog types.Log
 		k.cdc.MustUnmarshal(iter.Value(), &txLog)
@@ -272,7 +272,7 @@ func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
 
 	// We store the logs with key equal to txHash.Bytes() | sdk.Uint64ToBigEndian(uint64(log.Index)),
 	// therefore, we set the end boundary(excluded) to txHash.Bytes() | uint64.Max -> []byte
-	var end = txHash.Bytes()
+	end := txHash.Bytes()
 	end = append(end, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}...)
 
 	iter := store.Iterator(txHash.Bytes(), end)
@@ -293,7 +293,7 @@ func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
 	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
 
 	for _, log := range logs {
-		var key = txHash.Bytes()
+		key := txHash.Bytes()
 		key = append(key, sdk.Uint64ToBigEndian(uint64(log.Index))...)
 		txIndexLog := types.NewLogFromEth(log)
 		bz := k.cdc.MustMarshal(txIndexLog)
@@ -305,7 +305,7 @@ func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
 func (k Keeper) SetLog(log *ethtypes.Log) {
 	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
 
-	var key = log.TxHash.Bytes()
+	key := log.TxHash.Bytes()
 	key = append(key, sdk.Uint64ToBigEndian(uint64(log.Index))...)
 
 	txIndexLog := types.NewLogFromEth(log)
@@ -319,7 +319,7 @@ func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
 
 	// We store the logs with key equal to txHash.Bytes() | sdk.Uint64ToBigEndian(uint64(log.Index)),
 	// therefore, we set the end boundary(excluded) to txHash.Bytes() | uint64.Max -> []byte
-	var end = txHash.Bytes()
+	end := txHash.Bytes()
 	end = append(end, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}...)
 
 	iter := store.Iterator(txHash.Bytes(), end)
@@ -361,7 +361,6 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 		storage = append(storage, types.NewState(key, value))
 		return false
 	})
-
 	if err != nil {
 		return types.Storage{}, err
 	}

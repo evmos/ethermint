@@ -133,7 +133,6 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 			} else {
 				suite.Require().Error(err, "invalid test %d passed", i)
 			}
-
 		})
 	}
 }
@@ -206,7 +205,6 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 	}
 
 	for i, tc := range testCases {
-
 		suite.Run(tc.name, func() {
 			suite.SetupTest()
 			suite.app.EvmKeeper.AddBalance(suite.address, hundredInt.BigInt())
@@ -251,7 +249,6 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				suite.Require().Error(err, "invalid test %d passed", i)
 				suite.Require().Nil(fees, "invalid test %d passed. fees value must be nil", i)
 			}
-
 		})
 	}
 }

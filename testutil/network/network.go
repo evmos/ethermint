@@ -273,7 +273,7 @@ func New(t *testing.T, cfg Config) *Network {
 		nodeDir := filepath.Join(network.BaseDir, nodeDirName, "ethermintd")
 		gentxsDir := filepath.Join(network.BaseDir, "gentxs")
 
-		require.NoError(t, os.MkdirAll(filepath.Join(nodeDir, "config"), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(nodeDir, "config"), 0o755))
 
 		tmCfg.SetRoot(nodeDir)
 		tmCfg.Moniker = nodeDirName

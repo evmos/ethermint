@@ -183,7 +183,6 @@ type appCreator struct {
 
 // newApp is an appCreator
 func (a appCreator) newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
-
 	var cache sdk.MultiStorePersistentCache
 
 	if cast.ToBool(appOpts.Get(sdkserver.FlagInterBlockCache)) {

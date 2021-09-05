@@ -178,7 +178,6 @@ func (suite *KeeperTestSuite) TestGetNonce() {
 
 			nonce := suite.app.EvmKeeper.GetNonce(tc.address)
 			suite.Require().Equal(tc.expectedNonce, nonce)
-
 		})
 	}
 }
@@ -248,7 +247,6 @@ func (suite *KeeperTestSuite) TestGetCodeHash() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 
 			hash := suite.app.EvmKeeper.GetCodeHash(tc.address)
@@ -296,7 +294,6 @@ func (suite *KeeperTestSuite) TestSetCode() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			prev := suite.app.EvmKeeper.GetCode(tc.address)
 			suite.app.EvmKeeper.SetCode(tc.address, tc.code)
 			post := suite.app.EvmKeeper.GetCode(tc.address)
@@ -338,7 +335,6 @@ func (suite *KeeperTestSuite) TestRefund() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 
 			if tc.expPanic {
@@ -374,7 +370,6 @@ func (suite *KeeperTestSuite) TestState() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			suite.app.EvmKeeper.SetState(suite.address, tc.key, tc.value)
 			value := suite.app.EvmKeeper.GetState(suite.address, tc.key)
 			suite.Require().Equal(tc.value, value)
@@ -385,9 +380,9 @@ func (suite *KeeperTestSuite) TestState() {
 func (suite *KeeperTestSuite) TestCommittedState() {
 	suite.SetupTest()
 
-	var key = common.BytesToHash([]byte("key"))
-	var value1 = common.BytesToHash([]byte("value1"))
-	var value2 = common.BytesToHash([]byte("value2"))
+	key := common.BytesToHash([]byte("key"))
+	value1 := common.BytesToHash([]byte("value1"))
+	value2 := common.BytesToHash([]byte("value2"))
 
 	suite.app.EvmKeeper.SetState(suite.address, key, value1)
 
@@ -474,10 +469,9 @@ func (suite *KeeperTestSuite) TestEmpty() {
 }
 
 func (suite *KeeperTestSuite) TestSnapshot() {
-
-	var key = common.BytesToHash([]byte("key"))
-	var value1 = common.BytesToHash([]byte("value1"))
-	var value2 = common.BytesToHash([]byte("value2"))
+	key := common.BytesToHash([]byte("key"))
+	value1 := common.BytesToHash([]byte("value1"))
+	value2 := common.BytesToHash([]byte("value2"))
 
 	testCases := []struct {
 		name     string

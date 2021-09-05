@@ -58,7 +58,6 @@ func (suite *EvmTestSuite) SetupTest() {
 	suite.signer = tests.NewSigner(privKey)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.chainID)
 	suite.from = common.BytesToAddress(privKey.PubKey().Address().Bytes())
-
 }
 
 func TestEvmTestSuite(t *testing.T) {

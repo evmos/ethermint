@@ -104,7 +104,7 @@ package importer
 // 	}()
 // }
 
-// // nolint: interfacer
+//
 // func createAndTestGenesis(t *testing.T, cms sdk.CommitMultiStore, ak authkeeper.AccountKeeper, bk bankkeeper.Keeper, evmKeeper *evmkeeper.Keeper) {
 // 	genBlock := ethcore.DefaultGenesisBlock()
 // 	ms := cms.CacheMultiStore()

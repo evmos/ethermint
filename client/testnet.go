@@ -54,7 +54,7 @@ var (
 	flagIPAddrs        = "ip-addresses"
 )
 
-const nodeDirPerm = 0755
+const nodeDirPerm = 0o755
 
 // TestnetCmd initializes all files for tendermint testnet and application
 func TestnetCmd(
@@ -258,7 +258,6 @@ func InitTestnet(
 			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 			sdk.OneInt(),
 		)
-
 		if err != nil {
 			return err
 		}
@@ -461,16 +460,16 @@ func calculateIP(ip string, i int) (string, error) {
 	return ipv4.String(), nil
 }
 
-func writeFile(name string, dir string, contents []byte) error {
+func writeFile(name, dir string, contents []byte) error {
 	writePath := filepath.Join(dir)
 	file := filepath.Join(writePath, name)
 
-	err := tmos.EnsureDir(writePath, 0755)
+	err := tmos.EnsureDir(writePath, 0o755)
 	if err != nil {
 		return err
 	}
 
-	err = tmos.WriteFile(file, contents, 0644)
+	err = tmos.WriteFile(file, contents, 0o644)
 	if err != nil {
 		return err
 	}

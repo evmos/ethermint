@@ -388,7 +388,7 @@ func (e *EVMBackend) GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error) {
 		return nil, err
 	}
 
-	var blockLogs = [][]*ethtypes.Log{}
+	blockLogs := [][]*ethtypes.Log{}
 	for _, txLog := range res.TxLogs {
 		blockLogs = append(blockLogs, txLog.EthLogs())
 	}

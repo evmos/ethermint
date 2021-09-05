@@ -581,7 +581,6 @@ func TestEth_GetTransactionReceipt_ContractDeployment(t *testing.T) {
 
 	require.NotEqual(t, common.Address{}.String(), receipt["contractAddress"].(string))
 	require.NotNil(t, receipt["logs"])
-
 }
 
 func getTransactionReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {

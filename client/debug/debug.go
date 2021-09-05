@@ -75,7 +75,6 @@ func AddrCmd() *cobra.Command {
 $ %s debug addr 0xA588C66983a81e800Db4dF74564F09f91c026351`, version.AppName, version.AppName),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			addrString := args[0]
 			cfg := sdk.GetConfig()
 
