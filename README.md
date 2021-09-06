@@ -27,7 +27,7 @@ parent:
   </a>
 </div>
 <div align="center">
-  <a href="https://discord.gg/3ZbxEq4KDu">
+  <a href="https://discord.gg/trje9XuAmy">
     <img alt="Discord" src="https://img.shields.io/discord/809048090249134080.svg" />
   </a>
   <!-- <a href="https://github.com/tharsis/ethermint/actions?query=branch%3Amain+workflow%3ABuild">
@@ -71,7 +71,7 @@ The following chat channels and forums are a great spot to ask questions about E
 
 - [Ethermint Twitter](https://twitter.com/ethermint)
 - [Tharsis Twitter](https://twitter.com/ethermint)
-- [Ethermint Discord](https://discord.gg/3ZbxEq4KDu)
+- [Ethermint Discord](https://discord.gg/trje9XuAmy)
 - [Ethermint Forum](https://forum.cosmos.network/c/ethermint)
 
 ## Contributing
