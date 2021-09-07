@@ -41,6 +41,7 @@ jobs:
       - uses: technote-space/get-diff-action@v5
         with:
           PATTERNS: |
+            **/**.sol
             **/**.go
             go.mod
             go.sum
@@ -83,10 +84,11 @@ jobs:
       - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
+          PATTERNS: |
+            **/**.sol
+            **/**.go
+            go.mod
+            go.sum
       - name: test-solidity
         run: |
           make test-solidity
