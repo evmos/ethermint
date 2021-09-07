@@ -5,16 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/tests"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestTransactionLogsValidate(t *testing.T) {
-	priv, err := ethsecp256k1.GenerateKey()
-	require.NoError(t, err)
-	addr := crypto.PubkeyToAddress(priv.ToECDSA().PublicKey).String()
+	addr := tests.GenerateAddress().String()
 
 	testCases := []struct {
 		name    string
@@ -90,9 +87,7 @@ func TestTransactionLogsValidate(t *testing.T) {
 }
 
 func TestValidateLog(t *testing.T) {
-	priv, err := ethsecp256k1.GenerateKey()
-	require.NoError(t, err)
-	addr := crypto.PubkeyToAddress(priv.ToECDSA().PublicKey).String()
+	addr := tests.GenerateAddress().String()
 
 	testCases := []struct {
 		name    string

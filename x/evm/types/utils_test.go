@@ -10,25 +10,13 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/tharsis/ethermint/app"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/encoding"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 )
-
-// GenerateEthAddress generates an Ethereum address.
-func GenerateEthAddress() common.Address {
-	priv, err := ethsecp256k1.GenerateKey()
-	if err != nil {
-		panic(err)
-	}
-
-	return crypto.PubkeyToAddress(priv.ToECDSA().PublicKey)
-}
 
 func TestEvmDataEncoding(t *testing.T) {
 	ret := []byte{0x5, 0x8}

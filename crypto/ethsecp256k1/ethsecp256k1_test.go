@@ -28,7 +28,9 @@ func TestPrivKey(t *testing.T) {
 
 	// validate Ethereum address equality
 	addr := privKey.PubKey().Address()
-	expectedAddr := crypto.PubkeyToAddress(privKey.ToECDSA().PublicKey)
+	key, err := privKey.ToECDSA()
+	require.NoError(t, err)
+	expectedAddr := crypto.PubkeyToAddress(key.PublicKey)
 	require.Equal(t, expectedAddr.Bytes(), addr.Bytes())
 
 	// validate we can sign some bytes
@@ -37,7 +39,7 @@ func TestPrivKey(t *testing.T) {
 	expectedSig, err := secp256k1.Sign(sigHash.Bytes(), privKey.Bytes())
 	require.NoError(t, err)
 
-	sig, err := privKey.Sign(msg)
+	sig, err := privKey.Sign(sigHash.Bytes())
 	require.NoError(t, err)
 	require.Equal(t, expectedSig, sig)
 }
@@ -59,7 +61,8 @@ func TestPrivKey_PubKey(t *testing.T) {
 
 	// validate signature
 	msg := []byte("hello world")
-	sig, err := privKey.Sign(msg)
+	sigHash := crypto.Keccak256Hash(msg)
+	sig, err := privKey.Sign(sigHash.Bytes())
 	require.NoError(t, err)
 
 	res := pubKey.VerifySignature(msg, sig)
