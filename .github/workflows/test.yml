@@ -78,7 +78,7 @@ jobs:
 
   test-solidity:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: technote-space/get-diff-action@v5
