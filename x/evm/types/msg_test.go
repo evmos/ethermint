@@ -8,12 +8,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/tests"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const invalidFromAddress = "0x0000"
@@ -32,15 +30,11 @@ func TestMsgsTestSuite(t *testing.T) {
 }
 
 func (suite *MsgsTestSuite) SetupTest() {
-	privFrom, err := ethsecp256k1.GenerateKey()
-	suite.Require().NoError(err)
-
-	privTo, err := ethsecp256k1.GenerateKey()
-	suite.Require().NoError(err)
+	from, privFrom := tests.NewAddrKey()
 
 	suite.signer = tests.NewSigner(privFrom)
-	suite.from = crypto.PubkeyToAddress(privFrom.ToECDSA().PublicKey)
-	suite.to = crypto.PubkeyToAddress(privTo.ToECDSA().PublicKey)
+	suite.from = from
+	suite.to = tests.GenerateAddress()
 	suite.chainID = big.NewInt(1)
 }
 

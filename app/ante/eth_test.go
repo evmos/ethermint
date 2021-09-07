@@ -19,7 +19,7 @@ func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
 
 func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
-	addr, privKey := newTestAddrKey()
+	addr, privKey := tests.NewAddrKey()
 
 	signedTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	signedTx.From = addr.Hex()
@@ -61,7 +61,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 		suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper,
 	)
 
-	addr, _ := newTestAddrKey()
+	addr := tests.GenerateAddress()
 
 	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx.From = addr.Hex()
@@ -142,7 +142,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 	dec := ante.NewEthNonceVerificationDecorator(suite.app.AccountKeeper)
 
-	addr, _ := newTestAddrKey()
+	addr := tests.GenerateAddress()
 
 	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx.From = addr.Hex()
@@ -199,7 +199,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper,
 	)
 
-	addr, _ := newTestAddrKey()
+	addr := tests.GenerateAddress()
 
 	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	tx.From = addr.Hex()
@@ -302,7 +302,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 func (suite AnteTestSuite) TestCanTransferDecorator() {
 	dec := ante.NewCanTransferDecorator(suite.app.EvmKeeper)
 
-	addr, privKey := newTestAddrKey()
+	addr, privKey := tests.NewAddrKey()
 
 	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
 	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
@@ -360,7 +360,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 func (suite AnteTestSuite) TestAccessListDecorator() {
 	dec := ante.NewAccessListDecorator(suite.app.EvmKeeper)
 
-	addr, _ := newTestAddrKey()
+	addr := tests.GenerateAddress()
 	al := &ethtypes.AccessList{
 		{Address: addr, StorageKeys: []common.Hash{{}}},
 	}
@@ -418,7 +418,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 
 func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 	dec := ante.NewEthIncrementSenderSequenceDecorator(suite.app.AccountKeeper)
-	addr, privKey := newTestAddrKey()
+	addr, privKey := tests.NewAddrKey()
 
 	contract := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 0, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
 	contract.From = addr.Hex()

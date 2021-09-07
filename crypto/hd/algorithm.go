@@ -67,6 +67,7 @@ func (s ethSecp256k1Algo) Derive() hd.DeriveFn {
 			return nil, err
 		}
 
+		// create a BTC-utils hd-derivation key chain
 		masterKey, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
 		if err != nil {
 			return nil, err
@@ -80,11 +81,15 @@ func (s ethSecp256k1Algo) Derive() hd.DeriveFn {
 			}
 		}
 
+		// btc-utils representation of a secp256k1 private key
 		privateKey, err := key.ECPrivKey()
 		if err != nil {
 			return nil, err
 		}
 
+		// cast private key to a convertible form (single scalar field element of secp256k1)
+		// and then load into ethcrypto private key format.
+		// TODO: add links to godocs of the two methods or implementations of them, to compare equivalency
 		privateKeyECDSA := privateKey.ToECDSA()
 		derivedKey := crypto.FromECDSA(privateKeyECDSA)
 
@@ -98,6 +103,9 @@ func (s ethSecp256k1Algo) Generate() hd.GenerateFn {
 		bzArr := make([]byte, ethsecp256k1.PrivKeySize)
 		copy(bzArr, bz)
 
-		return &ethsecp256k1.PrivKey{Key: bzArr}
+		// TODO: modulo P
+		return &ethsecp256k1.PrivKey{
+			Key: bzArr,
+		}
 	}
 }

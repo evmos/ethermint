@@ -54,12 +54,20 @@ func GenerateKey() (*PrivKey, error) {
 
 // Bytes returns the byte representation of the ECDSA Private Key.
 func (privKey PrivKey) Bytes() []byte {
-	return privKey.Key
+	bz := make([]byte, len(privKey.Key))
+	copy(bz, privKey.Key)
+
+	return bz
 }
 
-// PubKey returns the ECDSA private key's public key.
+// PubKey returns the ECDSA private key's public key. If the privkey is not valid
+// it returns a nil value.
 func (privKey PrivKey) PubKey() cryptotypes.PubKey {
-	ecdsaPrivKey := privKey.ToECDSA()
+	ecdsaPrivKey, err := privKey.ToECDSA()
+	if err != nil {
+		return nil
+	}
+
 	return &PubKey{
 		Key: crypto.CompressPubkey(&ecdsaPrivKey.PublicKey),
 	}
@@ -106,21 +114,22 @@ func (privKey *PrivKey) UnmarshalAminoJSON(bz []byte) error {
 // provided hash of the message. The produced signature is 65 bytes
 // where the last byte contains the recovery ID.
 func (privKey PrivKey) Sign(digestBz []byte) ([]byte, error) {
+	// TODO: remove
 	if len(digestBz) != crypto.DigestLength {
 		digestBz = crypto.Keccak256Hash(digestBz).Bytes()
 	}
 
-	return crypto.Sign(digestBz, privKey.ToECDSA())
+	key, err := privKey.ToECDSA()
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.Sign(digestBz, key)
 }
 
 // ToECDSA returns the ECDSA private key as a reference to ecdsa.PrivateKey type.
-// The function will panic if the private key is invalid.
-func (privKey PrivKey) ToECDSA() *ecdsa.PrivateKey {
-	key, err := crypto.ToECDSA(privKey.Bytes())
-	if err != nil {
-		panic(err)
-	}
-	return key
+func (privKey PrivKey) ToECDSA() (*ecdsa.PrivateKey, error) {
+	return crypto.ToECDSA(privKey.Bytes())
 }
 
 // ----------------------------------------------------------------------------
@@ -132,11 +141,11 @@ var (
 )
 
 // Address returns the address of the ECDSA public key.
-// The function will panic if the public key is invalid.
+// The function will return an empty address if the public key is invalid.
 func (pubKey PubKey) Address() tmcrypto.Address {
 	pubk, err := crypto.DecompressPubkey(pubKey.Key)
 	if err != nil {
-		panic(err)
+		return nil
 	}
 
 	return tmcrypto.Address(crypto.PubkeyToAddress(*pubk).Bytes())
@@ -144,7 +153,10 @@ func (pubKey PubKey) Address() tmcrypto.Address {
 
 // Bytes returns the raw bytes of the ECDSA public key.
 func (pubKey PubKey) Bytes() []byte {
-	return pubKey.Key
+	bz := make([]byte, len(pubKey.Key))
+	copy(bz, pubKey.Key)
+
+	return bz
 }
 
 // String implements the fmt.Stringer interface.
