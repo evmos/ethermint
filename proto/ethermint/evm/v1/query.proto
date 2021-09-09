@@ -202,12 +202,16 @@ message QueryTxLogsRequest {
 
   // hash is the ethereum transaction hex hash to query the logs for.
   string hash = 1;
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
 // QueryTxLogs is the response type for the Query/TxLogs RPC method.
 message QueryTxLogsResponse {
   // logs represents the ethereum logs generated from the given transaction.
   repeated Log logs = 1;
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 // QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.

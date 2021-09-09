@@ -879,6 +879,7 @@ QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `hash` | [string](#string) |  | hash is the ethereum transaction hex hash to query the logs for. |
+| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
 
 
 
@@ -894,6 +895,7 @@ QueryTxLogs is the response type for the Query/TxLogs RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `logs` | [Log](#ethermint.evm.v1.Log) | repeated | logs represents the ethereum logs generated from the given transaction. |
+| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
 
 
 
