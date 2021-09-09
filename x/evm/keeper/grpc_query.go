@@ -217,8 +217,7 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 
 	hash := common.HexToHash(req.Hash)
 
-	pkey := append(types.KeyPrefixLogs, hash.Bytes()...)
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), pkey)
+	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), append(types.KeyPrefixLogs, hash.Bytes()...))
 
 	var logs []*types.Log
 
