@@ -1,8 +1,6 @@
 syntax = "proto3";
 package ethermint.feemarket.v1;
 
-import "gogoproto/gogo.proto";
-
 option go_package = "github.com/tharsis/ethermint/x/feemarket/types";
 
 // Params defines the EVM module parameters

@@ -40,8 +40,6 @@
     - [QueryAccountResponse](#ethermint.evm.v1.QueryAccountResponse)
     - [QueryBalanceRequest](#ethermint.evm.v1.QueryBalanceRequest)
     - [QueryBalanceResponse](#ethermint.evm.v1.QueryBalanceResponse)
-    - [QueryBaseFeeRequest](#ethermint.evm.v1.QueryBaseFeeRequest)
-    - [QueryBaseFeeResponse](#ethermint.evm.v1.QueryBaseFeeResponse)
     - [QueryBlockBloomRequest](#ethermint.evm.v1.QueryBlockBloomRequest)
     - [QueryBlockBloomResponse](#ethermint.evm.v1.QueryBlockBloomResponse)
     - [QueryBlockLogsRequest](#ethermint.evm.v1.QueryBlockLogsRequest)
@@ -633,32 +631,6 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `balance` | [string](#string) |  | balance is the balance of the EVM denomination. |
-
-
-
-
-
-
-<a name="ethermint.evm.v1.QueryBaseFeeRequest"></a>
-
-### QueryBaseFeeRequest
-QueryBaseFeeRequest defines the request type for querying the EIP1559 base
-fee.
-
-
-
-
-
-
-<a name="ethermint.evm.v1.QueryBaseFeeResponse"></a>
-
-### QueryBaseFeeResponse
-BaseFeeResponse returns the EIP1559 base fee.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `base_fee` | [string](#string) |  |  |
 
 
 
