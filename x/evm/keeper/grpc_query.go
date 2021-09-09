@@ -216,10 +216,26 @@ func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types
 	k.WithContext(ctx)
 
 	hash := common.HexToHash(req.Hash)
-	logs := k.GetTxLogs(hash)
+
+	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), append(types.KeyPrefixLogs, hash.Bytes()...))
+
+	var logs []*types.Log
+
+	pageRes, err := query.Paginate(store, req.Pagination, func(_, value []byte) error {
+		var log types.Log
+		if err := k.cdc.Unmarshal(value, &log); err != nil {
+			return err
+		}
+		logs = append(logs, &log)
+		return nil
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	return &types.QueryTxLogsResponse{
-		Logs: types.NewLogsFromEth(logs),
+		Logs:       logs,
+		Pagination: pageRes,
 	}, nil
 }
 
@@ -245,7 +261,9 @@ func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (
 
 	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
 		var txLog types.Log
-		k.cdc.MustUnmarshal(value, &txLog)
+		if err := k.cdc.Unmarshal(value, &txLog); err != nil {
+			return false, err
+		}
 
 		if txLog.BlockHash == req.Hash {
 			if accumulate {
