@@ -2,22 +2,16 @@ package keeper
 
 import (
 	"fmt"
-	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // EndBlock also retrieves the bloom filter value from the transient store and commits it to the
 // KVStore. The EVM end block logic doesn't update the validator set, thus it returns
 // an empty slice.
 func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
-	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
-
 	baseFee := k.CalculateBaseFee(ctx)
 	if baseFee == nil {
 		return
