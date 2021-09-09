@@ -164,6 +164,11 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			ctx.Logger.With("error", err).Error("error closing db")
+		}
+	}()
 
 	traceWriterFile := ctx.Viper.GetString(srvflags.TraceStore)
 	traceWriter, err := openTraceWriter(traceWriterFile)
@@ -226,6 +231,11 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		logger.Error("failed to open DB", "error", err.Error())
 		return err
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			ctx.Logger.With("error", err).Error("error closing db")
+		}
+	}()
 
 	traceWriter, err := openTraceWriter(traceWriterFile)
 	if err != nil {
