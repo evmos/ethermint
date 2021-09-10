@@ -52,7 +52,7 @@ type Backend interface {
 	GetCoinbase() (sdk.AccAddress, error)
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
-	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
+	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	RPCGasCap() uint64
 }
 
@@ -633,7 +633,7 @@ func (e *EVMBackend) SendTransaction(args types.SendTxArgs) (common.Hash, error)
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
-func (e *EVMBackend) EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error) {
+func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error) {
 	blockNr := types.EthPendingBlockNumber
 	if blockNrOptional != nil {
 		blockNr = *blockNrOptional

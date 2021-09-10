@@ -184,7 +184,7 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	require.NoError(t, err)
 
 	data := append(ContractBin, ctorArgs...)
-	args, err := json.Marshal(&types.CallArgs{
+	args, err := json.Marshal(&types.TransactionArgs{
 		From: &suite.address,
 		Data: (*hexutil.Bytes)(&data),
 	})
@@ -221,7 +221,7 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 
 	transferData, err := ContractABI.Pack("transfer", to, amount)
 	require.NoError(t, err)
-	args, err := json.Marshal(&types.CallArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
+	args, err := json.Marshal(&types.TransactionArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
 	require.NoError(t, err)
 	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
 		Args:   args,

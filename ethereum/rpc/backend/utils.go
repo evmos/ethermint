@@ -56,7 +56,7 @@ func (e *EVMBackend) setTxDefaults(args types.SendTxArgs) (types.SendTxArgs, err
 			input = args.Data
 		}
 
-		callArgs := evmtypes.CallArgs{
+		callArgs := evmtypes.TransactionArgs{
 			From:       &args.From, // From shouldn't be nil
 			To:         args.To,
 			Gas:        args.Gas,

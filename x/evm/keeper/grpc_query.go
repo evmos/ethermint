@@ -334,13 +334,16 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	var args types.CallArgs
+	var args types.TransactionArgs
 	err := json.Unmarshal(req.Args, &args)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	msg := args.ToMessage(req.GasCap)
+	msg, err := args.ToMessage(req.GasCap, nil)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
@@ -372,7 +375,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.InvalidArgument, "gas cap cannot be lower than 21,000")
 	}
 
-	var args types.CallArgs
+	var args types.TransactionArgs
 	err := json.Unmarshal(req.Args, &args)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -414,14 +417,17 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	msg, err := args.ToMessage(req.GasCap, nil)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (bool, *types.MsgEthereumTxResponse, error) {
 		args.Gas = (*hexutil.Uint64)(&gas)
 
 		// Reset to the initial context
 		k.WithContext(ctx)
-
-		msg := args.ToMessage(req.GasCap)
 
 		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
 		evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
@@ -503,9 +509,13 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 			}
 		}
 
-		txContext := core.NewEVMTxContext(coreMessage)
+		txctx := &tracers.Context{
+			BlockHash: common.Hash{},
+			TxIndex:   int(req.TxIndex),
+			TxHash:    req.Msg.AsTransaction().Hash(),
+		}
 		// Constuct the JavaScript tracer to execute with
-		if tracer, err = tracers.New(req.TraceConfig.Tracer, txContext); err != nil {
+		if tracer, err = tracers.New(req.TraceConfig.Tracer, txctx); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
