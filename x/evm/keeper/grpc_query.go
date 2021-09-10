@@ -510,7 +510,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		}
 
 		txctx := &tracers.Context{
-			BlockHash: common.Hash{},
+			BlockHash: common.Hash{},  // TODO pass in the block hash from the request
 			TxIndex:   int(req.TxIndex),
 			TxHash:    req.Msg.AsTransaction().Hash(),
 		}
