@@ -87,7 +87,8 @@ jobs:
           PATTERNS: |
             **/**.sol
             **/**.go
-            tests/solidity
+            tests/solidity/**/*.js
+            tests/solidity/**/*.sh
             go.mod
             go.sum
       - name: test-solidity
