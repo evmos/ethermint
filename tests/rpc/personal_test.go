@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestPersonal_ListAccounts(t *testing.T) {
@@ -47,18 +47,18 @@ func TestPersonal_Sign(t *testing.T) {
 }
 
 func TestPersonal_ImportRawKey(t *testing.T) {
-	privkey, err := ethcrypto.GenerateKey()
+	privkey, err := crypto.GenerateKey()
 	require.NoError(t, err)
 
 	// parse priv key to hex
-	hexPriv := common.Bytes2Hex(ethcrypto.FromECDSA(privkey))
+	hexPriv := common.Bytes2Hex(crypto.FromECDSA(privkey))
 	rpcRes := Call(t, "personal_importRawKey", []string{hexPriv, "password"})
 
 	var res hexutil.Bytes
 	err = json.Unmarshal(rpcRes.Result, &res)
 	require.NoError(t, err)
 
-	addr := ethcrypto.PubkeyToAddress(privkey.PublicKey)
+	addr := crypto.PubkeyToAddress(privkey.PublicKey)
 	resAddr := common.BytesToAddress(res)
 
 	require.Equal(t, addr.String(), resAddr.String())

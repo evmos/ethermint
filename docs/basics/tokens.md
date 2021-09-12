@@ -20,21 +20,13 @@ The denomination used for staking, governance and gas consumption on the EVM is 
 
 Ethermint uses [Atto](https://en.wikipedia.org/wiki/Atto-) Photon as the base denomination to maintain parity with Ethereum.
 
-```
-1 photon = 1×10⁻¹⁸ aphoton
-```
+$$1 photon = 1 ~ * ~ 10^{18} aphoton$$
 
 This matches Ethereum denomination of:
 
-```
-1 ETH = 1x10⁻¹⁸ wei
-```
+$$1 ETH = 1 ~ * ~ 10^{18} wei$$
 
 ### EVM Tokens
 
 Ethermint is compatible with ERC20 tokens and other non-fungible token standards (EIP721, EIP1155)
 that are natively supported by the EVM.
-
-## Next {hide}
-
-Learn about the supported [JSON-RPC](./json_rpc.md) methods on Ethermint {hide}

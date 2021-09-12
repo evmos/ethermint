@@ -10,8 +10,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/server"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -28,6 +30,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/server/config"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -47,7 +50,10 @@ type Backend interface {
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
 	GetCoinbase() (sdk.AccAddress, error)
+	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
+	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
+	RPCGasCap() uint64
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -59,20 +65,28 @@ type EVMBackend struct {
 	queryClient *types.QueryClient // gRPC query client
 	logger      log.Logger
 	chainID     *big.Int
+	cfg         config.Config
 }
 
 // NewEVMBackend creates a new EVMBackend instance
-func NewEVMBackend(logger log.Logger, clientCtx client.Context) *EVMBackend {
+func NewEVMBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context) *EVMBackend {
 	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
 	}
+
+	appConf, err := config.ParseConfig(ctx.Viper)
+	if err != nil {
+		panic(err)
+	}
+
 	return &EVMBackend{
 		ctx:         context.Background(),
 		clientCtx:   clientCtx,
 		queryClient: types.NewQueryClient(clientCtx),
 		logger:      logger.With("module", "evm-backend"),
 		chainID:     chainID,
+		cfg:         *appConf,
 	}
 }
 
@@ -168,7 +182,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	block *tmtypes.Block,
 	fullTx bool,
 ) (map[string]interface{}, error) {
-
 	gasUsed := uint64(0)
 
 	ethRPCTxs := []interface{}{}
@@ -307,6 +320,10 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
+	if resBlock.Block == nil {
+		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
+	}
+
 	req := &evmtypes.QueryBlockBloomRequest{Height: resBlock.Block.Height}
 
 	blockBloomResp, err := e.queryClient.BlockBloom(types.ContextWithHeight(resBlock.Block.Height), req)
@@ -370,7 +387,7 @@ func (e *EVMBackend) GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error) {
 		return nil, err
 	}
 
-	var blockLogs = [][]*ethtypes.Log{}
+	blockLogs := [][]*ethtypes.Log{}
 	for _, txLog := range res.TxLogs {
 		blockLogs = append(blockLogs, txLog.EthLogs())
 	}
@@ -444,6 +461,85 @@ func (e *EVMBackend) GetCoinbase() (sdk.AccAddress, error) {
 
 	address, _ := sdk.AccAddressFromBech32(res.AccountAddress)
 	return address, nil
+}
+
+// GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
+func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
+	res, err := e.GetTxByEthHash(txHash)
+	if err != nil {
+		// try to find tx in mempool
+		txs, err := e.PendingTransactions()
+		if err != nil {
+			e.logger.Debug("tx not found", "hash", txHash.Hex(), "error", err.Error())
+			return nil, nil
+		}
+
+		for _, tx := range txs {
+			msg, err := evmtypes.UnwrapEthereumMsg(tx)
+			if err != nil {
+				// not ethereum tx
+				continue
+			}
+
+			if msg.Hash == txHash.Hex() {
+				rpctx, err := types.NewTransactionFromMsg(
+					msg,
+					common.Hash{},
+					uint64(0),
+					uint64(0),
+					e.chainID,
+				)
+				if err != nil {
+					return nil, err
+				}
+				return rpctx, nil
+			}
+		}
+
+		e.logger.Debug("tx not found", "hash", txHash.Hex())
+		return nil, nil
+	}
+
+	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
+	if err != nil {
+		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
+		return nil, nil
+	}
+
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+	if err != nil {
+		e.logger.Debug("decoding failed", "error", err.Error())
+		return nil, fmt.Errorf("failed to decode tx: %w", err)
+	}
+
+	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
+	if err != nil {
+		e.logger.Debug("invalid tx", "error", err.Error())
+		return nil, err
+	}
+
+	return types.NewTransactionFromMsg(
+		msg,
+		common.BytesToHash(resBlock.Block.Hash()),
+		uint64(res.Height),
+		uint64(res.Index),
+		e.chainID,
+	)
+}
+
+// GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
+// TODO: Don't need to convert once hashing is fixed on Tendermint
+// https://github.com/tendermint/tendermint/issues/6539
+func (e *EVMBackend) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
+	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
+	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resTxs.Txs) == 0 {
+		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
+	}
+	return resTxs.Txs[0], nil
 }
 
 func (e *EVMBackend) SendTransaction(args types.SendTxArgs) (common.Hash, error) {
@@ -547,7 +643,8 @@ func (e *EVMBackend) EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.
 	if err != nil {
 		return 0, err
 	}
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
+
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: e.RPCGasCap()}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
@@ -580,4 +677,9 @@ func (e *EVMBackend) GetTransactionCount(address common.Address, blockNum types.
 
 	n := hexutil.Uint64(nonce)
 	return &n, nil
+}
+
+// RPCGasCap is the global gas cap for eth-call variants.
+func (e *EVMBackend) RPCGasCap() uint64 {
+	return e.cfg.JSONRPC.GasCap
 }

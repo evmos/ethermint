@@ -5,7 +5,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -23,7 +23,7 @@ var (
 func ProtoAccount() authtypes.AccountI {
 	return &EthAccount{
 		BaseAccount: &authtypes.BaseAccount{},
-		CodeHash:    common.BytesToHash(ethcrypto.Keccak256(nil)).String(),
+		CodeHash:    common.BytesToHash(crypto.Keccak256(nil)).String(),
 	}
 }
 

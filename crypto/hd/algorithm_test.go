@@ -22,6 +22,8 @@ func init() {
 	cryptocodec.RegisterCrypto(amino)
 }
 
+const mnemonic = "picnic rent average infant boat squirrel federal assault mercy purity very motor fossil wheel verify upset box fresh horse vivid copy predict square regret"
+
 func TestKeyring(t *testing.T) {
 	dir := t.TempDir()
 	mockIn := strings.NewReader("")
@@ -66,8 +68,6 @@ func TestKeyring(t *testing.T) {
 }
 
 func TestDerivation(t *testing.T) {
-	mnemonic := "picnic rent average infant boat squirrel federal assault mercy purity very motor fossil wheel verify upset box fresh horse vivid copy predict square regret"
-
 	bz, err := EthSecp256k1.Derive()(mnemonic, keyring.DefaultBIP39Passphrase, ethermint.BIP44HDPath)
 	require.NoError(t, err)
 	require.NotEmpty(t, bz)

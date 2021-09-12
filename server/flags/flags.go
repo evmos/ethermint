@@ -26,11 +26,11 @@ const (
 
 // JSON-RPC flags
 const (
-	JSONRPCEnable        = "json-rpc.enable"
-	JSONRPCAPI           = "json-rpc.api"
-	JSONRPCAddress       = "json-rpc.address"
-	JSONWsAddress        = "json-rpc.ws-address"
-	JSONEnableUnsafeCORS = "json-rpc.enable-unsafe-cors"
+	JSONRPCEnable  = "json-rpc.enable"
+	JSONRPCAPI     = "json-rpc.api"
+	JSONRPCAddress = "json-rpc.address"
+	JSONWsAddress  = "json-rpc.ws-address"
+	JSONRPCGasCap  = "json-rpc.gas-cap"
 )
 
 // EVM flags

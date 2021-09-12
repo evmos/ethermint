@@ -23,7 +23,13 @@ func InitConfig(cmd *cobra.Command) error {
 	}
 
 	configFile := path.Join(home, "config", "config.toml")
-	if _, err := os.Stat(configFile); err == nil {
+	_, err = os.Stat(configFile)
+	if err != nil && !os.IsNotExist(err) {
+		// Immediately return if the error isn't related to the file not existing.
+		// See issue https://github.com/tharsis/ethermint/issues/539
+		return err
+	}
+	if err == nil {
 		viper.SetConfigFile(configFile)
 
 		if err := viper.ReadInConfig(); err != nil {

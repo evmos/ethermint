@@ -39,6 +39,31 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (app) [tharsis#476](https://github.com/tharsis/ethermint/pull/476) Update Bech32 HRP to `ethm`.
+
+### API Breaking
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Deprecate `YoloV3Block` and `EWASMBlock` from `ChainConfig`
+
+### Features
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Support [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+* (evm) [tharsis#417](https://github.com/tharsis/ethermint/pull/417) Add `EvmHooks` for tx post-processing
+* (rpc) [tharsis#506](https://github.com/tharsis/ethermint/pull/506) Support for `debug_traceTransaction` RPC endpoint
+
+### Bug Fixes
+
+* (encoding) [tharsis#478](https://github.com/tharsis/ethermint/pull/478) Register `Evidence` to amino codec.
+* (rpc) [tharsis#478](https://github.com/tharsis/ethermint/pull/481) Getting the node configuration when calling the `miner` rpc methods.
+
+### Improvements
+
+* (evm) [tharsis#461](https://github.com/tharsis/ethermint/pull/461) Increase performance of `StateDB` transaction log storage (r/w).
+
+## [v0.5.0] - 2021-08-20
+
+### State Machine Breaking
+
 * (app, rpc) [tharsis#447](https://github.com/tharsis/ethermint/pull/447) Chain ID format has been changed from `<identifier>-<epoch>` to `<identifier>_<EIP155_number>-<epoch>`
 in order to clearly distinguish permanent vs impermanent components.
 * (app, evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) EVM `Keeper` struct and `NewEVM` function now have a new `trace` field to define
@@ -71,6 +96,9 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 
 ### Improvements
 
+* (client) [tharsis#450](https://github.com/tharsis/ethermint/issues/450) Add EIP55 hex address support on `debug addr` command.
+* (server) [tharsis#343](https://github.com/tharsis/ethermint/pull/343) Define a wrap tendermint logger `Handler` go-ethereum's `root` logger.
+* (rpc) [tharsis#457](https://github.com/tharsis/ethermint/pull/457) Configure RPC gas cap through app config.
 * (evm) [tharsis#434](https://github.com/tharsis/ethermint/pull/434) Support different `Tracer` types for the EVM.
 * (deps) [tharsis#427](https://github.com/tharsis/ethermint/pull/427) Bump ibc-go to [`v1.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v1.0.0)
 * (gRPC) [tharsis#239](https://github.com/tharsis/ethermint/pull/239) Query `ChainConfig` via gRPC.
@@ -85,6 +113,7 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 * (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
 * (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
 * (rpc) [#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
+* (eth) [tharsis#460](https://github.com/tharsis/ethermint/issues/460) Add support for EIP-1898.
 
 ### Bug Fixes
 

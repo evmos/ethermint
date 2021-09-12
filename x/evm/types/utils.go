@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 
-	log "github.com/xlab/suplog"
-
 	"github.com/gogo/protobuf/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,7 +17,6 @@ var EmptyCodeHash = crypto.Keccak256(nil)
 func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 	var txMsgData sdk.TxMsgData
 	if err := proto.Unmarshal(in, &txMsgData); err != nil {
-		log.WithError(err).Errorln("failed to unmarshal TxMsgData")
 		return nil, err
 	}
 
@@ -71,11 +68,10 @@ func UnwrapEthereumMsg(tx *sdk.Tx) (*MsgEthereumTx, error) {
 }
 
 // BinSearch execute the binary search and hone in on an executable gas limit
-func BinSearch(lo uint64, hi uint64, executable func(uint64) (bool, *MsgEthereumTxResponse, error)) (uint64, error) {
+func BinSearch(lo, hi uint64, executable func(uint64) (bool, *MsgEthereumTxResponse, error)) (uint64, error) {
 	for lo+1 < hi {
 		mid := (hi + lo) / 2
 		failed, _, err := executable(mid)
-
 		// If the error is not nil(consensus error), it means the provided message
 		// call or transaction will never be accepted no matter how much gas it is
 		// assigned. Return the error directly, don't struggle any more.

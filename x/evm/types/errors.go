@@ -32,6 +32,8 @@ const (
 	codeErrInvalidBaseFee
 )
 
+var ErrPostTxProcessing = errors.New("failed to execute post processing")
+
 var (
 	// ErrInvalidState returns an error resulting from an invalid Storage State.
 	ErrInvalidState = sdkerrors.Register(ModuleName, codeErrInvalidState, "invalid storage state")
@@ -88,7 +90,7 @@ var (
 // NewExecErrorWithReason unpacks the revert return bytes and returns a wrapped error
 // with the return reason.
 func NewExecErrorWithReason(revertReason []byte) *RevertError {
-	var result = common.CopyBytes(revertReason)
+	result := common.CopyBytes(revertReason)
 	reason, errUnpack := abi.UnpackRevert(result)
 	err := errors.New("execution reverted")
 	if errUnpack == nil {

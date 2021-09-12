@@ -289,7 +289,7 @@ func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *buf
 	return printCreate(cmd, info, showMnemonic, mnemonic, outputFormat)
 }
 
-func printCreate(cmd *cobra.Command, info keyring.Info, showMnemonic bool, mnemonic string, outputFormat string) error {
+func printCreate(cmd *cobra.Command, info keyring.Info, showMnemonic bool, mnemonic, outputFormat string) error {
 	switch outputFormat {
 	case OutputFormatText:
 		cmd.PrintErrln()

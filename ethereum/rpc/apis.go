@@ -5,7 +5,9 @@ package rpc
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
+
 	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/tharsis/ethermint/ethereum/rpc/backend"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth"
@@ -36,7 +38,7 @@ const (
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
 	nonceLock := new(types.AddrLocker)
-	evmBackend := backend.NewEVMBackend(ctx.Logger, clientCtx)
+	evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
 
 	var apis []rpc.API
 	// remove duplicates
@@ -83,7 +85,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 					Namespace: PersonalNamespace,
 					Version:   apiVersion,
 					Service:   personal.NewAPI(ctx.Logger, clientCtx, evmBackend),
-					Public:    true,
+					Public:    false,
 				},
 			)
 		case TxPoolNamespace:
@@ -100,7 +102,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
-					Service:   debug.NewInternalAPI(ctx),
+					Service:   debug.NewAPI(ctx, evmBackend, clientCtx),
 					Public:    true,
 				},
 			)
@@ -109,8 +111,8 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: MinerNamespace,
 					Version:   apiVersion,
-					Service:   miner.NewMinerAPI(ctx, clientCtx, evmBackend),
-					Public:    true,
+					Service:   miner.NewPrivateAPI(ctx, clientCtx, evmBackend),
+					Public:    false,
 				},
 			)
 		default:

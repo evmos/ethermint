@@ -1,5 +1,5 @@
 <!--
-order: 1
+order: 2
 -->
 
 # Running the Server
@@ -22,10 +22,33 @@ ethermintd start --json-rpc.enable
 ethermintd start --json-rpc.api eth,txpool,personal,net,debug,web3,miner
 ```
 
-### CORS
+## Set a Gas Cap
 
-If accessing the RPC from a browser, CORS will need to be enabled with the appropriate domain set. Otherwise, JavaScript calls are limit by the same-origin policy and requests will fail:
+`eth_call` and `eth_estimateGas` define a global gas cap over rpc for DoS protection. You can override the default gas cap value of 25,000,000 by passing a custom value when starting the node:
 
 ```bash
-ethermintd start --json-rpc.enable-unsafe-cors
+# set gas cap to 85M
+ethermintd start --json-rpc.gas-cap 85000000000
+
+# set gas cap to infinite (=0)
+ethermintd start --json-rpc.gas-cap 0
+```
+
+## CORS
+
+If accessing the RPC from a browser, CORS will need to be enabled with the appropriate domain set. Otherwise, JavaScript calls are limit by the same-origin policy and requests will fail.
+
+The CORS setting can be updated from the `app.toml`
+
+```toml
+###############################################################################
+###                           API Configuration                             ###
+###############################################################################
+
+[api]
+
+# ...
+
+# EnableUnsafeCORS defines if CORS should be enabled (unsafe - use it at your own risk).
+enabled-unsafe-cors = true # default false
 ```

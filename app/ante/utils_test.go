@@ -4,9 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/stretchr/testify/suite"
 
@@ -23,7 +21,6 @@ import (
 
 	"github.com/tharsis/ethermint/app"
 	ante "github.com/tharsis/ethermint/app/ante"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/tests"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -137,13 +134,6 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	}
 
 	return txBuilder
-}
-
-func newTestAddrKey() (common.Address, cryptotypes.PrivKey) {
-	privkey, _ := ethsecp256k1.GenerateKey()
-	addr := crypto.PubkeyToAddress(privkey.ToECDSA().PublicKey)
-
-	return addr, privkey
 }
 
 var _ sdk.Tx = &invalidTx{}

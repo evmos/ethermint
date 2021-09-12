@@ -1,10 +1,12 @@
 package ante
 
 import (
+	"fmt"
 	"runtime/debug"
 
 	"github.com/palantir/stacktrace"
-	log "github.com/xlab/suplog"
+
+	tmlog "github.com/tendermint/tendermint/libs/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -17,32 +19,20 @@ import (
 	ibcante "github.com/cosmos/ibc-go/modules/core/ante"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 const (
 	secp256k1VerifyCost uint64 = 21000
 )
 
-// AccountKeeper defines an expected keeper interface for the auth module's AccountKeeper
-type AccountKeeper interface {
-	authante.AccountKeeper
-	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-	GetSequence(sdk.Context, sdk.AccAddress) (uint64, error)
-}
-
-// BankKeeper defines an expected keeper interface for the bank module's Keeper
-type BankKeeper interface {
-	authtypes.BankKeeper
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-}
-
 // NewAnteHandler returns an ante handler responsible for attempting to route an
 // Ethereum or SDK transaction to an internal ante handler for performing
 // transaction-level processing (e.g. fee payment, signature verification) before
 // being passed onto it's respective handler.
 func NewAnteHandler(
-	ak AccountKeeper,
-	bankKeeper BankKeeper,
+	ak evmtypes.AccountKeeper,
+	bankKeeper evmtypes.BankKeeper,
 	evmKeeper EVMKeeper,
 	feeGrantKeeper authante.FeegrantKeeper,
 	channelKeeper channelkeeper.Keeper,
@@ -53,7 +43,7 @@ func NewAnteHandler(
 	) (newCtx sdk.Context, err error) {
 		var anteHandler sdk.AnteHandler
 
-		defer Recover(&err)
+		defer Recover(ctx.Logger(), &err)
 
 		txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx)
 		if ok {
@@ -119,15 +109,21 @@ func NewAnteHandler(
 	}
 }
 
-func Recover(err *error) {
+func Recover(logger tmlog.Logger, err *error) {
 	if r := recover(); r != nil {
 		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
-			log.WithError(e).Errorln("ante handler panicked with an error")
-			log.Debugln(string(debug.Stack()))
+			logger.Error(
+				"ante handler panicked",
+				"error", e,
+				"stack trace", string(debug.Stack()),
+			)
 		} else {
-			log.Errorln(r)
+			logger.Error(
+				"ante handler panicked",
+				"recover", fmt.Sprintf("%v", r),
+			)
 		}
 	}
 }
