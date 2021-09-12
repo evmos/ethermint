@@ -112,6 +112,23 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 	return decodedResult, nil
 }
 
+func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.TraceConfig) ([]interface{}, error) {
+	// Get block with full transactions by number
+	block, err := a.backend.GetBlockByNumber(height, true)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []interface{}
+	if block["transactions"] == nil {
+		// if no transactions then there is nothing to trace
+		return res, nil
+	}
+
+
+	return nil, nil
+}
+
 // BlockProfile turns on goroutine profiling for nsec seconds and writes profile data to
 // file. It uses a profile rate of 1 for most accurate information. If a different rate is
 // desired, set the rate and write the profile manually.
