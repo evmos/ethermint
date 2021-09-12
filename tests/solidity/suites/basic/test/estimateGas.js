@@ -10,7 +10,7 @@ contract('Storage', (accounts) => {
   it('estimated gas should match', async () => {
       // set new value
       let gasUsage = await storage.store.estimateGas(10);
-      expect(gasUsage.toString()).to.equal('43754');
+      expect(gasUsage.toString()).to.equal('45854');
 
       await storage.store(10);
 
