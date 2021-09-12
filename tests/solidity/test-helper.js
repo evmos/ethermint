@@ -157,7 +157,7 @@ function setupNetwork({ runConfig, timeout }) {
       if (runConfig.verboseLog) {
         process.stdout.write(oLine);
       }
-      if (oLine.indexOf('Starting EVM RPC server') !== -1) {
+      if (oLine.indexOf('Starting JSON-RPC server') !== -1) {
         logger.info('Ethermintd started');
         resolve(ethermintdProc);
       }
