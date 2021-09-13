@@ -23,7 +23,7 @@ parent:
     <img alt="Go report card" src="https://goreportcard.com/badge/github.com/tharsis/ethermint"/>
   </a>
   <a href="https://bestpractices.coreinfrastructure.org/projects/5018">
-    <img src="https://bestpractices.coreinfrastructure.org/projects/5018/badge">
+    <img alt="Lines of code" src="https://img.shields.io/tokei/lines/github/tharsis/ethermint">
   </a>
 </div>
 <div align="center">
