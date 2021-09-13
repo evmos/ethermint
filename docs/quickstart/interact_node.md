@@ -11,10 +11,10 @@ There are multiple ways to interact with a node: using the CLI, using gRPC or us
 Now that your very own node is running, it is time to try sending tokens from the first account you created to a second account. In a new terminal window, start by running the following query command:
 
 ```bash
-ethermintd query bank balances $MY_VALIDATOR_ADDRESS --chain-id=ethermintd-1
+ethermintd query bank balances $MY_VALIDATOR_ADDRESS --chain-id=ethermint_9000-1
 ```
 
-You should see the current balance of the account you created, equal to the original balance of `eth` you granted it minus the amount you delegated via the `gentx`. Now, create a second account:
+You should see the current balance of the account you created, equal to the original balance of tokens you granted it minus the amount you delegated via the `gentx`. Now, create a second account:
 
 ```bash
 ethermintd keys add recipient --keyring-backend=file
@@ -26,19 +26,19 @@ RECIPIENT=$(ethermintd keys show recipient -a --keyring-backend=file)
 The command above creates a local key-pair that is not yet registered on the chain. An account is created the first time it receives tokens from another account. Now, run the following command to send tokens to the `recipient` account:
 
 ```bash
-ethermintd tx bank send $MY_VALIDATOR_ADDRESS $RECIPIENT 1000000aphoton --chain-id=ethermintd-1 --keyring-backend=file
+ethermintd tx bank send $MY_VALIDATOR_ADDRESS $RECIPIENT 1000000aphoton --chain-id=ethermint_9000-1 --keyring-backend=file
 
 # Check that the recipient account did receive the tokens.
-ethermintd query bank balances $RECIPIENT --chain-id=ethermintd-1
+ethermintd query bank balances $RECIPIENT --chain-id=ethermint_9000-1
 ```
 
 Finally, delegate some of the stake tokens sent to the `recipient` account to the validator:
 
 ```bash
-ethermintd tx staking delegate $(ethermintd keys show my_validator --bech val -a --keyring-backend=file) 500aphoton --from=recipient --chain-id=ethermintd-1 --keyring-backend=file
+ethermintd tx staking delegate $(ethermintd keys show my_validator --bech val -a --keyring-backend=file) 500aphoton --from=recipient --chain-id=ethermint_9000-1 --keyring-backend=file
 
 # Query the total delegations to `validator`.
-ethermintd query staking delegations-to $(ethermintd keys show my_validator --bech val -a --keyring-backend=file) --chain-id=ethermintd-1
+ethermintd query staking delegations-to $(ethermintd keys show my_validator --bech val -a --keyring-backend=file) --chain-id=ethermint_9000-1
 ```
 
 You should see two delegations, the first one made from the `gentx`, and the second one you just performed from the `recipient` account.

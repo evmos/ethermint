@@ -14,7 +14,6 @@ type caseAny struct {
 }
 
 func TestPackTxData(t *testing.T) {
-
 	testCases := []struct {
 		name    string
 		txData  TxData

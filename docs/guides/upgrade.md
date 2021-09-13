@@ -46,7 +46,7 @@ mv new_genesis.json genesis.json
 
 Finally, go to the [reset data](./run_node.md#reset-data) section.
 
-### Export State to a new Genesis locally
+### Export State
 
 Ethermint can dump the entire application state to a JSON file. This, besides upgrades, can be
 useful for manual analysis of the state at a given height.

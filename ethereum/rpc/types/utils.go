@@ -35,7 +35,7 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEther
 
 // NewTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
+func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber, index uint64) *RPCTransaction {
 	// Determine the signer. For replay-protected transactions, use the most permissive
 	// signer, because we assume that signers are backwards-compatible with old
 	// transactions. For non-protected transactions, the homestead signer signer is used
@@ -242,7 +242,6 @@ func NewTransactionFromData(
 	txHash, blockHash common.Hash,
 	blockNumber, index uint64,
 ) (*RPCTransaction, error) {
-
 	if txHash == (common.Hash{}) {
 		txHash = ethtypes.EmptyRootHash
 	}

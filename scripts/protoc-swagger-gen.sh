@@ -7,7 +7,7 @@ proto_dirs=$(find ./proto ./third_party/proto -path -prune -o -name '*.proto' -p
 for dir in $proto_dirs; do
     
     # generate swagger files (filter query files)
-    query_file=$(find "${dir}" -maxdepth 1 -name 'query.proto')
+    query_file=$(find "${dir}" -maxdepth 1 \( -name 'query.proto' -o -name 'service.proto' \))
     if [[ ! -z "$query_file" ]]; then
         protoc  \
         -I "proto" \

@@ -7,7 +7,7 @@
     },
     "apis": [
       {
-        "url": "./tmp-swagger-gen/ethermint/evm/v1alpha1/query.swagger.json",
+        "url": "./tmp-swagger-gen/ethermint/evm/v1/query.swagger.json",
         "operationIds": {
           "rename": {
             "Params": "EvmParams"

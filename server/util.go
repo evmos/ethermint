@@ -7,12 +7,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/spf13/cobra"
-	log "github.com/xlab/suplog"
 
 	sdkserver "github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/version"
 
+	tmlog "github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 
 	"github.com/tharsis/ethermint/app"
@@ -44,22 +44,29 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 	)
 }
 
-func ConnectTmWS(tmRPCAddr, tmEndpoint string) *rpcclient.WSClient {
+func ConnectTmWS(tmRPCAddr, tmEndpoint string, logger tmlog.Logger) *rpcclient.WSClient {
 	tmWsClient, err := rpcclient.NewWS(tmRPCAddr, tmEndpoint,
 		rpcclient.MaxReconnectAttempts(256),
 		rpcclient.ReadWait(120*time.Second),
 		rpcclient.WriteWait(120*time.Second),
 		rpcclient.PingPeriod(50*time.Second),
 		rpcclient.OnReconnect(func() {
-			log.WithField("tendermint_rpc", tmRPCAddr+tmEndpoint).
-				Debugln("EVM RPC reconnects to Tendermint WS")
+			logger.Debug("EVM RPC reconnects to Tendermint WS", "address", tmRPCAddr+tmEndpoint)
 		}),
 	)
 
 	if err != nil {
-		log.WithError(err).Fatalln("Tendermint WS client could not be created for ", tmRPCAddr+tmEndpoint)
+		logger.Error(
+			"Tendermint WS client could not be created",
+			"address", tmRPCAddr+tmEndpoint,
+			"error", err,
+		)
 	} else if err := tmWsClient.OnStart(); err != nil {
-		log.WithError(err).Fatalln("Tendermint WS client could not start for ", tmRPCAddr+tmEndpoint)
+		logger.Error(
+			"Tendermint WS client could not start",
+			"address", tmRPCAddr+tmEndpoint,
+			"error", err,
+		)
 	}
 
 	return tmWsClient
@@ -69,9 +76,11 @@ func MountGRPCWebServices(
 	router *mux.Router,
 	grpcWeb *grpcweb.WrappedGrpcServer,
 	grpcResources []string,
+	logger tmlog.Logger,
 ) {
 	for _, res := range grpcResources {
-		log.Printf("[GRPC Web] HTTP POST mounted on %s", res)
+
+		logger.Info("[GRPC Web] HTTP POST mounted", "resource", res)
 
 		s := router.Methods("POST").Subrouter()
 		s.HandleFunc(res, func(resp http.ResponseWriter, req *http.Request) {

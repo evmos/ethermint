@@ -1,7 +1,6 @@
 package eth
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -23,8 +22,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
-	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -72,7 +69,6 @@ func NewPublicAPI(
 			clientCtx.Input,
 			hd.EthSecp256k1Option(),
 		)
-
 		if err != nil {
 			panic(err)
 		}
@@ -168,8 +164,7 @@ func (e *PublicAPI) Hashrate() hexutil.Uint64 {
 // GasPrice returns the current gas price based on Ethermint's gas price oracle.
 func (e *PublicAPI) GasPrice() *hexutil.Big {
 	e.logger.Debug("eth_gasPrice")
-	// TODO: use minimum value defined in config instead of default or implement oracle
-	out := big.NewInt(ethermint.DefaultGasPrice)
+	out := new(big.Int).SetUint64(e.backend.RPCGasCap())
 	return (*hexutil.Big)(out)
 }
 
@@ -199,8 +194,13 @@ func (e *PublicAPI) BlockNumber() (hexutil.Uint64, error) {
 }
 
 // GetBalance returns the provided account's balance up to the provided block number.
-func (e *PublicAPI) GetBalance(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Big, error) { // nolint: interfacer
-	e.logger.Debug("eth_getBalance", "address", address.String(), "block number", blockNum)
+func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error) {
+	e.logger.Debug("eth_getBalance", "address", address.String(), "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
 
 	req := &evmtypes.QueryBalanceRequest{
 		Address: address.String(),
@@ -220,8 +220,13 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNum rpctypes.BlockNu
 }
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
-func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNum rpctypes.BlockNumber) (hexutil.Bytes, error) { // nolint: interfacer
-	e.logger.Debug("eth_getStorageAt", "address", address.Hex(), "key", key, "block number", blockNum)
+func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) {
+	e.logger.Debug("eth_getStorageAt", "address", address.Hex(), "key", key, "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
 
 	req := &evmtypes.QueryStorageRequest{
 		Address: address.String(),
@@ -238,28 +243,13 @@ func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNum rp
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
-func (e *PublicAPI) GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error) {
-	e.logger.Debug("eth_getTransactionCount", "address", address.Hex(), "block number", blockNum)
-
-	// Get nonce (sequence) from account
-	from := sdk.AccAddress(address.Bytes())
-	accRet := e.clientCtx.AccountRetriever
-
-	err := accRet.EnsureExists(e.clientCtx, from)
-	if err != nil {
-		// account doesn't exist yet, return 0
-		n := hexutil.Uint64(0)
-		return &n, nil
-	}
-
-	includePending := blockNum == rpctypes.EthPendingBlockNumber
-	nonce, err := e.getAccountNonce(address, includePending, blockNum.Int64(), e.logger)
+func (e *PublicAPI) GetTransactionCount(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error) {
+	e.logger.Debug("eth_getTransactionCount", "address", address.Hex(), "block number or hash", blockNrOrHash)
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
-
-	n := hexutil.Uint64(nonce)
-	return &n, nil
+	return e.backend.GetTransactionCount(address, blockNum)
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions in the block identified by hash.
@@ -310,14 +300,19 @@ func (e *PublicAPI) GetUncleCountByBlockNumber(blockNum rpctypes.BlockNumber) he
 }
 
 // GetCode returns the contract code at the given address and block number.
-func (e *PublicAPI) GetCode(address common.Address, blockNumber rpctypes.BlockNumber) (hexutil.Bytes, error) { // nolint: interfacer
-	e.logger.Debug("eth_getCode", "address", address.Hex(), "block number", blockNumber)
+func (e *PublicAPI) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) {
+	e.logger.Debug("eth_getCode", "address", address.Hex(), "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
 
 	req := &evmtypes.QueryCodeRequest{
 		Address: address.String(),
 	}
 
-	res, err := e.queryClient.Code(rpctypes.ContextWithHeight(blockNumber.Int64()), req)
+	res, err := e.queryClient.Code(rpctypes.ContextWithHeight(blockNum.Int64()), req)
 	if err != nil {
 		return nil, err
 	}
@@ -357,94 +352,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 // SendTransaction sends an Ethereum transaction.
 func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, error) {
 	e.logger.Debug("eth_sendTransaction", "args", args.String())
-
-	// Look up the wallet containing the requested signer
-	_, err := e.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
-	if err != nil {
-		e.logger.Error("failed to find key in keyring", "address", args.From, "error", err.Error())
-		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
-	}
-
-	args, err = e.setTxDefaults(args)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	msg := args.ToTransaction()
-
-	if err := msg.ValidateBasic(); err != nil {
-		e.logger.Debug("tx failed basic validation", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	// TODO: get from chain config
-	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
-
-	// Sign transaction
-	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
-		e.logger.Debug("failed to sign tx", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	// Assemble transaction from fields
-	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
-	if !ok {
-		e.logger.Error("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
-	}
-
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	if err != nil {
-		e.logger.Error("codectypes.NewAnyWithValue failed to pack an obvious value", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(msg)
-	if err != nil {
-		e.logger.Error("builder.SetMsgs failed", "error", err.Error())
-	}
-
-	// Query params to use the EVM denomination
-	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
-	if err != nil {
-		e.logger.Error("failed to query evm params", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	txData, err := evmtypes.UnpackTxData(msg.Data)
-	if err != nil {
-		e.logger.Error("failed to unpack tx data", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
-	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(msg.GetGas())
-
-	// Encode transaction by default Tx encoder
-	txEncoder := e.clientCtx.TxConfig.TxEncoder()
-	txBytes, err := txEncoder(builder.GetTx())
-	if err != nil {
-		e.logger.Error("failed to encode eth tx using default encoder", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	txHash := msg.AsTransaction().Hash()
-
-	// Broadcast transaction in sync mode (default)
-	// NOTE: If error is encountered on the node, the broadcast will not return an error
-	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
-	rsp, err := syncCtx.BroadcastTx(txBytes)
-	if err != nil || rsp.Code != 0 {
-		if err == nil {
-			err = errors.New(rsp.RawLog)
-		}
-		e.logger.Error("failed to broadcast tx", "error", err.Error())
-		return txHash, err
-	}
-
-	// Return transaction hash
-	return txHash, nil
+	return e.backend.SendTransaction(args)
 }
 
 // SendRawTransaction send a raw Ethereum transaction.
@@ -526,9 +434,14 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 }
 
 // Call performs a raw contract call.
-func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNr rpctypes.BlockNumber, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
-	e.logger.Debug("eth_call", "args", args.String(), "block number", blockNr)
-	data, err := e.doCall(args, blockNr)
+func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
+	e.logger.Debug("eth_call", "args", args.String(), "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+	data, err := e.doCall(args, blockNum)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -545,7 +458,7 @@ func (e *PublicAPI) doCall(
 	if err != nil {
 		return nil, err
 	}
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
+	req := evmtypes.EthCallRequest{Args: bz, GasCap: e.backend.RPCGasCap()}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
@@ -568,26 +481,7 @@ func (e *PublicAPI) doCall(
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
 func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error) {
 	e.logger.Debug("eth_estimateGas")
-
-	blockNr := rpctypes.EthPendingBlockNumber
-	if blockNrOptional != nil {
-		blockNr = *blockNrOptional
-	}
-
-	bz, err := json.Marshal(&args)
-	if err != nil {
-		return 0, err
-	}
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: ethermint.DefaultRPCGasLimit}
-
-	// From ContextWithHeight: if the provided height is 0,
-	// it will return an empty context and the gRPC query will use
-	// the latest block height for querying.
-	res, err := e.queryClient.EstimateGas(rpctypes.ContextWithHeight(blockNr.Int64()), &req)
-	if err != nil {
-		return 0, err
-	}
-	return hexutil.Uint64(res.Gas), nil
+	return e.backend.EstimateGas(args, blockNrOptional)
 }
 
 // GetBlockByHash returns the block identified by hash.
@@ -602,81 +496,10 @@ func (e *PublicAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx bo
 	return e.backend.GetBlockByNumber(ethBlockNum, fullTx)
 }
 
-// GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
-// TODO: Don't need to convert once hashing is fixed on Tendermint
-// https://github.com/tendermint/tendermint/issues/6539
-func (e *PublicAPI) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
-	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
-	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
-	if err != nil {
-		return nil, err
-	}
-	if len(resTxs.Txs) == 0 {
-		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
-	}
-	return resTxs.Txs[0], nil
-}
-
 // GetTransactionByHash returns the transaction identified by hash.
 func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getTransactionByHash", "hash", hash.Hex())
-
-	res, err := e.GetTxByEthHash(hash)
-	if err != nil {
-		e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
-
-		// try to find tx in mempool
-		txs, err := e.backend.PendingTransactions()
-		if err != nil {
-			return nil, nil
-		}
-
-		for _, tx := range txs {
-			msg, err := evmtypes.UnwrapEthereumMsg(tx)
-			if err != nil {
-				// not ethereum tx
-				continue
-			}
-
-			rpctx, err := rpctypes.NewTransactionFromMsg(
-				msg,
-				common.Hash{},
-				uint64(0),
-				uint64(0),
-				e.chainIDEpoch,
-			)
-			if err != nil {
-				return nil, err
-			}
-			return rpctx, nil
-		}
-	}
-
-	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
-	if err != nil {
-		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
-		return nil, nil
-	}
-
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
-	if err != nil {
-		e.logger.Debug("decoding failed", "error", err.Error())
-		return nil, fmt.Errorf("failed to decode tx: %w", err)
-	}
-
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
-	}
-
-	return rpctypes.NewTransactionFromMsg(
-		msg,
-		common.BytesToHash(resBlock.Block.Hash()),
-		uint64(res.Height),
-		uint64(res.Index),
-		e.chainIDEpoch,
-	)
+	return e.backend.GetTransactionByHash(hash)
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
@@ -769,7 +592,7 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	e.logger.Debug("eth_getTransactionReceipt", "hash", hash.Hex())
 
-	res, err := e.GetTxByEthHash(hash)
+	res, err := e.backend.GetTxByEthHash(hash)
 	if err != nil {
 		e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
 		return nil, nil
@@ -909,14 +732,19 @@ func (e *PublicAPI) GetUncleByBlockHashAndIndex(hash common.Hash, idx hexutil.Ui
 }
 
 // GetUncleByBlockNumberAndIndex returns the uncle identified by number and index. Always returns nil.
-func (e *PublicAPI) GetUncleByBlockNumberAndIndex(number hexutil.Uint, idx hexutil.Uint) map[string]interface{} {
+func (e *PublicAPI) GetUncleByBlockNumberAndIndex(number, idx hexutil.Uint) map[string]interface{} {
 	return nil
 }
 
 // GetProof returns an account object with proof and any storage proofs
-func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, blockNumber rpctypes.BlockNumber) (*rpctypes.AccountResult, error) {
-	height := blockNumber.Int64()
-	e.logger.Debug("eth_getProof", "address", address.Hex(), "keys", storageKeys, "number", height)
+func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error) {
+	e.logger.Debug("eth_getProof", "address", address.Hex(), "keys", storageKeys, "block number or hash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+	height := blockNum.Int64()
 
 	ctx := rpctypes.ContextWithHeight(height)
 	clientCtx := e.clientCtx.WithHeight(height)
@@ -983,121 +811,20 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	}, nil
 }
 
-// setTxDefaults populates tx message with default values in case they are not
-// provided on the args
-func (e *PublicAPI) setTxDefaults(args rpctypes.SendTxArgs) (rpctypes.SendTxArgs, error) {
-
-	if args.GasPrice == nil {
-		// TODO: Change to either:
-		// - min gas price from context once available through server/daemon, or
-		// - suggest a gas price based on the previous included txs
-		args.GasPrice = (*hexutil.Big)(big.NewInt(ethermint.DefaultGasPrice))
-	}
-
-	if args.Nonce == nil {
-		// get the nonce from the account retriever
-		// ignore error in case tge account doesn't exist yet
-		nonce, _ := e.getAccountNonce(args.From, true, 0, e.logger)
-		args.Nonce = (*hexutil.Uint64)(&nonce)
-	}
-
-	if args.Data != nil && args.Input != nil && !bytes.Equal(*args.Data, *args.Input) {
-		return args, errors.New("both 'data' and 'input' are set and not equal. Please use 'input' to pass transaction call data")
-	}
-
-	if args.To == nil {
-		// Contract creation
-		var input []byte
-		if args.Data != nil {
-			input = *args.Data
-		} else if args.Input != nil {
-			input = *args.Input
-		}
-
-		if len(input) == 0 {
-			return args, errors.New(`contract creation without any data provided`)
-		}
-	}
-
-	if args.Gas == nil {
-		// For backwards-compatibility reason, we try both input and data
-		// but input is preferred.
-		input := args.Input
-		if input == nil {
-			input = args.Data
-		}
-
-		callArgs := evmtypes.CallArgs{
-			From:       &args.From, // From shouldn't be nil
-			To:         args.To,
-			Gas:        args.Gas,
-			GasPrice:   args.GasPrice,
-			Value:      args.Value,
-			Data:       input,
-			AccessList: args.AccessList,
-		}
-		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))
-		estimated, err := e.EstimateGas(callArgs, &blockNr)
+// getBlockNumber returns the BlockNumber from BlockNumberOrHash
+func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
+	switch {
+	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
+		return rpctypes.EthEarliestBlockNumber, fmt.Errorf("types BlockHash and BlockNumber cannot be both nil")
+	case blockNrOrHash.BlockHash != nil:
+		blockHeader, err := e.backend.HeaderByHash(*blockNrOrHash.BlockHash)
 		if err != nil {
-			return args, err
+			return rpctypes.EthEarliestBlockNumber, err
 		}
-		args.Gas = &estimated
-		e.logger.Debug("estimate gas usage automatically", "gas", args.Gas)
+		return rpctypes.NewBlockNumber(blockHeader.Number), nil
+	case blockNrOrHash.BlockNumber != nil:
+		return *blockNrOrHash.BlockNumber, nil
+	default:
+		return rpctypes.EthEarliestBlockNumber, nil
 	}
-
-	if args.ChainID == nil {
-		args.ChainID = (*hexutil.Big)(e.chainIDEpoch)
-	}
-
-	return args, nil
-}
-
-// getAccountNonce returns the account nonce for the given account address.
-// If the pending value is true, it will iterate over the mempool (pending)
-// txs in order to compute and return the pending tx sequence.
-// Todo: include the ability to specify a blockNumber
-func (e *PublicAPI) getAccountNonce(accAddr common.Address, pending bool, height int64, logger log.Logger) (uint64, error) {
-	queryClient := authtypes.NewQueryClient(e.clientCtx)
-	res, err := queryClient.Account(rpctypes.ContextWithHeight(height), &authtypes.QueryAccountRequest{Address: sdk.AccAddress(accAddr.Bytes()).String()})
-	if err != nil {
-		return 0, err
-	}
-	var acc authtypes.AccountI
-	if err := e.clientCtx.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
-		return 0, err
-	}
-
-	nonce := acc.GetSequence()
-
-	if !pending {
-		return nonce, nil
-	}
-
-	// the account retriever doesn't include the uncommitted transactions on the nonce so we need to
-	// to manually add them.
-	pendingTxs, err := e.backend.PendingTransactions()
-	if err != nil {
-		logger.Error("failed to fetch pending transactions", "error", err.Error())
-		return nonce, nil
-	}
-
-	// add the uncommitted txs to the nonce counter
-	// only supports `MsgEthereumTx` style tx
-	for _, tx := range pendingTxs {
-		msg, err := evmtypes.UnwrapEthereumMsg(tx)
-		if err != nil {
-			// not ethereum tx
-			continue
-		}
-
-		sender, err := msg.GetSender(e.chainIDEpoch)
-		if err != nil {
-			continue
-		}
-		if sender == accAddr {
-			nonce++
-		}
-	}
-
-	return nonce, nil
 }

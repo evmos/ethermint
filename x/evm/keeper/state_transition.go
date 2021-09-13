@@ -2,13 +2,10 @@ package keeper
 
 import (
 	"math/big"
-	"os"
-	"time"
 
 	"github.com/palantir/stacktrace"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -28,31 +25,37 @@ import (
 // (ChainConfig and module Params). It additionally sets the validator operator address as the
 // coinbase address to make it available for the COINBASE opcode, even though there is no
 // beneficiary of the coinbase transaction (since we're not mining).
-func (k *Keeper) NewEVM(msg core.Message, config *params.ChainConfig, params types.Params, coinbase common.Address) *vm.EVM {
+func (k *Keeper) NewEVM(
+	msg core.Message,
+	config *params.ChainConfig,
+	params types.Params,
+	coinbase common.Address,
+	tracer vm.Tracer,
+) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     k.GetHashFn(),
 		Coinbase:    coinbase,
-		GasLimit:    ethermint.BlockGasLimit(k.ctx),
-		BlockNumber: big.NewInt(k.ctx.BlockHeight()),
-		Time:        big.NewInt(k.ctx.BlockHeader().Time.Unix()),
+		GasLimit:    ethermint.BlockGasLimit(k.Ctx()),
+		BlockNumber: big.NewInt(k.Ctx().BlockHeight()),
+		Time:        big.NewInt(k.Ctx().BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
-	vmConfig := k.VMConfig(params)
+	vmConfig := k.VMConfig(msg, params, tracer)
 
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
 }
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(params types.Params) vm.Config {
+func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
 	return vm.Config{
 		Debug:       k.debug,
-		Tracer:      vm.NewJSONLogger(&vm.LogConfig{Debug: k.debug}, os.Stderr), // TODO: consider using the Struct Logger too
-		NoRecursion: false,                                                      // TODO: consider disabling recursion though params
+		Tracer:      tracer,
+		NoRecursion: false, // TODO: consider disabling recursion though params
 		ExtraEips:   params.EIPs(),
 	}
 }
@@ -64,39 +67,40 @@ func (k Keeper) VMConfig(params types.Params) vm.Config {
 func (k Keeper) GetHashFn() vm.GetHashFunc {
 	return func(height uint64) common.Hash {
 		h := int64(height)
+		ctx := k.Ctx()
 		switch {
-		case k.ctx.BlockHeight() == h:
+		case ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
 			// hash directly from the context.
 			// Note: The headerHash is only set at begin block, it will be nil in case of a query context
-			headerHash := k.ctx.HeaderHash()
+			headerHash := ctx.HeaderHash()
 			if len(headerHash) != 0 {
 				return common.BytesToHash(headerHash)
 			}
 
 			// only recompute the hash if not set (eg: checkTxState)
-			contextBlockHeader := k.ctx.BlockHeader()
+			contextBlockHeader := ctx.BlockHeader()
 			header, err := tmtypes.HeaderFromProto(&contextBlockHeader)
 			if err != nil {
-				k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
+				k.Logger(ctx).Error("failed to cast tendermint header from proto", "error", err)
 				return common.Hash{}
 			}
 
 			headerHash = header.Hash()
 			return common.BytesToHash(headerHash)
 
-		case k.ctx.BlockHeight() > h:
+		case ctx.BlockHeight() > h:
 			// Case 2: if the chain is not the current height we need to retrieve the hash from the store for the
 			// current chain epoch. This only applies if the current height is greater than the requested height.
-			histInfo, found := k.stakingKeeper.GetHistoricalInfo(k.ctx, h)
+			histInfo, found := k.stakingKeeper.GetHistoricalInfo(ctx, h)
 			if !found {
-				k.Logger(k.ctx).Debug("historical info not found", "height", h)
+				k.Logger(ctx).Debug("historical info not found", "height", h)
 				return common.Hash{}
 			}
 
 			header, err := tmtypes.HeaderFromProto(&histInfo.Header)
 			if err != nil {
-				k.Logger(k.ctx).Error("failed to cast tendermint header from proto", "error", err)
+				k.Logger(ctx).Error("failed to cast tendermint header from proto", "error", err)
 				return common.Hash{}
 			}
 
@@ -126,30 +130,35 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 //
 // For relevant discussion see: https://github.com/cosmos/cosmos-sdk/discussions/9072
 func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
-	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), types.MetricKeyTransitionDB)
+	ctx := k.Ctx()
+	params := k.GetParams(ctx)
 
-	params := k.GetParams(k.ctx)
+	// return error if contract creation or call are disabled through governance
+	if !params.EnableCreate && tx.To() == nil {
+		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
+	} else if !params.EnableCall && tx.To() != nil {
+		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+	}
+
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the latest signer according to the chain rules from the config
-	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(k.ctx.BlockHeight()))
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
 	msg, err := tx.AsMessage(signer)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
 	}
 
-	// we use a cached context to avoid modifying to state in case EVM msg is reverted
-	commit := k.BeginCachedContext()
-
 	// get the coinbase address from the block proposer
-	coinbase, err := k.GetCoinbaseAddress()
+	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
 	// create an ethereum EVM instance and run the message
-	evm := k.NewEVM(msg, ethCfg, params, coinbase)
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight(), k.debug)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 
 	txHash := tx.Hash()
 
@@ -157,6 +166,16 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// available on the StateDB functions (eg: AddLog)
 	k.SetTxHashTransient(txHash)
 	k.IncreaseTxIndexTransient()
+
+	if !k.ctxStack.IsEmpty() {
+		panic("context stack shouldn't be dirty before apply message")
+	}
+
+	var revision int
+	if k.hooks != nil {
+		// snapshot to contain the tx processing and post processing in same scope
+		revision = k.Snapshot()
+	}
 
 	// pass false to execute in real mode, which do actual gas refunding
 	res, err := k.ApplyMessage(evm, msg, ethCfg, false)
@@ -167,45 +186,32 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogs(txHash)
 
-	// Commit and switch to committed context
 	if !res.Failed() {
-		// keep the cosmos events emitted in the cache context
-		k.committedCtx.EventManager().EmitEvents(k.ctx.EventManager().Events())
-		commit()
+		// Only call hooks if tx executed successfully.
+		if err = k.PostTxProcessing(txHash, logs); err != nil {
+			// If hooks return error, revert the whole tx.
+			k.RevertToSnapshot(revision)
+			res.VmError = types.ErrPostTxProcessing.Error()
+			k.Logger(ctx).Error("tx post processing failed", "error", err)
+		}
 	}
 
-	k.EndCachedContext()
-
-	// Logs needs to be ignored when tx is reverted
-	// Set the log and bloom filter only when the tx is NOT REVERTED
-	if !res.Failed() {
+	if len(logs) > 0 {
 		res.Logs = types.NewLogsFromEth(logs)
-		// Update block bloom filter in the original context because blockbloom is set in EndBlock
+		// Update transient block bloom filter
 		bloom := k.GetBlockBloomTransient()
 		bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
 		k.SetBlockBloomTransient(bloom)
 	}
 
+	// Since we've implemented `RevertToSnapshot` api, so for the vm error cases,
+	// the state is reverted, so it's ok to call the commit here anyway.
+	k.CommitCachedContexts()
+
 	// update the gas used after refund
 	k.resetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
-
-// Gas consumption notes (write doc from this)
-
-// gas = remaining gas = limit - consumed
-
-// Gas consumption in ethereum:
-// 0. Buy gas -> deduct gasLimit * gasPrice from user account
-// 		0.1 leftover gas = gas limit
-// 1. consume intrinsic gas
-//   1.1 leftover gas = leftover gas - intrinsic gas
-// 2. Exec vm functions by passing the gas (i.e remaining gas)
-//   2.1 final leftover gas returned after spending gas from the opcodes jump tables
-// 3. Refund amount =  max(gasConsumed / 2, gas refund), where gas refund is a local variable
-
-// TODO: (@fedekunze) currently we consume the entire gas limit in the ante handler, so if a transaction fails
-// the amount spent will be grater than the gas spent in an Ethereum tx (i.e here the leftover gas won't be refunded).
 
 // ApplyMessage computes the new state by applying the given message against the existing state.
 // If the message fails, the VM execution error with the reason will be returned to the client
@@ -257,20 +263,29 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}
 	leftoverGas := msg.Gas() - intrinsicGas
 
+	// access list preparaion is moved from ante handler to here, because it's needed when `ApplyMessage` is called
+	// under contexts where ante handlers are not run, for example `eth_call` and `eth_estimateGas`.
+	if rules := cfg.Rules(big.NewInt(k.Ctx().BlockHeight())); rules.IsBerlin {
+		k.PrepareAccessList(msg.From(), msg.To(), vm.ActivePrecompiles(rules), msg.AccessList())
+	}
+
 	if contractCreation {
 		ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
 	} else {
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
 
+	refundQuotient := uint64(2)
+
 	if query {
 		// gRPC query handlers don't go through the AnteHandler to deduct the gas fee from the sender or have access historical state.
 		// We don't refund gas to the sender.
 		// For more info, see: https://github.com/tharsis/ethermint/issues/229 and https://github.com/cosmos/cosmos-sdk/issues/9636
-		leftoverGas += k.GasToRefund(msg.Gas() - leftoverGas)
+		gasConsumed := msg.Gas() - leftoverGas
+		leftoverGas += k.GasToRefund(gasConsumed, refundQuotient)
 	} else {
 		// refund gas prior to handling the vm error in order to match the Ethereum gas consumption instead of the default SDK one.
-		leftoverGas, err = k.RefundGas(msg, leftoverGas)
+		leftoverGas, err = k.RefundGas(msg, leftoverGas, refundQuotient)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 		}
@@ -292,7 +307,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 
 // GetEthIntrinsicGas returns the intrinsic gas cost for the transaction
 func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, isContractCreation bool) (uint64, error) {
-	height := big.NewInt(k.ctx.BlockHeight())
+	height := big.NewInt(k.Ctx().BlockHeight())
 	homestead := cfg.IsHomestead(height)
 	istanbul := cfg.IsIstanbul(height)
 
@@ -300,10 +315,10 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 }
 
 // GasToRefund calculates the amount of gas the state machine should refund to the sender. It is
-// capped by half of the gas consumed.
-func (k *Keeper) GasToRefund(gasConsumed uint64) uint64 {
-	// Apply refund counter, capped to half of the used gas.
-	refund := gasConsumed / 2
+// capped by the refund quotient value.
+func (k *Keeper) GasToRefund(gasConsumed, refundQuotient uint64) uint64 {
+	// Apply refund counter
+	refund := gasConsumed / refundQuotient
 	availableRefund := k.GetRefund()
 	if refund > availableRefund {
 		return availableRefund
@@ -315,7 +330,7 @@ func (k *Keeper) GasToRefund(gasConsumed uint64) uint64 {
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
-func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error) {
+func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64) (uint64, error) {
 	// safety check: leftover gas after execution should never exceed the gas limit defined on the message
 	if leftoverGas > msg.Gas() {
 		return leftoverGas, stacktrace.Propagate(
@@ -327,7 +342,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 	gasConsumed := msg.Gas() - leftoverGas
 
 	// calculate available gas to refund and add it to the leftover gas amount
-	refund := k.GasToRefund(gasConsumed)
+	refund := k.GasToRefund(gasConsumed, refundQuotient)
 	leftoverGas += refund
 
 	// safety check: leftover gas after refund should never exceed the gas limit defined on the message
@@ -347,12 +362,12 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 		return leftoverGas, sdkerrors.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
 	case 1:
 		// positive amount refund
-		params := k.GetParams(k.ctx)
+		params := k.GetParams(k.Ctx())
 		refundedCoins := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(remaining))}
 
 		// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
 
-		err := k.bankKeeper.SendCoinsFromModuleToAccount(k.ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
+		err := k.bankKeeper.SendCoinsFromModuleToAccount(k.Ctx(), authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
 			err = sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
 			return leftoverGas, stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
@@ -368,14 +383,15 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64) (uint64, error)
 // 'gasUsed'
 func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
 	// reset the gas count
-	k.ctx.GasMeter().RefundGas(k.ctx.GasMeter().GasConsumed(), "reset the gas count")
-	k.ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
+	ctx := k.Ctx()
+	ctx.GasMeter().RefundGas(ctx.GasMeter().GasConsumed(), "reset the gas count")
+	ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
 }
 
 // GetCoinbaseAddress returns the block proposer's validator operator address.
-func (k Keeper) GetCoinbaseAddress() (common.Address, error) {
-	consAddr := sdk.ConsAddress(k.ctx.BlockHeader().ProposerAddress)
-	validator, found := k.stakingKeeper.GetValidatorByConsAddr(k.ctx, consAddr)
+func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
+	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
 		return common.Address{}, stacktrace.Propagate(
 			sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, consAddr.String()),

@@ -22,7 +22,7 @@ type QueryClient struct {
 }
 
 // NewQueryClient creates a new gRPC query client
-func NewQueryClient(clientCtx client.Context) *QueryClient { // nolint: interfacer
+func NewQueryClient(clientCtx client.Context) *QueryClient {
 	return &QueryClient{
 		ServiceClient: tx.NewServiceClient(clientCtx),
 		QueryClient:   evmtypes.NewQueryClient(clientCtx),

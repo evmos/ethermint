@@ -259,6 +259,11 @@ func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionByHash(t *testing.T) {
+	// negative case, check that it returns empty.
+	rpcRes := Call(t, "eth_getTransactionByHash", []interface{}{"0xec5fa15e1368d6ac314f9f64118c5794f076f63c02e66f97ea5fe1de761a8973"})
+	require.Nil(t, rpcRes.Result)
+
+	// create a transaction.
 	data := "0x608060405234801561001057600080fd5b5061011e806100206000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c806302eb691b14602d575b600080fd5b603360ab565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101560715780820151818401526020810190506058565b50505050905090810190601f168015609d5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b60606040518060400160405280600d81526020017f617261736b61776173686572650000000000000000000000000000000000000081525090509056fea264697066735822122060917c5c2fab8c058a17afa6d3c1d23a7883b918ea3c7157131ea5b396e1aa7564736f6c63430007050033"
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
@@ -277,7 +282,7 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 	err := txHash.UnmarshalJSON(txRes.Result)
 	require.NoError(t, err)
 
-	rpcRes := Call(t, "eth_getTransactionByHash", []interface{}{txHash})
+	rpcRes = Call(t, "eth_getTransactionByHash", []interface{}{txHash})
 	var pendingBlockTx map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &pendingBlockTx)
 	require.NoError(t, err)

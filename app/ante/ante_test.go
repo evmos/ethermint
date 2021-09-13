@@ -6,12 +6,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/tharsis/ethermint/tests"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {
-	addr, privKey := newTestAddrKey()
-	to, _ := newTestAddrKey()
+	addr, privKey := tests.NewAddrKey()
+	to := tests.GenerateAddress()
 
 	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 	suite.Require().NoError(acc.SetSequence(1))
@@ -128,7 +129,6 @@ func (suite AnteTestSuite) TestAnteHandler() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			suite.ctx = suite.ctx.WithIsCheckTx(tc.reCheckTx).WithIsReCheckTx(tc.reCheckTx)
 
 			// expConsumed := params.TxGasContractCreation + params.TxGas
@@ -142,8 +142,6 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
-
 }

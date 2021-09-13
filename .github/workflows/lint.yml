@@ -1,4 +1,4 @@
-name: Run Lint
+name: Lint
 # Lint runs golangci-lint over the entire ethermint repository This workflow is
 # run on every pull request and push to main The `golangci` will pass without
 # running if no *.{go, mod, sum} files have been changed.
