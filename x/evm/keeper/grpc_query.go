@@ -513,7 +513,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	// Receive an array of transactions with MSGs and TxIndex
 	var (
 		results = make([]*types.TxTraceResult, len(req.Transactions))
-		pend = new(sync.WaitGroup)
+		wg = new(sync.WaitGroup)
 		jobs = make(chan *types.TxTraceTask, len(req.Transactions))
 	)
 
@@ -521,11 +521,10 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	if threads > len(req.Transactions) {
 		threads = len(req.Transactions)
 	}
-
+	wg.Add(threads)
 	for th := 0; th < threads; th++ {
-		pend.Add(1)
 		go func() {
-			defer pend.Done()
+			defer wg.Done()
 			// Fetch and execute the next transaction trace tasks
 			for task := range jobs {
 				res, err := k.traceTx(coinbase, signer, req.Transactions[task.Index].Index, params, c, ctx, ethCfg, req.Transactions[task.Index].Msg, req.TraceConfig)
@@ -543,7 +542,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	}
 
 	close(jobs)
-	pend.Wait()
+	wg.Wait()
 
 	resultData, err := json.Marshal(results)
 	if err != nil {
@@ -579,7 +578,7 @@ func (k *Keeper) traceTx(coinbase common.Address, signer ethtypes.Signer, txInde
 		}
 
 		txContext := core.NewEVMTxContext(coreMessage)
-		// Constuct the JavaScript tracer to execute with
+		// Construct the JavaScript tracer to execute with
 		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}

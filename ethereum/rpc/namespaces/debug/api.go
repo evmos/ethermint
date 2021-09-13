@@ -130,6 +130,12 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 		return res, nil
 	}
 
+	var (
+		results = make([]*types.TxTraceResult, len(txsLength))
+		wg = new(sync.WaitGroup)
+		jobs = make(chan *types.TxTraceTask, len(req.Transactions))
+	)
+
 	transactionsTraceRequest := make([]*evmtypes.TraceBlockTransaction, txsLength)
 
 	// Get all tx messages
@@ -142,8 +148,8 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 
 		ethMessage, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 		if !ok {
-			a.logger.Debug("invalid transaction type", "type", fmt.Sprintf("%T", tx))
-			return nil, fmt.Errorf("invalid transaction type %T", tx)
+			// Just considers Ethereum transactions
+			continue
 		}
 
 		transactionsTraceRequest[i] = &evmtypes.TraceBlockTransaction{
