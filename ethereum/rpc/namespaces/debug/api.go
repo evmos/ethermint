@@ -113,20 +113,67 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 }
 
 func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.TraceConfig) ([]interface{}, error) {
-	// Get block with full transactions by number
-	block, err := a.backend.GetBlockByNumber(height, true)
+	var res []interface{}
+	if height == 0 {
+		return nil, errors.New("genesis is not traceable")
+	}
+	// Get Tendermint Block
+	resBlock, err := a.backend.GetTendermintBlock(height)
 	if err != nil {
 		return nil, err
 	}
 
-	var res []interface{}
-	if block["transactions"] == nil {
-		// if no transactions then there is nothing to trace
+	txsLength := len(resBlock.Block.Txs)
+
+	if txsLength == 0 {
+		// If there are no transactions return empty array
 		return res, nil
 	}
 
+	transactionsTraceRequest := make([]*evmtypes.TraceBlockTransaction, txsLength)
 
-	return nil, nil
+	// Get all tx messages
+	for i, transaction := range resBlock.Block.Txs {
+		tx, err := a.clientCtx.TxConfig.TxDecoder()(transaction)
+		if err != nil {
+			a.logger.Debug("tx not found", "hash", transaction.Hash())
+			return nil, err
+		}
+
+		ethMessage, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			a.logger.Debug("invalid transaction type", "type", fmt.Sprintf("%T", tx))
+			return nil, fmt.Errorf("invalid transaction type %T", tx)
+		}
+
+		transactionsTraceRequest[i] = &evmtypes.TraceBlockTransaction{
+			Msg:     ethMessage,
+			Index: uint32(i),
+		}
+	}
+
+	traceTxRequest := evmtypes.QueryTraceBlockRequest{
+		TraceConfig: config,
+		Transactions: transactionsTraceRequest,
+	}
+
+	if config != nil {
+		traceTxRequest.TraceConfig = config
+	}
+
+	traceResult, err := a.queryClient.TraceBlock(rpctypes.ContextWithHeight(int64(height)), &traceTxRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	// Response format is unknown due to custom tracer config param
+	// More information can be found here https://geth.ethereum.org/docs/dapp/tracing-filtered
+	err = json.Unmarshal(traceResult.Result, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // BlockProfile turns on goroutine profiling for nsec seconds and writes profile data to
