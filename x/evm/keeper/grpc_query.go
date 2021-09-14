@@ -496,64 +496,6 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
-func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)  (*types.QueryTraceBlockResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	k.WithContext(ctx)
-	params := k.GetParams(ctx)
-
-	ctx.BlockHeader()
-
-	coinbase, err := k.GetCoinbaseAddress(ctx)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
-	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	// Receive an array of transactions with MSGs and TxIndex
-	var (
-		results = make([]*types.TxTraceResult, len(req.Transactions))
-		wg = new(sync.WaitGroup)
-		jobs = make(chan *types.TxTraceTask, len(req.Transactions))
-	)
-
-	threads := runtime.NumCPU()
-	if threads > len(req.Transactions) {
-		threads = len(req.Transactions)
-	}
-	wg.Add(threads)
-	for th := 0; th < threads; th++ {
-		go func() {
-			defer wg.Done()
-			// Fetch and execute the next transaction trace tasks
-			for task := range jobs {
-				res, err := k.traceTx(coinbase, signer, req.Transactions[task.Index].Index, params, c, ctx, ethCfg, req.Transactions[task.Index].Msg, req.TraceConfig)
-				if err != nil {
-					results[task.Index] = &types.TxTraceResult{Error: err.Error()}
-					continue
-				}
-				results[task.Index] = &types.TxTraceResult{Result: res}
-			}
-		}()
-	}
-
-	for i, _ := range req.Transactions {
-		jobs <- &types.TxTraceTask{Index: i}
-	}
-
-	close(jobs)
-	wg.Wait()
-
-	resultData, err := json.Marshal(results)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	return &types.QueryTraceBlockResponse{
-		Result: resultData,
-	}, nil
-}
-
 func (k *Keeper) traceTx(coinbase common.Address, signer ethtypes.Signer, txIndex uint32, params types.Params, c context.Context, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (

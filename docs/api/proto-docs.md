@@ -53,15 +53,12 @@
     - [QueryStaticCallResponse](#ethermint.evm.v1.QueryStaticCallResponse)
     - [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest)
     - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
-    - [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest)
-    - [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse)
     - [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest)
     - [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest)
     - [QueryTxLogsResponse](#ethermint.evm.v1.QueryTxLogsResponse)
     - [QueryValidatorAccountRequest](#ethermint.evm.v1.QueryValidatorAccountRequest)
     - [QueryValidatorAccountResponse](#ethermint.evm.v1.QueryValidatorAccountResponse)
-    - [TraceBlockTransaction](#ethermint.evm.v1.TraceBlockTransaction)
   
     - [Query](#ethermint.evm.v1.Query)
   
@@ -841,37 +838,6 @@ method.
 
 
 
-<a name="ethermint.evm.v1.QueryTraceBlockRequest"></a>
-
-### QueryTraceBlockRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TODO add comments |
-| `transactions` | [TraceBlockTransaction](#ethermint.evm.v1.TraceBlockTransaction) | repeated |  |
-
-
-
-
-
-
-<a name="ethermint.evm.v1.QueryTraceBlockResponse"></a>
-
-### QueryTraceBlockResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `result` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
 <a name="ethermint.evm.v1.QueryTraceTxRequest"></a>
 
 ### QueryTraceTxRequest
@@ -969,22 +935,6 @@ Query/ValidatorAccount RPC method.
 
 
 
-
-<a name="ethermint.evm.v1.TraceBlockTransaction"></a>
-
-### TraceBlockTransaction
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `msg` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) |  | msgEthereumTx for the requested transaction |
-| `index` | [uint32](#uint32) |  | transaction index |
-
-
-
-
-
  <!-- end messages -->
 
  <!-- end enums -->
@@ -1012,7 +962,6 @@ Query defines the gRPC querier service.
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
 | `TraceTx` | [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest) | [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_tx|
-| `TraceBlock` | [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest) | [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_block|
 
  <!-- end services -->
 
