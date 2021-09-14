@@ -473,8 +473,6 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	k.WithContext(ctx)
 	params := k.GetParams(ctx)
 
-	ctx.BlockHeader()
-
 	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
