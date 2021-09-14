@@ -44,6 +44,10 @@ func (k *Keeper) NewEVM(
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
+
+	if tracer == nil {
+		tracer = types.NewDummyTracer()
+	}
 	vmConfig := k.VMConfig(msg, params, tracer)
 
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
@@ -303,6 +307,35 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		VmError: vmError,
 		Ret:     ret,
 	}, nil
+}
+
+// ApplyNativeMessage execute a message on evm from native module
+func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxResponse, error) {
+	ctx := k.Ctx()
+	params := k.GetParams(ctx)
+	// return error if contract creation or call are disabled through governance
+	if !params.EnableCreate && msg.To() == nil {
+		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
+	} else if !params.EnableCall && msg.To() != nil {
+		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+	}
+
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+
+	// get the coinbase address from the block proposer
+	coinbase, err := k.GetCoinbaseAddress(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
+	}
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, nil)
+
+	ret, err := k.ApplyMessage(evm, msg, ethCfg, true)
+	if err != nil {
+		return nil, err
+	}
+	k.CommitCachedContexts()
+	return ret, nil
 }
 
 // GetEthIntrinsicGas returns the intrinsic gas cost for the transaction
