@@ -187,8 +187,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 				// Response format is unknown due to custom tracer config param
 				// More information can be found here https://geth.ethereum.org/docs/dapp/tracing-filtered
 				var decodedResult interface{}
-				err = json.Unmarshal(res.Data, &decodedResult)
-				if err != nil {
+				if err := json.Unmarshal(res.Data, &decodedResult); err != nil {
 					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
 					continue
 				}
