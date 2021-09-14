@@ -142,8 +142,8 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 
 	var (
 		results = make([]*evmtypes.TxTraceResult, txsLength)
-		wg = new(sync.WaitGroup)
-		jobs = make(chan *evmtypes.TxTraceTask, txsLength)
+		wg      = new(sync.WaitGroup)
+		jobs    = make(chan *evmtypes.TxTraceTask, txsLength)
 	)
 
 	threads := runtime.NumCPU()
@@ -174,8 +174,8 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 				}
 
 				traceTxRequest := &evmtypes.QueryTraceTxRequest{
-					Msg:     ethMessage,
-					TxIndex: uint32(task.Index),
+					Msg:         ethMessage,
+					TxIndex:     uint32(task.Index),
 					TraceConfig: config,
 				}
 

@@ -43,7 +43,7 @@ func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height 
 // TxTraceTask represents a single transaction trace task when an entire block
 // is being traced.
 type TxTraceTask struct {
-	Index   int            // Transaction offset in the block
+	Index int // Transaction offset in the block
 }
 
 // TxTraceResult is the result of a single transaction trace during a block trace.
