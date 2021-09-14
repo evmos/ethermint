@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/types"
 	"io"
 	"os"
 	"runtime"
@@ -112,6 +113,8 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 	return decodedResult, nil
 }
 
+// TraceBlockByNumber returns the structured logs created during the execution of
+// EVM and returns them as a JSON object.
 func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.TraceConfig) ([]*TxTraceResult, error) {
 	a.logger.Debug("debug_traceBlockByNumber", "height", height)
 	if height == 0 {
@@ -123,7 +126,14 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 		return nil, err
 	}
 
-	txsLength := len(resBlock.Block.Txs)
+	return a.traceBlock(height, config, resBlock.Block.Txs)
+}
+
+// traceBlock configures a new tracer according to the provided configuration, and
+// executes all the transactions contained within. The return value will be one item
+// per transaction, dependent on the requested tracer.
+func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, Txs types.Txs) ([]*TxTraceResult, error) {
+	txsLength := len(Txs)
 
 	if txsLength == 0 {
 		// If there are no transactions return empty array
@@ -144,11 +154,12 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 	for th := 0; th < threads; th++ {
 		go func() {
 			defer wg.Done()
+			txDecoder := a.clientCtx.TxConfig.TxDecoder()
 			// Fetch and execute the next transaction trace tasks
 			for task := range jobs {
-				tx, err := a.clientCtx.TxConfig.TxDecoder()(resBlock.Block.Txs[task.Index])
+				tx, err := txDecoder(Txs[task.Index])
 				if err != nil {
-					a.logger.Debug("tx not found", "hash", resBlock.Block.Txs[task.Index].Hash())
+					a.logger.Debug("tx not found", "hash", Txs[task.Index].Hash())
 					continue
 				}
 
@@ -181,7 +192,7 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 		}()
 	}
 
-	for i, _ := range resBlock.Block.Txs {
+	for i := range Txs {
 		jobs <- &TxTraceTask{Index: i}
 	}
 

@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"runtime"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
