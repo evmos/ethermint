@@ -150,6 +150,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 	if threads > txsLength {
 		threads = txsLength
 	}
+
 	wg.Add(threads)
 	for th := 0; th < threads; th++ {
 		go func() {
