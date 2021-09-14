@@ -151,6 +151,8 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 		threads = txsLength
 	}
 
+	ctxWithHeight := rpctypes.ContextWithHeight(int64(height))
+
 	wg.Add(threads)
 	for th := 0; th < threads; th++ {
 		go func() {
@@ -180,7 +182,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 					TraceConfig: config,
 				}
 
-				res, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(int64(height)), traceTxRequest)
+				res, err := a.queryClient.TraceTx(ctxWithHeight, traceTxRequest)
 				if err != nil {
 					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
 					continue
