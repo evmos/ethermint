@@ -115,7 +115,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 
 // TraceBlockByNumber returns the structured logs created during the execution of
 // EVM and returns them as a JSON object.
-func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.TraceConfig) ([]*TxTraceResult, error) {
+func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.TraceConfig) ([]*evmtypes.TxTraceResult, error) {
 	a.logger.Debug("debug_traceBlockByNumber", "height", height)
 	if height == 0 {
 		return nil, errors.New("genesis is not traceable")
@@ -132,18 +132,18 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 // traceBlock configures a new tracer according to the provided configuration, and
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requested tracer.
-func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, Txs types.Txs) ([]*TxTraceResult, error) {
+func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, Txs types.Txs) ([]*evmtypes.TxTraceResult, error) {
 	txsLength := len(Txs)
 
 	if txsLength == 0 {
 		// If there are no transactions return empty array
-		return []*TxTraceResult{}, nil
+		return []*evmtypes.TxTraceResult{}, nil
 	}
 
 	var (
-		results = make([]*TxTraceResult, txsLength)
+		results = make([]*evmtypes.TxTraceResult, txsLength)
 		wg = new(sync.WaitGroup)
-		jobs = make(chan *TxTraceTask, txsLength)
+		jobs = make(chan *evmtypes.TxTraceTask, txsLength)
 	)
 
 	threads := runtime.NumCPU()
@@ -159,7 +159,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 			for task := range jobs {
 				tx, err := txDecoder(Txs[task.Index])
 				if err != nil {
-					a.logger.Debug("tx not found", "hash", Txs[task.Index].Hash())
+					a.logger.Error("failed to decode transaction", "hash", Txs[task.Index].Hash(), "error", err.Error())
 					continue
 				}
 
@@ -176,7 +176,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 
 				res, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(int64(height)), traceTxRequest)
 				if err != nil {
-					results[task.Index] = &TxTraceResult{Error: err.Error()}
+					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
 					continue
 				}
 				// Response format is unknown due to custom tracer config param
@@ -184,16 +184,16 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 				var decodedResult interface{}
 				err = json.Unmarshal(res.Data, &decodedResult)
 				if err != nil {
-					results[task.Index] = &TxTraceResult{Error: err.Error()}
+					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
 					continue
 				}
-				results[task.Index] = &TxTraceResult{Result: decodedResult}
+				results[task.Index] = &evmtypes.TxTraceResult{Result: decodedResult}
 			}
 		}()
 	}
 
 	for i := range Txs {
-		jobs <- &TxTraceTask{Index: i}
+		jobs <- &evmtypes.TxTraceTask{Index: i}
 	}
 
 	close(jobs)
