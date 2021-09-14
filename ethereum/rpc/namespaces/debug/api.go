@@ -91,7 +91,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 
 	traceTxRequest := evmtypes.QueryTraceTxRequest{
 		Msg:     ethMessage,
-		TxIndex: transaction.Index,
+		TxIndex: uint64(transaction.Index),
 	}
 
 	if config != nil {
@@ -179,7 +179,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 
 				traceTxRequest := &evmtypes.QueryTraceTxRequest{
 					Msg:         ethMessage,
-					TxIndex:     uint32(task.Index),
+					TxIndex:     uint64(task.Index),
 					TraceConfig: config,
 				}
 

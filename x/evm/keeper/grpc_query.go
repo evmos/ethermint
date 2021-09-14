@@ -495,7 +495,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
-func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer ethtypes.Signer, txIndex uint32,
+func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer ethtypes.Signer, txIndex uint64,
 	params types.Params, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
@@ -549,7 +549,7 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
 
 	k.SetTxHashTransient(common.HexToHash(msg.Hash))
-	k.SetTxIndexTransient(uint64(txIndex))
+	k.SetTxIndexTransient(txIndex)
 
 	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
 	if err != nil {

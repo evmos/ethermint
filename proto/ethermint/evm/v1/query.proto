@@ -281,7 +281,7 @@ message QueryTraceTxRequest {
   // msgEthereumTx for the requested transaction
   MsgEthereumTx msg = 1;
   // transaction index
-  uint32 tx_index = 2;
+  uint64 tx_index = 2;
   // TraceConfig holds extra parameters to trace functions.
   TraceConfig trace_config = 3;
 }
