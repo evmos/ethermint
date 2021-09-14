@@ -132,8 +132,8 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 // traceBlock configures a new tracer according to the provided configuration, and
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requested tracer.
-func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, Txs types.Txs) ([]*evmtypes.TxTraceResult, error) {
-	txsLength := len(Txs)
+func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, txs types.Txs) ([]*evmtypes.TxTraceResult, error) {
+	txsLength := len(txs)
 
 	if txsLength == 0 {
 		// If there are no transactions return empty array
@@ -157,9 +157,9 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 			txDecoder := a.clientCtx.TxConfig.TxDecoder()
 			// Fetch and execute the next transaction trace tasks
 			for task := range jobs {
-				tx, err := txDecoder(Txs[task.Index])
+				tx, err := txDecoder(txs[task.Index])
 				if err != nil {
-					a.logger.Error("failed to decode transaction", "hash", Txs[task.Index].Hash(), "error", err.Error())
+					a.logger.Error("failed to decode transaction", "hash", txs[task.Index].Hash(), "error", err.Error())
 					continue
 				}
 
@@ -197,7 +197,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 		}()
 	}
 
-	for i := range Txs {
+	for i := range txs {
 		jobs <- &evmtypes.TxTraceTask{Index: i}
 	}
 
