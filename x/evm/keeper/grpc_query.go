@@ -480,7 +480,11 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	result, err := k.traceTx(coinbase, signer, req.TxIndex, params, c, ctx, ethCfg, req.Msg, req.TraceConfig)
+	result, err := k.traceTx(c, coinbase, signer, req.TxIndex, params, ctx, ethCfg, req.Msg, req.TraceConfig)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	resultData, err := json.Marshal(result)
 	if err != nil {
@@ -492,7 +496,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
-func (k *Keeper) traceTx(coinbase common.Address, signer ethtypes.Signer, txIndex uint32, params types.Params, c context.Context, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
+func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer ethtypes.Signer, txIndex uint32, params types.Params, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
 		tracer     vm.Tracer
