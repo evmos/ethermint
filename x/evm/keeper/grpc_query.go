@@ -481,7 +481,6 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 	result, err := k.traceTx(c, coinbase, signer, req.TxIndex, params, ctx, ethCfg, req.Msg, req.TraceConfig)
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/types"
 	"io"
 	"os"
 	"runtime"
@@ -13,6 +12,8 @@ import (
 	"runtime/pprof"
 	"sync"
 	"time"
+
+	"github.com/tendermint/tendermint/types"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
