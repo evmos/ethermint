@@ -102,6 +102,7 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 	}
 	return formatted
 }
+var _ vm.Tracer = &DummyTracer{}
 
 // DummyTracer is an empty implementation of vm.Tracer interface
 type DummyTracer struct{}
