@@ -19,7 +19,6 @@ func (ga GenesisAccount) Validate() error {
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Accounts: []GenesisAccount{},
-		TxsLogs:  []TransactionLogs{},
 		Params:   DefaultParams(),
 	}
 }
@@ -28,7 +27,6 @@ func DefaultGenesisState() *GenesisState {
 // failure.
 func (gs GenesisState) Validate() error {
 	seenAccounts := make(map[string]bool)
-	seenTxs := make(map[string]bool)
 	for _, acc := range gs.Accounts {
 		if seenAccounts[acc.Address] {
 			return fmt.Errorf("duplicated genesis account %s", acc.Address)
@@ -37,18 +35,6 @@ func (gs GenesisState) Validate() error {
 			return fmt.Errorf("invalid genesis account %s: %w", acc.Address, err)
 		}
 		seenAccounts[acc.Address] = true
-	}
-
-	for _, tx := range gs.TxsLogs {
-		if seenTxs[tx.Hash] {
-			return fmt.Errorf("duplicated logs from transaction %s", tx.Hash)
-		}
-
-		if err := tx.Validate(); err != nil {
-			return fmt.Errorf("invalid logs from transaction %s: %w", tx.Hash, err)
-		}
-
-		seenTxs[tx.Hash] = true
 	}
 
 	return gs.Params.Validate()

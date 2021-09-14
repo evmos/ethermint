@@ -5,19 +5,14 @@ import (
 	"fmt"
 	"math/big"
 
-	"google.golang.org/grpc/metadata"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
-
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 )
 
 // Not valid Ethereum address
@@ -341,38 +336,25 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 
 func (suite *KeeperTestSuite) TestQueryTxLogs() {
 	var (
-		req     *types.QueryTxLogsRequest
+		txHash  common.Hash
 		expLogs []*types.Log
 	)
 
 	testCases := []struct {
 		msg      string
 		malleate func()
-		expPass  bool
 	}{
 		{
-			"empty hash",
+			"empty logs",
 			func() {
-				req = &types.QueryTxLogsRequest{
-					Hash: common.Hash{}.String(),
-				}
+				txHash = common.BytesToHash([]byte("hash"))
+				expLogs = nil
 			},
-			false,
-		},
-		{
-			"logs not found",
-			func() {
-				hash := common.BytesToHash([]byte("hash"))
-				req = &types.QueryTxLogsRequest{
-					Hash: hash.String(),
-				}
-			},
-			true,
 		},
 		{
 			"success",
 			func() {
-				hash := common.BytesToHash([]byte("tx_hash"))
+				txHash = common.BytesToHash([]byte("tx_hash"))
 
 				expLogs = []*types.Log{
 					{
@@ -380,21 +362,20 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 						Topics:      []string{common.BytesToHash([]byte("topic")).String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
-						TxHash:      hash.String(),
+						TxHash:      txHash.String(),
 						TxIndex:     1,
-						BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
+						BlockHash:   common.BytesToHash(suite.ctx.HeaderHash()).Hex(),
 						Index:       0,
 						Removed:     false,
 					},
 				}
 
-				suite.app.EvmKeeper.SetLogs(hash, types.LogsToEthereum(expLogs))
-
-				req = &types.QueryTxLogsRequest{
-					Hash: hash.String(),
+				suite.app.EvmKeeper.SetTxHashTransient(txHash)
+				suite.app.EvmKeeper.IncreaseTxIndexTransient()
+				for _, log := range types.LogsToEthereum(expLogs) {
+					suite.app.EvmKeeper.AddLog(log)
 				}
 			},
-			true,
 		},
 	}
 
@@ -403,202 +384,8 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 			suite.SetupTest() // reset
 
 			tc.malleate()
-			ctx := sdk.WrapSDKContext(suite.ctx)
-			res, err := suite.queryClient.TxLogs(ctx, req)
-
-			if tc.expPass {
-				suite.Require().NoError(err)
-				suite.Require().NotNil(res)
-
-				suite.Require().Equal(expLogs, res.Logs)
-			} else {
-				suite.Require().Error(err)
-			}
-		})
-	}
-}
-
-func (suite *KeeperTestSuite) TestQueryBlockLogs() {
-	var (
-		req     *types.QueryBlockLogsRequest
-		expLogs []types.TransactionLogs
-	)
-
-	testCases := []struct {
-		msg      string
-		malleate func()
-		expPass  bool
-	}{
-		{
-			"empty hash",
-			func() {
-				req = &types.QueryBlockLogsRequest{
-					Hash: common.Hash{}.String(),
-				}
-			},
-			false,
-		},
-		{
-			"logs not found",
-			func() {
-				hash := common.BytesToHash([]byte("hash"))
-				req = &types.QueryBlockLogsRequest{
-					Hash: hash.String(),
-				}
-			},
-			true,
-		},
-		{
-			"success",
-			func() {
-				hash := common.BytesToHash([]byte("block_hash"))
-				expLogs = []types.TransactionLogs{
-					{
-						Hash: common.BytesToHash([]byte("tx_hash_0")).String(),
-						Logs: []*types.Log{
-							{
-								Address:     suite.address.String(),
-								Topics:      []string{common.BytesToHash([]byte("topic")).String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      common.BytesToHash([]byte("tx_hash_0")).String(),
-								TxIndex:     1,
-								BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
-								Index:       0,
-								Removed:     false,
-							},
-						},
-					},
-					{
-						Hash: common.BytesToHash([]byte("tx_hash_1")).String(),
-						Logs: []*types.Log{
-							{
-								Address:     suite.address.String(),
-								Topics:      []string{common.BytesToHash([]byte("topic")).String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      common.BytesToHash([]byte("tx_hash_1")).String(),
-								TxIndex:     1,
-								BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
-								Index:       1,
-								Removed:     false,
-							},
-							{
-								Address:     suite.address.String(),
-								Topics:      []string{common.BytesToHash([]byte("topic_1")).String()},
-								Data:        []byte("data_1"),
-								BlockNumber: 1,
-								TxHash:      common.BytesToHash([]byte("tx_hash_1")).String(),
-								TxIndex:     1,
-								BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
-								Index:       2,
-								Removed:     false,
-							},
-						},
-					},
-				}
-
-				suite.app.EvmKeeper.SetLogs(common.BytesToHash([]byte("tx_hash_0")), types.LogsToEthereum(expLogs[0].Logs))
-				suite.app.EvmKeeper.SetLogs(common.BytesToHash([]byte("tx_hash_1")), types.LogsToEthereum(expLogs[1].Logs))
-
-				req = &types.QueryBlockLogsRequest{
-					Hash: hash.String(),
-				}
-			},
-			true,
-		},
-	}
-
-	for _, tc := range testCases {
-		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
-			suite.SetupTest() // reset
-
-			tc.malleate()
-			ctx := sdk.WrapSDKContext(suite.ctx)
-			res, err := suite.queryClient.BlockLogs(ctx, req)
-
-			if tc.expPass {
-				suite.Require().NoError(err)
-				suite.Require().NotNil(res)
-
-				suite.Require().Equal(expLogs, res.TxLogs)
-			} else {
-				suite.Require().Error(err)
-			}
-		})
-	}
-}
-
-func (suite *KeeperTestSuite) TestQueryBlockBloom() {
-	var (
-		req      *types.QueryBlockBloomRequest
-		expBloom []byte
-	)
-
-	testCases := []struct {
-		msg      string
-		malleate func()
-		expPass  bool
-	}{
-		{
-			"bad height",
-			func() {
-				req = &types.QueryBlockBloomRequest{Height: -2}
-			},
-			false,
-		},
-		{
-			"bloom from transient store",
-			func() {
-				req = &types.QueryBlockBloomRequest{Height: 1}
-				bloom := ethtypes.BytesToBloom([]byte("bloom"))
-				expBloom = bloom.Bytes()
-				suite.app.EvmKeeper.WithContext(suite.ctx.WithBlockHeight(1))
-				suite.app.EvmKeeper.SetBlockBloomTransient(bloom.Big())
-			},
-			true,
-		},
-		{
-			"bloom not found for height",
-			func() {
-				req = &types.QueryBlockBloomRequest{Height: 100}
-				bloom := ethtypes.BytesToBloom([]byte("bloom"))
-				expBloom = bloom.Bytes()
-				suite.ctx = suite.ctx.WithBlockHeight(100)
-				suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 2, bloom)
-			},
-			false,
-		},
-		{
-			"success",
-			func() {
-				req = &types.QueryBlockBloomRequest{Height: 3}
-				bloom := ethtypes.BytesToBloom([]byte("bloom"))
-				expBloom = bloom.Bytes()
-				suite.ctx = suite.ctx.WithBlockHeight(3)
-				suite.app.EvmKeeper.SetBlockBloom(suite.ctx, 3, bloom)
-			},
-			true,
-		},
-	}
-
-	for _, tc := range testCases {
-		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
-			suite.SetupTest() // reset
-
-			tc.malleate()
-			ctx := sdk.WrapSDKContext(suite.ctx)
-			ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, fmt.Sprintf("%d", suite.ctx.BlockHeight()))
-			res, err := suite.queryClient.BlockBloom(ctx, req)
-
-			if tc.expPass {
-				suite.Require().NoError(err)
-				suite.Require().NotNil(res)
-
-				suite.Require().Equal(expBloom, res.Bloom)
-			} else {
-				suite.Require().Error(err)
-			}
+			logs := suite.app.EvmKeeper.GetTxLogsTransient(txHash)
+			suite.Require().Equal(expLogs, types.NewLogsFromEth(logs))
 		})
 	}
 }

@@ -23,7 +23,7 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Vali
 	k.WithContext(infCtx)
 
 	bloom := ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes())
-	k.SetBlockBloom(infCtx, req.Height, bloom)
+	k.EmitBlockBloomEvent(infCtx, bloom)
 
 	k.WithContext(ctx)
 

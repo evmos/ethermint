@@ -184,7 +184,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	}
 
 	res.Hash = txHash.Hex()
-	logs := k.GetTxLogs(txHash)
+	logs := k.GetTxLogsTransient(txHash)
 
 	if !res.Failed() {
 		// Only call hooks if tx executed successfully.
