@@ -163,11 +163,16 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 					continue
 				}
 
-				ethMessage, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+				messages := tx.GetMsgs()
+				if len(messages) == 0 {
+					continue
+				}
+				ethMessage, ok := messages[0].(*evmtypes.MsgEthereumTx)
 				if !ok {
 					// Just considers Ethereum transactions
 					continue
 				}
+
 				traceTxRequest := &evmtypes.QueryTraceTxRequest{
 					Msg:     ethMessage,
 					TxIndex: uint32(task.Index),
