@@ -121,7 +121,7 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 		return nil, errors.New("genesis is not traceable")
 	}
 	// Get Tendermint Block
-	resBlock, err := a.backend.GetTendermintBlock(height)
+	resBlock, err := a.backend.GetTendermintBlockByNumber(height)
 	if err != nil {
 		return nil, err
 	}

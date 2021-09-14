@@ -41,7 +41,7 @@ type Backend interface {
 	BlockNumber() (hexutil.Uint64, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
-	GetTendermintBlock(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
+	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
@@ -117,7 +117,7 @@ func (e *EVMBackend) BlockNumber() (hexutil.Uint64, error) {
 
 // GetBlockByNumber returns the block identified by number.
 func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error) {
-	resBlock, err := e.GetTendermintBlock(blockNum)
+	resBlock, err := e.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,8 @@ func (e *EVMBackend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]i
 	return e.EthBlockFromTendermint(resBlock.Block, fullTx)
 }
 
-func (e *EVMBackend) GetTendermintBlock(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error) {
+// GetTendermintBlockByNumber returns a Tendermint format block by block number
+func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error) {
 	height := blockNum.Int64()
 	currentBlockNumber, _ := e.BlockNumber()
 
