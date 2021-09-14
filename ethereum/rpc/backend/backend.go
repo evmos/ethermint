@@ -125,9 +125,10 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 	res, err := e.EthBlockFromTendermint(resBlock.Block, fullTx)
 	if err != nil {
 		e.logger.Debug("EthBlockFromTendermint failed", "height", blockNum, "error", err.Error())
+		return nil, err
 	}
 
-	return res, err
+	return res, nil
 }
 
 // GetBlockByHash returns the block identified by hash.
