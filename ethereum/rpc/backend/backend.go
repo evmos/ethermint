@@ -188,13 +188,11 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 	return resBlock, nil
 }
 
-// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block.
+// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block and its block result.
 func (e *EVMBackend) EthBlockFromTendermint(
 	block *tmtypes.Block,
 	fullTx bool,
 ) (map[string]interface{}, error) {
-	gasUsed := uint64(0)
-
 	ethRPCTxs := []interface{}{}
 
 	for i, txBz := range block.Txs {
@@ -211,8 +209,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 				continue
 			}
 
-			// Todo: gasUsed does not consider the refund gas so it is incorrect, we need to extract it from the result
-			gasUsed += ethMsg.GetGas()
 			hash := ethMsg.AsTransaction().Hash()
 			if !fullTx {
 				ethRPCTxs = append(ethRPCTxs, hash)
@@ -278,6 +274,19 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	if err != nil {
 		e.logger.Error("failed to query consensus params", "error", err.Error())
 	}
+
+	resBlockResult, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Height)
+	if err != nil {
+		e.logger.Debug("EthBlockFromTendermint block result not found", "height", block.Height, "error", err.Error())
+		return nil, err
+	}
+
+	gasUsed := uint64(0)
+
+	for _, txsResult := range resBlockResult.TxsResults {
+		gasUsed += uint64(txsResult.GetGasUsed())
+	}
+
 	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
 	return formattedBlock, nil
 }
