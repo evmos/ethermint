@@ -14,10 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -196,126 +193,6 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 
 	return &types.QueryCodeResponse{
 		Code: code,
-	}, nil
-}
-
-// TxLogs implements the Query/TxLogs gRPC method
-func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types.QueryTxLogsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
-	if ethermint.IsEmptyHash(req.Hash) {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrEmptyHash.Error(),
-		)
-	}
-
-	ctx := sdk.UnwrapSDKContext(c)
-	k.WithContext(ctx)
-
-	hash := common.HexToHash(req.Hash)
-
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), append(types.KeyPrefixLogs, hash.Bytes()...))
-
-	var logs []*types.Log
-
-	pageRes, err := query.Paginate(store, req.Pagination, func(_, value []byte) error {
-		var log types.Log
-		if err := k.cdc.Unmarshal(value, &log); err != nil {
-			return err
-		}
-		logs = append(logs, &log)
-		return nil
-	})
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	return &types.QueryTxLogsResponse{
-		Logs:       logs,
-		Pagination: pageRes,
-	}, nil
-}
-
-// BlockLogs implements the Query/BlockLogs gRPC method
-func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (*types.QueryBlockLogsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
-	if ethermint.IsEmptyHash(req.Hash) {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrEmptyHash.Error(),
-		)
-	}
-
-	ctx := sdk.UnwrapSDKContext(c)
-
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
-
-	mapOrder := []string{}
-	logs := make(map[string][]*types.Log)
-
-	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
-		var txLog types.Log
-		if err := k.cdc.Unmarshal(value, &txLog); err != nil {
-			return false, err
-		}
-
-		if txLog.BlockHash == req.Hash {
-			if accumulate {
-				if len(logs[txLog.TxHash]) == 0 {
-					mapOrder = append(mapOrder, txLog.TxHash)
-				}
-
-				logs[txLog.TxHash] = append(logs[txLog.TxHash], &txLog)
-			}
-			return true, nil
-		}
-
-		return false, nil
-	})
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	txsLogs := []types.TransactionLogs{}
-	for _, txHash := range mapOrder {
-		if len(logs[txHash]) > 0 {
-			txsLogs = append(txsLogs, types.TransactionLogs{Hash: txHash, Logs: logs[txHash]})
-		}
-	}
-
-	return &types.QueryBlockLogsResponse{
-		TxLogs:     txsLogs,
-		Pagination: pageRes,
-	}, nil
-}
-
-// BlockBloom implements the Query/BlockBloom gRPC method
-func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	bloom, found := k.GetBlockBloom(ctx, req.Height)
-	if !found {
-		// if the bloom is not found, query the transient store at the current height
-		k.WithContext(ctx)
-		bloomInt := k.GetBlockBloomTransient()
-
-		if bloomInt.Sign() == 0 {
-			return nil, status.Error(
-				codes.NotFound, sdkerrors.Wrapf(types.ErrBloomNotFound, "height: %d", req.Height).Error(),
-			)
-		}
-
-		bloom = ethtypes.BytesToBloom(bloomInt.Bytes())
-	}
-
-	return &types.QueryBlockBloomResponse{
-		Bloom: bloom.Bytes(),
 	}, nil
 }
 

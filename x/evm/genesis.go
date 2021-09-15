@@ -55,10 +55,6 @@ func InitGenesis(
 		}
 	}
 
-	for _, txLog := range data.TxsLogs {
-		k.SetLogs(common.HexToHash(txLog.Hash), txLog.EthLogs())
-	}
-
 	return []abci.ValidatorUpdate{}
 }
 
@@ -93,7 +89,6 @@ func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *t
 
 	return &types.GenesisState{
 		Accounts: ethGenAccounts,
-		TxsLogs:  k.GetAllTxLogs(ctx),
 		Params:   k.GetParams(ctx),
 	}
 }

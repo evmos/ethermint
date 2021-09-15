@@ -646,13 +646,10 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, err
 	}
 
-	resLogs, err := e.queryClient.TxLogs(e.ctx, &evmtypes.QueryTxLogsRequest{Hash: hash.Hex()})
+	logs, err := e.backend.GetTransactionLogs(hash)
 	if err != nil {
 		e.logger.Debug("logs not found", "hash", hash.Hex(), "error", err.Error())
-		resLogs = &evmtypes.QueryTxLogsResponse{Logs: []*evmtypes.Log{}}
 	}
-
-	logs := evmtypes.LogsToEthereum(resLogs.Logs)
 
 	receipt := map[string]interface{}{
 		// Consensus fields: These fields are defined by the Yellow Paper

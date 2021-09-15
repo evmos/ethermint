@@ -12,8 +12,6 @@ message GenesisState {
   repeated GenesisAccount accounts = 1 [(gogoproto.nullable) = false];
   // params defines all the paramaters of the module.
   Params params = 3 [(gogoproto.nullable) = false];
-
-  repeated TransactionLogs txs_logs = 4 [(gogoproto.moretags) = "yaml:\"txs_logs\"", (gogoproto.nullable) = false];
 }
 
 // GenesisAccount defines an account to be initialized in the genesis state.
