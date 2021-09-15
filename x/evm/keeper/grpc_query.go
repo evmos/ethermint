@@ -411,12 +411,12 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 			}
 		}()
 		defer cancel()
-	case traceConfig != nil && traceConfig.LogConfig != nil:
+	case traceConfig != nil:
 		logConfig := vm.LogConfig{
-			DisableMemory:  traceConfig.LogConfig.DisableMemory,
-			Debug:          traceConfig.LogConfig.Debug,
-			DisableStorage: traceConfig.LogConfig.DisableStorage,
-			DisableStack:   traceConfig.LogConfig.DisableStack,
+			DisableMemory:  traceConfig.DisableMemory,
+			Debug:          traceConfig.Debug,
+			DisableStorage: traceConfig.DisableStorage,
+			DisableStack:   traceConfig.DisableStack,
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:

@@ -12,7 +12,6 @@
     - [AccessTuple](#ethermint.evm.v1.AccessTuple)
     - [ChainConfig](#ethermint.evm.v1.ChainConfig)
     - [Log](#ethermint.evm.v1.Log)
-    - [LogConfig](#ethermint.evm.v1.LogConfig)
     - [Params](#ethermint.evm.v1.Params)
     - [State](#ethermint.evm.v1.State)
     - [TraceConfig](#ethermint.evm.v1.TraceConfig)
@@ -211,27 +210,6 @@ the node.
 
 
 
-<a name="ethermint.evm.v1.LogConfig"></a>
-
-### LogConfig
-LogConfig are the configuration options for structured logger the EVM
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `disable_memory` | [bool](#bool) |  | disable memory capture |
-| `disable_stack` | [bool](#bool) |  | disable stack capture |
-| `disable_storage` | [bool](#bool) |  | disable storage capture |
-| `disable_return_data` | [bool](#bool) |  | disable return data capture |
-| `debug` | [bool](#bool) |  | print output during capture end |
-| `limit` | [int32](#int32) |  | maximum length of output, but zero means unlimited |
-| `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
-
-
-
-
-
-
 <a name="ethermint.evm.v1.Params"></a>
 
 ### Params
@@ -278,7 +256,13 @@ TraceConfig holds extra parameters to trace functions.
 | `tracer` | [string](#string) |  | custom javascript tracer |
 | `timeout` | [string](#string) |  | overrides the default timeout of 5 seconds for JavaScript-based tracing calls |
 | `reexec` | [uint64](#uint64) |  | number of blocks the tracer is willing to go back |
-| `log_config` | [LogConfig](#ethermint.evm.v1.LogConfig) |  | configuration options for structured logger the EVM |
+| `disable_memory` | [bool](#bool) |  | disable memory capture |
+| `disable_stack` | [bool](#bool) |  | disable stack capture |
+| `disable_storage` | [bool](#bool) |  | disable storage capture |
+| `disable_return_data` | [bool](#bool) |  | disable return data capture |
+| `debug` | [bool](#bool) |  | print output during capture end |
+| `limit` | [int32](#int32) |  | maximum length of output, but zero means unlimited |
+| `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
 
 
 
