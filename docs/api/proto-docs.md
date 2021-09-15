@@ -847,7 +847,7 @@ QueryTraceTxRequest defines TraceTx request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `msg` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) |  | msgEthereumTx for the requested transaction |
-| `tx_index` | [uint32](#uint32) |  | transaction index |
+| `tx_index` | [uint64](#uint64) |  | transaction index |
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
 
 

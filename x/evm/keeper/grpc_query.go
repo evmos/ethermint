@@ -469,13 +469,6 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 // executes the given message in the provided environment. The return value will
 // be tracer dependent.
 func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*types.QueryTraceTxResponse, error) {
-	// Assemble the structured logger or the JavaScript tracer
-	var (
-		tracer     vm.Tracer
-		err        error
-		resultData []byte
-	)
-
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 	params := k.GetParams(ctx)
@@ -487,25 +480,48 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	coreMessage, err := req.Msg.AsMessage(signer)
+	result, err := k.traceTx(c, coinbase, signer, req.TxIndex, params, ctx, ethCfg, req.Msg, req.TraceConfig)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resultData, err := json.Marshal(result)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryTraceTxResponse{
+		Data: resultData,
+	}, nil
+}
+
+func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer ethtypes.Signer, txIndex uint64,
+	params types.Params, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
+	// Assemble the structured logger or the JavaScript tracer
+	var (
+		tracer vm.Tracer
+		err    error
+	)
+
+	coreMessage, err := msg.AsMessage(signer)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	switch {
-	case req.TraceConfig != nil && req.TraceConfig.Tracer != "":
+	case traceConfig != nil && traceConfig.Tracer != "":
 		timeout := defaultTraceTimeout
 		// TODO change timeout to time.duration
 		// Used string to comply with go ethereum
-		if req.TraceConfig.Timeout != "" {
-			if timeout, err = time.ParseDuration(req.TraceConfig.Timeout); err != nil {
+		if traceConfig.Timeout != "" {
+			if timeout, err = time.ParseDuration(traceConfig.Timeout); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
 			}
 		}
 
 		txContext := core.NewEVMTxContext(coreMessage)
-		// Constuct the JavaScript tracer to execute with
-		if tracer, err = tracers.New(req.TraceConfig.Tracer, txContext); err != nil {
+		// Construct the JavaScript tracer to execute with
+		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
@@ -518,12 +534,12 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 			}
 		}()
 		defer cancel()
-	case req.TraceConfig != nil && req.TraceConfig.LogConfig != nil:
+	case traceConfig != nil && traceConfig.LogConfig != nil:
 		logConfig := vm.LogConfig{
-			DisableMemory:  req.TraceConfig.LogConfig.DisableMemory,
-			Debug:          req.TraceConfig.LogConfig.Debug,
-			DisableStorage: req.TraceConfig.LogConfig.DisableStorage,
-			DisableStack:   req.TraceConfig.LogConfig.DisableStack,
+			DisableMemory:  traceConfig.LogConfig.DisableMemory,
+			Debug:          traceConfig.LogConfig.Debug,
+			DisableStorage: traceConfig.LogConfig.DisableStorage,
+			DisableStack:   traceConfig.LogConfig.DisableStack,
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
@@ -532,45 +548,34 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
 
-	k.SetTxHashTransient(common.HexToHash(req.Msg.Hash))
-	k.SetTxIndexTransient(uint64(req.TxIndex))
+	k.SetTxHashTransient(common.HexToHash(msg.Hash))
+	k.SetTxIndexTransient(txIndex)
 
 	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	var result interface{}
 	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
 		// TODO Return proper returnValue
-		result := types.ExecutionResult{
+		result = types.ExecutionResult{
 			Gas:         res.GasUsed,
 			Failed:      res.Failed(),
 			ReturnValue: "",
 			StructLogs:  types.FormatLogs(tracer.StructLogs()),
 		}
-
-		resultData, err = json.Marshal(result)
-
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
 	case *tracers.Tracer:
-		result, err := tracer.GetResult()
+		result, err = tracer.GetResult()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		resultData, err = json.Marshal(result)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
 	default:
 		return nil, status.Error(codes.InvalidArgument, "invalid tracer type")
 	}
 
-	return &types.QueryTraceTxResponse{
-		Data: resultData,
-	}, nil
+	return &result, nil
 }
