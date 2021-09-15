@@ -124,7 +124,7 @@ Check the JSON-RPC methods supported on Ethermint. {synopsis}
 | `debug_startGoTrace`                                                              | Debug     | ✔           |        |                    |
 | `debug_stopCPUProfile`                                                            | Debug     | ✔           |        |                    |
 | `debug_stopGoTrace`                                                               | Debug     | ✔           |        |                    |
-| `debug_traceBlock`                                                                | Debug     | ✔           |        |                    |
+| `debug_traceBlock`(#debug-traceblock)                                                                | Debug     | ✔           |        |                    |
 | `debug_traceBlockByNumber`                                                        | Debug     |             |        |                    |
 | `debug_traceBlockByHash`                                                          | Debug     |             |        |                    |
 | `debug_traceBlockFromFile`                                                        | Debug     |             |        |                    |
