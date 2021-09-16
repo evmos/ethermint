@@ -133,6 +133,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	ctx := k.Ctx()
 	params := k.GetParams(ctx)
 
+	// ensure keeper state error is cleared
 	defer k.ClearStateError()
 
 	// return error if contract creation or call are disabled through governance
@@ -250,6 +251,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
 	)
 
+	// ensure keeper state error is cleared
 	defer k.ClearStateError()
 
 	sender := vm.AccountRef(msg.From())
