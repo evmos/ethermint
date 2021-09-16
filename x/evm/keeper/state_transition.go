@@ -394,8 +394,6 @@ func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
 
 // GetCoinbaseAddress returns the block proposer's validator operator address.
 func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
-	defer k.ClearStateError()
-
 	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
