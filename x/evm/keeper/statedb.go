@@ -215,7 +215,6 @@ func (k *Keeper) GetNonce(addr common.Address) uint64 {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
-		k.stateErr = err
 	}
 
 	return nonce
@@ -296,7 +295,7 @@ func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
 // If the code hash from the account is empty, this function returns nil.
 func (k *Keeper) GetCode(addr common.Address) []byte {
 	if k.HasStateError() {
-		return []byte{}
+		return nil
 	}
 
 	ctx := k.Ctx()
