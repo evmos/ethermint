@@ -133,6 +133,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	ctx := k.Ctx()
 	params := k.GetParams(ctx)
 
+	defer k.ClearStateError()
+
 	// return error if contract creation or call are disabled through governance
 	if !params.EnableCreate && tx.To() == nil {
 		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
@@ -247,6 +249,8 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret   []byte // return bytes from evm execution
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
 	)
+
+	defer k.ClearStateError()
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
@@ -390,6 +394,8 @@ func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
 
 // GetCoinbaseAddress returns the block proposer's validator operator address.
 func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
+	defer k.ClearStateError()
+
 	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
