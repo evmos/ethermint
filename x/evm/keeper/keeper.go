@@ -90,6 +90,7 @@ func NewKeeper(
 		transientKey:  transientKey,
 		tracer:        tracer,
 		debug:         debug,
+		stateErr:      nil,
 	}
 }
 
