@@ -62,6 +62,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (evm) [tharsis#461](https://github.com/tharsis/ethermint/pull/461) Increase performance of `StateDB` transaction log storage (r/w).
+* (evm) [tharsis#566](https://github.com/tharsis/ethermint/pull/566) Introduce `stateErr` store in `StateDB` to avoid meaningless operations if any error happened before
 
 ## [v0.5.0] - 2021-08-20
 

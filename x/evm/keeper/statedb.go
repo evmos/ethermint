@@ -735,7 +735,7 @@ func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 // Snapshot return the index in the cached context stack
 func (k *Keeper) Snapshot() int {
 	if k.HasStateError() {
-		return -1
+		return 0
 	}
 
 	return k.ctxStack.Snapshot()
@@ -826,6 +826,7 @@ func (k *Keeper) HasStateError() bool {
 	return k.stateErr != nil
 }
 
+// ClearStateError reset the previous state operation error to nil
 func (k *Keeper) ClearStateError() {
 	k.stateErr = nil
 }
