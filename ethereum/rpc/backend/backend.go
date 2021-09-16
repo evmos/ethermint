@@ -56,6 +56,7 @@ type Backend interface {
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	RPCGasCap() uint64
+	RPCMinGasPrice() int64
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -77,10 +78,7 @@ func NewEVMBackend(ctx *server.Context, logger log.Logger, clientCtx client.Cont
 		panic(err)
 	}
 
-	appConf, err := config.ParseConfig(ctx.Viper)
-	if err != nil {
-		panic(err)
-	}
+	appConf := config.GetConfig(ctx.Viper)
 
 	return &EVMBackend{
 		ctx:         context.Background(),
@@ -88,7 +86,7 @@ func NewEVMBackend(ctx *server.Context, logger log.Logger, clientCtx client.Cont
 		queryClient: types.NewQueryClient(clientCtx),
 		logger:      logger.With("module", "evm-backend"),
 		chainID:     chainID,
-		cfg:         *appConf,
+		cfg:         appConf,
 	}
 }
 
@@ -699,4 +697,19 @@ func (e *EVMBackend) GetTransactionCount(address common.Address, blockNum types.
 // RPCGasCap is the global gas cap for eth-call variants.
 func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
+}
+
+// RPCMinGasPrice return the minimum gas price for a transaction.
+func (e *EVMBackend) RPCMinGasPrice() int64 {
+	evmParams, err := e.queryClient.Params(context.Background(), &evmtypes.QueryParamsRequest{})
+	if err == nil {
+		minGasPrice := e.cfg.GetMinGasPrices()
+		for _, coin := range minGasPrice {
+			if coin.Denom == evmParams.Params.EvmDenom {
+				return coin.Amount.TruncateInt64()
+			}
+		}
+	}
+
+	return ethermint.DefaultGasPrice
 }
