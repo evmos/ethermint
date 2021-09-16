@@ -181,7 +181,7 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 // denomination is obtained from the module parameters.
 func (k *Keeper) GetBalance(addr common.Address) *big.Int {
 	if k.HasStateError() {
-		return &big.Int{}
+		return big.NewInt(0)
 	}
 
 	ctx := k.Ctx()
