@@ -106,24 +106,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 						},
 					},
 				},
-				TxsLogs: []TransactionLogs{
-					{
-						Hash: suite.hash.String(),
-						Logs: []*Log{
-							{
-								Address:     suite.address,
-								Topics:      []string{suite.hash.String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      suite.hash.String(),
-								TxIndex:     1,
-								BlockHash:   suite.hash.String(),
-								Index:       1,
-								Removed:     false,
-							},
-						},
-					},
-				},
 				Params: DefaultParams(),
 			},
 			expPass: true,
@@ -181,40 +163,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 						},
 					},
 				},
-				TxsLogs: []TransactionLogs{
-					{
-						Hash: suite.hash.String(),
-						Logs: []*Log{
-							{
-								Address:     suite.address,
-								Topics:      []string{suite.hash.String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      suite.hash.String(),
-								TxIndex:     1,
-								BlockHash:   suite.hash.String(),
-								Index:       1,
-								Removed:     false,
-							},
-						},
-					},
-					{
-						Hash: suite.hash.String(),
-						Logs: []*Log{
-							{
-								Address:     suite.address,
-								Topics:      []string{suite.hash.String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      suite.hash.String(),
-								TxIndex:     1,
-								BlockHash:   suite.hash.String(),
-								Index:       1,
-								Removed:     false,
-							},
-						},
-					},
-				},
 			},
 			expPass: false,
 		},
@@ -231,7 +179,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 						},
 					},
 				},
-				TxsLogs: []TransactionLogs{NewTransactionLogs(common.Hash{}, nil)},
 			},
 			expPass: false,
 		},

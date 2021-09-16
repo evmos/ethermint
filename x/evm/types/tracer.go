@@ -40,6 +40,18 @@ func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height 
 	}
 }
 
+// TxTraceTask represents a single transaction trace task when an entire block
+// is being traced.
+type TxTraceTask struct {
+	Index int // Transaction offset in the block
+}
+
+// TxTraceResult is the result of a single transaction trace during a block trace.
+type TxTraceResult struct {
+	Result interface{} `json:"result,omitempty"` // Trace results produced by the tracer
+	Error  string      `json:"error,omitempty"`  // Trace failure produced by the tracer
+}
+
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value

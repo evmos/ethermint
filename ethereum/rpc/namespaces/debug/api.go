@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/tendermint/tendermint/types"
+
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -89,7 +91,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 
 	traceTxRequest := evmtypes.QueryTraceTxRequest{
 		Msg:     ethMessage,
-		TxIndex: transaction.Index,
+		TxIndex: uint64(transaction.Index),
 	}
 
 	if config != nil {
@@ -110,6 +112,102 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 	}
 
 	return decodedResult, nil
+}
+
+// TraceBlockByNumber returns the structured logs created during the execution of
+// EVM and returns them as a JSON object.
+func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.TraceConfig) ([]*evmtypes.TxTraceResult, error) {
+	a.logger.Debug("debug_traceBlockByNumber", "height", height)
+	if height == 0 {
+		return nil, errors.New("genesis is not traceable")
+	}
+	// Get Tendermint Block
+	resBlock, err := a.backend.GetTendermintBlockByNumber(height)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.traceBlock(height, config, resBlock.Block.Txs)
+}
+
+// traceBlock configures a new tracer according to the provided configuration, and
+// executes all the transactions contained within. The return value will be one item
+// per transaction, dependent on the requested tracer.
+func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, txs types.Txs) ([]*evmtypes.TxTraceResult, error) {
+	txsLength := len(txs)
+
+	if txsLength == 0 {
+		// If there are no transactions return empty array
+		return []*evmtypes.TxTraceResult{}, nil
+	}
+
+	var (
+		results = make([]*evmtypes.TxTraceResult, txsLength)
+		wg      = new(sync.WaitGroup)
+		jobs    = make(chan *evmtypes.TxTraceTask, txsLength)
+	)
+
+	threads := runtime.NumCPU()
+	if threads > txsLength {
+		threads = txsLength
+	}
+
+	ctxWithHeight := rpctypes.ContextWithHeight(int64(height))
+
+	wg.Add(threads)
+	for th := 0; th < threads; th++ {
+		go func() {
+			defer wg.Done()
+			txDecoder := a.clientCtx.TxConfig.TxDecoder()
+			// Fetch and execute the next transaction trace tasks
+			for task := range jobs {
+				tx, err := txDecoder(txs[task.Index])
+				if err != nil {
+					a.logger.Error("failed to decode transaction", "hash", txs[task.Index].Hash(), "error", err.Error())
+					continue
+				}
+
+				messages := tx.GetMsgs()
+				if len(messages) == 0 {
+					continue
+				}
+				ethMessage, ok := messages[0].(*evmtypes.MsgEthereumTx)
+				if !ok {
+					// Just considers Ethereum transactions
+					continue
+				}
+
+				traceTxRequest := &evmtypes.QueryTraceTxRequest{
+					Msg:         ethMessage,
+					TxIndex:     uint64(task.Index),
+					TraceConfig: config,
+				}
+
+				res, err := a.queryClient.TraceTx(ctxWithHeight, traceTxRequest)
+				if err != nil {
+					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
+					continue
+				}
+				// Response format is unknown due to custom tracer config param
+				// More information can be found here https://geth.ethereum.org/docs/dapp/tracing-filtered
+				var decodedResult interface{}
+				if err := json.Unmarshal(res.Data, &decodedResult); err != nil {
+					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
+					continue
+				}
+				results[task.Index] = &evmtypes.TxTraceResult{Result: decodedResult}
+			}
+		}()
+	}
+
+	for i := range txs {
+		jobs <- &evmtypes.TxTraceTask{Index: i}
+	}
+
+	close(jobs)
+	wg.Wait()
+
+	return results, nil
 }
 
 // BlockProfile turns on goroutine profiling for nsec seconds and writes profile data to
