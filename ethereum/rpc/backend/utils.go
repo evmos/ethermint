@@ -23,7 +23,7 @@ import (
 func (e *EVMBackend) setTxDefaults(args types.SendTxArgs) (types.SendTxArgs, error) {
 	if args.GasPrice == nil {
 		// TODO: Suggest a gas price based on the previous included txs
-		args.GasPrice = (*hexutil.Big)(new(big.Int).SetUint64(e.RPCGasCap()))
+		args.GasPrice = (*hexutil.Big)(new(big.Int).SetInt64(e.RPCMinGasPrice()))
 	}
 
 	if args.Nonce == nil {

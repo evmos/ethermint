@@ -221,6 +221,7 @@ func New(t *testing.T, cfg Config) *Network {
 		appCfg.Telemetry.Enabled = false
 
 		ctx := server.NewDefaultContext()
+
 		tmCfg := ctx.Config
 		tmCfg.Consensus.TimeoutCommit = cfg.TimeoutCommit
 
@@ -359,6 +360,13 @@ func New(t *testing.T, cfg Config) *Network {
 		require.NoError(t, writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz))
 
 		config.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appCfg)
+		ctx.Viper.AddConfigPath(fmt.Sprintf("%s/config", nodeDir))
+		ctx.Viper.SetConfigName("app")
+		ctx.Viper.SetConfigType("toml")
+		err = ctx.Viper.ReadInConfig()
+		if err != nil {
+			panic(err)
+		}
 
 		clientCtx := client.Context{}.
 			WithKeyringDir(nodeDir).
