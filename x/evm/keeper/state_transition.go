@@ -44,10 +44,6 @@ func (k *Keeper) NewEVM(
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
-
-	if tracer == nil {
-		tracer = types.NewDummyTracer()
-	}
 	vmConfig := k.VMConfig(msg, params, tracer)
 
 	return vm.NewEVM(blockCtx, txCtx, k, config, vmConfig)
@@ -315,8 +311,11 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}, nil
 }
 
-// ApplyNativeMessage execute a message on evm from native module
+// ApplyNativeMessage executes an ethereum message on the EVM. It is meant to be called from an internal
+// native Cosmos SDK module.
 func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxResponse, error) {
+	// TODO: clean up and remove duplicate code.
+
 	ctx := k.Ctx()
 	params := k.GetParams(ctx)
 	// return error if contract creation or call are disabled through governance

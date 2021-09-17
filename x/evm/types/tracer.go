@@ -38,7 +38,7 @@ func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height 
 	case TracerStruct:
 		return vm.NewStructLogger(logCfg)
 	default:
-		return nil
+		return NewNoOpTracer()
 	}
 }
 
@@ -114,26 +114,28 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 	}
 	return formatted
 }
-var _ vm.Tracer = &DummyTracer{}
 
-// DummyTracer is an empty implementation of vm.Tracer interface
-type DummyTracer struct{}
+var _ vm.Tracer = &NoOpTracer{}
 
-func NewDummyTracer() *DummyTracer {
-	return &DummyTracer{}
+// NoOpTracer is an empty implementation of vm.Tracer interface
+type NoOpTracer struct{}
+
+// NewNoOpTracer creates a no-op vm.Tracer
+func NewNoOpTracer() *NoOpTracer {
+	return &NoOpTracer{}
 }
 
 // CaptureStart implements vm.Tracer interface
-func (dt DummyTracer) CaptureStart(env *vm.EVM, from, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
+func (dt NoOpTracer) CaptureStart(env *vm.EVM, from, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 }
 
 // CaptureState implements vm.Tracer interface
-func (dt DummyTracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, rData []byte, depth int, err error) {
+func (dt NoOpTracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, rData []byte, depth int, err error) {
 }
 
 // CaptureFault implements vm.Tracer interface
-func (dt DummyTracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, depth int, err error) {
+func (dt NoOpTracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, depth int, err error) {
 }
 
 // CaptureEnd implements vm.Tracer interface
-func (dt DummyTracer) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) {}
+func (dt NoOpTracer) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) {}
