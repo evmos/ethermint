@@ -112,7 +112,7 @@ func NewDummyTracer() *DummyTracer {
 }
 
 // CaptureStart implements vm.Tracer interface
-func (dt DummyTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
+func (dt DummyTracer) CaptureStart(env *vm.EVM, from, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 }
 
 // CaptureState implements vm.Tracer interface
