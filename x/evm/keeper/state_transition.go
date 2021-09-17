@@ -311,6 +311,38 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}, nil
 }
 
+// ApplyNativeMessage executes an ethereum message on the EVM. It is meant to be called from an internal
+// native Cosmos SDK module.
+func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxResponse, error) {
+	// TODO: clean up and remove duplicate code.
+
+	ctx := k.Ctx()
+	params := k.GetParams(ctx)
+	// return error if contract creation or call are disabled through governance
+	if !params.EnableCreate && msg.To() == nil {
+		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
+	} else if !params.EnableCall && msg.To() != nil {
+		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+	}
+
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+
+	// get the coinbase address from the block proposer
+	coinbase, err := k.GetCoinbaseAddress(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
+	}
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, nil)
+
+	ret, err := k.ApplyMessage(evm, msg, ethCfg, true)
+	if err != nil {
+		return nil, err
+	}
+	k.CommitCachedContexts()
+	return ret, nil
+}
+
 // GetEthIntrinsicGas returns the intrinsic gas cost for the transaction
 func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, isContractCreation bool) (uint64, error) {
 	height := big.NewInt(k.Ctx().BlockHeight())
