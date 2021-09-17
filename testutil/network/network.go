@@ -221,6 +221,14 @@ func New(t *testing.T, cfg Config) *Network {
 		appCfg.Telemetry.Enabled = false
 
 		ctx := server.NewDefaultContext()
+		ctx.Viper.AddConfigPath("./test_config")
+		ctx.Viper.SetConfigName("app")
+		ctx.Viper.SetConfigType("toml")
+		err := ctx.Viper.ReadInConfig()
+		if err != nil {
+			panic(err)
+		}
+
 		tmCfg := ctx.Config
 		tmCfg.Consensus.TimeoutCommit = cfg.TimeoutCommit
 
