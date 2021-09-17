@@ -124,7 +124,7 @@ Check the JSON-RPC methods supported on Ethermint. {synopsis}
 | `debug_startGoTrace`                                                              | Debug     | ✔           |        |                    |
 | `debug_stopCPUProfile`                                                            | Debug     | ✔           |        |                    |
 | `debug_stopGoTrace`                                                               | Debug     | ✔           |        |                    |
-| `debug_traceBlock`                                                                | Debug     |             |        |                    |
+| `debug_traceBlock`(#debug-traceblock)                                                                | Debug     | ✔           |        |                    |
 | `debug_traceBlockByNumber`                                                        | Debug     |             |        |                    |
 | `debug_traceBlockByHash`                                                          | Debug     |             |        |                    |
 | `debug_traceBlockFromFile`                                                        | Debug     |             |        |                    |
@@ -1005,6 +1005,22 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"debug_traceTransaction","params"
 
 //Result
 ["68410", "51470"]
+```
+
+### `debug_traceBlockByNumber`
+
+The `traceBlockByNumber` endpoint accepts a block number and will replay the block that is already present in the database.
+
+#### Parameters
+
+- Trace Config
+
+```json
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"debug_traceBlockByNumber","params":["0xe", {"tracer": "{data: [], fault: function(log) {}, step: function(log) { if(log.op.toString() == \"CALL\") this.data.push(log.stack.peek(0)); }, result: function() { return this.data; }}"}],"id":1}' -H "Content-Type: application/json" http://localhost:8545
+
+//Result
+{"jsonrpc":"2.0","id":1,"result":[{"result":["68410", "51470"]}]}
 ```
 
 

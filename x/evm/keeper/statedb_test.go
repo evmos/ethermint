@@ -305,6 +305,8 @@ func (suite *KeeperTestSuite) TestSetCode() {
 			}
 
 			suite.Require().Equal(len(post), suite.app.EvmKeeper.GetCodeSize(tc.address))
+
+			suite.app.EvmKeeper.ClearStateError()
 		})
 	}
 }
@@ -608,7 +610,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 
 			suite.app.EvmKeeper.SetTxHashTransient(tc.hash)
 			suite.app.EvmKeeper.AddLog(tc.log)
-			logs := suite.app.EvmKeeper.GetTxLogs(tc.hash)
+			logs := suite.app.EvmKeeper.GetTxLogsTransient(tc.hash)
 			suite.Require().Equal(1, len(logs))
 			suite.Require().Equal(tc.expLog, logs[0])
 		})

@@ -14,10 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -199,126 +196,6 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 	}, nil
 }
 
-// TxLogs implements the Query/TxLogs gRPC method
-func (k Keeper) TxLogs(c context.Context, req *types.QueryTxLogsRequest) (*types.QueryTxLogsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
-	if ethermint.IsEmptyHash(req.Hash) {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrEmptyHash.Error(),
-		)
-	}
-
-	ctx := sdk.UnwrapSDKContext(c)
-	k.WithContext(ctx)
-
-	hash := common.HexToHash(req.Hash)
-
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), append(types.KeyPrefixLogs, hash.Bytes()...))
-
-	var logs []*types.Log
-
-	pageRes, err := query.Paginate(store, req.Pagination, func(_, value []byte) error {
-		var log types.Log
-		if err := k.cdc.Unmarshal(value, &log); err != nil {
-			return err
-		}
-		logs = append(logs, &log)
-		return nil
-	})
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	return &types.QueryTxLogsResponse{
-		Logs:       logs,
-		Pagination: pageRes,
-	}, nil
-}
-
-// BlockLogs implements the Query/BlockLogs gRPC method
-func (k Keeper) BlockLogs(c context.Context, req *types.QueryBlockLogsRequest) (*types.QueryBlockLogsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "empty request")
-	}
-
-	if ethermint.IsEmptyHash(req.Hash) {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrEmptyHash.Error(),
-		)
-	}
-
-	ctx := sdk.UnwrapSDKContext(c)
-
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
-
-	mapOrder := []string{}
-	logs := make(map[string][]*types.Log)
-
-	pageRes, err := query.FilteredPaginate(store, req.Pagination, func(_, value []byte, accumulate bool) (bool, error) {
-		var txLog types.Log
-		if err := k.cdc.Unmarshal(value, &txLog); err != nil {
-			return false, err
-		}
-
-		if txLog.BlockHash == req.Hash {
-			if accumulate {
-				if len(logs[txLog.TxHash]) == 0 {
-					mapOrder = append(mapOrder, txLog.TxHash)
-				}
-
-				logs[txLog.TxHash] = append(logs[txLog.TxHash], &txLog)
-			}
-			return true, nil
-		}
-
-		return false, nil
-	})
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	txsLogs := []types.TransactionLogs{}
-	for _, txHash := range mapOrder {
-		if len(logs[txHash]) > 0 {
-			txsLogs = append(txsLogs, types.TransactionLogs{Hash: txHash, Logs: logs[txHash]})
-		}
-	}
-
-	return &types.QueryBlockLogsResponse{
-		TxLogs:     txsLogs,
-		Pagination: pageRes,
-	}, nil
-}
-
-// BlockBloom implements the Query/BlockBloom gRPC method
-func (k Keeper) BlockBloom(c context.Context, req *types.QueryBlockBloomRequest) (*types.QueryBlockBloomResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	bloom, found := k.GetBlockBloom(ctx, req.Height)
-	if !found {
-		// if the bloom is not found, query the transient store at the current height
-		k.WithContext(ctx)
-		bloomInt := k.GetBlockBloomTransient()
-
-		if bloomInt.Sign() == 0 {
-			return nil, status.Error(
-				codes.NotFound, sdkerrors.Wrapf(types.ErrBloomNotFound, "height: %d", req.Height).Error(),
-			)
-		}
-
-		bloom = ethtypes.BytesToBloom(bloomInt.Bytes())
-	}
-
-	return &types.QueryBlockBloomResponse{
-		Bloom: bloom.Bytes(),
-	}, nil
-}
-
 // Params implements the Query/Params gRPC method
 func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -469,13 +346,6 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 // executes the given message in the provided environment. The return value will
 // be tracer dependent.
 func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*types.QueryTraceTxResponse, error) {
-	// Assemble the structured logger or the JavaScript tracer
-	var (
-		tracer     vm.Tracer
-		err        error
-		resultData []byte
-	)
-
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 	params := k.GetParams(ctx)
@@ -487,25 +357,48 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	coreMessage, err := req.Msg.AsMessage(signer)
+	result, err := k.traceTx(c, coinbase, signer, req.TxIndex, params, ctx, ethCfg, req.Msg, req.TraceConfig)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resultData, err := json.Marshal(result)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryTraceTxResponse{
+		Data: resultData,
+	}, nil
+}
+
+func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer ethtypes.Signer, txIndex uint64,
+	params types.Params, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
+	// Assemble the structured logger or the JavaScript tracer
+	var (
+		tracer vm.Tracer
+		err    error
+	)
+
+	coreMessage, err := msg.AsMessage(signer)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	switch {
-	case req.TraceConfig != nil && req.TraceConfig.Tracer != "":
+	case traceConfig != nil && traceConfig.Tracer != "":
 		timeout := defaultTraceTimeout
 		// TODO change timeout to time.duration
 		// Used string to comply with go ethereum
-		if req.TraceConfig.Timeout != "" {
-			if timeout, err = time.ParseDuration(req.TraceConfig.Timeout); err != nil {
+		if traceConfig.Timeout != "" {
+			if timeout, err = time.ParseDuration(traceConfig.Timeout); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
 			}
 		}
 
 		txContext := core.NewEVMTxContext(coreMessage)
-		// Constuct the JavaScript tracer to execute with
-		if tracer, err = tracers.New(req.TraceConfig.Tracer, txContext); err != nil {
+		// Construct the JavaScript tracer to execute with
+		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
@@ -518,12 +411,12 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 			}
 		}()
 		defer cancel()
-	case req.TraceConfig != nil && req.TraceConfig.LogConfig != nil:
+	case traceConfig != nil:
 		logConfig := vm.LogConfig{
-			DisableMemory:  req.TraceConfig.LogConfig.DisableMemory,
-			Debug:          req.TraceConfig.LogConfig.Debug,
-			DisableStorage: req.TraceConfig.LogConfig.DisableStorage,
-			DisableStack:   req.TraceConfig.LogConfig.DisableStack,
+			DisableMemory:  traceConfig.DisableMemory,
+			Debug:          traceConfig.Debug,
+			DisableStorage: traceConfig.DisableStorage,
+			DisableStack:   traceConfig.DisableStack,
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
@@ -532,45 +425,34 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
 
-	k.SetTxHashTransient(common.HexToHash(req.Msg.Hash))
-	k.SetTxIndexTransient(uint64(req.TxIndex))
+	k.SetTxHashTransient(common.HexToHash(msg.Hash))
+	k.SetTxIndexTransient(txIndex)
 
 	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	var result interface{}
 	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
 		// TODO Return proper returnValue
-		result := types.ExecutionResult{
+		result = types.ExecutionResult{
 			Gas:         res.GasUsed,
 			Failed:      res.Failed(),
 			ReturnValue: "",
 			StructLogs:  types.FormatLogs(tracer.StructLogs()),
 		}
-
-		resultData, err = json.Marshal(result)
-
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
 	case *tracers.Tracer:
-		result, err := tracer.GetResult()
+		result, err = tracer.GetResult()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		resultData, err = json.Marshal(result)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
 	default:
 		return nil, status.Error(codes.InvalidArgument, "invalid tracer type")
 	}
 
-	return &types.QueryTraceTxResponse{
-		Data: resultData,
-	}, nil
+	return &result, nil
 }

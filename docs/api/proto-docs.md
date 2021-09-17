@@ -12,7 +12,6 @@
     - [AccessTuple](#ethermint.evm.v1.AccessTuple)
     - [ChainConfig](#ethermint.evm.v1.ChainConfig)
     - [Log](#ethermint.evm.v1.Log)
-    - [LogConfig](#ethermint.evm.v1.LogConfig)
     - [Params](#ethermint.evm.v1.Params)
     - [State](#ethermint.evm.v1.State)
     - [TraceConfig](#ethermint.evm.v1.TraceConfig)
@@ -40,10 +39,6 @@
     - [QueryAccountResponse](#ethermint.evm.v1.QueryAccountResponse)
     - [QueryBalanceRequest](#ethermint.evm.v1.QueryBalanceRequest)
     - [QueryBalanceResponse](#ethermint.evm.v1.QueryBalanceResponse)
-    - [QueryBlockBloomRequest](#ethermint.evm.v1.QueryBlockBloomRequest)
-    - [QueryBlockBloomResponse](#ethermint.evm.v1.QueryBlockBloomResponse)
-    - [QueryBlockLogsRequest](#ethermint.evm.v1.QueryBlockLogsRequest)
-    - [QueryBlockLogsResponse](#ethermint.evm.v1.QueryBlockLogsResponse)
     - [QueryCodeRequest](#ethermint.evm.v1.QueryCodeRequest)
     - [QueryCodeResponse](#ethermint.evm.v1.QueryCodeResponse)
     - [QueryCosmosAccountRequest](#ethermint.evm.v1.QueryCosmosAccountRequest)
@@ -215,27 +210,6 @@ the node.
 
 
 
-<a name="ethermint.evm.v1.LogConfig"></a>
-
-### LogConfig
-LogConfig are the configuration options for structured logger the EVM
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `disable_memory` | [bool](#bool) |  | disable memory capture |
-| `disable_stack` | [bool](#bool) |  | disable stack capture |
-| `disable_storage` | [bool](#bool) |  | disable storage capture |
-| `disable_return_data` | [bool](#bool) |  | disable return data capture |
-| `debug` | [bool](#bool) |  | print output during capture end |
-| `limit` | [int32](#int32) |  | maximum length of output, but zero means unlimited |
-| `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
-
-
-
-
-
-
 <a name="ethermint.evm.v1.Params"></a>
 
 ### Params
@@ -282,7 +256,13 @@ TraceConfig holds extra parameters to trace functions.
 | `tracer` | [string](#string) |  | custom javascript tracer |
 | `timeout` | [string](#string) |  | overrides the default timeout of 5 seconds for JavaScript-based tracing calls |
 | `reexec` | [uint64](#uint64) |  | number of blocks the tracer is willing to go back |
-| `log_config` | [LogConfig](#ethermint.evm.v1.LogConfig) |  | configuration options for structured logger the EVM |
+| `disable_memory` | [bool](#bool) |  | disable memory capture |
+| `disable_stack` | [bool](#bool) |  | disable stack capture |
+| `disable_storage` | [bool](#bool) |  | disable storage capture |
+| `disable_return_data` | [bool](#bool) |  | disable return data capture |
+| `debug` | [bool](#bool) |  | print output during capture end |
+| `limit` | [int32](#int32) |  | maximum length of output, but zero means unlimited |
+| `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
 
 
 
@@ -372,7 +352,6 @@ GenesisState defines the evm module's genesis state.
 | ----- | ---- | ----- | ----------- |
 | `accounts` | [GenesisAccount](#ethermint.evm.v1.GenesisAccount) | repeated | accounts is an array containing the ethereum genesis accounts. |
 | `params` | [Params](#ethermint.evm.v1.Params) |  | params defines all the paramaters of the module. |
-| `txs_logs` | [TransactionLogs](#ethermint.evm.v1.TransactionLogs) | repeated |  |
 
 
 
@@ -637,70 +616,6 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 
 
 
-<a name="ethermint.evm.v1.QueryBlockBloomRequest"></a>
-
-### QueryBlockBloomRequest
-QueryBlockBloomRequest is the request type for the Query/BlockBloom RPC
-method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `height` | [int64](#int64) |  | height of the block which we want to query the bloom filter. Tendermint always replace the query request header by the current context header, height cannot be extracted from there, so we need to explicitly pass it in parameter. |
-
-
-
-
-
-
-<a name="ethermint.evm.v1.QueryBlockBloomResponse"></a>
-
-### QueryBlockBloomResponse
-QueryBlockBloomResponse is the response type for the Query/BlockBloom RPC
-method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `bloom` | [bytes](#bytes) |  | bloom represents bloom filter for the given block hash. |
-
-
-
-
-
-
-<a name="ethermint.evm.v1.QueryBlockLogsRequest"></a>
-
-### QueryBlockLogsRequest
-QueryBlockLogsRequest is the request type for the Query/BlockLogs RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `hash` | [string](#string) |  | hash is the block hash to query the logs for. |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
-
-
-
-
-
-
-<a name="ethermint.evm.v1.QueryBlockLogsResponse"></a>
-
-### QueryBlockLogsResponse
-QueryTxLogs is the response type for the Query/BlockLogs RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `tx_logs` | [TransactionLogs](#ethermint.evm.v1.TransactionLogs) | repeated | logs represents the ethereum logs generated at the given block hash. |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
-
-
-
-
-
-
 <a name="ethermint.evm.v1.QueryCodeRequest"></a>
 
 ### QueryCodeRequest
@@ -847,7 +762,7 @@ QueryTraceTxRequest defines TraceTx request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `msg` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) |  | msgEthereumTx for the requested transaction |
-| `tx_index` | [uint32](#uint32) |  | transaction index |
+| `tx_index` | [uint64](#uint64) |  | transaction index |
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
 
 
@@ -955,9 +870,6 @@ Query defines the gRPC querier service.
 | `Balance` | [QueryBalanceRequest](#ethermint.evm.v1.QueryBalanceRequest) | [QueryBalanceResponse](#ethermint.evm.v1.QueryBalanceResponse) | Balance queries the balance of a the EVM denomination for a single EthAccount. | GET|/ethermint/evm/v1/balances/{address}|
 | `Storage` | [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest) | [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse) | Storage queries the balance of all coins for a single account. | GET|/ethermint/evm/v1/storage/{address}/{key}|
 | `Code` | [QueryCodeRequest](#ethermint.evm.v1.QueryCodeRequest) | [QueryCodeResponse](#ethermint.evm.v1.QueryCodeResponse) | Code queries the balance of all coins for a single account. | GET|/ethermint/evm/v1/codes/{address}|
-| `TxLogs` | [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest) | [QueryTxLogsResponse](#ethermint.evm.v1.QueryTxLogsResponse) | TxLogs queries ethereum logs from a transaction. | GET|/ethermint/evm/v1/tx_logs/{hash}|
-| `BlockLogs` | [QueryBlockLogsRequest](#ethermint.evm.v1.QueryBlockLogsRequest) | [QueryBlockLogsResponse](#ethermint.evm.v1.QueryBlockLogsResponse) | BlockLogs queries all the ethereum logs for a given block hash. | GET|/ethermint/evm/v1/block_logs/{hash}|
-| `BlockBloom` | [QueryBlockBloomRequest](#ethermint.evm.v1.QueryBlockBloomRequest) | [QueryBlockBloomResponse](#ethermint.evm.v1.QueryBlockBloomResponse) | BlockBloom queries the block bloom filter bytes at a given height. | GET|/ethermint/evm/v1/block_bloom|
 | `Params` | [QueryParamsRequest](#ethermint.evm.v1.QueryParamsRequest) | [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse) | Params queries the parameters of x/evm module. | GET|/ethermint/evm/v1/params|
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
