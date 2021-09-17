@@ -215,6 +215,9 @@ func (k *Keeper) GetNonce(addr common.Address) uint64 {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
+		// since adding state error here will break some logic in the go-ethereum (unwanted panic), no
+		// state error will be store here
+		// Refer panic: https://github.com/ethereum/go-ethereum/blob/991384a7f6719e1125ca0be7fb27d0c4d1c5d2d3/core/vm/operations_acl.go#L66
 	}
 
 	return nonce
@@ -603,7 +606,7 @@ func (k *Keeper) Exist(addr common.Address) bool {
 // Non-ethereum accounts are considered not empty
 func (k *Keeper) Empty(addr common.Address) bool {
 	if k.HasStateError() {
-		return true
+		return false
 	}
 
 	ctx := k.Ctx()
