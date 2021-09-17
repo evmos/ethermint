@@ -29,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
 	"github.com/tharsis/ethermint/server/config"
 	ethermint "github.com/tharsis/ethermint/types"
@@ -57,6 +58,7 @@ type Backend interface {
 	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	RPCGasCap() uint64
 	RPCMinGasPrice() int64
+	GetFilteredBlocks(from int64, to int64, filter [][]filters.BloomIV, filterAddresses bool) ([]int64, error)
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -712,4 +714,66 @@ func (e *EVMBackend) RPCMinGasPrice() int64 {
 	}
 
 	return ethermint.DefaultGasPrice
+}
+
+// GetFilteredBlocks returns the block height list match the given bloom filters.
+func (e *EVMBackend) GetFilteredBlocks(
+	from int64,
+	to int64,
+	filters [][]filters.BloomIV,
+	filterAddresses bool,
+) ([]int64, error) {
+	matchedBlocks := make([]int64, 0)
+
+BLOCKS:
+	for height := from; height <= to; height++ {
+		if err := e.ctx.Err(); err != nil {
+			e.logger.Error("EVMBackend context error", "err", err)
+			return nil, err
+		}
+
+		h := height
+		bloom, err := e.BlockBloom(&h)
+		if err != nil {
+			e.logger.Error("retrieve header failed", "blockHeight", height, "err", err)
+			return nil, err
+		}
+
+		for i, filter := range filters {
+			// filter the header bloom with the addresses
+			if filterAddresses && i == 0 {
+				if !checkMatches(bloom, filter) {
+					continue BLOCKS
+				}
+
+				// the filter doesn't have any topics
+				if len(filters) == 1 {
+					matchedBlocks = append(matchedBlocks, height)
+					continue BLOCKS
+				}
+				continue
+			}
+
+			// filter the bloom with topics
+			if len(filter) > 0 && !checkMatches(bloom, filter) {
+				continue BLOCKS
+			}
+		}
+		matchedBlocks = append(matchedBlocks, height)
+	}
+
+	return matchedBlocks, nil
+}
+
+// checkMatches revised the function from
+// https://github.com/ethereum/go-ethereum/blob/401354976bb44f0ad4455ca1e0b5c0dc31d9a5f5/core/types/bloom9.go#L88
+func checkMatches(bloom ethtypes.Bloom, filter []filters.BloomIV) bool {
+	for _, bloomIV := range filter {
+		if bloomIV.V[0] == bloomIV.V[0]&bloom[bloomIV.I[0]] &&
+			bloomIV.V[1] == bloomIV.V[1]&bloom[bloomIV.I[1]] &&
+			bloomIV.V[2] == bloomIV.V[2]&bloom[bloomIV.I[2]] {
+			return true
+		}
+	}
+	return false
 }

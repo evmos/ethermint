@@ -32,6 +32,8 @@ type Backend interface {
 
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
+
+	GetFilteredBlocks(from int64, to int64, bloomIndexes [][]BloomIV, filterAddresses bool) ([]int64, error)
 }
 
 // consider a filter inactive if it has not been polled for within deadline
