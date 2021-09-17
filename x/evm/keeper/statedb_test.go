@@ -305,6 +305,8 @@ func (suite *KeeperTestSuite) TestSetCode() {
 			}
 
 			suite.Require().Equal(len(post), suite.app.EvmKeeper.GetCodeSize(tc.address))
+
+			suite.app.EvmKeeper.ClearStateError()
 		})
 	}
 }

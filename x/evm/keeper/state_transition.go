@@ -133,6 +133,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	ctx := k.Ctx()
 	params := k.GetParams(ctx)
 
+	// ensure keeper state error is cleared
+	defer k.ClearStateError()
+
 	// return error if contract creation or call are disabled through governance
 	if !params.EnableCreate && tx.To() == nil {
 		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
@@ -247,6 +250,9 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret   []byte // return bytes from evm execution
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
 	)
+
+	// ensure keeper state error is cleared
+	defer k.ClearStateError()
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil

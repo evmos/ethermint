@@ -28,6 +28,10 @@ var _ vm.StateDB = &Keeper{}
 // this function also resets any preexisting code and storage associated with that
 // address.
 func (k *Keeper) CreateAccount(addr common.Address) {
+	if k.HasStateError() {
+		return
+	}
+
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	ctx := k.Ctx()
 	account := k.accountKeeper.GetAccount(ctx, cosmosAddr)
@@ -57,6 +61,10 @@ func (k *Keeper) CreateAccount(addr common.Address) {
 // coins and transferring them to the address. The coin denomination is obtained
 // from the module parameters.
 func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 
 	if amount.Sign() != 1 {
@@ -86,6 +94,7 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
+		k.stateErr = err
 		return
 	}
 
@@ -96,6 +105,7 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
+		k.stateErr = err
 		return
 	}
 
@@ -111,6 +121,10 @@ func (k *Keeper) AddBalance(addr common.Address, amount *big.Int) {
 // from the module parameters. This function performs a no-op if the amount is negative
 // or the user doesn't have enough funds for the transfer.
 func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 
 	if amount.Sign() != 1 {
@@ -152,6 +166,7 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
+		k.stateErr = err
 		return
 	}
 
@@ -165,6 +180,10 @@ func (k *Keeper) SubBalance(addr common.Address, amount *big.Int) {
 // GetBalance returns the EVM denomination balance of the provided address. The
 // denomination is obtained from the module parameters.
 func (k *Keeper) GetBalance(addr common.Address) *big.Int {
+	if k.HasStateError() {
+		return big.NewInt(0)
+	}
+
 	ctx := k.Ctx()
 
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
@@ -181,6 +200,10 @@ func (k *Keeper) GetBalance(addr common.Address) *big.Int {
 // GetNonce retrieves the account with the given address and returns the tx
 // sequence (i.e nonce). The function performs a no-op if the account is not found.
 func (k *Keeper) GetNonce(addr common.Address) uint64 {
+	if k.HasStateError() {
+		return 0
+	}
+
 	ctx := k.Ctx()
 
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
@@ -192,6 +215,9 @@ func (k *Keeper) GetNonce(addr common.Address) uint64 {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
+		// since adding state error here will break some logic in the go-ethereum (unwanted panic), no
+		// state error will be store here
+		// Refer panic: https://github.com/ethereum/go-ethereum/blob/991384a7f6719e1125ca0be7fb27d0c4d1c5d2d3/core/vm/operations_acl.go#L66
 	}
 
 	return nonce
@@ -200,6 +226,10 @@ func (k *Keeper) GetNonce(addr common.Address) uint64 {
 // SetNonce sets the given nonce as the sequence of the address' account. If the
 // account doesn't exist, a new one will be created from the address.
 func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
@@ -223,7 +253,7 @@ func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 			"nonce", nonce,
 			"error", err,
 		)
-
+		k.stateErr = err
 		return
 	}
 
@@ -244,6 +274,10 @@ func (k *Keeper) SetNonce(addr common.Address, nonce uint64) {
 // GetCodeHash fetches the account from the store and returns its code hash. If the account doesn't
 // exist or is not an EthAccount type, GetCodeHash returns the empty code hash value.
 func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
+	if k.HasStateError() {
+		return common.Hash{}
+	}
+
 	ctx := k.Ctx()
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
@@ -263,6 +297,10 @@ func (k *Keeper) GetCodeHash(addr common.Address) common.Hash {
 // GetCode returns the code byte array associated with the given address.
 // If the code hash from the account is empty, this function returns nil.
 func (k *Keeper) GetCode(addr common.Address) []byte {
+	if k.HasStateError() {
+		return nil
+	}
+
 	ctx := k.Ctx()
 	hash := k.GetCodeHash(addr)
 
@@ -287,6 +325,10 @@ func (k *Keeper) GetCode(addr common.Address) []byte {
 // SetCode stores the code byte array to the application KVStore and sets the
 // code hash to the given account. The code is deleted from the store if it is empty.
 func (k *Keeper) SetCode(addr common.Address, code []byte) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 
 	if bytes.Equal(code, types.EmptyCodeHash) {
@@ -308,6 +350,7 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 			"ethereum-address", addr.Hex(),
 			"code-hash", hash.Hex(),
 		)
+		k.stateErr = fmt.Errorf("invalid account type, ethereum-address %v, code-hash %v", addr.Hex(), hash.Hex())
 		return
 	}
 
@@ -336,6 +379,10 @@ func (k *Keeper) SetCode(addr common.Address, code []byte) {
 // GetCodeSize returns the size of the contract code associated with this object,
 // or zero if none.
 func (k *Keeper) GetCodeSize(addr common.Address) int {
+	if k.HasStateError() {
+		return 0
+	}
+
 	code := k.GetCode(addr)
 	return len(code)
 }
@@ -351,6 +398,10 @@ func (k *Keeper) GetCodeSize(addr common.Address) int {
 
 // AddRefund adds the given amount of gas to the refund transient value.
 func (k *Keeper) AddRefund(gas uint64) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 	refund := k.GetRefund()
 
@@ -363,6 +414,10 @@ func (k *Keeper) AddRefund(gas uint64) {
 // SubRefund subtracts the given amount of gas from the transient refund value. This function
 // will panic if gas amount is greater than the stored refund.
 func (k *Keeper) SubRefund(gas uint64) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 	refund := k.GetRefund()
 
@@ -380,6 +435,10 @@ func (k *Keeper) SubRefund(gas uint64) {
 // GetRefund returns the amount of gas available for return after the tx execution
 // finalizes. This value is reset to 0 on every transaction.
 func (k *Keeper) GetRefund() uint64 {
+	if k.HasStateError() {
+		return 0
+	}
+
 	ctx := k.Ctx()
 	store := ctx.TransientStore(k.transientKey)
 
@@ -410,12 +469,20 @@ func doGetState(ctx sdk.Context, storeKey sdk.StoreKey, addr common.Address, has
 // GetCommittedState returns the value set in store for the given key hash. If the key is not registered
 // this function returns the empty hash.
 func (k *Keeper) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
+	if k.HasStateError() {
+		return common.Hash{}
+	}
+
 	return doGetState(k.ctxStack.initialCtx, k.storeKey, addr, hash)
 }
 
 // GetState returns the committed state for the given key hash, as all changes are committed directly
 // to the KVStore.
 func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
+	if k.HasStateError() {
+		return common.Hash{}
+	}
+
 	ctx := k.Ctx()
 	return doGetState(ctx, k.storeKey, addr, hash)
 }
@@ -423,6 +490,10 @@ func (k *Keeper) GetState(addr common.Address, hash common.Hash) common.Hash {
 // SetState sets the given hashes (key, value) to the KVStore. If the value hash is empty, this
 // function deletes the key from the store.
 func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
 	key = types.KeyAddressStorage(addr, key)
@@ -449,6 +520,10 @@ func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 // Suicide marks the given account as suicided and clears the account balance of
 // the EVM tokens.
 func (k *Keeper) Suicide(addr common.Address) bool {
+	if k.HasStateError() {
+		return false
+	}
+
 	ctx := k.Ctx()
 
 	prev := k.HasSuicided(addr)
@@ -466,7 +541,7 @@ func (k *Keeper) Suicide(addr common.Address) bool {
 			"cosmos-address", cosmosAddr.String(),
 			"error", err,
 		)
-
+		k.stateErr = err
 		return false
 	}
 
@@ -492,6 +567,10 @@ func (k Keeper) setSuicided(ctx sdk.Context, addr common.Address) {
 // current block. Accounts that are suicided will be returned as non-nil during queries and "cleared"
 // after the block has been committed.
 func (k *Keeper) HasSuicided(addr common.Address) bool {
+	if k.HasStateError() {
+		return false
+	}
+
 	ctx := k.Ctx()
 	store := prefix.NewStore(ctx.TransientStore(k.transientKey), types.KeyPrefixTransientSuicided)
 	return store.Has(addr.Bytes())
@@ -504,6 +583,10 @@ func (k *Keeper) HasSuicided(addr common.Address) bool {
 // Exist returns true if the given account exists in store or if it has been
 // marked as suicided in the transient store.
 func (k *Keeper) Exist(addr common.Address) bool {
+	if k.HasStateError() {
+		return false
+	}
+
 	ctx := k.Ctx()
 	// return true if the account has suicided
 	if k.HasSuicided(addr) {
@@ -522,6 +605,10 @@ func (k *Keeper) Exist(addr common.Address) bool {
 //
 // Non-ethereum accounts are considered not empty
 func (k *Keeper) Empty(addr common.Address) bool {
+	if k.HasStateError() {
+		return false
+	}
+
 	ctx := k.Ctx()
 	nonce := uint64(0)
 	codeHash := types.EmptyCodeHash
@@ -560,6 +647,10 @@ func (k *Keeper) Empty(addr common.Address) bool {
 //
 // This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
 func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList) {
+	if k.HasStateError() {
+		return
+	}
+
 	k.AddAddressToAccessList(sender)
 	if dest != nil {
 		k.AddAddressToAccessList(*dest)
@@ -578,6 +669,10 @@ func (k *Keeper) PrepareAccessList(sender common.Address, dest *common.Address, 
 
 // AddressInAccessList returns true if the address is registered on the transient store.
 func (k *Keeper) AddressInAccessList(addr common.Address) bool {
+	if k.HasStateError() {
+		return false
+	}
+
 	ctx := k.Ctx()
 	ts := prefix.NewStore(ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListAddress)
 	return ts.Has(addr.Bytes())
@@ -585,6 +680,10 @@ func (k *Keeper) AddressInAccessList(addr common.Address) bool {
 
 // SlotInAccessList checks if the address and the slots are registered in the transient store
 func (k *Keeper) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk, slotOk bool) {
+	if k.HasStateError() {
+		return false, false
+	}
+
 	addressOk = k.AddressInAccessList(addr)
 	slotOk = k.addressSlotInAccessList(addr, slot)
 	return addressOk, slotOk
@@ -601,6 +700,10 @@ func (k *Keeper) addressSlotInAccessList(addr common.Address, slot common.Hash) 
 // AddAddressToAccessList adds the given address to the access list. If the address is already
 // in the access list, this function performs a no-op.
 func (k *Keeper) AddAddressToAccessList(addr common.Address) {
+	if k.HasStateError() {
+		return
+	}
+
 	if k.AddressInAccessList(addr) {
 		return
 	}
@@ -613,6 +716,10 @@ func (k *Keeper) AddAddressToAccessList(addr common.Address) {
 // AddSlotToAccessList adds the given (address, slot) to the access list. If the address and slot are
 // already in the access list, this function performs a no-op.
 func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
+	if k.HasStateError() {
+		return
+	}
+
 	k.AddAddressToAccessList(addr)
 	if k.addressSlotInAccessList(addr, slot) {
 		return
@@ -630,11 +737,19 @@ func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 
 // Snapshot return the index in the cached context stack
 func (k *Keeper) Snapshot() int {
+	if k.HasStateError() {
+		return 0
+	}
+
 	return k.ctxStack.Snapshot()
 }
 
 // RevertToSnapshot pop all the cached contexts after(including) the snapshot
 func (k *Keeper) RevertToSnapshot(target int) {
+	if k.HasStateError() {
+		return
+	}
+
 	k.ctxStack.RevertToSnapshot(target)
 }
 
@@ -646,6 +761,10 @@ func (k *Keeper) RevertToSnapshot(target int) {
 // context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log
 // to store.
 func (k *Keeper) AddLog(log *ethtypes.Log) {
+	if k.HasStateError() {
+		return
+	}
+
 	ctx := k.Ctx()
 
 	log.BlockHash = common.BytesToHash(ctx.HeaderHash())
@@ -679,6 +798,10 @@ func (k *Keeper) AddPreimage(_ common.Hash, _ []byte) {}
 // ForEachStorage uses the store iterator to iterate over all the state keys and perform a callback
 // function on each of them.
 func (k *Keeper) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) error {
+	if k.HasStateError() {
+		return k.stateErr
+	}
+
 	ctx := k.Ctx()
 	store := ctx.KVStore(k.storeKey)
 	prefix := types.AddressStoragePrefix(addr)
@@ -699,4 +822,14 @@ func (k *Keeper) ForEachStorage(addr common.Address, cb func(key, value common.H
 	}
 
 	return nil
+}
+
+// HasStateError return the previous error for any state operations
+func (k *Keeper) HasStateError() bool {
+	return k.stateErr != nil
+}
+
+// ClearStateError reset the previous state operation error to nil
+func (k *Keeper) ClearStateError() {
+	k.stateErr = nil
 }

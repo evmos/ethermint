@@ -57,6 +57,9 @@ type Keeper struct {
 
 	// EVM Hooks for tx post-processing
 	hooks types.EvmHooks
+
+	// error from previous state operation
+	stateErr error
 }
 
 // NewKeeper generates new evm module keeper
@@ -87,6 +90,7 @@ func NewKeeper(
 		transientKey:  transientKey,
 		tracer:        tracer,
 		debug:         debug,
+		stateErr:      nil,
 	}
 }
 
