@@ -217,7 +217,9 @@ func calcBloomIVs(data []byte) BloomIV {
 
 	sha := crypto.NewKeccakState()
 	sha.Reset()
-	sha.Write(data)
+	if _, err := sha.Write(data); err != nil {
+		panic(err)
+	}
 	if _, err := sha.Read(hashbuf); err != nil {
 		panic(err)
 	}
