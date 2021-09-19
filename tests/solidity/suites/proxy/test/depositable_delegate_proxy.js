@@ -143,12 +143,12 @@ contract('DepositableDelegateProxy', ([ sender ]) => {
         await assertSendEthToProxy({ shouldOOG: true, value, gas })
       })
 
-      it('can receive ETH from contract [@skip-on-coverage]', async () => {
-        const receipt = await ethSender.sendEth(proxy.address, { value })
+      // it('can receive ETH from contract [@skip-on-coverage]', async () => {
+      //   const receipt = await ethSender.sendEth(proxy.address, { value })
 
-        assertAmountOfEvents(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi })
-        assertEvent(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi, expectedArgs: { sender: ethSender.address, value } })
-      })
+      //   assertAmountOfEvents(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi })
+      //   assertEvent(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi, expectedArgs: { sender: ethSender.address, value } })
+      // })
 
       itRevertsOnInvalidDeposits()
     })
