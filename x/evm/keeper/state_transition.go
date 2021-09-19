@@ -133,6 +133,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	ctx := k.Ctx()
 	params := k.GetParams(ctx)
 
+	// ensure keeper state error is cleared
+	defer k.ClearStateError()
+
 	// return error if contract creation or call are disabled through governance
 	if !params.EnableCreate && tx.To() == nil {
 		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
@@ -184,7 +187,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	}
 
 	res.Hash = txHash.Hex()
-	logs := k.GetTxLogs(txHash)
+	logs := k.GetTxLogsTransient(txHash)
 
 	if !res.Failed() {
 		// Only call hooks if tx executed successfully.
@@ -248,6 +251,9 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
 	)
 
+	// ensure keeper state error is cleared
+	defer k.ClearStateError()
+
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
 
@@ -303,6 +309,38 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		VmError: vmError,
 		Ret:     ret,
 	}, nil
+}
+
+// ApplyNativeMessage executes an ethereum message on the EVM. It is meant to be called from an internal
+// native Cosmos SDK module.
+func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxResponse, error) {
+	// TODO: clean up and remove duplicate code.
+
+	ctx := k.Ctx()
+	params := k.GetParams(ctx)
+	// return error if contract creation or call are disabled through governance
+	if !params.EnableCreate && msg.To() == nil {
+		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
+	} else if !params.EnableCall && msg.To() != nil {
+		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+	}
+
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+
+	// get the coinbase address from the block proposer
+	coinbase, err := k.GetCoinbaseAddress(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
+	}
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, nil)
+
+	ret, err := k.ApplyMessage(evm, msg, ethCfg, true)
+	if err != nil {
+		return nil, err
+	}
+	k.CommitCachedContexts()
+	return ret, nil
 }
 
 // GetEthIntrinsicGas returns the intrinsic gas cost for the transaction

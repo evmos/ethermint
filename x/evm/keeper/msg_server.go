@@ -52,11 +52,21 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyEthereumTxFailed, response.VmError))
 	}
 
+	txLogAttrs := make([]sdk.Attribute, 0)
+	for _, log := range response.Logs {
+		bz := k.cdc.MustMarshal(log)
+		txLogAttrs = append(txLogAttrs, sdk.NewAttribute(types.AttributeKeyTxLog, string(bz)))
+	}
+
 	// emit events
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			types.EventTypeEthereumTx,
 			attrs...,
+		),
+		sdk.NewEvent(
+			types.EventTypeTxLog,
+			txLogAttrs...,
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,

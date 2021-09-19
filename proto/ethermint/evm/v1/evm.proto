@@ -206,24 +206,18 @@ message TraceConfig {
   string timeout = 2;
   // number of blocks the tracer is willing to go back
   uint64 reexec  = 3;
-  // configuration options for structured logger the EVM
-  LogConfig log_config = 4 [ (gogoproto.jsontag) = "logConfig" ];
-}
-
-// LogConfig are the configuration options for structured logger the EVM
-message LogConfig {
   // disable memory capture
-  bool disable_memory = 1 [ (gogoproto.jsontag) = "disableMemory" ];
-    // disable stack capture
-  bool disable_stack = 2 [ (gogoproto.jsontag) = "disableStack" ];
+  bool disable_memory = 4 [ (gogoproto.jsontag) = "disableMemory" ];
+  // disable stack capture
+  bool disable_stack = 5 [ (gogoproto.jsontag) = "disableStack" ];
   // disable storage capture
-  bool disable_storage = 3 [ (gogoproto.jsontag) = "disableStorage" ];
+  bool disable_storage = 6 [ (gogoproto.jsontag) = "disableStorage" ];
   // disable return data capture
-  bool disable_return_data = 4 [ (gogoproto.jsontag) = "disableReturnData" ];
+  bool disable_return_data = 7 [ (gogoproto.jsontag) = "disableReturnData" ];
   // print output during capture end
-  bool debug = 5;
+  bool debug = 8;
   // maximum length of output, but zero means unlimited
-  int32 limit = 6;
+  int32 limit = 9;
   // Chain overrides, can be used to execute a trace using future fork rules
-  ChainConfig overrides = 7;
+  ChainConfig overrides = 10;
 }

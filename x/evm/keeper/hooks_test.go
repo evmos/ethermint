@@ -68,7 +68,7 @@ func (suite *KeeperTestSuite) TestEvmHooks() {
 			Topics:  []common.Hash{},
 			Address: suite.address,
 		})
-		logs := k.GetTxLogs(txHash)
+		logs := k.GetTxLogsTransient(txHash)
 		result := k.PostTxProcessing(txHash, logs)
 
 		tc.expFunc(hook, result)
