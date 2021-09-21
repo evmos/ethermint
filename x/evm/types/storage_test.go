@@ -3,9 +3,8 @@ package types
 import (
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-
-	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 func TestStorageValidate(t *testing.T) {
@@ -17,22 +16,22 @@ func TestStorageValidate(t *testing.T) {
 		{
 			"valid storage",
 			Storage{
-				NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+				NewState(common.BytesToHash([]byte{1, 2, 3}), common.BytesToHash([]byte{1, 2, 3})),
 			},
 			true,
 		},
 		{
 			"empty storage key bytes",
 			Storage{
-				{Key: ethcmn.Hash{}.String()},
+				{Key: common.Hash{}.String()},
 			},
 			false,
 		},
 		{
 			"duplicated storage key",
 			Storage{
-				{Key: ethcmn.BytesToHash([]byte{1, 2, 3}).String()},
-				{Key: ethcmn.BytesToHash([]byte{1, 2, 3}).String()},
+				{Key: common.BytesToHash([]byte{1, 2, 3}).String()},
+				{Key: common.BytesToHash([]byte{1, 2, 3}).String()},
 			},
 			false,
 		},
@@ -57,13 +56,13 @@ func TestStorageCopy(t *testing.T) {
 		{
 			"single storage",
 			Storage{
-				NewState(ethcmn.BytesToHash([]byte{1, 2, 3}), ethcmn.BytesToHash([]byte{1, 2, 3})),
+				NewState(common.BytesToHash([]byte{1, 2, 3}), common.BytesToHash([]byte{1, 2, 3})),
 			},
 		},
 		{
 			"empty storage key value bytes",
 			Storage{
-				{Key: ethcmn.Hash{}.String(), Value: ethcmn.Hash{}.String()},
+				{Key: common.Hash{}.String(), Value: common.Hash{}.String()},
 			},
 		},
 		{
@@ -79,7 +78,7 @@ func TestStorageCopy(t *testing.T) {
 }
 
 func TestStorageString(t *testing.T) {
-	storage := Storage{NewState(ethcmn.BytesToHash([]byte("key")), ethcmn.BytesToHash([]byte("value")))}
+	storage := Storage{NewState(common.BytesToHash([]byte("key")), common.BytesToHash([]byte("value")))}
 	str := "key:\"0x00000000000000000000000000000000000000000000000000000000006b6579\" value:\"0x00000000000000000000000000000000000000000000000000000076616c7565\" \n"
 	require.Equal(t, str, storage.String())
 }

@@ -195,3 +195,27 @@ message AccessTuple {
   // hex formatted hashes of the storage keys
   repeated string storage_keys = 2 [ (gogoproto.jsontag) = "storageKeys" ];
 }
+
+// TraceConfig holds extra parameters to trace functions.
+message TraceConfig {
+  // custom javascript tracer
+  string tracer = 1;
+  // overrides the default timeout of 5 seconds for JavaScript-based tracing calls
+  string timeout = 2;
+  // number of blocks the tracer is willing to go back
+  uint64 reexec  = 3;
+  // disable memory capture
+  bool disable_memory = 4 [ (gogoproto.jsontag) = "disableMemory" ];
+  // disable stack capture
+  bool disable_stack = 5 [ (gogoproto.jsontag) = "disableStack" ];
+  // disable storage capture
+  bool disable_storage = 6 [ (gogoproto.jsontag) = "disableStorage" ];
+  // disable return data capture
+  bool disable_return_data = 7 [ (gogoproto.jsontag) = "disableReturnData" ];
+  // print output during capture end
+  bool debug = 8;
+  // maximum length of output, but zero means unlimited
+  int32 limit = 9;
+  // Chain overrides, can be used to execute a trace using future fork rules
+  ChainConfig overrides = 10;
+}

@@ -7,7 +7,6 @@ order: 1
 ## Pre-requisite Readings
 
 - [Install Binary](./../../quickstart/installation)  {prereq}
-- [Install Starport](https://docs.starport.network/intro/install.html)  {prereq}
 
 ## Automated Localnet (script)
 

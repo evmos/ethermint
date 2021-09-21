@@ -26,7 +26,7 @@ import (
 	"github.com/tharsis/ethermint/server/config"
 )
 
-// API is the miner prefixed set of APIs in the Miner JSON-RPC spec.
+// API is the private miner prefixed set of APIs in the Miner JSON-RPC spec.
 type API struct {
 	ctx       *server.Context
 	logger    log.Logger
@@ -34,8 +34,8 @@ type API struct {
 	backend   backend.Backend
 }
 
-// NewMinerAPI creates an instance of the Miner API.
-func NewMinerAPI(
+// NewPrivateAPI creates an instance of the Miner API.
+func NewPrivateAPI(
 	ctx *server.Context,
 	clientCtx client.Context,
 	backend backend.Backend,

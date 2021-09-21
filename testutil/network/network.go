@@ -221,6 +221,7 @@ func New(t *testing.T, cfg Config) *Network {
 		appCfg.Telemetry.Enabled = false
 
 		ctx := server.NewDefaultContext()
+
 		tmCfg := ctx.Config
 		tmCfg.Consensus.TimeoutCommit = cfg.TimeoutCommit
 
@@ -273,7 +274,7 @@ func New(t *testing.T, cfg Config) *Network {
 		nodeDir := filepath.Join(network.BaseDir, nodeDirName, "ethermintd")
 		gentxsDir := filepath.Join(network.BaseDir, "gentxs")
 
-		require.NoError(t, os.MkdirAll(filepath.Join(nodeDir, "config"), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(nodeDir, "config"), 0o755))
 
 		tmCfg.SetRoot(nodeDir)
 		tmCfg.Moniker = nodeDirName
@@ -359,6 +360,13 @@ func New(t *testing.T, cfg Config) *Network {
 		require.NoError(t, writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz))
 
 		config.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appCfg)
+		ctx.Viper.AddConfigPath(fmt.Sprintf("%s/config", nodeDir))
+		ctx.Viper.SetConfigName("app")
+		ctx.Viper.SetConfigType("toml")
+		err = ctx.Viper.ReadInConfig()
+		if err != nil {
+			panic(err)
+		}
 
 		clientCtx := client.Context{}.
 			WithKeyringDir(nodeDir).

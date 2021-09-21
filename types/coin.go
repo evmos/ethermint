@@ -19,12 +19,13 @@ const (
 	// BaseDenomUnit defines the base denomination unit for Photons.
 	// 1 photon = 1x10^{BaseDenomUnit} aphoton
 	BaseDenomUnit = 18
+
+	// DefaultGasPrice is default gas price for evm transactions
+	DefaultGasPrice = 20
 )
 
-var (
-	// PowerReduction defines the default power reduction value for staking
-	PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(BaseDenomUnit), nil))
-)
+// PowerReduction defines the default power reduction value for staking
+var PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(BaseDenomUnit), nil))
 
 // NewPhotonCoin is a utility function that returns an "aphoton" coin with the given sdk.Int amount.
 // The function will panic if the provided amount is negative.

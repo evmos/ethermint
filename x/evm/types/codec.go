@@ -9,9 +9,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 )
 
-var (
-	ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
-)
+var ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 
 type (
 	ExtensionOptionsEthereumTxI interface{}

@@ -5,16 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	"github.com/tharsis/ethermint/tests"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func TestTransactionLogsValidate(t *testing.T) {
-	priv, err := ethsecp256k1.GenerateKey()
-	require.NoError(t, err)
-	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey).String()
+	addr := tests.GenerateAddress().String()
 
 	testCases := []struct {
 		name    string
@@ -24,16 +21,16 @@ func TestTransactionLogsValidate(t *testing.T) {
 		{
 			"valid log",
 			TransactionLogs{
-				Hash: ethcmn.BytesToHash([]byte("tx_hash")).String(),
+				Hash: common.BytesToHash([]byte("tx_hash")).String(),
 				Logs: []*Log{
 					{
 						Address:     addr,
-						Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
+						Topics:      []string{common.BytesToHash([]byte("topic")).String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
-						TxHash:      ethcmn.BytesToHash([]byte("tx_hash")).String(),
+						TxHash:      common.BytesToHash([]byte("tx_hash")).String(),
 						TxIndex:     1,
-						BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+						BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 						Index:       1,
 						Removed:     false,
 					},
@@ -44,14 +41,14 @@ func TestTransactionLogsValidate(t *testing.T) {
 		{
 			"empty hash",
 			TransactionLogs{
-				Hash: ethcmn.Hash{}.String(),
+				Hash: common.Hash{}.String(),
 			},
 			false,
 		},
 		{
 			"invalid log",
 			TransactionLogs{
-				Hash: ethcmn.BytesToHash([]byte("tx_hash")).String(),
+				Hash: common.BytesToHash([]byte("tx_hash")).String(),
 				Logs: []*Log{{}},
 			},
 			false,
@@ -59,16 +56,16 @@ func TestTransactionLogsValidate(t *testing.T) {
 		{
 			"hash mismatch log",
 			TransactionLogs{
-				Hash: ethcmn.BytesToHash([]byte("tx_hash")).String(),
+				Hash: common.BytesToHash([]byte("tx_hash")).String(),
 				Logs: []*Log{
 					{
 						Address:     addr,
-						Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
+						Topics:      []string{common.BytesToHash([]byte("topic")).String()},
 						Data:        []byte("data"),
 						BlockNumber: 1,
-						TxHash:      ethcmn.BytesToHash([]byte("other_hash")).String(),
+						TxHash:      common.BytesToHash([]byte("other_hash")).String(),
 						TxIndex:     1,
-						BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+						BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 						Index:       1,
 						Removed:     false,
 					},
@@ -90,9 +87,7 @@ func TestTransactionLogsValidate(t *testing.T) {
 }
 
 func TestValidateLog(t *testing.T) {
-	priv, err := ethsecp256k1.GenerateKey()
-	require.NoError(t, err)
-	addr := ethcrypto.PubkeyToAddress(priv.ToECDSA().PublicKey).String()
+	addr := tests.GenerateAddress().String()
 
 	testCases := []struct {
 		name    string
@@ -103,12 +98,12 @@ func TestValidateLog(t *testing.T) {
 			"valid log",
 			&Log{
 				Address:     addr,
-				Topics:      []string{ethcmn.BytesToHash([]byte("topic")).String()},
+				Topics:      []string{common.BytesToHash([]byte("topic")).String()},
 				Data:        []byte("data"),
 				BlockNumber: 1,
-				TxHash:      ethcmn.BytesToHash([]byte("tx_hash")).String(),
+				TxHash:      common.BytesToHash([]byte("tx_hash")).String(),
 				TxIndex:     1,
-				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+				BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 				Index:       1,
 				Removed:     false,
 			},
@@ -120,7 +115,7 @@ func TestValidateLog(t *testing.T) {
 		{
 			"zero address",
 			&Log{
-				Address: ethcmn.Address{}.String(),
+				Address: common.Address{}.String(),
 			},
 			false,
 		},
@@ -128,7 +123,7 @@ func TestValidateLog(t *testing.T) {
 			"empty block hash",
 			&Log{
 				Address:   addr,
-				BlockHash: ethcmn.Hash{}.String(),
+				BlockHash: common.Hash{}.String(),
 			},
 			false,
 		},
@@ -136,7 +131,7 @@ func TestValidateLog(t *testing.T) {
 			"zero block number",
 			&Log{
 				Address:     addr,
-				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+				BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 				BlockNumber: 0,
 			},
 			false,
@@ -145,9 +140,9 @@ func TestValidateLog(t *testing.T) {
 			"empty tx hash",
 			&Log{
 				Address:     addr,
-				BlockHash:   ethcmn.BytesToHash([]byte("block_hash")).String(),
+				BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
 				BlockNumber: 1,
-				TxHash:      ethcmn.Hash{}.String(),
+				TxHash:      common.Hash{}.String(),
 			},
 			false,
 		},

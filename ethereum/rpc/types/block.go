@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -73,7 +74,7 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	}
 
 	blckNum, err := hexutil.DecodeUint64(input)
-	if err == hexutil.ErrMissingPrefix {
+	if errors.Is(err, hexutil.ErrMissingPrefix) {
 		blckNum = cast.ToUint64(input)
 	} else if err != nil {
 		return err

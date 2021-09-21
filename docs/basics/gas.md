@@ -25,9 +25,7 @@ usage of operations during execution. Operations on Cosmos are represented as re
 In Cosmos, a fee is calculated and charged to the user during a message execution. This fee is
 calculated from the sum of all gas consumed in an message execution:
 
-```
-fee = gas * gas price
-```
+$$fee = gas ~ * ~ gasPrice$$
 
 In both networks, gas is used to make sure that operations do not require an excess amount of
 computational power to complete and as a way to deter bad-acting users from spamming the network.
@@ -86,7 +84,7 @@ as gas is required inherently by the EVM. This check is done by the EVM transact
 
 ## Gas estimation
 
-Ethereum provides a JSON-RPC endpoint `eth_estimateGas` to help users set up a correct gas limit in their transactions. 
+Ethereum provides a JSON-RPC endpoint `eth_estimateGas` to help users set up a correct gas limit in their transactions.
 
 Unfortunately, we cannot make use of the SDK `tx simulation` for gas estimation because the pre-check in the Ante Handlers would require a valid signature, and the sender balance to be enough to pay for the gas. But in Ethereum, this endpoint can be called without specifying any sender address.
 
@@ -96,7 +94,3 @@ transaction might be higher than the value returned by the EVM after applying th
 A cache context will be used during the whole execution to avoid changes be persisted in the state.
 
 +++ https://github.com/tharsis/ethermint/blob/098da6d0cc0e0c4cefbddf632df1057383973e4a/x/evm/keeper/grpc_query.go#L100
-
-## Next {hide}
-
-Learn about the different types of [tokens](./tokens.md) available {hide}

@@ -3,9 +3,8 @@ package types
 import (
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-
-	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 func TestIsEmptyHash(t *testing.T) {
@@ -18,11 +17,11 @@ func TestIsEmptyHash(t *testing.T) {
 			"empty string", "", true,
 		},
 		{
-			"zero hash", ethcmn.Hash{}.String(), true,
+			"zero hash", common.Hash{}.String(), true,
 		},
 
 		{
-			"non-empty hash", ethcmn.BytesToHash([]byte{1, 2, 3, 4}).String(), false,
+			"non-empty hash", common.BytesToHash([]byte{1, 2, 3, 4}).String(), false,
 		},
 	}
 
@@ -41,11 +40,11 @@ func TestIsZeroAddress(t *testing.T) {
 			"empty string", "", true,
 		},
 		{
-			"zero address", ethcmn.Address{}.String(), true,
+			"zero address", common.Address{}.String(), true,
 		},
 
 		{
-			"non-empty address", ethcmn.BytesToAddress([]byte{1, 2, 3, 4}).String(), false,
+			"non-empty address", common.BytesToAddress([]byte{1, 2, 3, 4}).String(), false,
 		},
 	}
 

@@ -56,6 +56,12 @@ type Keeper struct {
 	// trace EVM state transition execution. This value is obtained from the `--trace` flag.
 	// For more info check https://geth.ethereum.org/docs/dapp/tracing
 	debug bool
+
+	// EVM Hooks for tx post-processing
+	hooks types.EvmHooks
+
+	// error from previous state operation
+	stateErr error
 }
 
 // NewKeeper generates new evm module keeper
@@ -66,7 +72,6 @@ func NewKeeper(
 	fmk types.FeeMarketKeeper,
 	tracer string, debug bool,
 ) *Keeper {
-
 	// ensure evm module account is set
 	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the EVM module account has not been set")
@@ -89,6 +94,7 @@ func NewKeeper(
 		transientKey:    transientKey,
 		tracer:          tracer,
 		debug:           debug,
+		stateErr:        nil,
 	}
 }
 
@@ -141,23 +147,14 @@ func (k Keeper) ChainID() *big.Int {
 // Required by Web3 API.
 // ----------------------------------------------------------------------------
 
-// GetBlockBloom gets bloombits from block height
-func (k Keeper) GetBlockBloom(ctx sdk.Context, height int64) (ethtypes.Bloom, bool) {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.BloomKey(height))
-	if len(bz) == 0 {
-		return ethtypes.Bloom{}, false
-	}
-
-	return ethtypes.BytesToBloom(bz), true
-}
-
-// SetBlockBloom sets the mapping from block height to bloom bits
-func (k Keeper) SetBlockBloom(ctx sdk.Context, height int64, bloom ethtypes.Bloom) {
-	store := ctx.KVStore(k.storeKey)
-
-	key := types.BloomKey(height)
-	store.Set(key, bloom.Bytes())
+// EmitBlockBloomEvent emit block bloom events
+func (k Keeper) EmitBlockBloomEvent(ctx sdk.Context, bloom ethtypes.Bloom) {
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeBlockBloom,
+			sdk.NewAttribute(types.AttributeKeyEthereumBloom, string(bloom.Bytes())),
+		),
+	)
 }
 
 // GetBlockBloomTransient returns bloom bytes for the current block height
@@ -201,6 +198,12 @@ func (k Keeper) SetTxHashTransient(hash common.Hash) {
 	store.Set(types.KeyPrefixTransientTxHash, hash.Bytes())
 }
 
+// SetTxIndexTransient set the index of processing transaction
+func (k Keeper) SetTxIndexTransient(index uint64) {
+	store := k.Ctx().TransientStore(k.transientKey)
+	store.Set(types.KeyPrefixTransientTxIndex, sdk.Uint64ToBigEndian(index))
+}
+
 // GetTxIndexTransient returns EVM transaction index on the current block.
 func (k Keeper) GetTxIndexTransient() uint64 {
 	store := k.Ctx().TransientStore(k.transientKey)
@@ -216,8 +219,7 @@ func (k Keeper) GetTxIndexTransient() uint64 {
 // value by one and then sets the new index back to the transient store.
 func (k Keeper) IncreaseTxIndexTransient() {
 	txIndex := k.GetTxIndexTransient()
-	store := k.Ctx().TransientStore(k.transientKey)
-	store.Set(types.KeyPrefixTransientTxIndex, sdk.Uint64ToBigEndian(txIndex+1))
+	k.SetTxIndexTransient(txIndex + 1)
 }
 
 // ResetRefundTransient resets the available refund amount to 0
@@ -230,53 +232,39 @@ func (k Keeper) ResetRefundTransient(ctx sdk.Context) {
 // Log
 // ----------------------------------------------------------------------------
 
-// GetAllTxLogs return all the transaction logs from the store.
-func (k Keeper) GetAllTxLogs(ctx sdk.Context) []types.TransactionLogs {
-	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.KeyPrefixLogs)
-	defer iterator.Close()
-
-	txsLogs := []types.TransactionLogs{}
-	for ; iterator.Valid(); iterator.Next() {
-		var txLog types.TransactionLogs
-		k.cdc.MustUnmarshal(iterator.Value(), &txLog)
-
-		// add a new entry
-		txsLogs = append(txsLogs, txLog)
-	}
-	return txsLogs
-}
-
-// GetLogs returns the current logs for a given transaction hash from the KVStore.
+// GetTxLogsTransient returns the current logs for a given transaction hash from the KVStore.
 // This function returns an empty, non-nil slice if no logs are found.
-func (k Keeper) GetTxLogs(txHash common.Hash) []*ethtypes.Log {
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+func (k Keeper) GetTxLogsTransient(txHash common.Hash) []*ethtypes.Log {
+	store := prefix.NewStore(k.Ctx().TransientStore(k.transientKey), types.KeyPrefixTransientTxLogs)
 
-	bz := store.Get(txHash.Bytes())
-	if len(bz) == 0 {
-		return []*ethtypes.Log{}
+	// We store the logs with key equal to txHash.Bytes() | sdk.Uint64ToBigEndian(uint64(log.Index)),
+	// therefore, we set the end boundary(excluded) to txHash.Bytes() | uint64.Max -> []byte
+	end := txHash.Bytes()
+	end = append(end, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}...)
+
+	iter := store.Iterator(txHash.Bytes(), end)
+	defer iter.Close()
+
+	logs := []*ethtypes.Log{}
+	for ; iter.Valid(); iter.Next() {
+		var log types.Log
+		k.cdc.MustUnmarshal(iter.Value(), &log)
+		logs = append(logs, log.ToEthereum())
 	}
 
-	var logs types.TransactionLogs
-	k.cdc.MustUnmarshal(bz, &logs)
-
-	return logs.EthLogs()
+	return logs
 }
 
-// SetLogs sets the logs for a transaction in the KVStore.
-func (k Keeper) SetLogs(txHash common.Hash, logs []*ethtypes.Log) {
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixLogs)
+// SetLog sets the log for a transaction in the KVStore.
+func (k Keeper) AddLogTransient(log *ethtypes.Log) {
+	store := prefix.NewStore(k.Ctx().TransientStore(k.transientKey), types.KeyPrefixTransientTxLogs)
 
-	txLogs := types.NewTransactionLogsFromEth(txHash, logs)
-	bz := k.cdc.MustMarshal(&txLogs)
+	key := log.TxHash.Bytes()
+	key = append(key, sdk.Uint64ToBigEndian(uint64(log.Index))...)
 
-	store.Set(txHash.Bytes(), bz)
-}
-
-// DeleteLogs removes the logs from the KVStore. It is used during journal.Revert.
-func (k Keeper) DeleteTxLogs(ctx sdk.Context, txHash common.Hash) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixLogs)
-	store.Delete(txHash.Bytes())
+	txIndexLog := types.NewLogFromEth(log)
+	bz := k.cdc.MustMarshal(txIndexLog)
+	store.Set(key, bz)
 }
 
 // GetLogSizeTransient returns EVM log index on the current block.
@@ -310,7 +298,6 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 		storage = append(storage, types.NewState(key, value))
 		return false
 	})
-
 	if err != nil {
 		return types.Storage{}, err
 	}
@@ -372,4 +359,22 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 func (k Keeper) ResetAccount(addr common.Address) {
 	k.DeleteCode(addr)
 	k.DeleteAccountStorage(addr)
+}
+
+// SetHooks sets the hooks for the EVM module
+func (k *Keeper) SetHooks(eh types.EvmHooks) *Keeper {
+	if k.hooks != nil {
+		panic("cannot set evm hooks twice")
+	}
+
+	k.hooks = eh
+	return k
+}
+
+// PostTxProcessing delegate the call to the hooks. If no hook has been registered, this function returns with a `nil` error
+func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) error {
+	if k.hooks == nil {
+		return nil
+	}
+	return k.hooks.PostTxProcessing(k.Ctx(), txHash, logs)
 }

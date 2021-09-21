@@ -142,10 +142,15 @@ module.exports = {
               path: '/testnet/join'
             },
             {
+              title: 'Token Faucet',
+              directory: false,
+              path: '/testnet/faucet'
+            },
+            {
               title: 'Deploy Node on Cloud',
               directory: false,
               path: '/testnet/cloud_providers'
-            },
+            }
           ]
         },
         {
@@ -179,7 +184,7 @@ module.exports = {
       chat: {
         title: 'Developer Chat',
         text: 'Chat with Ethermint developers on Discord.',
-        url: 'https://discord.gg/3ZbxEq4KDu',
+        url: 'https://discord.gg/trje9XuAmy',
         bg: 'linear-gradient(103.75deg, #1B1E36 0%, #22253F 100%)'
       },
       forum: {
@@ -240,7 +245,7 @@ module.exports = {
         title: 'Community',
         children: [{
           title: 'Ethermint Community',
-          url: 'https://discord.gg/3ZbxEq4KDu'
+          url: 'https://discord.gg/trje9XuAmy'
         },
         {
           title: 'Ethermint Forum',
