@@ -13,9 +13,10 @@ import (
 func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 	hundredInt := sdk.NewInt(100)
 	zeroInt := sdk.ZeroInt()
-	oneInt := sdk.NewInt(1)
+	oneInt := sdk.OneInt()
 	fiveInt := sdk.NewInt(5)
 	fiftyInt := sdk.NewInt(50)
+	negInt := sdk.NewInt(-10)
 
 	testCases := []struct {
 		name       string
@@ -46,6 +47,16 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 			from:       suite.address.String(),
 			accessList: &ethtypes.AccessList{},
 			expectPass: true,
+		},
+		{
+			name:       "negative cost",
+			to:         suite.address.String(),
+			gasLimit:   1,
+			gasPrice:   &oneInt,
+			cost:       &negInt,
+			from:       suite.address.String(),
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
 		},
 		{
 			name:       "Higher gas limit, not enough balance",
