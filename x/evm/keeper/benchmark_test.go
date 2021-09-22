@@ -78,7 +78,7 @@ func BenchmarkEmitLogs(b *testing.B) {
 	})
 }
 
-func BenchmarkTokenTransferForm(b *testing.B) {
+func BenchmarkTokenTransferFrom(b *testing.B) {
 	DoBenchmark(b, func(suite *KeeperTestSuite, contract common.Address) *types.MsgEthereumTx {
 		input, err := ContractABI.Pack("transferFrom", suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(0))
 		require.NoError(b, err)
