@@ -47,7 +47,7 @@ func (e *EVMBackend) setTxDefaults(args types.SendTxArgs) (types.SendTxArgs, err
 		}
 
 		if len(input) == 0 {
-			return args, errors.New(`contract creation without any data provided`)
+			return args, errors.New("contract creation without any data provided")
 		}
 	}
 

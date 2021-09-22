@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // QueryClient defines a gRPC Client used for:
@@ -19,6 +20,7 @@ import (
 type QueryClient struct {
 	tx.ServiceClient
 	evmtypes.QueryClient
+	FeeMarket feemarkettypes.QueryClient
 }
 
 // NewQueryClient creates a new gRPC query client
@@ -26,6 +28,7 @@ func NewQueryClient(clientCtx client.Context) *QueryClient {
 	return &QueryClient{
 		ServiceClient: tx.NewServiceClient(clientCtx),
 		QueryClient:   evmtypes.NewQueryClient(clientCtx),
+		FeeMarket:     feemarkettypes.NewQueryClient(clientCtx),
 	}
 }
 
