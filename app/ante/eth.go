@@ -15,7 +15,6 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
-	cmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -30,9 +29,11 @@ type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	GetCoinbaseAddress() (common.Address, error)
 	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address, baseFee *big.Int, tracer vm.Tracer) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
+	DeductTxCostsFromUserBalance(
+		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
+	) (sdk.Coins, error)
 }
 
 type FeeMarketKeeper interface {
@@ -234,15 +235,15 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
-	ak              AccountKeeper
-	bankKeeper      BankKeeper
+	ak              evmtypes.AccountKeeper
+	bankKeeper      evmtypes.BankKeeper
 	evmKeeper       EVMKeeper
 	feeMarketKeeper FeeMarketKeeper
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
 func NewEthGasConsumeDecorator(
-	ak AccountKeeper, bankKeeper BankKeeper, ek EVMKeeper, fmk FeeMarketKeeper,
+	ak evmtypes.AccountKeeper, bankKeeper evmtypes.BankKeeper, ek EVMKeeper, fmk FeeMarketKeeper,
 ) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
 		ak:              ak,
@@ -296,40 +297,17 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
-		fees, err := evmkeeper.DeductTxCostsFromUserBalance(
+		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
-			egcd.bankKeeper,
-			egcd.ak,
 			*msgEthTx,
 			txData,
 			evmDenom,
 			homestead,
 			istanbul,
+			london,
 		)
 		if err != nil {
 			return ctx, stacktrace.Propagate(err, "failed to deduct transaction costs from user balance")
-		}
-
-		// calculate the fees paid to validators based on the effective tip and price
-
-		effectiveTip := txData.GetGasPrice()
-		if london && txData.TxType() == ethtypes.DynamicFeeTxType {
-			baseFee := egcd.feeMarketKeeper.GetBaseFee(ctx)
-			effectiveTip = cmath.BigMin(txData.GetGasTipCap(), new(big.Int).Sub(txData.GetGasFeeCap(), baseFee))
-		}
-
-		gasUsed := new(big.Int).SetUint64(txData.GetGas())
-		feeAmt := new(big.Int).Mul(gasUsed, effectiveTip)
-
-		evmDenom := egcd.evmKeeper.GetParams(ctx).EvmDenom
-		fees := sdk.Coins{sdk.NewCoin(evmDenom, sdk.NewIntFromBigInt(feeAmt))}
-
-		// deduct the full gas cost from the user balance
-		if err := authante.DeductFees(egcd.bankKeeper, ctx, signerAcc, fees); err != nil {
-			return ctx, stacktrace.Propagate(
-				err,
-				"failed to deduct full gas cost %s from the user %s balance", fees, msgEthTx.From,
-			)
 		}
 
 		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))

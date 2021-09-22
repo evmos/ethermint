@@ -369,9 +369,12 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	result, err := k.traceTx(c, coinbase, signer, req.TxIndex, params, ctx, ethCfg, req.Msg, req.TraceConfig)
+
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+
+	result, err := k.traceTx(c, coinbase, signer, req.TxIndex, params, ctx, ethCfg, req.Msg, baseFee, req.TraceConfig)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	resultData, err := json.Marshal(result)
@@ -384,15 +387,27 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
-func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer ethtypes.Signer, txIndex uint64,
-	params types.Params, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
+func (k *Keeper) traceTx(
+	c context.Context,
+	coinbase common.Address,
+	signer ethtypes.Signer,
+	txIndex uint64,
+	params types.Params,
+	ctx sdk.Context, ethCfg *ethparams.ChainConfig,
+	msg *types.MsgEthereumTx,
+	baseFee *big.Int,
+	traceConfig *types.TraceConfig,
+) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
 		tracer vm.Tracer
 		err    error
 	)
 
-	coreMessage, err := msg.AsMessage(signer)
+	tx := msg.AsTransaction()
+	txHash := signer.Hash(tx)
+
+	coreMessage, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -400,7 +415,7 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 	switch {
 	case traceConfig != nil && traceConfig.Tracer != "":
 		timeout := defaultTraceTimeout
-		// TODO change timeout to time.duration
+		// TODO: change timeout to time.duration
 		// Used string to comply with go ethereum
 		if traceConfig.Timeout != "" {
 			if timeout, err = time.ParseDuration(traceConfig.Timeout); err != nil {
@@ -408,9 +423,14 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 			}
 		}
 
-		txContext := core.NewEVMTxContext(coreMessage)
+		tCtx := &tracers.Context{
+			BlockHash: k.GetHashFn()(uint64(ctx.BlockHeight())),
+			TxIndex:   int(txIndex),
+			TxHash:    txHash,
+		}
+
 		// Construct the JavaScript tracer to execute with
-		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
+		if tracer, err = tracers.New(traceConfig.Tracer, tCtx); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
@@ -435,7 +455,7 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 		tracer = types.NewTracer(types.TracerStruct, coreMessage, ethCfg, ctx.BlockHeight(), true)
 	}
 
-	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
+	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, baseFee, tracer)
 
 	k.SetTxHashTransient(common.HexToHash(msg.Hash))
 	k.SetTxIndexTransient(txIndex)
@@ -449,7 +469,7 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
-		// TODO Return proper returnValue
+		// TODO: Return proper returnValue
 		result = types.ExecutionResult{
 			Gas:         res.GasUsed,
 			Failed:      res.Failed(),

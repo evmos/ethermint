@@ -346,7 +346,9 @@ func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxRespo
 		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, nil)
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, nil)
 
 	ret, err := k.ApplyMessage(evm, msg, ethCfg, true)
 	if err != nil {

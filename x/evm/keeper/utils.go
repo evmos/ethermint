@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -8,26 +10,24 @@ import (
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
+	cmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // AccountKeeper defines an expected keeper interface for the auth module's AccountKeeper
 // DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
-func DeductTxCostsFromUserBalance(
+func (k Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
-	bankKeeper evmtypes.BankKeeper,
-	accountKeeper evmtypes.AccountKeeper,
 	msgEthTx evmtypes.MsgEthereumTx,
 	txData evmtypes.TxData,
 	denom string,
-	homestead bool,
-	istanbul bool,
+	homestead, istanbul, london bool,
 ) (sdk.Coins, error) {
 	isContractCreation := txData.GetTo() == nil
 
 	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, accountKeeper, msgEthTx.GetFrom())
+	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, msgEthTx.GetFrom())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
 	}
@@ -56,13 +56,23 @@ func DeductTxCostsFromUserBalance(
 		)
 	}
 
-	// calculate the fees paid to validators based on gas limit and price
-	feeAmt := txData.Fee() // fee = gas limit * gas price
+	// calculate the fees paid to validators based on the effective tip and price
+	effectiveTip := txData.GetGasPrice()
+
+	feeMktParams := k.feeMarketKeeper.GetParams(ctx)
+
+	if london && !feeMktParams.NoBaseFee && txData.TxType() == ethtypes.DynamicFeeTxType {
+		baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+		effectiveTip = cmath.BigMin(txData.GetGasTipCap(), new(big.Int).Sub(txData.GetGasFeeCap(), baseFee))
+	}
+
+	gasUsed := new(big.Int).SetUint64(txData.GetGas())
+	feeAmt := new(big.Int).Mul(gasUsed, effectiveTip)
 
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(feeAmt))}
 
 	// deduct the full gas cost from the user balance
-	if err := authante.DeductFees(bankKeeper, ctx, signerAcc, fees); err != nil {
+	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"failed to deduct full gas cost %s from the user %s balance",
