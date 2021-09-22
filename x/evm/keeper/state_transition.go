@@ -168,7 +168,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// set the transaction hash and index to the impermanent (transient) block state so that it's also
 	// available on the StateDB functions (eg: AddLog)
 	k.SetTxHashTransient(txHash)
-	k.IncreaseTxIndexTransient()
 
 	if !k.ctxStack.IsEmpty() {
 		panic("context stack shouldn't be dirty before apply message")
@@ -185,6 +184,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
+
+	k.IncreaseTxIndexTransient()
 
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogsTransient(txHash)
