@@ -14,7 +14,7 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
-var templateTx = &ethtypes.LegacyTx{
+var templateAccessListTx = &ethtypes.AccessListTx{
 	GasPrice: big.NewInt(1),
 	Gas:      21000,
 	To:       &common.Address{},
@@ -29,7 +29,7 @@ func newSignedEthTx(
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
 ) (*ethtypes.Transaction, error) {
-	t := txData.(*ethtypes.LegacyTx)
+	t := txData.(*ethtypes.AccessListTx)
 	t.Nonce = nonce
 	ethTx := ethtypes.NewTx(t)
 
@@ -56,8 +56,8 @@ func newNativeMessage(
 ) (core.Message, error) {
 	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
 
-	templateTx.Nonce = nonce
-	ethTx := ethtypes.NewTx(templateTx)
+	templateAccessListTx.Nonce = nonce
+	ethTx := ethtypes.NewTx(templateAccessListTx)
 
 	msg := &evmtypes.MsgEthereumTx{}
 	msg.FromEthereumTx(ethTx)
@@ -85,7 +85,7 @@ func BenchmarkApplyTransaction(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		tx, err := newSignedEthTx(templateTx,
+		tx, err := newSignedEthTx(templateAccessListTx,
 			suite.app.EvmKeeper.GetNonce(suite.address),
 			sdk.AccAddress(suite.address.Bytes()),
 			suite.signer,
