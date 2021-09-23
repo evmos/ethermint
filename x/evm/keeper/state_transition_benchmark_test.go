@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"errors"
 	"math/big"
 	"testing"
 
@@ -22,6 +23,14 @@ var templateAccessListTx = &ethtypes.AccessListTx{
 	Data:     []byte{},
 }
 
+var templateLegacyTx = &ethtypes.LegacyTx{
+	GasPrice: big.NewInt(1),
+	Gas:      21000,
+	To:       &common.Address{},
+	Value:    big.NewInt(0),
+	Data:     []byte{},
+}
+
 func newSignedEthTx(
 	txData ethtypes.TxData,
 	nonce uint64,
@@ -29,9 +38,17 @@ func newSignedEthTx(
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
 ) (*ethtypes.Transaction, error) {
-	t := txData.(*ethtypes.AccessListTx)
-	t.Nonce = nonce
-	ethTx := ethtypes.NewTx(t)
+	var ethTx *ethtypes.Transaction
+	switch txData := txData.(type) {
+	case *ethtypes.AccessListTx:
+		txData.Nonce = nonce
+		ethTx = ethtypes.NewTx(txData)
+	case *ethtypes.LegacyTx:
+		txData.Nonce = nonce
+		ethTx = ethtypes.NewTx(txData)
+	default:
+		return nil, errors.New("unknown transaction type!")
+	}
 
 	sig, _, err := krSigner.SignByAddress(addr, ethTx.Hash().Bytes())
 	if err != nil {
@@ -53,11 +70,18 @@ func newNativeMessage(
 	cfg *params.ChainConfig,
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
+	isLegacy bool,
 ) (core.Message, error) {
 	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
 
-	templateAccessListTx.Nonce = nonce
-	ethTx := ethtypes.NewTx(templateAccessListTx)
+	var ethTx *ethtypes.Transaction
+	if isLegacy {
+		templateLegacyTx.Nonce = nonce
+		ethTx = ethtypes.NewTx(templateLegacyTx)
+	} else {
+		templateAccessListTx.Nonce = nonce
+		ethTx = ethtypes.NewTx(templateAccessListTx)
+	}
 
 	msg := &evmtypes.MsgEthereumTx{}
 	msg.FromEthereumTx(ethTx)
@@ -102,6 +126,33 @@ func BenchmarkApplyTransaction(b *testing.B) {
 	}
 }
 
+func BenchmarkApplyTransactionWithLegacyTx(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	ethSigner := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		tx, err := newSignedEthTx(templateLegacyTx,
+			suite.app.EvmKeeper.GetNonce(suite.address),
+			sdk.AccAddress(suite.address.Bytes()),
+			suite.signer,
+			ethSigner,
+		)
+		require.NoError(b, err)
+
+		b.StartTimer()
+		resp, err := suite.app.EvmKeeper.ApplyTransaction(tx)
+		b.StopTimer()
+
+		require.NoError(b, err)
+		require.False(b, resp.Failed())
+	}
+}
+
 func BenchmarkApplyNativeMessage(b *testing.B) {
 	suite := KeeperTestSuite{}
 	suite.DoSetupTest(b)
@@ -122,6 +173,40 @@ func BenchmarkApplyNativeMessage(b *testing.B) {
 			ethCfg,
 			suite.signer,
 			signer,
+			false,
+		)
+		require.NoError(b, err)
+
+		b.StartTimer()
+		resp, err := suite.app.EvmKeeper.ApplyNativeMessage(m)
+		b.StopTimer()
+
+		require.NoError(b, err)
+		require.False(b, resp.Failed())
+	}
+}
+
+func BenchmarkApplyNativeMessageWithLegacyTx(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	params := suite.app.EvmKeeper.GetParams(suite.ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+	signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		m, err := newNativeMessage(
+			suite.app.EvmKeeper.GetNonce(suite.address),
+			suite.ctx.BlockHeight(),
+			suite.address,
+			ethCfg,
+			suite.signer,
+			signer,
+			true,
 		)
 		require.NoError(b, err)
 
