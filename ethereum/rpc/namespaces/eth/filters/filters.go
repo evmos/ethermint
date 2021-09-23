@@ -194,12 +194,23 @@ func createBloomFilters(filters [][][]byte) [][]BloomIV {
 			continue
 		}
 		bloomIVs := make([]BloomIV, len(filter))
+
+		// Transform the filter rules (the addresses and topics) to the bloom index and value arrays
+		// So it can be used to compare with the bloom of the block header. If the rule has any nil
+		// clauses. The rule will be ignored.
 		for i, clause := range filter {
 			if clause == nil {
 				bloomIVs = nil
 				break
 			}
-			bloomIVs[i] = calcBloomIVs(clause)
+
+			iv, err := calcBloomIVs(clause)
+			if err != nil {
+				bloomIVs = nil
+				break
+			}
+
+			bloomIVs[i] = iv
 		}
 		// Accumulate the filter rules if no nil rule was within
 		if bloomIVs != nil {
@@ -211,17 +222,17 @@ func createBloomFilters(filters [][][]byte) [][]BloomIV {
 
 // calcBloomIVs returns BloomIV for the given data,
 // revised from https://github.com/ethereum/go-ethereum/blob/401354976bb44f0ad4455ca1e0b5c0dc31d9a5f5/core/types/bloom9.go#L139
-func calcBloomIVs(data []byte) BloomIV {
+func calcBloomIVs(data []byte) (BloomIV, error) {
 	hashbuf := make([]byte, 6)
 	biv := BloomIV{}
 
 	sha := crypto.NewKeccakState()
 	sha.Reset()
 	if _, err := sha.Write(data); err != nil {
-		panic(err)
+		return BloomIV{}, err
 	}
 	if _, err := sha.Read(hashbuf); err != nil {
-		panic(err)
+		return BloomIV{}, err
 	}
 
 	// The actual bits to flip
@@ -233,5 +244,5 @@ func calcBloomIVs(data []byte) BloomIV {
 	biv.I[1] = ethtypes.BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf[2:])&0x7ff)>>3) - 1
 	biv.I[2] = ethtypes.BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf[4:])&0x7ff)>>3) - 1
 
-	return biv
+	return biv, nil
 }
