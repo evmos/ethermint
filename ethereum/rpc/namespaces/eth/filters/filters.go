@@ -70,7 +70,7 @@ func NewRangeFilter(logger log.Logger, backend Backend, begin, end int64, addres
 		Topics:    topics,
 	}
 
-	return newFilter(logger, backend, criteria, createBloomFilters(filtersBz))
+	return newFilter(logger, backend, criteria, createBloomFilters(filtersBz, logger))
 }
 
 // newFilter returns a new Filter
@@ -186,7 +186,7 @@ func (f *Filter) blockLogs(header *ethtypes.Header) ([]*ethtypes.Log, error) {
 	return logs, nil
 }
 
-func createBloomFilters(filters [][][]byte) [][]BloomIV {
+func createBloomFilters(filters [][][]byte, logger log.Logger) [][]BloomIV {
 	bloomFilters := make([][]BloomIV, 0)
 	for _, filter := range filters {
 		// Gather the bit indexes of the filter rule, special casing the nil filter
@@ -207,6 +207,7 @@ func createBloomFilters(filters [][][]byte) [][]BloomIV {
 			iv, err := calcBloomIVs(clause)
 			if err != nil {
 				bloomIVs = nil
+				logger.Error("calcBloomIVs error: %v", err)
 				break
 			}
 
