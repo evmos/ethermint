@@ -235,10 +235,8 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 
-			fees, err := evmkeeper.DeductTxCostsFromUserBalance(
+			fees, err := suite.app.EvmKeeper.DeductTxCostsFromUserBalance(
 				suite.app.EvmKeeper.Ctx(),
-				suite.app.BankKeeper,
-				suite.app.AccountKeeper,
 				*tx,
 				txData,
 				evmtypes.DefaultEVMDenom,
