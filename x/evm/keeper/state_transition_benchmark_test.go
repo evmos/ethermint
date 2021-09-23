@@ -23,14 +23,15 @@ var templateTx = &ethtypes.LegacyTx{
 }
 
 func newSignedEthTx(
-	txData *ethtypes.LegacyTx,
+	txData ethtypes.TxData,
 	nonce uint64,
 	addr sdk.Address,
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
 ) (*ethtypes.Transaction, error) {
-	txData.Nonce = nonce
-	ethTx := ethtypes.NewTx(txData)
+	t := txData.(*ethtypes.LegacyTx)
+	t.Nonce = nonce
+	ethTx := ethtypes.NewTx(t)
 
 	sig, _, err := krSigner.SignByAddress(addr, ethTx.Hash().Bytes())
 	if err != nil {
