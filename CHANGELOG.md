@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (app) [tharsis#476](https://github.com/tharsis/ethermint/pull/476) Update Bech32 HRP to `ethm`.
 * (evm) [tharsis#556](https://github.com/tharsis/ethermint/pull/556) Remove tx logs and block bloom from chain state
+* (evm) [tharsis#590](https://github.com/tharsis/ethermint/pull/590) Contract storage key is not hashed anymore
 
 ### API Breaking
 
