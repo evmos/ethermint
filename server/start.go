@@ -101,6 +101,13 @@ which accepts a path for the resulting pprof file.
 				return startStandAlone(serverCtx, appCreator)
 			}
 
+			serverCtx.Logger.Info("Unlocking keyring")
+
+			_, err = clientCtx.Keyring.List()
+			if err != nil {
+				return err
+			}
+
 			serverCtx.Logger.Info("starting ABCI with Tendermint")
 
 			// amino is needed here for backwards compatibility of REST routes
