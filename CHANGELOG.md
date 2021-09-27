@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (app) [tharsis#476](https://github.com/tharsis/ethermint/pull/476) Update Bech32 HRP to `ethm`.
 * (evm) [tharsis#556](https://github.com/tharsis/ethermint/pull/556) Remove tx logs and block bloom from chain state
+* (evm) [tharsis#590](https://github.com/tharsis/ethermint/pull/590) Contract storage key is not hashed anymore
 
 ### API Breaking
 
@@ -55,6 +56,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (evm) [tharsis#579](https://github.com/tharsis/ethermint/pull/579) Update `DeriveChainID` function to handle `v` signature values `< 35`.
 * (encoding) [tharsis#478](https://github.com/tharsis/ethermint/pull/478) Register `Evidence` to amino codec.
 * (rpc) [tharsis#478](https://github.com/tharsis/ethermint/pull/481) Getting the node configuration when calling the `miner` rpc methods.
 * (cli) [tharsis#561](https://github.com/tharsis/ethermint/pull/561) `Export` and `Start` commands now use the same home directory.
@@ -63,6 +65,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [tharsis#461](https://github.com/tharsis/ethermint/pull/461) Increase performance of `StateDB` transaction log storage (r/w).
 * (evm) [tharsis#566](https://github.com/tharsis/ethermint/pull/566) Introduce `stateErr` store in `StateDB` to avoid meaningless operations if any error happened before
+* (rpc, evm) [tharsis#587](https://github.com/tharsis/ethermint/pull/587) Apply bloom filter when query ethlogs with range of blocks
+* (evm) [tharsis#586](https://github.com/tharsis/ethermint/pull/586) Benchmark evm keeper
 
 ## [v0.5.0] - 2021-08-20
 

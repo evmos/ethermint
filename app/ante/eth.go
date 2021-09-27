@@ -30,6 +30,9 @@ type EVMKeeper interface {
 	ResetRefundTransient(ctx sdk.Context)
 	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address, tracer vm.Tracer) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
+	DeductTxCostsFromUserBalance(
+		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul bool,
+	) (sdk.Coins, error)
 }
 
 // EthSigVerificationDecorator validates an ethereum signatures
@@ -69,7 +72,7 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 	if !ok {
 		return ctx, stacktrace.Propagate(
-			sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+			sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil)),
 			"failed to cast transaction",
 		)
 	}
@@ -123,7 +126,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
 			return ctx, stacktrace.Propagate(
-				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil)),
 				"failed to cast transaction %d", i,
 			)
 		}
@@ -191,7 +194,7 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
 			return ctx, stacktrace.Propagate(
-				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil)),
 				"failed to cast transaction %d", i,
 			)
 		}
@@ -227,17 +230,13 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
-	ak         evmtypes.AccountKeeper
-	bankKeeper evmtypes.BankKeeper
-	evmKeeper  EVMKeeper
+	evmKeeper EVMKeeper
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
-func NewEthGasConsumeDecorator(ak evmtypes.AccountKeeper, bankKeeper evmtypes.BankKeeper, ek EVMKeeper) EthGasConsumeDecorator {
+func NewEthGasConsumeDecorator(evmKeeper EVMKeeper) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
-		ak:         ak,
-		bankKeeper: bankKeeper,
-		evmKeeper:  ek,
+		evmKeeper: evmKeeper,
 	}
 }
 
@@ -274,7 +273,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
 			return ctx, stacktrace.Propagate(
-				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil)),
 				"failed to cast transaction %d", i,
 			)
 		}
@@ -284,10 +283,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
-		fees, err := evmkeeper.DeductTxCostsFromUserBalance(
+		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
-			egcd.bankKeeper,
-			egcd.ak,
 			*msgEthTx,
 			txData,
 			evmDenom,
@@ -348,7 +345,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
 			return ctx, stacktrace.Propagate(
-				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil)),
 				"failed to cast transaction %d", i,
 			)
 		}
@@ -420,7 +417,7 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
 			return ctx, stacktrace.Propagate(
-				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil)),
 				"failed to cast transaction %d", i,
 			)
 		}
@@ -460,7 +457,7 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
 			return ctx, stacktrace.Propagate(
-				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, &evmtypes.MsgEthereumTx{}),
+				sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil)),
 				"failed to cast transaction %d", i,
 			)
 		}

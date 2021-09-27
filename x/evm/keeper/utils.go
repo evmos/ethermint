@@ -12,12 +12,9 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// AccountKeeper defines an expected keeper interface for the auth module's AccountKeeper
 // DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
-func DeductTxCostsFromUserBalance(
+func (k Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
-	bankKeeper evmtypes.BankKeeper,
-	accountKeeper evmtypes.AccountKeeper,
 	msgEthTx evmtypes.MsgEthereumTx,
 	txData evmtypes.TxData,
 	denom string,
@@ -27,7 +24,7 @@ func DeductTxCostsFromUserBalance(
 	isContractCreation := txData.GetTo() == nil
 
 	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, accountKeeper, msgEthTx.GetFrom())
+	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, msgEthTx.GetFrom())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
 	}
@@ -62,7 +59,7 @@ func DeductTxCostsFromUserBalance(
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(feeAmt))}
 
 	// deduct the full gas cost from the user balance
-	if err := authante.DeductFees(bankKeeper, ctx, signerAcc, fees); err != nil {
+	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"failed to deduct full gas cost %s from the user %s balance",
@@ -72,7 +69,8 @@ func DeductTxCostsFromUserBalance(
 	return fees, nil
 }
 
-// CheckSenderBalance validates sender has enough funds to pay for tx cost
+// CheckSenderBalance validates that the tx cost value is positive and that the
+// sender has enough funds to pay for the fees and value of the transaction.
 func CheckSenderBalance(
 	ctx sdk.Context,
 	bankKeeper evmtypes.BankKeeper,
@@ -83,7 +81,16 @@ func CheckSenderBalance(
 	balance := bankKeeper.GetBalance(ctx, sender, denom)
 	cost := txData.Cost()
 
-	if balance.Amount.BigInt().Cmp(cost) < 0 {
+	if cost.Sign() < 0 {
+		return stacktrace.Propagate(
+			sdkerrors.Wrapf(
+				sdkerrors.ErrInvalidCoins,
+				"tx cost (%s%s) is negative and invalid", cost, denom,
+			),
+			"tx cost amount should never be negative")
+	}
+
+	if balance.IsNegative() || balance.Amount.BigInt().Cmp(cost) < 0 {
 		return stacktrace.Propagate(
 			sdkerrors.Wrapf(
 				sdkerrors.ErrInsufficientFunds,
