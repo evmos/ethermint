@@ -65,6 +65,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [tharsis#461](https://github.com/tharsis/ethermint/pull/461) Increase performance of `StateDB` transaction log storage (r/w).
 * (evm) [tharsis#566](https://github.com/tharsis/ethermint/pull/566) Introduce `stateErr` store in `StateDB` to avoid meaningless operations if any error happened before
+* (rpc, evm) [tharsis#587](https://github.com/tharsis/ethermint/pull/587) Apply bloom filter when query ethlogs with range of blocks
 * (evm) [tharsis#586](https://github.com/tharsis/ethermint/pull/586) Benchmark evm keeper
 
 ## [v0.5.0] - 2021-08-20
