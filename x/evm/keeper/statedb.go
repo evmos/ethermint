@@ -454,10 +454,9 @@ func (k *Keeper) GetRefund() uint64 {
 // State
 // ----------------------------------------------------------------------------
 
-func doGetState(ctx sdk.Context, storeKey sdk.StoreKey, addr common.Address, hash common.Hash) common.Hash {
+func doGetState(ctx sdk.Context, storeKey sdk.StoreKey, addr common.Address, key common.Hash) common.Hash {
 	store := prefix.NewStore(ctx.KVStore(storeKey), types.AddressStoragePrefix(addr))
 
-	key := types.KeyAddressStorage(addr, hash)
 	value := store.Get(key.Bytes())
 	if len(value) == 0 {
 		return common.Hash{}
@@ -496,7 +495,6 @@ func (k *Keeper) SetState(addr common.Address, key, value common.Hash) {
 
 	ctx := k.Ctx()
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.AddressStoragePrefix(addr))
-	key = types.KeyAddressStorage(addr, key)
 
 	action := "updated"
 	if ethermint.IsEmptyHash(value.Hex()) {

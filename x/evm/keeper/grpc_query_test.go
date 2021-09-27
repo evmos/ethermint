@@ -478,7 +478,6 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 }
 
 func (suite *KeeperTestSuite) TestEstimateGas() {
-	ctx := sdk.WrapSDKContext(suite.ctx)
 	gasHelper := hexutil.Uint64(20000)
 
 	var (
@@ -545,7 +544,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 				GasCap: gasCap,
 			}
 
-			rsp, err := suite.queryClient.EstimateGas(ctx, &req)
+			rsp, err := suite.queryClient.EstimateGas(sdk.WrapSDKContext(suite.ctx), &req)
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expGas, rsp.Gas)
