@@ -103,6 +103,7 @@ which accepts a path for the resulting pprof file.
 
 			serverCtx.Logger.Info("Unlocking keyring")
 
+			// fire unlock precess for keyring
 			_, err = clientCtx.Keyring.List()
 			if err != nil {
 				return err
