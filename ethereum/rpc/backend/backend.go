@@ -370,7 +370,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 // It returns an error if there's an encoding error.
 // If no logs are found for the tx hash, the error is nil.
 func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
-	tx, err := e.clientCtx.Client.Tx(e.ctx, txHash.Bytes(), false)
+	tx, err := e.GetTxByEthHash(txHash)
 	if err != nil {
 		return nil, err
 	}
