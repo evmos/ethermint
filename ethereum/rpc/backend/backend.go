@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/params"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"google.golang.org/grpc"
@@ -43,6 +44,7 @@ type Backend interface {
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
+	CurrentHeader() *ethtypes.Header
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
@@ -58,6 +60,8 @@ type Backend interface {
 	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	RPCGasCap() uint64
 	RPCMinGasPrice() int64
+	ChainConfig() *params.ChainConfig
+	SuggestGasTipCap() (*big.Int, error)
 	GetFilteredBlocks(from int64, to int64, filter [][]filters.BloomIV, filterAddresses bool) ([]int64, error)
 }
 
@@ -274,9 +278,16 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
 	}
 
-	res, err := e.queryClient.ValidatorAccount(e.ctx, req)
+	ctx := types.ContextWithHeight(block.Height)
+
+	res, err := e.queryClient.ValidatorAccount(ctx, req)
 	if err != nil {
-		e.logger.Debug("failed to query validator operator address", "cons-address", req.ConsAddress, "error", err.Error())
+		e.logger.Debug(
+			"failed to query validator operator address",
+			"height", block.Height,
+			"cons-address", req.ConsAddress,
+			"error", err.Error(),
+		)
 		return nil, err
 	}
 
@@ -287,7 +298,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	validatorAddr := common.BytesToAddress(addr)
 
-	gasLimit, err := types.BlockMaxGasFromConsensusParams(types.ContextWithHeight(block.Height), e.clientCtx)
+	gasLimit, err := types.BlockMaxGasFromConsensusParams(ctx, e.clientCtx)
 	if err != nil {
 		e.logger.Error("failed to query consensus params", "error", err.Error())
 	}
@@ -306,6 +317,12 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
 	return formattedBlock, nil
+}
+
+// CurrentHeader returns the latest block header
+func (e *EVMBackend) CurrentHeader() *ethtypes.Header {
+	header, _ := e.HeaderByNumber(types.EthLatestBlockNumber)
+	return header
 }
 
 // HeaderByNumber returns the block header identified by height.
@@ -714,6 +731,22 @@ func (e *EVMBackend) RPCMinGasPrice() int64 {
 	}
 
 	return ethermint.DefaultGasPrice
+}
+
+// ChainConfig return the ethereum chain configuration
+func (e *EVMBackend) ChainConfig() *params.ChainConfig {
+	params, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		return nil
+	}
+
+	return params.Params.ChainConfig.EthereumConfig(e.chainID)
+}
+
+// SuggestGasTipCap returns the suggested tip cap
+func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
+	// TODO: implement
+	return big.NewInt(1), nil
 }
 
 // GetFilteredBlocks returns the block height list match the given bloom filters.

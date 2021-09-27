@@ -152,6 +152,15 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 // able to decrypt the key it fails.
 func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.SendTxArgs, pwrd string) (common.Hash, error) {
 	api.logger.Debug("personal_sendTransaction", "address", args.To.String())
+
+	addr := sdk.AccAddress(args.From.Bytes())
+
+	// check if the key is on the keyring
+	_, err := api.clientCtx.Keyring.KeyByAddress(addr)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
 	return api.backend.SendTransaction(args)
 }
 
