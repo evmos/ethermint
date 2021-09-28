@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"path"
 
 	"github.com/spf13/viper"
 
@@ -31,9 +32,43 @@ const (
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
 
-// GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
-func GetDefaultAPINamespaces() []string {
-	return []string{"eth", "net", "web3"}
+// Config defines the server's top level configuration. It includes the default app config
+// from the SDK as well as the EVM configuration to enable the JSON-RPC APIs.
+type Config struct {
+	config.Config
+
+	EVM     EVMConfig     `mapstructure:"evm"`
+	JSONRPC JSONRPCConfig `mapstructure:"json-rpc"`
+	TLS     TLSConfig     `mapstructure:"tls"`
+}
+
+// EVMConfig defines the application configuration values for the EVM.
+type EVMConfig struct {
+	// Tracer defines vm.Tracer type that the EVM will use if the node is run in
+	// trace mode. Default: 'json'.
+	Tracer string `mapstructure:"tracer"`
+}
+
+// JSONRPCConfig defines configuration for the EVM RPC server.
+type JSONRPCConfig struct {
+	// Address defines the HTTP server to listen on
+	Address string `mapstructure:"address"`
+	// WsAddress defines the WebSocket server to listen on
+	WsAddress string `mapstructure:"ws-address"`
+	// API defines a list of JSON-RPC namespaces that should be enabled
+	API []string `mapstructure:"api"`
+	// Enable defines if the EVM RPC server should be enabled.
+	Enable bool `mapstructure:"enable"`
+	// GasCap is the global gas cap for eth-call variants.
+	GasCap uint64 `mapstructure:"gas-cap"`
+}
+
+// TLSConfig defines the certificate and matching private key for the server.
+type TLSConfig struct {
+	// CertificatePath the file path for the certificate .pem file
+	CertificatePath string `mapstructure:"certificate-path"`
+	// KeyPath the file path for the key .pem file
+	KeyPath string `mapstructure:"key-path"`
 }
 
 // AppConfig helps to override default appConfig template and configs.
@@ -63,6 +98,7 @@ func AppConfig(denom string) (string, interface{}) {
 		Config:  *srvCfg,
 		EVM:     *DefaultEVMConfig(),
 		JSONRPC: *DefaultJSONRPCConfig(),
+		TLS:     *DefaultTLSConfig(),
 	}
 
 	customAppTemplate := config.DefaultConfigTemplate + DefaultConfigTemplate
@@ -76,14 +112,8 @@ func DefaultConfig() *Config {
 		Config:  *config.DefaultConfig(),
 		EVM:     *DefaultEVMConfig(),
 		JSONRPC: *DefaultJSONRPCConfig(),
+		TLS:     *DefaultTLSConfig(),
 	}
-}
-
-// EVMConfig defines the application configuration values for the EVM.
-type EVMConfig struct {
-	// Tracer defines vm.Tracer type that the EVM will use if the node is run in
-	// trace mode. Default: 'json'.
-	Tracer string `mapstructure:"tracer"`
 }
 
 // DefaultEVMConfig returns the default EVM configuration
@@ -102,18 +132,20 @@ func (c EVMConfig) Validate() error {
 	return nil
 }
 
-// JSONRPCConfig defines configuration for the EVM RPC server.
-type JSONRPCConfig struct {
-	// Address defines the HTTP server to listen on
-	Address string `mapstructure:"address"`
-	// WsAddress defines the WebSocket server to listen on
-	WsAddress string `mapstructure:"ws-address"`
-	// API defines a list of JSON-RPC namespaces that should be enabled
-	API []string `mapstructure:"api"`
-	// Enable defines if the EVM RPC server should be enabled.
-	Enable bool `mapstructure:"enable"`
-	// GasCap is the global gas cap for eth-call variants.
-	GasCap uint64 `mapstructure:"gas-cap"`
+// GetDefaultAPINamespaces returns the default list of JSON-RPC namespaces that should be enabled
+func GetDefaultAPINamespaces() []string {
+	return []string{"eth", "net", "web3"}
+}
+
+// DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
+func DefaultJSONRPCConfig() *JSONRPCConfig {
+	return &JSONRPCConfig{
+		Enable:    true,
+		API:       GetDefaultAPINamespaces(),
+		Address:   DefaultJSONRPCAddress,
+		WsAddress: DefaultJSONRPCWsAddress,
+		GasCap:    DefaultGasCap,
+	}
 }
 
 // Validate returns an error if the JSON-RPC configuration fields are invalid.
@@ -135,24 +167,29 @@ func (c JSONRPCConfig) Validate() error {
 	return nil
 }
 
-// DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
-func DefaultJSONRPCConfig() *JSONRPCConfig {
-	return &JSONRPCConfig{
-		Enable:    true,
-		API:       GetDefaultAPINamespaces(),
-		Address:   DefaultJSONRPCAddress,
-		WsAddress: DefaultJSONRPCWsAddress,
-		GasCap:    DefaultGasCap,
+// DefaultTLSConfig returns the default TLS configuration
+func DefaultTLSConfig() *TLSConfig {
+	return &TLSConfig{
+		CertificatePath: "",
+		KeyPath:         "",
 	}
 }
 
-// Config defines the server's top level configuration. It includes the default app config
-// from the SDK as well as the EVM configuration to enable the JSON-RPC APIs.
-type Config struct {
-	config.Config
+// Validate returns an error if the TLS certificate and key file extensions are invalid.
+func (c TLSConfig) Validate() error {
+	certExt := path.Ext(c.CertificatePath)
 
-	EVM     EVMConfig     `mapstructure:"evm"`
-	JSONRPC JSONRPCConfig `mapstructure:"json-rpc"`
+	if c.CertificatePath != "" && certExt != ".pem" {
+		return fmt.Errorf("invalid extension %s for certificate path %s, expected '.pem'", certExt, c.CertificatePath)
+	}
+
+	keyExt := path.Ext(c.KeyPath)
+
+	if c.KeyPath != "" && keyExt != ".pem" {
+		return fmt.Errorf("invalid extension %s for key path %s, expected '.pem'", keyExt, c.KeyPath)
+	}
+
+	return nil
 }
 
 // GetConfig returns a fully parsed Config object.
@@ -170,6 +207,10 @@ func GetConfig(v *viper.Viper) Config {
 			Address:   v.GetString("json-rpc.address"),
 			WsAddress: v.GetString("json-rpc.ws-address"),
 			GasCap:    v.GetUint64("json-rpc.gas-cap"),
+		},
+		TLS: TLSConfig{
+			CertificatePath: v.GetString("tls.certificate-path"),
+			KeyPath:         v.GetString("tls.key-path"),
 		},
 	}
 }
@@ -191,6 +232,10 @@ func (c Config) ValidateBasic() error {
 
 	if err := c.JSONRPC.Validate(); err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid json-rpc config value: %s", err.Error())
+	}
+
+	if err := c.TLS.Validate(); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid tls config value: %s", err.Error())
 	}
 
 	return c.Config.ValidateBasic()
