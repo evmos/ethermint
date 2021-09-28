@@ -9,13 +9,15 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/spf13/cast"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
+
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // BlockNumber represents decoding hex string to block values
@@ -35,6 +37,11 @@ const (
 
 // NewBlockNumber creates a new BlockNumber instance.
 func NewBlockNumber(n *big.Int) BlockNumber {
+	if !n.IsInt64() {
+		// default to latest block if it overflows
+		return EthLatestBlockNumber
+	}
+
 	return BlockNumber(n.Int64())
 }
 
@@ -176,10 +183,13 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 		if err != nil {
 			return err
 		}
-		if blockNumber > math.MaxInt64 {
-			return fmt.Errorf("blocknumber %d is too high", blockNumber)
+
+		bnInt, err := ethermint.SafeInt64(blockNumber)
+		if err != nil {
+			return err
 		}
-		bn := BlockNumber(blockNumber)
+
+		bn := BlockNumber(bnInt)
 		bnh.BlockNumber = &bn
 	}
 	return nil
