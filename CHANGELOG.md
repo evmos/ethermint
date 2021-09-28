@@ -56,6 +56,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (evm) [tharsis#597](https://github.com/tharsis/ethermint/pull/597) Check for `uint64` -> `int64` block height overflow on `GetHashFn`
 * (evm) [tharsis#579](https://github.com/tharsis/ethermint/pull/579) Update `DeriveChainID` function to handle `v` signature values `< 35`.
 * (encoding) [tharsis#478](https://github.com/tharsis/ethermint/pull/478) Register `Evidence` to amino codec.
 * (rpc) [tharsis#478](https://github.com/tharsis/ethermint/pull/481) Getting the node configuration when calling the `miner` rpc methods.
