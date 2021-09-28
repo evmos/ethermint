@@ -387,15 +387,7 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 
 	switch {
 	case traceConfig != nil && traceConfig.Tracer != "":
-		timeout := defaultTraceTimeout
-		// TODO change timeout to time.duration
-		// Used string to comply with go ethereum
-		if traceConfig.Timeout != "" {
-			if timeout, err = time.ParseDuration(traceConfig.Timeout); err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
-			}
-		}
-
+		timeout := traceConfig.Timeout
 		txContext := core.NewEVMTxContext(coreMessage)
 		// Construct the JavaScript tracer to execute with
 		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
