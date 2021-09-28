@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net"
 	"net/http"
 	"sync"
 
@@ -25,6 +26,7 @@ import (
 
 	rpcfilters "github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/server/config"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
@@ -61,19 +63,25 @@ type ErrorMessageJSON struct {
 }
 
 type websocketsServer struct {
-	rpcAddr string // listen address of rest-server
-	wsAddr  string // listen address of ws server
-	api     *pubSubAPI
-	logger  log.Logger
+	rpcAddr  string // listen address of rest-server
+	wsAddr   string // listen address of ws server
+	certFile string
+	keyFile  string
+	api      *pubSubAPI
+	logger   log.Logger
 }
 
-func NewWebsocketsServer(logger log.Logger, tmWSClient *rpcclient.WSClient, rpcAddr, wsAddr string) WebsocketsServer {
+func NewWebsocketsServer(logger log.Logger, tmWSClient *rpcclient.WSClient, cfg config.Config) WebsocketsServer {
 	logger = logger.With("api", "websocket-server")
+	_, port, _ := net.SplitHostPort(cfg.JSONRPC.Address)
+
 	return &websocketsServer{
-		rpcAddr: rpcAddr,
-		wsAddr:  wsAddr,
-		api:     newPubSubAPI(logger, tmWSClient),
-		logger:  logger,
+		rpcAddr:  "localhost:" + port, // FIXME: this shouldn't be hardcoded to localhost
+		wsAddr:   cfg.JSONRPC.WsAddress,
+		certFile: cfg.TLS.CertificatePath,
+		keyFile:  cfg.TLS.KeyPath,
+		api:      newPubSubAPI(logger, tmWSClient),
+		logger:   logger,
 	}
 }
 
@@ -82,7 +90,13 @@ func (s *websocketsServer) Start() {
 	ws.Handle("/", s)
 
 	go func() {
-		err := http.ListenAndServe(s.wsAddr, ws)
+		var err error
+		if s.certFile == "" || s.keyFile == "" {
+			err = http.ListenAndServe(s.wsAddr, ws)
+		} else {
+			err = http.ListenAndServeTLS(s.wsAddr, s.certFile, s.keyFile, ws)
+		}
+
 		if err != nil {
 			if err == http.ErrServerClosed {
 				return
