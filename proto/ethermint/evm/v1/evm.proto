@@ -2,6 +2,7 @@ syntax = "proto3";
 package ethermint.evm.v1;
 
 import "gogoproto/gogo.proto";
+import "google/protobuf/duration.proto";
 
 option go_package = "github.com/tharsis/ethermint/x/evm/types";
 
@@ -203,7 +204,12 @@ message TraceConfig {
   // custom javascript tracer
   string tracer = 1;
   // overrides the default timeout of 5 seconds for JavaScript-based tracing calls
-  string timeout = 2;
+  google.protobuf.Duration timeout = 2 [
+    (gogoproto.nullable)    = false,
+    (gogoproto.stdduration) = true,
+    (gogoproto.jsontag)     = "timeout,omitempty",
+    (gogoproto.moretags)    = "yaml:\"timeout\""
+  ];
   // number of blocks the tracer is willing to go back
   uint64 reexec  = 3;
   // disable memory capture
