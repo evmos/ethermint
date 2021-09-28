@@ -2,7 +2,7 @@ package types
 
 import (
 	"bytes"
-	math "math"
+	"math"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
