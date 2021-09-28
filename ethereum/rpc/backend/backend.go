@@ -67,6 +67,8 @@ type Backend interface {
 
 var _ Backend = (*EVMBackend)(nil)
 
+var bAttributeKeyEthereumBloom = []byte(evmtypes.AttributeKeyEthereumBloom)
+
 // EVMBackend implements the Backend interface
 type EVMBackend struct {
 	ctx         context.Context
@@ -205,7 +207,7 @@ func (e *EVMBackend) BlockBloom(height *int64) (ethtypes.Bloom, error) {
 		}
 
 		for _, attr := range event.Attributes {
-			if bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyEthereumBloom)) {
+			if bytes.Equal(attr.Key, bAttributeKeyEthereumBloom) {
 				return ethtypes.BytesToBloom(attr.Value), nil
 			}
 		}
