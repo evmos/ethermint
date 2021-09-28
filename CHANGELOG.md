@@ -67,6 +67,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#566](https://github.com/tharsis/ethermint/pull/566) Introduce `stateErr` store in `StateDB` to avoid meaningless operations if any error happened before
 * (rpc, evm) [tharsis#587](https://github.com/tharsis/ethermint/pull/587) Apply bloom filter when query ethlogs with range of blocks
 * (evm) [tharsis#586](https://github.com/tharsis/ethermint/pull/586) Benchmark evm keeper
+* (proto, evm) [tharsis#594](https://github.com/tharsis/ethermint/pull/594) Change `TraceConfig.Timeout` field type from `string` to `time.Duration`
 
 ## [v0.5.0] - 2021-08-20
 
