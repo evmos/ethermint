@@ -720,19 +720,22 @@ func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
 }
 
-// RPCMinGasPrice return the minimum gas price for a transaction.
+// RPCMinGasPrice returns the minimum gas price for a transaction obtained from
+// the node config. If set value is 0, it will default to 20.
+
 func (e *EVMBackend) RPCMinGasPrice() int64 {
 	evmParams, err := e.queryClient.Params(context.Background(), &evmtypes.QueryParamsRequest{})
-	if err == nil {
-		minGasPrice := e.cfg.GetMinGasPrices()
-		for _, coin := range minGasPrice {
-			if coin.Denom == evmParams.Params.EvmDenom {
-				return coin.Amount.TruncateInt64()
-			}
-		}
+	if err != nil {
+		return ethermint.DefaultGasPrice
 	}
 
-	return ethermint.DefaultGasPrice
+	minGasPrice := e.cfg.GetMinGasPrices()
+	amt := minGasPrice.AmountOf(evmParams.Params.EvmDenom).TruncateInt64()
+	if amt == 0 {
+		return ethermint.DefaultGasPrice
+	}
+
+	return amt
 }
 
 // ChainConfig return the ethereum chain configuration
