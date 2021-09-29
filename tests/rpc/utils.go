@@ -72,7 +72,7 @@ func Call(t *testing.T, method string, params interface{}) *Response {
 	if HOST == "" {
 		HOST = "http://localhost:8545"
 	}
-	res, err := http.NewRequestWithContext(context.Background(), "POST", HOST, bytes.NewBuffer(req))
+	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req))
 	require.NoError(t, err)
 
 	decoder := json.NewDecoder(res.Body)
