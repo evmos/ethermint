@@ -20,7 +20,7 @@ jobs:
       - name: Set Env
         run: echo "TM_VERSION=$(go list -m github.com/tendermint/tendermint | sed 's:.* ::')" >> $GITHUB_ENV
       - name: Build
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v2.7.0
         if: ${{ github.event_name == 'pull_request' }}
         with:
           version: latest
