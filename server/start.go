@@ -147,6 +147,9 @@ which accepts a path for the resulting pprof file.
 
 	cmd.Flags().String(srvflags.EVMTracer, config.DefaultEVMTracer, "the EVM tracer type to collect execution traces from the EVM transaction execution (json|struct|access_list|markdown)")
 
+	cmd.Flags().String(srvflags.TLSCertPath, "", "the cert.pem file path for the server TLS configuration")
+	cmd.Flags().String(srvflags.TLSKeyPath, "", "the key.pem file path for the server TLS configuration")
+
 	cmd.Flags().Uint64(server.FlagStateSyncSnapshotInterval, 0, "State sync snapshot interval")
 	cmd.Flags().Uint32(server.FlagStateSyncSnapshotKeepRecent, 2, "State sync snapshot to keep")
 
@@ -164,6 +167,11 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			ctx.Logger.With("error", err).Error("error closing db")
+		}
+	}()
 
 	traceWriterFile := ctx.Viper.GetString(srvflags.TraceStore)
 	traceWriter, err := openTraceWriter(traceWriterFile)
@@ -226,6 +234,11 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		logger.Error("failed to open DB", "error", err.Error())
 		return err
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			ctx.Logger.With("error", err).Error("error closing db")
+		}
+	}()
 
 	traceWriter, err := openTraceWriter(traceWriterFile)
 	if err != nil {
@@ -444,6 +457,6 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 	return os.OpenFile(
 		traceWriterFile,
 		os.O_WRONLY|os.O_APPEND|os.O_CREATE,
-		0666,
+		0o666,
 	)
 }

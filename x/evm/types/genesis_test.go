@@ -3,9 +3,8 @@ package types
 import (
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
-
-	ethcmn "github.com/ethereum/go-ethereum/common"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 )
@@ -14,7 +13,7 @@ type GenesisTestSuite struct {
 	suite.Suite
 
 	address string
-	hash    ethcmn.Hash
+	hash    common.Hash
 	code    string
 }
 
@@ -22,9 +21,9 @@ func (suite *GenesisTestSuite) SetupTest() {
 	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)
 
-	suite.address = ethcmn.BytesToAddress(priv.PubKey().Address().Bytes()).String()
-	suite.hash = ethcmn.BytesToHash([]byte("hash"))
-	suite.code = ethcmn.Bytes2Hex([]byte{1, 2, 3})
+	suite.address = common.BytesToAddress(priv.PubKey().Address().Bytes()).String()
+	suite.hash = common.BytesToHash([]byte("hash"))
+	suite.code = common.Bytes2Hex([]byte{1, 2, 3})
 }
 
 func TestGenesisTestSuite(t *testing.T) {
@@ -32,7 +31,6 @@ func TestGenesisTestSuite(t *testing.T) {
 }
 
 func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
-
 	testCases := []struct {
 		name           string
 		genesisAccount GenesisAccount
@@ -52,7 +50,11 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 		{
 			"empty account address bytes",
 			GenesisAccount{
-				Address: ethcmn.Address{}.String(),
+				Address: "",
+				Code:    suite.code,
+				Storage: Storage{
+					NewState(suite.hash, suite.hash),
+				},
 			},
 			false,
 		},
@@ -61,8 +63,11 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 			GenesisAccount{
 				Address: suite.address,
 				Code:    "",
+				Storage: Storage{
+					NewState(suite.hash, suite.hash),
+				},
 			},
-			false,
+			true,
 		},
 	}
 
@@ -78,7 +83,6 @@ func (suite *GenesisTestSuite) TestValidateGenesisAccount() {
 }
 
 func (suite *GenesisTestSuite) TestValidateGenesis() {
-
 	testCases := []struct {
 		name     string
 		genState *GenesisState
@@ -102,24 +106,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 						},
 					},
 				},
-				TxsLogs: []TransactionLogs{
-					{
-						Hash: suite.hash.String(),
-						Logs: []*Log{
-							{
-								Address:     suite.address,
-								Topics:      []string{suite.hash.String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      suite.hash.String(),
-								TxIndex:     1,
-								BlockHash:   suite.hash.String(),
-								Index:       1,
-								Removed:     false,
-							},
-						},
-					},
-				},
 				Params: DefaultParams(),
 			},
 			expPass: true,
@@ -134,7 +120,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			genState: &GenesisState{
 				Accounts: []GenesisAccount{
 					{
-						Address: ethcmn.Address{}.String(),
+						Address: common.Address{}.String(),
 					},
 				},
 			},
@@ -177,40 +163,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 						},
 					},
 				},
-				TxsLogs: []TransactionLogs{
-					{
-						Hash: suite.hash.String(),
-						Logs: []*Log{
-							{
-								Address:     suite.address,
-								Topics:      []string{suite.hash.String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      suite.hash.String(),
-								TxIndex:     1,
-								BlockHash:   suite.hash.String(),
-								Index:       1,
-								Removed:     false,
-							},
-						},
-					},
-					{
-						Hash: suite.hash.String(),
-						Logs: []*Log{
-							{
-								Address:     suite.address,
-								Topics:      []string{suite.hash.String()},
-								Data:        []byte("data"),
-								BlockNumber: 1,
-								TxHash:      suite.hash.String(),
-								TxIndex:     1,
-								BlockHash:   suite.hash.String(),
-								Index:       1,
-								Removed:     false,
-							},
-						},
-					},
-				},
 			},
 			expPass: false,
 		},
@@ -227,7 +179,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 						},
 					},
 				},
-				TxsLogs: []TransactionLogs{NewTransactionLogs(ethcmn.Hash{}, nil)},
 			},
 			expPass: false,
 		},

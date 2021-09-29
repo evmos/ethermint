@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net"
 	"net/http"
 	"time"
 
@@ -18,7 +17,7 @@ import (
 )
 
 // StartJSONRPC starts the JSON-RPC server
-func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr string, tmEndpoint string, config config.Config) (*http.Server, chan struct{}, error) {
+func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEndpoint string, config config.Config) (*http.Server, chan struct{}, error) {
 	tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
 
 	rpcServer := ethrpc.NewServer()
@@ -73,11 +72,10 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr strin
 	}
 
 	ctx.Logger.Info("Starting JSON WebSocket server", "address", config.JSONRPC.WsAddress)
-	_, port, _ := net.SplitHostPort(config.JSONRPC.Address)
 
 	// allocate separate WS connection to Tendermint
 	tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
-	wsSrv := rpc.NewWebsocketsServer(ctx.Logger, tmWsClient, "localhost:"+port, config.JSONRPC.WsAddress)
+	wsSrv := rpc.NewWebsocketsServer(ctx.Logger, tmWsClient, config)
 	wsSrv.Start()
 	return httpSrv, httpSrvDone, nil
 }

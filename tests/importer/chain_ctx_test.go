@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	ethcons "github.com/ethereum/go-ethereum/consensus"
 	ethcore "github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -47,8 +47,8 @@ func TestChainContextGetHeader(t *testing.T) {
 	}
 
 	cc.SetHeader(uint64(header.Number.Int64()), header)
-	require.Equal(t, header, cc.GetHeader(ethcmn.Hash{}, uint64(header.Number.Int64())))
-	require.Nil(t, cc.GetHeader(ethcmn.Hash{}, 0))
+	require.Equal(t, header, cc.GetHeader(common.Hash{}, uint64(header.Number.Int64())))
+	require.Nil(t, cc.GetHeader(common.Hash{}, 0))
 }
 
 func TestChainContextAuthor(t *testing.T) {

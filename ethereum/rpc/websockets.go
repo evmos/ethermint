@@ -2,10 +2,12 @@ package rpc
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net"
 	"net/http"
 	"sync"
 
@@ -24,6 +26,7 @@ import (
 
 	rpcfilters "github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/server/config"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
@@ -60,19 +63,25 @@ type ErrorMessageJSON struct {
 }
 
 type websocketsServer struct {
-	rpcAddr string // listen address of rest-server
-	wsAddr  string // listen address of ws server
-	api     *pubSubAPI
-	logger  log.Logger
+	rpcAddr  string // listen address of rest-server
+	wsAddr   string // listen address of ws server
+	certFile string
+	keyFile  string
+	api      *pubSubAPI
+	logger   log.Logger
 }
 
-func NewWebsocketsServer(logger log.Logger, tmWSClient *rpcclient.WSClient, rpcAddr, wsAddr string) WebsocketsServer {
-	logger = logger.With("module", "websocket-server")
+func NewWebsocketsServer(logger log.Logger, tmWSClient *rpcclient.WSClient, cfg config.Config) WebsocketsServer {
+	logger = logger.With("api", "websocket-server")
+	_, port, _ := net.SplitHostPort(cfg.JSONRPC.Address)
+
 	return &websocketsServer{
-		rpcAddr: rpcAddr,
-		wsAddr:  wsAddr,
-		api:     newPubSubAPI(logger, tmWSClient),
-		logger:  logger,
+		rpcAddr:  "localhost:" + port, // FIXME: this shouldn't be hardcoded to localhost
+		wsAddr:   cfg.JSONRPC.WsAddress,
+		certFile: cfg.TLS.CertificatePath,
+		keyFile:  cfg.TLS.KeyPath,
+		api:      newPubSubAPI(logger, tmWSClient),
+		logger:   logger,
 	}
 }
 
@@ -81,7 +90,13 @@ func (s *websocketsServer) Start() {
 	ws.Handle("/", s)
 
 	go func() {
-		err := http.ListenAndServe(s.wsAddr, ws)
+		var err error
+		if s.certFile == "" || s.keyFile == "" {
+			err = http.ListenAndServe(s.wsAddr, ws)
+		} else {
+			err = http.ListenAndServeTLS(s.wsAddr, s.certFile, s.keyFile, ws)
+		}
+
 		if err != nil {
 			if err == http.ErrServerClosed {
 				return
@@ -93,7 +108,7 @@ func (s *websocketsServer) Start() {
 }
 
 func (s *websocketsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var upgrader = websocket.Upgrader{
+	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
@@ -235,7 +250,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 // tcpGetAndSendResponse connects to the rest-server over tcp, posts a JSON-RPC request, and sends the response
 // to the client over websockets
 func (s *websocketsServer) tcpGetAndSendResponse(wsConn *wsConn, mb []byte) error {
-	req, err := http.NewRequest("POST", "http://"+s.rpcAddr, bytes.NewBuffer(mb))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", "http://"+s.rpcAddr, bytes.NewBuffer(mb))
 	if err != nil {
 		return errors.Wrap(err, "Could not build request")
 	}
@@ -329,8 +344,8 @@ func (api *pubSubAPI) unsubscribe(id rpc.ID) bool {
 }
 
 func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
-	var query = "subscribeNewHeads"
-	var subID = rpc.NewID()
+	query := "subscribeNewHeads"
+	subID := rpc.NewID()
 
 	sub, _, err := api.events.SubscribeNewHeads()
 	if err != nil {
@@ -542,8 +557,8 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 		return rpc.ID(""), err
 	}
 
-	var query = "subscribeLogs" + string(critBz)
-	var subID = rpc.NewID()
+	query := "subscribeLogs" + string(critBz)
+	subID := rpc.NewID()
 
 	sub, _, err := api.events.SubscribeLogs(crit)
 	if err != nil {
@@ -637,8 +652,8 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, extra interface{}) (rpc.ID, 
 }
 
 func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, error) {
-	var query = "subscribePendingTransactions"
-	var subID = rpc.NewID()
+	query := "subscribePendingTransactions"
+	subID := rpc.NewID()
 
 	sub, _, err := api.events.SubscribePendingTxs()
 	if err != nil {

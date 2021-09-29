@@ -1,16 +1,16 @@
 package types
 
 import (
+	"testing"
+
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/status-im/keycard-go/hexutils"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var revertSelector = crypto.Keccak256([]byte("Error(string)"))[:4]
 
 func TestNewExecErrorWithReason(t *testing.T) {
-
 	testCases := []struct {
 		name         string
 		errorMessage string

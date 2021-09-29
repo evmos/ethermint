@@ -39,7 +39,7 @@ type PrivateAccountAPI struct {
 // NewAPI creates an instance of the public Personal Eth API.
 func NewAPI(logger log.Logger, clientCtx client.Context, backend backend.Backend) *PrivateAccountAPI {
 	cfg := sdk.GetConfig()
-	basePath := cfg.GetFullFundraiserPath()
+	basePath := cfg.GetFullBIP44Path()
 
 	iterator, err := ethermint.NewHDPathIterator(basePath, true)
 	if err != nil {
@@ -110,7 +110,7 @@ func (api *PrivateAccountAPI) ListAccounts() ([]common.Address, error) {
 
 // LockAccount will lock the account associated with the given address when it's unlocked.
 // It removes the key corresponding to the given address from the API's local keys.
-func (api *PrivateAccountAPI) LockAccount(address common.Address) bool { // nolint: interfacer
+func (api *PrivateAccountAPI) LockAccount(address common.Address) bool {
 	api.logger.Debug("personal_lockAccount", "address", address.String())
 	api.logger.Info("personal_lockAccount not supported")
 	// TODO: Not supported. See underlying issue  https://github.com/99designs/keyring/issues/85
@@ -141,7 +141,7 @@ func (api *PrivateAccountAPI) NewAccount(password string) (common.Address, error
 // UnlockAccount will unlock the account associated with the given address with
 // the given password for duration seconds. If duration is nil it will use a
 // default of 300 seconds. It returns an indication if the account was unlocked.
-func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Address, _ string, _ *uint64) (bool, error) { // nolint: interfacer
+func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Address, _ string, _ *uint64) (bool, error) {
 	api.logger.Debug("personal_unlockAccount", "address", addr.String())
 	// TODO: Not supported. See underlying issue  https://github.com/99designs/keyring/issues/85
 	return false, nil
@@ -152,6 +152,15 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 // able to decrypt the key it fails.
 func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.SendTxArgs, pwrd string) (common.Hash, error) {
 	api.logger.Debug("personal_sendTransaction", "address", args.To.String())
+
+	addr := sdk.AccAddress(args.From.Bytes())
+
+	// check if the key is on the keyring
+	_, err := api.clientCtx.Keyring.KeyByAddress(addr)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
 	return api.backend.SendTransaction(args)
 }
 

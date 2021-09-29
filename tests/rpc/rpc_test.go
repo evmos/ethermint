@@ -23,7 +23,7 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -34,8 +34,7 @@ const (
 )
 
 var (
-	MODE = os.Getenv("MODE")
-
+	MODE       = os.Getenv("MODE")
 	zeroString = "0x0"
 	from       = []byte{}
 )
@@ -339,7 +338,7 @@ func TestEth_blockNumber(t *testing.T) {
 }
 
 func TestEth_coinbase(t *testing.T) {
-	zeroAddress := hexutil.Bytes(ethcmn.Address{}.Bytes())
+	zeroAddress := hexutil.Bytes(common.Address{}.Bytes())
 	rpcRes := call(t, "eth_coinbase", []string{})
 
 	var res hexutil.Bytes
@@ -470,7 +469,7 @@ func TestEth_GetFilterChanges_BlockFilter(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	changesRes := call(t, "eth_getFilterChanges", []string{ID})
-	var hashes []ethcmn.Hash
+	var hashes []common.Hash
 	err = json.Unmarshal(changesRes.Result, &hashes)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(hashes), 1)
@@ -579,9 +578,8 @@ func TestEth_GetTransactionReceipt_ContractDeployment(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "0x1", receipt["status"].(string))
 
-	require.NotEqual(t, ethcmn.Address{}.String(), receipt["contractAddress"].(string))
+	require.NotEqual(t, common.Address{}.String(), receipt["contractAddress"].(string))
 	require.NotNil(t, receipt["logs"])
-
 }
 
 func getTransactionReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
@@ -911,4 +909,39 @@ func TestEth_GetBlockByNumber(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "0x", block["extraData"].(string))
 	require.Equal(t, []interface{}{}, block["uncles"].([]interface{}))
+}
+
+func TestEth_GetLogs(t *testing.T) {
+	time.Sleep(time.Second)
+
+	rpcRes := call(t, "eth_blockNumber", []string{})
+
+	var res hexutil.Uint64
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	param := make([]map[string]interface{}, 1)
+	param[0] = make(map[string]interface{})
+	param[0]["topics"] = []string{helloTopic, worldTopic}
+	param[0]["fromBlock"] = res.String()
+
+	deployTestContractWithFunction(t)
+
+	// get filter changes
+	logRes := call(t, "eth_getLogs", param)
+
+	var logs []*ethtypes.Log
+	err = json.Unmarshal(logRes.Result, &logs)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, len(logs))
+
+	// filter log with address
+	param[0] = make(map[string]interface{})
+	param[0]["address"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["fromBlock"] = res.String()
+	err = json.Unmarshal(logRes.Result, &logs)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, len(logs))
 }

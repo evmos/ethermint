@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestCreateAccount() {
@@ -179,7 +178,6 @@ func (suite *KeeperTestSuite) TestGetNonce() {
 
 			nonce := suite.app.EvmKeeper.GetNonce(tc.address)
 			suite.Require().Equal(tc.expectedNonce, nonce)
-
 		})
 	}
 }
@@ -249,7 +247,6 @@ func (suite *KeeperTestSuite) TestGetCodeHash() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 
 			hash := suite.app.EvmKeeper.GetCodeHash(tc.address)
@@ -297,7 +294,6 @@ func (suite *KeeperTestSuite) TestSetCode() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			prev := suite.app.EvmKeeper.GetCode(tc.address)
 			suite.app.EvmKeeper.SetCode(tc.address, tc.code)
 			post := suite.app.EvmKeeper.GetCode(tc.address)
@@ -309,6 +305,8 @@ func (suite *KeeperTestSuite) TestSetCode() {
 			}
 
 			suite.Require().Equal(len(post), suite.app.EvmKeeper.GetCodeSize(tc.address))
+
+			suite.app.EvmKeeper.ClearStateError()
 		})
 	}
 }
@@ -339,7 +337,6 @@ func (suite *KeeperTestSuite) TestRefund() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			tc.malleate()
 
 			if tc.expPanic {
@@ -375,7 +372,6 @@ func (suite *KeeperTestSuite) TestState() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
 			suite.app.EvmKeeper.SetState(suite.address, tc.key, tc.value)
 			value := suite.app.EvmKeeper.GetState(suite.address, tc.key)
 			suite.Require().Equal(tc.value, value)
@@ -386,9 +382,9 @@ func (suite *KeeperTestSuite) TestState() {
 func (suite *KeeperTestSuite) TestCommittedState() {
 	suite.SetupTest()
 
-	var key = common.BytesToHash([]byte("key"))
-	var value1 = common.BytesToHash([]byte("value1"))
-	var value2 = common.BytesToHash([]byte("value2"))
+	key := common.BytesToHash([]byte("key"))
+	value1 := common.BytesToHash([]byte("value1"))
+	value2 := common.BytesToHash([]byte("value2"))
 
 	suite.app.EvmKeeper.SetState(suite.address, key, value1)
 
@@ -475,10 +471,9 @@ func (suite *KeeperTestSuite) TestEmpty() {
 }
 
 func (suite *KeeperTestSuite) TestSnapshot() {
-
-	var key = common.BytesToHash([]byte("key"))
-	var value1 = common.BytesToHash([]byte("value1"))
-	var value2 = common.BytesToHash([]byte("value2"))
+	key := common.BytesToHash([]byte("key"))
+	value1 := common.BytesToHash([]byte("value1"))
+	value2 := common.BytesToHash([]byte("value2"))
 
 	testCases := []struct {
 		name     string
@@ -533,8 +528,8 @@ func (suite *KeeperTestSuite) TestSnapshot() {
 	}
 }
 
-func (suite *KeeperTestSuite) CreateTestTx(msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+func (suite *KeeperTestSuite) CreateTestTx(msg *types.MsgEthereumTx, priv cryptotypes.PrivKey) authsigning.Tx {
+	option, err := codectypes.NewAnyWithValue(&types.ExtensionOptionsEthereumTx{})
 	suite.Require().NoError(err)
 
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
@@ -558,14 +553,14 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	msg.From = addr.Hex()
 
 	tx := suite.CreateTestTx(msg, privKey)
-	msg, _ = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	msg, _ = tx.GetMsgs()[0].(*types.MsgEthereumTx)
 	txHash := msg.AsTransaction().Hash()
 
 	msg2 := types.NewTx(big.NewInt(1), 1, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
 	msg2.From = addr.Hex()
 
 	tx2 := suite.CreateTestTx(msg2, privKey)
-	msg2, _ = tx2.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	msg2, _ = tx2.GetMsgs()[0].(*types.MsgEthereumTx)
 	txHash2 := msg2.AsTransaction().Hash()
 
 	testCases := []struct {
@@ -615,7 +610,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 
 			suite.app.EvmKeeper.SetTxHashTransient(tc.hash)
 			suite.app.EvmKeeper.AddLog(tc.log)
-			logs := suite.app.EvmKeeper.GetTxLogs(tc.hash)
+			logs := suite.app.EvmKeeper.GetTxLogsTransient(tc.hash)
 			suite.Require().Equal(1, len(logs))
 			suite.Require().Equal(tc.expLog, logs[0])
 		})

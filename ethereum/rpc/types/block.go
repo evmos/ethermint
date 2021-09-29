@@ -2,16 +2,22 @@ package types
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"strings"
 
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/spf13/cast"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
+
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 // BlockNumber represents decoding hex string to block values
@@ -23,8 +29,19 @@ const (
 	EthEarliestBlockNumber = BlockNumber(0)
 )
 
+const (
+	BlockParamEarliest = "earliest"
+	BlockParamLatest   = "latest"
+	BlockParamPending  = "pending"
+)
+
 // NewBlockNumber creates a new BlockNumber instance.
 func NewBlockNumber(n *big.Int) BlockNumber {
+	if !n.IsInt64() {
+		// default to latest block if it overflows
+		return EthLatestBlockNumber
+	}
+
 	return BlockNumber(n.Int64())
 }
 
@@ -52,19 +69,19 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	}
 
 	switch input {
-	case "earliest":
+	case BlockParamEarliest:
 		*bn = EthEarliestBlockNumber
 		return nil
-	case "latest":
+	case BlockParamLatest:
 		*bn = EthLatestBlockNumber
 		return nil
-	case "pending":
+	case BlockParamPending:
 		*bn = EthPendingBlockNumber
 		return nil
 	}
 
 	blckNum, err := hexutil.DecodeUint64(input)
-	if err == hexutil.ErrMissingPrefix {
+	if errors.Is(err, hexutil.ErrMissingPrefix) {
 		blckNum = cast.ToUint64(input)
 	} else if err != nil {
 		return err
@@ -102,4 +119,78 @@ func (bn BlockNumber) TmHeight() *int64 {
 
 	height := bn.Int64()
 	return &height
+}
+
+// BlockNumberOrHash represents a block number or a block hash.
+type BlockNumberOrHash struct {
+	BlockNumber *BlockNumber `json:"blockNumber,omitempty"`
+	BlockHash   *common.Hash `json:"blockHash,omitempty"`
+}
+
+func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
+	type erased BlockNumberOrHash
+	e := erased{}
+	err := json.Unmarshal(data, &e)
+	if err == nil {
+		return bnh.checkUnmarshal(BlockNumberOrHash(e))
+	}
+	var input string
+	err = json.Unmarshal(data, &input)
+	if err != nil {
+		return err
+	}
+	err = bnh.decodeFromString(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bnh *BlockNumberOrHash) checkUnmarshal(e BlockNumberOrHash) error {
+	if e.BlockNumber != nil && e.BlockHash != nil {
+		return fmt.Errorf("cannot specify both BlockHash and BlockNumber, choose one or the other")
+	}
+	bnh.BlockNumber = e.BlockNumber
+	bnh.BlockHash = e.BlockHash
+	return nil
+}
+
+func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
+	switch input {
+	case BlockParamEarliest:
+		bn := EthEarliestBlockNumber
+		bnh.BlockNumber = &bn
+	case BlockParamLatest:
+		bn := EthLatestBlockNumber
+		bnh.BlockNumber = &bn
+	case BlockParamPending:
+		bn := EthPendingBlockNumber
+		bnh.BlockNumber = &bn
+	default:
+		// check if the input is a block hash
+		if len(input) == 66 {
+			hash := common.Hash{}
+			err := hash.UnmarshalText([]byte(input))
+			if err != nil {
+				return err
+			}
+			bnh.BlockHash = &hash
+			break
+		}
+		// otherwise take the hex string has int64 value
+		blockNumber, err := hexutil.DecodeUint64(input)
+		if err != nil {
+			return err
+		}
+
+		bnInt, err := ethermint.SafeInt64(blockNumber)
+		if err != nil {
+			return err
+		}
+
+		bn := BlockNumber(bnInt)
+		bnh.BlockNumber = &bn
+	}
+	return nil
 }

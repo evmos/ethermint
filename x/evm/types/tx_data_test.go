@@ -7,9 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/tharsis/ethermint/tests"
 )
 
 func TestTxData_chainID(t *testing.T) {
@@ -38,26 +35,49 @@ func TestTxData_chainID(t *testing.T) {
 }
 
 func TestTxData_DeriveChainID(t *testing.T) {
+	bitLen64, ok := new(big.Int).SetString("0x8000000000000000", 0)
+	require.True(t, ok)
+
+	bitLen80, ok := new(big.Int).SetString("0x80000000000000000000", 0)
+	require.True(t, ok)
+
+	expBitLen80, ok := new(big.Int).SetString("302231454903657293676526", 0)
+	require.True(t, ok)
+
 	testCases := []struct {
 		msg        string
 		data       TxData
 		expChainID *big.Int
-		from       common.Address
 	}{
 		{
-			"v = 0", &AccessListTx{V: big.NewInt(0).Bytes()}, nil, tests.GenerateAddress(),
+			"v = -1", &LegacyTx{V: big.NewInt(-1).Bytes()}, nil,
 		},
 		{
-			"v = 1", &AccessListTx{V: big.NewInt(1).Bytes()}, big.NewInt(9223372036854775791), tests.GenerateAddress(),
+			"v = 0", &LegacyTx{V: big.NewInt(0).Bytes()}, nil,
 		},
 		{
-			"v = 27", &AccessListTx{V: big.NewInt(27).Bytes()}, new(big.Int), tests.GenerateAddress(),
+			"v = 1", &LegacyTx{V: big.NewInt(1).Bytes()}, nil,
 		},
 		{
-			"v = 28", &AccessListTx{V: big.NewInt(28).Bytes()}, new(big.Int), tests.GenerateAddress(),
+			"v = 27", &LegacyTx{V: big.NewInt(27).Bytes()}, new(big.Int),
 		},
 		{
-			"v = nil ", &AccessListTx{V: nil}, nil, tests.GenerateAddress(),
+			"v = 28", &LegacyTx{V: big.NewInt(28).Bytes()}, new(big.Int),
+		},
+		{
+			"Ethereum mainnet", &LegacyTx{V: big.NewInt(37).Bytes()}, big.NewInt(1),
+		},
+		{
+			"chain ID 9000", &LegacyTx{V: big.NewInt(18035).Bytes()}, big.NewInt(9000),
+		},
+		{
+			"bit len 64", &LegacyTx{V: bitLen64.Bytes()}, big.NewInt(4611686018427387886),
+		},
+		{
+			"bit len 80", &LegacyTx{V: bitLen80.Bytes()}, expBitLen80,
+		},
+		{
+			"v = nil ", &LegacyTx{V: nil}, nil,
 		},
 	}
 

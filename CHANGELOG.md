@@ -40,11 +40,36 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (app) [tharsis#476](https://github.com/tharsis/ethermint/pull/476) Update Bech32 HRP to `ethm`.
+* (evm) [tharsis#556](https://github.com/tharsis/ethermint/pull/556) Remove tx logs and block bloom from chain state
+* (evm) [tharsis#590](https://github.com/tharsis/ethermint/pull/590) Contract storage key is not hashed anymore
+
+### API Breaking
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Deprecate `YoloV3Block` and `EWASMBlock` from `ChainConfig`
+
+### Features
+
+* (evm) [tharsis#469](https://github.com/tharsis/ethermint/pull/469) Support [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+* (evm) [tharsis#417](https://github.com/tharsis/ethermint/pull/417) Add `EvmHooks` for tx post-processing
+* (rpc) [tharsis#506](https://github.com/tharsis/ethermint/pull/506) Support for `debug_traceTransaction` RPC endpoint
+* (rpc) [tharsis#555](https://github.com/tharsis/ethermint/pull/555) Support for `debug_traceBlockByNumber` RPC endpoint
 
 ### Bug Fixes
 
+* (rpc, server) [tharsis#600](https://github.com/tharsis/ethermint/pull/600) Add TLS configuration for websocket API
+* (rpc) [tharsis#598](https://github.com/tharsis/ethermint/pull/598) Check truncation when creating a `BlockNumber` from `big.Int`
+* (evm) [tharsis#597](https://github.com/tharsis/ethermint/pull/597) Check for `uint64` -> `int64` block height overflow on `GetHashFn`
+* (evm) [tharsis#579](https://github.com/tharsis/ethermint/pull/579) Update `DeriveChainID` function to handle `v` signature values `< 35`.
 * (encoding) [tharsis#478](https://github.com/tharsis/ethermint/pull/478) Register `Evidence` to amino codec.
 * (rpc) [tharsis#478](https://github.com/tharsis/ethermint/pull/481) Getting the node configuration when calling the `miner` rpc methods.
+* (cli) [tharsis#561](https://github.com/tharsis/ethermint/pull/561) `Export` and `Start` commands now use the same home directory.
+
+### Improvements
+
+* (evm) [tharsis#461](https://github.com/tharsis/ethermint/pull/461) Increase performance of `StateDB` transaction log storage (r/w).
+* (evm) [tharsis#566](https://github.com/tharsis/ethermint/pull/566) Introduce `stateErr` store in `StateDB` to avoid meaningless operations if any error happened before
+* (rpc, evm) [tharsis#587](https://github.com/tharsis/ethermint/pull/587) Apply bloom filter when query ethlogs with range of blocks
+* (evm) [tharsis#586](https://github.com/tharsis/ethermint/pull/586) Benchmark evm keeper
 
 ## [v0.5.0] - 2021-08-20
 
@@ -99,6 +124,7 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 * (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
 * (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
 * (rpc) [#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
+* (eth) [tharsis#460](https://github.com/tharsis/ethermint/issues/460) Add support for EIP-1898.
 
 ### Bug Fixes
 

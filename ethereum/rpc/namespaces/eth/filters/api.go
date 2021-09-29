@@ -32,6 +32,8 @@ type Backend interface {
 
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
+
+	GetFilteredBlocks(from int64, to int64, bloomIndexes [][]BloomIV, filterAddresses bool) ([]int64, error)
 }
 
 // consider a filter inactive if it has not been polled for within deadline
@@ -191,7 +193,7 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 
 				txHash := common.BytesToHash(tmtypes.Tx(data.Tx).Hash())
 
-				// To keep the original behaviour, send a single tx hash in one notification.
+				// To keep the original behavior, send a single tx hash in one notification.
 				// TODO(rjl493456442) Send a batch of tx hashes in one notification
 				err = notifier.Notify(rpcSub.ID, txHash)
 				if err != nil {

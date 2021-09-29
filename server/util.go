@@ -14,8 +14,6 @@ import (
 
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-
-	"github.com/tharsis/ethermint/app"
 )
 
 // add server commands
@@ -39,7 +37,7 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 		startCmd,
 		sdkserver.UnsafeResetAllCmd(),
 		tendermintCmd,
-		sdkserver.ExportCmd(appExport, app.DefaultNodeHome),
+		sdkserver.ExportCmd(appExport, defaultNodeHome),
 		version.NewVersionCommand(),
 	)
 }
