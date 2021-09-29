@@ -63,7 +63,7 @@ Or check out the latest [release](https://github.com/tharsis/ethermint/releases)
 
 To learn how the Ethermint works from a high-level perspective, go to the [Introduction](https://ethermint.dev/intro/overview.html) section from the documentation. You can also check the instructions to [Run a Node](https://ethermint.dev/quickstart/run_node.html).
 
-For more, please refer to the [Ethermint Docs](./docs/), which are also hosted on [ethermint.dev](https://ethermint.dev/).
+For an example on how Ethermint can be used on any cosmos chain, please refer to [Evmos](https://www.github.com/tharsis/evmos)
 
 ## Community
 
