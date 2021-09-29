@@ -82,4 +82,4 @@ For additional instructions, standards and style guides, please refer to the [Co
 
 ## Careers
 
-See our open positions on [Cosmos Jobs](https://jobs.cosmos.network/project/ethermint-d0sk1uxuh-remote/), [Notion](https://tharsis.notion.site), or feel free to [reach out](mailto:careers@thars.is) via email.
+See our open positions on [Cosmos Jobs](https://jobs.cosmos.network/project/evmos-d0sk1uxuh-remote/), [Notion](https://tharsis.notion.site), or feel free to [reach out](mailto:careers@thars.is) via email.
