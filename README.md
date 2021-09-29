@@ -68,8 +68,8 @@ For an example on how Ethermint can be used on any Cosmos-SDK chain, please refe
 
 The following chat channels and forums are a great spot to ask questions about Ethermint:
 
-- [Tharsis Twitter](https://twitter.com/TharsisFinance)
-- [Evmos Twitter](https://twitter.com/TharsisFinance)
+- [Tharsis Twitter](https://twitter.com/TharsisHQ)
+- [Evmos Twitter](https://twitter.com/TharsisHQ)
 - [Ethermint Twitter](https://twitter.com/ethermint)
 - [Ethermint Discord](https://discord.gg/trje9XuAmy)
 - [Ethermint Forum](https://forum.cosmos.network/c/ethermint)
