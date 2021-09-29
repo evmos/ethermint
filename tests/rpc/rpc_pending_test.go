@@ -37,6 +37,8 @@ import (
 // }
 
 func TestEth_Pending_GetBalance(t *testing.T) {
+	t.Skip("skipping TestEth_Pending_GetBalance")
+
 	var res hexutil.Big
 	var resTxHash common.Hash
 	rpcRes := Call(t, "eth_getBalance", []string{addrA, "latest"})
@@ -90,6 +92,8 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionCount(t *testing.T) {
+	t.Skip("skipping TestEth_Pending_GetTransactionCount")
+
 	prePendingNonce := GetNonce(t, "pending")
 	t.Logf("Pending nonce before tx is %d", prePendingNonce)
 
@@ -123,6 +127,8 @@ func TestEth_Pending_GetTransactionCount(t *testing.T) {
 }
 
 func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
+	t.Skip("skipping TestEth_Pending_GetBlockTransactionCountByNumber")
+
 	rpcRes := Call(t, "eth_getBlockTransactionCountByNumber", []interface{}{"pending"})
 	var preTxPendingTxCount hexutil.Uint
 	err := json.Unmarshal(rpcRes.Result, &preTxPendingTxCount)
@@ -170,6 +176,8 @@ func TestEth_Pending_GetBlockTransactionCountByNumber(t *testing.T) {
 }
 
 func TestEth_Pending_GetBlockByNumber(t *testing.T) {
+	t.Skip("skipping TestEth_Pending_GetBlockByNumber")
+
 	rpcRes := Call(t, "eth_getBlockByNumber", []interface{}{"latest", true})
 	var preTxLatestBlock map[string]interface{}
 	err := json.Unmarshal(rpcRes.Result, &preTxLatestBlock)
@@ -213,6 +221,8 @@ func TestEth_Pending_GetBlockByNumber(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
+	t.Skip("skipping TestEth_Pending_GetTransactionByBlockNumberAndIndex")
+
 	var pendingTx []*rpctypes.RPCTransaction
 	resPendingTxs := Call(t, "eth_pendingTransactions", []string{})
 	err := json.Unmarshal(resPendingTxs.Result, &pendingTx)
@@ -259,6 +269,8 @@ func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionByHash(t *testing.T) {
+	t.Skip("skipping TestEth_Pending_GetTransactionByHash")
+
 	// negative case, check that it returns empty.
 	rpcRes := Call(t, "eth_getTransactionByHash", []interface{}{"0xec5fa15e1368d6ac314f9f64118c5794f076f63c02e66f97ea5fe1de761a8973"})
 	require.Nil(t, rpcRes.Result)
@@ -301,6 +313,8 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 }
 
 func TestEth_Pending_SendTransaction_PendingNonce(t *testing.T) {
+	t.Skip("skipping TestEth_Pending_SendTransaction_PendingNonce")
+
 	currNonce := GetNonce(t, "latest")
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
