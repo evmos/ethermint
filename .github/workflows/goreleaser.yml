@@ -1,27 +1,38 @@
-name: goreleaser
-
+# This workflow helps with creating releases.
+# This job will only be triggered when a tag (vX.X.x) is pushed
+name: Release
 on:
   push:
+    # Sequence of patterns matched against refs/tags
     tags:
-      - "v*.*.*"
+      - "v[0-9]+.[0-9]+.[0-9]+" # Push events to matching v*, i.e. v1.0, v20.15.10
+
 jobs:
-  goreleaser:
+  release:
     runs-on: ubuntu-latest
-    environment: release
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: true
-      - name: Set up Go
-        uses: actions/setup-go@v2
+          fetch-depth: 0
+      - uses: actions/setup-go@v2.1.4
         with:
           go-version: 1.17
-      - name: release dry run
-        run: make release-dry-run
-      - name: setup release environment
+      - name: Set Env
+        run: echo "TM_VERSION=$(go list -m github.com/tendermint/tendermint | sed 's:.* ::')" >> $GITHUB_ENV
+      - name: Build
+        uses: goreleaser/goreleaser-action@v2.7.0
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          version: latest
+          args: build --rm-dist --skip-validate # skip validate skips initial sanity checks in order to be able to fully run
+        env:
+          TM_VERSION: ${{ env.TM_VERSION }}
+      - name: Release
+        uses: goreleaser/goreleaser-action@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          version: latest
+          args: release --rm-dist --release-notes ./RELEASE_NOTES.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |-
-          echo 'GITHUB_TOKEN=${{secrets.GITHUB_TOKEN}}' > .release-env
-      - name: release publish
-        run: make release
+          TM_VERSION: ${{ env.TM_VERSION }}
