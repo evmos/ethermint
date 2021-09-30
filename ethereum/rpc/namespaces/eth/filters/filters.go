@@ -2,7 +2,7 @@ package filters
 
 import (
 	"context"
-	"fmt"
+	"encoding/binary"
 	"math/big"
 
 	"github.com/tharsis/ethermint/ethereum/rpc/types"
@@ -11,17 +11,25 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/bloombits"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/filters"
 )
+
+// BloomIV represents the bit indexes and value inside the bloom filter that belong
+// to some key.
+type BloomIV struct {
+	I [3]uint
+	V [3]byte
+}
 
 // Filter can be used to retrieve and filter logs.
 type Filter struct {
 	logger   log.Logger
 	backend  Backend
 	criteria filters.FilterCriteria
-	matcher  *bloombits.Matcher
+
+	bloomFilters [][]BloomIV // Filter the system is matching for
 }
 
 // NewBlockFilter creates a new filter which directly inspects the contents of
@@ -54,8 +62,6 @@ func NewRangeFilter(logger log.Logger, backend Backend, begin, end int64, addres
 		filtersBz = append(filtersBz, filter)
 	}
 
-	size, _ := backend.BloomStatus()
-
 	// Create a generic filter and convert it into a range filter
 	criteria := filters.FilterCriteria{
 		FromBlock: big.NewInt(begin),
@@ -64,16 +70,16 @@ func NewRangeFilter(logger log.Logger, backend Backend, begin, end int64, addres
 		Topics:    topics,
 	}
 
-	return newFilter(logger, backend, criteria, bloombits.NewMatcher(size, filtersBz))
+	return newFilter(logger, backend, criteria, createBloomFilters(filtersBz, logger))
 }
 
 // newFilter returns a new Filter
-func newFilter(logger log.Logger, backend Backend, criteria filters.FilterCriteria, matcher *bloombits.Matcher) *Filter {
+func newFilter(logger log.Logger, backend Backend, criteria filters.FilterCriteria, bloomFilters [][]BloomIV) *Filter {
 	return &Filter{
-		logger:   logger,
-		backend:  backend,
-		criteria: criteria,
-		matcher:  matcher,
+		logger:       logger,
+		backend:      backend,
+		criteria:     criteria,
+		bloomFilters: bloomFilters,
 	}
 }
 
@@ -132,52 +138,25 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 		f.criteria.ToBlock = big.NewInt(head + maxToOverhang)
 	}
 
-	for i := f.criteria.FromBlock.Int64(); i <= f.criteria.ToBlock.Int64(); i++ {
-		block, err := f.backend.GetBlockByNumber(types.BlockNumber(i), false)
-		if err != nil {
-			return logs, errors.Wrapf(err, "failed to fetch block by number %d", i)
-		}
+	from := f.criteria.FromBlock.Int64()
+	to := f.criteria.ToBlock.Int64()
 
-		if block["transactions"] == nil {
-			continue
-		}
-
-		var txHashes []common.Hash
-
-		txs, ok := block["transactions"].([]interface{})
-		if !ok {
-			_, ok = block["transactions"].([]common.Hash)
-			if !ok {
-				f.logger.Error(
-					"reading transactions from block data failed",
-					"type", fmt.Sprintf("%T", block["transactions"]),
-				)
-			}
-
-			continue
-		}
-
-		if len(txs) == 0 {
-			continue
-		}
-
-		for _, tx := range txs {
-			txHash, ok := tx.(common.Hash)
-			if !ok {
-				f.logger.Error(
-					"transactions list contains non-hash element",
-					"type", fmt.Sprintf("%T", tx),
-				)
-				continue
-			}
-
-			txHashes = append(txHashes, txHash)
-		}
-
-		logsMatched := f.checkMatches(txHashes)
-		logs = append(logs, logsMatched...)
+	blocks, err := f.backend.GetFilteredBlocks(from, to, f.bloomFilters, len(f.criteria.Addresses) > 0)
+	if err != nil {
+		return nil, err
 	}
 
+	for _, height := range blocks {
+		ethLogs, err := f.backend.GetLogsByNumber(types.BlockNumber(height))
+		if err != nil {
+			return logs, errors.Wrapf(err, "failed to fetch block by number %d", height)
+		}
+
+		for _, ethLog := range ethLogs {
+			filtered := FilterLogs(ethLog, f.criteria.FromBlock, f.criteria.ToBlock, f.criteria.Addresses, f.criteria.Topics)
+			logs = append(logs, filtered...)
+		}
+	}
 	return logs, nil
 }
 
@@ -207,21 +186,64 @@ func (f *Filter) blockLogs(header *ethtypes.Header) ([]*ethtypes.Log, error) {
 	return logs, nil
 }
 
-// checkMatches checks if the logs from the a list of transactions transaction
-// contain any log events that  match the filter criteria. This function is
-// called when the bloom filter signals a potential match.
-func (f *Filter) checkMatches(transactions []common.Hash) []*ethtypes.Log {
-	unfiltered := []*ethtypes.Log{}
-	for _, tx := range transactions {
-		logs, err := f.backend.GetTransactionLogs(tx)
-		if err != nil {
-			// ignore error if transaction didn't set any logs (eg: when tx type is not
-			// MsgEthereumTx or MsgEthermint)
+func createBloomFilters(filters [][][]byte, logger log.Logger) [][]BloomIV {
+	bloomFilters := make([][]BloomIV, 0)
+	for _, filter := range filters {
+		// Gather the bit indexes of the filter rule, special casing the nil filter
+		if len(filter) == 0 {
 			continue
 		}
+		bloomIVs := make([]BloomIV, len(filter))
 
-		unfiltered = append(unfiltered, logs...)
+		// Transform the filter rules (the addresses and topics) to the bloom index and value arrays
+		// So it can be used to compare with the bloom of the block header. If the rule has any nil
+		// clauses. The rule will be ignored.
+		for i, clause := range filter {
+			if clause == nil {
+				bloomIVs = nil
+				break
+			}
+
+			iv, err := calcBloomIVs(clause)
+			if err != nil {
+				bloomIVs = nil
+				logger.Error("calcBloomIVs error: %v", err)
+				break
+			}
+
+			bloomIVs[i] = iv
+		}
+		// Accumulate the filter rules if no nil rule was within
+		if bloomIVs != nil {
+			bloomFilters = append(bloomFilters, bloomIVs)
+		}
+	}
+	return bloomFilters
+}
+
+// calcBloomIVs returns BloomIV for the given data,
+// revised from https://github.com/ethereum/go-ethereum/blob/401354976bb44f0ad4455ca1e0b5c0dc31d9a5f5/core/types/bloom9.go#L139
+func calcBloomIVs(data []byte) (BloomIV, error) {
+	hashbuf := make([]byte, 6)
+	biv := BloomIV{}
+
+	sha := crypto.NewKeccakState()
+	sha.Reset()
+	if _, err := sha.Write(data); err != nil {
+		return BloomIV{}, err
+	}
+	if _, err := sha.Read(hashbuf); err != nil {
+		return BloomIV{}, err
 	}
 
-	return FilterLogs(unfiltered, f.criteria.FromBlock, f.criteria.ToBlock, f.criteria.Addresses, f.criteria.Topics)
+	// The actual bits to flip
+	biv.V[0] = byte(1 << (hashbuf[1] & 0x7))
+	biv.V[1] = byte(1 << (hashbuf[3] & 0x7))
+	biv.V[2] = byte(1 << (hashbuf[5] & 0x7))
+	// The indices for the bytes to OR in
+	biv.I[0] = ethtypes.BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf)&0x7ff)>>3) - 1
+	biv.I[1] = ethtypes.BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf[2:])&0x7ff)>>3) - 1
+	biv.I[2] = ethtypes.BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf[4:])&0x7ff)>>3) - 1
+
+	return biv, nil
 }

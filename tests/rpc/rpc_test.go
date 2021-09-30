@@ -34,8 +34,7 @@ const (
 )
 
 var (
-	MODE = os.Getenv("MODE")
-
+	MODE       = os.Getenv("MODE")
 	zeroString = "0x0"
 	from       = []byte{}
 )
@@ -910,4 +909,39 @@ func TestEth_GetBlockByNumber(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "0x", block["extraData"].(string))
 	require.Equal(t, []interface{}{}, block["uncles"].([]interface{}))
+}
+
+func TestEth_GetLogs(t *testing.T) {
+	time.Sleep(time.Second)
+
+	rpcRes := call(t, "eth_blockNumber", []string{})
+
+	var res hexutil.Uint64
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	param := make([]map[string]interface{}, 1)
+	param[0] = make(map[string]interface{})
+	param[0]["topics"] = []string{helloTopic, worldTopic}
+	param[0]["fromBlock"] = res.String()
+
+	deployTestContractWithFunction(t)
+
+	// get filter changes
+	logRes := call(t, "eth_getLogs", param)
+
+	var logs []*ethtypes.Log
+	err = json.Unmarshal(logRes.Result, &logs)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, len(logs))
+
+	// filter log with address
+	param[0] = make(map[string]interface{})
+	param[0]["address"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["fromBlock"] = res.String()
+	err = json.Unmarshal(logRes.Result, &logs)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, len(logs))
 }

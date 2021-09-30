@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -68,18 +67,4 @@ func AddressStoragePrefix(address common.Address) []byte {
 // StateKey defines the full key under which an account state is stored.
 func StateKey(address common.Address, key []byte) []byte {
 	return append(AddressStoragePrefix(address), key...)
-}
-
-// KeyAddressStorage returns the key hash to access a given account state. The composite key
-// (address + hash) is hashed using Keccak256.
-func KeyAddressStorage(address common.Address, hash common.Hash) common.Hash {
-	prefix := address.Bytes()
-	key := hash.Bytes()
-
-	compositeKey := make([]byte, len(prefix)+len(key))
-
-	copy(compositeKey, prefix)
-	copy(compositeKey[len(prefix):], key)
-
-	return crypto.Keccak256Hash(compositeKey)
 }

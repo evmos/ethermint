@@ -66,8 +66,14 @@ func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer
 //  3. The requested height is from a height greater than the latest one
 func (k Keeper) GetHashFn() vm.GetHashFunc {
 	return func(height uint64) common.Hash {
-		h := int64(height)
 		ctx := k.Ctx()
+
+		h, err := ethermint.SafeInt64(height)
+		if err != nil {
+			k.Logger(ctx).Error("failed to cast height to int64", "error", err)
+			return common.Hash{}
+		}
+
 		switch {
 		case ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
@@ -168,7 +174,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// set the transaction hash and index to the impermanent (transient) block state so that it's also
 	// available on the StateDB functions (eg: AddLog)
 	k.SetTxHashTransient(txHash)
-	k.IncreaseTxIndexTransient()
 
 	if !k.ctxStack.IsEmpty() {
 		panic("context stack shouldn't be dirty before apply message")
@@ -185,6 +190,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
+
+	k.IncreaseTxIndexTransient()
 
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogsTransient(txHash)
@@ -309,6 +316,38 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		VmError: vmError,
 		Ret:     ret,
 	}, nil
+}
+
+// ApplyNativeMessage executes an ethereum message on the EVM. It is meant to be called from an internal
+// native Cosmos SDK module.
+func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxResponse, error) {
+	// TODO: clean up and remove duplicate code.
+
+	ctx := k.Ctx()
+	params := k.GetParams(ctx)
+	// return error if contract creation or call are disabled through governance
+	if !params.EnableCreate && msg.To() == nil {
+		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
+	} else if !params.EnableCall && msg.To() != nil {
+		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+	}
+
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+
+	// get the coinbase address from the block proposer
+	coinbase, err := k.GetCoinbaseAddress(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
+	}
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, nil)
+
+	ret, err := k.ApplyMessage(evm, msg, ethCfg, true)
+	if err != nil {
+		return nil, err
+	}
+	k.CommitCachedContexts()
+	return ret, nil
 }
 
 // GetEthIntrinsicGas returns the intrinsic gas cost for the transaction

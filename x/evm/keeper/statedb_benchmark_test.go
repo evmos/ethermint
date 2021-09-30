@@ -126,3 +126,57 @@ func BenchmarkSnapshot(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkSubBalance(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	amt := big.NewInt(10)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		suite.app.EvmKeeper.SubBalance(suite.address, amt)
+	}
+}
+
+func BenchmarkSetNonce(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		suite.app.EvmKeeper.SetNonce(suite.address, 1)
+	}
+}
+
+func BenchmarkAddRefund(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		suite.app.EvmKeeper.AddRefund(1)
+	}
+}
+
+func BenchmarkSuicide(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		addr := tests.GenerateAddress()
+		suite.app.EvmKeeper.CreateAccount(addr)
+		b.StartTimer()
+
+		suite.app.EvmKeeper.Suicide(addr)
+	}
+}
