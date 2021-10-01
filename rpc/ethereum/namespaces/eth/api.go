@@ -30,8 +30,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/hd"
-	"github.com/tharsis/ethermint/ethereum/rpc/backend"
-	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/rpc/ethereum/backend"
+	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )

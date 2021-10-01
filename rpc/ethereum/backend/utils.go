@@ -14,7 +14,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/rpc/ethereum/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 

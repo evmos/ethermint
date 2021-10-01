@@ -22,8 +22,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tharsis/ethermint/ethereum/rpc/backend"
-	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/rpc/ethereum/backend"
+	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
 )
 
 // HandlerT keeps track of the cpu profiler and trace execution
