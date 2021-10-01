@@ -129,6 +129,11 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 		return nil, err
 	}
 
+	// return if requested block height is greater than the current one
+	if resBlock == nil || resBlock.Block == nil {
+		return nil, nil
+	}
+
 	res, err := e.EthBlockFromTendermint(resBlock.Block, fullTx)
 	if err != nil {
 		e.logger.Debug("EthBlockFromTendermint failed", "height", blockNum, "error", err.Error())
@@ -172,18 +177,17 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 		height = 1
 	default:
 		if blockNum < 0 {
-			err := errors.Errorf("incorrect block height: %d", height)
-			return nil, err
-		} else if height > int64(currentBlockNumber) {
+			return nil, errors.Errorf("cannot fetch a negative block height: %d", height)
+		}
+		if height > int64(currentBlockNumber) {
 			return nil, nil
 		}
 	}
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &height)
 	if err != nil {
-		// e.logger.Debug("GetBlockByNumber safely bumping down from %d to latest", height)
 		if resBlock, err = e.clientCtx.Client.Block(e.ctx, nil); err != nil {
-			e.logger.Debug("GetBlockByNumber failed to get latest block", "error", err.Error())
+			e.logger.Debug("tendermint client failed to get latest block", "height", height, "error", err.Error())
 			return nil, nil
 		}
 	}
@@ -192,6 +196,7 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 		e.logger.Debug("GetBlockByNumber block not found", "height", height)
 		return nil, nil
 	}
+
 	return resBlock, nil
 }
 
