@@ -838,7 +838,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
-func (e *PublicAPI) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
+func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getPendingTransactions")
 
 	txs, err := e.backend.PendingTransactions()
