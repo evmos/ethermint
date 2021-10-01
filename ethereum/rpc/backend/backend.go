@@ -180,7 +180,6 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 			return nil, errors.Errorf("cannot fetch a negative block height: %d", height)
 		}
 		if height > int64(currentBlockNumber) {
-			// TODO: should we set height = int64(currentBlockNumber) ?
 			return nil, nil
 		}
 	}
