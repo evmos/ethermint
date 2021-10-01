@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -99,7 +98,7 @@ func CallWithError(method string, params interface{}) (*Response, error) {
 	if HOST == "" {
 		HOST = "http://localhost:8545"
 	}
-	res, err := http.NewRequestWithContext(context.Background(), "POST", HOST, bytes.NewBuffer(req))
+	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req))
 	if err != nil {
 		return nil, err
 	}

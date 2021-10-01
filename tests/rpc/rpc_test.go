@@ -378,15 +378,26 @@ func TestEth_GetStorageAt(t *testing.T) {
 }
 
 func TestEth_GetProof(t *testing.T) {
+
+	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
+
+	var hash hexutil.Bytes
+	err := json.Unmarshal(rpcRes.Result, &hash)
+	require.NoError(t, err)
+
+	receipt := waitForReceipt(t, hash)
+	require.NotNil(t, receipt)
+	require.Equal(t, "0x1", receipt["status"].(string))
+
 	params := make([]interface{}, 3)
 	params[0] = addrA
 	params[1] = []string{fmt.Sprint(addrAStoreKey)}
 	params[2] = "latest"
-	rpcRes := call(t, "eth_getProof", params)
+	rpcRes = call(t, "eth_getProof", params)
 	require.NotNil(t, rpcRes)
 
 	var accRes rpctypes.AccountResult
-	err := json.Unmarshal(rpcRes.Result, &accRes)
+	err = json.Unmarshal(rpcRes.Result, &accRes)
 	require.NoError(t, err)
 	require.NotEmpty(t, accRes.AccountProof)
 	require.NotEmpty(t, accRes.StorageProof)
@@ -408,15 +419,8 @@ func TestEth_GetCode(t *testing.T) {
 }
 
 func TestEth_SendTransaction_Transfer(t *testing.T) {
-	param := make([]map[string]string, 1)
-	param[0] = make(map[string]string)
-	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
-	param[0]["to"] = "0x0000000000000000000000000000000012341234"
-	param[0]["value"] = "0x16345785d8a0000"
-	param[0]["gasLimit"] = "0x5208"
-	param[0]["gasPrice"] = "0x55ae82600"
 
-	rpcRes := call(t, "eth_sendTransaction", param)
+	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
 	err := json.Unmarshal(rpcRes.Result, &hash)
@@ -944,4 +948,16 @@ func TestEth_GetLogs(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(logs))
+}
+
+func makeEthTxParam() []map[string]string {
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["to"] = "0x0000000000000000000000000000000012341234"
+	param[0]["value"] = "0x16345785d8a0000"
+	param[0]["gasLimit"] = "0x5208"
+	param[0]["gasPrice"] = "0x55ae82600"
+
+	return param
 }
