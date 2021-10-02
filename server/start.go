@@ -41,8 +41,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethlog "github.com/ethereum/go-ethereum/log"
-	ethdebug "github.com/tharsis/ethermint/ethereum/rpc/namespaces/debug"
 	"github.com/tharsis/ethermint/log"
+	ethdebug "github.com/tharsis/ethermint/rpc/ethereum/namespaces/debug"
 	"github.com/tharsis/ethermint/server/config"
 	srvflags "github.com/tharsis/ethermint/server/flags"
 )

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/rpc/ethereum/types"
 
 	"github.com/tendermint/tendermint/libs/log"
 
