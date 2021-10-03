@@ -2,6 +2,7 @@ package backend
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"math/big"
 
@@ -147,7 +148,9 @@ func TxLogsFromEvents(codec codec.Codec, events []abci.Event) []*ethtypes.Log {
 			}
 
 			var log evmtypes.Log
-			codec.MustUnmarshal(attr.Value, &log)
+			if err := json.Unmarshal(attr.Value, &log); err != nil {
+				panic(err)
+			}
 			logs = append(logs, &log)
 		}
 	}
