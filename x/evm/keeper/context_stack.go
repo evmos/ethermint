@@ -60,7 +60,7 @@ func (cs *ContextStack) Commit() {
 	cs.cachedContexts = []cachedContext{}
 }
 
-// CommitToRevision flatter multiple layers of cache contexts into one layer,
+// CommitToRevision commit the cache after the target revision,
 // to improve efficiency of db operations.
 func (cs *ContextStack) CommitToRevision(target int) {
 	if target < 0 || target >= len(cs.cachedContexts) {
