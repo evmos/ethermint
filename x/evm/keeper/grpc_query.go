@@ -466,9 +466,13 @@ func (k *Keeper) traceTx(
 
 	case traceConfig != nil:
 		logConfig := vm.LogConfig{
-			Debug:          traceConfig.Debug,
-			DisableStorage: traceConfig.DisableStorage,
-			DisableStack:   traceConfig.DisableStack,
+			EnableMemory:     !traceConfig.DisableMemory, // TODO: rename
+			DisableStorage:   traceConfig.DisableStorage,
+			DisableStack:     traceConfig.DisableStack,
+			EnableReturnData: false, // TODO: enable
+			Debug:            traceConfig.Debug,
+			Limit:            0, // unlimited
+			Overrides:        nil,
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
