@@ -159,7 +159,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
-	baseFee := k.feeMarketKeeper.GetBaseFee(k.Ctx())
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
 	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {

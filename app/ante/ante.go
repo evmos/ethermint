@@ -36,7 +36,7 @@ func NewAnteHandler(
 	evmKeeper EVMKeeper,
 	feeGrantKeeper authante.FeegrantKeeper,
 	channelKeeper channelkeeper.Keeper,
-	feeMarketKeeper FeeMarketKeeper,
+	feeMarketKeeper evmtypes.FeeMarketKeeper,
 	signModeHandler authsigning.SignModeHandler,
 ) sdk.AnteHandler {
 	return func(
@@ -63,7 +63,7 @@ func NewAnteHandler(
 						NewEthSigVerificationDecorator(evmKeeper),
 						NewEthAccountVerificationDecorator(ak, bankKeeper, evmKeeper),
 						NewEthNonceVerificationDecorator(ak),
-						NewEthGasConsumeDecorator(evmKeeper, feeMarketKeeper),
+						NewEthGasConsumeDecorator(evmKeeper),
 						NewCanTransferDecorator(evmKeeper, feeMarketKeeper),
 						NewEthIncrementSenderSequenceDecorator(ak), // innermost AnteDecorator.
 					)

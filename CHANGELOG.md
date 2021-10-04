@@ -37,12 +37,17 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+* (evm, ante) [tharsis#620](https://github.com/tharsis/ethermint/pull/620) Add fee market field to EVM `Keeper` and `AnteHandler`.
+
 ### API Breaking
 
 * (rpc) [tharsis#400](https://github.com/tharsis/ethermint/issues/400) Restructure JSON-RPC directory and rename server config
 
 ### Improvements
 
+* (deps) [tharsis#621](https://github.com/tharsis/ethermint/pull/621) Bump IBC-go to [`v1.2.1`](https://github.com/cosmos/ibc-go/releases/tag/v1.2.1)
 * (evm) [tharsis#613](https://github.com/tharsis/ethermint/pull/613) Refactor `traceTx`
 * (deps) [tharsis#610](https://github.com/tharsis/ethermint/pull/610) Bump Cosmos SDK to [v0.44.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.1).
 

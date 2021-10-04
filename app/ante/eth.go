@@ -241,11 +241,10 @@ type EthGasConsumeDecorator struct {
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
 func NewEthGasConsumeDecorator(
-	evmKeeper EVMKeeper, fmk FeeMarketKeeper,
+	evmKeeper EVMKeeper,
 ) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
-		evmKeeper:       evmKeeper,
-		feeMarketKeeper: fmk,
+		evmKeeper: evmKeeper,
 	}
 }
 
@@ -333,11 +332,11 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 // context rules.
 type CanTransferDecorator struct {
 	evmKeeper       EVMKeeper
-	feemarketKeeper FeeMarketKeeper
+	feemarketKeeper evmtypes.FeeMarketKeeper
 }
 
 // NewCanTransferDecorator creates a new CanTransferDecorator instance.
-func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk FeeMarketKeeper) CanTransferDecorator {
+func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk evmtypes.FeeMarketKeeper) CanTransferDecorator {
 	return CanTransferDecorator{
 		evmKeeper:       evmKeeper,
 		feemarketKeeper: fmk,
@@ -350,6 +349,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	ctd.evmKeeper.WithContext(ctx)
 
 	params := ctd.evmKeeper.GetParams(ctx)
+	feeMktParams := ctd.feemarketKeeper.GetParams(ctx)
 
 	ethCfg := params.ChainConfig.EthereumConfig(ctd.evmKeeper.ChainID())
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
@@ -363,7 +363,11 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		baseFee := ctd.feemarketKeeper.GetBaseFee(ctx)
+		var baseFee *big.Int
+		if !feeMktParams.NoBaseFee {
+			baseFee = ctd.feemarketKeeper.GetBaseFee(ctx)
+		}
+
 		coreMsg, err := msgEthTx.AsMessage(signer, baseFee)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
@@ -384,16 +388,16 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		if !evm.Config.NoBaseFee && evm.Context.BaseFee == nil {
+		if !feeMktParams.NoBaseFee && baseFee == nil {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrap(evmtypes.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
 				"address %s", coreMsg.From(),
 			)
 		}
 
-		if !evm.Config.NoBaseFee && evm.Context.BaseFee != nil && coreMsg.GasFeeCap().Cmp(evm.Context.BaseFee) < 0 {
+		if !feeMktParams.NoBaseFee && baseFee != nil && coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
 			return ctx, stacktrace.Propagate(
-				sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), evm.Context.BaseFee),
+				sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), baseFee),
 				"address %s", coreMsg.From(),
 			)
 		}
