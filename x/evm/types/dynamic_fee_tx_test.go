@@ -19,6 +19,35 @@ var invalidAddr string = "123456"
 var addr common.Address = tests.GenerateAddress()
 var hexAddr string = addr.Hex()
 
+func TestGetValue(t *testing.T) {
+	testCases := []struct {
+		name string
+		tx   types.DynamicFeeTx
+		exp  *big.Int
+	}{
+		{
+			"empty amount",
+			types.DynamicFeeTx{
+				Amount: nil,
+			},
+			nil,
+		},
+		{
+			"non-empty amount",
+			types.DynamicFeeTx{
+				Amount: &hundredInt,
+			},
+			(&hundredInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.GetValue()
+
+		require.Equal(t, tc.exp, actual, tc.name)
+	}
+}
+
 func TestGetNonce(t *testing.T) {
 	testCases := []struct {
 		name string
