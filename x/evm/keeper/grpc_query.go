@@ -416,10 +416,12 @@ func (k *Keeper) traceTx(
 		err    error
 	)
 
-	msg, err := tx.AsMessage(signer)
+	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	txHash := tx.Hash()
 
 	switch {
 	case traceConfig != nil && traceConfig.Tracer != "":
@@ -469,7 +471,7 @@ func (k *Keeper) traceTx(
 
 	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
 
-	k.SetTxHashTransient(tx.Hash())
+	k.SetTxHashTransient(txHash)
 	k.SetTxIndexTransient(txIndex)
 
 	res, err := k.ApplyMessage(evm, msg, ethCfg, true)

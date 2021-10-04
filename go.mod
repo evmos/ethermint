@@ -16,7 +16,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/improbable-eng/grpc-web v0.14.1
 	github.com/klauspost/compress v1.11.9 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
 	github.com/pkg/errors v0.9.1
