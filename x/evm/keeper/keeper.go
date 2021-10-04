@@ -39,6 +39,8 @@ type Keeper struct {
 	bankKeeper types.BankKeeper
 	// access historical headers for EVM state transition execution
 	stakingKeeper types.StakingKeeper
+	// fetch EIP1559 base fee and parameters
+	feeMarketKeeper types.FeeMarketKeeper
 
 	// Manage the initial context and cache context stack for accessing the store,
 	// emit events and log info.
@@ -67,6 +69,7 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
+	fmk types.FeeMarketKeeper,
 	tracer string, debug bool,
 ) *Keeper {
 	// ensure evm module account is set
@@ -81,16 +84,17 @@ func NewKeeper(
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
-		cdc:           cdc,
-		paramSpace:    paramSpace,
-		accountKeeper: ak,
-		bankKeeper:    bankKeeper,
-		stakingKeeper: sk,
-		storeKey:      storeKey,
-		transientKey:  transientKey,
-		tracer:        tracer,
-		debug:         debug,
-		stateErr:      nil,
+		cdc:             cdc,
+		paramSpace:      paramSpace,
+		accountKeeper:   ak,
+		bankKeeper:      bankKeeper,
+		stakingKeeper:   sk,
+		feeMarketKeeper: fmk,
+		storeKey:        storeKey,
+		transientKey:    transientKey,
+		tracer:          tracer,
+		debug:           debug,
+		stateErr:        nil,
 	}
 }
 

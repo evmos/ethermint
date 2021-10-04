@@ -298,7 +298,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 }
 
 func (suite AnteTestSuite) TestCanTransferDecorator() {
-	dec := ante.NewCanTransferDecorator(suite.app.EvmKeeper)
+	dec := ante.NewCanTransferDecorator(suite.app.EvmKeeper, suite.app.FeeMarketKeeper)
 
 	addr, privKey := tests.NewAddrKey()
 

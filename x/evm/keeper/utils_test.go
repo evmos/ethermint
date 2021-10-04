@@ -242,6 +242,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				evmtypes.DefaultEVMDenom,
 				false,
 				false,
+				false, // london
 			)
 
 			if tc.expectPass {
