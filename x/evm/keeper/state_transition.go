@@ -71,8 +71,14 @@ func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer
 //  3. The requested height is from a height greater than the latest one
 func (k Keeper) GetHashFn() vm.GetHashFunc {
 	return func(height uint64) common.Hash {
-		h := int64(height)
 		ctx := k.Ctx()
+
+		h, err := ethermint.SafeInt64(height)
+		if err != nil {
+			k.Logger(ctx).Error("failed to cast height to int64", "error", err)
+			return common.Hash{}
+		}
+
 		switch {
 		case ctx.BlockHeight() == h:
 			// Case 1: The requested height matches the one from the context so we can retrieve the header
@@ -175,7 +181,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// set the transaction hash and index to the impermanent (transient) block state so that it's also
 	// available on the StateDB functions (eg: AddLog)
 	k.SetTxHashTransient(txHash)
-	k.IncreaseTxIndexTransient()
 
 	if !k.ctxStack.IsEmpty() {
 		panic("context stack shouldn't be dirty before apply message")
@@ -192,6 +197,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
+
+	k.IncreaseTxIndexTransient()
 
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogsTransient(txHash)

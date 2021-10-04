@@ -15,7 +15,6 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// AccountKeeper defines an expected keeper interface for the auth module's AccountKeeper
 // DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
 func (k Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,

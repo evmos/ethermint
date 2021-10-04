@@ -106,16 +106,6 @@ items. In addition, use the following review explanations:
 - If you sat down with the PR submitter and did a pairing review, add this information in the `Approval` or your PR comments.
 - If you are only making "surface level" reviews, submit any notes as `Comments` without adding a review.
 
-### Updating Documentation
-
-If you open a PR on Ethermint, it is mandatory to update the relevant documentation in `/docs`.
-
-- If your change relates to the core SDK (baseapp, store, ...), be sure to update the content in `docs/basics/`, `docs/core/` and/or `docs/building-modules/` folders.
-- If your changes relate to the core of the CLI (not specifically to module's CLI/Rest), then modify the content in the `docs/run-node/` folder.
-- If your changes relate to a module, then be sure to update the module's spec in `x/moduleName/docs/spec/`.
-
-When writing documentation, follow the [Documentation Writing Guidelines](./docs/DOC_WRITING_GUIDELINES.md).
-
 ## Forking
 
 Go requires code to live under absolute paths, and this requirement complicates forking.
