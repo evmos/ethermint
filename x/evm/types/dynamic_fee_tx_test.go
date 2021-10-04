@@ -5,10 +5,43 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
+
+var addr common.Address = tests.GenerateAddress()
+var hexAddr string = addr.Hex()
+
+func TestGetTo(t *testing.T) {
+	testCases := []struct {
+		name  string
+		tx    types.DynamicFeeTx
+		expTo *common.Address
+	}{
+		{
+			"empty address",
+			types.DynamicFeeTx{
+				To: "",
+			},
+			nil,
+		},
+		{
+			"non-empty address",
+			types.DynamicFeeTx{
+				To: hexAddr,
+			},
+			&addr,
+		},
+	}
+
+	for _, tc := range testCases {
+		to := tc.tx.GetTo()
+
+		require.Equal(t, tc.expTo, to, tc.name)
+	}
+}
 
 func TestSetSignatureValues(t *testing.T) {
 	testCases := []struct {
@@ -21,9 +54,9 @@ func TestSetSignatureValues(t *testing.T) {
 		{
 			"non-empty values",
 			big.NewInt(9000),
-			big.NewInt(0),
 			big.NewInt(1),
-			big.NewInt(2),
+			big.NewInt(1),
+			big.NewInt(1),
 		},
 		{
 			"empty values",
@@ -53,7 +86,6 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 	zeroInt := sdk.ZeroInt()
 	minusOneInt := sdk.NewInt(-1)
 	invalidAddr := "123456"
-	validAddr := tests.GenerateAddress().Hex()
 
 	testCases := []struct {
 		name     string
@@ -128,7 +160,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 				GasTipCap: &hundredInt,
 				GasFeeCap: &hundredInt,
 				Amount:    &hundredInt,
-				To:        validAddr,
+				To:        hexAddr,
 				ChainID:   nil,
 			},
 			true,
@@ -139,7 +171,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 				GasTipCap: &hundredInt,
 				GasFeeCap: &hundredInt,
 				Amount:    &hundredInt,
-				To:        validAddr,
+				To:        hexAddr,
 				ChainID:   &hundredInt,
 			},
 			false,
