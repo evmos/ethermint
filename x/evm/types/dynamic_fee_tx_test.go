@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"math/big"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,82 +10,43 @@ import (
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
-func TestGetRawSignatureValues(t *testing.T) {
-	hundredInt := sdk.NewInt(100)
-	validAddr := tests.GenerateAddress().Hex()
-
+func TestSetSignatureValues(t *testing.T) {
 	testCases := []struct {
 		name    string
-		tx      types.DynamicFeeTx
-		expPass bool
+		chainID *big.Int
+		r       *big.Int
+		v       *big.Int
+		s       *big.Int
 	}{
 		{
-			"success",
-			types.DynamicFeeTx{
-				GasTipCap: &hundredInt,
-				GasFeeCap: &hundredInt,
-				Amount:    &hundredInt,
-				To:        validAddr,
-				ChainID:   &hundredInt,
-			},
-			true,
+			"non-empty values",
+			big.NewInt(9000),
+			big.NewInt(0),
+			big.NewInt(1),
+			big.NewInt(2),
+		},
+		{
+			"empty values",
+			nil,
+			nil,
+			nil,
+			nil,
 		},
 	}
 
 	for _, tc := range testCases {
-		values := tc.tx.GetRawSignatureValues()
+		tx := &types.DynamicFeeTx{}
+		tx.SetSignatureValues(tc.chainID, tc.v, tc.r, tc.s)
 
-		if tc.expPass {
-			require.NoError(t, values, tc.name)
-			continue
-		}
+		v, r, s := tx.GetRawSignatureValues()
+		chainID := tx.GetChainID()
 
-		require.Error(t, values, tc.name)
+		require.Equal(t, tc.v, v, tc.name)
+		require.Equal(t, tc.r, r, tc.name)
+		require.Equal(t, tc.s, s, tc.name)
+		require.Equal(t, tc.chainID, chainID, tc.name)
 	}
 }
-
-// func TestSetSignatureValues(t *testing.T) {
-// 	hundredInt := sdk.NewInt(100)
-// 	validAddr := tests.GenerateAddress().Hex()
-// 	chainID := big.NewInt(0)
-
-// 	testCases := []struct {
-// 		name    string
-// 		tx      types.DynamicFeeTx
-// 		chainID *big.Int
-// 		r       *big.Int
-// 		v       *big.Int
-// 		s       *big.Int
-// 		expPass bool
-// 	}{
-// 		{
-// 			"chainID",
-// 			types.DynamicFeeTx{
-// 				GasTipCap: &hundredInt,
-// 				GasFeeCap: &hundredInt,
-// 				Amount:    &hundredInt,
-// 				To:        validAddr,
-// 				ChainID:   chainID,
-// 			},
-// 			chainID,
-// 			big.NewInt(0),
-// 			big.NewInt(1),
-// 			big.NewInt(2),
-// 			true,
-// 		},
-// 	}
-
-// for _, tc := range testCases {
-// 	err := tc.tx.SetSignatureValues(tc.chainID, tc.v, tc.r, tc.s)
-
-// 	if tc.expPass {
-// 		require.NoError(t, err, tc.name)
-// 		continue
-// 	}
-
-// 	require.Error(t, err, tc.name)
-// }
-// }
 
 func TestDynamicFeeTxValidate(t *testing.T) {
 	hundredInt := sdk.NewInt(100)
