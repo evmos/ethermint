@@ -4,10 +4,11 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/palantir/stacktrace"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/palantir/stacktrace"
 
 	ethermint "github.com/tharsis/ethermint/types"
 	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
@@ -28,10 +29,10 @@ type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address, tracer vm.Tracer) *vm.EVM
+	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address, baseFee *big.Int, tracer vm.Tracer) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
 	DeductTxCostsFromUserBalance(
-		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul bool,
+		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
 	) (sdk.Coins, error)
 }
 
@@ -234,7 +235,9 @@ type EthGasConsumeDecorator struct {
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
-func NewEthGasConsumeDecorator(evmKeeper EVMKeeper) EthGasConsumeDecorator {
+func NewEthGasConsumeDecorator(
+	evmKeeper EVMKeeper,
+) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
 		evmKeeper: evmKeeper,
 	}
@@ -265,6 +268,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
+	// london := ethCfg.IsLondon(blockHeight)
+	london := false
 	evmDenom := params.EvmDenom
 
 	var events sdk.Events
@@ -290,6 +295,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			evmDenom,
 			homestead,
 			istanbul,
+			london,
 		)
 		if err != nil {
 			return ctx, stacktrace.Propagate(err, "failed to deduct transaction costs from user balance")
@@ -321,13 +327,15 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 // CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
 // context rules.
 type CanTransferDecorator struct {
-	evmKeeper EVMKeeper
+	evmKeeper       EVMKeeper
+	feemarketKeeper evmtypes.FeeMarketKeeper
 }
 
 // NewCanTransferDecorator creates a new CanTransferDecorator instance.
-func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
+func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk evmtypes.FeeMarketKeeper) CanTransferDecorator {
 	return CanTransferDecorator{
-		evmKeeper: evmKeeper,
+		evmKeeper:       evmKeeper,
+		feemarketKeeper: fmk,
 	}
 }
 
@@ -337,6 +345,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	ctd.evmKeeper.WithContext(ctx)
 
 	params := ctd.evmKeeper.GetParams(ctx)
+	feeMktParams := ctd.feemarketKeeper.GetParams(ctx)
 
 	ethCfg := params.ChainConfig.EthereumConfig(ctd.evmKeeper.ChainID())
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
@@ -350,6 +359,11 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
+		var baseFee *big.Int
+		if !feeMktParams.NoBaseFee {
+			baseFee = ctd.feemarketKeeper.GetBaseFee(ctx)
+		}
+
 		coreMsg, err := msgEthTx.AsMessage(signer)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
@@ -359,7 +373,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		}
 
 		// NOTE: pass in an empty coinbase address and nil tracer as we don't need them for the check below
-		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params, common.Address{}, evmtypes.NewNoOpTracer())
+		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params, common.Address{}, baseFee, evmtypes.NewNoOpTracer())
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
@@ -369,6 +383,20 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 				"failed to transfer %s using the EVM block context transfer function", coreMsg.Value(),
 			)
 		}
+
+		// if !feeMktParams.NoBaseFee && baseFee == nil {
+		// 	return ctx, stacktrace.Propagate(
+		// 		sdkerrors.Wrap(evmtypes.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
+		// 		"address %s", coreMsg.From(),
+		// 	)
+		// }
+
+		// if !feeMktParams.NoBaseFee && baseFee != nil && coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
+		// 	return ctx, stacktrace.Propagate(
+		// 		sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), baseFee),
+		// 		"address %s", coreMsg.From(),
+		// 	)
+		// }
 	}
 
 	ctd.evmKeeper.WithContext(ctx)

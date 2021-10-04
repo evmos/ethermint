@@ -91,7 +91,7 @@ func newNativeMessage(
 		return nil, err
 	}
 
-	m, err := msg.AsMessage(msgSigner)
+	m, err := msg.AsMessage(msgSigner) // TODO: add DynamicFeeTx
 	if err != nil {
 		return nil, err
 	}

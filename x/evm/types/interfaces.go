@@ -1,9 +1,14 @@
 package types
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -35,6 +40,12 @@ type BankKeeper interface {
 type StakingKeeper interface {
 	GetHistoricalInfo(ctx sdk.Context, height int64) (stakingtypes.HistoricalInfo, bool)
 	GetValidatorByConsAddr(ctx sdk.Context, consAddr sdk.ConsAddress) (validator stakingtypes.Validator, found bool)
+}
+
+// FeeMarketKeeper
+type FeeMarketKeeper interface {
+	GetBaseFee(ctx sdk.Context) *big.Int
+	GetParams(ctx sdk.Context) feemarkettypes.Params
 }
 
 // Event Hooks

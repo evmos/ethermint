@@ -224,6 +224,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	msg := args.ToMessage(req.GasCap)
 
 	params := k.GetParams(ctx)
+	feemktParams := k.feeMarketKeeper.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	coinbase, err := k.GetCoinbaseAddress(ctx)
@@ -231,8 +232,16 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
+	var baseFee *big.Int
+
+	// ignore base fee if not enabled by fee market params
+	if !feemktParams.NoBaseFee {
+		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
+	}
+
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight(), k.debug)
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
 
 	// pass true means execute in query mode, which don't do actual gas refund.
 	res, err := k.ApplyMessage(evm, msg, ethCfg, true)
@@ -299,8 +308,10 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+
 	// Create a helper to check if a gas allowance results in an executable transaction
-	executable := func(gas uint64) (bool, *types.MsgEthereumTxResponse, error) {
+	executable := func(gas uint64) (vmerror bool, rsp *types.MsgEthereumTxResponse, err error) {
 		args.Gas = (*hexutil.Uint64)(&gas)
 
 		// Reset to the initial context
@@ -309,9 +320,11 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		msg := args.ToMessage(req.GasCap)
 
 		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
-		evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
+
+		evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
+
 		// pass true means execute in query mode, which don't do actual gas refund.
-		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
+		rsp, err = k.ApplyMessage(evm, msg, ethCfg, true)
 
 		k.ctxStack.RevertAll()
 
@@ -370,8 +383,9 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 	tx := req.Msg.AsTransaction()
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
-	result, err := k.traceTx(ctx, coinbase, signer, req.TxIndex, params, ethCfg, tx, req.TraceConfig)
+	result, err := k.traceTx(ctx, coinbase, signer, req.TxIndex, params, ethCfg, tx, baseFee, req.TraceConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -394,6 +408,7 @@ func (k *Keeper) traceTx(
 	params types.Params,
 	ethCfg *ethparams.ChainConfig,
 	tx *ethtypes.Transaction,
+	baseFee *big.Int,
 	traceConfig *types.TraceConfig,
 ) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
@@ -406,6 +421,8 @@ func (k *Keeper) traceTx(
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	txHash := tx.Hash()
 
 	switch {
 	case traceConfig != nil && traceConfig.Tracer != "":
@@ -422,8 +439,7 @@ func (k *Keeper) traceTx(
 		txContext := core.NewEVMTxContext(msg)
 
 		// Construct the JavaScript tracer to execute with
-		tracer, err = tracers.New(traceConfig.Tracer, txContext)
-		if err != nil {
+		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
@@ -450,9 +466,9 @@ func (k *Keeper) traceTx(
 		tracer = types.NewTracer(types.TracerStruct, msg, ethCfg, ctx.BlockHeight(), true)
 	}
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
 
-	k.SetTxHashTransient(tx.Hash())
+	k.SetTxHashTransient(txHash)
 	k.SetTxIndexTransient(txIndex)
 
 	res, err := k.ApplyMessage(evm, msg, ethCfg, true)
