@@ -11,14 +11,41 @@ import (
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
+var hundredInt sdk.Int = sdk.NewInt(100)
+var hundredUInt64 uint64 = hundredInt.Uint64()
+var zeroInt sdk.Int = sdk.ZeroInt()
+var minusOneInt sdk.Int = sdk.NewInt(-1)
+var invalidAddr string = "123456"
 var addr common.Address = tests.GenerateAddress()
 var hexAddr string = addr.Hex()
 
+func TestGetNonce(t *testing.T) {
+	testCases := []struct {
+		name string
+		tx   types.DynamicFeeTx
+		exp  uint64
+	}{
+		{
+			"non-empty nonce",
+			types.DynamicFeeTx{
+				Nonce: hundredUInt64,
+			},
+			hundredUInt64,
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.GetNonce()
+
+		require.Equal(t, tc.exp, actual, tc.name)
+	}
+}
+
 func TestGetTo(t *testing.T) {
 	testCases := []struct {
-		name  string
-		tx    types.DynamicFeeTx
-		expTo *common.Address
+		name string
+		tx   types.DynamicFeeTx
+		exp  *common.Address
 	}{
 		{
 			"empty address",
@@ -37,9 +64,9 @@ func TestGetTo(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		to := tc.tx.GetTo()
+		actual := tc.tx.GetTo()
 
-		require.Equal(t, tc.expTo, to, tc.name)
+		require.Equal(t, tc.exp, actual, tc.name)
 	}
 }
 
@@ -82,11 +109,6 @@ func TestSetSignatureValues(t *testing.T) {
 }
 
 func TestDynamicFeeTxValidate(t *testing.T) {
-	hundredInt := sdk.NewInt(100)
-	zeroInt := sdk.ZeroInt()
-	minusOneInt := sdk.NewInt(-1)
-	invalidAddr := "123456"
-
 	testCases := []struct {
 		name     string
 		tx       types.DynamicFeeTx
