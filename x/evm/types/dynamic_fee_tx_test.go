@@ -12,6 +12,8 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 	hundredInt := sdk.NewInt(100)
 	zeroInt := sdk.ZeroInt()
 	minusOneInt := sdk.NewInt(-1)
+	invalidAddress := "123456"
+	validAddress := "0xD115BFFAbbdd893A6f7ceA402e7338643Ced44a6"
 
 	testCases := []struct {
 		name     string
@@ -60,6 +62,47 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 				GasFeeCap: &zeroInt,
 			},
 			true,
+		},
+		{
+			"amount is negative",
+			types.DynamicFeeTx{
+				GasTipCap: &hundredInt,
+				GasFeeCap: &hundredInt,
+				Amount:    &minusOneInt,
+			},
+			true,
+		},
+		{
+			"to address is invalid",
+			types.DynamicFeeTx{
+				GasTipCap: &hundredInt,
+				GasFeeCap: &hundredInt,
+				Amount:    &hundredInt,
+				To:        invalidAddress,
+			},
+			true,
+		},
+		{
+			"chain ID not present on AccessList txs",
+			types.DynamicFeeTx{
+				GasTipCap: &hundredInt,
+				GasFeeCap: &hundredInt,
+				Amount:    &hundredInt,
+				To:        validAddress,
+				ChainID:   nil,
+			},
+			true,
+		},
+		{
+			"no errors",
+			types.DynamicFeeTx{
+				GasTipCap: &hundredInt,
+				GasFeeCap: &hundredInt,
+				Amount:    &hundredInt,
+				To:        validAddress,
+				ChainID:   &hundredInt,
+			},
+			false,
 		},
 	}
 
