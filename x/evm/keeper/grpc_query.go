@@ -224,6 +224,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	msg := args.ToMessage(req.GasCap)
 
 	params := k.GetParams(ctx)
+	feemktParams := k.feeMarketKeeper.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	coinbase, err := k.GetCoinbaseAddress(ctx)
@@ -231,8 +232,14 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
-	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+	var baseFee *big.Int
+
+	// ignore base fee if not enabled by fee market params
+	if !feemktParams.NoBaseFee {
+		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
+	}
+
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight(), k.debug)
 
 	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
 

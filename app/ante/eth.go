@@ -13,7 +13,6 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -35,11 +34,6 @@ type EVMKeeper interface {
 	DeductTxCostsFromUserBalance(
 		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
 	) (sdk.Coins, error)
-}
-
-type FeeMarketKeeper interface {
-	GetParams(ctx sdk.Context) feemarkettypes.Params
-	GetBaseFee(ctx sdk.Context) *big.Int
 }
 
 // EthSigVerificationDecorator validates an ethereum signatures
@@ -242,7 +236,7 @@ type EthGasConsumeDecorator struct {
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
 func NewEthGasConsumeDecorator(
-	evmKeeper EVMKeeper, fmk FeeMarketKeeper,
+	evmKeeper EVMKeeper,
 ) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
 		evmKeeper: evmKeeper,
@@ -334,11 +328,11 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 // context rules.
 type CanTransferDecorator struct {
 	evmKeeper       EVMKeeper
-	feemarketKeeper FeeMarketKeeper
+	feemarketKeeper evmtypes.FeeMarketKeeper
 }
 
 // NewCanTransferDecorator creates a new CanTransferDecorator instance.
-func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk FeeMarketKeeper) CanTransferDecorator {
+func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk evmtypes.FeeMarketKeeper) CanTransferDecorator {
 	return CanTransferDecorator{
 		evmKeeper:       evmKeeper,
 		feemarketKeeper: fmk,
