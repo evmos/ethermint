@@ -338,14 +338,14 @@ func NewEthermintApp(
 	tracer := cast.ToString(appOpts.Get(srvflags.EVMTracer))
 
 	// Create Ethermint keepers
-	app.EvmKeeper = evmkeeper.NewKeeper(
-		appCodec, keys[evmtypes.StoreKey], tkeys[evmtypes.TransientKey], app.GetSubspace(evmtypes.ModuleName),
-		app.AccountKeeper, app.BankKeeper, app.StakingKeeper,
-		tracer, bApp.Trace(), // debug EVM based on Baseapp options
-	)
-
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
 		appCodec, keys[feemarkettypes.StoreKey], app.GetSubspace(feemarkettypes.ModuleName),
+	)
+
+	app.EvmKeeper = evmkeeper.NewKeeper(
+		appCodec, keys[evmtypes.StoreKey], tkeys[evmtypes.TransientKey], app.GetSubspace(evmtypes.ModuleName),
+		app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.FeeMarketKeeper,
+		tracer, bApp.Trace(), // debug EVM based on Baseapp options
 	)
 
 	// Create IBC Keeper
@@ -512,6 +512,7 @@ func NewEthermintApp(
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
 			app.AccountKeeper, app.BankKeeper, app.EvmKeeper, app.FeeGrantKeeper, app.IBCKeeper.ChannelKeeper,
+			app.FeeMarketKeeper,
 			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)
