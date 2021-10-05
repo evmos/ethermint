@@ -50,6 +50,14 @@ func TestNewDynamicFeeTx(t *testing.T) {
 	}
 }
 
+func TestDynamicFeeTxCopy(t *testing.T) {
+	tx := &DynamicFeeTx{}
+	txCopy := tx.Copy()
+
+	require.Equal(t, &DynamicFeeTx{}, txCopy)
+	// TODO: Test for different pointers
+}
+
 func TestDynamicFeeTxGetChainID(t *testing.T) {
 	testCases := []struct {
 		name string
