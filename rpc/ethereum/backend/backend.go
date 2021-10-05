@@ -35,6 +35,7 @@ import (
 	"github.com/tharsis/ethermint/server/config"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // Backend implements the functionality shared within namespaces.
@@ -43,21 +44,21 @@ type Backend interface {
 	BlockNumber() (hexutil.Uint64, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
-	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	CurrentHeader() *ethtypes.Header
+	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
-	SendTransaction(args types.SendTxArgs) (common.Hash, error)
+	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
 	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
 	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
 	GetCoinbase() (sdk.AccAddress, error)
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
-	EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
+	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	RPCGasCap() uint64
 	RPCMinGasPrice() int64
 	ChainConfig() *params.ChainConfig
@@ -305,6 +306,12 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	validatorAddr := common.BytesToAddress(addr)
 
+	bfRes, err := e.queryClient.FeeMarket.BaseFee(ctx, &feemarkettypes.QueryBaseFeeRequest{})
+	if err != nil {
+		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
+		return nil, err
+	}
+
 	gasLimit, err := types.BlockMaxGasFromConsensusParams(ctx, e.clientCtx)
 	if err != nil {
 		e.logger.Error("failed to query consensus params", "error", err.Error())
@@ -322,7 +329,11 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		gasUsed += uint64(txsResult.GetGasUsed())
 	}
 
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
+	formattedBlock := types.FormatBlock(
+		block.Header, block.Size(),
+		gasLimit, new(big.Int).SetUint64(gasUsed),
+		ethRPCTxs, bloom, validatorAddr, bfRes.BaseFee.BigInt(),
+	)
 	return formattedBlock, nil
 }
 
@@ -588,7 +599,7 @@ func (e *EVMBackend) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, err
 	return resTxs.Txs[0], nil
 }
 
-func (e *EVMBackend) SendTransaction(args types.SendTxArgs) (common.Hash, error) {
+func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error) {
 	// Look up the wallet containing the requested signer
 	_, err := e.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
 	if err != nil {
@@ -679,7 +690,7 @@ func (e *EVMBackend) SendTransaction(args types.SendTxArgs) (common.Hash, error)
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
-func (e *EVMBackend) EstimateGas(args evmtypes.CallArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error) {
+func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error) {
 	blockNr := types.EthPendingBlockNumber
 	if blockNrOptional != nil {
 		blockNr = *blockNrOptional

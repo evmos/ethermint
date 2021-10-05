@@ -74,7 +74,10 @@ func newNativeMessage(
 ) (core.Message, error) {
 	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
 
-	var ethTx *ethtypes.Transaction
+	var (
+		ethTx   *ethtypes.Transaction
+		baseFee *big.Int
+	)
 	if isLegacy {
 		templateLegacyTx.Nonce = nonce
 		ethTx = ethtypes.NewTx(templateLegacyTx)
@@ -91,7 +94,7 @@ func newNativeMessage(
 		return nil, err
 	}
 
-	m, err := msg.AsMessage(msgSigner) // TODO: add DynamicFeeTx
+	m, err := msg.AsMessage(msgSigner, baseFee) // TODO: add DynamicFeeTx
 	if err != nil {
 		return nil, err
 	}

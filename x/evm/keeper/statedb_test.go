@@ -549,14 +549,14 @@ func (suite *KeeperTestSuite) CreateTestTx(msg *types.MsgEthereumTx, priv crypto
 
 func (suite *KeeperTestSuite) TestAddLog() {
 	addr, privKey := tests.NewAddrKey()
-	msg := types.NewTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
+	msg := types.NewTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, big.NewInt(1), nil, nil, []byte("test"), nil)
 	msg.From = addr.Hex()
 
 	tx := suite.CreateTestTx(msg, privKey)
 	msg, _ = tx.GetMsgs()[0].(*types.MsgEthereumTx)
 	txHash := msg.AsTransaction().Hash()
 
-	msg2 := types.NewTx(big.NewInt(1), 1, &suite.address, big.NewInt(1), 100000, big.NewInt(1), []byte("test"), nil)
+	msg2 := types.NewTx(big.NewInt(1), 1, &suite.address, big.NewInt(1), 100000, big.NewInt(1), nil, nil, []byte("test"), nil)
 	msg2.From = addr.Hex()
 
 	tx2 := suite.CreateTestTx(msg2, privKey)

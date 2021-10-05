@@ -60,8 +60,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	feeMktParams := k.feeMarketKeeper.GetParams(ctx)
 
-	if london && !feeMktParams.NoBaseFee {
-		// TODO: add to if statement above txData.TxType() == ethtypes.DynamicFeeTxType
+	if london && !feeMktParams.NoBaseFee && txData.TxType() == ethtypes.DynamicFeeTxType {
 		baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 		effectiveTip = cmath.BigMin(txData.GetGasTipCap(), new(big.Int).Sub(txData.GetGasFeeCap(), baseFee))
 	}

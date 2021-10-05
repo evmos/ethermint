@@ -17,6 +17,7 @@ import (
 // QueryClient defines a gRPC Client used for:
 //  - Transaction simulation
 //  - EVM module queries
+// 	- Fee market module queries
 type QueryClient struct {
 	tx.ServiceClient
 	evmtypes.QueryClient

@@ -43,8 +43,8 @@ type TxData interface {
 func NewTxDataFromTx(tx *ethtypes.Transaction) TxData {
 	var txData TxData
 	switch tx.Type() {
-	// case ethtypes.DynamicFeeTxType:
-	// 	txData = newDynamicFeeTx(tx)
+	case ethtypes.DynamicFeeTxType:
+		txData = newDynamicFeeTx(tx)
 	case ethtypes.AccessListTxType:
 		txData = newAccessListTx(tx)
 	default:
