@@ -16,6 +16,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -220,65 +221,67 @@ func NewTransactionFromMsg(
 	msg *evmtypes.MsgEthereumTx,
 	blockHash common.Hash,
 	blockNumber, index uint64,
-	chainID *big.Int,
+	baseFee *big.Int,
 ) (*RPCTransaction, error) {
-	from, err := msg.GetSender(chainID)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := evmtypes.UnpackTxData(msg.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpack tx data: %w", err)
-	}
-
-	return NewTransactionFromData(data, from, msg.AsTransaction().Hash(), blockHash, blockNumber, index)
+	tx := msg.AsTransaction()
+	return NewRPCTransaction(tx, blockHash, blockNumber, index, baseFee)
 }
 
 // NewTransactionFromData returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
-func NewTransactionFromData(
-	txData evmtypes.TxData,
-	from common.Address,
-	txHash, blockHash common.Hash,
-	blockNumber, index uint64,
+func NewRPCTransaction(
+	tx *ethtypes.Transaction, blockHash common.Hash, blockNumber, index uint64, baseFee *big.Int,
 ) (*RPCTransaction, error) {
-	if txHash == (common.Hash{}) {
-		txHash = ethtypes.EmptyRootHash
+	// Determine the signer. For replay-protected transactions, use the most permissive
+	// signer, because we assume that signers are backwards-compatible with old
+	// transactions. For non-protected transactions, the homestead signer signer is used
+	// because the return value of ChainId is zero for those transactions.
+	var signer ethtypes.Signer
+	if tx.Protected() {
+		signer = ethtypes.LatestSignerForChainID(tx.ChainId())
+	} else {
+		signer = ethtypes.HomesteadSigner{}
 	}
-
-	v, r, s := txData.GetRawSignatureValues()
-
-	rpcTx := &RPCTransaction{
-		Type:     hexutil.Uint64(txData.TxType()),
+	from, _ := ethtypes.Sender(signer, tx)
+	v, r, s := tx.RawSignatureValues()
+	result := &RPCTransaction{
+		Type:     hexutil.Uint64(tx.Type()),
 		From:     from,
-		Gas:      hexutil.Uint64(txData.GetGas()),
-		GasPrice: (*hexutil.Big)(txData.GetGasPrice()),
-		Hash:     txHash,
-		Input:    hexutil.Bytes(txData.GetData()),
-		Nonce:    hexutil.Uint64(txData.GetNonce()),
-		To:       txData.GetTo(),
-		Value:    (*hexutil.Big)(txData.GetValue()),
+		Gas:      hexutil.Uint64(tx.Gas()),
+		GasPrice: (*hexutil.Big)(tx.GasPrice()),
+		Hash:     tx.Hash(),
+		Input:    hexutil.Bytes(tx.Data()),
+		Nonce:    hexutil.Uint64(tx.Nonce()),
+		To:       tx.To(),
+		Value:    (*hexutil.Big)(tx.Value()),
 		V:        (*hexutil.Big)(v),
 		R:        (*hexutil.Big)(r),
 		S:        (*hexutil.Big)(s),
 	}
-	if rpcTx.To == nil {
-		addr := common.Address{}
-		rpcTx.To = &addr
-	}
-
 	if blockHash != (common.Hash{}) {
-		rpcTx.BlockHash = &blockHash
-		rpcTx.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
-		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
+		result.BlockHash = &blockHash
+		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		result.TransactionIndex = (*hexutil.Uint64)(&index)
 	}
-
-	if txData.TxType() == ethtypes.AccessListTxType {
-		accesses := txData.GetAccessList()
-		rpcTx.Accesses = &accesses
-		rpcTx.ChainID = (*hexutil.Big)(txData.GetChainID())
+	switch tx.Type() {
+	case ethtypes.AccessListTxType:
+		al := tx.AccessList()
+		result.Accesses = &al
+		result.ChainID = (*hexutil.Big)(tx.ChainId())
+	case ethtypes.DynamicFeeTxType:
+		al := tx.AccessList()
+		result.Accesses = &al
+		result.ChainID = (*hexutil.Big)(tx.ChainId())
+		result.GasFeeCap = (*hexutil.Big)(tx.GasFeeCap())
+		result.GasTipCap = (*hexutil.Big)(tx.GasTipCap())
+		// if the transaction has been mined, compute the effective gas price
+		if baseFee != nil && blockHash != (common.Hash{}) {
+			// price = min(tip, gasFeeCap - baseFee) + baseFee
+			price := math.BigMin(new(big.Int).Add(tx.GasTipCap(), baseFee), tx.GasFeeCap())
+			result.GasPrice = (*hexutil.Big)(price)
+		} else {
+			result.GasPrice = (*hexutil.Big)(tx.GasFeeCap())
+		}
 	}
-
-	return rpcTx, nil
+	return result, nil
 }

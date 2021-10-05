@@ -228,6 +228,14 @@ func (e *EVMBackend) EthBlockFromTendermint(
 ) (map[string]interface{}, error) {
 	ethRPCTxs := []interface{}{}
 
+	ctx := types.ContextWithHeight(block.Height)
+
+	bfRes, err := e.queryClient.FeeMarket.BaseFee(ctx, &feemarkettypes.QueryBaseFeeRequest{})
+	if err != nil {
+		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
+		return nil, err
+	}
+
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
@@ -237,43 +245,30 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 		for _, msg := range tx.GetMsgs() {
 			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-
 			if !ok {
 				continue
 			}
 
-			hash := ethMsg.AsTransaction().Hash()
+			tx := ethMsg.AsTransaction()
+
 			if !fullTx {
+				hash := tx.Hash()
 				ethRPCTxs = append(ethRPCTxs, hash)
 				continue
 			}
 
-			// get full transaction from message data
-			from, err := ethMsg.GetSender(e.chainID)
-			if err != nil {
-				e.logger.Debug("failed to get sender from already included transaction", "hash", hash.Hex(), "error", err.Error())
-				from = common.HexToAddress(ethMsg.From)
-			}
-
-			txData, err := evmtypes.UnpackTxData(ethMsg.Data)
-			if err != nil {
-				e.logger.Debug("decoding failed", "error", err.Error())
-				return nil, fmt.Errorf("failed to unpack tx data: %w", err)
-			}
-
-			ethTx, err := types.NewTransactionFromData(
-				txData,
-				from,
-				hash,
+			rpcTx, err := types.NewRPCTransaction(
+				tx,
 				common.BytesToHash(block.Hash()),
 				uint64(block.Height),
 				uint64(i),
+				bfRes.BaseFee.BigInt(),
 			)
 			if err != nil {
-				e.logger.Debug("NewTransactionFromData for receipt failed", "hash", hash.Hex(), "error", err.Error())
+				e.logger.Debug("NewTransactionFromData for receipt failed", "hash", tx.Hash().Hex(), "error", err.Error())
 				continue
 			}
-			ethRPCTxs = append(ethRPCTxs, ethTx)
+			ethRPCTxs = append(ethRPCTxs, rpcTx)
 		}
 	}
 
@@ -285,8 +280,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	req := &evmtypes.QueryValidatorAccountRequest{
 		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
 	}
-
-	ctx := types.ContextWithHeight(block.Height)
 
 	res, err := e.queryClient.ValidatorAccount(ctx, req)
 	if err != nil {
@@ -305,12 +298,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	}
 
 	validatorAddr := common.BytesToAddress(addr)
-
-	bfRes, err := e.queryClient.FeeMarket.BaseFee(ctx, &feemarkettypes.QueryBaseFeeRequest{})
-	if err != nil {
-		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
-		return nil, err
-	}
 
 	gasLimit, err := types.BlockMaxGasFromConsensusParams(ctx, e.clientCtx)
 	if err != nil {
@@ -701,7 +688,11 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 		return 0, err
 	}
 
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: e.RPCGasCap()}
+	req := evmtypes.EthCallRequest{
+		Args:    bz,
+		GasCap:  e.RPCGasCap(),
+		BaseFee: nil, // TODO: add
+	}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
