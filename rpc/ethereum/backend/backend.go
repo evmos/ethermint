@@ -772,8 +772,8 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 
 // SuggestGasTipCap returns the suggested tip cap
 func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
-	// TODO: implement
-	return big.NewInt(1), nil
+	out := new(big.Int).SetInt64(e.RPCMinGasPrice())
+	return out, nil
 }
 
 // GetFilteredBlocks returns the block height list match the given bloom filters.
