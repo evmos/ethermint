@@ -10,7 +10,6 @@ import (
 	"github.com/tharsis/ethermint/types"
 )
 
-// nolint: deadcode, unused
 func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 	txData := &DynamicFeeTx{
 		Nonce:    tx.Nonce(),
