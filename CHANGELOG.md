@@ -37,17 +37,25 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+* (evm, ante) [tharsis#620](https://github.com/tharsis/ethermint/pull/620) Add fee market field to EVM `Keeper` and `AnteHandler`.
+* (all) [tharsis#231](https://github.com/tharsis/ethermint/pull/231) Bump go-ethereum version to [`v1.10.9`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.9)
+
 ### API Breaking
 
 * (rpc) [tharsis#400](https://github.com/tharsis/ethermint/issues/400) Restructure JSON-RPC directory and rename server config
 
 ### Improvements
 
+* (deps) [tharsis#621](https://github.com/tharsis/ethermint/pull/621) Bump IBC-go to [`v1.2.1`](https://github.com/cosmos/ibc-go/releases/tag/v1.2.1)
 * (evm) [tharsis#613](https://github.com/tharsis/ethermint/pull/613) Refactor `traceTx`
 * (deps) [tharsis#610](https://github.com/tharsis/ethermint/pull/610) Bump Cosmos SDK to [v0.44.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.1).
 
 ### Bug Fixes
 
+* (evm) [tharsis#616](https://github.com/tharsis/ethermint/issues/616) Fix halt on deeply nested stack of cache context. Stack is now flattened before iterating over the tx logs.
+* (rpc, evm) [tharsis#614](https://github.com/tharsis/ethermint/issues/614) Use JSON for (un)marshaling tx `Log`s from events.
 * (rpc) [tharsis#611](https://github.com/tharsis/ethermint/pull/611) Fix panic on JSON-RPC when querying for an invalid block height.
 * (cmd) [tharsis#483](https://github.com/tharsis/ethermint/pull/483) Use config values on genesis accounts.
 

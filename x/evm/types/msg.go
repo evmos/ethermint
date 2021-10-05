@@ -34,23 +34,23 @@ const (
 // NewTx returns a reference to a new Ethereum transaction message.
 func NewTx(
 	chainID *big.Int, nonce uint64, to *common.Address, amount *big.Int,
-	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
+	gasLimit uint64, gasPrice, gasFeeCap, gasTipCap *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
-	return newMsgEthereumTx(chainID, nonce, to, amount, gasLimit, gasPrice, input, accesses)
+	return newMsgEthereumTx(chainID, nonce, to, amount, gasLimit, gasPrice, gasFeeCap, gasTipCap, input, accesses)
 }
 
 // NewTxContract returns a reference to a new Ethereum transaction
 // message designated for contract creation.
 func NewTxContract(
 	chainID *big.Int, nonce uint64, amount *big.Int,
-	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
+	gasLimit uint64, gasPrice, gasFeeCap, gasTipCap *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
-	return newMsgEthereumTx(chainID, nonce, nil, amount, gasLimit, gasPrice, input, accesses)
+	return newMsgEthereumTx(chainID, nonce, nil, amount, gasLimit, gasPrice, gasFeeCap, gasTipCap, input, accesses)
 }
 
 func newMsgEthereumTx(
 	chainID *big.Int, nonce uint64, to *common.Address, amount *big.Int,
-	gasLimit uint64, gasPrice *big.Int, input []byte, accesses *ethtypes.AccessList,
+	gasLimit uint64, gasPrice, gasFeeCap, gasTipCap *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
 	var (
 		cid, amt, gp *sdk.Int
@@ -77,7 +77,8 @@ func newMsgEthereumTx(
 		gp = &gasPriceInt
 	}
 
-	if accesses == nil {
+	switch {
+	case accesses == nil:
 		txData = &LegacyTx{
 			Nonce:    nonce,
 			To:       toAddr,
@@ -86,7 +87,22 @@ func newMsgEthereumTx(
 			GasPrice: gp,
 			Data:     input,
 		}
-	} else {
+	case accesses != nil && gasFeeCap != nil && gasTipCap != nil:
+		gtc := sdk.NewIntFromBigInt(gasTipCap)
+		gfc := sdk.NewIntFromBigInt(gasTipCap)
+
+		txData = &DynamicFeeTx{
+			ChainID:   cid,
+			Nonce:     nonce,
+			To:        toAddr,
+			Amount:    amt,
+			GasLimit:  gasLimit,
+			GasTipCap: &gtc,
+			GasFeeCap: &gfc,
+			Data:      input,
+			Accesses:  NewAccessList(accesses),
+		}
+	case accesses != nil:
 		txData = &AccessListTx{
 			ChainID:  cid,
 			Nonce:    nonce,
@@ -97,6 +113,7 @@ func newMsgEthereumTx(
 			Data:     input,
 			Accesses: NewAccessList(accesses),
 		}
+	default:
 	}
 
 	dataAny, err := PackTxData(txData)
@@ -237,8 +254,8 @@ func (msg MsgEthereumTx) AsTransaction() *ethtypes.Transaction {
 }
 
 // AsMessage creates an Ethereum core.Message from the msg fields
-func (msg MsgEthereumTx) AsMessage(signer ethtypes.Signer) (core.Message, error) {
-	return msg.AsTransaction().AsMessage(signer)
+func (msg MsgEthereumTx) AsMessage(signer ethtypes.Signer, baseFee *big.Int) (core.Message, error) {
+	return msg.AsTransaction().AsMessage(signer, baseFee)
 }
 
 // GetSender extracts the sender address from the signature values using the latest signer for the given chainID.

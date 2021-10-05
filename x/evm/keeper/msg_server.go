@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/palantir/stacktrace"
@@ -54,8 +55,11 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	txLogAttrs := make([]sdk.Attribute, 0)
 	for _, log := range response.Logs {
-		bz := k.cdc.MustMarshal(log)
-		txLogAttrs = append(txLogAttrs, sdk.NewAttribute(types.AttributeKeyTxLog, string(bz)))
+		value, err := json.Marshal(log)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "failed to encode log")
+		}
+		txLogAttrs = append(txLogAttrs, sdk.NewAttribute(types.AttributeKeyTxLog, string(value)))
 	}
 
 	// emit events
