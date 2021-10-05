@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 
@@ -889,9 +890,24 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	if err != nil {
 		return nil, err
 	}
-	height := blockNum.Int64()
 
+	height := blockNum.Int64()
 	ctx := rpctypes.ContextWithHeight(height)
+
+	// if the height is equal to zero, meaning the query condition of the block is either "pending" or "latest"
+	if height == 0 {
+		bn, err := e.backend.BlockNumber()
+		if err != nil {
+			return nil, err
+		}
+
+		if bn > math.MaxInt64 {
+			return nil, fmt.Errorf("not able to query block number greater than MaxInt64")
+		}
+
+		height = int64(bn)
+	}
+
 	clientCtx := e.clientCtx.WithHeight(height)
 
 	// query storage proofs
