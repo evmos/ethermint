@@ -6,7 +6,6 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -136,12 +135,13 @@ func (e *EVMBackend) getAccountNonce(accAddr common.Address, pending bool, heigh
 }
 
 // TxLogsFromEvents parses ethereum logs from cosmos events
-func TxLogsFromEvents(codec codec.Codec, events []abci.Event) []*ethtypes.Log {
+func TxLogsFromEvents(events []abci.Event) ([]*ethtypes.Log, error) {
 	logs := make([]*evmtypes.Log, 0)
 	for _, event := range events {
 		if event.Type != evmtypes.EventTypeTxLog {
 			continue
 		}
+
 		for _, attr := range event.Attributes {
 			if !bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxLog)) {
 				continue
@@ -149,10 +149,11 @@ func TxLogsFromEvents(codec codec.Codec, events []abci.Event) []*ethtypes.Log {
 
 			var log evmtypes.Log
 			if err := json.Unmarshal(attr.Value, &log); err != nil {
-				panic(err)
+				return nil, err
 			}
+
 			logs = append(logs, &log)
 		}
 	}
-	return evmtypes.LogsToEthereum(logs)
+	return evmtypes.LogsToEthereum(logs), nil
 }
