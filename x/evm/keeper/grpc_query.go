@@ -221,7 +221,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	msg, err := args.ToMessage(req.GasCap)
+	msg, err := args.ToMessage(req.GasCap, nil) // TODO: base fee
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -320,7 +320,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		// Reset to the initial context
 		k.WithContext(ctx)
 
-		msg, err := args.ToMessage(req.GasCap)
+		msg, err := args.ToMessage(req.GasCap, nil) // TODO: base fee
 		if err != nil {
 			return false, nil, err
 		}

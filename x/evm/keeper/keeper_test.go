@@ -203,8 +203,9 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 		nil,     // amount
 		res.Gas, // gasLimit
 		nil,     // gasPrice
-		data,    // input
-		nil,     // accesses
+		nil, nil,
+		data, // input
+		nil,  // accesses
 	)
 	erc20DeployTx.From = suite.address.Hex()
 	err = erc20DeployTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
@@ -237,6 +238,7 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 		nil,
 		res.Gas,
 		nil,
+		nil, nil,
 		transferData,
 		nil,
 	)
