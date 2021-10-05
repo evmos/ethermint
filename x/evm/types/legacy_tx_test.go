@@ -39,6 +39,15 @@ func TestLegacyTxValidate(t *testing.T) {
 			},
 			true,
 		},
+		{
+			"to address is invalid",
+			LegacyTx{
+				GasPrice: &hundredInt,
+				Amount:   &hundredInt,
+				To:       invalidAddr,
+			},
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -51,4 +60,11 @@ func TestLegacyTxValidate(t *testing.T) {
 
 		require.NoError(t, err, tc.name)
 	}
+}
+
+func TestLegacyTxFeeCost(t *testing.T) {
+	tx := &LegacyTx{}
+
+	require.Panics(t, func() { tx.Fee() }, "should panice")
+	require.Panics(t, func() { tx.Cost() }, "should panice")
 }
