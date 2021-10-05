@@ -46,6 +46,7 @@ type PublicAPI struct {
 	logger       log.Logger
 	backend      backend.Backend
 	nonceLock    *rpctypes.AddrLocker
+	signer       ethtypes.Signer
 }
 
 // NewPublicAPI creates an instance of the public ETH Web3 API.
@@ -77,6 +78,10 @@ func NewPublicAPI(
 		clientCtx = clientCtx.WithKeyring(kr)
 	}
 
+	// The signer used by the API should always be the 'latest' known one because we expect
+	// signers to be backwards-compatible with old transactions.
+	signer := ethtypes.LatestSigner(backend.ChainConfig())
+
 	api := &PublicAPI{
 		ctx:          context.Background(),
 		clientCtx:    clientCtx,
@@ -85,6 +90,7 @@ func NewPublicAPI(
 		logger:       logger.With("client", "json-rpc"),
 		backend:      backend,
 		nonceLock:    nonceLock,
+		signer:       signer,
 	}
 
 	return api
@@ -506,7 +512,47 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 		return common.Hash{}, fmt.Errorf("missing transaction nonce in transaction spec")
 	}
 
-	return common.Hash{}, fmt.Errorf("eth_resend not implemented")
+	args, err := e.backend.SetTxDefaults(args)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	matchTx := args.ToTransaction().AsTransaction()
+
+	pending, err := e.backend.PendingTransactions()
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	for _, tx := range pending {
+		p, err := evmtypes.UnwrapEthereumMsg(tx)
+		if err != nil {
+			// not valid ethereum tx
+			continue
+		}
+
+		pTx := p.AsTransaction()
+
+		wantSigHash := e.signer.Hash(matchTx)
+		pFrom, err := ethtypes.Sender(e.signer, pTx)
+		if err != nil {
+			continue
+		}
+
+		if pFrom == *args.From && e.signer.Hash(pTx) == wantSigHash {
+			// Match. Re-sign and send the transaction.
+			if gasPrice != nil && (*big.Int)(gasPrice).Sign() != 0 {
+				args.GasPrice = gasPrice
+			}
+			if gasLimit != nil && *gasLimit != 0 {
+				args.Gas = gasLimit
+			}
+
+			return e.backend.SendTransaction(args) // TODO: this calls SetTxDefaults again, refactor to avoid calling it twice
+		}
+	}
+
+	return common.Hash{}, fmt.Errorf("transaction %#x not found", matchTx.Hash())
 }
 
 // Call performs a raw contract call.
