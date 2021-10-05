@@ -198,6 +198,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
+	// flatten the cache contexts to improve efficiency of following db operations
+	k.ctxStack.CommitToRevision(revision)
+
 	k.IncreaseTxIndexTransient()
 
 	res.Hash = txHash.Hex()
