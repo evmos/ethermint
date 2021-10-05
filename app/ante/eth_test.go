@@ -21,7 +21,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
 	addr, privKey := tests.NewAddrKey()
 
-	signedTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	signedTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	signedTx.From = addr.Hex()
 	err := signedTx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
@@ -36,7 +36,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 		{"invalid transaction type", &invalidTx{}, false, false},
 		{
 			"invalid sender",
-			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
 			false,
 			false,
 		},
@@ -63,7 +63,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 
 	addr := tests.GenerateAddress()
 
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	tx.From = addr.Hex()
 
 	testCases := []struct {
@@ -77,7 +77,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 		{"invalid transaction type", &invalidTx{}, func() {}, true, false},
 		{
 			"sender not set to msg",
-			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
 			func() {},
 			true,
 			false,
@@ -144,7 +144,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 
 	addr := tests.GenerateAddress()
 
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	tx.From = addr.Hex()
 
 	testCases := []struct {
@@ -199,10 +199,10 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 
 	addr := tests.GenerateAddress()
 
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	tx.From = addr.Hex()
 
-	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000000, big.NewInt(1), nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
+	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000000, big.NewInt(1), nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
 	tx2.From = addr.Hex()
 
 	testCases := []struct {
@@ -215,7 +215,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		{"invalid transaction type", &invalidTx{}, func() {}, false, false},
 		{
 			"sender not found",
-			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
 			func() {},
 			false, false,
 		},
@@ -302,8 +302,8 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 
 	addr, privKey := tests.NewAddrKey()
 
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
-	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, &ethtypes.AccessList{})
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, &ethtypes.AccessList{})
+	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, &ethtypes.AccessList{})
 
 	tx.From = addr.Hex()
 
@@ -363,8 +363,8 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 		{Address: addr, StorageKeys: []common.Hash{{}}},
 	}
 
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
-	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, al)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
+	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, al)
 
 	tx.From = addr.Hex()
 	tx2.From = addr.Hex()
@@ -418,11 +418,11 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 	dec := ante.NewEthIncrementSenderSequenceDecorator(suite.app.AccountKeeper)
 	addr, privKey := tests.NewAddrKey()
 
-	contract := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 0, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	contract := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 0, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	contract.From = addr.Hex()
 
 	to := tests.GenerateAddress()
-	tx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 0, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 0, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	tx.From = addr.Hex()
 
 	err := contract.Sign(suite.ethSigner, tests.NewSigner(privKey))
@@ -446,7 +446,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		},
 		{
 			"no signers",
-			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil),
+			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
 			func() {},
 			false, true,
 		},
@@ -508,7 +508,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 
 func (suite AnteTestSuite) TestEthSetupContextDecorator() {
 	dec := ante.NewEthSetUpContextDecorator()
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 
 	testCases := []struct {
 		name    string

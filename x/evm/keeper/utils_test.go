@@ -126,7 +126,7 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 				gasPrice = tc.gasPrice.BigInt()
 			}
 
-			tx := evmtypes.NewTx(zeroInt.BigInt(), 1, &to, amount, tc.gasLimit, gasPrice, nil, tc.accessList)
+			tx := evmtypes.NewTx(zeroInt.BigInt(), 1, &to, amount, tc.gasLimit, gasPrice, nil, nil, nil, tc.accessList)
 			tx.From = tc.from
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
@@ -230,7 +230,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				gasPrice = tc.gasPrice.BigInt()
 			}
 
-			tx := evmtypes.NewTx(zeroInt.BigInt(), 1, &suite.address, amount, tc.gasLimit, gasPrice, nil, tc.accessList)
+			tx := evmtypes.NewTx(zeroInt.BigInt(), 1, &suite.address, amount, tc.gasLimit, gasPrice, nil, nil, nil, tc.accessList)
 			tx.From = suite.address.String()
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)

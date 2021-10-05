@@ -29,8 +29,8 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		IstanbulBlock:       getBlockValue(cc.IstanbulBlock),
 		MuirGlacierBlock:    getBlockValue(cc.MuirGlacierBlock),
 		BerlinBlock:         getBlockValue(cc.BerlinBlock),
-		// LondonBlock:         getBlockValue(cc.LondonBlock), // TODO: uncomment
-		CatalystBlock: getBlockValue(cc.CatalystBlock),
+		LondonBlock:         getBlockValue(cc.LondonBlock),
+		CatalystBlock:       getBlockValue(cc.CatalystBlock),
 	}
 }
 

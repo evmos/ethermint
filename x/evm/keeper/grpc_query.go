@@ -215,13 +215,20 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
-	var args types.CallArgs
+	var args types.TransactionArgs
 	err := json.Unmarshal(req.Args, &args)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	msg := args.ToMessage(req.GasCap)
+	if req.BaseFee != nil && req.BaseFee.IsNegative() {
+		return nil, status.Errorf(codes.InvalidArgument, "base fee cannot be negative %s", req.BaseFee)
+	}
+
+	msg, err := args.ToMessage(req.GasCap, req.GetBaseFee())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
 	params := k.GetParams(ctx)
 	feemktParams := k.feeMarketKeeper.GetParams(ctx)
@@ -266,7 +273,11 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.InvalidArgument, "gas cap cannot be lower than 21,000")
 	}
 
-	var args types.CallArgs
+	if req.BaseFee != nil && req.BaseFee.IsNegative() {
+		return nil, status.Errorf(codes.InvalidArgument, "base fee cannot be negative %s", req.BaseFee)
+	}
+
+	var args types.TransactionArgs
 	err := json.Unmarshal(req.Args, &args)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -308,7 +319,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+	baseFee := req.GetBaseFee()
 
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (vmerror bool, rsp *types.MsgEthereumTxResponse, err error) {
@@ -317,7 +328,10 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		// Reset to the initial context
 		k.WithContext(ctx)
 
-		msg := args.ToMessage(req.GasCap)
+		msg, err := args.ToMessage(req.GasCap, baseFee)
+		if err != nil {
+			return false, nil, err
+		}
 
 		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
 
@@ -371,6 +385,10 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
+	if req.TraceConfig != nil && req.TraceConfig.Limit < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "output limit cannot be negative, got %d", req.TraceConfig.Limit)
+	}
+
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
@@ -413,16 +431,21 @@ func (k *Keeper) traceTx(
 ) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer vm.Tracer
-		err    error
+		tracer    vm.Tracer
+		overrides *ethparams.ChainConfig
+		err       error
 	)
 
-	msg, err := tx.AsMessage(signer)
+	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	txHash := tx.Hash()
+
+	if traceConfig != nil && traceConfig.Overrides != nil {
+		overrides = traceConfig.Overrides.EthereumConfig(ethCfg.ChainID)
+	}
 
 	switch {
 	case traceConfig != nil && traceConfig.Tracer != "":
@@ -436,10 +459,14 @@ func (k *Keeper) traceTx(
 			}
 		}
 
-		txContext := core.NewEVMTxContext(msg)
+		tCtx := &tracers.Context{
+			BlockHash: k.GetHashFn()(uint64(ctx.BlockHeight())),
+			TxIndex:   int(txIndex),
+			TxHash:    txHash,
+		}
 
 		// Construct the JavaScript tracer to execute with
-		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
+		if tracer, err = tracers.New(traceConfig.Tracer, tCtx); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
@@ -456,10 +483,13 @@ func (k *Keeper) traceTx(
 
 	case traceConfig != nil:
 		logConfig := vm.LogConfig{
-			DisableMemory:  traceConfig.DisableMemory,
-			Debug:          traceConfig.Debug,
-			DisableStorage: traceConfig.DisableStorage,
-			DisableStack:   traceConfig.DisableStack,
+			EnableMemory:     traceConfig.EnableMemory,
+			DisableStorage:   traceConfig.DisableStorage,
+			DisableStack:     traceConfig.DisableStack,
+			EnableReturnData: traceConfig.EnableReturnData,
+			Debug:            traceConfig.Debug,
+			Limit:            int(traceConfig.Limit),
+			Overrides:        overrides,
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:

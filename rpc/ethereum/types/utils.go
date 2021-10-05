@@ -151,7 +151,7 @@ func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Contex
 func FormatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
 	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
-	validatorAddr common.Address,
+	validatorAddr common.Address, baseFee *big.Int,
 ) map[string]interface{} {
 	if len(header.DataHash) == 0 {
 		header.DataHash = tmbytes.HexBytes(common.Hash{}.Bytes())
@@ -175,6 +175,7 @@ func FormatBlock(
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
 		"transactionsRoot": hexutil.Bytes(header.DataHash),
 		"receiptsRoot":     ethtypes.EmptyRootHash,
+		"baseFeePerGas":    (*hexutil.Big)(baseFee),
 
 		"uncles":          []common.Hash{},
 		"transactions":    transactions,

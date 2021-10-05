@@ -10,7 +10,6 @@ import (
 	"github.com/tharsis/ethermint/types"
 )
 
-// nolint: deadcode, unused
 func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 	txData := &DynamicFeeTx{
 		Nonce:    tx.Nonce(),
@@ -27,17 +26,16 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 		amountInt := sdk.NewIntFromBigInt(tx.Value())
 		txData.Amount = &amountInt
 	}
-	// TODO:
 
-	// if tx.GasFeeCap() != nil {
-	// 	gasFeeCapInt := sdk.NewIntFromBigInt(tx.GasFeeCap())
-	// 	txData.GasFeeCap = &gasFeeCapInt
-	// }
+	if tx.GasFeeCap() != nil {
+		gasFeeCapInt := sdk.NewIntFromBigInt(tx.GasFeeCap())
+		txData.GasFeeCap = &gasFeeCapInt
+	}
 
-	// if tx.GasTipCap() != nil {
-	// 	gasTipCapInt := sdk.NewIntFromBigInt(tx.GasTipCap())
-	// 	txData.GasTipCap = &gasTipCapInt
-	// }
+	if tx.GasTipCap() != nil {
+		gasTipCapInt := sdk.NewIntFromBigInt(tx.GasTipCap())
+		txData.GasTipCap = &gasTipCapInt
+	}
 
 	if tx.AccessList() != nil {
 		al := tx.AccessList()
@@ -50,9 +48,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 
 // TxType returns the tx type
 func (tx *DynamicFeeTx) TxType() uint8 {
-	// TODO
-	return 0
-	// return ethtypes.DynamicFeeTxType
+	return ethtypes.DynamicFeeTxType
 }
 
 // Copy returns an instance with the same field values
@@ -145,23 +141,21 @@ func (tx *DynamicFeeTx) GetTo() *common.Address {
 // AsEthereumData returns an DynamicFeeTx transaction tx from the proto-formatted
 // TxData defined on the Cosmos EVM.
 func (tx *DynamicFeeTx) AsEthereumData() ethtypes.TxData {
-	return nil
-	// TODO:
-	// v, r, s := tx.GetRawSignatureValues()
-	// return &ethtypes.DynamicFeeTx{
-	// 	ChainID:    tx.GetChainID(),
-	// 	Nonce:      tx.GetNonce(),
-	// 	GasTipCap:  tx.GetGasTipCap(),
-	// 	GasFeeCap:  tx.GetGasFeeCap(),
-	// 	Gas:        tx.GetGas(),
-	// 	To:         tx.GetTo(),
-	// 	Value:      tx.GetValue(),
-	// 	Data:       tx.GetData(),
-	// 	AccessList: tx.GetAccessList(),
-	// 	V:          v,
-	// 	R:          r,
-	// 	S:          s,
-	// }
+	v, r, s := tx.GetRawSignatureValues()
+	return &ethtypes.DynamicFeeTx{
+		ChainID:    tx.GetChainID(),
+		Nonce:      tx.GetNonce(),
+		GasTipCap:  tx.GetGasTipCap(),
+		GasFeeCap:  tx.GetGasFeeCap(),
+		Gas:        tx.GetGas(),
+		To:         tx.GetTo(),
+		Value:      tx.GetValue(),
+		Data:       tx.GetData(),
+		AccessList: tx.GetAccessList(),
+		V:          v,
+		R:          r,
+		S:          s,
+	}
 }
 
 // GetRawSignatureValues returns the V, R, S signature values of the transaction.

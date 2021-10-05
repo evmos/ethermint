@@ -42,7 +42,7 @@ func (k *Keeper) NewEVM(
 		BlockNumber: big.NewInt(k.Ctx().BlockHeight()),
 		Time:        big.NewInt(k.Ctx().BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
-		// BaseFee:     baseFee,
+		BaseFee:     baseFee,
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
@@ -54,14 +54,14 @@ func (k *Keeper) NewEVM(
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
 func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
-	// fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
+	fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
 
 	return vm.Config{
 		Debug:       k.debug,
 		Tracer:      tracer,
 		NoRecursion: false, // TODO: consider disabling recursion though params
-		// NoBaseFee:   fmParams.NoBaseFee,
-		ExtraEips: params.EIPs(),
+		NoBaseFee:   fmParams.NoBaseFee,
+		ExtraEips:   params.EIPs(),
 	}
 }
 
@@ -161,7 +161,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
-	msg, err := tx.AsMessage(signer)
+	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
 	}
@@ -270,7 +270,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
-	// isLondon := cfg.IsLondon(evm.Context.BlockNumber)
+	isLondon := cfg.IsLondon(evm.Context.BlockNumber)
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(msg, cfg, contractCreation)
 	if err != nil {
@@ -296,14 +296,12 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
 
-	refundQuotient := uint64(2)
+	refundQuotient := params.RefundQuotient
 
-	// refundQuotient := params.RefundQuotient
-
-	// // After EIP-3529: refunds are capped to gasUsed / 5
-	// if isLondon {
-	// 	refundQuotient = params.RefundQuotientEIP3529
-	// }
+	// After EIP-3529: refunds are capped to gasUsed / 5
+	if isLondon {
+		refundQuotient = params.RefundQuotientEIP3529
+	}
 
 	if query {
 		// gRPC query handlers don't go through the AnteHandler to deduct the gas fee from the sender or have access historical state.

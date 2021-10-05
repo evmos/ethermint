@@ -214,6 +214,10 @@ message EthCallRequest {
   bytes args = 1;
   // the default gas cap to be used
   uint64 gas_cap = 2;
+  // header base fee used to generate the transaction
+  string base_fee = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"
+  ];
 }
 
 // EstimateGasResponse defines EstimateGas response

@@ -350,7 +350,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 }
 
 // SendTransaction sends an Ethereum transaction.
-func (e *PublicAPI) SendTransaction(args rpctypes.SendTxArgs) (common.Hash, error) {
+func (e *PublicAPI) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error) {
 	e.logger.Debug("eth_sendTransaction", "args", args.String())
 	return e.backend.SendTransaction(args)
 }
@@ -434,7 +434,7 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 }
 
 // Call performs a raw contract call.
-func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
+func (e *PublicAPI) Call(args evmtypes.TransactionArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_call", "args", args.String(), "block number or hash", blockNrOrHash)
 
 	blockNum, err := e.getBlockNumber(blockNrOrHash)
@@ -452,7 +452,7 @@ func (e *PublicAPI) Call(args evmtypes.CallArgs, blockNrOrHash rpctypes.BlockNum
 // DoCall performs a simulated call operation through the evmtypes. It returns the
 // estimated gas used on the operation or an error if fails.
 func (e *PublicAPI) doCall(
-	args evmtypes.CallArgs, blockNr rpctypes.BlockNumber,
+	args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber,
 ) (*evmtypes.MsgEthereumTxResponse, error) {
 	bz, err := json.Marshal(&args)
 	if err != nil {
@@ -479,7 +479,7 @@ func (e *PublicAPI) doCall(
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
-func (e *PublicAPI) EstimateGas(args evmtypes.CallArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error) {
+func (e *PublicAPI) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error) {
 	e.logger.Debug("eth_estimateGas")
 	return e.backend.EstimateGas(args, blockNrOptional)
 }
