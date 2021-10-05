@@ -1,10 +1,37 @@
 package types
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestLegacyTxSetSignatureValues(t *testing.T) {
+	testCases := []struct {
+		name string
+		v    *big.Int
+		r    *big.Int
+		s    *big.Int
+	}{
+		{
+			"non-empty values",
+			hundredbigInt,
+			hundredbigInt,
+			hundredbigInt,
+		},
+	}
+	for _, tc := range testCases {
+		tx := &LegacyTx{}
+		tx.SetSignatureValues(nil, tc.v, tc.r, tc.s)
+
+		v, r, s := tx.GetRawSignatureValues()
+
+		require.Equal(t, tc.v, v, tc.name)
+		require.Equal(t, tc.r, r, tc.name)
+		require.Equal(t, tc.s, s, tc.name)
+	}
+}
 
 func TestLegacyTxValidate(t *testing.T) {
 	testCases := []struct {
