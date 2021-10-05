@@ -221,7 +221,11 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	msg, err := args.ToMessage(req.GasCap, nil) // TODO: base fee
+	if req.BaseFee != nil && req.BaseFee.IsNegative() {
+		return nil, status.Errorf(codes.InvalidArgument, "base fee cannot be negative %s", req.BaseFee)
+	}
+
+	msg, err := args.ToMessage(req.GasCap, req.GetBaseFee())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -269,6 +273,10 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.InvalidArgument, "gas cap cannot be lower than 21,000")
 	}
 
+	if req.BaseFee != nil && req.BaseFee.IsNegative() {
+		return nil, status.Errorf(codes.InvalidArgument, "base fee cannot be negative %s", req.BaseFee)
+	}
+
 	var args types.TransactionArgs
 	err := json.Unmarshal(req.Args, &args)
 	if err != nil {
@@ -311,7 +319,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+	baseFee := req.GetBaseFee()
 
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (vmerror bool, rsp *types.MsgEthereumTxResponse, err error) {
@@ -320,7 +328,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		// Reset to the initial context
 		k.WithContext(ctx)
 
-		msg, err := args.ToMessage(req.GasCap, nil) // TODO: base fee
+		msg, err := args.ToMessage(req.GasCap, baseFee)
 		if err != nil {
 			return false, nil, err
 		}
@@ -377,6 +385,10 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
+	if req.TraceConfig != nil && req.TraceConfig.Limit < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "output limit cannot be negative, got %d", req.TraceConfig.Limit)
+	}
+
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
@@ -419,8 +431,9 @@ func (k *Keeper) traceTx(
 ) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer vm.Tracer
-		err    error
+		tracer    vm.Tracer
+		overrides *ethparams.ChainConfig
+		err       error
 	)
 
 	msg, err := tx.AsMessage(signer, baseFee)
@@ -429,6 +442,10 @@ func (k *Keeper) traceTx(
 	}
 
 	txHash := tx.Hash()
+
+	if traceConfig != nil && traceConfig.Overrides != nil {
+		overrides = traceConfig.Overrides.EthereumConfig(ethCfg.ChainID)
+	}
 
 	switch {
 	case traceConfig != nil && traceConfig.Tracer != "":
@@ -466,13 +483,13 @@ func (k *Keeper) traceTx(
 
 	case traceConfig != nil:
 		logConfig := vm.LogConfig{
-			EnableMemory:     !traceConfig.DisableMemory, // TODO: rename
+			EnableMemory:     traceConfig.EnableMemory,
 			DisableStorage:   traceConfig.DisableStorage,
 			DisableStack:     traceConfig.DisableStack,
-			EnableReturnData: false, // TODO: enable
+			EnableReturnData: traceConfig.EnableReturnData,
 			Debug:            traceConfig.Debug,
-			Limit:            0, // unlimited
-			Overrides:        nil,
+			Limit:            int(traceConfig.Limit),
+			Overrides:        overrides,
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
