@@ -35,7 +35,6 @@ import (
 	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // PublicAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
@@ -535,10 +534,22 @@ func (e *PublicAPI) doCall(
 	if err != nil {
 		return nil, err
 	}
+
+	baseFee, err := e.backend.BaseFee()
+	if err != nil {
+		return nil, err
+	}
+
+	var bf *sdk.Int
+	if baseFee != nil {
+		aux := sdk.NewIntFromBigInt(baseFee)
+		bf = &aux
+	}
+
 	req := evmtypes.EthCallRequest{
 		Args:    bz,
 		GasCap:  e.backend.RPCGasCap(),
-		BaseFee: nil, // TODO: add
+		BaseFee: bf,
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -617,9 +628,8 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, err
 	}
 
-	bfRes, err := e.queryClient.FeeMarket.BaseFee(e.ctx, &feemarkettypes.QueryBaseFeeRequest{})
+	baseFee, err := e.backend.BaseFee()
 	if err != nil {
-		e.logger.Debug("failed to base fee", "height", resBlock.Block.Height, "error", err.Error())
 		return nil, err
 	}
 
@@ -628,7 +638,7 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		hash,
 		uint64(resBlock.Block.Height),
 		uint64(idx),
-		bfRes.BaseFee.BigInt(),
+		baseFee,
 	)
 }
 

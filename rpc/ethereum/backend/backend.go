@@ -62,6 +62,7 @@ type Backend interface {
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
+	BaseFee() (*big.Int, error)
 
 	// Filter API
 	BloomStatus() (uint64, uint64)
@@ -746,7 +747,7 @@ func (e *EVMBackend) RPCGasCap() uint64 {
 // the node config. If set value is 0, it will default to 20.
 
 func (e *EVMBackend) RPCMinGasPrice() int64 {
-	evmParams, err := e.queryClient.Params(context.Background(), &evmtypes.QueryParamsRequest{})
+	evmParams, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
 		return ethermint.DefaultGasPrice
 	}
@@ -774,6 +775,20 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
 	out := new(big.Int).SetInt64(e.RPCMinGasPrice())
 	return out, nil
+}
+
+// BaseFee returns the base fee
+func (e *EVMBackend) BaseFee() (*big.Int, error) {
+	res, err := e.queryClient.FeeMarket.BaseFee(e.ctx, &feemarkettypes.QueryBaseFeeRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	if res.BaseFee == nil {
+		return nil, nil
+	}
+
+	return res.BaseFee.BigInt(), nil
 }
 
 // GetFilteredBlocks returns the block height list match the given bloom filters.
