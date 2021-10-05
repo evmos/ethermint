@@ -26,11 +26,6 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 		amountInt := sdk.NewIntFromBigInt(tx.Value())
 		txData.Amount = &amountInt
 	}
-<<<<<<< HEAD
-	
-	// TODO:
-=======
->>>>>>> 202bc5f1cd2e7c9e44a9cd6a722dd26abd5955ad
 
 	if tx.GasFeeCap() != nil {
 		gasFeeCapInt := sdk.NewIntFromBigInt(tx.GasFeeCap())
@@ -53,13 +48,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 
 // TxType returns the tx type
 func (tx *DynamicFeeTx) TxType() uint8 {
-<<<<<<< HEAD
-	// TODO
-	return 2
-	// return ethtypes.DynamicFeeTxType
-=======
 	return ethtypes.DynamicFeeTxType
->>>>>>> 202bc5f1cd2e7c9e44a9cd6a722dd26abd5955ad
 }
 
 // Copy returns an instance with the same field values
