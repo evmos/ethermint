@@ -41,29 +41,36 @@ import (
 // Backend implements the functionality shared within namespaces.
 // Implemented by EVMBackend.
 type Backend interface {
+	// General Ethereum API
+	RPCGasCap() uint64 // global gas cap for eth_call over rpc: DoS protection
+	RPCMinGasPrice() int64
+	SuggestGasTipCap() (*big.Int, error)
+
+	// Blockchain API
 	BlockNumber() (hexutil.Uint64, error)
+	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	CurrentHeader() *ethtypes.Header
-	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
 	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
-	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
-	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
-	BloomStatus() (uint64, uint64)
 	GetCoinbase() (sdk.AccAddress, error)
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
-	RPCGasCap() uint64
-	RPCMinGasPrice() int64
-	ChainConfig() *params.ChainConfig
-	SuggestGasTipCap() (*big.Int, error)
+
+	// Filter API
+	BloomStatus() (uint64, uint64)
+	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
+	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
 	GetFilteredBlocks(from int64, to int64, filter [][]filters.BloomIV, filterAddresses bool) ([]int64, error)
+
+	ChainConfig() *params.ChainConfig
+	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -594,20 +601,24 @@ func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash
 		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
-	args, err = e.setTxDefaults(args)
+	args, err = e.SetTxDefaults(args)
 	if err != nil {
 		return common.Hash{}, err
 	}
 
 	msg := args.ToTransaction()
-
 	if err := msg.ValidateBasic(); err != nil {
 		e.logger.Debug("tx failed basic validation", "error", err.Error())
 		return common.Hash{}, err
 	}
 
-	// TODO: get from chain config
-	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+	bn, err := e.BlockNumber()
+	if err != nil {
+		e.logger.Debug("failed to fetch latest block number", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	signer := ethtypes.MakeSigner(e.ChainConfig(), new(big.Int).SetUint64(uint64(bn)))
 
 	// Sign transaction
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
@@ -628,8 +639,7 @@ func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash
 	}
 
 	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(msg)
-	if err != nil {
+	if err = builder.SetMsgs(msg); err != nil {
 		e.logger.Error("builder.SetMsgs failed", "error", err.Error())
 	}
 
