@@ -1,40 +1,39 @@
-package types_test
+package types
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 func TestLegacyTxValidate(t *testing.T) {
 	testCases := []struct {
 		name     string
-		tx       types.LegacyTx
+		tx       LegacyTx
 		expError bool
 	}{
 		{
 			"empty",
-			types.LegacyTx{},
+			LegacyTx{},
 			true,
 		},
 		{
 			"gas price is nil",
-			types.LegacyTx{
+			LegacyTx{
 				GasPrice: nil,
 			},
 			true,
 		},
 		{
 			"gas price is negative",
-			types.LegacyTx{
+			LegacyTx{
 				GasPrice: &minusOneInt,
 			},
 			true,
 		},
 		{
 			"amount is negative",
-			types.LegacyTx{
+			LegacyTx{
 				GasPrice: &hundredInt,
 				Amount:   &minusOneInt,
 			},

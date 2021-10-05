@@ -1,4 +1,4 @@
-package types_test
+package types
 
 import (
 	"math/big"
@@ -9,52 +9,63 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tharsis/ethermint/tests"
-	"github.com/tharsis/ethermint/x/evm/types"
 )
 
-var hundredInt sdk.Int = sdk.NewInt(100)
-var hundredUInt64 uint64 = hundredInt.Uint64()
-var hundredbigInt *big.Int = big.NewInt(1)
-var zeroInt sdk.Int = sdk.ZeroInt()
-var minusOneInt sdk.Int = sdk.NewInt(-1)
-var invalidAddr string = "123456"
-var addr common.Address = tests.GenerateAddress()
-var hexAddr string = addr.Hex()
+var (
+	hundredInt    sdk.Int        = sdk.NewInt(100)
+	hundredUInt64 uint64         = hundredInt.Uint64()
+	hundredbigInt *big.Int       = big.NewInt(1)
+	zeroInt       sdk.Int        = sdk.ZeroInt()
+	minusOneInt   sdk.Int        = sdk.NewInt(-1)
+	invalidAddr   string         = "123456"
+	addr          common.Address = tests.GenerateAddress()
+	hexAddr       string         = addr.Hex()
+)
 
-// TODO: How to populate the right test data
-// func TestnewDynamicFeeTx(t *testing.T) {
-// 	testCases := []struct {
-// 		name string
-// 		tx   ethtypes.Transaction
-// 	}{
-// 		{
-// 			"non-empty tx",
-// 			ethtypes.NewTx(),
-// 		},
-// 	}
-// 	for _, tc := range testCases {
-// 		actual := newDynamicFeeTx(tc.tx)
+func TestNewDynamicFeeTx(t *testing.T) {
+	testCases := []struct {
+		name string
+		tx   *ethtypes.Transaction
+	}{
+		{
+			"non-empty tx",
+			ethtypes.NewTx(&ethtypes.AccessListTx{ // TODO: change to DynamicFeeTx on Geth
+				Nonce:      1,
+				Data:       []byte("data"),
+				Gas:        100,
+				Value:      big.NewInt(1),
+				AccessList: ethtypes.AccessList{},
+				To:         &addr,
+				V:          big.NewInt(1),
+				R:          big.NewInt(27),
+				S:          big.NewInt(10),
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		tx := newDynamicFeeTx(tc.tx)
 
-// 		require.IsType(t, *types.DynamicFeeTx, actual)
-// 	}
-// }
+		require.NotEmpty(t, tx)
+		require.Equal(t, uint8(2), tx.TxType())
+	}
+}
 
 func TestDynamicFeeTxGetChainID(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  *big.Int
 	}{
 		{
 			"empty chainID",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				ChainID: nil,
 			},
 			nil,
 		},
 		{
 			"non-empty chainID",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				ChainID: &hundredInt,
 			},
 			(&hundredInt).BigInt(),
@@ -71,27 +82,27 @@ func TestDynamicFeeTxGetChainID(t *testing.T) {
 func TestDynamicFeeTxGetAccessList(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  ethtypes.AccessList
 	}{
 		{
 			"empty accesses",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				Accesses: nil,
 			},
 			nil,
 		},
 		{
 			"nil",
-			types.DynamicFeeTx{
-				Accesses: types.NewAccessList(nil),
+			DynamicFeeTx{
+				Accesses: NewAccessList(nil),
 			},
 			nil,
 		},
 		{
 			"non-empty accesses",
-			types.DynamicFeeTx{
-				Accesses: types.AccessList{
+			DynamicFeeTx{
+				Accesses: AccessList{
 					{
 						Address:     hexAddr,
 						StorageKeys: []string{},
@@ -117,11 +128,11 @@ func TestDynamicFeeTxGetAccessList(t *testing.T) {
 func TestDynamicFeeTxGetData(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 	}{
 		{
 			"non-empty transaction",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				Data: nil,
 			},
 		},
@@ -137,12 +148,12 @@ func TestDynamicFeeTxGetData(t *testing.T) {
 func TestDynamicFeeTxGetGas(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  uint64
 	}{
 		{
 			"non-empty gas",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasLimit: hundredUInt64,
 			},
 			hundredUInt64,
@@ -159,12 +170,12 @@ func TestDynamicFeeTxGetGas(t *testing.T) {
 func TestDynamicFeeTxGetGasPrice(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  *big.Int
 	}{
 		{
 			"non-empty gasFeeCap",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasFeeCap: &hundredInt,
 			},
 			(&hundredInt).BigInt(),
@@ -181,19 +192,19 @@ func TestDynamicFeeTxGetGasPrice(t *testing.T) {
 func TestDynamicFeeTxGetGasTipCap(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  *big.Int
 	}{
 		{
 			"empty gasTipCap",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: nil,
 			},
 			nil,
 		},
 		{
 			"non-empty gasTipCap",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &hundredInt,
 			},
 			(&hundredInt).BigInt(),
@@ -210,19 +221,19 @@ func TestDynamicFeeTxGetGasTipCap(t *testing.T) {
 func TestDynamicFeeTxGetGasFeeCap(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  *big.Int
 	}{
 		{
 			"empty gasFeeCap",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasFeeCap: nil,
 			},
 			nil,
 		},
 		{
 			"non-empty gasFeeCap",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasFeeCap: &hundredInt,
 			},
 			(&hundredInt).BigInt(),
@@ -239,19 +250,19 @@ func TestDynamicFeeTxGetGasFeeCap(t *testing.T) {
 func TestDynamicFeeTxGetValue(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  *big.Int
 	}{
 		{
 			"empty amount",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				Amount: nil,
 			},
 			nil,
 		},
 		{
 			"non-empty amount",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				Amount: &hundredInt,
 			},
 			(&hundredInt).BigInt(),
@@ -268,12 +279,12 @@ func TestDynamicFeeTxGetValue(t *testing.T) {
 func TestDynamicFeeTxGetNonce(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  uint64
 	}{
 		{
 			"non-empty nonce",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				Nonce: hundredUInt64,
 			},
 			hundredUInt64,
@@ -290,19 +301,19 @@ func TestDynamicFeeTxGetNonce(t *testing.T) {
 func TestDynamicFeeTxGetTo(t *testing.T) {
 	testCases := []struct {
 		name string
-		tx   types.DynamicFeeTx
+		tx   DynamicFeeTx
 		exp  *common.Address
 	}{
 		{
 			"empty address",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				To: "",
 			},
 			nil,
 		},
 		{
 			"non-empty address",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				To: hexAddr,
 			},
 			&addr,
@@ -341,7 +352,7 @@ func TestDynamicFeeTxSetSignatureValues(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tx := &types.DynamicFeeTx{}
+		tx := &DynamicFeeTx{}
 		tx.SetSignatureValues(tc.chainID, tc.v, tc.r, tc.s)
 
 		v, r, s := tx.GetRawSignatureValues()
@@ -357,31 +368,31 @@ func TestDynamicFeeTxSetSignatureValues(t *testing.T) {
 func TestDynamicFeeTxValidate(t *testing.T) {
 	testCases := []struct {
 		name     string
-		tx       types.DynamicFeeTx
+		tx       DynamicFeeTx
 		expError bool
 	}{
 		{
 			"empty",
-			types.DynamicFeeTx{},
+			DynamicFeeTx{},
 			true,
 		},
 		{
 			"gas tip cap is nil",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: nil,
 			},
 			true,
 		},
 		{
 			"gas fee cap is nil",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &zeroInt,
 			},
 			true,
 		},
 		{
 			"gas tip cap is negative",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &minusOneInt,
 				GasFeeCap: &zeroInt,
 			},
@@ -389,7 +400,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		},
 		{
 			"gas tip cap is negative",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &zeroInt,
 				GasFeeCap: &minusOneInt,
 			},
@@ -397,7 +408,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		},
 		{
 			"gas fee cap < gas tip cap",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &hundredInt,
 				GasFeeCap: &zeroInt,
 			},
@@ -405,7 +416,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		},
 		{
 			"amount is negative",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &hundredInt,
 				GasFeeCap: &hundredInt,
 				Amount:    &minusOneInt,
@@ -414,7 +425,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		},
 		{
 			"to address is invalid",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &hundredInt,
 				GasFeeCap: &hundredInt,
 				Amount:    &hundredInt,
@@ -424,7 +435,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		},
 		{
 			"chain ID not present on AccessList txs",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &hundredInt,
 				GasFeeCap: &hundredInt,
 				Amount:    &hundredInt,
@@ -435,7 +446,7 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		},
 		{
 			"no errors",
-			types.DynamicFeeTx{
+			DynamicFeeTx{
 				GasTipCap: &hundredInt,
 				GasFeeCap: &hundredInt,
 				Amount:    &hundredInt,
@@ -456,4 +467,10 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 
 		require.NoError(t, err, tc.name)
 	}
+}
+
+func TestDynamicFeeTxFeeCost(t *testing.T) {
+	tx := &DynamicFeeTx{}
+	require.Panics(t, func() { tx.Fee() }, "should panic")
+	require.Panics(t, func() { tx.Cost() }, "should panic")
 }

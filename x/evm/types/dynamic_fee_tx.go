@@ -27,6 +27,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 		amountInt := sdk.NewIntFromBigInt(tx.Value())
 		txData.Amount = &amountInt
 	}
+	
 	// TODO:
 
 	// if tx.GasFeeCap() != nil {
@@ -51,7 +52,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 // TxType returns the tx type
 func (tx *DynamicFeeTx) TxType() uint8 {
 	// TODO
-	return 0
+	return 2
 	// return ethtypes.DynamicFeeTxType
 }
 
