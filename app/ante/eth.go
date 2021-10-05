@@ -36,10 +36,6 @@ type EVMKeeper interface {
 	) (sdk.Coins, error)
 }
 
-type FeeMarketKeeper interface {
-	GetBaseFee(ctx sdk.Context) *big.Int
-}
-
 // EthSigVerificationDecorator validates an ethereum signatures
 type EthSigVerificationDecorator struct {
 	evmKeeper EVMKeeper
@@ -235,8 +231,7 @@ func (nvd EthNonceVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, 
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
-	evmKeeper       EVMKeeper
-	feeMarketKeeper FeeMarketKeeper
+	evmKeeper EVMKeeper
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
