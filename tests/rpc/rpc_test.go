@@ -436,6 +436,8 @@ func TestEth_SendTransaction_ContractDeploy(t *testing.T) {
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
+	param[0]["gas"] = "0x200000"
+	param[0]["gasPrice"] = "0x1"
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -523,6 +525,7 @@ func sendTestTransaction(t *testing.T) hexutil.Bytes {
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
 	param[0]["value"] = "0x1"
+	param[0]["gasPrice"] = "0x1"
 	rpcRes := call(t, "eth_sendTransaction", param)
 
 	var hash hexutil.Bytes
@@ -555,6 +558,7 @@ func deployTestContract(t *testing.T) (hexutil.Bytes, map[string]interface{}) {
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
 	param[0]["gas"] = "0x200000"
+	param[0]["gasPrice"] = "0x1"
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -683,6 +687,7 @@ func deployTestContractWithFunction(t *testing.T) hexutil.Bytes {
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = bytecode
 	param[0]["gas"] = "0x200000"
+	param[0]["gasPrice"] = "0x1"
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -849,6 +854,9 @@ func TestEth_ExportAccount_WithStorage(t *testing.T) {
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["to"] = addr
 	param[0]["data"] = calldata
+	param[0]["gas"] = "0x200000"
+	param[0]["gasPrice"] = "0x1"
+
 	rpcRes := call(t, "eth_sendTransaction", param)
 
 	var txhash hexutil.Bytes
