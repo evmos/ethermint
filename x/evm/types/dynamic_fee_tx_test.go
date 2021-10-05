@@ -21,77 +21,21 @@ var invalidAddr string = "123456"
 var addr common.Address = tests.GenerateAddress()
 var hexAddr string = addr.Hex()
 
-// TODO: Change big.Int to sdk.Int
-func TestCopy(t *testing.T) {
+// TODO: How to populate the right test data
+func TestnewDynamicFeeTx(t *testing.T) {
 	testCases := []struct {
-		name      string
-		chainID   sdk.Int
-		nonce     sdk.Int
-		gasTipCap sdk.Int
-		gasFeeCap sdk.Int
-		gasLimit  uint64
-		to        *common.Address
-		amount    sdk.Int
-		data      []byte
-		accesses  ethtypes.AccessList
-		v         sdk.Int
-		r         sdk.Int
-		s         sdk.Int
+		name string
+		tx   ethtypes.Transaction
 	}{
 		{
-			"empty values",
-			nil,
-			nil,
-			nil,
-			nil,
-			0,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-		},
-		{
-			"non-empty values",
-			hundredInt,
-			hundredInt,
-			hundredInt,
-			hundredInt,
-			hundredUInt64,
-			&addr,
-			hundredInt,
-			nil,
-			ethtypes.AccessList{
-				{
-					Address:     addr,
-					StorageKeys: []common.Hash{},
-				},
-			},
-			hundredInt,
-			hundredInt,
-			hundredInt,
+			"non-empty tx",
+			ethtypes.NewTx(),
 		},
 	}
-
 	for _, tc := range testCases {
-		tx := &types.DynamicFeeTx{
-			ChainID:   &tc.chainID,
-			Nonce:     &tc.nonce,
-			GasTipCap: &tc.gasTipCap,
-			GasFeeCap: &tc.gasFeeCap,
-			GasLimit:  tc.gasLimit,
-			To:        tc.to,
-			Amount:    tc.amount,
-			Data:      common.CopyBytes(tc.data),
-			Accesses:  tc.Accesses,
-			V:         common.CopyBytes(tc.v),
-			R:         common.CopyBytes(tc.r),
-			S:         common.CopyBytes(tc.s),
-		}
-		copy := tx.Copy()
-		require.Equal(t, tx, copy, tc.name)
+		actual := newDynamicFeeTx(tc.tx)
+
+		require.IsType(t, *types.DynamicFeeTx, actual)
 	}
 }
 
