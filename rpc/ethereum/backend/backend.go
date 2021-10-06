@@ -41,29 +41,37 @@ import (
 // Backend implements the functionality shared within namespaces.
 // Implemented by EVMBackend.
 type Backend interface {
+	// General Ethereum API
+	RPCGasCap() uint64 // global gas cap for eth_call over rpc: DoS protection
+	RPCMinGasPrice() int64
+	SuggestGasTipCap() (*big.Int, error)
+
+	// Blockchain API
 	BlockNumber() (hexutil.Uint64, error)
+	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	CurrentHeader() *ethtypes.Header
-	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
 	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
-	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
-	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
-	BloomStatus() (uint64, uint64)
 	GetCoinbase() (sdk.AccAddress, error)
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
-	RPCGasCap() uint64
-	RPCMinGasPrice() int64
-	ChainConfig() *params.ChainConfig
-	SuggestGasTipCap() (*big.Int, error)
+	BaseFee() (*big.Int, error)
+
+	// Filter API
+	BloomStatus() (uint64, uint64)
+	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
+	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
 	GetFilteredBlocks(from int64, to int64, filter [][]filters.BloomIV, filterAddresses bool) ([]int64, error)
+
+	ChainConfig() *params.ChainConfig
+	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -228,6 +236,14 @@ func (e *EVMBackend) EthBlockFromTendermint(
 ) (map[string]interface{}, error) {
 	ethRPCTxs := []interface{}{}
 
+	ctx := types.ContextWithHeight(block.Height)
+
+	bfRes, err := e.queryClient.FeeMarket.BaseFee(ctx, &feemarkettypes.QueryBaseFeeRequest{})
+	if err != nil {
+		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
+		return nil, err
+	}
+
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
@@ -237,43 +253,30 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 		for _, msg := range tx.GetMsgs() {
 			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-
 			if !ok {
 				continue
 			}
 
-			hash := ethMsg.AsTransaction().Hash()
+			tx := ethMsg.AsTransaction()
+
 			if !fullTx {
+				hash := tx.Hash()
 				ethRPCTxs = append(ethRPCTxs, hash)
 				continue
 			}
 
-			// get full transaction from message data
-			from, err := ethMsg.GetSender(e.chainID)
-			if err != nil {
-				e.logger.Debug("failed to get sender from already included transaction", "hash", hash.Hex(), "error", err.Error())
-				from = common.HexToAddress(ethMsg.From)
-			}
-
-			txData, err := evmtypes.UnpackTxData(ethMsg.Data)
-			if err != nil {
-				e.logger.Debug("decoding failed", "error", err.Error())
-				return nil, fmt.Errorf("failed to unpack tx data: %w", err)
-			}
-
-			ethTx, err := types.NewTransactionFromData(
-				txData,
-				from,
-				hash,
+			rpcTx, err := types.NewRPCTransaction(
+				tx,
 				common.BytesToHash(block.Hash()),
 				uint64(block.Height),
 				uint64(i),
+				bfRes.BaseFee.BigInt(),
 			)
 			if err != nil {
-				e.logger.Debug("NewTransactionFromData for receipt failed", "hash", hash.Hex(), "error", err.Error())
+				e.logger.Debug("NewTransactionFromData for receipt failed", "hash", tx.Hash().Hex(), "error", err.Error())
 				continue
 			}
-			ethRPCTxs = append(ethRPCTxs, ethTx)
+			ethRPCTxs = append(ethRPCTxs, rpcTx)
 		}
 	}
 
@@ -285,8 +288,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	req := &evmtypes.QueryValidatorAccountRequest{
 		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
 	}
-
-	ctx := types.ContextWithHeight(block.Height)
 
 	res, err := e.queryClient.ValidatorAccount(ctx, req)
 	if err != nil {
@@ -305,12 +306,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	}
 
 	validatorAddr := common.BytesToAddress(addr)
-
-	bfRes, err := e.queryClient.FeeMarket.BaseFee(ctx, &feemarkettypes.QueryBaseFeeRequest{})
-	if err != nil {
-		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
-		return nil, err
-	}
 
 	gasLimit, err := types.BlockMaxGasFromConsensusParams(ctx, e.clientCtx)
 	if err != nil {
@@ -376,7 +371,13 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
+	baseFee, err := e.BaseFee()
+	if err != nil {
+		e.logger.Debug("HeaderByNumber BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
+		return nil, err
+	}
+
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, baseFee)
 	ethHeader.Bloom = bloom
 	return ethHeader, nil
 }
@@ -398,7 +399,13 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		e.logger.Debug("HeaderByHash BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
+	baseFee, err := e.BaseFee()
+	if err != nil {
+		e.logger.Debug("HeaderByHash BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
+		return nil, err
+	}
+
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, baseFee)
 	ethHeader.Bloom = bloom
 	return ethHeader, nil
 }
@@ -607,20 +614,24 @@ func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash
 		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
-	args, err = e.setTxDefaults(args)
+	args, err = e.SetTxDefaults(args)
 	if err != nil {
 		return common.Hash{}, err
 	}
 
 	msg := args.ToTransaction()
-
 	if err := msg.ValidateBasic(); err != nil {
 		e.logger.Debug("tx failed basic validation", "error", err.Error())
 		return common.Hash{}, err
 	}
 
-	// TODO: get from chain config
-	signer := ethtypes.LatestSignerForChainID(args.ChainID.ToInt())
+	bn, err := e.BlockNumber()
+	if err != nil {
+		e.logger.Debug("failed to fetch latest block number", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	signer := ethtypes.MakeSigner(e.ChainConfig(), new(big.Int).SetUint64(uint64(bn)))
 
 	// Sign transaction
 	if err := msg.Sign(signer, e.clientCtx.Keyring); err != nil {
@@ -641,8 +652,7 @@ func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash
 	}
 
 	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(msg)
-	if err != nil {
+	if err = builder.SetMsgs(msg); err != nil {
 		e.logger.Error("builder.SetMsgs failed", "error", err.Error())
 	}
 
@@ -701,7 +711,22 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 		return 0, err
 	}
 
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: e.RPCGasCap()}
+	baseFee, err := e.BaseFee()
+	if err != nil {
+		return 0, err
+	}
+
+	var bf *sdk.Int
+	if baseFee != nil {
+		aux := sdk.NewIntFromBigInt(baseFee)
+		bf = &aux
+	}
+
+	req := evmtypes.EthCallRequest{
+		Args:    bz,
+		GasCap:  e.RPCGasCap(),
+		BaseFee: bf,
+	}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
@@ -745,7 +770,7 @@ func (e *EVMBackend) RPCGasCap() uint64 {
 // the node config. If set value is 0, it will default to 20.
 
 func (e *EVMBackend) RPCMinGasPrice() int64 {
-	evmParams, err := e.queryClient.Params(context.Background(), &evmtypes.QueryParamsRequest{})
+	evmParams, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
 		return ethermint.DefaultGasPrice
 	}
@@ -771,8 +796,29 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 
 // SuggestGasTipCap returns the suggested tip cap
 func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
-	// TODO: implement
-	return big.NewInt(1), nil
+	out := new(big.Int).SetInt64(e.RPCMinGasPrice())
+	return out, nil
+}
+
+// BaseFee returns the base fee tracked by the Fee Market module. If the base fee is not enabled,
+// it returns the initial base fee amount.
+func (e *EVMBackend) BaseFee() (*big.Int, error) {
+	res, err := e.queryClient.FeeMarket.BaseFee(e.ctx, &feemarkettypes.QueryBaseFeeRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	if res.BaseFee != nil {
+		return res.BaseFee.BigInt(), nil
+	}
+
+	resParams, err := e.queryClient.FeeMarket.Params(e.ctx, &feemarkettypes.QueryParamsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	baseFee := big.NewInt(resParams.Params.InitialBaseFee)
+	return baseFee, nil
 }
 
 // GetFilteredBlocks returns the block height list match the given bloom filters.
