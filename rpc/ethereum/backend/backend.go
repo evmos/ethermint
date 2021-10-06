@@ -371,7 +371,13 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
+	baseFee, err := e.BaseFee()
+	if err != nil {
+		e.logger.Debug("HeaderByNumber BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
+		return nil, err
+	}
+
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, baseFee)
 	ethHeader.Bloom = bloom
 	return ethHeader, nil
 }
@@ -393,7 +399,13 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		e.logger.Debug("HeaderByHash BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header)
+	baseFee, err := e.BaseFee()
+	if err != nil {
+		e.logger.Debug("HeaderByHash BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
+		return nil, err
+	}
+
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, baseFee)
 	ethHeader.Bloom = bloom
 	return ethHeader, nil
 }
@@ -777,18 +789,25 @@ func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
 	return out, nil
 }
 
-// BaseFee returns the base fee
+// BaseFee returns the base fee tracked by the Fee Market module. If the base fee is not enabled,
+// it returns the initial base fee amount.
 func (e *EVMBackend) BaseFee() (*big.Int, error) {
 	res, err := e.queryClient.FeeMarket.BaseFee(e.ctx, &feemarkettypes.QueryBaseFeeRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	if res.BaseFee == nil {
-		return nil, nil
+	if res.BaseFee != nil {
+		return res.BaseFee.BigInt(), nil
 	}
 
-	return res.BaseFee.BigInt(), nil
+	resParams, err := e.queryClient.FeeMarket.Params(e.ctx, &feemarkettypes.QueryParamsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	baseFee := big.NewInt(resParams.Params.InitialBaseFee)
+	return baseFee, nil
 }
 
 // GetFilteredBlocks returns the block height list match the given bloom filters.

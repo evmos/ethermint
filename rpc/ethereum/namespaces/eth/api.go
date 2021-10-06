@@ -478,7 +478,12 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
+	fees := sdk.Coins{
+		{
+			Denom:  res.Params.EvmDenom,
+			Amount: sdk.NewIntFromBigInt(txData.Fee()),
+		},
+	}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethereumTx.GetGas())
 

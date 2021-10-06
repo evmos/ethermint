@@ -79,11 +79,12 @@ func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber
 
 // EthHeaderFromTendermint is an util function that returns an Ethereum Header
 // from a tendermint Header.
-func EthHeaderFromTendermint(header tmtypes.Header) *ethtypes.Header {
+func EthHeaderFromTendermint(header tmtypes.Header, baseFee *big.Int) *ethtypes.Header {
 	txHash := ethtypes.EmptyRootHash
 	if len(header.DataHash) == 0 {
 		txHash = common.BytesToHash(header.DataHash)
 	}
+
 	return &ethtypes.Header{
 		ParentHash:  common.BytesToHash(header.LastBlockID.Hash.Bytes()),
 		UncleHash:   ethtypes.EmptyUncleHash,
@@ -100,6 +101,7 @@ func EthHeaderFromTendermint(header tmtypes.Header) *ethtypes.Header {
 		Extra:       nil,
 		MixDigest:   common.Hash{},
 		Nonce:       ethtypes.BlockNonce{},
+		BaseFee:     baseFee,
 	}
 }
 
