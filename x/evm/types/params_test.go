@@ -85,12 +85,12 @@ func TestValidateChainConfig(t *testing.T) {
 	}{
 		{
 			"invalid chain config type",
-			NewParams("ara", true, true, ChainConfig{}, 2929, 1884, 1344),
+			"string",
 			true,
 		},
 		{
 			"valid chain config type",
-			NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344),
+			DefaultChainConfig(),
 			false,
 		},
 	}
