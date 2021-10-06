@@ -52,6 +52,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#613](https://github.com/tharsis/ethermint/pull/613) Refactor `traceTx`
 * (deps) [tharsis#610](https://github.com/tharsis/ethermint/pull/610) Bump Cosmos SDK to [v0.44.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.1).
 
+### Features
+
+* (rpc) [tharsis#624](https://github.com/tharsis/ethermint/pull/624) Implement new JSON-RPC endpoints from latest geth version
+
 ### Bug Fixes
 
 * (evm) [tharsis#616](https://github.com/tharsis/ethermint/issues/616) Fix halt on deeply nested stack of cache context. Stack is now flattened before iterating over the tx logs.

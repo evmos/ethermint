@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/rpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -45,6 +46,7 @@ type PublicAPI struct {
 	logger       log.Logger
 	backend      backend.Backend
 	nonceLock    *rpctypes.AddrLocker
+	signer       ethtypes.Signer
 }
 
 // NewPublicAPI creates an instance of the public ETH Web3 API.
@@ -76,6 +78,10 @@ func NewPublicAPI(
 		clientCtx = clientCtx.WithKeyring(kr)
 	}
 
+	// The signer used by the API should always be the 'latest' known one because we expect
+	// signers to be backwards-compatible with old transactions.
+	signer := ethtypes.LatestSigner(backend.ChainConfig())
+
 	api := &PublicAPI{
 		ctx:          context.Background(),
 		clientCtx:    clientCtx,
@@ -84,6 +90,7 @@ func NewPublicAPI(
 		logger:       logger.With("client", "json-rpc"),
 		backend:      backend,
 		nonceLock:    nonceLock,
+		signer:       signer,
 	}
 
 	return api
@@ -108,14 +115,30 @@ func (e *PublicAPI) ProtocolVersion() hexutil.Uint {
 	return hexutil.Uint(ethermint.ProtocolVersion)
 }
 
-// ChainId returns the chain's identifier in hex format
-func (e *PublicAPI) ChainId() (hexutil.Uint, error) { // nolint
+// ChainId is the EIP-155 replay-protection chain id for the current ethereum chain config.
+func (e *PublicAPI) ChainId() (*hexutil.Big, error) { // nolint
 	e.logger.Debug("eth_chainId")
-	return hexutil.Uint(uint(e.chainIDEpoch.Uint64())), nil
+	// if current block is at or past the EIP-155 replay-protection fork block, return chainID from config
+	bn, err := e.backend.BlockNumber()
+	if err != nil {
+		e.logger.Debug("failed to fetch latest block number", "error", err.Error())
+		return (*hexutil.Big)(e.chainIDEpoch), nil
+	}
+
+	if config := e.backend.ChainConfig(); config.IsEIP155(new(big.Int).SetUint64(uint64(bn))) {
+		return (*hexutil.Big)(config.ChainID), nil
+	}
+
+	return nil, fmt.Errorf("chain not synced beyond EIP-155 replay-protection fork block")
 }
 
-// Syncing returns whether or not the current node is syncing with other peers. Returns false if not, or a struct
-// outlining the state of the sync if it is.
+// Syncing returns false in case the node is currently not syncing with the network. It can be up to date or has not
+// yet received the latest block headers from its pears. In case it is synchronizing:
+// - startingBlock: block number this node started to synchronize from
+// - currentBlock:  block number this node is currently importing
+// - highestBlock:  block number of the highest block header this node has received from peers
+// - pulledStates:  number of state entries processed until now
+// - knownStates:   number of known state entries that still need to be pulled
 func (e *PublicAPI) Syncing() (interface{}, error) {
 	e.logger.Debug("eth_syncing")
 
@@ -129,8 +152,8 @@ func (e *PublicAPI) Syncing() (interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		// "startingBlock": nil, // NA
-		"currentBlock": hexutil.Uint64(status.SyncInfo.LatestBlockHeight),
+		"startingBlock": hexutil.Uint64(status.SyncInfo.EarliestBlockHeight),
+		"currentBlock":  hexutil.Uint64(status.SyncInfo.LatestBlockHeight),
 		// "highestBlock":  nil, // NA
 		// "pulledStates":  nil, // NA
 		// "knownStates":   nil, // NA
@@ -162,10 +185,35 @@ func (e *PublicAPI) Hashrate() hexutil.Uint64 {
 }
 
 // GasPrice returns the current gas price based on Ethermint's gas price oracle.
-func (e *PublicAPI) GasPrice() *hexutil.Big {
+func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 	e.logger.Debug("eth_gasPrice")
-	out := new(big.Int).SetInt64(e.backend.RPCMinGasPrice())
-	return (*hexutil.Big)(out)
+	tipcap, err := e.backend.SuggestGasTipCap()
+	if err != nil {
+		return nil, err
+	}
+
+	if head := e.backend.CurrentHeader(); head.BaseFee != nil {
+		tipcap.Add(tipcap, head.BaseFee)
+	}
+
+	return (*hexutil.Big)(tipcap), nil
+}
+
+// MaxPriorityFeePerGas returns a suggestion for a gas tip cap for dynamic fee transactions.
+func (e *PublicAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
+	e.logger.Debug("eth_maxPriorityFeePerGas")
+	tipcap, err := e.backend.SuggestGasTipCap()
+	if err != nil {
+		return nil, err
+	}
+
+	return (*hexutil.Big)(tipcap), nil
+}
+
+func (e *PublicAPI) FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error) {
+	e.logger.Debug("eth_feeHistory")
+
+	return nil, fmt.Errorf("eth_feeHistory not implemented")
 }
 
 // Accounts returns the list of accounts available to this node.
@@ -355,6 +403,29 @@ func (e *PublicAPI) SendTransaction(args evmtypes.TransactionArgs) (common.Hash,
 	return e.backend.SendTransaction(args)
 }
 
+// FillTransaction fills the defaults (nonce, gas, gasPrice or 1559 fields)
+// on a given unsigned transaction, and returns it to the caller for further
+// processing (signing + broadcast).
+func (e *PublicAPI) FillTransaction(args evmtypes.TransactionArgs) (*rpctypes.SignTransactionResult, error) {
+	// Set some sanity defaults and terminate on failure
+	args, err := e.backend.SetTxDefaults(args)
+	if err != nil {
+		return nil, err
+	}
+
+	// Assemble the transaction and obtain rlp
+	tx := args.ToTransaction().AsTransaction()
+	data, err := tx.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return &rpctypes.SignTransactionResult{
+		Raw: data,
+		Tx:  tx,
+	}, nil
+}
+
 // SendRawTransaction send a raw Ethereum transaction.
 func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) {
 	e.logger.Debug("eth_sendRawTransaction", "length", len(data))
@@ -407,7 +478,12 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
+	fees := sdk.Coins{
+		{
+			Denom:  res.Params.EvmDenom,
+			Amount: sdk.NewIntFromBigInt(txData.Fee()),
+		},
+	}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(ethereumTx.GetGas())
 
@@ -431,6 +507,57 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 	}
 
 	return txHash, nil
+}
+
+// Resend accepts an existing transaction and a new gas price and limit. It will remove
+// the given transaction from the pool and reinsert it with the new gas price and limit.
+func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error) {
+	e.logger.Debug("eth_resend", "args", args.String())
+	if args.Nonce == nil {
+		return common.Hash{}, fmt.Errorf("missing transaction nonce in transaction spec")
+	}
+
+	args, err := e.backend.SetTxDefaults(args)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	matchTx := args.ToTransaction().AsTransaction()
+
+	pending, err := e.backend.PendingTransactions()
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	for _, tx := range pending {
+		p, err := evmtypes.UnwrapEthereumMsg(tx)
+		if err != nil {
+			// not valid ethereum tx
+			continue
+		}
+
+		pTx := p.AsTransaction()
+
+		wantSigHash := e.signer.Hash(matchTx)
+		pFrom, err := ethtypes.Sender(e.signer, pTx)
+		if err != nil {
+			continue
+		}
+
+		if pFrom == *args.From && e.signer.Hash(pTx) == wantSigHash {
+			// Match. Re-sign and send the transaction.
+			if gasPrice != nil && (*big.Int)(gasPrice).Sign() != 0 {
+				args.GasPrice = gasPrice
+			}
+			if gasLimit != nil && *gasLimit != 0 {
+				args.Gas = gasLimit
+			}
+
+			return e.backend.SendTransaction(args) // TODO: this calls SetTxDefaults again, refactor to avoid calling it twice
+		}
+	}
+
+	return common.Hash{}, fmt.Errorf("transaction %#x not found", matchTx.Hash())
 }
 
 // Call performs a raw contract call.
@@ -458,7 +585,23 @@ func (e *PublicAPI) doCall(
 	if err != nil {
 		return nil, err
 	}
-	req := evmtypes.EthCallRequest{Args: bz, GasCap: e.backend.RPCGasCap()}
+
+	baseFee, err := e.backend.BaseFee()
+	if err != nil {
+		return nil, err
+	}
+
+	var bf *sdk.Int
+	if baseFee != nil {
+		aux := sdk.NewIntFromBigInt(baseFee)
+		bf = &aux
+	}
+
+	req := evmtypes.EthCallRequest{
+		Args:    bz,
+		GasCap:  e.backend.RPCGasCap(),
+		BaseFee: bf,
+	}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
@@ -536,12 +679,17 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, err
 	}
 
+	baseFee, err := e.backend.BaseFee()
+	if err != nil {
+		return nil, err
+	}
+
 	return rpctypes.NewTransactionFromMsg(
 		msg,
 		hash,
 		uint64(resBlock.Block.Height),
 		uint64(idx),
-		e.chainIDEpoch,
+		baseFee,
 	)
 }
 

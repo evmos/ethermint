@@ -113,7 +113,7 @@ func (args *TransactionArgs) ToTransaction() *MsgEthereumTx {
 			GasFeeCap: &maxFeePerGas,
 			GasTipCap: &maxPriorityFeePerGas,
 			Amount:    &value,
-			Data:      args.data(),
+			Data:      args.GetData(),
 			Accesses:  al,
 		}
 	case args.AccessList != nil:
@@ -124,7 +124,7 @@ func (args *TransactionArgs) ToTransaction() *MsgEthereumTx {
 			GasLimit: gas,
 			GasPrice: &gasPrice,
 			Amount:   &value,
-			Data:     args.data(),
+			Data:     args.GetData(),
 			Accesses: NewAccessList(args.AccessList),
 		}
 	default:
@@ -134,7 +134,7 @@ func (args *TransactionArgs) ToTransaction() *MsgEthereumTx {
 			GasLimit: gas,
 			GasPrice: &gasPrice,
 			Amount:   &value,
-			Data:     args.data(),
+			Data:     args.GetData(),
 		}
 	}
 
@@ -162,7 +162,7 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (e
 	}
 
 	// Set sender address or use zero address if none specified.
-	addr := args.from()
+	addr := args.GetFrom()
 
 	// Set default gas & gas price if none were set
 	gas := globalGasCap
@@ -214,7 +214,7 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (e
 	if args.Value != nil {
 		value = args.Value.ToInt()
 	}
-	data := args.data()
+	data := args.GetData()
 	var accessList ethtypes.AccessList
 	if args.AccessList != nil {
 		accessList = *args.AccessList
@@ -223,16 +223,16 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (e
 	return msg, nil
 }
 
-// from retrieves the transaction sender address.
-func (args *TransactionArgs) from() common.Address {
+// GetFrom retrieves the transaction sender address.
+func (args *TransactionArgs) GetFrom() common.Address {
 	if args.From == nil {
 		return common.Address{}
 	}
 	return *args.From
 }
 
-// data retrieves the transaction calldata. Input field is preferred.
-func (args *TransactionArgs) data() []byte {
+// GetData retrieves the transaction calldata. Input field is preferred.
+func (args *TransactionArgs) GetData() []byte {
 	if args.Input != nil {
 		return *args.Input
 	}
