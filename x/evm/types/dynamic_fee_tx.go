@@ -5,8 +5,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/tharsis/ethermint/types"
 )
 
@@ -228,12 +230,12 @@ func (tx DynamicFeeTx) Validate() error {
 	return nil
 }
 
-// Fee panics as it requires the base fee amount to calculate
+// Fee returns gasprice * gaslimit.
 func (tx DynamicFeeTx) Fee() *big.Int {
-	panic("fee can only be called manually by providing the base fee")
+	return fee(tx.GetGasPrice(), tx.GasLimit)
 }
 
 // Cost returns amount + gasprice * gaslimit.
 func (tx DynamicFeeTx) Cost() *big.Int {
-	panic("cost can only be called manually by providing the base fee")
+	return cost(tx.Fee(), tx.GetValue())
 }
