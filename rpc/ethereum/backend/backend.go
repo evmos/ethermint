@@ -711,10 +711,21 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 		return 0, err
 	}
 
+	baseFee, err := e.BaseFee()
+	if err != nil {
+		return 0, err
+	}
+
+	var bf *sdk.Int
+	if baseFee != nil {
+		aux := sdk.NewIntFromBigInt(baseFee)
+		bf = &aux
+	}
+
 	req := evmtypes.EthCallRequest{
 		Args:    bz,
 		GasCap:  e.RPCGasCap(),
-		BaseFee: nil, // TODO: add
+		BaseFee: bf,
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
