@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/ethereum/go-ethereum/common"
@@ -113,17 +112,11 @@ func DoBenchmarkDeepContextStack(b *testing.B, depth int) {
 	for i := 0; i < depth; i++ {
 		stack.Snapshot()
 
-		store := prefix.NewStore(
-			stack.CurrentContext().TransientStore(transientKey),
-			types.KeyPrefixTransientTxLogs,
-		)
+		store := stack.CurrentContext().TransientStore(transientKey)
 		store.Set(begin, []byte("value"))
 	}
 
-	store := prefix.NewStore(
-		stack.CurrentContext().TransientStore(transientKey),
-		types.KeyPrefixTransientTxLogs,
-	)
+	store := stack.CurrentContext().TransientStore(transientKey)
 	for i := 0; i < b.N; i++ {
 		store.Iterator(begin, end)
 	}
