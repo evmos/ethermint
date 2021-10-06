@@ -227,6 +227,8 @@ func (e *EVMBackend) EthBlockFromTendermint(
 ) (map[string]interface{}, error) {
 	ethRPCTxs := []interface{}{}
 
+	ctx := types.ContextWithHeight(block.Height)
+
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
@@ -285,8 +287,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
 	}
 
-	ctx := types.ContextWithHeight(block.Height)
-
 	res, err := e.queryClient.ValidatorAccount(ctx, req)
 	if err != nil {
 		e.logger.Debug(
@@ -322,7 +322,11 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		gasUsed += uint64(txsResult.GetGasUsed())
 	}
 
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
+	formattedBlock := types.FormatBlock(
+		block.Header, block.Size(),
+		gasLimit, new(big.Int).SetUint64(gasUsed),
+		ethRPCTxs, bloom, validatorAddr,
+	)
 	return formattedBlock, nil
 }
 
