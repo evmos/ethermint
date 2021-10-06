@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
 	"github.com/spf13/cobra"
 
@@ -99,6 +100,17 @@ which accepts a path for the resulting pprof file.
 			if !withTM {
 				serverCtx.Logger.Info("starting ABCI without Tendermint")
 				return startStandAlone(serverCtx, appCreator)
+			}
+
+			serverCtx.Logger.Info("Unlocking keyring")
+
+			// fire unlock precess for keyring
+			keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
+			if keyringBackend == keyring.BackendFile {
+				_, err = clientCtx.Keyring.List()
+				if err != nil {
+					return err
+				}
 			}
 
 			serverCtx.Logger.Info("starting ABCI with Tendermint")
