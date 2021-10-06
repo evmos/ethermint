@@ -268,8 +268,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
-	// london := ethCfg.IsLondon(blockHeight)
-	london := false
+	london := ethCfg.IsLondon(blockHeight)
 	evmDenom := params.EvmDenom
 
 	var events sdk.Events
@@ -364,7 +363,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			baseFee = ctd.feemarketKeeper.GetBaseFee(ctx)
 		}
 
-		coreMsg, err := msgEthTx.AsMessage(signer)
+		coreMsg, err := msgEthTx.AsMessage(signer, baseFee)
 		if err != nil {
 			return ctx, stacktrace.Propagate(
 				err,
@@ -384,19 +383,19 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		// if !feeMktParams.NoBaseFee && baseFee == nil {
-		// 	return ctx, stacktrace.Propagate(
-		// 		sdkerrors.Wrap(evmtypes.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
-		// 		"address %s", coreMsg.From(),
-		// 	)
-		// }
+		if !feeMktParams.NoBaseFee && baseFee == nil {
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrap(evmtypes.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
+				"address %s", coreMsg.From(),
+			)
+		}
 
-		// if !feeMktParams.NoBaseFee && baseFee != nil && coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
-		// 	return ctx, stacktrace.Propagate(
-		// 		sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), baseFee),
-		// 		"address %s", coreMsg.From(),
-		// 	)
-		// }
+		if !feeMktParams.NoBaseFee && baseFee != nil && coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
+			return ctx, stacktrace.Propagate(
+				sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), baseFee),
+				"address %s", coreMsg.From(),
+			)
+		}
 	}
 
 	ctd.evmKeeper.WithContext(ctx)

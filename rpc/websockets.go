@@ -17,6 +17,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/eth/filters"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/tendermint/tendermint/libs/log"
@@ -352,6 +353,9 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 		return "", errors.Wrap(err, "error creating block filter")
 	}
 
+	// TODO: use events
+	baseFee := big.NewInt(params.InitialBaseFee)
+
 	unsubscribed := make(chan struct{})
 	api.filtersMu.Lock()
 	api.filters[subID] = &wsSubscription{
@@ -377,7 +381,7 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 					continue
 				}
 
-				header := types.EthHeaderFromTendermint(data.Header)
+				header := types.EthHeaderFromTendermint(data.Header, baseFee)
 
 				api.filtersMu.RLock()
 				for subID, wsSub := range api.filters {
