@@ -472,7 +472,10 @@ func TestEth_GetFilterChanges_BlockFilter(t *testing.T) {
 	err := json.Unmarshal(rpcRes.Result, &ID)
 	require.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	txHash := sendTestTransaction(t)
+	receipt := waitForReceipt(t, txHash)
+	require.NotNil(t, receipt, "transaction failed")
+	require.Equal(t, "0x1", receipt["status"].(string))
 
 	changesRes := call(t, "eth_getFilterChanges", []string{ID})
 	var hashes []common.Hash
@@ -780,8 +783,6 @@ func TestEth_PendingTransactionFilter(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		deployTestContractWithFunction(t)
 	}
-
-	time.Sleep(10 * time.Second)
 
 	// get filter changes
 	changesRes := call(t, "eth_getFilterChanges", []string{ID})

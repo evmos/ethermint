@@ -117,6 +117,8 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, context.Canc
 		err = es.tmWSClient.Subscribe(es.ctx, sub.event)
 	case filters.BlocksSubscription:
 		err = es.tmWSClient.Subscribe(es.ctx, sub.event)
+	case filters.PendingTransactionsSubscription:
+		err = es.tmWSClient.Subscribe(es.ctx, sub.event)
 	default:
 		err = fmt.Errorf("invalid filter subscription type %d", sub.typ)
 	}
