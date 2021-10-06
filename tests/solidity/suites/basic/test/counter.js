@@ -76,8 +76,8 @@ contract('Counter', (accounts) => {
 
     // Check lifecycle of events
     const contract = new web3.eth.Contract(counter.abi, counter.address)
-    const allEvents = await contract.getPastEvents("allEvents", { fromBlock: 0, toBlock: 'latest' })
-    const changedEvents = await contract.getPastEvents("Changed", { fromBlock: 0, toBlock: 'latest' })
+    const allEvents = await contract.getPastEvents("allEvents", { fromBlock: 1, toBlock: 'latest' })
+    const changedEvents = await contract.getPastEvents("Changed", { fromBlock: 1, toBlock: 'latest' })
     console.log('allEvents', allEvents)
     console.log('changedEvents', changedEvents)
     assert.equal(allEvents.length, 3)
