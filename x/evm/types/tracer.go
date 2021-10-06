@@ -129,6 +129,13 @@ func NewNoOpTracer() *NoOpTracer {
 func (dt NoOpTracer) CaptureStart(env *vm.EVM, from, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 }
 
+// CaptureEnter implements vm.Tracer interface
+func (dt NoOpTracer) CaptureEnter(typ vm.OpCode, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+}
+
+// CaptureExit implements vm.Tracer interface
+func (dt NoOpTracer) CaptureExit(output []byte, gasUsed uint64, err error) {}
+
 // CaptureState implements vm.Tracer interface
 func (dt NoOpTracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, rData []byte, depth int, err error) {
 }

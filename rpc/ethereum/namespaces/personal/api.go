@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
@@ -150,8 +150,12 @@ func (api *PrivateAccountAPI) UnlockAccount(_ context.Context, addr common.Addre
 // SendTransaction will create a transaction from the given arguments and
 // tries to sign it with the key associated with args.To. If the given password isn't
 // able to decrypt the key it fails.
-func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args rpctypes.SendTxArgs, pwrd string) (common.Hash, error) {
+func (api *PrivateAccountAPI) SendTransaction(_ context.Context, args evmtypes.TransactionArgs, pwrd string) (common.Hash, error) {
 	api.logger.Debug("personal_sendTransaction", "address", args.To.String())
+
+	if args.From == nil {
+		return common.Hash{}, fmt.Errorf("from address cannot be nil in send transaction")
+	}
 
 	addr := sdk.AccAddress(args.From.Bytes())
 

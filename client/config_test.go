@@ -12,7 +12,7 @@ import (
 func TestInitConfigNonNotExistError(t *testing.T) {
 	tempDir := t.TempDir()
 	subDir := filepath.Join(tempDir, "nonPerms")
-	if err := os.Mkdir(subDir, 0600); err != nil {
+	if err := os.Mkdir(subDir, 0o600); err != nil {
 		t.Fatalf("Failed to create sub directory: %v", err)
 	}
 	cmd := &cobra.Command{}

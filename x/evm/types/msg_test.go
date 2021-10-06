@@ -39,7 +39,7 @@ func (suite *MsgsTestSuite) SetupTest() {
 }
 
 func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
-	msg := NewTx(nil, 0, &suite.to, nil, 100000, nil, []byte("test"), nil)
+	msg := NewTx(nil, 0, &suite.to, nil, 100000, nil, nil, nil, []byte("test"), nil)
 
 	// suite.Require().Equal(msg.Data.To, suite.to.Hex())
 	suite.Require().Equal(msg.Route(), RouterKey)
@@ -49,7 +49,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
 	suite.Require().Panics(func() { msg.GetSigners() })
 	suite.Require().Panics(func() { msg.GetSignBytes() })
 
-	msg = NewTxContract(nil, 0, nil, 100000, nil, []byte("test"), nil)
+	msg = NewTxContract(nil, 0, nil, 100000, nil, nil, nil, []byte("test"), nil)
 	suite.Require().NotNil(msg)
 	// suite.Require().Empty(msg.Data.To)
 	// suite.Require().Nil(msg.To())
@@ -103,7 +103,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			gasPrice = tc.gasPrice.BigInt()
 		}
 
-		tx := NewTx(chainID, 1, &to, amount, 1000, gasPrice, nil, tc.accessList)
+		tx := NewTx(chainID, 1, &to, amount, 1000, gasPrice, nil, nil, nil, tc.accessList)
 		tx.From = tc.from
 
 		err := tx.ValidateBasic()
@@ -126,42 +126,42 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 	}{
 		{
 			"pass - EIP2930 signer",
-			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
+			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, nil, nil, []byte("test"), &types.AccessList{}),
 			types.NewEIP2930Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"pass - EIP155 signer",
-			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
+			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, nil, nil, []byte("test"), nil),
 			types.NewEIP155Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"pass - Homestead signer",
-			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
+			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, nil, nil, []byte("test"), nil),
 			types.HomesteadSigner{},
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"pass - Frontier signer",
-			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), nil),
+			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, nil, nil, []byte("test"), nil),
 			types.FrontierSigner{},
 			func(tx *MsgEthereumTx) { tx.From = suite.from.Hex() },
 			true,
 		},
 		{
 			"no from address ",
-			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
+			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, nil, nil, []byte("test"), &types.AccessList{}),
 			types.NewEIP2930Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = "" },
 			false,
 		},
 		{
 			"from address ≠ signer address",
-			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, []byte("test"), &types.AccessList{}),
+			NewTx(suite.chainID, 0, &suite.to, nil, 100000, nil, nil, nil, []byte("test"), &types.AccessList{}),
 			types.NewEIP2930Signer(suite.chainID),
 			func(tx *MsgEthereumTx) { tx.From = suite.to.Hex() },
 			false,

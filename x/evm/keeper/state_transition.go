@@ -30,6 +30,7 @@ func (k *Keeper) NewEVM(
 	config *params.ChainConfig,
 	params types.Params,
 	coinbase common.Address,
+	baseFee *big.Int,
 	tracer vm.Tracer,
 ) *vm.EVM {
 	blockCtx := vm.BlockContext{
@@ -41,6 +42,7 @@ func (k *Keeper) NewEVM(
 		BlockNumber: big.NewInt(k.Ctx().BlockHeight()),
 		Time:        big.NewInt(k.Ctx().BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
+		BaseFee:     baseFee,
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
@@ -52,10 +54,13 @@ func (k *Keeper) NewEVM(
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
 func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
+	fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
+
 	return vm.Config{
 		Debug:       k.debug,
 		Tracer:      tracer,
 		NoRecursion: false, // TODO: consider disabling recursion though params
+		NoBaseFee:   fmParams.NoBaseFee,
 		ExtraEips:   params.EIPs(),
 	}
 }
@@ -154,7 +159,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
-	msg, err := tx.AsMessage(signer)
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+
+	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
 	}
@@ -167,7 +174,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	// create an ethereum EVM instance and run the message
 	tracer := types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight(), k.debug)
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
 
 	txHash := tx.Hash()
 
@@ -190,6 +197,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
+
+	// flatten the cache contexts to improve efficiency of following db operations
+	k.ctxStack.CommitToRevision(revision)
 
 	k.IncreaseTxIndexTransient()
 
@@ -263,6 +273,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
+	isLondon := cfg.IsLondon(evm.Context.BlockNumber)
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(msg, cfg, contractCreation)
 	if err != nil {
@@ -288,7 +299,12 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
 
-	refundQuotient := uint64(2)
+	refundQuotient := params.RefundQuotient
+
+	// After EIP-3529: refunds are capped to gasUsed / 5
+	if isLondon {
+		refundQuotient = params.RefundQuotientEIP3529
+	}
 
 	if query {
 		// gRPC query handlers don't go through the AnteHandler to deduct the gas fee from the sender or have access historical state.
@@ -340,7 +356,9 @@ func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxRespo
 		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, nil)
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, nil)
 
 	ret, err := k.ApplyMessage(evm, msg, ethCfg, true)
 	if err != nil {

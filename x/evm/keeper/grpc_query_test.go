@@ -481,7 +481,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 	gasHelper := hexutil.Uint64(20000)
 
 	var (
-		args   types.CallArgs
+		args   types.TransactionArgs
 		gasCap uint64
 	)
 	testCases := []struct {
@@ -492,23 +492,23 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 	}{
 		// should success, because transfer value is zero
 		{"default args", func() {
-			args = types.CallArgs{To: &common.Address{}}
+			args = types.TransactionArgs{To: &common.Address{}}
 		}, true, 21000},
 		// should fail, because the default From address(zero address) don't have fund
 		{"not enough balance", func() {
-			args = types.CallArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
+			args = types.TransactionArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
 		}, false, 0},
 		// should success, enough balance now
 		{"enough balance", func() {
-			args = types.CallArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
+			args = types.TransactionArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
 		}, false, 0},
 		// should success, because gas limit lower than 21000 is ignored
 		{"gas exceed allowance", func() {
-			args = types.CallArgs{To: &common.Address{}, Gas: &gasHelper}
+			args = types.TransactionArgs{To: &common.Address{}, Gas: &gasHelper}
 		}, true, 21000},
 		// should fail, invalid gas cap
 		{"gas exceed global allowance", func() {
-			args = types.CallArgs{To: &common.Address{}}
+			args = types.TransactionArgs{To: &common.Address{}}
 			gasCap = 20000
 		}, false, 0},
 		// estimate gas of an erc20 contract deployment, the exact gas number is checked with geth
@@ -516,7 +516,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			ctorArgs, err := ContractABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Require().NoError(err)
 			data := append(ContractBin, ctorArgs...)
-			args = types.CallArgs{
+			args = types.TransactionArgs{
 				From: &suite.address,
 				Data: (*hexutil.Bytes)(&data),
 			}
@@ -527,7 +527,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			suite.Commit()
 			transferData, err := ContractABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
 			suite.Require().NoError(err)
-			args = types.CallArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
+			args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
 		}, true, 51880},
 	}
 

@@ -30,7 +30,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"success - DeliverTx (contract)",
 			func() sdk.Tx {
-				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedContractTx.From = addr.Hex()
 
 				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
@@ -41,7 +41,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"success - CheckTx (contract)",
 			func() sdk.Tx {
-				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedContractTx.From = addr.Hex()
 
 				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
@@ -52,7 +52,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"success - ReCheckTx (contract)",
 			func() sdk.Tx {
-				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedContractTx.From = addr.Hex()
 
 				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
@@ -63,7 +63,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"success - DeliverTx",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
 				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
@@ -74,7 +74,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"success - CheckTx",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 2, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 2, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
 				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
@@ -85,7 +85,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"success - ReCheckTx",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 3, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 3, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
 				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
@@ -95,7 +95,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"success - CheckTx (cosmos tx not signed)",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 4, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 4, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
 				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
@@ -105,7 +105,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"fail - CheckTx (cosmos tx is not valid)",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 4, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 4, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
 				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
@@ -117,7 +117,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"fail - CheckTx (memo too long)",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 5, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 5, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
 				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, true)
