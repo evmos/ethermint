@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/backend"
+	"github.com/tharsis/ethermint/rpc/ethereum/backend"
 
 	"github.com/cosmos/cosmos-sdk/client"
 
@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
 )
 
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.

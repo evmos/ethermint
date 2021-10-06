@@ -30,8 +30,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/eth/filters"
+	"github.com/tharsis/ethermint/rpc/ethereum/types"
 	"github.com/tharsis/ethermint/server/config"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -400,7 +400,8 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 	if err != nil {
 		return nil, err
 	}
-	return TxLogsFromEvents(e.clientCtx.Codec, tx.TxResult.Events), nil
+
+	return TxLogsFromEvents(tx.TxResult.Events)
 }
 
 // PendingTransactions returns the transactions that are in the transaction pool
@@ -433,7 +434,11 @@ func (e *EVMBackend) GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error) {
 
 	blockLogs := [][]*ethtypes.Log{}
 	for _, txResult := range blockRes.TxsResults {
-		logs := TxLogsFromEvents(e.clientCtx.Codec, txResult.Events)
+		logs, err := TxLogsFromEvents(txResult.Events)
+		if err != nil {
+			return nil, err
+		}
+
 		blockLogs = append(blockLogs, logs)
 	}
 

@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
-	rpctypes "github.com/tharsis/ethermint/ethereum/rpc/types"
+	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"

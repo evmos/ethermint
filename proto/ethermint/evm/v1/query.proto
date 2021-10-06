@@ -208,9 +208,6 @@ message QueryParamsResponse {
   Params params = 1 [ (gogoproto.nullable) = false ];
 }
 
-// QueryStaticCallRequest defines static call response
-message QueryStaticCallResponse { bytes data = 1; }
-
 // EthCallRequest defines EthCall request
 message EthCallRequest {
   // same json format as the json rpc api.
