@@ -34,49 +34,6 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEther
 	return ethTx, nil
 }
 
-// NewTransaction returns a transaction that will serialize to the RPC
-// representation, with the given location metadata set (if available).
-func NewTransaction(tx *ethtypes.Transaction, blockHash common.Hash, blockNumber, index uint64) *RPCTransaction {
-	// Determine the signer. For replay-protected transactions, use the most permissive
-	// signer, because we assume that signers are backwards-compatible with old
-	// transactions. For non-protected transactions, the homestead signer signer is used
-	// because the return value of ChainId is zero for those transactions.
-	var signer ethtypes.Signer
-	if tx.Protected() {
-		signer = ethtypes.LatestSignerForChainID(tx.ChainId())
-	} else {
-		signer = ethtypes.HomesteadSigner{}
-	}
-
-	from, _ := ethtypes.Sender(signer, tx)
-	v, r, s := tx.RawSignatureValues()
-	result := &RPCTransaction{
-		Type:     hexutil.Uint64(tx.Type()),
-		From:     from,
-		Gas:      hexutil.Uint64(tx.Gas()),
-		GasPrice: (*hexutil.Big)(tx.GasPrice()),
-		Hash:     tx.Hash(), // NOTE: transaction hash here uses the ethereum format for compatibility
-		Input:    hexutil.Bytes(tx.Data()),
-		Nonce:    hexutil.Uint64(tx.Nonce()),
-		To:       tx.To(),
-		Value:    (*hexutil.Big)(tx.Value()),
-		V:        (*hexutil.Big)(v),
-		R:        (*hexutil.Big)(r),
-		S:        (*hexutil.Big)(s),
-	}
-	if blockHash != (common.Hash{}) {
-		result.BlockHash = &blockHash
-		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
-		result.TransactionIndex = (*hexutil.Uint64)(&index)
-	}
-	if tx.Type() == ethtypes.AccessListTxType {
-		al := tx.AccessList()
-		result.Accesses = &al
-		result.ChainID = (*hexutil.Big)(tx.ChainId())
-	}
-	return result
-}
-
 // EthHeaderFromTendermint is an util function that returns an Ethereum Header
 // from a tendermint Header.
 func EthHeaderFromTendermint(header tmtypes.Header, baseFee *big.Int) *ethtypes.Header {
