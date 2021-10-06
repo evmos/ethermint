@@ -105,7 +105,7 @@ func DoBenchmarkDeepContextStack(b *testing.B, depth int) {
 	suite := KeeperTestSuite{}
 	suite.DoSetupTest(b)
 
-	transientKey := suite.app.GetTKey("transient_evm")
+	transientKey := suite.app.GetTKey(types.TransientKey)
 
 	var stack keeper.ContextStack
 	stack.Reset(suite.ctx)
