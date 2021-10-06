@@ -238,9 +238,8 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	ctx := types.ContextWithHeight(block.Height)
 
-	bfRes, err := e.queryClient.FeeMarket.BaseFee(ctx, &feemarkettypes.QueryBaseFeeRequest{})
+	baseFee, err := e.BaseFee()
 	if err != nil {
-		e.logger.Debug("failed to base fee", "height", block.Height, "error", err.Error())
 		return nil, err
 	}
 
@@ -270,7 +269,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 				common.BytesToHash(block.Hash()),
 				uint64(block.Height),
 				uint64(i),
-				bfRes.BaseFee.BigInt(),
+				baseFee,
 			)
 			if err != nil {
 				e.logger.Debug("NewTransactionFromData for receipt failed", "hash", tx.Hash().Hex(), "error", err.Error())
@@ -327,7 +326,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	formattedBlock := types.FormatBlock(
 		block.Header, block.Size(),
 		gasLimit, new(big.Int).SetUint64(gasUsed),
-		ethRPCTxs, bloom, validatorAddr, bfRes.BaseFee.BigInt(),
+		ethRPCTxs, bloom, validatorAddr, baseFee,
 	)
 	return formattedBlock, nil
 }
