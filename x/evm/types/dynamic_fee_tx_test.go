@@ -7,22 +7,39 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"github.com/tharsis/ethermint/tests"
 )
 
-var (
-	hundredInt    sdk.Int        = sdk.NewInt(100)
-	hundredUInt64 uint64         = hundredInt.Uint64()
-	hundredbigInt *big.Int       = big.NewInt(1)
-	zeroInt       sdk.Int        = sdk.ZeroInt()
-	minusOneInt   sdk.Int        = sdk.NewInt(-1)
-	invalidAddr   string         = "123456"
-	addr          common.Address = tests.GenerateAddress()
-	hexAddr       string         = addr.Hex()
-)
+type DynamicFeeTxTestSuite struct {
+	suite.Suite
 
-func TestNewDynamicFeeTx(t *testing.T) {
+	sdkInt         sdk.Int
+	uint64         uint64
+	bigInt         *big.Int
+	sdkZeroInt     sdk.Int
+	sdkMinusOneInt sdk.Int
+	invalidAddr    string
+	addr           common.Address
+	hexAddr        string
+}
+
+func (suite *DynamicFeeTxTestSuite) SetupTest() {
+	suite.sdkInt = sdk.NewInt(100)
+	suite.uint64 = suite.sdkInt.Uint64()
+	suite.bigInt = big.NewInt(1)
+	suite.sdkZeroInt = sdk.ZeroInt()
+	suite.sdkMinusOneInt = sdk.NewInt(-1)
+	suite.invalidAddr = "123456"
+	suite.addr = tests.GenerateAddress()
+	suite.hexAddr = suite.addr.Hex()
+}
+
+func TestDynamicFeeTxTestSuite(t *testing.T) {
+	suite.Run(t, new(DynamicFeeTxTestSuite))
+}
+
+func (suite *DynamicFeeTxTestSuite) TestNewDynamicFeeTx() {
 	testCases := []struct {
 		name string
 		tx   *ethtypes.Transaction
@@ -35,30 +52,30 @@ func TestNewDynamicFeeTx(t *testing.T) {
 				Gas:        100,
 				Value:      big.NewInt(1),
 				AccessList: ethtypes.AccessList{},
-				To:         &addr,
-				V:          big.NewInt(1),
-				R:          big.NewInt(27),
-				S:          big.NewInt(10),
+				To:         &suite.addr,
+				V:          suite.bigInt,
+				R:          suite.bigInt,
+				S:          suite.bigInt,
 			}),
 		},
 	}
 	for _, tc := range testCases {
 		tx := newDynamicFeeTx(tc.tx)
 
-		require.NotEmpty(t, tx)
-		require.Equal(t, uint8(2), tx.TxType())
+		suite.Require().NotEmpty(tx)
+		suite.Require().Equal(uint8(2), tx.TxType())
 	}
 }
 
-func TestDynamicFeeTxCopy(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxCopy() {
 	tx := &DynamicFeeTx{}
 	txCopy := tx.Copy()
 
-	require.Equal(t, &DynamicFeeTx{}, txCopy)
+	suite.Require().Equal(&DynamicFeeTx{}, txCopy)
 	// TODO: Test for different pointers
 }
 
-func TestDynamicFeeTxGetChainID(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetChainID() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -74,20 +91,20 @@ func TestDynamicFeeTxGetChainID(t *testing.T) {
 		{
 			"non-empty chainID",
 			DynamicFeeTx{
-				ChainID: &hundredInt,
+				ChainID: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetChainID()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetAccessList(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetAccessList() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -112,14 +129,14 @@ func TestDynamicFeeTxGetAccessList(t *testing.T) {
 			DynamicFeeTx{
 				Accesses: AccessList{
 					{
-						Address:     hexAddr,
+						Address:     suite.hexAddr,
 						StorageKeys: []string{},
 					},
 				},
 			},
 			ethtypes.AccessList{
 				{
-					Address:     addr,
+					Address:     suite.addr,
 					StorageKeys: []common.Hash{},
 				},
 			},
@@ -129,11 +146,11 @@ func TestDynamicFeeTxGetAccessList(t *testing.T) {
 	for _, tc := range testCases {
 		actual := tc.tx.GetAccessList()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetData(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetData() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -149,11 +166,11 @@ func TestDynamicFeeTxGetData(t *testing.T) {
 	for _, tc := range testCases {
 		actual := tc.tx.GetData()
 
-		require.Equal(t, tc.tx.Data, actual, tc.name)
+		suite.Require().Equal(tc.tx.Data, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetGas(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGas() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -162,20 +179,20 @@ func TestDynamicFeeTxGetGas(t *testing.T) {
 		{
 			"non-empty gas",
 			DynamicFeeTx{
-				GasLimit: hundredUInt64,
+				GasLimit: suite.uint64,
 			},
-			hundredUInt64,
+			suite.uint64,
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGas()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetGasPrice(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasPrice() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -184,20 +201,20 @@ func TestDynamicFeeTxGetGasPrice(t *testing.T) {
 		{
 			"non-empty gasFeeCap",
 			DynamicFeeTx{
-				GasFeeCap: &hundredInt,
+				GasFeeCap: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGasPrice()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetGasTipCap(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasTipCap() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -213,20 +230,20 @@ func TestDynamicFeeTxGetGasTipCap(t *testing.T) {
 		{
 			"non-empty gasTipCap",
 			DynamicFeeTx{
-				GasTipCap: &hundredInt,
+				GasTipCap: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGasTipCap()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetGasFeeCap(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasFeeCap() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -242,20 +259,20 @@ func TestDynamicFeeTxGetGasFeeCap(t *testing.T) {
 		{
 			"non-empty gasFeeCap",
 			DynamicFeeTx{
-				GasFeeCap: &hundredInt,
+				GasFeeCap: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGasFeeCap()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetValue(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetValue() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -271,20 +288,20 @@ func TestDynamicFeeTxGetValue(t *testing.T) {
 		{
 			"non-empty amount",
 			DynamicFeeTx{
-				Amount: &hundredInt,
+				Amount: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetValue()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetNonce(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetNonce() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -293,49 +310,49 @@ func TestDynamicFeeTxGetNonce(t *testing.T) {
 		{
 			"non-empty nonce",
 			DynamicFeeTx{
-				Nonce: hundredUInt64,
+				Nonce: suite.uint64,
 			},
-			hundredUInt64,
+			suite.uint64,
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetNonce()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxGetTo(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetTo() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
 		exp  *common.Address
 	}{
 		{
-			"empty address",
+			"empty suite.address",
 			DynamicFeeTx{
 				To: "",
 			},
 			nil,
 		},
 		{
-			"non-empty address",
+			"non-empty suite.address",
 			DynamicFeeTx{
-				To: hexAddr,
+				To: suite.hexAddr,
 			},
-			&addr,
+			&suite.addr,
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetTo()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestDynamicFeeTxSetSignatureValues(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxSetSignatureValues() {
 	testCases := []struct {
 		name    string
 		chainID *big.Int
@@ -352,10 +369,10 @@ func TestDynamicFeeTxSetSignatureValues(t *testing.T) {
 		},
 		{
 			"non-empty values",
-			hundredbigInt,
-			hundredbigInt,
-			hundredbigInt,
-			hundredbigInt,
+			suite.bigInt,
+			suite.bigInt,
+			suite.bigInt,
+			suite.bigInt,
 		},
 	}
 
@@ -366,14 +383,14 @@ func TestDynamicFeeTxSetSignatureValues(t *testing.T) {
 		v, r, s := tx.GetRawSignatureValues()
 		chainID := tx.GetChainID()
 
-		require.Equal(t, tc.v, v, tc.name)
-		require.Equal(t, tc.r, r, tc.name)
-		require.Equal(t, tc.s, s, tc.name)
-		require.Equal(t, tc.chainID, chainID, tc.name)
+		suite.Require().Equal(tc.v, v, tc.name)
+		suite.Require().Equal(tc.r, r, tc.name)
+		suite.Require().Equal(tc.s, s, tc.name)
+		suite.Require().Equal(tc.chainID, chainID, tc.name)
 	}
 }
 
-func TestDynamicFeeTxValidate(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxValidate() {
 	testCases := []struct {
 		name     string
 		tx       DynamicFeeTx
@@ -394,60 +411,60 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		{
 			"gas fee cap is nil",
 			DynamicFeeTx{
-				GasTipCap: &zeroInt,
+				GasTipCap: &suite.sdkZeroInt,
 			},
 			true,
 		},
 		{
 			"gas tip cap is negative",
 			DynamicFeeTx{
-				GasTipCap: &minusOneInt,
-				GasFeeCap: &zeroInt,
+				GasTipCap: &suite.sdkMinusOneInt,
+				GasFeeCap: &suite.sdkZeroInt,
 			},
 			true,
 		},
 		{
 			"gas tip cap is negative",
 			DynamicFeeTx{
-				GasTipCap: &zeroInt,
-				GasFeeCap: &minusOneInt,
+				GasTipCap: &suite.sdkZeroInt,
+				GasFeeCap: &suite.sdkMinusOneInt,
 			},
 			true,
 		},
 		{
 			"gas fee cap < gas tip cap",
 			DynamicFeeTx{
-				GasTipCap: &hundredInt,
-				GasFeeCap: &zeroInt,
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkZeroInt,
 			},
 			true,
 		},
 		{
 			"amount is negative",
 			DynamicFeeTx{
-				GasTipCap: &hundredInt,
-				GasFeeCap: &hundredInt,
-				Amount:    &minusOneInt,
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				Amount:    &suite.sdkMinusOneInt,
 			},
 			true,
 		},
 		{
-			"to address is invalid",
+			"to suite.address is invalid",
 			DynamicFeeTx{
-				GasTipCap: &hundredInt,
-				GasFeeCap: &hundredInt,
-				Amount:    &hundredInt,
-				To:        invalidAddr,
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				Amount:    &suite.sdkInt,
+				To:        suite.invalidAddr,
 			},
 			true,
 		},
 		{
 			"chain ID not present on AccessList txs",
 			DynamicFeeTx{
-				GasTipCap: &hundredInt,
-				GasFeeCap: &hundredInt,
-				Amount:    &hundredInt,
-				To:        hexAddr,
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				Amount:    &suite.sdkInt,
+				To:        suite.hexAddr,
 				ChainID:   nil,
 			},
 			true,
@@ -455,11 +472,11 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		{
 			"no errors",
 			DynamicFeeTx{
-				GasTipCap: &hundredInt,
-				GasFeeCap: &hundredInt,
-				Amount:    &hundredInt,
-				To:        hexAddr,
-				ChainID:   &hundredInt,
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				Amount:    &suite.sdkInt,
+				To:        suite.hexAddr,
+				ChainID:   &suite.sdkInt,
 			},
 			false,
 		},
@@ -469,16 +486,16 @@ func TestDynamicFeeTxValidate(t *testing.T) {
 		err := tc.tx.Validate()
 
 		if tc.expError {
-			require.Error(t, err, tc.name)
+			suite.Require().Error(err, tc.name)
 			continue
 		}
 
-		require.NoError(t, err, tc.name)
+		suite.Require().NoError(err, tc.name)
 	}
 }
 
-func TestDynamicFeeTxFeeCost(t *testing.T) {
+func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxFeeCost() {
 	tx := &DynamicFeeTx{}
-	require.Panics(t, func() { tx.Fee() }, "should panic")
-	require.Panics(t, func() { tx.Cost() }, "should panic")
+	suite.Require().Panics(func() { tx.Fee() }, "should panic")
+	suite.Require().Panics(func() { tx.Cost() }, "should panic")
 }

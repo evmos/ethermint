@@ -4,12 +4,42 @@ import (
 	"math/big"
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"github.com/tharsis/ethermint/tests"
 )
 
-func TestNewLegacyTx(t *testing.T) {
+type LegacyTxTestSuite struct {
+	suite.Suite
+
+	sdkInt         sdk.Int
+	uint64         uint64
+	bigInt         *big.Int
+	sdkZeroInt     sdk.Int
+	sdkMinusOneInt sdk.Int
+	invalidAddr    string
+	addr           common.Address
+	hexAddr        string
+}
+
+func (suite *LegacyTxTestSuite) SetupTest() {
+	suite.sdkInt = sdk.NewInt(100)
+	suite.uint64 = suite.sdkInt.Uint64()
+	suite.bigInt = big.NewInt(1)
+	suite.sdkZeroInt = sdk.ZeroInt()
+	suite.sdkMinusOneInt = sdk.NewInt(-1)
+	suite.invalidAddr = "123456"
+	suite.addr = tests.GenerateAddress()
+	suite.hexAddr = suite.addr.Hex()
+}
+
+func TestLegacyTxTestSuite(t *testing.T) {
+	suite.Run(t, new(LegacyTxTestSuite))
+}
+
+func (suite *LegacyTxTestSuite) TestNewLegacyTx() {
 	testCases := []struct {
 		name string
 		tx   *ethtypes.Transaction
@@ -22,7 +52,7 @@ func TestNewLegacyTx(t *testing.T) {
 				Gas:        100,
 				Value:      big.NewInt(1),
 				AccessList: ethtypes.AccessList{},
-				To:         &addr,
+				To:         &suite.addr,
 				V:          big.NewInt(1),
 				R:          big.NewInt(1),
 				S:          big.NewInt(1),
@@ -33,41 +63,41 @@ func TestNewLegacyTx(t *testing.T) {
 	for _, tc := range testCases {
 		tx := newLegacyTx(tc.tx)
 
-		require.NotEmpty(t, tc.tx)
-		require.Equal(t, uint8(0), tx.TxType())
+		suite.Require().NotEmpty(tc.tx)
+		suite.Require().Equal(uint8(0), tx.TxType())
 	}
 }
 
-func TestLegacyTxTxType(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxTxType() {
 	tx := LegacyTx{}
 	actual := tx.TxType()
 
-	require.Equal(t, uint8(0), actual)
+	suite.Require().Equal(uint8(0), actual)
 }
 
-func TestLegacyTxCopy(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxCopy() {
 	tx := &LegacyTx{}
 	txData := tx.Copy()
 
-	require.Equal(t, &LegacyTx{}, txData)
+	suite.Require().Equal(&LegacyTx{}, txData)
 	// TODO: Test for different pointers
 }
 
-func TestLegacyTxGetChainID(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetChainID() {
 	tx := LegacyTx{}
 	actual := tx.GetChainID()
 
-	require.Nil(t, actual)
+	suite.Require().Nil(actual)
 }
 
-func TestLegacyTxGetAccessList(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetAccessList() {
 	tx := LegacyTx{}
 	actual := tx.GetAccessList()
 
-	require.Nil(t, actual)
+	suite.Require().Nil(actual)
 }
 
-func TestLegacyTxGetData(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetData() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -83,11 +113,11 @@ func TestLegacyTxGetData(t *testing.T) {
 	for _, tc := range testCases {
 		actual := tc.tx.GetData()
 
-		require.Equal(t, tc.tx.Data, actual, tc.name)
+		suite.Require().Equal(tc.tx.Data, actual, tc.name)
 	}
 }
 
-func TestLegacyTxGetGas(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetGas() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -96,20 +126,20 @@ func TestLegacyTxGetGas(t *testing.T) {
 		{
 			"non-empty gas",
 			LegacyTx{
-				GasLimit: hundredUInt64,
+				GasLimit: suite.uint64,
 			},
-			hundredUInt64,
+			suite.uint64,
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGas()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestLegacyTxGetGasPrice(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetGasPrice() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -125,20 +155,20 @@ func TestLegacyTxGetGasPrice(t *testing.T) {
 		{
 			"non-empty gasPrice",
 			LegacyTx{
-				GasPrice: &hundredInt,
+				GasPrice: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGasFeeCap()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestLegacyTxGetGasTipCap(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetGasTipCap() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -147,20 +177,20 @@ func TestLegacyTxGetGasTipCap(t *testing.T) {
 		{
 			"non-empty gasPrice",
 			LegacyTx{
-				GasPrice: &hundredInt,
+				GasPrice: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGasTipCap()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestLegacyTxGetGasFeeCap(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetGasFeeCap() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -169,20 +199,20 @@ func TestLegacyTxGetGasFeeCap(t *testing.T) {
 		{
 			"non-empty gasPrice",
 			LegacyTx{
-				GasPrice: &hundredInt,
+				GasPrice: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetGasFeeCap()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestLegacyTxGetValue(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetValue() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -198,20 +228,20 @@ func TestLegacyTxGetValue(t *testing.T) {
 		{
 			"non-empty amount",
 			LegacyTx{
-				Amount: &hundredInt,
+				Amount: &suite.sdkInt,
 			},
-			(&hundredInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetValue()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestLegacyTxGetNonce(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetNonce() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -220,19 +250,19 @@ func TestLegacyTxGetNonce(t *testing.T) {
 		{
 			"none-empty nonce",
 			LegacyTx{
-				Nonce: hundredUInt64,
+				Nonce: suite.uint64,
 			},
-			hundredUInt64,
+			suite.uint64,
 		},
 	}
 	for _, tc := range testCases {
 		actual := tc.tx.GetNonce()
 
-		require.Equal(t, tc.exp, actual)
+		suite.Require().Equal(tc.exp, actual)
 	}
 }
 
-func TestLegacyTxGetTo(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxGetTo() {
 	testCases := []struct {
 		name string
 		tx   LegacyTx
@@ -248,27 +278,27 @@ func TestLegacyTxGetTo(t *testing.T) {
 		{
 			"non-empty address",
 			LegacyTx{
-				To: hexAddr,
+				To: suite.hexAddr,
 			},
-			&addr,
+			&suite.addr,
 		},
 	}
 
 	for _, tc := range testCases {
 		actual := tc.tx.GetTo()
 
-		require.Equal(t, tc.exp, actual, tc.name)
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 
-func TestLegacyTxAsEthereumData(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxAsEthereumData() {
 	tx := &LegacyTx{}
 	txData := tx.AsEthereumData()
 
-	require.Equal(t, &ethtypes.LegacyTx{}, txData)
+	suite.Require().Equal(&ethtypes.LegacyTx{}, txData)
 }
 
-func TestLegacyTxSetSignatureValues(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxSetSignatureValues() {
 	testCases := []struct {
 		name string
 		v    *big.Int
@@ -277,9 +307,9 @@ func TestLegacyTxSetSignatureValues(t *testing.T) {
 	}{
 		{
 			"non-empty values",
-			hundredbigInt,
-			hundredbigInt,
-			hundredbigInt,
+			suite.bigInt,
+			suite.bigInt,
+			suite.bigInt,
 		},
 	}
 	for _, tc := range testCases {
@@ -288,13 +318,13 @@ func TestLegacyTxSetSignatureValues(t *testing.T) {
 
 		v, r, s := tx.GetRawSignatureValues()
 
-		require.Equal(t, tc.v, v, tc.name)
-		require.Equal(t, tc.r, r, tc.name)
-		require.Equal(t, tc.s, s, tc.name)
+		suite.Require().Equal(tc.v, v, tc.name)
+		suite.Require().Equal(tc.r, r, tc.name)
+		suite.Require().Equal(tc.s, s, tc.name)
 	}
 }
 
-func TestLegacyTxValidate(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxValidate() {
 	testCases := []struct {
 		name     string
 		tx       LegacyTx
@@ -315,24 +345,24 @@ func TestLegacyTxValidate(t *testing.T) {
 		{
 			"gas price is negative",
 			LegacyTx{
-				GasPrice: &minusOneInt,
+				GasPrice: &suite.sdkMinusOneInt,
 			},
 			true,
 		},
 		{
 			"amount is negative",
 			LegacyTx{
-				GasPrice: &hundredInt,
-				Amount:   &minusOneInt,
+				GasPrice: &suite.sdkInt,
+				Amount:   &suite.sdkMinusOneInt,
 			},
 			true,
 		},
 		{
 			"to address is invalid",
 			LegacyTx{
-				GasPrice: &hundredInt,
-				Amount:   &hundredInt,
-				To:       invalidAddr,
+				GasPrice: &suite.sdkInt,
+				Amount:   &suite.sdkInt,
+				To:       suite.invalidAddr,
 			},
 			true,
 		},
@@ -342,17 +372,17 @@ func TestLegacyTxValidate(t *testing.T) {
 		err := tc.tx.Validate()
 
 		if tc.expError {
-			require.Error(t, err, tc.name)
+			suite.Require().Error(err, tc.name)
 			continue
 		}
 
-		require.NoError(t, err, tc.name)
+		suite.Require().NoError(err, tc.name)
 	}
 }
 
-func TestLegacyTxFeeCost(t *testing.T) {
+func (suite *LegacyTxTestSuite) TestLegacyTxFeeCost() {
 	tx := &LegacyTx{}
 
-	require.Panics(t, func() { tx.Fee() }, "should panice")
-	require.Panics(t, func() { tx.Cost() }, "should panice")
+	suite.Require().Panics(func() { tx.Fee() }, "should panice")
+	suite.Require().Panics(func() { tx.Cost() }, "should panice")
 }

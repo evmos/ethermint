@@ -5,10 +5,27 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"github.com/tharsis/ethermint/tests"
 )
 
-func TestNewAccessList(t *testing.T) {
+type AccessListTestSuite struct {
+	suite.Suite
+
+	addr    common.Address
+	hexAddr string
+}
+
+func (suite *AccessListTestSuite) SetupTest() {
+	suite.addr = tests.GenerateAddress()
+	suite.hexAddr = suite.addr.Hex()
+}
+
+func TestAccessListTestSuite(t *testing.T) {
+	suite.Run(t, new(AccessListTestSuite))
+}
+
+func (suite *AccessListTestSuite) TestTestNewAccessList() {
 	testCases := []struct {
 		name          string
 		ethAccessList *ethtypes.AccessList
@@ -21,21 +38,21 @@ func TestNewAccessList(t *testing.T) {
 		},
 		{
 			"non-empty ethAccessList",
-			&ethtypes.AccessList{{Address: addr, StorageKeys: []common.Hash{{0}}}},
-			AccessList{{Address: addr.Hex(), StorageKeys: []string{common.Hash{}.Hex()}}},
+			&ethtypes.AccessList{{Address: suite.addr, StorageKeys: []common.Hash{{0}}}},
+			AccessList{{Address: suite.hexAddr, StorageKeys: []string{common.Hash{}.Hex()}}},
 		},
 	}
 	for _, tc := range testCases {
 		al := NewAccessList(tc.ethAccessList)
 
-		require.Equal(t, tc.expAl, al)
+		suite.Require().Equal(tc.expAl, al)
 	}
 }
 
-func TestAccessListToEthAccessList(t *testing.T) {
-	ethAccessList := ethtypes.AccessList{{Address: addr, StorageKeys: []common.Hash{{0}}}}
+func (suite *AccessListTestSuite) TestAccessListToEthAccessList() {
+	ethAccessList := ethtypes.AccessList{{Address: suite.addr, StorageKeys: []common.Hash{{0}}}}
 	al := NewAccessList(&ethAccessList)
 	actual := al.ToEthAccessList()
 
-	require.Equal(t, &ethAccessList, actual)
+	suite.Require().Equal(&ethAccessList, actual)
 }
