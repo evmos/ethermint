@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 
@@ -838,7 +839,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
-func (e *PublicAPI) PendingTransactions() ([]*rpctypes.RPCTransaction, error) {
+func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getPendingTransactions")
 
 	txs, err := e.backend.PendingTransactions()
@@ -889,9 +890,24 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	if err != nil {
 		return nil, err
 	}
-	height := blockNum.Int64()
 
+	height := blockNum.Int64()
 	ctx := rpctypes.ContextWithHeight(height)
+
+	// if the height is equal to zero, meaning the query condition of the block is either "pending" or "latest"
+	if height == 0 {
+		bn, err := e.backend.BlockNumber()
+		if err != nil {
+			return nil, err
+		}
+
+		if bn > math.MaxInt64 {
+			return nil, fmt.Errorf("not able to query block number greater than MaxInt64")
+		}
+
+		height = int64(bn)
+	}
+
 	clientCtx := e.clientCtx.WithHeight(height)
 
 	// query storage proofs
