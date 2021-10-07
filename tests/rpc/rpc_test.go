@@ -841,6 +841,8 @@ func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
 }
 
 func TestEth_ExportAccount_WithStorage(t *testing.T) {
+	t.Skip("skipping TestEth_ExportAccount_WithStorage due to the server haven't implmented yet")
+
 	hash := deployTestContractWithFunction(t)
 	receipt := waitForReceipt(t, hash)
 	addr := receipt["contractAddress"].(string)
