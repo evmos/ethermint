@@ -14,7 +14,7 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/feemarket/evm/v1/params";
   }
-  
+
   // BaseFee queries the base fee of the parent block of the current block.
   rpc BaseFee(QueryBaseFeeRequest) returns (QueryBaseFeeResponse) {
     option (google.api.http).get = "/feemarket/evm/v1/base_fee";
@@ -41,17 +41,13 @@ message QueryBaseFeeRequest {}
 
 // BaseFeeResponse returns the EIP1559 base fee.
 message QueryBaseFeeResponse {
-  string base_fee = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"
-  ];
+  string base_fee = 1
+      [ (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int" ];
 }
 
 // QueryBlockGasRequest defines the request type for querying the EIP1559 base
 // fee.
 message QueryBlockGasRequest {}
 
-
 // QueryBlockGasResponse returns block gas used for a given height.
-message QueryBlockGasResponse {
-  int64 gas = 1;
-}
+message QueryBlockGasResponse { int64 gas = 1; }

@@ -7,9 +7,11 @@ option go_package = "github.com/tharsis/ethermint/x/feemarket/types";
 message Params {
   // no base fee forces the EIP-1559 base fee to 0 (needed for 0 price calls)
   bool no_base_fee = 1;
-  // base fee change denominator bounds the amount the base fee can change between blocks.
+  // base fee change denominator bounds the amount the base fee can change
+  // between blocks.
   uint32 base_fee_change_denominator = 2;
-  // elasticity multiplier bounds the maximum gas limit an EIP-1559 block may have.
+  // elasticity multiplier bounds the maximum gas limit an EIP-1559 block may
+  // have.
   uint32 elasticity_multiplier = 3;
   // initial base fee for EIP-1559 blocks.
   int64 initial_base_fee = 4;
