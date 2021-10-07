@@ -202,7 +202,8 @@ message AccessTuple {
 message TraceConfig {
   // custom javascript tracer
   string tracer = 1;
-  // overrides the default timeout of 5 seconds for JavaScript-based tracing calls
+  // overrides the default timeout of 5 seconds for JavaScript-based tracing
+  // calls
   string timeout = 2;
   // number of blocks the tracer is willing to go back
   uint64 reexec  = 3;

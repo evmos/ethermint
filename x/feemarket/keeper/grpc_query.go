@@ -31,8 +31,10 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 		baseFee = big.NewInt(0)
 	}
 
+	bf := sdk.NewIntFromBigInt(baseFee)
+
 	return &types.QueryBaseFeeResponse{
-		BaseFee: sdk.NewIntFromBigInt(baseFee),
+		BaseFee: &bf,
 	}, nil
 }
 
