@@ -380,17 +380,19 @@ format-fix:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-containerProtoVer=v0.2
-containerProtoImage=tendermintdev/sdk-proto-gen:$(containerProtoVer)
-containerProtoGen=cosmos-sdk-proto-gen-$(containerProtoVer)
-containerProtoGenSwagger=cosmos-sdk-proto-gen-swagger-$(containerProtoVer)
-containerProtoFmt=cosmos-sdk-proto-fmt-$(containerProtoVer)
+protoVer=v0.2
+protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
+containerProtoImage=tendermintdev/sdk-proto-gen:$(protoVer)
+containerProtoGen=cosmos-sdk-proto-gen-$(protoVer)
+containerProtoGenSwagger=cosmos-sdk-proto-gen-swagger-$(protoVer)
+containerProtoFmt=cosmos-sdk-proto-fmt-$(protoVer)
 
 proto-all: proto-format proto-lint proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen sh ./scripts/protocgen.sh
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGen}$$"; then docker start -a $(containerProtoGen); else docker run --name $(containerProtoGen) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
+		sh ./scripts/protocgen.sh; fi
 
 proto-swagger-gen:
 	@echo "Generating Protobuf Swagger"
@@ -398,7 +400,8 @@ proto-swagger-gen:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	find ./ -not -path "./third_party/*" -name *.proto -exec clang-format -i {} \;
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGenSwagger}$$"; then docker start -a $(containerProtoGenSwagger); else docker run --name $(containerProtoGenSwagger) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
+		sh ./scripts/protoc-swagger-gen.sh; fi
 
 proto-lint:
 	@$(DOCKER_BUF) lint --error-format=json
