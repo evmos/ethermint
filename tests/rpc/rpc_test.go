@@ -814,13 +814,11 @@ func TestEth_EstimateGas(t *testing.T) {
 	param[0]["gas"] = "0x5209"
 	rpcRes := call(t, "eth_estimateGas", param)
 	require.NotNil(t, rpcRes)
-	require.Equal(t, rpcRes.Result, "0x5208")
 
 	var gas string
 	err := json.Unmarshal(rpcRes.Result, &gas)
 	require.NoError(t, err, string(rpcRes.Result))
-
-	require.Equal(t, "0xf552", gas)
+	require.Equal(t, "0x5208", gas)
 }
 
 func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
