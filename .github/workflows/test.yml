@@ -123,3 +123,22 @@ jobs:
           ./contrib/scripts/test_localnet_liveness.sh 100 5 50 localhost
         if: env.GIT_DIFF
       
+  test-rpc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-go@v2.1.4
+        with:
+          go-version: 1.17
+      - uses: actions/checkout@v2.3.4
+      - uses: technote-space/get-diff-action@v5
+        with:
+          PATTERNS: |
+            **/**.sol
+            **/**.go
+            go.mod
+            go.sum
+      - name: Test rpc endpoint
+        run: |
+          make test-rpc
+        if: env.GIT_DIFF
