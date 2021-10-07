@@ -19,8 +19,7 @@ service Query {
   // CosmosAccount queries an Ethereum account's Cosmos Address.
   rpc CosmosAccount(QueryCosmosAccountRequest)
       returns (QueryCosmosAccountResponse) {
-    option (google.api.http).get =
-        "/ethermint/evm/v1/cosmos_account/{address}";
+    option (google.api.http).get = "/ethermint/evm/v1/cosmos_account/{address}";
   }
 
   // ValidatorAccount queries an Ethereum account's from a validator consensus
@@ -39,8 +38,7 @@ service Query {
 
   // Storage queries the balance of all coins for a single account.
   rpc Storage(QueryStorageRequest) returns (QueryStorageResponse) {
-    option (google.api.http).get =
-        "/ethermint/evm/v1/storage/{address}/{key}";
+    option (google.api.http).get = "/ethermint/evm/v1/storage/{address}/{key}";
   }
 
   // Code queries the balance of all coins for a single account.
@@ -52,7 +50,7 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/params";
   }
-  
+
   // EthCall implements the `eth_call` rpc api
   rpc EthCall(EthCallRequest) returns (MsgEthereumTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/eth_call";
@@ -215,9 +213,8 @@ message EthCallRequest {
   // the default gas cap to be used
   uint64 gas_cap = 2;
   // header base fee used to generate the transaction
-  string base_fee = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"
-  ];
+  string base_fee = 3
+      [ (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int" ];
 }
 
 // EstimateGasResponse defines EstimateGas response

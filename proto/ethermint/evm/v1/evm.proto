@@ -198,16 +198,18 @@ message AccessTuple {
 
 // TraceConfig holds extra parameters to trace functions.
 message TraceConfig {
-  // DEPRECATED: DisableMemory and DisableReturnData have been renamed to Enable*.
+  // DEPRECATED: DisableMemory and DisableReturnData have been renamed to
+  // Enable*.
   reserved 4, 7;
   reserved "disable_memory", "disable_return_data";
 
   // custom javascript tracer
   string tracer = 1;
-  // overrides the default timeout of 5 seconds for JavaScript-based tracing calls
+  // overrides the default timeout of 5 seconds for JavaScript-based tracing
+  // calls
   string timeout = 2;
   // number of blocks the tracer is willing to go back
-  uint64 reexec  = 3;
+  uint64 reexec = 3;
   // disable stack capture
   bool disable_stack = 5 [ (gogoproto.jsontag) = "disableStack" ];
   // disable storage capture
