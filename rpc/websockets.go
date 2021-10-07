@@ -24,8 +24,8 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	rpcfilters "github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	rpcfilters "github.com/tharsis/ethermint/rpc/ethereum/namespaces/eth/filters"
+	"github.com/tharsis/ethermint/rpc/ethereum/types"
 	"github.com/tharsis/ethermint/server/config"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )

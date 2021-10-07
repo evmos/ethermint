@@ -26,9 +26,11 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type Params struct {
 	// no base fee forces the EIP-1559 base fee to 0 (needed for 0 price calls)
 	NoBaseFee bool `protobuf:"varint,1,opt,name=no_base_fee,json=noBaseFee,proto3" json:"no_base_fee,omitempty"`
-	// base fee change denominator bounds the amount the base fee can change between blocks.
+	// base fee change denominator bounds the amount the base fee can change
+	// between blocks.
 	BaseFeeChangeDenominator uint32 `protobuf:"varint,2,opt,name=base_fee_change_denominator,json=baseFeeChangeDenominator,proto3" json:"base_fee_change_denominator,omitempty"`
-	// elasticity multiplier bounds the maximum gas limit an EIP-1559 block may have.
+	// elasticity multiplier bounds the maximum gas limit an EIP-1559 block may
+	// have.
 	ElasticityMultiplier uint32 `protobuf:"varint,3,opt,name=elasticity_multiplier,json=elasticityMultiplier,proto3" json:"elasticity_multiplier,omitempty"`
 	// initial base fee for EIP-1559 blocks.
 	InitialBaseFee int64 `protobuf:"varint,4,opt,name=initial_base_fee,json=initialBaseFee,proto3" json:"initial_base_fee,omitempty"`

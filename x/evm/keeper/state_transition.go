@@ -191,6 +191,11 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
+	// flatten the cache contexts to improve efficiency of following db operations
+	// the reason is some operations under deep context stack is extremely slow,
+	// refer to `benchmark_test.go:BenchmarkDeepContextStack13`.
+	k.ctxStack.CommitToRevision(revision)
+
 	k.IncreaseTxIndexTransient()
 
 	res.Hash = txHash.Hex()

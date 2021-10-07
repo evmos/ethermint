@@ -30,8 +30,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/tharsis/ethermint/ethereum/rpc/namespaces/eth/filters"
-	"github.com/tharsis/ethermint/ethereum/rpc/types"
+	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/eth/filters"
+	"github.com/tharsis/ethermint/rpc/ethereum/types"
 	"github.com/tharsis/ethermint/server/config"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -129,6 +129,11 @@ func (e *EVMBackend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (
 		return nil, err
 	}
 
+	// return if requested block height is greater than the current one
+	if resBlock == nil || resBlock.Block == nil {
+		return nil, nil
+	}
+
 	res, err := e.EthBlockFromTendermint(resBlock.Block, fullTx)
 	if err != nil {
 		e.logger.Debug("EthBlockFromTendermint failed", "height", blockNum, "error", err.Error())
@@ -172,18 +177,17 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 		height = 1
 	default:
 		if blockNum < 0 {
-			err := errors.Errorf("incorrect block height: %d", height)
-			return nil, err
-		} else if height > int64(currentBlockNumber) {
+			return nil, errors.Errorf("cannot fetch a negative block height: %d", height)
+		}
+		if height > int64(currentBlockNumber) {
 			return nil, nil
 		}
 	}
 
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &height)
 	if err != nil {
-		// e.logger.Debug("GetBlockByNumber safely bumping down from %d to latest", height)
 		if resBlock, err = e.clientCtx.Client.Block(e.ctx, nil); err != nil {
-			e.logger.Debug("GetBlockByNumber failed to get latest block", "error", err.Error())
+			e.logger.Debug("tendermint client failed to get latest block", "height", height, "error", err.Error())
 			return nil, nil
 		}
 	}
@@ -192,6 +196,7 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 		e.logger.Debug("GetBlockByNumber block not found", "height", height)
 		return nil, nil
 	}
+
 	return resBlock, nil
 }
 
@@ -221,6 +226,8 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	fullTx bool,
 ) (map[string]interface{}, error) {
 	ethRPCTxs := []interface{}{}
+
+	ctx := types.ContextWithHeight(block.Height)
 
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
@@ -280,8 +287,6 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
 	}
 
-	ctx := types.ContextWithHeight(block.Height)
-
 	res, err := e.queryClient.ValidatorAccount(ctx, req)
 	if err != nil {
 		e.logger.Debug(
@@ -317,7 +322,11 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		gasUsed += uint64(txsResult.GetGasUsed())
 	}
 
-	formattedBlock := types.FormatBlock(block.Header, block.Size(), gasLimit, new(big.Int).SetUint64(gasUsed), ethRPCTxs, bloom, validatorAddr)
+	formattedBlock := types.FormatBlock(
+		block.Header, block.Size(),
+		gasLimit, new(big.Int).SetUint64(gasUsed),
+		ethRPCTxs, bloom, validatorAddr,
+	)
 	return formattedBlock, nil
 }
 
@@ -395,7 +404,8 @@ func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, er
 	if err != nil {
 		return nil, err
 	}
-	return TxLogsFromEvents(e.clientCtx.Codec, tx.TxResult.Events), nil
+
+	return TxLogsFromEvents(tx.TxResult.Events)
 }
 
 // PendingTransactions returns the transactions that are in the transaction pool
@@ -428,7 +438,11 @@ func (e *EVMBackend) GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error) {
 
 	blockLogs := [][]*ethtypes.Log{}
 	for _, txResult := range blockRes.TxsResults {
-		logs := TxLogsFromEvents(e.clientCtx.Codec, txResult.Events)
+		logs, err := TxLogsFromEvents(txResult.Events)
+		if err != nil {
+			return nil, err
+		}
+
 		blockLogs = append(blockLogs, logs)
 	}
 

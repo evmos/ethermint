@@ -208,6 +208,10 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 
 // EthCall implements eth_call rpc api.
 func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.MsgEthereumTxResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
@@ -242,6 +246,10 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 
 // EstimateGas implements eth_estimateGas rpc api.
 func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*types.EstimateGasResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
 
@@ -275,7 +283,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		}
 	}
 
-	// TODO Recap the highest gas limit with account's available balance.
+	// TODO: Recap the highest gas limit with account's available balance.
 
 	// Recap the highest gas allowance with specified gascap.
 	if req.GasCap != 0 && hi > req.GasCap {
@@ -346,20 +354,26 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 // executes the given message in the provided environment. The return value will
 // be tracer dependent.
 func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*types.QueryTraceTxResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
 	ctx := sdk.UnwrapSDKContext(c)
 	k.WithContext(ctx)
-	params := k.GetParams(ctx)
 
 	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	result, err := k.traceTx(c, coinbase, signer, req.TxIndex, params, ctx, ethCfg, req.Msg, req.TraceConfig)
+	tx := req.Msg.AsTransaction()
+
+	result, err := k.traceTx(ctx, coinbase, signer, req.TxIndex, params, ethCfg, tx, req.TraceConfig)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	resultData, err := json.Marshal(result)
@@ -372,15 +386,23 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
-func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer ethtypes.Signer, txIndex uint64,
-	params types.Params, ctx sdk.Context, ethCfg *ethparams.ChainConfig, msg *types.MsgEthereumTx, traceConfig *types.TraceConfig) (*interface{}, error) {
+func (k *Keeper) traceTx(
+	ctx sdk.Context,
+	coinbase common.Address,
+	signer ethtypes.Signer,
+	txIndex uint64,
+	params types.Params,
+	ethCfg *ethparams.ChainConfig,
+	tx *ethtypes.Transaction,
+	traceConfig *types.TraceConfig,
+) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
 		tracer vm.Tracer
 		err    error
 	)
 
-	coreMessage, err := msg.AsMessage(signer)
+	msg, err := tx.AsMessage(signer)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -388,29 +410,34 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 	switch {
 	case traceConfig != nil && traceConfig.Tracer != "":
 		timeout := defaultTraceTimeout
-		// TODO change timeout to time.duration
+		// TODO: change timeout to time.duration
 		// Used string to comply with go ethereum
 		if traceConfig.Timeout != "" {
-			if timeout, err = time.ParseDuration(traceConfig.Timeout); err != nil {
+			timeout, err = time.ParseDuration(traceConfig.Timeout)
+			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
 			}
 		}
 
-		txContext := core.NewEVMTxContext(coreMessage)
+		txContext := core.NewEVMTxContext(msg)
+
 		// Construct the JavaScript tracer to execute with
-		if tracer, err = tracers.New(traceConfig.Tracer, txContext); err != nil {
+		tracer, err = tracers.New(traceConfig.Tracer, txContext)
+		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
 		// Handle timeouts and RPC cancellations
-		deadlineCtx, cancel := context.WithTimeout(c, timeout)
+		deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
+		defer cancel()
+
 		go func() {
 			<-deadlineCtx.Done()
-			if deadlineCtx.Err() == context.DeadlineExceeded {
+			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
 				tracer.(*tracers.Tracer).Stop(errors.New("execution timeout"))
 			}
 		}()
-		defer cancel()
+
 	case traceConfig != nil:
 		logConfig := vm.LogConfig{
 			DisableMemory:  traceConfig.DisableMemory,
@@ -420,24 +447,25 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
-		tracer = types.NewTracer(types.TracerStruct, coreMessage, ethCfg, ctx.BlockHeight(), true)
+		tracer = types.NewTracer(types.TracerStruct, msg, ethCfg, ctx.BlockHeight(), true)
 	}
 
-	evm := k.NewEVM(coreMessage, ethCfg, params, coinbase, tracer)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 
-	k.SetTxHashTransient(common.HexToHash(msg.Hash))
+	k.SetTxHashTransient(tx.Hash())
 	k.SetTxIndexTransient(txIndex)
 
-	res, err := k.ApplyMessage(evm, coreMessage, ethCfg, true)
+	res, err := k.ApplyMessage(evm, msg, ethCfg, true)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	var result interface{}
+
 	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
-		// TODO Return proper returnValue
+		// TODO: Return proper returnValue
 		result = types.ExecutionResult{
 			Gas:         res.GasUsed,
 			Failed:      res.Failed(),
@@ -451,7 +479,7 @@ func (k *Keeper) traceTx(c context.Context, coinbase common.Address, signer etht
 		}
 
 	default:
-		return nil, status.Error(codes.InvalidArgument, "invalid tracer type")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid tracer type %T", tracer)
 	}
 
 	return &result, nil
