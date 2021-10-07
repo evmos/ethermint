@@ -120,11 +120,15 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	}
 
 	head := header.Number.Int64()
-	if f.criteria.FromBlock.Int64() == -1 {
+	if f.criteria.FromBlock.Int64() < 0 {
 		f.criteria.FromBlock = big.NewInt(head)
+	} else if f.criteria.FromBlock.Int64() == 0 {
+		f.criteria.FromBlock = big.NewInt(1)
 	}
-	if f.criteria.ToBlock.Int64() == -1 {
+	if f.criteria.ToBlock.Int64() < 0 {
 		f.criteria.ToBlock = big.NewInt(head)
+	} else if f.criteria.ToBlock.Int64() == 0 {
+		f.criteria.ToBlock = big.NewInt(1)
 	}
 
 	if f.criteria.ToBlock.Int64()-f.criteria.FromBlock.Int64() > maxFilterBlocks {
