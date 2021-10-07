@@ -394,6 +394,7 @@ proto-gen:
 
 proto-swagger-gen:
 	@echo "Generating Protobuf Swagger"
+	@./scripts/proto-tools-installer.sh
 	@./scripts/protoc-swagger-gen.sh
 
 proto-format:
