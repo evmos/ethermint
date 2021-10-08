@@ -23,9 +23,11 @@ var (
 	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
 	ParamStoreKeyChainConfig  = []byte("ChainConfig")
 
-	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the EVM interpreter. These EIPs are applied in
-	// order and can override the instruction sets from the latest hard fork enabled by the ChainConfig. For more info
-	// check: https://github.com/ethereum/go-ethereum/blob/v1.10.4/core/vm/interpreter.go#L122
+	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
+	// EVM interpreter. These EIPs are applied in order and can override the
+	// instruction sets from the latest hard fork enabled by the ChainConfig. For
+	// more info check:
+	// https://github.com/ethereum/go-ethereum/blob/master/core/vm/interpreter.go#L97
 	AvailableExtraEIPs = []int64{1344, 1884, 2200, 2929, 3198, 3529}
 )
 
