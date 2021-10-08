@@ -155,7 +155,7 @@ func (tx *LegacyTx) SetSignatureValues(_, v, r, s *big.Int) {
 func (tx LegacyTx) Validate() error {
 	gasPrice := tx.GetGasPrice()
 	if gasPrice == nil {
-		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
+		return sdkerrors.Wrap(ErrInvalidGasPrice, "gas price cannot be nil")
 	}
 
 	if gasPrice.Sign() == -1 {
