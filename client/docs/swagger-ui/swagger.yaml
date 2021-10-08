@@ -2237,7 +2237,9 @@ paths:
         - name: trace_config.timeout
           description: >-
             overrides the default timeout of 5 seconds for JavaScript-based
-            tracing calls.
+            tracing
+
+            calls.
           in: query
           required: false
           type: string
@@ -13399,7 +13401,9 @@ definitions:
         type: string
         title: >-
           overrides the default timeout of 5 seconds for JavaScript-based
-          tracing calls
+          tracing
+
+          calls
       reexec:
         type: string
         format: uint64

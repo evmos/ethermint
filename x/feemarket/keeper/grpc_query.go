@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -25,15 +24,15 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types.QueryBaseFeeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	res := &types.QueryBaseFeeResponse{}
 	baseFee := k.GetBaseFee(ctx)
-	if baseFee == nil {
-		// TODO: should this be 0? 1? error?
-		baseFee = big.NewInt(0)
+
+	if baseFee != nil {
+		aux := sdk.NewIntFromBigInt(baseFee)
+		res.BaseFee = &aux
 	}
 
-	return &types.QueryBaseFeeResponse{
-		BaseFee: sdk.NewIntFromBigInt(baseFee),
-	}, nil
+	return res, nil
 }
 
 // BlockGas implements the Query/BlockGas gRPC method
