@@ -3,8 +3,13 @@ package types
 import (
 	"testing"
 
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/require"
 )
+
+func TestParamKeyTable(t *testing.T) {
+	require.IsType(t, paramtypes.KeyTable{}, ParamKeyTable())
+}
 
 func TestParamsValidate(t *testing.T) {
 	testCases := []struct {
@@ -56,6 +61,13 @@ func TestParamsValidate(t *testing.T) {
 	}
 }
 
+func TestParamsEIPs(t *testing.T) {
+	params := NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344)
+	actual := params.EIPs()
+
+	require.Equal(t, []int([]int{2929, 1884, 1344}), actual)
+}
+
 func TestParamsValidatePriv(t *testing.T) {
 	require.Error(t, validateEVMDenom(false))
 	require.NoError(t, validateEVMDenom("inj"))
@@ -63,4 +75,32 @@ func TestParamsValidatePriv(t *testing.T) {
 	require.NoError(t, validateBool(true))
 	require.Error(t, validateEIPs(""))
 	require.NoError(t, validateEIPs([]int64{1884}))
+}
+
+func TestValidateChainConfig(t *testing.T) {
+	testCases := []struct {
+		name     string
+		i        interface{}
+		expError bool
+	}{
+		{
+			"invalid chain config type",
+			"string",
+			true,
+		},
+		{
+			"valid chain config type",
+			DefaultChainConfig(),
+			false,
+		},
+	}
+	for _, tc := range testCases {
+		err := validateChainConfig(tc.i)
+
+		if tc.expError {
+			require.Error(t, err, tc.name)
+		} else {
+			require.NoError(t, err, tc.name)
+		}
+	}
 }

@@ -98,7 +98,7 @@ func NewKeeper(
 	}
 }
 
-// Ctx returns the current context from the context stack
+// Ctx returns the current context from the context stack.
 func (k Keeper) Ctx() sdk.Context {
 	return k.ctxStack.CurrentContext()
 }

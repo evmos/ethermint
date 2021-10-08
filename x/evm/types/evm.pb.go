@@ -517,7 +517,8 @@ var xxx_messageInfo_AccessTuple proto.InternalMessageInfo
 type TraceConfig struct {
 	// custom javascript tracer
 	Tracer string `protobuf:"bytes,1,opt,name=tracer,proto3" json:"tracer,omitempty"`
-	// overrides the default timeout of 5 seconds for JavaScript-based tracing calls
+	// overrides the default timeout of 5 seconds for JavaScript-based tracing
+	// calls
 	Timeout string `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	// number of blocks the tracer is willing to go back
 	Reexec uint64 `protobuf:"varint,3,opt,name=reexec,proto3" json:"reexec,omitempty"`

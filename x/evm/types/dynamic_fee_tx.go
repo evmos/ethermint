@@ -103,7 +103,7 @@ func (tx *DynamicFeeTx) GetGasPrice() *big.Int {
 	return tx.GetGasFeeCap()
 }
 
-// GetGasTipCap returns the gas price field.
+// GetGasTipCap returns the gas tip cap field.
 func (tx *DynamicFeeTx) GetGasTipCap() *big.Int {
 	if tx.GasTipCap == nil {
 		return nil
@@ -111,7 +111,7 @@ func (tx *DynamicFeeTx) GetGasTipCap() *big.Int {
 	return tx.GasTipCap.BigInt()
 }
 
-// GetGasFeeCap returns the gas price field.
+// GetGasFeeCap returns the gas fee cap field.
 func (tx *DynamicFeeTx) GetGasFeeCap() *big.Int {
 	if tx.GasFeeCap == nil {
 		return nil

@@ -14,6 +14,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/holiman/uint256 v1.2.0
 	github.com/improbable-eng/grpc-web v0.14.1
 	github.com/klauspost/compress v1.11.9 // indirect
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
@@ -34,7 +35,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e
+	google.golang.org/genproto v0.0.0-20211007155348-82e027067bd4
 	google.golang.org/grpc v1.41.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0
@@ -92,7 +93,6 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hdevalence/ed25519consensus v0.0.0-20210204194344-59a8610d2b87 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
-	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/huin/goupnp v1.0.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2-0.20160603034137-1fa385a6f458 // indirect
@@ -149,3 +149,5 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 replace github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
+
+replace github.com/cosmos/iavl => github.com/cosmos/iavl v0.17.1
