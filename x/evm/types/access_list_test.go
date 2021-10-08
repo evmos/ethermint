@@ -1,31 +1,11 @@
 package types
 
 import (
-	"testing"
-
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/suite"
-	"github.com/tharsis/ethermint/tests"
 )
 
-type AccessListTestSuite struct {
-	suite.Suite
-
-	addr    common.Address
-	hexAddr string
-}
-
-func (suite *AccessListTestSuite) SetupTest() {
-	suite.addr = tests.GenerateAddress()
-	suite.hexAddr = suite.addr.Hex()
-}
-
-func TestAccessListTestSuite(t *testing.T) {
-	suite.Run(t, new(AccessListTestSuite))
-}
-
-func (suite *AccessListTestSuite) TestTestNewAccessList() {
+func (suite *TxDataTestSuite) TestTestNewAccessList() {
 	testCases := []struct {
 		name          string
 		ethAccessList *ethtypes.AccessList
@@ -49,7 +29,7 @@ func (suite *AccessListTestSuite) TestTestNewAccessList() {
 	}
 }
 
-func (suite *AccessListTestSuite) TestAccessListToEthAccessList() {
+func (suite *TxDataTestSuite) TestAccessListToEthAccessList() {
 	ethAccessList := ethtypes.AccessList{{Address: suite.addr, StorageKeys: []common.Hash{{0}}}}
 	al := NewAccessList(&ethAccessList)
 	actual := al.ToEthAccessList()
