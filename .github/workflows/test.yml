@@ -78,7 +78,7 @@ jobs:
 
   test-solidity:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: technote-space/get-diff-action@v5
@@ -87,6 +87,8 @@ jobs:
           PATTERNS: |
             **/**.sol
             **/**.go
+            tests/solidity/**/*.js
+            tests/solidity/**/*.sh
             go.mod
             go.sum
       - name: test-solidity
@@ -125,7 +127,7 @@ jobs:
       
   test-rpc:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/setup-go@v2.1.4
         with:

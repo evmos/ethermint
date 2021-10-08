@@ -292,12 +292,6 @@ test-rpc:
 test-rpc-pending:
 	./scripts/integration-test-all.sh -t "pending" -q 1 -z 1 -s 2 -m "pending" -r "true"
 
-test-contract:
-	@type "npm" 2> /dev/null || (echo 'Npm does not exist. Please install node.js and npm."' && exit 1)
-	@type "solcjs" 2> /dev/null || (echo 'Solcjs does not exist. Please install solcjs using make contract-tools."' && exit 1)
-	@type "protoc" 2> /dev/null || (echo 'Failed to install protoc. Please reinstall protoc using make contract-tools.' && exit 1)
-	bash scripts/contract-test.sh
-
 test-solidity:
 	@echo "Beginning solidity tests..."
 	./scripts/run-solidity-tests.sh
