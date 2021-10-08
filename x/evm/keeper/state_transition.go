@@ -186,7 +186,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		panic("context stack shouldn't be dirty before apply message")
 	}
 
-	var revision int
+	// revision is -1 for empty stack
+	revision := -1
 	if k.hooks != nil {
 		// snapshot to contain the tx processing and post processing in same scope
 		revision = k.Snapshot()
@@ -197,15 +198,23 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
-
-	// flatten the cache contexts to improve efficiency of following db operations
-	// the reason is some operations under deep context stack is extremely slow,
-	// refer to `benchmark_test.go:BenchmarkDeepContextStack13`.
-	k.ctxStack.CommitToRevision(revision)
-
-	k.IncreaseTxIndexTransient()
-
 	res.Hash = txHash.Hex()
+
+	// The state is reverted (i.e `RevertToSnapshot`) for the VM error cases, so it's safe to call the commit here.
+	// NOTE: revision is >= 0 only when the EVM hooks are not empty
+	if revision >= 0 {
+		// Flatten the cache contexts to improve the efficiency of following DB operations.
+		// Only commit the cache layers created by the EVM contract execution
+		// FIXME: some operations under deep context stack are extremely slow,
+		// see `benchmark_test.go:BenchmarkDeepContextStack13`.
+		if err = k.ctxStack.CommitToRevision(revision); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to commit ethereum core message")
+		}
+	} else {
+		// All cache layers are created by the EVM contract execution. So it is safe to commit them all
+		k.CommitCachedContexts()
+	}
+
 	logs := k.GetTxLogsTransient(txHash)
 
 	if !res.Failed() {
@@ -215,6 +224,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 			k.RevertToSnapshot(revision)
 			res.VmError = types.ErrPostTxProcessing.Error()
 			k.Logger(ctx).Error("tx post processing failed", "error", err)
+		} else {
+			// PostTxProcessing is successful, commit the leftover contexts
+			k.CommitCachedContexts()
 		}
 	}
 
@@ -226,9 +238,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		k.SetBlockBloomTransient(bloom)
 	}
 
-	// Since we've implemented `RevertToSnapshot` api, so for the vm error cases,
-	// the state is reverted, so it's ok to call the commit here anyway.
-	k.CommitCachedContexts()
+	k.IncreaseTxIndexTransient()
 
 	// update the gas used after refund
 	k.resetGasMeterAndConsumeGas(res.GasUsed)
