@@ -127,6 +127,23 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: false,
 		},
 		{
+			name: "invalid genesis account",
+			genState: &GenesisState{
+				Accounts: []GenesisAccount{
+					{
+						Address: "123456",
+
+						Code: suite.code,
+						Storage: Storage{
+							{Key: suite.hash.String()},
+						},
+					},
+				},
+				Params: DefaultParams(),
+			},
+			expPass: false,
+		},
+		{
 			name: "duplicated genesis account",
 			genState: &GenesisState{
 				Accounts: []GenesisAccount{

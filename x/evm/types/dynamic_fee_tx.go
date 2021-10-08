@@ -53,7 +53,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 // TxType returns the tx type
 func (tx *DynamicFeeTx) TxType() uint8 {
 	// TODO
-	return 0
+	return 2
 	// return ethtypes.DynamicFeeTxType
 }
 
@@ -107,7 +107,7 @@ func (tx *DynamicFeeTx) GetGasPrice() *big.Int {
 	return tx.GetGasFeeCap()
 }
 
-// GetGasTipCap returns the gas price field.
+// GetGasTipCap returns the gas tip cap field.
 func (tx *DynamicFeeTx) GetGasTipCap() *big.Int {
 	if tx.GasTipCap == nil {
 		return nil
@@ -115,7 +115,7 @@ func (tx *DynamicFeeTx) GetGasTipCap() *big.Int {
 	return tx.GasTipCap.BigInt()
 }
 
-// GetGasFeeCap returns the gas price field.
+// GetGasFeeCap returns the gas fee cap field.
 func (tx *DynamicFeeTx) GetGasFeeCap() *big.Int {
 	if tx.GasFeeCap == nil {
 		return nil
