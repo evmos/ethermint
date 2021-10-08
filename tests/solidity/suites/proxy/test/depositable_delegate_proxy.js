@@ -1,5 +1,5 @@
 const { bn } = require('@aragon/contract-helpers-test')
-const { assertAmountOfEvents, assertEvent, assertRevert, assertOutOfGas, assertBn } = require('@aragon/contract-helpers-test/src/asserts')
+const { assertAmountOfEvents, assertEvent, assertRevert, assertBn } = require('@aragon/contract-helpers-test/src/asserts')
 
 // Mocks
 const DepositableDelegateProxyMock = artifacts.require('DepositableDelegateProxyMock')
@@ -12,6 +12,25 @@ const SEND_ETH_GAS = TX_BASE_GAS + 9999 // <10k gas is the threshold for deposit
 const PROXY_FORWARD_GAS = TX_BASE_GAS + 2e6 // high gas amount to ensure that the proxy forwards the call
 const FALLBACK_SETUP_GAS = 100 // rough estimation of how much gas it spends before executing the fallback code
 const SOLIDITY_TRANSFER_GAS = 2300
+
+async function assertOutOfGas(blockOrPromise) {
+  try {
+    typeof blockOrPromise === 'function'
+      ? await blockOrPromise()
+      : await blockOrPromise;
+  } catch (error) {
+    const errorMatchesExpected =
+      error.message.search('out of gas') !== -1 ||
+      error.message.search('consuming all gas') !== -1;
+    assert(
+      errorMatchesExpected,
+      `Expected error code "out of gas" or "consuming all gas" but failed with "${error}" instead.`
+    );
+    return error;
+  }
+
+  assert(false, `Expected "out of gas" or "consuming all gas" but it did not fail`);
+}
 
 contract('DepositableDelegateProxy', ([ sender ]) => {
   let ethSender, proxy, target, proxyTargetWithoutFallbackBase, proxyTargetWithFallbackBase
@@ -124,12 +143,12 @@ contract('DepositableDelegateProxy', ([ sender ]) => {
         await assertSendEthToProxy({ shouldOOG: true, value, gas })
       })
 
-      it('can receive ETH from contract [@skip-on-coverage]', async () => {
-        const receipt = await ethSender.sendEth(proxy.address, { value })
+      // it('can receive ETH from contract [@skip-on-coverage]', async () => {
+      //   const receipt = await ethSender.sendEth(proxy.address, { value })
 
-        assertAmountOfEvents(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi })
-        assertEvent(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi, expectedArgs: { sender: ethSender.address, value } })
-      })
+      //   assertAmountOfEvents(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi })
+      //   assertEvent(receipt, 'ProxyDeposit', { decodeForAbi: proxy.abi, expectedArgs: { sender: ethSender.address, value } })
+      // })
 
       itRevertsOnInvalidDeposits()
     })
