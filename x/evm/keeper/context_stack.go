@@ -74,9 +74,8 @@ func (cs *ContextStack) CommitToRevision(target int) error {
 		targetCtx.EventManager().EmitEvents(cs.cachedContexts[i].ctx.EventManager().Events())
 		if cs.cachedContexts[i].commit == nil {
 			return fmt.Errorf("commit function at index %d should not be nil", i)
-		} else {
-			cs.cachedContexts[i].commit()
 		}
+		cs.cachedContexts[i].commit()
 	}
 	cs.cachedContexts = cs.cachedContexts[0 : target+1]
 
