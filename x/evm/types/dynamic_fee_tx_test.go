@@ -11,7 +11,7 @@ import (
 	"github.com/tharsis/ethermint/tests"
 )
 
-type DynamicFeeTxTestSuite struct {
+type TxDataTestSuite struct {
 	suite.Suite
 
 	sdkInt         sdk.Int
@@ -24,7 +24,7 @@ type DynamicFeeTxTestSuite struct {
 	hexAddr        string
 }
 
-func (suite *DynamicFeeTxTestSuite) SetupTest() {
+func (suite *TxDataTestSuite) SetupTest() {
 	suite.sdkInt = sdk.NewInt(100)
 	suite.uint64 = suite.sdkInt.Uint64()
 	suite.bigInt = big.NewInt(1)
@@ -35,11 +35,11 @@ func (suite *DynamicFeeTxTestSuite) SetupTest() {
 	suite.hexAddr = suite.addr.Hex()
 }
 
-func TestDynamicFeeTxTestSuite(t *testing.T) {
-	suite.Run(t, new(DynamicFeeTxTestSuite))
+func TestTxDataTestSuite(t *testing.T) {
+	suite.Run(t, new(TxDataTestSuite))
 }
 
-func (suite *DynamicFeeTxTestSuite) TestNewDynamicFeeTx() {
+func (suite *TxDataTestSuite) TestNewDynamicFeeTx() {
 	testCases := []struct {
 		name string
 		tx   *ethtypes.Transaction
@@ -67,7 +67,7 @@ func (suite *DynamicFeeTxTestSuite) TestNewDynamicFeeTx() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxCopy() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxCopy() {
 	tx := &DynamicFeeTx{}
 	txCopy := tx.Copy()
 
@@ -75,7 +75,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxCopy() {
 	// TODO: Test for different pointers
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetChainID() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetChainID() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -104,7 +104,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetChainID() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetAccessList() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetAccessList() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -150,7 +150,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetAccessList() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetData() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetData() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -170,7 +170,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetData() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGas() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetGas() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -192,7 +192,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGas() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasPrice() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetGasPrice() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -214,7 +214,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasPrice() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasTipCap() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetGasTipCap() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -243,7 +243,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasTipCap() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasFeeCap() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetGasFeeCap() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -272,7 +272,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetGasFeeCap() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetValue() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetValue() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -301,7 +301,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetValue() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetNonce() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetNonce() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -323,7 +323,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetNonce() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetTo() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxGetTo() {
 	testCases := []struct {
 		name string
 		tx   DynamicFeeTx
@@ -352,7 +352,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxGetTo() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxSetSignatureValues() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxSetSignatureValues() {
 	testCases := []struct {
 		name    string
 		chainID *big.Int
@@ -390,7 +390,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxSetSignatureValues() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxValidate() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxValidate() {
 	testCases := []struct {
 		name     string
 		tx       DynamicFeeTx
@@ -494,7 +494,7 @@ func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxValidate() {
 	}
 }
 
-func (suite *DynamicFeeTxTestSuite) TestDynamicFeeTxFeeCost() {
+func (suite *TxDataTestSuite) TestDynamicFeeTxFeeCost() {
 	tx := &DynamicFeeTx{}
 	suite.Require().Panics(func() { tx.Fee() }, "should panic")
 	suite.Require().Panics(func() { tx.Cost() }, "should panic")
