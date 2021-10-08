@@ -12,6 +12,8 @@ import (
 )
 
 func TestPersonal_ListAccounts(t *testing.T) {
+	t.Skip("skipping TestPersonal_ListAccounts")
+
 	rpcRes := Call(t, "personal_listAccounts", []string{})
 
 	var res []hexutil.Bytes
@@ -21,6 +23,8 @@ func TestPersonal_ListAccounts(t *testing.T) {
 }
 
 func TestPersonal_NewAccount(t *testing.T) {
+	t.Skip("skipping TestPersonal_NewAccount")
+
 	rpcRes := Call(t, "personal_newAccount", []string{"password"})
 	var addr common.Address
 	err := json.Unmarshal(rpcRes.Result, &addr)
@@ -34,6 +38,8 @@ func TestPersonal_NewAccount(t *testing.T) {
 }
 
 func TestPersonal_Sign(t *testing.T) {
+	t.Skip("skipping TestPersonal_Sign")
+
 	rpcRes := Call(t, "personal_unlockAccount", []interface{}{hexutil.Bytes(from), ""})
 	require.Nil(t, rpcRes.Error)
 
@@ -47,6 +53,8 @@ func TestPersonal_Sign(t *testing.T) {
 }
 
 func TestPersonal_ImportRawKey(t *testing.T) {
+	t.Skip("skipping TestPersonal_ImportRawKey")
+
 	privkey, err := crypto.GenerateKey()
 	require.NoError(t, err)
 
@@ -65,6 +73,8 @@ func TestPersonal_ImportRawKey(t *testing.T) {
 }
 
 func TestPersonal_EcRecover(t *testing.T) {
+	t.Skip("skipping TestPersonal_EcRecover")
+
 	data := hexutil.Bytes{0x88}
 	rpcRes := Call(t, "personal_sign", []interface{}{data, hexutil.Bytes(from), ""})
 
@@ -81,6 +91,8 @@ func TestPersonal_EcRecover(t *testing.T) {
 }
 
 func TestPersonal_UnlockAccount(t *testing.T) {
+	t.Skip("skipping TestPersonal_UnlockAccount")
+
 	pswd := "nootwashere"
 	rpcRes := Call(t, "personal_newAccount", []string{pswd})
 	var addr common.Address
@@ -106,6 +118,8 @@ func TestPersonal_UnlockAccount(t *testing.T) {
 }
 
 func TestPersonal_LockAccount(t *testing.T) {
+	t.Skip("skipping TestPersonal_LockAccount")
+
 	pswd := "nootwashere"
 	rpcRes := Call(t, "personal_newAccount", []string{pswd})
 	var addr common.Address
