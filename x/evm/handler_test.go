@@ -153,12 +153,12 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 func (suite *EvmTestSuite) SetupTest() {
 	suite.DoSetupTest(suite.T())
 }
+
 func TestEvmTestSuite(t *testing.T) {
 	suite.Run(t, new(EvmTestSuite))
 }
 
 func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
-
 	var tx *types.MsgEthereumTx
 
 	testCases := []struct {

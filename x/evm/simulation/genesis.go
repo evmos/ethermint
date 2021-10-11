@@ -11,7 +11,6 @@ import (
 
 // RandomizedGenState generates a random GenesisState for nft
 func RandomizedGenState(simState *module.SimulationState) {
-
 	params := types.NewParams(types.DefaultEVMDenom, true, true, types.DefaultChainConfig())
 	if simState.Rand.Uint32()%2 == 0 {
 		params = types.NewParams(types.DefaultEVMDenom, true, true, types.DefaultChainConfig(), 1344, 1884, 2200, 2929, 3198, 3529)
@@ -25,5 +24,4 @@ func RandomizedGenState(simState *module.SimulationState) {
 	fmt.Printf("Selected randomly generated %s parameters:\n%s\n", types.ModuleName, bz)
 
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(evmGenesis)
-
 }
