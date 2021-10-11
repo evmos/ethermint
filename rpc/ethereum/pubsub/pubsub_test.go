@@ -1,69 +1,82 @@
 package pubsub
 
-// func TestAddTopic(t *testing.T) {
-// 	q := NewEventBus()
-// 	err := q.AddTopic("kek", make(<-chan coretypes.ResultEvent))
-// 	require.NoError(t, err)
+import (
+	"log"
+	"sync"
+	"testing"
+	"time"
 
-// 	err = q.AddTopic("lol", make(<-chan coretypes.ResultEvent))
-// 	require.NoError(t, err)
+	"github.com/stretchr/testify/require"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+)
 
-// 	err = q.AddTopic("lol", make(<-chan coretypes.ResultEvent))
-// 	require.Error(t, err)
+func TestAddTopic(t *testing.T) {
+	q := NewEventBus()
+	err := q.AddTopic("kek", make(<-chan coretypes.ResultEvent))
+	require.NoError(t, err)
 
-// 	require.EqualValues(t, []string{"kek", "lol"}, q.Topics())
-// }
+	err = q.AddTopic("lol", make(<-chan coretypes.ResultEvent))
+	require.NoError(t, err)
 
-// func TestSubscribe(t *testing.T) {
-// 	q := NewEventBus()
-// 	kekSrc := make(chan coretypes.ResultEvent)
-// 	q.AddTopic("kek", kekSrc)
+	err = q.AddTopic("lol", make(<-chan coretypes.ResultEvent))
+	require.Error(t, err)
 
-// 	lolSrc := make(chan coretypes.ResultEvent)
-// 	q.AddTopic("lol", lolSrc)
+	require.EqualValues(t, []string{"kek", "lol"}, q.Topics())
+}
 
-// 	kekSubC, err := q.Subscribe("kek")
-// 	require.NoError(t, err)
+func TestSubscribe(t *testing.T) {
+	q := NewEventBus()
+	kekSrc := make(chan coretypes.ResultEvent)
 
-// 	lolSubC, err := q.Subscribe("lol")
-// 	require.NoError(t, err)
+	q.AddTopic("kek", kekSrc)
 
-// 	lol2SubC, err := q.Subscribe("lol")
-// 	require.NoError(t, err)
+	lolSrc := make(chan coretypes.ResultEvent)
 
-// 	wg := new(sync.WaitGroup)
-// 	wg.Add(4)
+	q.AddTopic("lol", lolSrc)
 
-// 	go func() {
-// 		defer wg.Done()
-// 		msg := <-kekSubC
-// 		log.Println("kek:", msg)
-// 		require.EqualValues(t, 1, msg)
-// 	}()
+	kekSubC, err := q.Subscribe("kek")
+	require.NoError(t, err)
 
-// 	go func() {
-// 		defer wg.Done()
-// 		msg := <-lolSubC
-// 		log.Println("lol:", msg)
-// 		require.EqualValues(t, 1, msg)
-// 	}()
+	lolSubC, err := q.Subscribe("lol")
+	require.NoError(t, err)
 
-// 	go func() {
-// 		defer wg.Done()
-// 		msg := <-lol2SubC
-// 		log.Println("lol2:", msg)
-// 		require.EqualValues(t, 1, msg)
-// 	}()
+	lol2SubC, err := q.Subscribe("lol")
+	require.NoError(t, err)
 
-// 	go func() {
-// 		defer wg.Done()
+	wg := new(sync.WaitGroup)
+	wg.Add(4)
 
-// 		time.Sleep(time.Second)
+	emptyMsg := coretypes.ResultEvent{}
+	go func() {
+		defer wg.Done()
+		msg := <-kekSubC
+		log.Println("kek:", msg)
+		require.EqualValues(t, emptyMsg, msg)
+	}()
 
-// 		close(kekSrc)
-// 		close(lolSrc)
-// 	}()
+	go func() {
+		defer wg.Done()
+		msg := <-lolSubC
+		log.Println("lol:", msg)
+		require.EqualValues(t, emptyMsg, msg)
+	}()
 
-// 	wg.Wait()
-// 	time.Sleep(time.Second)
-// }
+	go func() {
+		defer wg.Done()
+		msg := <-lol2SubC
+		log.Println("lol2:", msg)
+		require.EqualValues(t, emptyMsg, msg)
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		time.Sleep(time.Second)
+
+		close(kekSrc)
+		close(lolSrc)
+	}()
+
+	wg.Wait()
+	time.Sleep(time.Second)
+}

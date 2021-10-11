@@ -23,6 +23,14 @@ func DefaultGenesisState() *GenesisState {
 	}
 }
 
+// NewGenesisState creates a new genesis state.
+func NewGenesisState(params Params, accounts []GenesisAccount) *GenesisState {
+	return &GenesisState{
+		Accounts: accounts,
+		Params:   params,
+	}
+}
+
 // Validate performs basic genesis state validation returning an error upon any
 // failure.
 func (gs GenesisState) Validate() error {

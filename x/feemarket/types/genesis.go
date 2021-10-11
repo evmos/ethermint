@@ -15,6 +15,15 @@ func DefaultGenesisState() *GenesisState {
 	}
 }
 
+// NewGenesisState creates a new genesis state.
+func NewGenesisState(params Params, baseFee sdk.Int, blockGas uint64) *GenesisState {
+	return &GenesisState{
+		Params:   params,
+		BaseFee:  baseFee,
+		BlockGas: blockGas,
+	}
+}
+
 // Validate performs basic genesis state validation returning an error upon any
 // failure.
 func (gs GenesisState) Validate() error {
