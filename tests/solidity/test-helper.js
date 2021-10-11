@@ -24,6 +24,7 @@ function checkTestEnv() {
     .example('$0 --network ethermint test1 test2', 'run only test1 and test2 using ethermint network')
     .help('h').alias('h', 'help')
     .describe('network', 'set which network to use: ganache|ethermint')
+    .describe('batch', 'set the test batch in parallelized testing. Format: %d-%d')
     .boolean('verbose-log').describe('verbose-log', 'print ethermintd output, default false')
     .argv;
 
@@ -45,6 +46,29 @@ function checkTestEnv() {
     }
   }
 
+  if (argv.batch) {
+
+    const [toRunBatch, allBatches] = argv.batch.split('-').map(e => Number(e));
+
+    console.log([toRunBatch, allBatches]);
+    if (!toRunBatch || !allBatches) {
+      panic('bad batch input format');
+    }
+    
+    if (toRunBatch > allBatches) {
+      panic('test batch number is larger than batch counts');
+    }
+    
+    if (toRunBatch <= 0 || allBatches <=0 ) {
+      panic('test batch number or batch counts must be non-zero values');
+    }
+    
+    runConfig.batch = {};
+    runConfig.batch.this = toRunBatch;
+    runConfig.batch.all = allBatches;
+
+  }
+
   // only test
   runConfig.onlyTest = argv['_'];
   runConfig.verboseLog = !!argv['verbose-log'];
@@ -54,7 +78,7 @@ function checkTestEnv() {
 
 }
 
-function loadTests() {
+function loadTests(runConfig) {
   const validTests = [];
   fs.readdirSync(path.join(__dirname, 'suites')).forEach(dirname => {
     const dirStat = fs.statSync(path.join(__dirname, 'suites', dirname));
@@ -88,7 +112,18 @@ function loadTests() {
     }
     validTests.push(dirname);
   })
-  return validTests;
+
+  if (runConfig.batch) {
+    const chunkSize = Math.ceil(validTests.length / runConfig.batch.all);
+    const toRunTests = validTests.slice(
+      (runConfig.batch.this - 1) * chunkSize,
+      runConfig.batch.this === runConfig.batch.all ? undefined : runConfig.batch.this * chunkSize
+    );
+    return toRunTests;
+  }
+  else {
+    return validTests;
+  }
 }
 
 function performTestSuite({ testName, network }) {
@@ -174,6 +209,8 @@ async function main() {
 
   const runConfig = checkTestEnv();
   const allTests = loadTests(runConfig);
+
+  console.log(`Running Tests: ${allTests.join()}`);
 
   const proc = await setupNetwork({ runConfig, timeout: 50000 });
   await performTests({ allTests, runConfig });
