@@ -185,7 +185,7 @@ func BenchmarkApplyTransactionWithLegacyTx(b *testing.B) {
 }
 
 func BenchmarkApplyTransactionWithDynamicFeeTx(b *testing.B) {
-	suite := KeeperTestSuite{}
+	suite := KeeperTestSuite{dynamicTxFee: true}
 	suite.DoSetupTest(b)
 
 	ethSigner := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
@@ -278,7 +278,7 @@ func BenchmarkApplyNativeMessageWithLegacyTx(b *testing.B) {
 }
 
 func BenchmarkApplyNativeMessageWithDynamicFeeTx(b *testing.B) {
-	suite := KeeperTestSuite{}
+	suite := KeeperTestSuite{dynamicTxFee: true}
 	suite.DoSetupTest(b)
 
 	params := suite.app.EvmKeeper.GetParams(suite.ctx)
