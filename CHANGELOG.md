@@ -48,6 +48,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (deps) [tharsis#655](https://github.com/tharsis/ethermint/pull/665) Bump Cosmos SDK version to [`v0.44.2`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.2).
 * (evm) [tharsis#650](https://github.com/tharsis/ethermint/pull/650) Fix panic when flattening the cache context in case transaction is reverted.
 * (rpc, test) [tharsis#608](https://github.com/tharsis/ethermint/pull/608) Fix rpc test.
 
