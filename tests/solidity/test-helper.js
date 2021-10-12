@@ -21,10 +21,11 @@ function checkTestEnv() {
   const argv = yargs(hideBin(process.argv))
     .usage('Usage: $0 [options] <tests>')
     .example('$0 --network ethermint', 'run all tests using ethermint network')
-    .example('$0 --network ethermint test1 test2', 'run only test1 and test2 using ethermint network')
+    .example('$0 --network ethermint --allowTests=test1,test2', 'run only test1 and test2 using ethermint network')
     .help('h').alias('h', 'help')
     .describe('network', 'set which network to use: ganache|ethermint')
     .describe('batch', 'set the test batch in parallelized testing. Format: %d-%d')
+    .describe('allowTests', 'only run specified tests. Separated by comma.')
     .boolean('verbose-log').describe('verbose-log', 'print ethermintd output, default false')
     .argv;
 
@@ -70,7 +71,7 @@ function checkTestEnv() {
   }
 
   // only test
-  runConfig.onlyTest = argv['_'];
+  runConfig.onlyTest = !!argv['allowTests'] ? argv['allowTests'].split(',') : undefined;
   runConfig.verboseLog = !!argv['verbose-log'];
 
   logger.info(`Running on network: ${runConfig.network}`);
@@ -79,7 +80,7 @@ function checkTestEnv() {
 }
 
 function loadTests(runConfig) {
-  const validTests = [];
+  let validTests = [];
   fs.readdirSync(path.join(__dirname, 'suites')).forEach(dirname => {
     const dirStat = fs.statSync(path.join(__dirname, 'suites', dirname));
     if (!dirStat.isDirectory) {
@@ -112,6 +113,8 @@ function loadTests(runConfig) {
     }
     validTests.push(dirname);
   })
+
+  validTests = validTests.filter(t => runConfig.onlyTest.indexOf(t) !== -1);
 
   if (runConfig.batch) {
     const chunkSize = Math.ceil(validTests.length / runConfig.batch.all);
@@ -152,13 +155,6 @@ async function performTests({ allTests, runConfig }) {
 
   if (allTests.length === 0) {
     panic('No tests are found or all invalid!');
-  }
-  if (runConfig.onlyTest.length === 0) {
-    logger.info('Start all tests:');
-  }
-  else {
-    allTests = allTests.filter(t => runConfig.onlyTest.indexOf(t) !== -1);
-    logger.info(`Only run tests: (${allTests.join(', ')})`);
   }
 
   for (const currentTestName of allTests) {
