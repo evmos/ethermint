@@ -238,7 +238,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	ctx := types.ContextWithHeight(block.Height)
 
-	baseFee, err := e.BaseFee()
+	baseFee, err := e.getBaseFee(block.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +370,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	baseFee, err := e.BaseFee()
+	baseFee, err := e.getBaseFee(height)
 	if err != nil {
 		e.logger.Debug("HeaderByNumber BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
 		return nil, err
@@ -398,7 +398,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		e.logger.Debug("HeaderByHash BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	baseFee, err := e.BaseFee()
+	baseFee, err := e.getBaseFee(resBlock.Block.Height)
 	if err != nil {
 		e.logger.Debug("HeaderByHash BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
 		return nil, err
@@ -710,7 +710,7 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 		return 0, err
 	}
 
-	baseFee, err := e.BaseFee()
+	baseFee, err := e.getBaseFee(blockNr.Int64())
 	if err != nil {
 		return 0, err
 	}
@@ -872,6 +872,20 @@ BLOCKS:
 	}
 
 	return matchedBlocks, nil
+}
+
+func (e *EVMBackend) getBaseFee(height int64) (*big.Int, error) {
+	cfg := e.ChainConfig()
+	if !cfg.IsLondon(new(big.Int).SetInt64(height)) {
+		return nil, nil
+	}
+
+	baseFee, err := e.BaseFee()
+	if err != nil {
+		return nil, err
+	}
+
+	return baseFee, nil
 }
 
 // checkMatches revised the function from
