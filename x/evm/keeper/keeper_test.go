@@ -210,16 +210,33 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	require.NoError(t, err)
 
 	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
-	erc20DeployTx := types.NewTxContract(
-		chainID,
-		nonce,
-		nil,     // amount
-		res.Gas, // gasLimit
-		nil,     // gasPrice
-		nil, nil,
-		data, // input
-		nil,  // accesses
-	)
+
+	var erc20DeployTx *types.MsgEthereumTx
+	if suite.dynamicTxFee {
+		erc20DeployTx = types.NewTxContract(
+			chainID,
+			nonce,
+			nil,     // amount
+			res.Gas, // gasLimit
+			nil,     // gasPrice
+			suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx),
+			big.NewInt(1),
+			data,                   // input
+			&ethtypes.AccessList{}, // accesses
+		)
+	} else {
+		erc20DeployTx = types.NewTxContract(
+			chainID,
+			nonce,
+			nil,     // amount
+			res.Gas, // gasLimit
+			nil,     // gasPrice
+			nil, nil,
+			data, // input
+			nil,  // accesses
+		)
+	}
+
 	erc20DeployTx.From = suite.address.Hex()
 	err = erc20DeployTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
 	require.NoError(t, err)
@@ -244,17 +261,35 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 	require.NoError(t, err)
 
 	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
-	ercTransferTx := types.NewTx(
-		chainID,
-		nonce,
-		&contractAddr,
-		nil,
-		res.Gas,
-		nil,
-		nil, nil,
-		transferData,
-		nil,
-	)
+
+	var ercTransferTx *types.MsgEthereumTx
+	if suite.dynamicTxFee {
+		ercTransferTx = types.NewTx(
+			chainID,
+			nonce,
+			&contractAddr,
+			nil,
+			res.Gas,
+			nil,
+			suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx),
+			big.NewInt(1),
+			transferData,
+			&ethtypes.AccessList{}, // accesses
+		)
+	} else {
+		ercTransferTx = types.NewTx(
+			chainID,
+			nonce,
+			&contractAddr,
+			nil,
+			res.Gas,
+			nil,
+			nil, nil,
+			transferData,
+			nil,
+		)
+	}
+
 	ercTransferTx.From = suite.address.Hex()
 	err = ercTransferTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
 	require.NoError(t, err)
