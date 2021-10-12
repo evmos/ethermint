@@ -34,7 +34,7 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 			uint64(suite.ctx.BlockHeight()),
 			func() {
 				suite.ctx = suite.ctx.WithHeaderHash(tmhash.Sum([]byte("header")))
-				suite.app.EvmKeeper.WithContext(suite.ctx)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 			},
 			common.BytesToHash(tmhash.Sum([]byte("header"))),
 		},
@@ -45,7 +45,7 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 				header := tmproto.Header{}
 				header.Height = suite.ctx.BlockHeight()
 				suite.ctx = suite.ctx.WithBlockHeader(header)
-				suite.app.EvmKeeper.WithContext(suite.ctx)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 			},
 			common.Hash{},
 		},
@@ -54,7 +54,7 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 			uint64(suite.ctx.BlockHeight()),
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeader(header)
-				suite.app.EvmKeeper.WithContext(suite.ctx)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 			},
 			common.BytesToHash(hash),
 		},
@@ -63,7 +63,7 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 			1,
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(10)
-				suite.app.EvmKeeper.WithContext(suite.ctx)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 			},
 			common.Hash{},
 		},
@@ -73,7 +73,7 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 			func() {
 				suite.app.StakingKeeper.SetHistoricalInfo(suite.ctx, 1, &stakingtypes.HistoricalInfo{})
 				suite.ctx = suite.ctx.WithBlockHeight(10)
-				suite.app.EvmKeeper.WithContext(suite.ctx)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 			},
 			common.Hash{},
 		},
@@ -86,7 +86,7 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 				}
 				suite.app.StakingKeeper.SetHistoricalInfo(suite.ctx, 1, histInfo)
 				suite.ctx = suite.ctx.WithBlockHeight(10)
-				suite.app.EvmKeeper.WithContext(suite.ctx)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 			},
 			common.BytesToHash(hash),
 		},
@@ -104,7 +104,7 @@ func (suite *KeeperTestSuite) TestGetHashFn() {
 
 			tc.malleate()
 
-			hash := suite.app.EvmKeeper.GetHashFn()(tc.height)
+			hash := suite.app.EvmKeeper.GetHashFn(suite.ctx)(tc.height)
 			suite.Require().Equal(tc.expHash, hash)
 		})
 	}
@@ -124,7 +124,7 @@ func (suite *KeeperTestSuite) TestGetCoinbaseAddress() {
 				header := suite.ctx.BlockHeader()
 				header.ProposerAddress = []byte{}
 				suite.ctx = suite.ctx.WithBlockHeader(header)
-				suite.app.EvmKeeper.WithContext(suite.ctx)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 			},
 			false,
 		},
@@ -148,11 +148,11 @@ func (suite *KeeperTestSuite) TestGetCoinbaseAddress() {
 				header := suite.ctx.BlockHeader()
 				header.ProposerAddress = valConsAddr.Bytes()
 				suite.ctx = suite.ctx.WithBlockHeader(header)
+				suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 
 				_, found := suite.app.StakingKeeper.GetValidatorByConsAddr(suite.ctx, valConsAddr.Bytes())
 				suite.Require().True(found)
 
-				suite.app.EvmKeeper.WithContext(suite.ctx)
 				suite.Require().NotEmpty(suite.ctx.BlockHeader().ProposerAddress)
 			},
 			true,
@@ -276,10 +276,10 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 			signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 
 			suite.ctx = suite.ctx.WithBlockHeight(tc.height)
-			suite.app.EvmKeeper.WithContext(suite.ctx)
+			suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 
 			m, err := newNativeMessage(
-				suite.app.EvmKeeper.GetNonce(suite.address),
+				suite.vmdb.GetNonce(suite.address),
 				suite.ctx.BlockHeight(),
 				suite.address,
 				ethCfg,
@@ -291,7 +291,7 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 			)
 			suite.Require().NoError(err)
 
-			gas, err := suite.app.EvmKeeper.GetEthIntrinsicGas(m, ethCfg, tc.isContractCreation)
+			gas, err := suite.app.EvmKeeper.GetEthIntrinsicGas(suite.ctx, m, ethCfg, tc.isContractCreation)
 			if tc.noError {
 				suite.Require().NoError(err)
 			} else {
@@ -345,15 +345,15 @@ func (suite *KeeperTestSuite) TestGasToRefund() {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
 			suite.mintFeeCollector = true
 			suite.SetupTest() // reset
-			suite.app.EvmKeeper.AddRefund(10)
+			suite.vmdb.AddRefund(10)
 
 			if tc.expPanic {
 				panicF := func() {
-					suite.app.EvmKeeper.GasToRefund(tc.gasconsumed, tc.refundQuotient)
+					suite.app.EvmKeeper.GasToRefund(suite.ctx, tc.gasconsumed, tc.refundQuotient)
 				}
 				suite.Require().Panics(panicF)
 			} else {
-				gr := suite.app.EvmKeeper.GasToRefund(tc.gasconsumed, tc.refundQuotient)
+				gr := suite.app.EvmKeeper.GasToRefund(suite.ctx, tc.gasconsumed, tc.refundQuotient)
 				suite.Require().Equal(tc.expGasRefund, gr)
 			}
 		})
@@ -409,7 +409,7 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 			signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 
 			m, err := newNativeMessage(
-				suite.app.EvmKeeper.GetNonce(suite.address),
+				suite.vmdb.GetNonce(suite.address),
 				suite.ctx.BlockHeight(),
 				suite.address,
 				ethCfg,
@@ -421,16 +421,16 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 			)
 			suite.Require().NoError(err)
 
-			suite.app.EvmKeeper.AddRefund(params.TxGas)
+			suite.vmdb.AddRefund(params.TxGas)
 
 			if tc.leftoverGas > m.Gas() {
 				return
 			}
 			gasUsed := m.Gas() - tc.leftoverGas
-			refund := suite.app.EvmKeeper.GasToRefund(gasUsed, tc.refundQuotient)
+			refund := suite.app.EvmKeeper.GasToRefund(suite.ctx, gasUsed, tc.refundQuotient)
 			suite.Require().Equal(tc.expGasRefund, refund)
 
-			err = suite.app.EvmKeeper.RefundGas(m, refund, "aphoton")
+			err = suite.app.EvmKeeper.RefundGas(suite.ctx, m, refund, "aphoton")
 			if tc.noError {
 				suite.Require().NoError(err)
 			} else {
@@ -488,10 +488,8 @@ func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 			panicF := func() {
 				gm := sdk.NewGasMeter(10)
 				gm.ConsumeGas(tc.gasConsumed, "")
-				suite.ctx = suite.ctx.WithGasMeter(gm)
-				suite.app.EvmKeeper.WithContext(suite.ctx)
-
-				suite.app.EvmKeeper.ResetGasMeterAndConsumeGas(tc.gasUsed)
+				ctx := suite.ctx.WithGasMeter(gm)
+				suite.app.EvmKeeper.ResetGasMeterAndConsumeGas(ctx, tc.gasUsed)
 			}
 
 			if tc.expPanic {

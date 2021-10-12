@@ -62,14 +62,16 @@ func (suite *KeeperTestSuite) TestEvmHooks() {
 		suite.app.EvmKeeper.SetHooks(keeper.NewMultiEvmHooks(hook))
 
 		k := suite.app.EvmKeeper
+		ctx := suite.ctx
+
 		txHash := common.BigToHash(big.NewInt(1))
-		k.SetTxHashTransient(txHash)
-		k.AddLog(&ethtypes.Log{
+		k.SetTxHashTransient(ctx, txHash)
+		k.AddLog(ctx, &ethtypes.Log{
 			Topics:  []common.Hash{},
 			Address: suite.address,
 		})
-		logs := k.GetTxLogsTransient(txHash)
-		result := k.PostTxProcessing(txHash, logs)
+		logs := k.GetTxLogsTransient(ctx, txHash)
+		result := k.PostTxProcessing(ctx, txHash, logs)
 
 		tc.expFunc(hook, result)
 	}

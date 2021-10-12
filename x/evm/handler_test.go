@@ -18,6 +18,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -56,6 +57,7 @@ type EvmTestSuite struct {
 	to        sdk.AccAddress
 
 	dynamicTxFee bool
+	vmdb         vm.StateDB
 }
 
 /// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
@@ -135,7 +137,7 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 		ConsensusHash:      tmhash.Sum([]byte("consensus")),
 		LastResultsHash:    tmhash.Sum([]byte("last_result")),
 	})
-	suite.app.EvmKeeper.WithContext(suite.ctx)
+	suite.vmdb = types.NewStateDB(suite.ctx, suite.app.EvmKeeper)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
 	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
@@ -229,7 +231,7 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 			suite.SetupTest() // reset
 			//nolint
 			tc.malleate()
-			suite.app.EvmKeeper.Snapshot()
+			suite.vmdb.Snapshot()
 			res, err := suite.handler(suite.ctx, tx)
 
 			//nolint
@@ -287,11 +289,11 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 
 	tlogs := types.LogsToEthereum(txResponse.Logs)
 	for _, log := range tlogs {
-		suite.app.EvmKeeper.AddLogTransient(log)
+		suite.app.EvmKeeper.AddLogTransient(suite.ctx, log)
 	}
 	suite.Require().NoError(err)
 
-	logs := suite.app.EvmKeeper.GetTxLogsTransient(tlogs[0].TxHash)
+	logs := suite.app.EvmKeeper.GetTxLogsTransient(suite.ctx, tlogs[0].TxHash)
 
 	suite.Require().Equal(logs, tlogs)
 }

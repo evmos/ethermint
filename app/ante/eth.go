@@ -23,14 +23,12 @@ import (
 
 // EVMKeeper defines the expected keeper interface used on the Eth AnteHandler
 type EVMKeeper interface {
-	vm.StateDB
+	evmtypes.StateDBKeeper
 
 	ChainID() *big.Int
 	GetParams(ctx sdk.Context) evmtypes.Params
-	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	NewEVM(msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.Tracer) *vm.EVM
-	GetCodeHash(addr common.Address) common.Hash
+	NewEVM(ctx sdk.Context, msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.Tracer, stateDB vm.StateDB) *vm.EVM
 	DeductTxCostsFromUserBalance(
 		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
 	) (sdk.Coins, error)
@@ -124,7 +122,6 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		return next(ctx, tx, simulate)
 	}
 
-	avd.evmKeeper.WithContext(ctx)
 	evmDenom := avd.evmKeeper.GetParams(ctx).EvmDenom
 
 	for i, msg := range tx.GetMsgs() {
@@ -152,7 +149,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 
 		// check whether the sender address is EOA
 		fromAddr := common.BytesToAddress(from)
-		codeHash := avd.evmKeeper.GetCodeHash(fromAddr)
+		codeHash := avd.evmKeeper.GetCodeHash(ctx, fromAddr)
 		if codeHash != common.BytesToHash(evmtypes.EmptyCodeHash) {
 			return ctx, stacktrace.Propagate(sdkerrors.Wrapf(sdkerrors.ErrInvalidType,
 				"the sender is not EOA: address <%v>, codeHash <%s>", fromAddr, codeHash), "")
@@ -170,7 +167,6 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 
 	}
 	// recover  the original gas meter
-	avd.evmKeeper.WithContext(ctx)
 	return next(ctx, tx, simulate)
 }
 
@@ -322,8 +318,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
-	// set up the updated context to the evm Keeper
-	egcd.evmKeeper.WithContext(ctx)
 	return next(ctx, tx, simulate)
 }
 
@@ -345,8 +339,6 @@ func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk evmtypes.FeeMarketKeeper) 
 // AnteHandle creates an EVM from the message and calls the BlockContext CanTransfer function to
 // see if the address can execute the transaction.
 func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	ctd.evmKeeper.WithContext(ctx)
-
 	params := ctd.evmKeeper.GetParams(ctx)
 	feeMktParams := ctd.feemarketKeeper.GetParams(ctx)
 
@@ -382,11 +374,12 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			CoinBase:    common.Address{},
 			BaseFee:     baseFee,
 		}
-		evm := ctd.evmKeeper.NewEVM(coreMsg, cfg, evmtypes.NewNoOpTracer())
+		stateDB := evmtypes.NewStateDB(ctx, ctd.evmKeeper)
+		evm := ctd.evmKeeper.NewEVM(ctx, coreMsg, cfg, evmtypes.NewNoOpTracer(), stateDB)
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
-		if coreMsg.Value().Sign() > 0 && !evm.Context.CanTransfer(ctd.evmKeeper, coreMsg.From(), coreMsg.Value()) {
+		if coreMsg.Value().Sign() > 0 && !evm.Context.CanTransfer(stateDB, coreMsg.From(), coreMsg.Value()) {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "address %s", coreMsg.From()),
 				"failed to transfer %s using the EVM block context transfer function", coreMsg.Value(),
@@ -407,8 +400,6 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 	}
-
-	ctd.evmKeeper.WithContext(ctx)
 
 	// set the original gas meter
 	return next(ctx, tx, simulate)
@@ -447,9 +438,6 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 		return next(ctx, tx, simulate)
 	}
 
-	// setup the keeper context before setting the access list
-	ald.evmKeeper.WithContext(ctx)
-
 	for i, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -466,11 +454,9 @@ func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			return ctx, stacktrace.Propagate(err, "failed to unpack tx data")
 		}
 
-		ald.evmKeeper.PrepareAccessList(sender, txData.GetTo(), vm.ActivePrecompiles(rules), txData.GetAccessList())
+		ald.evmKeeper.PrepareAccessList(ctx, sender, txData.GetTo(), vm.ActivePrecompiles(rules), txData.GetAccessList())
 	}
 
-	// set the original gas meter
-	ald.evmKeeper.WithContext(ctx)
 	return next(ctx, tx, simulate)
 }
 

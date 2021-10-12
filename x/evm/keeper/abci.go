@@ -10,7 +10,6 @@ import (
 
 // BeginBlock sets the sdk Context and EIP155 chain id to the Keeper.
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	k.WithContext(ctx)
 	k.WithChainID(ctx)
 }
 
@@ -20,12 +19,9 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	// Gas costs are handled within msg handler so costs should be ignored
 	infCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-	k.WithContext(infCtx)
 
-	bloom := ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes())
+	bloom := ethtypes.BytesToBloom(k.GetBlockBloomTransient(infCtx).Bytes())
 	k.EmitBlockBloomEvent(infCtx, bloom)
-
-	k.WithContext(ctx)
 
 	return []abci.ValidatorUpdate{}
 }

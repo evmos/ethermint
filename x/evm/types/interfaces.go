@@ -56,3 +56,57 @@ type EvmHooks interface {
 	// Must be called after tx is processed successfully, if return an error, the whole transaction is reverted.
 	PostTxProcessing(ctx sdk.Context, txHash common.Hash, logs []*ethtypes.Log) error
 }
+
+// StateDBKeeper is the keeper interface underlying StateDB implementation
+// Differences from `vm.StateDB`:
+// - Pass `sdk.Context` explicitly.
+// - No following methods:
+//   - `GetCommittedState`, it's just `GetState` with a different `sdk.Context`.
+//   - `Snapshot`/`RevertToSnapshot`, it's implemented in the `StateDB`.
+// - Some methods return `error`, which is set to the `stateErr` in `StateDB`.
+type StateDBKeeper interface {
+	CreateAccount(sdk.Context, common.Address)
+
+	SubBalance(sdk.Context, common.Address, *big.Int) error
+	AddBalance(sdk.Context, common.Address, *big.Int) error
+	GetBalance(sdk.Context, common.Address) *big.Int
+
+	GetNonce(sdk.Context, common.Address) uint64
+	SetNonce(sdk.Context, common.Address, uint64) error
+
+	GetCodeHash(sdk.Context, common.Address) common.Hash
+	GetCode(sdk.Context, common.Address) []byte
+	SetCode(sdk.Context, common.Address, []byte) error
+	GetCodeSize(sdk.Context, common.Address) int
+
+	AddRefund(sdk.Context, uint64)
+	SubRefund(sdk.Context, uint64)
+	GetRefund(sdk.Context) uint64
+
+	GetState(sdk.Context, common.Address, common.Hash) common.Hash
+	SetState(sdk.Context, common.Address, common.Hash, common.Hash)
+
+	Suicide(sdk.Context, common.Address) (bool, error)
+	HasSuicided(sdk.Context, common.Address) bool
+
+	// Exist reports whether the given account exists in state.
+	// Notably this should also return true for suicided accounts.
+	Exist(sdk.Context, common.Address) bool
+	// Empty returns whether the given account is empty. Empty
+	// is defined according to EIP161 (balance = nonce = code = 0).
+	Empty(sdk.Context, common.Address) bool
+
+	PrepareAccessList(ctx sdk.Context, sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses ethtypes.AccessList)
+	AddressInAccessList(ctx sdk.Context, addr common.Address) bool
+	SlotInAccessList(ctx sdk.Context, addr common.Address, slot common.Hash) (addressOk bool, slotOk bool)
+	// AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
+	// even if the feature/fork is not active yet
+	AddAddressToAccessList(ctx sdk.Context, addr common.Address)
+	// AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
+	// even if the feature/fork is not active yet
+	AddSlotToAccessList(ctx sdk.Context, addr common.Address, slot common.Hash)
+
+	AddLog(sdk.Context, *ethtypes.Log)
+
+	ForEachStorage(sdk.Context, common.Address, func(common.Hash, common.Hash) bool) error
+}

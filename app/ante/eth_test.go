@@ -87,7 +87,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			tx,
 			func() {
 				// set not as an EOA
-				suite.app.EvmKeeper.SetCode(addr, []byte("1"))
+				suite.vmdb.SetCode(addr, []byte("1"))
 			},
 			true,
 			false,
@@ -97,7 +97,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			tx,
 			func() {
 				// reset back to EOA
-				suite.app.EvmKeeper.SetCode(addr, nil)
+				suite.vmdb.SetCode(addr, nil)
 			},
 			true,
 			false,
@@ -106,7 +106,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			"success new account",
 			tx,
 			func() {
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 			true,
@@ -118,7 +118,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 			true,
@@ -244,7 +244,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 			},
 			false, true,
 		},
@@ -255,7 +255,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1))
 			},
@@ -268,7 +268,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 
 				suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(10000000000000000000))
 			},
@@ -334,7 +334,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -383,7 +383,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -394,7 +394,7 @@ func (suite AnteTestSuite) TestAccessListDecorator() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
+				suite.vmdb.AddBalance(addr, big.NewInt(1000000))
 			},
 			true,
 		},
@@ -493,7 +493,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 				txData, err := evmtypes.UnpackTxData(msg.Data)
 				suite.Require().NoError(err)
 
-				nonce := suite.app.EvmKeeper.GetNonce(addr)
+				nonce := suite.vmdb.GetNonce(addr)
 				if txData.GetTo() == nil {
 					suite.Require().Equal(txData.GetNonce(), nonce)
 				} else {

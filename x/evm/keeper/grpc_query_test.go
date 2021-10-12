@@ -248,7 +248,7 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 				key := common.BytesToHash([]byte("key"))
 				value := common.BytesToHash([]byte("value"))
 				expValue = value.String()
-				suite.app.EvmKeeper.SetState(suite.address, key, value)
+				suite.vmdb.SetState(suite.address, key, value)
 				req = &types.QueryStorageRequest{
 					Address: suite.address.String(),
 					Key:     key.String(),
@@ -304,7 +304,7 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 			"success",
 			func() {
 				expCode = []byte("code")
-				suite.app.EvmKeeper.SetCode(suite.address, expCode)
+				suite.vmdb.SetCode(suite.address, expCode)
 
 				req = &types.QueryCodeRequest{
 					Address: suite.address.String(),
@@ -370,10 +370,10 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 					},
 				}
 
-				suite.app.EvmKeeper.SetTxHashTransient(txHash)
-				suite.app.EvmKeeper.IncreaseTxIndexTransient()
+				suite.app.EvmKeeper.SetTxHashTransient(suite.ctx, txHash)
+				suite.app.EvmKeeper.IncreaseTxIndexTransient(suite.ctx)
 				for _, log := range types.LogsToEthereum(expLogs) {
-					suite.app.EvmKeeper.AddLog(log)
+					suite.vmdb.AddLog(log)
 				}
 			},
 		},
@@ -384,7 +384,7 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 			suite.SetupTest() // reset
 
 			tc.malleate()
-			logs := suite.app.EvmKeeper.GetTxLogsTransient(txHash)
+			logs := suite.app.EvmKeeper.GetTxLogsTransient(suite.ctx, txHash)
 			suite.Require().Equal(expLogs, types.NewLogsFromEth(logs))
 		})
 	}

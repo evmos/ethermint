@@ -1,4 +1,4 @@
-package keeper
+package types
 
 import (
 	"fmt"
@@ -22,6 +22,11 @@ type ContextStack struct {
 	cachedContexts []cachedContext
 }
 
+// NewContextStack construct a clean stack with the initial ctx
+func NewContextStack(ctx sdk.Context) ContextStack {
+	return ContextStack{initialCtx: ctx}
+}
+
 // CurrentContext returns the top context of cached stack,
 // if the stack is empty, returns the initial context.
 func (cs *ContextStack) CurrentContext() sdk.Context {
@@ -30,14 +35,6 @@ func (cs *ContextStack) CurrentContext() sdk.Context {
 		return cs.initialCtx
 	}
 	return cs.cachedContexts[l-1].ctx
-}
-
-// Reset sets the initial context and clear the cache context stack.
-func (cs *ContextStack) Reset(ctx sdk.Context) {
-	cs.initialCtx = ctx
-	if len(cs.cachedContexts) > 0 {
-		cs.cachedContexts = []cachedContext{}
-	}
 }
 
 // IsEmpty returns true if the cache context stack is empty.
@@ -60,28 +57,6 @@ func (cs *ContextStack) Commit() {
 	cs.cachedContexts = []cachedContext{}
 }
 
-// CommitToRevision commit the cache after the target revision,
-// to improve efficiency of db operations.
-func (cs *ContextStack) CommitToRevision(target int) error {
-	if target < 0 || target >= len(cs.cachedContexts) {
-		return fmt.Errorf("snapshot index %d out of bound [%d..%d)", target, 0, len(cs.cachedContexts))
-	}
-
-	targetCtx := cs.cachedContexts[target].ctx
-	// commit in order from top to bottom
-	for i := len(cs.cachedContexts) - 1; i > target; i-- {
-		// keep all the cosmos events
-		targetCtx.EventManager().EmitEvents(cs.cachedContexts[i].ctx.EventManager().Events())
-		if cs.cachedContexts[i].commit == nil {
-			return fmt.Errorf("commit function at index %d should not be nil", i)
-		}
-		cs.cachedContexts[i].commit()
-	}
-	cs.cachedContexts = cs.cachedContexts[0 : target+1]
-
-	return nil
-}
-
 // Snapshot pushes a new cached context to the stack,
 // and returns the index of it.
 func (cs *ContextStack) Snapshot() int {
@@ -99,11 +74,4 @@ func (cs *ContextStack) RevertToSnapshot(target int) {
 		panic(fmt.Errorf("snapshot index %d out of bound [%d..%d)", target, 0, len(cs.cachedContexts)))
 	}
 	cs.cachedContexts = cs.cachedContexts[:target]
-}
-
-// RevertAll discards all the cache contexts.
-func (cs *ContextStack) RevertAll() {
-	if len(cs.cachedContexts) > 0 {
-		cs.RevertToSnapshot(0)
-	}
 }

@@ -35,7 +35,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.Require().NotNil(acc)
 
-				suite.app.EvmKeeper.AddBalance(address, big.NewInt(1))
+				suite.vmdb.AddBalance(address, big.NewInt(1))
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 			},
 			&types.GenesisState{
