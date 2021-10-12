@@ -104,6 +104,7 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 		feemarketGenesis := feemarkettypes.DefaultGenesisState()
 		feemarketGenesis.Params.EnableHeight = 1
 		feemarketGenesis.Params.NoBaseFee = false
+		feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
 		suite.app = app.Setup(checkTx, feemarketGenesis)
 	} else {
 		suite.app = app.Setup(checkTx, nil)
