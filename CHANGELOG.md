@@ -67,6 +67,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (rpc) [tharsis#667](https://github.com/tharsis/ethermint/issues/667) Fix ExpandHome restrictions bypass
 * (rpc) [tharsis#642](https://github.com/tharsis/ethermint/issues/642) Fix `eth_getLogs` when string is specified in filter's from or to fields
 * (evm) [tharsis#616](https://github.com/tharsis/ethermint/issues/616) Fix halt on deeply nested stack of cache context. Stack is now flattened before iterating over the tx logs.
 * (rpc, evm) [tharsis#614](https://github.com/tharsis/ethermint/issues/614) Use JSON for (un)marshaling tx `Log`s from events.
