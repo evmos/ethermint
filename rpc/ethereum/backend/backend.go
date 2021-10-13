@@ -766,7 +766,7 @@ func (e *EVMBackend) RPCGasCap() uint64 {
 }
 
 // RPCFilterCap is the limit for total number of filters that can be created
-func (e *EVMBackend) RPCFilterCap() uint64 {
+func (e *EVMBackend) RPCFilterCap() int32 {
 	return e.cfg.JSONRPC.FilterCap
 }
 

@@ -37,7 +37,7 @@ type Backend interface {
 
 	GetFilteredBlocks(from int64, to int64, bloomIndexes [][]BloomIV, filterAddresses bool) ([]int64, error)
 
-	RPCFilterCap() uint64
+	RPCFilterCap() int32
 }
 
 // consider a filter inactive if it has not been polled for within deadline

@@ -29,7 +29,7 @@ const (
 
 	DefaultGasCap uint64 = 25000000
 
-	DefaultFilterCap uint64 = 200
+	DefaultFilterCap int32 = 200
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
@@ -64,7 +64,7 @@ type JSONRPCConfig struct {
 	// GasCap is the global gas cap for eth-call variants.
 	GasCap uint64 `mapstructure:"gas-cap"`
 	// FilterCap is the global cap for total number of filters that can be created.
-	FilterCap uint64 `mapstructure:"filter-cap"`
+	FilterCap int32 `mapstructure:"filter-cap"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -159,6 +159,10 @@ func (c JSONRPCConfig) Validate() error {
 		return errors.New("cannot enable JSON-RPC without defining any API namespace")
 	}
 
+	if c.FilterCap < 0 {
+		return errors.New("JSON-RPC filter-cap cannot be negative")
+	}
+
 	// TODO: validate APIs
 	seenAPIs := make(map[string]bool)
 	for _, api := range c.API {
@@ -212,7 +216,7 @@ func GetConfig(v *viper.Viper) Config {
 			Address:   v.GetString("json-rpc.address"),
 			WsAddress: v.GetString("json-rpc.ws-address"),
 			GasCap:    v.GetUint64("json-rpc.gas-cap"),
-			FilterCap: v.GetUint64("json-rpc.filter-cap"),
+			FilterCap: v.GetInt32("json-rpc.filter-cap"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
