@@ -36,7 +36,7 @@ contract('Lifecycle', () => {
     })
 
     it('has correct initialization block', async () => {
-      assert.equal(await lifecycle.getInitializationBlock(), await web3.eth.getBlockNumber(), 'initialization block should be correct')
+      assert.equal((await lifecycle.getInitializationBlock()).toNumber(), await web3.eth.getBlockNumber(), 'initialization block should be correct')
     })
 
     it('cannot be re-initialized', async () => {
