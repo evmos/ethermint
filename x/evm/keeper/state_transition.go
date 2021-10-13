@@ -159,7 +159,10 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// get the latest signer according to the chain rules from the config
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
-	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+	var baseFee *big.Int
+	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
+		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
+	}
 
 	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
@@ -368,7 +371,10 @@ func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxRespo
 		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
-	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+	var baseFee *big.Int
+	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
+		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
+	}
 
 	tracer := types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight(), k.debug)
 	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)

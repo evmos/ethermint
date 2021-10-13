@@ -62,7 +62,7 @@ type Backend interface {
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
-	BaseFee() (*big.Int, error)
+	BaseFee(height int64) (*big.Int, error)
 
 	// Filter API
 	BloomStatus() (uint64, uint64)
@@ -238,7 +238,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	ctx := types.ContextWithHeight(block.Height)
 
-	baseFee, err := e.BaseFee()
+	baseFee, err := e.BaseFee(block.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +370,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		e.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	baseFee, err := e.BaseFee()
+	baseFee, err := e.BaseFee(resBlock.Block.Height)
 	if err != nil {
 		e.logger.Debug("HeaderByNumber BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
 		return nil, err
@@ -398,7 +398,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		e.logger.Debug("HeaderByHash BlockBloom failed", "height", resBlock.Block.Height)
 	}
 
-	baseFee, err := e.BaseFee()
+	baseFee, err := e.BaseFee(resBlock.Block.Height)
 	if err != nil {
 		e.logger.Debug("HeaderByHash BaseFee failed", "height", resBlock.Block.Height, "error", err.Error())
 		return nil, err
@@ -710,7 +710,21 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 		return 0, err
 	}
 
-	baseFee, err := e.BaseFee()
+	height := blockNr.Int64()
+	currentBlockNumber, _ := e.BlockNumber()
+	switch blockNr {
+	case types.EthLatestBlockNumber:
+		if currentBlockNumber > 0 {
+			height = int64(currentBlockNumber)
+		}
+	case types.EthPendingBlockNumber:
+		if currentBlockNumber > 0 {
+			height = int64(currentBlockNumber)
+		}
+	case types.EthEarliestBlockNumber:
+		height = 1
+	}
+	baseFee, err := e.BaseFee(height)
 	if err != nil {
 		return 0, err
 	}
@@ -730,7 +744,7 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	res, err := e.queryClient.EstimateGas(types.ContextWithHeight(blockNr.Int64()), &req)
+	res, err := e.queryClient.EstimateGas(types.ContextWithHeight(height), &req)
 	if err != nil {
 		return 0, err
 	}
@@ -805,9 +819,14 @@ func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
 }
 
 // BaseFee returns the base fee tracked by the Fee Market module. If the base fee is not enabled,
-// it returns the initial base fee amount.
-func (e *EVMBackend) BaseFee() (*big.Int, error) {
-	res, err := e.queryClient.FeeMarket.BaseFee(e.ctx, &feemarkettypes.QueryBaseFeeRequest{})
+// it returns the initial base fee amount. Return nil if London is not activated.
+func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
+	cfg := e.ChainConfig()
+	if !cfg.IsLondon(new(big.Int).SetInt64(height)) {
+		return nil, nil
+	}
+
+	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -816,7 +835,7 @@ func (e *EVMBackend) BaseFee() (*big.Int, error) {
 		return res.BaseFee.BigInt(), nil
 	}
 
-	resParams, err := e.queryClient.FeeMarket.Params(e.ctx, &feemarkettypes.QueryParamsRequest{})
+	resParams, err := e.queryClient.FeeMarket.Params(types.ContextWithHeight(height), &feemarkettypes.QueryParamsRequest{})
 	if err != nil {
 		return nil, err
 	}
