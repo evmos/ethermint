@@ -46,6 +46,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [tharsis#667](https://github.com/tharsis/ethermint/issues/667) Fix `ExpandHome` restrictions bypass
+* (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
 
 ## [v0.7.1] - 2021-10-08
 

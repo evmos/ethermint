@@ -28,6 +28,8 @@ const (
 	DefaultEVMTracer = "json"
 
 	DefaultGasCap uint64 = 25000000
+
+	DefaultFilterCap int32 = 200
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
@@ -51,16 +53,18 @@ type EVMConfig struct {
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
 type JSONRPCConfig struct {
+	// API defines a list of JSON-RPC namespaces that should be enabled
+	API []string `mapstructure:"api"`
 	// Address defines the HTTP server to listen on
 	Address string `mapstructure:"address"`
 	// WsAddress defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
-	// API defines a list of JSON-RPC namespaces that should be enabled
-	API []string `mapstructure:"api"`
-	// Enable defines if the EVM RPC server should be enabled.
-	Enable bool `mapstructure:"enable"`
 	// GasCap is the global gas cap for eth-call variants.
 	GasCap uint64 `mapstructure:"gas-cap"`
+	// FilterCap is the global cap for total number of filters that can be created.
+	FilterCap int32 `mapstructure:"filter-cap"`
+	// Enable defines if the EVM RPC server should be enabled.
+	Enable bool `mapstructure:"enable"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -145,6 +149,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		Address:   DefaultJSONRPCAddress,
 		WsAddress: DefaultJSONRPCWsAddress,
 		GasCap:    DefaultGasCap,
+		FilterCap: DefaultFilterCap,
 	}
 }
 
@@ -152,6 +157,10 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 func (c JSONRPCConfig) Validate() error {
 	if c.Enable && len(c.API) == 0 {
 		return errors.New("cannot enable JSON-RPC without defining any API namespace")
+	}
+
+	if c.FilterCap < 0 {
+		return errors.New("JSON-RPC filter-cap cannot be negative")
 	}
 
 	// TODO: validate APIs
@@ -207,6 +216,7 @@ func GetConfig(v *viper.Viper) Config {
 			Address:   v.GetString("json-rpc.address"),
 			WsAddress: v.GetString("json-rpc.ws-address"),
 			GasCap:    v.GetUint64("json-rpc.gas-cap"),
+			FilterCap: v.GetInt32("json-rpc.filter-cap"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
