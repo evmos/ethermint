@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"log"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -21,7 +22,9 @@ func TestAddTopic(t *testing.T) {
 	err = q.AddTopic("lol", make(<-chan coretypes.ResultEvent))
 	require.Error(t, err)
 
-	require.EqualValues(t, []string{"kek", "lol"}, q.Topics())
+	topics := q.Topics()
+	sort.Strings(topics)
+	require.EqualValues(t, []string{"kek", "lol"}, topics)
 }
 
 func TestSubscribe(t *testing.T) {

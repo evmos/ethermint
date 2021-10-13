@@ -24,26 +24,27 @@ func isCPUProfileConfigurationActivated(ctx *server.Context) bool {
 
 // ExpandHome expands home directory in file paths.
 // ~someuser/tmp will not be expanded.
-func ExpandHome(p string) string {
+func ExpandHome(p string) (string, error) {
 	if strings.HasPrefix(p, "~/") || strings.HasPrefix(p, "~\\") {
-		home := os.Getenv("HOME")
-		if home == "" {
-			if usr, err := user.Current(); err == nil {
-				home = usr.HomeDir
-			}
+		usr, err := user.Current()
+		if err != nil {
+			return p, err
 		}
-		if home != "" {
-			p = home + p[1:]
-		}
+		home := usr.HomeDir
+		p = home + p[1:]
 	}
-	return filepath.Clean(p)
+	return filepath.Clean(p), nil
 }
 
 // writeProfile writes the data to a file
 func writeProfile(name, file string, log log.Logger) error {
 	p := pprof.Lookup(name)
 	log.Info("Writing profile records", "count", p.Count(), "type", name, "dump", file)
-	f, err := os.Create(ExpandHome(file))
+	fp, err := ExpandHome(file)
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(fp)
 	if err != nil {
 		return err
 	}
