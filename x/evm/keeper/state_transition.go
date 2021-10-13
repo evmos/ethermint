@@ -370,7 +370,8 @@ func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxRespo
 
 	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
-	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, nil)
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight(), k.debug)
+	evm := k.NewEVM(msg, ethCfg, params, coinbase, baseFee, tracer)
 
 	ret, err := k.ApplyMessage(evm, msg, ethCfg, true)
 	if err != nil {
