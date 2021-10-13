@@ -14,9 +14,11 @@
   },
   "dependencies": {
     "truffle": "5.4.14",
-    "yargs": "^17.0.1"
+    "yargs": "^17.0.1",
+    "patch-package": "^6.4.7"
   },
   "scripts": {
-    "test": "node test-helper.js"
+    "test": "node test-helper.js",
+    "postinstall": "patch-package"
   }
 }
