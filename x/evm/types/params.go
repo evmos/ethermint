@@ -2,6 +2,10 @@ package types
 
 import (
 	"fmt"
+	"math/big"
+
+
+	"github.com/ethereum/go-ethereum/params"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -131,4 +135,9 @@ func validateChainConfig(i interface{}) error {
 	}
 
 	return cfg.Validate()
+}
+
+func IsLondon(ethConfig *params.ChainConfig, height int64) bool {
+	rules := ethConfig.Rules(big.NewInt(height))
+	return rules.IsLondon
 }

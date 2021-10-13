@@ -160,7 +160,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
 	var baseFee *big.Int
-	if types.IsLondon(params.ChainConfig.EthereumConfig(ethCfg.ChainID), ctx.BlockHeight()) {
+	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
 		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
 	}
 
@@ -372,7 +372,7 @@ func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxRespo
 	}
 
 	var baseFee *big.Int
-	if types.IsLondon(params.ChainConfig.EthereumConfig(ethCfg.ChainID), ctx.BlockHeight()) {
+	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
 		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
 	}
 
