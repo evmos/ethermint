@@ -223,7 +223,12 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var cpuProfileCleanup func()
 
 	if cpuProfile := ctx.Viper.GetString(srvflags.CPUProfile); cpuProfile != "" {
-		f, err := os.Create(ethdebug.ExpandHome(cpuProfile))
+		fp, err := ethdebug.ExpandHome(cpuProfile)
+		if err != nil {
+			ctx.Logger.Debug("failed to get filepath for the CPU profile file", "error", err.Error())
+			return err
+		}
+		f, err := os.Create(fp)
 		if err != nil {
 			return err
 		}
