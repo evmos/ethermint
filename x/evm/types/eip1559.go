@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/ethereum/go-ethereum/params"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/params"
 )
 
 func IsLondon(ethConfig *params.ChainConfig, height int64) bool {
