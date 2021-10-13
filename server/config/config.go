@@ -53,18 +53,18 @@ type EVMConfig struct {
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
 type JSONRPCConfig struct {
+	// API defines a list of JSON-RPC namespaces that should be enabled
+	API []string `mapstructure:"api"`
 	// Address defines the HTTP server to listen on
 	Address string `mapstructure:"address"`
 	// WsAddress defines the WebSocket server to listen on
 	WsAddress string `mapstructure:"ws-address"`
-	// API defines a list of JSON-RPC namespaces that should be enabled
-	API []string `mapstructure:"api"`
-	// Enable defines if the EVM RPC server should be enabled.
-	Enable bool `mapstructure:"enable"`
 	// GasCap is the global gas cap for eth-call variants.
 	GasCap uint64 `mapstructure:"gas-cap"`
 	// FilterCap is the global cap for total number of filters that can be created.
 	FilterCap int32 `mapstructure:"filter-cap"`
+	// Enable defines if the EVM RPC server should be enabled.
+	Enable bool `mapstructure:"enable"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
