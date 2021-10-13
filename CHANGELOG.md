@@ -35,6 +35,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+* (rpc) [tharsis#667](https://github.com/tharsis/ethermint/issues/667) Fix `ExpandHome` restrictions bypass
+
 ## [v0.7.1] - 2021-10-08
 
 ### Bug Fixes

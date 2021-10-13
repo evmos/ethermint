@@ -292,7 +292,12 @@ func (a *API) StartCPUProfile(file string) error {
 		a.logger.Debug("CPU profiling already in progress")
 		return errors.New("CPU profiling already in progress")
 	default:
-		f, err := os.Create(ExpandHome(file))
+		fp, err := ExpandHome(file)
+		if err != nil {
+			a.logger.Debug("failed to get filepath for the CPU profile file", "error", err.Error())
+			return err
+		}
+		f, err := os.Create(fp)
 		if err != nil {
 			a.logger.Debug("failed to create CPU profile file", "error", err.Error())
 			return err
