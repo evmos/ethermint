@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-
 	"github.com/ethereum/go-ethereum/params"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"

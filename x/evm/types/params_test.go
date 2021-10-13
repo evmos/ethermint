@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/ethereum/go-ethereum/params"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/params"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/require"
@@ -108,9 +109,9 @@ func TestValidateChainConfig(t *testing.T) {
 
 func TestIsLondon(t *testing.T) {
 	testCases := []struct {
-		name         string
-		height       int64
-		result       bool
+		name   string
+		height int64
+		result bool
 	}{
 		{
 			"Before london block",
