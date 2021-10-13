@@ -50,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [tharsis#650](https://github.com/tharsis/ethermint/pull/650) Fix panic when flattening the cache context in case transaction is reverted.
 * (rpc, test) [tharsis#608](https://github.com/tharsis/ethermint/pull/608) Fix rpc test.
+* (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix possibility of OOM error on creating too many filters using JSON-RPC.
 
 ## [v0.7.0] - 2021-10-07
 
