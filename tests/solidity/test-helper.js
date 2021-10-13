@@ -114,7 +114,9 @@ function loadTests(runConfig) {
     validTests.push(dirname);
   })
 
-  validTests = validTests.filter(t => runConfig.onlyTest.indexOf(t) !== -1);
+  if (runConfig.onlyTest) {
+    validTests = validTests.filter(t => runConfig.onlyTest.indexOf(t) !== -1);
+  }
 
   if (runConfig.batch) {
     const chunkSize = Math.ceil(validTests.length / runConfig.batch.all);
@@ -219,7 +221,8 @@ async function main() {
 
 // Add handler to exit the program when UnhandledPromiseRejection
 
-process.on('unhandledRejection', () => {
+process.on('unhandledRejection', e => {
+  console.error(e);
   process.exit(-1);
 });
 
