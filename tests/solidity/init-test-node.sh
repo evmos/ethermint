@@ -29,7 +29,7 @@ ethermintd init $MONIKER --chain-id $CHAINID
 cat $HOME/.ethermintd/config/genesis.json | jq '.consensus_params["block"]["max_gas"]="10000000"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
 
 # Reduce the block time to 1s
-sed -i -e '/^timeout_commit =/ s/= .*/= "500ms"/' $HOME/.ethermintd/config/config.toml
+sed -i -e '/^timeout_commit =/ s/= .*/= "150ms"/' $HOME/.ethermintd/config/config.toml
 
 # Allocate genesis accounts (cosmos formatted addresses)
 ethermintd add-genesis-account "$(ethermintd keys show $VAL_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
