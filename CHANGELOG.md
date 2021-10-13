@@ -51,7 +51,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (deps) [tharsis#655](https://github.com/tharsis/ethermint/pull/665) Bump Cosmos SDK version to [`v0.44.2`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.2).
 * (evm) [tharsis#650](https://github.com/tharsis/ethermint/pull/650) Fix panic when flattening the cache context in case transaction is reverted.
 * (rpc, test) [tharsis#608](https://github.com/tharsis/ethermint/pull/608) Fix rpc test.
-* (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix nil pointer panic in ApplyNativeMessage.
+* (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
+* (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 
 ## [v0.7.0] - 2021-10-07
 

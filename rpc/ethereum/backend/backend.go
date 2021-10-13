@@ -765,6 +765,11 @@ func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
 }
 
+// RPCFilterCap is the limit for total number of filters that can be created
+func (e *EVMBackend) RPCFilterCap() int32 {
+	return e.cfg.JSONRPC.FilterCap
+}
+
 // RPCMinGasPrice returns the minimum gas price for a transaction obtained from
 // the node config. If set value is 0, it will default to 20.
 
