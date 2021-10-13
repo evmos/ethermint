@@ -29,7 +29,7 @@ const (
 
 	DefaultGasCap uint64 = 25000000
 
-	DefaultFilterCap uint64 = 2000000
+	DefaultFilterCap uint64 = 200
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
