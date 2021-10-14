@@ -59,7 +59,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
-(rpc) [tharsis#679](https://github.com/tharsis/ethermint/pull/679) Fix file close handle.
+- (rpc) [tharsis#679](https://github.com/tharsis/ethermint/pull/679) Fix file close handle.
+- (rpc) [tharsis#671](https://github.com/tharsis/ethermint/pull/671) Don't pass base fee externally for `EthCall`/`EthEstimateGas` apis.
 
 ## [v0.7.0] - 2021-10-07
 

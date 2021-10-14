@@ -712,41 +712,15 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 		return 0, err
 	}
 
-	height := blockNr.Int64()
-	currentBlockNumber, _ := e.BlockNumber()
-	switch blockNr {
-	case types.EthLatestBlockNumber:
-		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber)
-		}
-	case types.EthPendingBlockNumber:
-		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber)
-		}
-	case types.EthEarliestBlockNumber:
-		height = 1
-	}
-	baseFee, err := e.BaseFee(height)
-	if err != nil {
-		return 0, err
-	}
-
-	var bf *sdk.Int
-	if baseFee != nil {
-		aux := sdk.NewIntFromBigInt(baseFee)
-		bf = &aux
-	}
-
 	req := evmtypes.EthCallRequest{
-		Args:    bz,
-		GasCap:  e.RPCGasCap(),
-		BaseFee: bf,
+		Args:   bz,
+		GasCap: e.RPCGasCap(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	res, err := e.queryClient.EstimateGas(types.ContextWithHeight(height), &req)
+	res, err := e.queryClient.EstimateGas(types.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return 0, err
 	}
