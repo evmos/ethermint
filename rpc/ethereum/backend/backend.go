@@ -826,22 +826,24 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 		return nil, nil
 	}
 
-	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
+	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &height)
 	if err != nil {
 		return nil, err
 	}
 
-	if res.BaseFee != nil {
+	baseFee := types.BaseFeeFromEvents(blockRes.EndBlockEvents)
+	if baseFee != nil {
+		return baseFee, nil
+	}
+
+	// If we cannot find in events, we tried to get it from the state.
+	// It will return feemarket.baseFee if london is activated but feemarket is not enable
+	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
+	if err == nil && res.BaseFee != nil {
 		return res.BaseFee.BigInt(), nil
 	}
 
-	resParams, err := e.queryClient.FeeMarket.Params(types.ContextWithHeight(height), &feemarkettypes.QueryParamsRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	baseFee := big.NewInt(resParams.Params.InitialBaseFee)
-	return baseFee, nil
+	return nil, nil
 }
 
 // GetFilteredBlocks returns the block height list match the given bloom filters.
