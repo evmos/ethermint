@@ -3,6 +3,8 @@ package types
 import (
 	"testing"
 
+	"github.com/ethereum/go-ethereum/params"
+
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/require"
 )
@@ -102,5 +104,34 @@ func TestValidateChainConfig(t *testing.T) {
 		} else {
 			require.NoError(t, err, tc.name)
 		}
+	}
+}
+
+func TestIsLondon(t *testing.T) {
+	testCases := []struct {
+		name   string
+		height int64
+		result bool
+	}{
+		{
+			"Before london block",
+			5,
+			false,
+		},
+		{
+			"After london block",
+			12_965_001,
+			true,
+		},
+		{
+			"london block",
+			12_965_000,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		ethConfig := params.MainnetChainConfig
+		require.Equal(t, IsLondon(ethConfig, tc.height), tc.result)
 	}
 }

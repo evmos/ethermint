@@ -359,7 +359,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		}
 
 		var baseFee *big.Int
-		if !feeMktParams.NoBaseFee {
+		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee {
 			baseFee = ctd.feemarketKeeper.GetBaseFee(ctx)
 		}
 
@@ -383,14 +383,14 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		if !feeMktParams.NoBaseFee && baseFee == nil {
+		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee && baseFee == nil {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrap(evmtypes.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil"),
 				"address %s", coreMsg.From(),
 			)
 		}
 
-		if !feeMktParams.NoBaseFee && baseFee != nil && coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
+		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee && baseFee != nil && coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
 			return ctx, stacktrace.Propagate(
 				sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), baseFee),
 				"address %s", coreMsg.From(),

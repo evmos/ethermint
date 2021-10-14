@@ -45,11 +45,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Features
 
 * (rpc) [tharsis#624](https://github.com/tharsis/ethermint/pull/624) Implement new JSON-RPC endpoints from latest geth version
+* (evm) [tharsis#662](https://github.com/tharsis/ethermint/pull/662) Disable basefee for non london blocks
 
 ### Bug Fixes
 
+* (deps) [tharsis#655](https://github.com/tharsis/ethermint/pull/665) Bump Cosmos SDK version to [`v0.44.2`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.2).
 * (evm) [tharsis#650](https://github.com/tharsis/ethermint/pull/650) Fix panic when flattening the cache context in case transaction is reverted.
 * (rpc, test) [tharsis#608](https://github.com/tharsis/ethermint/pull/608) Fix rpc test.
+* (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
+* (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 
 ## [v0.7.0] - 2021-10-07
 
@@ -65,6 +69,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (rpc) [tharsis#667](https://github.com/tharsis/ethermint/issues/667) Fix ExpandHome restrictions bypass
 * (rpc) [tharsis#642](https://github.com/tharsis/ethermint/issues/642) Fix `eth_getLogs` when string is specified in filter's from or to fields
 * (evm) [tharsis#616](https://github.com/tharsis/ethermint/issues/616) Fix halt on deeply nested stack of cache context. Stack is now flattened before iterating over the tx logs.
 * (rpc, evm) [tharsis#614](https://github.com/tharsis/ethermint/issues/614) Use JSON for (un)marshaling tx `Log`s from events.

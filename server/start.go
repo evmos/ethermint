@@ -156,6 +156,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(srvflags.JSONRPCAddress, config.DefaultJSONRPCAddress, "the JSON-RPC server address to listen on")
 	cmd.Flags().String(srvflags.JSONWsAddress, config.DefaultJSONRPCWsAddress, "the JSON-RPC WS server address to listen on")
 	cmd.Flags().Uint64(srvflags.JSONRPCGasCap, config.DefaultGasCap, "Sets a cap on gas that can be used in eth_call/estimateGas (0=infinite)")
+	cmd.Flags().Int32(srvflags.JSONRPCFilterCap, config.DefaultFilterCap, "Sets the global cap for total number of filters that can be created")
 
 	cmd.Flags().String(srvflags.EVMTracer, config.DefaultEVMTracer, "the EVM tracer type to collect execution traces from the EVM transaction execution (json|struct|access_list|markdown)")
 
@@ -223,7 +224,12 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var cpuProfileCleanup func()
 
 	if cpuProfile := ctx.Viper.GetString(srvflags.CPUProfile); cpuProfile != "" {
-		f, err := os.Create(ethdebug.ExpandHome(cpuProfile))
+		fp, err := ethdebug.ExpandHome(cpuProfile)
+		if err != nil {
+			ctx.Logger.Debug("failed to get filepath for the CPU profile file", "error", err.Error())
+			return err
+		}
+		f, err := os.Create(fp)
 		if err != nil {
 			return err
 		}

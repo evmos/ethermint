@@ -587,7 +587,21 @@ func (e *PublicAPI) doCall(
 		return nil, err
 	}
 
-	baseFee, err := e.backend.BaseFee()
+	currentBlockNumber, _ := e.BlockNumber()
+	height := blockNr.Int64()
+	switch blockNr {
+	case rpctypes.EthLatestBlockNumber:
+		if currentBlockNumber > 0 {
+			height = int64(currentBlockNumber)
+		}
+	case rpctypes.EthPendingBlockNumber:
+		if currentBlockNumber > 0 {
+			height = int64(currentBlockNumber)
+		}
+	case rpctypes.EthEarliestBlockNumber:
+		height = 1
+	}
+	baseFee, err := e.backend.BaseFee(height)
 	if err != nil {
 		return nil, err
 	}
@@ -680,7 +694,7 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 		return nil, err
 	}
 
-	baseFee, err := e.backend.BaseFee()
+	baseFee, err := e.backend.BaseFee(resBlock.Block.Height)
 	if err != nil {
 		return nil, err
 	}
