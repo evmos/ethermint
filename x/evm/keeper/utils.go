@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -65,7 +64,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 		baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 		gasFeeGap := new(big.Int).Sub(txData.GetGasFeeCap(), baseFee)
 		if gasFeeGap.Sign() == -1 {
-			return nil, fmt.Errorf("the tx gasfeecap is lower than the tx baseFee: %s (gasfeecap), %s (basefee) ", txData.GetGasFeeCap(), baseFee)
+			return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "the tx gasfeecap is lower than the tx baseFee: %s (gasfeecap), %s (basefee) ", txData.GetGasFeeCap(), baseFee)
 		}
 
 		effectiveTip = cmath.BigMin(txData.GetGasTipCap(), gasFeeGap)
