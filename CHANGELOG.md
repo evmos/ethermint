@@ -44,6 +44,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Features
 
+* (rpc, evm) [tharsis#673](https://github.com/tharsis/ethermint/pull/673) Use tendermint events to store fee market basefee.
 * (rpc) [tharsis#624](https://github.com/tharsis/ethermint/pull/624) Implement new JSON-RPC endpoints from latest geth version
 * (evm) [tharsis#662](https://github.com/tharsis/ethermint/pull/662) Disable basefee for non london blocks
 
