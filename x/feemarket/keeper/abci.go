@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tharsis/ethermint/x/feemarket/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -13,12 +14,21 @@ import (
 // an empty slice.
 func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	baseFee := k.CalculateBaseFee(ctx)
+
+	// return immediately if base fee is nil
 	if baseFee == nil {
 		return
 	}
 
-	// only set base fee if the NoBaseFee param is false
 	k.SetBaseFee(ctx, baseFee)
+
+	// Store current base fee in event
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeFeeMarket,
+			sdk.NewAttribute(types.AttributeKeyBaseFee, baseFee.String()),
+		),
+	})
 
 	if ctx.BlockGasMeter() == nil {
 		k.Logger(ctx).Error("block gas meter is nil when setting block gas used")
