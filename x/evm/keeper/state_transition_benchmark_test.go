@@ -40,14 +40,6 @@ var templateDynamicFeeTx = &ethtypes.DynamicFeeTx{
 	Data:      []byte{},
 }
 
-type txType int
-
-const (
-	LegacyTx txType = iota
-	AccessListTx
-	DynamicFeeTx
-)
-
 func newSignedEthTx(
 	txData ethtypes.TxData,
 	nonce uint64,
@@ -90,7 +82,7 @@ func newNativeMessage(
 	cfg *params.ChainConfig,
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
-	t txType,
+	txType byte,
 ) (core.Message, error) {
 	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
 
@@ -99,14 +91,14 @@ func newNativeMessage(
 		baseFee *big.Int
 	)
 
-	switch t {
-	case LegacyTx:
+	switch txType {
+	case ethtypes.LegacyTxType:
 		templateLegacyTx.Nonce = nonce
 		ethTx = ethtypes.NewTx(templateLegacyTx)
-	case AccessListTx:
+	case ethtypes.AccessListTxType:
 		templateAccessListTx.Nonce = nonce
 		ethTx = ethtypes.NewTx(templateAccessListTx)
-	case DynamicFeeTx:
+	case ethtypes.DynamicFeeTxType:
 		templateDynamicFeeTx.Nonce = nonce
 		ethTx = ethtypes.NewTx(templateDynamicFeeTx)
 		baseFee = big.NewInt(3)
@@ -231,7 +223,7 @@ func BenchmarkApplyNativeMessage(b *testing.B) {
 			ethCfg,
 			suite.signer,
 			signer,
-			AccessListTx,
+			ethtypes.AccessListTxType,
 		)
 		require.NoError(b, err)
 
@@ -264,7 +256,7 @@ func BenchmarkApplyNativeMessageWithLegacyTx(b *testing.B) {
 			ethCfg,
 			suite.signer,
 			signer,
-			LegacyTx,
+			ethtypes.LegacyTxType,
 		)
 		require.NoError(b, err)
 
@@ -297,7 +289,7 @@ func BenchmarkApplyNativeMessageWithDynamicFeeTx(b *testing.B) {
 			ethCfg,
 			suite.signer,
 			signer,
-			DynamicFeeTx,
+			ethtypes.DynamicFeeTxType,
 		)
 		require.NoError(b, err)
 
