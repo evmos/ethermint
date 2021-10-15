@@ -42,7 +42,9 @@ import (
 // Implemented by EVMBackend.
 type Backend interface {
 	// General Ethereum API
-	RPCGasCap() uint64 // global gas cap for eth_call over rpc: DoS protection
+	RPCGasCap() uint64    // global gas cap for eth_call over rpc: DoS protection
+	RPCTxFeeCap() float64 // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for, // send-transction variants. The unit is ether.
+
 	RPCMinGasPrice() int64
 	SuggestGasTipCap() (*big.Int, error)
 
@@ -777,6 +779,11 @@ func (e *EVMBackend) GetTransactionCount(address common.Address, blockNum types.
 // RPCGasCap is the global gas cap for eth-call variants.
 func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
+}
+
+// RPCGasCap is the global gas cap for eth-call variants.
+func (e *EVMBackend) RPCTxFeeCap() float64 {
+	return e.cfg.JSONRPC.TxFeeCap
 }
 
 // RPCFilterCap is the limit for total number of filters that can be created

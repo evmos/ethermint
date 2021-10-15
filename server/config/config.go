@@ -30,6 +30,9 @@ const (
 	DefaultGasCap uint64 = 25000000
 
 	DefaultFilterCap int32 = 200
+
+	// default 1.0 eth
+	DefaultTxFeeCap float64 = 1.0
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
@@ -61,6 +64,8 @@ type JSONRPCConfig struct {
 	WsAddress string `mapstructure:"ws-address"`
 	// GasCap is the global gas cap for eth-call variants.
 	GasCap uint64 `mapstructure:"gas-cap"`
+	// TxFeeCap is the global tx-fee cap for send transaction
+	TxFeeCap float64 `mapstructure:"txfee-cap"`
 	// FilterCap is the global cap for total number of filters that can be created.
 	FilterCap int32 `mapstructure:"filter-cap"`
 	// Enable defines if the EVM RPC server should be enabled.
