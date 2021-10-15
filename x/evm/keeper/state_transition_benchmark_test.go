@@ -83,6 +83,8 @@ func newNativeMessage(
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
 	txType byte,
+	data []byte,
+	accessList ethtypes.AccessList,
 ) (core.Message, error) {
 	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
 
@@ -94,9 +96,19 @@ func newNativeMessage(
 	switch txType {
 	case ethtypes.LegacyTxType:
 		templateLegacyTx.Nonce = nonce
+		if data != nil {
+			templateLegacyTx.Data = data
+		}
 		ethTx = ethtypes.NewTx(templateLegacyTx)
 	case ethtypes.AccessListTxType:
 		templateAccessListTx.Nonce = nonce
+		if data != nil {
+			templateAccessListTx.Data = data
+		} else {
+			templateAccessListTx.Data = []byte{}
+		}
+
+		templateAccessListTx.AccessList = accessList
 		ethTx = ethtypes.NewTx(templateAccessListTx)
 	case ethtypes.DynamicFeeTxType:
 		templateDynamicFeeTx.Nonce = nonce
@@ -224,6 +236,8 @@ func BenchmarkApplyNativeMessage(b *testing.B) {
 			suite.signer,
 			signer,
 			ethtypes.AccessListTxType,
+			nil,
+			nil,
 		)
 		require.NoError(b, err)
 
@@ -257,6 +271,8 @@ func BenchmarkApplyNativeMessageWithLegacyTx(b *testing.B) {
 			suite.signer,
 			signer,
 			ethtypes.LegacyTxType,
+			nil,
+			nil,
 		)
 		require.NoError(b, err)
 
@@ -290,6 +306,8 @@ func BenchmarkApplyNativeMessageWithDynamicFeeTx(b *testing.B) {
 			suite.signer,
 			signer,
 			ethtypes.DynamicFeeTxType,
+			nil,
+			nil,
 		)
 		require.NoError(b, err)
 

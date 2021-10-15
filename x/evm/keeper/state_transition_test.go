@@ -2,17 +2,17 @@ package keeper_test
 
 import (
 	"fmt"
-
-	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	"math/big"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
+	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/tendermint/tendermint/crypto/tmhash"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/tharsis/ethermint/tests"
 )
 
@@ -170,6 +170,102 @@ func (suite *KeeperTestSuite) TestGetCoinbaseAddress() {
 			} else {
 				suite.Require().Error(err)
 			}
+		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
+	testCases := []struct {
+		name               string
+		data               []byte
+		accessList         ethtypes.AccessList
+		height             int64
+		isContractCreation bool
+		noError            bool
+		expGas             uint64
+	}{
+		{
+			"no data, no accesslist, not contract creation, not homestead, not istanbul",
+			nil,
+			nil,
+			1,
+			false,
+			true,
+			params.TxGas,
+		},
+		{
+			"with one zero data, no accesslist, not contract creation, not homestead, not istanbul",
+			make([]byte, 1),
+			nil,
+			1,
+			false,
+			true,
+			params.TxGas + params.TxDataZeroGas*1,
+		},
+		{
+			"with one non zero data, no accesslist, not contract creation, not homestead, not istanbul",
+			[]byte{1},
+			nil,
+			1,
+			false,
+			true,
+			params.TxGas + params.TxDataNonZeroGasFrontier*1,
+		},
+		// we are not able to test the ErrGasUintOverflow due to RAM limitation
+		// {
+		// 	"with big data size overflow",
+		// 	make([]byte, 271300000000000000),
+		// 	nil,
+		// 	1,
+		// 	false,
+		// 	false,
+		// 	0,
+		// },
+		{
+			"no data, one accesslist, not contract creation, not homestead, not istanbul",
+			nil,
+			make([]ethtypes.AccessTuple, 1),
+			1,
+			false,
+			true,
+			params.TxGas + params.TxAccessListAddressGas,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset
+
+			params := suite.app.EvmKeeper.GetParams(suite.ctx)
+			ethCfg := params.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+			ethCfg.HomesteadBlock = big.NewInt(2)
+			ethCfg.IstanbulBlock = big.NewInt(3)
+			signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+			suite.ctx = suite.ctx.WithBlockHeight(tc.height)
+			suite.app.EvmKeeper.WithContext(suite.ctx)
+
+			m, err := newNativeMessage(
+				suite.app.EvmKeeper.GetNonce(suite.address),
+				suite.ctx.BlockHeight(),
+				suite.address,
+				ethCfg,
+				suite.signer,
+				signer,
+				ethtypes.AccessListTxType,
+				tc.data,
+				tc.accessList,
+			)
+			suite.Require().NoError(err)
+
+			gas, err := suite.app.EvmKeeper.GetEthIntrinsicGas(m, ethCfg, tc.isContractCreation)
+			if tc.noError {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+
+			suite.Require().Equal(tc.expGas, gas)
 		})
 	}
 }
