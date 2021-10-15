@@ -1,10 +1,14 @@
 package types
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"math/big"
+
+	abci "github.com/tendermint/tendermint/abci/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -243,4 +247,25 @@ func NewRPCTransaction(
 		}
 	}
 	return result, nil
+}
+
+// BaseFeeFromEvents parses the feemarket basefee from cosmos events
+func BaseFeeFromEvents(events []abci.Event) *big.Int {
+	for _, event := range events {
+		if event.Type != feemarkettypes.EventTypeFeeMarket {
+			continue
+		}
+
+		for _, attr := range event.Attributes {
+			if bytes.Equal(attr.Key, []byte(feemarkettypes.AttributeKeyBaseFee)) {
+				result, success := new(big.Int).SetString(string(attr.Value), 10)
+				if success {
+					return result
+				}
+
+				return nil
+			}
+		}
+	}
+	return nil
 }
