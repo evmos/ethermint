@@ -1505,11 +1505,6 @@ paths:
                         title: >-
                           Berlin switch block (nil = no fork, 0 = already on
                           berlin)
-                      catalyst_block:
-                        type: string
-                        title: >-
-                          Catalyst switch block (nil = no fork, 0 = already on
-                          catalyst)
                       london_block:
                         type: string
                         title: >-
@@ -2340,11 +2335,6 @@ paths:
           type: string
         - name: trace_config.overrides.berlin_block
           description: 'Berlin switch block (nil = no fork, 0 = already on berlin).'
-          in: query
-          required: false
-          type: string
-        - name: trace_config.overrides.catalyst_block
-          description: 'Catalyst switch block (nil = no fork, 0 = already on catalyst).'
           in: query
           required: false
           type: string
@@ -12794,9 +12784,6 @@ definitions:
       berlin_block:
         type: string
         title: 'Berlin switch block (nil = no fork, 0 = already on berlin)'
-      catalyst_block:
-        type: string
-        title: 'Catalyst switch block (nil = no fork, 0 = already on catalyst)'
       london_block:
         type: string
         title: 'London switch block (nil = no fork, 0 = already on london)'
@@ -13191,9 +13178,6 @@ definitions:
           berlin_block:
             type: string
             title: 'Berlin switch block (nil = no fork, 0 = already on berlin)'
-          catalyst_block:
-            type: string
-            title: 'Catalyst switch block (nil = no fork, 0 = already on catalyst)'
           london_block:
             type: string
             title: 'London switch block (nil = no fork, 0 = already on london)'
@@ -13340,9 +13324,6 @@ definitions:
               berlin_block:
                 type: string
                 title: 'Berlin switch block (nil = no fork, 0 = already on berlin)'
-              catalyst_block:
-                type: string
-                title: 'Catalyst switch block (nil = no fork, 0 = already on catalyst)'
               london_block:
                 type: string
                 title: 'London switch block (nil = no fork, 0 = already on london)'
@@ -13474,9 +13455,6 @@ definitions:
           berlin_block:
             type: string
             title: 'Berlin switch block (nil = no fork, 0 = already on berlin)'
-          catalyst_block:
-            type: string
-            title: 'Catalyst switch block (nil = no fork, 0 = already on catalyst)'
           london_block:
             type: string
             title: 'London switch block (nil = no fork, 0 = already on london)'

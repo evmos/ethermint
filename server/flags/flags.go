@@ -26,12 +26,13 @@ const (
 
 // JSON-RPC flags
 const (
-	JSONRPCEnable    = "json-rpc.enable"
-	JSONRPCAPI       = "json-rpc.api"
-	JSONRPCAddress   = "json-rpc.address"
-	JSONWsAddress    = "json-rpc.ws-address"
-	JSONRPCGasCap    = "json-rpc.gas-cap"
-	JSONRPCFilterCap = "json-rpc.filter-cap"
+	JSONRPCEnable     = "json-rpc.enable"
+	JSONRPCAPI        = "json-rpc.api"
+	JSONRPCAddress    = "json-rpc.address"
+	JSONWsAddress     = "json-rpc.ws-address"
+	JSONRPCGasCap     = "json-rpc.gas-cap"
+	JSONRPCFilterCap  = "json-rpc.filter-cap"
+	JSONRPCEVMTimeout = "json-rpc.evm-timeout"
 )
 
 // EVM flags

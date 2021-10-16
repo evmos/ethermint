@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"time"
 
 	"github.com/spf13/viper"
 
@@ -30,6 +31,8 @@ const (
 	DefaultGasCap uint64 = 25000000
 
 	DefaultFilterCap int32 = 200
+
+	DefaultEVMTimeout = 5 * time.Second
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
@@ -61,6 +64,8 @@ type JSONRPCConfig struct {
 	WsAddress string `mapstructure:"ws-address"`
 	// GasCap is the global gas cap for eth-call variants.
 	GasCap uint64 `mapstructure:"gas-cap"`
+	// EVMTimeout is the global timeout for eth-call.
+	EVMTimeout time.Duration `mapstructure:"evm-timeout"`
 	// FilterCap is the global cap for total number of filters that can be created.
 	FilterCap int32 `mapstructure:"filter-cap"`
 	// Enable defines if the EVM RPC server should be enabled.
@@ -144,12 +149,13 @@ func GetDefaultAPINamespaces() []string {
 // DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
 func DefaultJSONRPCConfig() *JSONRPCConfig {
 	return &JSONRPCConfig{
-		Enable:    true,
-		API:       GetDefaultAPINamespaces(),
-		Address:   DefaultJSONRPCAddress,
-		WsAddress: DefaultJSONRPCWsAddress,
-		GasCap:    DefaultGasCap,
-		FilterCap: DefaultFilterCap,
+		Enable:     true,
+		API:        GetDefaultAPINamespaces(),
+		Address:    DefaultJSONRPCAddress,
+		WsAddress:  DefaultJSONRPCWsAddress,
+		GasCap:     DefaultGasCap,
+		FilterCap:  DefaultFilterCap,
+		EVMTimeout: DefaultEVMTimeout,
 	}
 }
 
@@ -161,6 +167,10 @@ func (c JSONRPCConfig) Validate() error {
 
 	if c.FilterCap < 0 {
 		return errors.New("JSON-RPC filter-cap cannot be negative")
+	}
+
+	if c.EVMTimeout < 0 {
+		return errors.New("JSON-RPC EVM timeout duration cannot be negative")
 	}
 
 	// TODO: validate APIs
@@ -211,12 +221,13 @@ func GetConfig(v *viper.Viper) Config {
 			Tracer: v.GetString("evm.tracer"),
 		},
 		JSONRPC: JSONRPCConfig{
-			Enable:    v.GetBool("json-rpc.enable"),
-			API:       v.GetStringSlice("json-rpc.api"),
-			Address:   v.GetString("json-rpc.address"),
-			WsAddress: v.GetString("json-rpc.ws-address"),
-			GasCap:    v.GetUint64("json-rpc.gas-cap"),
-			FilterCap: v.GetInt32("json-rpc.filter-cap"),
+			Enable:     v.GetBool("json-rpc.enable"),
+			API:        v.GetStringSlice("json-rpc.api"),
+			Address:    v.GetString("json-rpc.address"),
+			WsAddress:  v.GetString("json-rpc.ws-address"),
+			GasCap:     v.GetUint64("json-rpc.gas-cap"),
+			FilterCap:  v.GetInt32("json-rpc.filter-cap"),
+			EVMTimeout: v.GetDuration("json-rpc.evm-timeout"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),

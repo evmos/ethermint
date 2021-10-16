@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -42,7 +43,8 @@ import (
 // Implemented by EVMBackend.
 type Backend interface {
 	// General Ethereum API
-	RPCGasCap() uint64 // global gas cap for eth_call over rpc: DoS protection
+	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
+	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
 	RPCMinGasPrice() int64
 	SuggestGasTipCap() (*big.Int, error)
 
@@ -777,6 +779,11 @@ func (e *EVMBackend) GetTransactionCount(address common.Address, blockNum types.
 // RPCGasCap is the global gas cap for eth-call variants.
 func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
+}
+
+// RPCGasCap is the global evm timeout for eth-call variants.
+func (e *EVMBackend) RPCEVMTimeout() time.Duration {
+	return e.cfg.JSONRPC.EVMTimeout
 }
 
 // RPCFilterCap is the limit for total number of filters that can be created
