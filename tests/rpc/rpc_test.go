@@ -539,6 +539,7 @@ func deployTestERC20Contract(t *testing.T) common.Address {
 	param[0]["data"] = hexutil.Encode(data)
 
 	param[0]["gas"] = "0x200000"
+	param[0]["gasPrice"] = "0x1"
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -566,6 +567,7 @@ func sendTestERC20Transaction(t *testing.T, contract common.Address, amount *big
 	require.NoError(t, err)
 	param[0]["data"] = hexutil.Encode(data)
 	param[0]["gas"] = "0x50000"
+	param[0]["gasPrice"] = "0x1"
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
