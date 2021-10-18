@@ -244,7 +244,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	k.IncreaseTxIndexTransient()
 
 	// update the gas used after refund
-	k.resetGasMeterAndConsumeGas(res.GasUsed)
+	k.ResetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
 
@@ -455,9 +455,9 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64)
 	return leftoverGas, nil
 }
 
-// resetGasMeterAndConsumeGas reset first the gas meter consumed value to zero and set it back to the new value
+// ResetGasMeterAndConsumeGas reset first the gas meter consumed value to zero and set it back to the new value
 // 'gasUsed'
-func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
+func (k *Keeper) ResetGasMeterAndConsumeGas(gasUsed uint64) {
 	// reset the gas count
 	ctx := k.Ctx()
 	ctx.GasMeter().RefundGas(ctx.GasMeter().GasConsumed(), "reset the gas count")
