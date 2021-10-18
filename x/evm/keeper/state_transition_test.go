@@ -195,7 +195,7 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 		},
 		{
 			"with one zero data, no accesslist, not contract creation, not homestead, not istanbul",
-			make([]byte, 1),
+			[]byte{0},
 			nil,
 			1,
 			false,
@@ -207,7 +207,7 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 			[]byte{1},
 			nil,
 			1,
-			false,
+			true,
 			true,
 			params.TxGas + params.TxDataNonZeroGasFrontier*1,
 		},
@@ -224,11 +224,42 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 		{
 			"no data, one accesslist, not contract creation, not homestead, not istanbul",
 			nil,
-			make([]ethtypes.AccessTuple, 1),
+			[]ethtypes.AccessTuple{
+				{},
+			},
 			1,
 			false,
 			true,
 			params.TxGas + params.TxAccessListAddressGas,
+		},
+		{
+			"no data, one accesslist with one storageKey, not contract creation, not homestead, not istanbul",
+			nil,
+			[]ethtypes.AccessTuple{
+				{StorageKeys: make([]common.Hash, 1)},
+			},
+			1,
+			false,
+			true,
+			params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas*1,
+		},
+		{
+			"no data, no accesslist, is contract creation, is homestead, not istanbul",
+			nil,
+			nil,
+			2,
+			true,
+			true,
+			params.TxGasContractCreation,
+		},
+		{
+			"with one zero data, no accesslist, not contract creation, is homestead, is istanbul",
+			[]byte{1},
+			nil,
+			3,
+			false,
+			true,
+			params.TxGas + params.TxDataNonZeroGasEIP2028*1,
 		},
 	}
 
