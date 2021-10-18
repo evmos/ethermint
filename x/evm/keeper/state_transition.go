@@ -429,14 +429,6 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64)
 	refund := k.GasToRefund(gasConsumed, refundQuotient)
 	leftoverGas += refund
 
-	// safety check: leftover gas after refund should never exceed the gas limit defined on the message
-	if leftoverGas > msg.Gas() {
-		return leftoverGas, stacktrace.Propagate(
-			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
-			"failed to update gas consumed after refund of %d gas", refund,
-		)
-	}
-
 	// Return EVM tokens for remaining gas, exchanged at the original rate.
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(leftoverGas), msg.GasPrice())
 
