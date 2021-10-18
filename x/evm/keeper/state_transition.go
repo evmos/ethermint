@@ -413,6 +413,7 @@ func (k *Keeper) GasToRefund(gasConsumed, refundQuotient uint64) uint64 {
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
+// NOTE: DO NOT pass 0 to refundQuotient
 func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64) (uint64, error) {
 	// safety check: leftover gas after execution should never exceed the gas limit defined on the message
 	if leftoverGas > msg.Gas() {

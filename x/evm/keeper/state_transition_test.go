@@ -356,3 +356,76 @@ func (suite *KeeperTestSuite) TestGasToRefund() {
 		})
 	}
 }
+
+func (suite *KeeperTestSuite) TestRefundGas() {
+	testCases := []struct {
+		name           string
+		leftoverGas    uint64
+		refundQuotient uint64
+		noError        bool
+		expGasRefund   uint64
+	}{
+		{
+			"leftoverGas more than tx gas limit",
+			params.TxGas + 1,
+			params.RefundQuotient,
+			false,
+			params.TxGas + 1,
+		},
+		{
+			"leftoverGas equal to tx gas limit, insufficient fee collector account",
+			params.TxGas,
+			params.RefundQuotient,
+			false,
+			params.TxGas,
+		},
+		{
+			"leftoverGas less than to tx gas limit",
+			params.TxGas - 1,
+			params.RefundQuotient,
+			true,
+			params.TxGas - 1,
+		},
+		{
+			"no leftoverGas, refund half used gas ",
+			0,
+			params.RefundQuotient,
+			true,
+			params.TxGas / params.RefundQuotient,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset
+
+			keeperParams := suite.app.EvmKeeper.GetParams(suite.ctx)
+			ethCfg := keeperParams.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+			signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+			m, err := newNativeMessage(
+				suite.app.EvmKeeper.GetNonce(suite.address),
+				suite.ctx.BlockHeight(),
+				suite.address,
+				ethCfg,
+				suite.signer,
+				signer,
+				ethtypes.AccessListTxType,
+				nil,
+				nil,
+			)
+			suite.Require().NoError(err)
+
+			suite.app.EvmKeeper.AddRefund(params.TxGas)
+
+			gr, err := suite.app.EvmKeeper.RefundGas(m, tc.leftoverGas, tc.refundQuotient)
+			if tc.noError {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+
+			suite.Require().Equal(tc.expGasRefund, gr)
+		})
+	}
+}
