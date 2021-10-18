@@ -398,6 +398,7 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 
 // GasToRefund calculates the amount of gas the state machine should refund to the sender. It is
 // capped by the refund quotient value.
+// Note: do not pass 0 to refundQuotient
 func (k *Keeper) GasToRefund(gasConsumed, refundQuotient uint64) uint64 {
 	// Apply refund counter
 	refund := gasConsumed / refundQuotient

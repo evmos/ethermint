@@ -300,3 +300,59 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 		})
 	}
 }
+
+func (suite *KeeperTestSuite) TestGasToRefund() {
+	testCases := []struct {
+		name           string
+		gasconsumed    uint64
+		refundQuotient uint64
+		expGasRefund   uint64
+		expPanic       bool
+	}{
+		{
+			"gas refund 5",
+			5,
+			1,
+			5,
+			false,
+		},
+		{
+			"gas refund 10",
+			10,
+			1,
+			10,
+			false,
+		},
+		{
+			"gas refund availableRefund",
+			11,
+			1,
+			10,
+			false,
+		},
+		{
+			"gas refund devide 0",
+			11,
+			0,
+			0,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset
+			suite.app.EvmKeeper.AddRefund(10)
+
+			if tc.expPanic {
+				panicF := func() {
+					suite.app.EvmKeeper.GasToRefund(tc.gasconsumed, tc.refundQuotient)
+				}
+				suite.Require().Panics(panicF)
+			} else {
+				gr := suite.app.EvmKeeper.GasToRefund(tc.gasconsumed, tc.refundQuotient)
+				suite.Require().Equal(tc.expGasRefund, gr)
+			}
+		})
+	}
+}
