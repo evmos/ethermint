@@ -17,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	"github.com/tharsis/ethermint/app"
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
@@ -79,6 +80,8 @@ type KeeperTestSuite struct {
 
 	appCodec codec.Codec
 	signer   keyring.Signer
+
+	dynamicTxFee bool
 }
 
 /// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
@@ -96,7 +99,17 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	require.NoError(t, err)
 	suite.consAddress = sdk.ConsAddress(priv.PubKey().Address())
 
-	suite.app = app.Setup(checkTx)
+	if suite.dynamicTxFee {
+		// setup feemarketGenesis params
+		feemarketGenesis := feemarkettypes.DefaultGenesisState()
+		feemarketGenesis.Params.EnableHeight = 1
+		feemarketGenesis.Params.NoBaseFee = false
+		feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
+		suite.app = app.Setup(checkTx, feemarketGenesis)
+	} else {
+		suite.app = app.Setup(checkTx, nil)
+	}
+
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{
 		Height:          1,
 		ChainID:         "ethermint_9000-1",
@@ -197,16 +210,33 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	require.NoError(t, err)
 
 	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
-	erc20DeployTx := types.NewTxContract(
-		chainID,
-		nonce,
-		nil,     // amount
-		res.Gas, // gasLimit
-		nil,     // gasPrice
-		nil, nil,
-		data, // input
-		nil,  // accesses
-	)
+
+	var erc20DeployTx *types.MsgEthereumTx
+	if suite.dynamicTxFee {
+		erc20DeployTx = types.NewTxContract(
+			chainID,
+			nonce,
+			nil,     // amount
+			res.Gas, // gasLimit
+			nil,     // gasPrice
+			suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx),
+			big.NewInt(1),
+			data,                   // input
+			&ethtypes.AccessList{}, // accesses
+		)
+	} else {
+		erc20DeployTx = types.NewTxContract(
+			chainID,
+			nonce,
+			nil,     // amount
+			res.Gas, // gasLimit
+			nil,     // gasPrice
+			nil, nil,
+			data, // input
+			nil,  // accesses
+		)
+	}
+
 	erc20DeployTx.From = suite.address.Hex()
 	err = erc20DeployTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
 	require.NoError(t, err)
@@ -231,17 +261,35 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 	require.NoError(t, err)
 
 	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
-	ercTransferTx := types.NewTx(
-		chainID,
-		nonce,
-		&contractAddr,
-		nil,
-		res.Gas,
-		nil,
-		nil, nil,
-		transferData,
-		nil,
-	)
+
+	var ercTransferTx *types.MsgEthereumTx
+	if suite.dynamicTxFee {
+		ercTransferTx = types.NewTx(
+			chainID,
+			nonce,
+			&contractAddr,
+			nil,
+			res.Gas,
+			nil,
+			suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx),
+			big.NewInt(1),
+			transferData,
+			&ethtypes.AccessList{}, // accesses
+		)
+	} else {
+		ercTransferTx = types.NewTx(
+			chainID,
+			nonce,
+			&contractAddr,
+			nil,
+			res.Gas,
+			nil,
+			nil, nil,
+			transferData,
+			nil,
+		)
+	}
+
 	ercTransferTx.From = suite.address.Hex()
 	err = ercTransferTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
 	require.NoError(t, err)
