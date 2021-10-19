@@ -48,7 +48,11 @@ func writeProfile(name, file string, log log.Logger) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
-	return p.WriteTo(f, 0)
+	if err := p.WriteTo(f, 0); err != nil {
+		f.Close()
+		return err
+	}
+
+	return f.Close()
 }

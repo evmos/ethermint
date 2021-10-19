@@ -57,6 +57,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 * (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
 
+### Improvements
+
+(rpc) [tharsis#679](https://github.com/tharsis/ethermint/pull/679) Fix file close handle.
+
 ## [v0.7.0] - 2021-10-07
 
 ### API Breaking
