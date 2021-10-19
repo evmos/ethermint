@@ -429,3 +429,49 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 		})
 	}
 }
+
+func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
+	testCases := []struct {
+		name     string
+		gasUsed  uint64
+		expPanic bool
+	}{
+		{
+			"gas refund 5",
+			5,
+			false,
+		},
+		{
+			"gas refund 10",
+			10,
+			false,
+		},
+		{
+			"gas refund availableRefund",
+			11,
+			false,
+		},
+		{
+			"gas refund devide 0",
+			11,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset
+			suite.app.EvmKeeper.AddRefund(10)
+
+			panicF := func() {
+				suite.app.EvmKeeper.ResetGasMeterAndConsumeGas(tc.gasUsed)
+			}
+
+			if tc.expPanic {
+				suite.Require().Panics(panicF)
+			} else {
+				suite.Require().NotPanics(panicF)
+			}
+		})
+	}
+}
