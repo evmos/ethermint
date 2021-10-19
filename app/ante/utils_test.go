@@ -24,6 +24,7 @@ import (
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/tests"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
@@ -31,16 +32,28 @@ import (
 type AnteTestSuite struct {
 	suite.Suite
 
-	ctx         sdk.Context
-	app         *app.EthermintApp
-	clientCtx   client.Context
-	anteHandler sdk.AnteHandler
-	ethSigner   ethtypes.Signer
+	ctx          sdk.Context
+	app          *app.EthermintApp
+	clientCtx    client.Context
+	anteHandler  sdk.AnteHandler
+	ethSigner    ethtypes.Signer
+	dynamicTxFee bool
 }
 
 func (suite *AnteTestSuite) SetupTest() {
 	checkTx := false
-	suite.app = app.Setup(checkTx)
+
+	if suite.dynamicTxFee {
+		// setup feemarketGenesis params
+		feemarketGenesis := feemarkettypes.DefaultGenesisState()
+		feemarketGenesis.Params.EnableHeight = 1
+		feemarketGenesis.Params.NoBaseFee = false
+		feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
+		suite.app = app.Setup(checkTx, feemarketGenesis)
+	} else {
+		suite.app = app.Setup(checkTx, nil)
+	}
+
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint_9000-1", Time: time.Now().UTC()})
 	suite.ctx = suite.ctx.WithMinGasPrices(sdk.NewDecCoins(sdk.NewDecCoin(evmtypes.DefaultEVMDenom, sdk.OneInt())))
 	suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000000000000000))

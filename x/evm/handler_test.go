@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -53,6 +54,8 @@ type EvmTestSuite struct {
 	ethSigner ethtypes.Signer
 	from      common.Address
 	to        sdk.AccAddress
+
+	dynamicTxFee bool
 }
 
 /// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
@@ -70,7 +73,15 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 	require.NoError(t, err)
 	consAddress := sdk.ConsAddress(priv.PubKey().Address())
 
-	suite.app = app.Setup(checkTx)
+	if suite.dynamicTxFee {
+		feemarketGenesis := feemarkettypes.DefaultGenesisState()
+		feemarketGenesis.Params.EnableHeight = 1
+		feemarketGenesis.Params.NoBaseFee = false
+		suite.app = app.Setup(checkTx, feemarketGenesis)
+	} else {
+		suite.app = app.Setup(checkTx, nil)
+	}
+
 	coins := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt(100000000000000)))
 	genesisState := app.ModuleBasics.DefaultGenesis(suite.app.AppCodec())
 	b32address := sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), priv.PubKey().Address().Bytes())
