@@ -127,8 +127,11 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 		}
 		// update total supply
 		bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt((int64(params.TxGas)-1)))), []banktypes.Metadata{})
+		bz := suite.app.AppCodec().MustMarshalJSON(bankGenesis)
+		require.NotNil(t, bz)
 		genesisState[banktypes.ModuleName] = suite.app.AppCodec().MustMarshalJSON(bankGenesis)
 
+		// we marshal the genesisState of all module to a byte array
 		stateBytes, err := tmjson.MarshalIndent(genesisState, "", " ")
 		require.NoError(t, err)
 
