@@ -27,7 +27,6 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -39,29 +38,6 @@ import (
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	"github.com/tendermint/tendermint/version"
 )
-
-var (
-	//go:embed ERC20Contract.json
-	compiledContractJSON []byte
-	ContractBin          []byte
-	ContractABI          abi.ABI
-)
-
-func init() {
-	var tmp struct {
-		Abi string
-		Bin string
-	}
-	err := json.Unmarshal(compiledContractJSON, &tmp)
-	if err != nil {
-		panic(err)
-	}
-	ContractBin = common.FromHex(tmp.Bin)
-	err = json.Unmarshal([]byte(tmp.Abi), &ContractABI)
-	if err != nil {
-		panic(err)
-	}
-}
 
 var testTokens = sdk.NewIntWithDecimal(1000, 18)
 
@@ -193,10 +169,10 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	chainID := suite.app.EvmKeeper.ChainID()
 
-	ctorArgs, err := ContractABI.Pack("", owner, supply)
+	ctorArgs, err := types.ERC20Contract.ABI.Pack("", owner, supply)
 	require.NoError(t, err)
 
-	data := append(ContractBin, ctorArgs...)
+	data := append(types.ERC20Contract.Bin, ctorArgs...)
 	args, err := json.Marshal(&types.TransactionArgs{
 		From: &suite.address,
 		Data: (*hexutil.Bytes)(&data),
@@ -250,7 +226,7 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	chainID := suite.app.EvmKeeper.ChainID()
 
-	transferData, err := ContractABI.Pack("transfer", to, amount)
+	transferData, err := types.ERC20Contract.ABI.Pack("transfer", to, amount)
 	require.NoError(t, err)
 	args, err := json.Marshal(&types.TransactionArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
 	require.NoError(t, err)
