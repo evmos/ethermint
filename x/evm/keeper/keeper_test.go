@@ -14,9 +14,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	tmjson "github.com/tendermint/tendermint/libs/json"
 	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	"github.com/tharsis/ethermint/app"
@@ -27,11 +30,11 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -39,29 +42,6 @@ import (
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	"github.com/tendermint/tendermint/version"
 )
-
-var (
-	//go:embed ERC20Contract.json
-	compiledContractJSON []byte
-	ContractBin          []byte
-	ContractABI          abi.ABI
-)
-
-func init() {
-	var tmp struct {
-		Abi string
-		Bin string
-	}
-	err := json.Unmarshal(compiledContractJSON, &tmp)
-	if err != nil {
-		panic(err)
-	}
-	ContractBin = common.FromHex(tmp.Bin)
-	err = json.Unmarshal([]byte(tmp.Abi), &ContractABI)
-	if err != nil {
-		panic(err)
-	}
-}
 
 var testTokens = sdk.NewIntWithDecimal(1000, 18)
 
@@ -81,7 +61,8 @@ type KeeperTestSuite struct {
 	appCodec codec.Codec
 	signer   keyring.Signer
 
-	dynamicTxFee bool
+	dynamicTxFee     bool
+	mintFeeCollector bool
 }
 
 /// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
@@ -108,6 +89,37 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 		suite.app = app.Setup(checkTx, feemarketGenesis)
 	} else {
 		suite.app = app.Setup(checkTx, nil)
+	}
+
+	if suite.mintFeeCollector {
+		// mint some coin to fee collector
+		coins := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt(int64(params.TxGas)-1)))
+		genesisState := app.ModuleBasics.DefaultGenesis(suite.app.AppCodec())
+		balances := []banktypes.Balance{
+			{
+				Address: suite.app.AccountKeeper.GetModuleAddress(authtypes.FeeCollectorName).String(),
+				Coins:   coins,
+			},
+		}
+		// update total supply
+		bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt((int64(params.TxGas)-1)))), []banktypes.Metadata{})
+		bz := suite.app.AppCodec().MustMarshalJSON(bankGenesis)
+		require.NotNil(t, bz)
+		genesisState[banktypes.ModuleName] = suite.app.AppCodec().MustMarshalJSON(bankGenesis)
+
+		// we marshal the genesisState of all module to a byte array
+		stateBytes, err := tmjson.MarshalIndent(genesisState, "", " ")
+		require.NoError(t, err)
+
+		//Initialize the chain
+		suite.app.InitChain(
+			abci.RequestInitChain{
+				ChainId:         "ethermint_9000-1",
+				Validators:      []abci.ValidatorUpdate{},
+				ConsensusParams: simapp.DefaultConsensusParams,
+				AppStateBytes:   stateBytes,
+			},
+		)
 	}
 
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{
@@ -193,10 +205,10 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	chainID := suite.app.EvmKeeper.ChainID()
 
-	ctorArgs, err := ContractABI.Pack("", owner, supply)
+	ctorArgs, err := types.ERC20Contract.ABI.Pack("", owner, supply)
 	require.NoError(t, err)
 
-	data := append(ContractBin, ctorArgs...)
+	data := append(types.ERC20Contract.Bin, ctorArgs...)
 	args, err := json.Marshal(&types.TransactionArgs{
 		From: &suite.address,
 		Data: (*hexutil.Bytes)(&data),
@@ -250,7 +262,7 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 	ctx := sdk.WrapSDKContext(suite.ctx)
 	chainID := suite.app.EvmKeeper.ChainID()
 
-	transferData, err := ContractABI.Pack("transfer", to, amount)
+	transferData, err := types.ERC20Contract.ABI.Pack("transfer", to, amount)
 	require.NoError(t, err)
 	args, err := json.Marshal(&types.TransactionArgs{To: &contractAddr, From: &from, Data: (*hexutil.Bytes)(&transferData)})
 	require.NoError(t, err)

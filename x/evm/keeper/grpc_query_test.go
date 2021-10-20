@@ -514,9 +514,9 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		}, false, 0, false},
 		// estimate gas of an erc20 contract deployment, the exact gas number is checked with geth
 		{"contract deployment", func() {
-			ctorArgs, err := ContractABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+			ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Require().NoError(err)
-			data := append(ContractBin, ctorArgs...)
+			data := append(types.ERC20Contract.Bin, ctorArgs...)
 			args = types.TransactionArgs{
 				From: &suite.address,
 				Data: (*hexutil.Bytes)(&data),
@@ -526,7 +526,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		{"erc20 transfer", func() {
 			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Commit()
-			transferData, err := ContractABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
+			transferData, err := types.ERC20Contract.ABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
 			suite.Require().NoError(err)
 			args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
 		}, true, 51880, false},
@@ -549,9 +549,9 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			gasCap = 20000
 		}, false, 0, true},
 		{"contract deployment w/ dynamicTxFee", func() {
-			ctorArgs, err := ContractABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
+			ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Require().NoError(err)
-			data := append(ContractBin, ctorArgs...)
+			data := append(types.ERC20Contract.Bin, ctorArgs...)
 			args = types.TransactionArgs{
 				From: &suite.address,
 				Data: (*hexutil.Bytes)(&data),
@@ -560,7 +560,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		{"erc20 transfer w/ dynamicTxFee", func() {
 			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 			suite.Commit()
-			transferData, err := ContractABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
+			transferData, err := types.ERC20Contract.ABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
 			suite.Require().NoError(err)
 			args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
 		}, true, 51880, true},

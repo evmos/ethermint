@@ -244,7 +244,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	k.IncreaseTxIndexTransient()
 
 	// update the gas used after refund
-	k.resetGasMeterAndConsumeGas(res.GasUsed)
+	k.ResetGasMeterAndConsumeGas(res.GasUsed)
 	return res, nil
 }
 
@@ -398,6 +398,7 @@ func (k *Keeper) GetEthIntrinsicGas(msg core.Message, cfg *params.ChainConfig, i
 
 // GasToRefund calculates the amount of gas the state machine should refund to the sender. It is
 // capped by the refund quotient value.
+// Note: do not pass 0 to refundQuotient
 func (k *Keeper) GasToRefund(gasConsumed, refundQuotient uint64) uint64 {
 	// Apply refund counter
 	refund := gasConsumed / refundQuotient
@@ -412,6 +413,7 @@ func (k *Keeper) GasToRefund(gasConsumed, refundQuotient uint64) uint64 {
 // consumed in the transaction. Additionally, the function sets the total gas consumed to the value
 // returned by the EVM execution, thus ignoring the previous intrinsic gas consumed during in the
 // AnteHandler.
+// NOTE: DO NOT pass 0 to refundQuotient
 func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64) (uint64, error) {
 	// safety check: leftover gas after execution should never exceed the gas limit defined on the message
 	if leftoverGas > msg.Gas() {
@@ -426,14 +428,6 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64)
 	// calculate available gas to refund and add it to the leftover gas amount
 	refund := k.GasToRefund(gasConsumed, refundQuotient)
 	leftoverGas += refund
-
-	// safety check: leftover gas after refund should never exceed the gas limit defined on the message
-	if leftoverGas > msg.Gas() {
-		return leftoverGas, stacktrace.Propagate(
-			sdkerrors.Wrapf(types.ErrInconsistentGas, "leftover gas cannot be greater than gas limit (%d > %d)", leftoverGas, msg.Gas()),
-			"failed to update gas consumed after refund of %d gas", refund,
-		)
-	}
 
 	// Return EVM tokens for remaining gas, exchanged at the original rate.
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(leftoverGas), msg.GasPrice())
@@ -461,9 +455,9 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64)
 	return leftoverGas, nil
 }
 
-// resetGasMeterAndConsumeGas reset first the gas meter consumed value to zero and set it back to the new value
+// ResetGasMeterAndConsumeGas reset first the gas meter consumed value to zero and set it back to the new value
 // 'gasUsed'
-func (k *Keeper) resetGasMeterAndConsumeGas(gasUsed uint64) {
+func (k *Keeper) ResetGasMeterAndConsumeGas(gasUsed uint64) {
 	// reset the gas count
 	ctx := k.Ctx()
 	ctx.GasMeter().RefundGas(ctx.GasMeter().GasConsumed(), "reset the gas count")
