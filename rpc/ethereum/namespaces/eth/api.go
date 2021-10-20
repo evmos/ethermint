@@ -521,9 +521,10 @@ func checkTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
 	}
 	totalfee := new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas)))
 	// 1 photon in 10^18 aphoton
-	onephoton := new(big.Float).SetInt(big.NewInt(params.Ether))
+	oneToken := new(big.Float).SetInt(big.NewInt(params.Ether))
 	// quo = rounded(x/y)
-	feeEth := new(big.Float).Quo(totalfee, onephoton)
+	feeEth := new(big.Float).Quo(totalfee, oneToken)
+	// no need to check error from parsing
 	feeFloat, _ := feeEth.Float64()
 	if feeFloat > cap {
 		return fmt.Errorf("tx fee (%.2f ether) exceeds the configured cap (%.2f ether)", feeFloat, cap)
