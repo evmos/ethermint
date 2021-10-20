@@ -332,7 +332,7 @@ func (suite *KeeperTestSuite) TestGasToRefund() {
 			false,
 		},
 		{
-			"gas refund devide 0",
+			"gas refund quotient 0",
 			11,
 			0,
 			0,
