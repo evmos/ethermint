@@ -112,6 +112,13 @@ func newNativeMessage(
 		ethTx = ethtypes.NewTx(templateAccessListTx)
 	case ethtypes.DynamicFeeTxType:
 		templateDynamicFeeTx.Nonce = nonce
+
+		if data != nil {
+			templateAccessListTx.Data = data
+		} else {
+			templateAccessListTx.Data = []byte{}
+		}
+		templateAccessListTx.AccessList = accessList
 		ethTx = ethtypes.NewTx(templateDynamicFeeTx)
 		baseFee = big.NewInt(3)
 	default:
