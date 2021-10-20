@@ -360,7 +360,6 @@ func TestEth_GetStorageAt(t *testing.T) {
 }
 
 func TestEth_GetProof(t *testing.T) {
-
 	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
@@ -401,7 +400,6 @@ func TestEth_GetCode(t *testing.T) {
 }
 
 func TestEth_SendTransaction_Transfer(t *testing.T) {
-
 	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
