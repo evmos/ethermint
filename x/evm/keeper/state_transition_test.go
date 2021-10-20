@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -436,28 +437,39 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 
 func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 	testCases := []struct {
-		name     string
-		gasUsed  uint64
-		expPanic bool
+		name        string
+		gasConsumed uint64
+		gasUsed     uint64
+		expPanic    bool
 	}{
 		{
-			"gas refund 5",
+			"gas consumed 5, used 5",
+			5,
 			5,
 			false,
 		},
 		{
-			"gas refund 10",
+			"gas consumed 5, used 10",
+			5,
 			10,
 			false,
 		},
 		{
-			"gas refund availableRefund",
-			11,
+			"gas consumed 10, used 10",
+			10,
+			10,
 			false,
 		},
 		{
-			"gas refund devide 0",
+			"gas consumed 11, used 10, NegativeGasConsumed panic",
 			11,
+			10,
+			true,
+		},
+		{
+			"gas consumed 1, used 10, overflow panic",
+			1,
+			math.MaxUint64,
 			true,
 		},
 	}
@@ -465,9 +477,13 @@ func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
 			suite.SetupTest() // reset
-			suite.app.EvmKeeper.AddRefund(10)
 
 			panicF := func() {
+				gm := sdk.NewGasMeter(10)
+				gm.ConsumeGas(tc.gasConsumed, "")
+				suite.ctx = suite.ctx.WithGasMeter(gm)
+				suite.app.EvmKeeper.WithContext(suite.ctx)
+
 				suite.app.EvmKeeper.ResetGasMeterAndConsumeGas(tc.gasUsed)
 			}
 
