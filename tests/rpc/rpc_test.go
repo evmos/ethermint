@@ -527,6 +527,84 @@ func TestEth_GetTransactionReceipt(t *testing.T) {
 	require.Equal(t, []interface{}{}, receipt["logs"].([]interface{}))
 }
 
+// deployTestERC20Contract deploys a contract that emits an event in the constructor
+func deployTestERC20Contract(t *testing.T) common.Address {
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+
+	ctorArgs, err := evmtypes.ERC20Contract.ABI.Pack("", common.BytesToAddress(from), big.NewInt(100000000))
+	require.NoError(t, err)
+	data := append(evmtypes.ERC20Contract.Bin, ctorArgs...)
+	param[0]["data"] = hexutil.Encode(data)
+
+	param[0]["gas"] = "0x200000"
+	param[0]["gasPrice"] = "0x1"
+
+	rpcRes := call(t, "eth_sendTransaction", param)
+
+	var hash hexutil.Bytes
+	err = json.Unmarshal(rpcRes.Result, &hash)
+	require.NoError(t, err)
+
+	receipt := expectSuccessReceipt(t, hash)
+	contractAddress := common.HexToAddress(receipt["contractAddress"].(string))
+	require.NotEqual(t, common.Address{}, contractAddress)
+
+	require.NotNil(t, receipt["logs"])
+
+	return contractAddress
+}
+
+// sendTestERC20Transaction sends a typical erc20 transfer transaction
+func sendTestERC20Transaction(t *testing.T, contract common.Address, amount *big.Int) hexutil.Bytes {
+	// transfer
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["to"] = contract.Hex()
+	data, err := evmtypes.ERC20Contract.ABI.Pack("transfer", common.BigToAddress(big.NewInt(1)), amount)
+	require.NoError(t, err)
+	param[0]["data"] = hexutil.Encode(data)
+	param[0]["gas"] = "0x50000"
+	param[0]["gasPrice"] = "0x1"
+
+	rpcRes := call(t, "eth_sendTransaction", param)
+
+	var hash hexutil.Bytes
+	err = json.Unmarshal(rpcRes.Result, &hash)
+	require.NoError(t, err)
+	return hash
+}
+
+func TestEth_GetTransactionReceipt_ERC20Transfer(t *testing.T) {
+	// deploy erc20 contract
+	contract := deployTestERC20Contract(t)
+	amount := big.NewInt(10)
+	hash := sendTestERC20Transaction(t, contract, amount)
+	receipt := expectSuccessReceipt(t, hash)
+
+	require.Equal(t, 1, len(receipt["logs"].([]interface{})))
+	log := receipt["logs"].([]interface{})[0].(map[string]interface{})
+
+	require.Equal(t, contract, common.HexToAddress(log["address"].(string)))
+
+	valueBz, err := hexutil.Decode(log["data"].(string))
+	require.NoError(t, err)
+	require.Equal(t, amount, big.NewInt(0).SetBytes(valueBz))
+
+	require.Equal(t, false, log["removed"].(bool))
+	require.Equal(t, "0x0", log["logIndex"].(string))
+	require.Equal(t, "0x0", log["transactionIndex"].(string))
+
+	expectedTopics := []interface{}{
+		"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+		"0x000000000000000000000000" + fmt.Sprintf("%x", from),
+		"0x0000000000000000000000000000000000000000000000000000000000000001",
+	}
+	require.Equal(t, expectedTopics, log["topics"].([]interface{}))
+}
+
 // deployTestContract deploys a contract that emits an event in the constructor
 func deployTestContract(t *testing.T) (hexutil.Bytes, map[string]interface{}) {
 	param := make([]map[string]string, 1)
@@ -590,6 +668,13 @@ func waitForReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
 			}
 		}
 	}
+}
+
+func expectSuccessReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
+	receipt := waitForReceipt(t, hash)
+	require.NotNil(t, receipt, "transaction failed")
+	require.Equal(t, "0x1", receipt["status"].(string))
+	return receipt
 }
 
 func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
