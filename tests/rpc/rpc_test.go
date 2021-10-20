@@ -360,7 +360,6 @@ func TestEth_GetStorageAt(t *testing.T) {
 }
 
 func TestEth_GetProof(t *testing.T) {
-
 	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
@@ -401,7 +400,6 @@ func TestEth_GetCode(t *testing.T) {
 }
 
 func TestEth_SendTransaction_Transfer(t *testing.T) {
-
 	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
@@ -1026,4 +1024,17 @@ func makeEthTxParam() []map[string]string {
 	param[0]["gasPrice"] = "0x55ae82600"
 
 	return param
+}
+
+func TestEth_EthResend(t *testing.T) {
+	tx := make(map[string]string)
+	tx["from"] = "0x" + fmt.Sprintf("%x", from)
+	tx["to"] = "0x0000000000000000000000000000000012341234"
+	tx["value"] = "0x16345785d8a0000"
+	tx["nonce"] = "0x2"
+	tx["gasLimit"] = "0x5208"
+	tx["gasPrice"] = "0x55ae82600"
+	param := []interface{}{tx, "0x1", "0x2"}
+	_, rpcerror := callWithError("eth_resend", param)
+	require.Equal(t, "transaction 0x3bf28b46ee1bb3925e50ec6003f899f95913db4b0f579c4e7e887efebf9ecd1b not found", fmt.Sprintf("%s", rpcerror))
 }
