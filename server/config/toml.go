@@ -44,6 +44,10 @@ txfee-cap = {{ .JSONRPC.TxFeeCap }}
 # FilterCap sets the global cap for total number of filters that can be created
 filter-cap = {{ .JSONRPC.FilterCap }}
 
+# FeeHistoryCap sets the global cap for total number of blocks that can be fetched
+feehistory-cap = {{ .JSONRPC.FeeHistoryCap }}
+
+
 ###############################################################################
 ###                             TLS Configuration                           ###
 ###############################################################################
