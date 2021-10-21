@@ -10,20 +10,21 @@ import (
 )
 
 // CalculateBaseFee calculates the base fee for the current block. This is only calculated once per
-// block during EndBlock. If the NoBaseFee parameter is enabled, this function returns nil.
+// block during EndBlock. If the NoBaseFee parameter is enabled or below activation height, this function returns nil.
 // NOTE: This code is inspired from the go-ethereum EIP1559 implementation and adapted to Cosmos SDK-based
 // chains. For the canonical code refer to: https://github.com/ethereum/go-ethereum/blob/master/consensus/misc/eip1559.go
 func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	params := k.GetParams(ctx)
 
-	if params.NoBaseFee {
+	// Ignore the calculation if not enable
+	if !params.IsBaseFeeEnabled(ctx.BlockHeight()) {
 		return nil
 	}
 
 	consParams := ctx.ConsensusParams()
 
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
-	if ctx.BlockHeight() <= params.EnableHeight {
+	if ctx.BlockHeight() == params.EnableHeight {
 		return new(big.Int).SetInt64(params.InitialBaseFee)
 	}
 

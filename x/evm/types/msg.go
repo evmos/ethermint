@@ -94,7 +94,7 @@ func newMsgEthereumTx(
 		}
 	case accesses != nil && gasFeeCap != nil && gasTipCap != nil:
 		gtc := sdk.NewIntFromBigInt(gasTipCap)
-		gfc := sdk.NewIntFromBigInt(gasTipCap)
+		gfc := sdk.NewIntFromBigInt(gasFeeCap)
 
 		txData = &DynamicFeeTx{
 			ChainID:   cid,

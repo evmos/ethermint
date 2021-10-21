@@ -3,7 +3,6 @@ package filters
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -36,6 +34,8 @@ type Backend interface {
 	BloomStatus() (uint64, uint64)
 
 	GetFilteredBlocks(from int64, to int64, bloomIndexes [][]BloomIV, filterAddresses bool) ([]int64, error)
+
+	RPCFilterCap() int32
 }
 
 // consider a filter inactive if it has not been polled for within deadline
@@ -107,15 +107,20 @@ func (api *PublicFilterAPI) timeoutLoop() {
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newPendingTransactionFilter
 func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {
+	api.filtersMu.Lock()
+	defer api.filtersMu.Unlock()
+
+	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
+		return rpc.ID("error creating pending tx filter: max limit reached")
+	}
+
 	pendingTxSub, cancelSubs, err := api.events.SubscribePendingTxs()
 	if err != nil {
 		// wrap error on the ID
 		return rpc.ID(fmt.Sprintf("error creating pending tx filter: %s", err.Error()))
 	}
 
-	api.filtersMu.Lock()
 	api.filters[pendingTxSub.ID()] = &filter{typ: filters.PendingTransactionsSubscription, deadline: time.NewTimer(deadline), hashes: make([]common.Hash, 0), s: pendingTxSub}
-	api.filtersMu.Unlock()
 
 	go func(txsCh <-chan coretypes.ResultEvent, errCh <-chan error) {
 		defer cancelSubs()
@@ -219,18 +224,20 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newblockfilter
 func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
+	api.filtersMu.Lock()
+	defer api.filtersMu.Unlock()
+
+	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
+		return rpc.ID("error creating block filter: max limit reached")
+	}
+
 	headerSub, cancelSubs, err := api.events.SubscribeNewHeads()
 	if err != nil {
 		// wrap error on the ID
 		return rpc.ID(fmt.Sprintf("error creating block filter: %s", err.Error()))
 	}
 
-	// TODO: use events to get the base fee amount
-	baseFee := big.NewInt(params.InitialBaseFee)
-
-	api.filtersMu.Lock()
 	api.filters[headerSub.ID()] = &filter{typ: filters.BlocksSubscription, deadline: time.NewTimer(deadline), hashes: []common.Hash{}, s: headerSub}
-	api.filtersMu.Unlock()
 
 	go func(headersCh <-chan coretypes.ResultEvent, errCh <-chan error) {
 		defer cancelSubs()
@@ -250,6 +257,8 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
+
+				baseFee := types.BaseFeeFromEvents(data.ResultEndBlock.Events)
 
 				header := types.EthHeaderFromTendermint(data.Header, baseFee)
 				api.filtersMu.Lock()
@@ -284,9 +293,6 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 		return &rpc.Subscription{}, err
 	}
 
-	// TODO: use events to get the base fee amount
-	baseFee := big.NewInt(params.InitialBaseFee)
-
 	go func(headersCh <-chan coretypes.ResultEvent) {
 		defer cancelSubs()
 
@@ -303,6 +309,8 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
 					continue
 				}
+
+				baseFee := types.BaseFeeFromEvents(data.ResultEndBlock.Events)
 
 				header := types.EthHeaderFromTendermint(data.Header, baseFee)
 				err = notifier.Notify(rpcSub.ID, header)
@@ -404,6 +412,13 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newfilter
 func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, error) {
+	api.filtersMu.Lock()
+	defer api.filtersMu.Unlock()
+
+	if len(api.filters) >= int(api.backend.RPCFilterCap()) {
+		return rpc.ID(""), fmt.Errorf("error creating filter: max limit reached")
+	}
+
 	var (
 		filterID = rpc.ID("")
 		err      error
@@ -416,9 +431,7 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 
 	filterID = logsSub.ID()
 
-	api.filtersMu.Lock()
 	api.filters[filterID] = &filter{typ: filters.LogsSubscription, deadline: time.NewTimer(deadline), hashes: []common.Hash{}, s: logsSub}
-	api.filtersMu.Unlock()
 
 	go func(eventCh <-chan coretypes.ResultEvent) {
 		defer cancelSubs()
