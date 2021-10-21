@@ -37,7 +37,7 @@ jobs:
       - uses: actions/setup-go@v2.1.4
         with:
           go-version: 1.17
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.3.5
       - uses: technote-space/get-diff-action@v5
         with:
           PATTERNS: |
@@ -60,7 +60,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   timeout-minutes: 10
   #   steps:
-  #     - uses: actions/checkout@v2.3.4
+  #     - uses: actions/checkout@v2.3.5
   #     - uses: actions/setup-go@v2.1.4
   #       with:
   #         go-version: 1.17
@@ -84,7 +84,10 @@ jobs:
       matrix:
         batch: ['1-3', '2-3', '3-3']
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.3.5
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
       - uses: technote-space/get-diff-action@v5
         id: git_diff
         with:
@@ -104,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.3.5
       - uses: actions/setup-go@v2.1.4
         with:
           go-version: 1.17
@@ -136,7 +139,7 @@ jobs:
       - uses: actions/setup-go@v2.1.4
         with:
           go-version: 1.17
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.3.5
       - uses: technote-space/get-diff-action@v5
         with:
           PATTERNS: |

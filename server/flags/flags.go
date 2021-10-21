@@ -31,6 +31,7 @@ const (
 	JSONRPCAddress   = "json-rpc.address"
 	JSONWsAddress    = "json-rpc.ws-address"
 	JSONRPCGasCap    = "json-rpc.gas-cap"
+	JSONRPCTxFeeCap  = "json-rpc.txfee-cap"
 	JSONRPCFilterCap = "json-rpc.filter-cap"
 )
 

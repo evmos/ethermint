@@ -563,6 +563,20 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	msg2, _ = tx2.GetMsgs()[0].(*types.MsgEthereumTx)
 	txHash2 := msg2.AsTransaction().Hash()
 
+	msg3 := types.NewTx(big.NewInt(1), 0, &suite.address, big.NewInt(1), 100000, nil, big.NewInt(1), big.NewInt(1), []byte("test"), nil)
+	msg3.From = addr.Hex()
+
+	tx3 := suite.CreateTestTx(msg3, privKey)
+	msg3, _ = tx3.GetMsgs()[0].(*types.MsgEthereumTx)
+	txHash3 := msg3.AsTransaction().Hash()
+
+	msg4 := types.NewTx(big.NewInt(1), 1, &suite.address, big.NewInt(1), 100000, nil, big.NewInt(1), big.NewInt(1), []byte("test"), nil)
+	msg4.From = addr.Hex()
+
+	tx4 := suite.CreateTestTx(msg4, privKey)
+	msg4, _ = tx4.GetMsgs()[0].(*types.MsgEthereumTx)
+	txHash4 := msg4.AsTransaction().Hash()
+
 	testCases := []struct {
 		name        string
 		hash        common.Hash
@@ -590,6 +604,38 @@ func (suite *KeeperTestSuite) TestAddLog() {
 			&ethtypes.Log{
 				Address: addr,
 				TxHash:  txHash2,
+				TxIndex: 1,
+				Index:   1,
+			},
+			func() {
+				suite.app.EvmKeeper.SetTxHashTransient(txHash)
+				suite.app.EvmKeeper.AddLog(&ethtypes.Log{
+					Address: addr,
+				})
+				suite.app.EvmKeeper.IncreaseTxIndexTransient()
+			},
+		},
+		{
+			"dynamicfee tx hash from message",
+			txHash3,
+			&ethtypes.Log{
+				Address: addr,
+			},
+			&ethtypes.Log{
+				Address: addr,
+				TxHash:  txHash3,
+			},
+			func() {},
+		},
+		{
+			"log index keep increasing in new dynamicfee tx",
+			txHash4,
+			&ethtypes.Log{
+				Address: addr,
+			},
+			&ethtypes.Log{
+				Address: addr,
+				TxHash:  txHash4,
 				TxIndex: 1,
 				Index:   1,
 			},

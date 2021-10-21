@@ -42,7 +42,9 @@ import (
 // Implemented by EVMBackend.
 type Backend interface {
 	// General Ethereum API
-	RPCGasCap() uint64 // global gas cap for eth_call over rpc: DoS protection
+	RPCGasCap() uint64    // global gas cap for eth_call over rpc: DoS protection
+	RPCTxFeeCap() float64 // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for, // send-transction variants. The unit is ether.
+
 	RPCMinGasPrice() int64
 	SuggestGasTipCap() (*big.Int, error)
 
@@ -779,6 +781,11 @@ func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
 }
 
+// RPCGasCap is the global gas cap for eth-call variants.
+func (e *EVMBackend) RPCTxFeeCap() float64 {
+	return e.cfg.JSONRPC.TxFeeCap
+}
+
 // RPCFilterCap is the limit for total number of filters that can be created
 func (e *EVMBackend) RPCFilterCap() int32 {
 	return e.cfg.JSONRPC.FilterCap
@@ -826,22 +833,24 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 		return nil, nil
 	}
 
-	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
+	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &height)
 	if err != nil {
 		return nil, err
 	}
 
-	if res.BaseFee != nil {
+	baseFee := types.BaseFeeFromEvents(blockRes.EndBlockEvents)
+	if baseFee != nil {
+		return baseFee, nil
+	}
+
+	// If we cannot find in events, we tried to get it from the state.
+	// It will return feemarket.baseFee if london is activated but feemarket is not enable
+	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
+	if err == nil && res.BaseFee != nil {
 		return res.BaseFee.BigInt(), nil
 	}
 
-	resParams, err := e.queryClient.FeeMarket.Params(types.ContextWithHeight(height), &feemarkettypes.QueryParamsRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	baseFee := big.NewInt(resParams.Params.InitialBaseFee)
-	return baseFee, nil
+	return nil, nil
 }
 
 // GetFilteredBlocks returns the block height list match the given bloom filters.

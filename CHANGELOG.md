@@ -44,6 +44,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Features
 
+* (rpc, evm) [tharsis#673](https://github.com/tharsis/ethermint/pull/673) Use tendermint events to store fee market basefee.
 * (rpc) [tharsis#624](https://github.com/tharsis/ethermint/pull/624) Implement new JSON-RPC endpoints from latest geth version
 * (evm) [tharsis#662](https://github.com/tharsis/ethermint/pull/662) Disable basefee for non london blocks
 
@@ -54,6 +55,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc, test) [tharsis#608](https://github.com/tharsis/ethermint/pull/608) Fix rpc test.
 * (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
 * (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
+* (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
+
+### Improvements
+
+(rpc) [tharsis#679](https://github.com/tharsis/ethermint/pull/679) Fix file close handle.
 
 ## [v0.7.0] - 2021-10-07
 
