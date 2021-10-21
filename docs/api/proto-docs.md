@@ -547,7 +547,6 @@ EthCallRequest defines EthCall request
 | ----- | ---- | ----- | ----------- |
 | `args` | [bytes](#bytes) |  | same json format as the json rpc api. |
 | `gas_cap` | [uint64](#uint64) |  | the default gas cap to be used |
-| `base_fee` | [string](#string) |  | header base fee used to generate the transaction |
 
 
 

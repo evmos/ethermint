@@ -622,35 +622,9 @@ func (e *PublicAPI) doCall(
 		return nil, err
 	}
 
-	currentBlockNumber, _ := e.BlockNumber()
-	height := blockNr.Int64()
-	switch blockNr {
-	case rpctypes.EthLatestBlockNumber:
-		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber)
-		}
-	case rpctypes.EthPendingBlockNumber:
-		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber)
-		}
-	case rpctypes.EthEarliestBlockNumber:
-		height = 1
-	}
-	baseFee, err := e.backend.BaseFee(height)
-	if err != nil {
-		return nil, err
-	}
-
-	var bf *sdk.Int
-	if baseFee != nil {
-		aux := sdk.NewIntFromBigInt(baseFee)
-		bf = &aux
-	}
-
 	req := evmtypes.EthCallRequest{
-		Args:    bz,
-		GasCap:  e.backend.RPCGasCap(),
-		BaseFee: bf,
+		Args:   bz,
+		GasCap: e.backend.RPCGasCap(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
