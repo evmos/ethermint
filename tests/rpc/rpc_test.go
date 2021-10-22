@@ -412,18 +412,20 @@ func TestEth_SendTransaction_Transfer(t *testing.T) {
 }
 
 func TestEth_SendTransaction_ContractDeploy(t *testing.T) {
-	param := make([]map[string]string, 1)
-	param[0] = make(map[string]string)
-	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
-	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
-	param[0]["gas"] = "0x200000"
-	param[0]["gasPrice"] = "0x1"
-
-	rpcRes := call(t, "eth_sendTransaction", param)
+	param := makeTestContractDeployParam(true)
+	rpcRes, err := callWithError("eth_sendTransaction", param)
+	require.NoError(t, err)
 
 	var hash hexutil.Bytes
-	err := json.Unmarshal(rpcRes.Result, &hash)
+	err = json.Unmarshal(rpcRes.Result, &hash)
 	require.NoError(t, err)
+}
+
+func TestEth_SendTransaction_ContractDeploy_no_gas_param(t *testing.T) {
+	param := makeTestContractDeployParam(false)
+	_, err := callWithError("eth_sendTransaction", param)
+	// server returns internal error.
+	require.Error(t, err)
 }
 
 func TestEth_NewFilter(t *testing.T) {
@@ -1022,6 +1024,19 @@ func makeEthTxParam() []map[string]string {
 	param[0]["value"] = "0x16345785d8a0000"
 	param[0]["gasLimit"] = "0x5208"
 	param[0]["gasPrice"] = "0x55ae82600"
+
+	return param
+}
+
+func makeTestContractDeployParam(withGas bool) []map[string]string {
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
+	if withGas {
+		param[0]["gas"] = "0x200000"
+		param[0]["gasPrice"] = "0x1"
+	}
 
 	return param
 }
