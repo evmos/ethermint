@@ -289,11 +289,12 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	}
 	cap = hi
 
-	params := k.GetParams(ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
-
+	cfg, err := k.EVMConfig(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to load evm config")
+	}
 	var baseFee *big.Int
-	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
+	if types.IsLondon(cfg.ChainConfig, ctx.BlockHeight()) {
 		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
 	}
 
@@ -309,7 +310,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 			return false, nil, err
 		}
 
-		rsp, err = k.ApplyMessage(msg, nil, false)
+		rsp, err = k.ApplyMessageWithConfig(msg, nil, false, cfg)
 
 		if err != nil {
 			if errors.Is(stacktrace.RootCause(err), core.ErrIntrinsicGas) {

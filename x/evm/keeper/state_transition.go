@@ -22,14 +22,14 @@ import (
 )
 
 // EVMConfig creates the EVMConfig based on current state
-func (k *Keeper) EVMConfig(ctx sdk.Context) (types.EVMConfig, error) {
+func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the coinbase address from the block proposer
 	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
-		return types.EVMConfig{}, stacktrace.Propagate(err, "failed to obtain coinbase address")
+		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
 	}
 
 	var baseFee *big.Int
@@ -37,7 +37,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (types.EVMConfig, error) {
 		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
 	}
 
-	return types.EVMConfig{
+	return &types.EVMConfig{
 		Params:      params,
 		ChainConfig: ethCfg,
 		CoinBase:    coinbase,
@@ -51,7 +51,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (types.EVMConfig, error) {
 // beneficiary of the coinbase transaction (since we're not mining).
 func (k *Keeper) NewEVM(
 	msg core.Message,
-	cfg types.EVMConfig,
+	cfg *types.EVMConfig,
 	tracer vm.Tracer,
 ) *vm.EVM {
 	blockCtx := vm.BlockContext{
@@ -165,18 +165,20 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 // For relevant discussion see: https://github.com/cosmos/cosmos-sdk/discussions/9072
 func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
 	ctx := k.Ctx()
-	params := k.GetParams(ctx)
 
 	// ensure keeper state error is cleared
 	defer k.ClearStateError()
 
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+	cfg, err := k.EVMConfig(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to load evm config")
+	}
 
 	// get the latest signer according to the chain rules from the config
-	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
+	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
 
 	var baseFee *big.Int
-	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
+	if types.IsLondon(cfg.ChainConfig, ctx.BlockHeight()) {
 		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
 	}
 
@@ -206,13 +208,13 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		})()
 	}
 
-	res, err := k.ApplyMessage(msg, nil, true)
+	res, err := k.ApplyMessageWithConfig(msg, nil, true, cfg)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
 	// refund gas prior to handling the vm error in order to match the Ethereum gas consumption instead of the default SDK one.
-	err = k.RefundGas(msg, msg.Gas()-res.GasUsed, params.EvmDenom)
+	err = k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
@@ -249,7 +251,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	return res, nil
 }
 
-// ApplyMessage computes the new state by applying the given message against the existing state.
+// ApplyMessageWithConfig computes the new state by applying the given message against the existing state.
 // If the message fails, the VM execution error with the reason will be returned to the client
 // and the transaction won't be committed to the store.
 //
@@ -288,7 +290,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 // Commit parameter
 //
 // If commit is true, the cache context stack will be committed, otherwise discarded.
-func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.Tracer, commit bool) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, commit bool, cfg *types.EVMConfig) (*types.MsgEthereumTxResponse, error) {
 	var (
 		ret   []byte // return bytes from evm execution
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
@@ -298,10 +300,6 @@ func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.Tracer, commit bool) (
 		panic("context stack shouldn't be dirty before apply message")
 	}
 
-	cfg, err := k.EVMConfig(k.Ctx())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to load evm config")
-	}
 	evm := k.NewEVM(msg, cfg, tracer)
 
 	// ensure keeper state error is cleared
@@ -379,6 +377,15 @@ func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.Tracer, commit bool) (
 		VmError: vmError,
 		Ret:     ret,
 	}, nil
+}
+
+// ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
+func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.Tracer, commit bool) (*types.MsgEthereumTxResponse, error) {
+	cfg, err := k.EVMConfig(k.Ctx())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "failed to load evm config")
+	}
+	return k.ApplyMessageWithConfig(msg, tracer, commit, cfg)
 }
 
 // GetEthIntrinsicGas returns the intrinsic gas cost for the transaction

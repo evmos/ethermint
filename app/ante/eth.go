@@ -28,7 +28,7 @@ type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	NewEVM(msg core.Message, cfg evmtypes.EVMConfig, tracer vm.Tracer) *vm.EVM
+	NewEVM(msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.Tracer) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
 	DeductTxCostsFromUserBalance(
 		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
@@ -371,7 +371,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		}
 
 		// NOTE: pass in an empty coinbase address and nil tracer as we don't need them for the check below
-		cfg := evmtypes.EVMConfig{
+		cfg := &evmtypes.EVMConfig{
 			ChainConfig: ethCfg,
 			Params:      params,
 			CoinBase:    common.Address{},
