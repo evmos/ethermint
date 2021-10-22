@@ -35,10 +35,6 @@ contract('Lifecycle', () => {
       assert.isFalse(await lifecycle.isPetrified(), 'should not be petrified')
     })
 
-    it('has correct initialization block', async () => {
-      assert.equal(await lifecycle.getInitializationBlock(), await web3.eth.getBlockNumber(), 'initialization block should be correct')
-    })
-
     it('cannot be re-initialized', async () => {
       await assertRevert(lifecycle.initializeMock()/*, ERRORS.INIT_ALREADY_INITIALIZED*/)
     })

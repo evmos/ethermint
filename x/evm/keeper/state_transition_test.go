@@ -15,6 +15,7 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/tharsis/ethermint/tests"
+	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestGetHashFn() {
@@ -379,15 +380,15 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 			"leftoverGas equal to tx gas limit, insufficient fee collector account",
 			params.TxGas,
 			params.RefundQuotient,
-			false,
-			params.TxGas,
+			true,
+			0,
 		},
 		{
 			"leftoverGas less than to tx gas limit",
 			params.TxGas - 1,
 			params.RefundQuotient,
 			true,
-			params.TxGas - 1,
+			0,
 		},
 		{
 			"no leftoverGas, refund half used gas ",
@@ -422,14 +423,20 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 
 			suite.app.EvmKeeper.AddRefund(params.TxGas)
 
-			gr, err := suite.app.EvmKeeper.RefundGas(m, tc.leftoverGas, tc.refundQuotient)
+			if tc.leftoverGas > m.Gas() {
+				return
+			}
+			gasUsed := m.Gas() - tc.leftoverGas
+			refund := suite.app.EvmKeeper.GasToRefund(gasUsed, tc.refundQuotient)
+			suite.Require().Equal(tc.expGasRefund, refund)
+
+			err = suite.app.EvmKeeper.RefundGas(m, refund, "aphoton")
 			if tc.noError {
 				suite.Require().NoError(err)
 			} else {
 				suite.Require().Error(err)
 			}
 
-			suite.Require().Equal(tc.expGasRefund, gr)
 		})
 	}
 	suite.mintFeeCollector = false
@@ -494,4 +501,14 @@ func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 			}
 		})
 	}
+}
+
+func (suite *KeeperTestSuite) TestEVMConfig() {
+	suite.SetupTest()
+	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
+	suite.Require().NoError(err)
+	suite.Require().Equal(types.DefaultParams(), cfg.Params)
+	suite.Require().Equal((*big.Int)(nil), cfg.BaseFee)
+	suite.Require().Equal(suite.address, cfg.CoinBase)
+	suite.Require().Equal(types.DefaultParams().ChainConfig.EthereumConfig(big.NewInt(9000)), cfg.ChainConfig)
 }
