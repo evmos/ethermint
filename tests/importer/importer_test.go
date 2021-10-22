@@ -248,10 +248,6 @@ func applyTransaction(
 		return &ethtypes.Receipt{}, 0, nil
 	}
 
-	if err != nil {
-		return nil, execResult.UsedGas, err
-	}
-
 	root := common.Hash{}.Bytes()
 	*usedGas += execResult.UsedGas
 
