@@ -15,8 +15,8 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	channelkeeper "github.com/cosmos/ibc-go/modules/core/04-channel/keeper"
-	ibcante "github.com/cosmos/ibc-go/modules/core/ante"
+	channelkeeper "github.com/cosmos/ibc-go/v2/modules/core/04-channel/keeper"
+	ibcante "github.com/cosmos/ibc-go/v2/modules/core/ante"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
