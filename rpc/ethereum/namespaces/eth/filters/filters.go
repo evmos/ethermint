@@ -177,7 +177,7 @@ func (f *Filter) blockLogs(header *ethtypes.Header) ([]*ethtypes.Log, error) {
 		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", header.Number.Int64())
 	}
 
-	var unfiltered []*ethtypes.Log
+	unfiltered := make([]*ethtypes.Log, 0)
 	for _, logs := range logsList {
 		unfiltered = append(unfiltered, logs...)
 	}

@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/params"
 )
 
 // EVMKeeper defines the expected keeper interface used on the Eth AnteHandler
@@ -29,7 +28,7 @@ type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	NewEVM(msg core.Message, config *params.ChainConfig, params evmtypes.Params, coinbase common.Address, baseFee *big.Int, tracer vm.Tracer) *vm.EVM
+	NewEVM(msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.Tracer) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
 	DeductTxCostsFromUserBalance(
 		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
@@ -372,7 +371,13 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		}
 
 		// NOTE: pass in an empty coinbase address and nil tracer as we don't need them for the check below
-		evm := ctd.evmKeeper.NewEVM(coreMsg, ethCfg, params, common.Address{}, baseFee, evmtypes.NewNoOpTracer())
+		cfg := &evmtypes.EVMConfig{
+			ChainConfig: ethCfg,
+			Params:      params,
+			CoinBase:    common.Address{},
+			BaseFee:     baseFee,
+		}
+		evm := ctd.evmKeeper.NewEVM(coreMsg, cfg, evmtypes.NewNoOpTracer())
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
