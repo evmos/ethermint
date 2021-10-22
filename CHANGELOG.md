@@ -40,6 +40,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (deps) [tharsis#692](https://github.com/tharsis/ethermint/pull/692) Bump Cosmos SDK version to [`v0.44.3`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.3).
+* (rpc) [tharsis#679](https://github.com/tharsis/ethermint/pull/679) Fix file close handle.
+* (deps) [tharsis#668](https://github.com/tharsis/ethermint/pull/668) Bump Tendermint version to [`v0.34.14`](https://github.com/tendermint/tendermint/releases/tag/v0.34.14).
 
 ### Bug Fixes
 
@@ -51,10 +53,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [tharsis#650](https://github.com/tharsis/ethermint/pull/650) Fix panic when flattening the cache context in case transaction is reverted.
 * (rpc, test) [tharsis#608](https://github.com/tharsis/ethermint/pull/608) Fix rpc test.
-
-### Improvements
-
-(rpc) [tharsis#679](https://github.com/tharsis/ethermint/pull/679) Fix file close handle.
 
 ## [v0.7.0] - 2021-10-07
 
