@@ -35,6 +35,18 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.7.2] - 2021-10-22
+
+### Improvements
+
+* (deps) [tharsis#692](https://github.com/tharsis/ethermint/pull/692) Bump Cosmos SDK version to [`v0.44.3`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.44.3).
+* (rpc) [tharsis#679](https://github.com/tharsis/ethermint/pull/679) Fix file close handle.
+* (deps) [tharsis#668](https://github.com/tharsis/ethermint/pull/668) Bump Tendermint version to [`v0.34.14`](https://github.com/tendermint/tendermint/releases/tag/v0.34.14).
+
+### Bug Fixes
+
+* (rpc) [tharsis#667](https://github.com/tharsis/ethermint/issues/667) Fix `ExpandHome` restrictions bypass
+
 ## [v0.7.1] - 2021-10-08
 
 ### Bug Fixes
