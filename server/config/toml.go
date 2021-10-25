@@ -36,7 +36,7 @@ api = "{{range $index, $elmt := .JSONRPC.API}}{{if $index}},{{$elmt}}{{else}}{{$
 gas-cap = {{ .JSONRPC.GasCap }}
 
 # EVMTimeout is the global timeout for eth_call. Default: 5s.
-evm-timeout = {{ .JSONRPC.EVMTimeout }}
+evm-timeout = "{{ .JSONRPC.EVMTimeout }}"
 
 # TxFeeCap is the global tx-fee cap for send transaction. Default: 1eth.
 txfee-cap = {{ .JSONRPC.TxFeeCap }}
