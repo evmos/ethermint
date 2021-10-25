@@ -93,8 +93,13 @@ func BinSearch(lo, hi uint64, executable func(uint64) (bool, *MsgEthereumTxRespo
 
 // SafeNewIntFromBigInt constructs Int from big.Int, return error if more than 256bits
 func SafeNewIntFromBigInt(i *big.Int) (sdk.Int, error) {
-	if i.BitLen() > maxBitLen {
+	if !IsValidInt256(i) {
 		return sdk.NewInt(0), errors.New("SafeNewIntFromBigInt() out of bound") // nolint
 	}
 	return sdk.NewIntFromBigInt(i), nil
+}
+
+// IsValidInt256 check the bound of 256 bit number
+func IsValidInt256(i *big.Int) bool {
+	return i == nil || i.BitLen() <= maxBitLen
 }

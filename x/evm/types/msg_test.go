@@ -61,6 +61,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	hundredInt := sdk.NewInt(100)
 	zeroInt := sdk.ZeroInt()
 	minusOneInt := sdk.NewInt(-1)
+	exp_2_255 := sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(2), big.NewInt(255), nil))
 
 	testCases := []struct {
 		msg        string
@@ -82,6 +83,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		{msg: "negative gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &minusOneInt, expectPass: false},
 		{msg: "zero gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, expectPass: true},
 		{msg: "invalid from address - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, from: invalidFromAddress, expectPass: false},
+		{msg: "out of bound gas fee - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &exp_2_255, expectPass: false},
 		{msg: "nil amount - AccessListTx", to: suite.to.Hex(), amount: nil, gasPrice: &hundredInt, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: true},
 		{msg: "negative amount - AccessListTx", to: suite.to.Hex(), amount: &minusOneInt, gasPrice: &hundredInt, accessList: &types.AccessList{}, chainID: nil, expectPass: false},
 		{msg: "nil gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: nil, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: false},

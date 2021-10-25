@@ -183,6 +183,9 @@ func (tx AccessListTx) Validate() error {
 	if gasPrice == nil {
 		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
 	}
+	if !IsValidInt256(gasPrice) {
+		return sdkerrors.Wrap(ErrInvalidGasPrice, "out of bound")
+	}
 
 	if gasPrice.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
@@ -192,6 +195,13 @@ func (tx AccessListTx) Validate() error {
 	// Amount can be 0
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+	}
+	if !IsValidInt256(amount) {
+		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
+	}
+
+	if !IsValidInt256(tx.Fee()) {
+		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
 	}
 
 	if tx.To != "" {

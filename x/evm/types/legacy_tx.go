@@ -166,11 +166,20 @@ func (tx LegacyTx) Validate() error {
 	if gasPrice.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
+	if !IsValidInt256(gasPrice) {
+		return sdkerrors.Wrap(ErrInvalidGasPrice, "out of bound")
+	}
+	if !IsValidInt256(tx.Fee()) {
+		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
+	}
 
 	amount := tx.GetValue()
 	// Amount can be 0
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+	}
+	if !IsValidInt256(amount) {
+		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
 	}
 
 	if tx.To != "" {
