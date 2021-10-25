@@ -394,36 +394,40 @@ func (a *API) SetGCPercent(v int) int {
 
 // GetHeaderRlp retrieves the RLP encoded for of a single header.
 func (a *API) GetHeaderRlp(number uint64) (hexutil.Bytes, error) {
-	header, _ := a.backend.HeaderByNumber(rpctypes.BlockNumber(number))
-	if header == nil {
-		return nil, fmt.Errorf("header #%d not found", number)
+	header, err := a.backend.HeaderByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return nil, err
 	}
+
 	return rlp.EncodeToBytes(header)
 }
 
 // GetBlockRlp retrieves the RLP encoded for of a single block.
 func (a *API) GetBlockRlp(number uint64) (hexutil.Bytes, error) {
-	block, _ := a.backend.GetBlockByNumber(rpctypes.BlockNumber(number), true)
-	if block == nil {
-		return nil, fmt.Errorf("block #%d not found", number)
+	block, err := a.backend.BlockByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return nil, err
 	}
+
 	return rlp.EncodeToBytes(block)
 }
 
 // PrintBlock retrieves a block and returns its pretty printed form.
 func (a *API) PrintBlock(number uint64) (string, error) {
-	block, _ := a.backend.GetBlockByNumber(rpctypes.BlockNumber(number), true)
-	if block == nil {
-		return "", fmt.Errorf("block #%d not found", number)
+	block, err := a.backend.BlockByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return "", err
 	}
+
 	return spew.Sdump(block), nil
 }
 
 // SeedHash retrieves the seed hash of a block.
 func (a *API) SeedHash(number uint64) (string, error) {
-	block, _ := a.backend.GetBlockByNumber(rpctypes.BlockNumber(number), true)
-	if block == nil {
-		return "", fmt.Errorf("block #%d not found", number)
+	_, err := a.backend.HeaderByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return "", err
 	}
+
 	return fmt.Sprintf("0x%x", ethash.SeedHash(number)), nil
 }

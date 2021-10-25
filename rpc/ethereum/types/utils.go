@@ -66,32 +66,6 @@ func EthHeaderFromTendermint(header tmtypes.Header, baseFee *big.Int) *ethtypes.
 	}
 }
 
-// EthTransactionsFromTendermint returns a slice of ethereum transaction hashes and the total gas usage from a set of
-// tendermint block transactions.
-func EthTransactionsFromTendermint(clientCtx client.Context, txs []tmtypes.Tx) ([]common.Hash, *big.Int, error) {
-	transactionHashes := []common.Hash{}
-	gasUsed := big.NewInt(0)
-
-	for _, tx := range txs {
-		ethTx, err := RawTxToEthTx(clientCtx, tx)
-		if err != nil {
-			// continue to next transaction in case it's not a MsgEthereumTx
-			continue
-		}
-
-		data, err := evmtypes.UnpackTxData(ethTx.Data)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to unpack tx data: %w", err)
-		}
-
-		// TODO: Remove gas usage calculation if saving gasUsed per block
-		gasUsed.Add(gasUsed, data.Fee())
-		transactionHashes = append(transactionHashes, common.BytesToHash(tx.Hash()))
-	}
-
-	return transactionHashes, gasUsed, nil
-}
-
 // BlockMaxGasFromConsensusParams returns the gas limit for the latest block from the chain consensus params.
 func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Context) (int64, error) {
 	resConsParams, err := clientCtx.Client.ConsensusParams(ctx, nil)
