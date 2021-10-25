@@ -10,7 +10,7 @@ import (
 	"github.com/tharsis/ethermint/types"
 )
 
-func newAccessListTx(tx *ethtypes.Transaction) *AccessListTx {
+func newAccessListTx(tx *ethtypes.Transaction) (*AccessListTx, error) {
 	txData := &AccessListTx{
 		Nonce:    tx.Nonce(),
 		Data:     tx.Data(),
@@ -23,12 +23,18 @@ func newAccessListTx(tx *ethtypes.Transaction) *AccessListTx {
 	}
 
 	if tx.Value() != nil {
-		amountInt := sdk.NewIntFromBigInt(tx.Value())
+		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		if err != nil {
+			return nil, err
+		}
 		txData.Amount = &amountInt
 	}
 
 	if tx.GasPrice() != nil {
-		gasPriceInt := sdk.NewIntFromBigInt(tx.GasPrice())
+		gasPriceInt, err := SafeNewIntFromBigInt(tx.GasPrice())
+		if err != nil {
+			return nil, err
+		}
 		txData.GasPrice = &gasPriceInt
 	}
 
@@ -38,7 +44,7 @@ func newAccessListTx(tx *ethtypes.Transaction) *AccessListTx {
 	}
 
 	txData.SetSignatureValues(tx.ChainId(), v, r, s)
-	return txData
+	return txData, nil
 }
 
 // TxType returns the tx type

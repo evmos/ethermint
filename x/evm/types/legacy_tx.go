@@ -3,14 +3,13 @@ package types
 import (
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tharsis/ethermint/types"
 )
 
-func newLegacyTx(tx *ethtypes.Transaction) *LegacyTx {
+func newLegacyTx(tx *ethtypes.Transaction) (*LegacyTx, error) {
 	txData := &LegacyTx{
 		Nonce:    tx.Nonce(),
 		Data:     tx.Data(),
@@ -23,17 +22,23 @@ func newLegacyTx(tx *ethtypes.Transaction) *LegacyTx {
 	}
 
 	if tx.Value() != nil {
-		amountInt := sdk.NewIntFromBigInt(tx.Value())
+		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		if err != nil {
+			return nil, err
+		}
 		txData.Amount = &amountInt
 	}
 
 	if tx.GasPrice() != nil {
-		gasPriceInt := sdk.NewIntFromBigInt(tx.GasPrice())
+		gasPriceInt, err := SafeNewIntFromBigInt(tx.GasPrice())
+		if err != nil {
+			return nil, err
+		}
 		txData.GasPrice = &gasPriceInt
 	}
 
 	txData.SetSignatureValues(tx.ChainId(), v, r, s)
-	return txData
+	return txData, nil
 }
 
 // TxType returns the tx type

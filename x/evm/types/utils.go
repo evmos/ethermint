@@ -1,7 +1,9 @@
 package types
 
 import (
+	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -10,6 +12,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+const maxBitLen = 256
 
 var EmptyCodeHash = crypto.Keccak256(nil)
 
@@ -85,4 +89,12 @@ func BinSearch(lo, hi uint64, executable func(uint64) (bool, *MsgEthereumTxRespo
 		}
 	}
 	return hi, nil
+}
+
+// SafeNewIntFromBigInt constructs Int from big.Int, return error if more than 256bits
+func SafeNewIntFromBigInt(i *big.Int) (sdk.Int, error) {
+	if i.BitLen() > maxBitLen {
+		return sdk.NewInt(0), errors.New("SafeNewIntFromBigInt() out of bound") // nolint
+	}
+	return sdk.NewIntFromBigInt(i), nil
 }
