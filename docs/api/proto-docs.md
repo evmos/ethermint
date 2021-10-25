@@ -176,7 +176,6 @@ instead of *big.Int.
 | `istanbul_block` | [string](#string) |  | Istanbul switch block (nil no fork, 0 = already on istanbul) |
 | `muir_glacier_block` | [string](#string) |  | Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated) |
 | `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
-| `catalyst_block` | [string](#string) |  | Catalyst switch block (nil = no fork, 0 = already on catalyst) |
 | `london_block` | [string](#string) |  | London switch block (nil = no fork, 0 = already on london) |
 
 
@@ -350,7 +349,7 @@ GenesisState defines the evm module's genesis state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `accounts` | [GenesisAccount](#ethermint.evm.v1.GenesisAccount) | repeated | accounts is an array containing the ethereum genesis accounts. |
-| `params` | [Params](#ethermint.evm.v1.Params) |  | params defines all the paramaters of the module. |
+| `params` | [Params](#ethermint.evm.v1.Params) |  | params defines all the parameters of the module. |
 
 
 

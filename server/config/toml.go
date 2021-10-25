@@ -35,6 +35,12 @@ api = "{{range $index, $elmt := .JSONRPC.API}}{{if $index}},{{$elmt}}{{else}}{{$
 # GasCap sets a cap on gas that can be used in eth_call/estimateGas (0=infinite). Default: 25,000,000.
 gas-cap = {{ .JSONRPC.GasCap }}
 
+# EVMTimeout is the global timeout for eth_call. Default: 5s.
+evm-timeout = "{{ .JSONRPC.EVMTimeout }}"
+
+# TxFeeCap is the global tx-fee cap for send transaction. Default: 1eth.
+txfee-cap = {{ .JSONRPC.TxFeeCap }}
+
 # FilterCap sets the global cap for total number of filters that can be created
 filter-cap = {{ .JSONRPC.FilterCap }}
 

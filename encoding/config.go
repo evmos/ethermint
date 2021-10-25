@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -45,7 +45,7 @@ type txConfig struct {
 func NewTxConfig(marshaler amino.ProtoCodecMarshaler) client.TxConfig {
 	return &txConfig{
 		marshaler,
-		tx.NewTxConfig(marshaler, tx.DefaultSignModes),
+		authtx.NewTxConfig(marshaler, authtx.DefaultSignModes),
 	}
 }
 

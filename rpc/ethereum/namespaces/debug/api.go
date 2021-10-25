@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/tendermint/tendermint/types"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -21,6 +22,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tharsis/ethermint/rpc/ethereum/backend"
 	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
@@ -386,4 +390,44 @@ func (a *API) FreeOSMemory() {
 func (a *API) SetGCPercent(v int) int {
 	a.logger.Debug("debug_setGCPercent", "percent", v)
 	return debug.SetGCPercent(v)
+}
+
+// GetHeaderRlp retrieves the RLP encoded for of a single header.
+func (a *API) GetHeaderRlp(number uint64) (hexutil.Bytes, error) {
+	header, err := a.backend.HeaderByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return nil, err
+	}
+
+	return rlp.EncodeToBytes(header)
+}
+
+// GetBlockRlp retrieves the RLP encoded for of a single block.
+func (a *API) GetBlockRlp(number uint64) (hexutil.Bytes, error) {
+	block, err := a.backend.BlockByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return nil, err
+	}
+
+	return rlp.EncodeToBytes(block)
+}
+
+// PrintBlock retrieves a block and returns its pretty printed form.
+func (a *API) PrintBlock(number uint64) (string, error) {
+	block, err := a.backend.BlockByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return "", err
+	}
+
+	return spew.Sdump(block), nil
+}
+
+// SeedHash retrieves the seed hash of a block.
+func (a *API) SeedHash(number uint64) (string, error) {
+	_, err := a.backend.HeaderByNumber(rpctypes.BlockNumber(number))
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("0x%x", ethash.SeedHash(number)), nil
 }
