@@ -1093,11 +1093,6 @@ paths:
           required: false
           type: string
           format: uint64
-        - name: base_fee
-          description: header base fee used to generate the transaction.
-          in: query
-          required: false
-          type: string
       tags:
         - Query
   /ethermint/evm/v1/eth_call:
@@ -1396,11 +1391,6 @@ paths:
           required: false
           type: string
           format: uint64
-        - name: base_fee
-          description: header base fee used to generate the transaction.
-          in: query
-          required: false
-          type: string
       tags:
         - Query
   /ethermint/evm/v1/params:

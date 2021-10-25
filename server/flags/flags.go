@@ -31,8 +31,9 @@ const (
 	JSONRPCAddress    = "json-rpc.address"
 	JSONWsAddress     = "json-rpc.ws-address"
 	JSONRPCGasCap     = "json-rpc.gas-cap"
-	JSONRPCFilterCap  = "json-rpc.filter-cap"
 	JSONRPCEVMTimeout = "json-rpc.evm-timeout"
+	JSONRPCTxFeeCap   = "json-rpc.txfee-cap"
+	JSONRPCFilterCap  = "json-rpc.filter-cap"
 )
 
 // EVM flags

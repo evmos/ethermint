@@ -45,6 +45,8 @@ type Backend interface {
 	// General Ethereum API
 	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
 	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
+	RPCTxFeeCap() float64         // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for send-transaction variants. The unit is ether.
+
 	RPCMinGasPrice() int64
 	SuggestGasTipCap() (*big.Int, error)
 
@@ -807,42 +809,15 @@ func (e *EVMBackend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional 
 		return 0, err
 	}
 
-	height := blockNr.Int64()
-	switch blockNr {
-	case types.EthLatestBlockNumber:
-		currentBlockNumber, _ := e.BlockNumber()
-		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber)
-		}
-	case types.EthPendingBlockNumber:
-		currentBlockNumber, _ := e.BlockNumber()
-		if currentBlockNumber > 0 {
-			height = int64(currentBlockNumber)
-		}
-	case types.EthEarliestBlockNumber:
-		height = 1
-	}
-	baseFee, err := e.BaseFee(height)
-	if err != nil {
-		return 0, err
-	}
-
-	var bf *sdk.Int
-	if baseFee != nil {
-		aux := sdk.NewIntFromBigInt(baseFee)
-		bf = &aux
-	}
-
 	req := evmtypes.EthCallRequest{
-		Args:    bz,
-		GasCap:  e.RPCGasCap(),
-		BaseFee: bf,
+		Args:   bz,
+		GasCap: e.RPCGasCap(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	res, err := e.queryClient.EstimateGas(types.ContextWithHeight(height), &req)
+	res, err := e.queryClient.EstimateGas(types.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return 0, err
 	}
@@ -877,9 +852,14 @@ func (e *EVMBackend) RPCGasCap() uint64 {
 	return e.cfg.JSONRPC.GasCap
 }
 
-// RPCGasCap is the global evm timeout for eth-call variants.
+// RPCEVMTimeout is the global evm timeout for eth-call variants.
 func (e *EVMBackend) RPCEVMTimeout() time.Duration {
 	return e.cfg.JSONRPC.EVMTimeout
+}
+
+// RPCGasCap is the global gas cap for eth-call variants.
+func (e *EVMBackend) RPCTxFeeCap() float64 {
+	return e.cfg.JSONRPC.TxFeeCap
 }
 
 // RPCFilterCap is the limit for total number of filters that can be created
@@ -927,6 +907,16 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 	cfg := e.ChainConfig()
 	if !cfg.IsLondon(new(big.Int).SetInt64(height)) {
 		return nil, nil
+	}
+
+	// Checks the feemarket param NoBaseFee settings, return 0 if it is enabled.
+	resParams, err := e.queryClient.FeeMarket.Params(e.ctx, &feemarkettypes.QueryParamsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	if resParams.Params.NoBaseFee {
+		return big.NewInt(0), nil
 	}
 
 	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &height)

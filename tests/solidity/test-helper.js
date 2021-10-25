@@ -21,9 +21,11 @@ function checkTestEnv() {
   const argv = yargs(hideBin(process.argv))
     .usage('Usage: $0 [options] <tests>')
     .example('$0 --network ethermint', 'run all tests using ethermint network')
-    .example('$0 --network ethermint test1 test2', 'run only test1 and test2 using ethermint network')
+    .example('$0 --network ethermint --allowTests=test1,test2', 'run only test1 and test2 using ethermint network')
     .help('h').alias('h', 'help')
     .describe('network', 'set which network to use: ganache|ethermint')
+    .describe('batch', 'set the test batch in parallelized testing. Format: %d-%d')
+    .describe('allowTests', 'only run specified tests. Separated by comma.')
     .boolean('verbose-log').describe('verbose-log', 'print ethermintd output, default false')
     .argv;
 
@@ -45,8 +47,31 @@ function checkTestEnv() {
     }
   }
 
+  if (argv.batch) {
+
+    const [toRunBatch, allBatches] = argv.batch.split('-').map(e => Number(e));
+
+    console.log([toRunBatch, allBatches]);
+    if (!toRunBatch || !allBatches) {
+      panic('bad batch input format');
+    }
+    
+    if (toRunBatch > allBatches) {
+      panic('test batch number is larger than batch counts');
+    }
+    
+    if (toRunBatch <= 0 || allBatches <=0 ) {
+      panic('test batch number or batch counts must be non-zero values');
+    }
+    
+    runConfig.batch = {};
+    runConfig.batch.this = toRunBatch;
+    runConfig.batch.all = allBatches;
+
+  }
+
   // only test
-  runConfig.onlyTest = argv['_'];
+  runConfig.onlyTest = !!argv['allowTests'] ? argv['allowTests'].split(',') : undefined;
   runConfig.verboseLog = !!argv['verbose-log'];
 
   logger.info(`Running on network: ${runConfig.network}`);
@@ -54,8 +79,8 @@ function checkTestEnv() {
 
 }
 
-function loadTests() {
-  const validTests = [];
+function loadTests(runConfig) {
+  let validTests = [];
   fs.readdirSync(path.join(__dirname, 'suites')).forEach(dirname => {
     const dirStat = fs.statSync(path.join(__dirname, 'suites', dirname));
     if (!dirStat.isDirectory) {
@@ -88,7 +113,22 @@ function loadTests() {
     }
     validTests.push(dirname);
   })
-  return validTests;
+
+  if (runConfig.onlyTest) {
+    validTests = validTests.filter(t => runConfig.onlyTest.indexOf(t) !== -1);
+  }
+
+  if (runConfig.batch) {
+    const chunkSize = Math.ceil(validTests.length / runConfig.batch.all);
+    const toRunTests = validTests.slice(
+      (runConfig.batch.this - 1) * chunkSize,
+      runConfig.batch.this === runConfig.batch.all ? undefined : runConfig.batch.this * chunkSize
+    );
+    return toRunTests;
+  }
+  else {
+    return validTests;
+  }
 }
 
 function performTestSuite({ testName, network }) {
@@ -117,13 +157,6 @@ async function performTests({ allTests, runConfig }) {
 
   if (allTests.length === 0) {
     panic('No tests are found or all invalid!');
-  }
-  if (runConfig.onlyTest.length === 0) {
-    logger.info('Start all tests:');
-  }
-  else {
-    allTests = allTests.filter(t => runConfig.onlyTest.indexOf(t) !== -1);
-    logger.info(`Only run tests: (${allTests.join(', ')})`);
   }
 
   for (const currentTestName of allTests) {
@@ -175,6 +208,8 @@ async function main() {
   const runConfig = checkTestEnv();
   const allTests = loadTests(runConfig);
 
+  console.log(`Running Tests: ${allTests.join()}`);
+
   const proc = await setupNetwork({ runConfig, timeout: 50000 });
   await performTests({ allTests, runConfig });
 
@@ -186,7 +221,8 @@ async function main() {
 
 // Add handler to exit the program when UnhandledPromiseRejection
 
-process.on('unhandledRejection', () => {
+process.on('unhandledRejection', e => {
+  console.error(e);
   process.exit(-1);
 });
 

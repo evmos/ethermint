@@ -33,6 +33,8 @@ const (
 	DefaultFilterCap int32 = 200
 
 	DefaultEVMTimeout = 5 * time.Second
+	// default 1.0 eth
+	DefaultTxFeeCap float64 = 1.0
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
@@ -66,6 +68,8 @@ type JSONRPCConfig struct {
 	GasCap uint64 `mapstructure:"gas-cap"`
 	// EVMTimeout is the global timeout for eth-call.
 	EVMTimeout time.Duration `mapstructure:"evm-timeout"`
+	// TxFeeCap is the global tx-fee cap for send transaction
+	TxFeeCap float64 `mapstructure:"txfee-cap"`
 	// FilterCap is the global cap for total number of filters that can be created.
 	FilterCap int32 `mapstructure:"filter-cap"`
 	// Enable defines if the EVM RPC server should be enabled.

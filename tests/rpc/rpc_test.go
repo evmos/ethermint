@@ -360,7 +360,6 @@ func TestEth_GetStorageAt(t *testing.T) {
 }
 
 func TestEth_GetProof(t *testing.T) {
-
 	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
@@ -401,7 +400,6 @@ func TestEth_GetCode(t *testing.T) {
 }
 
 func TestEth_SendTransaction_Transfer(t *testing.T) {
-
 	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
@@ -414,18 +412,20 @@ func TestEth_SendTransaction_Transfer(t *testing.T) {
 }
 
 func TestEth_SendTransaction_ContractDeploy(t *testing.T) {
-	param := make([]map[string]string, 1)
-	param[0] = make(map[string]string)
-	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
-	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
-	param[0]["gas"] = "0x200000"
-	param[0]["gasPrice"] = "0x1"
-
-	rpcRes := call(t, "eth_sendTransaction", param)
+	param := makeTestContractDeployParam(true)
+	rpcRes, err := callWithError("eth_sendTransaction", param)
+	require.NoError(t, err)
 
 	var hash hexutil.Bytes
-	err := json.Unmarshal(rpcRes.Result, &hash)
+	err = json.Unmarshal(rpcRes.Result, &hash)
 	require.NoError(t, err)
+}
+
+func TestEth_SendTransaction_ContractDeploy_no_gas_param(t *testing.T) {
+	param := makeTestContractDeployParam(false)
+	_, err := callWithError("eth_sendTransaction", param)
+	// server returns internal error.
+	require.Error(t, err)
 }
 
 func TestEth_NewFilter(t *testing.T) {
@@ -527,6 +527,84 @@ func TestEth_GetTransactionReceipt(t *testing.T) {
 	require.Equal(t, []interface{}{}, receipt["logs"].([]interface{}))
 }
 
+// deployTestERC20Contract deploys a contract that emits an event in the constructor
+func deployTestERC20Contract(t *testing.T) common.Address {
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+
+	ctorArgs, err := evmtypes.ERC20Contract.ABI.Pack("", common.BytesToAddress(from), big.NewInt(100000000))
+	require.NoError(t, err)
+	data := append(evmtypes.ERC20Contract.Bin, ctorArgs...)
+	param[0]["data"] = hexutil.Encode(data)
+
+	param[0]["gas"] = "0x200000"
+	param[0]["gasPrice"] = "0x1"
+
+	rpcRes := call(t, "eth_sendTransaction", param)
+
+	var hash hexutil.Bytes
+	err = json.Unmarshal(rpcRes.Result, &hash)
+	require.NoError(t, err)
+
+	receipt := expectSuccessReceipt(t, hash)
+	contractAddress := common.HexToAddress(receipt["contractAddress"].(string))
+	require.NotEqual(t, common.Address{}, contractAddress)
+
+	require.NotNil(t, receipt["logs"])
+
+	return contractAddress
+}
+
+// sendTestERC20Transaction sends a typical erc20 transfer transaction
+func sendTestERC20Transaction(t *testing.T, contract common.Address, amount *big.Int) hexutil.Bytes {
+	// transfer
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["to"] = contract.Hex()
+	data, err := evmtypes.ERC20Contract.ABI.Pack("transfer", common.BigToAddress(big.NewInt(1)), amount)
+	require.NoError(t, err)
+	param[0]["data"] = hexutil.Encode(data)
+	param[0]["gas"] = "0x50000"
+	param[0]["gasPrice"] = "0x1"
+
+	rpcRes := call(t, "eth_sendTransaction", param)
+
+	var hash hexutil.Bytes
+	err = json.Unmarshal(rpcRes.Result, &hash)
+	require.NoError(t, err)
+	return hash
+}
+
+func TestEth_GetTransactionReceipt_ERC20Transfer(t *testing.T) {
+	// deploy erc20 contract
+	contract := deployTestERC20Contract(t)
+	amount := big.NewInt(10)
+	hash := sendTestERC20Transaction(t, contract, amount)
+	receipt := expectSuccessReceipt(t, hash)
+
+	require.Equal(t, 1, len(receipt["logs"].([]interface{})))
+	log := receipt["logs"].([]interface{})[0].(map[string]interface{})
+
+	require.Equal(t, contract, common.HexToAddress(log["address"].(string)))
+
+	valueBz, err := hexutil.Decode(log["data"].(string))
+	require.NoError(t, err)
+	require.Equal(t, amount, big.NewInt(0).SetBytes(valueBz))
+
+	require.Equal(t, false, log["removed"].(bool))
+	require.Equal(t, "0x0", log["logIndex"].(string))
+	require.Equal(t, "0x0", log["transactionIndex"].(string))
+
+	expectedTopics := []interface{}{
+		"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+		"0x000000000000000000000000" + fmt.Sprintf("%x", from),
+		"0x0000000000000000000000000000000000000000000000000000000000000001",
+	}
+	require.Equal(t, expectedTopics, log["topics"].([]interface{}))
+}
+
 // deployTestContract deploys a contract that emits an event in the constructor
 func deployTestContract(t *testing.T) (hexutil.Bytes, map[string]interface{}) {
 	param := make([]map[string]string, 1)
@@ -590,6 +668,13 @@ func waitForReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
 			}
 		}
 	}
+}
+
+func expectSuccessReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {
+	receipt := waitForReceipt(t, hash)
+	require.NotNil(t, receipt, "transaction failed")
+	require.Equal(t, "0x1", receipt["status"].(string))
+	return receipt
 }
 
 func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
@@ -941,4 +1026,30 @@ func makeEthTxParam() []map[string]string {
 	param[0]["gasPrice"] = "0x55ae82600"
 
 	return param
+}
+
+func makeTestContractDeployParam(withGas bool) []map[string]string {
+	param := make([]map[string]string, 1)
+	param[0] = make(map[string]string)
+	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
+	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
+	if withGas {
+		param[0]["gas"] = "0x200000"
+		param[0]["gasPrice"] = "0x1"
+	}
+
+	return param
+}
+
+func TestEth_EthResend(t *testing.T) {
+	tx := make(map[string]string)
+	tx["from"] = "0x" + fmt.Sprintf("%x", from)
+	tx["to"] = "0x0000000000000000000000000000000012341234"
+	tx["value"] = "0x16345785d8a0000"
+	tx["nonce"] = "0x2"
+	tx["gasLimit"] = "0x5208"
+	tx["gasPrice"] = "0x55ae82600"
+	param := []interface{}{tx, "0x1", "0x2"}
+	_, rpcerror := callWithError("eth_resend", param)
+	require.Equal(t, "transaction 0x3bf28b46ee1bb3925e50ec6003f899f95913db4b0f579c4e7e887efebf9ecd1b not found", fmt.Sprintf("%s", rpcerror))
 }

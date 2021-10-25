@@ -9,10 +9,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/ethereum/go-ethereum/params"
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
@@ -376,4 +379,9 @@ func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) erro
 		return nil
 	}
 	return k.hooks.PostTxProcessing(k.Ctx(), txHash, logs)
+}
+
+// Tracer return a default vm.Tracer based on current keeper state
+func (k Keeper) Tracer(msg core.Message, ethCfg *params.ChainConfig) vm.Tracer {
+	return types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
 }
