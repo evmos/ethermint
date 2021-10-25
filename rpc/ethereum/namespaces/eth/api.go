@@ -642,7 +642,7 @@ func (e *PublicAPI) doCall(
 		ctx, cancel = context.WithCancel(ctx)
 	}
 
-	// Make sure the context is cancelled when the call has completed
+	// Make sure the context is canceled when the call has completed
 	// this makes sure resources are cleaned up.
 	defer cancel()
 
