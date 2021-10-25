@@ -38,6 +38,9 @@ gas-cap = {{ .JSONRPC.GasCap }}
 # EVMTimeout is the global timeout for eth_call. Default: 5s.
 evm-timeout = {{ .JSONRPC.EVMTimeout }}
 
+# TxFeeCap is the global tx-fee cap for send transaction. Default: 1eth.
+txfee-cap = {{ .JSONRPC.TxFeeCap }}
+
 # FilterCap sets the global cap for total number of filters that can be created
 filter-cap = {{ .JSONRPC.FilterCap }}
 

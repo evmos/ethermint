@@ -158,8 +158,9 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		Address:    DefaultJSONRPCAddress,
 		WsAddress:  DefaultJSONRPCWsAddress,
 		GasCap:     DefaultGasCap,
-		FilterCap:  DefaultFilterCap,
 		EVMTimeout: DefaultEVMTimeout,
+		TxFeeCap:   DefaultTxFeeCap,
+		FilterCap:  DefaultFilterCap,
 	}
 }
 
@@ -171,6 +172,10 @@ func (c JSONRPCConfig) Validate() error {
 
 	if c.FilterCap < 0 {
 		return errors.New("JSON-RPC filter-cap cannot be negative")
+	}
+
+	if c.TxFeeCap < 0 {
+		return errors.New("JSON-RPC tx fee cap cannot be negative")
 	}
 
 	if c.EVMTimeout < 0 {
@@ -231,6 +236,7 @@ func GetConfig(v *viper.Viper) Config {
 			WsAddress:  v.GetString("json-rpc.ws-address"),
 			GasCap:     v.GetUint64("json-rpc.gas-cap"),
 			FilterCap:  v.GetInt32("json-rpc.filter-cap"),
+			TxFeeCap:   v.GetFloat64("json-rpc.txfee-cap"),
 			EVMTimeout: v.GetDuration("json-rpc.evm-timeout"),
 		},
 		TLS: TLSConfig{
