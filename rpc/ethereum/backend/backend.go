@@ -204,7 +204,7 @@ func (e *EVMBackend) BlockByNumber(blockNum types.BlockNumber) (*ethtypes.Block,
 	}
 
 	if resBlock == nil || resBlock.Block == nil {
-		return nil, errors.Errorf("block not found", "height", height)
+		return nil, errors.Errorf("block not found for height %d", height)
 	}
 
 	return e.EthBlockFromTm(resBlock.Block)
@@ -219,7 +219,7 @@ func (e *EVMBackend) BlockByHash(hash common.Hash) (*ethtypes.Block, error) {
 	}
 
 	if resBlock == nil || resBlock.Block == nil {
-		return nil, errors.Errorf("block not found", "hash", hash.Hex())
+		return nil, errors.Errorf("block not found for hash %s", hash)
 	}
 
 	return e.EthBlockFromTm(resBlock.Block)
