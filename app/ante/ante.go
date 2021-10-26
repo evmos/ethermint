@@ -58,7 +58,7 @@ func NewAnteHandler(
 						authante.NewMempoolFeeDecorator(),
 						authante.NewTxTimeoutHeightDecorator(),
 						authante.NewValidateMemoDecorator(ak),
-						NewEthValidateBasicDecorator(),
+						NewEthValidateBasicDecorator(evmKeeper),
 						NewEthSigVerificationDecorator(evmKeeper),
 						NewEthAccountVerificationDecorator(ak, bankKeeper, evmKeeper),
 						NewEthNonceVerificationDecorator(ak),
