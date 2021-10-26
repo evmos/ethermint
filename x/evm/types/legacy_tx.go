@@ -3,14 +3,13 @@ package types
 import (
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tharsis/ethermint/types"
 )
 
-func newLegacyTx(tx *ethtypes.Transaction) *LegacyTx {
+func newLegacyTx(tx *ethtypes.Transaction) (*LegacyTx, error) {
 	txData := &LegacyTx{
 		Nonce:    tx.Nonce(),
 		Data:     tx.Data(),
@@ -23,17 +22,23 @@ func newLegacyTx(tx *ethtypes.Transaction) *LegacyTx {
 	}
 
 	if tx.Value() != nil {
-		amountInt := sdk.NewIntFromBigInt(tx.Value())
+		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		if err != nil {
+			return nil, err
+		}
 		txData.Amount = &amountInt
 	}
 
 	if tx.GasPrice() != nil {
-		gasPriceInt := sdk.NewIntFromBigInt(tx.GasPrice())
+		gasPriceInt, err := SafeNewIntFromBigInt(tx.GasPrice())
+		if err != nil {
+			return nil, err
+		}
 		txData.GasPrice = &gasPriceInt
 	}
 
 	txData.SetSignatureValues(tx.ChainId(), v, r, s)
-	return txData
+	return txData, nil
 }
 
 // TxType returns the tx type
@@ -161,11 +166,20 @@ func (tx LegacyTx) Validate() error {
 	if gasPrice.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
+	if !IsValidInt256(gasPrice) {
+		return sdkerrors.Wrap(ErrInvalidGasPrice, "out of bound")
+	}
+	if !IsValidInt256(tx.Fee()) {
+		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
+	}
 
 	amount := tx.GetValue()
 	// Amount can be 0
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+	}
+	if !IsValidInt256(amount) {
+		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
 	}
 
 	if tx.To != "" {

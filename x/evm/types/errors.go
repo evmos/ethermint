@@ -25,6 +25,7 @@ const (
 	codeErrCallDisabled
 	codeErrInvalidAmount
 	codeErrInvalidGasPrice
+	codeErrInvalidGasFee
 	codeErrVMExecution
 	codeErrInvalidRefund
 	codeErrInconsistentGas
@@ -71,6 +72,9 @@ var (
 
 	// ErrInvalidGasPrice returns an error if an invalid gas price is provided to the tx.
 	ErrInvalidGasPrice = sdkerrors.Register(ModuleName, codeErrInvalidGasPrice, "invalid gas price")
+
+	// ErrInvalidGasFee returns an error if the tx gas fee is out of bound.
+	ErrInvalidGasFee = sdkerrors.Register(ModuleName, codeErrInvalidGasFee, "invalid gas fee")
 
 	// ErrVMExecution returns an error resulting from an error in EVM execution.
 	ErrVMExecution = sdkerrors.Register(ModuleName, codeErrVMExecution, "evm transaction execution failed")

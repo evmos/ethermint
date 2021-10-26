@@ -130,17 +130,21 @@ func newMsgEthereumTx(
 }
 
 // fromEthereumTx populates the message fields from the given ethereum transaction
-func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
-	txData := NewTxDataFromTx(tx)
+func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) error {
+	txData, err := NewTxDataFromTx(tx)
+	if err != nil {
+		return err
+	}
 
 	anyTxData, err := PackTxData(txData)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	msg.Data = anyTxData
 	msg.Size_ = float64(tx.Size())
 	msg.Hash = tx.Hash().Hex()
+	return nil
 }
 
 // Route returns the route value of an MsgEthereumTx.
@@ -225,8 +229,7 @@ func (msg *MsgEthereumTx) Sign(ethSigner ethtypes.Signer, keyringSigner keyring.
 		return err
 	}
 
-	msg.FromEthereumTx(tx)
-	return nil
+	return msg.FromEthereumTx(tx)
 }
 
 // GetGas implements the GasTx interface. It returns the GasLimit of the transaction.

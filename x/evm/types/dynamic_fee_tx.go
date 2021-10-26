@@ -12,7 +12,7 @@ import (
 	"github.com/tharsis/ethermint/types"
 )
 
-func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
+func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	txData := &DynamicFeeTx{
 		Nonce:    tx.Nonce(),
 		Data:     tx.Data(),
@@ -25,17 +25,26 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 	}
 
 	if tx.Value() != nil {
-		amountInt := sdk.NewIntFromBigInt(tx.Value())
+		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		if err != nil {
+			return nil, err
+		}
 		txData.Amount = &amountInt
 	}
 
 	if tx.GasFeeCap() != nil {
-		gasFeeCapInt := sdk.NewIntFromBigInt(tx.GasFeeCap())
+		gasFeeCapInt, err := SafeNewIntFromBigInt(tx.GasFeeCap())
+		if err != nil {
+			return nil, err
+		}
 		txData.GasFeeCap = &gasFeeCapInt
 	}
 
 	if tx.GasTipCap() != nil {
-		gasTipCapInt := sdk.NewIntFromBigInt(tx.GasTipCap())
+		gasTipCapInt, err := SafeNewIntFromBigInt(tx.GasTipCap())
+		if err != nil {
+			return nil, err
+		}
 		txData.GasTipCap = &gasTipCapInt
 	}
 
@@ -45,7 +54,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) *DynamicFeeTx {
 	}
 
 	txData.SetSignatureValues(tx.ChainId(), v, r, s)
-	return txData
+	return txData, nil
 }
 
 // TxType returns the tx type
@@ -201,6 +210,14 @@ func (tx DynamicFeeTx) Validate() error {
 		return sdkerrors.Wrapf(ErrInvalidGasCap, "gas fee cap cannot be negative %s", tx.GasFeeCap)
 	}
 
+	if !IsValidInt256(tx.GetGasTipCap()) {
+		return sdkerrors.Wrap(ErrInvalidGasCap, "out of bound")
+	}
+
+	if !IsValidInt256(tx.GetGasFeeCap()) {
+		return sdkerrors.Wrap(ErrInvalidGasCap, "out of bound")
+	}
+
 	if tx.GasFeeCap.LT(*tx.GasTipCap) {
 		return sdkerrors.Wrapf(
 			ErrInvalidGasCap, "max priority fee per gas higher than max fee per gas (%s > %s)",
@@ -208,10 +225,17 @@ func (tx DynamicFeeTx) Validate() error {
 		)
 	}
 
+	if !IsValidInt256(tx.Fee()) {
+		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
+	}
+
 	amount := tx.GetValue()
 	// Amount can be 0
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+	}
+	if !IsValidInt256(amount) {
+		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
 	}
 
 	if tx.To != "" {
