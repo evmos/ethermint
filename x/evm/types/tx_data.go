@@ -40,18 +40,22 @@ type TxData interface {
 	Cost() *big.Int
 }
 
-func NewTxDataFromTx(tx *ethtypes.Transaction) TxData {
+func NewTxDataFromTx(tx *ethtypes.Transaction) (TxData, error) {
 	var txData TxData
+	var err error
 	switch tx.Type() {
 	case ethtypes.DynamicFeeTxType:
-		txData = newDynamicFeeTx(tx)
+		txData, err = newDynamicFeeTx(tx)
 	case ethtypes.AccessListTxType:
-		txData = newAccessListTx(tx)
+		txData, err = newAccessListTx(tx)
 	default:
-		txData = newLegacyTx(tx)
+		txData, err = newLegacyTx(tx)
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return txData
+	return txData, nil
 }
 
 // DeriveChainID derives the chain id from the given v parameter.

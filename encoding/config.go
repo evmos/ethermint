@@ -68,7 +68,10 @@ func (g txConfig) TxDecoder() sdk.TxDecoder {
 		err := tx.UnmarshalBinary(txBytes)
 		if err == nil {
 			msg := &evmtypes.MsgEthereumTx{}
-			msg.FromEthereumTx(tx)
+			err := msg.FromEthereumTx(tx)
+			if err != nil {
+				return nil, err
+			}
 			return msg, nil
 		}
 

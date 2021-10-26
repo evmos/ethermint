@@ -60,7 +60,8 @@ func (suite *TxDataTestSuite) TestNewDynamicFeeTx() {
 		},
 	}
 	for _, tc := range testCases {
-		tx := newDynamicFeeTx(tc.tx)
+		tx, err := newDynamicFeeTx(tc.tx)
+		suite.Require().NoError(err)
 
 		suite.Require().NotEmpty(tx)
 		suite.Require().Equal(uint8(2), tx.TxType())

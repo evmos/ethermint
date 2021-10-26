@@ -8,10 +8,12 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/tests"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 const invalidFromAddress = "0x0000"
@@ -59,6 +61,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	hundredInt := sdk.NewInt(100)
 	zeroInt := sdk.ZeroInt()
 	minusOneInt := sdk.NewInt(-1)
+	exp_2_255 := sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(2), big.NewInt(255), nil))
 
 	testCases := []struct {
 		msg        string
@@ -80,6 +83,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		{msg: "negative gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &minusOneInt, expectPass: false},
 		{msg: "zero gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, expectPass: true},
 		{msg: "invalid from address - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, from: invalidFromAddress, expectPass: false},
+		{msg: "out of bound gas fee - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &exp_2_255, expectPass: false},
 		{msg: "nil amount - AccessListTx", to: suite.to.Hex(), amount: nil, gasPrice: &hundredInt, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: true},
 		{msg: "negative amount - AccessListTx", to: suite.to.Hex(), amount: &minusOneInt, gasPrice: &hundredInt, accessList: &types.AccessList{}, chainID: nil, expectPass: false},
 		{msg: "nil gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: nil, accessList: &types.AccessList{}, chainID: &hundredInt, expectPass: false},
@@ -182,4 +186,81 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Sign() {
 			suite.Require().Error(err, "invalid test %d passed: %s", i, tc.msg)
 		}
 	}
+}
+
+func (suite *MsgsTestSuite) TestFromEthereumTx() {
+	privkey, _ := ethsecp256k1.GenerateKey()
+	ethPriv, err := privkey.ToECDSA()
+	suite.Require().NoError(err)
+
+	// 10^80 is more than 256 bits
+	exp_10_80 := new(big.Int).Mul(big.NewInt(1), new(big.Int).Exp(big.NewInt(10), big.NewInt(80), nil))
+
+	testCases := []struct {
+		msg        string
+		expectPass bool
+		buildTx    func() *ethtypes.Transaction
+	}{
+		{"success, normal tx", true, func() *ethtypes.Transaction {
+			tx := ethtypes.NewTransaction(
+				0,
+				common.BigToAddress(big.NewInt(1)),
+				big.NewInt(10),
+				21000, big.NewInt(0),
+				nil,
+			)
+			tx, err := ethtypes.SignTx(tx, types.NewEIP2930Signer(suite.chainID), ethPriv)
+			suite.Require().NoError(err)
+			return tx
+		}},
+		{"fail, value bigger than 256bits", false, func() *ethtypes.Transaction {
+			tx := ethtypes.NewTransaction(
+				0,
+				common.BigToAddress(big.NewInt(1)),
+				exp_10_80,
+				21000, big.NewInt(0),
+				nil,
+			)
+			tx, err := ethtypes.SignTx(tx, types.NewEIP2930Signer(suite.chainID), ethPriv)
+			suite.Require().NoError(err)
+			return tx
+		}},
+		{"fail, gas price bigger than 256bits", false, func() *ethtypes.Transaction {
+			tx := ethtypes.NewTransaction(
+				0,
+				common.BigToAddress(big.NewInt(1)),
+				big.NewInt(10),
+				21000, exp_10_80,
+				nil,
+			)
+			tx, err := ethtypes.SignTx(tx, types.NewEIP2930Signer(suite.chainID), ethPriv)
+			suite.Require().NoError(err)
+			return tx
+		}},
+	}
+
+	for _, tc := range testCases {
+		ethTx := tc.buildTx()
+		tx := &MsgEthereumTx{}
+		err := tx.FromEthereumTx(ethTx)
+		if tc.expectPass {
+			suite.Require().NoError(err)
+
+			// round-trip test
+			suite.assertEthTxEqual(tx.AsTransaction(), ethTx)
+		} else {
+			suite.Require().Error(err)
+		}
+	}
+}
+
+func (suite *MsgsTestSuite) assertEthTxEqual(tx1 *ethtypes.Transaction, tx2 *ethtypes.Transaction) {
+	suite.Require().Equal(tx1.Hash(), tx2.Hash())
+	suite.Require().Equal(tx1.Size(), tx2.Size())
+
+	bin1, err := tx1.MarshalBinary()
+	suite.Require().NoError(err)
+	bin2, err := tx2.MarshalBinary()
+	suite.Require().NoError(err)
+	suite.Require().Equal(bin1, bin2)
 }

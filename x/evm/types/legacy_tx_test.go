@@ -29,7 +29,8 @@ func (suite *TxDataTestSuite) TestNewLegacyTx() {
 	}
 
 	for _, tc := range testCases {
-		tx := newLegacyTx(tc.tx)
+		tx, err := newLegacyTx(tc.tx)
+		suite.Require().NoError(err)
 
 		suite.Require().NotEmpty(tc.tx)
 		suite.Require().Equal(uint8(0), tx.TxType())
