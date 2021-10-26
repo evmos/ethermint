@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/cosmos/cosmos-sdk/testutil/network"
+	"github.com/tharsis/ethermint/testutil/network"
 )
 
 type IntegrationTestSuite struct {
@@ -37,6 +37,10 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 func (s *IntegrationTestSuite) TestNetwork_Liveness() {
 	h, err := s.network.WaitForHeightWithTimeout(10, time.Minute)
 	s.Require().NoError(err, "expected to reach 10 blocks; got %d", h)
+
+	latestHeight, err := s.network.LatestHeight()
+	s.Require().NoError(err, "latest height failed")
+	s.Require().GreaterOrEqual(latestHeight, h)
 }
 
 func TestIntegrationTestSuite(t *testing.T) {
