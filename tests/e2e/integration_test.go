@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -40,7 +41,8 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	if s.network.Validators[0].JSONRPCClient == nil {
-		s.network.Validators[0].JSONRPCClient, err = ethclient.Dial(s.network.Validators[0].JSONRPCAddress)
+		address := fmt.Sprintf("http://%s", s.network.Validators[0].AppConfig.JSONRPC.Address)
+		s.network.Validators[0].JSONRPCClient, err = ethclient.Dial(address)
 		s.Require().NoError(err)
 	}
 }

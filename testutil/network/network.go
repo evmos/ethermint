@@ -159,21 +159,20 @@ type (
 	// a client can make RPC and API calls and interact with any client command
 	// or handler.
 	Validator struct {
-		AppConfig      *config.Config
-		ClientCtx      client.Context
-		Ctx            *server.Context
-		Dir            string
-		NodeID         string
-		PubKey         cryptotypes.PubKey
-		Moniker        string
-		APIAddress     string
-		RPCAddress     string
-		P2PAddress     string
-		JSONRPCAddress string
-		Address        sdk.AccAddress
-		ValAddress     sdk.ValAddress
-		RPCClient      tmclient.Client
-		JSONRPCClient  *ethclient.Client
+		AppConfig     *config.Config
+		ClientCtx     client.Context
+		Ctx           *server.Context
+		Dir           string
+		NodeID        string
+		PubKey        cryptotypes.PubKey
+		Moniker       string
+		APIAddress    string
+		RPCAddress    string
+		P2PAddress    string
+		Address       sdk.AccAddress
+		ValAddress    sdk.ValAddress
+		RPCClient     tmclient.Client
+		JSONRPCClient *ethclient.Client
 
 		tmNode      *node.Node
 		api         *api.Server
@@ -251,6 +250,7 @@ func New(l Logger, baseDir string, cfg Config) (*Network, error) {
 		appCfg.API.Enable = true
 		appCfg.API.Swagger = false
 		appCfg.Telemetry.Enabled = false
+		appCfg.Telemetry.GlobalLabels = [][]string{{"chain_id", cfg.ChainID}}
 
 		ctx := server.NewDefaultContext()
 		tmCfg := ctx.Config
@@ -472,6 +472,13 @@ func New(l Logger, baseDir string, cfg Config) (*Network, error) {
 		customAppTemplate, _ := config.AppConfig(ethermint.AttoPhoton)
 		srvconfig.SetConfigTemplate(customAppTemplate)
 		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appCfg)
+
+		ctx.Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+		ctx.Viper.SetConfigFile(filepath.Join(nodeDir, "config/app.toml"))
+		err = ctx.Viper.ReadInConfig()
+		if err != nil {
+			return nil, err
+		}
 
 		clientCtx := client.Context{}.
 			WithKeyringDir(clientDir).

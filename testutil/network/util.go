@@ -122,21 +122,24 @@ func startInProcess(cfg Config, val *Validator) error {
 		}
 	}
 
-	fmt.Println(val.Moniker, val.JSONRPCAddress, val.AppConfig.JSONRPC.Enable)
-	if val.AppConfig.JSONRPC.Enable && val.JSONRPCAddress != "" {
+	if val.AppConfig.JSONRPC.Enable && val.AppConfig.JSONRPC.Address != "" {
 		if val.Ctx == nil || val.Ctx.Viper == nil {
 			return fmt.Errorf("validator %s context is nil", val.Moniker)
 		}
 
 		tmEndpoint := "/websocket"
-		val.jsonrpc, val.jsonrpcDone, err = server.StartJSONRPC(val.Ctx, val.ClientCtx, val.JSONRPCAddress, tmEndpoint, *val.AppConfig)
+		tmRPCAddr := fmt.Sprintf("tcp://%s", val.AppConfig.GRPC.Address)
+
+		val.jsonrpc, val.jsonrpcDone, err = server.StartJSONRPC(val.Ctx, val.ClientCtx, tmRPCAddr, tmEndpoint, *val.AppConfig)
 		if err != nil {
 			return err
 		}
 
-		val.JSONRPCClient, err = ethclient.Dial(val.JSONRPCAddress)
+		address := fmt.Sprintf("http://%s", val.AppConfig.JSONRPC.Address)
+
+		val.JSONRPCClient, err = ethclient.Dial(address)
 		if err != nil {
-			return fmt.Errorf("failed to dial JSON-RPC at %s: %w", val.JSONRPCAddress, err)
+			return fmt.Errorf("failed to dial JSON-RPC at %s: %w", val.AppConfig.JSONRPC.Address, err)
 		}
 	}
 
