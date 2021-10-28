@@ -25,7 +25,7 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm
+      # - arm
       - arm64
 
 archives:
