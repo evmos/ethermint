@@ -37,7 +37,7 @@ const (
 	DefaultTxFeeCap float64 = 1.0
 
 	// DefaultPProfAddress is the default address the PProf server binds to.
-	DefaultPProfAddress = "0.0.0.0:6062"
+	DefaultPProfAddress = "0.0.0.0:6060"
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
