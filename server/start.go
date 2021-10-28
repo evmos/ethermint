@@ -165,6 +165,8 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().String(srvflags.TLSCertPath, "", "the cert.pem file path for the server TLS configuration")
 	cmd.Flags().String(srvflags.TLSKeyPath, "", "the key.pem file path for the server TLS configuration")
 
+	cmd.Flags().String(srvflags.PProfAddress, config.DefaultPProfAddress, "the PProf server address to listen on")
+
 	cmd.Flags().Uint64(server.FlagStateSyncSnapshotInterval, 0, "State sync snapshot interval")
 	cmd.Flags().Uint32(server.FlagStateSyncSnapshotKeepRecent, 2, "State sync snapshot to keep")
 
@@ -287,6 +289,8 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		logger.Error("failed load or gen node key", "error", err.Error())
 		return err
 	}
+
+	cfg.RPC.PprofListenAddress = config.PProf.Address
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(cfg)
 	tmNode, err := node.NewNode(

@@ -35,6 +35,9 @@ const (
 	DefaultEVMTimeout = 5 * time.Second
 	// default 1.0 eth
 	DefaultTxFeeCap float64 = 1.0
+
+	// DefaultPProfAddress is the default address the PProf server binds to.
+	DefaultPProfAddress = "0.0.0.0:6062"
 )
 
 var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
@@ -47,6 +50,7 @@ type Config struct {
 	EVM     EVMConfig     `mapstructure:"evm"`
 	JSONRPC JSONRPCConfig `mapstructure:"json-rpc"`
 	TLS     TLSConfig     `mapstructure:"tls"`
+	PProf   PProfConfig   `mapstructure:"pprof"`
 }
 
 // EVMConfig defines the application configuration values for the EVM.
@@ -84,6 +88,12 @@ type TLSConfig struct {
 	KeyPath string `mapstructure:"key-path"`
 }
 
+// PProfConfig defines configuration for the PProf server.
+type PProfConfig struct {
+	// Address defines the PProf server to listen on
+	Address string `mapstructure:"address"`
+}
+
 // AppConfig helps to override default appConfig template and configs.
 // return "", nil if no custom configuration is required for the application.
 func AppConfig(denom string) (string, interface{}) {
@@ -112,6 +122,7 @@ func AppConfig(denom string) (string, interface{}) {
 		EVM:     *DefaultEVMConfig(),
 		JSONRPC: *DefaultJSONRPCConfig(),
 		TLS:     *DefaultTLSConfig(),
+		PProf:   *DefaultPProfConfig(),
 	}
 
 	customAppTemplate := config.DefaultConfigTemplate + DefaultConfigTemplate
@@ -126,6 +137,7 @@ func DefaultConfig() *Config {
 		EVM:     *DefaultEVMConfig(),
 		JSONRPC: *DefaultJSONRPCConfig(),
 		TLS:     *DefaultTLSConfig(),
+		PProf:   *DefaultPProfConfig(),
 	}
 }
 
@@ -220,6 +232,13 @@ func (c TLSConfig) Validate() error {
 	return nil
 }
 
+// DefaultPProfConfig returns the default PProf configuration
+func DefaultPProfConfig() *PProfConfig {
+	return &PProfConfig{
+		Address: DefaultPProfAddress,
+	}
+}
+
 // GetConfig returns a fully parsed Config object.
 func GetConfig(v *viper.Viper) Config {
 	cfg := config.GetConfig(v)
@@ -242,6 +261,9 @@ func GetConfig(v *viper.Viper) Config {
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
 			KeyPath:         v.GetString("tls.key-path"),
+		},
+		PProf: PProfConfig{
+			Address: v.GetString("pprof.address"),
 		},
 	}
 }

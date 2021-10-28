@@ -47,6 +47,11 @@ const (
 	TLSKeyPath  = "tls.key-path"
 )
 
+// PProf flags
+const (
+	PProfAddress = "pprof.address"
+)
+
 // AddTxFlags adds common flags for commands to post tx
 func AddTxFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().String(flags.FlagChainID, "testnet", "Specify Chain ID for sending Tx")
