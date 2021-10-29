@@ -4,9 +4,6 @@ on:
   push:
     tags:
       - "v*.*.*"
-  pull_request:
-    branches:
-      - 'main'
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
@@ -27,4 +24,4 @@ jobs:
         run: |-
           echo 'GITHUB_TOKEN=${{secrets.GITHUB_TOKEN}}' > .release-env
       - name: release publish
-        run: make release-dry-run
+        run: make release

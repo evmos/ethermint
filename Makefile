@@ -165,7 +165,7 @@ release-dry-run:
 		-v ${GOPATH}/pkg:/go/pkg \
 		-w /go/src/$(PACKAGE_NAME) \
 		ghcr.io/troian/golang-cross:${GOLANG_CROSS_VERSION} \
-		--rm-dist --skip-validate --skip-publish --snapshot
+		--rm-dist --skip-validate --skip-publish
 
 release:
 	@if [ ! -f ".release-env" ]; then \
@@ -181,7 +181,7 @@ release:
 		-v `pwd`:/go/src/$(PACKAGE_NAME) \
 		-w /go/src/$(PACKAGE_NAME) \
 		ghcr.io/troian/golang-cross:${GOLANG_CROSS_VERSION} \
-		release --skip-publish --rm-dist --skip-validate --snapshot
+		release --rm-dist --skip-validate
 
 .PHONY: release-dry-run release
 
