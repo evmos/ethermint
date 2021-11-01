@@ -20,10 +20,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -452,22 +450,6 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
-	if !ok {
-		e.logger.Error("clientCtx.TxConfig.NewTxBuilder returns unsupported builder")
-	}
-
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	if err != nil {
-		e.logger.Error("codectypes.NewAnyWithValue failed to pack an obvious value", "error", err.Error())
-	}
-
-	builder.SetExtensionOptions(option)
-	err = builder.SetMsgs(tx.GetMsgs()...)
-	if err != nil {
-		e.logger.Error("builder.SetMsgs failed", "error", err.Error())
-	}
-
 	// Query params to use the EVM denomination
 	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
@@ -475,23 +457,14 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
-	txData, err := evmtypes.UnpackTxData(ethereumTx.Data)
+	cosmosTx, err := ethereumTx.BuildTx(e.clientCtx.TxConfig.NewTxBuilder(), res.Params.EvmDenom)
 	if err != nil {
-		e.logger.Error("failed to unpack tx data", "error", err.Error())
+		e.logger.Error("failed to build cosmos tx", "error", err.Error())
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{
-		{
-			Denom:  res.Params.EvmDenom,
-			Amount: sdk.NewIntFromBigInt(txData.Fee()),
-		},
-	}
-	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(ethereumTx.GetGas())
-
 	// Encode transaction by default Tx encoder
-	txBytes, err := e.clientCtx.TxConfig.TxEncoder()(builder.GetTx())
+	txBytes, err := e.clientCtx.TxConfig.TxEncoder()(cosmosTx)
 	if err != nil {
 		e.logger.Error("failed to encode eth tx using default encoder", "error", err.Error())
 		return common.Hash{}, err
