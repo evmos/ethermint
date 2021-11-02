@@ -60,6 +60,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#671](https://github.com/tharsis/ethermint/pull/671) Don't pass base fee externally for `EthCall`/`EthEstimateGas` apis.
 * (evm) [tharsis#674](https://github.com/tharsis/ethermint/pull/674) Refactor `ApplyMessage`, remove
   `ApplyNativeMessage`.
+* (rpc) [tharsis#714](https://github.com/tharsis/ethermint/pull/714) remove `MsgEthereumTx` support in `TxConfig`
 
 ## [v0.7.2] - 2021-10-24
 
