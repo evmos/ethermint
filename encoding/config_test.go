@@ -27,13 +27,8 @@ func TestTxEncoding(t *testing.T) {
 
 	cfg := encoding.MakeConfig(app.ModuleBasics)
 
-	bz, err := cfg.TxConfig.TxEncoder()(msg)
-	require.NoError(t, err, "encoding failed")
-
-	tx, err := cfg.TxConfig.TxDecoder()(bz)
-	require.NoError(t, err, "decoding failed")
-	require.IsType(t, &evmtypes.MsgEthereumTx{}, tx)
-	require.Equal(t, msg.Data, tx.(*evmtypes.MsgEthereumTx).Data)
+	_, err = cfg.TxConfig.TxEncoder()(msg)
+	require.Error(t, err, "encoding failed")
 
 	// FIXME: transaction hashing is hardcoded on Terndermint:
 	// See https://github.com/tendermint/tendermint/issues/6539 for reference
