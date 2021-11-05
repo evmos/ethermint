@@ -360,14 +360,32 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	ctx = ctx.WithBlockHeight(req.BlockNumber)
+	ctx = ctx.WithBlockTime(time.Unix(req.BlockTime, 0))
+	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
 	k.WithContext(ctx)
 
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	tx := req.Msg.AsTransaction()
 	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
+	for i, tx := range req.Predecessors {
+		ethTx := tx.AsTransaction()
+		msg, err := ethTx.AsMessage(signer)
+		if err != nil {
+			continue
+		}
+		k.SetTxHashTransient(ethTx.Hash())
+		k.SetTxIndexTransient(uint64(i))
+
+		_, err = k.ApplyMessage(msg, types.NewNoOpTracer(), true)
+		if err != nil {
+			continue
+		}
+	}
+
+	tx := req.Msg.AsTransaction()
 	result, err := k.traceTx(ctx, signer, req.TxIndex, ethCfg, tx, baseFee, req.TraceConfig)
 	if err != nil {
 		return nil, err

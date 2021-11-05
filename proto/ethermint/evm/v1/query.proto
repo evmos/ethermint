@@ -228,6 +228,12 @@ message QueryTraceTxRequest {
   uint64 tx_index = 2;
   // TraceConfig holds extra parameters to trace functions.
   TraceConfig trace_config = 3;
+  // the predecessor transactions included in the same block
+  // need to be replayed first to get correct context for tracing.
+  repeated MsgEthereumTx predecessors = 4;
+  int64 block_number = 5;
+  string block_hash = 6;
+  int64 block_time = 7;
 }
 
 // QueryTraceTxResponse defines TraceTx response

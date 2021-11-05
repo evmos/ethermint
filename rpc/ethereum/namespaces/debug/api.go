@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/tendermint/tendermint/types"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
@@ -81,6 +81,28 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		return nil, errors.New("genesis is not traceable")
 	}
 
+	blk, err := a.backend.GetTendermintBlockByNumber(rpctypes.BlockNumber(transaction.Height))
+	if err != nil {
+		a.logger.Debug("block not found", "height", transaction.Height)
+		return nil, err
+	}
+
+	predecessors := []*evmtypes.MsgEthereumTx{}
+	for _, txBz := range blk.Block.Txs[:transaction.Index] {
+		tx, err := a.clientCtx.TxConfig.TxDecoder()(txBz)
+		if err != nil {
+			a.logger.Debug("failed to decode transaction in block", "height", blk.Block.Height, "error", err.Error())
+			continue
+		}
+		msg := tx.GetMsgs()[0]
+		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			continue
+		}
+
+		predecessors = append(predecessors, ethMsg)
+	}
+
 	tx, err := a.clientCtx.TxConfig.TxDecoder()(transaction.Tx)
 	if err != nil {
 		a.logger.Debug("tx not found", "hash", hash)
@@ -94,15 +116,25 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 	}
 
 	traceTxRequest := evmtypes.QueryTraceTxRequest{
-		Msg:     ethMessage,
-		TxIndex: uint64(transaction.Index),
+		Msg:          ethMessage,
+		TxIndex:      uint64(transaction.Index),
+		Predecessors: predecessors,
+		BlockNumber:  blk.Block.Height,
+		BlockTime:    blk.Block.Time.Unix(),
+		BlockHash:    blk.BlockID.Hash.String(),
 	}
 
 	if config != nil {
 		traceTxRequest.TraceConfig = config
 	}
 
-	traceResult, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(transaction.Height), &traceTxRequest)
+	// minus one to get the context of block beginning
+	contextHeight := transaction.Height - 1
+	if contextHeight < 1 {
+		// 0 is a special value in `ContextWithHeight`
+		contextHeight = 1
+	}
+	traceResult, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(contextHeight), &traceTxRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -131,13 +163,14 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 		return nil, err
 	}
 
-	return a.traceBlock(height, config, resBlock.Block.Txs)
+	return a.traceBlock(height, config, resBlock)
 }
 
 // traceBlock configures a new tracer according to the provided configuration, and
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requested tracer.
-func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, txs types.Txs) ([]*evmtypes.TxTraceResult, error) {
+func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, block *tmrpctypes.ResultBlock) ([]*evmtypes.TxTraceResult, error) {
+	txs := block.Block.Txs
 	txsLength := len(txs)
 
 	if txsLength == 0 {
@@ -156,7 +189,13 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 		threads = txsLength
 	}
 
-	ctxWithHeight := rpctypes.ContextWithHeight(int64(height))
+	// minus one to get the context at the begining of the block
+	contextHeight := height - 1
+	if contextHeight < 1 {
+		// 0 is a special value for `ContextWithHeight`.
+		contextHeight = 1
+	}
+	ctxWithHeight := rpctypes.ContextWithHeight(int64(contextHeight))
 
 	wg.Add(threads)
 	for th := 0; th < threads; th++ {
@@ -185,6 +224,9 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 					Msg:         ethMessage,
 					TxIndex:     uint64(task.Index),
 					TraceConfig: config,
+					BlockNumber: block.Block.Height,
+					BlockTime:   block.Block.Time.Unix(),
+					BlockHash:   block.BlockID.Hash.String(),
 				}
 
 				res, err := a.queryClient.TraceTx(ctxWithHeight, traceTxRequest)
