@@ -189,7 +189,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 		threads = txsLength
 	}
 
-	// minus one to get the context at the begining of the block
+	// minus one to get the context at the beginning of the block
 	contextHeight := height - 1
 	if contextHeight < 1 {
 		// 0 is a special value for `ContextWithHeight`.
