@@ -241,3 +241,18 @@ message QueryTraceTxResponse {
   // response serialized in bytes
   bytes data = 1;
 }
+
+message QueryTraceBlockRequest {
+  // txs messages in the block
+  repeated MsgEthereumTx txs = 1;
+  // TraceConfig holds extra parameters to trace functions.
+  TraceConfig trace_config = 3;
+  int64 block_number = 5;
+  string block_hash = 6;
+  int64 block_time = 7;
+}
+
+message QueryTraceBlockResponse {
+  // response serialized in bytes
+  bytes data = 1;
+}

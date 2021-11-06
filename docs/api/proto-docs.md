@@ -47,6 +47,8 @@
     - [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse)
     - [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest)
     - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
+    - [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest)
+    - [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse)
     - [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest)
     - [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest)
@@ -508,7 +510,7 @@ Msg defines the evm Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | |
+| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | GET|/ethermint/evm/v1/ethereum_tx|
 
  <!-- end services -->
 
@@ -730,6 +732,40 @@ method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `value` | [string](#string) |  | key defines the storage state value hash associated with the given key. |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.QueryTraceBlockRequest"></a>
+
+### QueryTraceBlockRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `txs` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | txs messages in the block |
+| `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
+| `block_number` | [int64](#int64) |  |  |
+| `block_hash` | [string](#string) |  |  |
+| `block_time` | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.QueryTraceBlockResponse"></a>
+
+### QueryTraceBlockResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [bytes](#bytes) |  | response serialized in bytes |
 
 
 

@@ -401,6 +401,48 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
+func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest) (*types.QueryTraceTxResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	if req.TraceConfig != nil && req.TraceConfig.Limit < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "output limit cannot be negative, got %d", req.TraceConfig.Limit)
+	}
+
+	ctx := sdk.UnwrapSDKContext(c)
+	ctx = ctx.WithBlockHeight(req.BlockNumber)
+	ctx = ctx.WithBlockTime(time.Unix(req.BlockTime, 0))
+	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
+	k.WithContext(ctx)
+
+	params := k.GetParams(ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+
+	txsLength := len(req.Txs)
+	results := make([]*interface{}, txsLength)
+
+	for i, tx := range req.Txs {
+		ethTx := tx.AsTransaction()
+		traceResult, err := k.traceTx(ctx, signer, uint64(i), ethCfg, ethTx, baseFee, req.TraceConfig)
+		if err != nil {
+			continue
+		}
+		results[i] = traceResult
+	}
+
+	resultData, err := json.Marshal(results)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryTraceTxResponse{
+		Data: resultData,
+	}, nil
+}
+
 func (k *Keeper) traceTx(
 	ctx sdk.Context,
 	signer ethtypes.Signer,
