@@ -34,6 +34,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 -->
 
 # Changelog
+* (app,cli)[\#725](https://github.com/tharsis/ethermint/pull/725) different keyring-backend in adding,list keys
 
 ## Unreleased
 
