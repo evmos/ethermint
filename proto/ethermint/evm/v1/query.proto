@@ -65,6 +65,11 @@ service Query {
   rpc TraceTx(QueryTraceTxRequest) returns (QueryTraceTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/trace_tx";
   }
+
+  // TraceTx implements the `debug_traceTransaction` rpc api
+  rpc TraceBlock(QueryTraceBlockRequest) returns (QueryTraceBlockResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1/trace_block";
+  }
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -242,6 +247,7 @@ message QueryTraceTxResponse {
   bytes data = 1;
 }
 
+// QueryTraceBlockRequest defines TraceTx request
 message QueryTraceBlockRequest {
   // txs messages in the block
   repeated MsgEthereumTx txs = 1;
@@ -252,6 +258,7 @@ message QueryTraceBlockRequest {
   int64 block_time = 7;
 }
 
+// QueryTraceBlockResponse defines TraceBlock response
 message QueryTraceBlockResponse {
   // response serialized in bytes
   bytes data = 1;

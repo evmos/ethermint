@@ -401,7 +401,10 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
-func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest) (*types.QueryTraceTxResponse, error) {
+// TraceBlock configures a new tracer according to the provided configuration, and
+// executes the given message in the provided environment for all the transactions in the queried block.
+// The return value will be tracer dependent.
+func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest) (*types.QueryTraceBlockResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -438,7 +441,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryTraceTxResponse{
+	return &types.QueryTraceBlockResponse{
 		Data: resultData,
 	}, nil
 }
