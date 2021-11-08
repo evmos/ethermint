@@ -238,7 +238,7 @@ message QueryTraceTxRequest {
   repeated MsgEthereumTx predecessors = 4;
   // block number of requested transaction
   int64 block_number = 5;
-  // block hash of requested transaction
+  // block hex hash of requested transaction
   string block_hash = 6;
   // block time of requested transaction
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
