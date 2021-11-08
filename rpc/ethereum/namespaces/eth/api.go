@@ -433,15 +433,13 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 
 	// RLP decode raw transaction bytes
 	tx := &ethtypes.Transaction{}
-	err := tx.UnmarshalBinary(data)
-	if err != nil {
+	if err := tx.UnmarshalBinary(data); err != nil {
 		e.logger.Error("transaction decoding failed", "error", err.Error())
 		return common.Hash{}, err
 	}
 
 	ethereumTx := &evmtypes.MsgEthereumTx{}
-	err = ethereumTx.FromEthereumTx(tx)
-	if err != nil {
+	if err := ethereumTx.FromEthereumTx(tx); err != nil {
 		e.logger.Error("transaction converting failed", "error", err.Error())
 		return common.Hash{}, err
 	}
