@@ -258,7 +258,7 @@ message QueryTraceBlockRequest {
   TraceConfig trace_config = 3;
   // block number
   int64 block_number = 5;
-  // block hash
+  // block hex hash
   string block_hash = 6;
   // block time
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
