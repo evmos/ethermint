@@ -222,21 +222,8 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 	}
 
 	decodedResults := make([]*evmtypes.TxTraceResult, txsLength)
-	for i, res := range res.Results {
-		if res.Error != "" {
-			decodedResults[i] = &evmtypes.TxTraceResult{
-				Error: res.Error,
-			}
-			continue
-		}
-
-		var decodedResult interface{}
-		if err := json.Unmarshal(res.Result, &decodedResult); err != nil {
-			return nil, err
-		}
-		decodedResults[i] = &evmtypes.TxTraceResult{
-			Result: decodedResult,
-		}
+	if err := json.Unmarshal(res.Data, &decodedResults); err != nil {
+		return nil, err
 	}
 
 	return decodedResults, nil

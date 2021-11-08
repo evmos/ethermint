@@ -236,8 +236,11 @@ message QueryTraceTxRequest {
   // the predecessor transactions included in the same block
   // need to be replayed first to get correct context for tracing.
   repeated MsgEthereumTx predecessors = 4;
+  // block number of requested transaction
   int64 block_number = 5;
+  // block hash of requested transaction
   string block_hash = 6;
+  // block time of requested transaction
   int64 block_time = 7;
 }
 
@@ -253,19 +256,17 @@ message QueryTraceBlockRequest {
   repeated MsgEthereumTx txs = 1;
   // TraceConfig holds extra parameters to trace functions.
   TraceConfig trace_config = 3;
+  // block number
   int64 block_number = 5;
+  // block hash
   string block_hash = 6;
+  // block time
   int64 block_time = 7;
-}
-
-message QueryTraceBlockTxResult {
-  bytes result = 1;
-  string error = 2;
 }
 
 // QueryTraceBlockResponse defines TraceBlock response
 message QueryTraceBlockResponse {
-  repeated QueryTraceBlockTxResult results = 1;
+  bytes data = 1;
 }
 
 

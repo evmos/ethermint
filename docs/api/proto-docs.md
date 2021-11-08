@@ -49,7 +49,6 @@
     - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
     - [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest)
     - [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse)
-    - [QueryTraceBlockTxResult](#ethermint.evm.v1.QueryTraceBlockTxResult)
     - [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest)
     - [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest)
@@ -749,9 +748,9 @@ QueryTraceBlockRequest defines TraceTx request
 | ----- | ---- | ----- | ----------- |
 | `txs` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | txs messages in the block |
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
-| `block_number` | [int64](#int64) |  |  |
-| `block_hash` | [string](#string) |  |  |
-| `block_time` | [int64](#int64) |  |  |
+| `block_number` | [int64](#int64) |  | block number |
+| `block_hash` | [string](#string) |  | block hash |
+| `block_time` | [int64](#int64) |  | block time |
 
 
 
@@ -766,23 +765,7 @@ QueryTraceBlockResponse defines TraceBlock response
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `results` | [QueryTraceBlockTxResult](#ethermint.evm.v1.QueryTraceBlockTxResult) | repeated |  |
-
-
-
-
-
-
-<a name="ethermint.evm.v1.QueryTraceBlockTxResult"></a>
-
-### QueryTraceBlockTxResult
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `result` | [bytes](#bytes) |  |  |
-| `error` | [string](#string) |  |  |
+| `data` | [bytes](#bytes) |  |  |
 
 
 
@@ -801,9 +784,9 @@ QueryTraceTxRequest defines TraceTx request
 | `tx_index` | [uint64](#uint64) |  | transaction index |
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
 | `predecessors` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | the predecessor transactions included in the same block need to be replayed first to get correct context for tracing. |
-| `block_number` | [int64](#int64) |  |  |
-| `block_hash` | [string](#string) |  |  |
-| `block_time` | [int64](#int64) |  |  |
+| `block_number` | [int64](#int64) |  | block number of requested transaction |
+| `block_hash` | [string](#string) |  | block hash of requested transaction |
+| `block_time` | [int64](#int64) |  | block time of requested transaction |
 
 
 

@@ -386,7 +386,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}
 
 	tx := req.Msg.AsTransaction()
-	result, err := k.traceTx(ctx, signer, req.TxIndex, ethCfg, tx, baseFee, req.TraceConfig)
+	result, err := k.traceTx(ctx, signer, req.TxIndex, ethCfg, tx, baseFee, req.TraceConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -425,26 +425,25 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
 	txsLength := len(req.Txs)
-	results := make([]*types.QueryTraceBlockTxResult, txsLength)
+	results := make([]*types.TxTraceResult, txsLength)
 
 	for i, tx := range req.Txs {
 		ethTx := tx.AsTransaction()
-		traceResult, err := k.traceTx(ctx, signer, uint64(i), ethCfg, ethTx, baseFee, req.TraceConfig)
+		traceResult, err := k.traceTx(ctx, signer, uint64(i), ethCfg, ethTx, baseFee, req.TraceConfig, true)
 		if err != nil {
 			results[i].Error = err.Error()
 			continue
 		}
+		results[i].Result = traceResult
+	}
 
-		resultData, err := json.Marshal(traceResult)
-		if err != nil {
-			results[i].Error = err.Error()
-			continue
-		}
-		results[i].Result = resultData
+	resultData, err := json.Marshal(results)
+	if err != nil {
+		return nil, err
 	}
 
 	return &types.QueryTraceBlockResponse{
-		Results: results,
+		Data: resultData,
 	}, nil
 }
 
@@ -456,6 +455,7 @@ func (k *Keeper) traceTx(
 	tx *ethtypes.Transaction,
 	baseFee *big.Int,
 	traceConfig *types.TraceConfig,
+	commitMessage bool,
 ) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
@@ -527,7 +527,7 @@ func (k *Keeper) traceTx(
 	k.SetTxHashTransient(txHash)
 	k.SetTxIndexTransient(txIndex)
 
-	res, err := k.ApplyMessage(msg, tracer, false)
+	res, err := k.ApplyMessage(msg, tracer, commitMessage)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
