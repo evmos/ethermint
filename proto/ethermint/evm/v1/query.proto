@@ -269,4 +269,3 @@ message QueryTraceBlockResponse {
   bytes data = 1;
 }
 
-
