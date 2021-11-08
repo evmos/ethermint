@@ -38,7 +38,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
 			false, false, true,
@@ -49,7 +49,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
 			true, false, true,
@@ -60,7 +60,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedContractTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
 			false, true, true,
@@ -71,7 +71,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			},
 			false, false, true,
@@ -82,7 +82,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 2, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			},
 			true, false, true,
@@ -93,7 +93,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 3, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			}, false, true, true,
 		},
@@ -125,10 +125,86 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 5, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
-				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, true)
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
 				txBuilder.SetMemo(strings.Repeat("*", 257))
 				return txBuilder.GetTx()
 			}, true, false, false,
+		},
+		// Based on EVMBackend.SendTransaction, for cosmos tx, forcing null for some fields except ExtensionOptions, Fee, MsgEthereumTx
+		// should be part of consensus
+		{
+			"fail - DeliverTx (cosmos tx signed)",
+			func() sdk.Tx {
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), nonce, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
+				signedTx.From = addr.Hex()
+
+				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
+				return tx
+			}, false, false, false,
+		},
+		{
+			"fail - DeliverTx (cosmos tx with memo)",
+			func() sdk.Tx {
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), nonce, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
+				txBuilder.SetMemo("memo for cosmos tx not allowed")
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fail - DeliverTx (cosmos tx with timeoutheight)",
+			func() sdk.Tx {
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), nonce, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
+				txBuilder.SetTimeoutHeight(10)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fail - DeliverTx (invalid fee amount)",
+			func() sdk.Tx {
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), nonce, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
+
+				txData, err := evmtypes.UnpackTxData(signedTx.Data)
+				suite.Require().NoError(err)
+
+				expFee := txData.Fee()
+				invalidFee := new(big.Int).Add(expFee, big.NewInt(1))
+				invalidFeeAmount := sdk.Coins{sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(invalidFee))}
+				txBuilder.SetFeeAmount(invalidFeeAmount)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fail - DeliverTx (invalid fee gaslimit)",
+			func() sdk.Tx {
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), nonce, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
+
+				expGasLimit := signedTx.GetGas()
+				invalidGasLimit := expGasLimit + 1
+				txBuilder.SetGasLimit(invalidGasLimit)
+				return txBuilder.GetTx()
+			}, false, false, false,
 		},
 	}
 
@@ -188,7 +264,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 					)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
 			false, false, true,
@@ -210,7 +286,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 					)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
 			true, false, true,
@@ -232,7 +308,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 					)
 				signedContractTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedContractTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
 			false, true, true,
@@ -255,7 +331,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 					)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			},
 			false, false, true,
@@ -278,7 +354,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 					)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			},
 			true, false, true,
@@ -301,7 +377,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 					)
 				signedTx.From = addr.Hex()
 
-				tx := suite.CreateTestTx(signedTx, privKey, 1, true)
+				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			}, false, true, true,
 		},
@@ -369,7 +445,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 					)
 				signedTx.From = addr.Hex()
 
-				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, true)
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
 				txBuilder.SetMemo(strings.Repeat("*", 257))
 				return txBuilder.GetTx()
 			}, true, false, false,
