@@ -66,7 +66,7 @@ service Query {
     option (google.api.http).get = "/ethermint/evm/v1/trace_tx";
   }
 
-  // TraceTx implements the `debug_traceTransaction` rpc api
+  // TraceBlock implements the `debug_traceBlockByNumber` and `debug_traceBlockByHash` rpc api
   rpc TraceBlock(QueryTraceBlockRequest) returns (QueryTraceBlockResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/trace_block";
   }
@@ -258,8 +258,14 @@ message QueryTraceBlockRequest {
   int64 block_time = 7;
 }
 
+message QueryTraceBlockTxResult {
+  bytes result = 1;
+  string error = 2;
+}
+
 // QueryTraceBlockResponse defines TraceBlock response
 message QueryTraceBlockResponse {
-  // response serialized in bytes
-  bytes data = 1;
+  repeated QueryTraceBlockTxResult results = 1;
 }
+
+

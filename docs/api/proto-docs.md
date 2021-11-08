@@ -49,6 +49,7 @@
     - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
     - [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest)
     - [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse)
+    - [QueryTraceBlockTxResult](#ethermint.evm.v1.QueryTraceBlockTxResult)
     - [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest)
     - [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest)
@@ -765,7 +766,23 @@ QueryTraceBlockResponse defines TraceBlock response
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `data` | [bytes](#bytes) |  | response serialized in bytes |
+| `results` | [QueryTraceBlockTxResult](#ethermint.evm.v1.QueryTraceBlockTxResult) | repeated |  |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.QueryTraceBlockTxResult"></a>
+
+### QueryTraceBlockTxResult
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `result` | [bytes](#bytes) |  |  |
+| `error` | [string](#string) |  |  |
 
 
 
@@ -897,7 +914,7 @@ Query defines the gRPC querier service.
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
 | `TraceTx` | [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest) | [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_tx|
-| `TraceBlock` | [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest) | [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_block|
+| `TraceBlock` | [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest) | [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse) | TraceBlock implements the `debug_traceBlockByNumber` and `debug_traceBlockByHash` rpc api | GET|/ethermint/evm/v1/trace_block|
 
  <!-- end services -->
 
