@@ -241,7 +241,7 @@ message QueryTraceTxRequest {
   // block hash of requested transaction
   string block_hash = 6;
   // block time of requested transaction
-  int64 block_time = 7;
+  google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 }
 
 // QueryTraceTxResponse defines TraceTx response
