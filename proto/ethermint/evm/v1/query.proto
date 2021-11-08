@@ -261,7 +261,7 @@ message QueryTraceBlockRequest {
   // block hash
   string block_hash = 6;
   // block time
-  int64 block_time = 7;
+  google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 }
 
 // QueryTraceBlockResponse defines TraceBlock response
