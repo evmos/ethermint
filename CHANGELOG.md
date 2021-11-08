@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm, ante) [tharsis#620](https://github.com/tharsis/ethermint/pull/620) Add fee market field to EVM `Keeper` and `AnteHandler`.
 * (all) [tharsis#231](https://github.com/tharsis/ethermint/pull/231) Bump go-ethereum version to [`v1.10.9`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.9)
+* (ante) [tharsis#703](https://github.com/tharsis/ethermint/pull/703) Fix some fields in transaction are not authenticated by signature.
 
 ### Features
 
@@ -397,3 +398,5 @@ corresponding Ethereum API namespace:
 * (`x/evm`) [\#319](https://github.com/cosmos/ethermint/pull/319) Fix `SetBlockHash` that was setting the incorrect height during `BeginBlock`.
 * (`x/evm`) [\#176](https://github.com/cosmos/ethermint/issues/176) Updated Web3 transaction hash from using RLP hash. Now all transaction hashes exposed are amino hashes:
   * Removes `Hash()` (RLP) function from `MsgEthereumTx` to avoid confusion or misuse in future.
+
+
