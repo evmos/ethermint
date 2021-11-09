@@ -192,7 +192,7 @@ func (a *API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConf
 	for i, tx := range txs {
 		decodedTx, err := txDecoder(tx)
 		if err != nil {
-			a.logger.Error("failed to decode transaction", "hash", txs[i].Hash().String(), "error", err.Error())
+			a.logger.Error("failed to decode transaction", "hash", txs[i].Hash(), "error", err.Error())
 			continue
 		}
 
