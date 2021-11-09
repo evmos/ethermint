@@ -224,7 +224,7 @@ func (api *PrivateAccountAPI) EcRecover(_ context.Context, data, sig hexutil.Byt
 }
 
 // Unpair deletes a pairing between wallet and ethermint.
-func (api *PrivateAccountAPI) Unpair(_ context.Context, url string, pin string) error {
+func (api *PrivateAccountAPI) Unpair(_ context.Context, url, pin string) error {
 	api.logger.Debug("personal_unpair", "url", url, "pin", pin)
 	api.logger.Info("personal_unpair for smartcard wallet not supported")
 	// TODO: Smartcard wallet not supported yet, refer to: https://github.com/ethereum/go-ethereum/blob/master/accounts/scwallet/README.md
