@@ -360,16 +360,34 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	ctx = ctx.WithBlockHeight(req.BlockNumber)
+	ctx = ctx.WithBlockTime(req.BlockTime)
+	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
 	k.WithContext(ctx)
 
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	tx := req.Msg.AsTransaction()
 	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
-	result, err := k.traceTx(ctx, signer, req.TxIndex, ethCfg, tx, baseFee, req.TraceConfig)
+	for i, tx := range req.Predecessors {
+		ethTx := tx.AsTransaction()
+		msg, err := ethTx.AsMessage(signer, baseFee)
+		if err != nil {
+			continue
+		}
+		k.SetTxHashTransient(ethTx.Hash())
+		k.SetTxIndexTransient(uint64(i))
+
+		if _, err := k.ApplyMessage(msg, types.NewNoOpTracer(), true); err != nil {
+			continue
+		}
+	}
+
+	tx := req.Msg.AsTransaction()
+	result, err := k.traceTx(ctx, signer, req.TxIndex, ethCfg, tx, baseFee, req.TraceConfig, false)
 	if err != nil {
+		// error will be returned with detail status from traceTx
 		return nil, err
 	}
 
@@ -383,6 +401,54 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}, nil
 }
 
+// TraceBlock configures a new tracer according to the provided configuration, and
+// executes the given message in the provided environment for all the transactions in the queried block.
+// The return value will be tracer dependent.
+func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest) (*types.QueryTraceBlockResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	if req.TraceConfig != nil && req.TraceConfig.Limit < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "output limit cannot be negative, got %d", req.TraceConfig.Limit)
+	}
+
+	ctx := sdk.UnwrapSDKContext(c)
+	ctx = ctx.WithBlockHeight(req.BlockNumber)
+	ctx = ctx.WithBlockTime(req.BlockTime)
+	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
+	k.WithContext(ctx)
+
+	params := k.GetParams(ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+
+	txsLength := len(req.Txs)
+	results := make([]*types.TxTraceResult, 0, txsLength)
+
+	for i, tx := range req.Txs {
+		result := types.TxTraceResult{}
+		ethTx := tx.AsTransaction()
+		traceResult, err := k.traceTx(ctx, signer, uint64(i), ethCfg, ethTx, baseFee, req.TraceConfig, true)
+		if err != nil {
+			result.Error = err.Error()
+			continue
+		}
+		result.Result = traceResult
+		results = append(results, &result)
+	}
+
+	resultData, err := json.Marshal(results)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryTraceBlockResponse{
+		Data: resultData,
+	}, nil
+}
+
 func (k *Keeper) traceTx(
 	ctx sdk.Context,
 	signer ethtypes.Signer,
@@ -391,6 +457,7 @@ func (k *Keeper) traceTx(
 	tx *ethtypes.Transaction,
 	baseFee *big.Int,
 	traceConfig *types.TraceConfig,
+	commitMessage bool,
 ) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
@@ -462,7 +529,7 @@ func (k *Keeper) traceTx(
 	k.SetTxHashTransient(txHash)
 	k.SetTxIndexTransient(txIndex)
 
-	res, err := k.ApplyMessage(msg, tracer, false)
+	res, err := k.ApplyMessage(msg, tracer, commitMessage)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

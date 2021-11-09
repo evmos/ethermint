@@ -47,6 +47,8 @@
     - [QueryParamsResponse](#ethermint.evm.v1.QueryParamsResponse)
     - [QueryStorageRequest](#ethermint.evm.v1.QueryStorageRequest)
     - [QueryStorageResponse](#ethermint.evm.v1.QueryStorageResponse)
+    - [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest)
+    - [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse)
     - [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest)
     - [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse)
     - [QueryTxLogsRequest](#ethermint.evm.v1.QueryTxLogsRequest)
@@ -508,7 +510,7 @@ Msg defines the evm Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | |
+| `EthereumTx` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthereumTx defines a method submitting Ethereum transactions. | POST|/ethermint/evm/v1/ethereum_tx|
 
  <!-- end services -->
 
@@ -736,6 +738,40 @@ method.
 
 
 
+<a name="ethermint.evm.v1.QueryTraceBlockRequest"></a>
+
+### QueryTraceBlockRequest
+QueryTraceBlockRequest defines TraceTx request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `txs` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | txs messages in the block |
+| `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
+| `block_number` | [int64](#int64) |  | block number |
+| `block_hash` | [string](#string) |  | block hex hash |
+| `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.QueryTraceBlockResponse"></a>
+
+### QueryTraceBlockResponse
+QueryTraceBlockResponse defines TraceBlock response
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `data` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="ethermint.evm.v1.QueryTraceTxRequest"></a>
 
 ### QueryTraceTxRequest
@@ -747,6 +783,10 @@ QueryTraceTxRequest defines TraceTx request
 | `msg` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) |  | msgEthereumTx for the requested transaction |
 | `tx_index` | [uint64](#uint64) |  | transaction index |
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
+| `predecessors` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | the predecessor transactions included in the same block need to be replayed first to get correct context for tracing. |
+| `block_number` | [int64](#int64) |  | block number of requested transaction |
+| `block_hash` | [string](#string) |  | block hex hash of requested transaction |
+| `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time of requested transaction |
 
 
 
@@ -857,6 +897,7 @@ Query defines the gRPC querier service.
 | `EthCall` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [MsgEthereumTxResponse](#ethermint.evm.v1.MsgEthereumTxResponse) | EthCall implements the `eth_call` rpc api | GET|/ethermint/evm/v1/eth_call|
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
 | `TraceTx` | [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest) | [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_tx|
+| `TraceBlock` | [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest) | [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse) | TraceBlock implements the `debug_traceBlockByNumber` and `debug_traceBlockByHash` rpc api | GET|/ethermint/evm/v1/trace_block|
 
  <!-- end services -->
 
