@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -141,4 +142,14 @@ func TestPersonal_LockAccount(t *testing.T) {
 	// try to sign, should be locked
 	_, err = CallWithError("personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, ""})
 	require.Error(t, err)
+}
+
+func TestPersonal_Unpair(t *testing.T) {
+	t.Skip("skipping TestPersonal_Unpair")
+
+	rpcRes := Call(t, "personal_unpair", []interface{}{"", 0})
+
+	var res error
+	err := json.Unmarshal(rpcRes.Result, &res)
+	require.Equal(t, fmt.Errorf("smartcard wallet not supported yet"), err)
 }
