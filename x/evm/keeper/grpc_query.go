@@ -425,16 +425,18 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 
 	txsLength := len(req.Txs)
-	results := make([]*types.TxTraceResult, txsLength)
+	results := make([]*types.TxTraceResult, 0, txsLength)
 
 	for i, tx := range req.Txs {
+		result := types.TxTraceResult{}
 		ethTx := tx.AsTransaction()
 		traceResult, err := k.traceTx(ctx, signer, uint64(i), ethCfg, ethTx, baseFee, req.TraceConfig, true)
 		if err != nil {
-			results[i].Error = err.Error()
+			result.Error = err.Error()
 			continue
 		}
-		results[i].Result = traceResult
+		result.Result = traceResult
+		results = append(results, &result)
 	}
 
 	resultData, err := json.Marshal(results)
