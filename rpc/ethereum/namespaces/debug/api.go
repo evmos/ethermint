@@ -87,7 +87,13 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		return nil, err
 	}
 
-	predecessors := []*evmtypes.MsgEthereumTx{}
+	// check tx index is not out of bound
+	if uint32(len(blk.Block.Txs)) < transaction.Index {
+		a.logger.Debug("tx index", transaction.Index, "tx hash", hash, "out of bound in block", blk.Block.Height)
+		return nil, fmt.Errorf("transaction not included in block %v", blk.Block.Height)
+	}
+
+	var predecessors []*evmtypes.MsgEthereumTx
 	for _, txBz := range blk.Block.Txs[:transaction.Index] {
 		tx, err := a.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
