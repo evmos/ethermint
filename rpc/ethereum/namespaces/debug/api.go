@@ -202,7 +202,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 			// Just considers Ethereum transactions
 			continue
 		}
-		txsMessages[i] = ethMessage
+		txsMessages = append(txsMessages, ethMessage)
 	}
 
 	// minus one to get the context at the beginning of the block
