@@ -311,6 +311,61 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 	return ercTransferTx
 }
 
+// DeployTestMessageCall deploy a test erc20 contract and returns the contract address
+func (suite *KeeperTestSuite) DeployTestMessageCall(t require.TestingT) common.Address {
+	ctx := sdk.WrapSDKContext(suite.ctx)
+	chainID := suite.app.EvmKeeper.ChainID()
+
+	data := types.TestMessageCall.Bin
+	args, err := json.Marshal(&types.TransactionArgs{
+		From: &suite.address,
+		Data: (*hexutil.Bytes)(&data),
+	})
+	require.NoError(t, err)
+
+	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
+		Args:   args,
+		GasCap: uint64(config.DefaultGasCap),
+	})
+	require.NoError(t, err)
+
+	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
+
+	var erc20DeployTx *types.MsgEthereumTx
+	if suite.dynamicTxFee {
+		erc20DeployTx = types.NewTxContract(
+			chainID,
+			nonce,
+			nil,     // amount
+			res.Gas, // gasLimit
+			nil,     // gasPrice
+			suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx),
+			big.NewInt(1),
+			data,                   // input
+			&ethtypes.AccessList{}, // accesses
+		)
+	} else {
+		erc20DeployTx = types.NewTxContract(
+			chainID,
+			nonce,
+			nil,     // amount
+			res.Gas, // gasLimit
+			nil,     // gasPrice
+			nil, nil,
+			data, // input
+			nil,  // accesses
+		)
+	}
+
+	erc20DeployTx.From = suite.address.Hex()
+	err = erc20DeployTx.Sign(ethtypes.LatestSignerForChainID(chainID), suite.signer)
+	require.NoError(t, err)
+	rsp, err := suite.app.EvmKeeper.EthereumTx(ctx, erc20DeployTx)
+	require.NoError(t, err)
+	require.Empty(t, rsp.VmError)
+	return crypto.CreateAddress(suite.address, nonce)
+}
+
 func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
 }
