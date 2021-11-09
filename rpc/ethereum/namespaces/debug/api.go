@@ -186,6 +186,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 
 	txsMessages := make([]*evmtypes.MsgEthereumTx, txsLength)
 	txDecoder := a.clientCtx.TxConfig.TxDecoder()
+	
 	for i, tx := range txs {
 		decodedTx, err := txDecoder(tx)
 		if err != nil {
