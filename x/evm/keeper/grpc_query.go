@@ -387,6 +387,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	tx := req.Msg.AsTransaction()
 	result, err := k.traceTx(ctx, signer, req.TxIndex, ethCfg, tx, baseFee, req.TraceConfig, false)
 	if err != nil {
+		// error will be returned with detail status from traceTx
 		return nil, err
 	}
 
