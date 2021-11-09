@@ -128,7 +128,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		Predecessors: predecessors,
 		BlockNumber:  blk.Block.Height,
 		BlockTime:    blk.Block.Time,
-		BlockHash:    blk.BlockID.Hash.String(),
+		BlockHash:    common.Bytes2Hex(blk.BlockID.Hash),
 	}
 
 	if config != nil {
@@ -221,7 +221,7 @@ func (a *API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConf
 		TraceConfig: config,
 		BlockNumber: block.Block.Height,
 		BlockTime:   block.Block.Time,
-		BlockHash:   block.BlockID.Hash.String(),
+		BlockHash:   common.Bytes2Hex(block.BlockID.Hash),
 	}
 
 	res, err := a.queryClient.TraceBlock(ctxWithHeight, traceBlockRequest)
