@@ -126,7 +126,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		TxIndex:      uint64(transaction.Index),
 		Predecessors: predecessors,
 		BlockNumber:  blk.Block.Height,
-		BlockTime:    blk.Block.Time.Unix(),
+		BlockTime:    blk.Block.Time,
 		BlockHash:    blk.BlockID.Hash.String(),
 	}
 
@@ -217,7 +217,7 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 		Txs:         txsMessages,
 		TraceConfig: config,
 		BlockNumber: block.Block.Height,
-		BlockTime:   block.Block.Time.Unix(),
+		BlockTime:   block.Block.Time,
 		BlockHash:   block.BlockID.Hash.String(),
 	}
 

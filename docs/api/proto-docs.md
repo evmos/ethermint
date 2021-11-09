@@ -749,8 +749,8 @@ QueryTraceBlockRequest defines TraceTx request
 | `txs` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | txs messages in the block |
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
 | `block_number` | [int64](#int64) |  | block number |
-| `block_hash` | [string](#string) |  | block hash |
-| `block_time` | [int64](#int64) |  | block time |
+| `block_hash` | [string](#string) |  | block hex hash |
+| `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time |
 
 
 
@@ -785,8 +785,8 @@ QueryTraceTxRequest defines TraceTx request
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
 | `predecessors` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | the predecessor transactions included in the same block need to be replayed first to get correct context for tracing. |
 | `block_number` | [int64](#int64) |  | block number of requested transaction |
-| `block_hash` | [string](#string) |  | block hash of requested transaction |
-| `block_time` | [int64](#int64) |  | block time of requested transaction |
+| `block_hash` | [string](#string) |  | block hex hash of requested transaction |
+| `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time of requested transaction |
 
 
 

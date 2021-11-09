@@ -6,6 +6,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "google/api/annotations.proto";
 import "ethermint/evm/v1/evm.proto";
 import "ethermint/evm/v1/tx.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/tharsis/ethermint/x/evm/types";
 
