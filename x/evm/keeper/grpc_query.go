@@ -379,8 +379,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		k.SetTxHashTransient(ethTx.Hash())
 		k.SetTxIndexTransient(uint64(i))
 
-		_, err = k.ApplyMessage(msg, types.NewNoOpTracer(), true)
-		if err != nil {
+		if _, err := k.ApplyMessage(msg, types.NewNoOpTracer(), true); err != nil {
 			continue
 		}
 	}
