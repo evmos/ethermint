@@ -185,9 +185,10 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 		return []*evmtypes.TxTraceResult{}, nil
 	}
 
-	txsMessages := make([]*evmtypes.MsgEthereumTx, txsLength)
 	txDecoder := a.clientCtx.TxConfig.TxDecoder()
-	
+
+	// nolint: prealloc
+	var txsMessages []*evmtypes.MsgEthereumTx
 	for i, tx := range txs {
 		decodedTx, err := txDecoder(tx)
 		if err != nil {
