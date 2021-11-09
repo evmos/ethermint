@@ -89,7 +89,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 
 	// check tx index is not out of bound
 	if uint32(len(blk.Block.Txs)) < transaction.Index {
-		a.logger.Debug("tx index", transaction.Index, "tx hash", hash, "out of bound in block", blk.Block.Height)
+		a.logger.Debug("tx index out of bounds", "index", transaction.Index, "hash", hash.String(), "height", blk.Block.Height)
 		return nil, fmt.Errorf("transaction not included in block %v", blk.Block.Height)
 	}
 
@@ -192,7 +192,7 @@ func (a *API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConf
 	for i, tx := range txs {
 		decodedTx, err := txDecoder(tx)
 		if err != nil {
-			a.logger.Error("failed to decode transaction", "hash", txs[i].Hash(), "error", err.Error())
+			a.logger.Error("failed to decode transaction", "hash", txs[i].Hash().String(), "error", err.Error())
 			continue
 		}
 
