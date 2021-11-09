@@ -222,7 +222,6 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 	}
 
 	res, err := a.queryClient.TraceBlock(ctxWithHeight, traceBlockRequest)
-
 	if err != nil {
 		return nil, err
 	}
