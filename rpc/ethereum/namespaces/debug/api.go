@@ -93,6 +93,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		return nil, fmt.Errorf("transaction not included in block %v", blk.Block.Height)
 	}
 
+	// nolint: prealloc
 	var predecessors []*evmtypes.MsgEthereumTx
 	for _, txBz := range blk.Block.Txs[:transaction.Index] {
 		tx, err := a.clientCtx.TxConfig.TxDecoder()(txBz)
