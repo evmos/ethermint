@@ -13,7 +13,7 @@ option go_package = "github.com/tharsis/ethermint/x/evm/types";
 service Msg {
   // EthereumTx defines a method submitting Ethereum transactions.
   rpc EthereumTx(MsgEthereumTx) returns (MsgEthereumTxResponse) {
-    option (google.api.http).get = "/ethermint/evm/v1/ethereum_tx";
+    option (google.api.http).post = "/ethermint/evm/v1/ethereum_tx";
   };
 }
 

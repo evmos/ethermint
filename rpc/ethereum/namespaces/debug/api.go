@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/tendermint/tendermint/types"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
@@ -81,6 +81,35 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		return nil, errors.New("genesis is not traceable")
 	}
 
+	blk, err := a.backend.GetTendermintBlockByNumber(rpctypes.BlockNumber(transaction.Height))
+	if err != nil {
+		a.logger.Debug("block not found", "height", transaction.Height)
+		return nil, err
+	}
+
+	// check tx index is not out of bound
+	if uint32(len(blk.Block.Txs)) < transaction.Index {
+		a.logger.Debug("tx index out of bounds", "index", transaction.Index, "hash", hash.String(), "height", blk.Block.Height)
+		return nil, fmt.Errorf("transaction not included in block %v", blk.Block.Height)
+	}
+
+	// nolint: prealloc
+	var predecessors []*evmtypes.MsgEthereumTx
+	for _, txBz := range blk.Block.Txs[:transaction.Index] {
+		tx, err := a.clientCtx.TxConfig.TxDecoder()(txBz)
+		if err != nil {
+			a.logger.Debug("failed to decode transaction in block", "height", blk.Block.Height, "error", err.Error())
+			continue
+		}
+		msg := tx.GetMsgs()[0]
+		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			continue
+		}
+
+		predecessors = append(predecessors, ethMsg)
+	}
+
 	tx, err := a.clientCtx.TxConfig.TxDecoder()(transaction.Tx)
 	if err != nil {
 		a.logger.Debug("tx not found", "hash", hash)
@@ -94,15 +123,25 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 	}
 
 	traceTxRequest := evmtypes.QueryTraceTxRequest{
-		Msg:     ethMessage,
-		TxIndex: uint64(transaction.Index),
+		Msg:          ethMessage,
+		TxIndex:      uint64(transaction.Index),
+		Predecessors: predecessors,
+		BlockNumber:  blk.Block.Height,
+		BlockTime:    blk.Block.Time,
+		BlockHash:    common.Bytes2Hex(blk.BlockID.Hash),
 	}
 
 	if config != nil {
 		traceTxRequest.TraceConfig = config
 	}
 
-	traceResult, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(transaction.Height), &traceTxRequest)
+	// minus one to get the context of block beginning
+	contextHeight := transaction.Height - 1
+	if contextHeight < 1 {
+		// 0 is a special value in `ContextWithHeight`
+		contextHeight = 1
+	}
+	traceResult, err := a.queryClient.TraceTx(rpctypes.ContextWithHeight(contextHeight), &traceTxRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -131,13 +170,14 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 		return nil, err
 	}
 
-	return a.traceBlock(height, config, resBlock.Block.Txs)
+	return a.traceBlock(height, config, resBlock)
 }
 
 // traceBlock configures a new tracer according to the provided configuration, and
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requested tracer.
-func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, txs types.Txs) ([]*evmtypes.TxTraceResult, error) {
+func (a *API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, block *tmrpctypes.ResultBlock) ([]*evmtypes.TxTraceResult, error) {
+	txs := block.Block.Txs
 	txsLength := len(txs)
 
 	if txsLength == 0 {
@@ -145,73 +185,56 @@ func (a API) traceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfi
 		return []*evmtypes.TxTraceResult{}, nil
 	}
 
-	var (
-		results = make([]*evmtypes.TxTraceResult, txsLength)
-		wg      = new(sync.WaitGroup)
-		jobs    = make(chan *evmtypes.TxTraceTask, txsLength)
-	)
+	txDecoder := a.clientCtx.TxConfig.TxDecoder()
 
-	threads := runtime.NumCPU()
-	if threads > txsLength {
-		threads = txsLength
+	// nolint: prealloc
+	var txsMessages []*evmtypes.MsgEthereumTx
+	for i, tx := range txs {
+		decodedTx, err := txDecoder(tx)
+		if err != nil {
+			a.logger.Error("failed to decode transaction", "hash", txs[i].Hash(), "error", err.Error())
+			continue
+		}
+
+		messages := decodedTx.GetMsgs()
+		if len(messages) == 0 {
+			continue
+		}
+		ethMessage, ok := messages[0].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			// Just considers Ethereum transactions
+			continue
+		}
+		txsMessages = append(txsMessages, ethMessage)
 	}
 
-	ctxWithHeight := rpctypes.ContextWithHeight(int64(height))
+	// minus one to get the context at the beginning of the block
+	contextHeight := height - 1
+	if contextHeight < 1 {
+		// 0 is a special value for `ContextWithHeight`.
+		contextHeight = 1
+	}
+	ctxWithHeight := rpctypes.ContextWithHeight(int64(contextHeight))
 
-	wg.Add(threads)
-	for th := 0; th < threads; th++ {
-		go func() {
-			defer wg.Done()
-			txDecoder := a.clientCtx.TxConfig.TxDecoder()
-			// Fetch and execute the next transaction trace tasks
-			for task := range jobs {
-				tx, err := txDecoder(txs[task.Index])
-				if err != nil {
-					a.logger.Error("failed to decode transaction", "hash", txs[task.Index].Hash(), "error", err.Error())
-					continue
-				}
-
-				messages := tx.GetMsgs()
-				if len(messages) == 0 {
-					continue
-				}
-				ethMessage, ok := messages[0].(*evmtypes.MsgEthereumTx)
-				if !ok {
-					// Just considers Ethereum transactions
-					continue
-				}
-
-				traceTxRequest := &evmtypes.QueryTraceTxRequest{
-					Msg:         ethMessage,
-					TxIndex:     uint64(task.Index),
-					TraceConfig: config,
-				}
-
-				res, err := a.queryClient.TraceTx(ctxWithHeight, traceTxRequest)
-				if err != nil {
-					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
-					continue
-				}
-				// Response format is unknown due to custom tracer config param
-				// More information can be found here https://geth.ethereum.org/docs/dapp/tracing-filtered
-				var decodedResult interface{}
-				if err := json.Unmarshal(res.Data, &decodedResult); err != nil {
-					results[task.Index] = &evmtypes.TxTraceResult{Error: err.Error()}
-					continue
-				}
-				results[task.Index] = &evmtypes.TxTraceResult{Result: decodedResult}
-			}
-		}()
+	traceBlockRequest := &evmtypes.QueryTraceBlockRequest{
+		Txs:         txsMessages,
+		TraceConfig: config,
+		BlockNumber: block.Block.Height,
+		BlockTime:   block.Block.Time,
+		BlockHash:   common.Bytes2Hex(block.BlockID.Hash),
 	}
 
-	for i := range txs {
-		jobs <- &evmtypes.TxTraceTask{Index: i}
+	res, err := a.queryClient.TraceBlock(ctxWithHeight, traceBlockRequest)
+	if err != nil {
+		return nil, err
 	}
 
-	close(jobs)
-	wg.Wait()
+	decodedResults := make([]*evmtypes.TxTraceResult, txsLength)
+	if err := json.Unmarshal(res.Data, &decodedResults); err != nil {
+		return nil, err
+	}
 
-	return results, nil
+	return decodedResults, nil
 }
 
 // BlockProfile turns on goroutine profiling for nsec seconds and writes profile data to
