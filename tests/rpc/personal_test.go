@@ -148,9 +148,13 @@ func TestPersonal_LockAccount(t *testing.T) {
 func TestPersonal_Unpair(t *testing.T) {
 	t.Skip("skipping TestPersonal_Unpair")
 
-	rpcRes := Call(t, "personal_unpair", []interface{}{"", 0})
+	_, err := CallWithError(t, "personal_unpair", []interface{}{"", 0})
+	require.True(t, errors.Is(err, fmt.Errorf("smartcard wallet not supported yet")))
+}
 
-	var res error
-	err := json.Unmarshal(rpcRes.Result, &res)
+func TestPersonal_InitializeWallet(t *testing.T) {
+	t.Skip("skipping TestPersonal_InitializeWallet")
+
+	_, err := CallWithError(t, "personal_initializeWallet", []interface{}{""})
 	require.True(t, errors.Is(err, fmt.Errorf("smartcard wallet not supported yet")))
 }
