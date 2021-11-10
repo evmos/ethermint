@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ethereum/go-ethereum/eth/tracers/native"
 	"github.com/ethereum/go-ethereum/params"
 )
 
 const (
+	TracerNative     = "native"
 	TracerAccessList = "access_list"
 	TracerJSON       = "json"
 	TracerStruct     = "struct"
@@ -21,24 +23,34 @@ const (
 
 // NewTracer creates a new Logger tracer to collect execution traces from an
 // EVM transaction.
-func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height int64, debug bool) vm.Tracer {
+func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height int64, debug bool) vm.EVMLogger {
 	// TODO: enable additional log configuration
 	logCfg := &vm.LogConfig{
 		Debug: debug,
 	}
 
+	traceCtx := &tracers.Context{
+		BlockHash: common.Hash{},
+		TxIndex:   0,
+		TxHash:    common.Hash{},
+	}
+
 	switch tracer {
+	case TracerNative:
+		return native.NewCallTracer()
 	case TracerAccessList:
 		precompiles := vm.ActivePrecompiles(cfg.Rules(big.NewInt(height)))
 		return vm.NewAccessListTracer(msg.AccessList(), msg.From(), *msg.To(), precompiles)
 	case TracerJSON:
-		return vm.NewJSONLogger(logCfg, os.Stderr)
+		code := ""
+		tracer, _ := tracers.New(code, traceCtx)
+		return tracer
 	case TracerMarkdown:
 		return vm.NewMarkdownLogger(logCfg, os.Stdout) // TODO: Stderr ?
 	case TracerStruct:
 		return vm.NewStructLogger(logCfg)
 	default:
-		return NewNoOpTracer()
+		return native.NewNoopTracer()
 	}
 }
 
@@ -113,73 +125,4 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 		}
 	}
 	return formatted
-}
-
-var _ vm.Tracer = &NoOpTracer{}
-
-// NoOpTracer is an empty implementation of vm.Tracer interface
-type NoOpTracer struct{}
-
-// NewNoOpTracer creates a no-op vm.Tracer
-func NewNoOpTracer() *NoOpTracer {
-	return &NoOpTracer{}
-}
-
-// CaptureStart implements vm.Tracer interface
-func (dt NoOpTracer) CaptureStart(
-	env *vm.EVM,
-	from, to common.Address,
-	create bool,
-	input []byte,
-	gas uint64,
-	value *big.Int,
-) {
-}
-
-// CaptureEnter implements vm.Tracer interface
-func (dt NoOpTracer) CaptureEnter(
-	typ vm.OpCode,
-	from common.Address,
-	to common.Address,
-	input []byte,
-	gas uint64,
-	value *big.Int,
-) {
-}
-
-// CaptureExit implements vm.Tracer interface
-func (dt NoOpTracer) CaptureExit(output []byte, gasUsed uint64, err error) {}
-
-// CaptureState implements vm.Tracer interface
-func (dt NoOpTracer) CaptureState(
-	env *vm.EVM,
-	pc uint64,
-	op vm.OpCode,
-	gas, cost uint64,
-	scope *vm.ScopeContext,
-	rData []byte,
-	depth int,
-	err error,
-) {
-}
-
-// CaptureFault implements vm.Tracer interface
-func (dt NoOpTracer) CaptureFault(
-	env *vm.EVM,
-	pc uint64,
-	op vm.OpCode,
-	gas, cost uint64,
-	scope *vm.ScopeContext,
-	depth int,
-	err error,
-) {
-}
-
-// CaptureEnd implements vm.Tracer interface
-func (dt NoOpTracer) CaptureEnd(
-	output []byte,
-	gasUsed uint64,
-	t time.Duration,
-	err error,
-) {
 }

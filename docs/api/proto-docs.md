@@ -179,6 +179,7 @@ instead of *big.Int.
 | `muir_glacier_block` | [string](#string) |  | Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated) |
 | `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
 | `london_block` | [string](#string) |  | London switch block (nil = no fork, 0 = already on london) |
+| `arrow_glacier_block` | [string](#string) |  | Arrow Glacier switch block (nil = no fork, 0 = already on arrow glacier) |
 
 
 

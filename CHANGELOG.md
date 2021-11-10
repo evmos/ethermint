@@ -40,7 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (evm, ante) [tharsis#620](https://github.com/tharsis/ethermint/pull/620) Add fee market field to EVM `Keeper` and `AnteHandler`.
-* (all) [tharsis#231](https://github.com/tharsis/ethermint/pull/231) Bump go-ethereum version to [`v1.10.9`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.9)
+* (all) [tharsis#231](https://github.com/tharsis/ethermint/pull/732) Bump go-ethereum version to [`v1.10.12`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.12)
 * (ante) [tharsis#703](https://github.com/tharsis/ethermint/pull/703) Fix some fields in transaction are not authenticated by signature.
 
 ### Features

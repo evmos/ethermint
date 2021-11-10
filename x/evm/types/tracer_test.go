@@ -77,7 +77,3 @@ func TestFormatLogs(t *testing.T) {
 		require.Equal(t, tc.exp, actual)
 	}
 }
-
-func TestNewNoOpTracer(t *testing.T) {
-	require.Equal(t, &NoOpTracer{}, NewNoOpTracer())
-}

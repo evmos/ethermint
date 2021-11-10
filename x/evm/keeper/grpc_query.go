@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ethereum/go-ethereum/eth/tracers/native"
 
 	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc/codes"
@@ -379,7 +380,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		k.SetTxHashTransient(ethTx.Hash())
 		k.SetTxIndexTransient(uint64(i))
 
-		if _, err := k.ApplyMessage(msg, types.NewNoOpTracer(), true); err != nil {
+		if _, err := k.ApplyMessage(msg, native.NewNoopTracer(), true); err != nil {
 			continue
 		}
 	}
@@ -461,7 +462,7 @@ func (k *Keeper) traceTx(
 ) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer    vm.Tracer
+		tracer    tracers.Tracer
 		overrides *ethparams.ChainConfig
 		err       error
 	)
@@ -507,11 +508,12 @@ func (k *Keeper) traceTx(
 		go func() {
 			<-deadlineCtx.Done()
 			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
-				tracer.(*tracers.Tracer).Stop(errors.New("execution timeout"))
+				tracer.Stop(errors.New("execution timeout"))
 			}
 		}()
 
 	case traceConfig != nil:
+		// TODO: this should be the native Go tracer
 		logConfig := vm.LogConfig{
 			EnableMemory:     traceConfig.EnableMemory,
 			DisableStorage:   traceConfig.DisableStorage,

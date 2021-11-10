@@ -382,6 +382,6 @@ func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) erro
 }
 
 // Tracer return a default vm.Tracer based on current keeper state
-func (k Keeper) Tracer(msg core.Message, ethCfg *params.ChainConfig) vm.Tracer {
+func (k Keeper) Tracer(msg core.Message, ethCfg *params.ChainConfig) vm.EVMLogger {
 	return types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
 }

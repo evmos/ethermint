@@ -52,7 +52,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 func (k *Keeper) NewEVM(
 	msg core.Message,
 	cfg *types.EVMConfig,
-	tracer vm.Tracer,
+	tracer vm.EVMLogger,
 ) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
@@ -76,7 +76,7 @@ func (k *Keeper) NewEVM(
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
+func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.EVMLogger) vm.Config {
 	fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
 
 	return vm.Config{
@@ -290,7 +290,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 // Commit parameter
 //
 // If commit is true, the cache context stack will be committed, otherwise discarded.
-func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, commit bool, cfg *types.EVMConfig) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.EVMLogger, commit bool, cfg *types.EVMConfig) (*types.MsgEthereumTxResponse, error) {
 	var (
 		ret   []byte // return bytes from evm execution
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
@@ -380,7 +380,7 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 }
 
 // ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
-func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.Tracer, commit bool) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.EVMLogger, commit bool) (*types.MsgEthereumTxResponse, error) {
 	cfg, err := k.EVMConfig(k.Ctx())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to load evm config")

@@ -107,6 +107,11 @@ message ChainConfig {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags) = "yaml:\"london_block\""
   ];
+  // Arrow Glacier switch block (nil = no fork, 0 = already on arrow glacier)
+  string arrow_glacier_block = 18 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"arrow_glacier_block\""
+  ];
 }
 
 // State represents a single Storage key value pair item.
