@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -151,5 +152,5 @@ func TestPersonal_Unpair(t *testing.T) {
 
 	var res error
 	err := json.Unmarshal(rpcRes.Result, &res)
-	require.Equal(t, fmt.Errorf("smartcard wallet not supported yet"), err)
+	require.True(t, errors.Is(err, fmt.Errorf("smartcard wallet not supported yet")))
 }
