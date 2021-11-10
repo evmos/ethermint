@@ -50,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#662](https://github.com/tharsis/ethermint/pull/662) Disable basefee for non london blocks
 * (cmd) [tharsis#712](https://github.com/tharsis/ethermint/pull/712) add tx cli to build evm transaction
 * (rpc) [tharsis#733](https://github.com/tharsis/ethermint/pull/733) add JSON_RPC endpoint personal_unpair
+* (rpc) [tharsis#740](https://github.com/tharsis/ethermint/pull/740) add JSON_RPC endpoint personal_initializeWallet
 
 ### Bug Fixes
 
