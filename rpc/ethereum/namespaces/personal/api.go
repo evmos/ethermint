@@ -230,3 +230,11 @@ func (api *PrivateAccountAPI) Unpair(_ context.Context, url, pin string) error {
 	// TODO: Smartcard wallet not supported yet, refer to: https://github.com/ethereum/go-ethereum/blob/master/accounts/scwallet/README.md
 	return fmt.Errorf("smartcard wallet not supported yet")
 }
+
+// InitializeWallet initializes a new wallet at the provided URL, by generating and returning a new private key.
+func (api *PrivateAccountAPI) InitializeWallet(_ context.Context, url string) (string, error) {
+	api.logger.Debug("personal_initializeWallet", "url", url)
+	api.logger.Info("personal_initializeWallet for smartcard wallet not supported")
+	// TODO: Smartcard wallet not supported yet, refer to: https://github.com/ethereum/go-ethereum/blob/master/accounts/scwallet/README.md
+	return "", fmt.Errorf("smartcard wallet not supported yet")
+}
