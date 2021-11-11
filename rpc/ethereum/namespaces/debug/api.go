@@ -173,6 +173,19 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 	return a.traceBlock(height, config, resBlock)
 }
 
+// TraceBlockByHash returns the structured logs created during the execution of
+// EVM and returns them as a JSON object.
+func (a *API) TraceBlockByHash(hash common.Hash, config *evmtypes.TraceConfig) ([]*evmtypes.TxTraceResult, error) {
+	a.logger.Debug("debug_traceBlockByHash", "hash", hash)
+	// Get Tendermint Block
+	resBlock, err := a.backend.GetTendermintBlockByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.traceBlock(rpctypes.BlockNumber(resBlock.Block.Height), config, resBlock)
+}
+
 // traceBlock configures a new tracer according to the provided configuration, and
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requested tracer.
