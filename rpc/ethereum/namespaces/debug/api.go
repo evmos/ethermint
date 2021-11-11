@@ -185,12 +185,7 @@ func (a *API) TraceBlockByHash(hash common.Hash, config *evmtypes.TraceConfig) (
 		return nil, err
 	}
 
-	if resBlock == nil {
-		a.logger.Debug("block not found", "hash", hash.Hex())
-		return nil, errors.New("block not found")
-	}
-
-	if resBlock.Block == nil {
+	if resBlock == nil || resBlock.Block == nil {
 		a.logger.Debug("block not found", "hash", hash.Hex())
 		return nil, errors.New("block not found")
 	}
