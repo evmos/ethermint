@@ -50,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#662](https://github.com/tharsis/ethermint/pull/662) Disable basefee for non london blocks
 * (cmd) [tharsis#712](https://github.com/tharsis/ethermint/pull/712) add tx cli to build evm transaction
 * (rpc) [tharsis#733](https://github.com/tharsis/ethermint/pull/733) add JSON_RPC endpoint personal_unpair
+* (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) add JSON_RPC endpoint debug_traceBlockByHash
 
 ### Bug Fixes
 
@@ -59,6 +60,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
 * (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers 
 * (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
+* (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) Fix debug JSON RPC handler crash on non-existing block
 
 ### Improvements
 

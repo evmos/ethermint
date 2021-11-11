@@ -167,6 +167,7 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 	// Get Tendermint Block
 	resBlock, err := a.backend.GetTendermintBlockByNumber(height)
 	if err != nil {
+		a.logger.Debug("get block failed", "height", height, "error", err.Error())
 		return nil, err
 	}
 
@@ -180,7 +181,18 @@ func (a *API) TraceBlockByHash(hash common.Hash, config *evmtypes.TraceConfig) (
 	// Get Tendermint Block
 	resBlock, err := a.backend.GetTendermintBlockByHash(hash)
 	if err != nil {
+		a.logger.Debug("get block failed", "hash", hash.Hex(), "error", err.Error())
 		return nil, err
+	}
+
+	if resBlock == nil {
+		a.logger.Debug("block not found", "hash", hash.Hex())
+		return nil, errors.New("block not found")
+    }
+
+	if resBlock.Block == nil {
+		a.logger.Debug("block not found", "hash", hash.Hex())
+		return nil, errors.New("block not found")
 	}
 
 	return a.traceBlock(rpctypes.BlockNumber(resBlock.Block.Height), config, resBlock)
