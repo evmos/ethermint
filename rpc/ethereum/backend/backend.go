@@ -307,7 +307,6 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 	return resBlock, nil
 }
 
-
 // GetTendermintBlockByHash returns a Tendermint format block by block number
 func (e *EVMBackend) GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error) {
 	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, blockHash.Bytes())
