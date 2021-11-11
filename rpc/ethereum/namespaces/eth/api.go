@@ -720,18 +720,7 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 		return nil, nil
 	}
 
-	txBz := resBlock.Block.Txs[i]
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
-	if err != nil {
-		e.logger.Debug("decoding failed", "error", err.Error())
-		return nil, fmt.Errorf("failed to decode tx: %w", err)
-	}
-
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
-	}
+	msg := ethMsgs[i]
 
 	return rpctypes.NewTransactionFromMsg(
 		msg,
