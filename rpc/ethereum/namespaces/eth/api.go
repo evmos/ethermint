@@ -984,6 +984,8 @@ func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rp
 	}
 }
 
+// getEthereumMsgFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
+// It also ensures consistency over the correct txs indexes across RPC endpoints
 func (e *PublicAPI) getEthereumMsgFromTendermintBlock(block *ctypes.ResultBlock) []*evmtypes.MsgEthereumTx {
 	var result []*evmtypes.MsgEthereumTx
 	for _, tx := range block.Block.Txs {
