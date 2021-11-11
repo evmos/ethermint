@@ -358,7 +358,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 			// check tx exists on EVM
 			_, err := e.GetTxByEthHash(tx.Hash())
 			if err != nil {
-				e.logger.Debug("failed to query eth tx hash", "hash", tx.Hash().Hex(), "error", err.Error())
+				e.logger.Debug("failed to query eth tx", "hash", tx.Hash().Hex(), "error", err.Error())
 				continue
 			}
 
