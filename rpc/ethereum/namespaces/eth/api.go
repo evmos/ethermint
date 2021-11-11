@@ -995,7 +995,6 @@ func (e *PublicAPI) getEthereumMsgFromTendermintBlock(block *ctypes.ResultBlock)
 
 		for _, msg := range tx.GetMsgs() {
 			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-
 			if !ok {
 				continue
 			}
