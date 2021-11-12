@@ -167,10 +167,30 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 	// Get Tendermint Block
 	resBlock, err := a.backend.GetTendermintBlockByNumber(height)
 	if err != nil {
+		a.logger.Debug("get block failed", "height", height, "error", err.Error())
 		return nil, err
 	}
 
 	return a.traceBlock(height, config, resBlock)
+}
+
+// TraceBlockByHash returns the structured logs created during the execution of
+// EVM and returns them as a JSON object.
+func (a *API) TraceBlockByHash(hash common.Hash, config *evmtypes.TraceConfig) ([]*evmtypes.TxTraceResult, error) {
+	a.logger.Debug("debug_traceBlockByHash", "hash", hash)
+	// Get Tendermint Block
+	resBlock, err := a.backend.GetTendermintBlockByHash(hash)
+	if err != nil {
+		a.logger.Debug("get block failed", "hash", hash.Hex(), "error", err.Error())
+		return nil, err
+	}
+
+	if resBlock == nil || resBlock.Block == nil {
+		a.logger.Debug("block not found", "hash", hash.Hex())
+		return nil, errors.New("block not found")
+	}
+
+	return a.traceBlock(rpctypes.BlockNumber(resBlock.Block.Height), config, resBlock)
 }
 
 // traceBlock configures a new tracer according to the provided configuration, and
