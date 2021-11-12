@@ -314,7 +314,7 @@ func (e *EVMBackend) GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctype
 		e.logger.Debug("tendermint client failed to get block", "blockHash", blockHash.Hex(), "error", err.Error())
 	}
 
-	if resBlock || resBlock.Block == nil {
+	if resBlock == nil || resBlock.Block == nil {
 		e.logger.Debug("GetBlockByNumber block not found", "blockHash", blockHash.Hex())
 		return nil, nil
 	}
