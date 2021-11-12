@@ -1,4 +1,4 @@
-package e2e
+package e2e_test
 
 import (
 	"context"
@@ -6,6 +6,10 @@ import (
 	"math/big"
 	"testing"
 
+	// . "github.com/onsi/ginkgo"
+	// . "github.com/onsi/gomega"
+
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/suite"
 
@@ -15,6 +19,15 @@ import (
 	ethermint "github.com/tharsis/ethermint/types"
 )
 
+// var _ = Describe("E2e", func() {
+// })
+
+// func TestJsonRpc(t *testing.T) {
+// 	RegisterFailHandler(Fail)
+// 	RunSpecs(t, "JSON-RPC Suite")
+// }
+
+// TODO: migrate to Ginkgo BDD
 type IntegrationTestSuite struct {
 	suite.Suite
 
@@ -71,41 +84,54 @@ func (s *IntegrationTestSuite) TestBlock() {
 	s.Require().NoError(err)
 	s.Require().NotZero(blockNum)
 
+	bn := int64(blockNum)
+
+	block, err := s.network.Validators[0].RPCClient.Block(s.ctx, &bn)
+	s.Require().NoError(err)
+	s.Require().NotNil(block)
+
 	blockByNum, err := s.network.Validators[0].JSONRPCClient.BlockByNumber(s.ctx, new(big.Int).SetUint64(blockNum))
 	s.Require().NoError(err)
 	s.Require().NotNil(blockByNum)
 
-	hash := blockByNum.Hash()
+	// compare the ethereum header with the tendermint header
+	s.Require().Equal(len(block.Block.Txs), len(blockByNum.Body().Transactions))
+	s.Require().Equal(block.Block.LastBlockID.Hash.Bytes(), blockByNum.Header().ParentHash.Bytes())
+
+	hash := common.BytesToHash(block.Block.Hash())
+	block, err = s.network.Validators[0].RPCClient.BlockByHash(s.ctx, hash.Bytes())
+	s.Require().NoError(err)
+	s.Require().NotNil(block)
+
 	blockByHash, err := s.network.Validators[0].JSONRPCClient.BlockByHash(s.ctx, hash)
 	s.Require().NoError(err)
 	s.Require().NotNil(blockByHash)
 	s.Require().Equal(blockByNum, blockByHash)
 
-	block, err := s.network.Validators[0].RPCClient.BlockByHash(s.ctx, hash.Bytes())
-	s.Require().NoError(err)
-	s.Require().NotNil(block)
-
 	// TODO: parse Tm block to Ethereum and compare
 }
 
-func (s *IntegrationTestSuite) TestHash() {
+func (s *IntegrationTestSuite) TestHeader() {
 	blockNum, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
 	s.Require().NoError(err)
 	s.Require().NotZero(blockNum)
+
+	bn := int64(blockNum)
+
+	block, err := s.network.Validators[0].RPCClient.Block(s.ctx, &bn)
+	s.Require().NoError(err)
+	s.Require().NotNil(block)
+
+	hash := common.BytesToHash(block.Block.Hash())
 
 	headerByNum, err := s.network.Validators[0].JSONRPCClient.HeaderByNumber(s.ctx, new(big.Int).SetUint64(blockNum))
 	s.Require().NoError(err)
 	s.Require().NotNil(headerByNum)
 
-	hash := headerByNum.Hash()
 	headerByHash, err := s.network.Validators[0].JSONRPCClient.HeaderByHash(s.ctx, hash)
 	s.Require().NoError(err)
 	s.Require().NotNil(headerByHash)
 	s.Require().Equal(headerByNum, headerByHash)
-
-	block, err := s.network.Validators[0].RPCClient.BlockByHash(s.ctx, hash.Bytes())
-	s.Require().NoError(err)
-	s.Require().NotNil(block)
 
 	header := rpctypes.EthHeaderFromTendermint(block.Block.Header, headerByHash.BaseFee)
 	s.Require().NotNil(header)
