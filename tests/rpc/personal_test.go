@@ -142,3 +142,13 @@ func TestPersonal_LockAccount(t *testing.T) {
 	_, err = CallWithError("personal_sign", []interface{}{hexutil.Bytes{0x88}, addr, ""})
 	require.Error(t, err)
 }
+
+func TestPersonal_Unpair(t *testing.T) {
+	_, err := CallWithError("personal_unpair", []interface{}{"", ""})
+	require.Equal(t, "smartcard wallet not supported yet", err.Error())
+}
+
+func TestPersonal_InitializeWallet(t *testing.T) {
+	_, err := CallWithError("personal_initializeWallet", []interface{}{""})
+	require.Equal(t, "smartcard wallet not supported yet", err.Error())
+}

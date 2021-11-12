@@ -74,6 +74,12 @@ var (
 
 	// ERC20Contract is the compiled test erc20 contract
 	ERC20Contract CompiledContract
+
+	//go:embed TestMessageCall.json
+	testMessageCallJSON []byte
+
+	// TestMessageCall is the compiled message call benchmark contract
+	TestMessageCall CompiledContract
 )
 
 func init() {
@@ -83,6 +89,15 @@ func init() {
 	}
 
 	if len(ERC20Contract.Bin) == 0 {
+		panic("load contract failed")
+	}
+
+	err = json.Unmarshal(testMessageCallJSON, &TestMessageCall)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(TestMessageCall.Bin) == 0 {
 		panic("load contract failed")
 	}
 }

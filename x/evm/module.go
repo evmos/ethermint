@@ -76,7 +76,7 @@ func (b AppModuleBasic) RegisterGRPCGatewayRoutes(c client.Context, serveMux *ru
 
 // GetTxCmd returns the root tx command for the evm module.
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
-	return nil
+	return cli.GetTxCmd()
 }
 
 // GetQueryCmd returns no root query command for the evm module.
