@@ -53,6 +53,7 @@ type Backend interface {
 	// Blockchain API
 	BlockNumber() (hexutil.Uint64, error)
 	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
+	GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	BlockByNumber(blockNum types.BlockNumber) (*ethtypes.Block, error)
@@ -300,6 +301,21 @@ func (e *EVMBackend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tm
 
 	if resBlock.Block == nil {
 		e.logger.Debug("GetBlockByNumber block not found", "height", height)
+		return nil, nil
+	}
+
+	return resBlock, nil
+}
+
+// GetTendermintBlockByHash returns a Tendermint format block by block number
+func (e *EVMBackend) GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error) {
+	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, blockHash.Bytes())
+	if err != nil {
+		e.logger.Debug("tendermint client failed to get block", "blockHash", blockHash.Hex(), "error", err.Error())
+	}
+
+	if resBlock == nil || resBlock.Block == nil {
+		e.logger.Debug("GetBlockByNumber block not found", "blockHash", blockHash.Hex())
 		return nil, nil
 	}
 
