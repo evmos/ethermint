@@ -2,6 +2,7 @@ syntax = "proto3";
 package ethermint.evm.v1;
 
 import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
 import "google/protobuf/any.proto";
 import "cosmos_proto/cosmos.proto";
 import "ethermint/evm/v1/evm.proto";
@@ -11,7 +12,9 @@ option go_package = "github.com/tharsis/ethermint/x/evm/types";
 // Msg defines the evm Msg service.
 service Msg {
   // EthereumTx defines a method submitting Ethereum transactions.
-  rpc EthereumTx(MsgEthereumTx) returns (MsgEthereumTxResponse);
+  rpc EthereumTx(MsgEthereumTx) returns (MsgEthereumTxResponse) {
+    option (google.api.http).post = "/ethermint/evm/v1/ethereum_tx";
+  };
 }
 
 // MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.

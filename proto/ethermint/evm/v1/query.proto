@@ -6,6 +6,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "google/api/annotations.proto";
 import "ethermint/evm/v1/evm.proto";
 import "ethermint/evm/v1/tx.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/tharsis/ethermint/x/evm/types";
 
@@ -64,6 +65,11 @@ service Query {
   // TraceTx implements the `debug_traceTransaction` rpc api
   rpc TraceTx(QueryTraceTxRequest) returns (QueryTraceTxResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/trace_tx";
+  }
+
+  // TraceBlock implements the `debug_traceBlockByNumber` and `debug_traceBlockByHash` rpc api
+  rpc TraceBlock(QueryTraceBlockRequest) returns (QueryTraceBlockResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1/trace_block";
   }
 }
 
@@ -228,6 +234,15 @@ message QueryTraceTxRequest {
   uint64 tx_index = 2;
   // TraceConfig holds extra parameters to trace functions.
   TraceConfig trace_config = 3;
+  // the predecessor transactions included in the same block
+  // need to be replayed first to get correct context for tracing.
+  repeated MsgEthereumTx predecessors = 4;
+  // block number of requested transaction
+  int64 block_number = 5;
+  // block hex hash of requested transaction
+  string block_hash = 6;
+  // block time of requested transaction
+  google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 }
 
 // QueryTraceTxResponse defines TraceTx response
@@ -235,3 +250,23 @@ message QueryTraceTxResponse {
   // response serialized in bytes
   bytes data = 1;
 }
+
+// QueryTraceBlockRequest defines TraceTx request
+message QueryTraceBlockRequest {
+  // txs messages in the block
+  repeated MsgEthereumTx txs = 1;
+  // TraceConfig holds extra parameters to trace functions.
+  TraceConfig trace_config = 3;
+  // block number
+  int64 block_number = 5;
+  // block hex hash
+  string block_hash = 6;
+  // block time
+  google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+}
+
+// QueryTraceBlockResponse defines TraceBlock response
+message QueryTraceBlockResponse {
+  bytes data = 1;
+}
+
