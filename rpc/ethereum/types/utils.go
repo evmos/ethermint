@@ -8,7 +8,6 @@ import (
 	"math/big"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -87,11 +86,14 @@ func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Contex
 // transactions.
 func FormatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
-	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
+	gasUsed *big.Int, transactions []interface{}, bloom ethtypes.Bloom,
 	validatorAddr common.Address, baseFee *big.Int,
 ) map[string]interface{} {
-	if len(header.DataHash) == 0 {
-		header.DataHash = tmbytes.HexBytes(common.Hash{}.Bytes())
+	var transactionsRoot common.Hash
+	if len(transactions) == 0 {
+		transactionsRoot = ethtypes.EmptyRootHash
+	} else {
+		transactionsRoot = common.BytesToHash(header.DataHash)
 	}
 
 	return map[string]interface{}{
@@ -110,7 +112,7 @@ func FormatBlock(
 		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
 		"gasUsed":          (*hexutil.Big)(gasUsed),
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
-		"transactionsRoot": hexutil.Bytes(header.DataHash),
+		"transactionsRoot": transactionsRoot,
 		"receiptsRoot":     ethtypes.EmptyRootHash,
 		"baseFeePerGas":    (*hexutil.Big)(baseFee),
 
