@@ -19,6 +19,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.11.9 // indirect
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
+	github.com/onsi/ginkgo v1.16.5
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
@@ -41,8 +42,6 @@ require (
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-require github.com/onsi/ginkgo v1.16.5
 
 require (
 	filippo.io/edwards25519 v1.0.0-beta.2 // indirect
