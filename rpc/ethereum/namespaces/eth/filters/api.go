@@ -260,7 +260,7 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 
 				baseFee := types.BaseFeeFromEvents(data.ResultEndBlock.Events)
 
-				header := types.EthHeaderFromTendermint(data.Header, baseFee)
+				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
 				api.filtersMu.Lock()
 				if f, found := api.filters[headerSub.ID()]; found {
 					f.hashes = append(f.hashes, header.Hash())
@@ -312,7 +312,8 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 
 				baseFee := types.BaseFeeFromEvents(data.ResultEndBlock.Events)
 
-				header := types.EthHeaderFromTendermint(data.Header, baseFee)
+				// TODO: fetch bloom from events
+				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
 				err = notifier.Notify(rpcSub.ID, header)
 				if err != nil {
 					headersSub.err <- err

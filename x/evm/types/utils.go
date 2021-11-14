@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -94,7 +93,7 @@ func BinSearch(lo, hi uint64, executable func(uint64) (bool, *MsgEthereumTxRespo
 // SafeNewIntFromBigInt constructs Int from big.Int, return error if more than 256bits
 func SafeNewIntFromBigInt(i *big.Int) (sdk.Int, error) {
 	if !IsValidInt256(i) {
-		return sdk.NewInt(0), errors.New("SafeNewIntFromBigInt() out of bound") // nolint
+		return sdk.NewInt(0), fmt.Errorf("big int out of bound: %s", i)
 	}
 	return sdk.NewIntFromBigInt(i), nil
 }

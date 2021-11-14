@@ -60,12 +60,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
 * (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 * (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
-* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers 
+* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
 * (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
 * (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) Fix debug JSON RPC handler crash on non-existing block
 
 ### Improvements
 
+* (tests) [tharsis#704](https://github.com/tharsis/ethermint/pull/704) Introduce E2E testing framework for clients
 * (deps) [tharsis#737](https://github.com/tharsis/ethermint/pull/737) Bump ibc-go to [`v2.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v2.0.0)
 * (rpc) [tharsis#671](https://github.com/tharsis/ethermint/pull/671) Don't pass base fee externally for `EthCall`/`EthEstimateGas` apis.
 * (evm) [tharsis#674](https://github.com/tharsis/ethermint/pull/674) Refactor `ApplyMessage`, remove

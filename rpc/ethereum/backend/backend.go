@@ -239,8 +239,7 @@ func (e *EVMBackend) EthBlockFromTm(block *tmtypes.Block) (*ethtypes.Block, erro
 		return nil, err
 	}
 
-	ethHeader := types.EthHeaderFromTendermint(block.Header, baseFee)
-	ethHeader.Bloom = bloom
+	ethHeader := types.EthHeaderFromTendermint(block.Header, bloom, baseFee)
 
 	var txs []*ethtypes.Transaction
 	for _, txBz := range block.Txs {
@@ -490,8 +489,7 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 		return nil, err
 	}
 
-	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, baseFee)
-	ethHeader.Bloom = bloom
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, bloom, baseFee)
 	return ethHeader, nil
 }
 
@@ -518,8 +516,7 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 		return nil, err
 	}
 
-	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, baseFee)
-	ethHeader.Bloom = bloom
+	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, bloom, baseFee)
 	return ethHeader, nil
 }
 
