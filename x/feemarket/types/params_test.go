@@ -11,10 +11,6 @@ type ParamsTestSuite struct {
 	suite.Suite
 }
 
-func (suite *ParamsTestSuite) SetupTest() {
-
-}
-
 func TestParamsTestSuite(t *testing.T) {
 	suite.Run(t, new(ParamsTestSuite))
 }
