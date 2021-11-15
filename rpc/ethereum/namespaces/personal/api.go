@@ -241,7 +241,7 @@ func (api *PrivateAccountAPI) InitializeWallet(_ context.Context, url string) (s
 
 // rawWallet is a JSON representation of an accounts.Wallet interface, with its
 // data contents extracted into plain fields.
-type rawWallet struct {
+type RawWallet struct {
 	URL      string             `json:"url"`
 	Status   string             `json:"status"`
 	Failure  string             `json:"failure,omitempty"`
@@ -249,8 +249,8 @@ type rawWallet struct {
 }
 
 // ListWallets will return a list of wallets this node manages.
-func (api *PrivateAccountAPI) ListWallets() []rawWallet {
+func (api *PrivateAccountAPI) ListWallets() []RawWallet {
 	api.logger.Debug("personal_ListWallets")
 	api.logger.Info("currently wallet level that manages accounts is not supported")
-	return ([]rawWallet)(nil)
+	return ([]RawWallet)(nil)
 }
