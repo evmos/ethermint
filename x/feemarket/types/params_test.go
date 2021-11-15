@@ -55,19 +55,6 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 			NewParams(true, 7, 3, 2000000000, int64(-544435345345435345)),
 			true,
 		},
-		// {
-		// 	"invalid eip",
-		// 	Params{
-		// 		EvmDenom:  "stake",
-		// 		ExtraEIPs: []int64{1},
-		// 	},
-		// 	true,
-		// },
-		// {
-		// 	"invalid chain config",
-		// 	NewParams("ara", true, true, ChainConfig{}, 2929, 1884, 1344),
-		// 	false,
-		// },
 	}
 
 	for _, tc := range testCases {
@@ -79,4 +66,20 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 			suite.Require().NoError(err, tc.name)
 		}
 	}
+}
+
+func (suite *ParamsTestSuite) TestParamsValidatePriv() {
+	suite.Require().Error(validateBool(2))
+	suite.Require().NoError(validateBool(true))
+	suite.Require().Error(validateBaseFeeChangeDenominator(0))
+	suite.Require().Error(validateBaseFeeChangeDenominator(uint32(0)))
+	suite.Require().NoError(validateBaseFeeChangeDenominator(uint32(7)))
+	suite.Require().Error(validateElasticityMultiplier(""))
+	suite.Require().NoError(validateElasticityMultiplier(uint32(2)))
+	suite.Require().Error(validateInitialBaseFee(""))
+	suite.Require().Error(validateInitialBaseFee(int64(-2000000000)))
+	suite.Require().NoError(validateInitialBaseFee(int64(2000000000)))
+	suite.Require().Error(validateEnableHeight(""))
+	suite.Require().Error(validateEnableHeight(int64(-544435345345435345)))
+	suite.Require().NoError(validateEnableHeight(int64(544435345345435345)))
 }
