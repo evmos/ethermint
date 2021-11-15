@@ -238,3 +238,19 @@ func (api *PrivateAccountAPI) InitializeWallet(_ context.Context, url string) (s
 	// TODO: Smartcard wallet not supported yet, refer to: https://github.com/ethereum/go-ethereum/blob/master/accounts/scwallet/README.md
 	return "", fmt.Errorf("smartcard wallet not supported yet")
 }
+
+// RawWallet is a JSON representation of an accounts.Wallet interface, with its
+// data contents extracted into plain fields.
+type RawWallet struct {
+	URL      string             `json:"url"`
+	Status   string             `json:"status"`
+	Failure  string             `json:"failure,omitempty"`
+	Accounts []accounts.Account `json:"accounts,omitempty"`
+}
+
+// ListWallets will return a list of wallets this node manages.
+func (api *PrivateAccountAPI) ListWallets() []RawWallet {
+	api.logger.Debug("personal_ListWallets")
+	api.logger.Info("currently wallet level that manages accounts is not supported")
+	return ([]RawWallet)(nil)
+}

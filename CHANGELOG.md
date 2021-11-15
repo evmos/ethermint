@@ -49,8 +49,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#624](https://github.com/tharsis/ethermint/pull/624) Implement new JSON-RPC endpoints from latest geth version
 * (evm) [tharsis#662](https://github.com/tharsis/ethermint/pull/662) Disable basefee for non london blocks
 * (cmd) [tharsis#712](https://github.com/tharsis/ethermint/pull/712) add tx cli to build evm transaction
-* (rpc) [tharsis#733](https://github.com/tharsis/ethermint/pull/733) add JSON_RPC endpoint personal_unpair
-* (rpc) [tharsis#740](https://github.com/tharsis/ethermint/pull/740) add JSON_RPC endpoint personal_initializeWallet
+* (rpc) [tharsis#733](https://github.com/tharsis/ethermint/pull/733) add JSON_RPC endpoint `personal_unpair`
+* (rpc) [tharsis#740](https://github.com/tharsis/ethermint/pull/740) add JSON_RPC endpoint `personal_initializeWallet`
+* (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) add JSON_RPC endpoint `debug_traceBlockByHash`
+* (rpc) [tharsis#748](https://github.com/tharsis/ethermint/pull/748) add JSON_RPC endpoint `personal_listWallets`
 
 ### Bug Fixes
 
@@ -59,12 +61,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
 * (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 * (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
-* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers 
+* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
 * (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
 * (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs 
+* (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) Fix debug JSON RPC handler crash on non-existing block
 
 ### Improvements
 
+* (tests) [tharsis#704](https://github.com/tharsis/ethermint/pull/704) Introduce E2E testing framework for clients
 * (deps) [tharsis#737](https://github.com/tharsis/ethermint/pull/737) Bump ibc-go to [`v2.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v2.0.0)
 * (rpc) [tharsis#671](https://github.com/tharsis/ethermint/pull/671) Don't pass base fee externally for `EthCall`/`EthEstimateGas` apis.
 * (evm) [tharsis#674](https://github.com/tharsis/ethermint/pull/674) Refactor `ApplyMessage`, remove

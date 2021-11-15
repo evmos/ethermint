@@ -5,19 +5,15 @@ package client
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
 
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/spf13/cobra"
-
 	tmconfig "github.com/tendermint/tendermint/config"
-	tmos "github.com/tendermint/tendermint/libs/os"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
@@ -26,7 +22,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/server"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdkserver "github.com/cosmos/cosmos-sdk/server"
 	srvconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -41,119 +38,190 @@ import (
 
 	"github.com/tharsis/ethermint/crypto/hd"
 	"github.com/tharsis/ethermint/server/config"
+	srvflags "github.com/tharsis/ethermint/server/flags"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+
+	"github.com/tharsis/ethermint/testutil/network"
 )
 
 var (
-	flagNodeDirPrefix  = "node-dir-prefix"
-	flagNumValidators  = "v"
-	flagOutputDir      = "output-dir"
-	flagNodeDaemonHome = "node-daemon-home"
-	flagCoinDenom      = "coin-denom"
-	flagIPAddrs        = "ip-addresses"
+	flagNodeDirPrefix     = "node-dir-prefix"
+	flagNumValidators     = "v"
+	flagOutputDir         = "output-dir"
+	flagNodeDaemonHome    = "node-daemon-home"
+	flagStartingIPAddress = "starting-ip-address"
+	flagEnableLogging     = "enable-logging"
+	flagRPCAddress        = "rpc.address"
+	flagAPIAddress        = "api.address"
+	flagPrintMnemonic     = "print-mnemonic"
 )
 
-const nodeDirPerm = 0o755
+type initArgs struct {
+	algo              string
+	chainID           string
+	keyringBackend    string
+	minGasPrices      string
+	nodeDaemonHome    string
+	nodeDirPrefix     string
+	numValidators     int
+	outputDir         string
+	startingIPAddress string
+}
 
-// TestnetCmd initializes all files for tendermint testnet and application
-func TestnetCmd(
-	mbm module.BasicManager, genBalancesIterator banktypes.GenesisBalancesIterator,
-) *cobra.Command {
+type startArgs struct {
+	algo           string
+	apiAddress     string
+	chainID        string
+	grpcAddress    string
+	minGasPrices   string
+	outputDir      string
+	rpcAddress     string
+	jsonrpcAddress string
+	numValidators  int
+	enableLogging  bool
+	printMnemonic  bool
+}
+
+func addTestnetFlagsToCmd(cmd *cobra.Command) {
+	cmd.Flags().Int(flagNumValidators, 4, "Number of validators to initialize the testnet with")
+	cmd.Flags().StringP(flagOutputDir, "o", "./.testnets", "Directory to store initialization data for the testnet")
+	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
+	cmd.Flags().String(sdkserver.FlagMinGasPrices, fmt.Sprintf("0.000006%s", ethermint.AttoPhoton), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
+	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.EthSecp256k1Type), "Key signing algorithm to generate keys for")
+}
+
+// NewTestnetCmd creates a root testnet command with subcommands to run an in-process testnet or initialize
+// validator configuration files for running a multi-validator testnet in a separate process
+func NewTestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
+	testnetCmd := &cobra.Command{
+		Use:                        "testnet",
+		Short:                      "subcommands for starting or configuring local testnets",
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
+	}
+
+	testnetCmd.AddCommand(testnetStartCmd())
+	testnetCmd.AddCommand(testnetInitFilesCmd(mbm, genBalIterator))
+
+	return testnetCmd
+}
+
+// get cmd to initialize all files for tendermint testnet and application
+func testnetInitFilesCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "testnet",
-		Short: "Initialize files for a Ethermint testnet",
-		Long: `testnet will create "v" number of directories and populate each with
-necessary files (private validator, genesis, config, etc.).
+		Use:   "init-files",
+		Short: "Initialize config directories & files for a multi-validator testnet running locally via separate processes (e.g. Docker Compose or similar)",
+		Long: `init-files will setup "v" number of directories and populate each with
+necessary files (private validator, genesis, config, etc.) for running "v" validator nodes.
 
-Note, strict routability for addresses is turned off in the config file.`,
+Booting up a network with these validator folders is intended to be used with Docker Compose,
+or a similar setup where each node has a manually configurable IP address.
 
-		Example: "ethermintd testnet --v 4 --keyring-backend test --output-dir ./output --ip-addresses 192.168.10.2",
+Note, strict routability for addresses is turned off in the config file.
+
+Example:
+	evmosd testnet init-files --v 4 --output-dir ./.testnets --starting-ip-address 192.168.10.2
+	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			clientCtx := client.GetClientContextFromCmd(cmd)
-
-			serverCtx := server.GetServerContextFromCmd(cmd)
-			config := serverCtx.Config
-
-			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
-			keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
-			chainID, _ := cmd.Flags().GetString(flags.FlagChainID)
-			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
-			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
-			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
-			ipAddresses, _ := cmd.Flags().GetStringSlice(flagIPAddrs)
-			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
-			coinDenom, _ := cmd.Flags().GetString(flagCoinDenom)
-
-			if len(ipAddresses) == 0 {
-				return errors.New("IP address list cannot be empty")
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
 			}
 
-			return InitTestnet(
-				clientCtx, cmd, config, mbm, genBalancesIterator, outputDir, chainID, coinDenom, minGasPrices,
-				nodeDirPrefix, nodeDaemonHome, keyringBackend, algo, ipAddresses, numValidators,
-			)
+			serverCtx := sdkserver.GetServerContextFromCmd(cmd)
+
+			args := initArgs{}
+			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
+			args.keyringBackend, _ = cmd.Flags().GetString(flags.FlagKeyringBackend)
+			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
+			args.minGasPrices, _ = cmd.Flags().GetString(sdkserver.FlagMinGasPrices)
+			args.nodeDirPrefix, _ = cmd.Flags().GetString(flagNodeDirPrefix)
+			args.nodeDaemonHome, _ = cmd.Flags().GetString(flagNodeDaemonHome)
+			args.startingIPAddress, _ = cmd.Flags().GetString(flagStartingIPAddress)
+			args.numValidators, _ = cmd.Flags().GetInt(flagNumValidators)
+			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+
+			return initTestnetFiles(clientCtx, cmd, serverCtx.Config, mbm, genBalIterator, args)
 		},
 	}
 
-	cmd.Flags().Int(flagNumValidators, 4, "Number of validators to initialize the testnet with")
-	cmd.Flags().StringP(flagOutputDir, "o", "./mytestnet", "Directory to store initialization data for the testnet")
+	addTestnetFlagsToCmd(cmd)
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
-	cmd.Flags().String(flagNodeDaemonHome, "ethermintd", "Home directory of the node's daemon configuration")
-	cmd.Flags().StringSlice(flagIPAddrs, []string{"192.168.0.1"}, "List of IP addresses to use (i.e. `192.168.0.1,172.168.0.1` results in persistent peers list ID0@192.168.0.1:46656, ID1@172.168.0.1)")
-	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(server.FlagMinGasPrices, "", "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01inj,0.001stake)")
+	cmd.Flags().String(flagNodeDaemonHome, "evmosd", "Home directory of the node's daemon configuration")
+	cmd.Flags().String(flagStartingIPAddress, "192.168.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
-	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.EthSecp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().String(flagCoinDenom, ethermint.AttoPhoton, "Coin denomination used for staking, governance, mint, crisis and evm parameters")
+
 	return cmd
 }
 
-// InitTestnet initializes the testnet configuration
-func InitTestnet(
+// get cmd to start multi validator in-process testnet
+func testnetStartCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start",
+		Short: "Launch an in-process multi-validator testnet",
+		Long: `testnet will launch an in-process multi-validator testnet,
+and generate "v" directories, populated with necessary validator configuration files
+(private validator, genesis, config, etc.).
+
+Example:
+	evmosd testnet --v 4 --output-dir ./.testnets
+	`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			args := startArgs{}
+			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
+			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
+			args.minGasPrices, _ = cmd.Flags().GetString(sdkserver.FlagMinGasPrices)
+			args.numValidators, _ = cmd.Flags().GetInt(flagNumValidators)
+			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			args.enableLogging, _ = cmd.Flags().GetBool(flagEnableLogging)
+			args.rpcAddress, _ = cmd.Flags().GetString(flagRPCAddress)
+			args.apiAddress, _ = cmd.Flags().GetString(flagAPIAddress)
+			args.grpcAddress, _ = cmd.Flags().GetString(srvflags.GRPCAddress)
+			args.jsonrpcAddress, _ = cmd.Flags().GetString(srvflags.JSONRPCAddress)
+			args.printMnemonic, _ = cmd.Flags().GetBool(flagPrintMnemonic)
+
+			return startTestnet(cmd, args)
+		},
+	}
+
+	addTestnetFlagsToCmd(cmd)
+	cmd.Flags().Bool(flagEnableLogging, false, "Enable INFO logging of tendermint validator nodes")
+	cmd.Flags().String(flagRPCAddress, "tcp://0.0.0.0:26657", "the RPC address to listen on")
+	cmd.Flags().String(flagAPIAddress, "tcp://0.0.0.0:1317", "the address to listen on for REST API")
+	cmd.Flags().String(srvflags.GRPCAddress, config.DefaultGRPCAddress, "the gRPC server address to listen on")
+	cmd.Flags().String(srvflags.JSONRPCAddress, config.DefaultJSONRPCAddress, "the JSON-RPC server address to listen on")
+	cmd.Flags().Bool(flagPrintMnemonic, true, "print mnemonic of first validator to stdout for manual testing")
+	return cmd
+}
+
+const nodeDirPerm = 0o755
+
+// initTestnetFiles initializes testnet files for a testnet to be run in a separate process
+func initTestnetFiles(
 	clientCtx client.Context,
 	cmd *cobra.Command,
 	nodeConfig *tmconfig.Config,
 	mbm module.BasicManager,
 	genBalIterator banktypes.GenesisBalancesIterator,
-	outputDir,
-	chainID,
-	coinDenom,
-	minGasPrices,
-	nodeDirPrefix,
-	nodeDaemonHome,
-	keyringBackend,
-	algoStr string,
-	ipAddresses []string,
-	numValidators int,
+	args initArgs,
 ) error {
-	if chainID == "" {
-		chainID = fmt.Sprintf("ethermint_%d-1", tmrand.Int63n(9999999999999)+1)
+
+	if args.chainID == "" {
+		args.chainID = fmt.Sprintf("ethermint_%d-1", tmrand.Int63n(9999999999999)+1)
 	}
 
-	if !ethermint.IsValidChainID(chainID) {
-		return fmt.Errorf("invalid chain-id: %s", chainID)
-	}
-
-	if err := sdk.ValidateDenom(coinDenom); err != nil {
-		return err
-	}
-
-	if len(ipAddresses) != 0 {
-		numValidators = len(ipAddresses)
-	}
-
-	nodeIDs := make([]string, numValidators)
-	valPubKeys := make([]cryptotypes.PubKey, numValidators)
+	nodeIDs := make([]string, args.numValidators)
+	valPubKeys := make([]cryptotypes.PubKey, args.numValidators)
 
 	appConfig := config.DefaultConfig()
-	appConfig.MinGasPrices = minGasPrices
+	appConfig.MinGasPrices = args.minGasPrices
 	appConfig.API.Enable = true
 	appConfig.Telemetry.Enabled = true
 	appConfig.Telemetry.PrometheusRetentionTime = 60
 	appConfig.Telemetry.EnableHostnameLabel = false
-	appConfig.Telemetry.GlobalLabels = [][]string{{"chain_id", chainID}}
+	appConfig.Telemetry.GlobalLabels = [][]string{{"chain_id", args.chainID}}
 
 	var (
 		genAccounts []authtypes.GenesisAccount
@@ -163,65 +231,51 @@ func InitTestnet(
 
 	inBuf := bufio.NewReader(cmd.InOrStdin())
 	// generate private keys, node IDs, and initial transactions
-	for i := 0; i < numValidators; i++ {
-		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
-		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
-		gentxsDir := filepath.Join(outputDir, "gentxs")
+	for i := 0; i < args.numValidators; i++ {
+		nodeDirName := fmt.Sprintf("%s%d", args.nodeDirPrefix, i)
+		nodeDir := filepath.Join(args.outputDir, nodeDirName, args.nodeDaemonHome)
+		gentxsDir := filepath.Join(args.outputDir, "gentxs")
 
 		nodeConfig.SetRoot(nodeDir)
 		nodeConfig.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 
 		if err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm); err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(args.outputDir)
 			return err
 		}
 
 		nodeConfig.Moniker = nodeDirName
 
-		var (
-			ip  string
-			err error
-		)
-
-		if len(ipAddresses) == 1 {
-			ip, err = getIP(i, ipAddresses[0])
-			if err != nil {
-				_ = os.RemoveAll(outputDir)
-				return err
-			}
-		} else {
-			ip = ipAddresses[i]
+		ip, err := getIP(i, args.startingIPAddress)
+		if err != nil {
+			_ = os.RemoveAll(args.outputDir)
+			return err
 		}
 
 		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(nodeConfig)
 		if err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(args.outputDir)
 			return err
 		}
 
 		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
 		genFiles = append(genFiles, nodeConfig.GenesisFile())
 
-		kb, err := keyring.New(
-			sdk.KeyringServiceName(),
-			keyringBackend,
-			nodeDir,
-			inBuf,
-			hd.EthSecp256k1Option(),
-		)
+		kb, err := keyring.New(sdk.KeyringServiceName(), args.keyringBackend, nodeDir, inBuf, hd.EthSecp256k1Option())
 		if err != nil {
 			return err
 		}
 
 		keyringAlgos, _ := kb.SupportedAlgorithms()
-		algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
+		algo, err := keyring.NewSigningAlgoFromString(args.algo, keyringAlgos)
 		if err != nil {
 			return err
 		}
 
-		addr, secret, err := server.GenerateSaveCoinKey(kb, nodeDirName, true, algo)
+		// TODO: remove when using Cosmos SDK v0.45
+		addr, secret, err := GenerateSaveCoinKey(kb, nodeDirName, true, algo)
 		if err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(args.outputDir)
 			return err
 		}
 
@@ -233,16 +287,16 @@ func InitTestnet(
 		}
 
 		// save private key seed words
-		if err := writeFile(fmt.Sprintf("%v.json", "key_seed"), nodeDir, cliPrint); err != nil {
+		if err := network.WriteFile(fmt.Sprintf("%v.json", "key_seed"), nodeDir, cliPrint); err != nil {
 			return err
 		}
 
 		accStakingTokens := sdk.TokensFromConsensusPower(5000, ethermint.PowerReduction)
-		coins := sdk.NewCoins(
-			sdk.NewCoin(coinDenom, accStakingTokens),
-		)
+		coins := sdk.Coins{
+			sdk.NewCoin(ethermint.AttoPhoton, accStakingTokens),
+		}
 
-		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins})
+		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
 		genAccounts = append(genAccounts, &ethermint.EthAccount{
 			BaseAccount: authtypes.NewBaseAccount(addr, nil, 0, 0),
 			CodeHash:    common.BytesToHash(evmtypes.EmptyCodeHash).Hex(),
@@ -252,7 +306,7 @@ func InitTestnet(
 		createValMsg, err := stakingtypes.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
-			sdk.NewCoin(coinDenom, valTokens),
+			sdk.NewCoin(ethermint.AttoPhoton, valTokens),
 			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
 			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 			sdk.OneInt(),
@@ -270,12 +324,12 @@ func InitTestnet(
 
 		txFactory := tx.Factory{}
 		txFactory = txFactory.
-			WithChainID(chainID).
+			WithChainID(args.chainID).
 			WithMemo(memo).
 			WithKeybase(kb).
 			WithTxConfig(clientCtx.TxConfig)
 
-		if err := tx.Sign(txFactory, nodeDirName, txBuilder, false); err != nil {
+		if err := tx.Sign(txFactory, nodeDirName, txBuilder, true); err != nil {
 			return err
 		}
 
@@ -284,26 +338,32 @@ func InitTestnet(
 			return err
 		}
 
-		if err := writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz); err != nil {
+		if err := network.WriteFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz); err != nil {
+			return err
+		}
+
+		customAppTemplate, customAppConfig := config.AppConfig(ethermint.AttoPhoton)
+		srvconfig.SetConfigTemplate(customAppTemplate)
+		if err := sdkserver.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig); err != nil {
 			return err
 		}
 
 		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), appConfig)
 	}
 
-	if err := initGenFiles(clientCtx, mbm, chainID, coinDenom, genAccounts, genBalances, genFiles, numValidators); err != nil {
+	if err := initGenFiles(clientCtx, mbm, args.chainID, ethermint.AttoPhoton, genAccounts, genBalances, genFiles, args.numValidators); err != nil {
 		return err
 	}
 
 	err := collectGenFiles(
-		clientCtx, nodeConfig, chainID, nodeIDs, valPubKeys, numValidators,
-		outputDir, nodeDirPrefix, nodeDaemonHome, genBalIterator,
+		clientCtx, nodeConfig, args.chainID, nodeIDs, valPubKeys, args.numValidators,
+		args.outputDir, args.nodeDirPrefix, args.nodeDaemonHome, genBalIterator,
 	)
 	if err != nil {
 		return err
 	}
 
-	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators)
+	cmd.PrintErrf("Successfully initialized %d node directories\n", args.numValidators)
 	return nil
 }
 
@@ -317,8 +377,8 @@ func initGenFiles(
 	genFiles []string,
 	numValidators int,
 ) error {
-	appGenState := mbm.DefaultGenesis(clientCtx.Codec)
 
+	appGenState := mbm.DefaultGenesis(clientCtx.Codec)
 	// set the accounts in the genesis state
 	var authGenState authtypes.GenesisState
 	clientCtx.Codec.MustUnmarshalJSON(appGenState[authtypes.ModuleName], &authGenState)
@@ -393,6 +453,7 @@ func collectGenFiles(
 	nodeIDs []string, valPubKeys []cryptotypes.PubKey, numValidators int,
 	outputDir, nodeDirPrefix, nodeDaemonHome string, genBalIterator banktypes.GenesisBalancesIterator,
 ) error {
+
 	var appState json.RawMessage
 	genTime := tmtime.Now()
 
@@ -435,7 +496,7 @@ func collectGenFiles(
 
 func getIP(i int, startingIPAddr string) (ip string, err error) {
 	if len(startingIPAddr) == 0 {
-		ip, err = server.ExternalIP()
+		ip, err = sdkserver.ExternalIP()
 		if err != nil {
 			return "", err
 		}
@@ -457,19 +518,80 @@ func calculateIP(ip string, i int) (string, error) {
 	return ipv4.String(), nil
 }
 
-func writeFile(name, dir string, contents []byte) error {
-	writePath := filepath.Join(dir)
-	file := filepath.Join(writePath, name)
+// startTestnet starts an in-process testnet
+func startTestnet(cmd *cobra.Command, args startArgs) error {
+	networkConfig := network.DefaultConfig()
 
-	err := tmos.EnsureDir(writePath, 0o755)
+	// Default networkConfig.ChainID is random, and we should only override it if chainID provided
+	// is non-empty
+	if args.chainID != "" {
+		networkConfig.ChainID = args.chainID
+	}
+	networkConfig.SigningAlgo = args.algo
+	networkConfig.MinGasPrices = args.minGasPrices
+	networkConfig.NumValidators = args.numValidators
+	networkConfig.EnableTMLogging = args.enableLogging
+	networkConfig.RPCAddress = args.rpcAddress
+	networkConfig.APIAddress = args.apiAddress
+	networkConfig.GRPCAddress = args.grpcAddress
+	networkConfig.JSONRPCAddress = args.jsonrpcAddress
+	networkConfig.PrintMnemonic = args.printMnemonic
+	networkLogger := network.NewCLILogger(cmd)
+
+	baseDir := fmt.Sprintf("%s/%s", args.outputDir, networkConfig.ChainID)
+	if _, err := os.Stat(baseDir); !os.IsNotExist(err) {
+		return fmt.Errorf(
+			"testnests directory already exists for chain-id '%s': %s, please remove or select a new --chain-id",
+			networkConfig.ChainID, baseDir)
+	}
+
+	testnet, err := network.New(networkLogger, baseDir, networkConfig)
 	if err != nil {
 		return err
 	}
 
-	err = tmos.WriteFile(file, contents, 0o644)
+	_, err = testnet.WaitForHeight(1)
 	if err != nil {
 		return err
 	}
+
+	cmd.Println("press the Enter Key to terminate")
+	fmt.Scanln() // wait for Enter Key
+	testnet.Cleanup()
 
 	return nil
+}
+
+// TODO: remove
+
+// GenerateSaveCoinKey returns the address of a public key, along with the secret
+// phrase to recover the private key.
+func GenerateSaveCoinKey(keybase keyring.Keyring, keyName string, overwrite bool, algo keyring.SignatureAlgo) (sdk.AccAddress, string, error) {
+	exists := false
+	_, err := keybase.Key(keyName)
+	if err == nil {
+		exists = true
+	}
+
+	// ensure no overwrite
+	if !overwrite && exists {
+		return sdk.AccAddress([]byte{}), "", fmt.Errorf(
+			"key already exists, overwrite is disabled")
+	}
+
+	// generate a private key, with recovery phrase
+	if exists {
+		err = keybase.Delete(keyName)
+		if err != nil {
+			return sdk.AccAddress([]byte{}), "", fmt.Errorf(
+				"failed to overwrite key")
+		}
+	}
+
+	info, secret, err := keybase.NewMnemonic(keyName, keyring.English, sdk.GetConfig().GetFullBIP44Path(), keyring.DefaultBIP39Passphrase, algo)
+	if err != nil {
+		return sdk.AccAddress([]byte{}), "", err
+	}
+
+	return sdk.AccAddress(info.GetPubKey().Address()), secret, nil
 }
