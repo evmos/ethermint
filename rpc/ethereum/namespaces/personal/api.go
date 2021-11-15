@@ -239,7 +239,7 @@ func (api *PrivateAccountAPI) InitializeWallet(_ context.Context, url string) (s
 	return "", fmt.Errorf("smartcard wallet not supported yet")
 }
 
-// rawWallet is a JSON representation of an accounts.Wallet interface, with its
+// RawWallet is a JSON representation of an accounts.Wallet interface, with its
 // data contents extracted into plain fields.
 type RawWallet struct {
 	URL      string             `json:"url"`
