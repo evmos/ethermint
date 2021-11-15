@@ -523,7 +523,7 @@ func (k *Keeper) traceTx(
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
-		tracer = types.NewTracer(types.TracerStruct, msg, ethCfg, ctx.BlockHeight(), true)
+		tracer = types.NewTracer(types.TracerStruct, msg, ethCfg, ctx.BlockHeight())
 	}
 
 	k.SetTxHashTransient(txHash)
