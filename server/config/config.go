@@ -138,7 +138,7 @@ func DefaultEVMConfig() *EVMConfig {
 
 // Validate returns an error if the tracer type is invalid.
 func (c EVMConfig) Validate() error {
-	if !strings.StringInSlice(c.Tracer, evmTracers) {
+	if c.Tracer != "" && !strings.StringInSlice(c.Tracer, evmTracers) {
 		return fmt.Errorf("invalid tracer type %s, available types: %v", c.Tracer, evmTracers)
 	}
 
