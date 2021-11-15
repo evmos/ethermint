@@ -21,10 +21,10 @@ const (
 
 // NewTracer creates a new Logger tracer to collect execution traces from an
 // EVM transaction.
-func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height int64, debug bool) vm.Tracer {
+func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height int64) vm.Tracer {
 	// TODO: enable additional log configuration
 	logCfg := &vm.LogConfig{
-		Debug: debug,
+		Debug: true,
 	}
 
 	switch tracer {
