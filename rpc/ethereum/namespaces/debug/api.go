@@ -474,3 +474,10 @@ func (a *API) SeedHash(number uint64) (string, error) {
 
 	return fmt.Sprintf("0x%x", ethash.SeedHash(number)), nil
 }
+
+// IntermediateRoots executes a block, and returns a list
+// of intermediate roots: the stateroot after each transaction.
+func (a *API) IntermediateRoots(hash common.Hash, _ *evmtypes.TraceConfig) ([]common.Hash, error) {
+	a.logger.Debug("debug_intermediateRoots", "hash", hash)
+	return ([]common.Hash)(nil), nil
+}
