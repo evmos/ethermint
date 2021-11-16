@@ -80,9 +80,7 @@ func (k Keeper) VMConfig(params types.Params, tracer vm.Tracer) vm.Config {
 	fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
 
 	var debug bool
-	if _, ok := tracer.(types.NoOpTracer); ok {
-		debug = false
-	} else {
+	if _, ok := tracer.(types.NoOpTracer); !ok {
 		debug = true
 	}
 
