@@ -79,6 +79,7 @@ type Backend interface {
 
 	ChainConfig() *params.ChainConfig
 	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
+	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock) []*evmtypes.MsgEthereumTx
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -370,6 +371,13 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 			tx := ethMsg.AsTransaction()
 
+			// check tx exists on EVM and it has the correct block height
+			ethTx, err := e.GetTxByEthHash(tx.Hash())
+			if err != nil || ethTx.Height != block.Height {
+				e.logger.Debug("failed to query eth tx", "hash", tx.Hash().Hex())
+				continue
+			}
+
 			if !fullTx {
 				hash := tx.Hash()
 				ethRPCTxs = append(ethRPCTxs, hash)
@@ -641,11 +649,12 @@ func (e *EVMBackend) GetCoinbase() (sdk.AccAddress, error) {
 // GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
 func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
 	res, err := e.GetTxByEthHash(txHash)
+	hexTx := txHash.Hex()
 	if err != nil {
 		// try to find tx in mempool
 		txs, err := e.PendingTransactions()
 		if err != nil {
-			e.logger.Debug("tx not found", "hash", txHash.Hex(), "error", err.Error())
+			e.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
 			return nil, nil
 		}
 
@@ -656,7 +665,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 				continue
 			}
 
-			if msg.Hash == txHash.Hex() {
+			if msg.Hash == hexTx {
 				rpctx, err := types.NewTransactionFromMsg(
 					msg,
 					common.Hash{},
@@ -671,7 +680,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 			}
 		}
 
-		e.logger.Debug("tx not found", "hash", txHash.Hex())
+		e.logger.Debug("tx not found", "hash", hexTx)
 		return nil, nil
 	}
 
@@ -681,23 +690,23 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 		return nil, nil
 	}
 
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
-	if err != nil {
-		e.logger.Debug("decoding failed", "error", err.Error())
-		return nil, fmt.Errorf("failed to decode tx: %w", err)
+	var txIndex uint64
+	msgs := e.GetEthereumMsgsFromTendermintBlock(resBlock)
+
+	for i := range msgs {
+		if msgs[i].Hash == hexTx {
+			txIndex = uint64(i)
+			break
+		}
 	}
 
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
-	}
+	msg := msgs[txIndex]
 
 	return types.NewTransactionFromMsg(
 		msg,
 		common.BytesToHash(resBlock.Block.Hash()),
 		uint64(res.Height),
-		uint64(res.Index),
+		txIndex,
 		e.chainID,
 	)
 }
@@ -999,6 +1008,39 @@ BLOCKS:
 	}
 
 	return matchedBlocks, nil
+}
+
+// GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
+// It also ensures consistency over the correct txs indexes across RPC endpoints
+func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock) []*evmtypes.MsgEthereumTx {
+	var result []*evmtypes.MsgEthereumTx
+
+	for _, tx := range block.Block.Txs {
+		tx, err := e.clientCtx.TxConfig.TxDecoder()(tx)
+		if err != nil {
+			e.logger.Debug("failed to decode transaction in block", "height", block.Block.Height, "error", err.Error())
+			continue
+		}
+
+		for _, msg := range tx.GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				continue
+			}
+
+			hash := ethMsg.AsTransaction().Hash()
+			// check tx exists on EVM and has the correct block height
+			ethTx, err := e.GetTxByEthHash(hash)
+			if err != nil || ethTx.Height != block.Block.Height {
+				e.logger.Debug("failed to query eth tx hash", "hash", hash.Hex())
+				continue
+			}
+
+			result = append(result, ethMsg)
+		}
+	}
+
+	return result
 }
 
 // checkMatches revised the function from
