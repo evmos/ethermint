@@ -239,8 +239,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	k.WithContext(ctx)
 
 	// refund gas according to Ethereum gas accounting rules.
-	err = k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom)
-	if err != nil {
+	if err := k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom); err != nil {
 		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
