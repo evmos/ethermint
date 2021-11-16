@@ -14,12 +14,12 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v2.4.0
-      - uses: technote-space/get-diff-action@v5
-        with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
+      # - uses: technote-space/get-diff-action@v5
+      #   with:
+      #     SUFFIX_FILTER: |
+      #       .go
+      #       .mod
+      #       .sum
       - name: Run Gosec Security Scanner
         uses: informalsystems/gosec@master
         with:
@@ -30,4 +30,4 @@ jobs:
         with:
           # Path to SARIF file relative to the root of the repository
           sarif_file: results.sarif
-        if: "env.GIT_DIFF != ''"
+        # if: "env.GIT_DIFF != ''"
