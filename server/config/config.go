@@ -25,14 +25,14 @@ const (
 	DefaultJSONRPCWsAddress = "0.0.0.0:8546"
 
 	// DefaultEVMTracer is the default vm.Tracer type
-	DefaultEVMTracer = "json"
+	DefaultEVMTracer = ""
 
 	DefaultGasCap uint64 = 25000000
 
 	DefaultFilterCap int32 = 200
 )
 
-var evmTracers = []string{DefaultEVMTracer, "markdown", "struct", "access_list"}
+var evmTracers = []string{"json", "markdown", "struct", "access_list"}
 
 // Config defines the server's top level configuration. It includes the default app config
 // from the SDK as well as the EVM configuration to enable the JSON-RPC APIs.
@@ -129,7 +129,7 @@ func DefaultEVMConfig() *EVMConfig {
 
 // Validate returns an error if the tracer type is invalid.
 func (c EVMConfig) Validate() error {
-	if !strings.StringInSlice(c.Tracer, evmTracers) {
+	if c.Tracer != "" && !strings.StringInSlice(c.Tracer, evmTracers) {
 		return fmt.Errorf("invalid tracer type %s, available types: %v", c.Tracer, evmTracers)
 	}
 

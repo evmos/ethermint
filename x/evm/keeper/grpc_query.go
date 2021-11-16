@@ -231,7 +231,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+	tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight())
 	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 
 	// pass true means execute in query mode, which don't do actual gas refund.
@@ -308,7 +308,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 
 		msg := args.ToMessage(req.GasCap)
 
-		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight(), k.debug)
+		tracer := types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight())
 		evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
 		// pass true means execute in query mode, which don't do actual gas refund.
 		rsp, err := k.ApplyMessage(evm, msg, ethCfg, true)
@@ -519,7 +519,7 @@ func (k *Keeper) traceTx(
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
-		tracer = types.NewTracer(types.TracerStruct, msg, ethCfg, ctx.BlockHeight(), true)
+		tracer = types.NewTracer(types.TracerStruct, msg, ethCfg, ctx.BlockHeight())
 	}
 
 	evm := k.NewEVM(msg, ethCfg, params, coinbase, tracer)
