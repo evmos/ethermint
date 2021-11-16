@@ -1029,7 +1029,7 @@ func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.Result
 			}
 
 			hash := ethMsg.AsTransaction().Hash()
-			//check tx exists on EVM and has the correct block height
+			// check tx exists on EVM and has the correct block height
 			ethTx, err := e.GetTxByEthHash(hash)
 			if err != nil || ethTx.Height != block.Block.Height {
 				e.logger.Debug("failed to query eth tx hash", "hash", hash.Hex())
