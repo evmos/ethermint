@@ -56,6 +56,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (evm) [tharsis#746](https://github.com/tharsis/ethermint/pull/746) Set EVM debugging based on tracer configuration.
 * (app,cli) [tharsis#725](https://github.com/tharsis/ethermint/pull/725) Fix cli-config for  `keys` command.
 * (rpc) [tharsis#727](https://github.com/tharsis/ethermint/pull/727) Decode raw transaction using RLP.
 * (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.

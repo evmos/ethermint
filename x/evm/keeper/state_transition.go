@@ -70,17 +70,22 @@ func (k *Keeper) NewEVM(
 	if tracer == nil {
 		tracer = k.Tracer(msg, cfg.ChainConfig)
 	}
-	vmConfig := k.VMConfig(msg, cfg.Params, tracer)
+	vmConfig := k.VMConfig(cfg.Params, tracer)
 	return vm.NewEVM(blockCtx, txCtx, k, cfg.ChainConfig, vmConfig)
 }
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
+func (k Keeper) VMConfig(params types.Params, tracer vm.Tracer) vm.Config {
 	fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
 
+	var debug bool
+	if _, ok := tracer.(types.NoOpTracer); !ok {
+		debug = true
+	}
+
 	return vm.Config{
-		Debug:       k.debug,
+		Debug:       debug,
 		Tracer:      tracer,
 		NoRecursion: false, // TODO: consider disabling recursion though params
 		NoBaseFee:   fmParams.NoBaseFee,
