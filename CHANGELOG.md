@@ -42,6 +42,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm, ante) [tharsis#620](https://github.com/tharsis/ethermint/pull/620) Add fee market field to EVM `Keeper` and `AnteHandler`.
 * (all) [tharsis#231](https://github.com/tharsis/ethermint/pull/231) Bump go-ethereum version to [`v1.10.9`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.9)
 * (ante) [tharsis#703](https://github.com/tharsis/ethermint/pull/703) Fix some fields in transaction are not authenticated by signature.
+* (evm) [tharsis#751](https://github.com/tharsis/ethermint/pull/751) don't revert gas refund logic when transaction reverted
 
 ### Features
 
