@@ -732,11 +732,12 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 
 // GetTransactionReceipt returns the transaction receipt identified by hash.
 func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
-	e.logger.Debug("eth_getTransactionReceipt", "hash", hash.Hex())
+	hexTx := hash.Hex()
+	e.logger.Debug("eth_getTransactionReceipt", "hash", hexTx)
 
 	res, err := e.backend.GetTxByEthHash(hash)
 	if err != nil {
-		e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
+		e.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
 		return nil, nil
 	}
 
@@ -790,14 +791,14 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	logs, err := e.backend.GetTransactionLogs(hash)
 	if err != nil {
-		e.logger.Debug("logs not found", "hash", hash.Hex(), "error", err.Error())
+		e.logger.Debug("logs not found", "hash", hexTx, "error", err.Error())
 	}
 
 	// get eth index based on block's txs
 	var txIndex uint64
 	msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
 	for i := range msgs {
-		if msgs[i].Hash == hash.Hex() {
+		if msgs[i].Hash == hexTx {
 			txIndex = uint64(i)
 			break
 		}

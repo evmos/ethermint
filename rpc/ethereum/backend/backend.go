@@ -649,11 +649,12 @@ func (e *EVMBackend) GetCoinbase() (sdk.AccAddress, error) {
 // GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
 func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
 	res, err := e.GetTxByEthHash(txHash)
+	hexTx := txHash.Hex()
 	if err != nil {
 		// try to find tx in mempool
 		txs, err := e.PendingTransactions()
 		if err != nil {
-			e.logger.Debug("tx not found", "hash", txHash.Hex(), "error", err.Error())
+			e.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
 			return nil, nil
 		}
 
@@ -664,7 +665,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 				continue
 			}
 
-			if msg.Hash == txHash.Hex() {
+			if msg.Hash == hexTx {
 				rpctx, err := types.NewTransactionFromMsg(
 					msg,
 					common.Hash{},
@@ -679,7 +680,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 			}
 		}
 
-		e.logger.Debug("tx not found", "hash", txHash.Hex())
+		e.logger.Debug("tx not found", "hash", hexTx)
 		return nil, nil
 	}
 
@@ -691,9 +692,10 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 
 	var txIndex uint64
 	msgs := e.GetEthereumMsgsFromTendermintBlock(resBlock)
+
 	for i := range msgs {
 
-		if msgs[i].Hash == txHash.Hex() {
+		if msgs[i].Hash == hexTx {
 			txIndex = uint64(i)
 			break
 		}
