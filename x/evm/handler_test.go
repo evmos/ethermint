@@ -526,7 +526,7 @@ func (suite *EvmTestSuite) TestErrorWhenDeployContract() {
 	// TODO: snapshot checking
 }
 
-func (suite *EvmTestSuite) deployTestRevertContract() common.Address {
+func (suite *EvmTestSuite) deployERC20Contract() common.Address {
 	k := suite.app.EvmKeeper
 	nonce := k.GetNonce(suite.from)
 	ctorArgs, err := types.ERC20Contract.ABI.Pack("", suite.from, big.NewInt(0))
@@ -550,6 +550,7 @@ func (suite *EvmTestSuite) deployTestRevertContract() common.Address {
 	return crypto.CreateAddress(suite.from, nonce)
 }
 
+// TestGasRefundWhenReverted check that when transaction reverted, gas refund should still work.
 func (suite *EvmTestSuite) TestGasRefundWhenReverted() {
 	suite.SetupTest()
 	k := suite.app.EvmKeeper
@@ -560,7 +561,7 @@ func (suite *EvmTestSuite) TestGasRefundWhenReverted() {
 	// add some fund to pay gas fee
 	k.AddBalance(suite.from, big.NewInt(10000000000))
 
-	contract := suite.deployTestRevertContract()
+	contract := suite.deployERC20Contract()
 
 	// the call will fail because no balance
 	data, err := types.ERC20Contract.ABI.Pack("transfer", common.BigToAddress(big.NewInt(1)), big.NewInt(10))
