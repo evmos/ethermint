@@ -268,7 +268,8 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 		return nil
 	}
 
-	n := hexutil.Uint(len(resBlock.Block.Txs))
+	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	n := hexutil.Uint(len(ethMsgs))
 	return &n
 }
 
@@ -286,7 +287,8 @@ func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumb
 		return nil
 	}
 
-	n := hexutil.Uint(len(resBlock.Block.Txs))
+	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	n := hexutil.Uint(len(ethMsgs))
 	return &n
 }
 
@@ -526,23 +528,13 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 	}
 
 	i := int(idx)
-	if i >= len(resBlock.Block.Txs) {
+	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	if i >= len(ethMsgs) {
 		e.logger.Debug("block txs index out of bound", "index", i)
 		return nil, nil
 	}
 
-	txBz := resBlock.Block.Txs[i]
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
-	if err != nil {
-		e.logger.Debug("decoding failed", "error", err.Error())
-		return nil, fmt.Errorf("failed to decode tx: %w", err)
-	}
-
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
-	}
+	msg := ethMsgs[i]
 
 	return rpctypes.NewTransactionFromMsg(
 		msg,
@@ -569,23 +561,13 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 	}
 
 	i := int(idx)
-	if i >= len(resBlock.Block.Txs) {
+	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	if i >= len(ethMsgs) {
 		e.logger.Debug("block txs index out of bound", "index", i)
 		return nil, nil
 	}
 
-	txBz := resBlock.Block.Txs[i]
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
-	if err != nil {
-		e.logger.Debug("decoding failed", "error", err.Error())
-		return nil, fmt.Errorf("failed to decode tx: %w", err)
-	}
-
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
-	}
+	msg := ethMsgs[i]
 
 	return rpctypes.NewTransactionFromMsg(
 		msg,
@@ -598,11 +580,12 @@ func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockN
 
 // GetTransactionReceipt returns the transaction receipt identified by hash.
 func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
-	e.logger.Debug("eth_getTransactionReceipt", "hash", hash.Hex())
+	hexTx := hash.Hex()
+	e.logger.Debug("eth_getTransactionReceipt", "hash", hexTx)
 
 	res, err := e.backend.GetTxByEthHash(hash)
 	if err != nil {
-		e.logger.Debug("tx not found", "hash", hash.Hex(), "error", err.Error())
+		e.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
 		return nil, nil
 	}
 
@@ -656,7 +639,17 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	logs, err := e.backend.GetTransactionLogs(hash)
 	if err != nil {
-		e.logger.Debug("logs not found", "hash", hash.Hex(), "error", err.Error())
+		e.logger.Debug("logs not found", "hash", hexTx, "error", err.Error())
+	}
+
+	// get eth index based on block's txs
+	var txIndex uint64
+	msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	for i := range msgs {
+		if msgs[i].Hash == hexTx {
+			txIndex = uint64(i)
+			break
+		}
 	}
 
 	receipt := map[string]interface{}{
@@ -677,7 +670,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		// transaction corresponding to this receipt.
 		"blockHash":        common.BytesToHash(resBlock.Block.Header.Hash()).Hex(),
 		"blockNumber":      hexutil.Uint64(res.Height),
-		"transactionIndex": hexutil.Uint64(res.Index),
+		"transactionIndex": hexutil.Uint64(txIndex),
 
 		// sender and receiver (contract or EOA) addreses
 		"from": from,
@@ -696,7 +689,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	return receipt, nil
 }
 
-// PendingTransactions returns the transactions that are in the transaction pool
+// GetPendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
 func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getPendingTransactions")
