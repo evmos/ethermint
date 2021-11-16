@@ -694,7 +694,6 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 	msgs := e.GetEthereumMsgsFromTendermintBlock(resBlock)
 
 	for i := range msgs {
-
 		if msgs[i].Hash == hexTx {
 			txIndex = uint64(i)
 			break
