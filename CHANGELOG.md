@@ -35,6 +35,26 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.7.2-cronos-2] - 2021-11-17
+
+### Bug Fixes
+- [tharsis#720](https://github.com/tharsis/ethermint/pull/720) traceTransaction fails for succesful tx
+- [tharsis#743](https://github.com/tharsis/ethermint/pull/743) missing debug_tranceBlockByHash RPC method and fix debug_traceBlock*
+- [tharsis#746](https://github.com/tharsis/ethermint/pull/746) set debug based on tracer
+- [tharsis#741](https://github.com/tharsis/ethermint/pull/741) filter non eth txs in block rpc response
+- [crypto-org-chain/ethermint#12](https://github.com/crypto-org-chain/ethermint/pull/12) reject tx with too large gas limit
+
+
+## [v0.7.2-cronos] - 2021-10-26
+
+### State Machine Breaking
+
+* (ante) [tharsis#689](https://github.com/tharsis/ethermint/pull/689) Fix some fields in transaction are not authenticated by signature.
+
+### Bug Fixes
+
+* (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
+
 ## [v0.7.2] - 2021-10-24
 
 ### Improvements
