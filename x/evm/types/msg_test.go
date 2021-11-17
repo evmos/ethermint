@@ -363,7 +363,7 @@ func encodeDecodeBinary(tx *ethtypes.Transaction) (*types.MsgEthereumTx, error) 
 	if err != nil {
 		return nil, fmt.Errorf("rlp encoding failed: %v", err)
 	}
-	var parsedTx = &types.MsgEthereumTx{}
+	parsedTx := &types.MsgEthereumTx{}
 	if err := parsedTx.UnmarshalBinary(data); err != nil {
 		return nil, fmt.Errorf("rlp decoding failed: %v", err)
 	}

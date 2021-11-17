@@ -1053,3 +1053,24 @@ func TestEth_EthResend(t *testing.T) {
 	_, rpcerror := callWithError("eth_resend", param)
 	require.Equal(t, "transaction 0x3bf28b46ee1bb3925e50ec6003f899f95913db4b0f579c4e7e887efebf9ecd1b not found", fmt.Sprintf("%s", rpcerror))
 }
+
+func TestEth_FeeHistory(t *testing.T) {
+	params := make([]interface{}, 0)
+	params = append(params, 4)
+	params = append(params, "0x1c")
+	params = append(params, []int{25, 75})
+
+	rpcRes := call(t, "eth_feeHistory", params)
+
+	info := make(map[string]interface{})
+	err := json.Unmarshal(rpcRes.Result, &info)
+	require.NoError(t, err)
+	reward := info["reward"].([]interface{})
+	baseFeePerGas := info["baseFeePerGas"].([]interface{})
+	gasUsedRatio := info["gasUsedRatio"].([]interface{})
+
+	require.Equal(t, info["oldestBlock"].(string), "0x18")
+	require.Equal(t, 4, len(gasUsedRatio))
+	require.Equal(t, 4, len(baseFeePerGas))
+	require.Equal(t, 4, len(reward))
+}

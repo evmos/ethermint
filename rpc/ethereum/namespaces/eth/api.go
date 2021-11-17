@@ -212,8 +212,7 @@ func (e *PublicAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
 
 func (e *PublicAPI) FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error) {
 	e.logger.Debug("eth_feeHistory")
-
-	return nil, fmt.Errorf("eth_feeHistory not implemented")
+	return e.backend.FeeHistory(blockCount, lastBlock, rewardPercentiles)
 }
 
 // Accounts returns the list of accounts available to this node.

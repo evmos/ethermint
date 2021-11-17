@@ -436,7 +436,6 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 			} else {
 				suite.Require().Error(err)
 			}
-
 		})
 	}
 	suite.mintFeeCollector = false

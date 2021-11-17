@@ -15,6 +15,7 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"google.golang.org/grpc"
@@ -42,6 +43,9 @@ import (
 // Backend implements the functionality shared within namespaces.
 // Implemented by EVMBackend.
 type Backend interface {
+	// Fee API
+	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*types.FeeHistoryResult, error)
+
 	// General Ethereum API
 	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
 	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
@@ -76,7 +80,6 @@ type Backend interface {
 	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
 	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
 	GetFilteredBlocks(from int64, to int64, filter [][]filters.BloomIV, filterAddresses bool) ([]int64, error)
-
 	ChainConfig() *params.ChainConfig
 	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
 	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock) []*evmtypes.MsgEthereumTx
@@ -887,6 +890,11 @@ func (e *EVMBackend) RPCTxFeeCap() float64 {
 // RPCFilterCap is the limit for total number of filters that can be created
 func (e *EVMBackend) RPCFilterCap() int32 {
 	return e.cfg.JSONRPC.FilterCap
+}
+
+// RPCFeeHistoryCap is the limit for total number of blocks that can be fetched
+func (e *EVMBackend) RPCFeeHistoryCap() int32 {
+	return e.cfg.JSONRPC.FeeHistoryCap
 }
 
 // RPCMinGasPrice returns the minimum gas price for a transaction obtained from
