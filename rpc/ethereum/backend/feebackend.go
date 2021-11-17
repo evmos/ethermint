@@ -53,7 +53,7 @@ func (e *EVMBackend) processBlock(
 	if gasLimitUint64 <= 0 {
 		return fmt.Errorf("gasLimit of block height %d should be bigger than 0 , current gaslimit %d", blockHeight, gasLimitUint64)
 	}
-	
+
 	gasUsedRatio := gasusedfloat / float64(gasLimitUint64)
 	blockGasUsed := gasusedfloat
 	targetOneFeeHistory.GasUsedRatio = gasUsedRatio
@@ -119,7 +119,7 @@ func (e *EVMBackend) FeeHistory(
 	userBlockCount rpc.DecimalOrHex, // number blocks to fetch, maximum is 100
 	lastBlock rpc.BlockNumber, // the block to start search , to oldest
 	rewardPercentiles []float64, // percentiles to fetch reward
-)  (*rpctypes.FeeHistoryResult, error) {
+) (*rpctypes.FeeHistoryResult, error) {
 	blockEnd := int64(lastBlock)
 
 	if blockEnd <= 0 {

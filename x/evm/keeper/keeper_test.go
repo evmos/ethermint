@@ -111,7 +111,7 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 		stateBytes, err := tmjson.MarshalIndent(genesisState, "", " ")
 		require.NoError(t, err)
 
-		//Initialize the chain
+		// Initialize the chain
 		suite.app.InitChain(
 			abci.RequestInitChain{
 				ChainId:         "ethermint_9000-1",
