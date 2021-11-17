@@ -374,6 +374,13 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, fmt.Errorf("invalid transaction type %T", tx)
 	}
 
+	// hotfix, reject tx with too high gas limit
+	// FIXME remove after real fix is used: https://github.com/tharsis/ethermint/pull/751
+	if ethereumTx.GetGas() > rpctypes.RPCTxGasCap {
+		e.logger.Debug("gas limit too large", "gasLimit", fmt.Sprintf("%d", ethereumTx.GetGas()))
+		return common.Hash{}, fmt.Errorf("gas limit too large %d", ethereumTx.GetGas())
+	}
+
 	if err := ethereumTx.ValidateBasic(); err != nil {
 		e.logger.Debug("tx failed basic validation", "error", err.Error())
 		return common.Hash{}, err

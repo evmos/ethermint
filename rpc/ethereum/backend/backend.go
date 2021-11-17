@@ -607,6 +607,13 @@ func (e *EVMBackend) SendTransaction(args types.SendTxArgs) (common.Hash, error)
 
 	msg := args.ToTransaction()
 
+	// hotfix, reject tx with too high gas limit
+	// FIXME remove after real fix is used: https://github.com/tharsis/ethermint/pull/751
+	if msg.GetGas() > types.RPCTxGasCap {
+		e.logger.Debug("gas limit too large", "gasLimit", fmt.Sprintf("%d", msg.GetGas()))
+		return common.Hash{}, fmt.Errorf("gas limit too large %d", msg.GetGas())
+	}
+
 	if err := msg.ValidateBasic(); err != nil {
 		e.logger.Debug("tx failed basic validation", "error", err.Error())
 		return common.Hash{}, err
