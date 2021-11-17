@@ -10,7 +10,7 @@ option go_package = "github.com/tharsis/ethermint/x/evm/types";
 message GenesisState {
   // accounts is an array containing the ethereum genesis accounts.
   repeated GenesisAccount accounts = 1 [ (gogoproto.nullable) = false ];
-  // params defines all the paramaters of the module.
+  // params defines all the parameters of the module.
   Params params = 2 [ (gogoproto.nullable) = false ];
 }
 

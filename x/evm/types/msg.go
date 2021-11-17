@@ -1,14 +1,18 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	"github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
 	"github.com/tharsis/ethermint/types"
 
@@ -94,7 +98,7 @@ func newMsgEthereumTx(
 		}
 	case accesses != nil && gasFeeCap != nil && gasTipCap != nil:
 		gtc := sdk.NewIntFromBigInt(gasTipCap)
-		gfc := sdk.NewIntFromBigInt(gasTipCap)
+		gfc := sdk.NewIntFromBigInt(gasFeeCap)
 
 		txData = &DynamicFeeTx{
 			ChainID:   cid,
@@ -130,17 +134,21 @@ func newMsgEthereumTx(
 }
 
 // fromEthereumTx populates the message fields from the given ethereum transaction
-func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) {
-	txData := NewTxDataFromTx(tx)
+func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) error {
+	txData, err := NewTxDataFromTx(tx)
+	if err != nil {
+		return err
+	}
 
 	anyTxData, err := PackTxData(txData)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	msg.Data = anyTxData
 	msg.Size_ = float64(tx.Size())
 	msg.Hash = tx.Hash().Hex()
+	return nil
 }
 
 // Route returns the route value of an MsgEthereumTx.
@@ -225,8 +233,7 @@ func (msg *MsgEthereumTx) Sign(ethSigner ethtypes.Signer, keyringSigner keyring.
 		return err
 	}
 
-	msg.FromEthereumTx(tx)
-	return nil
+	return msg.FromEthereumTx(tx)
 }
 
 // GetGas implements the GasTx interface. It returns the GasLimit of the transaction.
@@ -278,4 +285,47 @@ func (msg *MsgEthereumTx) GetSender(chainID *big.Int) (common.Address, error) {
 // UnpackInterfaces implements UnpackInterfacesMesssage.UnpackInterfaces
 func (msg MsgEthereumTx) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	return unpacker.UnpackAny(msg.Data, new(TxData))
+}
+
+// UnmarshalBinary decodes the canonical encoding of transactions.
+func (msg *MsgEthereumTx) UnmarshalBinary(b []byte) error {
+	tx := &ethtypes.Transaction{}
+	if err := tx.UnmarshalBinary(b); err != nil {
+		return err
+	}
+	return msg.FromEthereumTx(tx)
+}
+
+// BuildTx builds the canonical cosmos tx from ethereum msg
+func (msg *MsgEthereumTx) BuildTx(b client.TxBuilder, evmDenom string) (signing.Tx, error) {
+	builder, ok := b.(authtx.ExtensionOptionsTxBuilder)
+	if !ok {
+		return nil, errors.New("unsupported builder")
+	}
+
+	option, err := codectypes.NewAnyWithValue(&ExtensionOptionsEthereumTx{})
+	if err != nil {
+		return nil, err
+	}
+
+	txData, err := UnpackTxData(msg.Data)
+	if err != nil {
+		return nil, err
+	}
+	fees := sdk.Coins{
+		{
+			Denom:  evmDenom,
+			Amount: sdk.NewIntFromBigInt(txData.Fee()),
+		},
+	}
+
+	builder.SetExtensionOptions(option)
+	err = builder.SetMsgs(msg)
+	if err != nil {
+		return nil, err
+	}
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(msg.GetGas())
+	tx := builder.GetTx()
+	return tx, nil
 }

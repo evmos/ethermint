@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -53,6 +54,8 @@ type EvmTestSuite struct {
 	ethSigner ethtypes.Signer
 	from      common.Address
 	to        sdk.AccAddress
+
+	dynamicTxFee bool
 }
 
 /// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
@@ -70,7 +73,15 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 	require.NoError(t, err)
 	consAddress := sdk.ConsAddress(priv.PubKey().Address())
 
-	suite.app = app.Setup(checkTx)
+	if suite.dynamicTxFee {
+		feemarketGenesis := feemarkettypes.DefaultGenesisState()
+		feemarketGenesis.Params.EnableHeight = 1
+		feemarketGenesis.Params.NoBaseFee = false
+		suite.app = app.Setup(checkTx, feemarketGenesis)
+	} else {
+		suite.app = app.Setup(checkTx, nil)
+	}
+
 	coins := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt(100000000000000)))
 	genesisState := app.ModuleBasics.DefaultGenesis(suite.app.AppCodec())
 	b32address := sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), priv.PubKey().Address().Bytes())
@@ -513,4 +524,86 @@ func (suite *EvmTestSuite) TestErrorWhenDeployContract() {
 	suite.Require().Equal("invalid opcode: opcode 0xa6 not defined", res.VmError, "correct evm error")
 
 	// TODO: snapshot checking
+}
+
+func (suite *EvmTestSuite) deployERC20Contract() common.Address {
+	k := suite.app.EvmKeeper
+	nonce := k.GetNonce(suite.from)
+	ctorArgs, err := types.ERC20Contract.ABI.Pack("", suite.from, big.NewInt(0))
+	suite.Require().NoError(err)
+	msg := ethtypes.NewMessage(
+		suite.from,
+		nil,
+		nonce,
+		big.NewInt(0),
+		2000000,
+		big.NewInt(1),
+		nil,
+		nil,
+		append(types.ERC20Contract.Bin, ctorArgs...),
+		nil,
+		true,
+	)
+	rsp, err := k.ApplyMessage(msg, nil, true)
+	suite.Require().NoError(err)
+	suite.Require().False(rsp.Failed())
+	return crypto.CreateAddress(suite.from, nonce)
+}
+
+// TestGasRefundWhenReverted check that when transaction reverted, gas refund should still work.
+func (suite *EvmTestSuite) TestGasRefundWhenReverted() {
+	suite.SetupTest()
+	k := suite.app.EvmKeeper
+
+	// the bug only reproduce when there are hooks
+	k.SetHooks(&DummyHook{})
+
+	// add some fund to pay gas fee
+	k.AddBalance(suite.from, big.NewInt(10000000000))
+
+	contract := suite.deployERC20Contract()
+
+	// the call will fail because no balance
+	data, err := types.ERC20Contract.ABI.Pack("transfer", common.BigToAddress(big.NewInt(1)), big.NewInt(10))
+	suite.Require().NoError(err)
+
+	tx := types.NewTx(
+		suite.chainID,
+		k.GetNonce(suite.from),
+		&contract,
+		big.NewInt(0),
+		41000,
+		big.NewInt(1),
+		nil,
+		nil,
+		data,
+		nil,
+	)
+	tx.From = suite.from.String()
+	err = tx.Sign(suite.ethSigner, suite.signer)
+	suite.Require().NoError(err)
+
+	before := k.GetBalance(suite.from)
+
+	txData, err := types.UnpackTxData(tx.Data)
+	suite.Require().NoError(err)
+	_, err = k.DeductTxCostsFromUserBalance(suite.ctx, *tx, txData, "aphoton", true, true, true)
+	suite.Require().NoError(err)
+
+	res, err := k.EthereumTx(sdk.WrapSDKContext(suite.ctx), tx)
+	suite.Require().NoError(err)
+	suite.Require().True(res.Failed())
+
+	after := k.GetBalance(suite.from)
+
+	suite.Require().Equal(uint64(21861), res.GasUsed)
+	// check gas refund works
+	suite.Require().Equal(big.NewInt(21861), new(big.Int).Sub(before, after))
+}
+
+// DummyHook implements EvmHooks interface
+type DummyHook struct{}
+
+func (dh *DummyHook) PostTxProcessing(ctx sdk.Context, txHash common.Hash, logs []*ethtypes.Log) error {
+	return nil
 }

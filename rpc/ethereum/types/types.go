@@ -1,6 +1,8 @@
 package types
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -78,4 +80,10 @@ type FeeHistoryResult struct {
 type SignTransactionResult struct {
 	Raw hexutil.Bytes         `json:"raw"`
 	Tx  *ethtypes.Transaction `json:"tx"`
+}
+
+type OneFeeHistory struct {
+	BaseFee      *big.Int   // base fee  for each block
+	Reward       []*big.Int // each element of the array will have the tip provided to miners for the percentile given
+	GasUsedRatio float64    // the ratio of gas used to the gas limit for each block
 }

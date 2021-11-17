@@ -15,23 +15,38 @@ USER1_MNEMONIC="copper push brief egg scan entry inform record adjust fossil bos
 USER2_KEY="user2"
 USER2_MNEMONIC="maximum display century economy unlock van census kite error heart snow filter midnight usage egg venture cash kick motor survey drastic edge muffin visual"
 
+# user3 address 0x40a0cb1C63e026A81B55EE1308586E21eec1eFa9
+USER3_KEY="user3"
+USER3_MNEMONIC="will wear settle write dance topic tape sea glory hotel oppose rebel client problem era video gossip glide during yard balance cancel file rose"
+
+# user4 address 0x498B5AeC5D439b733dC2F58AB489783A23FB26dA
+USER4_KEY="user4"
+USER4_MNEMONIC="doll midnight silk carpet brush boring pluck office gown inquiry duck chief aim exit gain never tennis crime fragile ship cloud surface exotic patch"
+
 # remove existing daemon and client
 rm -rf ~/.ethermint*
 
 # Import keys from mnemonics
-echo $VAL_MNEMONIC | ethermintd keys add $VAL_KEY --recover --keyring-backend test --algo "eth_secp256k1"
+echo $VAL_MNEMONIC   | ethermintd keys add $VAL_KEY   --recover --keyring-backend test --algo "eth_secp256k1"
 echo $USER1_MNEMONIC | ethermintd keys add $USER1_KEY --recover --keyring-backend test --algo "eth_secp256k1"
-echo $USER2_MNEMONIC | ethermintd keys add $USER2_KEY --recover --keyring-backend test  --algo "eth_secp256k1"
+echo $USER2_MNEMONIC | ethermintd keys add $USER2_KEY --recover --keyring-backend test --algo "eth_secp256k1"
+echo $USER3_MNEMONIC | ethermintd keys add $USER3_KEY --recover --keyring-backend test --algo "eth_secp256k1"
+echo $USER4_MNEMONIC | ethermintd keys add $USER4_KEY --recover --keyring-backend test --algo "eth_secp256k1"
 
 ethermintd init $MONIKER --chain-id $CHAINID
 
 # Set gas limit in genesis
 cat $HOME/.ethermintd/config/genesis.json | jq '.consensus_params["block"]["max_gas"]="10000000"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
 
+# Reduce the block time to 1s
+sed -i -e '/^timeout_commit =/ s/= .*/= "850ms"/' $HOME/.ethermintd/config/config.toml
+
 # Allocate genesis accounts (cosmos formatted addresses)
-ethermintd add-genesis-account "$(ethermintd keys show $VAL_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
+ethermintd add-genesis-account "$(ethermintd keys show $VAL_KEY   -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
 ethermintd add-genesis-account "$(ethermintd keys show $USER1_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
 ethermintd add-genesis-account "$(ethermintd keys show $USER2_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
+ethermintd add-genesis-account "$(ethermintd keys show $USER3_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
+ethermintd add-genesis-account "$(ethermintd keys show $USER4_KEY -a --keyring-backend test)" 1000000000000000000000aphoton,1000000000000000000stake --keyring-backend test
 
 # Sign genesis transaction
 ethermintd gentx $VAL_KEY 1000000000000000000stake --amount=1000000000000000000000aphoton --chain-id $CHAINID --keyring-backend test

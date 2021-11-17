@@ -3,7 +3,6 @@ package filters
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -239,9 +237,6 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 		return rpc.ID(fmt.Sprintf("error creating block filter: %s", err.Error()))
 	}
 
-	// TODO: use events to get the base fee amount
-	baseFee := big.NewInt(params.InitialBaseFee)
-
 	api.filters[headerSub.ID()] = &filter{typ: filters.BlocksSubscription, deadline: time.NewTimer(deadline), hashes: []common.Hash{}, s: headerSub}
 
 	go func(headersCh <-chan coretypes.ResultEvent, errCh <-chan error) {
@@ -263,7 +258,9 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 					continue
 				}
 
-				header := types.EthHeaderFromTendermint(data.Header, baseFee)
+				baseFee := types.BaseFeeFromEvents(data.ResultEndBlock.Events)
+
+				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
 				api.filtersMu.Lock()
 				if f, found := api.filters[headerSub.ID()]; found {
 					f.hashes = append(f.hashes, header.Hash())
@@ -296,9 +293,6 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 		return &rpc.Subscription{}, err
 	}
 
-	// TODO: use events to get the base fee amount
-	baseFee := big.NewInt(params.InitialBaseFee)
-
 	go func(headersCh <-chan coretypes.ResultEvent) {
 		defer cancelSubs()
 
@@ -316,7 +310,10 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 					continue
 				}
 
-				header := types.EthHeaderFromTendermint(data.Header, baseFee)
+				baseFee := types.BaseFeeFromEvents(data.ResultEndBlock.Events)
+
+				// TODO: fetch bloom from events
+				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
 				err = notifier.Notify(rpcSub.ID, header)
 				if err != nil {
 					headersSub.err <- err

@@ -6,8 +6,6 @@
   "dependencies": {
     "@truffle/hdwallet-provider": "^1.4.1",
     "concurrently": "^6.2.0",
-    "ganache-cli": "^6.12.2",
-    "truffle": "^5.3.3",
     "truffle-assertions": "^0.9.2"
   },
   "scripts": {

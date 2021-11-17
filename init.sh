@@ -25,7 +25,7 @@ ethermintd config chain-id $CHAINID
 ethermintd keys add $KEY --keyring-backend $KEYRING --algo $KEYALGO
 
 # Set moniker and chain-id for Ethermint (Moniker can be anything, chain-id must be an integer)
-ethermintd init $MONIKER --chain-id $CHAINID 
+ethermintd init $MONIKER --chain-id $CHAINID
 
 # Change parameter token denominations to aphoton
 cat $HOME/.ethermintd/config/genesis.json | jq '.app_state["staking"]["params"]["bond_denom"]="aphoton"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
@@ -87,4 +87,4 @@ if [[ $1 == "pending" ]]; then
 fi
 
 # Start the node (remove the --pruning=nothing flag if historical queries are not needed)
-ethermintd start --pruning=nothing $TRACE --log_level $LOGLEVEL --minimum-gas-prices=0.0001aphoton --json-rpc.api eth,txpool,personal,net,debug,web3,miner
+ethermintd start --pruning=nothing --evm.tracer=json $TRACE --log_level $LOGLEVEL --minimum-gas-prices=0.0001aphoton --json-rpc.api eth,txpool,personal,net,debug,web3,miner
