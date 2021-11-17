@@ -22,7 +22,7 @@ import (
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/tests"
 	ethermint "github.com/tharsis/ethermint/types"
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -66,7 +66,7 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	require.NoError(t, err)
 	suite.consAddress = sdk.ConsAddress(priv.PubKey().Address())
 
-	suite.app = app.Setup(checkTx)
+	suite.app = app.Setup(checkTx, nil)
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{
 		Height:          1,
 		ChainID:         "ethermint_9000-1",
@@ -93,7 +93,7 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	suite.app.EvmKeeper.WithContext(suite.ctx)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
-	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
+	types.RegisterQueryServer(queryHelper, suite.app.FeeMarketKeeper)
 	suite.queryClient = types.NewQueryClient(queryHelper)
 
 	acc := &ethermint.EthAccount{
