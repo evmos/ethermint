@@ -22,7 +22,7 @@ import (
 	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/tests"
 	ethermint "github.com/tharsis/ethermint/types"
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/tharsis/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -93,7 +93,7 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	suite.app.EvmKeeper.WithContext(suite.ctx)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
-	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
+	types.RegisterQueryServer(queryHelper, suite.app.FeeMarketKeeper)
 	suite.queryClient = types.NewQueryClient(queryHelper)
 
 	acc := &ethermint.EthAccount{
@@ -131,12 +131,6 @@ func (suite *KeeperTestSuite) TestSetGetBlockGasUsed() {
 		malleate func()
 		expGas   uint64
 	}{
-		// TODO How to test len(bz) = 0
-		// {
-		// 	"no KeyPrefixBlockGasUsed",
-		// 	func() {},
-		// 	uint64(0),
-		// },
 		{
 			"with last block given",
 			func() {
