@@ -893,7 +893,7 @@ func (e *EVMBackend) RPCFilterCap() int32 {
 }
 
 // RPCFeeHistoryCap is the limit for total number of blocks that can be fetched
-func (e *EVMBackend) RPCFeeHistgoryCap() int32 {
+func (e *EVMBackend) RPCFeeHistoryCap() int32 {
 	return e.cfg.JSONRPC.FeeHistoryCap
 }
 

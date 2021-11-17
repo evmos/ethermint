@@ -49,12 +49,12 @@ func (e *EVMBackend) processBlock(
 	gasLimitUint64 := (*ethBlock)["gasLimit"].(hexutil.Uint64)
 	gasUsedBig := (*ethBlock)["gasUsed"].(*hexutil.Big)
 	gasusedfloat, _ := new(big.Float).SetInt(gasUsedBig.ToInt()).Float64()
-	var gasUsedRatio float64
-	if gasLimitUint64 > 0 {
-		gasUsedRatio = gasusedfloat / float64(gasLimitUint64)
-	} else {
+
+	if gasLimitUint64 <= 0 {
 		return fmt.Errorf("gasLimit of block height %d should be bigger than 0 , current gaslimit %d", blockHeight, gasLimitUint64)
 	}
+	
+	gasUsedRatio := gasusedfloat / float64(gasLimitUint64)
 	blockGasUsed := gasusedfloat
 	targetOneFeeHistory.GasUsedRatio = gasUsedRatio
 
@@ -115,9 +115,11 @@ func (e *EVMBackend) processBlock(
 	return nil
 }
 
-func (e *EVMBackend) FeeHistory(userBlockCount rpc.DecimalOrHex, /* number blocks to fetch, maximum is 100 */
-	lastBlock rpc.BlockNumber, /* the block to start search , to oldest */
-	rewardPercentiles []float64) /* percentiles to fetch reward */ (*rpctypes.FeeHistoryResult, error) {
+func (e *EVMBackend) FeeHistory(
+	userBlockCount rpc.DecimalOrHex, // number blocks to fetch, maximum is 100
+	lastBlock rpc.BlockNumber, // the block to start search , to oldest
+	rewardPercentiles []float64, // percentiles to fetch reward
+)  (*rpctypes.FeeHistoryResult, error) {
 	blockEnd := int64(lastBlock)
 
 	if blockEnd <= 0 {
@@ -184,7 +186,6 @@ func (e *EVMBackend) FeeHistory(userBlockCount rpc.DecimalOrHex, /* number block
 		for j := 0; j < rewardcount; j++ {
 			reward[index][j] = (*hexutil.Big)(onefeehistory.Reward[j])
 		}
-
 	}
 
 	feeHistory := rpctypes.FeeHistoryResult{
