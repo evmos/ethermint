@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
@@ -11,7 +13,19 @@ import (
 	cmdcfg "github.com/tharsis/ethermint/cmd/config"
 )
 
+func extendSystemLimit() {
+	var rLimit syscall.Rlimit
+	rLimit.Max = 2_000_000
+	rLimit.Cur = 2_000_000
+	err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	if err != nil {
+		fmt.Println("Error Setting Rlimit ", err)
+	}
+}
+
 func main() {
+
+	extendSystemLimit()
 	setupConfig()
 	cmdcfg.RegisterDenoms()
 
