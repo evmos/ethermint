@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
@@ -31,40 +32,45 @@ func (suite *KeeperTestSuite) TestQueryParams() {
 }
 
 func (suite *KeeperTestSuite) TestQueryBaseFee() {
-	// var aux sdk.Int
+	var (
+		aux    sdk.Int
+		expRes *types.QueryBaseFeeResponse
+	)
 
 	testCases := []struct {
 		name     string
 		malleate func()
-		expRes   *types.QueryBaseFeeResponse
 		expPass  bool
 	}{
 		{
 			"pass - nil Base Fee",
-			func() {},
-			&types.QueryBaseFeeResponse{},
+			func() {
+				expRes = &types.QueryBaseFeeResponse{}
+			},
 			true,
 		},
-		// TODO non-nil Base Fee
-		// {
-		// 	"pass - non-nil Base Fee",
-		// 	func() {
-		// 		baseFee := sdk.OneInt().BigInt()
-		// 		suite.app.FeeMarketKeeper.SetBaseFee(suite.ctx, baseFee)
+		{
+			"pass - non-nil Base Fee",
+			func() {
+				baseFee := sdk.OneInt().BigInt()
+				suite.app.FeeMarketKeeper.SetBaseFee(suite.ctx, baseFee)
 
-		// 		aux = sdk.NewIntFromBigInt(baseFee)
-		// 	},
-		// 	&types.QueryBaseFeeResponse{BaseFee: &aux},
-		// 	true,
-		// },
+				aux = sdk.NewIntFromBigInt(baseFee)
+				expRes = &types.QueryBaseFeeResponse{BaseFee: &aux}
+			},
+			true,
+		},
 	}
 	for _, tc := range testCases {
 		fee := suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx)
 		fmt.Printf("baseFee: %v", fee)
 
+		tc.malleate()
+
 		res, err := suite.queryClient.BaseFee(suite.ctx.Context(), &types.QueryBaseFeeRequest{})
 		if tc.expPass {
-			suite.Require().Equal(tc.expRes, res, tc.name)
+			suite.Require().NotNil(res)
+			suite.Require().Equal(expRes, res, tc.name)
 			suite.Require().NoError(err)
 		} else {
 			suite.Require().Error(err)
