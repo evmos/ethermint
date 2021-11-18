@@ -30,17 +30,11 @@ parent:
   <a href="https://discord.gg/trje9XuAmy">
     <img alt="Discord" src="https://img.shields.io/discord/809048090249134080.svg" />
   </a>
-  <!-- <a href="https://github.com/tharsis/ethermint/actions?query=branch%3Amain+workflow%3ABuild">
-    <img alt="Build Status" src="https://github.com/tharsis/ethermint/actions/workflows/build.yml/badge.svg?branch=main" />
-  </a> -->
   <a href="https://github.com/tharsis/ethermint/actions?query=branch%3Amain+workflow%3ALint">
     <img alt="Lint Status" src="https://github.com/tharsis/ethermint/actions/workflows/lint.yml/badge.svg?branch=main" />
   </a>
   <a href="https://codecov.io/gh/tharsis/ethermint">
     <img alt="Code Coverage" src="https://codecov.io/gh/tharsis/ethermint/branch/main/graph/badge.svg" />
-  </a>
-    <a href="https://twitter.com/ethermint">
-    <img alt="Twitter Follow Ethermint" src="https://img.shields.io/twitter/follow/ethermint"/>
   </a>
 </div>
 
@@ -68,11 +62,10 @@ For an example on how Ethermint can be used on any Cosmos-SDK chain, please refe
 
 The following chat channels and forums are a great spot to ask questions about Ethermint:
 
+- [Evmos Twitter](https://twitter.com/EvmosOrg)
+- [Evmos Discord](https://discord.gg/trje9XuAmy)
+- [Evmos Telegram](https://t.me/EvmosOrg)
 - [Tharsis Twitter](https://twitter.com/TharsisHQ)
-- [Evmos Twitter](https://twitter.com/TharsisHQ)
-- [Ethermint Twitter](https://twitter.com/ethermint)
-- [Ethermint Discord](https://discord.gg/trje9XuAmy)
-- [Ethermint Forum](https://forum.cosmos.network/c/ethermint)
 
 ## Contributing
 

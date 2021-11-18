@@ -1,18 +1,20 @@
 package types
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"math/big"
 
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -36,7 +38,7 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEther
 
 // EthHeaderFromTendermint is an util function that returns an Ethereum Header
 // from a tendermint Header.
-func EthHeaderFromTendermint(header tmtypes.Header, baseFee *big.Int) *ethtypes.Header {
+func EthHeaderFromTendermint(header tmtypes.Header, bloom ethtypes.Bloom, baseFee *big.Int) *ethtypes.Header {
 	txHash := ethtypes.EmptyRootHash
 	if len(header.DataHash) == 0 {
 		txHash = common.BytesToHash(header.DataHash)
@@ -45,47 +47,21 @@ func EthHeaderFromTendermint(header tmtypes.Header, baseFee *big.Int) *ethtypes.
 	return &ethtypes.Header{
 		ParentHash:  common.BytesToHash(header.LastBlockID.Hash.Bytes()),
 		UncleHash:   ethtypes.EmptyUncleHash,
-		Coinbase:    common.Address{},
+		Coinbase:    common.BytesToAddress(header.ProposerAddress),
 		Root:        common.BytesToHash(header.AppHash),
 		TxHash:      txHash,
 		ReceiptHash: ethtypes.EmptyRootHash,
-		Bloom:       ethtypes.Bloom{},
+		Bloom:       bloom,
 		Difficulty:  big.NewInt(0),
 		Number:      big.NewInt(header.Height),
 		GasLimit:    0,
 		GasUsed:     0,
-		Time:        uint64(header.Time.Unix()),
-		Extra:       nil,
+		Time:        uint64(header.Time.UTC().Unix()),
+		Extra:       []byte{},
 		MixDigest:   common.Hash{},
 		Nonce:       ethtypes.BlockNonce{},
 		BaseFee:     baseFee,
 	}
-}
-
-// EthTransactionsFromTendermint returns a slice of ethereum transaction hashes and the total gas usage from a set of
-// tendermint block transactions.
-func EthTransactionsFromTendermint(clientCtx client.Context, txs []tmtypes.Tx) ([]common.Hash, *big.Int, error) {
-	transactionHashes := []common.Hash{}
-	gasUsed := big.NewInt(0)
-
-	for _, tx := range txs {
-		ethTx, err := RawTxToEthTx(clientCtx, tx)
-		if err != nil {
-			// continue to next transaction in case it's not a MsgEthereumTx
-			continue
-		}
-
-		data, err := evmtypes.UnpackTxData(ethTx.Data)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to unpack tx data: %w", err)
-		}
-
-		// TODO: Remove gas usage calculation if saving gasUsed per block
-		gasUsed.Add(gasUsed, data.Fee())
-		transactionHashes = append(transactionHashes, common.BytesToHash(tx.Hash()))
-	}
-
-	return transactionHashes, gasUsed, nil
 }
 
 // BlockMaxGasFromConsensusParams returns the gas limit for the latest block from the chain consensus params.
@@ -110,11 +86,14 @@ func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Contex
 // transactions.
 func FormatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
-	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
+	gasUsed *big.Int, transactions []interface{}, bloom ethtypes.Bloom,
 	validatorAddr common.Address, baseFee *big.Int,
 ) map[string]interface{} {
-	if len(header.DataHash) == 0 {
-		header.DataHash = tmbytes.HexBytes(common.Hash{}.Bytes())
+	var transactionsRoot common.Hash
+	if len(transactions) == 0 {
+		transactionsRoot = ethtypes.EmptyRootHash
+	} else {
+		transactionsRoot = common.BytesToHash(header.DataHash)
 	}
 
 	return map[string]interface{}{
@@ -133,7 +112,7 @@ func FormatBlock(
 		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
 		"gasUsed":          (*hexutil.Big)(gasUsed),
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
-		"transactionsRoot": hexutil.Bytes(header.DataHash),
+		"transactionsRoot": transactionsRoot,
 		"receiptsRoot":     ethtypes.EmptyRootHash,
 		"baseFeePerGas":    (*hexutil.Big)(baseFee),
 
@@ -243,4 +222,25 @@ func NewRPCTransaction(
 		}
 	}
 	return result, nil
+}
+
+// BaseFeeFromEvents parses the feemarket basefee from cosmos events
+func BaseFeeFromEvents(events []abci.Event) *big.Int {
+	for _, event := range events {
+		if event.Type != feemarkettypes.EventTypeFeeMarket {
+			continue
+		}
+
+		for _, attr := range event.Attributes {
+			if bytes.Equal(attr.Key, []byte(feemarkettypes.AttributeKeyBaseFee)) {
+				result, success := new(big.Int).SetString(string(attr.Value), 10)
+				if success {
+					return result
+				}
+
+				return nil
+			}
+		}
+	}
+	return nil
 }

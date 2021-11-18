@@ -31,6 +31,15 @@ var templateLegacyTx = &ethtypes.LegacyTx{
 	Data:     []byte{},
 }
 
+var templateDynamicFeeTx = &ethtypes.DynamicFeeTx{
+	GasFeeCap: big.NewInt(10),
+	GasTipCap: big.NewInt(2),
+	Gas:       21000,
+	To:        &common.Address{},
+	Value:     big.NewInt(0),
+	Data:      []byte{},
+}
+
 func newSignedEthTx(
 	txData ethtypes.TxData,
 	nonce uint64,
@@ -44,6 +53,9 @@ func newSignedEthTx(
 		txData.Nonce = nonce
 		ethTx = ethtypes.NewTx(txData)
 	case *ethtypes.LegacyTx:
+		txData.Nonce = nonce
+		ethTx = ethtypes.NewTx(txData)
+	case *ethtypes.DynamicFeeTx:
 		txData.Nonce = nonce
 		ethTx = ethtypes.NewTx(txData)
 	default:
@@ -70,7 +82,9 @@ func newNativeMessage(
 	cfg *params.ChainConfig,
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
-	isLegacy bool,
+	txType byte,
+	data []byte,
+	accessList ethtypes.AccessList,
 ) (core.Message, error) {
 	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
 
@@ -78,12 +92,37 @@ func newNativeMessage(
 		ethTx   *ethtypes.Transaction
 		baseFee *big.Int
 	)
-	if isLegacy {
+
+	switch txType {
+	case ethtypes.LegacyTxType:
 		templateLegacyTx.Nonce = nonce
+		if data != nil {
+			templateLegacyTx.Data = data
+		}
 		ethTx = ethtypes.NewTx(templateLegacyTx)
-	} else {
+	case ethtypes.AccessListTxType:
 		templateAccessListTx.Nonce = nonce
+		if data != nil {
+			templateAccessListTx.Data = data
+		} else {
+			templateAccessListTx.Data = []byte{}
+		}
+
+		templateAccessListTx.AccessList = accessList
 		ethTx = ethtypes.NewTx(templateAccessListTx)
+	case ethtypes.DynamicFeeTxType:
+		templateDynamicFeeTx.Nonce = nonce
+
+		if data != nil {
+			templateAccessListTx.Data = data
+		} else {
+			templateAccessListTx.Data = []byte{}
+		}
+		templateAccessListTx.AccessList = accessList
+		ethTx = ethtypes.NewTx(templateDynamicFeeTx)
+		baseFee = big.NewInt(3)
+	default:
+		return nil, errors.New("unsupport tx type")
 	}
 
 	msg := &evmtypes.MsgEthereumTx{}
@@ -94,7 +133,7 @@ func newNativeMessage(
 		return nil, err
 	}
 
-	m, err := msg.AsMessage(msgSigner, baseFee) // TODO: add DynamicFeeTx
+	m, err := msg.AsMessage(msgSigner, baseFee)
 	if err != nil {
 		return nil, err
 	}
@@ -156,32 +195,26 @@ func BenchmarkApplyTransactionWithLegacyTx(b *testing.B) {
 	}
 }
 
-func BenchmarkApplyNativeMessage(b *testing.B) {
-	suite := KeeperTestSuite{}
+func BenchmarkApplyTransactionWithDynamicFeeTx(b *testing.B) {
+	suite := KeeperTestSuite{dynamicTxFee: true}
 	suite.DoSetupTest(b)
 
-	params := suite.app.EvmKeeper.GetParams(suite.ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
-	signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+	ethSigner := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-
-		m, err := newNativeMessage(
+		tx, err := newSignedEthTx(templateDynamicFeeTx,
 			suite.app.EvmKeeper.GetNonce(suite.address),
-			suite.ctx.BlockHeight(),
-			suite.address,
-			ethCfg,
+			sdk.AccAddress(suite.address.Bytes()),
 			suite.signer,
-			signer,
-			false,
+			ethSigner,
 		)
 		require.NoError(b, err)
 
 		b.StartTimer()
-		resp, err := suite.app.EvmKeeper.ApplyNativeMessage(m)
+		resp, err := suite.app.EvmKeeper.ApplyTransaction(tx)
 		b.StopTimer()
 
 		require.NoError(b, err)
@@ -189,7 +222,7 @@ func BenchmarkApplyNativeMessage(b *testing.B) {
 	}
 }
 
-func BenchmarkApplyNativeMessageWithLegacyTx(b *testing.B) {
+func BenchmarkApplyMessage(b *testing.B) {
 	suite := KeeperTestSuite{}
 	suite.DoSetupTest(b)
 
@@ -209,12 +242,84 @@ func BenchmarkApplyNativeMessageWithLegacyTx(b *testing.B) {
 			ethCfg,
 			suite.signer,
 			signer,
-			true,
+			ethtypes.AccessListTxType,
+			nil,
+			nil,
 		)
 		require.NoError(b, err)
 
 		b.StartTimer()
-		resp, err := suite.app.EvmKeeper.ApplyNativeMessage(m)
+		resp, err := suite.app.EvmKeeper.ApplyMessage(m, nil, true)
+		b.StopTimer()
+
+		require.NoError(b, err)
+		require.False(b, resp.Failed())
+	}
+}
+
+func BenchmarkApplyMessageWithLegacyTx(b *testing.B) {
+	suite := KeeperTestSuite{}
+	suite.DoSetupTest(b)
+
+	params := suite.app.EvmKeeper.GetParams(suite.ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+	signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		m, err := newNativeMessage(
+			suite.app.EvmKeeper.GetNonce(suite.address),
+			suite.ctx.BlockHeight(),
+			suite.address,
+			ethCfg,
+			suite.signer,
+			signer,
+			ethtypes.LegacyTxType,
+			nil,
+			nil,
+		)
+		require.NoError(b, err)
+
+		b.StartTimer()
+		resp, err := suite.app.EvmKeeper.ApplyMessage(m, nil, true)
+		b.StopTimer()
+
+		require.NoError(b, err)
+		require.False(b, resp.Failed())
+	}
+}
+
+func BenchmarkApplyMessageWithDynamicFeeTx(b *testing.B) {
+	suite := KeeperTestSuite{dynamicTxFee: true}
+	suite.DoSetupTest(b)
+
+	params := suite.app.EvmKeeper.GetParams(suite.ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+	signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		m, err := newNativeMessage(
+			suite.app.EvmKeeper.GetNonce(suite.address),
+			suite.ctx.BlockHeight(),
+			suite.address,
+			ethCfg,
+			suite.signer,
+			signer,
+			ethtypes.DynamicFeeTxType,
+			nil,
+			nil,
+		)
+		require.NoError(b, err)
+
+		b.StartTimer()
+		resp, err := suite.app.EvmKeeper.ApplyMessage(m, nil, true)
 		b.StopTimer()
 
 		require.NoError(b, err)

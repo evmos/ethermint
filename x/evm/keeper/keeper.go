@@ -9,10 +9,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/ethereum/go-ethereum/params"
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
@@ -53,9 +56,6 @@ type Keeper struct {
 
 	// Tracer used to collect execution traces from the EVM transaction execution
 	tracer string
-	// trace EVM state transition execution. This value is obtained from the `--trace` flag.
-	// For more info check https://geth.ethereum.org/docs/dapp/tracing
-	debug bool
 
 	// EVM Hooks for tx post-processing
 	hooks types.EvmHooks
@@ -70,7 +70,7 @@ func NewKeeper(
 	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
 	fmk types.FeeMarketKeeper,
-	tracer string, debug bool,
+	tracer string,
 ) *Keeper {
 	// ensure evm module account is set
 	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
@@ -93,7 +93,6 @@ func NewKeeper(
 		storeKey:        storeKey,
 		transientKey:    transientKey,
 		tracer:          tracer,
-		debug:           debug,
 		stateErr:        nil,
 	}
 }
@@ -376,4 +375,9 @@ func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) erro
 		return nil
 	}
 	return k.hooks.PostTxProcessing(k.Ctx(), txHash, logs)
+}
+
+// Tracer return a default vm.Tracer based on current keeper state
+func (k Keeper) Tracer(msg core.Message, ethCfg *params.ChainConfig) vm.Tracer {
+	return types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight())
 }
