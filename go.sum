@@ -206,8 +206,8 @@ github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23/go.mod h1:bbYlZJ7
 github.com/c-bata/go-prompt v0.2.2/go.mod h1:VzqtzE2ksDBcdln8G7mk2RX9QyGjH+OVqOCSiVIqS34=
 github.com/casbin/casbin/v2 v2.1.2/go.mod h1:YcPU1XXisHhLzuxH9coDNf2FbKpjGlbCg3n9yuLkIJQ=
 github.com/casbin/casbin/v2 v2.37.0/go.mod h1:vByNa/Fchek0KZUgG5wEsl7iFsiviAYKRtgrQfcJqHg=
-github.com/celestiaorg/optimint v0.0.0-20211117164551-516a7bb2655d h1:zqhWW31tBNUP8XD3KomcZsd7yTxa1hqwPzj85taefR4=
-github.com/celestiaorg/optimint v0.0.0-20211117164551-516a7bb2655d/go.mod h1:OLuwV/ADWFeGZ2bJalbTB1VFM2ZpwFRAYzNfaiwE1QY=
+github.com/celestiaorg/optimint v0.0.0-20211119113807-406ce5950325 h1:92uHNWfWtETQtQiP/pn9A3Iw4kwrbvUiA25OTY9GUhI=
+github.com/celestiaorg/optimint v0.0.0-20211119113807-406ce5950325/go.mod h1:OLuwV/ADWFeGZ2bJalbTB1VFM2ZpwFRAYzNfaiwE1QY=
 github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/cenkalti/backoff/v4 v4.1.1 h1:G2HAfAmvm/GcKan2oOQpBXOd2tT2G57ZnZGWa1PxPBQ=

@@ -40,7 +40,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/celestiaorg/optimint v0.0.0-20211117164551-516a7bb2655d
+require github.com/celestiaorg/optimint v0.0.0-20211119113807-406ce5950325
 
 require (
 	filippo.io/edwards25519 v1.0.0-beta.2 // indirect
