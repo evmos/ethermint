@@ -4,7 +4,7 @@ import (
 	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
-func (suite *KeeperTestSuite) TestParams() {
+func (suite *KeeperTestSuite) TestSetGetParams() {
 	params := suite.app.FeeMarketKeeper.GetParams(suite.ctx)
 	suite.Require().Equal(types.DefaultParams(), params)
 	params.ElasticityMultiplier = 3

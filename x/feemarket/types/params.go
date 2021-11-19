@@ -2,9 +2,9 @@ package types
 
 import (
 	"fmt"
-	"math"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 const (
@@ -42,13 +42,12 @@ func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, 
 
 // DefaultParams returns default evm parameters
 func DefaultParams() Params {
-	// TODO: use geth parameters
 	return Params{
 		NoBaseFee:                true,
-		BaseFeeChangeDenominator: DefaultBaseFeeChangeDenominator,
-		ElasticityMultiplier:     DefaultElasticityMultiplier,
-		InitialBaseFee:           DefaultInitialBaseFee,
-		EnableHeight:             math.MaxInt64,
+		BaseFeeChangeDenominator: params.BaseFeeChangeDenominator,
+		ElasticityMultiplier:     params.ElasticityMultiplier,
+		InitialBaseFee:           params.InitialBaseFee,
+		EnableHeight:             0,
 	}
 }
 
