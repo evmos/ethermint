@@ -28,37 +28,72 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			},
 			big.NewInt(suite.app.FeeMarketKeeper.GetParams(suite.ctx).InitialBaseFee),
 		},
-		// TODO: get the maxGas to change the BaseFee?
 		{
-			"with BaseFee - with gas Limit (consParams)",
+			"with BaseFee - parent block used the same gas as its target",
 			false,
 			func() {
+				// non initial block
 				suite.ctx = suite.ctx.WithBlockHeight(1)
+
+				// Set gas used
+				suite.app.FeeMarketKeeper.SetBlockGasUsed(suite.ctx, 100)
+
+				// Set target/gasLimit through Consensus Param MaxGas
 				blockParams := abci.BlockParams{
-					MaxGas:   1,
-					MaxBytes: 1,
+					MaxGas:   100,
+					MaxBytes: 10,
 				}
 				consParams := abci.ConsensusParams{Block: &blockParams}
 				suite.ctx = suite.ctx.WithConsensusParams(&consParams)
-				fmt.Println(suite.ctx.ConsensusParams())
+
+				// set ElasticityMultiplier
+				params := suite.app.FeeMarketKeeper.GetParams(suite.ctx)
+				params.ElasticityMultiplier = 1
+				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			big.NewInt(875000000),
+			big.NewInt(suite.app.FeeMarketKeeper.GetParams(suite.ctx).InitialBaseFee),
 		},
 		{
-			"with BaseFee - non-initial EIP-1559 block",
+			"with BaseFee - parent block used more gas than its target",
 			false,
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(1)
+
+				suite.app.FeeMarketKeeper.SetBlockGasUsed(suite.ctx, 200)
+
+				blockParams := abci.BlockParams{
+					MaxGas:   100,
+					MaxBytes: 10,
+				}
+				consParams := abci.ConsensusParams{Block: &blockParams}
+				suite.ctx = suite.ctx.WithConsensusParams(&consParams)
+
+				params := suite.app.FeeMarketKeeper.GetParams(suite.ctx)
+				params.ElasticityMultiplier = 1
+				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			big.NewInt(875000000),
+			big.NewInt(1125000000),
 		},
 		{
-			"with BaseFee - non-initial EIP-1559 block",
+			"with BaseFee - Parent gas used smaller than parent gas target",
 			false,
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(1)
+
+				suite.app.FeeMarketKeeper.SetBlockGasUsed(suite.ctx, 50)
+
+				blockParams := abci.BlockParams{
+					MaxGas:   100,
+					MaxBytes: 10,
+				}
+				consParams := abci.ConsensusParams{Block: &blockParams}
+				suite.ctx = suite.ctx.WithConsensusParams(&consParams)
+
+				params := suite.app.FeeMarketKeeper.GetParams(suite.ctx)
+				params.ElasticityMultiplier = 1
+				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			big.NewInt(875000000),
+			big.NewInt(937500000),
 		},
 	}
 	for _, tc := range testCases {
@@ -74,7 +109,6 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			if tc.NoBaseFee {
 				suite.Require().Nil(fee, tc.name)
 			} else {
-
 				suite.Require().Equal(tc.expFee, fee, tc.name)
 			}
 		})
