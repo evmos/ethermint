@@ -112,9 +112,6 @@ func (bn BlockNumber) Int64() int64 {
 func (bn BlockNumber) TmHeight() *int64 {
 	if bn < 0 {
 		return nil
-	} else if bn == EthEarliestBlockNumber {
-		var firstHeight int64 = 0
-		return &firstHeight
 	}
 
 	height := bn.Int64()

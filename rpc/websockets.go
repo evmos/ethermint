@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -381,7 +382,7 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn) (rpc.ID, error) {
 					continue
 				}
 
-				header := types.EthHeaderFromTendermint(data.Header, baseFee)
+				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
 
 				api.filtersMu.RLock()
 				for subID, wsSub := range api.filters {

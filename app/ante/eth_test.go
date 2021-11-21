@@ -302,8 +302,30 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 
 	addr, privKey := tests.NewAddrKey()
 
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, &ethtypes.AccessList{})
-	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, &ethtypes.AccessList{})
+	suite.app.FeeMarketKeeper.SetBaseFee(suite.ctx, big.NewInt(100))
+
+	tx := evmtypes.NewTxContract(
+		suite.app.EvmKeeper.ChainID(),
+		1,
+		big.NewInt(10),
+		1000,
+		big.NewInt(150),
+		big.NewInt(200),
+		nil,
+		nil,
+		&ethtypes.AccessList{},
+	)
+	tx2 := evmtypes.NewTxContract(
+		suite.app.EvmKeeper.ChainID(),
+		1,
+		big.NewInt(10),
+		1000,
+		big.NewInt(150),
+		big.NewInt(200),
+		nil,
+		nil,
+		&ethtypes.AccessList{},
+	)
 
 	tx.From = addr.Hex()
 

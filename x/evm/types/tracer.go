@@ -23,10 +23,10 @@ const (
 
 // NewTracer creates a new Logger tracer to collect execution traces from an
 // EVM transaction.
-func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height int64, debug bool) vm.EVMLogger {
+func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height int64) vm.EVMLogger {
 	// TODO: enable additional log configuration
 	logCfg := &vm.LogConfig{
-		Debug: debug,
+		Debug: true,
 	}
 
 	traceCtx := &tracers.Context{
@@ -102,6 +102,7 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 			Depth:   trace.Depth,
 			Error:   trace.ErrorString(),
 		}
+
 		if trace.Stack != nil {
 			stack := make([]string, len(trace.Stack))
 			for i, stackValue := range trace.Stack {
@@ -109,6 +110,7 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 			}
 			formatted[index].Stack = &stack
 		}
+
 		if trace.Memory != nil {
 			memory := make([]string, 0, (len(trace.Memory)+31)/32)
 			for i := 0; i+32 <= len(trace.Memory); i += 32 {
@@ -116,6 +118,7 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 			}
 			formatted[index].Memory = &memory
 		}
+
 		if trace.Storage != nil {
 			storage := make(map[string]string)
 			for i, storageValue := range trace.Storage {

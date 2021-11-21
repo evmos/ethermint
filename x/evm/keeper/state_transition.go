@@ -70,17 +70,22 @@ func (k *Keeper) NewEVM(
 	if tracer == nil {
 		tracer = k.Tracer(msg, cfg.ChainConfig)
 	}
-	vmConfig := k.VMConfig(msg, cfg.Params, tracer)
+	vmConfig := k.VMConfig(cfg.Params, tracer)
 	return vm.NewEVM(blockCtx, txCtx, k, cfg.ChainConfig, vmConfig)
 }
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(msg core.Message, params types.Params, tracer vm.EVMLogger) vm.Config {
+func (k Keeper) VMConfig(params types.Params, tracer vm.EVMLogger) vm.Config {
 	fmParams := k.feeMarketKeeper.GetParams(k.Ctx())
 
+	var debug bool
+	if _, ok := tracer.(types.NoOpTracer); !ok {
+		debug = true
+	}
+
 	return vm.Config{
-		Debug:       k.debug,
+		Debug:       debug,
 		Tracer:      tracer,
 		NoRecursion: false, // TODO: consider disabling recursion though params
 		NoBaseFee:   fmParams.NoBaseFee,
@@ -213,12 +218,6 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
 	}
 
-	// refund gas prior to handling the vm error in order to match the Ethereum gas consumption instead of the default SDK one.
-	err = k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
-	}
-
 	res.Hash = txHash.Hex()
 
 	logs := k.GetTxLogsTransient(txHash)
@@ -234,6 +233,14 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 			commit()
 			ctx.EventManager().EmitEvents(k.Ctx().EventManager().Events())
 		}
+	}
+
+	// change to original context
+	k.WithContext(ctx)
+
+	// refund gas according to Ethereum gas accounting rules.
+	if err := k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
 	if len(logs) > 0 {

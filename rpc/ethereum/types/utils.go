@@ -8,15 +8,13 @@ import (
 	"math/big"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
-
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -40,7 +38,7 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEther
 
 // EthHeaderFromTendermint is an util function that returns an Ethereum Header
 // from a tendermint Header.
-func EthHeaderFromTendermint(header tmtypes.Header, baseFee *big.Int) *ethtypes.Header {
+func EthHeaderFromTendermint(header tmtypes.Header, bloom ethtypes.Bloom, baseFee *big.Int) *ethtypes.Header {
 	txHash := ethtypes.EmptyRootHash
 	if len(header.DataHash) == 0 {
 		txHash = common.BytesToHash(header.DataHash)
@@ -49,17 +47,17 @@ func EthHeaderFromTendermint(header tmtypes.Header, baseFee *big.Int) *ethtypes.
 	return &ethtypes.Header{
 		ParentHash:  common.BytesToHash(header.LastBlockID.Hash.Bytes()),
 		UncleHash:   ethtypes.EmptyUncleHash,
-		Coinbase:    common.Address{},
+		Coinbase:    common.BytesToAddress(header.ProposerAddress),
 		Root:        common.BytesToHash(header.AppHash),
 		TxHash:      txHash,
 		ReceiptHash: ethtypes.EmptyRootHash,
-		Bloom:       ethtypes.Bloom{},
+		Bloom:       bloom,
 		Difficulty:  big.NewInt(0),
 		Number:      big.NewInt(header.Height),
 		GasLimit:    0,
 		GasUsed:     0,
-		Time:        uint64(header.Time.Unix()),
-		Extra:       nil,
+		Time:        uint64(header.Time.UTC().Unix()),
+		Extra:       []byte{},
 		MixDigest:   common.Hash{},
 		Nonce:       ethtypes.BlockNonce{},
 		BaseFee:     baseFee,
@@ -88,11 +86,14 @@ func BlockMaxGasFromConsensusParams(ctx context.Context, clientCtx client.Contex
 // transactions.
 func FormatBlock(
 	header tmtypes.Header, size int, gasLimit int64,
-	gasUsed *big.Int, transactions interface{}, bloom ethtypes.Bloom,
+	gasUsed *big.Int, transactions []interface{}, bloom ethtypes.Bloom,
 	validatorAddr common.Address, baseFee *big.Int,
 ) map[string]interface{} {
-	if len(header.DataHash) == 0 {
-		header.DataHash = tmbytes.HexBytes(common.Hash{}.Bytes())
+	var transactionsRoot common.Hash
+	if len(transactions) == 0 {
+		transactionsRoot = ethtypes.EmptyRootHash
+	} else {
+		transactionsRoot = common.BytesToHash(header.DataHash)
 	}
 
 	return map[string]interface{}{
@@ -111,7 +112,7 @@ func FormatBlock(
 		"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
 		"gasUsed":          (*hexutil.Big)(gasUsed),
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
-		"transactionsRoot": hexutil.Bytes(header.DataHash),
+		"transactionsRoot": transactionsRoot,
 		"receiptsRoot":     ethtypes.EmptyRootHash,
 		"baseFeePerGas":    (*hexutil.Big)(baseFee),
 
