@@ -462,7 +462,7 @@ func (k *Keeper) traceTx(
 ) (*interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer    tracers.Tracer
+		tracer    vm.EVMLogger
 		overrides *ethparams.ChainConfig
 		err       error
 	)
@@ -497,20 +497,21 @@ func (k *Keeper) traceTx(
 		}
 
 		// Construct the JavaScript tracer to execute with
-		if tracer, err = tracers.New(traceConfig.Tracer, tCtx); err != nil {
+		if t, err := tracers.New(traceConfig.Tracer, tCtx); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
+		} else {
+			// Handle timeouts and RPC cancellations
+			deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
+			defer cancel()
+
+			go func() {
+				<-deadlineCtx.Done()
+				if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
+					t.Stop(errors.New("execution timeout"))
+				}
+			}()
+			tracer = t
 		}
-
-		// Handle timeouts and RPC cancellations
-		deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
-		defer cancel()
-
-		go func() {
-			<-deadlineCtx.Done()
-			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
-				tracer.Stop(errors.New("execution timeout"))
-			}
-		}()
 
 	case traceConfig != nil:
 		// TODO: this should be the native Go tracer
@@ -548,7 +549,7 @@ func (k *Keeper) traceTx(
 			ReturnValue: "",
 			StructLogs:  types.FormatLogs(tracer.StructLogs()),
 		}
-	case *tracers.Tracer:
+	case tracers.Tracer:
 		result, err = tracer.GetResult()
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
