@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/eth/tracers/native"
+
 	"github.com/palantir/stacktrace"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,7 +31,7 @@ type EVMKeeper interface {
 	GetParams(ctx sdk.Context) evmtypes.Params
 	WithContext(ctx sdk.Context)
 	ResetRefundTransient(ctx sdk.Context)
-	NewEVM(msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.Tracer) *vm.EVM
+	NewEVM(msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.EVMLogger) *vm.EVM
 	GetCodeHash(addr common.Address) common.Hash
 	DeductTxCostsFromUserBalance(
 		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
@@ -382,7 +384,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			CoinBase:    common.Address{},
 			BaseFee:     baseFee,
 		}
-		evm := ctd.evmKeeper.NewEVM(coreMsg, cfg, evmtypes.NewNoOpTracer())
+		evm := ctd.evmKeeper.NewEVM(coreMsg, cfg, native.NewNoopTracer())
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter

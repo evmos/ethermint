@@ -34,7 +34,6 @@ func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height 
 		TxIndex:   0,
 		TxHash:    common.Hash{},
 	}
-
 	switch tracer {
 	case TracerNative:
 		return native.NewCallTracer()
