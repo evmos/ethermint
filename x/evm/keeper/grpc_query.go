@@ -497,21 +497,21 @@ func (k *Keeper) traceTx(
 		}
 
 		// Construct the JavaScript tracer to execute with
-		if t, err := tracers.New(traceConfig.Tracer, tCtx); err != nil {
+		t, err := tracers.New(traceConfig.Tracer, tCtx)
+		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
-		} else {
-			// Handle timeouts and RPC cancellations
-			deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
-			defer cancel()
-
-			go func() {
-				<-deadlineCtx.Done()
-				if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
-					t.Stop(errors.New("execution timeout"))
-				}
-			}()
-			tracer = t
 		}
+		// Handle timeouts and RPC cancellations
+		deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
+		defer cancel()
+
+		go func() {
+			<-deadlineCtx.Done()
+			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
+				t.Stop(errors.New("execution timeout"))
+			}
+		}()
+		tracer = t
 
 	case traceConfig != nil:
 		// TODO: this should be the native Go tracer
