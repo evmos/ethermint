@@ -56,7 +56,7 @@ func NewPublicAPI(
 	backend backend.Backend,
 	nonceLock *rpctypes.AddrLocker,
 ) *PublicAPI {
-	epoch, err := ethermint.ParseChainID(clientCtx.ChainID)
+	eip155ChainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
 	}
@@ -80,13 +80,18 @@ func NewPublicAPI(
 
 	// The signer used by the API should always be the 'latest' known one because we expect
 	// signers to be backwards-compatible with old transactions.
-	signer := ethtypes.LatestSigner(backend.ChainConfig())
+	cfg := backend.ChainConfig()
+	if cfg == nil {
+		cfg = evmtypes.DefaultChainConfig().EthereumConfig(eip155ChainID)
+	}
+
+	signer := ethtypes.LatestSigner(cfg)
 
 	api := &PublicAPI{
 		ctx:          context.Background(),
 		clientCtx:    clientCtx,
 		queryClient:  rpctypes.NewQueryClient(clientCtx),
-		chainIDEpoch: epoch,
+		chainIDEpoch: eip155ChainID,
 		logger:       logger.With("client", "json-rpc"),
 		backend:      backend,
 		nonceLock:    nonceLock,

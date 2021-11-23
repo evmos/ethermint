@@ -131,12 +131,6 @@ func (suite *KeeperTestSuite) TestSetGetBlockGasUsed() {
 		malleate func()
 		expGas   uint64
 	}{
-		// TODO How to test len(bz) = 0
-		// {
-		// 	"no KeyPrefixBlockGasUsed",
-		// 	func() {},
-		// 	uint64(0),
-		// },
 		{
 			"with last block given",
 			func() {

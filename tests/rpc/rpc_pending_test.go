@@ -100,7 +100,7 @@ func TestEth_Pending_GetTransactionCount(t *testing.T) {
 	t.Logf("Current nonce is %d", currentNonce)
 	require.Equal(t, prePendingNonce, currentNonce)
 
-	param := makePendingTxParams()
+	param := makePendingTxParams(t)
 	txRes := Call(t, "eth_sendTransaction", param)
 	require.Nil(t, txRes.Error)
 
@@ -278,7 +278,7 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 
 	// create a transaction.
 	data := "0x608060405234801561001057600080fd5b5061011e806100206000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c806302eb691b14602d575b600080fd5b603360ab565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101560715780820151818401526020810190506058565b50505050905090810190601f168015609d5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b60606040518060400160405280600d81526020017f617261736b61776173686572650000000000000000000000000000000000000081525090509056fea264697066735822122060917c5c2fab8c058a17afa6d3c1d23a7883b918ea3c7157131ea5b396e1aa7564736f6c63430007050033"
-	param := makePendingTxParams()
+	param := makePendingTxParams(t)
 	param[0]["data"] = data
 
 	txRes := Call(t, "eth_sendTransaction", param)
@@ -306,7 +306,7 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 
 func TestEth_Pending_SendTransaction_PendingNonce(t *testing.T) {
 	currNonce := GetNonce(t, "latest")
-	param := makePendingTxParams()
+	param := makePendingTxParams(t)
 
 	// first transaction
 	txRes1 := Call(t, "eth_sendTransaction", param)
@@ -331,13 +331,15 @@ func TestEth_Pending_SendTransaction_PendingNonce(t *testing.T) {
 	require.Greater(t, uint64(pendingNonce3), uint64(pendingNonce2))
 }
 
-func makePendingTxParams() []map[string]string {
+func makePendingTxParams(t *testing.T) []map[string]string {
+	gasPrice := GetGasPrice(t)
+
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["to"] = addrA
 	param[0]["value"] = "0xA"
 	param[0]["gasLimit"] = "0x5208"
-	param[0]["gasPrice"] = "0x1"
+	param[0]["gasPrice"] = gasPrice
 	return param
 }

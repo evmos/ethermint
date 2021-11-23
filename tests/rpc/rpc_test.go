@@ -412,7 +412,7 @@ func TestEth_SendTransaction_Transfer(t *testing.T) {
 }
 
 func TestEth_SendTransaction_ContractDeploy(t *testing.T) {
-	param := makeTestContractDeployParam(true)
+	param := makeTestContractDeployParam(t, true)
 	rpcRes, err := callWithError("eth_sendTransaction", param)
 	require.NoError(t, err)
 
@@ -422,7 +422,7 @@ func TestEth_SendTransaction_ContractDeploy(t *testing.T) {
 }
 
 func TestEth_SendTransaction_ContractDeploy_no_gas_param(t *testing.T) {
-	param := makeTestContractDeployParam(false)
+	param := makeTestContractDeployParam(t, false)
 	_, err := callWithError("eth_sendTransaction", param)
 	// server returns internal error.
 	require.Error(t, err)
@@ -503,12 +503,14 @@ func TestEth_GetFilterChanges_WrongID(t *testing.T) {
 
 // sendTestTransaction sends a dummy transaction
 func sendTestTransaction(t *testing.T) hexutil.Bytes {
+	gasPrice := GetGasPrice(t)
+
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
 	param[0]["value"] = "0x1"
-	param[0]["gasPrice"] = "0x1"
+	param[0]["gasPrice"] = gasPrice
 	rpcRes := call(t, "eth_sendTransaction", param)
 
 	var hash hexutil.Bytes
@@ -529,6 +531,8 @@ func TestEth_GetTransactionReceipt(t *testing.T) {
 
 // deployTestERC20Contract deploys a contract that emits an event in the constructor
 func deployTestERC20Contract(t *testing.T) common.Address {
+	gasPrice := GetGasPrice(t)
+
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
@@ -539,7 +543,7 @@ func deployTestERC20Contract(t *testing.T) common.Address {
 	param[0]["data"] = hexutil.Encode(data)
 
 	param[0]["gas"] = "0x200000"
-	param[0]["gasPrice"] = "0x1"
+	param[0]["gasPrice"] = gasPrice
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -559,6 +563,7 @@ func deployTestERC20Contract(t *testing.T) common.Address {
 // sendTestERC20Transaction sends a typical erc20 transfer transaction
 func sendTestERC20Transaction(t *testing.T, contract common.Address, amount *big.Int) hexutil.Bytes {
 	// transfer
+	gasPrice := GetGasPrice(t)
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
@@ -567,7 +572,7 @@ func sendTestERC20Transaction(t *testing.T, contract common.Address, amount *big
 	require.NoError(t, err)
 	param[0]["data"] = hexutil.Encode(data)
 	param[0]["gas"] = "0x50000"
-	param[0]["gasPrice"] = "0x1"
+	param[0]["gasPrice"] = gasPrice
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -607,12 +612,13 @@ func TestEth_GetTransactionReceipt_ERC20Transfer(t *testing.T) {
 
 // deployTestContract deploys a contract that emits an event in the constructor
 func deployTestContract(t *testing.T) (hexutil.Bytes, map[string]interface{}) {
+	gasPrice := GetGasPrice(t)
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
 	param[0]["gas"] = "0x200000"
-	param[0]["gasPrice"] = "0x1"
+	param[0]["gasPrice"] = gasPrice
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -744,13 +750,14 @@ func deployTestContractWithFunction(t *testing.T) hexutil.Bytes {
 	// }
 
 	bytecode := "0x608060405234801561001057600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a260d08061004d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032"
+	gasPrice := GetGasPrice(t)
 
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = bytecode
 	param[0]["gas"] = "0x200000"
-	param[0]["gasPrice"] = "0x1"
+	param[0]["gasPrice"] = gasPrice
 
 	rpcRes := call(t, "eth_sendTransaction", param)
 
@@ -1028,14 +1035,15 @@ func makeEthTxParam() []map[string]string {
 	return param
 }
 
-func makeTestContractDeployParam(withGas bool) []map[string]string {
+func makeTestContractDeployParam(t *testing.T, withGas bool) []map[string]string {
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
 	param[0]["from"] = "0x" + fmt.Sprintf("%x", from)
 	param[0]["data"] = "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
 	if withGas {
+		gasPrice := GetGasPrice(t)
 		param[0]["gas"] = "0x200000"
-		param[0]["gasPrice"] = "0x1"
+		param[0]["gasPrice"] = gasPrice
 	}
 
 	return param
