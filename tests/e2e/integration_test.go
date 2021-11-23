@@ -11,8 +11,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/tharsis/ethermint/server/config"
 	"github.com/tharsis/ethermint/testutil/network"
@@ -34,6 +37,8 @@ type IntegrationTestSuite struct {
 	ctx     context.Context
 	cfg     network.Config
 	network *network.Network
+
+	gethClient *gethclient.Client
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -53,11 +58,17 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	_, err = s.network.WaitForHeight(1)
 	s.Require().NoError(err)
 
+	address := fmt.Sprintf("http://%s", s.network.Validators[0].AppConfig.JSONRPC.Address)
+
 	if s.network.Validators[0].JSONRPCClient == nil {
-		address := fmt.Sprintf("http://%s", s.network.Validators[0].AppConfig.JSONRPC.Address)
 		s.network.Validators[0].JSONRPCClient, err = ethclient.Dial(address)
 		s.Require().NoError(err)
 	}
+
+	rpcClient, err := rpc.DialContext(s.ctx, address)
+	s.Require().NoError(err)
+	s.gethClient = gethclient.New(rpcClient)
+	s.Require().NotNil(s.gethClient)
 }
 
 func (s *IntegrationTestSuite) TestChainID() {
@@ -77,6 +88,20 @@ func (s *IntegrationTestSuite) TestChainID() {
 
 	s.Require().Equal(chainID, eip155ChainID)
 	s.Require().Equal(eip155ChainID, eip155ChainIDGen)
+}
+
+func (s *IntegrationTestSuite) TestNodeInfo() {
+	// Not implemented
+	info, err := s.gethClient.GetNodeInfo(s.ctx)
+	s.Require().Error(err)
+	s.Require().Empty(info)
+}
+
+func (s *IntegrationTestSuite) TestCreateAccessList() {
+	// Not implemented
+	accessList, _, _, err := s.gethClient.CreateAccessList(s.ctx, ethereum.CallMsg{})
+	s.Require().Error(err)
+	s.Require().Nil(accessList)
 }
 
 func (s *IntegrationTestSuite) TestBlock() {
