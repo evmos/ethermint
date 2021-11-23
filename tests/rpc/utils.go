@@ -267,6 +267,15 @@ func GetNonce(t *testing.T, block string) hexutil.Uint64 {
 	return nonce
 }
 
+func GetGasPrice(t *testing.T) string {
+	gasRes := Call(t, "eth_gasPrice", []interface{}{})
+
+	var gasPrice string
+	err := json.Unmarshal(gasRes.Result, &gasPrice)
+	require.NoError(t, err)
+	return gasPrice
+}
+
 func UnlockAllAccounts(t *testing.T) {
 	var accts []common.Address
 	rpcRes := Call(t, "eth_accounts", []map[string]string{})
