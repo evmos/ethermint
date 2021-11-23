@@ -1,4 +1,5 @@
 #!/bin/bash
+# ulimit -n 65535 to prevent file open errors
 
 KEY="mykey"
 CHAINID="ethermint_9000-1"
