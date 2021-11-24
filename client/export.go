@@ -38,6 +38,7 @@ func UnsafeExportEthKeyCommand() *cobra.Command {
 				inBuf,
 				hd.EthSecp256k1Option(),
 			)
+
 			if err != nil {
 				return err
 			}
