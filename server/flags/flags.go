@@ -67,13 +67,13 @@ func AddTxFlags(cmd *cobra.Command) (*cobra.Command, error) {
 
 	// viper.BindPFlag(flags.FlagTrustNode, cmd.Flags().Lookup(flags.FlagTrustNode))
 
-	if err := viper.BindPFlag(flags.FlagNode, cmd.Flags().Lookup(flags.FlagNode)); err != nil {
+	if err := viper.BindPFlag(flags.FlagNode, cmd.PersistentFlags().Lookup(flags.FlagNode)); err != nil {
 		return nil, err
 	}
-	if err := viper.BindPFlag(flags.FlagKeyringBackend, cmd.Flags().Lookup(flags.FlagKeyringBackend)); err != nil {
+	if err := viper.BindPFlag(flags.FlagKeyringBackend, cmd.PersistentFlags().Lookup(flags.FlagKeyringBackend)); err != nil {
 		return nil, err
 	}
-	if err := cmd.MarkFlagRequired(flags.FlagChainID); err != nil {
+	if err := cmd.MarkPersistentFlagRequired(flags.FlagChainID); err != nil {
 		return nil, err
 	}
 	return cmd, nil
