@@ -19,9 +19,10 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	stderrors "github.com/pkg/errors"
 
 	"github.com/cosmos/cosmos-sdk/server"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
@@ -354,7 +355,7 @@ func (a *API) StartCPUProfile(file string) error {
 			a.logger.Debug("cpu profiling already in use", "error", err.Error())
 			if err := f.Close(); err != nil {
 				a.logger.Debug("failed to close cpu profile file")
-				return sdkerrors.Wrap(err, "failed to close cpu profile file")
+				return stderrors.Wrap(err, "failed to close cpu profile file")
 			}
 			return err
 		}
@@ -381,7 +382,7 @@ func (a *API) StopCPUProfile() error {
 		pprof.StopCPUProfile()
 		if err := a.handler.cpuFile.Close(); err != nil {
 			a.logger.Debug("failed to close cpu file")
-			return sdkerrors.Wrap(err, "failed to close cpu file")
+			return stderrors.Wrap(err, "failed to close cpu file")
 		}
 		a.handler.cpuFile = nil
 		a.handler.cpuFilename = ""

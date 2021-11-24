@@ -219,7 +219,7 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 }
 
 // legacyAminoCdc is used for the legacy REST API
-func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) error {
+func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) (err error) {
 	cfg := ctx.Config
 	home := cfg.RootDir
 	logger := ctx.Logger
@@ -427,7 +427,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-	defer func() error {
+	defer func() {
 		if tmNode.IsRunning() {
 			_ = tmNode.Stop()
 		}
@@ -445,7 +445,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			if grpcWebSrv != nil {
 				if err := grpcWebSrv.Close(); err != nil {
 					logger.Error("failed to close the grpcWebSrc", "error", err.Error())
-					return err
 				}
 			}
 		}
@@ -466,7 +465,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 
 		logger.Info("Bye!")
-		return nil
 	}()
 
 	// Wait for SIGINT or SIGTERM signal
