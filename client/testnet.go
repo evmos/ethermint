@@ -556,7 +556,10 @@ func startTestnet(cmd *cobra.Command, args startArgs) error {
 	}
 
 	cmd.Println("press the Enter Key to terminate")
-	fmt.Scanln() // wait for Enter Key
+	_, err = fmt.Scanln() // wait for Enter Key
+	if err != nil {
+		return err
+	}
 	testnet.Cleanup()
 
 	return nil

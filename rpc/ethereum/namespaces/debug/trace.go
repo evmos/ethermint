@@ -47,7 +47,11 @@ func (a *API) StartGoTrace(file string) error {
 	}
 	if err := trace.Start(f); err != nil {
 		a.logger.Debug("Go tracing already started", "error", err.Error())
-		f.Close()
+		if err := f.Close(); err != nil {
+			a.logger.Debug("failed to close trace file")
+			return errors.New("failed to close trace file")
+		}
+
 		return err
 	}
 	a.handler.traceFile = f
@@ -68,7 +72,10 @@ func (a *API) StopGoTrace() error {
 		return errors.New("trace not in progress")
 	}
 	a.logger.Info("Done writing Go trace", "dump", a.handler.traceFilename)
-	a.handler.traceFile.Close()
+	if err := a.handler.traceFile.Close(); err != nil {
+		a.logger.Debug("failed to close trace file")
+		return errors.New("failed to close trace file")
+	}
 	a.handler.traceFile = nil
 	a.handler.traceFilename = ""
 	return nil

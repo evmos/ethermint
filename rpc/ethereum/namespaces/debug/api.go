@@ -351,7 +351,10 @@ func (a *API) StartCPUProfile(file string) error {
 		}
 		if err := pprof.StartCPUProfile(f); err != nil {
 			a.logger.Debug("cpu profiling already in use", "error", err.Error())
-			f.Close()
+			if err := f.Close(); err != nil {
+				a.logger.Debug("failed to close cpu profile file")
+				return errors.New("failed to close cpu profile file")
+			}
 			return err
 		}
 
@@ -375,7 +378,10 @@ func (a *API) StopCPUProfile() error {
 	case a.handler.cpuFile != nil:
 		a.logger.Info("Done writing CPU profile", "profile", a.handler.cpuFilename)
 		pprof.StopCPUProfile()
-		a.handler.cpuFile.Close()
+		if err := a.handler.cpuFile.Close(); err != nil {
+			a.logger.Debug("failed to close cpu file")
+			return errors.New("failed to close cpu file")
+		}
 		a.handler.cpuFile = nil
 		a.handler.cpuFilename = ""
 		return nil
