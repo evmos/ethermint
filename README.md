@@ -50,6 +50,11 @@ For prerequisites and detailed build instructions please read the Evmos [Install
 make install
 ```
 
+for rpc endpoints bandwidth, setup open files limit before running the program:
+```
+ulimit -n 65535
+```
+
 Or check out the latest [release](https://github.com/tharsis/ethermint/releases).
 
 ## Quick Start
