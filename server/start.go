@@ -223,7 +223,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	cfg := ctx.Config
 	home := cfg.RootDir
 	logger := ctx.Logger
-	var cpuProfileCleanup func()
+	var cpuProfileCleanup func() error
 
 	if cpuProfile := ctx.Viper.GetString(srvflags.CPUProfile); cpuProfile != "" {
 		fp, err := ethdebug.ExpandHome(cpuProfile)
@@ -241,12 +241,14 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			return err
 		}
 
-		cpuProfileCleanup = func() {
+		cpuProfileCleanup = func() error {
 			ctx.Logger.Info("stopping CPU profiler", "profile", cpuProfile)
 			pprof.StopCPUProfile()
 			if err := f.Close(); err != nil {
 				logger.Error("failed to close CPU profiler file", "error", err.Error())
+				return err
 			}
+			return nil
 		}
 	}
 
@@ -425,13 +427,13 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-	defer func() {
+	defer func() error {
 		if tmNode.IsRunning() {
 			_ = tmNode.Stop()
 		}
 
 		if cpuProfileCleanup != nil {
-			cpuProfileCleanup()
+			_ = cpuProfileCleanup()
 		}
 
 		if apiSrv != nil {
@@ -443,6 +445,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			if grpcWebSrv != nil {
 				if err := grpcWebSrv.Close(); err != nil {
 					logger.Error("failed to close the grpcWebSrc", "error", err.Error())
+					return err
 				}
 			}
 		}
@@ -463,6 +466,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 
 		logger.Info("Bye!")
+		return nil
 	}()
 
 	// Wait for SIGINT or SIGTERM signal

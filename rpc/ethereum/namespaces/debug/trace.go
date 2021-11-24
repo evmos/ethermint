@@ -23,6 +23,8 @@ import (
 	"errors"
 	"os"
 	"runtime/trace"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // StartGoTrace turns on tracing, writing to the given file.
@@ -49,7 +51,7 @@ func (a *API) StartGoTrace(file string) error {
 		a.logger.Debug("Go tracing already started", "error", err.Error())
 		if err := f.Close(); err != nil {
 			a.logger.Debug("failed to close trace file")
-			return errors.New("failed to close trace file")
+			return sdkerrors.Wrap(err, "failed to close trace file")
 		}
 
 		return err
@@ -74,7 +76,7 @@ func (a *API) StopGoTrace() error {
 	a.logger.Info("Done writing Go trace", "dump", a.handler.traceFilename)
 	if err := a.handler.traceFile.Close(); err != nil {
 		a.logger.Debug("failed to close trace file")
-		return errors.New("failed to close trace file")
+		return sdkerrors.Wrap(err, "failed to close trace file")
 	}
 	a.handler.traceFile = nil
 	a.handler.traceFilename = ""
