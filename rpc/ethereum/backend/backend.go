@@ -359,7 +359,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		return nil, err
 	}
 
-	resBlockResult, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Height)
+	resBlockResult, err := e.clientCtx.Client.BlockResults(ctx, &block.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +382,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 			tx := ethMsg.AsTransaction()
 
 			// check tx exists on EVM by cross checking with blockResults
-			if txResults[i].Code == 0 {
+			if txResults[i].Code != 0 {
 				e.logger.Debug("invalid tx result code", "hash", tx.Hash().Hex())
 				continue
 			}
