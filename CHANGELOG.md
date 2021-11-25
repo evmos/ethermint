@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 - [tharsis#782](https://github.com/tharsis/ethermint/pull/782) web3 rpc api returns wrong block gas limit
+- [tharsis#781](https://github.com/tharsis/ethermint/pull/781) fix empty transactions in getBlock 
 
 ## [v0.7.2-cronos-2] - 2021-11-17
 

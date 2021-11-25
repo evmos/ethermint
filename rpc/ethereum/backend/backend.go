@@ -246,6 +246,14 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	ctx := types.ContextWithHeight(block.Height)
 
+	resBlockResult, err := e.clientCtx.Client.BlockResults(ctx, &block.Height)
+	if err != nil {
+		e.logger.Debug("EthBlockFromTendermint block result not found", "height", block.Height, "error", err.Error())
+		return nil, err
+	}
+
+	txResults := resBlockResult.TxsResults
+
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
@@ -262,10 +270,9 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 			hash := ethMsg.AsTransaction().Hash()
 
-			// check tx exists on EVM and it has the correct block height
-			tx, err := e.GetTxByEthHash(hash)
-			if err != nil || tx.Height != block.Height {
-				e.logger.Debug("failed to query eth tx", "hash", hash)
+			// check tx exists on EVM by cross checking with blockResults
+			if txResults[i].Code != 0 {
+				e.logger.Debug("invalid tx result code", "hash", hash)
 				continue
 			}
 
@@ -335,15 +342,9 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		e.logger.Error("failed to query consensus params", "error", err.Error())
 	}
 
-	resBlockResult, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Height)
-	if err != nil {
-		e.logger.Debug("EthBlockFromTendermint block result not found", "height", block.Height, "error", err.Error())
-		return nil, err
-	}
-
 	gasUsed := uint64(0)
 
-	for _, txsResult := range resBlockResult.TxsResults {
+	for _, txsResult := range txResults {
 		gasUsed += uint64(txsResult.GetGasUsed())
 	}
 
