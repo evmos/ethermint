@@ -337,7 +337,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	validatorAddr := common.BytesToAddress(addr)
 
-	gasLimit, err := types.BlockMaxGasFromConsensusParams(ctx, e.clientCtx)
+	gasLimit, err := types.BlockMaxGasFromConsensusParams(ctx, e.clientCtx, &block.Height)
 	if err != nil {
 		e.logger.Error("failed to query consensus params", "error", err.Error())
 	}

@@ -39,8 +39,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
-- [tharsis#782](https://github.com/tharsis/ethermint/pull/782) web3 rpc api returns wrong block gas limit
-- [tharsis#781](https://github.com/tharsis/ethermint/pull/781) fix empty transactions in getBlock 
+- [tharsis#781](https://github.com/tharsis/ethermint/pull/781) fix empty transactions in getBlock
+- [crypto-org-chain/ethermint#15](https://github.com/crypto-org-chain/ethermint/pull/15) web3 rpc api returns wrong block gas limit
+- [crypto-org-chain/ethermint#16](https://github.com/crypto-org-chain/ethermint/pull/16) fix unwrap context panic in BlockMaxGasFromConsensusParams
 
 ## [v0.7.2-cronos-2] - 2021-11-17
 
