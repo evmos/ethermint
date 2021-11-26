@@ -229,6 +229,21 @@ func (e *EVMBackend) EthBlockFromTendermint(
 
 	ctx := types.ContextWithHeight(block.Height)
 
+<<<<<<< HEAD
+=======
+	baseFee, err := e.BaseFee(block.Height)
+	if err != nil {
+		return nil, err
+	}
+
+	resBlockResult, err := e.clientCtx.Client.BlockResults(ctx, &block.Height)
+	if err != nil {
+		return nil, err
+	}
+
+	txResults := resBlockResult.TxsResults
+
+>>>>>>> bfe059e (Fix get block (#781))
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
@@ -243,7 +258,18 @@ func (e *EVMBackend) EthBlockFromTendermint(
 				continue
 			}
 
+<<<<<<< HEAD
 			hash := ethMsg.AsTransaction().Hash()
+=======
+			tx := ethMsg.AsTransaction()
+
+			// check tx exists on EVM by cross checking with blockResults
+			if txResults[i].Code != 0 {
+				e.logger.Debug("invalid tx result code", "hash", tx.Hash().Hex())
+				continue
+			}
+
+>>>>>>> bfe059e (Fix get block (#781))
 			if !fullTx {
 				ethRPCTxs = append(ethRPCTxs, hash)
 				continue
@@ -310,15 +336,9 @@ func (e *EVMBackend) EthBlockFromTendermint(
 		e.logger.Error("failed to query consensus params", "error", err.Error())
 	}
 
-	resBlockResult, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Height)
-	if err != nil {
-		e.logger.Debug("EthBlockFromTendermint block result not found", "height", block.Height, "error", err.Error())
-		return nil, err
-	}
-
 	gasUsed := uint64(0)
 
-	for _, txsResult := range resBlockResult.TxsResults {
+	for _, txsResult := range txResults {
 		gasUsed += uint64(txsResult.GetGasUsed())
 	}
 
