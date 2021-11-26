@@ -37,6 +37,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+## Improvements
+
+* (ci) [tharsis#784](https://github.com/tharsis/ethermint/pull/784) Enable automatic backport of PRs.
+
 ### Bug Fixes
 
 * (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
