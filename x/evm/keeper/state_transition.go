@@ -3,7 +3,6 @@ package keeper
 import (
 	"math/big"
 
-	"github.com/palantir/stacktrace"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,7 +28,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 	// get the coinbase address from the block proposer
 	coinbase, err := k.GetCoinbaseAddress(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to obtain coinbase address")
+		return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
 	}
 
 	var baseFee *big.Int
@@ -176,7 +175,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	cfg, err := k.EVMConfig(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to load evm config")
+		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
 
 	// get the latest signer according to the chain rules from the config
@@ -189,7 +188,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	msg, err := tx.AsMessage(signer, baseFee)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
+		return nil, sdkerrors.Wrap(err, "failed to return ethereum transaction as core message")
 	}
 
 	txHash := tx.Hash()
@@ -215,7 +214,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	res, err := k.ApplyMessageWithConfig(msg, nil, true, cfg)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
+		return nil, sdkerrors.Wrap(err, "failed to apply ethereum core message")
 	}
 
 	res.Hash = txHash.Hex()
@@ -240,7 +239,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	// refund gas according to Ethereum gas accounting rules.
 	if err := k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom); err != nil {
-		return nil, stacktrace.Propagate(err, "failed to refund gas leftover gas to sender %s", msg.From())
+		return nil, sdkerrors.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
 	if len(logs) > 0 {
@@ -314,9 +313,9 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 
 	// return error if contract creation or call are disabled through governance
 	if !cfg.Params.EnableCreate && msg.To() == nil {
-		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
+		return nil, sdkerrors.Wrap(types.ErrCreateDisabled, "failed to create new contract")
 	} else if !cfg.Params.EnableCall && msg.To() != nil {
-		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+		return nil, sdkerrors.Wrap(types.ErrCallDisabled, "failed to call contract")
 	}
 
 	sender := vm.AccountRef(msg.From())
@@ -326,12 +325,12 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 	intrinsicGas, err := k.GetEthIntrinsicGas(msg, cfg.ChainConfig, contractCreation)
 	if err != nil {
 		// should have already been checked on Ante Handler
-		return nil, stacktrace.Propagate(err, "intrinsic gas failed")
+		return nil, sdkerrors.Wrap(err, "intrinsic gas failed")
 	}
 	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
 	if msg.Gas() < intrinsicGas {
 		// eth_estimateGas will check for this exact error
-		return nil, stacktrace.Propagate(core.ErrIntrinsicGas, "apply message")
+		return nil, sdkerrors.Wrap(core.ErrIntrinsicGas, "apply message")
 	}
 	leftoverGas := msg.Gas() - intrinsicGas
 
@@ -356,12 +355,12 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 
 	// calculate gas refund
 	if msg.Gas() < leftoverGas {
-		return nil, stacktrace.Propagate(types.ErrGasOverflow, "apply message")
+		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
 	gasUsed := msg.Gas() - leftoverGas
 	refund := k.GasToRefund(gasUsed, refundQuotient)
 	if refund > gasUsed {
-		return nil, stacktrace.Propagate(types.ErrGasOverflow, "apply message")
+		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
 	gasUsed -= refund
 
@@ -390,7 +389,7 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.Tracer, commit bool) (*types.MsgEthereumTxResponse, error) {
 	cfg, err := k.EVMConfig(k.Ctx())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to load evm config")
+		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
 	return k.ApplyMessageWithConfig(msg, tracer, commit, cfg)
 }
@@ -438,7 +437,7 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas uint64, denom string) e
 		err := k.bankKeeper.SendCoinsFromModuleToAccount(k.Ctx(), authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
 			err = sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
-			return stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
+			return sdkerrors.Wrapf(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
 		}
 	default:
 		// no refund, consume gas and update the tx gas meter
@@ -461,9 +460,10 @@ func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
 	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
-		return common.Address{}, stacktrace.Propagate(
-			sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, consAddr.String()),
-			"failed to retrieve validator from block proposer address",
+		return common.Address{}, sdkerrors.Wrapf(
+			stakingtypes.ErrNoValidatorFound,
+			"failed to retrieve validator from block proposer address %s",
+			consAddr.String(),
 		)
 	}
 
