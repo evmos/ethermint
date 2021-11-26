@@ -22,6 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -479,10 +480,10 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 
 	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
 	rsp, err := syncCtx.BroadcastTx(txBytes)
-	if err != nil || rsp.Code != 0 {
-		if err == nil {
-			err = errors.New(rsp.RawLog)
-		}
+	if rsp != nil && rsp.Code != 0 {
+		err = sdkerrors.ABCIError(rsp.Codespace, rsp.Code, rsp.RawLog)
+	}
+	if err != nil {
 		e.logger.Error("failed to broadcast tx", "error", err.Error())
 		return txHash, err
 	}
