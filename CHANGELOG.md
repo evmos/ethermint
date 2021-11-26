@@ -37,10 +37,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+## Improvements
+
+* (ci) [tharsis#784](https://github.com/tharsis/ethermint/pull/784) Enable automatic backport of PRs.
+* (rpc) [tharsis#786](https://github.com/tharsis/ethermint/pull/786) Improve error message of `SendTransaction`/`SendRawTransaction` JSON-RPC APIs.
+
 ### Bug Fixes
 
 * (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
 * (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
+* (rpc) [tharsis#782](https://github.com/tharsis/ethermint/pull/782) Fix wrong block gas limit returned by JSON-RPC.
 
 ## [v0.8.0] - 2021-11-17
 

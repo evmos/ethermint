@@ -186,7 +186,9 @@ func (app *EthermintApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAd
 		app.StakingKeeper.SetValidator(ctx, validator)
 	}
 
-	iter.Close()
+	if err := iter.Close(); err != nil {
+		return err
+	}
 
 	if _, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx); err != nil {
 		return err

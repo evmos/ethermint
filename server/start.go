@@ -219,11 +219,11 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 }
 
 // legacyAminoCdc is used for the legacy REST API
-func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) error {
+func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) (err error) {
 	cfg := ctx.Config
 	home := cfg.RootDir
 	logger := ctx.Logger
-	var cpuProfileCleanup func()
+	var cpuProfileCleanup func() error
 
 	if cpuProfile := ctx.Viper.GetString(srvflags.CPUProfile); cpuProfile != "" {
 		fp, err := ethdebug.ExpandHome(cpuProfile)
@@ -241,10 +241,14 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			return err
 		}
 
-		cpuProfileCleanup = func() {
+		cpuProfileCleanup = func() error {
 			ctx.Logger.Info("stopping CPU profiler", "profile", cpuProfile)
 			pprof.StopCPUProfile()
-			f.Close()
+			if err := f.Close(); err != nil {
+				logger.Error("failed to close CPU profiler file", "error", err.Error())
+				return err
+			}
+			return nil
 		}
 	}
 
@@ -359,7 +363,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if config.GRPCWeb.Enable {
 			grpcWebSrv, err = servergrpc.StartGRPCWeb(grpcSrv, config.Config)
 			if err != nil {
-				ctx.Logger.Error("failed to start grpc-web http server: ", err)
+				ctx.Logger.Error("failed to start grpc-web http server", "error", err)
 				return err
 			}
 		}
@@ -429,7 +433,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 
 		if cpuProfileCleanup != nil {
-			cpuProfileCleanup()
+			_ = cpuProfileCleanup()
 		}
 
 		if apiSrv != nil {
@@ -439,7 +443,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if grpcSrv != nil {
 			grpcSrv.Stop()
 			if grpcWebSrv != nil {
-				grpcWebSrv.Close()
+				if err := grpcWebSrv.Close(); err != nil {
+					logger.Error("failed to close the grpcWebSrc", "error", err.Error())
+				}
 			}
 		}
 
@@ -474,9 +480,11 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 	if traceWriterFile == "" {
 		return
 	}
+
+	filePath := filepath.Clean(traceWriterFile)
 	return os.OpenFile(
-		traceWriterFile,
+		filePath,
 		os.O_WRONLY|os.O_APPEND|os.O_CREATE,
-		0o666,
+		0o600,
 	)
 }
