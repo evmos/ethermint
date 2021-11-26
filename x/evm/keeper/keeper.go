@@ -7,12 +7,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/palantir/stacktrace"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/ethereum/go-ethereum/params"
@@ -341,11 +341,11 @@ func (k Keeper) ClearBalance(addr sdk.AccAddress) (prevBalance sdk.Coin, err err
 	prevBalance = k.bankKeeper.GetBalance(k.Ctx(), addr, params.EvmDenom)
 	if prevBalance.IsPositive() {
 		if err := k.bankKeeper.SendCoinsFromAccountToModule(k.Ctx(), addr, types.ModuleName, sdk.Coins{prevBalance}); err != nil {
-			return sdk.Coin{}, stacktrace.Propagate(err, "failed to transfer to module account")
+			return sdk.Coin{}, sdkerrors.Wrap(err, "failed to transfer to module account")
 		}
 
 		if err := k.bankKeeper.BurnCoins(k.Ctx(), types.ModuleName, sdk.Coins{prevBalance}); err != nil {
-			return sdk.Coin{}, stacktrace.Propagate(err, "failed to burn coins from evm module account")
+			return sdk.Coin{}, sdkerrors.Wrap(err, "failed to burn coins from evm module account")
 		}
 	}
 

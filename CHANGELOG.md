@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ## Improvements
 
 * (ci) [tharsis#784](https://github.com/tharsis/ethermint/pull/784) Enable automatic backport of PRs.
+* (rpc) [tharsis#786](https://github.com/tharsis/ethermint/pull/786) Improve error message of `SendTransaction`/`SendRawTransaction` JSON-RPC APIs.
 
 ### Bug Fixes
 

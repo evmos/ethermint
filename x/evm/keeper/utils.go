@@ -6,7 +6,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/palantir/stacktrace"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
@@ -28,7 +27,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 	// fetch sender account from signature
 	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, msgEthTx.GetFrom())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "account not found for sender %s", msgEthTx.From)
+		return nil, sdkerrors.Wrapf(err, "account not found for sender %s", msgEthTx.From)
 	}
 
 	gasLimit := txData.GetGas()
@@ -40,9 +39,9 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	intrinsicGas, err := core.IntrinsicGas(txData.GetData(), accessList, isContractCreation, homestead, istanbul)
 	if err != nil {
-		return nil, stacktrace.Propagate(sdkerrors.Wrap(
+		return nil, sdkerrors.Wrapf(
 			err,
-			"failed to compute intrinsic gas cost"), "failed to retrieve intrinsic gas, contract creation = %t; homestead = %t, istanbul = %t",
+			"failed to retrieve intrinsic gas, contract creation = %t; homestead = %t, istanbul = %t",
 			isContractCreation, homestead, istanbul,
 		)
 	}
@@ -77,7 +76,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	// deduct the full gas cost from the user balance
 	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, sdkerrors.Wrapf(
 			err,
 			"failed to deduct full gas cost %s from the user %s balance",
 			fees, msgEthTx.From,
@@ -99,22 +98,16 @@ func CheckSenderBalance(
 	cost := txData.Cost()
 
 	if cost.Sign() < 0 {
-		return stacktrace.Propagate(
-			sdkerrors.Wrapf(
-				sdkerrors.ErrInvalidCoins,
-				"tx cost (%s%s) is negative and invalid", cost, denom,
-			),
-			"tx cost amount should never be negative")
+		return sdkerrors.Wrapf(
+			sdkerrors.ErrInvalidCoins,
+			"tx cost (%s%s) is negative and invalid", cost, denom,
+		)
 	}
 
 	if balance.IsNegative() || balance.Amount.BigInt().Cmp(cost) < 0 {
-		return stacktrace.Propagate(
-			sdkerrors.Wrapf(
-				sdkerrors.ErrInsufficientFunds,
-				"sender balance < tx cost (%s < %s%s)", balance, txData.Cost(), denom,
-			),
-			"sender should have had enough funds to pay for tx cost = fee + amount (%s = %s + %s)",
-			cost, txData.Fee(), txData.GetValue(),
+		return sdkerrors.Wrapf(
+			sdkerrors.ErrInsufficientFunds,
+			"sender balance < tx cost (%s < %s%s)", balance, txData.Cost(), denom,
 		)
 	}
 	return nil
