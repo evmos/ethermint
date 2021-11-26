@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
 * (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
+* (rpc) [tharsis#781](https://github.com/tharsis/ethermint/pull/781) Fix get block invalid transactions filter.
 
 ## [v0.8.0] - 2021-11-17
 
