@@ -14,9 +14,17 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+<<<<<<< HEAD
 	github.com/improbable-eng/grpc-web v0.14.1
 	github.com/miguelmota/go-ethereum-hdwallet v0.0.1
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
+=======
+	github.com/holiman/uint256 v1.2.0
+	github.com/improbable-eng/grpc-web v0.15.0
+	github.com/klauspost/compress v1.11.9 // indirect
+	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
+	github.com/onsi/ginkgo v1.16.5
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/regen-network/cosmos-proto v0.3.1

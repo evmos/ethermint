@@ -3,7 +3,6 @@ package keeper
 import (
 	"math/big"
 
-	"github.com/palantir/stacktrace"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,6 +20,33 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
+<<<<<<< HEAD
+=======
+// EVMConfig creates the EVMConfig based on current state
+func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
+	params := k.GetParams(ctx)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+
+	// get the coinbase address from the block proposer
+	coinbase, err := k.GetCoinbaseAddress(ctx)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
+	}
+
+	var baseFee *big.Int
+	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
+		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
+	}
+
+	return &types.EVMConfig{
+		Params:      params,
+		ChainConfig: ethCfg,
+		CoinBase:    coinbase,
+		BaseFee:     baseFee,
+	}, nil
+}
+
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 // NewEVM generates a go-ethereum VM from the provided Message fields and the chain parameters
 // (ChainConfig and module Params). It additionally sets the validator operator address as the
 // coinbase address to make it available for the COINBASE opcode, even though there is no
@@ -142,11 +168,17 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// ensure keeper state error is cleared
 	defer k.ClearStateError()
 
+<<<<<<< HEAD
 	// return error if contract creation or call are disabled through governance
 	if !params.EnableCreate && tx.To() == nil {
 		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
 	} else if !params.EnableCall && tx.To() != nil {
 		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+=======
+	cfg, err := k.EVMConfig(ctx)
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to load evm config")
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 	}
 
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
@@ -156,7 +188,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	msg, err := tx.AsMessage(signer)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to return ethereum transaction as core message")
+		return nil, sdkerrors.Wrap(err, "failed to return ethereum transaction as core message")
 	}
 
 	// get the coinbase address from the block proposer
@@ -189,7 +221,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	// pass false to execute in real mode, which do actual gas refunding
 	res, err := k.ApplyMessage(evm, msg, ethCfg, false)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "failed to apply ethereum core message")
+		return nil, sdkerrors.Wrap(err, "failed to apply ethereum core message")
 	}
 	res.Hash = txHash.Hex()
 
@@ -223,6 +255,17 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		}
 	}
 
+<<<<<<< HEAD
+=======
+	// change to original context
+	k.WithContext(ctx)
+
+	// refund gas according to Ethereum gas accounting rules.
+	if err := k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom); err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
+	}
+
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 	if len(logs) > 0 {
 		res.Logs = types.NewLogsFromEth(logs)
 		// Update transient block bloom filter
@@ -276,18 +319,28 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	// ensure keeper state error is cleared
 	defer k.ClearStateError()
 
+<<<<<<< HEAD
+=======
+	// return error if contract creation or call are disabled through governance
+	if !cfg.Params.EnableCreate && msg.To() == nil {
+		return nil, sdkerrors.Wrap(types.ErrCreateDisabled, "failed to create new contract")
+	} else if !cfg.Params.EnableCall && msg.To() != nil {
+		return nil, sdkerrors.Wrap(types.ErrCallDisabled, "failed to call contract")
+	}
+
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(msg, cfg, contractCreation)
 	if err != nil {
 		// should have already been checked on Ante Handler
-		return nil, stacktrace.Propagate(err, "intrinsic gas failed")
+		return nil, sdkerrors.Wrap(err, "intrinsic gas failed")
 	}
 	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
 	if msg.Gas() < intrinsicGas {
 		// eth_estimateGas will check for this exact error
-		return nil, stacktrace.Propagate(core.ErrIntrinsicGas, "apply message")
+		return nil, sdkerrors.Wrap(core.ErrIntrinsicGas, "apply message")
 	}
 	leftoverGas := msg.Gas() - intrinsicGas
 
@@ -319,6 +372,20 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 		}
 	}
 
+<<<<<<< HEAD
+=======
+	// calculate gas refund
+	if msg.Gas() < leftoverGas {
+		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
+	}
+	gasUsed := msg.Gas() - leftoverGas
+	refund := k.GasToRefund(gasUsed, refundQuotient)
+	if refund > gasUsed {
+		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
+	}
+	gasUsed -= refund
+
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 	// EVM execution error needs to be available for the JSON-RPC client
 	var vmError string
 	if vmErr != nil {
@@ -333,6 +400,7 @@ func (k *Keeper) ApplyMessage(evm *vm.EVM, msg core.Message, cfg *params.ChainCo
 	}, nil
 }
 
+<<<<<<< HEAD
 // ApplyNativeMessage executes an ethereum message on the EVM. It is meant to be called from an internal
 // native Cosmos SDK module.
 func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxResponse, error) {
@@ -345,6 +413,13 @@ func (k *Keeper) ApplyNativeMessage(msg core.Message) (*types.MsgEthereumTxRespo
 		return nil, stacktrace.Propagate(types.ErrCreateDisabled, "failed to create new contract")
 	} else if !params.EnableCall && msg.To() != nil {
 		return nil, stacktrace.Propagate(types.ErrCallDisabled, "failed to call contract")
+=======
+// ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
+func (k *Keeper) ApplyMessage(msg core.Message, tracer vm.Tracer, commit bool) (*types.MsgEthereumTxResponse, error) {
+	cfg, err := k.EVMConfig(k.Ctx())
+	if err != nil {
+		return nil, sdkerrors.Wrap(err, "failed to load evm config")
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 	}
 
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
@@ -430,7 +505,11 @@ func (k *Keeper) RefundGas(msg core.Message, leftoverGas, refundQuotient uint64)
 		err := k.bankKeeper.SendCoinsFromModuleToAccount(k.Ctx(), authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
 			err = sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
+<<<<<<< HEAD
 			return leftoverGas, stacktrace.Propagate(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
+=======
+			return sdkerrors.Wrapf(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 		}
 	default:
 		// no refund, consume gas and update the tx gas meter
@@ -453,9 +532,10 @@ func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
 	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
-		return common.Address{}, stacktrace.Propagate(
-			sdkerrors.Wrap(stakingtypes.ErrNoValidatorFound, consAddr.String()),
-			"failed to retrieve validator from block proposer address",
+		return common.Address{}, sdkerrors.Wrapf(
+			stakingtypes.ErrNoValidatorFound,
+			"failed to retrieve validator from block proposer address %s",
+			consAddr.String(),
 		)
 	}
 

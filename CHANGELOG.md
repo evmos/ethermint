@@ -35,6 +35,66 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+<<<<<<< HEAD
+=======
+## Unreleased
+
+## Improvements
+
+* (ci) [tharsis#784](https://github.com/tharsis/ethermint/pull/784) Enable automatic backport of PRs.
+* (rpc) [tharsis#786](https://github.com/tharsis/ethermint/pull/786) Improve error message of `SendTransaction`/`SendRawTransaction` JSON-RPC APIs.
+
+### Bug Fixes
+
+* (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
+* (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
+* (rpc) [tharsis#782](https://github.com/tharsis/ethermint/pull/782) Fix wrong block gas limit returned by JSON-RPC.
+
+## [v0.8.0] - 2021-11-17
+
+### State Machine Breaking
+
+* (evm, ante) [tharsis#620](https://github.com/tharsis/ethermint/pull/620) Add fee market field to EVM `Keeper` and `AnteHandler`.
+* (all) [tharsis#231](https://github.com/tharsis/ethermint/pull/231) Bump go-ethereum version to [`v1.10.9`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.9)
+* (ante) [tharsis#703](https://github.com/tharsis/ethermint/pull/703) Fix some fields in transaction are not authenticated by signature.
+* (evm) [tharsis#751](https://github.com/tharsis/ethermint/pull/751) don't revert gas refund logic when transaction reverted
+
+### Features
+
+* (rpc, evm) [tharsis#673](https://github.com/tharsis/ethermint/pull/673) Use tendermint events to store fee market basefee.
+* (rpc) [tharsis#624](https://github.com/tharsis/ethermint/pull/624) Implement new JSON-RPC endpoints from latest geth version
+* (evm) [tharsis#662](https://github.com/tharsis/ethermint/pull/662) Disable basefee for non london blocks
+* (cmd) [tharsis#712](https://github.com/tharsis/ethermint/pull/712) add tx cli to build evm transaction
+* (rpc) [tharsis#733](https://github.com/tharsis/ethermint/pull/733) add JSON_RPC endpoint `personal_unpair`
+* (rpc) [tharsis#734](https://github.com/tharsis/ethermint/pull/734) add JSON_RPC endpoint `eth_feeHistory`
+* (rpc) [tharsis#740](https://github.com/tharsis/ethermint/pull/740) add JSON_RPC endpoint `personal_initializeWallet`
+* (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) add JSON_RPC endpoint `debug_traceBlockByHash`
+* (rpc) [tharsis#748](https://github.com/tharsis/ethermint/pull/748) add JSON_RPC endpoint `personal_listWallets`
+* (rpc) [tharsis#754](https://github.com/tharsis/ethermint/pull/754) add JSON_RPC endpoint `debug_intermediateRoots`
+
+### Bug Fixes
+
+* (evm) [tharsis#746](https://github.com/tharsis/ethermint/pull/746) Set EVM debugging based on tracer configuration.
+* (app,cli) [tharsis#725](https://github.com/tharsis/ethermint/pull/725) Fix cli-config for  `keys` command.
+* (rpc) [tharsis#727](https://github.com/tharsis/ethermint/pull/727) Decode raw transaction using RLP.
+* (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
+* (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
+* (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
+* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
+* (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
+* (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs 
+* (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) Fix debug JSON RPC handler crash on non-existing block
+
+### Improvements
+
+* (tests) [tharsis#704](https://github.com/tharsis/ethermint/pull/704) Introduce E2E testing framework for clients
+* (deps) [tharsis#737](https://github.com/tharsis/ethermint/pull/737) Bump ibc-go to [`v2.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v2.0.0)
+* (rpc) [tharsis#671](https://github.com/tharsis/ethermint/pull/671) Don't pass base fee externally for `EthCall`/`EthEstimateGas` apis.
+* (evm) [tharsis#674](https://github.com/tharsis/ethermint/pull/674) Refactor `ApplyMessage`, remove
+  `ApplyNativeMessage`.
+* (rpc) [tharsis#714](https://github.com/tharsis/ethermint/pull/714) remove `MsgEthereumTx` support in `TxConfig`
+
+>>>>>>> c8d4d3f (fix: improve error message in `SendTransaction` json-rpc api (#786))
 ## [v0.7.2] - 2021-10-24
 
 ### Improvements
