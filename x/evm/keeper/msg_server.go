@@ -56,7 +56,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	for _, log := range response.Logs {
 		value, err := json.Marshal(log)
 		if err != nil {
-			return nil, sdkerror.Wrap(err, "failed to encode log")
+			return nil, sdkerrors.Wrap(err, "failed to encode log")
 		}
 		txLogAttrs = append(txLogAttrs, sdk.NewAttribute(types.AttributeKeyTxLog, string(value)))
 	}
