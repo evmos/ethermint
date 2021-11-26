@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/params"
@@ -810,10 +811,10 @@ func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
 	syncCtx := e.clientCtx.WithBroadcastMode(flags.BroadcastSync)
 	rsp, err := syncCtx.BroadcastTx(txBytes)
-	if err != nil || rsp.Code != 0 {
-		if err == nil {
-			err = errors.New(rsp.RawLog)
-		}
+	if rsp != nil && rsp.Code != 0 {
+		err = sdkerrors.ABCIError(rsp.Codespace, rsp.Code, rsp.RawLog)
+	}
+	if err != nil {
 		e.logger.Error("failed to broadcast tx", "error", err.Error())
 		return txHash, err
 	}
