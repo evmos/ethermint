@@ -37,6 +37,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Unreleased
 
+## [v0.7.2-cronos-3] - 2021-11-29
+
 ### Bug Fixes
 
 - [tharsis#781](https://github.com/tharsis/ethermint/pull/781) fix empty transactions in getBlock
