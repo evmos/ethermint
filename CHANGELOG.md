@@ -43,6 +43,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - [crypto-org-chain/ethermint#15](https://github.com/crypto-org-chain/ethermint/pull/15) web3 rpc api returns wrong block gas limit
 - [crypto-org-chain/ethermint#16](https://github.com/crypto-org-chain/ethermint/pull/16) fix unwrap context panic in BlockMaxGasFromConsensusParams
 
+### Improvements
+
+- [tharsis#786](https://github.com/tharsis/ethermint/pull/786) Improve error message of `SendTransaction`/`SendRawTransaction` JSON-RPC APIs.
+
 ## [v0.7.2-cronos-2] - 2021-11-17
 
 ### Bug Fixes

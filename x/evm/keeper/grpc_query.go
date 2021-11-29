@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -316,7 +315,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		k.ctxStack.RevertAll()
 
 		if err != nil {
-			if errors.Is(stacktrace.RootCause(err), core.ErrIntrinsicGas) {
+			if errors.Is(err, core.ErrIntrinsicGas) {
 				return true, nil, nil // Special case, raise gas limit
 			}
 			return true, nil, err // Bail out

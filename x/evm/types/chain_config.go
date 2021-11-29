@@ -131,7 +131,7 @@ func (cc ChainConfig) Validate() error {
 
 func validateHash(hex string) error {
 	if hex != "" && strings.TrimSpace(hex) == "" {
-		return sdkerrors.Wrapf(ErrInvalidChainConfig, "hash cannot be blank")
+		return sdkerrors.Wrap(ErrInvalidChainConfig, "hash cannot be blank")
 	}
 
 	return nil
