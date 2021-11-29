@@ -39,11 +39,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Improvements
 
+* (app) [tharsis#794](https://github.com/tharsis/ethermint/pull/794) Setup in-place store migrators.
 * (ci) [tharsis#784](https://github.com/tharsis/ethermint/pull/784) Enable automatic backport of PRs.
 * (rpc) [tharsis#786](https://github.com/tharsis/ethermint/pull/786) Improve error message of `SendTransaction`/`SendRawTransaction` JSON-RPC APIs.
 
 ### Bug Fixes
 
+* (evm) [tharsis#794](https://github.com/tharsis/ethermint/pull/794) Register EVM gRPC `Msg` server.
 * (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
 * (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
 * (rpc) [tharsis#781](https://github.com/tharsis/ethermint/pull/781) Fix get block invalid transactions filter.
