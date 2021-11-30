@@ -9,7 +9,6 @@ import (
 	"github.com/tharsis/ethermint/tests"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
-	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -366,65 +365,6 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 		suite.Run(tc.name, func() {
 			tc.malleate()
 
-			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
-
-			if tc.expPass {
-				suite.Require().NoError(err)
-			} else {
-				suite.Require().Error(err)
-			}
-		})
-	}
-}
-
-func (suite AnteTestSuite) TestAccessListDecorator() {
-	dec := ante.NewAccessListDecorator(suite.app.EvmKeeper)
-
-	addr := tests.GenerateAddress()
-	al := &ethtypes.AccessList{
-		{Address: addr, StorageKeys: []common.Hash{{}}},
-	}
-
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
-	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, al)
-
-	tx.From = addr.Hex()
-	tx2.From = addr.Hex()
-
-	testCases := []struct {
-		name     string
-		tx       sdk.Tx
-		malleate func()
-		expPass  bool
-	}{
-		{"invalid transaction type", &invalidTx{}, func() {}, false},
-		{
-			"success - no access list",
-			tx,
-			func() {
-				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
-				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
-
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
-			},
-			true,
-		},
-		{
-			"success - with access list",
-			tx2,
-			func() {
-				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
-				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
-
-				suite.app.EvmKeeper.AddBalance(addr, big.NewInt(1000000))
-			},
-			true,
-		},
-	}
-
-	for _, tc := range testCases {
-		suite.Run(tc.name, func() {
-			tc.malleate()
 			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
 
 			if tc.expPass {
