@@ -37,7 +37,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
-## Improvements
+### State Machine Breaking
+
+- (evm) [tharsis#802](https://github.com/tharsis/ethermint/pull/802) Clear access list for each transaction
+
+### Improvements
 
 * (app) [tharsis#794](https://github.com/tharsis/ethermint/pull/794) Setup in-place store migrators.
 * (ci) [tharsis#784](https://github.com/tharsis/ethermint/pull/784) Enable automatic backport of PRs.
