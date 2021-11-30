@@ -334,6 +334,8 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 	}
 	leftoverGas := msg.Gas() - intrinsicGas
 
+	// Clear access list before executing the contract
+	k.ClearAccessList()
 	// access list preparaion is moved from ante handler to here, because it's needed when `ApplyMessage` is called
 	// under contexts where ante handlers are not run, for example `eth_call` and `eth_estimateGas`.
 	if rules := cfg.ChainConfig.Rules(big.NewInt(k.Ctx().BlockHeight())); rules.IsBerlin {
