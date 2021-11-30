@@ -385,63 +385,6 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	return next(ctx, tx, simulate)
 }
 
-// AccessListDecorator prepare an access list for the sender if Yolov3/Berlin/EIPs 2929 and 2930 are
-// applicable at the current block number.
-type AccessListDecorator struct {
-	evmKeeper EVMKeeper
-}
-
-// NewAccessListDecorator creates a new AccessListDecorator.
-func NewAccessListDecorator(evmKeeper EVMKeeper) AccessListDecorator {
-	return AccessListDecorator{
-		evmKeeper: evmKeeper,
-	}
-}
-
-// AnteHandle handles the preparatory steps for executing an EVM state transition with
-// regards to both EIP-2929 and EIP-2930:
-//
-// 	- Add sender to access list (2929)
-// 	- Add destination to access list (2929)
-// 	- Add precompiles to access list (2929)
-// 	- Add the contents of the optional tx access list (2930)
-//
-// The AnteHandler will only prepare the access list if Yolov3/Berlin/EIPs 2929 and 2930 are applicable at the current number.
-func (ald AccessListDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	params := ald.evmKeeper.GetParams(ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(ald.evmKeeper.ChainID())
-
-	rules := ethCfg.Rules(big.NewInt(ctx.BlockHeight()))
-
-	// we don't need to prepare the access list if the chain is not currently on the Berlin upgrade
-	if !rules.IsBerlin {
-		return next(ctx, tx, simulate)
-	}
-
-	// setup the keeper context before setting the access list
-	ald.evmKeeper.WithContext(ctx)
-
-	for _, msg := range tx.GetMsgs() {
-		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
-		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil))
-		}
-
-		sender := common.BytesToAddress(msgEthTx.GetFrom())
-
-		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
-		if err != nil {
-			return ctx, sdkerrors.Wrap(err, "failed to unpack tx data")
-		}
-
-		ald.evmKeeper.PrepareAccessList(sender, txData.GetTo(), vm.ActivePrecompiles(rules), txData.GetAccessList())
-	}
-
-	// set the original gas meter
-	ald.evmKeeper.WithContext(ctx)
-	return next(ctx, tx, simulate)
-}
-
 // EthIncrementSenderSequenceDecorator increments the sequence of the signers.
 type EthIncrementSenderSequenceDecorator struct {
 	ak evmtypes.AccountKeeper
