@@ -318,7 +318,7 @@ func New(l Logger, baseDir string, cfg Config) (*Network, error) {
 				appCfg.JSONRPC.Address = fmt.Sprintf("0.0.0.0:%s", jsonRPCPort)
 			}
 			appCfg.JSONRPC.Enable = true
-			appCfg.JSONRPC.API = config.GetDefaultAPINamespaces()
+			appCfg.JSONRPC.API = config.GetAPINamespaces()
 		}
 
 		logger := log.NewNopLogger()

@@ -295,7 +295,7 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) (type
 
 	err := k.ForEachStorage(address, func(key, value common.Hash) bool {
 		storage = append(storage, types.NewState(key, value))
-		return false
+		return true
 	})
 	if err != nil {
 		return types.Storage{}, err
@@ -317,7 +317,7 @@ func (k Keeper) DeleteState(addr common.Address, key common.Hash) {
 func (k Keeper) DeleteAccountStorage(addr common.Address) {
 	_ = k.ForEachStorage(addr, func(key, _ common.Hash) bool {
 		k.DeleteState(addr, key)
-		return false
+		return true
 	})
 }
 

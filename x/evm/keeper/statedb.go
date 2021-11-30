@@ -805,6 +805,7 @@ func (k *Keeper) AddPreimage(_ common.Hash, _ []byte) {}
 
 // ForEachStorage uses the store iterator to iterate over all the state keys and perform a callback
 // function on each of them.
+// The callback should return `true` to continue, return `false` to break early.
 func (k *Keeper) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) error {
 	if k.HasStateError() {
 		return k.stateErr
@@ -824,7 +825,7 @@ func (k *Keeper) ForEachStorage(addr common.Address, cb func(key, value common.H
 		value := common.BytesToHash(iterator.Value())
 
 		// check if iteration stops
-		if cb(key, value) {
+		if !cb(key, value) {
 			return nil
 		}
 	}
