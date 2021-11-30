@@ -747,7 +747,7 @@ func (suite *KeeperTestSuite) TestForEachStorage() {
 			},
 			func(key, value common.Hash) bool {
 				storage = append(storage, types.NewState(key, value))
-				return false
+				return true
 			},
 			[]common.Hash{
 				common.BytesToHash([]byte("value0")),
@@ -766,9 +766,9 @@ func (suite *KeeperTestSuite) TestForEachStorage() {
 			func(key, value common.Hash) bool {
 				if value == common.BytesToHash([]byte("filtervalue")) {
 					storage = append(storage, types.NewState(key, value))
-					return true
+					return false
 				}
-				return false
+				return true
 			},
 			[]common.Hash{
 				common.BytesToHash([]byte("filtervalue")),
