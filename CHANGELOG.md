@@ -45,6 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (license) [tharsis#800](https://github.com/tharsis/ethermint/pull/800) Re-license project to [LGPLv3](https://choosealicense.com/licenses/lgpl-3.0/#) to comply with go-ethereum.
 * (evm) [tharsis#794](https://github.com/tharsis/ethermint/pull/794) Register EVM gRPC `Msg` server.
 * (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
 * (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
