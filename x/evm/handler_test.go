@@ -596,9 +596,9 @@ func (suite *EvmTestSuite) TestGasRefundWhenReverted() {
 
 	after := k.GetBalance(suite.from)
 
-	suite.Require().Equal(uint64(21861), res.GasUsed)
+	suite.Require().Equal(uint64(23861), res.GasUsed)
 	// check gas refund works
-	suite.Require().Equal(big.NewInt(21861), new(big.Int).Sub(before, after))
+	suite.Require().Equal(big.NewInt(23861), new(big.Int).Sub(before, after))
 }
 
 // DummyHook implements EvmHooks interface
