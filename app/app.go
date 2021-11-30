@@ -114,6 +114,7 @@ func init() {
 	}
 
 	DefaultNodeHome = filepath.Join(userHomeDir, ".ethermintd")
+	sdk.DefaultPowerReduction = ethermint.PowerReduction
 }
 
 const appName = "ethermintd"
