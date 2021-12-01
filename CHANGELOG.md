@@ -35,14 +35,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.8.1] - 2021-11-23
-
-### Bug Fixes
-
-* (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
-* (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
-
-## [v0.8.0] - 2021-11-17
+## [v0.9.0] - 2021-12-01
 
 ### State Machine Breaking
 
