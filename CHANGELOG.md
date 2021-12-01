@@ -39,7 +39,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-- (evm) [tharsis#802](https://github.com/tharsis/ethermint/pull/802) Clear access list for each transaction
+* (evm) [tharsis#802](https://github.com/tharsis/ethermint/pull/802) Clear access list for each transaction
 
 ### Improvements
 
@@ -51,11 +51,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (license) [tharsis#800](https://github.com/tharsis/ethermint/pull/800) Re-license project to [LGPLv3](https://choosealicense.com/licenses/lgpl-3.0/#) to comply with go-ethereum.
 * (evm) [tharsis#794](https://github.com/tharsis/ethermint/pull/794) Register EVM gRPC `Msg` server.
-* (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
-* (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
 * (rpc) [tharsis#781](https://github.com/tharsis/ethermint/pull/781) Fix get block invalid transactions filter.
 * (rpc) [tharsis#782](https://github.com/tharsis/ethermint/pull/782) Fix wrong block gas limit returned by JSON-RPC.
 * (evm) [tharsis#798](https://github.com/tharsis/ethermint/pull/798) Fix the semantic of `ForEachStorage` callback's return value
+
+## [v0.8.1] - 2021-11-23
+
+### Bug Fixes
+
+* (feemarket) [tharsis#770](https://github.com/tharsis/ethermint/pull/770) Enable fee market (EIP1559) by default.
+* (rpc) [tharsis#769](https://github.com/tharsis/ethermint/pull/769) Fix default Ethereum signer for JSON-RPC.
 
 ## [v0.8.0] - 2021-11-17
 
