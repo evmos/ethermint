@@ -168,23 +168,27 @@ func (s *IntegrationTestSuite) TestHeader() {
 
 func (s *IntegrationTestSuite) TestSendRawTransaction() {
 	testCases := []struct {
-		name     string
-		data     string
-		expError bool
+		name           string
+		data           string
+		expEncodingErr bool
+		expError       bool
 	}{
 		{
 			"rlp: expected input list for types.LegacyTx",
 			"0x85b7119c978b22ac5188a554916d5eb9000567b87b3b8a536222c3c2e6549b98",
+			true,
 			false,
 		},
 		{
 			"transaction type not supported",
 			"0x1238b01bfc01e946ffdf8ccb087a072298cf9f141899c5c586550cc910b8c5aa",
+			true,
 			false,
 		},
 		{
 			"rlp: element is larger than containing list",
 			"0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
+			true,
 			false,
 		},
 	}
@@ -198,29 +202,37 @@ func (s *IntegrationTestSuite) TestSendRawTransaction() {
 
 			tx := new(ethtypes.Transaction)
 			err = tx.UnmarshalBinary(data)
+			if tc.expEncodingErr {
+				s.Require().Error(err)
+				s.Require().Equal(tc.name, err.Error())
+				return
+			}
+
 			s.Require().NoError(err)
+			s.Require().NotEmpty(tx)
 
 			hash := tx.Hash()
 
 			err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, tx)
 			if tc.expError {
 				s.Require().Error(err)
-			} else {
-				s.Require().NoError(err)
+				return
 			}
+
+			s.Require().NoError(err)
 
 			err = s.network.WaitForNextBlock()
 			s.Require().NoError(err)
 
 			expTx, isPending, err := s.network.Validators[0].JSONRPCClient.TransactionByHash(s.ctx, hash)
-
 			if tc.expError {
 				s.Require().Error(err)
-			} else {
-				s.Require().NoError(err)
-				s.Require().False(isPending)
-				s.Require().Equal(tx, expTx)
+				return
 			}
+
+			s.Require().NoError(err)
+			s.Require().False(isPending)
+			s.Require().Equal(tx, expTx)
 		})
 	}
 }
