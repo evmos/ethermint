@@ -61,8 +61,7 @@ func (s *CompiledContract) UnmarshalJSON(data []byte) error {
 
 	s.Bin = x.Bin
 	if err := json.Unmarshal([]byte(x.ABI), &s.ABI); err != nil {
-		fmt.Println("unmarshal abi fail", x.ABI, string(data))
-		return err
+		return fmt.Errorf("failed to unmarshal ABI: %w", err)
 	}
 
 	return nil
