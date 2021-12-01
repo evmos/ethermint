@@ -13,6 +13,8 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -162,6 +164,77 @@ func (s *IntegrationTestSuite) TestHeader() {
 	// header := rpctypes.EthHeaderFromTendermint(block.Block.Header, ethtypes.Bloom{}, headerByHash.BaseFee)
 	// s.Require().NotNil(header)
 	// s.Require().Equal(headerByHash, header)
+}
+
+func (s *IntegrationTestSuite) TestSendRawTransaction() {
+	testCases := []struct {
+		name           string
+		data           string
+		expEncodingErr bool
+		expError       bool
+	}{
+		{
+			"rlp: expected input list for types.LegacyTx",
+			"0x85b7119c978b22ac5188a554916d5eb9000567b87b3b8a536222c3c2e6549b98",
+			true,
+			false,
+		},
+		{
+			"transaction type not supported",
+			"0x1238b01bfc01e946ffdf8ccb087a072298cf9f141899c5c586550cc910b8c5aa",
+			true,
+			false,
+		},
+		{
+			"rlp: element is larger than containing list",
+			"0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
+			true,
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			var data hexutil.Bytes
+
+			err := data.UnmarshalText([]byte(tc.data))
+			s.Require().NoError(err, data)
+
+			tx := new(ethtypes.Transaction)
+			err = tx.UnmarshalBinary(data)
+			if tc.expEncodingErr {
+				s.Require().Error(err)
+				s.Require().Equal(tc.name, err.Error())
+				return
+			}
+
+			s.Require().NoError(err)
+			s.Require().NotEmpty(tx)
+
+			hash := tx.Hash()
+
+			err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, tx)
+			if tc.expError {
+				s.Require().Error(err)
+				return
+			}
+
+			s.Require().NoError(err)
+
+			err = s.network.WaitForNextBlock()
+			s.Require().NoError(err)
+
+			expTx, isPending, err := s.network.Validators[0].JSONRPCClient.TransactionByHash(s.ctx, hash)
+			if tc.expError {
+				s.Require().Error(err)
+				return
+			}
+
+			s.Require().NoError(err)
+			s.Require().False(isPending)
+			s.Require().Equal(tx, expTx)
+		})
+	}
 }
 
 func TestIntegrationTestSuite(t *testing.T) {
