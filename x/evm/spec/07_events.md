@@ -15,6 +15,7 @@ The `x/evm` module emits the Cosmos SDK events after a state execution. The EVM 
 | ethereum_tx | `"contract"`       | `{hex_address}`         |
 | ethereum_tx | `"txHash"`         | `{tendermint_hex_hash}` |
 | ethereum_tx | `"ethereumTxHash"` | `{hex_hash}`            |
+| ethereum_tx | `"txIndex"`        | `{tx_index}`            |
 | tx_log      | `"txLog"`          | `{tx_log}`              |
 | message     | `"sender"`         | `{eth_address}`         |
 | message     | `"action"`         | `"ethereum"`            |
