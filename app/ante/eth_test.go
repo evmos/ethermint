@@ -382,15 +382,18 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 
 	contract := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 0, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	contract.From = addr.Hex()
+	err := contract.Sign(suite.ethSigner, tests.NewSigner(privKey))
+	suite.Require().NoError(err)
 
 	to := tests.GenerateAddress()
 	tx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 0, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	tx.From = addr.Hex()
-
-	err := contract.Sign(suite.ethSigner, tests.NewSigner(privKey))
+	err = tx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
 
-	err = tx.Sign(suite.ethSigner, tests.NewSigner(privKey))
+	tx2 := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
+	tx2.From = addr.Hex()
+	err = tx2.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
 
 	testCases := []struct {
@@ -404,7 +407,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 			"invalid transaction type",
 			&invalidTx{},
 			func() {},
-			false, false,
+			false, true,
 		},
 		{
 			"no signers",
@@ -429,7 +432,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		},
 		{
 			"success - call",
-			tx,
+			tx2,
 			func() {},
 			true, false,
 		},
@@ -456,11 +459,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 				suite.Require().NoError(err)
 
 				nonce := suite.app.EvmKeeper.GetNonce(addr)
-				if txData.GetTo() == nil {
-					suite.Require().Equal(txData.GetNonce(), nonce)
-				} else {
-					suite.Require().Equal(txData.GetNonce()+1, nonce)
-				}
+				suite.Require().Equal(txData.GetNonce()+1, nonce)
 			} else {
 				suite.Require().Error(err)
 			}

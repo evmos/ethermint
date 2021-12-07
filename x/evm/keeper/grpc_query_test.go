@@ -678,6 +678,8 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			malleate: func() {
 				txIndex = 1
 				traceConfig = nil
+				// increase nonce to avoid address collision
+				suite.app.EvmKeeper.SetNonce(suite.address, suite.app.EvmKeeper.GetNonce(suite.address)+1)
 
 				contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 				suite.Commit()
@@ -803,6 +805,8 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			msg: "tracer with multiple transactions",
 			malleate: func() {
 				traceConfig = nil
+				// increase nonce to avoid address collision
+				suite.app.EvmKeeper.SetNonce(suite.address, suite.app.EvmKeeper.GetNonce(suite.address)+1)
 				contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 				suite.Commit()
 				// create multiple transactions in the same block
