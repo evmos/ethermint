@@ -7,12 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-const (
-	DefaultBaseFeeChangeDenominator = 8
-	DefaultElasticityMultiplier     = 2
-	DefaultInitialBaseFee           = 1000000000
-)
-
 var _ paramtypes.ParamSet = &Params{}
 
 // Parameter keys
