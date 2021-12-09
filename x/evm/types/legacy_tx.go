@@ -200,3 +200,11 @@ func (tx LegacyTx) Fee() *big.Int {
 func (tx LegacyTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
 }
+
+func (tx LegacyTx) EffectiveFee(baseFee *big.Int) *big.Int {
+	return tx.Fee()
+}
+
+func (tx LegacyTx) EffectiveCost(baseFee *big.Int) *big.Int {
+	return tx.Cost()
+}

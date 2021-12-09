@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	cmath "github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
@@ -257,7 +256,9 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 	oneInt := sdk.NewInt(1)
 	fiveInt := sdk.NewInt(5)
 	fiftyInt := sdk.NewInt(50)
-	hundredBaseFeeInt := sdk.NewInt(ethparams.InitialBaseFee * 100)
+
+	// should be enough to cover all test cases
+	initBalance := sdk.NewInt((ethparams.InitialBaseFee + 10) * 105)
 
 	testCases := []struct {
 		name         string
@@ -331,15 +332,14 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			expectPass:   false,
 			dynamicTxFee: true,
 		},
-		// TODO: is this case valid?
 		{
-			name:         "empty fee failed to deduct",
+			name:         "empty tip fee is valid to deduct",
 			gasLimit:     10,
 			gasFeeCap:    big.NewInt(ethparams.InitialBaseFee),
 			gasTipCap:    big.NewInt(1),
 			cost:         &oneInt,
 			accessList:   &ethtypes.AccessList{},
-			expectPass:   false,
+			expectPass:   true,
 			dynamicTxFee: true,
 		},
 		{
@@ -382,9 +382,9 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				} else {
 					gasTipCap = tc.gasTipCap
 				}
-				suite.app.EvmKeeper.AddBalance(suite.address, hundredBaseFeeInt.BigInt())
+				suite.app.EvmKeeper.AddBalance(suite.address, initBalance.BigInt())
 				balance := suite.app.EvmKeeper.GetBalance(suite.address)
-				suite.Require().Equal(balance, hundredBaseFeeInt.BigInt())
+				suite.Require().Equal(balance, initBalance.BigInt())
 			} else {
 				if tc.gasPrice != nil {
 					gasPrice = tc.gasPrice.BigInt()
@@ -414,13 +414,10 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				suite.Require().NoError(err, "valid test %d failed", i)
 				if tc.dynamicTxFee {
 					baseFee := suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx)
-					gasFeeGap := new(big.Int).Sub(txData.GetGasFeeCap(), baseFee)
-					effectiveTip := cmath.BigMin(txData.GetGasTipCap(), gasFeeGap)
-
 					suite.Require().Equal(
 						fees,
 						sdk.NewCoins(
-							sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(effectiveTip).Mul(sdk.NewIntFromUint64(tc.gasLimit))),
+							sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewIntFromBigInt(txData.EffectiveFee(baseFee))),
 						),
 						"valid test %d failed, fee value is wrong ", i,
 					)
