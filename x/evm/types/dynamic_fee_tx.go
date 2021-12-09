@@ -270,12 +270,12 @@ func (tx *DynamicFeeTx) GetEffectiveGasPrice(baseFee *big.Int) *big.Int {
 	return math.BigMin(new(big.Int).Add(tx.GasTipCap.BigInt(), baseFee), tx.GasFeeCap.BigInt())
 }
 
-// Fee returns effective_gasprice * gaslimit.
+// EffectiveFee returns effective_gasprice * gaslimit.
 func (tx DynamicFeeTx) EffectiveFee(baseFee *big.Int) *big.Int {
 	return fee(tx.GetEffectiveGasPrice(baseFee), tx.GasLimit)
 }
 
-// Cost returns amount + effective_gasprice * gaslimit.
+// EffectiveCost returns amount + effective_gasprice * gaslimit.
 func (tx DynamicFeeTx) EffectiveCost(baseFee *big.Int) *big.Int {
 	return cost(tx.EffectiveFee(baseFee), tx.GetValue())
 }
