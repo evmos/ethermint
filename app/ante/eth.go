@@ -562,10 +562,10 @@ func NewEthMempoolFeeDecorator(ek EVMKeeper, fmk evmtypes.FeeMarketKeeper) EthMe
 	}
 }
 
+// AnteHandle ensures that the provided fees meet a minimum threshold for the validator,
+// if this is a CheckTx. This is only for local mempool purposes, and thus
+// is only ran on check tx.
 func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	// Ensure that the provided fees meet a minimum threshold for the validator,
-	// if this is a CheckTx. This is only for local mempool purposes, and thus
-	// is only ran on check tx.
 	if ctx.IsCheckTx() && !simulate {
 		if len(tx.GetMsgs()) != 1 {
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx")
@@ -591,7 +591,7 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 
 		glDec := sdk.NewDec(int64(msg.GetGas()))
 		requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
-		if !sdk.NewDecFromBigInt(feeAmt).GTE(requiredFee) {
+		if sdk.NewDecFromBigInt(feeAmt).LT(requiredFee) {
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; got: %s required: %s", feeAmt, requiredFee)
 		}
 	}

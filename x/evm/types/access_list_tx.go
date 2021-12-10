@@ -230,10 +230,12 @@ func (tx AccessListTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
 }
 
+// EffectiveFee is the same as Fee for AccessListTx
 func (tx AccessListTx) EffectiveFee(baseFee *big.Int) *big.Int {
 	return tx.Fee()
 }
 
+// EffectiveCost is the same as Cost for AccessListTx
 func (tx AccessListTx) EffectiveCost(baseFee *big.Int) *big.Int {
 	return tx.Cost()
 }
