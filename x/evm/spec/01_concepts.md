@@ -6,64 +6,57 @@ order: 1
 
 ## EVM
 
-The Ethereum Virtual Machine [EVM](https://ethereum.org/en/developers/docs/evm/)  is a state machine
-that provides the necessary tools to run or create a contract on a given state.
+The Ethereum Virtual Machine (EVM) is a computation engine which can be thought of as one single entity maintained by thousands of connected computers running an Ethereum client. It is considered to be the part of the Ethereum protocol that handles the deployment and execution of [smart contracts](https://ethereum.org/en/developers/docs/smart-contracts/).
 
-## State DB
+To make a clear distinction: The Ethereum protocol describes a blockchain, in which all Ethereum accounts and smart contracts live. It has only one canonical state (a data structure, which keeps all accounts) at any given block in the chain. The EVM, however, is the [state machine](https://en.wikipedia.org/wiki/Finite-state_machine) that defines the rules for computing a new valid state from block to block. It is an isolated runtime, which means that code running inside the EVM has no access to network, filesystem, or other processes.
 
-The `StateDB` interface from geth represents an EVM database for full state querying of both
-contracts and accounts. The concrete type that fulfills this interface on Ethermint is the
-`CommitStateDB`.
+The `x/evm` module implements the EVM as a Cosmos SDK module. It allows users to interact with the EVM by submitting Ethereum transactions and executing their containing messages on the given state to evoke a state transition.
 
-## Genesis State
+### State Transition with Smart Contracts
 
-The `x/evm` module `GenesisState` defines the state necessary for initializing the chain from a previous exported height.
+A state transition on the EVM can be initiated through a transaction that either deploys or calls a smart contract.
 
-+++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/genesis.go#L14-L20
+Smart contracts are just like regular accounts on the blockchain, which additionally  store executable code in an Ethereum-specific binary format (EVM bytecode). They are typically written in an Ethereum high level language, compiled into byte code using an EVM compiler, and finally deployed on the blockchain, by submitting a transaction using an Ethereum client. Whenever another account makes a message call to that deployed contract, it executes its EVM bytecode to  perform calculations and further transactions.
 
-### Genesis Accounts
+### Opcodes
 
-The `GenesisAccount` type corresponds to an adaptation of the Ethereum `GenesisAccount` type. Its
-main difference is that the one on Ethermint uses a custom `Storage` type that uses a slice instead
-of maps for the evm `State` (due to non-determinism), and that it doesn't contain the private key
-field.
+The EVM operates as a stack-based machine, where transactions carry a payload of Opcodes, that are used to specify the interaction with a smart contract.
 
-It is also important to note that since the `auth` and `bank` SDK modules manage the accounts and
-balance state,  the `Address` must correspond to an `EthAccount` that is stored in the `auth`'s
-module `AccountKeeper` and the balance must match the balance of the `EvmDenom` token denomination
-defined on the `GenesisState`'s `Param`. The values for the address and the balance amount maintain
-the same format as the ones from the SDK to make manual inspections easier on the genesis.json.
+Typically contracts expose a public ABI, which is a list of supported ways a user can interact with a contract. To interact with a contract, a user will submit a transaction carrying any amount of wei (including 0) and a data payload formatted according to the ABI, specifying the type of interaction and any additional parameters. Each Opcode execution requires gas that needs to be payed with the transaction. The EVM is therefore considered quasi-turing complete, as it allows any arbitrary computation, but the amount of computations during a contract execution is limited to the amount gas provided in the transaction.
 
-+++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/genesis.go#L22-L30
+For further reading, please refer to:
 
-### Transaction Logs
+- [EVM](https://eth.wiki/concepts/evm/evm)
+- [EVM Architecture](https://cypherpunks-core.github.io/ethereumbook/13evm.html#evm_architecture)
+- [What is Ethereum](https://ethdocs.org/en/latest/introduction/what-is-ethereum.html#what-is-ethereum)
+- [Opcodes](https://www.ethervm.io/)
 
-On every Ethermint transaction, its result contains the Ethereum `Log`s from the state machine
-execution that are used by the JSON-RPC Web3 server for for filter querying. Since Cosmos upgrades
-don't persist the transactions on the blockchain state, we need to persist the logs the EVM module
-state to prevent the queries from failing.
+## StateDB
 
-`TxsLogs` is the field that contains all the transaction logs that need to be persisted after an
-upgrade. It uses an array instead of a map to ensure determinism on the iteration.
+The `StateDB` interface from [go-ethereum](https://github.com/ethereum/go-ethereum/blob/master/core/vm/interface.go) represents an EVM database for full state querying. EVM state transitions are enabled by this interface, which in the `x/evm` module is implemented by the `Keeper`. The implementation of this interface is what makes Ethermint EVM compatible.
 
-+++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/logs.go#L12-L18
+## Consensus Engine
 
-### Chain Config
+The application using the `x/evm` module interacts with the Tendermint Core Consensus Engine over an Application Blockchain Interface (ABCI). Together, the application and Tendermint Core form the programs that run a complete blockchain and combine business logic with decentralized data storage.
 
-The `ChainConfig` is a custom type that contains the same fields as the go-ethereum `ChainConfig`
-parameters, but using `sdk.Int` types instead of `*big.Int`. It also defines additional YAML tags
-for pretty printing.
+Ethereum transactions that are submitted to the `x/evm` module take part in a this consensus process before being executed and changing the application state. We encourage to understand the basics of the [Tendermint consensus engine](https://docs.tendermint.com/master/introduction/what-is-tendermint.html#intro-to-abci) in order to understand state transitions in detail.
 
-The `ChainConfig` type is not a configurable SDK `Param` since the SDK does not allow for validation
-against a previous stored parameter values or `Context` fields. Since most of this type's fields
-rely on the block height value, this limitation prevents the validation of of potential new
-parameter values against the current block height (eg: to prevent updating the config block values
-to a past block).
+## JSON-RPC
 
-If you want to update the config values, use an software upgrade procedure.
+JSON-RPC is a stateless, lightweight remote procedure call (RPC) protocol. Primarily this specification defines several data structures and the rules around their processing. It is transport agnostic in that the concepts can be used within the same process, over sockets, over HTTP, or in many various message passing environments. It uses JSON (RFC 4627) as a data format.
 
-+++ https://github.com/tharsis/ethermint/blob/v0.3.1/x/evm/types/chain_config.go#L16-L45
+Ethermint supports all standard web3 [JSON-RPC](https://evmos.dev/api/json-rpc/server.html) APIs. For more info check the client section.
 
-### Params
+## Transaction Logs
 
-See the [params](07_params.md) document for further information about parameters.
+On every `x/evm` transaction, the result contains the Ethereum `Log`s from the state machine execution that are used by the JSON-RPC Web3 server for filter querying and for processing the EVM Hooks.
+
+The tx logs are stored in the transient store during tx execution and then emitted through cosmos events after the transaction has been processed. They can be queried via gRPC and JSON-RPC.
+
+## Block Bloom
+
+Bloom is the bloom filter value in bytes for each block that can be used for filter queries. The block bloom value is stored in the transient store and then emitted through a cosmos event during `EndBlock` processing. They can be queried via gRPC and JSON-RPC.
+
+::: tip
+👉 **Note**: Since they are not stored on state, Transaction Logs and Block Blooms are not persisted after upgrades. A user must use an archival node after upgrades in order to obtain legacy chain events.
+:::
