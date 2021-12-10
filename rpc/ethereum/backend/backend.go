@@ -955,7 +955,7 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 		return nil, err
 	}
 
-	baseFee := types.BaseFeeFromEvents(blockRes.EndBlockEvents)
+	baseFee := types.BaseFeeFromEvents(blockRes.BeginBlockEvents)
 	if baseFee != nil {
 		return baseFee, nil
 	}
