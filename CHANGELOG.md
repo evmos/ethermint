@@ -37,6 +37,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+- (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update base fee in begin blocker
+
 ## [v0.9.0] - 2021-12-01
 
 ### State Machine Breaking
