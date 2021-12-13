@@ -11,8 +11,13 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/tharsis/ethermint/server/config"
 	"github.com/tharsis/ethermint/testutil/network"
@@ -34,6 +39,8 @@ type IntegrationTestSuite struct {
 	ctx     context.Context
 	cfg     network.Config
 	network *network.Network
+
+	gethClient *gethclient.Client
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -53,11 +60,17 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	_, err = s.network.WaitForHeight(1)
 	s.Require().NoError(err)
 
+	address := fmt.Sprintf("http://%s", s.network.Validators[0].AppConfig.JSONRPC.Address)
+
 	if s.network.Validators[0].JSONRPCClient == nil {
-		address := fmt.Sprintf("http://%s", s.network.Validators[0].AppConfig.JSONRPC.Address)
 		s.network.Validators[0].JSONRPCClient, err = ethclient.Dial(address)
 		s.Require().NoError(err)
 	}
+
+	rpcClient, err := rpc.DialContext(s.ctx, address)
+	s.Require().NoError(err)
+	s.gethClient = gethclient.New(rpcClient)
+	s.Require().NotNil(s.gethClient)
 }
 
 func (s *IntegrationTestSuite) TestChainID() {
@@ -77,6 +90,20 @@ func (s *IntegrationTestSuite) TestChainID() {
 
 	s.Require().Equal(chainID, eip155ChainID)
 	s.Require().Equal(eip155ChainID, eip155ChainIDGen)
+}
+
+func (s *IntegrationTestSuite) TestNodeInfo() {
+	// Not implemented
+	info, err := s.gethClient.GetNodeInfo(s.ctx)
+	s.Require().Error(err)
+	s.Require().Empty(info)
+}
+
+func (s *IntegrationTestSuite) TestCreateAccessList() {
+	// Not implemented
+	accessList, _, _, err := s.gethClient.CreateAccessList(s.ctx, ethereum.CallMsg{})
+	s.Require().Error(err)
+	s.Require().Nil(accessList)
 }
 
 func (s *IntegrationTestSuite) TestBlock() {
@@ -137,6 +164,77 @@ func (s *IntegrationTestSuite) TestHeader() {
 	// header := rpctypes.EthHeaderFromTendermint(block.Block.Header, ethtypes.Bloom{}, headerByHash.BaseFee)
 	// s.Require().NotNil(header)
 	// s.Require().Equal(headerByHash, header)
+}
+
+func (s *IntegrationTestSuite) TestSendRawTransaction() {
+	testCases := []struct {
+		name           string
+		data           string
+		expEncodingErr bool
+		expError       bool
+	}{
+		{
+			"rlp: expected input list for types.LegacyTx",
+			"0x85b7119c978b22ac5188a554916d5eb9000567b87b3b8a536222c3c2e6549b98",
+			true,
+			false,
+		},
+		{
+			"transaction type not supported",
+			"0x1238b01bfc01e946ffdf8ccb087a072298cf9f141899c5c586550cc910b8c5aa",
+			true,
+			false,
+		},
+		{
+			"rlp: element is larger than containing list",
+			"0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
+			true,
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			var data hexutil.Bytes
+
+			err := data.UnmarshalText([]byte(tc.data))
+			s.Require().NoError(err, data)
+
+			tx := new(ethtypes.Transaction)
+			err = tx.UnmarshalBinary(data)
+			if tc.expEncodingErr {
+				s.Require().Error(err)
+				s.Require().Equal(tc.name, err.Error())
+				return
+			}
+
+			s.Require().NoError(err)
+			s.Require().NotEmpty(tx)
+
+			hash := tx.Hash()
+
+			err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, tx)
+			if tc.expError {
+				s.Require().Error(err)
+				return
+			}
+
+			s.Require().NoError(err)
+
+			err = s.network.WaitForNextBlock()
+			s.Require().NoError(err)
+
+			expTx, isPending, err := s.network.Validators[0].JSONRPCClient.TransactionByHash(s.ctx, hash)
+			if tc.expError {
+				s.Require().Error(err)
+				return
+			}
+
+			s.Require().NoError(err)
+			s.Require().False(isPending)
+			s.Require().Equal(tx, expTx)
+		})
+	}
 }
 
 func TestIntegrationTestSuite(t *testing.T) {

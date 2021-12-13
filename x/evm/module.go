@@ -115,15 +115,15 @@ func (AppModule) Name() string {
 // RegisterInvariants interface for registering invariants. Performs a no-op
 // as the evm module doesn't expose invariants.
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
-	// Invariats lead to performance degradation
-	//
-	// keeper.RegisterInvariants(ir, *am.keeper)
 }
 
 // RegisterQueryService registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterMsgServer(cfg.MsgServer(), am.keeper)
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+
+	_ = keeper.NewMigrator(*am.keeper)
 }
 
 // Route returns the message routing key for the evm module.

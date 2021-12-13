@@ -729,6 +729,16 @@ func (k *Keeper) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 	ts.Set(key, []byte{0x1})
 }
 
+// ClearAccessList clear current access list
+func (k *Keeper) ClearAccessList() {
+	ctx := k.Ctx()
+	ts := prefix.NewStore(ctx.TransientStore(k.transientKey), types.KeyPrefixTransientAccessListSlot)
+	itr := ts.Iterator(nil, nil)
+	for ; itr.Valid(); itr.Next() {
+		ts.Delete(itr.Key())
+	}
+}
+
 // ----------------------------------------------------------------------------
 // Snapshotting
 // ----------------------------------------------------------------------------
@@ -795,6 +805,7 @@ func (k *Keeper) AddPreimage(_ common.Hash, _ []byte) {}
 
 // ForEachStorage uses the store iterator to iterate over all the state keys and perform a callback
 // function on each of them.
+// The callback should return `true` to continue, return `false` to break early.
 func (k *Keeper) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) error {
 	if k.HasStateError() {
 		return k.stateErr
@@ -814,7 +825,7 @@ func (k *Keeper) ForEachStorage(addr common.Address, cb func(key, value common.H
 		value := common.BytesToHash(iterator.Value())
 
 		// check if iteration stops
-		if cb(key, value) {
+		if !cb(key, value) {
 			return nil
 		}
 	}
