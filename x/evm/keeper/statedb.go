@@ -623,15 +623,12 @@ func (k *Keeper) Empty(addr common.Address) bool {
 
 		codeHash = common.HexToHash(ethAccount.CodeHash).Bytes()
 	}
-	if nonce == 0 {
-		return false
-	}
 
 	balance := k.GetBalance(addr)
 	hasZeroBalance := balance.Sign() == 0
 	hasEmptyCodeHash := bytes.Equal(codeHash, types.EmptyCodeHash)
 
-	return hasZeroBalance && hasEmptyCodeHash
+	return hasZeroBalance && nonce == 0 && hasEmptyCodeHash
 }
 
 // ----------------------------------------------------------------------------

@@ -180,36 +180,3 @@ func BenchmarkDeepContextStack10(b *testing.B) {
 func BenchmarkDeepContextStack13(b *testing.B) {
 	DoBenchmarkDeepContextStack(b, 13)
 }
-
-func before() *big.Int {
-	b2 := new(big.Int).SetUint64(2)
-	return new(big.Int).Mul(b2, new(big.Int).SetUint64(34))
-}
-
-func after() *big.Int {
-	b2 := new(big.Int).SetUint64(2)
-        return b2
-	return b2.Mul(b2, new(big.Int).SetUint64(34))
-}
-
-var sink interface{}
-
-func BenchmarkMulBefore(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		sink = before()
-	}
-	if sink == nil {
-		b.Fatal("Benchmark did not run")
-	}
-	sink = (interface{})(nil)
-}
-
-func BenchmarkMulAfter(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		sink = after()
-	}
-	if sink == nil {
-		b.Fatal("Benchmark did not run")
-	}
-	sink = (interface{})(nil)
-}
