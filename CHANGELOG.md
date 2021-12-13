@@ -41,6 +41,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
 
+### Bug Fixes
+
+* (rpc) [tharsis#831](https://github.com/tharsis/ethermint/pull/831) Fix BaseFee value when height is specified.
+
 ## [v0.9.0] - 2021-12-01
 
 ### State Machine Breaking
