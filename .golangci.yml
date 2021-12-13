@@ -28,7 +28,7 @@ linters:
     - staticcheck
     - structcheck
     - stylecheck
-    - typecheck
+    # - typecheck #TODO: enable
     - unconvert
     - unparam
     - unused
