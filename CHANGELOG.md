@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
+* (evm) [tharsis#827](https://github.com/tharsis/ethermint/issues/827) Speed up creation of event logs by using the slice insertion idiom with indices.
 
 ### Bug Fixes
 
