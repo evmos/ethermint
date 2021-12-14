@@ -41,6 +41,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 - (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
 
+### Improvements
+
+* (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
+* (evm) [tharsis#827](https://github.com/tharsis/ethermint/issues/827) Speed up creation of event logs by using the slice insertion idiom with indices.
+
+### Bug Fixes
+
+* (rpc) [tharsis#831](https://github.com/tharsis/ethermint/pull/831) Fix BaseFee value when height is specified.
+
 ## [v0.9.0] - 2021-12-01
 
 ### State Machine Breaking

@@ -44,21 +44,21 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyTxHash, hash.String()))
 	}
 
-	if tx.To() != nil {
-		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, tx.To().Hex()))
+	if to := tx.To(); to != nil {
+		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, to.Hex()))
 	}
 
 	if response.Failed() {
 		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyEthereumTxFailed, response.VmError))
 	}
 
-	txLogAttrs := make([]sdk.Attribute, 0)
-	for _, log := range response.Logs {
+	txLogAttrs := make([]sdk.Attribute, len(response.Logs))
+	for i, log := range response.Logs {
 		value, err := json.Marshal(log)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "failed to encode log")
 		}
-		txLogAttrs = append(txLogAttrs, sdk.NewAttribute(types.AttributeKeyTxLog, string(value)))
+		txLogAttrs[i] = sdk.NewAttribute(types.AttributeKeyTxLog, string(value))
 	}
 
 	// emit events
