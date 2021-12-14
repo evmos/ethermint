@@ -592,6 +592,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 			&ethtypes.Log{
 				Address: addr,
 				TxHash:  txHash,
+				Topics:  make([]common.Hash, 0),
 			},
 			func() {},
 		},
@@ -606,6 +607,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 				TxHash:  txHash2,
 				TxIndex: 1,
 				Index:   1,
+				Topics:  make([]common.Hash, 0),
 			},
 			func() {
 				suite.app.EvmKeeper.SetTxHashTransient(txHash)
@@ -624,6 +626,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 			&ethtypes.Log{
 				Address: addr,
 				TxHash:  txHash3,
+				Topics:  make([]common.Hash, 0),
 			},
 			func() {},
 		},
@@ -638,6 +641,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 				TxHash:  txHash4,
 				TxIndex: 1,
 				Index:   1,
+				Topics:  make([]common.Hash, 0),
 			},
 			func() {
 				suite.app.EvmKeeper.SetTxHashTransient(txHash)
