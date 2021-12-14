@@ -1,23 +1,30 @@
 <!--
-order: 6
+order: 7
 -->
 
 # Events
 
-The EVM module emits the Cosmos SDK [events](./../../../docs/quickstart/events.md#sdk-and-tendermint-events) after a state execution. It can be expected that the type `message`, with an
-attribute key of `action` will represent the first event for each message being processed as emitted
-by the Cosmos SDK's `Baseapp` (i.e the the basic application that implements Tendermint Core's ABCI
-interface).
+The `x/evm` module emits the Cosmos SDK events after a state execution. The EVM module emits events of the relevant transaction fields, as well as the transaction logs (ethereum events).
 
 ## MsgEthereumTx
 
 | Type        | Attribute Key      | Attribute Value         |
-|-------------|--------------------|-------------------------|
+| ----------- | ------------------ | ----------------------- |
 | ethereum_tx | `"amount"`         | `{amount}`              |
 | ethereum_tx | `"recipient"`      | `{hex_address}`         |
 | ethereum_tx | `"contract"`       | `{hex_address}`         |
 | ethereum_tx | `"txHash"`         | `{tendermint_hex_hash}` |
 | ethereum_tx | `"ethereumTxHash"` | `{hex_hash}`            |
+| tx_log      | `"txLog"`          | `{tx_log}`              |
 | message     | `"sender"`         | `{eth_address}`         |
 | message     | `"action"`         | `"ethereum"`            |
 | message     | `"module"`         | `"evm"`                 |
+
+
+Additionally, the EVM module emits an event during `EndBlock` for the filter query block bloom.
+
+## ABCI
+
+| Type        | Attribute Key | Attribute Value      |
+| ----------- | ------------- | -------------------- |
+| block_bloom | `"bloom"`     | `string(bloomBytes)` |
