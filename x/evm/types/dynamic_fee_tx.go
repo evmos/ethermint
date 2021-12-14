@@ -20,8 +20,8 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	}
 
 	v, r, s := tx.RawSignatureValues()
-	if tx.To() != nil {
-		txData.To = tx.To().Hex()
+	if to := tx.To(); to != nil {
+		txData.To = to.Hex()
 	}
 
 	if tx.Value() != nil {

@@ -41,8 +41,6 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethlog "github.com/ethereum/go-ethereum/log"
-	"github.com/tharsis/ethermint/log"
 	ethdebug "github.com/tharsis/ethermint/rpc/ethereum/namespaces/debug"
 	"github.com/tharsis/ethermint/server/config"
 	srvflags "github.com/tharsis/ethermint/server/flags"
@@ -405,12 +403,11 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-	ethlog.Root().SetHandler(log.NewHandler(logger))
-
 	var (
 		httpSrv     *http.Server
 		httpSrvDone chan struct{}
 	)
+
 	if config.JSONRPC.Enable {
 		genDoc, err := genDocProvider()
 		if err != nil {
