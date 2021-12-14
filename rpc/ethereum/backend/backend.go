@@ -941,7 +941,7 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 	}
 
 	// Checks the feemarket param NoBaseFee settings, return 0 if it is enabled.
-	resParams, err := e.queryClient.FeeMarket.Params(e.ctx, &feemarkettypes.QueryParamsRequest{})
+	resParams, err := e.queryClient.FeeMarket.Params(types.ContextWithHeight(height), &feemarkettypes.QueryParamsRequest{})
 	if err != nil {
 		return nil, err
 	}
