@@ -101,8 +101,13 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 
 		if trace.Memory != nil {
 			memory := make([]string, 0, (len(trace.Memory)+31)/32)
-			for i := 0; i+32 <= len(trace.Memory); i += 32 {
-				memory = append(memory, fmt.Sprintf("%x", trace.Memory[i:i+32]))
+			for i, n := 0, len(trace.Memory); i < n; {
+				end := i + 32
+				if end >= n {
+					end = n
+				}
+				memory = append(memory, fmt.Sprintf("%x", trace.Memory[i:end]))
+				i = end
 			}
 			formatted[index].Memory = &memory
 		}
