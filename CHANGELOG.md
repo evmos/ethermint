@@ -51,6 +51,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [tharsis#831](https://github.com/tharsis/ethermint/pull/831) Fix BaseFee value when height is specified.
+* (evm) [tharsis#838](https://github.com/tharsis/ethermint/pull/838) Fix splitting of trace.Memory into 32 chunks.
 
 ## [v0.9.0] - 2021-12-01
 
