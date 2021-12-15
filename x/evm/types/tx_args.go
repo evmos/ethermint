@@ -85,10 +85,6 @@ func (args *TransactionArgs) ToTransaction() *MsgEthereumTx {
 		maxPriorityFeePerGas = sdk.NewIntFromBigInt(args.MaxPriorityFeePerGas.ToInt())
 	}
 
-	if args.GasPrice != nil {
-		gasPrice = sdk.NewIntFromBigInt(args.GasPrice.ToInt())
-	}
-
 	if args.Value != nil {
 		value = sdk.NewIntFromBigInt(args.Value.ToInt())
 	}

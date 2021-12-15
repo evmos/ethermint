@@ -10,7 +10,7 @@ import (
 )
 
 // CalculateBaseFee calculates the base fee for the current block. This is only calculated once per
-// block during EndBlock. If the NoBaseFee parameter is enabled or below activation height, this function returns nil.
+// block during BeginBlock. If the NoBaseFee parameter is enabled or below activation height, this function returns nil.
 // NOTE: This code is inspired from the go-ethereum EIP1559 implementation and adapted to Cosmos SDK-based
 // chains. For the canonical code refer to: https://github.com/ethereum/go-ethereum/blob/master/consensus/misc/eip1559.go
 func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
