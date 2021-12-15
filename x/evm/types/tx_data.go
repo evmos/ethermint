@@ -36,8 +36,14 @@ type TxData interface {
 
 	AsEthereumData() ethtypes.TxData
 	Validate() error
+
+	// static fee
 	Fee() *big.Int
 	Cost() *big.Int
+
+	// effective fee according to current base fee
+	EffectiveFee(baseFee *big.Int) *big.Int
+	EffectiveCost(baseFee *big.Int) *big.Int
 }
 
 func NewTxDataFromTx(tx *ethtypes.Transaction) (TxData, error) {

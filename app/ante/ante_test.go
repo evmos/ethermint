@@ -193,7 +193,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				// bigger than MaxGasWanted
 				txBuilder.SetGasLimit(uint64(1 << 63))
 				return txBuilder.GetTx()
-			}, false, true, false,
+			}, true, false, false,
 		},
 		{
 			"fail - CheckTx (memo too long)",
@@ -286,7 +286,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			suite.ctx = suite.ctx.WithIsCheckTx(tc.reCheckTx).WithIsReCheckTx(tc.reCheckTx)
+			suite.ctx = suite.ctx.WithIsCheckTx(tc.checkTx).WithIsReCheckTx(tc.reCheckTx)
 
 			// expConsumed := params.TxGasContractCreation + params.TxGas
 			_, err := suite.anteHandler(suite.ctx, tc.txFn(), false)
@@ -313,8 +313,6 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 	suite.Require().NoError(acc.SetSequence(1))
 	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
-
-	suite.app.EvmKeeper.AddBalance(addr, big.NewInt((ethparams.InitialBaseFee+10)*100000))
 
 	testCases := []struct {
 		name      string
@@ -501,7 +499,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				// bigger than MaxGasWanted
 				txBuilder.SetGasLimit(uint64(1 << 63))
 				return txBuilder.GetTx()
-			}, false, true, false,
+			}, true, false, false,
 		},
 		{
 			"fail - CheckTx (memo too long)",
@@ -530,7 +528,8 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			suite.ctx = suite.ctx.WithIsCheckTx(tc.reCheckTx).WithIsReCheckTx(tc.reCheckTx)
+			suite.ctx = suite.ctx.WithIsCheckTx(tc.checkTx).WithIsReCheckTx(tc.reCheckTx)
+			suite.app.EvmKeeper.AddBalance(addr, big.NewInt((ethparams.InitialBaseFee+10)*100000))
 			_, err := suite.anteHandler(suite.ctx, tc.txFn(), false)
 			if tc.expPass {
 				suite.Require().NoError(err)
