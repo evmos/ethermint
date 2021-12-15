@@ -39,16 +39,21 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+- (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
+- (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
+- (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
 - (evm) [tharsis#808](https://github.com/tharsis/ethermint/issues/808) increase nonce in ante handler for contract creation transaction.
 
 ### Improvements
 
 * (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
 * (evm) [tharsis#827](https://github.com/tharsis/ethermint/issues/827) Speed up creation of event logs by using the slice insertion idiom with indices.
+* (ante) [tharsis#819](https://github.com/tharsis/ethermint/pull/819) remove redundant ante handlers
 
 ### Bug Fixes
 
 * (rpc) [tharsis#831](https://github.com/tharsis/ethermint/pull/831) Fix BaseFee value when height is specified.
+* (evm) [tharsis#838](https://github.com/tharsis/ethermint/pull/838) Fix splitting of trace.Memory into 32 chunks.
 
 ## [v0.9.0] - 2021-12-01
 

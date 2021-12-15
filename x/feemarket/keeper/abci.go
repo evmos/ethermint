@@ -9,10 +9,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// EndBlock also retrieves the bloom filter value from the transient store and commits it to the
-// KVStore. The EVM end block logic doesn't update the validator set, thus it returns
-// an empty slice.
-func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
+// BeginBlock updates base fee
+func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	baseFee := k.CalculateBaseFee(ctx)
 
 	// return immediately if base fee is nil
@@ -29,7 +27,12 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 			sdk.NewAttribute(types.AttributeKeyBaseFee, baseFee.String()),
 		),
 	})
+}
 
+// EndBlock update block gas used.
+// The EVM end block logic doesn't update the validator set, thus it returns
+// an empty slice.
+func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	if ctx.BlockGasMeter() == nil {
 		k.Logger(ctx).Error("block gas meter is nil when setting block gas used")
 		return

@@ -7,6 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/tharsis/ethermint/types"
@@ -256,10 +257,25 @@ func (tx DynamicFeeTx) Validate() error {
 
 // Fee returns gasprice * gaslimit.
 func (tx DynamicFeeTx) Fee() *big.Int {
-	return fee(tx.GetGasPrice(), tx.GasLimit)
+	return fee(tx.GetGasFeeCap(), tx.GasLimit)
 }
 
 // Cost returns amount + gasprice * gaslimit.
 func (tx DynamicFeeTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
+}
+
+// GetEffectiveGasPrice returns the effective gas price
+func (tx *DynamicFeeTx) GetEffectiveGasPrice(baseFee *big.Int) *big.Int {
+	return math.BigMin(new(big.Int).Add(tx.GasTipCap.BigInt(), baseFee), tx.GasFeeCap.BigInt())
+}
+
+// EffectiveFee returns effective_gasprice * gaslimit.
+func (tx DynamicFeeTx) EffectiveFee(baseFee *big.Int) *big.Int {
+	return fee(tx.GetEffectiveGasPrice(baseFee), tx.GasLimit)
+}
+
+// EffectiveCost returns amount + effective_gasprice * gaslimit.
+func (tx DynamicFeeTx) EffectiveCost(baseFee *big.Int) *big.Int {
+	return cost(tx.EffectiveFee(baseFee), tx.GetValue())
 }
