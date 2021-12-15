@@ -53,8 +53,8 @@ func NewAnteHandler(
 					// handle as *evmtypes.MsgEthereumTx
 
 					anteHandler = sdk.ChainAnteDecorators(
-						NewEthSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-						authante.NewMempoolFeeDecorator(),
+						NewEthSetUpContextDecorator(),                         // outermost AnteDecorator. SetUpContext must be called first
+						NewEthMempoolFeeDecorator(evmKeeper, feeMarketKeeper), // Check eth effective gas price against minimal-gas-prices
 						NewEthValidateBasicDecorator(evmKeeper),
 						NewEthSigVerificationDecorator(evmKeeper),
 						NewEthAccountVerificationDecorator(ak, bankKeeper, evmKeeper),
