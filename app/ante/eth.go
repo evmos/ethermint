@@ -543,3 +543,58 @@ func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 	newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	return next(newCtx, tx, simulate)
 }
+
+// EthMempoolFeeDecorator will check if the transaction's effective fee is at least as large
+// as the local validator's minimum gasFee (defined in validator config).
+// If fee is too low, decorator returns error and tx is rejected from mempool.
+// Note this only applies when ctx.CheckTx = true
+// If fee is high enough or not CheckTx, then call next AnteHandler
+// CONTRACT: Tx must implement FeeTx to use MempoolFeeDecorator
+type EthMempoolFeeDecorator struct {
+	feemarketKeeper evmtypes.FeeMarketKeeper
+	evmKeeper       EVMKeeper
+}
+
+func NewEthMempoolFeeDecorator(ek EVMKeeper, fmk evmtypes.FeeMarketKeeper) EthMempoolFeeDecorator {
+	return EthMempoolFeeDecorator{
+		feemarketKeeper: fmk,
+		evmKeeper:       ek,
+	}
+}
+
+// AnteHandle ensures that the provided fees meet a minimum threshold for the validator,
+// if this is a CheckTx. This is only for local mempool purposes, and thus
+// is only ran on check tx.
+func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	if ctx.IsCheckTx() && !simulate {
+		if len(tx.GetMsgs()) != 1 {
+			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "only 1 ethereum msg supported per tx")
+		}
+		msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil))
+		}
+
+		var feeAmt *big.Int
+
+		feeMktParams := mfd.feemarketKeeper.GetParams(ctx)
+		params := mfd.evmKeeper.GetParams(ctx)
+		chainID := mfd.evmKeeper.ChainID()
+		ethCfg := params.ChainConfig.EthereumConfig(chainID)
+		evmDenom := params.EvmDenom
+		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee {
+			baseFee := mfd.feemarketKeeper.GetBaseFee(ctx)
+			feeAmt = msg.GetEffectiveFee(baseFee)
+		} else {
+			feeAmt = msg.GetFee()
+		}
+
+		glDec := sdk.NewDec(int64(msg.GetGas()))
+		requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
+		if sdk.NewDecFromBigInt(feeAmt).LT(requiredFee) {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; got: %s required: %s", feeAmt, requiredFee)
+		}
+	}
+
+	return next(ctx, tx, simulate)
+}

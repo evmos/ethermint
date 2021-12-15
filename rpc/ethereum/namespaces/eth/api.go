@@ -843,6 +843,14 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		receipt["contractAddress"] = crypto.CreateAddress(from, txData.GetNonce())
 	}
 
+	if dynamicTx, ok := txData.(*evmtypes.DynamicFeeTx); ok {
+		baseFee, err := e.backend.BaseFee(res.Height)
+		if err != nil {
+			return nil, err
+		}
+		receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
+	}
+
 	return receipt, nil
 }
 
