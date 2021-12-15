@@ -37,6 +37,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+- (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
+
 ### Improvements
 
 * (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
