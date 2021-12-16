@@ -155,5 +155,11 @@ func TxLogsFromEvents(events []abci.Event) ([]*ethtypes.Log, error) {
 			logs = append(logs, &log)
 		}
 	}
-	return evmtypes.LogsToEthereum(logs), nil
+	ethLogs := evmtypes.LogsToEthereum(logs)
+	for i := range ethLogs {
+		if ethLogs[i].Topics == nil {
+			ethLogs[i].Topics = make([]common.Hash, 0)
+		}
+	}
+	return ethLogs, nil
 }
