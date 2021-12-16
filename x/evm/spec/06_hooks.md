@@ -35,9 +35,9 @@ It's executed in the same cache context as the EVM transaction, if it returns an
 
 The error returned by the hooks is translated to a VM error `failed to process native logs`, the detailed error message is stored in the return value. The message is sent to native modules asynchronously, there's no way for the caller to catch and recover the error.
 
-## Use Case: Call Native Intrarelayer Module on Evmos
+## Use Case: Call Native erc20 Module on Evmos
 
-Here is an example taken from the [Evmos intrarelayer module](https://evmos.dev/modules/intrarelayer/) that shows how the `EVMHooks` supports a contract calling a native module to convert ERC-20 Tokens intor Cosmos native Coins. Following the steps from above.
+Here is an example taken from the [Evmos erc20 module](https://evmos.dev/modules/erc20/) that shows how the `EVMHooks` supports a contract calling a native module to convert ERC-20 Tokens intor Cosmos native Coins. Following the steps from above.
 
 You can define and emit a `Transfer` log signature in the smart contract like this:
 
@@ -177,5 +177,5 @@ func (k Keeper) PostTxProcessing(ctx sdk.Context, txHash common.Hash, logs []*et
 Lastly, register the hook in `app.go`:
 
 ```go
-app.EvmKeeper = app.EvmKeeper.SetHooks(app.IntrarelayerKeeper)
+app.EvmKeeper = app.EvmKeeper.SetHooks(app.Erc20Keeper)
 ```
