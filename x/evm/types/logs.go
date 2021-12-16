@@ -70,9 +70,9 @@ func (log *Log) Validate() error {
 
 // ToEthereum returns the Ethereum type Log from a Ethermint proto compatible Log.
 func (log *Log) ToEthereum() *ethtypes.Log {
-	var topics []common.Hash // nolint: prealloc
-	for i := range log.Topics {
-		topics = append(topics, common.HexToHash(log.Topics[i]))
+	topics := make([]common.Hash, len(log.Topics))
+	for i, topic := range log.Topics {
+		topics[i] = common.HexToHash(topic)
 	}
 
 	return &ethtypes.Log{
@@ -108,9 +108,9 @@ func LogsToEthereum(logs []*Log) []*ethtypes.Log {
 
 // NewLogFromEth creates a new Log instance from a Ethereum type Log.
 func NewLogFromEth(log *ethtypes.Log) *Log {
-	var topics []string // nolint: prealloc
-	for _, topic := range log.Topics {
-		topics = append(topics, topic.String())
+	topics := make([]string, len(log.Topics))
+	for i, topic := range log.Topics {
+		topics[i] = topic.String()
 	}
 
 	return &Log{

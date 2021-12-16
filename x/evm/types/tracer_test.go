@@ -51,7 +51,7 @@ func TestFormatLogs(t *testing.T) {
 				{
 					Pc:     uint64(0),
 					Op:     "STOP",
-					Memory: &[]string{},
+					Memory: &[]string{"05"},
 				},
 			},
 		},
@@ -72,9 +72,11 @@ func TestFormatLogs(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		actual := FormatLogs(tc.logs)
+		t.Run(tc.name, func(t *testing.T) {
+			actual := FormatLogs(tc.logs)
 
-		require.Equal(t, tc.exp, actual)
+			require.Equal(t, tc.exp, actual)
+		})
 	}
 }
 

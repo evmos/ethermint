@@ -17,8 +17,8 @@ func newLegacyTx(tx *ethtypes.Transaction) (*LegacyTx, error) {
 	}
 
 	v, r, s := tx.RawSignatureValues()
-	if tx.To() != nil {
-		txData.To = tx.To().Hex()
+	if to := tx.To(); to != nil {
+		txData.To = to.Hex()
 	}
 
 	if tx.Value() != nil {
@@ -199,4 +199,14 @@ func (tx LegacyTx) Fee() *big.Int {
 // Cost returns amount + gasprice * gaslimit.
 func (tx LegacyTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
+}
+
+// EffectiveFee is the same as Fee for LegacyTx
+func (tx LegacyTx) EffectiveFee(baseFee *big.Int) *big.Int {
+	return tx.Fee()
+}
+
+// EffectiveCost is the same as Cost for LegacyTx
+func (tx LegacyTx) EffectiveCost(baseFee *big.Int) *big.Int {
+	return tx.Cost()
 }
