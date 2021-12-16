@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -243,4 +245,27 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 		}
 	}
 	return nil
+}
+
+// TxIndexFromEvents parses the tx index from cosmos events
+func TxIndexFromEvents(events []abci.Event) (uint64, error) {
+	for _, event := range events {
+		if event.Type != evmtypes.EventTypeEthereumTx {
+			continue
+		}
+
+		for _, attr := range event.Attributes {
+			if bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxIndex)) {
+				result, err := strconv.ParseInt(string(attr.Value), 10, 64)
+				if err != nil {
+					return 0, err
+				}
+				if result < 0 {
+					return 0, errors.New("negative tx index")
+				}
+				return uint64(result), nil
+			}
+		}
+	}
+	return 0, errors.New("not found")
 }
