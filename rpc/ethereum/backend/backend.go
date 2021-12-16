@@ -73,6 +73,7 @@ type Backend interface {
 	GetCoinbase() (sdk.AccAddress, error)
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
+	GetTxByTxIndex(height int64, txIndex uint) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	BaseFee(height int64) (*big.Int, error)
 
@@ -83,7 +84,7 @@ type Backend interface {
 	GetFilteredBlocks(from int64, to int64, filter [][]filters.BloomIV, filterAddresses bool) ([]int64, error)
 	ChainConfig() *params.ChainConfig
 	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
-	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock) []*evmtypes.MsgEthereumTx
+	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
 }
 
 var _ Backend = (*EVMBackend)(nil)
@@ -688,27 +689,57 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 		return nil, nil
 	}
 
-	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
+	if res.TxResult.Code != 0 {
+		return nil, errors.New("invalid ethereum tx")
+	}
+
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tx.GetMsgs()) != 1 {
+		return nil, errors.New("invalid ethereum tx")
+	}
+
+	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	if !ok {
+		return nil, errors.New("invalid ethereum tx")
+	}
+
+	block, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
 	if err != nil {
 		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
-		return nil, nil
+		return nil, err
 	}
 
-	var txIndex uint64
-	msgs := e.GetEthereumMsgsFromTendermintBlock(resBlock)
-
-	for i := range msgs {
-		if msgs[i].Hash == hexTx {
-			txIndex = uint64(i)
-			break
+	// Try to find txIndex from events
+	found := false
+	txIndex, err := types.TxIndexFromEvents(res.TxResult.Events)
+	if err == nil {
+		found = true
+	} else {
+		// Fallback to find tx index by iterating all valid eth transactions
+		blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+		if err != nil {
+			return nil, nil
+		}
+		msgs := e.GetEthereumMsgsFromTendermintBlock(block, blockRes)
+		for i := range msgs {
+			if msgs[i].Hash == hexTx {
+				txIndex = uint64(i)
+				found = true
+				break
+			}
 		}
 	}
-
-	msg := msgs[txIndex]
+	if !found {
+		return nil, errors.New("can't find index of ethereum tx")
+	}
 
 	return types.NewTransactionFromMsg(
 		msg,
-		common.BytesToHash(resBlock.Block.Hash()),
+		common.BytesToHash(block.BlockID.Hash.Bytes()),
 		uint64(res.Height),
 		txIndex,
 		e.chainID,
@@ -726,6 +757,22 @@ func (e *EVMBackend) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, err
 	}
 	if len(resTxs.Txs) == 0 {
 		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
+	}
+	return resTxs.Txs[0], nil
+}
+
+// GetTxByTxIndex uses `/tx_query` to find transaction by tx index of valid ethereum txs
+func (e *EVMBackend) GetTxByTxIndex(height int64, index uint) (*tmrpctypes.ResultTx, error) {
+	query := fmt.Sprintf("tx.height=%d AND %s.%s=%d",
+		height, evmtypes.TypeMsgEthereumTx,
+		evmtypes.AttributeKeyTxIndex, index,
+	)
+	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resTxs.Txs) == 0 {
+		return nil, errors.Errorf("ethereum tx not found for block %d index %d", height, index)
 	}
 	return resTxs.Txs[0], nil
 }
@@ -1021,32 +1068,34 @@ BLOCKS:
 
 // GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
 // It also ensures consistency over the correct txs indexes across RPC endpoints
-func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock) []*evmtypes.MsgEthereumTx {
+func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx {
+	// nolint: prealloc
 	var result []*evmtypes.MsgEthereumTx
 
-	for _, tx := range block.Block.Txs {
+	txResults := blockRes.TxsResults
+
+	for i, tx := range block.Block.Txs {
+		// check tx exists on EVM by cross checking with blockResults
+		if txResults[i].Code != 0 {
+			e.logger.Debug("invalid tx result code", "cosmos-hash", hexutil.Encode(tx.Hash()))
+			continue
+		}
+
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(tx)
 		if err != nil {
 			e.logger.Debug("failed to decode transaction in block", "height", block.Block.Height, "error", err.Error())
 			continue
 		}
-
-		for _, msg := range tx.GetMsgs() {
-			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-			if !ok {
-				continue
-			}
-
-			hash := ethMsg.AsTransaction().Hash()
-			// check tx exists on EVM and has the correct block height
-			ethTx, err := e.GetTxByEthHash(hash)
-			if err != nil || ethTx.Height != block.Block.Height {
-				e.logger.Debug("failed to query eth tx hash", "hash", hash.Hex())
-				continue
-			}
-
-			result = append(result, ethMsg)
+		if len(tx.GetMsgs()) != 1 {
+			continue
 		}
+
+		ethMsg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			continue
+		}
+
+		result = append(result, ethMsg)
 	}
 
 	return result

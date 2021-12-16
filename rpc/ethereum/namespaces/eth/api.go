@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -309,18 +310,23 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNrOrHash rp
 func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
 	e.logger.Debug("eth_getBlockTransactionCountByHash", "hash", hash.Hex())
 
-	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
+	block, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
 		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
 		return nil
 	}
 
-	if resBlock.Block == nil {
+	if block.Block == nil {
 		e.logger.Debug("block not found", "hash", hash.Hex())
 		return nil
 	}
 
-	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	if err != nil {
+		return nil
+	}
+
+	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(block, blockRes)
 	n := hexutil.Uint(len(ethMsgs))
 	return &n
 }
@@ -328,18 +334,23 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
 	e.logger.Debug("eth_getBlockTransactionCountByNumber", "height", blockNum.Int64())
-	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
+	block, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
 		return nil
 	}
 
-	if resBlock.Block == nil {
+	if block.Block == nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil
 	}
 
-	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	if err != nil {
+		return nil
+	}
+
+	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(block, blockRes)
 	n := hexutil.Uint(len(ethMsgs))
 	return &n
 }
@@ -664,75 +675,86 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 	return e.backend.GetTransactionByHash(hash)
 }
 
+// getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
+func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	var msg *evmtypes.MsgEthereumTx
+	// try /tx_search first
+	res, err := e.backend.GetTxByTxIndex(block.Block.Height, uint(idx))
+	if err == nil {
+		tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+		if err != nil {
+			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
+			return nil, nil
+		}
+		if len(tx.GetMsgs()) != 1 {
+			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
+			return nil, nil
+		}
+		var ok bool
+		msg, ok = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
+			return nil, nil
+		}
+	} else {
+		blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+		if err != nil {
+			return nil, nil
+		}
+
+		i := int(idx)
+		ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(block, blockRes)
+		if i >= len(ethMsgs) {
+			e.logger.Debug("block txs index out of bound", "index", i)
+			return nil, nil
+		}
+
+		msg = ethMsgs[i]
+	}
+
+	return rpctypes.NewTransactionFromMsg(
+		msg,
+		common.BytesToHash(block.Block.Hash()),
+		uint64(block.Block.Height),
+		uint64(idx),
+		e.chainIDEpoch,
+	)
+}
+
 // GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
 func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getTransactionByBlockHashAndIndex", "hash", hash.Hex(), "index", idx)
 
-	resBlock, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
+	block, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
 	if err != nil {
 		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
 		return nil, nil
 	}
 
-	if resBlock.Block == nil {
+	if block.Block == nil {
 		e.logger.Debug("block not found", "hash", hash.Hex())
 		return nil, nil
 	}
 
-	i := int(idx)
-	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
-	if i >= len(ethMsgs) {
-		e.logger.Debug("block txs index out of bound", "index", i)
-		return nil, nil
-	}
-
-	msg := ethMsgs[i]
-
-	baseFee, err := e.backend.BaseFee(resBlock.Block.Height)
-	if err != nil {
-		return nil, err
-	}
-
-	return rpctypes.NewTransactionFromMsg(
-		msg,
-		hash,
-		uint64(resBlock.Block.Height),
-		uint64(idx),
-		baseFee,
-	)
+	return e.getTransactionByBlockAndIndex(block, idx)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
 func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
 
-	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
+	block, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
 	if err != nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
 		return nil, nil
 	}
 
-	if resBlock.Block == nil {
+	if block.Block == nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64())
 		return nil, nil
 	}
 
-	i := int(idx)
-	ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
-	if i >= len(ethMsgs) {
-		e.logger.Debug("block txs index out of bound", "index", i)
-		return nil, nil
-	}
-
-	msg := ethMsgs[i]
-
-	return rpctypes.NewTransactionFromMsg(
-		msg,
-		common.BytesToHash(resBlock.Block.Hash()),
-		uint64(resBlock.Block.Height),
-		uint64(idx),
-		e.chainIDEpoch,
-	)
+	return e.getTransactionByBlockAndIndex(block, idx)
 }
 
 // GetTransactionReceipt returns the transaction receipt identified by hash.
@@ -801,7 +823,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	// get eth index based on block's txs
 	var txIndex uint64
-	msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock)
+	msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
 	for i := range msgs {
 		if msgs[i].Hash == hexTx {
 			txIndex = uint64(i)
