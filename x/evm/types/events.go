@@ -10,6 +10,7 @@ const (
 	AttributeKeyRecipient       = "recipient"
 	AttributeKeyTxHash          = "txHash"
 	AttributeKeyEthereumTxHash  = "ethereumTxHash"
+	AttributeKeyTxIndex         = "txIndex"
 	AttributeKeyTxType          = "txType"
 	AttributeKeyTxLog           = "txLog"
 	// tx failed in eth vm execution
