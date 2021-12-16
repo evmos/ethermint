@@ -60,7 +60,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			func() sdk.Tx {
 				signedContractTx := evmtypes.NewTxContract(
 					suite.app.EvmKeeper.ChainID(),
-					1,
+					2,
 					big.NewInt(10),
 					100000,
 					big.NewInt(150),
@@ -81,7 +81,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			func() sdk.Tx {
 				signedContractTx := evmtypes.NewTxContract(
 					suite.app.EvmKeeper.ChainID(),
-					1,
+					3,
 					big.NewInt(10),
 					100000,
 					big.NewInt(150),
@@ -102,7 +102,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			func() sdk.Tx {
 				signedTx := evmtypes.NewTx(
 					suite.app.EvmKeeper.ChainID(),
-					1,
+					4,
 					&to,
 					big.NewInt(10),
 					100000,
@@ -124,7 +124,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			func() sdk.Tx {
 				signedTx := evmtypes.NewTx(
 					suite.app.EvmKeeper.ChainID(),
-					2,
+					5,
 					&to,
 					big.NewInt(10),
 					100000,
@@ -349,7 +349,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedContractTx :=
 					evmtypes.NewTxContract(
 						suite.app.EvmKeeper.ChainID(),
-						1,
+						2,
 						big.NewInt(10),
 						100000,
 						nil,
@@ -371,7 +371,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedContractTx :=
 					evmtypes.NewTxContract(
 						suite.app.EvmKeeper.ChainID(),
-						1,
+						3,
 						big.NewInt(10),
 						100000,
 						nil,
@@ -393,7 +393,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						1,
+						4,
 						&to,
 						big.NewInt(10),
 						100000,
@@ -416,7 +416,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						2,
+						5,
 						&to,
 						big.NewInt(10),
 						100000,

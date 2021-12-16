@@ -402,24 +402,6 @@ func NewEthIncrementSenderSequenceDecorator(ak evmtypes.AccountKeeper) EthIncrem
 // this AnteHandler decorator.
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	for _, msg := range tx.GetMsgs() {
-		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
-		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil))
-		}
-
-		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
-		if err != nil {
-			return ctx, sdkerrors.Wrap(err, "failed to unpack tx data")
-		}
-
-		// NOTE: on contract creation, the nonce is incremented within the EVM Create function during tx execution
-		// and not previous to the state transition ¯\_(ツ)_/¯
-		if txData.GetTo() == nil {
-			// contract creation, don't increment sequence on AnteHandler but on tx execution
-			// continue to the next item
-			continue
-		}
-
 		// increment sequence of all signers
 		for _, addr := range msg.GetSigners() {
 			acc := issd.ak.GetAccount(ctx, addr)
@@ -439,7 +421,6 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 		}
 	}
 
-	// set the original gas meter
 	return next(ctx, tx, simulate)
 }
 
