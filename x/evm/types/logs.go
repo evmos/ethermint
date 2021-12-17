@@ -125,3 +125,22 @@ func NewLogFromEth(log *ethtypes.Log) *Log {
 		Removed:     log.Removed,
 	}
 }
+
+type TransactionReceipt struct {
+	Hash    string
+	Logs    []*ethtypes.Log
+	From    common.Address
+	To      *common.Address
+	GasUsed uint64
+}
+
+// NewTransactionReceipt creates a new TransactionReceipt instance using []*ethtypes.Log.
+func NewTransactionReceipt(hash common.Hash, ethlogs []*ethtypes.Log, from common.Address, to *common.Address, gasUsed uint64) *TransactionReceipt {
+	return &TransactionReceipt{
+		Hash:    hash.String(),
+		Logs:    ethlogs,
+		From:    from,
+		To:      to,
+		GasUsed: gasUsed,
+	}
+}
