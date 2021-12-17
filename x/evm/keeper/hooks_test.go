@@ -17,7 +17,7 @@ type LogRecordHook struct {
 	Logs []*ethtypes.Log
 }
 
-func (dh *LogRecordHook) PostTxProcessing(ctx sdk.Context, receipt *types.TransactionReceipt) error {
+func (dh *LogRecordHook) PostTxProcessing(ctx sdk.Context, from common.Address, to *common.Address, receipt *ethtypes.Receipt) error {
 	dh.Logs = receipt.Logs
 	return nil
 }
@@ -25,7 +25,7 @@ func (dh *LogRecordHook) PostTxProcessing(ctx sdk.Context, receipt *types.Transa
 // FailureHook always fail
 type FailureHook struct{}
 
-func (dh FailureHook) PostTxProcessing(ctx sdk.Context, receipt *types.TransactionReceipt) error {
+func (dh FailureHook) PostTxProcessing(ctx sdk.Context, from common.Address, to *common.Address, receipt *ethtypes.Receipt) error {
 	return errors.New("post tx processing failed")
 }
 
@@ -69,9 +69,11 @@ func (suite *KeeperTestSuite) TestEvmHooks() {
 			Address: suite.address,
 		})
 		logs := k.GetTxLogsTransient(txHash)
-
-		receipt := types.NewTransactionReceipt(txHash, logs, common.Address{}, nil, uint64(0))
-		result := k.PostTxProcessing(receipt)
+		receipt := &ethtypes.Receipt{
+			TxHash: txHash,
+			Logs:   logs,
+		}
+		result := k.PostTxProcessing(common.Address{}, nil, receipt)
 
 		tc.expFunc(hook, result)
 	}

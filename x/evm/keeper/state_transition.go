@@ -220,10 +220,17 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	res.Hash = txHash.Hex()
 
 	logs := k.GetTxLogsTransient(txHash)
-	receipt := types.NewTransactionReceipt(txHash, logs, msg.From(), tx.To(), res.GasUsed)
+	receipt := &ethtypes.Receipt{
+		Type:        tx.Type(),
+		TxHash:      txHash,
+		Logs:        logs,
+		GasUsed:     res.GasUsed,
+		BlockNumber: big.NewInt(ctx.BlockHeight()),
+	}
+
 	if !res.Failed() {
 		// Only call hooks if tx executed successfully.
-		if err = k.PostTxProcessing(receipt); err != nil {
+		if err = k.PostTxProcessing(msg.From(), tx.To(), receipt); err != nil {
 			// If hooks return error, revert the whole tx.
 			res.VmError = types.ErrPostTxProcessing.Error()
 			k.Logger(k.Ctx()).Error("tx post processing failed", "error", err)
