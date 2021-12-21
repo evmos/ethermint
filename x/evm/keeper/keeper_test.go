@@ -208,10 +208,13 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	ctorArgs, err := types.ERC20Contract.ABI.Pack("", owner, supply)
 	require.NoError(t, err)
 
+	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
+
 	data := append(types.ERC20Contract.Bin, ctorArgs...)
 	args, err := json.Marshal(&types.TransactionArgs{
-		From: &suite.address,
-		Data: (*hexutil.Bytes)(&data),
+		From:  &suite.address,
+		Data:  (*hexutil.Bytes)(&data),
+		Nonce: (*hexutil.Uint64)(&nonce),
 	})
 	require.NoError(t, err)
 
@@ -220,8 +223,6 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 		GasCap: uint64(config.DefaultGasCap),
 	})
 	require.NoError(t, err)
-
-	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
 
 	var erc20DeployTx *types.MsgEthereumTx
 	if suite.dynamicTxFee {

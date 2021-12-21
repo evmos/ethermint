@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -634,18 +635,21 @@ func deployTestContract(t *testing.T) (hexutil.Bytes, map[string]interface{}) {
 }
 
 func TestEth_GetTransactionReceipt_ContractDeployment(t *testing.T) {
-	hash, _ := deployTestContract(t)
+	nonce := getNonce(t)
+	_, receipt := deployTestContract(t)
 
-	param := []string{hash.String()}
-	rpcRes := call(t, "eth_getTransactionReceipt", param)
-
-	receipt := make(map[string]interface{})
-	err := json.Unmarshal(rpcRes.Result, &receipt)
+	addrBz, err := hexutil.Decode(receipt["contractAddress"].(string))
 	require.NoError(t, err)
-	require.Equal(t, "0x1", receipt["status"].(string))
 
-	require.NotEqual(t, common.Address{}.String(), receipt["contractAddress"].(string))
-	require.NotNil(t, receipt["logs"])
+	addr := common.BytesToAddress(addrBz)
+	require.Equal(t, crypto.CreateAddress(common.BytesToAddress(from), uint64(nonce)), addr)
+	require.Greater(t, len(receipt["logs"].([]interface{})), 0)
+
+	rpcRes := call(t, "eth_getCode", []string{addr.Hex(), "latest"})
+	var code hexutil.Bytes
+	err = code.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+	require.NotEmpty(t, code)
 }
 
 func getTransactionReceipt(t *testing.T, hash hexutil.Bytes) map[string]interface{} {

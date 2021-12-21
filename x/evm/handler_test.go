@@ -665,12 +665,15 @@ func (suite *EvmTestSuite) TestContractDeploymentRevert() {
 			)
 			suite.SignTx(tx)
 
+			// simulate nonce increment in ante handler
+			k.SetNonce(suite.from, nonce+1)
+
 			rsp, err := k.EthereumTx(sdk.WrapSDKContext(suite.ctx), tx)
 			suite.Require().NoError(err)
 			suite.Require().True(rsp.Failed())
 
-			// nonce don't increase, it's increased in ante handler.
-			suite.Require().Equal(nonce, k.GetNonce(suite.from))
+			// nonce don't change
+			suite.Require().Equal(nonce+1, k.GetNonce(suite.from))
 		})
 	}
 }

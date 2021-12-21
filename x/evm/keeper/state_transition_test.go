@@ -511,3 +511,9 @@ func (suite *KeeperTestSuite) TestEVMConfig() {
 	suite.Require().Equal(suite.address, cfg.CoinBase)
 	suite.Require().Equal(types.DefaultParams().ChainConfig.EthereumConfig(big.NewInt(9000)), cfg.ChainConfig)
 }
+
+func (suite *KeeperTestSuite) TestContractDeployment() {
+	suite.SetupTest()
+	contractAddress := suite.DeployTestContract(suite.T(), suite.address, big.NewInt(10000000000000))
+	suite.Require().Greater(suite.app.EvmKeeper.GetCodeSize(contractAddress), 0)
+}
