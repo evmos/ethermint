@@ -423,6 +423,7 @@ func TestEth_SendTransaction_ContractDeploy(t *testing.T) {
 }
 
 func TestEth_SendTransaction_ContractDeploy_no_gas_param(t *testing.T) {
+	t.Skip("Moved to tests/e2e/integration_test.go#TestSendTransactionContractDeploymentNoGas")
 	param := makeTestContractDeployParam(t, false)
 	_, err := callWithError("eth_sendTransaction", param)
 	// server returns internal error.
@@ -891,6 +892,7 @@ func TestEth_EstimateGas(t *testing.T) {
 }
 
 func TestEth_EstimateGas_ContractDeployment(t *testing.T) {
+	t.Skip("Moved to tests/e2e/integration_test.go#TestEstimateGasContractDeployment")
 	bytecode := "0x608060405234801561001057600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a260d08061004d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032"
 
 	param := make([]map[string]string, 1)

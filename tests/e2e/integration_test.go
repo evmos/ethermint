@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	"testing"
 
@@ -225,6 +226,7 @@ func (s *IntegrationTestSuite) TestSendRawTransaction() {
 			s.Require().NoError(err)
 
 			expTx, isPending, err := s.network.Validators[0].JSONRPCClient.TransactionByHash(s.ctx, hash)
+
 			if tc.expError {
 				s.Require().Error(err)
 				return
@@ -235,6 +237,38 @@ func (s *IntegrationTestSuite) TestSendRawTransaction() {
 			s.Require().Equal(tx, expTx)
 		})
 	}
+}
+
+func (s *IntegrationTestSuite) TestEstimateGasContractDeployment() {
+	bytecode := "0x608060405234801561001057600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a260d08061004d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063eb8ac92114602d575b600080fd5b606060048036036040811015604157600080fd5b8101908080359060200190929190803590602001909291905050506062565b005b8160008190555080827ff3ca124a697ba07e8c5e80bebcfcc48991fc16a63170e8a9206e30508960d00360405160405180910390a3505056fea265627a7a723158201d94d2187aaf3a6790527b615fcc40970febf0385fa6d72a2344848ebd0df3e964736f6c63430005110032"
+	expectedGas := uint64(0x1879c)
+
+	var data hexutil.Bytes
+
+	err := data.UnmarshalText([]byte(bytecode))
+
+	s.Require().NoError(err, data)
+
+	gas, err := s.network.Validators[0].JSONRPCClient.EstimateGas(s.ctx, ethereum.CallMsg{
+		Data: data,
+	})
+
+	s.Require().NoError(err)
+	s.Require().Equal(expectedGas, gas)
+}
+
+func (s *IntegrationTestSuite) TestSendTransactionContractDeploymentNoGas() {
+	bytecode := "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
+
+	var data hexutil.Bytes
+	err := data.UnmarshalText([]byte(bytecode))
+
+	var testKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	tx := ethtypes.NewContractCreation(0, nil, 0x5208, nil, data)
+	tx, _ = ethtypes.SignTx(tx, ethtypes.HomesteadSigner{}, testKey)
+
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, tx)
+	s.Require().Error(err)
 }
 
 func TestIntegrationTestSuite(t *testing.T) {
