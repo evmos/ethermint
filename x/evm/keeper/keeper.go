@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -322,15 +321,9 @@ func (k Keeper) DeleteAccountStorage(addr common.Address) {
 }
 
 // DeleteCode removes the contract code byte array from the store associated with
-// the given address.
+// the given address and empties CodeHash on account.
 func (k Keeper) DeleteCode(addr common.Address) {
-	hash := k.GetCodeHash(addr)
-	if bytes.Equal(hash.Bytes(), common.BytesToHash(types.EmptyCodeHash).Bytes()) {
-		return
-	}
-
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixCode)
-	store.Delete(hash.Bytes())
+	k.SetCode(addr, nil)
 }
 
 // ClearBalance subtracts the EVM all the balance denomination from the address

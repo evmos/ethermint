@@ -403,20 +403,33 @@ func (suite *KeeperTestSuite) TestCommittedState() {
 }
 
 func (suite *KeeperTestSuite) TestSuicide() {
-	testCases := []struct {
-		name     string
-		suicided bool
-	}{
-		{"success, first time suicided", true},
-		{"success, already suicided", true},
+	code := []byte("code")
+	// Add code to account
+	suite.app.EvmKeeper.SetCode(suite.address, code)
+	suite.Require().Equal(code, suite.app.EvmKeeper.GetCode(suite.address))
+	// Add state to account
+	for i := 0; i < 5; i++ {
+		suite.app.EvmKeeper.SetState(suite.address, common.BytesToHash([]byte(fmt.Sprintf("key%d", i))), common.BytesToHash([]byte(fmt.Sprintf("value%d", i))))
 	}
 
-	for _, tc := range testCases {
-		suite.Run(tc.name, func() {
-			suite.Require().Equal(tc.suicided, suite.app.EvmKeeper.Suicide(suite.address))
-			suite.Require().Equal(tc.suicided, suite.app.EvmKeeper.HasSuicided(suite.address))
-		})
-	}
+	// Call Suicide
+	suite.Require().Equal(true, suite.app.EvmKeeper.Suicide(suite.address))
+
+	// Check suicided is marked
+	suite.Require().Equal(true, suite.app.EvmKeeper.HasSuicided(suite.address))
+	// Check code is deleted
+	suite.Require().Nil(suite.app.EvmKeeper.GetCode(suite.address))
+	// Check state is deleted
+	var storage types.Storage
+	err := suite.app.EvmKeeper.ForEachStorage(suite.address, func(key, value common.Hash) bool {
+		storage = append(storage, types.NewState(key, value))
+		return true
+	})
+	suite.Require().NoError(err)
+	suite.Require().Equal(0, len(storage))
+
+	// Check CodeHash is emptied
+	suite.Require().Equal(common.BytesToHash(types.EmptyCodeHash).Bytes(), suite.app.EvmKeeper.GetCodeHash(suite.address).Bytes())
 }
 
 func (suite *KeeperTestSuite) TestExist() {
