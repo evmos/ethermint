@@ -84,6 +84,7 @@ func TestAnteTestSuite(t *testing.T) {
 // CreateTestTx is a helper function to create a tx given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTx(
 	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
+	unsetExtensionOptions ...bool,
 ) authsigning.Tx {
 	return suite.CreateTestTxBuilder(msg, priv, accNum, signCosmosTx).GetTx()
 }
@@ -91,15 +92,22 @@ func (suite *AnteTestSuite) CreateTestTx(
 // CreateTestTxBuilder is a helper function to create a tx builder given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTxBuilder(
 	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
+	unsetExtensionOptions ...bool,
 ) client.TxBuilder {
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	suite.Require().NoError(err)
+	var option *codectypes.Any
+	var err error
+	if len(unsetExtensionOptions) == 0 {
+		option, err = codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+		suite.Require().NoError(err)
+	}
 
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
 	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
 	suite.Require().True(ok)
 
-	builder.SetExtensionOptions(option)
+	if len(unsetExtensionOptions) == 0 {
+		builder.SetExtensionOptions(option)
+	}
 
 	err = msg.Sign(suite.ethSigner, tests.NewSigner(priv))
 	suite.Require().NoError(err)

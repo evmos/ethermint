@@ -206,6 +206,16 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				return txBuilder.GetTx()
 			}, true, false, false,
 		},
+		{
+			"fail - CheckTx (ExtensionOptionsEthereumTx not set)",
+			func() sdk.Tx {
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 5, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false, true)
+				return txBuilder.GetTx()
+			}, true, false, false,
+		},
 		// Based on EVMBackend.SendTransaction, for cosmos tx, forcing null for some fields except ExtensionOptions, Fee, MsgEthereumTx
 		// should be part of consensus
 		{
