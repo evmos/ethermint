@@ -98,7 +98,7 @@ func FormatBlock(
 		transactionsRoot = common.BytesToHash(header.DataHash)
 	}
 
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		"number":           hexutil.Uint64(header.Height),
 		"hash":             hexutil.Bytes(header.Hash()),
 		"parentHash":       common.BytesToHash(header.LastBlockID.Hash.Bytes()),
@@ -116,12 +116,17 @@ func FormatBlock(
 		"timestamp":        hexutil.Uint64(header.Time.Unix()),
 		"transactionsRoot": transactionsRoot,
 		"receiptsRoot":     ethtypes.EmptyRootHash,
-		"baseFeePerGas":    (*hexutil.Big)(baseFee),
 
 		"uncles":          []common.Hash{},
 		"transactions":    transactions,
 		"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
 	}
+
+	if baseFee != nil {
+		result["baseFeePerGas"] = (*hexutil.Big)(baseFee)
+	}
+
+	return result
 }
 
 type DataError interface {
