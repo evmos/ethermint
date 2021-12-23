@@ -43,6 +43,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
 - (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
 - (evm) [tharsis#808](https://github.com/tharsis/ethermint/issues/808) increase nonce in ante handler for contract creation transaction.
+- (evm) [tharsis#N/A]() reject invalid `MsgEthereumTx` wrapping tx
+- (evm) [tharsis#N/A]() Fix SelfDestruct opcode by deleting account code and state
 
 ### Improvements
 

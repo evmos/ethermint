@@ -76,6 +76,17 @@ func NewAnteHandler(
 			}
 		}
 
+		// Reject messages that requires specific authentication here.
+		// For example `MsgEthereumTx` requires fee to be deducted in the antehandler in order to perform the refund.
+		for _, msg := range tx.GetMsgs() {
+			if _, ok := msg.(*evmtypes.MsgEthereumTx); ok {
+				return ctx, sdkerrors.Wrapf(
+					sdkerrors.ErrInvalidType,
+					"MsgEthereumTx needs to be contained within a tx with ExtensionOptionsEthereumTx option",
+				)
+			}
+		}
+
 		// handle as totally normal Cosmos SDK tx
 
 		switch tx.(type) {
