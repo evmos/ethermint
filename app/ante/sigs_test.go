@@ -8,7 +8,7 @@ import (
 )
 
 func (suite AnteTestSuite) TestSignatures() {
-	suite.dynamicTxFee = false
+	suite.enableFeemarket = false
 	suite.SetupTest() // reset
 
 	addr, privKey := tests.NewAddrKey()

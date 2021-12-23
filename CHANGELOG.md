@@ -45,6 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - (evm) [tharsis#808](https://github.com/tharsis/ethermint/issues/808) increase nonce in ante handler for contract creation transaction.
 - (evm) [tharsis#N/A]() reject invalid `MsgEthereumTx` wrapping tx
 - (evm) [tharsis#N/A]() Fix SelfDestruct opcode by deleting account code and state
+- (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent baseFee check logic
 
 ### Improvements
 

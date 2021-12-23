@@ -71,7 +71,8 @@ func (k Keeper) SetBlockGasUsed(ctx sdk.Context, gas uint64) {
 // Required by EIP1559 base fee calculation.
 // ----------------------------------------------------------------------------
 
-// GetLastBaseFee returns the last base fee value from the store.
+// GetBaseFee returns the last base fee value from the store.
+// returns nil if base fee is not enabled.
 func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.KeyPrefixBaseFee)

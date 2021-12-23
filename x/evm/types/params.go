@@ -136,7 +136,7 @@ func validateChainConfig(i interface{}) error {
 	return cfg.Validate()
 }
 
+// IsLondon returns if london hardfork is enabled.
 func IsLondon(ethConfig *params.ChainConfig, height int64) bool {
-	rules := ethConfig.Rules(big.NewInt(height))
-	return rules.IsLondon
+	return ethConfig.IsLondon(big.NewInt(height))
 }

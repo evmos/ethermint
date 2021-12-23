@@ -220,20 +220,17 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	params := k.GetParams(ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
-
-	var baseFee *big.Int
-	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
-		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
+	cfg, err := k.EVMConfig(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	msg, err := args.ToMessage(req.GasCap, baseFee)
+	msg, err := args.ToMessage(req.GasCap, cfg.BaseFee)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	res, err := k.ApplyMessage(msg, nil, false)
+	res, err := k.ApplyMessageWithConfig(msg, nil, false, cfg)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -292,10 +289,6 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to load evm config")
 	}
-	var baseFee *big.Int
-	if types.IsLondon(cfg.ChainConfig, ctx.BlockHeight()) {
-		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
-	}
 
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (vmerror bool, rsp *types.MsgEthereumTxResponse, err error) {
@@ -304,7 +297,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		// Reset to the initial context
 		k.WithContext(ctx)
 
-		msg, err := args.ToMessage(req.GasCap, baseFee)
+		msg, err := args.ToMessage(req.GasCap, cfg.BaseFee)
 		if err != nil {
 			return false, nil, err
 		}
@@ -364,27 +357,28 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
 	k.WithContext(ctx)
 
-	params := k.GetParams(ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
-	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+	cfg, err := k.EVMConfig(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to load evm config")
+	}
+	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
 
 	for i, tx := range req.Predecessors {
 		ethTx := tx.AsTransaction()
-		msg, err := ethTx.AsMessage(signer, baseFee)
+		msg, err := ethTx.AsMessage(signer, cfg.BaseFee)
 		if err != nil {
 			continue
 		}
 		k.SetTxHashTransient(ethTx.Hash())
 		k.SetTxIndexTransient(uint64(i))
 
-		if _, err := k.ApplyMessage(msg, types.NewNoOpTracer(), true); err != nil {
+		if _, err := k.ApplyMessageWithConfig(msg, types.NewNoOpTracer(), true, cfg); err != nil {
 			continue
 		}
 	}
 
 	tx := req.Msg.AsTransaction()
-	result, err := k.traceTx(ctx, signer, req.TxIndex, ethCfg, tx, baseFee, req.TraceConfig, false)
+	result, err := k.traceTx(ctx, cfg, signer, req.TxIndex, tx, req.TraceConfig, false)
 	if err != nil {
 		// error will be returned with detail status from traceTx
 		return nil, err
@@ -418,18 +412,18 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
 	k.WithContext(ctx)
 
-	params := k.GetParams(ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
-	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
-	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
-
+	cfg, err := k.EVMConfig(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to load evm config")
+	}
+	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
 	txsLength := len(req.Txs)
 	results := make([]*types.TxTraceResult, 0, txsLength)
 
 	for i, tx := range req.Txs {
 		result := types.TxTraceResult{}
 		ethTx := tx.AsTransaction()
-		traceResult, err := k.traceTx(ctx, signer, uint64(i), ethCfg, ethTx, baseFee, req.TraceConfig, true)
+		traceResult, err := k.traceTx(ctx, cfg, signer, uint64(i), ethTx, req.TraceConfig, true)
 		if err != nil {
 			result.Error = err.Error()
 			continue
@@ -450,11 +444,10 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 
 func (k *Keeper) traceTx(
 	ctx sdk.Context,
+	cfg *types.EVMConfig,
 	signer ethtypes.Signer,
 	txIndex uint64,
-	ethCfg *ethparams.ChainConfig,
 	tx *ethtypes.Transaction,
-	baseFee *big.Int,
 	traceConfig *types.TraceConfig,
 	commitMessage bool,
 ) (*interface{}, error) {
@@ -465,7 +458,7 @@ func (k *Keeper) traceTx(
 		err       error
 	)
 
-	msg, err := tx.AsMessage(signer, baseFee)
+	msg, err := tx.AsMessage(signer, cfg.BaseFee)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -473,7 +466,7 @@ func (k *Keeper) traceTx(
 	txHash := tx.Hash()
 
 	if traceConfig != nil && traceConfig.Overrides != nil {
-		overrides = traceConfig.Overrides.EthereumConfig(ethCfg.ChainID)
+		overrides = traceConfig.Overrides.EthereumConfig(cfg.ChainConfig.ChainID)
 	}
 
 	switch {
@@ -522,13 +515,13 @@ func (k *Keeper) traceTx(
 		}
 		tracer = vm.NewStructLogger(&logConfig)
 	default:
-		tracer = types.NewTracer(types.TracerStruct, msg, ethCfg, ctx.BlockHeight())
+		tracer = types.NewTracer(types.TracerStruct, msg, cfg.ChainConfig, ctx.BlockHeight())
 	}
 
 	k.SetTxHashTransient(txHash)
 	k.SetTxIndexTransient(txIndex)
 
-	res, err := k.ApplyMessage(msg, tracer, commitMessage)
+	res, err := k.ApplyMessageWithConfig(msg, tracer, commitMessage, cfg)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {
-	suite.dynamicTxFee = false
+	suite.enableFeemarket = false
 	suite.SetupTest() // reset
 
 	addr, privKey := tests.NewAddrKey()
@@ -314,22 +314,16 @@ func (suite AnteTestSuite) TestAnteHandler() {
 }
 
 func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
-	suite.dynamicTxFee = true
-	suite.SetupTest() // reset
-
 	addr, privKey := tests.NewAddrKey()
 	to := tests.GenerateAddress()
 
-	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
-	suite.Require().NoError(acc.SetSequence(1))
-	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
-
 	testCases := []struct {
-		name      string
-		txFn      func() sdk.Tx
-		checkTx   bool
-		reCheckTx bool
-		expPass   bool
+		name           string
+		txFn           func() sdk.Tx
+		enableLondonHF bool
+		checkTx        bool
+		reCheckTx      bool
+		expPass        bool
 	}{
 		{
 			"success - DeliverTx (contract)",
@@ -351,6 +345,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
+			true,
 			false, false, true,
 		},
 		{
@@ -359,7 +354,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedContractTx :=
 					evmtypes.NewTxContract(
 						suite.app.EvmKeeper.ChainID(),
-						2,
+						1,
 						big.NewInt(10),
 						100000,
 						nil,
@@ -373,6 +368,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
+			true,
 			true, false, true,
 		},
 		{
@@ -381,7 +377,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedContractTx :=
 					evmtypes.NewTxContract(
 						suite.app.EvmKeeper.ChainID(),
-						3,
+						1,
 						big.NewInt(10),
 						100000,
 						nil,
@@ -395,6 +391,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
 				return tx
 			},
+			true,
 			false, true, true,
 		},
 		{
@@ -403,7 +400,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						4,
+						1,
 						&to,
 						big.NewInt(10),
 						100000,
@@ -418,6 +415,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			},
+			true,
 			false, false, true,
 		},
 		{
@@ -426,7 +424,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						5,
+						1,
 						&to,
 						big.NewInt(10),
 						100000,
@@ -441,6 +439,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
 			},
+			true,
 			true, false, true,
 		},
 		{
@@ -449,7 +448,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						3,
+						1,
 						&to,
 						big.NewInt(10),
 						100000,
@@ -463,7 +462,9 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 
 				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
-			}, false, true, true,
+			},
+			true,
+			false, true, true,
 		},
 		{
 			"success - CheckTx (cosmos tx not signed)",
@@ -471,7 +472,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						4,
+						1,
 						&to,
 						big.NewInt(10),
 						100000,
@@ -485,7 +486,9 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 
 				tx := suite.CreateTestTx(signedTx, privKey, 1, false)
 				return tx
-			}, false, true, true,
+			},
+			true,
+			false, true, true,
 		},
 		{
 			"fail - CheckTx (cosmos tx is not valid)",
@@ -493,7 +496,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						4,
+						1,
 						&to,
 						big.NewInt(10),
 						100000,
@@ -509,7 +512,9 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				// bigger than MaxGasWanted
 				txBuilder.SetGasLimit(uint64(1 << 63))
 				return txBuilder.GetTx()
-			}, true, false, false,
+			},
+			true,
+			true, false, false,
 		},
 		{
 			"fail - CheckTx (memo too long)",
@@ -517,7 +522,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				signedTx :=
 					evmtypes.NewTx(
 						suite.app.EvmKeeper.ChainID(),
-						5,
+						1,
 						&to,
 						big.NewInt(10),
 						100000,
@@ -532,12 +537,45 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
 				txBuilder.SetMemo(strings.Repeat("*", 257))
 				return txBuilder.GetTx()
-			}, true, false, false,
+			},
+			true,
+			true, false, false,
+		},
+		{
+			"fail - DynamicFeeTx without london hark fork",
+			func() sdk.Tx {
+				signedContractTx :=
+					evmtypes.NewTxContract(
+						suite.app.EvmKeeper.ChainID(),
+						1,
+						big.NewInt(10),
+						100000,
+						nil,
+						big.NewInt(ethparams.InitialBaseFee+1),
+						big.NewInt(1),
+						nil,
+						&types.AccessList{},
+					)
+				signedContractTx.From = addr.Hex()
+
+				tx := suite.CreateTestTx(signedContractTx, privKey, 1, false)
+				return tx
+			},
+			false,
+			false, false, false,
 		},
 	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.enableFeemarket = true
+			suite.enableLondonHF = tc.enableLondonHF
+			suite.SetupTest() // reset
+
+			acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
+			suite.Require().NoError(acc.SetSequence(1))
+			suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
 			suite.ctx = suite.ctx.WithIsCheckTx(tc.checkTx).WithIsReCheckTx(tc.reCheckTx)
 			suite.app.EvmKeeper.AddBalance(addr, big.NewInt((ethparams.InitialBaseFee+10)*100000))
 			_, err := suite.anteHandler(suite.ctx, tc.txFn(), false)
@@ -548,5 +586,6 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 			}
 		})
 	}
-	suite.dynamicTxFee = false
+	suite.enableFeemarket = false
+	suite.enableLondonHF = true
 }
