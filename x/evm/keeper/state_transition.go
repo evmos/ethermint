@@ -221,11 +221,20 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	logs := k.GetTxLogsTransient(txHash)
 	receipt := &ethtypes.Receipt{
-		Type:        tx.Type(),
-		TxHash:      txHash,
-		Logs:        logs,
-		GasUsed:     res.GasUsed,
-		BlockNumber: big.NewInt(ctx.BlockHeight()),
+		Type:      tx.Type(),
+		PostState: nil,
+		// NOTE: assume until this point that tx is successful
+		Status: ethtypes.ReceiptStatusSuccessful,
+		Bloom:  ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes()),
+		// Cumulative gas used for the current block, excluding this tx
+		CumulativeGasUsed: ctx.BlockGasMeter().GasConsumedToLimit(),
+		TxHash:            txHash,
+		Logs:              logs,
+		GasUsed:           res.GasUsed,
+		ContractAddress:   *tx.To(),
+		BlockHash:         common.BytesToHash(ctx.HeaderHash()),
+		BlockNumber:       big.NewInt(ctx.BlockHeight()),
+		TransactionIndex:  uint(k.GetTxIndexTransient()),
 	}
 
 	if !res.Failed() {
@@ -233,7 +242,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		if err = k.PostTxProcessing(msg.From(), tx.To(), receipt); err != nil {
 			// If hooks return error, revert the whole tx.
 			res.VmError = types.ErrPostTxProcessing.Error()
-			k.Logger(k.Ctx()).Error("tx post processing failed", "error", err)
+			k.Logger(ctx).Error("tx post processing failed", "error", err)
 		} else if commit != nil {
 			// PostTxProcessing is successful, commit the cache context
 			commit()
