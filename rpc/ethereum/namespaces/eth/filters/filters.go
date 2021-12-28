@@ -147,12 +147,12 @@ func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*eth
 	for height := from; height <= to; height++ {
 		bloom, err := f.backend.BlockBloom(&height)
 		if err != nil {
-			return logs, err
+			return nil, err
 		}
 
 		filtered, err := f.blockLogs(height, bloom)
 		if err != nil {
-			return logs, err
+			return nil, errors.Wrapf(err, "failed to fetch block by number %d", height)
 		}
 
 		// check logs limit
