@@ -263,6 +263,8 @@ func GetConfig(v *viper.Viper) Config {
 			FeeHistoryCap: v.GetInt32("json-rpc.feehistory-cap"),
 			TxFeeCap:      v.GetFloat64("json-rpc.txfee-cap"),
 			EVMTimeout:    v.GetDuration("json-rpc.evm-timeout"),
+			LogsCap:       v.GetInt32("json-rpc.logs-cap"),
+			BlockRangeCap: v.GetInt32("json-rpc.block-range-cap"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
