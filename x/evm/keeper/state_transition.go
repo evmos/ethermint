@@ -343,10 +343,12 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 	}
 
 	if contractCreation {
-		nonce := k.GetNonce(sender.Address())
+		// take over the nonce management from evm:
+		// - reset sender's nonce to msg.Nonce() before calling evm.
+		// - increase sender's nonce by one no matter the result.
+		k.SetNonce(sender.Address(), msg.Nonce())
 		ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
-		// revert nonce increment, because it's increased in ante handler
-		k.SetNonce(sender.Address(), nonce)
+		k.SetNonce(sender.Address(), msg.Nonce()+1)
 	} else {
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
 	}
