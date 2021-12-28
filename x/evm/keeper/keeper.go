@@ -374,3 +374,19 @@ func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) erro
 func (k Keeper) Tracer(msg core.Message, ethCfg *params.ChainConfig) vm.Tracer {
 	return types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight())
 }
+
+// BaseFee returns current base fee, return values:
+// - `nil`: london hardfork not enabled.
+// - `0`: london hardfork enabled but feemarket is not enabled.
+// - `n`: both london hardfork and feemarket are enabled.
+func (k Keeper) BaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
+	if !types.IsLondon(ethCfg, ctx.BlockHeight()) {
+		return nil
+	}
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+	if baseFee == nil {
+		// return 0 if feemarket not enabled.
+		baseFee = big.NewInt(0)
+	}
+	return baseFee
+}

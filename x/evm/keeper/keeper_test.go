@@ -3,6 +3,7 @@ package keeper_test
 import (
 	_ "embed"
 	"encoding/json"
+	"math"
 	"math/big"
 	"testing"
 	"time"
@@ -61,7 +62,8 @@ type KeeperTestSuite struct {
 	appCodec codec.Codec
 	signer   keyring.Signer
 
-	dynamicTxFee     bool
+	enableFeemarket  bool
+	enableLondonHF   bool
 	mintFeeCollector bool
 }
 
@@ -80,16 +82,22 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	require.NoError(t, err)
 	suite.consAddress = sdk.ConsAddress(priv.PubKey().Address())
 
-	if suite.dynamicTxFee {
-		// setup feemarketGenesis params
-		feemarketGenesis := feemarkettypes.DefaultGenesisState()
-		feemarketGenesis.Params.EnableHeight = 1
-		feemarketGenesis.Params.NoBaseFee = false
-		feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
-		suite.app = app.Setup(checkTx, feemarketGenesis)
-	} else {
-		suite.app = app.Setup(checkTx, nil)
-	}
+	suite.app = app.Setup(checkTx, func(app *app.EthermintApp, genesis simapp.GenesisState) simapp.GenesisState {
+		if suite.enableFeemarket {
+			feemarketGenesis := feemarkettypes.DefaultGenesisState()
+			feemarketGenesis.Params.EnableHeight = 1
+			feemarketGenesis.Params.NoBaseFee = false
+			feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
+			genesis[feemarkettypes.ModuleName] = app.AppCodec().MustMarshalJSON(feemarketGenesis)
+		}
+		if !suite.enableLondonHF {
+			evmGenesis := types.DefaultGenesisState()
+			maxInt := sdk.NewInt(math.MaxInt64)
+			evmGenesis.Params.ChainConfig.LondonBlock = &maxInt
+			genesis[types.ModuleName] = app.AppCodec().MustMarshalJSON(evmGenesis)
+		}
+		return genesis
+	})
 
 	if suite.mintFeeCollector {
 		// mint some coin to fee collector
@@ -225,7 +233,7 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	require.NoError(t, err)
 
 	var erc20DeployTx *types.MsgEthereumTx
-	if suite.dynamicTxFee {
+	if suite.enableFeemarket {
 		erc20DeployTx = types.NewTxContract(
 			chainID,
 			nonce,
@@ -276,7 +284,7 @@ func (suite *KeeperTestSuite) TransferERC20Token(t require.TestingT, contractAdd
 	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
 
 	var ercTransferTx *types.MsgEthereumTx
-	if suite.dynamicTxFee {
+	if suite.enableFeemarket {
 		ercTransferTx = types.NewTx(
 			chainID,
 			nonce,
@@ -333,7 +341,7 @@ func (suite *KeeperTestSuite) DeployTestMessageCall(t require.TestingT) common.A
 	nonce := suite.app.EvmKeeper.GetNonce(suite.address)
 
 	var erc20DeployTx *types.MsgEthereumTx
-	if suite.dynamicTxFee {
+	if suite.enableFeemarket {
 		erc20DeployTx = types.NewTxContract(
 			chainID,
 			nonce,
@@ -367,6 +375,38 @@ func (suite *KeeperTestSuite) DeployTestMessageCall(t require.TestingT) common.A
 	return crypto.CreateAddress(suite.address, nonce)
 }
 
+func (suite *KeeperTestSuite) TestBaseFee() {
+	testCases := []struct {
+		name            string
+		enableLondonHF  bool
+		enableFeemarket bool
+		expectBaseFee   *big.Int
+	}{
+		{"not enable london HF, not enable feemarket", false, false, nil},
+		{"enable london HF, not enable feemarket", true, false, big.NewInt(0)},
+		{"enable london HF, enable feemarket", true, true, big.NewInt(1000000000)},
+		{"not enable london HF, enable feemarket", false, true, nil},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.enableFeemarket = tc.enableFeemarket
+			suite.enableLondonHF = tc.enableLondonHF
+			suite.SetupTest()
+			suite.app.EvmKeeper.BeginBlock(suite.ctx, abci.RequestBeginBlock{})
+			params := suite.app.EvmKeeper.GetParams(suite.ctx)
+			ethCfg := params.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+			baseFee := suite.app.EvmKeeper.BaseFee(suite.ctx, ethCfg)
+			suite.Require().Equal(tc.expectBaseFee, baseFee)
+		})
+	}
+	suite.enableFeemarket = false
+	suite.enableLondonHF = true
+}
+
 func TestKeeperTestSuite(t *testing.T) {
-	suite.Run(t, new(KeeperTestSuite))
+	suite.Run(t, &KeeperTestSuite{
+		enableFeemarket: false,
+		enableLondonHF:  true,
+	})
 }

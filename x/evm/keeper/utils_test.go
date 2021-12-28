@@ -20,17 +20,17 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 	negInt := sdk.NewInt(-10)
 
 	testCases := []struct {
-		name         string
-		to           string
-		gasLimit     uint64
-		gasPrice     *sdk.Int
-		gasFeeCap    *big.Int
-		gasTipCap    *big.Int
-		cost         *sdk.Int
-		from         string
-		accessList   *ethtypes.AccessList
-		expectPass   bool
-		dynamicTxFee bool
+		name            string
+		to              string
+		gasLimit        uint64
+		gasPrice        *sdk.Int
+		gasFeeCap       *big.Int
+		gasTipCap       *big.Int
+		cost            *sdk.Int
+		from            string
+		accessList      *ethtypes.AccessList
+		expectPass      bool
+		enableFeemarket bool
 	}{
 		{
 			name:       "Enough balance",
@@ -113,92 +113,92 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 			expectPass: false,
 		},
 		{
-			name:         "Enough balance w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     10,
-			gasFeeCap:    big.NewInt(1),
-			cost:         &oneInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   true,
-			dynamicTxFee: true,
+			name:            "Enough balance w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        10,
+			gasFeeCap:       big.NewInt(1),
+			cost:            &oneInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      true,
+			enableFeemarket: true,
 		},
 		{
-			name:         "Equal balance w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     99,
-			gasFeeCap:    big.NewInt(1),
-			cost:         &oneInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   true,
-			dynamicTxFee: true,
+			name:            "Equal balance w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        99,
+			gasFeeCap:       big.NewInt(1),
+			cost:            &oneInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      true,
+			enableFeemarket: true,
 		},
 		{
-			name:         "negative cost w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     1,
-			gasFeeCap:    big.NewInt(1),
-			cost:         &negInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   false,
-			dynamicTxFee: true,
+			name:            "negative cost w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        1,
+			gasFeeCap:       big.NewInt(1),
+			cost:            &negInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      false,
+			enableFeemarket: true,
 		},
 		{
-			name:         "Higher gas limit, not enough balance w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     100,
-			gasFeeCap:    big.NewInt(1),
-			cost:         &oneInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   false,
-			dynamicTxFee: true,
+			name:            "Higher gas limit, not enough balance w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        100,
+			gasFeeCap:       big.NewInt(1),
+			cost:            &oneInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      false,
+			enableFeemarket: true,
 		},
 		{
-			name:         "Higher gas price, enough balance w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     10,
-			gasFeeCap:    big.NewInt(5),
-			cost:         &oneInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   true,
-			dynamicTxFee: true,
+			name:            "Higher gas price, enough balance w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        10,
+			gasFeeCap:       big.NewInt(5),
+			cost:            &oneInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      true,
+			enableFeemarket: true,
 		},
 		{
-			name:         "Higher gas price, not enough balance w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     20,
-			gasFeeCap:    big.NewInt(5),
-			cost:         &oneInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   false,
-			dynamicTxFee: true,
+			name:            "Higher gas price, not enough balance w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        20,
+			gasFeeCap:       big.NewInt(5),
+			cost:            &oneInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      false,
+			enableFeemarket: true,
 		},
 		{
-			name:         "Higher cost, enough balance w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     10,
-			gasFeeCap:    big.NewInt(5),
-			cost:         &fiftyInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   true,
-			dynamicTxFee: true,
+			name:            "Higher cost, enough balance w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        10,
+			gasFeeCap:       big.NewInt(5),
+			cost:            &fiftyInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      true,
+			enableFeemarket: true,
 		},
 		{
-			name:         "Higher cost, not enough balance w/ dynamicTxFee",
-			to:           suite.address.String(),
-			gasLimit:     10,
-			gasFeeCap:    big.NewInt(5),
-			cost:         &hundredInt,
-			from:         suite.address.String(),
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   false,
-			dynamicTxFee: true,
+			name:            "Higher cost, not enough balance w/ enableFeemarket",
+			to:              suite.address.String(),
+			gasLimit:        10,
+			gasFeeCap:       big.NewInt(5),
+			cost:            &hundredInt,
+			from:            suite.address.String(),
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      false,
+			enableFeemarket: true,
 		},
 	}
 
@@ -215,7 +215,7 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 				amount = tc.cost.BigInt()
 			}
 
-			if tc.dynamicTxFee {
+			if tc.enableFeemarket {
 				gasFeeCap = tc.gasFeeCap
 				if tc.gasTipCap == nil {
 					gasTipCap = oneInt.BigInt()
@@ -261,15 +261,15 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 	initBalance := sdk.NewInt((ethparams.InitialBaseFee + 10) * 105)
 
 	testCases := []struct {
-		name         string
-		gasLimit     uint64
-		gasPrice     *sdk.Int
-		gasFeeCap    *big.Int
-		gasTipCap    *big.Int
-		cost         *sdk.Int
-		accessList   *ethtypes.AccessList
-		expectPass   bool
-		dynamicTxFee bool
+		name            string
+		gasLimit        uint64
+		gasPrice        *sdk.Int
+		gasFeeCap       *big.Int
+		gasTipCap       *big.Int
+		cost            *sdk.Int
+		accessList      *ethtypes.AccessList
+		expectPass      bool
+		enableFeemarket bool
 	}{
 		{
 			name:       "Enough balance",
@@ -321,51 +321,51 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			accessList: &ethtypes.AccessList{},
 			expectPass: true,
 		},
-		//  testcases with dynamicTxFee enabled.
+		//  testcases with enableFeemarket enabled.
 		{
-			name:         "Invalid gasFeeCap w/ dynamicTxFee",
-			gasLimit:     10,
-			gasFeeCap:    big.NewInt(1),
-			gasTipCap:    big.NewInt(1),
-			cost:         &oneInt,
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   false,
-			dynamicTxFee: true,
+			name:            "Invalid gasFeeCap w/ enableFeemarket",
+			gasLimit:        10,
+			gasFeeCap:       big.NewInt(1),
+			gasTipCap:       big.NewInt(1),
+			cost:            &oneInt,
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      false,
+			enableFeemarket: true,
 		},
 		{
-			name:         "empty tip fee is valid to deduct",
-			gasLimit:     10,
-			gasFeeCap:    big.NewInt(ethparams.InitialBaseFee),
-			gasTipCap:    big.NewInt(1),
-			cost:         &oneInt,
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   true,
-			dynamicTxFee: true,
+			name:            "empty tip fee is valid to deduct",
+			gasLimit:        10,
+			gasFeeCap:       big.NewInt(ethparams.InitialBaseFee),
+			gasTipCap:       big.NewInt(1),
+			cost:            &oneInt,
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      true,
+			enableFeemarket: true,
 		},
 		{
-			name:         "effectiveTip equal to gasTipCap",
-			gasLimit:     100,
-			gasFeeCap:    big.NewInt(ethparams.InitialBaseFee + 2),
-			cost:         &oneInt,
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   true,
-			dynamicTxFee: true,
+			name:            "effectiveTip equal to gasTipCap",
+			gasLimit:        100,
+			gasFeeCap:       big.NewInt(ethparams.InitialBaseFee + 2),
+			cost:            &oneInt,
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      true,
+			enableFeemarket: true,
 		},
 		{
-			name:         "effectiveTip equal to (gasFeeCap - baseFee)",
-			gasLimit:     105,
-			gasFeeCap:    big.NewInt(ethparams.InitialBaseFee + 1),
-			gasTipCap:    big.NewInt(2),
-			cost:         &oneInt,
-			accessList:   &ethtypes.AccessList{},
-			expectPass:   true,
-			dynamicTxFee: true,
+			name:            "effectiveTip equal to (gasFeeCap - baseFee)",
+			gasLimit:        105,
+			gasFeeCap:       big.NewInt(ethparams.InitialBaseFee + 1),
+			gasTipCap:       big.NewInt(2),
+			cost:            &oneInt,
+			accessList:      &ethtypes.AccessList{},
+			expectPass:      true,
+			enableFeemarket: true,
 		},
 	}
 
 	for i, tc := range testCases {
 		suite.Run(tc.name, func() {
-			suite.dynamicTxFee = tc.dynamicTxFee
+			suite.enableFeemarket = tc.enableFeemarket
 			suite.SetupTest()
 
 			var amount, gasPrice, gasFeeCap, gasTipCap *big.Int
@@ -373,7 +373,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				amount = tc.cost.BigInt()
 			}
 
-			if suite.dynamicTxFee {
+			if suite.enableFeemarket {
 				if tc.gasFeeCap != nil {
 					gasFeeCap = tc.gasFeeCap
 				}
@@ -407,12 +407,12 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 				evmtypes.DefaultEVMDenom,
 				false,
 				false,
-				suite.dynamicTxFee, // london
+				suite.enableFeemarket, // london
 			)
 
 			if tc.expectPass {
 				suite.Require().NoError(err, "valid test %d failed", i)
-				if tc.dynamicTxFee {
+				if tc.enableFeemarket {
 					baseFee := suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx)
 					suite.Require().Equal(
 						fees,
@@ -436,5 +436,5 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			}
 		})
 	}
-	suite.dynamicTxFee = false // reset flag
+	suite.enableFeemarket = false // reset flag
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // EVMKeeper defines the expected keeper interface used on the Eth AnteHandler
@@ -32,6 +33,7 @@ type EVMKeeper interface {
 	DeductTxCostsFromUserBalance(
 		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
 	) (sdk.Coins, error)
+	BaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int
 }
 
 type protoTxProvider interface {
@@ -326,8 +328,6 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	ctd.evmKeeper.WithContext(ctx)
 
 	params := ctd.evmKeeper.GetParams(ctx)
-	feeMktParams := ctd.feemarketKeeper.GetParams(ctx)
-
 	ethCfg := params.ChainConfig.EthereumConfig(ctd.evmKeeper.ChainID())
 	signer := ethtypes.MakeSigner(ethCfg, big.NewInt(ctx.BlockHeight()))
 
@@ -337,10 +337,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type %T, expected %T", tx, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
-		var baseFee *big.Int
-		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee {
-			baseFee = ctd.feemarketKeeper.GetBaseFee(ctx)
-		}
+		baseFee := ctd.evmKeeper.BaseFee(ctx, ethCfg)
 
 		coreMsg, err := msgEthTx.AsMessage(signer, baseFee)
 		if err != nil {
@@ -370,16 +367,22 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
-		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee && baseFee == nil {
-			return ctx, sdkerrors.Wrap(evmtypes.ErrInvalidBaseFee, "base fee is supported but evm block context value is nil")
-		}
-
-		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee && baseFee != nil && coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
-			return ctx, sdkerrors.Wrapf(evmtypes.ErrInvalidBaseFee, "max fee per gas less than block base fee (%s < %s)", coreMsg.GasFeeCap(), baseFee)
+		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) {
+			if baseFee == nil {
+				return ctx, sdkerrors.Wrap(
+					evmtypes.ErrInvalidBaseFee,
+					"base fee is supported but evm block context value is nil",
+				)
+			}
+			if coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
+				return ctx, sdkerrors.Wrapf(
+					evmtypes.ErrInvalidBaseFee,
+					"max fee per gas less than block base fee (%s < %s)",
+					coreMsg.GasFeeCap(), baseFee,
+				)
+			}
 		}
 	}
-
-	ctd.evmKeeper.WithContext(ctx)
 
 	// set the original gas meter
 	return next(ctx, tx, simulate)
@@ -443,6 +446,8 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		return next(ctx, tx, simulate)
 	}
 
+	vbd.evmKeeper.WithContext(ctx)
+
 	err := tx.ValidateBasic()
 	// ErrNoSignatures is fine with eth tx
 	if err != nil && !errors.Is(err, sdkerrors.ErrNoSignatures) {
@@ -477,7 +482,15 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		if err != nil {
 			return ctx, sdkerrors.Wrap(err, "failed to unpack MsgEthereumTx Data")
 		}
+
 		params := vbd.evmKeeper.GetParams(ctx)
+		chainID := vbd.evmKeeper.ChainID()
+		ethCfg := params.ChainConfig.EthereumConfig(chainID)
+		baseFee := vbd.evmKeeper.BaseFee(ctx, ethCfg)
+		if baseFee == nil && txData.TxType() == ethtypes.DynamicFeeTxType {
+			return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
+		}
+
 		ethFeeAmount := sdk.Coins{sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
 
 		authInfo := protoTx.AuthInfo
@@ -558,13 +571,12 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 
 		var feeAmt *big.Int
 
-		feeMktParams := mfd.feemarketKeeper.GetParams(ctx)
 		params := mfd.evmKeeper.GetParams(ctx)
 		chainID := mfd.evmKeeper.ChainID()
 		ethCfg := params.ChainConfig.EthereumConfig(chainID)
 		evmDenom := params.EvmDenom
-		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) && !feeMktParams.NoBaseFee {
-			baseFee := mfd.feemarketKeeper.GetBaseFee(ctx)
+		baseFee := mfd.evmKeeper.BaseFee(ctx, ethCfg)
+		if baseFee != nil {
 			feeAmt = msg.GetEffectiveFee(baseFee)
 		} else {
 			feeAmt = msg.GetFee()

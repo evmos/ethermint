@@ -31,11 +31,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 		return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
 	}
 
-	var baseFee *big.Int
-	if types.IsLondon(ethCfg, ctx.BlockHeight()) {
-		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
-	}
-
+	baseFee := k.BaseFee(ctx, ethCfg)
 	return &types.EVMConfig{
 		Params:      params,
 		ChainConfig: ethCfg,
@@ -178,15 +174,9 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
 
-	// get the latest signer according to the chain rules from the config
+	// get the signer according to the chain rules from the config and block height
 	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
-
-	var baseFee *big.Int
-	if types.IsLondon(cfg.ChainConfig, ctx.BlockHeight()) {
-		baseFee = k.feeMarketKeeper.GetBaseFee(ctx)
-	}
-
-	msg, err := tx.AsMessage(signer, baseFee)
+	msg, err := tx.AsMessage(signer, cfg.BaseFee)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to return ethereum transaction as core message")
 	}

@@ -46,6 +46,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - (evm) [tharsis#851](https://github.com/tharsis/ethermint/pull/851) fix contract address used in EVM, this issue is caused by [tharsis#808](https://github.com/tharsis/ethermint/issues/808).
 - (evm) [tharsis#N/A]() reject invalid `MsgEthereumTx` wrapping tx
 - (evm) [tharsis#N/A]() Fix SelfDestruct opcode by deleting account code and state
+- (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent baseFee check logic
 
 ### Improvements
 

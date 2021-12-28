@@ -142,7 +142,7 @@ func newNativeMessage(
 }
 
 func BenchmarkApplyTransaction(b *testing.B) {
-	suite := KeeperTestSuite{}
+	suite := KeeperTestSuite{enableLondonHF: true}
 	suite.DoSetupTest(b)
 
 	ethSigner := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
@@ -169,7 +169,7 @@ func BenchmarkApplyTransaction(b *testing.B) {
 }
 
 func BenchmarkApplyTransactionWithLegacyTx(b *testing.B) {
-	suite := KeeperTestSuite{}
+	suite := KeeperTestSuite{enableLondonHF: true}
 	suite.DoSetupTest(b)
 
 	ethSigner := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
@@ -196,7 +196,7 @@ func BenchmarkApplyTransactionWithLegacyTx(b *testing.B) {
 }
 
 func BenchmarkApplyTransactionWithDynamicFeeTx(b *testing.B) {
-	suite := KeeperTestSuite{dynamicTxFee: true}
+	suite := KeeperTestSuite{enableFeemarket: true, enableLondonHF: true}
 	suite.DoSetupTest(b)
 
 	ethSigner := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
@@ -223,7 +223,7 @@ func BenchmarkApplyTransactionWithDynamicFeeTx(b *testing.B) {
 }
 
 func BenchmarkApplyMessage(b *testing.B) {
-	suite := KeeperTestSuite{}
+	suite := KeeperTestSuite{enableLondonHF: true}
 	suite.DoSetupTest(b)
 
 	params := suite.app.EvmKeeper.GetParams(suite.ctx)
@@ -258,7 +258,7 @@ func BenchmarkApplyMessage(b *testing.B) {
 }
 
 func BenchmarkApplyMessageWithLegacyTx(b *testing.B) {
-	suite := KeeperTestSuite{}
+	suite := KeeperTestSuite{enableLondonHF: true}
 	suite.DoSetupTest(b)
 
 	params := suite.app.EvmKeeper.GetParams(suite.ctx)
@@ -293,7 +293,7 @@ func BenchmarkApplyMessageWithLegacyTx(b *testing.B) {
 }
 
 func BenchmarkApplyMessageWithDynamicFeeTx(b *testing.B) {
-	suite := KeeperTestSuite{dynamicTxFee: true}
+	suite := KeeperTestSuite{enableFeemarket: true, enableLondonHF: true}
 	suite.DoSetupTest(b)
 
 	params := suite.app.EvmKeeper.GetParams(suite.ctx)
