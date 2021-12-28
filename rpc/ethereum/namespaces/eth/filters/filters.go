@@ -157,7 +157,7 @@ func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*eth
 
 		// check logs limit
 		if len(logs)+len(filtered) > logLimit {
-			return logs, nil
+			return nil, errors.Errorf("query returned more than %d results", logLimit)
 		}
 		logs = append(logs, filtered...)
 	}
