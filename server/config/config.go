@@ -34,6 +34,10 @@ const (
 
 	DefaultFeeHistoryCap int32 = 100
 
+	DefaultLogsCap int32 = 10000
+
+	DefaultBlockRangeCap int32 = 10000
+
 	DefaultEVMTimeout = 5 * time.Second
 	// default 1.0 eth
 	DefaultTxFeeCap float64 = 1.0
@@ -78,6 +82,10 @@ type JSONRPCConfig struct {
 	FeeHistoryCap int32 `mapstructure:"feehistory-cap"`
 	// Enable defines if the EVM RPC server should be enabled.
 	Enable bool `mapstructure:"enable"`
+	// LogsCap defines the max number of results can be returned from single `eth_getLogs` query.
+	LogsCap int32 `mapstructure:"logs-cap"`
+	// BlockRangeCap defines the max block range allowed for `eth_getLogs` query.
+	BlockRangeCap int32 `mapstructure:"block-range-cap"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -171,6 +179,8 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		TxFeeCap:      DefaultTxFeeCap,
 		FilterCap:     DefaultFilterCap,
 		FeeHistoryCap: DefaultFeeHistoryCap,
+		BlockRangeCap: DefaultBlockRangeCap,
+		LogsCap:       DefaultLogsCap,
 	}
 }
 
