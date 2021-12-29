@@ -33,7 +33,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/eth/filters"
 	"github.com/tharsis/ethermint/rpc/ethereum/types"
 	"github.com/tharsis/ethermint/server/config"
 	ethermint "github.com/tharsis/ethermint/types"
@@ -81,7 +80,6 @@ type Backend interface {
 	BloomStatus() (uint64, uint64)
 	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
 	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
-	GetFilteredBlocks(from int64, to int64, filter [][]filters.BloomIV, filterAddresses bool) ([]int64, error)
 	ChainConfig() *params.ChainConfig
 	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
 	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
@@ -945,6 +943,16 @@ func (e *EVMBackend) RPCFeeHistoryCap() int32 {
 	return e.cfg.JSONRPC.FeeHistoryCap
 }
 
+// RPCLogsCap defines the max number of results can be returned from single `eth_getLogs` query.
+func (e *EVMBackend) RPCLogsCap() int32 {
+	return e.cfg.JSONRPC.LogsCap
+}
+
+// RPCBlockRangeCap defines the max block range allowed for `eth_getLogs` query.
+func (e *EVMBackend) RPCBlockRangeCap() int32 {
+	return e.cfg.JSONRPC.BlockRangeCap
+}
+
 // RPCMinGasPrice returns the minimum gas price for a transaction obtained from
 // the node config. If set value is 0, it will default to 20.
 
@@ -1017,55 +1025,6 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 	return nil, nil
 }
 
-// GetFilteredBlocks returns the block height list match the given bloom filters.
-func (e *EVMBackend) GetFilteredBlocks(
-	from int64,
-	to int64,
-	filters [][]filters.BloomIV,
-	filterAddresses bool,
-) ([]int64, error) {
-	matchedBlocks := make([]int64, 0)
-
-BLOCKS:
-	for height := from; height <= to; height++ {
-		if err := e.ctx.Err(); err != nil {
-			e.logger.Error("EVMBackend context error", "err", err)
-			return nil, err
-		}
-
-		h := height
-		bloom, err := e.BlockBloom(&h)
-		if err != nil {
-			e.logger.Error("retrieve header failed", "blockHeight", height, "err", err)
-			return nil, err
-		}
-
-		for i, filter := range filters {
-			// filter the header bloom with the addresses
-			if filterAddresses && i == 0 {
-				if !checkMatches(bloom, filter) {
-					continue BLOCKS
-				}
-
-				// the filter doesn't have any topics
-				if len(filters) == 1 {
-					matchedBlocks = append(matchedBlocks, height)
-					continue BLOCKS
-				}
-				continue
-			}
-
-			// filter the bloom with topics
-			if len(filter) > 0 && !checkMatches(bloom, filter) {
-				continue BLOCKS
-			}
-		}
-		matchedBlocks = append(matchedBlocks, height)
-	}
-
-	return matchedBlocks, nil
-}
-
 // GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
 // It also ensures consistency over the correct txs indexes across RPC endpoints
 func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx {
@@ -1099,17 +1058,4 @@ func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.Result
 	}
 
 	return result
-}
-
-// checkMatches revised the function from
-// https://github.com/ethereum/go-ethereum/blob/401354976bb44f0ad4455ca1e0b5c0dc31d9a5f5/core/types/bloom9.go#L88
-func checkMatches(bloom ethtypes.Bloom, filter []filters.BloomIV) bool {
-	for _, bloomIV := range filter {
-		if bloomIV.V[0] == bloomIV.V[0]&bloom[bloomIV.I[0]] &&
-			bloomIV.V[1] == bloomIV.V[1]&bloom[bloomIV.I[1]] &&
-			bloomIV.V[2] == bloomIV.V[2]&bloom[bloomIV.I[2]] {
-			return true
-		}
-	}
-	return false
 }
