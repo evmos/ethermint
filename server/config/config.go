@@ -206,6 +206,14 @@ func (c JSONRPCConfig) Validate() error {
 		return errors.New("JSON-RPC EVM timeout duration cannot be negative")
 	}
 
+	if c.LogsCap < 0 {
+		return errors.New("JSON-RPC logs cap cannot be negative")
+	}
+
+	if c.BlockRangeCap < 0 {
+		return errors.New("JSON-RPC block range cap cannot be negative")
+	}
+
 	// TODO: validate APIs
 	seenAPIs := make(map[string]bool)
 	for _, api := range c.API {
