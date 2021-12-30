@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"math/big"
 
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -219,6 +220,11 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 
 	res.Hash = txHash.Hex()
 
+	contractAddress := common.Address{}
+	if msg.To() != nil && !bytes.Equal(k.GetCodeHash(*msg.To()).Bytes(), common.BytesToHash(types.EmptyCodeHash).Bytes()) {
+		contractAddress = *msg.To()
+	}
+
 	logs := k.GetTxLogsTransient(txHash)
 	receipt := &ethtypes.Receipt{
 		Type:      tx.Type(),
@@ -227,14 +233,15 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 		Status: ethtypes.ReceiptStatusSuccessful,
 		Bloom:  ethtypes.BytesToBloom(k.GetBlockBloomTransient().Bytes()),
 		// Cumulative gas used for the current block, excluding this tx
-		CumulativeGasUsed: ctx.BlockGasMeter().GasConsumedToLimit(),
-		TxHash:            txHash,
-		Logs:              logs,
-		GasUsed:           res.GasUsed,
-		ContractAddress:   *tx.To(),
-		BlockHash:         common.BytesToHash(ctx.HeaderHash()),
-		BlockNumber:       big.NewInt(ctx.BlockHeight()),
-		TransactionIndex:  uint(k.GetTxIndexTransient()),
+		// FIXME: nil pointer
+		// CumulativeGasUsed: ctx.BlockGasMeter().GasConsumedToLimit(),
+		TxHash:           txHash,
+		Logs:             logs,
+		GasUsed:          res.GasUsed,
+		ContractAddress:  contractAddress,
+		BlockHash:        common.BytesToHash(ctx.HeaderHash()),
+		BlockNumber:      big.NewInt(ctx.BlockHeight()),
+		TransactionIndex: uint(k.GetTxIndexTransient() + 1),
 	}
 
 	if !res.Failed() {
