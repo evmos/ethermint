@@ -13,9 +13,6 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	channelkeeper "github.com/cosmos/ibc-go/v2/modules/core/04-channel/keeper"
-	ibcante "github.com/cosmos/ibc-go/v2/modules/core/ante"
-
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -33,7 +30,6 @@ func NewAnteHandler(
 	bankKeeper evmtypes.BankKeeper,
 	evmKeeper EVMKeeper,
 	feeGrantKeeper authante.FeegrantKeeper,
-	channelKeeper channelkeeper.Keeper,
 	feeMarketKeeper evmtypes.FeeMarketKeeper,
 	signModeHandler authsigning.SignModeHandler,
 ) sdk.AnteHandler {
@@ -91,22 +87,19 @@ func NewAnteHandler(
 
 		switch tx.(type) {
 		case sdk.Tx:
-			anteHandler = sdk.ChainAnteDecorators(
-				authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-				authante.NewRejectExtensionOptionsDecorator(),
-				authante.NewMempoolFeeDecorator(),
-				authante.NewValidateBasicDecorator(),
-				authante.NewTxTimeoutHeightDecorator(),
-				authante.NewValidateMemoDecorator(ak),
-				ibcante.NewAnteDecorator(channelKeeper),
-				authante.NewConsumeGasForTxSizeDecorator(ak),
-				authante.NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
-				authante.NewValidateSigCountDecorator(ak),
-				authante.NewDeductFeeDecorator(ak, bankKeeper, feeGrantKeeper),
-				authante.NewSigGasConsumeDecorator(ak, DefaultSigVerificationGasConsumer),
-				authante.NewSigVerificationDecorator(ak, signModeHandler),
-				authante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
+			anteHandler, err = authante.NewAnteHandler(
+				authante.HandlerOptions{
+					AccountKeeper:   ak,
+					BankKeeper:      bankKeeper,
+					SignModeHandler: signModeHandler,
+					FeegrantKeeper:  feeGrantKeeper,
+					SigGasConsumer:  DefaultSigVerificationGasConsumer,
+				},
 			)
+			if err != nil {
+				return ctx, err
+			}
+
 		default:
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", tx)
 		}

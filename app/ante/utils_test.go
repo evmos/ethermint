@@ -83,8 +83,7 @@ func (suite *AnteTestSuite) SetupTest() {
 
 	suite.anteHandler = ante.NewAnteHandler(
 		suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper, suite.app.FeeGrantKeeper,
-		suite.app.IBCKeeper.ChannelKeeper, suite.app.FeeMarketKeeper,
-		encodingConfig.TxConfig.SignModeHandler(),
+		suite.app.FeeMarketKeeper, encodingConfig.TxConfig.SignModeHandler(),
 	)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 }
