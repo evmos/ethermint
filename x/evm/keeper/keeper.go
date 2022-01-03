@@ -363,11 +363,11 @@ func (k *Keeper) SetHooks(eh types.EvmHooks) *Keeper {
 }
 
 // PostTxProcessing delegate the call to the hooks. If no hook has been registered, this function returns with a `nil` error
-func (k *Keeper) PostTxProcessing(txHash common.Hash, logs []*ethtypes.Log) error {
+func (k *Keeper) PostTxProcessing(from common.Address, to *common.Address, receipt *ethtypes.Receipt) error {
 	if k.hooks == nil {
 		return nil
 	}
-	return k.hooks.PostTxProcessing(k.Ctx(), txHash, logs)
+	return k.hooks.PostTxProcessing(k.Ctx(), from, to, receipt)
 }
 
 // Tracer return a default vm.Tracer based on current keeper state

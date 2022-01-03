@@ -491,6 +491,7 @@ MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 | `ret` | [bytes](#bytes) |  | returned data from evm function (result or data supplied with revert opcode) |
 | `vm_error` | [string](#string) |  | vm error is the error returned by vm execution |
 | `gas_used` | [uint64](#uint64) |  | gas consumed by the transaction |
+| `contract_address` | [string](#string) |  | hex address of the contract created / called |
 
 
 
