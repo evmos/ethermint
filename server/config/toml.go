@@ -47,6 +47,11 @@ filter-cap = {{ .JSONRPC.FilterCap }}
 # FeeHistoryCap sets the global cap for total number of blocks that can be fetched
 feehistory-cap = {{ .JSONRPC.FeeHistoryCap }}
 
+# LogsCap defines the max number of results can be returned from single 'eth_getLogs' query.
+logs-cap = {{ .JSONRPC.LogsCap }}
+
+# BlockRangeCap defines the max block range allowed for 'eth_getLogs' query.
+block-range-cap = {{ .JSONRPC.BlockRangeCap }}
 
 ###############################################################################
 ###                             TLS Configuration                           ###

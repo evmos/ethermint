@@ -81,11 +81,20 @@ func (suite *AnteTestSuite) SetupTest() {
 
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 
-	suite.anteHandler = ante.NewAnteHandler(
-		suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper, suite.app.FeeGrantKeeper,
-		suite.app.IBCKeeper.ChannelKeeper, suite.app.FeeMarketKeeper,
-		encodingConfig.TxConfig.SignModeHandler(),
-	)
+	options := ante.HandlerOptions{
+		AccountKeeper:    suite.app.AccountKeeper,
+		BankKeeper:       suite.app.BankKeeper,
+		EvmKeeper:        suite.app.EvmKeeper,
+		FeegrantKeeper:   suite.app.FeeGrantKeeper,
+		IBCChannelKeeper: suite.app.IBCKeeper.ChannelKeeper,
+		FeeMarketKeeper:  suite.app.FeeMarketKeeper,
+		SignModeHandler:  encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:   ante.DefaultSigVerificationGasConsumer,
+	}
+
+	suite.Require().NoError(options.Validate())
+
+	suite.anteHandler = ante.NewAnteHandler(options)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 }
 

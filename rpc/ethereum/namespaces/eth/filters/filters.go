@@ -84,13 +84,12 @@ func newFilter(logger log.Logger, backend Backend, criteria filters.FilterCriter
 }
 
 const (
-	maxFilterBlocks = 100000
-	maxToOverhang   = 600
+	maxToOverhang = 600
 )
 
 // Logs searches the blockchain for matching log entries, returning all from the
 // first block that contains matches, updating the start of the filter accordingly.
-func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
+func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*ethtypes.Log, error) {
 	logs := []*ethtypes.Log{}
 	var err error
 
@@ -105,7 +104,7 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 			return nil, errors.Errorf("unknown block header %s", f.criteria.BlockHash.String())
 		}
 
-		return f.blockLogs(header)
+		return f.blockLogs(header.Number.Int64(), header.Bloom)
 	}
 
 	// Figure out the limits of the filter range
@@ -131,8 +130,8 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 		f.criteria.ToBlock = big.NewInt(1)
 	}
 
-	if f.criteria.ToBlock.Int64()-f.criteria.FromBlock.Int64() > maxFilterBlocks {
-		return nil, errors.Errorf("maximum [from, to] blocks distance: %d", maxFilterBlocks)
+	if f.criteria.ToBlock.Int64()-f.criteria.FromBlock.Int64() > blockLimit {
+		return nil, errors.Errorf("maximum [from, to] blocks distance: %d", blockLimit)
 	}
 
 	// check bounds
@@ -145,36 +144,37 @@ func (f *Filter) Logs(_ context.Context) ([]*ethtypes.Log, error) {
 	from := f.criteria.FromBlock.Int64()
 	to := f.criteria.ToBlock.Int64()
 
-	blocks, err := f.backend.GetFilteredBlocks(from, to, f.bloomFilters, len(f.criteria.Addresses) > 0)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, height := range blocks {
-		ethLogs, err := f.backend.GetLogsByNumber(types.BlockNumber(height))
+	for height := from; height <= to; height++ {
+		bloom, err := f.backend.BlockBloom(&height)
 		if err != nil {
-			return logs, errors.Wrapf(err, "failed to fetch block by number %d", height)
+			return nil, err
 		}
 
-		for _, ethLog := range ethLogs {
-			filtered := FilterLogs(ethLog, f.criteria.FromBlock, f.criteria.ToBlock, f.criteria.Addresses, f.criteria.Topics)
-			logs = append(logs, filtered...)
+		filtered, err := f.blockLogs(height, bloom)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to fetch block by number %d", height)
 		}
+
+		// check logs limit
+		if len(logs)+len(filtered) > logLimit {
+			return nil, errors.Errorf("query returned more than %d results", logLimit)
+		}
+		logs = append(logs, filtered...)
 	}
 	return logs, nil
 }
 
 // blockLogs returns the logs matching the filter criteria within a single block.
-func (f *Filter) blockLogs(header *ethtypes.Header) ([]*ethtypes.Log, error) {
-	if !bloomFilter(header.Bloom, f.criteria.Addresses, f.criteria.Topics) {
+func (f *Filter) blockLogs(height int64, bloom ethtypes.Bloom) ([]*ethtypes.Log, error) {
+	if !bloomFilter(bloom, f.criteria.Addresses, f.criteria.Topics) {
 		return []*ethtypes.Log{}, nil
 	}
 
 	// DANGER: do not call GetLogs(header.Hash())
 	// eth header's hash doesn't match tm block hash
-	logsList, err := f.backend.GetLogsByNumber(types.BlockNumber(header.Number.Int64()))
+	logsList, err := f.backend.GetLogsByNumber(types.BlockNumber(height))
 	if err != nil {
-		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", header.Number.Int64())
+		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", height)
 	}
 
 	unfiltered := make([]*ethtypes.Log, 0)

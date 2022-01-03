@@ -512,14 +512,23 @@ func NewEthermintApp(
 	app.SetBeginBlocker(app.BeginBlocker)
 
 	// use Ethermint's custom AnteHandler
-	app.SetAnteHandler(
-		ante.NewAnteHandler(
-			app.AccountKeeper, app.BankKeeper, app.EvmKeeper, app.FeeGrantKeeper, app.IBCKeeper.ChannelKeeper,
-			app.FeeMarketKeeper,
-			encodingConfig.TxConfig.SignModeHandler(),
-		),
-	)
 
+	options := ante.HandlerOptions{
+		AccountKeeper:    app.AccountKeeper,
+		BankKeeper:       app.BankKeeper,
+		EvmKeeper:        app.EvmKeeper,
+		FeegrantKeeper:   app.FeeGrantKeeper,
+		IBCChannelKeeper: app.IBCKeeper.ChannelKeeper,
+		FeeMarketKeeper:  app.FeeMarketKeeper,
+		SignModeHandler:  encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:   ante.DefaultSigVerificationGasConsumer,
+	}
+
+	if err := options.Validate(); err != nil {
+		panic(err)
+	}
+
+	app.SetAnteHandler(ante.NewAnteHandler(options))
 	app.SetEndBlocker(app.EndBlocker)
 
 	if loadLatest {
