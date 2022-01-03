@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### API Breaking
 
 * (ante) [\#866](https://github.com/tharsis/ethermint/pull/866) `NewAnteHandler` constructor now receives a `HandlerOptions` field.
+* (evm) [\#849](https://github.com/tharsis/ethermint/pull/849) `PostTxProcessing` hook now takes an Ethereum tx `Receipt` and a `from` `Address` as arguments.
 
 ### State Machine Breaking
 
@@ -54,6 +55,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (types) [tharsis#849](https://github.com/tharsis/ethermint/pull/849) Add `Type` function to distinguish EOAs from Contract accounts.
 * (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
 * (evm) [tharsis#827](https://github.com/tharsis/ethermint/issues/827) Speed up creation of event logs by using the slice insertion idiom with indices.
 * (ante) [tharsis#819](https://github.com/tharsis/ethermint/pull/819) remove redundant ante handlers
