@@ -8,8 +8,8 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	channelkeeper "github.com/cosmos/ibc-go/v2/modules/core/04-channel/keeper"
-	ibcante "github.com/cosmos/ibc-go/v2/modules/core/ante"
+	channelkeeper "github.com/cosmos/ibc-go/v3/modules/core/04-channel/keeper"
+	ibcante "github.com/cosmos/ibc-go/v3/modules/core/ante"
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
