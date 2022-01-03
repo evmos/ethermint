@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -47,4 +48,11 @@ func (suite *AccountTestSuite) SetupTest() {
 
 func TestAccountTestSuite(t *testing.T) {
 	suite.Run(t, new(AccountTestSuite))
+}
+
+func (suite *AccountTestSuite) TestAccountType() {
+	suite.account.CodeHash = common.Bytes2Hex(crypto.Keccak256(nil))
+	suite.Require().Equal(types.AccountTypeEOA, suite.account.Type())
+	suite.account.CodeHash = common.Bytes2Hex(crypto.Keccak256([]byte{1, 2, 3}))
+	suite.Require().Equal(types.AccountTypeContract, suite.account.Type())
 }

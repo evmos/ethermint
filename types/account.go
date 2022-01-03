@@ -1,6 +1,8 @@
 package types
 
 import (
+	"bytes"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -14,6 +16,15 @@ var (
 	_ codectypes.UnpackInterfacesMessage = (*EthAccount)(nil)
 )
 
+var emptyCodeHash = crypto.Keccak256(nil)
+
+const (
+	// AccountTypeEOA defines the type for externally owned accounts (EOAs)
+	AccountTypeEOA = int8(iota + 1)
+	// AccountTypeContract defines the type for contract accounts
+	AccountTypeContract
+)
+
 // ----------------------------------------------------------------------------
 // Main Ethermint account
 // ----------------------------------------------------------------------------
@@ -23,7 +34,7 @@ var (
 func ProtoAccount() authtypes.AccountI {
 	return &EthAccount{
 		BaseAccount: &authtypes.BaseAccount{},
-		CodeHash:    common.BytesToHash(crypto.Keccak256(nil)).String(),
+		CodeHash:    common.BytesToHash(emptyCodeHash).String(),
 	}
 }
 
@@ -35,4 +46,12 @@ func (acc EthAccount) EthAddress() common.Address {
 // GetCodeHash returns the account code hash in byte format
 func (acc EthAccount) GetCodeHash() common.Hash {
 	return common.HexToHash(acc.CodeHash)
+}
+
+// Type returns the type of Ethereum Account (EOA or Contract)
+func (acc EthAccount) Type() int8 {
+	if bytes.Equal(emptyCodeHash, common.Hex2Bytes(acc.CodeHash)) {
+		return AccountTypeEOA
+	}
+	return AccountTypeContract
 }

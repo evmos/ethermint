@@ -1,8 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 )
@@ -62,9 +60,6 @@ func (suite *KeeperTestSuite) TestQueryBaseFee() {
 		},
 	}
 	for _, tc := range testCases {
-		fee := suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx)
-		fmt.Printf("baseFee: %v", fee)
-
 		tc.malleate()
 
 		res, err := suite.queryClient.BaseFee(suite.ctx.Context(), &types.QueryBaseFeeRequest{})
