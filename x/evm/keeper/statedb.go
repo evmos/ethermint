@@ -543,8 +543,10 @@ func (k *Keeper) Suicide(addr common.Address) bool {
 		return false
 	}
 
-	// TODO: (@fedekunze) do we also need to delete the storage state and the code?
 	k.setSuicided(ctx, addr)
+
+	// delete account code and state
+	k.ResetAccount(addr)
 
 	k.Logger(ctx).Debug(
 		"account suicided",

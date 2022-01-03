@@ -507,7 +507,14 @@ func (suite *KeeperTestSuite) TestEVMConfig() {
 	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
 	suite.Require().NoError(err)
 	suite.Require().Equal(types.DefaultParams(), cfg.Params)
-	suite.Require().Equal((*big.Int)(nil), cfg.BaseFee)
+	// london hardfork is enabled by default
+	suite.Require().Equal(new(big.Int), cfg.BaseFee)
 	suite.Require().Equal(suite.address, cfg.CoinBase)
 	suite.Require().Equal(types.DefaultParams().ChainConfig.EthereumConfig(big.NewInt(9000)), cfg.ChainConfig)
+}
+
+func (suite *KeeperTestSuite) TestContractDeployment() {
+	suite.SetupTest()
+	contractAddress := suite.DeployTestContract(suite.T(), suite.address, big.NewInt(10000000000000))
+	suite.Require().Greater(suite.app.EvmKeeper.GetCodeSize(contractAddress), 0)
 }

@@ -37,12 +37,20 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### API Breaking
+
+* (ante) [\#866](https://github.com/tharsis/ethermint/pull/866) `NewAnteHandler` constructor now receives a `HandlerOptions` field.
+
 ### State Machine Breaking
 
-- (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
-- (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
-- (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
-- (evm) [tharsis#808](https://github.com/tharsis/ethermint/issues/808) increase nonce in ante handler for contract creation transaction.
+* (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
+* (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
+* (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
+* (evm) [tharsis#808](https://github.com/tharsis/ethermint/issues/808) increase nonce in ante handler for contract creation transaction.
+* (evm) [tharsis#851](https://github.com/tharsis/ethermint/pull/851) fix contract address used in EVM, this issue is caused by [tharsis#808](https://github.com/tharsis/ethermint/issues/808).
+* (evm)  Reject invalid `MsgEthereumTx` wrapping tx
+* (evm)  Fix `SelfDestruct` opcode by deleting account code and state.
+* (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent `BaseFee` check logic.
 
 ### Improvements
 
@@ -54,6 +62,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [tharsis#831](https://github.com/tharsis/ethermint/pull/831) Fix BaseFee value when height is specified.
 * (evm) [tharsis#838](https://github.com/tharsis/ethermint/pull/838) Fix splitting of trace.Memory into 32 chunks.
+* (rpc) [tharsis#860](https://github.com/tharsis/ethermint/pull/860) Fix `eth_getLogs` when specify blockHash without address/topics, and limit the response size.
+* (rpc) [tharsis#865](https://github.com/tharsis/ethermint/pull/865) Fix RPC Filter parameters being ignored
 
 ## [v0.9.0] - 2021-12-01
 

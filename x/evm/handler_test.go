@@ -74,14 +74,15 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 	require.NoError(t, err)
 	consAddress := sdk.ConsAddress(priv.PubKey().Address())
 
-	if suite.dynamicTxFee {
-		feemarketGenesis := feemarkettypes.DefaultGenesisState()
-		feemarketGenesis.Params.EnableHeight = 1
-		feemarketGenesis.Params.NoBaseFee = false
-		suite.app = app.Setup(checkTx, feemarketGenesis)
-	} else {
-		suite.app = app.Setup(checkTx, nil)
-	}
+	suite.app = app.Setup(checkTx, func(app *app.EthermintApp, genesis simapp.GenesisState) simapp.GenesisState {
+		if suite.dynamicTxFee {
+			feemarketGenesis := feemarkettypes.DefaultGenesisState()
+			feemarketGenesis.Params.EnableHeight = 1
+			feemarketGenesis.Params.NoBaseFee = false
+			genesis[feemarkettypes.ModuleName] = app.AppCodec().MustMarshalJSON(feemarketGenesis)
+		}
+		return genesis
+	})
 
 	coins := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt(100000000000000)))
 	genesisState := app.ModuleBasics.DefaultGenesis(suite.app.AppCodec())
@@ -665,12 +666,15 @@ func (suite *EvmTestSuite) TestContractDeploymentRevert() {
 			)
 			suite.SignTx(tx)
 
+			// simulate nonce increment in ante handler
+			k.SetNonce(suite.from, nonce+1)
+
 			rsp, err := k.EthereumTx(sdk.WrapSDKContext(suite.ctx), tx)
 			suite.Require().NoError(err)
 			suite.Require().True(rsp.Failed())
 
-			// nonce don't increase, it's increased in ante handler.
-			suite.Require().Equal(nonce, k.GetNonce(suite.from))
+			// nonce don't change
+			suite.Require().Equal(nonce+1, k.GetNonce(suite.from))
 		})
 	}
 }

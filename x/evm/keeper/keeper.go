@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -322,15 +321,9 @@ func (k Keeper) DeleteAccountStorage(addr common.Address) {
 }
 
 // DeleteCode removes the contract code byte array from the store associated with
-// the given address.
+// the given address and empties CodeHash on account.
 func (k Keeper) DeleteCode(addr common.Address) {
-	hash := k.GetCodeHash(addr)
-	if bytes.Equal(hash.Bytes(), common.BytesToHash(types.EmptyCodeHash).Bytes()) {
-		return
-	}
-
-	store := prefix.NewStore(k.Ctx().KVStore(k.storeKey), types.KeyPrefixCode)
-	store.Delete(hash.Bytes())
+	k.SetCode(addr, nil)
 }
 
 // ClearBalance subtracts the EVM all the balance denomination from the address
@@ -380,4 +373,20 @@ func (k *Keeper) PostTxProcessing(from common.Address, to *common.Address, recei
 // Tracer return a default vm.Tracer based on current keeper state
 func (k Keeper) Tracer(msg core.Message, ethCfg *params.ChainConfig) vm.Tracer {
 	return types.NewTracer(k.tracer, msg, ethCfg, k.Ctx().BlockHeight())
+}
+
+// BaseFee returns current base fee, return values:
+// - `nil`: london hardfork not enabled.
+// - `0`: london hardfork enabled but feemarket is not enabled.
+// - `n`: both london hardfork and feemarket are enabled.
+func (k Keeper) BaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
+	if !types.IsLondon(ethCfg, ctx.BlockHeight()) {
+		return nil
+	}
+	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
+	if baseFee == nil {
+		// return 0 if feemarket not enabled.
+		baseFee = big.NewInt(0)
+	}
+	return baseFee
 }

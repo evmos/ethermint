@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -32,27 +34,38 @@ import (
 type AnteTestSuite struct {
 	suite.Suite
 
-	ctx          sdk.Context
-	app          *app.EthermintApp
-	clientCtx    client.Context
-	anteHandler  sdk.AnteHandler
-	ethSigner    ethtypes.Signer
-	dynamicTxFee bool
+	ctx             sdk.Context
+	app             *app.EthermintApp
+	clientCtx       client.Context
+	anteHandler     sdk.AnteHandler
+	ethSigner       ethtypes.Signer
+	enableFeemarket bool
+	enableLondonHF  bool
 }
 
 func (suite *AnteTestSuite) SetupTest() {
 	checkTx := false
 
-	if suite.dynamicTxFee {
-		// setup feemarketGenesis params
-		feemarketGenesis := feemarkettypes.DefaultGenesisState()
-		feemarketGenesis.Params.EnableHeight = 1
-		feemarketGenesis.Params.NoBaseFee = false
-		feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
-		suite.app = app.Setup(checkTx, feemarketGenesis)
-	} else {
-		suite.app = app.Setup(checkTx, nil)
-	}
+	suite.app = app.Setup(checkTx, func(app *app.EthermintApp, genesis simapp.GenesisState) simapp.GenesisState {
+		if suite.enableFeemarket {
+			// setup feemarketGenesis params
+			feemarketGenesis := feemarkettypes.DefaultGenesisState()
+			feemarketGenesis.Params.EnableHeight = 1
+			feemarketGenesis.Params.NoBaseFee = false
+			feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
+			// Verify feeMarket genesis
+			err := feemarketGenesis.Validate()
+			suite.Require().NoError(err)
+			genesis[feemarkettypes.ModuleName] = app.AppCodec().MustMarshalJSON(feemarketGenesis)
+		}
+		if !suite.enableLondonHF {
+			evmGenesis := evmtypes.DefaultGenesisState()
+			maxInt := sdk.NewInt(math.MaxInt64)
+			evmGenesis.Params.ChainConfig.LondonBlock = &maxInt
+			genesis[evmtypes.ModuleName] = app.AppCodec().MustMarshalJSON(evmGenesis)
+		}
+		return genesis
+	})
 
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint_9000-1", Time: time.Now().UTC()})
 	suite.ctx = suite.ctx.WithMinGasPrices(sdk.NewDecCoins(sdk.NewDecCoin(evmtypes.DefaultEVMDenom, sdk.OneInt())))
@@ -61,7 +74,6 @@ func (suite *AnteTestSuite) SetupTest() {
 
 	infCtx := suite.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	suite.app.AccountKeeper.SetParams(infCtx, authtypes.DefaultParams())
-	suite.app.EvmKeeper.SetParams(infCtx, evmtypes.DefaultParams())
 
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	// We're using TestMsg amino encoding in some tests, so register it here.
@@ -69,21 +81,33 @@ func (suite *AnteTestSuite) SetupTest() {
 
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 
-	suite.anteHandler = ante.NewAnteHandler(
-		suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper, suite.app.FeeGrantKeeper,
-		suite.app.IBCKeeper.ChannelKeeper, suite.app.FeeMarketKeeper,
-		encodingConfig.TxConfig.SignModeHandler(),
-	)
+	options := ante.HandlerOptions{
+		AccountKeeper:    suite.app.AccountKeeper,
+		BankKeeper:       suite.app.BankKeeper,
+		EvmKeeper:        suite.app.EvmKeeper,
+		FeegrantKeeper:   suite.app.FeeGrantKeeper,
+		IBCChannelKeeper: suite.app.IBCKeeper.ChannelKeeper,
+		FeeMarketKeeper:  suite.app.FeeMarketKeeper,
+		SignModeHandler:  encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:   ante.DefaultSigVerificationGasConsumer,
+	}
+
+	suite.Require().NoError(options.Validate())
+
+	suite.anteHandler = ante.NewAnteHandler(options)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 }
 
 func TestAnteTestSuite(t *testing.T) {
-	suite.Run(t, new(AnteTestSuite))
+	suite.Run(t, &AnteTestSuite{
+		enableLondonHF: true,
+	})
 }
 
 // CreateTestTx is a helper function to create a tx given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTx(
 	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
+	unsetExtensionOptions ...bool,
 ) authsigning.Tx {
 	return suite.CreateTestTxBuilder(msg, priv, accNum, signCosmosTx).GetTx()
 }
@@ -91,15 +115,22 @@ func (suite *AnteTestSuite) CreateTestTx(
 // CreateTestTxBuilder is a helper function to create a tx builder given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTxBuilder(
 	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
+	unsetExtensionOptions ...bool,
 ) client.TxBuilder {
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	suite.Require().NoError(err)
+	var option *codectypes.Any
+	var err error
+	if len(unsetExtensionOptions) == 0 {
+		option, err = codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
+		suite.Require().NoError(err)
+	}
 
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
 	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
 	suite.Require().True(ok)
 
-	builder.SetExtensionOptions(option)
+	if len(unsetExtensionOptions) == 0 {
+		builder.SetExtensionOptions(option)
+	}
 
 	err = msg.Sign(suite.ethSigner, tests.NewSigner(priv))
 	suite.Require().NoError(err)
