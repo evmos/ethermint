@@ -366,7 +366,13 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 		k.SetNonce(sender.Address(), msg.Nonce()+1)
 	} else {
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
-		contractAddr = *msg.To()
+		to := *msg.To()
+		acc := k.accountKeeper.GetAccount(k.Ctx(), sdk.AccAddress(to.Bytes()))
+		if acc != nil {
+			if ethAcc, ok := acc.(*ethermint.EthAccount); ok && ethAcc.Type() == ethermint.AccountTypeContract {
+				contractAddr = to
+			}
+		}
 	}
 
 	refundQuotient := params.RefundQuotient
