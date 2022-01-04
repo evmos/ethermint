@@ -1,11 +1,13 @@
 package evm
 
 import (
+	"bytes"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	ethermint "github.com/tharsis/ethermint/types"
@@ -39,7 +41,7 @@ func InitGenesis(
 			panic(fmt.Errorf("account not found for address %s", account.Address))
 		}
 
-		_, ok := acc.(*ethermint.EthAccount)
+		ethAcct, ok := acc.(*ethermint.EthAccount)
 		if !ok {
 			panic(
 				fmt.Errorf("account %s must be an %T type, got %T",
@@ -48,7 +50,12 @@ func InitGenesis(
 			)
 		}
 
-		k.SetCode(address, common.Hex2Bytes(account.Code))
+		code := common.Hex2Bytes(account.Code)
+		codeHash := crypto.Keccak256Hash(code)
+		if !bytes.Equal(common.HexToHash(ethAcct.CodeHash).Bytes(), codeHash.Bytes()) {
+			panic("code don't match codeHash")
+		}
+		k.SetCode(address, code)
 
 		for _, storage := range account.Storage {
 			k.SetState(address, common.HexToHash(storage.Key), common.HexToHash(storage.Value))
