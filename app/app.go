@@ -450,6 +450,7 @@ func NewEthermintApp(
 		stakingtypes.ModuleName,
 		ibchost.ModuleName,
 		// no-op modules
+		ibctransfertypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		govtypes.ModuleName,
@@ -469,6 +470,7 @@ func NewEthermintApp(
 		evmtypes.ModuleName,
 		feemarkettypes.ModuleName,
 		// no-op modules
+		ibctransfertypes.ModuleName,
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
