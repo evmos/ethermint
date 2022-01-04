@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -165,6 +166,11 @@ func (k Keeper) GetHashFn() vm.GetHashFunc {
 //
 // For relevant discussion see: https://github.com/cosmos/cosmos-sdk/discussions/9072
 func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
+	var (
+		bloom        *big.Int
+		bloomReceipt ethtypes.Bloom
+	)
+
 	ctx := k.Ctx()
 
 	// ensure keeper state error is cleared
@@ -211,25 +217,12 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 	res.Hash = txHash.Hex()
 	logs := k.GetTxLogsTransient(txHash)
 
-	// change to original context
-	k.WithContext(ctx)
-
-	// refund gas according to Ethereum gas accounting rules.
-	if err := k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom); err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
-	}
-
-	var bloomReceipt ethtypes.Bloom
+	// Compute block bloom filter
 	if len(logs) > 0 {
-		res.Logs = types.NewLogsFromEth(logs)
-		// Update transient block bloom filter
-		bloom := k.GetBlockBloomTransient()
+		bloom = k.GetBlockBloomTransient()
 		bloom.Or(bloom, big.NewInt(0).SetBytes(ethtypes.LogsBloom(logs)))
-		k.SetBlockBloomTransient(bloom)
 		bloomReceipt = ethtypes.BytesToBloom(bloom.Bytes())
 	}
-
-	k.IncreaseTxIndexTransient()
 
 	if !res.Failed() {
 		cumulativeGasUsed := res.GasUsed
@@ -237,6 +230,11 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 			limit := ctx.BlockGasMeter().Limit()
 			consumed := ctx.BlockGasMeter().GasConsumed()
 			cumulativeGasUsed = uint64(math.Min(float64(cumulativeGasUsed+consumed), float64(limit)))
+		}
+
+		var contractAddr common.Address
+		if msg.To() == nil {
+			contractAddr = crypto.CreateAddress(msg.From(), msg.Nonce())
 		}
 
 		receipt := &ethtypes.Receipt{
@@ -247,7 +245,7 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 			Bloom:             bloomReceipt,
 			Logs:              logs,
 			TxHash:            txHash,
-			ContractAddress:   common.HexToAddress(res.ContractAddress),
+			ContractAddress:   contractAddr,
 			GasUsed:           res.GasUsed,
 			BlockHash:         common.BytesToHash(ctx.HeaderHash()),
 			BlockNumber:       big.NewInt(ctx.BlockHeight()),
@@ -265,6 +263,23 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 			ctx.EventManager().EmitEvents(k.Ctx().EventManager().Events())
 		}
 	}
+
+	// change to original context
+	k.WithContext(ctx)
+
+	// refund gas according to Ethereum gas accounting rules.
+	if err := k.RefundGas(msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom); err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
+	}
+
+	if len(logs) > 0 {
+		res.Logs = types.NewLogsFromEth(logs)
+
+		// Update transient block bloom filter
+		k.SetBlockBloomTransient(bloom)
+	}
+
+	k.IncreaseTxIndexTransient()
 
 	// update the gas used after refund
 	k.ResetGasMeterAndConsumeGas(res.GasUsed)
@@ -312,9 +327,8 @@ func (k *Keeper) ApplyTransaction(tx *ethtypes.Transaction) (*types.MsgEthereumT
 // If commit is true, the cache context stack will be committed, otherwise discarded.
 func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, commit bool, cfg *types.EVMConfig) (*types.MsgEthereumTxResponse, error) {
 	var (
-		ret          []byte // return bytes from evm execution
-		vmErr        error  // vm errors do not effect consensus and are therefore not assigned to err
-		contractAddr common.Address
+		ret   []byte // return bytes from evm execution
+		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
 	)
 
 	if !k.ctxStack.IsEmpty() {
@@ -362,17 +376,10 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 		// - reset sender's nonce to msg.Nonce() before calling evm.
 		// - increase sender's nonce by one no matter the result.
 		k.SetNonce(sender.Address(), msg.Nonce())
-		ret, contractAddr, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
+		ret, _, leftoverGas, vmErr = evm.Create(sender, msg.Data(), leftoverGas, msg.Value())
 		k.SetNonce(sender.Address(), msg.Nonce()+1)
 	} else {
 		ret, leftoverGas, vmErr = evm.Call(sender, *msg.To(), msg.Data(), leftoverGas, msg.Value())
-		to := *msg.To()
-		acc := k.accountKeeper.GetAccount(k.Ctx(), sdk.AccAddress(to.Bytes()))
-		if acc != nil {
-			if ethAcc, ok := acc.(*ethermint.EthAccount); ok && ethAcc.Type() == ethermint.AccountTypeContract {
-				contractAddr = to
-			}
-		}
 	}
 
 	refundQuotient := params.RefundQuotient
@@ -408,10 +415,9 @@ func (k *Keeper) ApplyMessageWithConfig(msg core.Message, tracer vm.Tracer, comm
 	}
 
 	return &types.MsgEthereumTxResponse{
-		GasUsed:         gasUsed,
-		VmError:         vmError,
-		Ret:             ret,
-		ContractAddress: contractAddr.String(),
+		GasUsed: gasUsed,
+		VmError: vmError,
+		Ret:     ret,
 	}, nil
 }
 
