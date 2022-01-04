@@ -11,7 +11,7 @@ type TxConfig struct {
 }
 
 // NewTxConfig returns a TxConfig
-func NewTxConfig(bhash, thash common.Hash, txIndex uint, logIndex uint) TxConfig {
+func NewTxConfig(bhash, thash common.Hash, txIndex, logIndex uint) TxConfig {
 	return TxConfig{
 		BlockHash: bhash,
 		TxHash:    thash,

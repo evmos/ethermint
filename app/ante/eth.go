@@ -118,7 +118,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		acct, err := avd.evmKeeper.GetAccount(ctx, fromAddr)
 		if err != nil {
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType,
-				"the sender is not EthAccount: address <%v>", fromAddr)
+				"the sender is not EthAccount: address %s", fromAddr)
 		}
 		if acct == nil {
 			acc := avd.ak.NewAccountWithAddress(ctx, from)
@@ -126,7 +126,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 			acct = statedb.NewEmptyAccount()
 		} else if acct.IsContract() {
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType,
-				"the sender is not EOA: address <%v>, codeHash <%s>", fromAddr, acct.CodeHash)
+				"the sender is not EOA: address %s, codeHash <%s>", fromAddr, acct.CodeHash)
 		}
 
 		if err := evmkeeper.CheckSenderBalance(sdk.NewIntFromBigInt(acct.Balance), txData); err != nil {
