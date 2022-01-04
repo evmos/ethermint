@@ -80,6 +80,23 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 			},
 			true,
 		},
+		{
+			"invalid code hash",
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+			},
+			&types.GenesisState{
+				Params: types.DefaultParams(),
+				Accounts: []types.GenesisAccount{
+					{
+						Address: address.String(),
+						Code:    "ffffffff",
+					},
+				},
+			},
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
