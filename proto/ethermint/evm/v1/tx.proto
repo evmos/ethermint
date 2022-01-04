@@ -169,6 +169,4 @@ message MsgEthereumTxResponse {
   string vm_error = 4;
   // gas consumed by the transaction
   uint64 gas_used = 5;
-  // hex address of the contract created / called
-  string contract_address = 6;
 }
