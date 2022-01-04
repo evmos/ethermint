@@ -220,9 +220,8 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 
 	data := append(types.ERC20Contract.Bin, ctorArgs...)
 	args, err := json.Marshal(&types.TransactionArgs{
-		From:  &suite.address,
-		Data:  (*hexutil.Bytes)(&data),
-		Nonce: (*hexutil.Uint64)(&nonce),
+		From: &suite.address,
+		Data: (*hexutil.Bytes)(&data),
 	})
 	require.NoError(t, err)
 

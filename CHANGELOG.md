@@ -66,6 +66,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#838](https://github.com/tharsis/ethermint/pull/838) Fix splitting of trace.Memory into 32 chunks.
 * (rpc) [tharsis#860](https://github.com/tharsis/ethermint/pull/860) Fix `eth_getLogs` when specify blockHash without address/topics, and limit the response size.
 * (rpc) [tharsis#865](https://github.com/tharsis/ethermint/pull/865) Fix RPC Filter parameters being ignored
+* (evm) [tharsis#871](https://github.com/tharsis/ethermint/pull/871) Set correct nonce in `EthCall` and `EstimateGas` grpc query.
 
 ## [v0.9.0] - 2021-12-01
 
