@@ -7,7 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/tharsis/ethermint/x/evm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -232,12 +234,12 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 
 	testCases := []struct {
 		msg      string
-		malleate func()
+		malleate func(vm.StateDB)
 		expPass  bool
 	}{
 		{
 			"invalid address",
-			func() {
+			func(vm.StateDB) {
 				req = &types.QueryStorageRequest{
 					Address: invalidAddress,
 				}
@@ -246,11 +248,11 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 		},
 		{
 			"success",
-			func() {
+			func(vmdb vm.StateDB) {
 				key := common.BytesToHash([]byte("key"))
 				value := common.BytesToHash([]byte("value"))
 				expValue = value.String()
-				suite.app.EvmKeeper.SetState(suite.address, key, value)
+				vmdb.SetState(suite.address, key, value)
 				req = &types.QueryStorageRequest{
 					Address: suite.address.String(),
 					Key:     key.String(),
@@ -264,7 +266,10 @@ func (suite *KeeperTestSuite) TestQueryStorage() {
 		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
 			suite.SetupTest() // reset
 
-			tc.malleate()
+			vmdb := suite.StateDB()
+			tc.malleate(vmdb)
+			suite.Require().NoError(vmdb.Commit())
+
 			ctx := sdk.WrapSDKContext(suite.ctx)
 			res, err := suite.queryClient.Storage(ctx, req)
 
@@ -288,12 +293,12 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 
 	testCases := []struct {
 		msg      string
-		malleate func()
+		malleate func(vm.StateDB)
 		expPass  bool
 	}{
 		{
 			"invalid address",
-			func() {
+			func(vm.StateDB) {
 				req = &types.QueryCodeRequest{
 					Address: invalidAddress,
 				}
@@ -304,9 +309,9 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 		},
 		{
 			"success",
-			func() {
+			func(vmdb vm.StateDB) {
 				expCode = []byte("code")
-				suite.app.EvmKeeper.SetCode(suite.address, expCode)
+				vmdb.SetCode(suite.address, expCode)
 
 				req = &types.QueryCodeRequest{
 					Address: suite.address.String(),
@@ -320,7 +325,10 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
 			suite.SetupTest() // reset
 
-			tc.malleate()
+			vmdb := suite.StateDB()
+			tc.malleate(vmdb)
+			suite.Require().NoError(vmdb.Commit())
+
 			ctx := sdk.WrapSDKContext(suite.ctx)
 			res, err := suite.queryClient.Code(ctx, req)
 
@@ -338,26 +346,25 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 
 func (suite *KeeperTestSuite) TestQueryTxLogs() {
 	var (
-		txHash  common.Hash
 		expLogs []*types.Log
 	)
+	txHash := common.BytesToHash([]byte("tx_hash"))
+	txIndex := uint(1)
+	logIndex := uint(1)
 
 	testCases := []struct {
 		msg      string
-		malleate func()
+		malleate func(vm.StateDB)
 	}{
 		{
 			"empty logs",
-			func() {
-				txHash = common.BytesToHash([]byte("hash"))
+			func(vm.StateDB) {
 				expLogs = nil
 			},
 		},
 		{
 			"success",
-			func() {
-				txHash = common.BytesToHash([]byte("tx_hash"))
-
+			func(vmdb vm.StateDB) {
 				expLogs = []*types.Log{
 					{
 						Address:     suite.address.String(),
@@ -365,17 +372,15 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 						Data:        []byte("data"),
 						BlockNumber: 1,
 						TxHash:      txHash.String(),
-						TxIndex:     1,
+						TxIndex:     uint64(txIndex),
 						BlockHash:   common.BytesToHash(suite.ctx.HeaderHash()).Hex(),
-						Index:       0,
+						Index:       uint64(logIndex),
 						Removed:     false,
 					},
 				}
 
-				suite.app.EvmKeeper.SetTxHashTransient(txHash)
-				suite.app.EvmKeeper.IncreaseTxIndexTransient()
 				for _, log := range types.LogsToEthereum(expLogs) {
-					suite.app.EvmKeeper.AddLog(log)
+					vmdb.AddLog(log)
 				}
 			},
 		},
@@ -385,8 +390,11 @@ func (suite *KeeperTestSuite) TestQueryTxLogs() {
 		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
 			suite.SetupTest() // reset
 
-			tc.malleate()
-			logs := suite.app.EvmKeeper.GetTxLogsTransient(txHash)
+			vmdb := statedb.New(suite.ctx, suite.app.EvmKeeper, statedb.NewTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes()), txHash, txIndex, logIndex))
+			tc.malleate(vmdb)
+			suite.Require().NoError(vmdb.Commit())
+
+			logs := vmdb.Logs()
 			suite.Require().Equal(expLogs, types.NewLogsFromEth(logs))
 		})
 	}
@@ -680,8 +688,11 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			malleate: func() {
 				txIndex = 1
 				traceConfig = nil
+
 				// increase nonce to avoid address collision
-				suite.app.EvmKeeper.SetNonce(suite.address, suite.app.EvmKeeper.GetNonce(suite.address)+1)
+				vmdb := suite.StateDB()
+				vmdb.SetNonce(suite.address, vmdb.GetNonce(suite.address)+1)
+				suite.Require().NoError(vmdb.Commit())
 
 				contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 				suite.Commit()
@@ -807,8 +818,12 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			msg: "tracer with multiple transactions",
 			malleate: func() {
 				traceConfig = nil
+
 				// increase nonce to avoid address collision
-				suite.app.EvmKeeper.SetNonce(suite.address, suite.app.EvmKeeper.GetNonce(suite.address)+1)
+				vmdb := suite.StateDB()
+				vmdb.SetNonce(suite.address, vmdb.GetNonce(suite.address)+1)
+				suite.Require().NoError(vmdb.Commit())
+
 				contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdk.NewIntWithDecimal(1000, 18).BigInt())
 				suite.Commit()
 				// create multiple transactions in the same block
@@ -867,7 +882,7 @@ func (suite *KeeperTestSuite) TestNonceInQuery() {
 	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)
 	address := common.BytesToAddress(priv.PubKey().Address().Bytes())
-	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(address))
+	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(suite.ctx, address))
 	supply := sdk.NewIntWithDecimal(1000, 18).BigInt()
 
 	// accupy nonce 0

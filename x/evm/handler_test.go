@@ -33,6 +33,7 @@ import (
 	"github.com/tharsis/ethermint/tests"
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm"
+	"github.com/tharsis/ethermint/x/evm/statedb"
 	"github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -137,7 +138,6 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 		ConsensusHash:      tmhash.Sum([]byte("consensus")),
 		LastResultsHash:    tmhash.Sum([]byte("last_result")),
 	})
-	suite.app.EvmKeeper.WithContext(suite.ctx)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
 	types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
@@ -171,6 +171,10 @@ func (suite *EvmTestSuite) SignTx(tx *types.MsgEthereumTx) {
 	tx.From = suite.from.String()
 	err := tx.Sign(suite.ethSigner, suite.signer)
 	suite.Require().NoError(err)
+}
+
+func (suite *EvmTestSuite) StateDB() *statedb.StateDB {
+	return statedb.New(suite.ctx, suite.app.EvmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes())))
 }
 
 func TestEvmTestSuite(t *testing.T) {
@@ -230,7 +234,6 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 			suite.SetupTest() // reset
 			//nolint
 			tc.malleate()
-			suite.app.EvmKeeper.Snapshot()
 			res, err := suite.handler(suite.ctx, tx)
 
 			//nolint
@@ -282,16 +285,6 @@ func (suite *EvmTestSuite) TestHandlerLogs() {
 
 	suite.Require().Equal(len(txResponse.Logs), 1)
 	suite.Require().Equal(len(txResponse.Logs[0].Topics), 2)
-
-	tlogs := types.LogsToEthereum(txResponse.Logs)
-	for _, log := range tlogs {
-		suite.app.EvmKeeper.AddLogTransient(log)
-	}
-	suite.Require().NoError(err)
-
-	logs := suite.app.EvmKeeper.GetTxLogsTransient(tlogs[0].TxHash)
-
-	suite.Require().Equal(logs, tlogs)
 }
 
 func (suite *EvmTestSuite) TestDeployAndCallContract() {
@@ -510,7 +503,7 @@ func (suite *EvmTestSuite) TestErrorWhenDeployContract() {
 
 func (suite *EvmTestSuite) deployERC20Contract() common.Address {
 	k := suite.app.EvmKeeper
-	nonce := k.GetNonce(suite.from)
+	nonce := k.GetNonce(suite.ctx, suite.from)
 	ctorArgs, err := types.ERC20Contract.ABI.Pack("", suite.from, big.NewInt(10000000000))
 	suite.Require().NoError(err)
 	msg := ethtypes.NewMessage(
@@ -526,7 +519,7 @@ func (suite *EvmTestSuite) deployERC20Contract() common.Address {
 		nil,
 		true,
 	)
-	rsp, err := k.ApplyMessage(msg, nil, true)
+	rsp, err := k.ApplyMessage(suite.ctx, msg, nil, true)
 	suite.Require().NoError(err)
 	suite.Require().False(rsp.Failed())
 	return crypto.CreateAddress(suite.from, nonce)
@@ -571,14 +564,14 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 			k.SetHooks(tc.hooks)
 
 			// add some fund to pay gas fee
-			k.AddBalance(suite.from, big.NewInt(10000000000))
+			k.SetBalance(suite.ctx, suite.from, big.NewInt(10000000000))
 
 			contract := suite.deployERC20Contract()
 
 			data, err := types.ERC20Contract.ABI.Pack("transfer", suite.from, big.NewInt(10))
 			suite.Require().NoError(err)
 
-			nonce := k.GetNonce(suite.from)
+			nonce := k.GetNonce(suite.ctx, suite.from)
 			tx := types.NewTx(
 				suite.chainID,
 				nonce,
@@ -593,7 +586,7 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 			)
 			suite.SignTx(tx)
 
-			before := k.GetBalance(suite.from)
+			before := k.GetBalance(suite.ctx, suite.from)
 
 			txData, err := types.UnpackTxData(tx.Data)
 			suite.Require().NoError(err)
@@ -606,7 +599,7 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 			suite.Require().True(res.Failed())
 			suite.Require().Equal(tc.expErr, res.VmError)
 
-			after := k.GetBalance(suite.from)
+			after := k.GetBalance(suite.ctx, suite.from)
 
 			if tc.expErr == "out of gas" {
 				suite.Require().Equal(tc.gasLimit, res.GasUsed)
@@ -618,7 +611,8 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 			suite.Require().Equal(big.NewInt(int64(res.GasUsed)), new(big.Int).Sub(before, after))
 
 			// nonce should not be increased.
-			suite.Require().Equal(nonce, k.GetNonce(suite.from))
+			nonce2 := k.GetNonce(suite.ctx, suite.from)
+			suite.Require().Equal(nonce, nonce2)
 		})
 	}
 }
@@ -650,7 +644,7 @@ func (suite *EvmTestSuite) TestContractDeploymentRevert() {
 			// test with different hooks scenarios
 			k.SetHooks(tc.hooks)
 
-			nonce := k.GetNonce(suite.from)
+			nonce := k.GetNonce(suite.ctx, suite.from)
 			ctorArgs, err := types.ERC20Contract.ABI.Pack("", suite.from, big.NewInt(0))
 			suite.Require().NoError(err)
 
@@ -667,14 +661,17 @@ func (suite *EvmTestSuite) TestContractDeploymentRevert() {
 			suite.SignTx(tx)
 
 			// simulate nonce increment in ante handler
-			k.SetNonce(suite.from, nonce+1)
+			db := suite.StateDB()
+			db.SetNonce(suite.from, nonce+1)
+			suite.Require().NoError(db.Commit())
 
 			rsp, err := k.EthereumTx(sdk.WrapSDKContext(suite.ctx), tx)
 			suite.Require().NoError(err)
 			suite.Require().True(rsp.Failed())
 
 			// nonce don't change
-			suite.Require().Equal(nonce+1, k.GetNonce(suite.from))
+			nonce2 := k.GetNonce(suite.ctx, suite.from)
+			suite.Require().Equal(nonce+1, nonce2)
 		})
 	}
 }

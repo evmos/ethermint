@@ -8,6 +8,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/x/evm"
+	"github.com/tharsis/ethermint/x/evm/statedb"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
@@ -16,6 +17,8 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 	suite.Require().NoError(err)
 
 	address := common.HexToAddress(privkey.PubKey().Address().String())
+
+	var vmdb *statedb.StateDB
 
 	testCases := []struct {
 		name     string
@@ -32,11 +35,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 		{
 			"valid account",
 			func() {
-				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
-				suite.Require().NotNil(acc)
-
-				suite.app.EvmKeeper.AddBalance(address, big.NewInt(1))
-				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+				vmdb.AddBalance(address, big.NewInt(1))
 			},
 			&types.GenesisState{
 				Params: types.DefaultParams(),
@@ -102,8 +101,10 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			suite.SetupTest() // reset values
+			vmdb = suite.StateDB()
 
 			tc.malleate()
+			vmdb.Commit()
 
 			if tc.expPanic {
 				suite.Require().Panics(

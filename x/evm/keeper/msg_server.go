@@ -23,13 +23,12 @@ var _ types.MsgServer = &Keeper{}
 // parameter.
 func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	k.WithContext(ctx)
 
 	sender := msg.From
 	tx := msg.AsTransaction()
-	txIndex := k.GetTxIndexTransient()
+	txIndex := k.GetTxIndexTransient(ctx)
 
-	response, err := k.ApplyTransaction(tx)
+	response, err := k.ApplyTransaction(ctx, tx)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to apply transaction")
 	}

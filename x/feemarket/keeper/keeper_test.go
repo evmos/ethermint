@@ -90,7 +90,6 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 		ConsensusHash:      tmhash.Sum([]byte("consensus")),
 		LastResultsHash:    tmhash.Sum([]byte("last_result")),
 	})
-	suite.app.EvmKeeper.WithContext(suite.ctx)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
 	types.RegisterQueryServer(queryHelper, suite.app.FeeMarketKeeper)
