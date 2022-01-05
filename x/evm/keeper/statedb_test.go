@@ -473,10 +473,6 @@ func (suite *KeeperTestSuite) TestEmpty() {
 	baseAcc := &authtypes.BaseAccount{Address: sdk.AccAddress(addr.Bytes()).String()}
 	suite.app.AccountKeeper.SetAccount(suite.ctx, baseAcc)
 
-	acct, err := suite.app.EvmKeeper.GetAccount(suite.ctx, suite.address)
-	suite.Require().NoError(err)
-	fmt.Println("default address", acct)
-
 	testCases := []struct {
 		name     string
 		address  common.Address

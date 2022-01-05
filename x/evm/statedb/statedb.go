@@ -235,11 +235,7 @@ func (s *StateDB) getStateObject(addr common.Address) *stateObject {
 		return obj
 	}
 	// If no live objects are available, load it from keeper
-	account, err := s.keeper.GetAccount(s.ctx, addr)
-	if err != nil {
-		s.setError(err)
-		return nil
-	}
+	account := s.keeper.GetAccount(s.ctx, addr)
 	if account == nil {
 		return nil
 	}

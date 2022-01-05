@@ -40,20 +40,21 @@ func InitGenesis(
 			panic(fmt.Errorf("account not found for address %s", account.Address))
 		}
 
-		ethAcct, ok := acc.(*ethermint.EthAccount)
+		ethAcct, ok := acc.(ethermint.EthAccountI)
 		if !ok {
 			panic(
-				fmt.Errorf("account %s must be an %T type, got %T",
-					account.Address, &ethermint.EthAccount{}, acc,
+				fmt.Errorf("account %s must be an EthAccount interface, got %T",
+					account.Address, acc,
 				),
 			)
 		}
 
 		code := common.Hex2Bytes(account.Code)
 		codeHash := crypto.Keccak256Hash(code)
-		if !bytes.Equal(common.HexToHash(ethAcct.CodeHash).Bytes(), codeHash.Bytes()) {
+		if !bytes.Equal(ethAcct.GetCodeHash().Bytes(), codeHash.Bytes()) {
 			panic("code don't match codeHash")
 		}
+
 		k.SetCode(ctx, codeHash.Bytes(), code)
 
 		for _, storage := range account.Storage {
@@ -68,7 +69,7 @@ func InitGenesis(
 func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *types.GenesisState {
 	var ethGenAccounts []types.GenesisAccount
 	ak.IterateAccounts(ctx, func(account authtypes.AccountI) bool {
-		ethAccount, ok := account.(*ethermint.EthAccount)
+		ethAccount, ok := account.(ethermint.EthAccountI)
 		if !ok {
 			// ignore non EthAccounts
 			return false
