@@ -116,14 +116,13 @@ func (k *Keeper) SetAccount(ctx sdk.Context, addr common.Address, account stated
 
 	codeHash := common.BytesToHash(account.CodeHash)
 
-	ethAcct, ok := acct.(ethermint.EthAccountI)
-	if ok {
+	if ethAcct, ok := acct.(ethermint.EthAccountI); ok {
 		if err := ethAcct.SetCodeHash(codeHash); err != nil {
 			return err
 		}
 	}
 
-	k.accountKeeper.SetAccount(ctx, ethAcct)
+	k.accountKeeper.SetAccount(ctx, acct)
 
 	if err := k.SetBalance(ctx, addr, account.Balance); err != nil {
 		return err
