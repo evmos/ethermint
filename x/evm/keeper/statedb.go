@@ -2,12 +2,12 @@ package keeper
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm/statedb"
@@ -111,7 +111,7 @@ func (k *Keeper) SetAccount(ctx sdk.Context, addr common.Address, account stated
 	}
 	ethAcct, ok := acct.(*ethermint.EthAccount)
 	if !ok {
-		return errors.New("not EthAccount")
+		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
 	}
 	if err := ethAcct.SetSequence(account.Nonce); err != nil {
 		return err
@@ -179,7 +179,7 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 
 	ethAcct, ok := acct.(*ethermint.EthAccount)
 	if !ok {
-		return errors.New("not EthAccount")
+		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
 	}
 
 	// clear balance
@@ -194,7 +194,7 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 	}
 
 	// clear storage
-	k.ForEachStorage(ctx, addr, func(key, value common.Hash) bool {
+	k.ForEachStorage(ctx, addr, func(key, _ common.Hash) bool {
 		k.SetState(ctx, addr, key, nil)
 		return true
 	})
