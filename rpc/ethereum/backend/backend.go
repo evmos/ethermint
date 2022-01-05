@@ -443,6 +443,11 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	gasUsed := uint64(0)
 
 	for _, txsResult := range txResults {
+		// workaround for cosmos-sdk bug. https://github.com/cosmos/cosmos-sdk/issues/10832
+		if txsResult.GetCode() == 11 && txsResult.GetLog() == "no block gas left to run tx: out of gas" {
+			// block gas limit has exceeded, other txs must have failed with same reason.
+			break
+		}
 		gasUsed += uint64(txsResult.GetGasUsed())
 	}
 
