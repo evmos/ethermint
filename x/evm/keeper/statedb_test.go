@@ -475,13 +475,15 @@ func (suite *KeeperTestSuite) TestEmpty() {
 		address  common.Address
 		malleate func(vm.StateDB)
 		empty    bool
-		expErr   bool
 	}{
-		{"empty, account exists", suite.address, func(vm.StateDB) {}, true, false},
-		{"not empty, positive balance", suite.address, func(vmdb vm.StateDB) {
-			vmdb.AddBalance(suite.address, big.NewInt(100))
-		}, false, false},
-		{"empty, account doesn't exist", tests.GenerateAddress(), func(vm.StateDB) {}, true, false},
+		{"empty, account exists", suite.address, func(vm.StateDB) {}, true},
+		{
+			"not empty, positive balance",
+			suite.address,
+			func(vmdb vm.StateDB) { vmdb.AddBalance(suite.address, big.NewInt(100)) },
+			false,
+		},
+		{"empty, account doesn't exist", tests.GenerateAddress(), func(vm.StateDB) {}, true},
 	}
 
 	for _, tc := range testCases {
@@ -490,11 +492,6 @@ func (suite *KeeperTestSuite) TestEmpty() {
 			tc.malleate(vmdb)
 
 			suite.Require().Equal(tc.empty, vmdb.Empty(tc.address))
-			if tc.expErr {
-				suite.Require().Error(vmdb.Error())
-			} else {
-				suite.Require().NoError(vmdb.Error())
-			}
 		})
 	}
 }
