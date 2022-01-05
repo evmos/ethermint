@@ -114,14 +114,13 @@ func (k *Keeper) SetAccount(ctx sdk.Context, addr common.Address, account stated
 		return err
 	}
 
-	ethAcct, ok := acct.(ethermint.EthAccountI)
-	if !ok {
-		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
-	}
-
 	codeHash := common.BytesToHash(account.CodeHash)
-	if err := ethAcct.SetCodeHash(codeHash); err != nil {
-		return err
+
+	ethAcct, ok := acct.(ethermint.EthAccountI)
+	if ok {
+		if err := ethAcct.SetCodeHash(codeHash); err != nil {
+			return err
+		}
 	}
 
 	k.accountKeeper.SetAccount(ctx, ethAcct)

@@ -235,9 +235,9 @@ func (suite *KeeperTestSuite) TestGetCodeHash() {
 			func(vm.StateDB) {},
 		},
 		{
-			"account not EthAccount type, error",
+			"account not EthAccount type, EmptyCodeHash",
 			addr,
-			common.Hash{},
+			common.BytesToHash(types.EmptyCodeHash),
 			func(vm.StateDB) {},
 		},
 		{
@@ -469,9 +469,6 @@ func (suite *KeeperTestSuite) TestExist() {
 
 func (suite *KeeperTestSuite) TestEmpty() {
 	suite.SetupTest()
-	addr := tests.GenerateAddress()
-	baseAcc := &authtypes.BaseAccount{Address: sdk.AccAddress(addr.Bytes()).String()}
-	suite.app.AccountKeeper.SetAccount(suite.ctx, baseAcc)
 
 	testCases := []struct {
 		name     string
@@ -481,7 +478,6 @@ func (suite *KeeperTestSuite) TestEmpty() {
 		expErr   bool
 	}{
 		{"empty, account exists", suite.address, func(vm.StateDB) {}, true, false},
-		{"error, non ethereum account", addr, func(vm.StateDB) {}, true, true},
 		{"not empty, positive balance", suite.address, func(vmdb vm.StateDB) {
 			vmdb.AddBalance(suite.address, big.NewInt(100))
 		}, false, false},
