@@ -275,12 +275,7 @@ func (k *Keeper) GetNonce(ctx sdk.Context, addr common.Address) uint64 {
 		return 0
 	}
 
-	ethAcct, ok := acct.(ethermint.EthAccountI)
-	if !ok {
-		return 0
-	}
-
-	return ethAcct.GetSequence()
+	return acct.GetSequence()
 }
 
 // GetBalance load account's balance of gas token

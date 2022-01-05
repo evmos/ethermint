@@ -185,6 +185,7 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 		return nil
 	}
 
+	// NOTE: only Ethereum accounts (contracts) can be selfdestructed
 	ethAcct, ok := acct.(ethermint.EthAccountI)
 	if !ok {
 		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)

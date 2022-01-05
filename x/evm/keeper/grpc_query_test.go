@@ -345,9 +345,7 @@ func (suite *KeeperTestSuite) TestQueryCode() {
 }
 
 func (suite *KeeperTestSuite) TestQueryTxLogs() {
-	var (
-		expLogs []*types.Log
-	)
+	var expLogs []*types.Log
 	txHash := common.BytesToHash([]byte("tx_hash"))
 	txIndex := uint(1)
 	logIndex := uint(1)
@@ -593,7 +591,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			rsp, err := suite.queryClient.EstimateGas(sdk.WrapSDKContext(suite.ctx), &req)
 			if tc.expPass {
 				suite.Require().NoError(err)
-				suite.Require().Equal(tc.expGas, rsp.Gas)
+				suite.Require().Equal(int64(tc.expGas), int64(rsp.Gas))
 			} else {
 				suite.Require().Error(err)
 			}
