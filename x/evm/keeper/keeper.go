@@ -6,7 +6,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -235,38 +234,37 @@ func (k Keeper) Tracer(ctx sdk.Context, msg core.Message, ethCfg *params.ChainCo
 
 // GetAccountWithoutBalance load nonce and codehash without balance,
 // more efficient in cases where balance is not needed.
-func (k *Keeper) GetAccountWithoutBalance(ctx sdk.Context, addr common.Address) (*statedb.Account, error) {
+func (k *Keeper) GetAccountWithoutBalance(ctx sdk.Context, addr common.Address) *statedb.Account {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	acct := k.accountKeeper.GetAccount(ctx, cosmosAddr)
 	if acct == nil {
-		return nil, nil
+		return nil
 	}
 
-	ethAcct, ok := acct.(*ethermint.EthAccount)
-	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
+	codeHash := types.EmptyCodeHash
+	ethAcct, ok := acct.(ethermint.EthAccountI)
+	if ok {
+		codeHash = ethAcct.GetCodeHash().Bytes()
 	}
 
 	return &statedb.Account{
-		Nonce:    ethAcct.Sequence,
-		CodeHash: common.FromHex(ethAcct.CodeHash),
-	}, nil
+		Nonce:    acct.GetSequence(),
+		CodeHash: codeHash,
+	}
 }
 
 // GetAccountOrEmpty returns empty account if not exist, returns error if it's not `EthAccount`
-func (k *Keeper) GetAccountOrEmpty(ctx sdk.Context, addr common.Address) (statedb.Account, error) {
-	acct, err := k.GetAccount(ctx, addr)
-	if err != nil {
-		return statedb.Account{}, err
+func (k *Keeper) GetAccountOrEmpty(ctx sdk.Context, addr common.Address) statedb.Account {
+	acct := k.GetAccount(ctx, addr)
+	if acct != nil {
+		return *acct
 	}
-	if acct == nil {
-		// empty account
-		return statedb.Account{
-			Balance:  new(big.Int),
-			CodeHash: types.EmptyCodeHash,
-		}, nil
+
+	// empty account
+	return statedb.Account{
+		Balance:  new(big.Int),
+		CodeHash: types.EmptyCodeHash,
 	}
-	return *acct, nil
 }
 
 // GetNonce returns the sequence number of an account, returns 0 if not exists.
@@ -277,12 +275,7 @@ func (k *Keeper) GetNonce(ctx sdk.Context, addr common.Address) uint64 {
 		return 0
 	}
 
-	ethAcct, ok := acct.(*ethermint.EthAccount)
-	if !ok {
-		return 0
-	}
-
-	return ethAcct.Sequence
+	return acct.GetSequence()
 }
 
 // GetBalance load account's balance of gas token

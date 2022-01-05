@@ -8,7 +8,7 @@ import (
 // Keeper provide underlying storage of StateDB
 type Keeper interface {
 	// Read methods
-	GetAccount(ctx sdk.Context, addr common.Address) (*Account, error)
+	GetAccount(ctx sdk.Context, addr common.Address) *Account
 	GetState(ctx sdk.Context, addr common.Address, key common.Hash) common.Hash
 	GetCode(ctx sdk.Context, codeHash common.Hash) []byte
 	// the callback returns false to break early

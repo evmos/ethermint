@@ -56,6 +56,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (types) [tharsis#884](https://github.com/tharsis/ethermint/pull/884) Introduce a new `EthAccountI` interface for EVM-compatible account types.
 * (types) [tharsis#849](https://github.com/tharsis/ethermint/pull/849) Add `Type` function to distinguish EOAs from Contract accounts.
 * (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
 * (evm) [tharsis#827](https://github.com/tharsis/ethermint/issues/827) Speed up creation of event logs by using the slice insertion idiom with indices.
@@ -64,6 +65,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (evm) [tharsis#884](https://github.com/tharsis/ethermint/pull/884) Support multiple account types on the EVM `StateDB`.
 * (rpc) [tharsis#831](https://github.com/tharsis/ethermint/pull/831) Fix BaseFee value when height is specified.
 * (evm) [tharsis#838](https://github.com/tharsis/ethermint/pull/838) Fix splitting of trace.Memory into 32 chunks.
 * (rpc) [tharsis#860](https://github.com/tharsis/ethermint/pull/860) Fix `eth_getLogs` when specify blockHash without address/topics, and limit the response size.

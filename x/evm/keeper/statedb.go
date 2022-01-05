@@ -17,18 +17,18 @@ import (
 var _ statedb.Keeper = &Keeper{}
 
 // ----------------------------------------------------------------------------
-// statedb.Keeper implementation
+// StateDB Keeper implementation
 // ----------------------------------------------------------------------------
 
-// GetAccount returns nil if account is not exist, returns error if it's not `EthAccount`
-func (k *Keeper) GetAccount(ctx sdk.Context, addr common.Address) (*statedb.Account, error) {
-	acct, err := k.GetAccountWithoutBalance(ctx, addr)
-	if acct == nil || err != nil {
-		return acct, err
+// GetAccount returns nil if account is not exist, returns error if it's not `EthAccountI`
+func (k *Keeper) GetAccount(ctx sdk.Context, addr common.Address) *statedb.Account {
+	acct := k.GetAccountWithoutBalance(ctx, addr)
+	if acct == nil {
+		return nil
 	}
 
 	acct.Balance = k.GetBalance(ctx, addr)
-	return acct, nil
+	return acct
 }
 
 // GetState loads contract state from database, implements `statedb.Keeper` interface.
@@ -109,25 +109,33 @@ func (k *Keeper) SetAccount(ctx sdk.Context, addr common.Address, account stated
 	if acct == nil {
 		acct = k.accountKeeper.NewAccountWithAddress(ctx, cosmosAddr)
 	}
-	ethAcct, ok := acct.(*ethermint.EthAccount)
-	if !ok {
-		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
-	}
-	if err := ethAcct.SetSequence(account.Nonce); err != nil {
+
+	if err := acct.SetSequence(account.Nonce); err != nil {
 		return err
 	}
-	ethAcct.CodeHash = common.BytesToHash(account.CodeHash).Hex()
-	k.accountKeeper.SetAccount(ctx, ethAcct)
 
-	err := k.SetBalance(ctx, addr, account.Balance)
+	codeHash := common.BytesToHash(account.CodeHash)
+
+	if ethAcct, ok := acct.(ethermint.EthAccountI); ok {
+		if err := ethAcct.SetCodeHash(codeHash); err != nil {
+			return err
+		}
+	}
+
+	k.accountKeeper.SetAccount(ctx, acct)
+
+	if err := k.SetBalance(ctx, addr, account.Balance); err != nil {
+		return err
+	}
+
 	k.Logger(ctx).Debug(
 		"account updated",
 		"ethereum-address", addr.Hex(),
 		"nonce", account.Nonce,
-		"codeHash", common.BytesToHash(account.CodeHash).Hex(),
+		"codeHash", codeHash.Hex(),
 		"balance", account.Balance,
 	)
-	return err
+	return nil
 }
 
 // SetState update contract storage, delete if value is empty.
@@ -177,7 +185,8 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 		return nil
 	}
 
-	ethAcct, ok := acct.(*ethermint.EthAccount)
+	// NOTE: only Ethereum accounts (contracts) can be selfdestructed
+	ethAcct, ok := acct.(ethermint.EthAccountI)
 	if !ok {
 		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
 	}
@@ -188,9 +197,9 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 	}
 
 	// remove code
-	codeHash := common.HexToHash(ethAcct.CodeHash).Bytes()
-	if !bytes.Equal(codeHash, types.EmptyCodeHash) {
-		k.SetCode(ctx, codeHash, nil)
+	codeHashBz := ethAcct.GetCodeHash().Bytes()
+	if !bytes.Equal(codeHashBz, types.EmptyCodeHash) {
+		k.SetCode(ctx, codeHashBz, nil)
 	}
 
 	// clear storage
