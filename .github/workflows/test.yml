@@ -38,7 +38,7 @@ jobs:
         with:
           go-version: 1.17
       - uses: actions/checkout@v2.4.0
-      - uses: technote-space/get-diff-action@v5
+      - uses: technote-space/get-diff-action@v6.0.1
         with:
           PATTERNS: |
             **/**.sol
@@ -63,7 +63,7 @@ jobs:
         with:
           go-version: 1.17
       - uses: actions/checkout@v2.4.0
-      - uses: technote-space/get-diff-action@v5
+      - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
         with:
           SUFFIX_FILTER: |
@@ -87,7 +87,7 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - uses: technote-space/get-diff-action@v5
+      - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
         with:
           PATTERNS: |
@@ -110,7 +110,7 @@ jobs:
       - uses: actions/setup-go@v2.1.4
         with:
           go-version: 1.17
-      - uses: technote-space/get-diff-action@v5
+      - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
         with:
           PATTERNS: |
@@ -139,7 +139,7 @@ jobs:
         with:
           go-version: 1.17
       - uses: actions/checkout@v2.4.0
-      - uses: technote-space/get-diff-action@v5
+      - uses: technote-space/get-diff-action@v6.0.1
         with:
           PATTERNS: |
             **/**.sol
