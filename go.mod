@@ -154,6 +154,8 @@ replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
 	// TODO: remove once v0.45 is released
 	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.44.6-0.20220104141845-0be9863cfed1
+	// TODO: remove once v3 is released
+	github.com/cosmos/ibc-go/v3 => github.com/cosmos/ibc-go/v3 v3.0.0-alpha1.0.20220105123212-9d79e86da4a8
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
