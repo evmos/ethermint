@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -244,7 +243,7 @@ func (k *Keeper) GetAccountWithoutBalance(ctx sdk.Context, addr common.Address) 
 
 	ethAcct, ok := acct.(*ethermint.EthAccount)
 	if !ok {
-		return nil, errors.New("not EthAccount")
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvali)
 	}
 
 	return &statedb.Account{
