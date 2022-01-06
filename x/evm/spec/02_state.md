@@ -12,22 +12,17 @@ The `x/evm` module keeps the following objects in state:
 
 ### State
 
-|                   | Description                                                                                                               | Key                                               | Value                 | Store     |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | --------------------- | --------- |
-| Code              | Smart contract bytecode                                                                                                   | `[]byte{1} + []byte(address)`                     | `[]byte{code}`        | KV        |
-| Storage           | Smart contract storage                                                                                                    | `[]byte{2} + []byte(block.Height)`                | `[]byte(Bloom)`       | KV        |
-| Account Suicided  | Check if the account has been marked as suicided in the current block                                                     | `[]byte{1} + []byte(block.Hash)`                  |                       | Transient |
-| Block Bloom       | Block bloom filter                                                                                                        | `[]byte{2} + []byte(tx.Hash)`                     | `protobuf([]Log)`     | Transient |
-| Tx Refund         | Refund value for the transaction                                                                                          | `[]byte{3} + []byte(address) + []byte(state.Key)` | `[]byte(state.Value)` | Transient |
-| AccesList Address | EIP2930 access list address updated in the block                                                                          | `[]byte{4}`                                       | `protobuf()`          | Transient |
-| AccessList Slot   | EIP2930 access list slots updated in the block                                                                            | `[]byte{5}`                                       |                       | Transient |
-| TxHash            | Ethereum RLP hash of the transaction. Set during state transition to be accessible by the StateDB functions (eg: AddLog). | `[]byte{6}`                                       |                       | Transient |
-| Log Size          | Size (i.e len) of the log slice in the processed tx. Set to the transient store to prevent iterations over the tx logs.   | `[]byte{7}`                                       |                       | Transient |
-| Tx Logs           | Logs emitted for each transaction (AddLog) are stored on the transient store and then emitted as events.                  | `[]byte{7}`                                       |                       | Transient |
+|             | Description                                                  | Key                           | Value               | Store     |
+| ----------- | ------------------------------------------------------------ | ----------------------------- | ------------------- | --------- |
+| Code        | Smart contract bytecode                                      | `[]byte{1} + []byte(address)` | `[]byte{code}`      | KV        |
+| Storage     | Smart contract storage                                       | `[]byte{2} + [32]byte{key}`   | `[32]byte(value)`   | KV        |
+| Block Bloom | Block bloom filter, used to accumulate the bloom filter of current block, emitted to events at end blocker. | `[]byte{1} + []byte(tx.Hash)` | `protobuf([]Log)`   | Transient |
+| Tx Index    | Index of current transaction in current block.               | `[]byte{2}`                   | `BigEndian(uint64)` | Transient |
+| Log Size    | Number of the logs emitted so far in current block. Used to decide the log index of following logs. | `[]byte{3}`                   | `BigEndian(uint64)` | Transient |
 
 ## StateDB
 
-The `StateDB` interface is implemented by the `Keeper` in the `x/evm` module to represent an EVM database for full state querying of both contracts and accounts. Within the Ethereum protocol, `StateDB`s are used to store anything within the IAVL tree and take care of caching and storing nested states.
+The `StateDB` interface is implemented by the `StateDB` in the `x/evm/statedb` module to represent an EVM database for full state querying of both contracts and accounts. Within the Ethereum protocol, `StateDB`s are used to store anything within the IAVL tree and take care of caching and storing nested states.
 
 ```go
 // github.com/ethereum/go-ethereum/core/vm/interface.go
@@ -112,25 +107,25 @@ Gas refunded needs to be tracked and stored in a separate variable in
 order to add it subtract/add it from/to the gas used value after the EVM
 execution has finalized. The refund value is cleared on every transaction and at the end of every block.
 
-- `AddRefund()` adds the given amount of gas to the refund transient value.
-- `SubRefund()` subtracts the given amount of gas from the transient refund value. This function will panic if gas amount is greater than the stored refund.
+- `AddRefund()` adds the given amount of gas to the in-memory refund value.
+- `SubRefund()` subtracts the given amount of gas from the in-memory refund value. This function will panic if gas amount is greater than the current refund.
 - `GetRefund()` returns the amount of gas available for return after the tx execution finalizes. This value is reset to 0 on every transaction.
 
 The state is stored on the `EVMKeeper`. It can be queried with `GetCommittedState()`, `GetState()` and updated with `SetState()`.
 
 - `GetCommittedState()` returns the value set in store for the given key hash. If the key is not registered this function returns the empty hash.
-- `GetState()` returns the committed state for the given key hash, as all changes are committed directly to the KVStore.
-- `SetState()` sets the given hashes (key, value) to the KVStore. If the value hash is empty, this function deletes the key from the store.
+- `GetState()` returns the in-memory dirty state for the given key hash, if not exist load the committed value from KVStore.
+- `SetState()` sets the given hashes (key, value) to the state. If the value hash is empty, this function deletes the key from the state, the new value is kept in dirty state at first, and will be committed to KVStore in the end.
 
-Accounts can also be set to a suicide state. When an contract commits suicide, the account code is deleted (from the next block and forward) but the address still exists.
+Accounts can also be set to a suicide state. When a contract commits suicide, the account is marked as suicided, when committing the code, storage and account are deleted (from the next block and forward).
 
 - `Suicide()` marks the given account as suicided and clears the account balance of the EVM tokens.
-- `HasSuicided()` queries the transient store to check if the account has been marked as suicided in the current block. Accounts that are suicided will be returned as non-nil during queries and "cleared" after the block has been committed.
+- `HasSuicided()` queries the in-memory flag to check if the account has been marked as suicided in the current transaction. Accounts that are suicided will be returned as non-nil during queries and "cleared" after the block has been committed.
 
 To check account existence use `Exist()` and `Empty()`.
 
 - `Exist()` returns true if the given account exists in store or if it has been
-marked as suicided in the transient store.
+marked as suicided.
 - `Empty()` returns true if the address meets the following conditions:
     - nonce is 0
     - balance amount for evm denom is 0
@@ -138,15 +133,15 @@ marked as suicided in the transient store.
 
 ### EIP2930 functionality
 
-Supports a transaction type that contains an [access list](https://eips.ethereum.org/EIPS/eip-2930), a list of addresses, and storage keys that the transaction plans to access.
+Supports a transaction type that contains an [access list](https://eips.ethereum.org/EIPS/eip-2930), a list of addresses, and storage keys that the transaction plans to access. The access list state is kept in memory and discarded after the transaction committed.
 
 - `PrepareAccessList()` handles the preparatory steps for executing a state transition with regards to both EIP-2929 and EIP-2930. This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
   - Add sender to access list (EIP-2929)
   - Add destination to access list (EIP-2929)
   - Add precompiles to access list (EIP-2929)
   - Add the contents of the optional tx access list (EIP-2930)
-- `AddressInAccessList()` returns true if the address is registered on the transient store.
-- `SlotInAccessList()` checks if the address and the slots are registered in the transient store
+- `AddressInAccessList()` returns true if the address is registered.
+- `SlotInAccessList()` checks if the address and the slots are registered.
 - `AddAddressToAccessList()` adds the given address to the access list. If the address is already in the access list, this function performs a no-op.
 - `AddSlotToAccessList()` adds the given (address, slot) to the access list. If the address and slot are already in the access list, this function performs a no-op.
 
@@ -154,74 +149,19 @@ Supports a transaction type that contains an [access list](https://eips.ethereum
 
 The EVM uses state-reverting exceptions to handle errors. Such an exception will undo all changes made to the state in the current call (and all its sub-calls), and the caller could handle the error and don't propagate. You can use `Snapshot()` to identify the current state with a revision and revert the state to a given revision with `RevertToSnapshot()` to support this feature.
 
-- `Snapshot()` returns the index in the cached context stack
-- `RevertToSnapshot()` pops all the cached contexts after(including) the snapshot
+- `Snapshot()` creates a new snapshot and returns the identifier.
+- `RevertToSnapshot(rev)` undo all the modifications up to the snapshot identified as `rev`.
 
-[go-ethereum implementation](https://github.com/ethereum/go-ethereum/blob/master/core/state/journal.go#L39) manages transient states in memory, and uses a list of journal logs to record all the state modification operations done so far, snapshot is an index in the log list, and to revert to a snapshot it just undo the journal logs after the snapshot index in reversed order.
-
-Evmos uses cosmos-sdk's storage api to manage states, fortunately the storage api supports creating cached overlays, it works like this:
-
-```go
-// create a cached overlay storage on top of ctx storage.
-overlayCtx, commit := ctx.CacheContext()
-// Modify states using the overlayed storage
-err := doCall(overlayCtx)
-if err != nil {
-  return err
-}
-// commit will write the dirty states into the underlying storage
-commit()
-
-// Now, just drop the overlayCtx and keep using ctx
-```
-
-And it can be used in a nested way, like this:
-
-```go
-overlayCtx1, commit1 := ctx.CacheContext()
-doCall1(overlayCtx1)
-{
-    overlayCtx2, commit2 := overlayCtx1.CacheContext()
-    doCall2(overlayCtx2)
-    commit2()
-}
-commit1()
-```
-
-With this feature, we can use a stake of overlayed contexts to implement nested `Snapshot` and `RevertToSnapshot` calls.
-
-```go
-type cachedContext struct {
-  ctx    sdk.Context
-  commit func()
-}
-
-var contextStack []cachedContext
-func Snapshot() int {
-  ctx, commit := contextStack.Top().CacheContext()
-  contextStack.Push(cachedContext{ctx, commit})
-  return len(contextStack) - 1
-}
-
-func RevertToSnapshot(int snapshot) {
-  contextStack = contextStack[:snapshot]
-}
-
-func Commit() {
-  for i := len(contextStack) - 1; i >= 0; i-- {
-    contextStack[i].commit()
-  }
-  contextStack = {}
-}
-```
+Evmos adapted the [go-ethereum journal implementation](https://github.com/ethereum/go-ethereum/blob/master/core/state/journal.go#L39) to support this, it uses a list of journal logs to record all the state modification operations done so far,
+snapshot is consists of a unique id and an index in the log list, and to revert to a snapshot it just undo the journal logs after the snapshot index in reversed order.
 
 ### Ethereum Transaction logs
 
-With `AddLog()` you can append the given ethereum `Log` to the list of Logs associated with the transaction hash kept in the current context. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log to store.
+With `AddLog()` you can append the given ethereum `Log` to the list of Logs associated with the transaction hash kept in the current state. This function also fills in the tx hash, block hash, tx index and log index fields before setting the log to store.
 
 ## Keeper
 
-The EVM module `Keeper` grants access to the EVM module state and implements the `StateDB` interface. The Keeper contains a store key that allows the DB to write to a concrete subtree of the multistore that is only accessible to the EVM module. Instead of using a trie and database for querying and persistence (the `StateDB` implementation on Ethermint), use the Cosmos `KVStore` (key-value store) and Cosmos SDK `Keeper` to facilitate state transitions.
+The EVM module `Keeper` grants access to the EVM module state and implements `statedb.Keeper` interface to support the `StateDB` implementation. The Keeper contains a store key that allows the DB to write to a concrete subtree of the multistore that is only accessible to the EVM module. Instead of using a trie and database for querying and persistence (the `StateDB` implementation on Ethermint), use the Cosmos `KVStore` (key-value store) and Cosmos SDK `Keeper` to facilitate state transitions.
 
 To support the interface functionality, it imports 4 module Keepers:
 
@@ -255,12 +195,6 @@ type Keeper struct {
 	// fetch EIP1559 base fee and parameters
 	feeMarketKeeper types.FeeMarketKeeper
 
-	// Manage the initial context and cache context stack for accessing the store,
-	// emit events and log info.
-	// It is kept as a field to make is accessible by the StateDB
-	// functions. Resets on every transaction/block.
-	ctxStack ContextStack
-
 	// chain ID number obtained from the context's chain id
 	eip155ChainID *big.Int
 
@@ -272,17 +206,8 @@ type Keeper struct {
 
 	// EVM Hooks for tx post-processing
 	hooks types.EvmHooks
-
-	// error from previous state operation
-	stateErr error
 }
 ```
-
-### EVM Context
-
-Since the  `StateDB` interface methods require access to the state, the `Keeper` must provide the `sdk.Context`, so that each of the Keepers can access their corresponding `KVStore`. Every time a new block or EVM transaction is processed, this field is updated using the `keeper.WithContext` function, on `BeginBlock` and `AnteHandler`, respectively.
-
-As the EVM module doesn't use a single `sdk.Context`, it implements a stack of Contexts to support the Revert and Snapshot operations from the StateDB. For this purpose, the `ContextStack` is defined as a `Keeper` field.
 
 ## Genesis State
 
@@ -290,10 +215,10 @@ The `x/evm` module `GenesisState` defines the state necessary for initializing t
 
 ```go
 type GenesisState struct {
-  // accounts is an array containing the ethereum genesis accounts.
-  Accounts []GenesisAccount `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts"`
-  // params defines all the parameters of the module.
-  Params Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params"`
+  // accounts is an array containing the ethereum genesis accounts.
+  Accounts []GenesisAccount `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts"`
+  // params defines all the parameters of the module.
+  Params Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params"`
 }
 ```
 
@@ -307,11 +232,11 @@ It is also important to note that since the `auth` module on the Cosmos SDK mana
 
 ```go
 type GenesisAccount struct {
-  // address defines an ethereum hex formated address of an account
-  Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-  // code defines the hex bytes of the account code.
-  Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-  // storage defines the set of state key values for the account.
-  Storage Storage `protobuf:"bytes,3,rep,name=storage,proto3,castrepeated=Storage" json:"storage"`
+  // address defines an ethereum hex formated address of an account
+  Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+  // code defines the hex bytes of the account code.
+  Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+  // storage defines the set of state key values for the account.
+  Storage Storage `protobuf:"bytes,3,rep,name=storage,proto3,castrepeated=Storage" json:"storage"`
 }
 ```
