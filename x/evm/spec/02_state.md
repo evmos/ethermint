@@ -117,7 +117,7 @@ The state is stored on the `EVMKeeper`. It can be queried with `GetCommittedStat
 - `GetState()` returns the dirty state for the given key hash, if not exists load the committed value from KVStore.
 - `SetState()` sets the given hashes (key, value) to the state. If the value hash is empty, this function deletes the key from the state, the new value is kept in dirty state at first, and will be committed to KVStore in the end.
 
-Accounts can also be set to a suicide state. When a contract commits suicide, the account is marked as suicided, after commit the code, storage and account will be deleted (from the next block and forward).
+Accounts can also be set to a suicide state. When a contract commits suicide, the account is marked as suicided, when committing the code, storage and account are deleted (from the next block and forward).
 
 - `Suicide()` marks the given account as suicided and clears the account balance of the EVM tokens.
 - `HasSuicided()` queries the in-memory flag to check if the account has been marked as suicided in the current transaction. Accounts that are suicided will be returned as non-nil during queries and "cleared" after the block has been committed.
