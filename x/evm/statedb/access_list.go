@@ -54,23 +54,6 @@ func newAccessList() *accessList {
 	}
 }
 
-// Copy creates an independent copy of an accessList.
-func (al *accessList) Copy() *accessList {
-	cp := newAccessList()
-	for k, v := range al.addresses {
-		cp.addresses[k] = v
-	}
-	cp.slots = make([]map[common.Hash]struct{}, len(al.slots))
-	for i, slotMap := range al.slots {
-		newSlotmap := make(map[common.Hash]struct{}, len(slotMap))
-		for k := range slotMap {
-			newSlotmap[k] = struct{}{}
-		}
-		cp.slots[i] = newSlotmap
-	}
-	return cp
-}
-
 // AddAddress adds an address to the access list, and returns 'true' if the operation
 // caused a change (addr was not previously in the list).
 func (al *accessList) AddAddress(address common.Address) bool {
