@@ -114,7 +114,7 @@ execution has finalized. The refund value is cleared on every transaction and at
 The state is stored on the `EVMKeeper`. It can be queried with `GetCommittedState()`, `GetState()` and updated with `SetState()`.
 
 - `GetCommittedState()` returns the value set in store for the given key hash. If the key is not registered this function returns the empty hash.
-- `GetState()` returns the dirty state for the given key hash, if not exists load the committed value from KVStore.
+- `GetState()` returns the in-memory dirty state for the given key hash, if not exist load the committed value from KVStore.
 - `SetState()` sets the given hashes (key, value) to the state. If the value hash is empty, this function deletes the key from the state, the new value is kept in dirty state at first, and will be committed to KVStore in the end.
 
 Accounts can also be set to a suicide state. When a contract commits suicide, the account is marked as suicided, when committing the code, storage and account are deleted (from the next block and forward).
