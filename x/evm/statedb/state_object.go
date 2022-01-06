@@ -124,9 +124,6 @@ func (s *stateObject) setBalance(amount *big.Int) {
 	s.account.Balance = amount
 }
 
-// Return the gas back to the origin. Used by the Virtual machine or Closures
-func (s *stateObject) ReturnGas(gas *big.Int) {}
-
 //
 // Attribute accessors
 //

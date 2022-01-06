@@ -70,11 +70,6 @@ func (s *StateDB) Keeper() Keeper {
 	return s.keeper
 }
 
-// Context returns the embedded `sdk.Context`
-func (s *StateDB) Context() sdk.Context {
-	return s.ctx
-}
-
 // AddLog adds a log, called by evm.
 func (s *StateDB) AddLog(log *ethtypes.Log) {
 	s.journal.append(addLogChange{})
@@ -137,16 +132,6 @@ func (s *StateDB) GetNonce(addr common.Address) uint64 {
 	}
 
 	return 0
-}
-
-// TxIndex returns the current transaction index.
-func (s *StateDB) TxIndex() uint {
-	return s.txConfig.TxIndex
-}
-
-// BlockHash returns the current block hash.
-func (s *StateDB) BlockHash() common.Hash {
-	return s.txConfig.BlockHash
 }
 
 // GetCode returns the code of account, nil if not exists.
