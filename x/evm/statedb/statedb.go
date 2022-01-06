@@ -31,7 +31,6 @@ var _ vm.StateDB = &StateDB{}
 type StateDB struct {
 	keeper Keeper
 	ctx    sdk.Context
-	dbErr  error
 
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
@@ -74,18 +73,6 @@ func (s *StateDB) Keeper() Keeper {
 // Context returns the embedded `sdk.Context`
 func (s *StateDB) Context() sdk.Context {
 	return s.ctx
-}
-
-// setError remembers the first non-nil error it is called with.
-func (s *StateDB) setError(err error) {
-	if s.dbErr == nil {
-		s.dbErr = err
-	}
-}
-
-// Error returns the database error recorded.
-func (s *StateDB) Error() error {
-	return s.dbErr
 }
 
 // AddLog adds a log, called by evm.
@@ -235,11 +222,7 @@ func (s *StateDB) getStateObject(addr common.Address) *stateObject {
 		return obj
 	}
 	// If no live objects are available, load it from keeper
-	account, err := s.keeper.GetAccount(s.ctx, addr)
-	if err != nil {
-		s.setError(err)
-		return nil
-	}
+	account := s.keeper.GetAccount(s.ctx, addr)
 	if account == nil {
 		return nil
 	}
@@ -468,9 +451,6 @@ func (s *StateDB) RevertToSnapshot(revid int) {
 // Commit writes the dirty states to keeper
 // the StateDB object should be discarded after committed.
 func (s *StateDB) Commit() error {
-	if s.dbErr != nil {
-		return fmt.Errorf("commit aborted due to earlier error: %v", s.dbErr)
-	}
 	for _, addr := range s.journal.sortedDirties() {
 		obj := s.stateObjects[addr]
 		if obj.suicided {

@@ -17,7 +17,6 @@ type StateDBTestSuite struct {
 }
 
 func (suite *StateDBTestSuite) TestAccounts() {
-	addrErr := common.BigToAddress(big.NewInt(1))
 	addr2 := common.BigToAddress(big.NewInt(2))
 	testTxConfig := statedb.NewTxConfig(
 		common.BigToHash(big.NewInt(10)), // tx hash
@@ -31,7 +30,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 		test func(*statedb.StateDB)
 	}{
 		{
-			"success,empty account",
+			"success, empty account",
 			func(db *statedb.StateDB) {
 				suite.Require().Equal(true, db.Empty(addr2))
 				suite.Require().Equal(big.NewInt(0), db.GetBalance(addr2))
@@ -40,21 +39,14 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,GetBalance",
+			"success, GetBalance",
 			func(db *statedb.StateDB) {
 				db.AddBalance(addr2, big.NewInt(1))
 				suite.Require().Equal(big.NewInt(1), db.GetBalance(addr2))
 			},
 		},
 		{
-			"fail,GetBalance dbErr",
-			func(db *statedb.StateDB) {
-				suite.Require().Equal(big.NewInt(0), db.GetBalance(addrErr))
-				suite.Require().Error(db.Commit())
-			},
-		},
-		{
-			"success,change balance",
+			"success, change balance",
 			func(db *statedb.StateDB) {
 				db.AddBalance(addr2, big.NewInt(2))
 				suite.Require().Equal(big.NewInt(2), db.GetBalance(addr2))
@@ -69,7 +61,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,SetState",
+			"success, SetState",
 			func(db *statedb.StateDB) {
 				key := common.BigToHash(big.NewInt(1))
 				value := common.BigToHash(big.NewInt(1))
@@ -81,7 +73,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,SetCode",
+			"success, SetCode",
 			func(db *statedb.StateDB) {
 				code := []byte("hello world")
 				codeHash := crypto.Keccak256Hash(code)
@@ -98,7 +90,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,CreateAccount",
+			"success, CreateAccount",
 			func(db *statedb.StateDB) {
 				// test balance carry over when overwritten
 				amount := big.NewInt(1)
@@ -131,7 +123,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,nested snapshot revert",
+			"success, nested snapshot revert",
 			func(db *statedb.StateDB) {
 				key := common.BigToHash(big.NewInt(1))
 				value1 := common.BigToHash(big.NewInt(1))
@@ -152,7 +144,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,nonce",
+			"success, nonce",
 			func(db *statedb.StateDB) {
 				suite.Require().Equal(uint64(0), db.GetNonce(addr2))
 				db.SetNonce(addr2, 1)
@@ -165,7 +157,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,logs",
+			"success, logs",
 			func(db *statedb.StateDB) {
 				data := []byte("hello world")
 				db.AddLog(&ethtypes.Log{
@@ -203,7 +195,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,refund",
+			"success, refund",
 			func(db *statedb.StateDB) {
 				db.AddRefund(uint64(10))
 				suite.Require().Equal(uint64(10), db.GetRefund())
@@ -218,7 +210,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,empty",
+			"success, empty",
 			func(db *statedb.StateDB) {
 				suite.Require().False(db.Exist(addr2))
 				suite.Require().True(db.Empty(addr2))
@@ -233,7 +225,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,suicide commit",
+			"success, suicide commit",
 			func(db *statedb.StateDB) {
 				code := []byte("hello world")
 				db.SetCode(addr2, code)
@@ -253,7 +245,7 @@ func (suite *StateDBTestSuite) TestAccounts() {
 			},
 		},
 		{
-			"success,suicide revert",
+			"success, suicide revert",
 			func(db *statedb.StateDB) {
 				code := []byte("hello world")
 				db.SetCode(addr2, code)

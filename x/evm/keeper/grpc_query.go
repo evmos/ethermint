@@ -48,10 +48,8 @@ func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*typ
 	addr := common.HexToAddress(req.Address)
 
 	ctx := sdk.UnwrapSDKContext(c)
-	acct, err := k.GetAccountOrEmpty(ctx, addr)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
+	acct := k.GetAccountOrEmpty(ctx, addr)
+
 	return &types.QueryAccountResponse{
 		Balance:  acct.Balance.String(),
 		CodeHash: common.BytesToHash(acct.CodeHash).Hex(),
@@ -186,10 +184,7 @@ func (k Keeper) Code(c context.Context, req *types.QueryCodeRequest) (*types.Que
 	ctx := sdk.UnwrapSDKContext(c)
 
 	address := common.HexToAddress(req.Address)
-	acct, err := k.GetAccountWithoutBalance(ctx, address)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
+	acct := k.GetAccountWithoutBalance(ctx, address)
 
 	var code []byte
 	if acct != nil && acct.IsContract() {

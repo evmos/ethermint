@@ -1,7 +1,6 @@
 package statedb_test
 
 import (
-	"errors"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,15 +28,12 @@ func NewMockKeeper() *MockKeeper {
 	}
 }
 
-func (k MockKeeper) GetAccount(ctx sdk.Context, addr common.Address) (*statedb.Account, error) {
-	if addr == k.errAddress {
-		return nil, errors.New("mock db error")
-	}
+func (k MockKeeper) GetAccount(ctx sdk.Context, addr common.Address) *statedb.Account {
 	acct, ok := k.accounts[addr]
 	if !ok {
-		return nil, nil
+		return nil
 	}
-	return &acct, nil
+	return &acct
 }
 
 func (k MockKeeper) GetState(ctx sdk.Context, addr common.Address, key common.Hash) common.Hash {
