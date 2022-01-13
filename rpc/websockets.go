@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
@@ -73,7 +74,7 @@ type websocketsServer struct {
 	logger   log.Logger
 }
 
-func NewWebsocketsServer(logger log.Logger, tmWSClient *rpcclient.WSClient, cfg config.Config) WebsocketsServer {
+func NewWebsocketsServer(clientCtx client.Context, logger log.Logger, tmWSClient *rpcclient.WSClient, cfg config.Config) WebsocketsServer {
 	logger = logger.With("api", "websocket-server")
 	_, port, _ := net.SplitHostPort(cfg.JSONRPC.Address)
 
@@ -82,7 +83,7 @@ func NewWebsocketsServer(logger log.Logger, tmWSClient *rpcclient.WSClient, cfg 
 		wsAddr:   cfg.JSONRPC.WsAddress,
 		certFile: cfg.TLS.CertificatePath,
 		keyFile:  cfg.TLS.KeyPath,
-		api:      newPubSubAPI(logger, tmWSClient),
+		api:      newPubSubAPI(clientCtx, logger, tmWSClient),
 		logger:   logger,
 	}
 }
@@ -293,16 +294,18 @@ type pubSubAPI struct {
 	filtersMu *sync.RWMutex
 	filters   map[rpc.ID]*wsSubscription
 	logger    log.Logger
+	clientCtx client.Context
 }
 
 // newPubSubAPI creates an instance of the ethereum PubSub API.
-func newPubSubAPI(logger log.Logger, tmWSClient *rpcclient.WSClient) *pubSubAPI {
+func newPubSubAPI(clientCtx client.Context, logger log.Logger, tmWSClient *rpcclient.WSClient) *pubSubAPI {
 	logger = logger.With("module", "websocket-client")
 	return &pubSubAPI{
 		events:    rpcfilters.NewEventSystem(logger, tmWSClient),
 		filtersMu: new(sync.RWMutex),
 		filters:   make(map[rpc.ID]*wsSubscription),
 		logger:    logger,
+		clientCtx: clientCtx,
 	}
 }
 
@@ -680,7 +683,11 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 			select {
 			case ev := <-txsCh:
 				data, _ := ev.Data.(tmtypes.EventDataTx)
-				txHash := common.BytesToHash(tmtypes.Tx(data.Tx).Hash())
+				ethTx, err := types.RawTxToEthTx(api.clientCtx, data.Tx)
+				if err != nil {
+					// not ethereum tx
+					panic("debug")
+				}
 
 				api.filtersMu.RLock()
 				for subID, wsSub := range api.filters {
@@ -695,7 +702,7 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 						Method:  "eth_subscription",
 						Params: &SubscriptionResult{
 							Subscription: subID,
-							Result:       txHash,
+							Result:       ethTx.Hash,
 						},
 					}
 
