@@ -25,21 +25,21 @@ import (
 )
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
-func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEthereumTx, error) {
+func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) ([]*evmtypes.MsgEthereumTx, error) {
 	tx, err := clientCtx.TxConfig.TxDecoder()(txBz)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
-	if len(tx.GetMsgs()) != 1 {
-		return nil, errors.New("not ethereum tx")
+	ethTxs := make([]*evmtypes.MsgEthereumTx, len(tx.GetMsgs()))
+	for i, msg := range tx.GetMsgs() {
+		ethTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return nil, fmt.Errorf("invalid message type %T, expected %T", msg, &evmtypes.MsgEthereumTx{})
+		}
+		ethTxs[i] = ethTx
 	}
-
-	ethTx, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return nil, fmt.Errorf("invalid msg type %T, expected %T", tx, evmtypes.MsgEthereumTx{})
-	}
-	return ethTx, nil
+	return ethTxs, nil
 }
 
 // EthHeaderFromTendermint is an util function that returns an Ethereum Header
@@ -256,25 +256,50 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 	return nil
 }
 
-// TxIndexFromEvents parses the tx index from cosmos events
-func TxIndexFromEvents(events []abci.Event) (uint64, error) {
+// FindEthTxInEvents returns the msg index of the eth tx in cosmos tx
+// returns -1 if not found.
+func FindEthTxInEvents(events []abci.Event, txHash string) (msgIndex int, attrs []abci.EventAttribute) {
+	var counter int
 	for _, event := range events {
 		if event.Type != evmtypes.EventTypeEthereumTx {
 			continue
 		}
 
-		for _, attr := range event.Attributes {
-			if bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxIndex)) {
-				result, err := strconv.ParseInt(string(attr.Value), 10, 64)
-				if err != nil {
-					return 0, err
-				}
-				if result < 0 {
-					return 0, errors.New("negative tx index")
-				}
-				return uint64(result), nil
-			}
+		value := FindAttribute(attrs, []byte(evmtypes.AttributeKeyEthereumTxHash))
+		if bytes.Equal(value, []byte(txHash)) {
+			return counter, event.Attributes
 		}
+		counter++
 	}
-	return 0, errors.New("not found")
+	// not found
+	return -1, nil
+}
+
+// FindAttribute find event attribute with specified key, if not found returns nil.
+func FindAttribute(attrs []abci.EventAttribute, key []byte) []byte {
+	for _, attr := range attrs {
+		if !bytes.Equal(attr.Key, key) {
+			continue
+		}
+		return attr.Value
+	}
+	return nil
+}
+
+// TxIndexFromAttributes parses the tx index from cosmos event attributes
+func TxIndexFromAttributes(attrs []abci.EventAttribute) (uint64, error) {
+	value := FindAttribute(attrs, []byte(evmtypes.AttributeKeyTxIndex))
+
+	if value == nil {
+		return 0, errors.New("tx index attribute not found")
+	}
+	var result int64
+	result, err := strconv.ParseInt(string(value), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	if result < 0 {
+		return 0, errors.New("negative tx index")
+	}
+	return uint64(result), nil
 }

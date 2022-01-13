@@ -146,7 +146,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			func() sdk.Tx {
 				signedTx := evmtypes.NewTx(
 					suite.app.EvmKeeper.ChainID(),
-					3,
+					6,
 					&to,
 					big.NewInt(10),
 					100000,
@@ -167,7 +167,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			func() sdk.Tx {
 				signedTx := evmtypes.NewTx(
 					suite.app.EvmKeeper.ChainID(),
-					4,
+					7,
 					&to,
 					big.NewInt(10),
 					100000,
@@ -186,7 +186,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		{
 			"fail - CheckTx (cosmos tx is not valid)",
 			func() sdk.Tx {
-				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 4, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 8, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 				signedTx.From = addr.Hex()
 
 				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)

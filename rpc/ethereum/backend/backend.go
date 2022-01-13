@@ -667,7 +667,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 		}
 
 		for _, tx := range txs {
-			msg, err := evmtypes.UnwrapEthereumMsg(tx)
+			msg, err := evmtypes.UnwrapEthereumMsg(tx, txHash)
 			if err != nil {
 				// not ethereum tx
 				continue
@@ -696,16 +696,17 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 		return nil, errors.New("invalid ethereum tx")
 	}
 
+	msgIndex, attrs := types.FindEthTxInEvents(res.TxResult.Events, hexTx)
+	if msgIndex < 0 {
+		return nil, errors.New("ethereum tx not found in msgs")
+	}
+
 	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(tx.GetMsgs()) != 1 {
-		return nil, errors.New("invalid ethereum tx")
-	}
-
-	msg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+	msg, ok := tx.GetMsgs()[msgIndex].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		return nil, errors.New("invalid ethereum tx")
 	}
@@ -718,7 +719,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 
 	// Try to find txIndex from events
 	found := false
-	txIndex, err := types.TxIndexFromEvents(res.TxResult.Events)
+	txIndex, err := types.TxIndexFromAttributes(attrs)
 	if err == nil {
 		found = true
 	} else {
@@ -1033,7 +1034,6 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 // GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
 // It also ensures consistency over the correct txs indexes across RPC endpoints
 func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx {
-	// nolint: prealloc
 	var result []*evmtypes.MsgEthereumTx
 
 	txResults := blockRes.TxsResults
@@ -1050,16 +1050,15 @@ func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.Result
 			e.logger.Debug("failed to decode transaction in block", "height", block.Block.Height, "error", err.Error())
 			continue
 		}
-		if len(tx.GetMsgs()) != 1 {
-			continue
-		}
 
-		ethMsg, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-		if !ok {
-			continue
-		}
+		for _, msg := range tx.GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				continue
+			}
 
-		result = append(result, ethMsg)
+			result = append(result, ethMsg)
+		}
 	}
 
 	return result

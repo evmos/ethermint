@@ -53,6 +53,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm)  Fix `SelfDestruct` opcode by deleting account code and state.
 * (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent `BaseFee` check logic.
 * (evm) [tharsis#729](https://github.com/tharsis/ethermint/pull/729) Refactor EVM StateDB implementation.
+* (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple MsgEthereumTx in single tx.
 
 ### Improvements
 

@@ -556,7 +556,8 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 	}
 
 	for _, tx := range pending {
-		p, err := evmtypes.UnwrapEthereumMsg(tx)
+		// FIXME does Resend api possible at all?
+		p, err := evmtypes.UnwrapEthereumMsg(tx, common.Hash{})
 		if err != nil {
 			// not valid ethereum tx
 			continue
@@ -780,7 +781,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
+	msg, err := evmtypes.UnwrapEthereumMsg(&tx, hash)
 	if err != nil {
 		e.logger.Debug("invalid tx", "error", err.Error())
 		return nil, err
@@ -888,24 +889,26 @@ func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error)
 
 	result := make([]*rpctypes.RPCTransaction, 0, len(txs))
 	for _, tx := range txs {
-		msg, err := evmtypes.UnwrapEthereumMsg(tx)
-		if err != nil {
-			// not valid ethereum tx
-			continue
-		}
+		for _, msg := range (*tx).GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				// not valid ethereum tx
+				break
+			}
 
-		rpctx, err := rpctypes.NewTransactionFromMsg(
-			msg,
-			common.Hash{},
-			uint64(0),
-			uint64(0),
-			e.chainIDEpoch,
-		)
-		if err != nil {
-			return nil, err
-		}
+			rpctx, err := rpctypes.NewTransactionFromMsg(
+				ethMsg,
+				common.Hash{},
+				uint64(0),
+				uint64(0),
+				e.chainIDEpoch,
+			)
+			if err != nil {
+				return nil, err
+			}
 
-		result = append(result, rpctx)
+			result = append(result, rpctx)
+		}
 	}
 
 	return result, nil

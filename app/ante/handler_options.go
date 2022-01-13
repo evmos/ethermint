@@ -53,7 +53,6 @@ func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		NewEthValidateBasicDecorator(options.EvmKeeper),
 		NewEthSigVerificationDecorator(options.EvmKeeper),
 		NewEthAccountVerificationDecorator(options.AccountKeeper, options.BankKeeper, options.EvmKeeper),
-		NewEthNonceVerificationDecorator(options.AccountKeeper),
 		NewEthGasConsumeDecorator(options.EvmKeeper),
 		NewCanTransferDecorator(options.EvmKeeper, options.FeeMarketKeeper),
 		NewEthIncrementSenderSequenceDecorator(options.AccountKeeper), // innermost AnteDecorator.

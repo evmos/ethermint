@@ -182,18 +182,20 @@ func (e *EVMBackend) getAccountNonce(accAddr common.Address, pending bool, heigh
 	// add the uncommitted txs to the nonce counter
 	// only supports `MsgEthereumTx` style tx
 	for _, tx := range pendingTxs {
-		msg, err := evmtypes.UnwrapEthereumMsg(tx)
-		if err != nil {
-			// not ethereum tx
-			continue
-		}
+		for _, msg := range (*tx).GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				// not ethereum tx
+				break
+			}
 
-		sender, err := msg.GetSender(e.chainID)
-		if err != nil {
-			continue
-		}
-		if sender == accAddr {
-			nonce++
+			sender, err := ethMsg.GetSender(e.chainID)
+			if err != nil {
+				continue
+			}
+			if sender == accAddr {
+				nonce++
+			}
 		}
 	}
 
