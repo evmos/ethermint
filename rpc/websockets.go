@@ -686,7 +686,7 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 				ethTx, err := types.RawTxToEthTx(api.clientCtx, data.Tx)
 				if err != nil {
 					// not ethereum tx
-					continue
+					panic("debug")
 				}
 
 				api.filtersMu.RLock()

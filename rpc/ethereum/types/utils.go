@@ -31,9 +31,13 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) (*evmtypes.MsgEther
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
-	ethTx, ok := tx.(*evmtypes.MsgEthereumTx)
+	if len(tx.GetMsgs()) != 1 {
+		return nil, errors.New("not ethereum tx")
+	}
+
+	ethTx, ok := tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 	if !ok {
-		return nil, fmt.Errorf("invalid transaction type %T, expected %T", tx, evmtypes.MsgEthereumTx{})
+		return nil, fmt.Errorf("invalid msg type %T, expected %T", tx, evmtypes.MsgEthereumTx{})
 	}
 	return ethTx, nil
 }
