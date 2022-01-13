@@ -265,7 +265,7 @@ func FindEthTxInEvents(events []abci.Event, txHash string) (msgIndex int, attrs 
 			continue
 		}
 
-		value := FindAttribute(attrs, []byte(evmtypes.AttributeKeyEthereumTxHash))
+		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyEthereumTxHash))
 		if bytes.Equal(value, []byte(txHash)) {
 			return counter, event.Attributes
 		}

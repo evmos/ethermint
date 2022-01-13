@@ -698,7 +698,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 
 	msgIndex, attrs := types.FindEthTxInEvents(res.TxResult.Events, hexTx)
 	if msgIndex < 0 {
-		return nil, errors.New("ethereum tx not found in msgs")
+		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
 	}
 
 	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)

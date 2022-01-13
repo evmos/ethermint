@@ -769,6 +769,11 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, nil
 	}
 
+	msgIndex, attrs := rpctypes.FindEthTxInEvents(res.TxResult.Events, hexTx)
+	if msgIndex < 0 {
+		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
+	}
+
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
 	if err != nil {
 		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
@@ -781,13 +786,14 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx, hash)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
+	msg := tx.GetMsgs()[msgIndex]
+	ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		e.logger.Debug(fmt.Printf("invalid tx type: %T", msg)
+		return nil, fmt.Errorf("invalid tx type: %T", msg)
 	}
 
-	txData, err := evmtypes.UnpackTxData(msg.Data)
+	txData, err := evmtypes.UnpackTxData(ethMsg.Data)
 	if err != nil {
 		e.logger.Error("failed to unpack tx data", "error", err.Error())
 		return nil, err
