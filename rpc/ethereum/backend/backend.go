@@ -673,7 +673,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 				continue
 			}
 
-			if msg.Hash == hexTx {
+			if msg.AsTransaction().Hash() == txHash {
 				rpctx, err := types.NewTransactionFromMsg(
 					msg,
 					common.Hash{},
