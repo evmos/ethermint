@@ -6,5 +6,5 @@ order: 0
 
 Here are the modules required in Ethermint :
 
-- [Evm](evm/spec/README.md) - Implement the EVM as a Cosmos SDK module.
-- [Feemarket](feemarket/spec/README.md) - Define a global variable fee for Cosmos transactions.
+- [EVM](evm/spec/README.md) - Implement the EVM as a Cosmos SDK module.
+- [Fee Market](feemarket/spec/README.md) - Define a global variable fee for Cosmos transactions based on EIP-1559.
