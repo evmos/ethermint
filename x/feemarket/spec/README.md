@@ -11,6 +11,16 @@ parent:
 
 This document specifies the feemarket module which allows to define a global transaction fee for the network.
 
+This module has been designed to implement EIP1559 in cosmos-sdk.
+
+The `MempoolFeeDecorator` in `x/auth` module can be override to check the `baseFee` along with the `minimal-gas-prices` allowing to implement a global fee mechanism which vary depending on the network activity. 
+
+For more reference to EIP1559:
+
+https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md
+
+
+
 ## Contents
 
 1. **[Concepts](01_concepts.md)**
