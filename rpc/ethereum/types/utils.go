@@ -306,7 +306,6 @@ func GetUint64Attribute(attrs map[string]string, key string) (uint64, error) {
 		return 0, errors.New("negative tx index")
 	}
 	return uint64(result), nil
-
 }
 
 // AccumulativeGasUsedOfMsg accumulate the gas used by msgs before `msgIndex`.
