@@ -76,3 +76,17 @@ key: ElasticityMultiplier
 subspace: feemarket
 value: "2"
 ```
+
+
+## gRPC
+
+### Queries
+
+| Verb   | Method                                               | Description                                                                |
+| ------ | ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| `gRPC`  | `ethermint.feemarket.v1.Query/Params`               | Get the module params                                                      |
+| `gRPC`  | `ethermint.feemarket.v1.Query/BaseFee`              | Get the block base fee                                                     |
+| `gRPC`  | `ethermint.feemarket.v1.Query/BlockGas`             | Get the block gas used                                                     |
+| `GET`  | `/feemarket/evm/v1/params`                           | Get the module params                                                      |
+| `GET`  | `/feemarket/evm/v1/base_fee`                         | Get the block base fee                                                     |
+| `GET`  | `/feemarket/evm/v1/block_gas`                        | Get the block gas used                                                     |
