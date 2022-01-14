@@ -19,7 +19,7 @@ The `x/evm` module keeps the following objects in state:
 | Block Bloom | Block bloom filter, used to accumulate the bloom filter of current block, emitted to events at end blocker. | `[]byte{1} + []byte(tx.Hash)` | `protobuf([]Log)`   | Transient |
 | Tx Index    | Index of current transaction in current block.               | `[]byte{2}`                   | `BigEndian(uint64)` | Transient |
 | Log Size    | Number of the logs emitted so far in current block. Used to decide the log index of following logs. | `[]byte{3}`                   | `BigEndian(uint64)` | Transient |
-| Gas Used    | Amount of gas used by ethereum messages of current cosmos-sdk, it's necessary when cosmos-sdk contains multiple ethereum messages. | `[]byte{4}`                   | `BigEndian(uint64)` | Transient |
+| Gas Used    | Amount of gas used by ethereum messages of current cosmos-sdk tx, it's necessary when cosmos-sdk tx contains multiple ethereum messages. | `[]byte{4}`                   | `BigEndian(uint64)` | Transient |
 
 ## StateDB
 
