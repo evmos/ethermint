@@ -693,7 +693,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 		return nil, err
 	}
 
-	// the `msgIndex` is infered from tx events, should be within the bound.
+	// the `msgIndex` is inferred from tx events, should be within the bound.
 	msg, ok := tx.GetMsgs()[msgIndex].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		return nil, errors.New("invalid ethereum tx")

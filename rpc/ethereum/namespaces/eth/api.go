@@ -798,7 +798,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	// the `msgIndex` is infered from tx events, should be within the bound.
+	// the `msgIndex` is inferred from tx events, should be within the bound.
 	msg := tx.GetMsgs()[msgIndex]
 	ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
 	if !ok {
