@@ -298,7 +298,7 @@ func TxIndexFromAttributes(attrs map[string]string) (uint64, error) {
 		return 0, errors.New("tx index attribute not found")
 	}
 	var result int64
-	result, err := strconv.ParseInt(string(value), 10, 64)
+	result, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, err
 	}

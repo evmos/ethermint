@@ -210,7 +210,7 @@ func AllTxLogsFromEvents(events []abci.Event) ([][]*ethtypes.Log, error) {
 			continue
 		}
 
-		logs, err := ParseTxLogsFromEvent(&event)
+		logs, err := ParseTxLogsFromEvent(event)
 		if err != nil {
 			return nil, err
 		}
@@ -233,13 +233,13 @@ func TxLogsFromEvents(events []abci.Event, msgIndex int) ([]*ethtypes.Log, error
 			continue
 		}
 
-		return ParseTxLogsFromEvent(&event)
+		return ParseTxLogsFromEvent(event)
 	}
 	return nil, fmt.Errorf("eth tx logs is not found: %d", msgIndex)
 }
 
 // ParseTxLogsFromEvent parse tx logs from one event
-func ParseTxLogsFromEvent(event *abci.Event) ([]*ethtypes.Log, error) {
+func ParseTxLogsFromEvent(event abci.Event) ([]*ethtypes.Log, error) {
 	logs := make([]*ethtypes.Log, 0, len(event.Attributes))
 	for _, attr := range event.Attributes {
 		if !bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxLog)) {

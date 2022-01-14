@@ -33,7 +33,6 @@ import (
 
 	"github.com/tharsis/ethermint/crypto/hd"
 	"github.com/tharsis/ethermint/rpc/ethereum/backend"
-	"github.com/tharsis/ethermint/rpc/ethereum/types"
 	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -848,7 +847,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	// Try to find txIndex from events
 	found = false
-	txIndex, err := types.TxIndexFromAttributes(attrs)
+	txIndex, err := rpctypes.TxIndexFromAttributes(attrs)
 	if err == nil {
 		found = true
 	} else {

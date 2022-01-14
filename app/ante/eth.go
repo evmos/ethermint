@@ -132,12 +132,6 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 	return next(ctx, tx, simulate)
 }
 
-// EthNonceVerificationDecorator checks that the account nonce from the transaction matches
-// the sender account sequence.
-type EthNonceVerificationDecorator struct {
-	ak evmtypes.AccountKeeper
-}
-
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
