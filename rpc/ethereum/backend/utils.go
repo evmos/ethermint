@@ -240,18 +240,18 @@ func TxLogsFromEvents(events []abci.Event, msgIndex int) ([]*ethtypes.Log, error
 
 // ParseTxLogsFromEvent parse tx logs from one event
 func ParseTxLogsFromEvent(event abci.Event) ([]*ethtypes.Log, error) {
-	logs := make([]*ethtypes.Log, 0, len(event.Attributes))
+	logs := make([]*evmtypes.Log, 0, len(event.Attributes))
 	for _, attr := range event.Attributes {
 		if !bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxLog)) {
 			continue
 		}
 
-		var log ethtypes.Log
+		var log evmtypes.Log
 		if err := json.Unmarshal(attr.Value, &log); err != nil {
 			return nil, err
 		}
 
 		logs = append(logs, &log)
 	}
-	return logs, nil
+	return evmtypes.LogsToEthereum(logs), nil
 }
