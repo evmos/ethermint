@@ -301,3 +301,36 @@ func (k Keeper) BaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
 	}
 	return baseFee
 }
+
+// ResetTransientGasUsed reset gas used by current cosmos tx, called in ante handler.
+func (k Keeper) ResetTransientGasUsed(ctx sdk.Context) {
+	store := ctx.TransientStore(k.transientKey)
+	store.Delete(types.KeyPrefixTransientGasUsed)
+}
+
+// GetTransientGasUsed returns the gas used by current cosmos tx.
+func (k Keeper) GetTransientGasUsed(ctx sdk.Context) uint64 {
+	store := ctx.TransientStore(k.transientKey)
+	bz := store.Get(types.KeyPrefixTransientGasUsed)
+	if len(bz) == 0 {
+		return 0
+	}
+	return sdk.BigEndianToUint64(bz)
+}
+
+// SetTransientGasUsed sets the gas used by current cosmos tx.
+func (k Keeper) SetTransientGasUsed(ctx sdk.Context, gasUsed uint64) {
+	store := ctx.TransientStore(k.transientKey)
+	bz := sdk.Uint64ToBigEndian(gasUsed)
+	store.Set(types.KeyPrefixTransientGasUsed, bz)
+}
+
+// AddTransientGasUsed accumulate gas used by each eth tx msgs included in current cosmos tx.
+func (k Keeper) AddTransientGasUsed(ctx sdk.Context, gasUsed uint64) uint64 {
+	result := k.GetTransientGasUsed(ctx) + gasUsed
+	if result < gasUsed {
+		panic("transient gas used overflow")
+	}
+	k.SetTransientGasUsed(ctx, result)
+	return result
+}

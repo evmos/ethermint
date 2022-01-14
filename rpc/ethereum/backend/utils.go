@@ -202,26 +202,56 @@ func (e *EVMBackend) getAccountNonce(accAddr common.Address, pending bool, heigh
 	return nonce, nil
 }
 
-// TxLogsFromEvents parses ethereum logs from cosmos events
-func TxLogsFromEvents(events []abci.Event) ([]*ethtypes.Log, error) {
-	logs := make([]*evmtypes.Log, 0)
+// AllTxLogsFromEvents parses all ethereum logs from cosmos events
+func AllTxLogsFromEvents(events []abci.Event) ([][]*ethtypes.Log, error) {
+	allLogs := make([][]*ethtypes.Log, 0, 4)
 	for _, event := range events {
 		if event.Type != evmtypes.EventTypeTxLog {
 			continue
 		}
 
-		for _, attr := range event.Attributes {
-			if !bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxLog)) {
-				continue
-			}
-
-			var log evmtypes.Log
-			if err := json.Unmarshal(attr.Value, &log); err != nil {
-				return nil, err
-			}
-
-			logs = append(logs, &log)
+		logs, err := ParseTxLogsFromEvent(&event)
+		if err != nil {
+			return nil, err
 		}
+
+		allLogs = append(allLogs, logs)
 	}
-	return evmtypes.LogsToEthereum(logs), nil
+	return allLogs, nil
+}
+
+// TxLogsFromEvents parses ethereum logs from cosmos events for specific msg index
+func TxLogsFromEvents(events []abci.Event, msgIndex int) ([]*ethtypes.Log, error) {
+	for _, event := range events {
+		if event.Type != evmtypes.EventTypeTxLog {
+			continue
+		}
+
+		if msgIndex > 0 {
+			// not the eth tx we want
+			msgIndex--
+			continue
+		}
+
+		return ParseTxLogsFromEvent(&event)
+	}
+	return nil, fmt.Errorf("eth tx logs is not found: %d", msgIndex)
+}
+
+// ParseTxLogsFromEvent parse tx logs from one event
+func ParseTxLogsFromEvent(event *abci.Event) ([]*ethtypes.Log, error) {
+	logs := make([]*ethtypes.Log, 0, len(event.Attributes))
+	for _, attr := range event.Attributes {
+		if !bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxLog)) {
+			continue
+		}
+
+		var log ethtypes.Log
+		if err := json.Unmarshal(attr.Value, &log); err != nil {
+			return nil, err
+		}
+
+		logs = append(logs, &log)
+	}
+	return logs, nil
 }

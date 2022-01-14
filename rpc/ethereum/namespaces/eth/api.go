@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -34,6 +33,7 @@ import (
 
 	"github.com/tharsis/ethermint/crypto/hd"
 	"github.com/tharsis/ethermint/rpc/ethereum/backend"
+	"github.com/tharsis/ethermint/rpc/ethereum/types"
 	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -389,7 +389,20 @@ func (e *PublicAPI) GetCode(address common.Address, blockNrOrHash rpctypes.Block
 // GetTransactionLogs returns the logs given a transaction hash.
 func (e *PublicAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
 	e.logger.Debug("eth_getTransactionLogs", "hash", txHash)
-	return e.backend.GetTransactionLogs(txHash)
+
+	hexTx := txHash.Hex()
+	res, err := e.backend.GetTxByEthHash(txHash)
+	if err != nil {
+		e.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
+		return nil, nil
+	}
+
+	msgIndex, _ := rpctypes.FindTxAttributes(res.TxResult.Events, hexTx)
+	if msgIndex < 0 {
+		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
+	}
+	// parse tx logs from events
+	return backend.TxLogsFromEvents(res.TxResult.Events, msgIndex)
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
@@ -769,7 +782,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, nil
 	}
 
-	msgIndex, attrs := rpctypes.FindEthTxInEvents(res.TxResult.Events, hexTx)
+	msgIndex, attrs := rpctypes.FindTxAttributes(res.TxResult.Events, hexTx)
 	if msgIndex < 0 {
 		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
 	}
@@ -789,7 +802,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	msg := tx.GetMsgs()[msgIndex]
 	ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
 	if !ok {
-		e.logger.Debug(fmt.Printf("invalid tx type: %T", msg)
+		e.logger.Debug(fmt.Sprintf("invalid tx type: %T", msg))
 		return nil, fmt.Errorf("invalid tx type: %T", msg)
 	}
 
@@ -809,33 +822,48 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	for i := 0; i <= int(res.Index) && i < len(blockRes.TxsResults); i++ {
 		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
 	}
+	for i := 0; i < msgIndex; i++ {
+		cumulativeGasUsed += rpctypes.AccumulateGasUsedBeforeMsg(res.TxResult.Events, msgIndex)
+	}
 
 	// Get the transaction result from the log
+	_, found := attrs[evmtypes.AttributeKeyEthereumTxFailed]
 	var status hexutil.Uint
-	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxFailed) {
+	if found {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
 	}
 
-	from, err := msg.GetSender(e.chainIDEpoch)
+	from, err := ethMsg.GetSender(e.chainIDEpoch)
 	if err != nil {
 		return nil, err
 	}
 
-	logs, err := e.backend.GetTransactionLogs(hash)
+	// parse tx logs from events
+	logs, err := backend.TxLogsFromEvents(res.TxResult.Events, msgIndex)
 	if err != nil {
 		e.logger.Debug("logs not found", "hash", hexTx, "error", err.Error())
 	}
 
-	// get eth index based on block's txs
-	var txIndex uint64
-	msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
-	for i := range msgs {
-		if msgs[i].Hash == hexTx {
-			txIndex = uint64(i)
-			break
+	// Try to find txIndex from events
+	found = false
+	txIndex, err := types.TxIndexFromAttributes(attrs)
+	if err == nil {
+		found = true
+	} else {
+		// Fallback to find tx index by iterating all valid eth transactions
+		msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
+		for i := range msgs {
+			if msgs[i].Hash == hexTx {
+				txIndex = uint64(i)
+				found = true
+				break
+			}
 		}
+	}
+	if !found {
+		return nil, errors.New("can't find index of ethereum tx")
 	}
 
 	receipt := map[string]interface{}{

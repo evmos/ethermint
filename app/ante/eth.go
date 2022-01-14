@@ -455,10 +455,14 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 
 // EthSetupContextDecorator is adapted from SetUpContextDecorator from cosmos-sdk, it ignores gas consumption
 // by setting the gas meter to infinite
-type EthSetupContextDecorator struct{}
+type EthSetupContextDecorator struct {
+	evmKeeper EVMKeeper
+}
 
-func NewEthSetUpContextDecorator() EthSetupContextDecorator {
-	return EthSetupContextDecorator{}
+func NewEthSetUpContextDecorator(evmKeeper EVMKeeper) EthSetupContextDecorator {
+	return EthSetupContextDecorator{
+		evmKeeper: evmKeeper,
+	}
 }
 
 func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
@@ -469,6 +473,7 @@ func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 	}
 
 	newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	esc.evmKeeper.ResetTransientGasUsed(ctx)
 	return next(newCtx, tx, simulate)
 }
 

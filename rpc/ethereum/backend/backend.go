@@ -66,7 +66,6 @@ type Backend interface {
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
-	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
 	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
 	GetCoinbase() (sdk.AccAddress, error)
@@ -536,18 +535,6 @@ func (e *EVMBackend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, erro
 	return ethHeader, nil
 }
 
-// GetTransactionLogs returns the logs given a transaction hash.
-// It returns an error if there's an encoding error.
-// If no logs are found for the tx hash, the error is nil.
-func (e *EVMBackend) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
-	tx, err := e.GetTxByEthHash(txHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return TxLogsFromEvents(tx.TxResult.Events)
-}
-
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
 func (e *EVMBackend) PendingTransactions() ([]*sdk.Tx, error) {
@@ -578,12 +565,12 @@ func (e *EVMBackend) GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error) {
 
 	blockLogs := [][]*ethtypes.Log{}
 	for _, txResult := range blockRes.TxsResults {
-		logs, err := TxLogsFromEvents(txResult.Events)
+		logs, err := AllTxLogsFromEvents(txResult.Events)
 		if err != nil {
 			return nil, err
 		}
 
-		blockLogs = append(blockLogs, logs)
+		blockLogs = append(blockLogs, logs...)
 	}
 
 	return blockLogs, nil
@@ -696,7 +683,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 		return nil, errors.New("invalid ethereum tx")
 	}
 
-	msgIndex, attrs := types.FindEthTxInEvents(res.TxResult.Events, hexTx)
+	msgIndex, attrs := types.FindTxAttributes(res.TxResult.Events, hexTx)
 	if msgIndex < 0 {
 		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
 	}

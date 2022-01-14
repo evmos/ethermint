@@ -286,9 +286,10 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	}
 
 	k.SetTxIndexTransient(ctx, uint64(txConfig.TxIndex)+1)
+	totalGasUsed := k.AddTransientGasUsed(ctx, res.GasUsed)
 
-	// update the gas used after refund
-	k.ResetGasMeterAndConsumeGas(ctx, res.GasUsed)
+	// reset the gas meter for current cosmos transaction
+	k.ResetGasMeterAndConsumeGas(ctx, totalGasUsed)
 	return res, nil
 }
 

@@ -256,9 +256,9 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 	return nil
 }
 
-// FindEthTxInEvents returns the msg index of the eth tx in cosmos tx
-// returns -1 if not found.
-func FindEthTxInEvents(events []abci.Event, txHash string) (msgIndex int, attrs []abci.EventAttribute) {
+// FindTxAttributes returns the msg index of the eth tx in cosmos tx, and the attributes,
+// returns -1 and nil if not found.
+func FindTxAttributes(events []abci.Event, txHash string) (int, map[string]string) {
 	var counter int
 	for _, event := range events {
 		if event.Type != evmtypes.EventTypeEthereumTx {
@@ -267,7 +267,12 @@ func FindEthTxInEvents(events []abci.Event, txHash string) (msgIndex int, attrs 
 
 		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyEthereumTxHash))
 		if bytes.Equal(value, []byte(txHash)) {
-			return counter, event.Attributes
+			// convert attributes to map for later lookup
+			attrs := make(map[string]string, len(event.Attributes))
+			for _, attr := range event.Attributes {
+				attrs[string(attr.Key)] = string(attr.Value)
+			}
+			return counter, attrs
 		}
 		counter++
 	}
@@ -287,10 +292,9 @@ func FindAttribute(attrs []abci.EventAttribute, key []byte) []byte {
 }
 
 // TxIndexFromAttributes parses the tx index from cosmos event attributes
-func TxIndexFromAttributes(attrs []abci.EventAttribute) (uint64, error) {
-	value := FindAttribute(attrs, []byte(evmtypes.AttributeKeyTxIndex))
-
-	if value == nil {
+func TxIndexFromAttributes(attrs map[string]string) (uint64, error) {
+	value, found := attrs[evmtypes.AttributeKeyTxIndex]
+	if !found {
 		return 0, errors.New("tx index attribute not found")
 	}
 	var result int64
@@ -302,4 +306,27 @@ func TxIndexFromAttributes(attrs []abci.EventAttribute) (uint64, error) {
 		return 0, errors.New("negative tx index")
 	}
 	return uint64(result), nil
+}
+
+// AccumulateGasUsedBeforeMsg accumulate the gas used by msgs before `msgIndex`.
+func AccumulateGasUsedBeforeMsg(events []abci.Event, msgIndex int) (gasUsed uint64) {
+	for _, event := range events {
+		if event.Type != evmtypes.EventTypeEthereumTx {
+			continue
+		}
+
+		if msgIndex == 0 {
+			break
+		}
+		msgIndex--
+
+		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyTxGasUsed))
+		var result int64
+		result, err := strconv.ParseInt(string(value), 10, 64)
+		if err != nil {
+			continue
+		}
+		gasUsed += uint64(result)
+	}
+	return
 }
