@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"math/big"
 	"net/http"
 	"strings"
@@ -94,17 +95,22 @@ func getEthTransactionByHash(clientCtx client.Context, hashHex string) ([]byte, 
 
 	blockHash := common.BytesToHash(block.Block.Header.Hash())
 
-	ethTx, err := rpctypes.RawTxToEthTx(clientCtx, tx.Tx)
+	ethTxs, err := rpctypes.RawTxToEthTx(clientCtx, tx.Tx)
 	if err != nil {
 		return nil, err
 	}
 
 	height := uint64(tx.Height)
 
-	rpcTx, err := rpctypes.NewRPCTransaction(ethTx.AsTransaction(), blockHash, height, uint64(tx.Index), baseFee)
-	if err != nil {
-		return nil, err
+	for _, ethTx := range ethTxs {
+		if common.HexToHash(ethTx.Hash) == common.BytesToHash(hash) {
+			rpcTx, err := rpctypes.NewRPCTransaction(ethTx.AsTransaction(), blockHash, height, uint64(tx.Index), baseFee)
+			if err != nil {
+				return nil, err
+			}
+			return json.Marshal(rpcTx)
+		}
 	}
 
-	return json.Marshal(rpcTx)
+	return nil, errors.New("eth tx not found")
 }

@@ -683,44 +683,46 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 			select {
 			case ev := <-txsCh:
 				data, _ := ev.Data.(tmtypes.EventDataTx)
-				ethTx, err := types.RawTxToEthTx(api.clientCtx, data.Tx)
+				ethTxs, err := types.RawTxToEthTx(api.clientCtx, data.Tx)
 				if err != nil {
 					// not ethereum tx
-					panic("debug")
+					continue
 				}
 
 				api.filtersMu.RLock()
-				for subID, wsSub := range api.filters {
-					subID := subID
-					wsSub := wsSub
-					if wsSub.query != query {
-						continue
-					}
-					// write to ws conn
-					res := &SubscriptionNotification{
-						Jsonrpc: "2.0",
-						Method:  "eth_subscription",
-						Params: &SubscriptionResult{
-							Subscription: subID,
-							Result:       ethTx.Hash,
-						},
-					}
+				for _, ethTx := range ethTxs {
+					for subID, wsSub := range api.filters {
+						subID := subID
+						wsSub := wsSub
+						if wsSub.query != query {
+							continue
+						}
+						// write to ws conn
+						res := &SubscriptionNotification{
+							Jsonrpc: "2.0",
+							Method:  "eth_subscription",
+							Params: &SubscriptionResult{
+								Subscription: subID,
+								Result:       ethTx.Hash,
+							},
+						}
 
-					err = wsSub.wsConn.WriteJSON(res)
-					if err != nil {
-						api.logger.Debug("error writing header, will drop peer", "error", err.Error())
+						err = wsSub.wsConn.WriteJSON(res)
+						if err != nil {
+							api.logger.Debug("error writing header, will drop peer", "error", err.Error())
 
-						try(func() {
-							api.filtersMu.Lock()
-							defer api.filtersMu.Unlock()
+							try(func() {
+								api.filtersMu.Lock()
+								defer api.filtersMu.Unlock()
 
-							if err != websocket.ErrCloseSent {
-								_ = wsSub.wsConn.Close()
-							}
+								if err != websocket.ErrCloseSent {
+									_ = wsSub.wsConn.Close()
+								}
 
-							delete(api.filters, subID)
-							close(wsSub.unsubscribed)
-						}, api.logger, "closing websocket peer sub")
+								delete(api.filters, subID)
+								close(wsSub.unsubscribed)
+							}, api.logger, "closing websocket peer sub")
+						}
 					}
 				}
 				api.filtersMu.RUnlock()

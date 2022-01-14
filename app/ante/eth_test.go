@@ -32,7 +32,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 		reCheckTx bool
 		expPass   bool
 	}{
-		{"ReCheckTx", nil, true, false},
+		{"ReCheckTx", &invalidTx{}, true, false},
 		{"invalid transaction type", &invalidTx{}, false, false},
 		{
 			"invalid sender",
@@ -145,7 +145,8 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 }
 
 func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
-	dec := ante.NewEthNonceVerificationDecorator(suite.app.AccountKeeper)
+	suite.SetupTest()
+	dec := ante.NewEthIncrementSenderSequenceDecorator(suite.app.AccountKeeper)
 
 	addr := tests.GenerateAddress()
 
@@ -159,7 +160,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 		reCheckTx bool
 		expPass   bool
 	}{
-		{"ReCheckTx", nil, func() {}, true, true},
+		{"ReCheckTx", &invalidTx{}, func() {}, true, false},
 		{"invalid transaction type", &invalidTx{}, func() {}, false, false},
 		{"sender account not found", tx, func() {}, false, false},
 		{
@@ -406,13 +407,13 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 			"invalid transaction type",
 			&invalidTx{},
 			func() {},
-			false, true,
+			false, false,
 		},
 		{
 			"no signers",
 			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
 			func() {},
-			false, true,
+			false, false,
 		},
 		{
 			"account not set to store",
@@ -467,7 +468,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 }
 
 func (suite AnteTestSuite) TestEthSetupContextDecorator() {
-	dec := ante.NewEthSetUpContextDecorator()
+	dec := ante.NewEthSetUpContextDecorator(suite.app.EvmKeeper)
 	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 
 	testCases := []struct {

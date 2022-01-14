@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -389,7 +388,20 @@ func (e *PublicAPI) GetCode(address common.Address, blockNrOrHash rpctypes.Block
 // GetTransactionLogs returns the logs given a transaction hash.
 func (e *PublicAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error) {
 	e.logger.Debug("eth_getTransactionLogs", "hash", txHash)
-	return e.backend.GetTransactionLogs(txHash)
+
+	hexTx := txHash.Hex()
+	res, err := e.backend.GetTxByEthHash(txHash)
+	if err != nil {
+		e.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
+		return nil, nil
+	}
+
+	msgIndex, _ := rpctypes.FindTxAttributes(res.TxResult.Events, hexTx)
+	if msgIndex < 0 {
+		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
+	}
+	// parse tx logs from events
+	return backend.TxLogsFromEvents(res.TxResult.Events, msgIndex)
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
@@ -556,7 +568,8 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 	}
 
 	for _, tx := range pending {
-		p, err := evmtypes.UnwrapEthereumMsg(tx)
+		// FIXME does Resend api possible at all?  https://github.com/tharsis/ethermint/issues/905
+		p, err := evmtypes.UnwrapEthereumMsg(tx, common.Hash{})
 		if err != nil {
 			// not valid ethereum tx
 			continue
@@ -768,6 +781,11 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, nil
 	}
 
+	msgIndex, attrs := rpctypes.FindTxAttributes(res.TxResult.Events, hexTx)
+	if msgIndex < 0 {
+		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
+	}
+
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
 	if err != nil {
 		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
@@ -780,13 +798,15 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	msg, err := evmtypes.UnwrapEthereumMsg(&tx)
-	if err != nil {
-		e.logger.Debug("invalid tx", "error", err.Error())
-		return nil, err
+	// the `msgIndex` is inferred from tx events, should be within the bound.
+	msg := tx.GetMsgs()[msgIndex]
+	ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+	if !ok {
+		e.logger.Debug(fmt.Sprintf("invalid tx type: %T", msg))
+		return nil, fmt.Errorf("invalid tx type: %T", msg)
 	}
 
-	txData, err := evmtypes.UnpackTxData(msg.Data)
+	txData, err := evmtypes.UnpackTxData(ethMsg.Data)
 	if err != nil {
 		e.logger.Error("failed to unpack tx data", "error", err.Error())
 		return nil, err
@@ -799,36 +819,60 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, nil
 	}
 
-	for i := 0; i <= int(res.Index) && i < len(blockRes.TxsResults); i++ {
+	for i := 0; i < int(res.Index) && i < len(blockRes.TxsResults); i++ {
 		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
+	}
+	cumulativeGasUsed += rpctypes.AccumulativeGasUsedOfMsg(res.TxResult.Events, msgIndex)
+
+	var gasUsed uint64
+	if len(tx.GetMsgs()) == 1 {
+		// backward compatibility
+		gasUsed = uint64(res.TxResult.GasUsed)
+	} else {
+		gasUsed, err = rpctypes.GetUint64Attribute(attrs, evmtypes.AttributeKeyTxGasUsed)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Get the transaction result from the log
+	_, found := attrs[evmtypes.AttributeKeyEthereumTxFailed]
 	var status hexutil.Uint
-	if strings.Contains(res.TxResult.GetLog(), evmtypes.AttributeKeyEthereumTxFailed) {
+	if found {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
 	}
 
-	from, err := msg.GetSender(e.chainIDEpoch)
+	from, err := ethMsg.GetSender(e.chainIDEpoch)
 	if err != nil {
 		return nil, err
 	}
 
-	logs, err := e.backend.GetTransactionLogs(hash)
+	// parse tx logs from events
+	logs, err := backend.TxLogsFromEvents(res.TxResult.Events, msgIndex)
 	if err != nil {
 		e.logger.Debug("logs not found", "hash", hexTx, "error", err.Error())
 	}
 
-	// get eth index based on block's txs
-	var txIndex uint64
-	msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
-	for i := range msgs {
-		if msgs[i].Hash == hexTx {
-			txIndex = uint64(i)
-			break
+	// Try to find txIndex from events
+	found = false
+	txIndex, err := rpctypes.GetUint64Attribute(attrs, evmtypes.AttributeKeyTxIndex)
+	if err == nil {
+		found = true
+	} else {
+		// Fallback to find tx index by iterating all valid eth transactions
+		msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
+		for i := range msgs {
+			if msgs[i].Hash == hexTx {
+				txIndex = uint64(i)
+				found = true
+				break
+			}
 		}
+	}
+	if !found {
+		return nil, errors.New("can't find index of ethereum tx")
 	}
 
 	receipt := map[string]interface{}{
@@ -842,7 +886,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		// They are stored in the chain database.
 		"transactionHash": hash,
 		"contractAddress": nil,
-		"gasUsed":         hexutil.Uint64(res.TxResult.GasUsed),
+		"gasUsed":         hexutil.Uint64(gasUsed),
 		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
@@ -888,24 +932,26 @@ func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error)
 
 	result := make([]*rpctypes.RPCTransaction, 0, len(txs))
 	for _, tx := range txs {
-		msg, err := evmtypes.UnwrapEthereumMsg(tx)
-		if err != nil {
-			// not valid ethereum tx
-			continue
-		}
+		for _, msg := range (*tx).GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				// not valid ethereum tx
+				break
+			}
 
-		rpctx, err := rpctypes.NewTransactionFromMsg(
-			msg,
-			common.Hash{},
-			uint64(0),
-			uint64(0),
-			e.chainIDEpoch,
-		)
-		if err != nil {
-			return nil, err
-		}
+			rpctx, err := rpctypes.NewTransactionFromMsg(
+				ethMsg,
+				common.Hash{},
+				uint64(0),
+				uint64(0),
+				e.chainIDEpoch,
+			)
+			if err != nil {
+				return nil, err
+			}
 
-		result = append(result, rpctx)
+			result = append(result, rpctx)
+		}
 	}
 
 	return result, nil
