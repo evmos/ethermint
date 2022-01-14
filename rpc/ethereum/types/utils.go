@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -266,15 +265,18 @@ func FindTxAttributes(events []abci.Event, txHash string) (int, map[string]strin
 		}
 
 		msgIndex++
+
 		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyEthereumTxHash))
-		if bytes.Equal(value, []byte(txHash)) {
-			// convert attributes to map for later lookup
-			attrs := make(map[string]string, len(event.Attributes))
-			for _, attr := range event.Attributes {
-				attrs[string(attr.Key)] = string(attr.Value)
-			}
-			return msgIndex, attrs
+		if !bytes.Equal(value, []byte(txHash)) {
+			continue
 		}
+
+		// found, convert attributes to map for later lookup
+		attrs := make(map[string]string, len(event.Attributes))
+		for _, attr := range event.Attributes {
+			attrs[string(attr.Key)] = string(attr.Value)
+		}
+		return msgIndex, attrs
 	}
 	// not found
 	return -1, nil
@@ -295,7 +297,7 @@ func FindAttribute(attrs []abci.EventAttribute, key []byte) []byte {
 func GetUint64Attribute(attrs map[string]string, key string) (uint64, error) {
 	value, found := attrs[key]
 	if !found {
-		return 0, errors.New("tx index attribute not found")
+		return 0, fmt.Errorf("tx index attribute not found: %s", key)
 	}
 	var result int64
 	result, err := strconv.ParseInt(value, 10, 64)
@@ -303,7 +305,7 @@ func GetUint64Attribute(attrs map[string]string, key string) (uint64, error) {
 		return 0, err
 	}
 	if result < 0 {
-		return 0, errors.New("negative tx index")
+		return 0, fmt.Errorf("negative tx index: %d", result)
 	}
 	return uint64(result), nil
 }

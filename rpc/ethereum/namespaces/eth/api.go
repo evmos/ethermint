@@ -568,7 +568,7 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 	}
 
 	for _, tx := range pending {
-		// FIXME does Resend api possible at all?
+		// FIXME does Resend api possible at all?  https://github.com/tharsis/ethermint/issues/905
 		p, err := evmtypes.UnwrapEthereumMsg(tx, common.Hash{})
 		if err != nil {
 			// not valid ethereum tx
@@ -798,6 +798,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
+	// the `msgIndex` is infered from tx events, should be within the bound.
 	msg := tx.GetMsgs()[msgIndex]
 	ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
 	if !ok {
