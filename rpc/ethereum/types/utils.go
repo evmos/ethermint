@@ -259,12 +259,13 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 // FindTxAttributes returns the msg index of the eth tx in cosmos tx, and the attributes,
 // returns -1 and nil if not found.
 func FindTxAttributes(events []abci.Event, txHash string) (int, map[string]string) {
-	var counter int
+	msgIndex := -1
 	for _, event := range events {
 		if event.Type != evmtypes.EventTypeEthereumTx {
 			continue
 		}
 
+		msgIndex++
 		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyEthereumTxHash))
 		if bytes.Equal(value, []byte(txHash)) {
 			// convert attributes to map for later lookup
@@ -272,9 +273,8 @@ func FindTxAttributes(events []abci.Event, txHash string) (int, map[string]strin
 			for _, attr := range event.Attributes {
 				attrs[string(attr.Key)] = string(attr.Value)
 			}
-			return counter, attrs
+			return msgIndex, attrs
 		}
-		counter++
 	}
 	// not found
 	return -1, nil
@@ -291,9 +291,9 @@ func FindAttribute(attrs []abci.EventAttribute, key []byte) []byte {
 	return nil
 }
 
-// TxIndexFromAttributes parses the tx index from cosmos event attributes
-func TxIndexFromAttributes(attrs map[string]string) (uint64, error) {
-	value, found := attrs[evmtypes.AttributeKeyTxIndex]
+// GetUint64Attribute parses the uint64 value from event attributes
+func GetUint64Attribute(attrs map[string]string, key string) (uint64, error) {
+	value, found := attrs[key]
 	if !found {
 		return 0, errors.New("tx index attribute not found")
 	}
@@ -306,16 +306,17 @@ func TxIndexFromAttributes(attrs map[string]string) (uint64, error) {
 		return 0, errors.New("negative tx index")
 	}
 	return uint64(result), nil
+
 }
 
-// AccumulateGasUsedBeforeMsg accumulate the gas used by msgs before `msgIndex`.
-func AccumulateGasUsedBeforeMsg(events []abci.Event, msgIndex int) (gasUsed uint64) {
+// AccumulativeGasUsedOfMsg accumulate the gas used by msgs before `msgIndex`.
+func AccumulativeGasUsedOfMsg(events []abci.Event, msgIndex int) (gasUsed uint64) {
 	for _, event := range events {
 		if event.Type != evmtypes.EventTypeEthereumTx {
 			continue
 		}
 
-		if msgIndex == 0 {
+		if msgIndex < 0 {
 			break
 		}
 		msgIndex--

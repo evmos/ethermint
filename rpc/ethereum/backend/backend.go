@@ -706,7 +706,7 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 
 	// Try to find txIndex from events
 	found := false
-	txIndex, err := types.TxIndexFromAttributes(attrs)
+	txIndex, err := types.GetUint64Attribute(attrs, evmtypes.AttributeKeyTxIndex)
 	if err == nil {
 		found = true
 	} else {

@@ -431,11 +431,11 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 
 		fmt.Println("fee compare", authInfo.Fee.Amount, txFee)
 		if !authInfo.Fee.Amount.IsEqual(txFee) {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid eth tx AuthInfo Fee Amount")
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee Amount (%s != %s)", authInfo.Fee.Amount, txFee)
 		}
 
 		if authInfo.Fee.GasLimit != txGasLimit {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid eth tx AuthInfo Fee GasLimit")
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee GasLimit (%d != %d)", authInfo.Fee.GasLimit, txGasLimit)
 		}
 
 		sigs := protoTx.Signatures

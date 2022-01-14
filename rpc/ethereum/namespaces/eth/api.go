@@ -818,11 +818,20 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, nil
 	}
 
-	for i := 0; i <= int(res.Index) && i < len(blockRes.TxsResults); i++ {
+	for i := 0; i < int(res.Index) && i < len(blockRes.TxsResults); i++ {
 		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
 	}
-	for i := 0; i < msgIndex; i++ {
-		cumulativeGasUsed += rpctypes.AccumulateGasUsedBeforeMsg(res.TxResult.Events, msgIndex)
+	cumulativeGasUsed += rpctypes.AccumulativeGasUsedOfMsg(res.TxResult.Events, msgIndex)
+
+	var gasUsed uint64
+	if len(tx.GetMsgs()) == 1 {
+		// backward compatibility
+		gasUsed = uint64(res.TxResult.GasUsed)
+	} else {
+		gasUsed, err = rpctypes.GetUint64Attribute(attrs, evmtypes.AttributeKeyTxGasUsed)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Get the transaction result from the log
@@ -847,7 +856,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 
 	// Try to find txIndex from events
 	found = false
-	txIndex, err := rpctypes.TxIndexFromAttributes(attrs)
+	txIndex, err := rpctypes.GetUint64Attribute(attrs, evmtypes.AttributeKeyTxIndex)
 	if err == nil {
 		found = true
 	} else {
@@ -876,7 +885,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		// They are stored in the chain database.
 		"transactionHash": hash,
 		"contractAddress": nil,
-		"gasUsed":         hexutil.Uint64(res.TxResult.GasUsed),
+		"gasUsed":         hexutil.Uint64(gasUsed),
 		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
