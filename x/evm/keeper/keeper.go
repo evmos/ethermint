@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -302,7 +303,7 @@ func (k Keeper) BaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
 	return baseFee
 }
 
-// ResetTransientGasUsed reset gas used by current cosmos tx, called in ante handler.
+// ResetTransientGasUsed reset gas used to prepare for execution of current cosmos tx, called in ante handler.
 func (k Keeper) ResetTransientGasUsed(ctx sdk.Context) {
 	store := ctx.TransientStore(k.transientKey)
 	store.Delete(types.KeyPrefixTransientGasUsed)
@@ -325,12 +326,12 @@ func (k Keeper) SetTransientGasUsed(ctx sdk.Context, gasUsed uint64) {
 	store.Set(types.KeyPrefixTransientGasUsed, bz)
 }
 
-// AddTransientGasUsed accumulate gas used by each eth tx msgs included in current cosmos tx.
-func (k Keeper) AddTransientGasUsed(ctx sdk.Context, gasUsed uint64) uint64 {
+// AddTransientGasUsed accumulate gas used by each eth msgs included in current cosmos tx.
+func (k Keeper) AddTransientGasUsed(ctx sdk.Context, gasUsed uint64) (uint64, error) {
 	result := k.GetTransientGasUsed(ctx) + gasUsed
 	if result < gasUsed {
-		panic("transient gas used overflow")
+		return 0, sdkerrors.Wrap(types.ErrGasOverflow, "transient gas used")
 	}
 	k.SetTransientGasUsed(ctx, result)
-	return result
+	return result, nil
 }
