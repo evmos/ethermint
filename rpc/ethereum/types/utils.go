@@ -286,6 +286,7 @@ func FindTxAttributes(events []abci.Event, txHash string) (int, map[string]strin
 // returns the msgIndex, returns -1 if not found.
 func FindTxAttributesByIndex(events []abci.Event, txIndex uint64) int {
 	strIndex := []byte(strconv.FormatUint(txIndex, 10))
+	txIndexKey := []byte(evmtypes.AttributeKeyTxIndex)
 	msgIndex := -1
 	for _, event := range events {
 		if event.Type != evmtypes.EventTypeEthereumTx {
@@ -294,7 +295,7 @@ func FindTxAttributesByIndex(events []abci.Event, txIndex uint64) int {
 
 		msgIndex++
 
-		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyTxIndex))
+		value := FindAttribute(event.Attributes, txIndexKey)
 		if !bytes.Equal(value, strIndex) {
 			continue
 		}
