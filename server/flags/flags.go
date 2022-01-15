@@ -24,6 +24,11 @@ const (
 	GRPCWebAddress = "grpc-web.address"
 )
 
+// RPCEnable Defines if Cosmos-sdk REST server should be enabled
+const (
+	RPCEnable = "api.enable"
+)
+
 // JSON-RPC flags
 const (
 	JSONRPCEnable        = "json-rpc.enable"
@@ -34,7 +39,6 @@ const (
 	JSONRPCEVMTimeout    = "json-rpc.evm-timeout"
 	JSONRPCTxFeeCap      = "json-rpc.txfee-cap"
 	JSONRPCFilterCap     = "json-rpc.filter-cap"
-	JSONRPFeeHistoryCap  = "json-rpc.feehistory-cap"
 	JSONRPCLogsCap       = "json-rpc.logs-cap"
 	JSONRPCBlockRangeCap = "json-rpc.block-range-cap"
 )
