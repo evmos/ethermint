@@ -15,7 +15,10 @@ Unlike the Cosmos SDK local `minimal-gas-prices`, this value is persisted in the
 
 ## Tip
 
-To be consistent with EIP-1559, the `tip` is a local value that each node can define and be added to the `baseFee`.
+To be consistent with EIP-1559, the `tip` is a local value that each node can define and be added to the `baseFee` in order to incentive transaction prioritization.
+
+In Cosmos SDK there is no notion of prioritization, but there is a notion of minimum gas fee that does not exist in the Ethereum.
+To comply with both design, we decided to make the tip equals to the `minimal-gas-prices` value defined locally by each validator nodes.
 
 The transaction fee is calculated using the following the formula :
 
