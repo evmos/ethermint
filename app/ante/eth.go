@@ -286,7 +286,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			}
 			if coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
 				return ctx, sdkerrors.Wrapf(
-					evmtypes.ErrInvalidBaseFee,
+					sdkerrors.ErrInsufficientFee,
 					"max fee per gas less than block base fee (%s < %s)",
 					coreMsg.GasFeeCap(), baseFee,
 				)
