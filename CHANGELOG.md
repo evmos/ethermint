@@ -63,6 +63,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [tharsis#819](https://github.com/tharsis/ethermint/pull/819) remove redundant ante handlers
 * (app) [tharsis#873](https://github.com/tharsis/ethermint/pull/873) Validate code hash in GenesisAccount
 * (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple MsgEthereumTx in single tx.
+* (config) [tharsis#908](https://github.com/tharsis/ethermint/pull/908) Add api.enable flag for Cosmos SDK Rest server
 
 ### Bug Fixes
 
