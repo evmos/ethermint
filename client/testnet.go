@@ -25,6 +25,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdkserver "github.com/cosmos/cosmos-sdk/server"
 	srvconfig "github.com/cosmos/cosmos-sdk/server/config"
+	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -272,8 +273,7 @@ func initTestnetFiles(
 			return err
 		}
 
-		// TODO: remove when using Cosmos SDK v0.45
-		addr, secret, err := GenerateSaveCoinKey(kb, nodeDirName, true, algo)
+		addr, secret, err := testutil.GenerateSaveCoinKey(kb, nodeDirName, "", true, algo)
 		if err != nil {
 			_ = os.RemoveAll(args.outputDir)
 			return err
@@ -563,38 +563,4 @@ func startTestnet(cmd *cobra.Command, args startArgs) error {
 	testnet.Cleanup()
 
 	return nil
-}
-
-// TODO: remove
-
-// GenerateSaveCoinKey returns the address of a public key, along with the secret
-// phrase to recover the private key.
-func GenerateSaveCoinKey(keybase keyring.Keyring, keyName string, overwrite bool, algo keyring.SignatureAlgo) (sdk.AccAddress, string, error) {
-	exists := false
-	_, err := keybase.Key(keyName)
-	if err == nil {
-		exists = true
-	}
-
-	// ensure no overwrite
-	if !overwrite && exists {
-		return sdk.AccAddress([]byte{}), "", fmt.Errorf(
-			"key already exists, overwrite is disabled")
-	}
-
-	// generate a private key, with recovery phrase
-	if exists {
-		err = keybase.Delete(keyName)
-		if err != nil {
-			return sdk.AccAddress([]byte{}), "", fmt.Errorf(
-				"failed to overwrite key")
-		}
-	}
-
-	info, secret, err := keybase.NewMnemonic(keyName, keyring.English, sdk.GetConfig().GetFullBIP44Path(), keyring.DefaultBIP39Passphrase, algo)
-	if err != nil {
-		return sdk.AccAddress([]byte{}), "", err
-	}
-
-	return sdk.AccAddress(info.GetPubKey().Address()), secret, nil
 }
