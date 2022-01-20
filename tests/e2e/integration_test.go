@@ -75,7 +75,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.gethClient = gethclient.New(rpcClient)
 	s.Require().NotNil(s.gethClient)
-	s.ethSigner = ethtypes.LatestSigner(nil)
+	s.ethSigner = ethtypes.LatestSignerForChainID(nil)
 }
 
 func (s *IntegrationTestSuite) TestChainID() {
@@ -319,6 +319,12 @@ func (s *IntegrationTestSuite) TestBlockTransactionCount() {
 	count, err := s.network.Validators[0].JSONRPCClient.TransactionCount(s.ctx, receipt.BlockHash)
 	s.Require().NoError(err)
 	s.Require().Equal(uint(1), count)
+
+	// expect 0 response with random block hash
+	anyBlockHash := common.HexToHash("0xb3b20624f8f0f86eb50dd04688409e5cea4bd02d700bf6e79e9384d47d6a5a35")
+	count, err = s.network.Validators[0].JSONRPCClient.TransactionCount(s.ctx, anyBlockHash)
+	s.Require().NoError(err)
+	s.Require().NotEqual(uint(0), 0)
 }
 
 func (s *IntegrationTestSuite) TestGetTransactionByBlockHashAndIndex() {
