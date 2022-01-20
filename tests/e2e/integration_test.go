@@ -351,8 +351,9 @@ func (s *IntegrationTestSuite) TestGetBalance() {
 	s.waitForTransaction()
 	receipt := s.expectSuccessReceipt(signedTx.AsTransaction().Hash())
 	finalBalance, err := s.network.Validators[0].JSONRPCClient.BalanceAt(s.ctx, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), receipt.BlockNumber)
-	var result big.Int
 	s.Require().NoError(err)
+
+	var result big.Int
 	s.Require().Equal(result.Add(initialBalance, amountToTransfer), finalBalance)
 
 	// test old balance is still the same
