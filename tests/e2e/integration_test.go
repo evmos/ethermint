@@ -340,10 +340,10 @@ func (s *IntegrationTestSuite) TestGetBalance() {
 	blockNumber, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
 	s.Require().NoError(err)
 
-	amountToTransfer := big.NewInt(10)
 	initialBalance, err := s.network.Validators[0].JSONRPCClient.BalanceAt(s.ctx, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), big.NewInt(int64(blockNumber)))
 	s.Require().NoError(err)
 
+	amountToTransfer := big.NewInt(10)
 	signedTx := s.signValidTx(common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), amountToTransfer)
 	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, signedTx.AsTransaction())
 	s.Require().NoError(err)
@@ -351,8 +351,14 @@ func (s *IntegrationTestSuite) TestGetBalance() {
 	s.waitForTransaction()
 	receipt := s.expectSuccessReceipt(signedTx.AsTransaction().Hash())
 	finalBalance, err := s.network.Validators[0].JSONRPCClient.BalanceAt(s.ctx, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), receipt.BlockNumber)
+	var result big.Int
 	s.Require().NoError(err)
-	s.Require().Equal(initialBalance.Add(initialBalance, amountToTransfer), finalBalance)
+	s.Require().Equal(result.Add(initialBalance, amountToTransfer), finalBalance)
+
+	// test old balance is still the same
+	prevBalance, err := s.network.Validators[0].JSONRPCClient.BalanceAt(s.ctx, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), big.NewInt(int64(blockNumber)))
+	s.Require().NoError(err)
+	s.Require().Equal(initialBalance, prevBalance)
 }
 
 func (s *IntegrationTestSuite) TestGetLogs() {
