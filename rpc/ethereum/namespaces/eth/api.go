@@ -699,12 +699,15 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
 			return nil, nil
 		}
-		if len(tx.GetMsgs()) != 1 {
+		// find msg index in events
+		msgIndex := rpctypes.FindTxAttributesByIndex(res.TxResult.Events, uint64(idx))
+		if msgIndex < 0 {
 			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
 			return nil, nil
 		}
 		var ok bool
-		msg, ok = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+		// msgIndex is inferred from tx events, should be within bound.
+		msg, ok = tx.GetMsgs()[msgIndex].(*evmtypes.MsgEthereumTx)
 		if !ok {
 			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
 			return nil, nil

@@ -44,6 +44,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (deps) [tharis#912](https://github.com/tharsis/ethermint/pull/912) Bump Cosmos SDK version to [`v0.45.0`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.0)
 * (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
 * (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
 * (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
@@ -63,6 +64,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [tharsis#819](https://github.com/tharsis/ethermint/pull/819) remove redundant ante handlers
 * (app) [tharsis#873](https://github.com/tharsis/ethermint/pull/873) Validate code hash in GenesisAccount
 * (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple MsgEthereumTx in single tx.
+* (config) [tharsis#908](https://github.com/tharsis/ethermint/pull/908) Add api.enable flag for Cosmos SDK Rest server
 
 ### Bug Fixes
 
