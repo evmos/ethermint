@@ -75,7 +75,9 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.gethClient = gethclient.New(rpcClient)
 	s.Require().NotNil(s.gethClient)
-	s.ethSigner = ethtypes.LatestSignerForChainID(nil)
+	chainId, err := ethermint.ParseChainID(s.cfg.ChainID)
+	s.Require().NoError(err)
+	s.ethSigner = ethtypes.LatestSignerForChainID(chainId)
 }
 
 func (s *IntegrationTestSuite) TestChainID() {
