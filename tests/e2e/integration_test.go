@@ -299,7 +299,7 @@ func (s *IntegrationTestSuite) TestSendTransactionContractDeploymentNoGas() {
 	contractDeployTx.From = owner.Hex()
 	err = contractDeployTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
 	s.Require().NoError(err)
-	
+
 	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, contractDeployTx.AsTransaction())
 	s.Require().Error(err)
 }
@@ -329,6 +329,7 @@ func (s *IntegrationTestSuite) TestGetTransactionByBlockHashAndIndex() {
 	s.waitForTransaction()
 	receipt := s.expectSuccessReceipt(signedTx.AsTransaction().Hash())
 
+	// TransactionInBlock endpoint represents eth_getTransactionByBlockHashAndIndex
 	transaction, err := s.network.Validators[0].JSONRPCClient.TransactionInBlock(s.ctx, receipt.BlockHash, 0)
 	s.Require().NoError(err)
 	s.Require().NotNil(transaction)
