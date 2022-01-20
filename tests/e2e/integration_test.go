@@ -75,7 +75,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.gethClient = gethclient.New(rpcClient)
 	s.Require().NotNil(s.gethClient)
-	s.ethSigner = ethtypes.LatestSignerForChainID(nil)
+	s.ethSigner = ethtypes.LatestSigner(nil)
 }
 
 func (s *IntegrationTestSuite) TestChainID() {
@@ -363,7 +363,7 @@ func (s *IntegrationTestSuite) TestGetBalance() {
 }
 
 func (s *IntegrationTestSuite) TestGetLogs() {
-	//TODO cover different params
+	//TODO create tests to cover different filterQuery params
 	_, contractAddr := s.deployERC20Contract()
 
 	blockNum, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
