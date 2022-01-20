@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 	"math/big"
 	"testing"
@@ -282,17 +281,26 @@ func (s *IntegrationTestSuite) TestSendTransactionContractDeploymentNoGas() {
 	var data hexutil.Bytes
 	err := data.UnmarshalText([]byte(bytecode))
 
-	var testKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	tx := ethtypes.NewTx(&ethtypes.LegacyTx{
-		Nonce:    0,
-		GasPrice: nil,
-		Gas:      0x5208,
-		Value:    nil,
-		Data:     data,
-	})
-	tx, _ = ethtypes.SignTx(tx, ethtypes.HomesteadSigner{}, testKey)
+	chainID, err := s.network.Validators[0].JSONRPCClient.ChainID(s.ctx)
+	s.Require().NoError(err)
 
-	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, tx)
+	owner := common.BytesToAddress(s.network.Validators[0].Address)
+	nonce := s.getAccountNonce(owner)
+	contractDeployTx := evmtypes.NewTxContract(
+		chainID,
+		nonce,
+		nil,    // amount
+		0x5208, // gasLimit
+		nil,    // gasPrice
+		nil, nil,
+		data, // input
+		nil,  // accesses
+	)
+	contractDeployTx.From = owner.Hex()
+	err = contractDeployTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
+	s.Require().NoError(err)
+	
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, contractDeployTx.AsTransaction())
 	s.Require().Error(err)
 }
 
