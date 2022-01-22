@@ -192,28 +192,40 @@ func (e *PublicAPI) Hashrate() hexutil.Uint64 {
 
 // GasPrice returns the current gas price based on Ethermint's gas price oracle.
 func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
+	var gasPrice *big.Int
 	e.logger.Debug("eth_gasPrice")
-	tipcap, err := e.backend.SuggestGasTipCap()
+	tipCap, err := e.backend.SuggestGasTipCap()
 	if err != nil {
 		return nil, err
 	}
 
 	if head := e.backend.CurrentHeader(); head.BaseFee != nil {
-		tipcap.Add(tipcap, head.BaseFee)
+		// return the more expensive gas price between tipCap and baseFee
+		// see https://github.com/tharsis/ethermint/issues/816 for more info
+		if cmpResult := tipCap.Cmp(head.BaseFee); cmpResult == 1 {
+			gasPrice = tipCap
+		} else {
+			gasPrice = head.BaseFee
+		}
+	} else {
+		gasPrice = tipCap
 	}
 
-	return (*hexutil.Big)(tipcap), nil
+	return (*hexutil.Big)(gasPrice), nil
 }
 
 // MaxPriorityFeePerGas returns a suggestion for a gas tip cap for dynamic fee transactions.
 func (e *PublicAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
 	e.logger.Debug("eth_maxPriorityFeePerGas")
-	tipcap, err := e.backend.SuggestGasTipCap()
+	tipCap, err := e.backend.SuggestGasTipCap()
 	if err != nil {
 		return nil, err
 	}
 
-	return (*hexutil.Big)(tipcap), nil
+	if head := e.backend.CurrentHeader(); head.BaseFee != nil {
+		tipCap.Sub(tipCap, head.BaseFee)
+	}
+	return (*hexutil.Big)(tipCap), nil
 }
 
 func (e *PublicAPI) FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error) {
