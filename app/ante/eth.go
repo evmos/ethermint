@@ -221,15 +221,13 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 // CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
 // context rules.
 type CanTransferDecorator struct {
-	evmKeeper       EVMKeeper
-	feemarketKeeper evmtypes.FeeMarketKeeper
+	evmKeeper EVMKeeper
 }
 
 // NewCanTransferDecorator creates a new CanTransferDecorator instance.
-func NewCanTransferDecorator(evmKeeper EVMKeeper, fmk evmtypes.FeeMarketKeeper) CanTransferDecorator {
+func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
 	return CanTransferDecorator{
-		evmKeeper:       evmKeeper,
-		feemarketKeeper: fmk,
+		evmKeeper: evmKeeper,
 	}
 }
 
@@ -477,45 +475,38 @@ func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 // If fee is high enough or not CheckTx, then call next AnteHandler
 // CONTRACT: Tx must implement FeeTx to use MempoolFeeDecorator
 type EthMempoolFeeDecorator struct {
-	feemarketKeeper evmtypes.FeeMarketKeeper
-	evmKeeper       EVMKeeper
+	evmKeeper EVMKeeper
 }
 
-func NewEthMempoolFeeDecorator(ek EVMKeeper, fmk evmtypes.FeeMarketKeeper) EthMempoolFeeDecorator {
+func NewEthMempoolFeeDecorator(ek EVMKeeper) EthMempoolFeeDecorator {
 	return EthMempoolFeeDecorator{
-		feemarketKeeper: fmk,
-		evmKeeper:       ek,
+		evmKeeper: ek,
 	}
 }
 
 // AnteHandle ensures that the provided fees meet a minimum threshold for the validator,
 // if this is a CheckTx. This is only for local mempool purposes, and thus
 // is only ran on check tx.
+// It only do the check if london hardfork not enabled or feemarket not enabled, because in that case feemarket will take over the task.
 func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	if ctx.IsCheckTx() && !simulate {
-		for _, msg := range tx.GetMsgs() {
-			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-			if !ok {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
-			}
+		params := mfd.evmKeeper.GetParams(ctx)
+		ethCfg := params.ChainConfig.EthereumConfig(mfd.evmKeeper.ChainID())
+		baseFee := mfd.evmKeeper.BaseFee(ctx, ethCfg)
+		if baseFee == nil {
+			for _, msg := range tx.GetMsgs() {
+				ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+				if !ok {
+					return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
+				}
 
-			var feeAmt *big.Int
-
-			params := mfd.evmKeeper.GetParams(ctx)
-			chainID := mfd.evmKeeper.ChainID()
-			ethCfg := params.ChainConfig.EthereumConfig(chainID)
-			evmDenom := params.EvmDenom
-			baseFee := mfd.evmKeeper.BaseFee(ctx, ethCfg)
-			if baseFee != nil {
-				feeAmt = ethMsg.GetEffectiveFee(baseFee)
-			} else {
-				feeAmt = ethMsg.GetFee()
-			}
-
-			glDec := sdk.NewDec(int64(ethMsg.GetGas()))
-			requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
-			if sdk.NewDecFromBigInt(feeAmt).LT(requiredFee) {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; got: %s required: %s", feeAmt, requiredFee)
+				evmDenom := params.EvmDenom
+				feeAmt := ethMsg.GetFee()
+				glDec := sdk.NewDec(int64(ethMsg.GetGas()))
+				requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
+				if sdk.NewDecFromBigInt(feeAmt).LT(requiredFee) {
+					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; got: %s required: %s", feeAmt, requiredFee)
+				}
 			}
 		}
 	}

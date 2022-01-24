@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (ante) [\#866](https://github.com/tharsis/ethermint/pull/866) `NewAnteHandler` constructor now receives a `HandlerOptions` field.
 * (evm) [\#849](https://github.com/tharsis/ethermint/pull/849) `PostTxProcessing` hook now takes an Ethereum tx `Receipt` and a `from` `Address` as arguments.
+* (ante) [#916](https://github.com/tharsis/ethermint/pull/916) don't check min-gas-price for eth tx if london hardfork enabled and feemarket enabled.
 
 ### State Machine Breaking
 

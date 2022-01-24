@@ -976,9 +976,9 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 }
 
 // SuggestGasTipCap returns the suggested tip cap
+// always return zero since we don't support tx prioritization yet.
 func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
-	out := new(big.Int).SetInt64(e.RPCMinGasPrice())
-	return out, nil
+	return big.NewInt(0), nil
 }
 
 // BaseFee returns the base fee tracked by the Fee Market module. If the base fee is not enabled,
