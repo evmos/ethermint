@@ -12,6 +12,7 @@ vendor/
 .venv/
 .tox/
 *.min.js
+*.pb.gw.go
 
 # Common test paths
 test/
