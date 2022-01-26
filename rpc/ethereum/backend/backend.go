@@ -10,10 +10,8 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -802,23 +800,6 @@ func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash
 		return common.Hash{}, err
 	}
 
-	// Assemble transaction from fields
-	builder, ok := e.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
-	if !ok {
-		e.logger.Error("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
-	}
-
-	option, err := codectypes.NewAnyWithValue(&evmtypes.ExtensionOptionsEthereumTx{})
-	if err != nil {
-		e.logger.Error("codectypes.NewAnyWithValue failed to pack an obvious value", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	builder.SetExtensionOptions(option)
-	if err = builder.SetMsgs(msg); err != nil {
-		e.logger.Error("builder.SetMsgs failed", "error", err.Error())
-	}
-
 	// Query params to use the EVM denomination
 	res, err := e.queryClient.QueryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
@@ -826,19 +807,16 @@ func (e *EVMBackend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash
 		return common.Hash{}, err
 	}
 
-	txData, err := evmtypes.UnpackTxData(msg.Data)
+	// Assemble transaction from fields
+	tx, err := msg.BuildTx(e.clientCtx.TxConfig.NewTxBuilder(), res.Params.EvmDenom)
 	if err != nil {
-		e.logger.Error("failed to unpack tx data", "error", err.Error())
+		e.logger.Error("build cosmos tx failed", "error", err.Error())
 		return common.Hash{}, err
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(res.Params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee()))}
-	builder.SetFeeAmount(fees)
-	builder.SetGasLimit(msg.GetGas())
-
 	// Encode transaction by default Tx encoder
 	txEncoder := e.clientCtx.TxConfig.TxEncoder()
-	txBytes, err := txEncoder(builder.GetTx())
+	txBytes, err := txEncoder(tx)
 	if err != nil {
 		e.logger.Error("failed to encode eth tx using default encoder", "error", err.Error())
 		return common.Hash{}, err
@@ -976,9 +954,9 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 }
 
 // SuggestGasTipCap returns the suggested tip cap
+// always return zero since we don't support tx prioritization yet.
 func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
-	out := new(big.Int).SetInt64(e.RPCMinGasPrice())
-	return out, nil
+	return big.NewInt(0), nil
 }
 
 // BaseFee returns the base fee tracked by the Fee Market module. If the base fee is not enabled,

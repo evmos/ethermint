@@ -48,13 +48,13 @@ func (options HandlerOptions) Validate() error {
 
 func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
-		NewEthSetUpContextDecorator(options.EvmKeeper),                        // outermost AnteDecorator. SetUpContext must be called first
-		NewEthMempoolFeeDecorator(options.EvmKeeper, options.FeeMarketKeeper), // Check eth effective gas price against minimal-gas-prices
+		NewEthSetUpContextDecorator(options.EvmKeeper), // outermost AnteDecorator. SetUpContext must be called first
+		NewEthMempoolFeeDecorator(options.EvmKeeper),   // Check eth effective gas price against minimal-gas-prices
 		NewEthValidateBasicDecorator(options.EvmKeeper),
 		NewEthSigVerificationDecorator(options.EvmKeeper),
 		NewEthAccountVerificationDecorator(options.AccountKeeper, options.BankKeeper, options.EvmKeeper),
 		NewEthGasConsumeDecorator(options.EvmKeeper),
-		NewCanTransferDecorator(options.EvmKeeper, options.FeeMarketKeeper),
+		NewCanTransferDecorator(options.EvmKeeper),
 		NewEthIncrementSenderSequenceDecorator(options.AccountKeeper), // innermost AnteDecorator.
 	)
 }
