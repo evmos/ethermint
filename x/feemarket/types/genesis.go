@@ -4,13 +4,15 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // DefaultGenesisState sets default fee market genesis state.
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		Params:   DefaultParams(),
-		BaseFee:  sdk.ZeroInt(),
+		Params: DefaultParams(),
+		// the default base fee should be initialized because the default enable height is zero.
+		BaseFee:  sdk.NewIntFromUint64(params.InitialBaseFee),
 		BlockGas: 0,
 	}
 }

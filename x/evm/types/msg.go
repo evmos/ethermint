@@ -330,11 +330,10 @@ func (msg *MsgEthereumTx) BuildTx(b client.TxBuilder, evmDenom string) (signing.
 	if err != nil {
 		return nil, err
 	}
-	fees := sdk.Coins{
-		{
-			Denom:  evmDenom,
-			Amount: sdk.NewIntFromBigInt(txData.Fee()),
-		},
+	fees := make(sdk.Coins, 0)
+	feeAmt := sdk.NewIntFromBigInt(txData.Fee())
+	if feeAmt.Sign() > 0 {
+		fees = append(fees, sdk.NewCoin(evmDenom, feeAmt))
 	}
 
 	builder.SetExtensionOptions(option)
