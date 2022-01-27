@@ -1,9 +1,11 @@
 package e2e_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 	"math/big"
 	"testing"
 
@@ -42,6 +44,7 @@ type IntegrationTestSuite struct {
 	network *network.Network
 
 	gethClient *gethclient.Client
+	ethSigner  ethtypes.Signer
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -72,6 +75,9 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.gethClient = gethclient.New(rpcClient)
 	s.Require().NotNil(s.gethClient)
+	chainId, err := ethermint.ParseChainID(s.cfg.ChainID)
+	s.Require().NoError(err)
+	s.ethSigner = ethtypes.LatestSignerForChainID(chainId)
 }
 
 func (s *IntegrationTestSuite) TestChainID() {
@@ -137,6 +143,20 @@ func (s *IntegrationTestSuite) TestBlock() {
 	s.Require().Equal(blockByNum, blockByHash)
 
 	// TODO: parse Tm block to Ethereum and compare
+}
+
+func (s *IntegrationTestSuite) TestBlockBloom() {
+	transactionHash, _ := s.deployTestContract()
+	receipt, err := s.network.Validators[0].JSONRPCClient.TransactionReceipt(s.ctx, transactionHash)
+	s.Require().NoError(err)
+
+	number := receipt.BlockNumber
+	block, err := s.network.Validators[0].JSONRPCClient.BlockByNumber(s.ctx, number)
+	s.Require().NoError(err)
+
+	lb := block.Bloom().Big()
+	s.Require().NotEqual(big.NewInt(0), lb)
+	s.Require().Equal(transactionHash.String(), block.Transactions()[0].Hash().String())
 }
 
 func (s *IntegrationTestSuite) TestHeader() {
@@ -263,12 +283,401 @@ func (s *IntegrationTestSuite) TestSendTransactionContractDeploymentNoGas() {
 	var data hexutil.Bytes
 	err := data.UnmarshalText([]byte(bytecode))
 
-	var testKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	tx := ethtypes.NewContractCreation(0, nil, 0x5208, nil, data)
-	tx, _ = ethtypes.SignTx(tx, ethtypes.HomesteadSigner{}, testKey)
+	chainID, err := s.network.Validators[0].JSONRPCClient.ChainID(s.ctx)
+	s.Require().NoError(err)
 
-	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, tx)
+	owner := common.BytesToAddress(s.network.Validators[0].Address)
+	nonce := s.getAccountNonce(owner)
+	contractDeployTx := evmtypes.NewTxContract(
+		chainID,
+		nonce,
+		nil,    // amount
+		0x5208, // gasLimit
+		nil,    // gasPrice
+		nil, nil,
+		data, // input
+		nil,  // accesses
+	)
+	contractDeployTx.From = owner.Hex()
+	err = contractDeployTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
+	s.Require().NoError(err)
+
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, contractDeployTx.AsTransaction())
 	s.Require().Error(err)
+}
+
+func (s *IntegrationTestSuite) TestBlockTransactionCount() {
+	// start with clean block
+	err := s.network.WaitForNextBlock()
+	s.Require().NoError(err)
+
+	signedTx := s.signValidTx(common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(10))
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, signedTx.AsTransaction())
+	s.Require().NoError(err)
+
+	s.waitForTransaction()
+	receipt := s.expectSuccessReceipt(signedTx.AsTransaction().Hash())
+	// TransactionCount endpoint represents eth_getTransactionCountByHash
+	count, err := s.network.Validators[0].JSONRPCClient.TransactionCount(s.ctx, receipt.BlockHash)
+	s.Require().NoError(err)
+	s.Require().Equal(uint(1), count)
+
+	// expect 0 response with random block hash
+	anyBlockHash := common.HexToHash("0xb3b20624f8f0f86eb50dd04688409e5cea4bd02d700bf6e79e9384d47d6a5a35")
+	count, err = s.network.Validators[0].JSONRPCClient.TransactionCount(s.ctx, anyBlockHash)
+	s.Require().NoError(err)
+	s.Require().NotEqual(uint(0), 0)
+}
+
+func (s *IntegrationTestSuite) TestGetTransactionByBlockHashAndIndex() {
+	signedTx := s.signValidTx(common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(10))
+	err := s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, signedTx.AsTransaction())
+	s.Require().NoError(err)
+
+	s.waitForTransaction()
+	receipt := s.expectSuccessReceipt(signedTx.AsTransaction().Hash())
+
+	// TransactionInBlock endpoint represents eth_getTransactionByBlockHashAndIndex
+	transaction, err := s.network.Validators[0].JSONRPCClient.TransactionInBlock(s.ctx, receipt.BlockHash, 0)
+	s.Require().NoError(err)
+	s.Require().NotNil(transaction)
+	s.Require().Equal(receipt.TxHash, transaction.Hash())
+}
+
+func (s *IntegrationTestSuite) TestGetBalance() {
+	blockNumber, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
+	s.Require().NoError(err)
+
+	initialBalance, err := s.network.Validators[0].JSONRPCClient.BalanceAt(s.ctx, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), big.NewInt(int64(blockNumber)))
+	s.Require().NoError(err)
+
+	amountToTransfer := big.NewInt(10)
+	signedTx := s.signValidTx(common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), amountToTransfer)
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, signedTx.AsTransaction())
+	s.Require().NoError(err)
+
+	s.waitForTransaction()
+	receipt := s.expectSuccessReceipt(signedTx.AsTransaction().Hash())
+	finalBalance, err := s.network.Validators[0].JSONRPCClient.BalanceAt(s.ctx, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), receipt.BlockNumber)
+	s.Require().NoError(err)
+
+	var result big.Int
+	s.Require().Equal(result.Add(initialBalance, amountToTransfer), finalBalance)
+
+	// test old balance is still the same
+	prevBalance, err := s.network.Validators[0].JSONRPCClient.BalanceAt(s.ctx, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ed"), big.NewInt(int64(blockNumber)))
+	s.Require().NoError(err)
+	s.Require().Equal(initialBalance, prevBalance)
+}
+
+func (s *IntegrationTestSuite) TestGetLogs() {
+	//TODO create tests to cover different filterQuery params
+	_, contractAddr := s.deployERC20Contract()
+
+	blockNum, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
+	s.Require().NoError(err)
+
+	s.transferERC20Transaction(contractAddr, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(10))
+	filterQuery := ethereum.FilterQuery{
+		FromBlock: big.NewInt(int64(blockNum)),
+	}
+
+	logs, err := s.network.Validators[0].JSONRPCClient.FilterLogs(s.ctx, filterQuery)
+	s.Require().NoError(err)
+	s.Require().NotNil(logs)
+	s.Require().Equal(1, len(logs))
+
+	expectedTopics := []common.Hash{
+		common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"),
+		common.HexToHash("0x000000000000000000000000" + fmt.Sprintf("%x", common.BytesToAddress(s.network.Validators[0].Address))),
+		common.HexToHash("0x000000000000000000000000378c50d9264c63f3f92b806d4ee56e9d86ffb3ec"),
+	}
+	s.Require().Equal(expectedTopics, logs[0].Topics)
+}
+
+func (s *IntegrationTestSuite) TestTransactionReceiptERC20Transfer() {
+	//start with clean block
+	err := s.network.WaitForNextBlock()
+	s.Require().NoError(err)
+	// deploy erc20 contract
+	_, contractAddr := s.deployERC20Contract()
+
+	amount := big.NewInt(10)
+	hash := s.transferERC20Transaction(contractAddr, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), amount)
+	transferReceipt := s.expectSuccessReceipt(hash)
+	logs := transferReceipt.Logs
+	s.Require().Equal(1, len(logs))
+	s.Require().Equal(contractAddr, logs[0].Address)
+
+	s.Require().Equal(amount, big.NewInt(0).SetBytes(logs[0].Data))
+
+	s.Require().Equal(false, logs[0].Removed)
+	s.Require().Equal(uint(0x0), logs[0].Index)
+	s.Require().Equal(uint(0x0), logs[0].TxIndex)
+
+	expectedTopics := []common.Hash{
+		common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"),
+		common.HexToHash("0x000000000000000000000000" + fmt.Sprintf("%x", common.BytesToAddress(s.network.Validators[0].Address))),
+		common.HexToHash("0x000000000000000000000000378c50d9264c63f3f92b806d4ee56e9d86ffb3ec"),
+	}
+	s.Require().Equal(expectedTopics, logs[0].Topics)
+}
+
+func (s *IntegrationTestSuite) TestGetCode() {
+	expectedCode := "0x608060405234801561001057600080fd5b50600436106100365760003560e01c80636d4ce63c1461003b578063d04ad49514610059575b600080fd5b610043610075565b6040516100509190610132565b60405180910390f35b610073600480360381019061006e91906100f6565b61009e565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b6000813590506100f081610172565b92915050565b60006020828403121561010c5761010b61016d565b5b600061011a848285016100e1565b91505092915050565b61012c8161014d565b82525050565b60006020820190506101476000830184610123565b92915050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b600080fd5b61017b8161014d565b811461018657600080fd5b5056fea26469706673582212204c98c8f28598d29acc328cb34578de54cbed70b20bf9364897d48b2381f0c78b64736f6c63430008070033"
+
+	_, addr := s.deploySimpleStorageContract()
+	block, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
+	s.Require().NoError(err)
+	code, err := s.network.Validators[0].JSONRPCClient.CodeAt(s.ctx, addr, big.NewInt(int64(block)))
+	s.Require().NoError(err)
+	s.Require().Equal(expectedCode, hexutil.Encode(code))
+}
+
+func (s *IntegrationTestSuite) TestGetStorageAt() {
+	expectedStore := []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5}
+	_, addr := s.deploySimpleStorageContract()
+
+	s.storeValueStorageContract(addr, big.NewInt(5))
+	block, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
+	s.Require().NoError(err)
+
+	storage, err := s.network.Validators[0].JSONRPCClient.StorageAt(s.ctx, addr, common.BigToHash(big.NewInt(0)), big.NewInt(int64(block)))
+	s.Require().NoError(err)
+	s.Require().NotNil(storage)
+	s.Require().True(bytes.Equal(expectedStore, storage))
+}
+
+func (s *IntegrationTestSuite) getGasPrice() *big.Int {
+	gasPrice, err := s.network.Validators[0].JSONRPCClient.SuggestGasPrice(s.ctx)
+	s.Require().NoError(err)
+	return gasPrice
+}
+
+func (s *IntegrationTestSuite) getAccountNonce(addr common.Address) uint64 {
+	nonce, err := s.network.Validators[0].JSONRPCClient.NonceAt(s.ctx, addr, nil)
+	s.Require().NoError(err)
+	return nonce
+}
+
+func (s *IntegrationTestSuite) signValidTx(to common.Address, amount *big.Int) *evmtypes.MsgEthereumTx {
+	chainId, err := s.network.Validators[0].JSONRPCClient.ChainID(s.ctx)
+	s.Require().NoError(err)
+
+	gasPrice := s.getGasPrice()
+	from := common.BytesToAddress(s.network.Validators[0].Address)
+	nonce := s.getAccountNonce(from)
+
+	msgTx := evmtypes.NewTx(
+		chainId,
+		nonce,
+		&to,
+		amount,
+		100000,
+		gasPrice,
+		big.NewInt(200),
+		nil,
+		nil,
+		nil,
+	)
+	msgTx.From = from.Hex()
+	err = msgTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
+	s.Require().NoError(err)
+	return msgTx
+}
+
+func (s *IntegrationTestSuite) signValidContractDeploymentTx(input []byte) *evmtypes.MsgEthereumTx {
+	chainId, err := s.network.Validators[0].JSONRPCClient.ChainID(s.ctx)
+	s.Require().NoError(err)
+
+	gasPrice := s.getGasPrice()
+	from := common.BytesToAddress(s.network.Validators[0].Address)
+	nonce := s.getAccountNonce(from)
+
+	msgTx := evmtypes.NewTxContract(
+		chainId,
+		nonce,
+		big.NewInt(10),
+		134216,
+		gasPrice,
+		big.NewInt(200),
+		nil,
+		input,
+		nil,
+	)
+	msgTx.From = from.Hex()
+	err = msgTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
+	s.Require().NoError(err)
+	return msgTx
+}
+
+func (s *IntegrationTestSuite) deployTestContract() (transaction common.Hash, contractAddr common.Address) {
+	bytecode := "0x6080604052348015600f57600080fd5b5060117f775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd73889860405160405180910390a2603580604b6000396000f3fe6080604052600080fdfea165627a7a723058206cab665f0f557620554bb45adf266708d2bd349b8a4314bdff205ee8440e3c240029"
+
+	var data hexutil.Bytes
+	err := data.UnmarshalText([]byte(bytecode))
+	s.Require().NoError(err)
+
+	return s.deployContract(data)
+}
+
+func (s *IntegrationTestSuite) deployContract(data []byte) (transaction common.Hash, contractAddr common.Address) {
+	chainID, err := s.network.Validators[0].JSONRPCClient.ChainID(s.ctx)
+	s.Require().NoError(err)
+
+	owner := common.BytesToAddress(s.network.Validators[0].Address)
+	nonce := s.getAccountNonce(owner)
+
+	gas, err := s.network.Validators[0].JSONRPCClient.EstimateGas(s.ctx, ethereum.CallMsg{
+		From: owner,
+		Data: data,
+	})
+	s.Require().NoError(err)
+
+	gasPrice := s.getGasPrice()
+
+	contractDeployTx := evmtypes.NewTxContract(
+		chainID,
+		nonce,
+		nil,      // amount
+		gas,      // gasLimit
+		gasPrice, // gasPrice
+		nil, nil,
+		data, // input
+		nil,  // accesses
+	)
+
+	contractDeployTx.From = owner.Hex()
+	err = contractDeployTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
+	s.Require().NoError(err)
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, contractDeployTx.AsTransaction())
+	s.Require().NoError(err)
+
+	s.waitForTransaction()
+
+	receipt := s.expectSuccessReceipt(contractDeployTx.AsTransaction().Hash())
+	s.Require().NotNil(receipt.ContractAddress)
+	return contractDeployTx.AsTransaction().Hash(), receipt.ContractAddress
+}
+
+// Deploys erc20 contract, commits block and returns contract address
+func (s *IntegrationTestSuite) deployERC20Contract() (transaction common.Hash, contractAddr common.Address) {
+	owner := common.BytesToAddress(s.network.Validators[0].Address)
+	supply := sdk.NewIntWithDecimal(1000, 18).BigInt()
+
+	ctorArgs, err := evmtypes.ERC20Contract.ABI.Pack("", owner, supply)
+	s.Require().NoError(err)
+
+	data := append(evmtypes.ERC20Contract.Bin, ctorArgs...)
+	return s.deployContract(data)
+}
+
+// Deploys SimpleStorageContract and,commits block and returns contract address
+func (s *IntegrationTestSuite) deploySimpleStorageContract() (transaction common.Hash, contractAddr common.Address) {
+	ctorArgs, err := evmtypes.SimpleStorageContract.ABI.Pack("")
+	s.Require().NoError(err)
+
+	data := append(evmtypes.SimpleStorageContract.Bin, ctorArgs...)
+	return s.deployContract(data)
+}
+
+func (s *IntegrationTestSuite) expectSuccessReceipt(hash common.Hash) *ethtypes.Receipt {
+	receipt, err := s.network.Validators[0].JSONRPCClient.TransactionReceipt(s.ctx, hash)
+	s.Require().NoError(err)
+	s.Require().NotNil(receipt)
+	s.Require().Equal(uint64(0x1), receipt.Status)
+	return receipt
+}
+
+func (s *IntegrationTestSuite) transferERC20Transaction(contractAddr, to common.Address, amount *big.Int) common.Hash {
+	chainID, err := s.network.Validators[0].JSONRPCClient.ChainID(s.ctx)
+	s.Require().NoError(err)
+
+	transferData, err := evmtypes.ERC20Contract.ABI.Pack("transfer", to, amount)
+	s.Require().NoError(err)
+	owner := common.BytesToAddress(s.network.Validators[0].Address)
+	nonce := s.getAccountNonce(owner)
+
+	gas, err := s.network.Validators[0].JSONRPCClient.EstimateGas(s.ctx, ethereum.CallMsg{
+		To:   &contractAddr,
+		From: owner,
+		Data: transferData,
+	})
+	s.Require().NoError(err)
+
+	gasPrice := s.getGasPrice()
+	ercTransferTx := evmtypes.NewTx(
+		chainID,
+		nonce,
+		&contractAddr,
+		nil,
+		gas,
+		gasPrice,
+		nil, nil,
+		transferData,
+		nil,
+	)
+
+	ercTransferTx.From = owner.Hex()
+	err = ercTransferTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
+	s.Require().NoError(err)
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, ercTransferTx.AsTransaction())
+	s.Require().NoError(err)
+
+	s.waitForTransaction()
+
+	receipt := s.expectSuccessReceipt(ercTransferTx.AsTransaction().Hash())
+	s.Require().NotEmpty(receipt.Logs)
+	return ercTransferTx.AsTransaction().Hash()
+
+}
+
+func (s *IntegrationTestSuite) storeValueStorageContract(contractAddr common.Address, amount *big.Int) common.Hash {
+	chainID, err := s.network.Validators[0].JSONRPCClient.ChainID(s.ctx)
+	s.Require().NoError(err)
+
+	transferData, err := evmtypes.SimpleStorageContract.ABI.Pack("store", amount)
+	s.Require().NoError(err)
+	owner := common.BytesToAddress(s.network.Validators[0].Address)
+	nonce := s.getAccountNonce(owner)
+
+	gas, err := s.network.Validators[0].JSONRPCClient.EstimateGas(s.ctx, ethereum.CallMsg{
+		To:   &contractAddr,
+		From: owner,
+		Data: transferData,
+	})
+	s.Require().NoError(err)
+
+	gasPrice := s.getGasPrice()
+	ercTransferTx := evmtypes.NewTx(
+		chainID,
+		nonce,
+		&contractAddr,
+		nil,
+		gas,
+		gasPrice,
+		nil, nil,
+		transferData,
+		nil,
+	)
+
+	ercTransferTx.From = owner.Hex()
+	err = ercTransferTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
+	s.Require().NoError(err)
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, ercTransferTx.AsTransaction())
+	s.Require().NoError(err)
+
+	s.waitForTransaction()
+
+	s.expectSuccessReceipt(ercTransferTx.AsTransaction().Hash())
+	return ercTransferTx.AsTransaction().Hash()
+}
+
+// waits 2 blocks time to keep tests stable
+func (s *IntegrationTestSuite) waitForTransaction() {
+	err := s.network.WaitForNextBlock()
+	err = s.network.WaitForNextBlock()
+	s.Require().NoError(err)
 }
 
 func TestIntegrationTestSuite(t *testing.T) {

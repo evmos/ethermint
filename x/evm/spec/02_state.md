@@ -19,6 +19,7 @@ The `x/evm` module keeps the following objects in state:
 | Block Bloom | Block bloom filter, used to accumulate the bloom filter of current block, emitted to events at end blocker. | `[]byte{1} + []byte(tx.Hash)` | `protobuf([]Log)`   | Transient |
 | Tx Index    | Index of current transaction in current block.               | `[]byte{2}`                   | `BigEndian(uint64)` | Transient |
 | Log Size    | Number of the logs emitted so far in current block. Used to decide the log index of following logs. | `[]byte{3}`                   | `BigEndian(uint64)` | Transient |
+| Gas Used    | Amount of gas used by ethereum messages of current cosmos-sdk tx, it's necessary when cosmos-sdk tx contains multiple ethereum messages. | `[]byte{4}`                   | `BigEndian(uint64)` | Transient |
 
 ## StateDB
 
@@ -161,7 +162,7 @@ With `AddLog()` you can append the given ethereum `Log` to the list of Logs asso
 
 ## Keeper
 
-The EVM module `Keeper` grants access to the EVM module state and implements `statedb.Keeper` interface to support the `StateDB` implementation. The Keeper contains a store key that allows the DB to write to a concrete subtree of the multistore that is only accessible to the EVM module. Instead of using a trie and database for querying and persistence (the `StateDB` implementation on Ethermint), use the Cosmos `KVStore` (key-value store) and Cosmos SDK `Keeper` to facilitate state transitions.
+The EVM module `Keeper` grants access to the EVM module state and implements `statedb.Keeper` interface to support the `StateDB` implementation. The Keeper contains a store key that allows the DB to write to a concrete subtree of the multistore that is only accessible to the EVM module. Instead of using a trie and database for querying and persistence (the `StateDB` implementation on Ethermint), use the Cosmos `KVStore` (key-value store) and Cosmos SDK `Keeper` to facilitate state transitions.
 
 To support the interface functionality, it imports 4 module Keepers:
 

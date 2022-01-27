@@ -31,7 +31,6 @@ type Backend interface {
 	GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.Log, error)
 	BlockBloom(height *int64) (ethtypes.Bloom, error)
 
-	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
 	BloomStatus() (uint64, uint64)
 
 	RPCFilterCap() int32
