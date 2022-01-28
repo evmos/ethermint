@@ -36,11 +36,12 @@ func InitGenesis(
 		accAddress := sdk.AccAddress(address.Bytes())
 		// check that the EVM balance the matches the account balance
 		acc := accountKeeper.GetAccount(ctx, accAddress)
+
 		if acc == nil {
 			panic(fmt.Errorf("account not found for address %s", account.Address))
 		}
 
-		ethAcct, ok := acc.(ethermint.EthAccountI)
+		ethAccount, ok := acc.(ethermint.EthAccountI)
 		if !ok {
 			panic(
 				fmt.Errorf("account %s must be an EthAccount interface, got %T",
@@ -51,12 +52,21 @@ func InitGenesis(
 
 		code := common.Hex2Bytes(account.Code)
 		codeHash := crypto.Keccak256Hash(code)
-		if !bytes.Equal(ethAcct.GetCodeHash().Bytes(), codeHash.Bytes()) {
-			panic("code don't match codeHash")
+		isEmptyCodeHash := codeHash.Hex() == common.BytesToHash(types.EmptyCodeHash).String()
+
+		// If account has no code allow for code to be added, if code already exists do not allow modification
+		if !isEmptyCodeHash && bytes.Equal(ethAccount.GetCodeHash().Bytes(), codeHash.Bytes()) {
+			panic("Code don't match codeHash")
 		}
 
+		// Set Code
 		k.SetCode(ctx, codeHash.Bytes(), code)
 
+		// Commit CodeHash to StateDB
+		ethAccount.SetCodeHash(codeHash)
+		accountKeeper.SetAccount(ctx, ethAccount)
+
+		// Set Storage
 		for _, storage := range account.Storage {
 			k.SetState(ctx, address, common.HexToHash(storage.Key), common.HexToHash(storage.Value).Bytes())
 		}
