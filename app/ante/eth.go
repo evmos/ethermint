@@ -154,7 +154,6 @@ func NewEthGasConsumeDecorator(
 // of data supplied with the transaction.
 //
 // This AnteHandler decorator will fail if:
-// - the transaction contains more than one message
 // - the message is not a MsgEthereumTx
 // - sender account cannot be found
 // - transaction's gas limit is lower than the intrinsic gas
