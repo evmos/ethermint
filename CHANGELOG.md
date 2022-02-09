@@ -78,6 +78,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#871](https://github.com/tharsis/ethermint/pull/871) Set correct nonce in `EthCall` and `EstimateGas` grpc query.
 * (rpc) [tharsis#878](https://github.com/tharsis/ethermint/pull/878) Workaround to make GetBlock RPC api report correct block gas used.
 * (rpc) [tharsis#900](https://github.com/tharsis/ethermint/pull/900) newPendingTransactions filter return ethereum tx hash.
+* (evm) [tharsis#932](https://github.com/tharsis/ethermint/pull/932) Fix base fee check logic in state transition.
 
 ## [v0.9.0] - 2021-12-01
 
