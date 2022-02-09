@@ -193,16 +193,22 @@ func (e *PublicAPI) Hashrate() hexutil.Uint64 {
 // GasPrice returns the current gas price based on Ethermint's gas price oracle.
 func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 	e.logger.Debug("eth_gasPrice")
-	tipcap, err := e.backend.SuggestGasTipCap()
-	if err != nil {
-		return nil, err
-	}
-
+	var (
+		result *big.Int
+		err    error
+	)
 	if head := e.backend.CurrentHeader(); head.BaseFee != nil {
-		tipcap.Add(tipcap, head.BaseFee)
+		result, err = e.backend.SuggestGasTipCap()
+		if err != nil {
+			return nil, err
+		}
+
+		result = result.Add(result, head.BaseFee)
+	} else {
+		result = big.NewInt(e.backend.RPCMinGasPrice())
 	}
 
-	return (*hexutil.Big)(tipcap), nil
+	return (*hexutil.Big)(result), nil
 }
 
 // MaxPriorityFeePerGas returns a suggestion for a gas tip cap for dynamic fee transactions.
