@@ -712,8 +712,12 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 							api.logger.Debug("error writing header, will drop peer", "error", err.Error())
 
 							try(func() {
+								api.filtersMu.RUnlock()
 								api.filtersMu.Lock()
-								defer api.filtersMu.Unlock()
+								defer func() {
+									api.filtersMu.Unlock()
+									api.filtersMu.RLock()
+								}()
 
 								if err != websocket.ErrCloseSent {
 									_ = wsSub.wsConn.Close()
