@@ -127,7 +127,7 @@ if [[ -z $TEST || $TEST == "rpc" ]]; then
         MODE=$MODE HOST=$HOST_RPC go test ./tests/e2e/... -timeout=300s -v -short
         MODE=$MODE HOST=$HOST_RPC go test ./tests/rpc/... -timeout=300s -v -short
 
-        RPC_FAIL=$?
+        TEST_FAIL=$?
     done
     
 fi
@@ -150,8 +150,8 @@ for i in "${arr[@]}"; do
     stop_func "$i"
 done
 
-if [[ (-z $TEST || $TEST == "rpc") && $RPC_FAIL -ne 0 ]]; then
-    exit $RPC_FAIL
+if [[ (-z $TEST || $TEST == "rpc") && $TEST_FAIL -ne 0 ]]; then
+    exit $TEST_FAIL
 else
     exit 0
 fi
