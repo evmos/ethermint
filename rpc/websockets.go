@@ -712,8 +712,16 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn) (rpc.ID, erro
 							api.logger.Debug("error writing header, will drop peer", "error", err.Error())
 
 							try(func() {
+								// Release the initial read lock in .RUnlock() before
+								// invoking .Lock() to avoid the deadlock in
+								// https://github.com/tharsis/ethermint/issues/821#issuecomment-1033959984
+								// and as documented at https://pkg.go.dev/sync#RWMutex
+								api.filtersMu.RUnlock()
 								api.filtersMu.Lock()
-								defer api.filtersMu.Unlock()
+								defer func() {
+									api.filtersMu.Unlock()
+									api.filtersMu.RLock()
+								}()
 
 								if err != websocket.ErrCloseSent {
 									_ = wsSub.wsConn.Close()

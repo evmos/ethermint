@@ -78,6 +78,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#871](https://github.com/tharsis/ethermint/pull/871) Set correct nonce in `EthCall` and `EstimateGas` grpc query.
 * (rpc) [tharsis#878](https://github.com/tharsis/ethermint/pull/878) Workaround to make GetBlock RPC api report correct block gas used.
 * (rpc) [tharsis#900](https://github.com/tharsis/ethermint/pull/900) newPendingTransactions filter return ethereum tx hash.
+* (rpc) [tharsis#933](https://github.com/tharsis/ethermint/pull/933) Fix newPendingTransactions subscription deadlock when a Websocket client exits without unsubscribing and the node errors.
 
 ## [v0.9.0] - 2021-12-01
 
