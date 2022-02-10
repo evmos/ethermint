@@ -14,6 +14,14 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
+const (
+	// Eip712SigValidation is the EIP712 signature
+	Eip712SigValidation = 1
+
+	// CosmosSigValidation is the eth_secp256k1 signature
+	CosmosSigValidation = 2
+)
+
 // HandlerOptions extend the SDK's AnteHandler options by requiring the IBC
 // channel keeper, EVM Keeper and Fee Market Keeper.
 type HandlerOptions struct {
@@ -60,6 +68,25 @@ func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 }
 
 func newCosmosAnteHandler(options HandlerOptions) sdk.AnteHandler {
+	return cosmosAnteHandlerCreator(options, CosmosSigValidation)
+}
+
+func newCosmosAnteHandlerEip712(options HandlerOptions) sdk.AnteHandler {
+	return cosmosAnteHandlerCreator(options, Eip712SigValidation)
+}
+
+func newSignatureVerification(options HandlerOptions, signature int) sdk.AnteDecorator {
+	if signature == CosmosSigValidation {
+		return ante.NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler)
+	}
+	if signature == Eip712SigValidation {
+		return NewEip712SigVerificationDecorator(options.AccountKeeper, options.SignModeHandler)
+	}
+
+	panic("Invalid signature verification decorator set for cosmos transactions.")
+}
+
+func cosmosAnteHandlerCreator(options HandlerOptions, signatureType int) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		RejectMessagesDecorator{}, // reject MsgEthereumTxs
 		ante.NewSetUpContextDecorator(),
@@ -74,7 +101,7 @@ func newCosmosAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		ante.NewSetPubKeyDecorator(options.AccountKeeper),
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
 		ante.NewSigGasConsumeDecorator(options.AccountKeeper, options.SigGasConsumer),
-		ante.NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
+		newSignatureVerification(options, signatureType),
 		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewAnteDecorator(options.IBCChannelKeeper),
 	)
