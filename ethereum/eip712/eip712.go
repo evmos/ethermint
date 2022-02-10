@@ -8,19 +8,17 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
+
 	"github.com/ethereum/go-ethereum/crypto"
-	signercore "github.com/ethereum/go-ethereum/signer/core"
+	"github.com/pkg/errors"
 )
 
 // ComputeTypedDataHash computes keccak hash of typed data for signing.
-func ComputeTypedDataHash(typedData signercore.TypedData) ([]byte, error) {
+func ComputeTypedDataHash(typedData TypedData) ([]byte, error) {
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
 		err = errors.Wrap(err, "failed to pack and hash typedData EIP712Domain")
@@ -45,14 +43,14 @@ func WrapTxToTypedData(
 	msg sdk.Msg,
 	data []byte,
 	feeDelegation *FeeDelegationOptions,
-) (signercore.TypedData, error) {
+) (TypedData, error) {
 	txData := make(map[string]interface{})
 
 	if err := json.Unmarshal(data, &txData); err != nil {
-		return signercore.TypedData{}, errors.Wrap(err, "failed to JSON unmarshal data")
+		return TypedData{}, errors.Wrap(err, "failed to JSON unmarshal data")
 	}
 
-	domain := signercore.TypedDataDomain{
+	domain := TypedDataDomain{
 		Name:              "Cosmos Web3",
 		Version:           "1.0.0",
 		ChainId:           math.NewHexOrDecimal256(int64(chainID)),
@@ -62,7 +60,7 @@ func WrapTxToTypedData(
 
 	msgTypes, err := extractMsgTypes(cdc, "MsgValue", msg)
 	if err != nil {
-		return signercore.TypedData{}, err
+		return TypedData{}, err
 	}
 
 	if feeDelegation != nil {
@@ -70,14 +68,14 @@ func WrapTxToTypedData(
 		feeInfo["feePayer"] = feeDelegation.FeePayer.String()
 
 		// also patching msgTypes to include feePayer
-		msgTypes["Fee"] = []signercore.Type{
+		msgTypes["Fee"] = []Type{
 			{Name: "feePayer", Type: "string"},
 			{Name: "amount", Type: "Coin[]"},
 			{Name: "gas", Type: "string"},
 		}
 	}
 
-	typedData := signercore.TypedData{
+	typedData := TypedData{
 		Types:       msgTypes,
 		PrimaryType: "Tx",
 		Domain:      domain,
@@ -91,8 +89,8 @@ type FeeDelegationOptions struct {
 	FeePayer sdk.AccAddress
 }
 
-func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg) (signercore.Types, error) {
-	rootTypes := signercore.Types{
+func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg) (Types, error) {
+	rootTypes := Types{
 		"EIP712Domain": {
 			{
 				Name: "name",
@@ -148,7 +146,7 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 
 const typeDefPrefix = "_"
 
-func walkFields(cdc codectypes.AnyUnpacker, typeMap signercore.Types, rootType string, in interface{}) (err error) {
+func walkFields(cdc codectypes.AnyUnpacker, typeMap Types, rootType string, in interface{}) (err error) {
 	defer doRecover(&err)
 
 	t := reflect.TypeOf(in)
@@ -176,7 +174,7 @@ type cosmosAnyWrapper struct {
 
 func traverseFields(
 	cdc codectypes.AnyUnpacker,
-	typeMap signercore.Types,
+	typeMap Types,
 	rootType string,
 	prefix string,
 	t reflect.Type,
@@ -286,13 +284,13 @@ func traverseFields(
 		ethTyp := typToEth(fieldType)
 		if len(ethTyp) > 0 {
 			if prefix == typeDefPrefix {
-				typeMap[rootType] = append(typeMap[rootType], signercore.Type{
+				typeMap[rootType] = append(typeMap[rootType], Type{
 					Name: fieldName,
 					Type: ethTyp,
 				})
 			} else {
 				typeDef := sanitizeTypedef(prefix)
-				typeMap[typeDef] = append(typeMap[typeDef], signercore.Type{
+				typeMap[typeDef] = append(typeMap[typeDef], Type{
 					Name: fieldName,
 					Type: ethTyp,
 				})
@@ -312,13 +310,13 @@ func traverseFields(
 			}
 
 			if prefix == typeDefPrefix {
-				typeMap[rootType] = append(typeMap[rootType], signercore.Type{
+				typeMap[rootType] = append(typeMap[rootType], Type{
 					Name: fieldName,
 					Type: fieldTypedef,
 				})
 			} else {
 				typeDef := sanitizeTypedef(prefix)
-				typeMap[typeDef] = append(typeMap[typeDef], signercore.Type{
+				typeMap[typeDef] = append(typeMap[typeDef], Type{
 					Name: fieldName,
 					Type: fieldTypedef,
 				})

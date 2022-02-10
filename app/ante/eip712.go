@@ -18,7 +18,6 @@ import (
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
-	signercore "github.com/ethereum/go-ethereum/signer/core"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/ethereum/eip712"
@@ -202,7 +201,7 @@ func VerifySignature(
 			}
 		}
 
-		var typedData signercore.TypedData
+		var typedData eip712.TypedData
 		var sigHash []byte
 
 		if feeDelegated {
