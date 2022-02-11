@@ -41,16 +41,17 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the coinbase address from the block proposer
-	coinbase, err := k.GetCoinbaseAddress(ctx)
-	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
-	}
+	// TODO(@jbowen93): Commented out until we implement coinbase stuff
+	// coinbase, err := k.GetCoinbaseAddress(ctx)
+	// if err != nil {
+	// 	return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
+	// }
 
 	baseFee := k.BaseFee(ctx, ethCfg)
 	return &types.EVMConfig{
 		Params:      params,
 		ChainConfig: ethCfg,
-		CoinBase:    coinbase,
+		CoinBase:    common.Address{},
 		BaseFee:     baseFee,
 	}, nil
 }
