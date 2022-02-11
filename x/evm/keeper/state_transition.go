@@ -73,7 +73,7 @@ func (k *Keeper) NewEVM(
 	ctx sdk.Context,
 	msg core.Message,
 	cfg *types.EVMConfig,
-	tracer vm.Tracer,
+	tracer vm.EVMLogger,
 	stateDB vm.StateDB,
 ) *vm.EVM {
 	blockCtx := vm.BlockContext{
@@ -98,7 +98,7 @@ func (k *Keeper) NewEVM(
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, params types.Params, tracer vm.Tracer) vm.Config {
+func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, params types.Params, tracer vm.EVMLogger) vm.Config {
 	fmParams := k.feeMarketKeeper.GetParams(ctx)
 
 	var debug bool
@@ -107,11 +107,10 @@ func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, params types.Params,
 	}
 
 	return vm.Config{
-		Debug:       debug,
-		Tracer:      tracer,
-		NoRecursion: false, // TODO: consider disabling recursion though params
-		NoBaseFee:   fmParams.NoBaseFee,
-		ExtraEips:   params.EIPs(),
+		Debug:     debug,
+		Tracer:    tracer,
+		NoBaseFee: fmParams.NoBaseFee,
+		ExtraEips: params.EIPs(),
 	}
 }
 
@@ -335,7 +334,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 // Commit parameter
 //
 // If commit is true, the `StateDB` will be committed, otherwise discarded.
-func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, tracer vm.Tracer, commit bool, cfg *types.EVMConfig, txConfig statedb.TxConfig) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool, cfg *types.EVMConfig, txConfig statedb.TxConfig) (*types.MsgEthereumTxResponse, error) {
 	var (
 		ret   []byte // return bytes from evm execution
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
@@ -425,7 +424,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 }
 
 // ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
-func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.Tracer, commit bool) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool) (*types.MsgEthereumTxResponse, error) {
 	cfg, err := k.EVMConfig(ctx)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
