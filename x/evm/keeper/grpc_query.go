@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
+
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
