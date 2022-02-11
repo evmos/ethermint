@@ -76,6 +76,5 @@ By default, all block configuration fields but `ConstantinopleBlock`, are enable
 | IstanbulBlock       | 0                                                                    |
 | MuirGlacierBlock    | 0                                                                    |
 | BerlinBlock         | 0                                                                    |
-| CatalystBlock       | `nil`                                                                |
 | LondonBlock         | 0                                                                    |
 
