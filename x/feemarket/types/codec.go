@@ -19,7 +19,4 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	)
 }
 
-var (
-	ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
-)
-
+var ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())

@@ -1,12 +1,13 @@
 package feemarket
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/tharsis/ethermint/x/feemarket/keeper"
 	"github.com/tharsis/ethermint/x/feemarket/types"
-	"math/big"
 )
 
 // NewBaseFeeChangeProposalHandler creates a new governance Handler for a BaseFeeChangeProposal
