@@ -1,6 +1,8 @@
 syntax = "proto3";
 package ethermint.feemarket.v1;
 
+import "gogoproto/gogo.proto";
+
 option go_package = "github.com/tharsis/ethermint/x/feemarket/types";
 
 // Params defines the EVM module parameters
@@ -17,4 +19,14 @@ message Params {
   int64 initial_base_fee = 4;
   // height at which the base fee calculation is enabled.
   int64 enable_height = 5;
+}
+
+// BaseFeeChangeProposal defines a proposal to reinitialize the feemarket baseFee
+message BaseFeeChangeProposal {
+  option (gogoproto.goproto_getters)  = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  string   title                           = 1;
+  string   description                     = 2;
+  uint64   base_fee                        = 3;
 }

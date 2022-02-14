@@ -38,8 +38,13 @@ func (AppModuleBasic) Name() string {
 	return types.ModuleName
 }
 
+func (AppModuleBasic) RegisterCodec(cdc *codec.LegacyAmino) {
+	types.RegisterCodec(cdc)
+}
+
 // RegisterLegacyAminoCodec performs a no-op as the fee market module doesn't support amino.
-func (AppModuleBasic) RegisterLegacyAminoCodec(_ *codec.LegacyAmino) {
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	types.RegisterCodec(cdc)
 }
 
 // ConsensusVersion returns the consensus state-breaking version for the module.
@@ -85,7 +90,9 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 }
 
 // RegisterInterfaces registers interfaces and implementations of the fee market module.
-func (AppModuleBasic) RegisterInterfaces(_ codectypes.InterfaceRegistry) {}
+func (AppModuleBasic) RegisterInterfaces(reg codectypes.InterfaceRegistry) {
+	types.RegisterInterfaces(reg)
+}
 
 // ____________________________________________________________________________
 

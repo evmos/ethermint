@@ -59,6 +59,7 @@
     - [Query](#ethermint.evm.v1.Query)
   
 - [ethermint/feemarket/v1/feemarket.proto](#ethermint/feemarket/v1/feemarket.proto)
+    - [BaseFeeChangeProposal](#ethermint.feemarket.v1.BaseFeeChangeProposal)
     - [Params](#ethermint.feemarket.v1.Params)
   
 - [ethermint/feemarket/v1/genesis.proto](#ethermint/feemarket/v1/genesis.proto)
@@ -907,6 +908,23 @@ Query defines the gRPC querier service.
 <p align="right"><a href="#top">Top</a></p>
 
 ## ethermint/feemarket/v1/feemarket.proto
+
+
+
+<a name="ethermint.feemarket.v1.BaseFeeChangeProposal"></a>
+
+### BaseFeeChangeProposal
+BaseFeeChangeProposal defines a proposal to reinitialize the feemarket baseFee
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `title` | [string](#string) |  |  |
+| `description` | [string](#string) |  |  |
+| `base_fee` | [uint64](#uint64) |  |  |
+
+
+
 
 
 
