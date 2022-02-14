@@ -30,6 +30,8 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		MuirGlacierBlock:        getBlockValue(cc.MuirGlacierBlock),
 		BerlinBlock:             getBlockValue(cc.BerlinBlock),
 		LondonBlock:             getBlockValue(cc.LondonBlock),
+		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
+		MergeForkBlock:          getBlockValue(cc.MergeForkBlock),
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,
@@ -50,6 +52,8 @@ func DefaultChainConfig() ChainConfig {
 	muirGlacierBlock := sdk.ZeroInt()
 	berlinBlock := sdk.ZeroInt()
 	londonBlock := sdk.ZeroInt()
+	arrowGlacierBlock := sdk.ZeroInt()
+	mergeForkBlock := sdk.ZeroInt()
 
 	return ChainConfig{
 		HomesteadBlock:      &homesteadBlock,
@@ -66,6 +70,8 @@ func DefaultChainConfig() ChainConfig {
 		MuirGlacierBlock:    &muirGlacierBlock,
 		BerlinBlock:         &berlinBlock,
 		LondonBlock:         &londonBlock,
+		ArrowGlacierBlock:   &arrowGlacierBlock,
+		MergeForkBlock:      &mergeForkBlock,
 	}
 }
 
@@ -118,6 +124,12 @@ func (cc ChainConfig) Validate() error {
 	}
 	if err := validateBlock(cc.LondonBlock); err != nil {
 		return sdkerrors.Wrap(err, "londonBlock")
+	}
+	if err := validateBlock(cc.ArrowGlacierBlock); err != nil {
+		return sdkerrors.Wrap(err, "arrowGlacierBlock")
+	}
+	if err := validateBlock(cc.MergeForkBlock); err != nil {
+		return sdkerrors.Wrap(err, "mergeForkBlock")
 	}
 
 	// NOTE: chain ID is not needed to check config order
