@@ -7,8 +7,6 @@ import (
 
 	"github.com/tharsis/ethermint/x/feemarket/types"
 
-	"github.com/tharsis/ethermint/x/feemarket/types"
-
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -19,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	// "github.com/cosmos/cosmos-sdk/client/flags"
 )
+
 // NewSubmitBaseChangeProposalTxCmd returns a CLI command handler for creating
 // a base fee change proposal governance transaction.
 func NewSubmitBaseChangeProposalTxCmd() *cobra.Command {

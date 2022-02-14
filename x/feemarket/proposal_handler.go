@@ -18,7 +18,7 @@ func NewBaseFeeChangeProposalHandler(k keeper.Keeper) govtypes.Handler {
 			k.SetBaseFee(ctx, new(big.Int).SetUint64(c.BaseFee))
 			return nil
 		default:
-			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized cronos proposal content type: %T", c)
+			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized proposal content type: %T", c)
 		}
 	}
 }
