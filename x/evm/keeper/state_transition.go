@@ -110,10 +110,10 @@ func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, cfg *types.EVMConfig
 	}
 
 	return vm.Config{
-		Debug:       debug,
-		Tracer:      tracer,
-		NoBaseFee:   noBaseFee,
-		ExtraEips:   cfg.Params.EIPs(),
+		Debug:     debug,
+		Tracer:    tracer,
+		NoBaseFee: noBaseFee,
+		ExtraEips: cfg.Params.EIPs(),
 	}
 }
 
