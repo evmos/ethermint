@@ -35,4 +35,4 @@ jobs:
         run: |
           sudo make contract-tools
           sudo make test-contract
-        if: "env.GIT_DIFF != ''"
+        if: env.GIT_DIFF

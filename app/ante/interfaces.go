@@ -19,7 +19,7 @@ type EVMKeeper interface {
 
 	ChainID() *big.Int
 	GetParams(ctx sdk.Context) evmtypes.Params
-	NewEVM(ctx sdk.Context, msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.Tracer, stateDB vm.StateDB) *vm.EVM
+	NewEVM(ctx sdk.Context, msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.EVMLogger, stateDB vm.StateDB) *vm.EVM
 	DeductTxCostsFromUserBalance(
 		ctx sdk.Context, msgEthTx evmtypes.MsgEthereumTx, txData evmtypes.TxData, denom string, homestead, istanbul, london bool,
 	) (sdk.Coins, error)

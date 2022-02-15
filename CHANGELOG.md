@@ -35,7 +35,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.10.0] - 2022-01-27
+## [v0.10.0-beta1] - 2022-02-15
 
 ### API Breaking
 
@@ -46,15 +46,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (deps) [tharis#912](https://github.com/tharsis/ethermint/pull/912) Bump Cosmos SDK version to [`v0.45.0`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.0)
-* (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
-* (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
-* (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
+* (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
+* (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
+* (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
 * (evm) [tharsis#808](https://github.com/tharsis/ethermint/issues/808) increase nonce in ante handler for contract creation transaction.
 * (evm) [tharsis#851](https://github.com/tharsis/ethermint/pull/851) fix contract address used in EVM, this issue is caused by [tharsis#808](https://github.com/tharsis/ethermint/issues/808).
 * (evm)  Reject invalid `MsgEthereumTx` wrapping tx
 * (evm)  Fix `SelfDestruct` opcode by deleting account code and state.
-* (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent `BaseFee` check logic.
-* (evm) [tharsis#729](https://github.com/tharsis/ethermint/pull/729) Refactor EVM StateDB implementation.
+* (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent `BaseFee` check logic.
+* (evm) [tharsis#729](https://github.com/tharsis/ethermint/pull/729) Refactor EVM StateDB implementation.
+* (evm) [tharsis#935](https://github.com/tharsis/ethermint/pull/935) Bumb Go-ethereum version to [`v1.10.15`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.15)
 
 ### Improvements
 
@@ -64,9 +65,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#827](https://github.com/tharsis/ethermint/issues/827) Speed up creation of event logs by using the slice insertion idiom with indices.
 * (ante) [tharsis#819](https://github.com/tharsis/ethermint/pull/819) remove redundant ante handlers
 * (app) [tharsis#873](https://github.com/tharsis/ethermint/pull/873) Validate code hash in GenesisAccount
-* (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple MsgEthereumTx in single tx.
+* (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple MsgEthereumTx in single tx.
 * (config) [tharsis#908](https://github.com/tharsis/ethermint/pull/908) Add api.enable flag for Cosmos SDK Rest server
-* (feemarket) [tharsis#919](https://github.com/tharsis/ethermint/pull/919) Initialize baseFee in default genesis state.
+* (feemarket) [tharsis#919](https://github.com/tharsis/ethermint/pull/919) Initialize baseFee in default genesis state.
 
 ### Bug Fixes
 
@@ -75,9 +76,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#838](https://github.com/tharsis/ethermint/pull/838) Fix splitting of trace.Memory into 32 chunks.
 * (rpc) [tharsis#860](https://github.com/tharsis/ethermint/pull/860) Fix `eth_getLogs` when specify blockHash without address/topics, and limit the response size.
 * (rpc) [tharsis#865](https://github.com/tharsis/ethermint/pull/865) Fix RPC Filter parameters being ignored
-* (evm) [tharsis#871](https://github.com/tharsis/ethermint/pull/871) Set correct nonce in `EthCall` and `EstimateGas` grpc query.
-* (rpc) [tharsis#878](https://github.com/tharsis/ethermint/pull/878) Workaround to make GetBlock RPC api report correct block gas used.
-* (rpc) [tharsis#900](https://github.com/tharsis/ethermint/pull/900) newPendingTransactions filter return ethereum tx hash.
+* (evm) [tharsis#871](https://github.com/tharsis/ethermint/pull/871) Set correct nonce in `EthCall` and `EstimateGas` grpc query.
+* (rpc) [tharsis#878](https://github.com/tharsis/ethermint/pull/878) Workaround to make GetBlock RPC api report correct block gas used.
+* (rpc) [tharsis#900](https://github.com/tharsis/ethermint/pull/900) newPendingTransactions filter return ethereum tx hash.
+* (rpc) [tharsis#933](https://github.com/tharsis/ethermint/pull/933) Fix newPendingTransactions subscription deadlock when a Websocket client exits without unsubscribing and the node errors.
+* (evm) [tharsis#932](https://github.com/tharsis/ethermint/pull/932) Fix base fee check logic in state transition.
 
 ## [v0.9.0] - 2021-12-01
 
@@ -137,9 +140,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
 * (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 * (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
-* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
-* (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
-* (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs 
+* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
+* (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
+* (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs
 * (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) Fix debug JSON RPC handler crash on non-existing block
 
 ### Improvements

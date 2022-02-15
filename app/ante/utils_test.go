@@ -68,6 +68,8 @@ func (suite *AnteTestSuite) SetupTest() {
 			evmGenesis := evmtypes.DefaultGenesisState()
 			maxInt := sdk.NewInt(math.MaxInt64)
 			evmGenesis.Params.ChainConfig.LondonBlock = &maxInt
+			evmGenesis.Params.ChainConfig.ArrowGlacierBlock = &maxInt
+			evmGenesis.Params.ChainConfig.MergeForkBlock = &maxInt
 			genesis[evmtypes.ModuleName] = app.AppCodec().MustMarshalJSON(evmGenesis)
 		}
 		return genesis

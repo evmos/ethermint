@@ -8,6 +8,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
+
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"google.golang.org/grpc/codes"
@@ -469,7 +471,7 @@ func (k *Keeper) traceTx(
 ) (*interface{}, uint, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer    vm.Tracer
+		tracer    vm.EVMLogger
 		overrides *ethparams.ChainConfig
 		err       error
 	)
@@ -513,12 +515,12 @@ func (k *Keeper) traceTx(
 		go func() {
 			<-deadlineCtx.Done()
 			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
-				tracer.(*tracers.Tracer).Stop(errors.New("execution timeout"))
+				tracer.(tracers.Tracer).Stop(errors.New("execution timeout"))
 			}
 		}()
 
 	case traceConfig != nil:
-		logConfig := vm.LogConfig{
+		logConfig := logger.Config{
 			EnableMemory:     traceConfig.EnableMemory,
 			DisableStorage:   traceConfig.DisableStorage,
 			DisableStack:     traceConfig.DisableStack,
@@ -527,7 +529,7 @@ func (k *Keeper) traceTx(
 			Limit:            int(traceConfig.Limit),
 			Overrides:        overrides,
 		}
-		tracer = vm.NewStructLogger(&logConfig)
+		tracer = logger.NewStructLogger(&logConfig)
 	default:
 		tracer = types.NewTracer(types.TracerStruct, msg, cfg.ChainConfig, ctx.BlockHeight())
 	}
@@ -541,7 +543,7 @@ func (k *Keeper) traceTx(
 
 	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
-	case *vm.StructLogger:
+	case *logger.StructLogger:
 		// TODO: Return proper returnValue
 		result = types.ExecutionResult{
 			Gas:         res.GasUsed,
@@ -549,7 +551,7 @@ func (k *Keeper) traceTx(
 			ReturnValue: "",
 			StructLogs:  types.FormatLogs(tracer.StructLogs()),
 		}
-	case *tracers.Tracer:
+	case tracers.Tracer:
 		result, err = tracer.GetResult()
 		if err != nil {
 			return nil, 0, status.Error(codes.Internal, err.Error())
