@@ -968,33 +968,16 @@ func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 	}
 
 	// Checks the feemarket param NoBaseFee settings, return 0 if it is enabled.
-	resParams, err := e.queryClient.FeeMarket.Params(types.ContextWithHeight(height), &feemarkettypes.QueryParamsRequest{})
+	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	if resParams.Params.NoBaseFee {
+	if res.BaseFee == nil {
 		return big.NewInt(0), nil
 	}
 
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &height)
-	if err != nil {
-		return nil, err
-	}
-
-	baseFee := types.BaseFeeFromEvents(blockRes.BeginBlockEvents)
-	if baseFee != nil {
-		return baseFee, nil
-	}
-
-	// If we cannot find in events, we tried to get it from the state.
-	// It will return feemarket.baseFee if london is activated but feemarket is not enable
-	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
-	if err == nil && res.BaseFee != nil {
-		return res.BaseFee.BigInt(), nil
-	}
-
-	return nil, nil
+	return res.BaseFee.BigInt(), nil
 }
 
 // GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.

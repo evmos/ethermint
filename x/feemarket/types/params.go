@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+	"math/big"
+	"strconv"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/params"
@@ -14,7 +16,7 @@ var (
 	ParamStoreKeyNoBaseFee                = []byte("NoBaseFee")
 	ParamStoreKeyBaseFeeChangeDenominator = []byte("BaseFeeChangeDenominator")
 	ParamStoreKeyElasticityMultiplier     = []byte("ElasticityMultiplier")
-	ParamStoreKeyInitialBaseFee           = []byte("InitialBaseFee")
+	ParamStoreKeyBaseFee           		  = []byte("BaseFee")
 	ParamStoreKeyEnableHeight             = []byte("EnableHeight")
 )
 
@@ -24,12 +26,12 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, initialBaseFee, enableHeight int64) Params {
+func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, baseFee, enableHeight int64) Params {
 	return Params{
 		NoBaseFee:                noBaseFee,
 		BaseFeeChangeDenominator: baseFeeChangeDenom,
 		ElasticityMultiplier:     elasticityMultiplier,
-		InitialBaseFee:           initialBaseFee,
+		BaseFee:         		  strconv.FormatInt(baseFee, 10),
 		EnableHeight:             enableHeight,
 	}
 }
@@ -40,7 +42,7 @@ func DefaultParams() Params {
 		NoBaseFee:                false,
 		BaseFeeChangeDenominator: params.BaseFeeChangeDenominator,
 		ElasticityMultiplier:     params.ElasticityMultiplier,
-		InitialBaseFee:           params.InitialBaseFee,
+		BaseFee:          		  strconv.FormatInt(params.InitialBaseFee, 10),
 		EnableHeight:             0,
 	}
 }
@@ -51,7 +53,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyNoBaseFee, &p.NoBaseFee, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyBaseFeeChangeDenominator, &p.BaseFeeChangeDenominator, validateBaseFeeChangeDenominator),
 		paramtypes.NewParamSetPair(ParamStoreKeyElasticityMultiplier, &p.ElasticityMultiplier, validateElasticityMultiplier),
-		paramtypes.NewParamSetPair(ParamStoreKeyInitialBaseFee, &p.InitialBaseFee, validateInitialBaseFee),
+		paramtypes.NewParamSetPair(ParamStoreKeyBaseFee, &p.BaseFee, validateBaseFee),
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableHeight, &p.EnableHeight, validateEnableHeight),
 	}
 }
@@ -62,8 +64,14 @@ func (p Params) Validate() error {
 		return fmt.Errorf("base fee change denominator cannot be 0")
 	}
 
-	if p.InitialBaseFee < 0 {
-		return fmt.Errorf("initial base fee cannot be negative: %d", p.InitialBaseFee)
+	baseFee , valid := new(big.Int).SetString(p.BaseFee, 10)
+	if !valid {
+		return fmt.Errorf("not a valid base fee: %s", p.BaseFee)
+
+	}
+
+	if baseFee.Sign() < 0 {
+		return fmt.Errorf("initial base fee cannot be negative: %s", p.BaseFee)
 	}
 
 	if p.EnableHeight < 0 {
@@ -106,14 +114,20 @@ func validateElasticityMultiplier(i interface{}) error {
 	return nil
 }
 
-func validateInitialBaseFee(i interface{}) error {
-	value, ok := i.(int64)
+func validateBaseFee(i interface{}) error {
+	value, ok := i.(string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if value < 0 {
-		return fmt.Errorf("initial base fee cannot be negative: %d", value)
+	baseFee , valid := new(big.Int).SetString(value, 10)
+	if !valid {
+		return fmt.Errorf("not a valid base fee: %s", baseFee)
+
+	}
+
+	if baseFee.Sign() < 0 {
+		return fmt.Errorf("base fee cannot be negative: %s", baseFee)
 	}
 
 	return nil

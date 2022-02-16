@@ -3,6 +3,7 @@ package filters
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -36,6 +37,7 @@ type Backend interface {
 	RPCFilterCap() int32
 	RPCLogsCap() int32
 	RPCBlockRangeCap() int32
+	BaseFee(height int64) (*big.Int, error)
 }
 
 // consider a filter inactive if it has not been polled for within deadline
@@ -258,7 +260,11 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 					continue
 				}
 
-				baseFee := types.BaseFeeFromEvents(data.ResultBeginBlock.Events)
+				baseFee, err := api.backend.BaseFee(data.Header.Height)
+				if err != nil {
+					api.logger.Debug("cannot retrieve base fee", "err", fmt.Sprintf("%v", err))
+					continue
+				}
 
 				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
 				api.filtersMu.Lock()
@@ -310,7 +316,11 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 					continue
 				}
 
-				baseFee := types.BaseFeeFromEvents(data.ResultBeginBlock.Events)
+				baseFee, err := api.backend.BaseFee(data.Header.Height)
+				if err != nil {
+					api.logger.Debug("cannot retrieve base fee", "err", fmt.Sprintf("%v", err))
+					continue
+				}
 
 				// TODO: fetch bloom from events
 				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)

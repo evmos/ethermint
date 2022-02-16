@@ -91,10 +91,11 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 		if suite.enableFeemarket {
 			feemarketGenesis.Params.EnableHeight = 1
 			feemarketGenesis.Params.NoBaseFee = false
-			feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
+			bf, _  := sdk.NewIntFromString(feemarketGenesis.Params.BaseFee)
+			feemarketGenesis.DefaultBaseFee = bf
 		} else {
 			feemarketGenesis.Params.NoBaseFee = true
-			feemarketGenesis.BaseFee = sdk.NewInt(0)
+			feemarketGenesis.DefaultBaseFee = sdk.NewInt(0)
 		}
 		genesis[feemarkettypes.ModuleName] = app.AppCodec().MustMarshalJSON(feemarketGenesis)
 		if !suite.enableLondonHF {

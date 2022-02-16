@@ -2,8 +2,6 @@ package keeper_test
 
 import (
 	"fmt"
-	"math/big"
-
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -12,13 +10,13 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 		name      string
 		NoBaseFee bool
 		malleate  func()
-		expFee    *big.Int
+		expFee    string
 	}{
 		{
 			"without BaseFee",
 			true,
 			func() {},
-			nil,
+			"",
 		},
 		{
 			"with BaseFee - initial EIP-1559 block",
@@ -26,7 +24,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(0)
 			},
-			big.NewInt(suite.app.FeeMarketKeeper.GetParams(suite.ctx).InitialBaseFee),
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee,
 		},
 		{
 			"with BaseFee - parent block used the same gas as its target",
@@ -51,7 +49,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				params.ElasticityMultiplier = 1
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			big.NewInt(suite.app.FeeMarketKeeper.GetParams(suite.ctx).InitialBaseFee),
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee,
 		},
 		{
 			"with BaseFee - parent block used more gas than its target",
@@ -72,7 +70,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				params.ElasticityMultiplier = 1
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			big.NewInt(1125000000),
+			"1125000000",
 		},
 		{
 			"with BaseFee - Parent gas used smaller than parent gas target",
@@ -93,7 +91,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				params.ElasticityMultiplier = 1
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			big.NewInt(937500000),
+			"937500000",
 		},
 	}
 	for _, tc := range testCases {
@@ -109,7 +107,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			if tc.NoBaseFee {
 				suite.Require().Nil(fee, tc.name)
 			} else {
-				suite.Require().Equal(tc.expFee, fee, tc.name)
+				suite.Require().Equal(tc.expFee, fee.String(), tc.name)
 			}
 		})
 	}

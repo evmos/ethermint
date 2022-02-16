@@ -12,7 +12,7 @@ func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params: DefaultParams(),
 		// the default base fee should be initialized because the default enable height is zero.
-		BaseFee:  sdk.NewIntFromUint64(params.InitialBaseFee),
+		DefaultBaseFee:  sdk.NewIntFromUint64(params.InitialBaseFee),
 		BlockGas: 0,
 	}
 }
@@ -21,7 +21,7 @@ func DefaultGenesisState() *GenesisState {
 func NewGenesisState(params Params, baseFee sdk.Int, blockGas uint64) *GenesisState {
 	return &GenesisState{
 		Params:   params,
-		BaseFee:  baseFee,
+		DefaultBaseFee:  baseFee,
 		BlockGas: blockGas,
 	}
 }
@@ -29,8 +29,8 @@ func NewGenesisState(params Params, baseFee sdk.Int, blockGas uint64) *GenesisSt
 // Validate performs basic genesis state validation returning an error upon any
 // failure.
 func (gs GenesisState) Validate() error {
-	if gs.BaseFee.IsNegative() {
-		return fmt.Errorf("base fee cannot be negative: %s", gs.BaseFee)
+	if gs.DefaultBaseFee.IsNegative() {
+		return fmt.Errorf("base fee cannot be negative: %s", gs.DefaultBaseFee)
 	}
 
 	return gs.Params.Validate()

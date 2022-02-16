@@ -21,10 +21,18 @@ func (k Keeper) Params(c context.Context, _ *types.QueryParamsRequest) (*types.Q
 }
 
 // BaseFee implements the Query/BaseFee gRPC method
+// return empty if base fee is not enable
 func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types.QueryBaseFeeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
 	res := &types.QueryBaseFeeResponse{}
+
+	params := k.GetParams(ctx)
+
+	if params.NoBaseFee {
+		return res, nil
+	}
+
 	baseFee := k.GetBaseFee(ctx)
 
 	if baseFee != nil {
