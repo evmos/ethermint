@@ -47,18 +47,18 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 		{
 			"empty genesis",
 			&GenesisState{
-				Params:   Params{},
-				DefaultBaseFee:  sdk.ZeroInt(),
-				BlockGas: 0,
+				Params:         Params{},
+				DefaultBaseFee: sdk.ZeroInt(),
+				BlockGas:       0,
 			},
 			false,
 		},
 		{
 			"base fee is negative",
 			&GenesisState{
-				Params:   Params{},
-				DefaultBaseFee:  sdk.OneInt().Neg(),
-				BlockGas: 0,
+				Params:         Params{},
+				DefaultBaseFee: sdk.OneInt().Neg(),
+				BlockGas:       0,
 			},
 			false,
 		},

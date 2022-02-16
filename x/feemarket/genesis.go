@@ -29,8 +29,8 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	}
 
 	return &types.GenesisState{
-		Params:   k.GetParams(ctx),
-		DefaultBaseFee:  baseFee,
-		BlockGas: k.GetBlockGasUsed(ctx),
+		Params:         k.GetParams(ctx),
+		DefaultBaseFee: baseFee,
+		BlockGas:       k.GetBlockGasUsed(ctx),
 	}
 }

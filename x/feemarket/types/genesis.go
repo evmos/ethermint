@@ -12,17 +12,17 @@ func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params: DefaultParams(),
 		// the default base fee should be initialized because the default enable height is zero.
-		DefaultBaseFee:  sdk.NewIntFromUint64(params.InitialBaseFee),
-		BlockGas: 0,
+		DefaultBaseFee: sdk.NewIntFromUint64(params.InitialBaseFee),
+		BlockGas:       0,
 	}
 }
 
 // NewGenesisState creates a new genesis state.
 func NewGenesisState(params Params, baseFee sdk.Int, blockGas uint64) *GenesisState {
 	return &GenesisState{
-		Params:   params,
-		DefaultBaseFee:  baseFee,
-		BlockGas: blockGas,
+		Params:         params,
+		DefaultBaseFee: baseFee,
+		BlockGas:       blockGas,
 	}
 }
 

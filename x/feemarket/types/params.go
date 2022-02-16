@@ -16,7 +16,7 @@ var (
 	ParamStoreKeyNoBaseFee                = []byte("NoBaseFee")
 	ParamStoreKeyBaseFeeChangeDenominator = []byte("BaseFeeChangeDenominator")
 	ParamStoreKeyElasticityMultiplier     = []byte("ElasticityMultiplier")
-	ParamStoreKeyBaseFee           		  = []byte("BaseFee")
+	ParamStoreKeyBaseFee                  = []byte("BaseFee")
 	ParamStoreKeyEnableHeight             = []byte("EnableHeight")
 )
 
@@ -31,7 +31,7 @@ func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, 
 		NoBaseFee:                noBaseFee,
 		BaseFeeChangeDenominator: baseFeeChangeDenom,
 		ElasticityMultiplier:     elasticityMultiplier,
-		BaseFee:         		  strconv.FormatInt(baseFee, 10),
+		BaseFee:                  strconv.FormatInt(baseFee, 10),
 		EnableHeight:             enableHeight,
 	}
 }
@@ -42,7 +42,7 @@ func DefaultParams() Params {
 		NoBaseFee:                false,
 		BaseFeeChangeDenominator: params.BaseFeeChangeDenominator,
 		ElasticityMultiplier:     params.ElasticityMultiplier,
-		BaseFee:          		  strconv.FormatInt(params.InitialBaseFee, 10),
+		BaseFee:                  strconv.FormatInt(params.InitialBaseFee, 10),
 		EnableHeight:             0,
 	}
 }
@@ -64,10 +64,9 @@ func (p Params) Validate() error {
 		return fmt.Errorf("base fee change denominator cannot be 0")
 	}
 
-	baseFee , valid := new(big.Int).SetString(p.BaseFee, 10)
+	baseFee, valid := new(big.Int).SetString(p.BaseFee, 10)
 	if !valid {
 		return fmt.Errorf("not a valid base fee: %s", p.BaseFee)
-
 	}
 
 	if baseFee.Sign() < 0 {
@@ -120,10 +119,9 @@ func validateBaseFee(i interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	baseFee , valid := new(big.Int).SetString(value, 10)
+	baseFee, valid := new(big.Int).SetString(value, 10)
 	if !valid {
 		return fmt.Errorf("not a valid base fee: %s", baseFee)
-
 	}
 
 	if baseFee.Sign() < 0 {
