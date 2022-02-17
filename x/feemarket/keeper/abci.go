@@ -3,8 +3,10 @@ package keeper
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tharsis/ethermint/x/feemarket/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // BeginBlock updates base fee
@@ -17,6 +19,14 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	}
 
 	k.SetBaseFee(ctx, baseFee)
+
+	// Store current base fee in event
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeFeeMarket,
+			sdk.NewAttribute(types.AttributeKeyBaseFee, baseFee.String()),
+		),
+	})
 }
 
 // EndBlock update block gas used.

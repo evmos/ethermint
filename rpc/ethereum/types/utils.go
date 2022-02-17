@@ -14,11 +14,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
@@ -230,6 +232,27 @@ func NewRPCTransaction(
 		}
 	}
 	return result, nil
+}
+
+// BaseFeeFromEvents parses the feemarket basefee from cosmos events
+func BaseFeeFromEvents(events []abci.Event) *big.Int {
+	for _, event := range events {
+		if event.Type != feemarkettypes.EventTypeFeeMarket {
+			continue
+		}
+
+		for _, attr := range event.Attributes {
+			if bytes.Equal(attr.Key, []byte(feemarkettypes.AttributeKeyBaseFee)) {
+				result, success := new(big.Int).SetString(string(attr.Value), 10)
+				if success {
+					return result
+				}
+
+				return nil
+			}
+		}
+	}
+	return nil
 }
 
 // FindTxAttributes returns the msg index of the eth tx in cosmos tx, and the attributes,
