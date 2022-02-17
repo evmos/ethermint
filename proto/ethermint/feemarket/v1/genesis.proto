@@ -12,5 +12,5 @@ message GenesisState {
   Params params = 1 [ (gogoproto.nullable) = false ];
   // block gas is the amount of gas used on the last block before the upgrade.
   // Zero by default.
-  uint64 block_gas = 3;
+  uint64 block_gas = 2;
 }
