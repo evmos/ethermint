@@ -22,15 +22,8 @@ func InitGenesis(
 
 // ExportGenesis exports genesis state of the fee market module
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
-	baseFee := sdk.ZeroInt()
-	baseFeeInt := k.GetBaseFee(ctx)
-	if baseFeeInt != nil {
-		baseFee = sdk.NewIntFromBigInt(baseFeeInt)
-	}
-
 	return &types.GenesisState{
-		Params:         k.GetParams(ctx),
-		DefaultBaseFee: baseFee,
-		BlockGas:       k.GetBlockGasUsed(ctx),
+		Params:   k.GetParams(ctx),
+		BlockGas: k.GetBlockGasUsed(ctx),
 	}
 }

@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"fmt"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"math/big"
 )
 
 func (suite *KeeperTestSuite) TestCalculateBaseFee() {
@@ -10,13 +11,13 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 		name      string
 		NoBaseFee bool
 		malleate  func()
-		expFee    string
+		expFee    *big.Int
 	}{
 		{
 			"without BaseFee",
 			true,
 			func() {},
-			"",
+			nil,
 		},
 		{
 			"with BaseFee - initial EIP-1559 block",
@@ -24,7 +25,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(0)
 			},
-			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee,
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
 		},
 		{
 			"with BaseFee - parent block used the same gas as its target",
@@ -49,7 +50,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				params.ElasticityMultiplier = 1
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee,
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
 		},
 		{
 			"with BaseFee - parent block used more gas than its target",
@@ -70,7 +71,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				params.ElasticityMultiplier = 1
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			"1125000000",
+			big.NewInt(1125000000),
 		},
 		{
 			"with BaseFee - Parent gas used smaller than parent gas target",
@@ -91,7 +92,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				params.ElasticityMultiplier = 1
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			"937500000",
+			big.NewInt(937500000),
 		},
 	}
 	for _, tc := range testCases {
@@ -107,7 +108,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			if tc.NoBaseFee {
 				suite.Require().Nil(fee, tc.name)
 			} else {
-				suite.Require().Equal(tc.expFee, fee.String(), tc.name)
+				suite.Require().Equal(tc.expFee, fee, tc.name)
 			}
 		})
 	}

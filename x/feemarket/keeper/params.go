@@ -29,15 +29,11 @@ func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
 	if params.NoBaseFee {
 		return nil
 	}
-	baseFee, valid := new(big.Int).SetString(params.BaseFee, 10)
-	if !valid {
-		return nil
-	}
 
-	return baseFee
+	return params.BaseFee.BigInt()
 }
 
 // SetBaseFee set's the base fee in the paramSpace
 func (k Keeper) SetBaseFee(ctx sdk.Context, baseFee *big.Int) {
-	k.paramSpace.Set(ctx, types.ParamStoreKeyBaseFee, baseFee.String())
+	k.paramSpace.Set(ctx, types.ParamStoreKeyBaseFee, sdk.NewIntFromBigInt(baseFee))
 }

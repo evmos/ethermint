@@ -2,9 +2,8 @@ package types
 
 import (
 	"fmt"
-	"math/big"
-	"strconv"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -26,12 +25,12 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, baseFee, enableHeight int64) Params {
+func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, baseFee uint64, enableHeight int64) Params {
 	return Params{
 		NoBaseFee:                noBaseFee,
 		BaseFeeChangeDenominator: baseFeeChangeDenom,
 		ElasticityMultiplier:     elasticityMultiplier,
-		BaseFee:                  strconv.FormatInt(baseFee, 10),
+		BaseFee:                  sdk.NewIntFromUint64(baseFee),
 		EnableHeight:             enableHeight,
 	}
 }
@@ -42,7 +41,7 @@ func DefaultParams() Params {
 		NoBaseFee:                false,
 		BaseFeeChangeDenominator: params.BaseFeeChangeDenominator,
 		ElasticityMultiplier:     params.ElasticityMultiplier,
-		BaseFee:                  strconv.FormatInt(params.InitialBaseFee, 10),
+		BaseFee:                  sdk.NewIntFromUint64(params.InitialBaseFee),
 		EnableHeight:             0,
 	}
 }
@@ -64,12 +63,7 @@ func (p Params) Validate() error {
 		return fmt.Errorf("base fee change denominator cannot be 0")
 	}
 
-	baseFee, valid := new(big.Int).SetString(p.BaseFee, 10)
-	if !valid {
-		return fmt.Errorf("not a valid base fee: %s", p.BaseFee)
-	}
-
-	if baseFee.Sign() < 0 {
+	if p.BaseFee.IsNegative() {
 		return fmt.Errorf("initial base fee cannot be negative: %s", p.BaseFee)
 	}
 
@@ -114,18 +108,13 @@ func validateElasticityMultiplier(i interface{}) error {
 }
 
 func validateBaseFee(i interface{}) error {
-	value, ok := i.(string)
+	value, ok := i.(sdk.Int)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	baseFee, valid := new(big.Int).SetString(value, 10)
-	if !valid {
-		return fmt.Errorf("not a valid base fee: %s", baseFee)
-	}
-
-	if baseFee.Sign() < 0 {
-		return fmt.Errorf("base fee cannot be negative: %s", baseFee)
+	if value.Sign() < 0 {
+		return fmt.Errorf("base fee cannot be negative")
 	}
 
 	return nil
