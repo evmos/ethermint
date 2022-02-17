@@ -113,7 +113,7 @@ func validateBaseFee(i interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if value.Sign() < 0 {
+	if value.IsNegative() {
 		return fmt.Errorf("base fee cannot be negative")
 	}
 
