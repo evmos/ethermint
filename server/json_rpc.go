@@ -29,11 +29,11 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEn
 		case ethlog.LvlDebug:
 			logger.Debug(r.Msg, r.Ctx...)
 		case ethlog.LvlInfo:
-			logger.Info(r.Msg, r.Ctx...)
+			fallthrough
 		case ethlog.LvlWarn:
 			logger.Info(r.Msg, r.Ctx...)
 		case ethlog.LvlError:
-			logger.Error(r.Msg, r.Ctx...)
+			fallthrough
 		case ethlog.LvlCrit:
 			logger.Error(r.Msg, r.Ctx...)
 		}
