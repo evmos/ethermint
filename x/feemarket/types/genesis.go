@@ -1,9 +1,5 @@
 package types
 
-import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-)
-
 // DefaultGenesisState sets default fee market genesis state.
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
@@ -13,7 +9,7 @@ func DefaultGenesisState() *GenesisState {
 }
 
 // NewGenesisState creates a new genesis state.
-func NewGenesisState(params Params, baseFee sdk.Int, blockGas uint64) *GenesisState {
+func NewGenesisState(params Params, blockGas uint64) *GenesisState {
 	return &GenesisState{
 		Params:   params,
 		BlockGas: blockGas,
