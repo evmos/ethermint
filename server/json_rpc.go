@@ -24,17 +24,11 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEn
 	logger := ctx.Logger.With("module", "geth")
 	ethlog.Root().SetHandler(ethlog.FuncHandler(func(r *ethlog.Record) error {
 		switch r.Lvl {
-		case ethlog.LvlTrace:
-			fallthrough
-		case ethlog.LvlDebug:
+		case ethlog.LvlTrace, ethlog.LvlDebug:
 			logger.Debug(r.Msg, r.Ctx...)
-		case ethlog.LvlInfo:
-			fallthrough
-		case ethlog.LvlWarn:
+		case ethlog.LvlInfo, ethlog.LvlWarn:
 			logger.Info(r.Msg, r.Ctx...)
-		case ethlog.LvlError:
-			fallthrough
-		case ethlog.LvlCrit:
+		case ethlog.LvlError, ethlog.LvlCrit:
 			logger.Error(r.Msg, r.Ctx...)
 		}
 		return nil
