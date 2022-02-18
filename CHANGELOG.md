@@ -35,6 +35,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- (log) [#948](https://github.com/tharsis/ethermint/pull/948) redirect go-ethereum's logs to cosmos-sdk logger.
+
 ## [v0.10.0-beta1] - 2022-02-15
 
 ### API Breaking
