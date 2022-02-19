@@ -14,7 +14,6 @@ pull_request_rules:
         name: default
       merge:
         method: squash
-        strict: true
         commit_message: title+body
   - name: backport patches to v0.9.x branch
     conditions:
