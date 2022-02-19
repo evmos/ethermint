@@ -61,7 +61,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm)  Fix `SelfDestruct` opcode by deleting account code and state.
 * (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent `BaseFee` check logic.
 * (evm) [tharsis#729](https://github.com/tharsis/ethermint/pull/729) Refactor EVM StateDB implementation.
-* (evm) [tharsis#935](https://github.com/tharsis/ethermint/pull/935) Bumb Go-ethereum version to [`v1.10.15`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.15)
+* (evm) [tharsis#945](https://github.com/tharsis/ethermint/pull/945) Bumb Go-ethereum version to [`v1.10.16`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.16)
 
 ### Improvements
 
