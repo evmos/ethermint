@@ -92,14 +92,17 @@ func (k *Keeper) NewEVM(
 	if tracer == nil {
 		tracer = k.Tracer(ctx, msg, cfg.ChainConfig)
 	}
-	vmConfig := k.VMConfig(ctx, msg, cfg.Params, tracer)
+	vmConfig := k.VMConfig(ctx, msg, cfg, tracer)
 	return vm.NewEVM(blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig)
 }
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, params types.Params, tracer vm.EVMLogger) vm.Config {
-	fmParams := k.feeMarketKeeper.GetParams(ctx)
+func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, cfg *types.EVMConfig, tracer vm.EVMLogger) vm.Config {
+	noBaseFee := true
+	if types.IsLondon(cfg.ChainConfig, ctx.BlockHeight()) {
+		noBaseFee = k.feeMarketKeeper.GetParams(ctx).NoBaseFee
+	}
 
 	var debug bool
 	if _, ok := tracer.(types.NoOpTracer); !ok {
@@ -109,8 +112,8 @@ func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, params types.Params,
 	return vm.Config{
 		Debug:     debug,
 		Tracer:    tracer,
-		NoBaseFee: fmParams.NoBaseFee,
-		ExtraEips: params.EIPs(),
+		NoBaseFee: noBaseFee,
+		ExtraEips: cfg.Params.EIPs(),
 	}
 }
 
@@ -368,7 +371,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 
 	// access list preparaion is moved from ante handler to here, because it's needed when `ApplyMessage` is called
 	// under contexts where ante handlers are not run, for example `eth_call` and `eth_estimateGas`.
-	if rules := cfg.ChainConfig.Rules(big.NewInt(ctx.BlockHeight())); rules.IsBerlin {
+	if rules := cfg.ChainConfig.Rules(big.NewInt(ctx.BlockHeight()), cfg.ChainConfig.MergeForkBlock != nil); rules.IsBerlin {
 		stateDB.PrepareAccessList(msg.From(), msg.To(), vm.ActivePrecompiles(rules), msg.AccessList())
 	}
 
