@@ -120,7 +120,7 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 			{Name: "memo", Type: "string"},
 			{Name: "msgs", Type: "Msg[]"},
 			{Name: "sequence", Type: "string"},
-			{Name: "timeout_height", Type: "string"},
+			// {Name: "timeout_height", Type: "string"},
 		},
 		"Fee": {
 			{Name: "amount", Type: "Coin[]"},

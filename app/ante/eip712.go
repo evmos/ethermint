@@ -173,7 +173,7 @@ func VerifySignature(
 					// but limited to certain options: 1 (mainnet), 42 (Kovan), thus Metamask will
 					// be able to submit signatures without switching networks.
 
-					if extOpt.TypedDataChainID == 1 || extOpt.TypedDataChainID == 42 {
+					if extOpt.TypedDataChainID == 1 || extOpt.TypedDataChainID == 42 || extOpt.TypedDataChainID == 9000 {
 						chainID = extOpt.TypedDataChainID
 					}
 

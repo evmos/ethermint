@@ -90,9 +90,9 @@ func cosmosAnteHandlerCreator(options HandlerOptions, signatureType int) sdk.Ant
 	return sdk.ChainAnteDecorators(
 		RejectMessagesDecorator{}, // reject MsgEthereumTxs
 		ante.NewSetUpContextDecorator(),
-		ante.NewRejectExtensionOptionsDecorator(),
+		// ante.NewRejectExtensionOptionsDecorator(),
 		ante.NewMempoolFeeDecorator(),
-		ante.NewValidateBasicDecorator(),
+		// ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
