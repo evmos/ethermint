@@ -219,6 +219,14 @@ func VerifySignature(
 				return err
 			}
 
+			if len(feePayerSig) != 65 {
+				return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
+			}
+			if feePayerSig[64] > 4 {
+				// Remove the recovery offset if needed (ie. Metamask eip712 signature)
+				feePayerSig[64] = feePayerSig[64] - 27
+			}
+
 			feePayerPubkey, err := secp256k1.RecoverPubkey(sigHash, feePayerSig)
 			if err != nil {
 				return errors.Wrap(err, "failed to recover delegated fee payer from sig")
@@ -239,8 +247,11 @@ func VerifySignature(
 				return errors.New("failed to verify delegated fee payer sig")
 			}
 
+			// Overwrite the transaction signature because we are using EIP712
+			// TODO: should we allow only feePayerSignature and return error
+			// if the transaction signatures != []?
+			data.Signature = feePayerSig
 		} else {
-
 			typedData, err = eip712.WrapTxToTypedData(ethermintCodec, chainID, msgs[0], txBytes, nil)
 			if err != nil {
 				return errors.Wrap(err, "failed to pack tx data in EIP712 object")

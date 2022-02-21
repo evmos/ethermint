@@ -468,6 +468,11 @@ func (typedData *TypedData) EncodeData(primaryType string, data map[string]inter
 					if err != nil {
 						return nil, err
 					}
+
+					// This condition solves the problem that the implementation doesn't
+					// hash the encoded data when operating with CustomTypes inside CustomTypes
+					// maybe it can hash all the messages and work fine, more debugging is
+					// needed to remove it
 					if len(encodedData) != 32 {
 						encodedData = crypto.Keccak256(encodedData)
 					}
@@ -481,9 +486,6 @@ func (typedData *TypedData) EncodeData(primaryType string, data map[string]inter
 				}
 			}
 
-			fmt.Println("field name: ", field.Name)
-			fmt.Println(crypto.Keccak256(arrayBuffer.Bytes()))
-
 			buffer.Write(crypto.Keccak256(arrayBuffer.Bytes()))
 		} else if typedData.Types[field.Type] != nil {
 			mapValue, ok := encValue.(map[string]interface{})
@@ -494,16 +496,14 @@ func (typedData *TypedData) EncodeData(primaryType string, data map[string]inter
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println("field name: ", field.Name)
-			fmt.Println(crypto.Keccak256(encodedData))
+
 			buffer.Write(crypto.Keccak256(encodedData))
 		} else {
 			byteValue, err := typedData.EncodePrimitiveValue(encType, encValue, depth)
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println("field name: ", field.Name)
-			fmt.Println(byteValue)
+
 			buffer.Write(byteValue)
 		}
 	}
