@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"math/big"
 	"reflect"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -302,7 +303,7 @@ func traverseFields(
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-			// nolint: unused
+
 			var fieldTypedef string
 
 			if isCollection {
@@ -375,9 +376,11 @@ var (
 // typToEth supports only basic types and arrays of basic types.
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
 func typToEth(typ reflect.Type) string {
+	const str = "string"
+
 	switch typ.Kind() {
 	case reflect.String:
-		return "string"
+		return str
 	case reflect.Bool:
 		return "bool"
 	case reflect.Int:
@@ -413,14 +416,14 @@ func typToEth(typ reflect.Type) string {
 	case reflect.Ptr:
 		if typ.Elem().ConvertibleTo(bigIntType) ||
 			typ.Elem().ConvertibleTo(cosmIntType) {
-			return "string"
+			return str
 		}
 	case reflect.Struct:
 		if typ.ConvertibleTo(hashType) ||
 			typ.ConvertibleTo(addressType) ||
 			typ.ConvertibleTo(bigIntType) ||
 			typ.ConvertibleTo(cosmIntType) {
-			return "string"
+			return str
 		}
 	}
 

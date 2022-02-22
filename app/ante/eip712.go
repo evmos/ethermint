@@ -2,8 +2,9 @@ package ante
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
 	"github.com/pkg/errors"
 
@@ -225,7 +226,7 @@ func VerifySignature(
 			}
 			if feePayerSig[64] > 4 {
 				// Remove the recovery offset if needed (ie. Metamask eip712 signature)
-				feePayerSig[64] = feePayerSig[64] - 27
+				feePayerSig[64] -= 27
 			}
 
 			feePayerPubkey, err := secp256k1.RecoverPubkey(sigHash, feePayerSig)
