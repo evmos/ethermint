@@ -2,6 +2,7 @@ package ante
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -201,7 +202,7 @@ func VerifySignature(
 			}
 		}
 
-		var typedData eip712.TypedData
+		var typedData apitypes.TypedData
 		var sigHash []byte
 
 		if feeDelegated {

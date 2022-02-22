@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"math/big"
 	"reflect"
 	"strings"
@@ -18,7 +19,7 @@ import (
 )
 
 // ComputeTypedDataHash computes keccak hash of typed data for signing.
-func ComputeTypedDataHash(typedData TypedData) ([]byte, error) {
+func ComputeTypedDataHash(typedData apitypes.TypedData) ([]byte, error) {
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
 		err = errors.Wrap(err, "failed to pack and hash typedData EIP712Domain")
@@ -43,14 +44,14 @@ func WrapTxToTypedData(
 	msg sdk.Msg,
 	data []byte,
 	feeDelegation *FeeDelegationOptions,
-) (TypedData, error) {
+) (apitypes.TypedData, error) {
 	txData := make(map[string]interface{})
 
 	if err := json.Unmarshal(data, &txData); err != nil {
-		return TypedData{}, errors.Wrap(err, "failed to JSON unmarshal data")
+		return apitypes.TypedData{}, errors.Wrap(err, "failed to JSON unmarshal data")
 	}
 
-	domain := TypedDataDomain{
+	domain := apitypes.TypedDataDomain{
 		Name:              "Cosmos Web3",
 		Version:           "1.0.0",
 		ChainId:           math.NewHexOrDecimal256(int64(chainID)),
@@ -60,7 +61,7 @@ func WrapTxToTypedData(
 
 	msgTypes, err := extractMsgTypes(cdc, "MsgValue", msg)
 	if err != nil {
-		return TypedData{}, err
+		return apitypes.TypedData{}, err
 	}
 
 	if feeDelegation != nil {
@@ -68,14 +69,14 @@ func WrapTxToTypedData(
 		feeInfo["feePayer"] = feeDelegation.FeePayer.String()
 
 		// also patching msgTypes to include feePayer
-		msgTypes["Fee"] = []Type{
+		msgTypes["Fee"] = []apitypes.Type{
 			{Name: "feePayer", Type: "string"},
 			{Name: "amount", Type: "Coin[]"},
 			{Name: "gas", Type: "string"},
 		}
 	}
 
-	typedData := TypedData{
+	typedData := apitypes.TypedData{
 		Types:       msgTypes,
 		PrimaryType: "Tx",
 		Domain:      domain,
@@ -89,8 +90,8 @@ type FeeDelegationOptions struct {
 	FeePayer sdk.AccAddress
 }
 
-func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg) (Types, error) {
-	rootTypes := Types{
+func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg) (apitypes.Types, error) {
+	rootTypes := apitypes.Types{
 		"EIP712Domain": {
 			{
 				Name: "name",
@@ -147,7 +148,7 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 
 const typeDefPrefix = "_"
 
-func walkFields(cdc codectypes.AnyUnpacker, typeMap Types, rootType string, in interface{}) (err error) {
+func walkFields(cdc codectypes.AnyUnpacker, typeMap apitypes.Types, rootType string, in interface{}) (err error) {
 	defer doRecover(&err)
 
 	t := reflect.TypeOf(in)
@@ -175,7 +176,7 @@ type cosmosAnyWrapper struct {
 
 func traverseFields(
 	cdc codectypes.AnyUnpacker,
-	typeMap Types,
+	typeMap apitypes.Types,
 	rootType string,
 	prefix string,
 	t reflect.Type,
@@ -285,13 +286,13 @@ func traverseFields(
 		ethTyp := typToEth(fieldType)
 		if len(ethTyp) > 0 {
 			if prefix == typeDefPrefix {
-				typeMap[rootType] = append(typeMap[rootType], Type{
+				typeMap[rootType] = append(typeMap[rootType], apitypes.Type{
 					Name: fieldName,
 					Type: ethTyp,
 				})
 			} else {
 				typeDef := sanitizeTypedef(prefix)
-				typeMap[typeDef] = append(typeMap[typeDef], Type{
+				typeMap[typeDef] = append(typeMap[typeDef], apitypes.Type{
 					Name: fieldName,
 					Type: ethTyp,
 				})
@@ -311,13 +312,13 @@ func traverseFields(
 			}
 
 			if prefix == typeDefPrefix {
-				typeMap[rootType] = append(typeMap[rootType], Type{
+				typeMap[rootType] = append(typeMap[rootType], apitypes.Type{
 					Name: fieldName,
 					Type: fieldTypedef,
 				})
 			} else {
 				typeDef := sanitizeTypedef(prefix)
-				typeMap[typeDef] = append(typeMap[typeDef], Type{
+				typeMap[typeDef] = append(typeMap[typeDef], apitypes.Type{
 					Name: fieldName,
 					Type: fieldTypedef,
 				})
