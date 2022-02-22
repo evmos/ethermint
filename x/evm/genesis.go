@@ -52,7 +52,7 @@ func InitGenesis(
 
 		code := common.Hex2Bytes(account.Code)
 		codeHash := crypto.Keccak256Hash(code)
-		isEmptyCodeHash := codeHash.Hex() == common.BytesToHash(types.EmptyCodeHash).String()
+		isEmptyCodeHash := bytes.Equal(codeHash.Bytes(), types.EmptyCodeHash)
 
 		// If account has no code allow for code to be added, if code already exists do not allow modification
 		if !isEmptyCodeHash && bytes.Equal(ethAccount.GetCodeHash().Bytes(), codeHash.Bytes()) {

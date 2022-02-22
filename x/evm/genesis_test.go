@@ -4,9 +4,11 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	ethermint "github.com/tharsis/ethermint/types"
 	"github.com/tharsis/ethermint/x/evm"
 	"github.com/tharsis/ethermint/x/evm/statedb"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -80,7 +82,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 			true,
 		},
 		{
-			"invalid code hash",
+			"set code at genesis",
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
@@ -90,7 +92,29 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Accounts: []types.GenesisAccount{
 					{
 						Address: address.String(),
-						Code:    "ffffffff",
+						Code:    "1234567890",
+					},
+				},
+			},
+			false,
+		},
+		{
+			"set code at genesis - panic due to duplicate",
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
+				ethAccount := acc.(ethermint.EthAccountI)
+				code := common.Hex2Bytes("1234567890")
+				codeHash := crypto.Keccak256Hash(code)
+				suite.app.EvmKeeper.SetCode(suite.ctx, codeHash.Bytes(), code)
+				ethAccount.SetCodeHash(codeHash)
+
+			},
+			&types.GenesisState{
+				Params: types.DefaultParams(),
+				Accounts: []types.GenesisAccount{
+					{
+						Address: address.String(),
+						Code:    "0987654321",
 					},
 				},
 			},
