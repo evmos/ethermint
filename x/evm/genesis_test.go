@@ -102,12 +102,10 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 			"set code at genesis - panic due to duplicate",
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
-				ethAccount := acc.(ethermint.EthAccountI)
 				code := common.Hex2Bytes("1234567890")
 				codeHash := crypto.Keccak256Hash(code)
 				suite.app.EvmKeeper.SetCode(suite.ctx, codeHash.Bytes(), code)
-				ethAccount.SetCodeHash(codeHash)
-
+				acc.(ethermint.EthAccountI).SetCodeHash(codeHash)
 			},
 			&types.GenesisState{
 				Params: types.DefaultParams(),
