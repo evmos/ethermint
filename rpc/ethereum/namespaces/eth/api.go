@@ -456,9 +456,9 @@ func (e *PublicAPI) SignTypedData(address common.Address, typedData apitypes.Typ
 	}
 
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-	sighash := crypto.Keccak256(rawData)
+	sigHash := crypto.Keccak256(rawData)
 	// Sign the requested hash with the wallet
-	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, sighash)
+	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, sigHash)
 	if err != nil {
 		e.logger.Error("keyring.SignByAddress failed", "address", address.Hex())
 		return nil, err
