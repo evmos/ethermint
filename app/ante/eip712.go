@@ -4,10 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-
-	"github.com/pkg/errors"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -20,12 +16,21 @@ import (
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/ethereum/eip712"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
+
+var ethermintCodec codec.ProtoCodecMarshaler
+
+func init() {
+	registry := codectypes.NewInterfaceRegistry()
+	ethermint.RegisterInterfaces(registry)
+	ethermintCodec = codec.NewProtoCodec(registry)
+}
 
 // Verify all signatures for a tx and return an error if any are invalid. Note,
 // the Eip712SigVerificationDecorator decorator will not get executed on ReCheck.
@@ -49,9 +54,10 @@ func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx,
 	if ctx.IsReCheckTx() {
 		return next(ctx, tx, simulate)
 	}
+
 	sigTx, ok := tx.(authsigning.SigVerifiableTx)
 	if !ok {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "invalid transaction type")
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx %T doesn't implement authsigning.SigVerifiableTx", tx)
 	}
 
 	// stdSigs contains the sequence number, account number, and signatures.
@@ -91,35 +97,34 @@ func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx,
 		// retrieve signer data
 		genesis := ctx.BlockHeight() == 0
 		chainID := ctx.ChainID()
+
 		var accNum uint64
 		if !genesis {
 			accNum = acc.GetAccountNumber()
 		}
+
 		signerData := authsigning.SignerData{
 			ChainID:       chainID,
 			AccountNumber: accNum,
 			Sequence:      acc.GetSequence(),
 		}
 
-		if !simulate {
-			err := VerifySignature(pubKey, signerData, sig.Data, svd.signModeHandler, tx.(authsigning.Tx))
-			if err != nil {
-				errMsg := fmt.Sprintf("signature verification failed; please verify account number (%d) and chain-id (%s)", accNum, chainID)
-				return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, errMsg)
+		if simulate {
+			continue
+		}
 
-			}
+		authSignTx, ok := tx.(authsigning.Tx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx %T doesn't implement the authsigning.Tx interface", tx)
+		}
+
+		if err := VerifySignature(pubKey, signerData, sig.Data, svd.signModeHandler, authSignTx); err != nil {
+			errMsg := fmt.Errorf("signature verification failed; please verify account number (%d) and chain-id (%s): %w", accNum, chainID, err)
+			return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, errMsg.Error())
 		}
 	}
 
 	return next(ctx, tx, simulate)
-}
-
-var ethermintCodec codec.ProtoCodecMarshaler
-
-func init() {
-	registry := codectypes.NewInterfaceRegistry()
-	ethermint.RegisterInterfaces(registry)
-	ethermintCodec = codec.NewProtoCodec(registry)
 }
 
 // VerifySignature verifies a transaction signature contained in SignatureData abstracting over different signing modes
@@ -141,6 +146,10 @@ func VerifySignature(
 		// and the signature is SIGN_MODE_LEGACY_AMINO_JSON which is supported for EIP712 for now
 
 		msgs := tx.GetMsgs()
+		if len(msgs) == 0 {
+			return sdkerrors.Wrap(sdkerrors.ErrNoSignatures, "tx doesn't contain any msgs to verify signature")
+		}
+
 		txBytes := legacytx.StdSignBytes(
 			signerData.ChainID,
 			signerData.AccountNumber,
@@ -153,10 +162,13 @@ func VerifySignature(
 			msgs, tx.GetMemo(),
 		)
 
-		var chainID uint64
-		var err error
-
 		var (
+			chainID uint64
+			err     error
+
+			typedData apitypes.TypedData
+			sigHash   []byte
+
 			feePayer     sdk.AccAddress
 			feePayerSig  []byte
 			feeDelegated bool
@@ -167,27 +179,27 @@ func VerifySignature(
 				var optIface ethermint.ExtensionOptionsWeb3TxI
 
 				if err := ethermintCodec.UnpackAny(opts[0], &optIface); err != nil {
-					return errors.Wrap(err, "failed to proto-unpack ExtensionOptionsWeb3Tx")
+					return sdkerrors.Wrap(err, "failed to proto-unpack ExtensionOptionsWeb3Tx")
 				}
 
 				if extOpt, ok := optIface.(*ethermint.ExtensionOptionsWeb3Tx); ok {
 					// chainID in EIP712 typed data is allowed to not match signerData.ChainID,
-					// but limited to certain options: 1 (mainnet), 42 (Kovan), thus Metamask will
+					// but limited to certain options: 9001 (mainnet), 9000 (testnet), thus Metamask will
 					// be able to submit signatures without switching networks.
 
-					if extOpt.TypedDataChainID == 1 || extOpt.TypedDataChainID == 42 || extOpt.TypedDataChainID == 9000 {
+					if extOpt.TypedDataChainID == 9001 || extOpt.TypedDataChainID == 9000 {
 						chainID = extOpt.TypedDataChainID
 					}
 
 					if len(extOpt.FeePayer) > 0 {
 						feePayer, err = sdk.AccAddressFromBech32(extOpt.FeePayer)
 						if err != nil {
-							return errors.Wrap(err, "failed to parse feePayer from ExtensionOptionsWeb3Tx")
+							return sdkerrors.Wrap(err, "failed to parse feePayer from ExtensionOptionsWeb3Tx")
 						}
 
 						feePayerSig = extOpt.FeePayerSig
 						if len(feePayerSig) == 0 {
-							return errors.Wrap(err, "no feePayerSig provided in ExtensionOptionsWeb3Tx")
+							return sdkerrors.Wrap(err, "no feePayerSig provided in ExtensionOptionsWeb3Tx")
 						}
 
 						feeDelegated = true
@@ -199,12 +211,9 @@ func VerifySignature(
 		if chainID == 0 {
 			chainID, err = strconv.ParseUint(signerData.ChainID, 10, 64)
 			if err != nil {
-				return errors.Wrapf(err, "failed to parse chainID: %s", signerData.ChainID)
+				return sdkerrors.Wrapf(err, "failed to parse chainID: %s", signerData.ChainID)
 			}
 		}
-
-		var typedData apitypes.TypedData
-		var sigHash []byte
 
 		if feeDelegated {
 			feeDelegation := &eip712.FeeDelegationOptions{
@@ -213,7 +222,7 @@ func VerifySignature(
 
 			typedData, err = eip712.WrapTxToTypedData(ethermintCodec, chainID, msgs[0], txBytes, feeDelegation)
 			if err != nil {
-				return errors.Wrap(err, "failed to pack tx data in EIP712 object")
+				return sdkerrors.Wrap(err, "failed to pack tx data in EIP712 object")
 			}
 
 			sigHash, err = eip712.ComputeTypedDataHash(typedData)
@@ -221,22 +230,23 @@ func VerifySignature(
 				return err
 			}
 
-			if len(feePayerSig) != 65 {
+			if len(feePayerSig) != ethcrypto.SignatureLength {
 				return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
 			}
-			if feePayerSig[64] > 4 {
+
+			if feePayerSig[ethcrypto.RecoveryIDOffset] > 4 {
 				// Remove the recovery offset if needed (ie. Metamask eip712 signature)
-				feePayerSig[64] -= 27
+				feePayerSig[ethcrypto.RecoveryIDOffset] -= 27
 			}
 
 			feePayerPubkey, err := secp256k1.RecoverPubkey(sigHash, feePayerSig)
 			if err != nil {
-				return errors.Wrap(err, "failed to recover delegated fee payer from sig")
+				return sdkerrors.Wrap(err, "failed to recover delegated fee payer from sig")
 			}
 
 			ecPubKey, err := ethcrypto.UnmarshalPubkey(feePayerPubkey)
 			if err != nil {
-				return errors.Wrap(err, "failed to unmarshal recovered fee payer pubkey")
+				return sdkerrors.Wrap(err, "failed to unmarshal recovered fee payer pubkey")
 			}
 
 			pk := &ethsecp256k1.PubKey{
@@ -246,7 +256,7 @@ func VerifySignature(
 			recoveredFeePayerAcc := sdk.AccAddress(pk.Address().Bytes())
 
 			if !recoveredFeePayerAcc.Equals(feePayer) {
-				return errors.New("failed to verify delegated fee payer sig")
+				return sdkerrors.Wrapf(sdkerrors.ErrorInvalidSigner, "failed to verify delegated fee payer %s signature", recoveredFeePayerAcc)
 			}
 
 			// Overwrite the transaction signature because we are using EIP712
@@ -256,7 +266,7 @@ func VerifySignature(
 		} else {
 			typedData, err = eip712.WrapTxToTypedData(ethermintCodec, chainID, msgs[0], txBytes, nil)
 			if err != nil {
-				return errors.Wrap(err, "failed to pack tx data in EIP712 object")
+				return sdkerrors.Wrap(err, "failed to pack tx data in EIP712 object")
 			}
 
 			sigHash, err = eip712.ComputeTypedDataHash(typedData)
@@ -265,7 +275,7 @@ func VerifySignature(
 			}
 		}
 
-		if len(data.Signature) != 65 {
+		if len(data.Signature) != ethcrypto.SignatureLength {
 			return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
 		}
 
