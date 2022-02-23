@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"math"
 	"math/big"
 
@@ -424,6 +425,40 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 
 	// Sign the requested hash with the wallet
 	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, data)
+	if err != nil {
+		e.logger.Error("keyring.SignByAddress failed", "address", address.Hex())
+		return nil, err
+	}
+
+	signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	return signature, nil
+}
+
+// SignTypedData signs EIP-712 conformant typed data
+func (e *PublicAPI) SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error) {
+	e.logger.Debug("eth_signTypedData", "address", address.Hex(), "data", typedData)
+	from := sdk.AccAddress(address.Bytes())
+
+	_, err := e.clientCtx.Keyring.KeyByAddress(from)
+	if err != nil {
+		e.logger.Error("failed to find key in keyring", "address", address.String())
+		return nil, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
+	}
+
+	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	if err != nil {
+		return nil, err
+	}
+
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+	if err != nil {
+		return nil, err
+	}
+
+	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
+	sighash := crypto.Keccak256(rawData)
+	// Sign the requested hash with the wallet
+	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, sighash)
 	if err != nil {
 		e.logger.Error("keyring.SignByAddress failed", "address", address.Hex())
 		return nil, err
