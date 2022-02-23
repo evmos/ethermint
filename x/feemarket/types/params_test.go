@@ -1,6 +1,7 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"testing"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -41,16 +42,6 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 			NewParams(true, 0, 3, 2000000000, int64(544435345345435345)),
 			true,
 		},
-		{
-			"initial base fee cannot is negative",
-			NewParams(true, 7, 3, -2000000000, int64(544435345345435345)),
-			true,
-		},
-		{
-			"initial base fee cannot is negative",
-			NewParams(true, 7, 3, 2000000000, int64(-544435345345435345)),
-			true,
-		},
 	}
 
 	for _, tc := range testCases {
@@ -72,9 +63,10 @@ func (suite *ParamsTestSuite) TestParamsValidatePriv() {
 	suite.Require().NoError(validateBaseFeeChangeDenominator(uint32(7)))
 	suite.Require().Error(validateElasticityMultiplier(""))
 	suite.Require().NoError(validateElasticityMultiplier(uint32(2)))
-	suite.Require().Error(validateInitialBaseFee(""))
-	suite.Require().Error(validateInitialBaseFee(int64(-2000000000)))
-	suite.Require().NoError(validateInitialBaseFee(int64(2000000000)))
+	suite.Require().Error(validateBaseFee(""))
+	suite.Require().Error(validateBaseFee(int64(2000000000)))
+	suite.Require().Error(validateBaseFee(sdk.NewInt(-2000000000)))
+	suite.Require().NoError(validateBaseFee(sdk.NewInt(2000000000)))
 	suite.Require().Error(validateEnableHeight(""))
 	suite.Require().Error(validateEnableHeight(int64(-544435345345435345)))
 	suite.Require().NoError(validateEnableHeight(int64(544435345345435345)))
