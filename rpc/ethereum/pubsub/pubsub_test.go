@@ -37,13 +37,13 @@ func TestSubscribe(t *testing.T) {
 
 	q.AddTopic("lol", lolSrc)
 
-	kekSubC, err := q.Subscribe("kek")
+	kekSubC, _, err := q.Subscribe("kek")
 	require.NoError(t, err)
 
-	lolSubC, err := q.Subscribe("lol")
+	lolSubC, _, err := q.Subscribe("lol")
 	require.NoError(t, err)
 
-	lol2SubC, err := q.Subscribe("lol")
+	lol2SubC, _, err := q.Subscribe("lol")
 	require.NoError(t, err)
 
 	wg := new(sync.WaitGroup)
