@@ -204,7 +204,8 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 		}
 
 		connID := msg["id"].(float64)
-		if method == "eth_subscribe" {
+		switch method {
+		case "eth_subscribe":
 			params := msg["params"].([]interface{})
 			if len(params) == 0 {
 				s.sendErrResponse(wsConn, "invalid parameters")
@@ -228,7 +229,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			if err := wsConn.WriteJSON(res); err != nil {
 				break
 			}
-		} else if method == "eth_unsubscribe" {
+		case "eth_unsubscribe":
 			params, ok := msg["params"].([]interface{})
 			if !ok {
 				s.sendErrResponse(wsConn, "invalid parameters")
@@ -255,7 +256,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			if err := wsConn.WriteJSON(res); err != nil {
 				break
 			}
-		} else {
+		default:
 			// otherwise, call the usual rpc server to respond
 			err = s.tcpGetAndSendResponse(wsConn, mb)
 			if err != nil {

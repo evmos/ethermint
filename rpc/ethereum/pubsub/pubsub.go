@@ -134,7 +134,7 @@ func (m *memEventBus) publishAllSubscribers(name string, msg coretypes.ResultEve
 	subsribers := m.subscribers[name]
 	m.subscribersMux.RUnlock()
 
-	for id, sub := range subsribers {
+	for _, sub := range subsribers {
 		select {
 		case sub <- msg:
 		default:
