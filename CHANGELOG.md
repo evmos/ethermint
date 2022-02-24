@@ -35,7 +35,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## UNRELEASED
+## Unreleased
+
+
+### Improvements
+
+- (log) [#948](https://github.com/tharsis/ethermint/pull/948) redirect go-ethereum's logs to Cosmos SDK logger.
 
 ### Bug Fixes
 
@@ -61,7 +66,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm)  Fix `SelfDestruct` opcode by deleting account code and state.
 * (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent `BaseFee` check logic.
 * (evm) [tharsis#729](https://github.com/tharsis/ethermint/pull/729) Refactor EVM StateDB implementation.
-* (evm) [tharsis#935](https://github.com/tharsis/ethermint/pull/935) Bumb Go-ethereum version to [`v1.10.15`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.15)
+* (evm) [tharsis#945](https://github.com/tharsis/ethermint/pull/945) Bumb Go-ethereum version to [`v1.10.16`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.16)
 
 ### Improvements
 
@@ -74,6 +79,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple MsgEthereumTx in single tx.
 * (config) [tharsis#908](https://github.com/tharsis/ethermint/pull/908) Add api.enable flag for Cosmos SDK Rest server
 * (feemarket) [tharsis#919](https://github.com/tharsis/ethermint/pull/919) Initialize baseFee in default genesis state.
+* (feemarket) [tharsis#943](https://github.com/tharsis/ethermint/pull/943) Store the base fee as a module param instead of using state storage.
 
 ### Bug Fixes
 

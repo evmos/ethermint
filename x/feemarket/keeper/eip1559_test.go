@@ -2,9 +2,8 @@ package keeper_test
 
 import (
 	"fmt"
-	"math/big"
-
 	abci "github.com/tendermint/tendermint/abci/types"
+	"math/big"
 )
 
 func (suite *KeeperTestSuite) TestCalculateBaseFee() {
@@ -26,7 +25,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(0)
 			},
-			big.NewInt(suite.app.FeeMarketKeeper.GetParams(suite.ctx).InitialBaseFee),
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
 		},
 		{
 			"with BaseFee - parent block used the same gas as its target",
@@ -51,7 +50,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				params.ElasticityMultiplier = 1
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 			},
-			big.NewInt(suite.app.FeeMarketKeeper.GetParams(suite.ctx).InitialBaseFee),
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
 		},
 		{
 			"with BaseFee - parent block used more gas than its target",
