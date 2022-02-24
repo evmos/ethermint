@@ -35,6 +35,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## UNRELEASED
+
+### Bug Fixes
+
+- (rpc) [#955](https://github.com/tharsis/ethermint/pull/955) Fix websocket server push duplicated messages to subscriber.
+
 ## [v0.10.0-beta1] - 2022-02-15
 
 ### API Breaking
