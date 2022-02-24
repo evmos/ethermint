@@ -1,6 +1,8 @@
 syntax = "proto3";
 package ethermint.feemarket.v1;
 
+import "gogoproto/gogo.proto";
+
 option go_package = "github.com/tharsis/ethermint/x/feemarket/types";
 
 // Params defines the EVM module parameters
@@ -13,8 +15,14 @@ message Params {
   // elasticity multiplier bounds the maximum gas limit an EIP-1559 block may
   // have.
   uint32 elasticity_multiplier = 3;
-  // initial base fee for EIP-1559 blocks.
-  int64 initial_base_fee = 4;
+  // DEPRECATED: initial base fee for EIP-1559 blocks.
+  reserved  4;
+  reserved "initial_base_fee";
   // height at which the base fee calculation is enabled.
   int64 enable_height = 5;
+  // base fee for EIP-1559 blocks.
+  string base_fee = 6 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
 }

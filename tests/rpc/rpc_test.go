@@ -565,7 +565,7 @@ func TestEth_EthResend(t *testing.T) {
 func TestEth_FeeHistory(t *testing.T) {
 	params := make([]interface{}, 0)
 	params = append(params, 4)
-	params = append(params, "0x1c")
+	params = append(params, "0xa")
 	params = append(params, []int{25, 75})
 
 	rpcRes := call(t, "eth_feeHistory", params)
@@ -577,7 +577,7 @@ func TestEth_FeeHistory(t *testing.T) {
 	baseFeePerGas := info["baseFeePerGas"].([]interface{})
 	gasUsedRatio := info["gasUsedRatio"].([]interface{})
 
-	require.Equal(t, info["oldestBlock"].(string), "0x18")
+	require.Equal(t, info["oldestBlock"].(string), "0x6")
 	require.Equal(t, 4, len(gasUsedRatio))
 	require.Equal(t, 4, len(baseFeePerGas))
 	require.Equal(t, 4, len(reward))
