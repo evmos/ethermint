@@ -292,6 +292,15 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
+		{
+			"success - DeliverTx EIP712 signed Cosmos Tx",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+
+				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(privKey, from, to)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
 	}
 
 	for _, tc := range testCases {

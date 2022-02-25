@@ -2,8 +2,6 @@ package ante
 
 import (
 	"fmt"
-	"strconv"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -174,6 +172,11 @@ func VerifySignature(
 			feeDelegated bool
 		)
 
+		signerChainId, err := ethermint.ParseChainID(signerData.ChainID)
+		if err != nil {
+			return sdkerrors.Wrapf(err, "failed to parse chainID: %s", signerData.ChainID)
+		}
+
 		if txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx); ok {
 			if opts := txWithExtensions.GetExtensionOptions(); len(opts) > 0 {
 				var optIface ethermint.ExtensionOptionsWeb3TxI
@@ -183,11 +186,8 @@ func VerifySignature(
 				}
 
 				if extOpt, ok := optIface.(*ethermint.ExtensionOptionsWeb3Tx); ok {
-					// chainID in EIP712 typed data is allowed to not match signerData.ChainID,
-					// but limited to certain options: 9001 (mainnet), 9000 (testnet), thus Metamask will
-					// be able to submit signatures without switching networks.
 
-					if extOpt.TypedDataChainID == 9001 || extOpt.TypedDataChainID == 9000 {
+					if extOpt.TypedDataChainID == signerChainId.Uint64() {
 						chainID = extOpt.TypedDataChainID
 					}
 
@@ -209,10 +209,7 @@ func VerifySignature(
 		}
 
 		if chainID == 0 {
-			chainID, err = strconv.ParseUint(signerData.ChainID, 10, 64)
-			if err != nil {
-				return sdkerrors.Wrapf(err, "failed to parse chainID: %s", signerData.ChainID)
-			}
+			chainID = signerChainId.Uint64()
 		}
 
 		if feeDelegated {
@@ -255,6 +252,11 @@ func VerifySignature(
 
 			recoveredFeePayerAcc := sdk.AccAddress(pk.Address().Bytes())
 
+			feePayerAcc := recoveredFeePayerAcc.String()
+			feePayerTest := feePayer.String()
+
+			fmt.Println(feePayerAcc)
+			fmt.Println(feePayerTest)
 			if !recoveredFeePayerAcc.Equals(feePayer) {
 				return sdkerrors.Wrapf(sdkerrors.ErrorInvalidSigner, "failed to verify delegated fee payer %s signature", recoveredFeePayerAcc)
 			}

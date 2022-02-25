@@ -1,6 +1,14 @@
 package ante_test
 
 import (
+	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/tharsis/ethermint/ethereum/eip712"
+	"github.com/tharsis/ethermint/types"
 	"math"
 	"testing"
 	"time"
@@ -189,6 +197,117 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	}
 
 	return txBuilder
+}
+
+func (suite *AnteTestSuite) GetTypedData(chainId uint64, msg sdk.Msg, gas uint64, amount sdk.Coins, from sdk.AccAddress) apitypes.TypedData {
+	var ethermintCodec codec.ProtoCodecMarshaler
+	fee := legacytx.NewStdFee(gas, amount)
+	data := legacytx.StdSignBytes("ethermint_9000-1", 1, 1, 0, fee, []sdk.Msg{msg}, "")
+	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, chainId, msg, data, &eip712.FeeDelegationOptions{
+		FeePayer: from,
+	})
+	suite.Require().NoError(err)
+	return typedData
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
+	priv cryptotypes.PrivKey, from sdk.AccAddress, to common.Address,
+) client.TxBuilder {
+	var option *codectypes.Any
+	var err error
+
+	amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+	gas := uint64(200000)
+
+	//bech32PrefixAccAddr := "ethm"
+	//
+	//sdk.GetConfig().SetBech32PrefixForAccount("ethm", "ethm")
+
+	// sdk.GetConfig().SetBech32PrefixForAccount("ethm")
+
+	//bz, err := sdk.GetFromBech32("ethm1tfegf50n5xl0hd5cxfzjca3ylsfpg0fned5gqm", bech32PrefixAccAddr)
+	//suite.Require().NoError(err)
+	//
+	//err = sdk.VerifyAddressFormat(bz)
+	//suite.Require().NoError(err)
+	//
+	//recipient := sdk.AccAddress(bz)
+	//suite.Require().NoError(err)
+
+	recipient := sdk.AccAddress(common.Address{}.Bytes())
+
+	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(1))))
+
+	typedData := suite.GetTypedData(9000, msgSend, gas, amount, from)
+
+	// Sign ethereum TypeData tx
+	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	suite.Require().NoError(err)
+
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+	suite.Require().NoError(err)
+
+	keyringSigner := tests.NewSigner(priv)
+	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
+	sigHash := crypto.Keccak256(rawData)
+	signature, _, err := keyringSigner.SignByAddress(from, sigHash)
+	suite.Require().NoError(err)
+
+	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+
+	// Add ExtensionOptionsWeb3Tx extension
+	option, err = codectypes.NewAnyWithValue(&types.ExtensionOptionsWeb3Tx{
+		FeePayer:         from.String(),
+		TypedDataChainID: 9000,
+		FeePayerSig:      signature,
+	})
+	suite.Require().NoError(err)
+
+	suite.clientCtx.TxConfig.SignModeHandler()
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
+	suite.Require().True(ok)
+
+	builder.SetExtensionOptions(option)
+	//sendBytes, err := msgSend.Marshal()
+	//suite.Require().NoError(err)
+
+	//msgAny := codectypes.Any{
+	//	Value: sendBytes,
+	//}
+
+	//msgs := []*codectypes.Any{&msgAny}
+
+	//txBody := tx2.TxBody{
+	//	Messages: msgs,
+	//}
+	//
+	//txRaw := tx2.TxRaw{}
+
+	builder.SetFeeAmount(amount)
+	builder.SetGasLimit(gas)
+
+	sigsV2 := signing.SignatureV2{
+		PubKey: priv.PubKey(),
+		Data: &signing.SingleSignatureData{
+			SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+		},
+		Sequence: 1,
+	}
+
+	err = builder.SetSignatures(sigsV2)
+	suite.Require().NoError(err)
+
+	err = builder.SetMsgs(msgSend)
+	suite.Require().NoError(err)
+
+	// sign the messages
+	// set the messages for
+	// set fee amount
+	// set gas limit
+
+	// return tx builder
+	return builder
 }
 
 var _ sdk.Tx = &invalidTx{}
