@@ -12,14 +12,12 @@ const (
 	RouterKey = ModuleName
 )
 
-// prefix bytes for the EVM persistent store
+// prefix bytes for the feemarket persistent store
 const (
 	prefixBlockGasUsed = iota + 1
-	prefixBaseFee
 )
 
 // KVStore key prefixes
 var (
 	KeyPrefixBlockGasUsed = []byte{prefixBlockGasUsed}
-	KeyPrefixBaseFee      = []byte{prefixBaseFee}
 )
