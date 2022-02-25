@@ -21,7 +21,7 @@ The transaction fee in Ethereum is calculated using the following the formula :
 
 `transaction fee = (baseFee + tip) * gas units (limit)`
 
-In Cosmos SDK there is no notion of prioritization, thus the tip for an EIP-1559 transactions in Ethermint should be zero (MaxPriorityFeePerGas endpoint returns 0)
+In Cosmos SDK there is no notion of prioritization, thus the tip for an EIP-1559 transaction in Ethermint should be zero (MaxPriorityFeePerGas json-rpc endpoint returns 0)
 
 
 
