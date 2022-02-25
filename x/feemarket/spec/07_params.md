@@ -9,6 +9,6 @@ The `x/feemarket` module contains the following parameters:
 | ----------------------------- | ------ | ----------- |------------- |
 | NoBaseFee                     | bool   | false       | control the base fee adjustment |
 | BaseFeeChangeDenominator      | uint32 | 8           | bounds the amount the base fee that can change between blocks |
-| ElasticityMultiplier          | uint32 | 2           | bounds the maximum gas limit an EIP-1559 block may have |
-| InitialBaseFee                | uint32 | 1000000000  | initial base fee for EIP-1559 blocks |
+| ElasticityMultiplier          | uint32 | 2           | bounds the threshold which the base fee will increase or decrease depending on the total gas used in the previous block|
+| BaseFee                      | uint32 | 1000000000  | base fee for EIP-1559 blocks |
 | EnableHeight                  | uint32 | 0           | height which enable fee adjustment |

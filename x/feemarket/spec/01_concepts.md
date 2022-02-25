@@ -11,18 +11,19 @@ The base fee is a global base fee defined at the consensus level. It is adjusted
 - it increases when blocks are above the gas target
 - it decreases when blocks are below the gas target
 
-Unlike the Cosmos SDK local `minimal-gas-prices`, this value is persisted in the KVStore which provides a reliable value for validators to agree upon.
+Unlike the Cosmos SDK local `minimal-gas-prices`, this value is stored as a module parameter which provides a reliable value for validators to agree upon.
 
 ## Tip
 
-To be consistent with EIP-1559, the `tip` is a local value that each node can define and be added to the `baseFee` in order to incentive transaction prioritization.
+In EIP-1559, the `tip` is a value that can be added to the `baseFee` in order to incentive transaction prioritization.
 
-In Cosmos SDK there is no notion of prioritization, but there is a notion of minimum gas fee that does not exist in the Ethereum.
-To comply with both design, we decided to make the tip equals to the `minimal-gas-prices` value defined locally by each validator nodes.
+The transaction fee in Ethereum is calculated using the following the formula :
 
-The transaction fee is calculated using the following the formula :
+`transaction fee = (baseFee + tip) * gas units (limit)`
 
-`transaction fee = (baseFee + tip) * gas units (limit)` 
+In Cosmos SDK there is no notion of prioritization, thus the tip for an EIP-1559 transactions in Ethermint should be zero (MaxPriorityFeePerGas endpoint returns 0)
+
+
 
 ## EIP-1559
 
