@@ -1,3 +1,4 @@
+
 <!--
 Guiding Principles:
 
@@ -39,7 +40,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
-- (log) [#948](https://github.com/tharsis/ethermint/pull/948) redirect go-ethereum's logs to cosmos-sdk logger.
+* (log) [#948](https://github.com/tharsis/ethermint/pull/948) redirect go-ethereum's logs to cosmos-sdk logger.
+* (rpc) [tharsis#953](https://github.com/tharsis/ethermint/pull/953) Add `eth_signTypedData` api support.
+
 
 ## [v0.10.0-beta1] - 2022-02-15
 
