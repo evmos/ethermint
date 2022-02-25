@@ -431,7 +431,7 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 		return nil, err
 	}
 
-	signature[crypto.RecoveryIDOffset] -= 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 	return signature, nil
 }
 
@@ -465,7 +465,7 @@ func (e *PublicAPI) SignTypedData(address common.Address, typedData apitypes.Typ
 		return nil, err
 	}
 
-	signature[crypto.RecoveryIDOffset] -= 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 	return signature, nil
 }
 
