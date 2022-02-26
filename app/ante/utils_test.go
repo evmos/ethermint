@@ -202,7 +202,10 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 func (suite *AnteTestSuite) GetTypedData(chainId uint64, msg sdk.Msg, gas uint64, amount sdk.Coins, from sdk.AccAddress) apitypes.TypedData {
 	var ethermintCodec codec.ProtoCodecMarshaler
 	fee := legacytx.NewStdFee(gas, amount)
-	data := legacytx.StdSignBytes("ethermint_9000-1", 1, 1, 0, fee, []sdk.Msg{msg}, "")
+	nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, from)
+	suite.Require().NoError(err)
+	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
+	data := legacytx.StdSignBytes("ethermint_9000-1", accNumber, nonce, 0, fee, []sdk.Msg{msg}, "")
 	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, chainId, msg, data, &eip712.FeeDelegationOptions{
 		FeePayer: from,
 	})
@@ -211,7 +214,7 @@ func (suite *AnteTestSuite) GetTypedData(chainId uint64, msg sdk.Msg, gas uint64
 }
 
 func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
-	priv cryptotypes.PrivKey, from sdk.AccAddress, to common.Address,
+	priv cryptotypes.PrivKey, from sdk.AccAddress,
 ) client.TxBuilder {
 	var option *codectypes.Any
 	var err error
@@ -250,7 +253,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	keyringSigner := tests.NewSigner(priv)
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	sigHash := crypto.Keccak256(rawData)
-	signature, _, err := keyringSigner.SignByAddress(from, sigHash)
+	signature, pubKey, err := keyringSigner.SignByAddress(from, sigHash)
 	suite.Require().NoError(err)
 
 	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
@@ -288,7 +291,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	builder.SetGasLimit(gas)
 
 	sigsV2 := signing.SignatureV2{
-		PubKey: priv.PubKey(),
+		PubKey: pubKey,
 		Data: &signing.SingleSignatureData{
 			SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 		},
