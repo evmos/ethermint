@@ -211,7 +211,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 
 	// Build MsgSend
 	recipient := sdk.AccAddress(common.Address{}.Bytes())
-	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(1))))
+	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1))))
 
 	// GenerateTypedData TypedData
 	var ethermintCodec codec.ProtoCodecMarshaler
