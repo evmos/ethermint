@@ -3,7 +3,6 @@ package types
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,7 +29,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			"valid genesis",
 			&GenesisState{
 				DefaultParams(),
-				sdk.ZeroInt(),
 				uint64(1),
 			},
 			true,
@@ -39,7 +37,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			"valid New genesis",
 			NewGenesisState(
 				DefaultParams(),
-				sdk.ZeroInt(),
 				uint64(1),
 			),
 			true,
@@ -48,16 +45,6 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			"empty genesis",
 			&GenesisState{
 				Params:   Params{},
-				BaseFee:  sdk.ZeroInt(),
-				BlockGas: 0,
-			},
-			false,
-		},
-		{
-			"base fee is negative",
-			&GenesisState{
-				Params:   Params{},
-				BaseFee:  sdk.OneInt().Neg(),
 				BlockGas: 0,
 			},
 			false,

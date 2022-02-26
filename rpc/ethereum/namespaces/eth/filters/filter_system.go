@@ -90,62 +90,62 @@ func (es *EventSystem) WithContext(ctx context.Context) {
 
 // subscribe performs a new event subscription to a given Tendermint event.
 // The subscription creates a unidirectional receive event channel to receive the ResultEvent.
-func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, context.CancelFunc, error) {
+func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.UnsubscribeFunc, error) {
 	var (
 		err      error
 		cancelFn context.CancelFunc
 	)
 
-	es.ctx, cancelFn = context.WithCancel(context.Background())
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
 
 	existingSubs := es.eventBus.Topics()
 	for _, topic := range existingSubs {
 		if topic == sub.event {
-			eventCh, err := es.eventBus.Subscribe(sub.event)
+			eventCh, unsubFn, err := es.eventBus.Subscribe(sub.event)
 			if err != nil {
 				err := errors.Wrapf(err, "failed to subscribe to topic: %s", sub.event)
-				return nil, cancelFn, err
+				return nil, nil, err
 			}
 
 			sub.eventCh = eventCh
-			return sub, cancelFn, nil
+			return sub, unsubFn, nil
 		}
 	}
 
 	switch sub.typ {
 	case filters.LogsSubscription:
-		err = es.tmWSClient.Subscribe(es.ctx, sub.event)
+		err = es.tmWSClient.Subscribe(ctx, sub.event)
 	case filters.BlocksSubscription:
-		err = es.tmWSClient.Subscribe(es.ctx, sub.event)
+		err = es.tmWSClient.Subscribe(ctx, sub.event)
 	case filters.PendingTransactionsSubscription:
-		err = es.tmWSClient.Subscribe(es.ctx, sub.event)
+		err = es.tmWSClient.Subscribe(ctx, sub.event)
 	default:
 		err = fmt.Errorf("invalid filter subscription type %d", sub.typ)
 	}
 
 	if err != nil {
 		sub.err <- err
-		return nil, cancelFn, err
+		return nil, nil, err
 	}
 
 	// wrap events in a go routine to prevent blocking
 	es.install <- sub
 	<-sub.installed
 
-	eventCh, err := es.eventBus.Subscribe(sub.event)
+	eventCh, unsubFn, err := es.eventBus.Subscribe(sub.event)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to subscribe to topic after installed: %s", sub.event)
-		return sub, cancelFn, err
+		return nil, nil, errors.Wrapf(err, "failed to subscribe to topic after installed: %s", sub.event)
 	}
 
 	sub.eventCh = eventCh
-	return sub, cancelFn, nil
+	return sub, unsubFn, nil
 }
 
 // SubscribeLogs creates a subscription that will write all logs matching the
 // given criteria to the given logs channel. Default value for the from and to
 // block is "latest". If the fromBlock > toBlock an error is returned.
-func (es *EventSystem) SubscribeLogs(crit filters.FilterCriteria) (*Subscription, context.CancelFunc, error) {
+func (es *EventSystem) SubscribeLogs(crit filters.FilterCriteria) (*Subscription, pubsub.UnsubscribeFunc, error) {
 	var from, to rpc.BlockNumber
 	if crit.FromBlock == nil {
 		from = rpc.LatestBlockNumber
@@ -173,7 +173,7 @@ func (es *EventSystem) SubscribeLogs(crit filters.FilterCriteria) (*Subscription
 
 // subscribeLogs creates a subscription that will write all logs matching the
 // given criteria to the given logs channel.
-func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription, context.CancelFunc, error) {
+func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription, pubsub.UnsubscribeFunc, error) {
 	sub := &Subscription{
 		id:        rpc.NewID(),
 		typ:       filters.LogsSubscription,
@@ -188,7 +188,7 @@ func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription
 }
 
 // SubscribeNewHeads subscribes to new block headers events.
-func (es EventSystem) SubscribeNewHeads() (*Subscription, context.CancelFunc, error) {
+func (es EventSystem) SubscribeNewHeads() (*Subscription, pubsub.UnsubscribeFunc, error) {
 	sub := &Subscription{
 		id:        rpc.NewID(),
 		typ:       filters.BlocksSubscription,
@@ -202,7 +202,7 @@ func (es EventSystem) SubscribeNewHeads() (*Subscription, context.CancelFunc, er
 }
 
 // SubscribePendingTxs subscribes to new pending transactions events from the mempool.
-func (es EventSystem) SubscribePendingTxs() (*Subscription, context.CancelFunc, error) {
+func (es EventSystem) SubscribePendingTxs() (*Subscription, pubsub.UnsubscribeFunc, error) {
 	sub := &Subscription{
 		id:        rpc.NewID(),
 		typ:       filters.PendingTransactionsSubscription,
