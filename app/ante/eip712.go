@@ -15,8 +15,6 @@ import (
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/ethereum/eip712"
 	ethermint "github.com/tharsis/ethermint/types"
@@ -144,6 +142,8 @@ func VerifySignature(
 ) error {
 	switch data := sigData.(type) {
 	case *signing.SingleSignatureData:
+		var err error
+
 		if data.SignMode != signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON {
 			return fmt.Errorf("unexpected SignatureData %T: wrong SignMode", sigData)
 		}
@@ -171,17 +171,6 @@ func VerifySignature(
 				Gas:    tx.GetGas(),
 			},
 			msgs, tx.GetMemo(),
-		)
-
-		var (
-			chainID uint64
-			err     error
-
-			typedData apitypes.TypedData
-			sigHash   []byte
-
-			feePayer    sdk.AccAddress
-			feePayerSig []byte
 		)
 
 		signerChainID, err := ethermint.ParseChainID(signerData.ChainID)
@@ -213,17 +202,15 @@ func VerifySignature(
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidChainID, "invalid chainID")
 		}
 
-		chainID = extOpt.TypedDataChainID
-
 		if len(extOpt.FeePayer) == 0 {
 			return fmt.Errorf("no feePayer on ExtensionOptionsWeb3Tx")
 		}
-		feePayer, err = sdk.AccAddressFromBech32(extOpt.FeePayer)
+		feePayer, err := sdk.AccAddressFromBech32(extOpt.FeePayer)
 		if err != nil {
 			return sdkerrors.Wrap(err, "failed to parse feePayer from ExtensionOptionsWeb3Tx")
 		}
 
-		feePayerSig = extOpt.FeePayerSig
+		feePayerSig := extOpt.FeePayerSig
 		if len(feePayerSig) == 0 {
 			return fmt.Errorf("no feePayerSig provided in ExtensionOptionsWeb3Tx")
 		}
@@ -232,12 +219,12 @@ func VerifySignature(
 			FeePayer: feePayer,
 		}
 
-		typedData, err = eip712.WrapTxToTypedData(ethermintCodec, chainID, msgs[0], txBytes, feeDelegation)
+		typedData, err := eip712.WrapTxToTypedData(ethermintCodec, extOpt.TypedDataChainID, msgs[0], txBytes, feeDelegation)
 		if err != nil {
 			return sdkerrors.Wrap(err, "failed to pack tx data in EIP712 object")
 		}
 
-		sigHash, err = eip712.ComputeTypedDataHash(typedData)
+		sigHash, err := eip712.ComputeTypedDataHash(typedData)
 		if err != nil {
 			return err
 		}
