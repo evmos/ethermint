@@ -199,13 +199,11 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	return txBuilder
 }
 
-func (suite *AnteTestSuite) GetTypedData(chainId uint64, msg sdk.Msg, gas uint64, amount sdk.Coins, from sdk.AccAddress) apitypes.TypedData {
+func (suite *AnteTestSuite) GetTypedData(chainId uint64, msg sdk.Msg, gas uint64, amount sdk.Coins, from sdk.AccAddress, sequence uint64) apitypes.TypedData {
 	var ethermintCodec codec.ProtoCodecMarshaler
 	fee := legacytx.NewStdFee(gas, amount)
-	nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, from)
-	suite.Require().NoError(err)
 	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
-	data := legacytx.StdSignBytes("ethermint_9000-1", accNumber, nonce, 0, fee, []sdk.Msg{msg}, "")
+	data := legacytx.StdSignBytes("ethermint_9000-1", accNumber, sequence, 0, fee, []sdk.Msg{msg}, "")
 	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, chainId, msg, data, &eip712.FeeDelegationOptions{
 		FeePayer: from,
 	})
@@ -219,29 +217,17 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	var option *codectypes.Any
 	var err error
 
+	nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, from)
+	suite.Require().NoError(err)
+
 	amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
 	gas := uint64(200000)
-
-	//bech32PrefixAccAddr := "ethm"
-	//
-	//sdk.GetConfig().SetBech32PrefixForAccount("ethm", "ethm")
-
-	// sdk.GetConfig().SetBech32PrefixForAccount("ethm")
-
-	//bz, err := sdk.GetFromBech32("ethm1tfegf50n5xl0hd5cxfzjca3ylsfpg0fned5gqm", bech32PrefixAccAddr)
-	//suite.Require().NoError(err)
-	//
-	//err = sdk.VerifyAddressFormat(bz)
-	//suite.Require().NoError(err)
-	//
-	//recipient := sdk.AccAddress(bz)
-	//suite.Require().NoError(err)
 
 	recipient := sdk.AccAddress(common.Address{}.Bytes())
 
 	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(1))))
 
-	typedData := suite.GetTypedData(9000, msgSend, gas, amount, from)
+	typedData := suite.GetTypedData(9000, msgSend, gas, amount, from, nonce)
 
 	// Sign ethereum TypeData tx
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
@@ -272,20 +258,6 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	suite.Require().True(ok)
 
 	builder.SetExtensionOptions(option)
-	//sendBytes, err := msgSend.Marshal()
-	//suite.Require().NoError(err)
-
-	//msgAny := codectypes.Any{
-	//	Value: sendBytes,
-	//}
-
-	//msgs := []*codectypes.Any{&msgAny}
-
-	//txBody := tx2.TxBody{
-	//	Messages: msgs,
-	//}
-	//
-	//txRaw := tx2.TxRaw{}
 
 	builder.SetFeeAmount(amount)
 	builder.SetGasLimit(gas)
@@ -295,7 +267,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 		Data: &signing.SingleSignatureData{
 			SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 		},
-		Sequence: 1,
+		Sequence: nonce,
 	}
 
 	err = builder.SetSignatures(sigsV2)
