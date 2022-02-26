@@ -43,6 +43,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (log) [#948](https://github.com/tharsis/ethermint/pull/948) redirect go-ethereum's logs to cosmos-sdk logger.
 * (rpc) [tharsis#953](https://github.com/tharsis/ethermint/pull/953) Add `eth_signTypedData` api support.
 
+### Features
+* (ante) [#950](https://github.com/tharsis/ethermint/pull/950) Add support for EIP712 signed Cosmos transactions
 
 ## [v0.10.0-beta1] - 2022-02-15
 
