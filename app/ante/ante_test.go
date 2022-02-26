@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"math/big"
 	"strings"
 
@@ -296,9 +297,45 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			"success - DeliverTx EIP712 signed Cosmos Tx",
 			func() sdk.Tx {
 				from := acc.GetAddress()
-				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(privKey, from)
+				amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9000-1", gas, amount)
 				return txBuilder.GetTx()
 			}, false, false, true,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with wrong Chain ID",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9002-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with different gas fees",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9001-1", gas, amount)
+				txBuilder.SetGasLimit(uint64(300000))
+				txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(30))))
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with empty signature",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9001-1", gas, amount)
+				sigsV2 := signing.SignatureV2{}
+				txBuilder.SetSignatures(sigsV2)
+				return txBuilder.GetTx()
+			}, false, false, false,
 		},
 	}
 

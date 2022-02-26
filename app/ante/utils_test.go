@@ -1,12 +1,10 @@
 package ante_test
 
 import (
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/tharsis/ethermint/ethereum/eip712"
 	"github.com/tharsis/ethermint/types"
 	"math"
@@ -199,55 +197,49 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	return txBuilder
 }
 
-func (suite *AnteTestSuite) GetTypedData(chainId uint64, msg sdk.Msg, gas uint64, amount sdk.Coins, from sdk.AccAddress, sequence uint64) apitypes.TypedData {
-	var ethermintCodec codec.ProtoCodecMarshaler
-	fee := legacytx.NewStdFee(gas, amount)
-	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
-	data := legacytx.StdSignBytes("ethermint_9000-1", accNumber, sequence, 0, fee, []sdk.Msg{msg}, "")
-	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, chainId, msg, data, &eip712.FeeDelegationOptions{
-		FeePayer: from,
-	})
-	suite.Require().NoError(err)
-	return typedData
-}
-
 func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
-	priv cryptotypes.PrivKey, from sdk.AccAddress,
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins,
 ) client.TxBuilder {
-	var option *codectypes.Any
 	var err error
 
 	nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, from)
 	suite.Require().NoError(err)
 
-	amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
-	gas := uint64(200000)
+	pc, err := types.ParseChainID(chainId)
+	suite.Require().NoError(err)
+	ethChainId := pc.Uint64()
 
+	// Build MsgSend
 	recipient := sdk.AccAddress(common.Address{}.Bytes())
-
 	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(1))))
 
-	typedData := suite.GetTypedData(9000, msgSend, gas, amount, from, nonce)
+	// GenerateTypedData TypedData
+	//typedData := suite.newTypedData(chainId, ethChainId, msgSend, gas, gasAmount, from, nonce)
 
-	// Sign ethereum TypeData tx
-	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	var ethermintCodec codec.ProtoCodecMarshaler
+	fee := legacytx.NewStdFee(gas, gasAmount)
+	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
+
+	data := legacytx.StdSignBytes(chainId, accNumber, nonce, 0, fee, []sdk.Msg{msgSend}, "")
+	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, ethChainId, msgSend, data, &eip712.FeeDelegationOptions{
+		FeePayer: from,
+	})
 	suite.Require().NoError(err)
 
-	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+	sigHash, err := eip712.ComputeTypedDataHash(typedData)
 	suite.Require().NoError(err)
 
+	// Sign typedData
 	keyringSigner := tests.NewSigner(priv)
-	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-	sigHash := crypto.Keccak256(rawData)
 	signature, pubKey, err := keyringSigner.SignByAddress(from, sigHash)
 	suite.Require().NoError(err)
-
 	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 
 	// Add ExtensionOptionsWeb3Tx extension
+	var option *codectypes.Any
 	option, err = codectypes.NewAnyWithValue(&types.ExtensionOptionsWeb3Tx{
 		FeePayer:         from.String(),
-		TypedDataChainID: 9000,
+		TypedDataChainID: ethChainId,
 		FeePayerSig:      signature,
 	})
 	suite.Require().NoError(err)
@@ -256,10 +248,9 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
 	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
 	suite.Require().True(ok)
-
 	builder.SetExtensionOptions(option)
 
-	builder.SetFeeAmount(amount)
+	builder.SetFeeAmount(gasAmount)
 	builder.SetGasLimit(gas)
 
 	sigsV2 := signing.SignatureV2{
@@ -276,12 +267,6 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	err = builder.SetMsgs(msgSend)
 	suite.Require().NoError(err)
 
-	// sign the messages
-	// set the messages for
-	// set fee amount
-	// set gas limit
-
-	// return tx builder
 	return builder
 }
 
