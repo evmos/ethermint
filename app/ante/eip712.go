@@ -181,11 +181,11 @@ func VerifySignature(
 
 		txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx)
 		if !ok {
-			return fmt.Errorf("tx doesnt contain any extensions")
+			return sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, "tx doesnt contain any extensions")
 		}
 		opts := txWithExtensions.GetExtensionOptions()
 		if len(opts) != 1 {
-			return fmt.Errorf("tx doesnt contain expected amount of extension options")
+			return sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, "tx doesnt contain expected amount of extension options")
 		}
 
 		var optIface ethermint.ExtensionOptionsWeb3TxI
@@ -204,16 +204,11 @@ func VerifySignature(
 		}
 
 		if len(extOpt.FeePayer) == 0 {
-			return fmt.Errorf("no feePayer on ExtensionOptionsWeb3Tx")
+			return sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, "no feePayer on ExtensionOptionsWeb3Tx")
 		}
 		feePayer, err := sdk.AccAddressFromBech32(extOpt.FeePayer)
 		if err != nil {
 			return sdkerrors.Wrap(err, "failed to parse feePayer from ExtensionOptionsWeb3Tx")
-		}
-
-		feePayerSig := extOpt.FeePayerSig
-		if len(feePayerSig) == 0 {
-			return fmt.Errorf("no feePayerSig provided in ExtensionOptionsWeb3Tx")
 		}
 
 		feeDelegation := &eip712.FeeDelegationOptions{
@@ -230,8 +225,9 @@ func VerifySignature(
 			return err
 		}
 
+		feePayerSig := extOpt.FeePayerSig
 		if len(feePayerSig) != ethcrypto.SignatureLength {
-			return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
+			return sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, "signature length doesn't match typical [R||S||V] signature 65 bytes")
 		}
 
 		// Remove the recovery offset if needed (ie. Metamask eip712 signature)
@@ -254,7 +250,7 @@ func VerifySignature(
 		}
 
 		if !pubKey.Equals(pk) {
-			return fmt.Errorf("feePayer pubkey is different from transaction pubkey")
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidPubKey, "feePayer pubkey is different from transaction pubkey")
 		}
 
 		recoveredFeePayerAcc := sdk.AccAddress(pk.Address().Bytes())
@@ -263,18 +259,14 @@ func VerifySignature(
 			return sdkerrors.Wrapf(sdkerrors.ErrorInvalidSigner, "failed to verify delegated fee payer %s signature", recoveredFeePayerAcc)
 		}
 
-		if len(feePayerSig) != ethcrypto.SignatureLength {
-			return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
-		}
-
 		// VerifySignature of ethsecp256k1 accepts 64 byte signature [R||S]
 		// WARNING! Under NO CIRCUMSTANCES try to use pubKey.VerifySignature there
 		if !secp256k1.VerifySignature(pubKey.Bytes(), sigHash, feePayerSig[:len(feePayerSig)-1]) {
-			return fmt.Errorf("unable to verify signer signature of EIP712 typed data")
+			return sdkerrors.Wrap(sdkerrors.ErrorInvalidSigner, "unable to verify signer signature of EIP712 typed data")
 		}
 
 		return nil
 	default:
-		return fmt.Errorf("unexpected SignatureData %T", sigData)
+		return sdkerrors.Wrapf(sdkerrors.ErrTooManySignatures, "unexpected SignatureData %T", sigData)
 	}
 }
