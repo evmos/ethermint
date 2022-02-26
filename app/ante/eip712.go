@@ -167,9 +167,8 @@ func VerifySignature(
 			typedData apitypes.TypedData
 			sigHash   []byte
 
-			feePayer     sdk.AccAddress
-			feePayerSig  []byte
-			feeDelegated bool
+			feePayer    sdk.AccAddress
+			feePayerSig []byte
 		)
 
 		signerChainId, err := ethermint.ParseChainID(signerData.ChainID)
@@ -177,43 +176,43 @@ func VerifySignature(
 			return sdkerrors.Wrapf(err, "failed to parse chainID: %s", signerData.ChainID)
 		}
 
-		if txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx); ok {
-			if opts := txWithExtensions.GetExtensionOptions(); len(opts) > 0 {
-				var optIface ethermint.ExtensionOptionsWeb3TxI
-
-				if err := ethermintCodec.UnpackAny(opts[0], &optIface); err != nil {
-					return sdkerrors.Wrap(err, "failed to proto-unpack ExtensionOptionsWeb3Tx")
-				}
-
-				if extOpt, ok := optIface.(*ethermint.ExtensionOptionsWeb3Tx); ok {
-
-					if extOpt.TypedDataChainID == signerChainId.Uint64() {
-						chainID = extOpt.TypedDataChainID
-					}
-
-					if len(extOpt.FeePayer) > 0 {
-						feePayer, err = sdk.AccAddressFromBech32(extOpt.FeePayer)
-						if err != nil {
-							return sdkerrors.Wrap(err, "failed to parse feePayer from ExtensionOptionsWeb3Tx")
-						}
-
-						feePayerSig = extOpt.FeePayerSig
-						if len(feePayerSig) == 0 {
-							return sdkerrors.Wrap(err, "no feePayerSig provided in ExtensionOptionsWeb3Tx")
-						}
-
-						feeDelegated = true
-					}
-				}
-			}
+		txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx)
+		if !ok {
+			return fmt.Errorf("tx doesnt contain any extensions")
+		}
+		opts := txWithExtensions.GetExtensionOptions()
+		if len(opts) != 1 {
+			return fmt.Errorf("tx doesnt contain expected amount of extension options")
 		}
 
-		if chainID == 0 {
-			chainID = signerChainId.Uint64()
+		var optIface ethermint.ExtensionOptionsWeb3TxI
+
+		if err := ethermintCodec.UnpackAny(opts[0], &optIface); err != nil {
+			return sdkerrors.Wrap(err, "failed to proto-unpack ExtensionOptionsWeb3Tx")
 		}
 
-		if !feeDelegated {
-			return sdkerrors.Wrap(err, "fee delegated not enabled")
+		extOpt, ok := optIface.(*ethermint.ExtensionOptionsWeb3Tx)
+		if !ok {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidChainID, "unknown extension option")
+		}
+
+		if extOpt.TypedDataChainID != signerChainId.Uint64() {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidChainID, "invalid chainID")
+		}
+
+		chainID = extOpt.TypedDataChainID
+
+		if len(extOpt.FeePayer) == 0 {
+			return fmt.Errorf("no feePayer on ExtensionOptionsWeb3Tx")
+		}
+		feePayer, err = sdk.AccAddressFromBech32(extOpt.FeePayer)
+		if err != nil {
+			return sdkerrors.Wrap(err, "failed to parse feePayer from ExtensionOptionsWeb3Tx")
+		}
+
+		feePayerSig = extOpt.FeePayerSig
+		if len(feePayerSig) == 0 {
+			return fmt.Errorf("no feePayerSig provided in ExtensionOptionsWeb3Tx")
 		}
 
 		feeDelegation := &eip712.FeeDelegationOptions{
