@@ -2,33 +2,41 @@ package pubsub
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
+type UnsubscribeFunc func()
+
 type EventBus interface {
 	AddTopic(name string, src <-chan coretypes.ResultEvent) error
 	RemoveTopic(name string)
-	Subscribe(name string) (<-chan coretypes.ResultEvent, error)
+	Subscribe(name string) (<-chan coretypes.ResultEvent, UnsubscribeFunc, error)
 	Topics() []string
 }
 
 type memEventBus struct {
-	topics         map[string]<-chan coretypes.ResultEvent
-	topicsMux      *sync.RWMutex
-	subscribers    map[string][]chan<- coretypes.ResultEvent
-	subscribersMux *sync.RWMutex
+	topics          map[string]<-chan coretypes.ResultEvent
+	topicsMux       *sync.RWMutex
+	subscribers     map[string]map[uint64]chan<- coretypes.ResultEvent
+	subscribersMux  *sync.RWMutex
+	currentUniqueID uint64
 }
 
 func NewEventBus() EventBus {
 	return &memEventBus{
 		topics:         make(map[string]<-chan coretypes.ResultEvent),
 		topicsMux:      new(sync.RWMutex),
-		subscribers:    make(map[string][]chan<- coretypes.ResultEvent),
+		subscribers:    make(map[string]map[uint64]chan<- coretypes.ResultEvent),
 		subscribersMux: new(sync.RWMutex),
 	}
+}
+
+func (m *memEventBus) GenUniqueID() uint64 {
+	return atomic.AddUint64(&m.currentUniqueID, 1)
 }
 
 func (m *memEventBus) Topics() (topics []string) {
@@ -67,21 +75,32 @@ func (m *memEventBus) RemoveTopic(name string) {
 	m.topicsMux.Unlock()
 }
 
-func (m *memEventBus) Subscribe(name string) (<-chan coretypes.ResultEvent, error) {
+func (m *memEventBus) Subscribe(name string) (<-chan coretypes.ResultEvent, UnsubscribeFunc, error) {
 	m.topicsMux.RLock()
 	_, ok := m.topics[name]
 	m.topicsMux.RUnlock()
 
 	if !ok {
-		return nil, errors.Errorf("topic not found: %s", name)
+		return nil, nil, errors.Errorf("topic not found: %s", name)
 	}
 
 	ch := make(chan coretypes.ResultEvent)
 	m.subscribersMux.Lock()
 	defer m.subscribersMux.Unlock()
-	m.subscribers[name] = append(m.subscribers[name], ch)
 
-	return ch, nil
+	id := m.GenUniqueID()
+	if _, ok := m.subscribers[name]; !ok {
+		m.subscribers[name] = make(map[uint64]chan<- coretypes.ResultEvent)
+	}
+	m.subscribers[name][id] = ch
+
+	unsubscribe := func() {
+		m.subscribersMux.Lock()
+		defer m.subscribersMux.Unlock()
+		delete(m.subscribers[name], id)
+	}
+
+	return ch, unsubscribe, nil
 }
 
 func (m *memEventBus) publishTopic(name string, src <-chan coretypes.ResultEvent) {
