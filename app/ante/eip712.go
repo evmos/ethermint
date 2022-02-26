@@ -29,7 +29,7 @@ func init() {
 	ethermintCodec = codec.NewProtoCodec(registry)
 }
 
-// Verify all signatures for a tx and return an error if any are invalid. Note,
+// Eip712SigVerificationDecorator Verify all signatures for a tx and return an error if any are invalid. Note,
 // the Eip712SigVerificationDecorator decorator will not get executed on ReCheck.
 //
 // CONTRACT: Pubkeys are set in context for all signers before this decorator runs
@@ -39,6 +39,7 @@ type Eip712SigVerificationDecorator struct {
 	signModeHandler authsigning.SignModeHandler
 }
 
+// NewEip712SigVerificationDecorator creates a new Eip712SigVerificationDecorator
 func NewEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandler authsigning.SignModeHandler) Eip712SigVerificationDecorator {
 	return Eip712SigVerificationDecorator{
 		ak:              ak,
@@ -46,6 +47,8 @@ func NewEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandle
 	}
 }
 
+// AnteHandle handles validation of EIP712 signed cosmos txs.
+// it is not run on RecheckTx
 func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	// no need to verify signatures on recheck tx
 	if ctx.IsReCheckTx() {
@@ -55,6 +58,11 @@ func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx,
 	sigTx, ok := tx.(authsigning.SigVerifiableTx)
 	if !ok {
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx %T doesn't implement authsigning.SigVerifiableTx", tx)
+	}
+
+	authSignTx, ok := tx.(authsigning.Tx)
+	if !ok {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx %T doesn't implement the authsigning.Tx interface", tx)
 	}
 
 	// stdSigs contains the sequence number, account number, and signatures.
@@ -118,11 +126,6 @@ func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx,
 		return next(ctx, tx, simulate)
 	}
 
-	authSignTx, ok := tx.(authsigning.Tx)
-	if !ok {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "tx %T doesn't implement the authsigning.Tx interface", tx)
-	}
-
 	if err := VerifySignature(pubKey, signerData, sig.Data, svd.signModeHandler, authSignTx); err != nil {
 		errMsg := fmt.Errorf("signature verification failed; please verify account number (%d) and chain-id (%s): %w", accNum, chainID, err)
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, errMsg.Error())
@@ -142,15 +145,13 @@ func VerifySignature(
 ) error {
 	switch data := sigData.(type) {
 	case *signing.SingleSignatureData:
-		var err error
-
 		if data.SignMode != signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON {
-			return fmt.Errorf("unexpected SignatureData %T: wrong SignMode", sigData)
+			return sdkerrors.Wrapf(sdkerrors.ErrNotSupported, "unexpected SignatureData %T: wrong SignMode", sigData)
 		}
 
 		// Note: this prevents the user from sending thrash data in the signature field
 		if len(data.Signature) != 0 {
-			return fmt.Errorf("invalid signature value; EIP712 must have the cosmos transaction signature empty")
+			return sdkerrors.Wrap(sdkerrors.ErrTooManySignatures, "invalid signature value; EIP712 must have the cosmos transaction signature empty")
 		}
 
 		// @contract: this code is reached only when Msg has Web3Tx extension (so this custom Ante handler flow),

@@ -307,7 +307,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			"fails - DeliverTx EIP712 signed Cosmos Tx with wrong Chain ID",
 			func() sdk.Tx {
 				from := acc.GetAddress()
-				amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
 				gas := uint64(200000)
 				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9002-1", gas, amount)
 				return txBuilder.GetTx()
@@ -317,11 +317,11 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			"fails - DeliverTx EIP712 signed Cosmos Tx with different gas fees",
 			func() sdk.Tx {
 				from := acc.GetAddress()
-				amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
 				gas := uint64(200000)
 				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9001-1", gas, amount)
 				txBuilder.SetGasLimit(uint64(300000))
-				txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(30))))
+				txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(30))))
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
@@ -329,7 +329,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			"fails - DeliverTx EIP712 signed Cosmos Tx with empty signature",
 			func() sdk.Tx {
 				from := acc.GetAddress()
-				amount := sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(20)))
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
 				gas := uint64(200000)
 				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9001-1", gas, amount)
 				sigsV2 := signing.SignatureV2{}
