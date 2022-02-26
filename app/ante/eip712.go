@@ -212,70 +212,62 @@ func VerifySignature(
 			chainID = signerChainId.Uint64()
 		}
 
-		if feeDelegated {
-			feeDelegation := &eip712.FeeDelegationOptions{
-				FeePayer: feePayer,
-			}
-
-			typedData, err = eip712.WrapTxToTypedData(ethermintCodec, chainID, msgs[0], txBytes, feeDelegation)
-			if err != nil {
-				return sdkerrors.Wrap(err, "failed to pack tx data in EIP712 object")
-			}
-
-			sigHash, err = eip712.ComputeTypedDataHash(typedData)
-			if err != nil {
-				return err
-			}
-
-			if len(feePayerSig) != ethcrypto.SignatureLength {
-				return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
-			}
-
-			if feePayerSig[ethcrypto.RecoveryIDOffset] > 4 {
-				// Remove the recovery offset if needed (ie. Metamask eip712 signature)
-				feePayerSig[ethcrypto.RecoveryIDOffset] -= 27
-			}
-
-			feePayerPubkey, err := secp256k1.RecoverPubkey(sigHash, feePayerSig)
-			if err != nil {
-				return sdkerrors.Wrap(err, "failed to recover delegated fee payer from sig")
-			}
-
-			ecPubKey, err := ethcrypto.UnmarshalPubkey(feePayerPubkey)
-			if err != nil {
-				return sdkerrors.Wrap(err, "failed to unmarshal recovered fee payer pubkey")
-			}
-
-			pk := &ethsecp256k1.PubKey{
-				Key: ethcrypto.CompressPubkey(ecPubKey),
-			}
-
-			recoveredFeePayerAcc := sdk.AccAddress(pk.Address().Bytes())
-
-			feePayerAcc := recoveredFeePayerAcc.String()
-			feePayerTest := feePayer.String()
-
-			fmt.Println(feePayerAcc)
-			fmt.Println(feePayerTest)
-			if !recoveredFeePayerAcc.Equals(feePayer) {
-				return sdkerrors.Wrapf(sdkerrors.ErrorInvalidSigner, "failed to verify delegated fee payer %s signature", recoveredFeePayerAcc)
-			}
-
-			// Overwrite the transaction signature because we are using EIP712
-			// TODO: should we allow only feePayerSignature and return error
-			// if the transaction signatures != []?
-			data.Signature = feePayerSig
-		} else {
-			typedData, err = eip712.WrapTxToTypedData(ethermintCodec, chainID, msgs[0], txBytes, nil)
-			if err != nil {
-				return sdkerrors.Wrap(err, "failed to pack tx data in EIP712 object")
-			}
-
-			sigHash, err = eip712.ComputeTypedDataHash(typedData)
-			if err != nil {
-				return err
-			}
+		if !feeDelegated {
+			return sdkerrors.Wrap(err, "fee delegated not enabled")
 		}
+
+		feeDelegation := &eip712.FeeDelegationOptions{
+			FeePayer: feePayer,
+		}
+
+		typedData, err = eip712.WrapTxToTypedData(ethermintCodec, chainID, msgs[0], txBytes, feeDelegation)
+		if err != nil {
+			return sdkerrors.Wrap(err, "failed to pack tx data in EIP712 object")
+		}
+
+		sigHash, err = eip712.ComputeTypedDataHash(typedData)
+		if err != nil {
+			return err
+		}
+
+		if len(feePayerSig) != ethcrypto.SignatureLength {
+			return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
+		}
+
+		if feePayerSig[ethcrypto.RecoveryIDOffset] > 4 {
+			// Remove the recovery offset if needed (ie. Metamask eip712 signature)
+			feePayerSig[ethcrypto.RecoveryIDOffset] -= 27
+		}
+
+		feePayerPubkey, err := secp256k1.RecoverPubkey(sigHash, feePayerSig)
+		if err != nil {
+			return sdkerrors.Wrap(err, "failed to recover delegated fee payer from sig")
+		}
+
+		ecPubKey, err := ethcrypto.UnmarshalPubkey(feePayerPubkey)
+		if err != nil {
+			return sdkerrors.Wrap(err, "failed to unmarshal recovered fee payer pubkey")
+		}
+
+		pk := &ethsecp256k1.PubKey{
+			Key: ethcrypto.CompressPubkey(ecPubKey),
+		}
+
+		recoveredFeePayerAcc := sdk.AccAddress(pk.Address().Bytes())
+
+		feePayerAcc := recoveredFeePayerAcc.String()
+		feePayerTest := feePayer.String()
+
+		fmt.Println(feePayerAcc)
+		fmt.Println(feePayerTest)
+		if !recoveredFeePayerAcc.Equals(feePayer) {
+			return sdkerrors.Wrapf(sdkerrors.ErrorInvalidSigner, "failed to verify delegated fee payer %s signature", recoveredFeePayerAcc)
+		}
+
+		// Overwrite the transaction signature because we are using EIP712
+		// TODO: should we allow only feePayerSignature and return error
+		// if the transaction signatures != []?
+		data.Signature = feePayerSig
 
 		if len(data.Signature) != ethcrypto.SignatureLength {
 			return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
