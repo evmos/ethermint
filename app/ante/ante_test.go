@@ -337,6 +337,46 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with invalid sequence",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9001-1", gas, amount)
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				sigsV2 := signing.SignatureV2{
+					PubKey: privKey.PubKey(),
+					Data: &signing.SingleSignatureData{
+						SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					},
+					Sequence: nonce - 1,
+				}
+				txBuilder.SetSignatures(sigsV2)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with invalid signMode",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9001-1", gas, amount)
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				sigsV2 := signing.SignatureV2{
+					PubKey: privKey.PubKey(),
+					Data: &signing.SingleSignatureData{
+						SignMode: signing.SignMode_SIGN_MODE_UNSPECIFIED,
+					},
+					Sequence: nonce,
+				}
+				txBuilder.SetSignatures(sigsV2)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
 	}
 
 	for _, tc := range testCases {
