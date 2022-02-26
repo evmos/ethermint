@@ -2,6 +2,7 @@ package ante
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -233,7 +234,7 @@ func VerifySignature(
 			return fmt.Errorf("signature length doesn't match typical [R||S||V] signature 65 bytes")
 		}
 
-		if feePayerSig[ethcrypto.RecoveryIDOffset] > 4 {
+		if feePayerSig[ethcrypto.RecoveryIDOffset] == 27 || feePayerSig[ethcrypto.RecoveryIDOffset] == 28 {
 			// Remove the recovery offset if needed (ie. Metamask eip712 signature)
 			feePayerSig[ethcrypto.RecoveryIDOffset] -= 27
 		}
@@ -254,18 +255,11 @@ func VerifySignature(
 
 		recoveredFeePayerAcc := sdk.AccAddress(pk.Address().Bytes())
 
-		feePayerAcc := recoveredFeePayerAcc.String()
-		feePayerTest := feePayer.String()
-
-		fmt.Println(feePayerAcc)
-		fmt.Println(feePayerTest)
 		if !recoveredFeePayerAcc.Equals(feePayer) {
 			return sdkerrors.Wrapf(sdkerrors.ErrorInvalidSigner, "failed to verify delegated fee payer %s signature", recoveredFeePayerAcc)
 		}
 
 		// Overwrite the transaction signature because we are using EIP712
-		// TODO: should we allow only feePayerSignature and return error
-		// if the transaction signatures != []?
 		data.Signature = feePayerSig
 
 		if len(data.Signature) != ethcrypto.SignatureLength {
