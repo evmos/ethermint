@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/tharsis/ethermint/ethereum/eip712"
 	"math"
 	"math/big"
+
+	"github.com/tharsis/ethermint/ethereum/eip712"
 
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
