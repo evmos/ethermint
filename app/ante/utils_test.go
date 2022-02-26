@@ -214,8 +214,6 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(1))))
 
 	// GenerateTypedData TypedData
-	//typedData := suite.newTypedData(chainId, ethChainId, msgSend, gas, gasAmount, from, nonce)
-
 	var ethermintCodec codec.ProtoCodecMarshaler
 	fee := legacytx.NewStdFee(gas, gasAmount)
 	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
@@ -248,8 +246,8 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
 	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
 	suite.Require().True(ok)
-	builder.SetExtensionOptions(option)
 
+	builder.SetExtensionOptions(option)
 	builder.SetFeeAmount(gasAmount)
 	builder.SetGasLimit(gas)
 
