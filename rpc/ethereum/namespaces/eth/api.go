@@ -7,6 +7,8 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/tharsis/ethermint/ethereum/eip712"
+
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -446,18 +448,11 @@ func (e *PublicAPI) SignTypedData(address common.Address, typedData apitypes.Typ
 		return nil, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
-	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	sigHash, err := eip712.ComputeTypedDataHash(typedData)
 	if err != nil {
 		return nil, err
 	}
 
-	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
-	if err != nil {
-		return nil, err
-	}
-
-	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-	sigHash := crypto.Keccak256(rawData)
 	// Sign the requested hash with the wallet
 	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, sigHash)
 	if err != nil {
