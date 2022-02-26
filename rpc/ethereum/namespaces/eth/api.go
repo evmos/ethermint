@@ -7,6 +7,10 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/tharsis/ethermint/ethereum/eip712"
+
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -429,7 +433,34 @@ func (e *PublicAPI) Sign(address common.Address, data hexutil.Bytes) (hexutil.By
 		return nil, err
 	}
 
-	signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	return signature, nil
+}
+
+// SignTypedData signs EIP-712 conformant typed data
+func (e *PublicAPI) SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error) {
+	e.logger.Debug("eth_signTypedData", "address", address.Hex(), "data", typedData)
+	from := sdk.AccAddress(address.Bytes())
+
+	_, err := e.clientCtx.Keyring.KeyByAddress(from)
+	if err != nil {
+		e.logger.Error("failed to find key in keyring", "address", address.String())
+		return nil, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
+	}
+
+	sigHash, err := eip712.ComputeTypedDataHash(typedData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sign the requested hash with the wallet
+	signature, _, err := e.clientCtx.Keyring.SignByAddress(from, sigHash)
+	if err != nil {
+		e.logger.Error("keyring.SignByAddress failed", "address", address.Hex())
+		return nil, err
+	}
+
+	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 	return signature, nil
 }
 

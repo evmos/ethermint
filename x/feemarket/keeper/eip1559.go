@@ -25,13 +25,13 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
 	if ctx.BlockHeight() == params.EnableHeight {
-		return new(big.Int).SetInt64(params.InitialBaseFee)
+		return params.BaseFee.BigInt()
 	}
 
 	// get the block gas used and the base fee values for the parent block.
-	parentBaseFee := k.GetBaseFee(ctx)
+	parentBaseFee := params.BaseFee.BigInt()
 	if parentBaseFee == nil {
-		parentBaseFee = new(big.Int).SetInt64(params.InitialBaseFee)
+		return nil
 	}
 
 	parentGasUsed := k.GetBlockGasUsed(ctx)
@@ -43,7 +43,7 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 
 	parentGasTargetBig := new(big.Int).Div(gasLimit, new(big.Int).SetUint64(uint64(params.ElasticityMultiplier)))
 	if !parentGasTargetBig.IsUint64() {
-		return new(big.Int).SetInt64(params.InitialBaseFee)
+		return nil
 	}
 
 	parentGasTarget := parentGasTargetBig.Uint64()
