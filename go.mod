@@ -250,4 +250,5 @@ replace github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210
 
 replace github.com/cosmos/iavl => github.com/cosmos/iavl v0.17.1
 
-replace github.com/celestiaorg/optimint => github.com/jbowen93/optimint v0.0.0-20220126203110-0905be5c836a
+// replace github.com/celestiaorg/optimint => github.com/jbowen93/optimint v0.0.0-20220126203110-0905be5c836a
+replace github.com/celestiaorg/optimint => /home/jskybowen/Code/forks/jbowen93/optimint
