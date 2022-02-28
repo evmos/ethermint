@@ -704,8 +704,6 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("[ethermint] backend.go resBlock: %#v\n", resBlock)
-	fmt.Print("[ethermint] backend.go e.clientCtx.Client.Block passed\n")
 
 	// the `msgIndex` is inferred from tx events, should be within the bound.
 	msg, ok := tx.GetMsgs()[msgIndex].(*evmtypes.MsgEthereumTx)
