@@ -172,6 +172,11 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	var events sdk.Events
 
+	gasTx, ok := tx.(authante.GasTx)
+	if !ok {
+		return newCtx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
+	}
+
 	for _, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -213,8 +218,11 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
 	}
 
+	// Set newCtx.GasMeter to 0, with a limit of GasWanted (gasLimit)
+	newCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
+
 	// we know that we have enough gas on the pool to cover the intrinsic gas
-	return next(ctx, tx, simulate)
+	return next(newCtx, tx, simulate)
 }
 
 // CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
