@@ -171,11 +171,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	evmDenom := params.EvmDenom
 
 	var events sdk.Events
-
-	gasTx, ok := tx.(authante.GasTx)
-	if !ok {
-		return newCtx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
-	}
 	gasWanted := uint64(0)
 
 	for _, msg := range tx.GetMsgs() {
@@ -221,9 +216,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// Set newCtx.GasMeter to 0, with a limit of GasWanted (gasLimit)
-	if gasWanted < gasTx.GetGas() {
-		gasWanted = gasTx.GetGas()
-	}
 	newCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
