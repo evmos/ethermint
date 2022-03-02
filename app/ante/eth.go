@@ -176,6 +176,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	if !ok {
 		return newCtx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
 	}
+	gasWanted := uint64(0)
 
 	for _, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -187,6 +188,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		if err != nil {
 			return ctx, sdkerrors.Wrap(err, "failed to unpack tx data")
 		}
+		gasWanted += txData.GetGas()
 
 		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
@@ -219,7 +221,10 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// Set newCtx.GasMeter to 0, with a limit of GasWanted (gasLimit)
-	newCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasTx.GetGas()))
+	if gasWanted < gasTx.GetGas() {
+		gasWanted = gasTx.GetGas()
+	}
+	newCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	return next(newCtx, tx, simulate)
