@@ -292,9 +292,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
 
-	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
+	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.PrivValidatorKeyFile())
 	if err != nil {
-		logger.Error("failed load or gen node key", "error", err.Error())
+		logger.Error("failed load or gen key", "error", err.Error())
 		return err
 	}
 
