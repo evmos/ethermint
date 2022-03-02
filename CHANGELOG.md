@@ -40,7 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
-* (evm) [](https://github.com/tharsis/ethermint/issues/529) support return value on trace tx response.
+* (evm) [\#529](https://github.com/tharsis/ethermint/issues/529) support return value on trace tx response.
 
 ## [v0.10.0] - 2022-02-26
 
