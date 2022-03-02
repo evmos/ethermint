@@ -38,42 +38,35 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
-
-### Improvements
-
-* (log) [#948](https://github.com/tharsis/ethermint/pull/948) redirect go-ethereum's logs to Cosmos SDK logger.
-
-### Features
-* (ante) [#950](https://github.com/tharsis/ethermint/pull/950) Add support for EIP712 signed Cosmos transactions
-
 ### Bug Fixes
 
-* (rpc) [#955](https://github.com/tharsis/ethermint/pull/955) Fix websocket server push duplicated messages to subscriber.
-* (rpc) [tharsis#953](https://github.com/tharsis/ethermint/pull/953) Add `eth_signTypedData` api support.
-* (log) [#948](https://github.com/tharsis/ethermint/pull/948) redirect go-ethereum's logs to cosmos-sdk logger.
+* (evm) [\#529](https://github.com/tharsis/ethermint/issues/529) support return value on trace tx response.
 
-
-## [v0.10.0-beta1] - 2022-02-15
+## [v0.10.0] - 2022-02-26
 
 ### API Breaking
 
-* (ante) [\#866](https://github.com/tharsis/ethermint/pull/866) `NewAnteHandler` constructor now receives a `HandlerOptions` field.
-* (evm) [\#849](https://github.com/tharsis/ethermint/pull/849) `PostTxProcessing` hook now takes an Ethereum tx `Receipt` and a `from` `Address` as arguments.
-* (ante) [#916](https://github.com/tharsis/ethermint/pull/916) don't check min-gas-price for eth tx if london hardfork enabled and feemarket enabled.
+* (ante) [tharsis#866](https://github.com/tharsis/ethermint/pull/866) `NewAnteHandler` constructor now receives a `HandlerOptions` field.
+* (evm) [tharsis#849](https://github.com/tharsis/ethermint/pull/849) `PostTxProcessing` hook now takes an Ethereum tx `Receipt` and a `from` `Address` as arguments.
+* (ante) [tharsis#916](https://github.com/tharsis/ethermint/pull/916) Don't check min-gas-price for eth tx if london hardfork enabled and feemarket enabled.
 
 ### State Machine Breaking
 
-* (deps) [tharis#912](https://github.com/tharsis/ethermint/pull/912) Bump Cosmos SDK version to [`v0.45.0`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.0)
-* (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
-* (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
-* (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
+* (deps) [tharsis#912](https://github.com/tharsis/ethermint/pull/912) Bump Cosmos SDK version to [`v0.45.1`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.1)
+* (evm) [tharsis#840](https://github.com/tharsis/ethermint/pull/840) Store empty topics as empty array rather than nil.
+* (feemarket) [tharsis#822](https://github.com/tharsis/ethermint/pull/822) Update EIP1559 base fee in `BeginBlock`.
+* (evm) [tharsis#817](https://github.com/tharsis/ethermint/pull/817) Use `effectiveGasPrice` in ante handler, add `effectiveGasPrice` to tx receipt.
 * (evm) [tharsis#808](https://github.com/tharsis/ethermint/issues/808) increase nonce in ante handler for contract creation transaction.
 * (evm) [tharsis#851](https://github.com/tharsis/ethermint/pull/851) fix contract address used in EVM, this issue is caused by [tharsis#808](https://github.com/tharsis/ethermint/issues/808).
 * (evm)  Reject invalid `MsgEthereumTx` wrapping tx
 * (evm)  Fix `SelfDestruct` opcode by deleting account code and state.
-* (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) consistent `BaseFee` check logic.
-* (evm) [tharsis#729](https://github.com/tharsis/ethermint/pull/729) Refactor EVM StateDB implementation.
+* (feemarket) [tharsis#855](https://github.com/tharsis/ethermint/pull/855) Consistent `BaseFee` check logic.
+* (evm) [tharsis#729](https://github.com/tharsis/ethermint/pull/729) Refactor EVM `StateDB` implementation.
 * (evm) [tharsis#945](https://github.com/tharsis/ethermint/pull/945) Bumb Go-ethereum version to [`v1.10.16`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.16)
+
+### Features
+
+* (ante) [#950](https://github.com/tharsis/ethermint/pull/950) Add support for EIP712 signed Cosmos transactions
 
 ### Improvements
 
@@ -81,25 +74,28 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (types) [tharsis#849](https://github.com/tharsis/ethermint/pull/849) Add `Type` function to distinguish EOAs from Contract accounts.
 * (evm) [tharsis#826](https://github.com/tharsis/ethermint/issues/826) Improve allocation of bytes of `tx.To` address.
 * (evm) [tharsis#827](https://github.com/tharsis/ethermint/issues/827) Speed up creation of event logs by using the slice insertion idiom with indices.
-* (ante) [tharsis#819](https://github.com/tharsis/ethermint/pull/819) remove redundant ante handlers
+* (ante) [tharsis#819](https://github.com/tharsis/ethermint/pull/819) Remove redundant ante handlers
 * (app) [tharsis#873](https://github.com/tharsis/ethermint/pull/873) Validate code hash in GenesisAccount
-* (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple MsgEthereumTx in single tx.
-* (config) [tharsis#908](https://github.com/tharsis/ethermint/pull/908) Add api.enable flag for Cosmos SDK Rest server
-* (feemarket) [tharsis#919](https://github.com/tharsis/ethermint/pull/919) Initialize baseFee in default genesis state.
-* (feemarket) [tharsis#943](https://github.com/tharsis/ethermint/pull/943) Store the base fee as a module param instead of using state storage.
+* (evm) [tharsis#901](https://github.com/tharsis/ethermint/pull/901) Support multiple `MsgEthereumTx` in single tx.
+* (config) [tharsis#908](https://github.com/tharsis/ethermint/pull/908) Add `api.enable` flag for Cosmos SDK Rest server
+* (feemarket) [tharsis#919](https://github.com/tharsis/ethermint/pull/919) Initialize baseFee in default genesis state.
+* (feemarket) [tharsis#943](https://github.com/tharsis/ethermint/pull/943) Store the base fee as a module param instead of using state storage.
 
 ### Bug Fixes
 
+* (rpc) [tharsis#955](https://github.com/tharsis/ethermint/pull/955) Fix websocket server push duplicated messages to subscriber.
+* (rpc) [tharsis#953](https://github.com/tharsis/ethermint/pull/953) Add `eth_signTypedData` api support.
+* (log) [tharsis#948](https://github.com/tharsis/ethermint/pull/948) Redirect go-ethereum's logs to cosmos-sdk logger.
 * (evm) [tharsis#884](https://github.com/tharsis/ethermint/pull/884) Support multiple account types on the EVM `StateDB`.
 * (rpc) [tharsis#831](https://github.com/tharsis/ethermint/pull/831) Fix BaseFee value when height is specified.
 * (evm) [tharsis#838](https://github.com/tharsis/ethermint/pull/838) Fix splitting of trace.Memory into 32 chunks.
 * (rpc) [tharsis#860](https://github.com/tharsis/ethermint/pull/860) Fix `eth_getLogs` when specify blockHash without address/topics, and limit the response size.
 * (rpc) [tharsis#865](https://github.com/tharsis/ethermint/pull/865) Fix RPC Filter parameters being ignored
-* (evm) [tharsis#871](https://github.com/tharsis/ethermint/pull/871) Set correct nonce in `EthCall` and `EstimateGas` grpc query.
-* (rpc) [tharsis#878](https://github.com/tharsis/ethermint/pull/878) Workaround to make GetBlock RPC api report correct block gas used.
-* (rpc) [tharsis#900](https://github.com/tharsis/ethermint/pull/900) newPendingTransactions filter return ethereum tx hash.
-* (rpc) [tharsis#933](https://github.com/tharsis/ethermint/pull/933) Fix newPendingTransactions subscription deadlock when a Websocket client exits without unsubscribing and the node errors.
-* (evm) [tharsis#932](https://github.com/tharsis/ethermint/pull/932) Fix base fee check logic in state transition.
+* (evm) [tharsis#871](https://github.com/tharsis/ethermint/pull/871) Set correct nonce in `EthCall` and `EstimateGas` grpc query.
+* (rpc) [tharsis#878](https://github.com/tharsis/ethermint/pull/878) Workaround to make GetBlock RPC api report correct block gas used.
+* (rpc) [tharsis#900](https://github.com/tharsis/ethermint/pull/900) `newPendingTransactions` filter return ethereum tx hash.
+* (rpc) [tharsis#933](https://github.com/tharsis/ethermint/pull/933) Fix `newPendingTransactions` subscription deadlock when a Websocket client exits without unsubscribing and the node errors.
+* (evm) [tharsis#932](https://github.com/tharsis/ethermint/pull/932) Fix base fee check logic in state transition.
 
 ## [v0.9.0] - 2021-12-01
 
