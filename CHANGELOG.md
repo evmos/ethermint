@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (rpc) [#970] (https://github.com/tharsis/ethermint/pull/970) Fix unexpected nil reward values on `eth_feeHistory` response
 * (ante) [tharsis#964](https://github.com/tharsis/ethermint/pull/964) fix gas meter reset with correct gas limit in `EthGasConsumeDecorator`.
 * (evm) [\#529](https://github.com/tharsis/ethermint/issues/529) support return value on trace tx response.
 
