@@ -117,8 +117,8 @@ func (e *EVMBackend) processBlock(
 
 func (e *EVMBackend) FeeHistory(
 	userBlockCount rpc.DecimalOrHex, // number blocks to fetch, maximum is 100
-	lastBlock rpc.BlockNumber,       // the block to start search , to oldest
-	rewardPercentiles []float64,     // percentiles to fetch reward
+	lastBlock rpc.BlockNumber, // the block to start search , to oldest
+	rewardPercentiles []float64, // percentiles to fetch reward
 ) (*rpctypes.FeeHistoryResult, error) {
 	blockEnd := int64(lastBlock)
 
