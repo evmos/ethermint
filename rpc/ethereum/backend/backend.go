@@ -966,7 +966,7 @@ func (e *EVMBackend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	// calculate the maxumum base fee delta in current block, assuming all block gas limit is consumed
+	// calculate the maximum base fee delta in current block, assuming all block gas limit is consumed
 	// ```
 	// GasTarget = GasLimit / ElasticityMultiplier
 	// Delta = BaseFee * (GasUsed - GasTarget) / GasTarget / Denominator
