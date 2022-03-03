@@ -185,6 +185,9 @@ func (e *EVMBackend) FeeHistory(
 		thisGasUsedRatio[index] = onefeehistory.GasUsedRatio
 		for j := 0; j < rewardcount; j++ {
 			reward[index][j] = (*hexutil.Big)(onefeehistory.Reward[j])
+			if reward[index][j] == nil {
+				reward[index][j] = (*hexutil.Big)(big.NewInt(0))
+			}
 		}
 	}
 
