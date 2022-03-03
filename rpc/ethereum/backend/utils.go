@@ -31,19 +31,16 @@ func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 		return args, errors.New("latest header is nil")
 	}
 
-	cfg := e.ChainConfig()
-
 	// If user specifies both maxPriorityfee and maxFee, then we do not
 	// need to consult the chain for defaults. It's definitely a London tx.
 	if args.MaxPriorityFeePerGas == nil || args.MaxFeePerGas == nil {
 		// In this clause, user left some fields unspecified.
-		if cfg.IsLondon(head.Number) && args.GasPrice == nil {
+		if head.BaseFee != nil && args.GasPrice == nil {
 			if args.MaxPriorityFeePerGas == nil {
-				tip, err := e.SuggestGasTipCap()
+				tip, err := e.SuggestGasTipCap(head.BaseFee)
 				if err != nil {
 					return args, err
 				}
-
 				args.MaxPriorityFeePerGas = (*hexutil.Big)(tip)
 			}
 
@@ -65,12 +62,11 @@ func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 			}
 
 			if args.GasPrice == nil {
-				price, err := e.SuggestGasTipCap()
+				price, err := e.SuggestGasTipCap(head.BaseFee)
 				if err != nil {
 					return args, err
 				}
-
-				if cfg.IsLondon(head.Number) {
+				if head.BaseFee != nil {
 					// The legacy tx gas price suggestion should not add 2x base fee
 					// because all fees are consumed, so it would result in a spiral
 					// upwards.

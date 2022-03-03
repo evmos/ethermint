@@ -43,6 +43,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [tharsis#964](https://github.com/tharsis/ethermint/pull/964) fix gas meter reset with correct gas limit in `EthGasConsumeDecorator`.
 * (evm) [\#529](https://github.com/tharsis/ethermint/issues/529) support return value on trace tx response.
 
+## Improvements
+
+- (rpc) [#968](https://github.com/tharsis/ethermint/pull/968) Add some buffer to returned gas price to provide better default UX for client.
+
 ## [v0.10.0] - 2022-02-26
 
 ### API Breaking
