@@ -117,8 +117,8 @@ func (e *EVMBackend) processBlock(
 
 func (e *EVMBackend) FeeHistory(
 	userBlockCount rpc.DecimalOrHex, // number blocks to fetch, maximum is 100
-	lastBlock rpc.BlockNumber, // the block to start search , to oldest
-	rewardPercentiles []float64, // percentiles to fetch reward
+	lastBlock rpc.BlockNumber,       // the block to start search , to oldest
+	rewardPercentiles []float64,     // percentiles to fetch reward
 ) (*rpctypes.FeeHistoryResult, error) {
 	blockEnd := int64(lastBlock)
 
@@ -152,6 +152,11 @@ func (e *EVMBackend) FeeHistory(
 	thisBaseFee := make([]*hexutil.Big, blockCount)
 	thisGasUsedRatio := make([]float64, blockCount)
 
+	var addReward bool
+	if len(rewardPercentiles) != 0 {
+		addReward = true
+	}
+
 	// fetch block
 	for blockID := blockStart; blockID < blockEnd; blockID++ {
 		index := int32(blockID - blockStart)
@@ -183,19 +188,25 @@ func (e *EVMBackend) FeeHistory(
 		// copy
 		thisBaseFee[index] = (*hexutil.Big)(onefeehistory.BaseFee)
 		thisGasUsedRatio[index] = onefeehistory.GasUsedRatio
-		for j := 0; j < rewardcount; j++ {
-			reward[index][j] = (*hexutil.Big)(onefeehistory.Reward[j])
-			if reward[index][j] == nil {
-				reward[index][j] = (*hexutil.Big)(big.NewInt(0))
+		if addReward {
+			for j := 0; j < rewardcount; j++ {
+				reward[index][j] = (*hexutil.Big)(onefeehistory.Reward[j])
+				if reward[index][j] == nil {
+					reward[index][j] = (*hexutil.Big)(big.NewInt(0))
+				}
 			}
 		}
 	}
 
 	feeHistory := rpctypes.FeeHistoryResult{
 		OldestBlock:  oldestBlock,
-		Reward:       reward,
 		BaseFee:      thisBaseFee,
 		GasUsedRatio: thisGasUsedRatio,
 	}
+
+	if addReward {
+		feeHistory.Reward = reward
+	}
+
 	return &feeHistory, nil
 }
