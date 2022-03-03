@@ -216,10 +216,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// Set newCtx.GasMeter to 0, with a limit of GasWanted (gasLimit)
-	newCtx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
+	if ctx.IsCheckTx() {
+		ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
+	}
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
-	return next(newCtx, tx, simulate)
+	return next(ctx, tx, simulate)
 }
 
 // CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
