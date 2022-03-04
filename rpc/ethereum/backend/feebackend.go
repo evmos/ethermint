@@ -115,6 +115,7 @@ func (e *EVMBackend) processBlock(
 	return nil
 }
 
+// FeeHistory returns data relevant for fee estimation based on the specified range of blocks.
 func (e *EVMBackend) FeeHistory(
 	userBlockCount rpc.DecimalOrHex, // number blocks to fetch, maximum is 100
 	lastBlock rpc.BlockNumber, // the block to start search , to oldest
@@ -145,12 +146,15 @@ func (e *EVMBackend) FeeHistory(
 
 	// prepare space
 	reward := make([][]*hexutil.Big, blockCount)
-	rewardcount := len(rewardPercentiles)
+	rewardCount := len(rewardPercentiles)
 	for i := 0; i < int(blockCount); i++ {
-		reward[i] = make([]*hexutil.Big, rewardcount)
+		reward[i] = make([]*hexutil.Big, rewardCount)
 	}
 	thisBaseFee := make([]*hexutil.Big, blockCount)
 	thisGasUsedRatio := make([]float64, blockCount)
+
+	// rewards should only be calculated if reward percentiles were included
+	calculateRewards := rewardCount != 0
 
 	// fetch block
 	for blockID := blockStart; blockID < blockEnd; blockID++ {
@@ -174,25 +178,34 @@ func (e *EVMBackend) FeeHistory(
 			return nil, err
 		}
 
-		onefeehistory := rpctypes.OneFeeHistory{}
-		err = e.processBlock(tendermintblock, &ethBlock, rewardPercentiles, tendermintBlockResult, &onefeehistory)
+		oneFeeHistory := rpctypes.OneFeeHistory{}
+		err = e.processBlock(tendermintblock, &ethBlock, rewardPercentiles, tendermintBlockResult, &oneFeeHistory)
 		if err != nil {
 			return nil, err
 		}
 
 		// copy
-		thisBaseFee[index] = (*hexutil.Big)(onefeehistory.BaseFee)
-		thisGasUsedRatio[index] = onefeehistory.GasUsedRatio
-		for j := 0; j < rewardcount; j++ {
-			reward[index][j] = (*hexutil.Big)(onefeehistory.Reward[j])
+		thisBaseFee[index] = (*hexutil.Big)(oneFeeHistory.BaseFee)
+		thisGasUsedRatio[index] = oneFeeHistory.GasUsedRatio
+		if calculateRewards {
+			for j := 0; j < rewardCount; j++ {
+				reward[index][j] = (*hexutil.Big)(oneFeeHistory.Reward[j])
+				if reward[index][j] == nil {
+					reward[index][j] = (*hexutil.Big)(big.NewInt(0))
+				}
+			}
 		}
 	}
 
 	feeHistory := rpctypes.FeeHistoryResult{
 		OldestBlock:  oldestBlock,
-		Reward:       reward,
 		BaseFee:      thisBaseFee,
 		GasUsedRatio: thisGasUsedRatio,
 	}
+
+	if calculateRewards {
+		feeHistory.Reward = reward
+	}
+
 	return &feeHistory, nil
 }

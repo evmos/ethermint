@@ -202,7 +202,7 @@ func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 		err    error
 	)
 	if head := e.backend.CurrentHeader(); head.BaseFee != nil {
-		result, err = e.backend.SuggestGasTipCap()
+		result, err = e.backend.SuggestGasTipCap(head.BaseFee)
 		if err != nil {
 			return nil, err
 		}
@@ -218,11 +218,11 @@ func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 // MaxPriorityFeePerGas returns a suggestion for a gas tip cap for dynamic fee transactions.
 func (e *PublicAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
 	e.logger.Debug("eth_maxPriorityFeePerGas")
-	tipcap, err := e.backend.SuggestGasTipCap()
+	head := e.backend.CurrentHeader()
+	tipcap, err := e.backend.SuggestGasTipCap(head.BaseFee)
 	if err != nil {
 		return nil, err
 	}
-
 	return (*hexutil.Big)(tipcap), nil
 }
 
