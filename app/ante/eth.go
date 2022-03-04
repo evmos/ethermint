@@ -216,9 +216,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// Set newCtx.GasMeter to 0, with a limit of GasWanted (gasLimit)
-	if ctx.IsCheckTx() {
-		ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
-	}
+	ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	return next(ctx, tx, simulate)
