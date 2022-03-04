@@ -40,12 +40,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
-* (rpc) [tharsis##970](https://github.com/tharsis/ethermint/pull/970) Fix unexpected nil reward values on `eth_feeHistory` response
-* (evm) [tharsis##529](https://github.com/tharsis/ethermint/issues/529) Add support return value on trace tx response.
+* (rpc) [tharsis#970](https://github.com/tharsis/ethermint/pull/970) Fix unexpected nil reward values on `eth_feeHistory` response
+* (evm) [tharsis#529](https://github.com/tharsis/ethermint/issues/529) Add support return value on trace tx response.
 
 ## Improvements
 
-* (rpc) [tharsis##968](https://github.com/tharsis/ethermint/pull/968) Add some buffer to returned gas price to provide better default UX for client.
+* (rpc) [tharsis#968](https://github.com/tharsis/ethermint/pull/968) Add some buffer to returned gas price to provide better default UX for client.
 
 ## [v0.10.0] - 2022-02-26
 
