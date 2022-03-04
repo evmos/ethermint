@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.actor != 'dependabot[bot]')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Get Diff
         uses: technote-space/get-diff-action@v6.0.1
         with:
