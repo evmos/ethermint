@@ -205,12 +205,10 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 
 	addr := tests.GenerateAddress()
 
-	txGasLimit := uint64(1000)
-	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), txGasLimit, big.NewInt(1), nil, nil, nil, nil)
+	tx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
 	tx.From = addr.Hex()
 
-	tx2GasLimit := uint64(1000000)
-	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx2GasLimit, big.NewInt(1), nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
+	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000000, big.NewInt(1), nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
 	tx2.From = addr.Hex()
 
 	var vmdb *statedb.StateDB
@@ -218,37 +216,32 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 	testCases := []struct {
 		name     string
 		tx       sdk.Tx
-		gasLimit uint64
 		malleate func()
 		expPass  bool
 		expPanic bool
 	}{
-		{"invalid transaction type", &invalidTx{}, 0, func() {}, false, false},
+		{"invalid transaction type", &invalidTx{}, func() {}, false, false},
 		{
 			"sender not found",
 			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
-			0,
 			func() {},
 			false, false,
 		},
 		{
 			"gas limit too low",
 			tx,
-			0,
 			func() {},
 			false, false,
 		},
 		{
 			"not enough balance for fees",
 			tx2,
-			0,
 			func() {},
 			false, false,
 		},
 		{
 			"not enough tx gas",
 			tx2,
-			0,
 			func() {
 				vmdb.AddBalance(addr, big.NewInt(1000000))
 			},
@@ -257,7 +250,6 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		{
 			"not enough block gas",
 			tx2,
-			0,
 			func() {
 				vmdb.AddBalance(addr, big.NewInt(1000000))
 
@@ -268,7 +260,6 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		{
 			"success",
 			tx2,
-			tx2GasLimit,
 			func() {
 				vmdb.AddBalance(addr, big.NewInt(1000000))
 
@@ -291,13 +282,12 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 				return
 			}
 
-			newCtx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true).WithGasMeter(sdk.NewInfiniteGasMeter()), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true).WithGasMeter(sdk.NewInfiniteGasMeter()), tc.tx, false, nextFn)
 			if tc.expPass {
 				suite.Require().NoError(err)
 			} else {
 				suite.Require().Error(err)
 			}
-			suite.Require().Equal(tc.gasLimit, newCtx.GasMeter().Limit())
 		})
 	}
 }
@@ -409,6 +399,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 	testCases := []struct {
 		name     string
 		tx       sdk.Tx
+		gasLimit uint64
 		malleate func()
 		expPass  bool
 		expPanic bool
@@ -416,24 +407,28 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		{
 			"invalid transaction type",
 			&invalidTx{},
+			0,
 			func() {},
 			false, false,
 		},
 		{
 			"no signers",
 			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
+			0,
 			func() {},
 			false, false,
 		},
 		{
 			"account not set to store",
 			tx,
+			0,
 			func() {},
 			false, false,
 		},
 		{
 			"success - create contract",
 			contract,
+			1000,
 			func() {
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr.Bytes())
 				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
@@ -443,6 +438,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 		{
 			"success - call",
 			tx2,
+			1000,
 			func() {},
 			true, false,
 		},
@@ -459,7 +455,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 				return
 			}
 
-			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+			ctx, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -473,6 +469,7 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 			} else {
 				suite.Require().Error(err)
 			}
+			suite.Require().Equal(tc.gasLimit, ctx.GasMeter().Limit())
 		})
 	}
 }

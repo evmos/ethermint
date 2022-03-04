@@ -171,7 +171,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	evmDenom := params.EvmDenom
 
 	var events sdk.Events
-	gasWanted := uint64(0)
 
 	for _, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -183,7 +182,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		if err != nil {
 			return ctx, sdkerrors.Wrap(err, "failed to unpack tx data")
 		}
-		gasWanted += txData.GetGas()
 
 		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
@@ -214,9 +212,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		gasPool := sdk.NewGasMeter(blockGasLimit)
 		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
 	}
-
-	// Set newCtx.GasMeter to 0, with a limit of GasWanted (gasLimit)
-	ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	return next(ctx, tx, simulate)
@@ -314,7 +309,10 @@ func NewEthIncrementSenderSequenceDecorator(ak evmtypes.AccountKeeper) EthIncrem
 // AnteHandle handles incrementing the sequence of the signer (i.e sender). If the transaction is a
 // contract creation, the nonce will be incremented during the transaction execution and not within
 // this AnteHandler decorator.
+// being the innermost decorator, it also resets the GasMeter with a limit
+// based on user provided gas limit
 func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	gasWanted := uint64(0)
 	for _, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
@@ -325,6 +323,8 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 		if err != nil {
 			return ctx, sdkerrors.Wrap(err, "failed to unpack tx data")
 		}
+
+		gasWanted += txData.GetGas()
 
 		// increase sequence of sender
 		acc := issd.ak.GetAccount(ctx, msgEthTx.GetFrom())
@@ -351,6 +351,9 @@ func (issd EthIncrementSenderSequenceDecorator) AnteHandle(ctx sdk.Context, tx s
 
 		issd.ak.SetAccount(ctx, acc)
 	}
+
+	// Set ctx.GasMeter to 0, with a limit of GasWanted (gasLimit)
+	ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasWanted))
 
 	return next(ctx, tx, simulate)
 }

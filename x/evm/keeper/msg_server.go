@@ -23,7 +23,7 @@ var _ types.MsgServer = &Keeper{}
 // parameter.
 func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	// reset the gas meter set in EthSetupContextDecorator.AnteHandle
+	// reset the gas meter set in EthIncrementSenderSequenceDecorator.AnteHandle
 	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	sender := msg.From
