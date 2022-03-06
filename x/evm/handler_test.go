@@ -470,9 +470,16 @@ func (suite *EvmTestSuite) TestOutOfGasWhenDeployContract() {
 	tx := types.NewTx(suite.chainID, 1, nil, big.NewInt(0), gasLimit, gasPrice, nil, nil, bytecode, nil)
 	suite.SignTx(tx)
 
-	_, err := suite.handler(suite.ctx, tx)
+	defer func() {
+		if r := recover(); r != nil {
+			// TODO: snapshotting logic
+		} else {
+			suite.Require().Fail("panic did not happen")
+		}
+	}()
 
-	suite.Require().Equal("failed to apply transaction: failed to apply ethereum core message: apply message: intrinsic gas too low", err.Error(), "correct error")
+	suite.handler(suite.ctx, tx)
+	suite.Require().Fail("panic did not happen")
 }
 
 func (suite *EvmTestSuite) TestErrorWhenDeployContract() {
