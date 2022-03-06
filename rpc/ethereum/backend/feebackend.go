@@ -87,6 +87,9 @@ func (e *EVMBackend) processBlock(
 			}
 			tx := ethMsg.AsTransaction()
 			reward := tx.EffectiveGasTipValue(blockBaseFee)
+			if reward == nil {
+				reward = big.NewInt(0)
+			}
 			sorter[i] = txGasAndReward{gasUsed: txGasUsed, reward: reward}
 			break
 		}
