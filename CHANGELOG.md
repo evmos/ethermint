@@ -38,16 +38,24 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
-### Bug Fixes
+### State Machine Breaking
 
 * (ante) [tharsis#964](https://github.com/tharsis/ethermint/pull/964) add NewInfiniteGasMeterWithLimit for storing the user provided gas limit. Fixes block's consumed gas calculation in the block creation phase.
+
+### Bug Fixes
+
 * (rpc) [tharsis#975](https://github.com/tharsis/ethermint/pull/975) Fix unexpected `nil` values for `reward`, returned by `EffectiveGasTipValue(blockBaseFee)` in the `eth_feeHistory` RPC method.
-* (rpc) [tharsis#970] (https://github.com/tharsis/ethermint/pull/970) Fix unexpected nil reward values on `eth_feeHistory` response
-* (evm) [tharsis#529](https://github.com/tharsis/ethermint/issues/529) support return value on trace tx response.
 
-## Improvements
+## [v0.10.1] - 2022-03-04
 
-- (rpc) [#968](https://github.com/tharsis/ethermint/pull/968) Add some buffer to returned gas price to provide better default UX for client.
+### Bug Fixes
+
+* (rpc) [tharsis#970](https://github.com/tharsis/ethermint/pull/970) Fix unexpected nil reward values on `eth_feeHistory` response
+* (evm) [tharsis#529](https://github.com/tharsis/ethermint/issues/529) Add support return value on trace tx response.
+
+### Improvements
+
+* (rpc) [tharsis#968](https://github.com/tharsis/ethermint/pull/968) Add some buffer to returned gas price to provide better default UX for client.
 
 ## [v0.10.0] - 2022-02-26
 
@@ -73,7 +81,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Features
 
-* (ante) [#950](https://github.com/tharsis/ethermint/pull/950) Add support for EIP712 signed Cosmos transactions
+* (ante) [tharsis#950](https://github.com/tharsis/ethermint/pull/950) Add support for EIP712 signed Cosmos transactions
 
 ### Improvements
 
@@ -251,7 +259,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc, evm) [tharsis#587](https://github.com/tharsis/ethermint/pull/587) Apply bloom filter when query ethlogs with range of blocks
 * (evm) [tharsis#586](https://github.com/tharsis/ethermint/pull/586) Benchmark evm keeper
 
-
 ## [v0.5.0] - 2021-08-20
 
 ### State Machine Breaking
@@ -281,8 +288,8 @@ the Tracer type used to collect execution traces from the EVM transaction execut
   * The `TxReceipt`, `TxReceiptsByBlockHeight` endpoints have been removed from the Query service.
   * The `ContractAddress`, `Bloom` have been removed from the `MsgEthereumTxResponse` and the
     response now contains the ethereum-formatted `Hash` in hex format.
-* (eth) [\#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
-* (evm) [#202](https://github.com/tharsis/ethermint/pull/202) Web3 api `SendTransaction`/`SendRawTransaction` returns ethereum compatible transaction hash, and query api `GetTransaction*` also accept that.
+* (eth) [tharsis#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
+* (evm) [tharsis#202](https://github.com/tharsis/ethermint/pull/202) Web3 api `SendTransaction`/`SendRawTransaction` returns ethereum compatible transaction hash, and query api `GetTransaction*` also accept that.
 * (rpc) [tharsis#258](https://github.com/tharsis/ethermint/pull/258) Return empty `BloomFilter` instead of throwing an error when it cannot be found (`nil` or empty).
 * (rpc) [tharsis#277](https://github.com/tharsis/ethermint/pull/321) Fix `BloomFilter` response.
 
@@ -298,13 +305,13 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 * (deps) [tharsis#423](https://github.com/tharsis/ethermint/pull/423) Bump Cosmos SDK and Tendermint versions to [v0.43.0](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.43.0) and [v0.34.11](https://github.com/tendermint/tendermint/releases/tag/v0.34.11), respectively.
 * (evm) [tharsis#66](https://github.com/tharsis/ethermint/issues/66) Support legacy transaction types for signing.
 * (evm) [tharsis#24](https://github.com/tharsis/ethermint/pull/24) Implement metrics for `MsgEthereumTx`, state transitions, `BeginBlock` and `EndBlock`.
-* (rpc)  [#124](https://github.com/tharsis/ethermint/issues/124) Implement `txpool_content`, `txpool_inspect` and `txpool_status` RPC methods
+* (rpc)  [tharsis#124](https://github.com/tharsis/ethermint/issues/124) Implement `txpool_content`, `txpool_inspect` and `txpool_status` RPC methods
 * (rpc) [tharsis#112](https://github.com/tharsis/ethermint/pull/153) Fix `eth_coinbase` to return the ethereum address of the validator
 * (rpc) [tharsis#176](https://github.com/tharsis/ethermint/issues/176) Support fetching pending nonce
 * (rpc) [tharsis#272](https://github.com/tharsis/ethermint/pull/272) do binary search to estimate gas accurately
-* (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
-* (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
-* (rpc) [#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
+* (rpc) [tharsis#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
+* (rpc) [tharsis#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
+* (rpc) [tharsis#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
 * (eth) [tharsis#460](https://github.com/tharsis/ethermint/issues/460) Add support for EIP-1898.
 
 ### Bug Fixes
@@ -318,41 +325,41 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 
 ### API Breaking
 
-* (faucet) [\#678](https://github.com/cosmos/ethermint/pull/678) Faucet module has been removed in favor of client libraries such as [`@cosmjs/faucet`](https://github.com/cosmos/cosmjs/tree/master/packages/faucet).
-* (evm) [\#670](https://github.com/cosmos/ethermint/pull/670) Migrate types to the ones defined by the protobuf messages, which are required for the stargate release.
+* (faucet) [tharsis#678](https://github.com/cosmos/ethermint/pull/678) Faucet module has been removed in favor of client libraries such as [`@cosmjs/faucet`](https://github.com/cosmos/cosmjs/tree/master/packages/faucet).
+* (evm) [tharsis#670](https://github.com/cosmos/ethermint/pull/670) Migrate types to the ones defined by the protobuf messages, which are required for the stargate release.
 
 ### Bug Fixes
 
-* (evm) [\#799](https://github.com/cosmos/ethermint/issues/799) Fix wrong precision in calculation of gas fee.
-* (evm) [\#760](https://github.com/cosmos/ethermint/issues/760) Fix Failed to call function EstimateGas.
-* (evm) [\#767](https://github.com/cosmos/ethermint/issues/767) Fix error of timeout when using Truffle to deploy contract.
-* (evm) [\#751](https://github.com/cosmos/ethermint/issues/751) Fix misused method to calculate block hash in evm related function.
-* (evm) [\#721](https://github.com/cosmos/ethermint/issues/721) Fix mismatch block hash in rpc response when use eht.getBlock.
-* (evm) [\#730](https://github.com/cosmos/ethermint/issues/730) Fix 'EIP2028' not open when Istanbul version has been enabled.
-* (evm) [\#749](https://github.com/cosmos/ethermint/issues/749) Fix panic in `AnteHandler` when gas price larger than 100000
-* (evm) [\#747](https://github.com/cosmos/ethermint/issues/747) Fix format errors in String() of QueryETHLogs
-* (evm) [\#742](https://github.com/cosmos/ethermint/issues/742) Add parameter check for evm query func.
-* (evm) [\#687](https://github.com/cosmos/ethermint/issues/687) Fix nonce check to explicitly check for the correct nonce, rather than a simple 'greater than' comparison.
-* (api) [\#687](https://github.com/cosmos/ethermint/issues/687) Returns error for a transaction with an incorrect nonce.
-* (evm) [\#674](https://github.com/cosmos/ethermint/issues/674) Reset all cache after account data has been committed in `EndBlock` to make sure every node state consistent.
-* (evm) [\#672](https://github.com/cosmos/ethermint/issues/672) Fix panic of `wrong Block.Header.AppHash` when restart a node with snapshot.
-* (evm) [\#775](https://github.com/cosmos/ethermint/issues/775) MisUse of headHash as blockHash when create EVM context.
+* (evm) [tharsis#799](https://github.com/cosmos/ethermint/issues/799) Fix wrong precision in calculation of gas fee.
+* (evm) [tharsis#760](https://github.com/cosmos/ethermint/issues/760) Fix Failed to call function EstimateGas.
+* (evm) [tharsis#767](https://github.com/cosmos/ethermint/issues/767) Fix error of timeout when using Truffle to deploy contract.
+* (evm) [tharsis#751](https://github.com/cosmos/ethermint/issues/751) Fix misused method to calculate block hash in evm related function.
+* (evm) [tharsis#721](https://github.com/cosmos/ethermint/issues/721) Fix mismatch block hash in rpc response when use eht.getBlock.
+* (evm) [tharsis#730](https://github.com/cosmos/ethermint/issues/730) Fix 'EIP2028' not open when Istanbul version has been enabled.
+* (evm) [tharsis#749](https://github.com/cosmos/ethermint/issues/749) Fix panic in `AnteHandler` when gas price larger than 100000
+* (evm) [tharsis#747](https://github.com/cosmos/ethermint/issues/747) Fix format errors in String() of QueryETHLogs
+* (evm) [tharsis#742](https://github.com/cosmos/ethermint/issues/742) Add parameter check for evm query func.
+* (evm) [tharsis#687](https://github.com/cosmos/ethermint/issues/687) Fix nonce check to explicitly check for the correct nonce, rather than a simple 'greater than' comparison.
+* (api) [tharsis#687](https://github.com/cosmos/ethermint/issues/687) Returns error for a transaction with an incorrect nonce.
+* (evm) [tharsis#674](https://github.com/cosmos/ethermint/issues/674) Reset all cache after account data has been committed in `EndBlock` to make sure every node state consistent.
+* (evm) [tharsis#672](https://github.com/cosmos/ethermint/issues/672) Fix panic of `wrong Block.Header.AppHash` when restart a node with snapshot.
+* (evm) [tharsis#775](https://github.com/cosmos/ethermint/issues/775) MisUse of headHash as blockHash when create EVM context.
 
 ### Features
-* (api) [\#821](https://github.com/cosmos/ethermint/pull/821) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
+* (api) [tharsis#821](https://github.com/cosmos/ethermint/pull/821) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
 
 ### Features
-* (api) [\#825](https://github.com/cosmos/ethermint/pull/825) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
+* (api) [tharsis#825](https://github.com/cosmos/ethermint/pull/825) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
 
 ## [v0.4.0] - 2020-12-15
 
 ### API Breaking
 
-* (evm) [\#661](https://github.com/cosmos/ethermint/pull/661) `Balance` field has been removed from the evm module's `GenesisState`.
+* (evm) [tharsis#661](https://github.com/cosmos/ethermint/pull/661) `Balance` field has been removed from the evm module's `GenesisState`.
 
 ### Features
 
-* (rpc) [\#571](https://github.com/cosmos/ethermint/pull/571) Add pending queries to JSON-RPC calls. This allows for the querying of pending transactions and other relevant information that pertains to the pending state:
+* (rpc) [tharsis#571](https://github.com/cosmos/ethermint/pull/571) Add pending queries to JSON-RPC calls. This allows for the querying of pending transactions and other relevant information that pertains to the pending state:
   * `eth_getBalance`
   * `eth_getTransactionCount`
   * `eth_getBlockTransactionCountByNumber`
@@ -363,149 +370,149 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 
 ### Improvements
 
-* (evm) [\#661](https://github.com/cosmos/ethermint/pull/661) Add invariant check for account balance and account nonce.
-* (deps) [\#654](https://github.com/cosmos/ethermint/pull/654) Bump go-ethereum version to [v1.9.25](https://github.com/ethereum/go-ethereum/releases/tag/v1.9.25)
-* (evm) [\#627](https://github.com/cosmos/ethermint/issues/627) Add extra EIPs parameter to apply custom EVM jump tables.
+* (evm) [tharsis#661](https://github.com/cosmos/ethermint/pull/661) Add invariant check for account balance and account nonce.
+* (deps) [tharsis#654](https://github.com/cosmos/ethermint/pull/654) Bump go-ethereum version to [v1.9.25](https://github.com/ethereum/go-ethereum/releases/tag/v1.9.25)
+* (evm) [tharsis#627](https://github.com/cosmos/ethermint/issues/627) Add extra EIPs parameter to apply custom EVM jump tables.
 
 ### Bug Fixes
 
-* (evm) [\#661](https://github.com/cosmos/ethermint/pull/661) Set nonce to the EVM account on genesis initialization.
-* (rpc) [\#648](https://github.com/cosmos/ethermint/issues/648) Fix block cumulative gas used value.
-* (evm) [\#621](https://github.com/cosmos/ethermint/issues/621) EVM `GenesisAccount` fields now share the same format as the auth module `Account`.
-* (evm) [\#618](https://github.com/cosmos/ethermint/issues/618) Add missing EVM `Context` `GetHash` field that retrieves a the header hash from a given block height.
-* (app) [\#617](https://github.com/cosmos/ethermint/issues/617) Fix genesis export functionality.
-* (rpc) [\#574](https://github.com/cosmos/ethermint/issues/574) Fix outdated version from `eth_protocolVersion`.
+* (evm) [tharsis#661](https://github.com/cosmos/ethermint/pull/661) Set nonce to the EVM account on genesis initialization.
+* (rpc) [tharsis#648](https://github.com/cosmos/ethermint/issues/648) Fix block cumulative gas used value.
+* (evm) [tharsis#621](https://github.com/cosmos/ethermint/issues/621) EVM `GenesisAccount` fields now share the same format as the auth module `Account`.
+* (evm) [tharsis#618](https://github.com/cosmos/ethermint/issues/618) Add missing EVM `Context` `GetHash` field that retrieves a the header hash from a given block height.
+* (app) [tharsis#617](https://github.com/cosmos/ethermint/issues/617) Fix genesis export functionality.
+* (rpc) [tharsis#574](https://github.com/cosmos/ethermint/issues/574) Fix outdated version from `eth_protocolVersion`.
 
 ## [v0.3.1] - 2020-11-24
 
 ### Improvements
 
-* (deps) [\#615](https://github.com/cosmos/ethermint/pull/615) Bump Cosmos SDK version to [v0.39.2](https://github.com/cosmos/cosmos-sdk/tag/v0.39.2)
-* (deps) [\#610](https://github.com/cosmos/ethermint/pull/610) Update Go dependency to 1.15+.
-* (evm) [#603](https://github.com/cosmos/ethermint/pull/603) Add state transition params that enable or disable the EVM `Call` and `Create` operations.
-* (deps) [\#602](https://github.com/cosmos/ethermint/pull/602) Bump tendermint version to [v0.33.9](https://github.com/tendermint/tendermint/releases/tag/v0.33.9)
+* (deps) [tharsis#615](https://github.com/cosmos/ethermint/pull/615) Bump Cosmos SDK version to [v0.39.2](https://github.com/cosmos/cosmos-sdk/tag/v0.39.2)
+* (deps) [tharsis#610](https://github.com/cosmos/ethermint/pull/610) Update Go dependency to 1.15+.
+* (evm) [tharsis#603](https://github.com/cosmos/ethermint/pull/603) Add state transition params that enable or disable the EVM `Call` and `Create` operations.
+* (deps) [tharsis#602](https://github.com/cosmos/ethermint/pull/602) Bump tendermint version to [v0.33.9](https://github.com/tendermint/tendermint/releases/tag/v0.33.9)
 
 ### Bug Fixes
 
-* (rpc) [\#613](https://github.com/cosmos/ethermint/issues/613) Fix potential deadlock caused if the keyring `List` returned an error.
+* (rpc) [tharsis#613](https://github.com/cosmos/ethermint/issues/613) Fix potential deadlock caused if the keyring `List` returned an error.
 
 ## [v0.3.0] - 2020-11-16
 
 ### API Breaking
 
-* (crypto) [\#559](https://github.com/cosmos/ethermint/pull/559) Refactored crypto package in preparation for the SDK's Stargate release:
+* (crypto) [tharsis#559](https://github.com/cosmos/ethermint/pull/559) Refactored crypto package in preparation for the SDK's Stargate release:
   * `crypto.PubKeySecp256k1` and `crypto.PrivKeySecp256k1` are now `ethsecp256k1.PubKey` and `ethsecp256k1.PrivKey`, respectively
   * Moved SDK `SigningAlgo` implementation for Ethermint's Secp256k1 key to `crypto/hd` package.
-* (rpc) [\#588](https://github.com/cosmos/ethermint/pull/588) The `rpc` package has been refactored to account for the separation of each
+* (rpc) [tharsis#588](https://github.com/cosmos/ethermint/pull/588) The `rpc` package has been refactored to account for the separation of each
 corresponding Ethereum API namespace:
   * `rpc/namespaces/eth`: `eth` namespace. Exposes the `PublicEthereumAPI` and the `PublicFilterAPI`.
   * `rpc/namespaces/personal`: `personal` namespace. Exposes the `PrivateAccountAPI`.
   * `rpc/namespaces/net`: `net` namespace. Exposes the `PublicNetAPI`.
   * `rpc/namespaces/web3`: `web3` namespace. Exposes the `PublicWeb3API`.
-* (evm) [\#588](https://github.com/cosmos/ethermint/pull/588) The EVM transaction CLI has been removed in favor of the JSON-RPC.
+* (evm) [tharsis#588](https://github.com/cosmos/ethermint/pull/588) The EVM transaction CLI has been removed in favor of the JSON-RPC.
 
 ### Improvements
 
-* (deps) [\#594](https://github.com/cosmos/ethermint/pull/594) Bump go-ethereum version to [v1.9.24](https://github.com/ethereum/go-ethereum/releases/tag/v1.9.24)
+* (deps) [tharsis#594](https://github.com/cosmos/ethermint/pull/594) Bump go-ethereum version to [v1.9.24](https://github.com/ethereum/go-ethereum/releases/tag/v1.9.24)
 
 ### Bug Fixes
 
-* (ante) [\#597](https://github.com/cosmos/ethermint/pull/597) Fix incorrect fee check on `AnteHandler`.
-* (evm) [\#583](https://github.com/cosmos/ethermint/pull/583) Fixes incorrect resetting of tx count and block bloom during `BeginBlock`, as well as gas consumption.
-* (crypto) [\#577](https://github.com/cosmos/ethermint/pull/577) Fix `BIP44HDPath` that did not prepend `m/` to the path. This now uses the `DefaultBaseDerivationPath` variable from go-ethereum to ensure addresses are consistent.
+* (ante) [tharsis#597](https://github.com/cosmos/ethermint/pull/597) Fix incorrect fee check on `AnteHandler`.
+* (evm) [tharsis#583](https://github.com/cosmos/ethermint/pull/583) Fixes incorrect resetting of tx count and block bloom during `BeginBlock`, as well as gas consumption.
+* (crypto) [tharsis#577](https://github.com/cosmos/ethermint/pull/577) Fix `BIP44HDPath` that did not prepend `m/` to the path. This now uses the `DefaultBaseDerivationPath` variable from go-ethereum to ensure addresses are consistent.
 
 ## [v0.2.1] - 2020-09-30
 
 ### Features
 
-* (rpc) [\#552](https://github.com/cosmos/ethermint/pull/552) Implement Eth Personal namespace `personal_importRawKey`.
+* (rpc) [tharsis#552](https://github.com/cosmos/ethermint/pull/552) Implement Eth Personal namespace `personal_importRawKey`.
 
 ### Bug fixes
 
-* (keys) [\#554](https://github.com/cosmos/ethermint/pull/554) Fix private key derivation.
-* (app/ante) [\#550](https://github.com/cosmos/ethermint/pull/550) Update ante handler nonce verification to accept any nonce greater than or equal to the expected nonce to allow to successive transactions.
+* (keys) [tharsis#554](https://github.com/cosmos/ethermint/pull/554) Fix private key derivation.
+* (app/ante) [tharsis#550](https://github.com/cosmos/ethermint/pull/550) Update ante handler nonce verification to accept any nonce greater than or equal to the expected nonce to allow to successive transactions.
 
 ## [v0.2.0] - 2020-09-24
 
 ### State Machine Breaking
 
-* (app) [\#540](https://github.com/cosmos/ethermint/issues/540) Chain identifier's format has been changed to match the Cosmos `chainID` [standard](https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-5.md), which is required for IBC. The epoch number of the ID is used as the EVM `chainID`.
+* (app) [tharsis#540](https://github.com/cosmos/ethermint/issues/540) Chain identifier's format has been changed to match the Cosmos `chainID` [standard](https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-5.md), which is required for IBC. The epoch number of the ID is used as the EVM `chainID`.
 
 ### API Breaking
 
-* (types) [\#503](https://github.com/cosmos/ethermint/pull/503) The `types.DenomDefault` constant for `"aphoton"` has been renamed to `types.AttoPhoton`.
+* (types) [tharsis#503](https://github.com/cosmos/ethermint/pull/503) The `types.DenomDefault` constant for `"aphoton"` has been renamed to `types.AttoPhoton`.
 
 ### Improvements
 
-* (types) [\#504](https://github.com/cosmos/ethermint/pull/504) Unmarshal a JSON `EthAccount` using an Ethereum hex address in addition to Bech32.
-* (types) [\#503](https://github.com/cosmos/ethermint/pull/503) Add `--coin-denom` flag to testnet command that sets the given coin denomination to SDK and Ethermint parameters.
-* (types) [\#502](https://github.com/cosmos/ethermint/pull/502) `EthAccount` now also exposes the Ethereum hex address in `string` format to clients.
-* (types) [\#494](https://github.com/cosmos/ethermint/pull/494) Update `EthAccount` public key JSON type to `string`.
-* (app) [\#471](https://github.com/cosmos/ethermint/pull/471) Add `x/upgrade` module for managing software updates.
-* (`x/evm`) [\#458](https://github.com/cosmos/ethermint/pull/458) Define parameter for token denomination used for the EVM module.
-* (`x/evm`) [\#443](https://github.com/cosmos/ethermint/issues/443) Support custom Ethereum `ChainConfig` params.
-* (types) [\#434](https://github.com/cosmos/ethermint/issues/434) Update default denomination to Atto Photon (`aphoton`).
-* (types) [\#515](https://github.com/cosmos/ethermint/pull/515) Update minimum gas price to be 1.
+* (types) [tharsis#504](https://github.com/cosmos/ethermint/pull/504) Unmarshal a JSON `EthAccount` using an Ethereum hex address in addition to Bech32.
+* (types) [tharsis#503](https://github.com/cosmos/ethermint/pull/503) Add `--coin-denom` flag to testnet command that sets the given coin denomination to SDK and Ethermint parameters.
+* (types) [tharsis#502](https://github.com/cosmos/ethermint/pull/502) `EthAccount` now also exposes the Ethereum hex address in `string` format to clients.
+* (types) [tharsis#494](https://github.com/cosmos/ethermint/pull/494) Update `EthAccount` public key JSON type to `string`.
+* (app) [tharsis#471](https://github.com/cosmos/ethermint/pull/471) Add `x/upgrade` module for managing software updates.
+* (evm) [tharsis#458](https://github.com/cosmos/ethermint/pull/458) Define parameter for token denomination used for the EVM module.
+* (evm) [tharsis#443](https://github.com/cosmos/ethermint/issues/443) Support custom Ethereum `ChainConfig` params.
+* (types) [tharsis#434](https://github.com/cosmos/ethermint/issues/434) Update default denomination to Atto Photon (`aphoton`).
+* (types) [tharsis#515](https://github.com/cosmos/ethermint/pull/515) Update minimum gas price to be 1.
 
 ### Bug Fixes
 
-* (ante) [\#525](https://github.com/cosmos/ethermint/pull/525) Add message validation decorator to `AnteHandler` for `MsgEthereumTx`.
-* (types) [\#507](https://github.com/cosmos/ethermint/pull/507) Fix hardcoded `aphoton` on `EthAccount` balance getter and setter.
-* (types) [\#501](https://github.com/cosmos/ethermint/pull/501) Fix bech32 encoding error by using the compressed ethereum secp256k1 public key.
-* (`x/evm`) [\#496](https://github.com/cosmos/ethermint/pull/496) Fix bugs on `journal.revert` and `CommitStateDB.Copy`.
-* (types) [\#480](https://github.com/cosmos/ethermint/pull/480) Update [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) coin type to `60` to satisfy [EIP84](https://github.com/ethereum/EIPs/issues/84).
-* (types) [\#513](https://github.com/cosmos/ethermint/pull/513) Fix simulated transaction bug that was causing a consensus error by unintentionally affecting the state.
+* (ante) [tharsis#525](https://github.com/cosmos/ethermint/pull/525) Add message validation decorator to `AnteHandler` for `MsgEthereumTx`.
+* (types) [tharsis#507](https://github.com/cosmos/ethermint/pull/507) Fix hardcoded `aphoton` on `EthAccount` balance getter and setter.
+* (types) [tharsis#501](https://github.com/cosmos/ethermint/pull/501) Fix bech32 encoding error by using the compressed ethereum secp256k1 public key.
+* (evm) [tharsis#496](https://github.com/cosmos/ethermint/pull/496) Fix bugs on `journal.revert` and `CommitStateDB.Copy`.
+* (types) [tharsis#480](https://github.com/cosmos/ethermint/pull/480) Update [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) coin type to `60` to satisfy [EIP84](https://github.com/ethereum/EIPs/issues/84).
+* (types) [tharsis#513](https://github.com/cosmos/ethermint/pull/513) Fix simulated transaction bug that was causing a consensus error by unintentionally affecting the state.
 
 ## [v0.1.0] - 2020-08-23
 
 ### Improvements
 
-* (sdk) [\#386](https://github.com/cosmos/ethermint/pull/386) Bump Cosmos SDK version to [v0.39.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.39.1)
-* (`x/evm`) [\#181](https://github.com/cosmos/ethermint/issues/181) Updated EVM module to the recommended module structure.
-* (app) [\#188](https://github.com/cosmos/ethermint/issues/186)  Misc cleanup:
-  * (`x/evm`) Rename `EthereumTxMsg` --> `MsgEthereumTx` and `EmintMsg` --> `MsgEthermint` for consistency with SDK standards
+* (sdk) [tharsis#386](https://github.com/cosmos/ethermint/pull/386) Bump Cosmos SDK version to [v0.39.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.39.1)
+* (evm) [tharsis#181](https://github.com/cosmos/ethermint/issues/181) Updated EVM module to the recommended module structure.
+* (app) [tharsis#188](https://github.com/cosmos/ethermint/issues/186)  Misc cleanup:
+  * (evm) Rename `EthereumTxMsg` --> `MsgEthereumTx` and `EmintMsg` --> `MsgEthermint` for consistency with SDK standards
   * Updated integration and unit tests to use `EthermintApp` as testing suite
   * Use expected `Keeper` interface for `AccountKeeper`
   * Replaced `count` type in keeper with `int`
   * Add SDK events for transactions
-* [\#236](https://github.com/cosmos/ethermint/pull/236) Changes from upgrade:
+* [tharsis#236](https://github.com/cosmos/ethermint/pull/236) Changes from upgrade:
   * (`app/ante`) Moved `AnteHandler` implementation to `app/ante`
   * (keys) Marked `ExportEthKeyCommand` as **UNSAFE**
-  * (`x/evm`) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
-* (`x/evm`) [\#255](https://github.com/cosmos/ethermint/pull/255) Add missing `GenesisState` fields and support `ExportGenesis` functionality.
-* [\#272](https://github.com/cosmos/ethermint/pull/272) Add `Logger` for evm module.
-* [\#317](https://github.com/cosmos/ethermint/pull/317) `GenesisAccount` validation.
-* (`x/evm`) [\#319](https://github.com/cosmos/ethermint/pull/319) Various evm improvements:
+  * (evm) Moved `BeginBlock` and `EndBlock` to `x/evm/abci.go`
+* (evm) [tharsis#255](https://github.com/cosmos/ethermint/pull/255) Add missing `GenesisState` fields and support `ExportGenesis` functionality.
+* [tharsis#272](https://github.com/cosmos/ethermint/pull/272) Add `Logger` for evm module.
+* [tharsis#317](https://github.com/cosmos/ethermint/pull/317) `GenesisAccount` validation.
+* (evm) [tharsis#319](https://github.com/cosmos/ethermint/pull/319) Various evm improvements:
   * Add transaction `[]*ethtypes.Logs` to evm's `GenesisState` to persist logs after an upgrade.
   * Remove evm `CodeKey` and `BlockKey`in favor of a prefix `Store`.
   * Set `BlockBloom` during `EndBlock` instead of `BeginBlock`.
   * `Commit` state object and `Finalize` storage after `InitGenesis` setup.
-* (rpc) [\#325](https://github.com/cosmos/ethermint/pull/325) `eth_coinbase` JSON-RPC query now returns the node's validator address.
+* (rpc) [tharsis#325](https://github.com/cosmos/ethermint/pull/325) `eth_coinbase` JSON-RPC query now returns the node's validator address.
 
 ### Features
 
-* (build) [\#378](https://github.com/cosmos/ethermint/pull/378) Create multi-node, local, automated testnet setup with `make localnet-start`.
-* (rpc) [\#330](https://github.com/cosmos/ethermint/issues/330) Implement `PublicFilterAPI`'s `EventSystem` which subscribes to Tendermint events upon `Filter` creation.
-* (rpc) [\#231](https://github.com/cosmos/ethermint/issues/231) Implement `NewBlockFilter` in rpc/filters.go which instantiates a polling block filter
+* (build) [tharsis#378](https://github.com/cosmos/ethermint/pull/378) Create multi-node, local, automated testnet setup with `make localnet-start`.
+* (rpc) [tharsis#330](https://github.com/cosmos/ethermint/issues/330) Implement `PublicFilterAPI`'s `EventSystem` which subscribes to Tendermint events upon `Filter` creation.
+* (rpc) [tharsis#231](https://github.com/cosmos/ethermint/issues/231) Implement `NewBlockFilter` in rpc/filters.go which instantiates a polling block filter
   * Polls for new blocks via `BlockNumber` rpc call; if block number changes, it requests the new block via `GetBlockByNumber` rpc call and adds it to its internal list of blocks
   * Update `uninstallFilter` and `getFilterChanges` accordingly
   * `uninstallFilter` stops the polling goroutine
   * `getFilterChanges` returns the filter's internal list of block hashes and resets it
-* (rpc) [\#54](https://github.com/cosmos/ethermint/issues/54), [\#55](https://github.com/cosmos/ethermint/issues/55)
+* (rpc) [tharsis#54](https://github.com/cosmos/ethermint/issues/54), [tharsis#55](https://github.com/cosmos/ethermint/issues/55)
   Implement `eth_getFilterLogs` and `eth_getLogs`:
   * For a given filter, look through each block for transactions. If there are transactions in the block, get the logs from it, and filter using the filterLogs method
   * `eth_getLogs` and `eth_getFilterChanges` for log filters use the same underlying method as `eth_getFilterLogs`
   * update `HandleMsgEthereumTx` to store logs using the ethereum hash
-* (app) [\#187](https://github.com/cosmos/ethermint/issues/187) Add support for simulations.
+* (app) [tharsis#187](https://github.com/cosmos/ethermint/issues/187) Add support for simulations.
 
 ### Bug Fixes
 
-* (evm) [\#767](https://github.com/cosmos/ethermint/issues/767) Fix error of timeout when using Truffle to deploy contract.
-* (evm) [\#751](https://github.com/cosmos/ethermint/issues/751) Fix misused method to calculate block hash in evm related function.
-* (evm) [\#721](https://github.com/cosmos/ethermint/issues/721) Fix mismatch block hash in rpc response when use eth.getBlock.
-* (evm) [\#730](https://github.com/cosmos/ethermint/issues/730) Fix 'EIP2028' not open when Istanbul version has been enabled.
-* (app) [\#749](https://github.com/cosmos/ethermint/issues/749) Fix panic in `AnteHandler` when gas price larger than 100000
-* (rpc) [\#305](https://github.com/cosmos/ethermint/issues/305) Update `eth_getTransactionCount` to check for account existence before getting sequence and return 0 as the nonce if it doesn't exist.
-* (`x/evm`) [\#319](https://github.com/cosmos/ethermint/pull/319) Fix `SetBlockHash` that was setting the incorrect height during `BeginBlock`.
-* (`x/evm`) [\#176](https://github.com/cosmos/ethermint/issues/176) Updated Web3 transaction hash from using RLP hash. Now all transaction hashes exposed are amino hashes:
+* (evm) [tharsis#767](https://github.com/cosmos/ethermint/issues/767) Fix error of timeout when using Truffle to deploy contract.
+* (evm) [tharsis#751](https://github.com/cosmos/ethermint/issues/751) Fix misused method to calculate block hash in evm related function.
+* (evm) [tharsis#721](https://github.com/cosmos/ethermint/issues/721) Fix mismatch block hash in rpc response when use eth.getBlock.
+* (evm) [tharsis#730](https://github.com/cosmos/ethermint/issues/730) Fix 'EIP2028' not open when Istanbul version has been enabled.
+* (app) [tharsis#749](https://github.com/cosmos/ethermint/issues/749) Fix panic in `AnteHandler` when gas price larger than 100000
+* (rpc) [tharsis#305](https://github.com/cosmos/ethermint/issues/305) Update `eth_getTransactionCount` to check for account existence before getting sequence and return 0 as the nonce if it doesn't exist.
+* (evm) [tharsis#319](https://github.com/cosmos/ethermint/pull/319) Fix `SetBlockHash` that was setting the incorrect height during `BeginBlock`.
+* (evm) [tharsis#176](https://github.com/cosmos/ethermint/issues/176) Updated Web3 transaction hash from using RLP hash. Now all transaction hashes exposed are amino hashes:
   * Removes `Hash()` (RLP) function from `MsgEthereumTx` to avoid confusion or misuse in future.
