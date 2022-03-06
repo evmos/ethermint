@@ -8,7 +8,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
-	"github.com/tharsis/ethermint/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
 	"github.com/tharsis/ethermint/x/evm/statedb"
@@ -218,7 +217,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	// Set ctx.GasMeter with a limit of GasWanted (gasLimit)
 	gasConsumed := ctx.GasMeter().GasConsumed()
-	ctx = ctx.WithGasMeter(types.NewInfiniteGasMeterWithLimit(gasWanted))
+	ctx = ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
 	ctx.GasMeter().ConsumeGas(uint64(gasConsumed), "copy gas consumed")
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas

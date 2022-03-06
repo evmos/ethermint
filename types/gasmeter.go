@@ -14,6 +14,12 @@ type ErrorNegativeGasConsumed struct {
 	Descriptor string
 }
 
+// ErrorGasOverflow defines an error thrown when an action results gas consumption
+// unsigned integer overflow.
+type ErrorGasOverflow struct {
+	Descriptor string
+}
+
 type infiniteGasMeterWithLimit struct {
 	consumed sdk.Gas
 	limit    sdk.Gas
@@ -54,7 +60,7 @@ func (g *infiniteGasMeterWithLimit) ConsumeGas(amount sdk.Gas, descriptor string
 	// TODO: Should we set the consumed field after overflow checking?
 	g.consumed, overflow = addUint64Overflow(g.consumed, amount)
 	if overflow {
-		panic(sdk.ErrorGasOverflow{descriptor})
+		panic(ErrorGasOverflow{descriptor})
 	}
 }
 
