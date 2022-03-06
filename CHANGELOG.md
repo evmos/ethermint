@@ -288,13 +288,8 @@ the Tracer type used to collect execution traces from the EVM transaction execut
   * The `TxReceipt`, `TxReceiptsByBlockHeight` endpoints have been removed from the Query service.
   * The `ContractAddress`, `Bloom` have been removed from the `MsgEthereumTxResponse` and the
     response now contains the ethereum-formatted `Hash` in hex format.
-<<<<<<< HEAD
-* (eth) [\#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
-* (evm) [#202](https://github.com/tharsis/ethermint/pull/202) Web3 api `SendTransaction`/`SendRawTransaction` returns ethereum compatible transaction hash, and query api `GetTransaction*` also accept that.
-=======
 * (eth) [tharsis#845](https://github.com/cosmos/ethermint/pull/845) The `eth` namespace must be included in the list of API's as default to run the rpc server without error.
 * (evm) [tharsis#202](https://github.com/tharsis/ethermint/pull/202) Web3 api `SendTransaction`/`SendRawTransaction` returns ethereum compatible transaction hash, and query api `GetTransaction*` also accept that.
->>>>>>> 3cbc03356fa8e730a2c3dc66d8c36df52083f71b
 * (rpc) [tharsis#258](https://github.com/tharsis/ethermint/pull/258) Return empty `BloomFilter` instead of throwing an error when it cannot be found (`nil` or empty).
 * (rpc) [tharsis#277](https://github.com/tharsis/ethermint/pull/321) Fix `BloomFilter` response.
 
@@ -314,15 +309,9 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 * (rpc) [tharsis#112](https://github.com/tharsis/ethermint/pull/153) Fix `eth_coinbase` to return the ethereum address of the validator
 * (rpc) [tharsis#176](https://github.com/tharsis/ethermint/issues/176) Support fetching pending nonce
 * (rpc) [tharsis#272](https://github.com/tharsis/ethermint/pull/272) do binary search to estimate gas accurately
-<<<<<<< HEAD
-* (rpc) [#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
-* (rpc) [#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
-* (rpc) [#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
-=======
 * (rpc) [tharsis#313](https://github.com/tharsis/ethermint/pull/313) Implement internal debug namespace (Not including logger functions nor traces).
 * (rpc) [tharsis#349](https://github.com/tharsis/ethermint/pull/349) Implement configurable JSON-RPC APIs to manage enabled namespaces.
 * (rpc) [tharsis#377](https://github.com/tharsis/ethermint/pull/377) Implement `miner_` namespace. `miner_setEtherbase` and `miner_setGasPrice` are working as intended. All the other calls are not applicable and return `unsupported`.
->>>>>>> 3cbc03356fa8e730a2c3dc66d8c36df52083f71b
 * (eth) [tharsis#460](https://github.com/tharsis/ethermint/issues/460) Add support for EIP-1898.
 
 ### Bug Fixes
