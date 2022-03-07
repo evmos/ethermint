@@ -40,7 +40,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/celestiaorg/optimint v0.0.0-20220302215117-ec63d3be57ad
+require github.com/celestiaorg/optimint v0.1.0
 
 require (
 	filippo.io/edwards25519 v1.0.0-beta.2 // indirect
@@ -250,5 +250,4 @@ replace github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210
 
 // replace github.com/cosmos/iavl => github.com/cosmos/iavl v0.17.1
 
-// replace github.com/celestiaorg/optimint => github.com/jbowen93/optimint v0.0.0-20220126203110-0905be5c836a
-replace github.com/celestiaorg/optimint => /home/jskybowen/Code/forks/jbowen93/optimint
+// replace github.com/celestiaorg/optimint => /home/jskybowen/Code/forks/jbowen93/optimint
