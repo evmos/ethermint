@@ -372,7 +372,7 @@ func (s *IntegrationTestSuite) TestGetBalance() {
 }
 
 func (s *IntegrationTestSuite) TestGetLogs() {
-	//TODO create tests to cover different filterQuery params
+	// TODO create tests to cover different filterQuery params
 	_, contractAddr := s.deployERC20Contract()
 
 	blockNum, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
@@ -398,7 +398,7 @@ func (s *IntegrationTestSuite) TestGetLogs() {
 }
 
 func (s *IntegrationTestSuite) TestTransactionReceiptERC20Transfer() {
-	//start with clean block
+	// start with clean block
 	err := s.network.WaitForNextBlock()
 	s.Require().NoError(err)
 	// deploy erc20 contract
@@ -631,7 +631,6 @@ func (s *IntegrationTestSuite) transferERC20Transaction(contractAddr, to common.
 	receipt := s.expectSuccessReceipt(ercTransferTx.AsTransaction().Hash())
 	s.Require().NotEmpty(receipt.Logs)
 	return ercTransferTx.AsTransaction().Hash()
-
 }
 
 func (s *IntegrationTestSuite) storeValueStorageContract(contractAddr common.Address, amount *big.Int) common.Hash {

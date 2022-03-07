@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"

@@ -35,7 +35,8 @@ func (e *EVMBackend) processBlock(
 	ethBlock *map[string]interface{},
 	rewardPercentiles []float64,
 	tendermintBlockResult *tmrpctypes.ResultBlockResults,
-	targetOneFeeHistory *rpctypes.OneFeeHistory) error {
+	targetOneFeeHistory *rpctypes.OneFeeHistory,
+) error {
 	blockHeight := tendermintBlock.Block.Height
 	blockBaseFee, err := e.BaseFee(blockHeight)
 	if err != nil {

@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"time"
+
 	opticonf "github.com/celestiaorg/optimint/config"
 	opticonv "github.com/celestiaorg/optimint/conv"
 	optinode "github.com/celestiaorg/optimint/node"
 	rpcclient "github.com/celestiaorg/optimint/rpc/client"
-	"path/filepath"
-	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	tmos "github.com/tendermint/tendermint/libs/os"

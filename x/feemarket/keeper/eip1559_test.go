@@ -2,8 +2,9 @@ package keeper_test
 
 import (
 	"fmt"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"math/big"
+
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func (suite *KeeperTestSuite) TestCalculateBaseFee() {
