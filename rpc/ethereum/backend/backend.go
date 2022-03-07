@@ -641,20 +641,7 @@ func (e *EVMBackend) GetCoinbase() (sdk.AccAddress, error) {
 
 // GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
 func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
-	fmt.Printf("[ethermint] backend.go EVMBackend: %#v\n", e)
-	fmt.Printf("[ethermint] backend.go EVMBackend.clientCtx: %#v\n", e.clientCtx)
-	fmt.Printf("[ethermint] backend.go EVMBackend.clientCtx.TxConfig: %#v\n", e.clientCtx.TxConfig)
-	fmt.Printf("[ethermint] backend.go EVMBackend.clientCtx.TxConfig.TxDecoder(): %#v\n", e.clientCtx.TxConfig.TxDecoder())
-
-	fmt.Print("[ethermint] backend.go GetTransactionByHash\n")
-	fmt.Printf("[ethermint] hash: %#v\n", txHash)
-
 	res, err := e.GetTxByEthHash(txHash)
-
-	fmt.Print("[ethermint] backend.go e.GetTxByEthHash(txHash) passed\n")
-	fmt.Printf("[ethermint] backend.go res: %#v\n", res)
-	fmt.Printf("[ethermint] backend.go err: %#v\n", err)
-
 	hexTx := txHash.Hex()
 	if err != nil {
 		// try to find tx in mempool
@@ -689,7 +676,6 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 		e.logger.Debug("tx not found", "hash", hexTx)
 		return nil, nil
 	}
-	fmt.Printf("[ethermint] backend.go hexTx: %#v\n", hexTx)
 
 	if res.TxResult.Code != 0 {
 		return nil, errors.New("invalid ethereum tx")
@@ -754,17 +740,11 @@ func (e *EVMBackend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransac
 // TODO: Don't need to convert once hashing is fixed on Tendermint
 // https://github.com/tendermint/tendermint/issues/6539
 func (e *EVMBackend) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
-	fmt.Print("[ethermint] backend.go GetTxByEthHash\n")
-	fmt.Printf("[ethermint] hash: %#v\n", hash)
-
 	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
 	resTxs, err := e.clientCtx.Client.TxSearch(e.ctx, query, false, nil, nil, "")
 	if err != nil {
 		return nil, err
 	}
-	fmt.Print("[ethermint] e.clientCtx.Client.TxSearch passed\n")
-	fmt.Printf("rexTxs.Txs: %#v\n", resTxs.Txs)
-
 	if len(resTxs.Txs) == 0 {
 		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
 	}
@@ -1032,17 +1012,13 @@ func (e *EVMBackend) GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.Result
 		}
 
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(tx)
-		fmt.Printf("[ethermint] e.GetEthereumMsgsFromTendermintBlock decoded tx: %#v\n", tx)
 		if err != nil {
 			e.logger.Debug("failed to decode transaction in block", "height", block.Block.Height, "error", err.Error())
 			continue
 		}
 
 		for _, msg := range tx.GetMsgs() {
-			fmt.Printf("[ethermint] e.GetEthereumMsgsFromTendermintBlock msg: %#v\n", msg)
 			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-			fmt.Printf("[ethermint] e.GetEthereumMsgsFromTendermintBlock MsgEthereumTx: %#v\n", ethMsg)
-			fmt.Printf("[ethermint] e.GetEthereumMsgsFromTendermintBlock ok: %#v\n", ok)
 			if !ok {
 				continue
 			}
