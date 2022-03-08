@@ -46,6 +46,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [tharsis#975](https://github.com/tharsis/ethermint/pull/975) Fix unexpected `nil` values for `reward`, returned by `EffectiveGasTipValue(blockBaseFee)` in the `eth_feeHistory` RPC method.
 
+### Improvements
+
+- (rpc) [tharsis#979](https://github.com/tharsis/ethermint/pull/979) Add configurable timeouts to http server
+
 ## [v0.10.1] - 2022-03-04
 
 ### Bug Fixes
