@@ -33,14 +33,14 @@ require (
 	github.com/tendermint/tm-db v0.6.6
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.etcd.io/bbolt v1.3.6 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	google.golang.org/genproto v0.0.0-20220222213610-43724f9ea8cf
+	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70 // indirect
+	google.golang.org/genproto v0.0.0-20220307174427-659dce7fcb03
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/celestiaorg/optimint v0.1.0
+require github.com/celestiaorg/optimint v0.1.1
 
 require (
 	filippo.io/edwards25519 v1.0.0-beta.2 // indirect
@@ -245,4 +245,5 @@ require (
 replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
