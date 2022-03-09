@@ -34,7 +34,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: solhint
-        uses: contractshark/inject-solhint-ci@4.0.0
+      - uses: technote-space/get-diff-action@v6.0.1
+        with:
+          SUFFIX_FILTER: |
+            .sol
+        uses: contractshark/inject-solhint-ci@latest
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review # Change reporter.
