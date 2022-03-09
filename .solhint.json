@@ -1,15 +1,20 @@
 {
   "rules": {
-    "no-unused-vars": "warning",
-    "const-name-snakecase": "warning",
-    "contract-name-camelcase": "warning",
-    "event-name-camelcase": "warning",
-    "func-name-mixedcase": "warning",
-    "func-param-name-mixedcase": "warning",
-    "modifier-name-mixedcase": "warning",
-    "private-vars-leading-underscore": "warning",
-    "var-name-mixedcase": "warning",
-    "imports-on-top": "warning",
-    "max-line-length": ["warning", { "code": 250 }]
+    "no-unused-vars": "warn",
+    "contract-name-camelcase": "warn",
+    "code-complexity": ["warn",7],
+    "event-name-camelcase": "warn",
+    "func-name-mixedcase": "warn",
+    "function-max-lines": ["warn", { "max": 50 }],
+    "function-name-case": "warn",
+    "private-vars-leading-underscore": "warn",
+    "var-name-mixedcase": "warn",
+    "no-empty-blocks": "warn",
+    "max-states-count": ["warn",15],
+    "imports-on-top": "warn",
+    "max-line-length": ["warn", { "code": 250 }],
+    "payable-fallback": "warn",
+    "reason-string": ["warn",{"maxLength":32}],
+    "constructor-syntax": "warn"
   }
 }
