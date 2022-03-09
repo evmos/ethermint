@@ -395,12 +395,14 @@ benchmark:
 
 lint:
 	golangci-lint run --out-format=tab
+	solhint **/*.sol
 
 format:
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs gofumpt -d -e -extra
 
 lint-fix:
 	golangci-lint run --fix --out-format=tab --issues-exit-code=0
+	solhint --fix **/*.sol
 .PHONY: lint lint-fix
 
 format-fix:

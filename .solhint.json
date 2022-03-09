@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "no-unused-vars": "warning",
+    "const-name-snakecase": "warning",
+    "contract-name-camelcase": "warning",
+    "event-name-camelcase": "warning",
+    "func-name-mixedcase": "warning",
+    "func-param-name-mixedcase": "warning",
+    "modifier-name-mixedcase": "warning",
+    "private-vars-leading-underscore": "warning",
+    "var-name-mixedcase": "warning",
+    "imports-on-top": "warning",
+    "max-line-length": ["warning", { "code": 250 }]
+  }
+}

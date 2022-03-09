@@ -28,3 +28,14 @@ jobs:
           github-token: ${{ secrets.github_token }}
         # Check only if there are differences in the source code
         if: "env.GIT_DIFF"
+  solhint:
+    name: runner / solhint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: solhint
+        uses: contractshark/inject-solhint-ci@latest
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review # Change reporter.
+          solhint_input: '**/*.sol'
