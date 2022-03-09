@@ -38,8 +38,8 @@ jobs:
         with:
           SUFFIX_FILTER: |
             .sol
-        uses: contractshark/inject-solhint-ci@latest
-        with:
+      - uses: contractshark/inject-solhint-ci@4.0.0
+      - with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review # Change reporter.
           solhint_input: '**/*.sol'
