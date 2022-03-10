@@ -20,7 +20,7 @@ func FuzzNetworkRPC(f *testing.F) {
 			if err != nil {
 				t.Fatalf("we encountered issues creating the network")
 			}
-			//testnetWork.Validators[0].JSONRPCClient.SendTransaction(context.Background(), ethJson)
+			testnetWork.Validators[0].JSONRPCClient.SendTransaction(context.Background(), ethJson)
 			h, err := testnetWork.WaitForHeightWithTimeout(10, time.Minute)
 			if err != nil {
 				t.Fatalf("expected to reach 10 blocks; got %d", h)
