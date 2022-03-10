@@ -3,7 +3,6 @@ pragma solidity 0.4.24;
 import "./DelegateProxy.sol";
 import "./DepositableStorage.sol";
 
-
 contract DepositableDelegateProxy is DepositableStorage, DelegateProxy {
     event ProxyDeposit(address sender, uint256 value);
 
