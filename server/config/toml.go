@@ -53,6 +53,12 @@ logs-cap = {{ .JSONRPC.LogsCap }}
 # BlockRangeCap defines the max block range allowed for 'eth_getLogs' query.
 block-range-cap = {{ .JSONRPC.BlockRangeCap }}
 
+# HTTPTimeout is the read/write timeout of http json-rpc server.
+http-timeout = "{{ .JSONRPC.HTTPTimeout }}"
+
+# HTTPIdleTimeout is the idle timeout of http json-rpc server.
+http-idle-timeout = "{{ .JSONRPC.HTTPIdleTimeout }}"
+
 ###############################################################################
 ###                             TLS Configuration                           ###
 ###############################################################################
