@@ -4,7 +4,6 @@
 package network
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -17,20 +16,23 @@ func FuzzNetworkRPC(f *testing.F) {
 		var ethJson *ethtypes.Transaction = new(ethtypes.Transaction)
 		jsonErr := json.Unmarshal(msg, ethJson)
 		if jsonErr == nil {
-			testnetwork := New(t, DefaultConfig())
-			testnetwork.Validators[0].JSONRPCClient.SendTransaction(context.Background(), ethJson)
-			h, err := testnetwork.WaitForHeightWithTimeout(10, time.Minute)
+			testnetWork, err := New(t, t.TempDir(), DefaultConfig())
+			if err != nil {
+				t.Fatalf("we encountered issues creating the network")
+			}
+			//testnetWork.Validators[0].JSONRPCClient.SendTransaction(context.Background(), ethJson)
+			h, err := testnetWork.WaitForHeightWithTimeout(10, time.Minute)
 			if err != nil {
 				t.Fatalf("expected to reach 10 blocks; got %d", h)
 			}
-			latestHeight, err := testnetwork.LatestHeight()
+			latestHeight, err := testnetWork.LatestHeight()
 			if err != nil {
 				t.Fatalf("latest height failed")
 			}
 			if latestHeight < h {
 				t.Errorf("latestHeight should be greater or equal to")
 			}
-			testnetwork.Cleanup()
+			testnetWork.Cleanup()
 		} else {
 			t.Skip("invalid tx")
 		}
