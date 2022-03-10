@@ -30,9 +30,7 @@ type Backend interface {
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 	GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.Log, error)
 	BlockBloom(height *int64) (ethtypes.Bloom, error)
-
 	BloomStatus() (uint64, uint64)
-
 	RPCFilterCap() int32
 	RPCLogsCap() int32
 	RPCBlockRangeCap() int32

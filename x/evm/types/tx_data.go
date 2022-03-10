@@ -30,10 +30,8 @@ type TxData interface {
 	GetGasFeeCap() *big.Int
 	GetValue() *big.Int
 	GetTo() *common.Address
-
 	GetRawSignatureValues() (v, r, s *big.Int)
 	SetSignatureValues(chainID, v, r, s *big.Int)
-
 	AsEthereumData() ethtypes.TxData
 	Validate() error
 
