@@ -4,6 +4,7 @@
 package network
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -20,6 +21,7 @@ func FuzzNetworkRPC(f *testing.F) {
 			if err != nil {
 				t.Fatalf("we encountered issues creating the network")
 			}
+			// send different EVM transactions to test the network reliability
 			testnetWork.Validators[0].JSONRPCClient.SendTransaction(context.Background(), ethJson)
 			h, err := testnetWork.WaitForHeightWithTimeout(10, time.Minute)
 			if err != nil {
