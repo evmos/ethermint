@@ -5,7 +5,6 @@ pragma solidity 0.5.17;
 import "../../lib/os/ERC20.sol";
 import "../../lib/os/SafeMath.sol";
 
-
 /**
  * @title Standard ERC20 token
  *
@@ -22,7 +21,8 @@ contract StandardTokenMock is ERC20 {
 
   uint256 private totalSupply_;
 
-  constructor(address initialAccount, uint256 initialBalance) public {
+  constructor(address initialAccount, uint256 initialBalance) public 
+  {
       balances[initialAccount] = initialBalance;
       totalSupply_ = initialBalance;
   }
