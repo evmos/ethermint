@@ -14,11 +14,11 @@ import (
 
 func FuzzNetworkRPC(f *testing.F) {
 	f.Fuzz(func(t *testing.T, msg []byte) {
-		var ethjson *ethtypes.Transaction = new(ethtypes.Transaction)
-		jsonerr := json.Unmarshal(msg, ethjson)
-		if jsonerr == nil {
-			testnetwork := New(t, network.DefaultConfig())
-			testnetwork.Validators[0].JSONRPCClient.SendTransaction(context.Background(), ethjson)
+		var ethJson *ethtypes.Transaction = new(ethtypes.Transaction)
+		jsonErr := json.Unmarshal(msg, ethJson)
+		if jsonErr == nil {
+			testnetwork := New(t, DefaultConfig())
+			testnetwork.Validators[0].JSONRPCClient.SendTransaction(context.Background(), ethJson)
 			h, err := testnetwork.WaitForHeightWithTimeout(10, time.Minute)
 			if err != nil {
 				t.Fatalf("expected to reach 10 blocks; got %d", h)
