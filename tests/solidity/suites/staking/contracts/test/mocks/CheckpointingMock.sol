@@ -8,7 +8,8 @@ contract CheckpointingMock {
 
     Checkpointing.History history;
 
-    function add(uint64 value, uint256 time) public {
+    function add(uint64 value, uint256 time) public 
+    {
         history.add(value, time);
     }
 
