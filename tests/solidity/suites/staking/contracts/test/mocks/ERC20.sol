@@ -5,7 +5,8 @@ pragma solidity ^0.5.17;
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
-contract ERC20 {
+contract ERC20 
+{
     function totalSupply() public view returns (uint256);
 
     function balanceOf(address _who) public view returns (uint256);
