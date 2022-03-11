@@ -33,7 +33,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: solhint
       - uses: technote-space/get-diff-action@v6.0.1
         with:
           SUFFIX_FILTER: |
