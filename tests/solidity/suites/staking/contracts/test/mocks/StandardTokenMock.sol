@@ -27,7 +27,8 @@ contract StandardTokenMock is ERC20 {
       totalSupply_ = initialBalance;
   }
 
-  function mint (address account, uint256 amount) public {
+  function mint (address account, uint256 amount) public 
+  {
     balances[account] = balances[account].add(amount);
     totalSupply_ = totalSupply_.add(amount);
   }
