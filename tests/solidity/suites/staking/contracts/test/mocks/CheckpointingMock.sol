@@ -28,4 +28,6 @@ contract CheckpointingMock {
     function lastUpdate() public view returns (uint256) {
         return history.lastUpdate();
     }
+
+    // trigger Linter
 }
