@@ -43,8 +43,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address:  address.String(),
-						CodeHash: "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+						Address: address.String(),
 						Storage: types.Storage{
 							{Key: common.BytesToHash([]byte("key")).String(), Value: common.BytesToHash([]byte("value")).String()},
 						},
@@ -60,8 +59,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address:  address.String(),
-						CodeHash: "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+						Address: address.String(),
 					},
 				},
 			},
@@ -77,8 +75,7 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address:  address.String(),
-						CodeHash: "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+						Address: address.String(),
 					},
 				},
 			},
@@ -138,6 +135,40 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 					{
 						Address:  address.String(),
 						Code:     "0987654321",
+						CodeHash: "00000000cbbb5823aa8c8d4070b8f8ff8112b5531d748765f6682c517674512c",
+					},
+				},
+			},
+			true,
+		},
+		{
+			"set only code but not codeHash",
+			func() {
+				acc := authtypes.NewBaseAccountWithAddress(address.Bytes())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+			},
+			&types.GenesisState{
+				Params: types.DefaultParams(),
+				Accounts: []types.GenesisAccount{
+					{
+						Address: address.String(),
+						Code:    "012345678",
+					},
+				},
+			},
+			true,
+		},
+		{
+			"set only codeHash but not code",
+			func() {
+				acc := authtypes.NewBaseAccountWithAddress(address.Bytes())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+			},
+			&types.GenesisState{
+				Params: types.DefaultParams(),
+				Accounts: []types.GenesisAccount{
+					{
+						Address:  address.String(),
 						CodeHash: "00000000cbbb5823aa8c8d4070b8f8ff8112b5531d748765f6682c517674512c",
 					},
 				},

@@ -53,7 +53,8 @@ func InitGenesis(
 		code := common.Hex2Bytes(account.Code)
 		codeHash := common.Hex2Bytes(account.CodeHash)
 
-		if !bytes.Equal(codeHash, crypto.Keccak256(code)) {
+		// If either code or codeHash is set, we must check to ensure invariant
+		if !(bytes.Equal(code, []byte("")) && bytes.Equal(codeHash, []byte(""))) && !bytes.Equal(codeHash, crypto.Keccak256(code)) {
 			panic("Code don't match codeHash")
 		}
 
