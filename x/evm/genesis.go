@@ -51,18 +51,14 @@ func InitGenesis(
 		}
 
 		code := common.Hex2Bytes(account.Code)
-		codeHash := crypto.Keccak256Hash(code)
+		codeHash := common.Hex2Bytes(account.CodeHash)
 
-		// If account has no code allow for code to be added, if code already exists do not allow modification
-		if !bytes.Equal(codeHash.Bytes(), types.EmptyCodeHash) && bytes.Equal(ethAccount.GetCodeHash().Bytes(), codeHash.Bytes()) {
+		if !bytes.Equal(codeHash, crypto.Keccak256(code)) {
 			panic("Code don't match codeHash")
 		}
 
-		// Set Code
-		k.SetCode(ctx, codeHash.Bytes(), code)
-
-		// Commit CodeHash to StateDB
-		ethAccount.SetCodeHash(codeHash)
+		k.SetCode(ctx, codeHash, code)
+		ethAccount.SetCodeHash(common.BytesToHash(codeHash))
 		accountKeeper.SetAccount(ctx, ethAccount)
 
 		// Set Storage
@@ -89,9 +85,10 @@ func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *t
 		storage := k.GetAccountStorage(ctx, addr)
 
 		genAccount := types.GenesisAccount{
-			Address: addr.String(),
-			Code:    common.Bytes2Hex(k.GetCode(ctx, ethAccount.GetCodeHash())),
-			Storage: storage,
+			Address:  addr.String(),
+			Code:     common.Bytes2Hex(k.GetCode(ctx, ethAccount.GetCodeHash())),
+			CodeHash: common.Bytes2Hex(ethAccount.GetCodeHash().Bytes()),
+			Storage:  storage,
 		}
 
 		ethGenAccounts = append(ethGenAccounts, genAccount)

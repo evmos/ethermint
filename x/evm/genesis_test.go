@@ -43,7 +43,8 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address: address.String(),
+						Address:  address.String(),
+						CodeHash: "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
 						Storage: types.Storage{
 							{Key: common.BytesToHash([]byte("key")).String(), Value: common.BytesToHash([]byte("value")).String()},
 						},
@@ -59,7 +60,8 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address: address.String(),
+						Address:  address.String(),
+						CodeHash: "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
 					},
 				},
 			},
@@ -75,7 +77,8 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address: address.String(),
+						Address:  address.String(),
+						CodeHash: "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
 					},
 				},
 			},
@@ -91,8 +94,9 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address: address.String(),
-						Code:    "1234567890",
+						Address:  address.String(),
+						Code:     "1234567890",
+						CodeHash: "3a56b02b60d4990074262f496ac34733f870e1b7815719b46ce155beac5e1a41",
 					},
 				},
 			},
@@ -111,8 +115,30 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 				Params: types.DefaultParams(),
 				Accounts: []types.GenesisAccount{
 					{
-						Address: address.String(),
-						Code:    "0987654321",
+						Address:  address.String(),
+						Code:     "0987654321",
+						CodeHash: "e90b0f9bcbbb5823aa8c8d4070b8f8ff8112b5531d748765f6682c517674512c",
+					},
+				},
+			},
+			true,
+		},
+		{
+			"set code at genesis - panic due to codeHash mismatch",
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
+				code := common.Hex2Bytes("1234567890")
+				codeHash := crypto.Keccak256Hash(code)
+				suite.app.EvmKeeper.SetCode(suite.ctx, codeHash.Bytes(), code)
+				acc.(ethermint.EthAccountI).SetCodeHash(codeHash)
+			},
+			&types.GenesisState{
+				Params: types.DefaultParams(),
+				Accounts: []types.GenesisAccount{
+					{
+						Address:  address.String(),
+						Code:     "0987654321",
+						CodeHash: "00000000cbbb5823aa8c8d4070b8f8ff8112b5531d748765f6682c517674512c",
 					},
 				},
 			},
