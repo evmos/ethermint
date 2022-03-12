@@ -5,6 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
+	types3 "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/tharsis/ethermint/ethereum/eip712"
+	"github.com/tharsis/ethermint/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -58,7 +66,6 @@ func (suite *AnteTestSuite) SetupTest() {
 			feemarketGenesis := feemarkettypes.DefaultGenesisState()
 			feemarketGenesis.Params.EnableHeight = 1
 			feemarketGenesis.Params.NoBaseFee = false
-			feemarketGenesis.BaseFee = sdk.NewInt(feemarketGenesis.Params.InitialBaseFee)
 			// Verify feeMarket genesis
 			err := feemarketGenesis.Validate()
 			suite.Require().NoError(err)
@@ -90,14 +97,14 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 
 	options := ante.HandlerOptions{
-		AccountKeeper:    suite.app.AccountKeeper,
-		BankKeeper:       suite.app.BankKeeper,
-		EvmKeeper:        suite.app.EvmKeeper,
-		FeegrantKeeper:   suite.app.FeeGrantKeeper,
-		IBCChannelKeeper: suite.app.IBCKeeper.ChannelKeeper,
-		FeeMarketKeeper:  suite.app.FeeMarketKeeper,
-		SignModeHandler:  encodingConfig.TxConfig.SignModeHandler(),
-		SigGasConsumer:   ante.DefaultSigVerificationGasConsumer,
+		AccountKeeper:   suite.app.AccountKeeper,
+		BankKeeper:      suite.app.BankKeeper,
+		EvmKeeper:       suite.app.EvmKeeper,
+		FeegrantKeeper:  suite.app.FeeGrantKeeper,
+		IBCKeeper:       suite.app.IBCKeeper,
+		FeeMarketKeeper: suite.app.FeeMarketKeeper,
+		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 	}
 
 	suite.Require().NoError(options.Validate())
@@ -190,6 +197,88 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	}
 
 	return txBuilder
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgSend(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	// Build MsgSend
+	recipient := sdk.AccAddress(common.Address{}.Bytes())
+	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(1))))
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgSend)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgDelegate(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	// Build MsgSend
+	valEthAddr := tests.GenerateAddress()
+	valAddr := sdk.ValAddress(valEthAddr.Bytes())
+	msgSend := types3.NewMsgDelegate(from, valAddr, sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgSend)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins, msg sdk.Msg,
+) client.TxBuilder {
+	var err error
+
+	nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, from)
+	suite.Require().NoError(err)
+
+	pc, err := types.ParseChainID(chainId)
+	suite.Require().NoError(err)
+	ethChainId := pc.Uint64()
+
+	// GenerateTypedData TypedData
+	var ethermintCodec codec.ProtoCodecMarshaler
+	fee := legacytx.NewStdFee(gas, gasAmount)
+	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
+
+	data := legacytx.StdSignBytes(chainId, accNumber, nonce, 0, fee, []sdk.Msg{msg}, "")
+	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, ethChainId, msg, data, &eip712.FeeDelegationOptions{
+		FeePayer: from,
+	})
+	suite.Require().NoError(err)
+
+	sigHash, err := eip712.ComputeTypedDataHash(typedData)
+	suite.Require().NoError(err)
+
+	// Sign typedData
+	keyringSigner := tests.NewSigner(priv)
+	signature, pubKey, err := keyringSigner.SignByAddress(from, sigHash)
+	suite.Require().NoError(err)
+	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+
+	// Add ExtensionOptionsWeb3Tx extension
+	var option *codectypes.Any
+	option, err = codectypes.NewAnyWithValue(&types.ExtensionOptionsWeb3Tx{
+		FeePayer:         from.String(),
+		TypedDataChainID: ethChainId,
+		FeePayerSig:      signature,
+	})
+	suite.Require().NoError(err)
+
+	suite.clientCtx.TxConfig.SignModeHandler()
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
+	suite.Require().True(ok)
+
+	builder.SetExtensionOptions(option)
+	builder.SetFeeAmount(gasAmount)
+	builder.SetGasLimit(gas)
+
+	sigsV2 := signing.SignatureV2{
+		PubKey: pubKey,
+		Data: &signing.SingleSignatureData{
+			SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+		},
+		Sequence: nonce,
+	}
+
+	err = builder.SetSignatures(sigsV2)
+	suite.Require().NoError(err)
+
+	err = builder.SetMsgs(msg)
+	suite.Require().NoError(err)
+
+	return builder
 }
 
 var _ sdk.Tx = &invalidTx{}

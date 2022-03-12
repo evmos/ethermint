@@ -50,7 +50,7 @@ type Backend interface {
 	RPCTxFeeCap() float64         // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for send-transaction variants. The unit is ether.
 
 	RPCMinGasPrice() int64
-	SuggestGasTipCap() (*big.Int, error)
+	SuggestGasTipCap(baseFee *big.Int) (*big.Int, error)
 
 	// Blockchain API
 	BlockNumber() (hexutil.Uint64, error)
@@ -954,9 +954,34 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 }
 
 // SuggestGasTipCap returns the suggested tip cap
-// always return zero since we don't support tx prioritization yet.
-func (e *EVMBackend) SuggestGasTipCap() (*big.Int, error) {
-	return big.NewInt(0), nil
+// Although we don't support tx prioritization yet, but we return a positive value to help client to
+// mitigate the base fee changes.
+func (e *EVMBackend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
+	if baseFee == nil {
+		// london hardfork not enabled or feemarket not enabeld
+		return big.NewInt(0), nil
+	}
+
+	params, err := e.queryClient.FeeMarket.Params(e.ctx, &feemarkettypes.QueryParamsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	// calculate the maximum base fee delta in current block, assuming all block gas limit is consumed
+	// ```
+	// GasTarget = GasLimit / ElasticityMultiplier
+	// Delta = BaseFee * (GasUsed - GasTarget) / GasTarget / Denominator
+	// ```
+	// The delta is at maximum when `GasUsed` is equal to `GasLimit`, which is:
+	// ```
+	// MaxDelta = BaseFee * (GasLimit - GasLimit / ElasticityMultiplier) / (GasLimit / ElasticityMultiplier) / Denominator
+	//          = BaseFee * (ElasticityMultiplier - 1) / Denominator
+	// ```
+	maxDelta := baseFee.Int64() * (int64(params.Params.ElasticityMultiplier) - 1) / int64(params.Params.BaseFeeChangeDenominator)
+	if maxDelta < 0 {
+		// impossible if the parameter validation passed.
+		maxDelta = 0
+	}
+	return big.NewInt(maxDelta), nil
 }
 
 // BaseFee returns the base fee tracked by the Fee Market module. If the base fee is not enabled,

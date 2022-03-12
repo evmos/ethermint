@@ -10,12 +10,10 @@ option go_package = "github.com/tharsis/ethermint/x/feemarket/types";
 message GenesisState {
   // params defines all the paramaters of the module.
   Params params = 1 [ (gogoproto.nullable) = false ];
-  // base fee is the exported value from previous software version.
+  // DEPRECATED: base fee is the exported value from previous software version.
   // Zero by default.
-  string base_fee = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
+  reserved 2;
+  reserved "base_fee";
   // block gas is the amount of gas used on the last block before the upgrade.
   // Zero by default.
   uint64 block_gas = 3;

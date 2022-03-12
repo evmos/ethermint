@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"math/big"
 	"strings"
 
@@ -289,6 +290,101 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				expGasLimit := signedTx.GetGas()
 				invalidGasLimit := expGasLimit + 1
 				txBuilder.SetGasLimit(invalidGasLimit)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"success - DeliverTx EIP712 signed Cosmos Tx with MsgSend",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712TxBuilderMsgSend(from, privKey, "ethermint_9000-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success - DeliverTx EIP712 signed Cosmos Tx with DelegateMsg",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				amount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712TxBuilderMsgDelegate(from, privKey, "ethermint_9000-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with wrong Chain ID",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712TxBuilderMsgSend(from, privKey, "ethermint_9002-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with different gas fees",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712TxBuilderMsgSend(from, privKey, "ethermint_9001-1", gas, amount)
+				txBuilder.SetGasLimit(uint64(300000))
+				txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(30))))
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with empty signature",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712TxBuilderMsgSend(from, privKey, "ethermint_9001-1", gas, amount)
+				sigsV2 := signing.SignatureV2{}
+				txBuilder.SetSignatures(sigsV2)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with invalid sequence",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712TxBuilderMsgSend(from, privKey, "ethermint_9001-1", gas, amount)
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				sigsV2 := signing.SignatureV2{
+					PubKey: privKey.PubKey(),
+					Data: &signing.SingleSignatureData{
+						SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					},
+					Sequence: nonce - 1,
+				}
+				txBuilder.SetSignatures(sigsV2)
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"fails - DeliverTx EIP712 signed Cosmos Tx with invalid signMode",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712TxBuilderMsgSend(from, privKey, "ethermint_9001-1", gas, amount)
+				nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, acc.GetAddress())
+				suite.Require().NoError(err)
+				sigsV2 := signing.SignatureV2{
+					PubKey: privKey.PubKey(),
+					Data: &signing.SingleSignatureData{
+						SignMode: signing.SignMode_SIGN_MODE_UNSPECIFIED,
+					},
+					Sequence: nonce,
+				}
+				txBuilder.SetSignatures(sigsV2)
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
