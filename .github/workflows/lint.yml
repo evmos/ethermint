@@ -38,5 +38,6 @@ jobs:
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
-          solhint_input: $GIT_DIFF
+          solhint_input: '*.sol'
+          workdir: tools
         if: "env.GIT_DIFF"
