@@ -29,9 +29,9 @@ jobs:
     name: runner / solhint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - uses: contractshark/inject-solhint-ci@1.0.0+0
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-check
-          solhint_input: '*.sol'
+          solhint_input: 'contracts/*.sol'
