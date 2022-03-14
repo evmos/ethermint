@@ -38,6 +38,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Bug Fixes
+
+* (rpc) [tharsis#990](https://github.com/tharsis/ethermint/pull/990) Calculate reward values from all `MsgEthereumTx` from a block in `eth_feeHistory`.
+
+## [v0.11.0] - 2022-03-06
+
 ### State Machine Breaking
 
 * (ante) [tharsis#964](https://github.com/tharsis/ethermint/pull/964) add NewInfiniteGasMeterWithLimit for storing the user provided gas limit. Fixes block's consumed gas calculation in the block creation phase.
