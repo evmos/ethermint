@@ -42,4 +42,4 @@ jobs:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review # Change reporter.
           solhint_input: '**/*.sol'
-        if: "env.GIT_DIFF"
+        if: "env.GIT_DIFF_ACTION"
