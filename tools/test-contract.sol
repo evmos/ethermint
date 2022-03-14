@@ -1,5 +1,5 @@
 
-// File: contracts/first-contract.sol
+// File: tools/first-contract.sol
 
 pragma solidity >=0.4.0 <0.7.0;
 contract SimpleStorage {
