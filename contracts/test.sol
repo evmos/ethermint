@@ -12,4 +12,4 @@ contract SimpleStorage {
         return storedData;
     }
 }
-// Test 2
+// Test
