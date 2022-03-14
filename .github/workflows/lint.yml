@@ -3,8 +3,10 @@ name: Lint
 # run on every pull request and push to main The `golangci` will pass without
 # running if no *.{go, mod, sum} files have been changed.
 on:
- - push
- 
+  pull_request:
+  push:
+    branches:
+      - main
 jobs:
   golangci:
     name: Run golangci-lint
@@ -39,5 +41,5 @@ jobs:
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review # Change reporter.
-          solhint_input: '*'
+          solhint_input: 'tools/*.sol'
         if: "env.GIT_DIFF"
