@@ -33,5 +33,5 @@ jobs:
       - uses: contractshark/inject-solhint-ci@1.0.0+0
         with:
           github_token: ${{ secrets.github_token }}
-          reporter: github-pr-review
-          solhint_input: 'tools/*.sol'
+          reporter: github-check
+          solhint_input: '*.sol'
