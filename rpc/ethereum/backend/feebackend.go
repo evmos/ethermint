@@ -61,14 +61,15 @@ func (e *EVMBackend) processBlock(
 	rewardCount := len(rewardPercentiles)
 	targetOneFeeHistory.Reward = make([]*big.Int, rewardCount)
 	for i := 0; i < rewardCount; i++ {
-		targetOneFeeHistory.Reward[i] = big.NewInt(2000)
+		targetOneFeeHistory.Reward[i] = big.NewInt(0)
 	}
 
 	// check tendermintTxs
 	tendermintTxs := tendermintBlock.Block.Txs
 	tendermintTxResults := tendermintBlockResult.TxsResults
 	tendermintTxCount := len(tendermintTxs)
-	sorter := make(sortGasAndReward, tendermintTxCount)
+
+	var sorter sortGasAndReward
 
 	for i := 0; i < tendermintTxCount; i++ {
 		eachTendermintTx := tendermintTxs[i]
@@ -90,29 +91,28 @@ func (e *EVMBackend) processBlock(
 			if reward == nil {
 				reward = big.NewInt(0)
 			}
-			sorter[i] = txGasAndReward{gasUsed: txGasUsed, reward: reward}
-			break
+			sorter = append(sorter, txGasAndReward{gasUsed: txGasUsed, reward: reward})
 		}
 	}
+
+	// return an all zero row if there are no transactions to gather data from
+	ethTxCount := len(sorter)
+	if ethTxCount == 0 {
+		return nil
+	}
+
 	sort.Sort(sorter)
 
 	var txIndex int
-	sumGasUsed := uint64(0)
-	if len(sorter) > 0 {
-		sumGasUsed = sorter[0].gasUsed
-	}
+	sumGasUsed := sorter[0].gasUsed
+
 	for i, p := range rewardPercentiles {
 		thresholdGasUsed := uint64(blockGasUsed * p / 100)
-		for sumGasUsed < thresholdGasUsed && txIndex < tendermintTxCount-1 {
+		for sumGasUsed < thresholdGasUsed && txIndex < ethTxCount-1 {
 			txIndex++
 			sumGasUsed += sorter[txIndex].gasUsed
 		}
-
-		chosenReward := big.NewInt(0)
-		if 0 <= txIndex && txIndex < len(sorter) {
-			chosenReward = sorter[txIndex].reward
-		}
-		targetOneFeeHistory.Reward[i] = chosenReward
+		targetOneFeeHistory.Reward[i] = sorter[txIndex].reward
 	}
 
 	return nil
