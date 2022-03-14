@@ -23,9 +23,7 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
-	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
-	"github.com/tendermint/tendermint/rpc/client/local"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/server/rosetta"
@@ -44,6 +42,11 @@ import (
 	ethdebug "github.com/tharsis/ethermint/rpc/ethereum/namespaces/debug"
 	"github.com/tharsis/ethermint/server/config"
 	srvflags "github.com/tharsis/ethermint/server/flags"
+
+	opticonf "github.com/celestiaorg/optimint/config"
+	opticonv "github.com/celestiaorg/optimint/conv"
+	optinode "github.com/celestiaorg/optimint/node"
+	optirpc "github.com/celestiaorg/optimint/rpc"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -172,6 +175,7 @@ which accepts a path for the resulting pprof file.
 
 	// add support for all Tendermint-specific command line options
 	tcmd.AddNodeFlags(cmd)
+	opticonf.AddFlags(cmd)
 	return cmd
 }
 
@@ -288,25 +292,47 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
 
-	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
+	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.PrivValidatorKeyFile())
 	if err != nil {
-		logger.Error("failed load or gen node key", "error", err.Error())
+		logger.Error("failed load or gen key", "error", err.Error())
 		return err
 	}
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(cfg)
-	tmNode, err := node.NewNode(
-		cfg,
-		pvm.LoadOrGenFilePV(cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile()),
-		nodeKey,
+	// node key in optimint format
+	oNodeKey, err := opticonv.GetNodeKey(nodeKey)
+	if err != nil {
+		return err
+	}
+	genesis, err := genDocProvider()
+	if err != nil {
+		return err
+	}
+	nodeConfig := opticonf.NodeConfig{}
+	err = nodeConfig.GetViperConfig(ctx.Viper)
+	if err != nil {
+		return err
+	}
+	opticonv.GetNodeConfig(&nodeConfig, cfg)
+	err = opticonv.TranslateAddresses(&nodeConfig)
+	if err != nil {
+		return err
+	}
+	tmNode, err := optinode.NewNode(
+		context.Background(),
+		nodeConfig,
+		oNodeKey,
 		proxy.NewLocalClientCreator(app),
-		genDocProvider,
-		node.DefaultDBProvider,
-		node.DefaultMetricsProvider(cfg.Instrumentation),
-		ctx.Logger.With("server", "node"),
+		genesis,
+		ctx.Logger,
 	)
 	if err != nil {
-		logger.Error("failed init node", "error", err.Error())
+		return err
+	}
+
+	srv := optirpc.NewServer(tmNode, cfg.RPC, ctx.Logger)
+	err = srv.Start()
+	if err != nil {
 		return err
 	}
 
@@ -319,7 +345,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	// service if API or gRPC is enabled, and avoid doing so in the general
 	// case, because it spawns a new local tendermint RPC client.
 	if config.API.Enable || config.GRPC.Enable {
-		clientCtx = clientCtx.WithClient(local.New(tmNode))
+		clientCtx = clientCtx.WithClient(srv.Client())
 
 		app.RegisterTxService(clientCtx)
 		app.RegisterTendermintService(clientCtx)
