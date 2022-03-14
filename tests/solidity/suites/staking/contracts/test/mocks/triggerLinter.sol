@@ -12,5 +12,8 @@ contract triggerLinter
 
     function setX(uint256 _x) public {
         x = _x;
+        Event1(x);
     }
+
+    event Event1(uint256 x);
 }

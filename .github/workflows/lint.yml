@@ -32,14 +32,15 @@ jobs:
     name: runner / solhint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.0.1
         with:
           PATTERNS: |
-            **/*.sol
-      - uses: contractshark/inject-solhint-ci@4.0.0
+            .sol
+      - name: solhint
+        uses: contractshark/inject-solhint-ci@4.0.0
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review # Change reporter.
           solhint_input: '**/*.sol'
-        if: "env.GIT_DIFF_ACTION"
+        if: "env.GIT_DIFF"
