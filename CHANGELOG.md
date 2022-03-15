@@ -55,6 +55,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 - (rpc) [tharsis#979](https://github.com/tharsis/ethermint/pull/979) Add configurable timeouts to http server
+- (rpc) [tharsis#988](https://github.com/tharsis/ethermint/pull/988) json-rpc server always use local rpc client
 
 ## [v0.10.1] - 2022-03-04
 
