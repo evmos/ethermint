@@ -1,6 +1,10 @@
 package ante_test
 
 import (
+	"math"
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -8,9 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tharsis/ethermint/ethereum/eip712"
 	"github.com/tharsis/ethermint/types"
-	"math"
-	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -96,14 +97,14 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 
 	options := ante.HandlerOptions{
-		AccountKeeper:    suite.app.AccountKeeper,
-		BankKeeper:       suite.app.BankKeeper,
-		EvmKeeper:        suite.app.EvmKeeper,
-		FeegrantKeeper:   suite.app.FeeGrantKeeper,
-		IBCChannelKeeper: suite.app.IBCKeeper.ChannelKeeper,
-		FeeMarketKeeper:  suite.app.FeeMarketKeeper,
-		SignModeHandler:  encodingConfig.TxConfig.SignModeHandler(),
-		SigGasConsumer:   ante.DefaultSigVerificationGasConsumer,
+		AccountKeeper:   suite.app.AccountKeeper,
+		BankKeeper:      suite.app.BankKeeper,
+		EvmKeeper:       suite.app.EvmKeeper,
+		FeegrantKeeper:  suite.app.FeeGrantKeeper,
+		IBCKeeper:       suite.app.IBCKeeper,
+		FeeMarketKeeper: suite.app.FeeMarketKeeper,
+		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 	}
 
 	suite.Require().NoError(options.Validate())
