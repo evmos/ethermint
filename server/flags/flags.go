@@ -24,9 +24,10 @@ const (
 	GRPCWebAddress = "grpc-web.address"
 )
 
-// RPCEnable Defines if Cosmos-sdk REST server should be enabled
+// Cosmos API flags
 const (
-	RPCEnable = "api.enable"
+	RPCEnable         = "api.enable"
+	EnabledUnsafeCors = "api.enabled-unsafe-cors"
 )
 
 // JSON-RPC flags
