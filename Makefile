@@ -393,8 +393,10 @@ benchmark:
 ###                                Linting                                  ###
 ###############################################################################
 
-lint:
+lint-golang:
 	golangci-lint run --out-format=tab
+
+lint-solidity:
 	solhint **/*.sol
 
 format:
