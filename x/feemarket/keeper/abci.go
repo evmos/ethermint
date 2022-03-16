@@ -11,14 +11,11 @@ import (
 
 // BeginBlock updates base fee
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	baseFee := k.CalculateBaseFee(ctx)
+	// baseFee := k.CalculateBaseFee(ctx)
+	params := k.GetParams(ctx)
+	baseFee := params.BaseFee.BigInt()
 
-	// return immediately if base fee is nil
-	if baseFee == nil {
-		return
-	}
-
-	k.SetBaseFee(ctx, baseFee)
+	k.SetBaseFee(ctx, params.BaseFee.BigInt())
 
 	// Store current base fee in event
 	ctx.EventManager().EmitEvents(sdk.Events{
