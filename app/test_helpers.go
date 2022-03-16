@@ -5,8 +5,14 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/tharsis/ethermint/encoding"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	"github.com/tharsis/ethermint/encoding"
+	ethermint "github.com/tharsis/ethermint/types"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -61,4 +67,20 @@ func Setup(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState)
 	}
 
 	return app
+}
+
+func RandomGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAccounts {
+	var emptyCodeHash = crypto.Keccak256(nil)
+	genesisAccs := make(authtypes.GenesisAccounts, len(simState.Accounts))
+	for i, acc := range simState.Accounts {
+		bacc := authtypes.NewBaseAccountWithAddress(acc.Address)
+
+		ethacc := &ethermint.EthAccount{
+			BaseAccount: bacc,
+			CodeHash:    common.BytesToHash(emptyCodeHash).String(),
+		}
+		genesisAccs[i] = ethacc
+	}
+
+	return genesisAccs
 }
