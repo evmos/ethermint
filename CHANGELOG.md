@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [tharsis#990](https://github.com/tharsis/ethermint/pull/990) Calculate reward values from all `MsgEthereumTx` from a block in `eth_feeHistory`.
+* (ante) [tharsis#991](https://github.com/tharsis/ethermint/pull/991) Set an upper bound to gasWanted to prevent DoS attack.
 
 ## [v0.11.0] - 2022-03-06
 
