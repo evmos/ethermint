@@ -17,6 +17,8 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
+const MaxTxGasWanted uint64 = 500000
+
 // EthSigVerificationDecorator validates an ethereum signatures
 type EthSigVerificationDecorator struct {
 	evmKeeper EVMKeeper
@@ -171,7 +173,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	london := ethCfg.IsLondon(blockHeight)
 	evmDenom := params.EvmDenom
 	gasWanted := uint64(0)
-
 	var events sdk.Events
 
 	for _, msg := range tx.GetMsgs() {
@@ -184,7 +185,17 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		if err != nil {
 			return ctx, sdkerrors.Wrap(err, "failed to unpack tx data")
 		}
-		gasWanted += txData.GetGas()
+
+		if ctx.IsCheckTx() {
+			// We can't trust the tx gas limit, because we'll refund the unused gas.
+			if txData.GetGas() > MaxTxGasWanted {
+				gasWanted += MaxTxGasWanted
+			} else {
+				gasWanted += txData.GetGas()
+			}
+		} else {
+			gasWanted += txData.GetGas()
+		}
 
 		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
