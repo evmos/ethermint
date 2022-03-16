@@ -72,6 +72,8 @@ func TestFullAppSimulation(t *testing.T) {
 	}
 	require.NoError(t, err, "simulation setup failed")
 
+	config.ChainID = SimAppChainID
+
 	defer func() {
 		db.Close()
 		require.NoError(t, os.RemoveAll(dir))
@@ -109,6 +111,8 @@ func TestAppImportExport(t *testing.T) {
 		t.Skip("skipping application import/export simulation")
 	}
 	require.NoError(t, err, "simulation setup failed")
+
+	config.ChainID = SimAppChainID
 
 	defer func() {
 		db.Close()
@@ -209,6 +213,8 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t.Skip("skipping application simulation after import")
 	}
 	require.NoError(t, err, "simulation setup failed")
+
+	config.ChainID = SimAppChainID
 
 	defer func() {
 		db.Close()
