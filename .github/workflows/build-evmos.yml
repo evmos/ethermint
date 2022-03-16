@@ -29,8 +29,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - name: up a level
-        run: cd .. && pwd
       - name: Clone evmos repo
         uses: actions/checkout@v2
         with:
@@ -45,8 +43,7 @@ jobs:
         run: |
           ls
           mv evmos ..
-          mv ethermint ..
-          mv ephemeral-cluster ..
+          mv optimint ..
           cd ..
           cp -R optimint ethermint
           cd ethermint
