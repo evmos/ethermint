@@ -13,6 +13,9 @@ const DefaultConfigTemplate = `
 # Valid types are: json|struct|access_list|markdown
 tracer = "{{ .EVM.Tracer }}"
 
+# MaxTxGasWanted defines the gas wanted for each eth tx returned in ante handler in check tx mode.
+max-tx-gas-wanted = {{ .EVM.MaxTxGasWanted }}
+
 ###############################################################################
 ###                           JSON RPC Configuration                        ###
 ###############################################################################
