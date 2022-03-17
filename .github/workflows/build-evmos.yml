@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: jbowen93/evmos
+  IMAGE_NAME: celestiaorg/evmos
   TAG_PREFIX: ethermint-
 
 jobs:
