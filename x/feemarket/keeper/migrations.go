@@ -6,6 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+var (
+	// the base fee key prefix used in version 1
+	KeyPrefixBaseFeeV1 = []byte{2}
+)
+
 // Migrator is a struct for handling in-place store migrations.
 type Migrator struct {
 	keeper Keeper
@@ -20,12 +25,11 @@ func NewMigrator(keeper Keeper) Migrator {
 
 func (m Migrator) Migrate1to2(ctx sdk.Context) error {
 	store := ctx.KVStore(m.keeper.storeKey)
-	baseFeeKeyPrefix := []byte{2}
-	bz := store.Get(baseFeeKeyPrefix)
+	bz := store.Get(KeyPrefixBaseFeeV1)
 	if len(bz) > 0 {
 		baseFee := new(big.Int).SetBytes(bz)
 		m.keeper.SetBaseFee(ctx, baseFee)
 	}
-	store.Delete(baseFeeKeyPrefix)
+	store.Delete(KeyPrefixBaseFeeV1)
 	return nil
 }
