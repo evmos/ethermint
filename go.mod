@@ -40,7 +40,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/celestiaorg/optimint v0.1.1
+require github.com/celestiaorg/optimint v0.1.2
 
 require (
 	filippo.io/edwards25519 v1.0.0-beta.2 // indirect
@@ -165,7 +165,6 @@ require (
 	github.com/libp2p/go-tcp-transport v0.2.8 // indirect
 	github.com/libp2p/go-ws-transport v0.5.0 // indirect
 	github.com/libp2p/go-yamux/v2 v2.2.0 // indirect
-	github.com/lucas-clemente/quic-go v0.23.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
@@ -244,6 +243,7 @@ require (
 
 replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
+	// github.com/celestiaorg/optimint => github.com/jbowen93/optimint v0.0.0-20220315020324-912fd8a28a1
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
