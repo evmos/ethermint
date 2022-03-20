@@ -188,5 +188,7 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 
 // WeightedOperations returns the all the evm module operations with their respective weights.
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
-	return nil
+	return simulation.WeightedOperations(
+		simState.AppParams, simState.Cdc, am.ak, am.keeper,
+	)
 }
