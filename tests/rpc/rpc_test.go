@@ -135,33 +135,6 @@ func callWithError(method string, params interface{}) (*Response, error) {
 	return rpcRes, nil
 }
 
-func TestWeb3_Sha3(t *testing.T) {
-	expectedRes1 := "0x23e7488ec9097f0126b0338926bfaeb5264b01cb162a0fd4a6d76e1081c2b24a"
-	rpcRes1 := call(t, "web3_sha3", []string{"0xabcd1234567890"})
-
-	res1 := hexutil.Bytes{}
-	err1 := res1.UnmarshalJSON(rpcRes1.Result)
-	require.NoError(t, err1)
-	require.Equal(t, expectedRes1, res1.String(), "expected: %s got: %s\n", expectedRes1, rpcRes1.Result)
-
-	expectedRes2 := "0x39bef1777deb3dfb14f64b9f81ced092c501fee72f90e93d03bb95ee89df9837"
-	rpcRes2 := call(t, "web3_sha3", []string{"0x"})
-
-	res2 := hexutil.Bytes{}
-	err2 := res2.UnmarshalJSON(rpcRes2.Result)
-	require.NoError(t, err2)
-	require.Equal(t, expectedRes2, res2.String(), "expected: %s got: %s\n", expectedRes2, rpcRes2.Result)
-
-	expectedRes3 := "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
-	rpcRes3 := call(t, "web3_sha3", []string{""})
-
-	res3 := hexutil.Bytes{}
-	err3 := res3.UnmarshalJSON(rpcRes3.Result)
-	require.NoError(t, err3)
-	require.Equal(t, expectedRes3, res3.String(), "expected: %s got: %s\n", expectedRes3, rpcRes3.Result)
-
-}
-
 func TestEth_protocolVersion(t *testing.T) {
 	expectedRes := hexutil.Uint(ethermint.ProtocolVersion)
 

@@ -46,6 +46,7 @@ type IntegrationTestSuite struct {
 
 	gethClient *gethclient.Client
 	ethSigner  ethtypes.Signer
+	rpcClient  *rpc.Client
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -74,6 +75,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	rpcClient, err := rpc.DialContext(s.ctx, address)
 	s.Require().NoError(err)
+	s.rpcClient = rpcClient
 	s.gethClient = gethclient.New(rpcClient)
 	s.Require().NotNil(s.gethClient)
 	chainId, err := ethermint.ParseChainID(s.cfg.ChainID)
@@ -684,4 +686,27 @@ func (s *IntegrationTestSuite) waitForTransaction() {
 
 func TestIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
+}
+
+func (s *IntegrationTestSuite) TestWeb3Sha3() {
+	expectedRes1 := "0x23e7488ec9097f0126b0338926bfaeb5264b01cb162a0fd4a6d76e1081c2b24a"
+
+	var result1 string
+	err1 := s.rpcClient.Call(&result1, "web3_sha3", "0xabcd1234567890")
+	s.Require().NoError(err1)
+	s.Require().Equal(expectedRes1, result1)
+
+	expectedRes2 := "0x39bef1777deb3dfb14f64b9f81ced092c501fee72f90e93d03bb95ee89df9837"
+
+	var result2 string
+	err2 := s.rpcClient.Call(&result2, "web3_sha3", "0x")
+	s.Require().NoError(err2)
+	s.Require().Equal(expectedRes2, result2)
+
+	expectedRes3 := "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+
+	var result3 string
+	err3 := s.rpcClient.Call(&result3, "web3_sha3", "")
+	s.Require().NoError(err3)
+	s.Require().Equal(expectedRes3, result3)
 }
