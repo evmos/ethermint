@@ -44,7 +44,7 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(_ *codec.LegacyAmino) {
 
 // ConsensusVersion returns the consensus state-breaking version for the module.
 func (AppModuleBasic) ConsensusVersion() uint64 {
-	return 1
+	return 2
 }
 
 // DefaultGenesis returns default genesis state as raw bytes for the fee market
@@ -117,7 +117,11 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
-	_ = keeper.NewMigrator(am.keeper)
+	m := keeper.NewMigrator(am.keeper)
+	err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Route returns the message routing key for the fee market module.
