@@ -689,24 +689,35 @@ func TestIntegrationTestSuite(t *testing.T) {
 }
 
 func (s *IntegrationTestSuite) TestWeb3Sha3() {
-	expectedRes1 := "0x23e7488ec9097f0126b0338926bfaeb5264b01cb162a0fd4a6d76e1081c2b24a"
+	testCases := []struct {
+		name     string
+		arg      string
+		expected string
+	}{
+		{
+			"normal input",
+			"0xabcd1234567890",
+			"0x23e7488ec9097f0126b0338926bfaeb5264b01cb162a0fd4a6d76e1081c2b24a",
+		},
+		{
+			"0x case",
+			"0x",
+			"0x39bef1777deb3dfb14f64b9f81ced092c501fee72f90e93d03bb95ee89df9837",
+		},
+		{
+			"empty string case",
+			"",
+			"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+		},
+	}
 
-	var result1 string
-	err1 := s.rpcClient.Call(&result1, "web3_sha3", "0xabcd1234567890")
-	s.Require().NoError(err1)
-	s.Require().Equal(expectedRes1, result1)
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			var result string
 
-	expectedRes2 := "0x39bef1777deb3dfb14f64b9f81ced092c501fee72f90e93d03bb95ee89df9837"
-
-	var result2 string
-	err2 := s.rpcClient.Call(&result2, "web3_sha3", "0x")
-	s.Require().NoError(err2)
-	s.Require().Equal(expectedRes2, result2)
-
-	expectedRes3 := "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
-
-	var result3 string
-	err3 := s.rpcClient.Call(&result3, "web3_sha3", "")
-	s.Require().NoError(err3)
-	s.Require().Equal(expectedRes3, result3)
+			err := s.rpcClient.Call(&result, "web3_sha3", tc.arg)
+			s.Require().NoError(err)
+			s.Require().Equal(tc.expected, result)
+		})
+	}
 }
