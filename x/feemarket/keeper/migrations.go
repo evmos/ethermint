@@ -6,10 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var (
-	// the base fee key prefix used in version 1
-	KeyPrefixBaseFeeV1 = []byte{2}
-)
+// KeyPrefixBaseFeeV1 is the base fee key prefix used in version 1
+var KeyPrefixBaseFeeV1 = []byte{2}
 
 // Migrator is a struct for handling in-place store migrations.
 type Migrator struct {
