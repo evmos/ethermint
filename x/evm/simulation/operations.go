@@ -48,7 +48,7 @@ func WeightedOperations(
 
 	appParams.GetOrGenerate(cdc, OpWeightMsgEthCallContract, &weightMsgEthCallContract, nil,
 		func(_ *rand.Rand) {
-			weightMsgEthCallContract = weightMsgEthCallContract
+			weightMsgEthCallContract = WeightMsgEthCallContract
 		},
 	)
 
