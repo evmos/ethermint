@@ -136,15 +136,18 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 // EthGasConsumeDecorator validates enough intrinsic gas for the transaction and
 // gas consumption.
 type EthGasConsumeDecorator struct {
-	evmKeeper EVMKeeper
+	evmKeeper    EVMKeeper
+	maxGasWanted uint64
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
 func NewEthGasConsumeDecorator(
 	evmKeeper EVMKeeper,
+	maxGasWanted uint64,
 ) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
-		evmKeeper: evmKeeper,
+		evmKeeper,
+		maxGasWanted,
 	}
 }
 
@@ -188,8 +191,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		if ctx.IsCheckTx() {
 			// We can't trust the tx gas limit, because we'll refund the unused gas.
-			if txData.GetGas() > MaxTxGasWanted {
-				gasWanted += MaxTxGasWanted
+			if txData.GetGas() > egcd.maxGasWanted {
+				gasWanted += egcd.maxGasWanted
 			} else {
 				gasWanted += txData.GetGas()
 			}
