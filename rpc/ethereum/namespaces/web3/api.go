@@ -21,6 +21,6 @@ func (a *PublicAPI) ClientVersion() string {
 }
 
 // Sha3 returns the keccak-256 hash of the passed-in input.
-func (a *PublicAPI) Sha3(input hexutil.Bytes) hexutil.Bytes {
-	return crypto.Keccak256(input)
+func (a *PublicAPI) Sha3(input string) hexutil.Bytes {
+	return crypto.Keccak256(hexutil.Bytes(input))
 }
