@@ -46,6 +46,7 @@ type IntegrationTestSuite struct {
 
 	gethClient *gethclient.Client
 	ethSigner  ethtypes.Signer
+	rpcClient  *rpc.Client
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -74,6 +75,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	rpcClient, err := rpc.DialContext(s.ctx, address)
 	s.Require().NoError(err)
+	s.rpcClient = rpcClient
 	s.gethClient = gethclient.New(rpcClient)
 	s.Require().NotNil(s.gethClient)
 	chainId, err := ethermint.ParseChainID(s.cfg.ChainID)
@@ -684,4 +686,38 @@ func (s *IntegrationTestSuite) waitForTransaction() {
 
 func TestIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
+}
+
+func (s *IntegrationTestSuite) TestWeb3Sha3() {
+	testCases := []struct {
+		name     string
+		arg      string
+		expected string
+	}{
+		{
+			"normal input",
+			"0xabcd1234567890",
+			"0x23e7488ec9097f0126b0338926bfaeb5264b01cb162a0fd4a6d76e1081c2b24a",
+		},
+		{
+			"0x case",
+			"0x",
+			"0x39bef1777deb3dfb14f64b9f81ced092c501fee72f90e93d03bb95ee89df9837",
+		},
+		{
+			"empty string case",
+			"",
+			"0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			var result string
+
+			err := s.rpcClient.Call(&result, "web3_sha3", tc.arg)
+			s.Require().NoError(err)
+			s.Require().Equal(tc.expected, result)
+		})
+	}
 }

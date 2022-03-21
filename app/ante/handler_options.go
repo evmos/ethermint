@@ -25,6 +25,7 @@ type HandlerOptions struct {
 	FeegrantKeeper  ante.FeegrantKeeper
 	SignModeHandler authsigning.SignModeHandler
 	SigGasConsumer  func(meter sdk.GasMeter, sig signing.SignatureV2, params authtypes.Params) error
+	MaxTxGasWanted  uint64
 }
 
 func (options HandlerOptions) Validate() error {
@@ -53,7 +54,7 @@ func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		NewEthValidateBasicDecorator(options.EvmKeeper),
 		NewEthSigVerificationDecorator(options.EvmKeeper),
 		NewEthAccountVerificationDecorator(options.AccountKeeper, options.BankKeeper, options.EvmKeeper),
-		NewEthGasConsumeDecorator(options.EvmKeeper),
+		NewEthGasConsumeDecorator(options.EvmKeeper, options.MaxTxGasWanted),
 		NewCanTransferDecorator(options.EvmKeeper),
 		NewEthIncrementSenderSequenceDecorator(options.AccountKeeper), // innermost AnteDecorator.
 	)
