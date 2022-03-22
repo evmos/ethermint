@@ -544,11 +544,17 @@ func (k *Keeper) traceTx(
 	// Depending on the tracer type, format and return the trace result data.
 	switch tracer := tracer.(type) {
 	case *logger.StructLogger:
-		// TODO: Return proper returnValue
+		returnVal := ""
+		revert := res.Revert()
+		if len(revert) > 0 {
+			returnVal = fmt.Sprintf("%x", revert)
+		} else {
+			returnVal = fmt.Sprintf("%x", res.Return())
+		}
 		result = types.ExecutionResult{
 			Gas:         res.GasUsed,
 			Failed:      res.Failed(),
-			ReturnValue: "",
+			ReturnValue: returnVal,
 			StructLogs:  types.FormatLogs(tracer.StructLogs()),
 		}
 	case tracers.Tracer:
