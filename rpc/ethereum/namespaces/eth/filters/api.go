@@ -219,12 +219,7 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 				for _, msg := range tx.GetMsgs() {
 					ethTx, ok := msg.(*evmtypes.MsgEthereumTx)
 					if ok {
-						// To keep the original behavior, send a single tx hash in one notification.
-						// TODO(rjl493456442) Send a batch of tx hashes in one notification
-						err = notifier.Notify(rpcSub.ID, common.HexToHash(ethTx.Hash))
-						if err != nil {
-							return
-						}
+						notifier.Notify(rpcSub.ID, common.HexToHash(ethTx.Hash)) // nolint: errcheck
 					}
 				}
 			case <-rpcSub.Err():
@@ -335,11 +330,7 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 
 				// TODO: fetch bloom from events
 				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
-				err = notifier.Notify(rpcSub.ID, header)
-				if err != nil {
-					headersSub.err <- err
-					return
-				}
+				notifier.Notify(rpcSub.ID, header) // nolint: errcheck
 			case <-rpcSub.Err():
 				headersSub.Unsubscribe(api.events)
 				return
@@ -402,10 +393,7 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 				logs := FilterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
 
 				for _, log := range logs {
-					err = notifier.Notify(rpcSub.ID, log)
-					if err != nil {
-						return
-					}
+					notifier.Notify(rpcSub.ID, log) // nolint: errcheck
 				}
 			case <-rpcSub.Err(): // client send an unsubscribe request
 				logsSub.Unsubscribe(api.events)
