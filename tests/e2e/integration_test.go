@@ -738,6 +738,8 @@ func (s *IntegrationTestSuite) TestPendingTransactionFilter() {
 	signedTx := s.signValidTx(common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(10)).AsTransaction()
 	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, signedTx)
 	s.Require().NoError(err)
+
+	s.waitForTransaction()
 	s.expectSuccessReceipt(signedTx.Hash())
 
 	// check filter changes match the tx hash
