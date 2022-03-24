@@ -17,8 +17,6 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const MaxTxGasWanted uint64 = 500000
-
 // EthSigVerificationDecorator validates an ethereum signatures
 type EthSigVerificationDecorator struct {
 	evmKeeper EVMKeeper
