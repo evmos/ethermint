@@ -57,7 +57,7 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 				rpc.API{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
-					Service:   filters.NewPublicAPI(ctx.Logger, tmWSClient, evmBackend),
+					Service:   filters.NewPublicAPI(ctx.Logger, clientCtx, tmWSClient, evmBackend),
 					Public:    true,
 				},
 			)

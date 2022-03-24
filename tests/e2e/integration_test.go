@@ -721,3 +721,29 @@ func (s *IntegrationTestSuite) TestWeb3Sha3() {
 		})
 	}
 }
+
+func (s *IntegrationTestSuite) TestPendingTransactionFilter() {
+	var (
+		filterID     string
+		filterResult []common.Hash
+	)
+	// create filter
+	err := s.rpcClient.Call(&filterID, "eth_newPendingTransactionFilter")
+	s.Require().NoError(err)
+	// check filter result is empty
+	err = s.rpcClient.Call(&filterResult, "eth_getFilterChanges", filterID)
+	s.Require().NoError(err)
+	s.Require().Empty(filterResult)
+	// send transaction
+	signedTx := s.signValidTx(common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(10)).AsTransaction()
+	err = s.network.Validators[0].JSONRPCClient.SendTransaction(s.ctx, signedTx)
+	s.Require().NoError(err)
+
+	s.waitForTransaction()
+	s.expectSuccessReceipt(signedTx.Hash())
+
+	// check filter changes match the tx hash
+	err = s.rpcClient.Call(&filterResult, "eth_getFilterChanges", filterID)
+	s.Require().NoError(err)
+	s.Require().Equal([]common.Hash{signedTx.Hash()}, filterResult)
+}
