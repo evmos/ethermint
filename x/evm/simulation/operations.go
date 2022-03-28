@@ -97,7 +97,7 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		from := common.BytesToAddress(simAccount.Address)
 		to := common.BytesToAddress(receipient.Address)
 
-		estimateGas, err := EstimateGas(k, ctx, &from, &to, (*hexutil.Bytes)(&[]byte{}))
+		estimateGas, err := EstimateGas(ctx, k, &from, &to, (*hexutil.Bytes)(&[]byte{}))
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not estimate gas wanted"), nil, err
 		}
@@ -107,7 +107,7 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		gasFeeCap := k.BaseFee(ctx, chainConfig)
 		nonce := k.GetNonce(ctx, common.BytesToAddress(simAccount.Address))
 
-		amount, err := RandomTransferableAmount(k, ctx, r, from, gasLimit, gasFeeCap)
+		amount, err := RandomTransferableAmount(ctx, k, r, from, gasLimit, gasFeeCap)
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "no enough transferable amount"), nil, nil
 		}
@@ -122,7 +122,7 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 
 		txConfig := NewTxConfig()
 		txBuilder := txConfig.NewTxBuilder()
-		signedTx, err := GetSignedTx(k, ctx, txBuilder, ethSimpleTransferTx, simAccount.PrivKey)
+		signedTx, err := GetSignedTx(ctx, k, txBuilder, ethSimpleTransferTx, simAccount.PrivKey)
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not sign ethereum tx"), nil, err
 		}
@@ -140,8 +140,48 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 
 func SimulateEthCreateContract(ak types.AccountKeeper, k *keeper.Keeper) simtypes.Operation {
 	return func(
-		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
+		r *rand.Rand, bapp *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
+		simAccount, _ := simtypes.RandomAcc(r, accs)
+
+		from := common.BytesToAddress(simAccount.Address)
+
+		ctorArgs, err := types.ERC20Contract.ABI.Pack("", from, sdk.NewIntWithDecimal(1000, 18).BigInt())
+		if err != nil {
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not pack owner and supply"), nil, err
+		}
+		data := append(types.ERC20Contract.Bin, ctorArgs...)
+
+		estimateGas, err := EstimateGas(ctx, k, &from, nil, (*hexutil.Bytes)(&data))
+		if err != nil {
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not estimate gas wanted"), nil, err
+		}
+		gasLimit := estimateGas
+		ethChainID := k.ChainID()
+		chainConfig := k.GetParams(ctx).ChainConfig.EthereumConfig(ethChainID)
+		gasFeeCap := k.BaseFee(ctx, chainConfig)
+		nonce := k.GetNonce(ctx, common.BytesToAddress(simAccount.Address))
+
+		ethCreateContractTx := types.NewTxContract(ethChainID, nonce, nil, gasLimit, gasFeeCap, gasFeeCap, nil, data, nil)
+
+		ethAddress, err := GetEthAddress(simAccount)
+		if err != nil {
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not get ethaddress"), nil, err
+		}
+		ethCreateContractTx.From = ethAddress
+
+		txConfig := NewTxConfig()
+		txBuilder := txConfig.NewTxBuilder()
+		signedTx, err := GetSignedTx(ctx, k, txBuilder, ethCreateContractTx, simAccount.PrivKey)
+		if err != nil {
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not sign ethereum tx"), nil, err
+		}
+
+		_, _, err = bapp.Deliver(txConfig.TxEncoder(), signedTx)
+
+		if err != nil {
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "failed to deliver tx"), nil, err
+		}
 		return simtypes.OperationMsg{}, nil, nil
 	}
 }
@@ -154,7 +194,7 @@ func SimulateEthCallContract(ak types.AccountKeeper, k *keeper.Keeper) simtypes.
 	}
 }
 
-func EstimateGas(k *keeper.Keeper, ctx sdk.Context, from, to *common.Address, data *hexutil.Bytes) (gas uint64, err error) {
+func EstimateGas(ctx sdk.Context, k *keeper.Keeper, from, to *common.Address, data *hexutil.Bytes) (gas uint64, err error) {
 	args, err := json.Marshal(&types.TransactionArgs{To: to, From: from, Data: data})
 	if err != nil {
 		return 0, err
@@ -170,7 +210,7 @@ func EstimateGas(k *keeper.Keeper, ctx sdk.Context, from, to *common.Address, da
 	return res.Gas, nil
 }
 
-func RandomTransferableAmount(k *keeper.Keeper, ctx sdk.Context, r *rand.Rand, address common.Address, gasLimit uint64, gasFeeCap *big.Int) (amount *big.Int, err error) {
+func RandomTransferableAmount(ctx sdk.Context, k *keeper.Keeper, r *rand.Rand, address common.Address, gasLimit uint64, gasFeeCap *big.Int) (amount *big.Int, err error) {
 	balance := k.GetBalance(ctx, address)
 	feeLimit := new(big.Int).Mul(gasFeeCap, big.NewInt(int64(gasLimit)))
 	if (feeLimit.Cmp(balance)) > 0 {
@@ -210,7 +250,7 @@ func NewTxConfig() client.TxConfig {
 	return txConfig
 }
 
-func GetSignedTx(k *keeper.Keeper, ctx sdk.Context, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
+func GetSignedTx(ctx sdk.Context, k *keeper.Keeper, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
 	builder, ok := txBuilder.(tx.ExtensionOptionsTxBuilder)
 	if !ok {
 		err = fmt.Errorf("can not initiate ExtensionOptionsTxBuilder")
