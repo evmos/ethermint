@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.12.1] - 2022-03-29
+
+### Bug Fixes
+
+* (evm) [tharsis#1016](https://github.com/tharsis/ethermint/pull/1016) Update validate basic check for storage state.
+
 ## [v0.12.0] - 2022-03-24
 
 ### Bug Fixes
