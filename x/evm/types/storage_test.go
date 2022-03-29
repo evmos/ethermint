@@ -23,7 +23,7 @@ func TestStorageValidate(t *testing.T) {
 		{
 			"empty storage key bytes",
 			Storage{
-				{Key: common.Hash{}.String()},
+				{Key: ""},
 			},
 			false,
 		},
