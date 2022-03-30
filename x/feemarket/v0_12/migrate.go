@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 type FeeMarketKeeper interface {
@@ -26,7 +27,18 @@ func MigrateStore(ctx sdk.Context, k FeeMarketKeeper, storeKey sdk.StoreKey) err
 	return nil
 }
 
-// TODO: update
-func MigrateJSON(ctx sdk.Context, k FeeMarketKeeper, storeKey sdk.StoreKey) error {
-	return nil
+// MigrateJSON accepts exported v0.11 x/feemarket genesis state and migrates it to
+// v0.12 x/feemarket genesis state. The migration includes:
+// - Migrate BaseFee to Params
+func MigrateJSON(oldState types.GenesisState) types.GenesisState {
+	return types.GenesisState{
+		Params: types.Params{
+			NoBaseFee:                oldState.Params.NoBaseFee,
+			BaseFeeChangeDenominator: oldState.Params.BaseFeeChangeDenominator,
+			ElasticityMultiplier:     oldState.Params.ElasticityMultiplier,
+			EnableHeight:             oldState.Params.EnableHeight,
+			// BaseFee:                  oldState.BaseFee, FIXME: import
+		},
+		BlockGas: oldState.BlockGas,
+	}
 }
