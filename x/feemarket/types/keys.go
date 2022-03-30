@@ -14,7 +14,8 @@ const (
 
 // prefix bytes for the feemarket persistent store
 const (
-	prefixBlockGasUsed = iota + 1
+	prefixBlockGasUsed      = iota + 1
+	deprecatedPrefixBaseFee // nolint
 )
 
 // KVStore key prefixes
