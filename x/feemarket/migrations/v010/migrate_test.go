@@ -34,7 +34,7 @@ func TestMigrateStore(t *testing.T) {
 	// check that the fee market is not nil
 	err := v010.MigrateStore(ctx, &paramstore, feemarketKey)
 	require.NoError(t, err)
-	require.False(t, ctx.KVStore(feemarketKey).Has(v0_10.KeyPrefixBaseFeeV1))
+	require.False(t, ctx.KVStore(feemarketKey).Has(v010.KeyPrefixBaseFeeV1))
 
 	params := fmKeeper.GetParams(ctx)
 	require.False(t, params.BaseFee.IsNil())
