@@ -191,10 +191,10 @@ func SimulateEthTx(ctx *SimulateContext, from, to *common.Address, amount *big.I
 	}
 
 	_, _, err = ctx.bapp.Deliver(txConfig.TxEncoder(), signedTx)
-
 	if err != nil {
 		return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "failed to deliver tx"), nil, err
 	}
+
 	return simtypes.OperationMsg{}, fops, nil
 }
 
