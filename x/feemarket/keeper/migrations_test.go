@@ -4,7 +4,7 @@ import (
 	"math/big"
 
 	"github.com/tharsis/ethermint/x/feemarket/keeper"
-	"github.com/tharsis/ethermint/x/feemarket/v0_12"
+	"github.com/tharsis/ethermint/x/feemarket/migrations/v0_12"
 )
 
 func (suite *KeeperTestSuite) TestMigration1To2() {
