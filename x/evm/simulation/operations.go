@@ -175,7 +175,7 @@ func operationSimulateEthCallContract(ak types.AccountKeeper, k *keeper.Keeper, 
 }
 
 func SimulateEthTx(ctx *SimulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes, prv cryptotypes.PrivKey, fops []simtypes.FutureOperation) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
-	ethTx, err := CreateRandomValidEthTx(ctx, from, nil, nil, (*hexutil.Bytes)(data))
+	ethTx, err := CreateRandomValidEthTx(ctx, from, nil, nil, data)
 	if err == ErrNoEnoughBalance {
 		return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "no enough balance"), nil, nil
 	}
