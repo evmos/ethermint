@@ -76,7 +76,7 @@ func Setup(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState)
 }
 
 func RandomGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAccounts {
-	var emptyCodeHash = crypto.Keccak256(nil)
+	emptyCodeHash := crypto.Keccak256(nil)
 	genesisAccs := make(authtypes.GenesisAccounts, len(simState.Accounts))
 	for i, acc := range simState.Accounts {
 		bacc := authtypes.NewBaseAccountWithAddress(acc.Address)
