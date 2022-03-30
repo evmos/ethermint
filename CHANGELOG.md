@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.12.2] - 2022-03-30
+
+### Bug Fixes
+
+* (feemarket) [tharsis#1021](https://github.com/tharsis/ethermint/pull/1021) Fix fee market migration.
+
 ## [v0.12.1] - 2022-03-29
 
 ### Bug Fixes
@@ -64,7 +70,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
-- (rpc) [tharsis#979](https://github.com/tharsis/ethermint/pull/979) Add configurable timeouts to http server
+- (rpc) [tharsis#979](https://github.com/tharsis/ethermint/pull/979) Add configurable timeouts to http server
 - (rpc) [tharsis#988](https://github.com/tharsis/ethermint/pull/988) json-rpc server always use local rpc client
 
 ## [v0.10.1] - 2022-03-04
