@@ -1,13 +1,10 @@
 package keeper
 
 import (
-	"math/big"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-)
 
-// KeyPrefixBaseFeeV1 is the base fee key prefix used in version 1
-var KeyPrefixBaseFeeV1 = []byte{2}
+	v010 "github.com/tharsis/ethermint/x/feemarket/migrations/v010"
+)
 
 // Migrator is a struct for handling in-place store migrations.
 type Migrator struct {
@@ -21,13 +18,7 @@ func NewMigrator(keeper Keeper) Migrator {
 	}
 }
 
+// Migrate1to2 migrates the store from consensus version v1 to v2
 func (m Migrator) Migrate1to2(ctx sdk.Context) error {
-	store := ctx.KVStore(m.keeper.storeKey)
-	bz := store.Get(KeyPrefixBaseFeeV1)
-	if len(bz) > 0 {
-		baseFee := new(big.Int).SetBytes(bz)
-		m.keeper.SetBaseFee(ctx, baseFee)
-	}
-	store.Delete(KeyPrefixBaseFeeV1)
-	return nil
+	return v010.MigrateStore(ctx, &m.keeper.paramSpace, m.keeper.storeKey)
 }
