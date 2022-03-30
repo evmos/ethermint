@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	v010types "github.com/tharsis/ethermint/x/feemarket/migrations/v0_10/types"
+	v09types "github.com/tharsis/ethermint/x/feemarket/migrations/v0_9/types"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
@@ -29,10 +29,10 @@ func MigrateStore(ctx sdk.Context, k FeeMarketKeeper, storeKey sdk.StoreKey) err
 	return nil
 }
 
-// MigrateJSON accepts exported v0.11 x/feemarket genesis state and migrates it to
+// MigrateJSON accepts exported v0.9 - v0.11 x/feemarket genesis state and migrates it to
 // v0.12 x/feemarket genesis state. The migration includes:
 // - Migrate BaseFee to Params
-func MigrateJSON(oldState v010types.GenesisState) types.GenesisState {
+func MigrateJSON(oldState v09types.GenesisState) types.GenesisState {
 	return types.GenesisState{
 		Params: types.Params{
 			NoBaseFee:                oldState.Params.NoBaseFee,
