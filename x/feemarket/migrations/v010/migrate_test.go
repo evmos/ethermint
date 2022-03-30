@@ -1,4 +1,4 @@
-package v0_10_test
+package v010_test
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/tharsis/ethermint/app"
 	feemarketkeeper "github.com/tharsis/ethermint/x/feemarket/keeper"
-	v0_10 "github.com/tharsis/ethermint/x/feemarket/migrations/v0_10"
+	v010 "github.com/tharsis/ethermint/x/feemarket/migrations/v010"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
@@ -32,7 +32,7 @@ func TestMigrateStore(t *testing.T) {
 	require.True(t, paramstore.HasKeyTable())
 
 	// check that the fee market is not nil
-	err := v0_10.MigrateStore(ctx, &paramstore, feemarketKey)
+	err := v010.MigrateStore(ctx, &paramstore, feemarketKey)
 	require.NoError(t, err)
 	require.False(t, ctx.KVStore(feemarketKey).Has(v0_10.KeyPrefixBaseFeeV1))
 

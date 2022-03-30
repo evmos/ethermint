@@ -1,4 +1,4 @@
-package v0_10
+package v010
 
 import (
 	"math/big"
@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	v09types "github.com/tharsis/ethermint/x/feemarket/migrations/v0_9/types"
+	v09types "github.com/tharsis/ethermint/x/feemarket/migrations/v09/types"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
