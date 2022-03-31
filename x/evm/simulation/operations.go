@@ -49,7 +49,7 @@ var (
 	maxWaitSeconds = 10
 )
 
-type SimulateContext struct {
+type simulateContext struct {
 	context sdk.Context
 	bapp    *baseapp.BaseApp
 	rand    *rand.Rand
@@ -108,7 +108,7 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		from := common.BytesToAddress(simAccount.Address)
 		to := common.BytesToAddress(receipient.Address)
 
-		simulateContext := &SimulateContext{ctx, bapp, r, k}
+		simulateContext := &simulateContext{ctx, bapp, r, k}
 
 		return SimulateEthTx(simulateContext, &from, &to, nil, (*hexutil.Bytes)(&[]byte{}), simAccount.PrivKey, nil)
 	}
@@ -130,7 +130,7 @@ func SimulateEthCreateContract(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		data := types.ERC20Contract.Bin
 		data = append(data, ctorArgs...)
 
-		simulateContext := &SimulateContext{ctx, bapp, r, k}
+		simulateContext := &simulateContext{ctx, bapp, r, k}
 
 		fops := make([]simtypes.FutureOperation, 1)
 		whenCall := ctx.BlockHeader().Time.Add(time.Duration(r.Intn(maxWaitSeconds)+1) * time.Second)
@@ -164,13 +164,13 @@ func operationSimulateEthCallContract(k *keeper.Keeper, contractAddr, to *common
 		}
 		data := append(types.ERC20Contract.Bin, ctorArgs...)
 
-		simulateContext := &SimulateContext{ctx, bapp, r, k}
+		simulateContext := &simulateContext{ctx, bapp, r, k}
 
 		return SimulateEthTx(simulateContext, &from, contractAddr, nil, (*hexutil.Bytes)(&data), simAccount.PrivKey, nil)
 	}
 }
 
-func SimulateEthTx(ctx *SimulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes, prv cryptotypes.PrivKey, fops []simtypes.FutureOperation) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
+func SimulateEthTx(ctx *simulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes, prv cryptotypes.PrivKey, fops []simtypes.FutureOperation) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 	ethTx, err := CreateRandomValidEthTx(ctx, from, nil, nil, data)
 	if err == ErrNoEnoughBalance {
 		return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "no enough balance"), nil, nil
@@ -194,7 +194,7 @@ func SimulateEthTx(ctx *SimulateContext, from, to *common.Address, amount *big.I
 	return simtypes.OperationMsg{}, fops, nil
 }
 
-func CreateRandomValidEthTx(ctx *SimulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes) (ethTx *types.MsgEthereumTx, err error) {
+func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes) (ethTx *types.MsgEthereumTx, err error) {
 	estimateGas, err := EstimateGas(ctx, from, to, data)
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func CreateRandomValidEthTx(ctx *SimulateContext, from, to *common.Address, amou
 	return ethTx, nil
 }
 
-func EstimateGas(ctx *SimulateContext, from, to *common.Address, data *hexutil.Bytes) (gas uint64, err error) {
+func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.Bytes) (gas uint64, err error) {
 	args, err := json.Marshal(&types.TransactionArgs{To: to, From: from, Data: data})
 	if err != nil {
 		return 0, err
@@ -235,7 +235,7 @@ func EstimateGas(ctx *SimulateContext, from, to *common.Address, data *hexutil.B
 	return res.Gas, nil
 }
 
-func RandomTransferableAmount(ctx *SimulateContext, address common.Address, gasLimit uint64, gasFeeCap *big.Int) (amount *big.Int, err error) {
+func RandomTransferableAmount(ctx *simulateContext, address common.Address, gasLimit uint64, gasFeeCap *big.Int) (amount *big.Int, err error) {
 	balance := ctx.keeper.GetBalance(ctx.context, address)
 	feeLimit := new(big.Int).Mul(gasFeeCap, big.NewInt(int64(gasLimit)))
 	if (feeLimit.Cmp(balance)) > 0 {
@@ -261,7 +261,7 @@ func NewTxConfig() client.TxConfig {
 	return txConfig
 }
 
-func GetSignedTx(ctx *SimulateContext, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
+func GetSignedTx(ctx *simulateContext, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
 	builder, ok := txBuilder.(tx.ExtensionOptionsTxBuilder)
 	if !ok {
 		err = fmt.Errorf("can not initiate ExtensionOptionsTxBuilder")
