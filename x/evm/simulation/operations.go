@@ -41,13 +41,9 @@ const (
 	WeightMsgEthCallContract   = 100
 )
 
-var (
-	ErrNoEnoughBalance = fmt.Errorf("no enough balance")
-)
+var ErrNoEnoughBalance = fmt.Errorf("no enough balance")
 
-var (
-	maxWaitSeconds = 10
-)
+var maxWaitSeconds = 10
 
 type simulateContext struct {
 	context sdk.Context
@@ -57,7 +53,8 @@ type simulateContext struct {
 }
 
 func WeightedOperations(
-	appParams simtypes.AppParams, cdc codec.JSONCodec, ak types.AccountKeeper, k *keeper.Keeper) simulation.WeightedOperations {
+	appParams simtypes.AppParams, cdc codec.JSONCodec, ak types.AccountKeeper, k *keeper.Keeper,
+) simulation.WeightedOperations {
 	var (
 		weightMsgEthSimpleTransfer int
 		weightMsgEthCreateContract int
