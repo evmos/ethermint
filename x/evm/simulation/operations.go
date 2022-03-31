@@ -9,7 +9,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
-	amino "github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
@@ -92,10 +91,6 @@ func WeightedOperations(
 			weightMsgEthCreateContract,
 			SimulateEthCreateContract(ak, k),
 		),
-		// simulation.NewWeightedOperation(
-		// 	weightMsgEthCallContract,
-		// 	SimulateEthCallContract(ak, k),
-		// ),
 	}
 }
 
@@ -132,7 +127,8 @@ func SimulateEthCreateContract(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not pack owner and supply"), nil, err
 		}
-		data := append(types.ERC20Contract.Bin, ctorArgs...)
+		data := types.ERC20Contract.Bin
+		data = append(data, ctorArgs...)
 
 		simulateContext := &SimulateContext{ctx, bapp, r, k}
 
@@ -148,13 +144,13 @@ func SimulateEthCreateContract(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		receipientAddr := common.BytesToAddress(tokenReceipient.Address)
 		fops[0] = simtypes.FutureOperation{
 			BlockTime: whenCall,
-			Op:        operationSimulateEthCallContract(ak, k, &contractAddr, &receipientAddr, nil),
+			Op:        operationSimulateEthCallContract(k, &contractAddr, &receipientAddr, nil),
 		}
 		return SimulateEthTx(simulateContext, &from, nil, nil, (*hexutil.Bytes)(&data), simAccount.PrivKey, fops)
 	}
 }
 
-func operationSimulateEthCallContract(ak types.AccountKeeper, k *keeper.Keeper, contractAddr, to *common.Address, amount *big.Int) simtypes.Operation {
+func operationSimulateEthCallContract(k *keeper.Keeper, contractAddr, to *common.Address, amount *big.Int) simtypes.Operation {
 	return func(
 		r *rand.Rand, bapp *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
@@ -260,7 +256,7 @@ func RandomTransferableAmount(ctx *SimulateContext, address common.Address, gasL
 
 func NewTxConfig() client.TxConfig {
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
-	marshaler := amino.NewProtoCodec(interfaceRegistry)
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
 	txConfig := tx.NewTxConfig(marshaler, tx.DefaultSignModes)
 	return txConfig
 }
