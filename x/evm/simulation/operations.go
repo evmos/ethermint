@@ -162,7 +162,8 @@ func operationSimulateEthCallContract(k *keeper.Keeper, contractAddr, to *common
 		if err != nil {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not pack method and args"), nil, err
 		}
-		data := append(types.ERC20Contract.Bin, ctorArgs...)
+		data := types.ERC20Contract.Bin
+		data = append(data, ctorArgs...)
 
 		simulateContext := &simulateContext{ctx, bapp, r, k}
 
