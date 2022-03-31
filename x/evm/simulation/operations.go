@@ -244,14 +244,15 @@ func RandomTransferableAmount(ctx *simulateContext, address common.Address, gasL
 	spendable := new(big.Int).Sub(balance, feeLimit)
 	if spendable.Cmp(big.NewInt(0)) == 0 {
 		amount = new(big.Int).Set(spendable)
+		return amount, nil
 	} else {
 		simAmount, err := simtypes.RandPositiveInt(ctx.rand, sdk.NewIntFromBigInt(spendable))
 		if err != nil {
 			return nil, err
 		}
 		amount = simAmount.BigInt()
+		return amount, nil
 	}
-	return amount, nil
 }
 
 func NewTxConfig() client.TxConfig {
