@@ -47,6 +47,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (feemarket) [tharsis#1021](https://github.com/tharsis/ethermint/pull/1021) Fix fee market migration.
 
+### Improvements
+
+* (evm) [tharsis#1025](https://github.com/tharsis/ethermint/pull/1025) Allow to append logs after a post processing hook.
+
 ## [v0.12.1] - 2022-03-29
 
 ### Bug Fixes
