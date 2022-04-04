@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### API Breaking
+
+* (feemarket) [tharsis#1026](https://github.com/tharsis/ethermint/pull/1026) Fix REST endpoints to use `/ethermint/feemarket/*` instead of `/feemarket/evm/*`.
+
 ### Bug Fixes
 
 * (feemarket) [tharsis#1021](https://github.com/tharsis/ethermint/pull/1021) Fix fee market migration.
