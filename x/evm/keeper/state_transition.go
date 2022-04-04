@@ -264,7 +264,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		}
 
 		// Only call hooks if tx executed successfully.
-		if err = k.PostTxProcessing(tmpCtx, msg.From(), tx.To(), receipt); err != nil {
+		if err = k.PostTxProcessing(tmpCtx, msg, receipt); err != nil {
 			// If hooks return error, revert the whole tx.
 			res.VmError = types.ErrPostTxProcessing.Error()
 			k.Logger(ctx).Error("tx post processing failed", "error", err)
