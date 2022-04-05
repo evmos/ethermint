@@ -271,9 +271,7 @@ func GetSignedTx(ctx *simulateContext, txBuilder client.TxBuilder, msg *types.Ms
 	}
 	builder.SetExtensionOptions(option)
 
-	err = msg.Sign(ethtypes.LatestSignerForChainID(ctx.keeper.ChainID()), tests.NewSigner(prv))
-
-	if err != nil {
+	if err := msg.Sign(ethtypes.LatestSignerForChainID(ctx.keeper.ChainID()), tests.NewSigner(prv)); err != nil {
 		return nil, err
 	}
 
