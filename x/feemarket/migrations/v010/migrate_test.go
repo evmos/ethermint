@@ -15,6 +15,7 @@ import (
 	"github.com/tharsis/ethermint/app"
 	feemarketkeeper "github.com/tharsis/ethermint/x/feemarket/keeper"
 	v010 "github.com/tharsis/ethermint/x/feemarket/migrations/v010"
+	v09types "github.com/tharsis/ethermint/x/feemarket/migrations/v09/types"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
@@ -43,4 +44,26 @@ func TestMigrateStore(t *testing.T) {
 	require.NotNil(t, baseFee)
 
 	require.Equal(t, baseFee.Int64(), params.BaseFee.Int64())
+}
+
+func TestMigrateJSON(t *testing.T) {
+	rawJson := `{
+		"base_fee": "669921875",
+		"block_gas": "0",
+		"params": {
+			"base_fee_change_denominator": 8,
+			"elasticity_multiplier": 2,
+			"enable_height": "0",
+			"initial_base_fee": "1000000000",
+			"no_base_fee": false
+		}
+  }`
+	encCfg := encoding.MakeConfig(app.ModuleBasics)
+	var genState v09types.GenesisState
+	err := encCfg.Marshaler.UnmarshalJSON([]byte(rawJson), &genState)
+	require.NoError(t, err)
+
+	migratedGenState := v010.MigrateJSON(genState)
+
+	require.Equal(t, int64(669921875), migratedGenState.Params.BaseFee.Int64())
 }
