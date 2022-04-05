@@ -262,8 +262,7 @@ func NewTxConfig() client.TxConfig {
 func GetSignedTx(ctx *simulateContext, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
 	builder, ok := txBuilder.(tx.ExtensionOptionsTxBuilder)
 	if !ok {
-		err = fmt.Errorf("can not initiate ExtensionOptionsTxBuilder")
-		return nil, err
+		return nil, fmt.Errorf("can not initiate ExtensionOptionsTxBuilder")
 	}
 	option, err := codectypes.NewAnyWithValue(&types.ExtensionOptionsEthereumTx{})
 	if err != nil {
