@@ -13,17 +13,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.0.1
+        id: git_diff
         with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
-      - uses: golangci/golangci-lint-action@v2.5.2
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - uses: golangci/golangci-lint-action@v3
         with:
-          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.42.1
+          version: latest
           args: --timeout 10m
           github-token: ${{ secrets.github_token }}
         # Check only if there are differences in the source code

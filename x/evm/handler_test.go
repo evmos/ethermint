@@ -99,7 +99,7 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 			Coins:   coins,
 		},
 	}
-	// update total supply
+	// Update total supply
 	bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt(200000000000000))), []banktypes.Metadata{})
 	genesisState[banktypes.ModuleName] = suite.app.AppCodec().MustMarshalJSON(bankGenesis)
 
