@@ -15,7 +15,10 @@ import (
 	"github.com/tharsis/ethermint/app"
 	feemarketkeeper "github.com/tharsis/ethermint/x/feemarket/keeper"
 	v010 "github.com/tharsis/ethermint/x/feemarket/migrations/v010"
+<<<<<<< HEAD
 	v09types "github.com/tharsis/ethermint/x/feemarket/migrations/v09/types"
+=======
+>>>>>>> 4ddc8afd18237e24558b6d7c12e44fcfca3411bf
 	"github.com/tharsis/ethermint/x/feemarket/types"
 	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
@@ -45,6 +48,7 @@ func TestMigrateStore(t *testing.T) {
 
 	require.Equal(t, baseFee.Int64(), params.BaseFee.Int64())
 }
+<<<<<<< HEAD
 
 func TestMigrateJSON(t *testing.T) {
 	rawJson := `{
@@ -67,3 +71,5 @@ func TestMigrateJSON(t *testing.T) {
 
 	require.Equal(t, int64(669921875), migratedGenState.Params.BaseFee.Int64())
 }
+=======
+>>>>>>> 4ddc8afd18237e24558b6d7c12e44fcfca3411bf
