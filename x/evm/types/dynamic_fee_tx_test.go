@@ -17,6 +17,7 @@ type TxDataTestSuite struct {
 	sdkInt         sdk.Int
 	uint64         uint64
 	bigInt         *big.Int
+	overflowBigInt *big.Int
 	sdkZeroInt     sdk.Int
 	sdkMinusOneInt sdk.Int
 	invalidAddr    string
@@ -28,6 +29,7 @@ func (suite *TxDataTestSuite) SetupTest() {
 	suite.sdkInt = sdk.NewInt(100)
 	suite.uint64 = suite.sdkInt.Uint64()
 	suite.bigInt = big.NewInt(1)
+	suite.overflowBigInt = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(256), nil)
 	suite.sdkZeroInt = sdk.ZeroInt()
 	suite.sdkMinusOneInt = sdk.NewInt(-1)
 	suite.invalidAddr = "123456"
@@ -41,12 +43,14 @@ func TestTxDataTestSuite(t *testing.T) {
 
 func (suite *TxDataTestSuite) TestNewDynamicFeeTx() {
 	testCases := []struct {
-		name string
-		tx   *ethtypes.Transaction
+		name     string
+		expError bool
+		tx       *ethtypes.Transaction
 	}{
 		{
 			"non-empty tx",
-			ethtypes.NewTx(&ethtypes.AccessListTx{ // TODO: change to DynamicFeeTx on Geth
+			false,
+			ethtypes.NewTx(&ethtypes.DynamicFeeTx{
 				Nonce:      1,
 				Data:       []byte("data"),
 				Gas:        100,
@@ -58,14 +62,94 @@ func (suite *TxDataTestSuite) TestNewDynamicFeeTx() {
 				S:          suite.bigInt,
 			}),
 		},
+		{
+			"value out of bounds tx",
+			true,
+			ethtypes.NewTx(&ethtypes.DynamicFeeTx{
+				Nonce:      1,
+				Data:       []byte("data"),
+				Gas:        100,
+				Value:      suite.overflowBigInt,
+				AccessList: ethtypes.AccessList{},
+				To:         &suite.addr,
+				V:          suite.bigInt,
+				R:          suite.bigInt,
+				S:          suite.bigInt,
+			}),
+		},
+		{
+			"gas fee cap out of bounds tx",
+			true,
+			ethtypes.NewTx(&ethtypes.DynamicFeeTx{
+				Nonce:      1,
+				Data:       []byte("data"),
+				Gas:        100,
+				GasFeeCap:  suite.overflowBigInt,
+				Value:      big.NewInt(1),
+				AccessList: ethtypes.AccessList{},
+				To:         &suite.addr,
+				V:          suite.bigInt,
+				R:          suite.bigInt,
+				S:          suite.bigInt,
+			}),
+		},
+		{
+			"gas tip cap out of bounds tx",
+			true,
+			ethtypes.NewTx(&ethtypes.DynamicFeeTx{
+				Nonce:      1,
+				Data:       []byte("data"),
+				Gas:        100,
+				GasTipCap:  suite.overflowBigInt,
+				Value:      big.NewInt(1),
+				AccessList: ethtypes.AccessList{},
+				To:         &suite.addr,
+				V:          suite.bigInt,
+				R:          suite.bigInt,
+				S:          suite.bigInt,
+			}),
+		},
 	}
 	for _, tc := range testCases {
 		tx, err := newDynamicFeeTx(tc.tx)
-		suite.Require().NoError(err)
 
-		suite.Require().NotEmpty(tx)
-		suite.Require().Equal(uint8(2), tx.TxType())
+		if tc.expError {
+			suite.Require().Error(err)
+		} else {
+			suite.Require().NoError(err)
+			suite.Require().NotEmpty(tx)
+			suite.Require().Equal(uint8(2), tx.TxType())
+		}
 	}
+}
+
+func (suite *TxDataTestSuite) TestDynamicFeeTxAsEthereumData() {
+	feeConfig := &ethtypes.DynamicFeeTx{
+		Nonce:      1,
+		Data:       []byte("data"),
+		Gas:        100,
+		Value:      big.NewInt(1),
+		AccessList: ethtypes.AccessList{},
+		To:         &suite.addr,
+		V:          suite.bigInt,
+		R:          suite.bigInt,
+		S:          suite.bigInt,
+	}
+
+	tx := ethtypes.NewTx(feeConfig)
+
+	dynamicFeeTx, err := newDynamicFeeTx(tx)
+	suite.Require().NoError(err)
+
+	res := dynamicFeeTx.AsEthereumData()
+	resTx := ethtypes.NewTx(res)
+
+	suite.Require().Equal(feeConfig.Nonce, resTx.Nonce())
+	suite.Require().Equal(feeConfig.Data, resTx.Data())
+	suite.Require().Equal(feeConfig.Gas, resTx.Gas())
+	suite.Require().Equal(feeConfig.Value, resTx.Value())
+	suite.Require().Equal(feeConfig.AccessList, resTx.AccessList())
+	suite.Require().Equal(feeConfig.To, resTx.To())
 }
 
 func (suite *TxDataTestSuite) TestDynamicFeeTxCopy() {
