@@ -96,7 +96,7 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		r *rand.Rand, bapp *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
-		var receipient simtypes.Account
+		var recipient simtypes.Account
 		if r.Intn(2) == 1 {
 			receipient, _ = simtypes.RandomAcc(r, accs)
 		} else {
