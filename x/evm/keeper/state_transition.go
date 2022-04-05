@@ -55,7 +55,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 	}, nil
 }
 
-// TxConfig load `TxConfig` from current transient storage
+// TxConfig loads `TxConfig` from current transient storage
 func (k *Keeper) TxConfig(ctx sdk.Context, txHash common.Hash) statedb.TxConfig {
 	return statedb.NewTxConfig(
 		common.BytesToHash(ctx.HeaderHash()), // BlockHash
@@ -235,36 +235,36 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		bloomReceipt = ethtypes.BytesToBloom(bloom.Bytes())
 	}
 
+	cumulativeGasUsed := res.GasUsed
+	if ctx.BlockGasMeter() != nil {
+		limit := ctx.BlockGasMeter().Limit()
+		consumed := ctx.BlockGasMeter().GasConsumed()
+		cumulativeGasUsed = uint64(math.Min(float64(cumulativeGasUsed+consumed), float64(limit)))
+	}
+
+	var contractAddr common.Address
+	if msg.To() == nil {
+		contractAddr = crypto.CreateAddress(msg.From(), msg.Nonce())
+	}
+
+	receipt := &ethtypes.Receipt{
+		Type:              tx.Type(),
+		PostState:         nil, // TODO: intermediate state root
+		CumulativeGasUsed: cumulativeGasUsed,
+		Bloom:             bloomReceipt,
+		Logs:              logs,
+		TxHash:            txConfig.TxHash,
+		ContractAddress:   contractAddr,
+		GasUsed:           res.GasUsed,
+		BlockHash:         txConfig.BlockHash,
+		BlockNumber:       big.NewInt(ctx.BlockHeight()),
+		TransactionIndex:  txConfig.TxIndex,
+	}
+
 	if !res.Failed() {
-		cumulativeGasUsed := res.GasUsed
-		if ctx.BlockGasMeter() != nil {
-			limit := ctx.BlockGasMeter().Limit()
-			consumed := ctx.BlockGasMeter().GasConsumed()
-			cumulativeGasUsed = uint64(math.Min(float64(cumulativeGasUsed+consumed), float64(limit)))
-		}
-
-		var contractAddr common.Address
-		if msg.To() == nil {
-			contractAddr = crypto.CreateAddress(msg.From(), msg.Nonce())
-		}
-
-		receipt := &ethtypes.Receipt{
-			Type:              tx.Type(),
-			PostState:         nil, // TODO: intermediate state root
-			Status:            ethtypes.ReceiptStatusSuccessful,
-			CumulativeGasUsed: cumulativeGasUsed,
-			Bloom:             bloomReceipt,
-			Logs:              logs,
-			TxHash:            txConfig.TxHash,
-			ContractAddress:   contractAddr,
-			GasUsed:           res.GasUsed,
-			BlockHash:         txConfig.BlockHash,
-			BlockNumber:       big.NewInt(ctx.BlockHeight()),
-			TransactionIndex:  txConfig.TxIndex,
-		}
-
+		receipt.Status = ethtypes.ReceiptStatusSuccessful
 		// Only call hooks if tx executed successfully.
-		if err = k.PostTxProcessing(tmpCtx, msg.From(), tx.To(), receipt); err != nil {
+		if err = k.PostTxProcessing(tmpCtx, msg, receipt); err != nil {
 			// If hooks return error, revert the whole tx.
 			res.VmError = types.ErrPostTxProcessing.Error()
 			k.Logger(ctx).Error("tx post processing failed", "error", err)
@@ -280,11 +280,10 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		return nil, sdkerrors.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
-	if len(logs) > 0 {
+	if len(receipt.Logs) > 0 {
 		// Update transient block bloom filter
-		k.SetBlockBloomTransient(ctx, bloom)
-
-		k.SetLogSizeTransient(ctx, uint64(txConfig.LogIndex)+uint64(len(logs)))
+		k.SetBlockBloomTransient(ctx, receipt.Bloom.Big())
+		k.SetLogSizeTransient(ctx, uint64(txConfig.LogIndex)+uint64(len(receipt.Logs)))
 	}
 
 	k.SetTxIndexTransient(ctx, uint64(txConfig.TxIndex)+1)

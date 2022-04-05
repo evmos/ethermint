@@ -40,11 +40,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (evm) [tharsis#1027](https://github.com/tharsis/ethermint/pull/1027) Change the `PostTxProcessing` hook interface to include the full message data.
 * (feemarket) [tharsis#1026](https://github.com/tharsis/ethermint/pull/1026) Fix REST endpoints to use `/ethermint/feemarket/*` instead of `/feemarket/evm/*`.
 
 ### Bug Fixes
 
 * (feemarket) [tharsis#1021](https://github.com/tharsis/ethermint/pull/1021) Fix fee market migration.
+
+### Improvements
+
+* (evm) [tharsis#1025](https://github.com/tharsis/ethermint/pull/1025) Allow to append logs after a post processing hook.
 
 ## [v0.12.1] - 2022-03-29
 
