@@ -24,7 +24,7 @@ jobs:
       - uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: --timeout 10m --out-format=tab
+          args: --timeout 10m
           github-token: ${{ secrets.github_token }}
         # Check only if there are differences in the source code
         if: "env.GIT_DIFF"
