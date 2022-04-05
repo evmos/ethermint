@@ -277,8 +277,7 @@ func GetSignedTx(ctx *simulateContext, txBuilder client.TxBuilder, msg *types.Ms
 		return nil, err
 	}
 
-	err = builder.SetMsgs(msg)
-	if err != nil {
+	if err = builder.SetMsgs(msg); err != nil {
 		return nil, err
 	}
 
