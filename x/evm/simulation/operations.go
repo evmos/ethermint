@@ -98,12 +98,12 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		var recipient simtypes.Account
 		if r.Intn(2) == 1 {
-			receipient, _ = simtypes.RandomAcc(r, accs)
+			recipient, _ = simtypes.RandomAcc(r, accs)
 		} else {
-			receipient = simtypes.RandomAccounts(r, 1)[0]
+			recipient = simtypes.RandomAccounts(r, 1)[0]
 		}
 		from := common.BytesToAddress(simAccount.Address)
-		to := common.BytesToAddress(receipient.Address)
+		to := common.BytesToAddress(recipient.Address)
 
 		simulateContext := &simulateContext{ctx, bapp, r, k}
 
