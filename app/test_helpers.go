@@ -75,6 +75,8 @@ func Setup(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState)
 	return app
 }
 
+// This is used by auth module to create random genesis accounts in simulation when genesis.json not specified
+// The default auth module's RandomGenesisAccounts implementation creates only base accounts and vestings accounts
 func RandomGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAccounts {
 	emptyCodeHash := crypto.Keccak256(nil)
 	genesisAccs := make(authtypes.GenesisAccounts, len(simState.Accounts))
@@ -91,6 +93,8 @@ func RandomGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAc
 	return genesisAccs
 }
 
+// Create random accounts with ethsecp256k1.PrivKey
+// TODO: replace secp256k1.GenPrivKeyFromSecret() with similar function in go-ethereum
 func RandomAccounts(r *rand.Rand, n int) []simtypes.Account {
 	accs := make([]simtypes.Account, n)
 

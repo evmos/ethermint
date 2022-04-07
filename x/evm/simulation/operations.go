@@ -55,6 +55,8 @@ type simulateContext struct {
 	keeper  *keeper.Keeper
 }
 
+// Two kinds of operations are generated: SimulateEthSimpleTransfer, SimulateEthCreateContract
+// Contract call operations work as the future operations of SimulateEthCreateContract
 func WeightedOperations(
 	appParams simtypes.AppParams, cdc codec.JSONCodec, ak types.AccountKeeper, k *keeper.Keeper,
 ) simulation.WeightedOperations {
@@ -94,6 +96,8 @@ func WeightedOperations(
 	}
 }
 
+// Random sender, recipient and transferable amount are choosed
+// Other tx details like nonce, gasprice, gaslimit are calculated to get valid value.
 func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtypes.Operation {
 	return func(
 		r *rand.Rand, bapp *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
@@ -114,6 +118,7 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 	}
 }
 
+// operationSimulateEthCallContract is the future operations of SimulateEthCreateContract to make sure valid contract call
 func SimulateEthCreateContract(ak types.AccountKeeper, k *keeper.Keeper) simtypes.Operation {
 	return func(
 		r *rand.Rand, bapp *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
@@ -171,6 +176,7 @@ func operationSimulateEthCallContract(k *keeper.Keeper, contractAddr, to *common
 	}
 }
 
+// Create valid ethereum tx and pack it as cosmos tx, and deliver it.
 func SimulateEthTx(ctx *simulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes, prv cryptotypes.PrivKey, fops []simtypes.FutureOperation) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 	ethTx, err := CreateRandomValidEthTx(ctx, from, nil, nil, data)
 	if err == ErrNoEnoughBalance {
@@ -195,6 +201,7 @@ func SimulateEthTx(ctx *simulateContext, from, to *common.Address, amount *big.I
 	return simtypes.OperationMsg{}, fops, nil
 }
 
+// Populate the ethereum tx with valid random values
 func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes) (ethTx *types.MsgEthereumTx, err error) {
 	estimateGas, err := EstimateGas(ctx, from, to, data)
 	if err != nil {
@@ -220,6 +227,7 @@ func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amou
 	return ethTx, nil
 }
 
+// Estimate gas used by quering the keeper
 func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.Bytes) (gas uint64, err error) {
 	args, err := json.Marshal(&types.TransactionArgs{To: to, From: from, Data: data})
 	if err != nil {
@@ -236,6 +244,7 @@ func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.B
 	return res.Gas, nil
 }
 
+// Transferable amount is between the range [0, spendable), spendable = balance - gasFeeCap * GasLimit
 func RandomTransferableAmount(ctx *simulateContext, address common.Address, gasLimit uint64, gasFeeCap *big.Int) (amount *big.Int, err error) {
 	balance := ctx.keeper.GetBalance(ctx.context, address)
 	feeLimit := new(big.Int).Mul(gasFeeCap, big.NewInt(int64(gasLimit)))
@@ -255,6 +264,7 @@ func RandomTransferableAmount(ctx *simulateContext, address common.Address, gasL
 	return amount, nil
 }
 
+// TxConfig helps with pack the ethereum tx and deliver it.
 func NewTxConfig() client.TxConfig {
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	marshaler := codec.NewProtoCodec(interfaceRegistry)
@@ -262,6 +272,7 @@ func NewTxConfig() client.TxConfig {
 	return txConfig
 }
 
+// Populate the signedTx with valid values
 func GetSignedTx(ctx *simulateContext, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
 	builder, ok := txBuilder.(tx.ExtensionOptionsTxBuilder)
 	if !ok {
