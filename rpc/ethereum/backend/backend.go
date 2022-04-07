@@ -362,6 +362,7 @@ func (e *EVMBackend) EthBlockFromTendermint(
 	}
 
 	txResults := resBlockResult.TxsResults
+	txIndex := uint64(0)
 
 	for i, txBz := range block.Txs {
 		tx, err := e.clientCtx.TxConfig.TxDecoder()(txBz)
@@ -394,14 +395,16 @@ func (e *EVMBackend) EthBlockFromTendermint(
 				tx,
 				common.BytesToHash(block.Hash()),
 				uint64(block.Height),
-				uint64(i),
+				txIndex,
 				baseFee,
 			)
 			if err != nil {
 				e.logger.Debug("NewTransactionFromData for receipt failed", "hash", tx.Hash().Hex(), "error", err.Error())
 				continue
 			}
+
 			ethRPCTxs = append(ethRPCTxs, rpcTx)
+			txIndex++
 		}
 	}
 

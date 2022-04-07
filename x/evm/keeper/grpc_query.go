@@ -363,7 +363,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	ctx = ctx.WithBlockHeight(req.BlockNumber)
+	ctx = ctx.WithBlockHeight(req.BlockNumber - 1)
 	ctx = ctx.WithBlockTime(req.BlockTime)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
 
