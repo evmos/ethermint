@@ -46,6 +46,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (feemarket) [tharsis#1021](https://github.com/tharsis/ethermint/pull/1021) Fix fee market migration.
+* (rpc) [tharsis#1034](https://github.com/tharsis/ethermint/pull/1034) Fix `getBlock` rpc with batched Ethereum txs
 
 ### Improvements
 
