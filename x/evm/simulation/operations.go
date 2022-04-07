@@ -207,7 +207,7 @@ func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amou
 	if err != nil {
 		return nil, err
 	}
-	gasLimit := estimateGas + uint64(ctx.rand.Intn(int(sdktx.MaxGasWanted)))
+	gasLimit := estimateGas + uint64(ctx.rand.Intn(int(sdktx.MaxGasWanted-estimateGas)))
 	ethChainID := ctx.keeper.ChainID()
 	chainConfig := ctx.keeper.GetParams(ctx.context).ChainConfig.EthereumConfig(ethChainID)
 	gasPrice := ctx.keeper.BaseFee(ctx.context, chainConfig)
