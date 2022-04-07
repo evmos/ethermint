@@ -32,17 +32,13 @@ func ValidateAddress(address string) error {
 // ValidateNonZeroAddress returns an error if the provided string is not a hex
 // formatted string address or is equal to zero
 func ValidateNonZeroAddress(address string) error {
-	err := ValidateAddress(address)
-	if err != nil {
-		return err
-	}
 	if IsZeroAddress(address) {
 		return sdkerrors.Wrapf(
 			sdkerrors.ErrInvalidAddress, "address '%s' must not be zero",
 			address,
 		)
 	}
-	return nil
+	return ValidateAddress(address)
 }
 
 // SafeInt64 checks for overflows while casting a uint64 to int64 value.
