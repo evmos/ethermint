@@ -73,18 +73,40 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_Constructor() {
 }
 
 func (suite *MsgsTestSuite) TestMsgEthereumTx_BuildTx() {
-	msg := types.NewTx(nil, 0, &suite.to, nil, 100000, big.NewInt(1), big.NewInt(1), big.NewInt(0), []byte("test"), nil)
+	testCases := []struct {
+		name     string
+		msg      *types.MsgEthereumTx
+		expError bool
+	}{
+		{
+			"build tx - pass",
+			types.NewTx(nil, 0, &suite.to, nil, 100000, big.NewInt(1), big.NewInt(1), big.NewInt(0), []byte("test"), nil),
+			false,
+		},
+		{
+			"build tx - fail: nil data",
+			types.NewTx(nil, 0, &suite.to, nil, 100000, big.NewInt(1), big.NewInt(1), big.NewInt(0), []byte("test"), nil),
+			true,
+		},
+	}
 
-	err := msg.ValidateBasic()
-	suite.Require().NoError(err)
+	for _, tc := range testCases {
+		if strings.Contains(tc.name, "nil data") {
+			tc.msg.Data = nil
+		}
 
-	tx, err := msg.BuildTx(suite.clientCtx.TxConfig.NewTxBuilder(), "aphoton")
-	suite.Require().NoError(err)
+		tx, err := tc.msg.BuildTx(suite.clientCtx.TxConfig.NewTxBuilder(), "aphoton")
+		if tc.expError {
+			suite.Require().Error(err)
+		} else {
+			suite.Require().NoError(err)
 
-	suite.Require().Empty(tx.GetMemo())
-	suite.Require().Empty(tx.GetTimeoutHeight())
-	suite.Require().Equal(uint64(100000), tx.GetGas())
-	suite.Require().Equal(sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(100000))), tx.GetFee())
+			suite.Require().Empty(tx.GetMemo())
+			suite.Require().Empty(tx.GetTimeoutHeight())
+			suite.Require().Equal(uint64(100000), tx.GetGas())
+			suite.Require().Equal(sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(100000))), tx.GetFee())
+		}
+	}
 }
 
 func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
