@@ -93,7 +93,7 @@ func RandomGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAc
 	return genesisAccs
 }
 
-// Create random accounts with ethsecp256k1.PrivKey
+// RandomAccounts creates random accounts with an ethsecp256k1 private key
 // TODO: replace secp256k1.GenPrivKeyFromSecret() with similar function in go-ethereum
 func RandomAccounts(r *rand.Rand, n int) []simtypes.Account {
 	accs := make([]simtypes.Account, n)
