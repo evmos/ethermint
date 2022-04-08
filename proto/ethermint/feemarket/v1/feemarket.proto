@@ -16,13 +16,10 @@ message Params {
   // have.
   uint32 elasticity_multiplier = 3;
   // DEPRECATED: initial base fee for EIP-1559 blocks.
-  reserved  4;
+  reserved 4;
   reserved "initial_base_fee";
   // height at which the base fee calculation is enabled.
   int64 enable_height = 5;
   // base fee for EIP-1559 blocks.
-  string base_fee = 6 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.nullable) = false
-  ];
+  string base_fee = 6 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.nullable) = false];
 }
