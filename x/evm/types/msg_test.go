@@ -110,66 +110,55 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_BuildTx() {
 }
 
 func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
-	hundredInt := sdk.NewInt(100)
-	zeroInt := sdk.ZeroInt()
-	minusOneInt := sdk.NewInt(-1)
-	exp_2_255 := sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(2), big.NewInt(255), nil))
+	hundredInt := big.NewInt(100)
+	zeroInt := big.NewInt(0)
+	minusOneInt := big.NewInt(-1)
+	exp_2_255 := new(big.Int).Exp(big.NewInt(2), big.NewInt(255), nil)
 
 	testCases := []struct {
 		msg        string
 		to         string
-		amount     *sdk.Int
-		gasPrice   *sdk.Int
-		gasFeeCap  *sdk.Int
-		gasTipCap  *sdk.Int
+		amount     *big.Int
+		gasPrice   *big.Int
+		gasFeeCap  *big.Int
+		gasTipCap  *big.Int
 		from       string
 		accessList *ethtypes.AccessList
-		chainID    *sdk.Int
+		chainID    *big.Int
 		expectPass bool
 	}{
-		{msg: "pass with recipient - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
-		{msg: "pass with recipient - AccessList Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: true},
-		{msg: "pass with recipient - DynamicFee Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, gasFeeCap: &hundredInt, gasTipCap: &zeroInt, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: true},
-		{msg: "pass contract - Legacy Tx", to: "", amount: &hundredInt, gasPrice: &hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
-		// {msg: "invalid recipient", to: invalidFromAddress, amount: &minusOneInt, gasPrice: &hundredInt, expectPass: false},
-		{msg: "nil amount - Legacy Tx", to: suite.to.Hex(), amount: nil, gasPrice: &hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
-		{msg: "negative amount - Legacy Tx", to: suite.to.Hex(), amount: &minusOneInt, gasPrice: &hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
-		{msg: "nil gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: nil, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
-		{msg: "negative gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &minusOneInt, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
-		{msg: "zero gas price - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
-		{msg: "invalid from address - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, gasFeeCap: nil, gasTipCap: nil, from: invalidFromAddress, expectPass: false},
-		{msg: "out of bound gas fee - Legacy Tx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &exp_2_255, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
-		{msg: "nil amount - AccessListTx", to: suite.to.Hex(), amount: nil, gasPrice: &hundredInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: true},
-		{msg: "negative amount - AccessListTx", to: suite.to.Hex(), amount: &minusOneInt, gasPrice: &hundredInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
-		{msg: "nil gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: nil, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: false},
-		{msg: "negative gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &minusOneInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
-		{msg: "zero gas price - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: true},
-		{msg: "invalid from address - AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, gasFeeCap: nil, gasTipCap: nil, from: invalidFromAddress, accessList: &ethtypes.AccessList{}, chainID: &hundredInt, expectPass: false},
-		{msg: "chain ID not set on AccessListTx", to: suite.to.Hex(), amount: &hundredInt, gasPrice: &zeroInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "pass with recipient - Legacy Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
+		{msg: "pass with recipient - AccessList Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: hundredInt, expectPass: true},
+		{msg: "pass with recipient - DynamicFee Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: hundredInt, gasTipCap: zeroInt, accessList: &ethtypes.AccessList{}, chainID: hundredInt, expectPass: true},
+		{msg: "pass contract - Legacy Tx", to: "", amount: hundredInt, gasPrice: hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
+		// {msg: "invalid recipient", to: invalidFromAddress, amount: minusOneInt, gasPrice: hundredInt, expectPass: false},
+		{msg: "nil amount - Legacy Tx", to: suite.to.Hex(), amount: nil, gasPrice: hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
+		{msg: "negative amount - Legacy Tx", to: suite.to.Hex(), amount: minusOneInt, gasPrice: hundredInt, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
+		{msg: "nil gas price - Legacy Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: nil, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
+		{msg: "negative gas price - Legacy Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: minusOneInt, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
+		{msg: "zero gas price - Legacy Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: nil, gasTipCap: nil, expectPass: true},
+		{msg: "invalid from address - Legacy Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: nil, gasTipCap: nil, from: invalidFromAddress, expectPass: false},
+		{msg: "out of bound gas fee - Legacy Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: exp_2_255, gasFeeCap: nil, gasTipCap: nil, expectPass: false},
+		{msg: "nil amount - AccessListTx", to: suite.to.Hex(), amount: nil, gasPrice: hundredInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: hundredInt, expectPass: true},
+		{msg: "negative amount - AccessListTx", to: suite.to.Hex(), amount: minusOneInt, gasPrice: hundredInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "nil gas price - AccessListTx", to: suite.to.Hex(), amount: hundredInt, gasPrice: nil, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: hundredInt, expectPass: false},
+		{msg: "negative gas price - AccessListTx", to: suite.to.Hex(), amount: hundredInt, gasPrice: minusOneInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "zero gas price - AccessListTx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: hundredInt, expectPass: true},
+		{msg: "invalid from address - AccessListTx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: nil, gasTipCap: nil, from: invalidFromAddress, accessList: &ethtypes.AccessList{}, chainID: hundredInt, expectPass: false},
+		{msg: "chain ID not set on AccessListTx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: nil, expectPass: false},
+		{msg: "nil tx.Data - AccessList Tx", to: suite.to.Hex(), amount: hundredInt, gasPrice: zeroInt, gasFeeCap: nil, gasTipCap: nil, accessList: &ethtypes.AccessList{}, chainID: hundredInt, expectPass: false},
 	}
 
 	for i, tc := range testCases {
 		to := common.HexToAddress(tc.from)
 
-		var chainID, amount, gasPrice, gasFeeCap, gasTipCap *big.Int
-		if tc.chainID != nil {
-			chainID = tc.chainID.BigInt()
-		}
-		if tc.amount != nil {
-			amount = tc.amount.BigInt()
-		}
-		if tc.gasPrice != nil {
-			gasPrice = tc.gasPrice.BigInt()
-		}
-		if tc.gasFeeCap != nil {
-			gasFeeCap = tc.gasFeeCap.BigInt()
-		}
-		if tc.gasTipCap != nil {
-			gasTipCap = tc.gasTipCap.BigInt()
-		}
-
-		tx := types.NewTx(chainID, 1, &to, amount, 1000, gasPrice, gasFeeCap, gasTipCap, nil, tc.accessList)
+		tx := types.NewTx(tc.chainID, 1, &to, tc.amount, 1000, tc.gasPrice, tc.gasFeeCap, tc.gasTipCap, nil, tc.accessList)
 		tx.From = tc.from
+
+		// apply out of bounds values here to test ValidateBasic function instead of NewTx
+		if strings.Contains(tc.msg, "nil tx.Data") {
+			tx.Data = nil
+		}
 
 		err := tx.ValidateBasic()
 
