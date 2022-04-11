@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	sdktx "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -23,6 +24,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/tharsis/ethermint/encoding"
 	"github.com/tharsis/ethermint/server/config"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/keeper"
@@ -186,7 +188,7 @@ func SimulateEthTx(ctx *simulateContext, from, to *common.Address, amount *big.I
 		return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgEthereumTx, "can not create valid eth tx"), nil, err
 	}
 
-	txConfig := NewTxConfig()
+	txConfig := encoding.MakeConfig(module.NewBasicManager()).TxConfig
 	txBuilder := txConfig.NewTxBuilder()
 	signedTx, err := GetSignedTx(ctx, txBuilder, ethTx, prv)
 	if err != nil {
@@ -262,14 +264,6 @@ func RandomTransferableAmount(ctx *simulateContext, address common.Address, gasL
 	}
 	amount = simAmount.BigInt()
 	return amount, nil
-}
-
-// TxConfig helps with pack the ethereum tx and deliver it.
-func NewTxConfig() client.TxConfig {
-	interfaceRegistry := codectypes.NewInterfaceRegistry()
-	marshaler := codec.NewProtoCodec(interfaceRegistry)
-	txConfig := tx.NewTxConfig(marshaler, tx.DefaultSignModes)
-	return txConfig
 }
 
 // Populate the signedTx with valid values
