@@ -1,7 +1,7 @@
 #!/bin/bash
 
 KEY="mykey"
-CHAINID="ethermint_9000-1"
+CHAINID="opti_9000-1"
 MONIKER="localtestnet"
 KEYRING="test"
 KEYALGO="eth_secp256k1"
@@ -15,8 +15,6 @@ command -v jq > /dev/null 2>&1 || { echo >&2 "jq not installed. More info: https
 
 # remove existing daemon and client
 rm -rf ~/.ethermintd*
-
-make install
 
 ethermintd config keyring-backend $KEYRING
 ethermintd config chain-id $CHAINID
@@ -81,10 +79,3 @@ ethermintd collect-gentxs
 
 # Run this to ensure everything worked and that the genesis file is setup correctly
 ethermintd validate-genesis
-
-if [[ $1 == "pending" ]]; then
-  echo "pending mode is on, please wait for the first block committed."
-fi
-
-# Start the node (remove the --pruning=nothing flag if historical queries are not needed)
-ethermintd start --pruning=nothing --evm.tracer=json $TRACE --log_level $LOGLEVEL --minimum-gas-prices=0.0001aphoton --json-rpc.api eth,txpool,personal,net,debug,web3,miner --api.enable
