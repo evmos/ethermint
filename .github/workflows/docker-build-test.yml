@@ -63,7 +63,6 @@ jobs:
       with:
         repository: celestiaorg/ephemeral-cluster
         path: ephemeral-cluster
-        ref: ethermint-chain
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
@@ -72,7 +71,7 @@ jobs:
       run: |
         export EVMOS_IMAGE_TAG=ethermint-$(git rev-parse --short "$GITHUB_SHA")
         cd ephemeral-cluster
-        scripts/min-cevmos.sh
+        scripts/minimal-cevmos.sh
     - name: "Test Cluster"
       run: | 
         docker ps -a
