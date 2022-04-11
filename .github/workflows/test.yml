@@ -21,6 +21,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
+          check-latest: true
       - name: Display Go Version
         run: go version
       - name: Install tparse
@@ -37,6 +38,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
+          check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.0.1
         with:
@@ -62,6 +64,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
+          check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
@@ -87,6 +90,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
+          check-latest: true
       - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
         with:
@@ -110,6 +114,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
+          check-latest: true
       - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
         with:
@@ -138,6 +143,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
+          check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.0.1
         with:
@@ -158,6 +164,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
+          check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.0.1
         with:
