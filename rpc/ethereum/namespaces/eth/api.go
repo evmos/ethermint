@@ -940,7 +940,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	if logs == nil {
-		receipt["logs"] = [][]*ethtypes.Log{}
+		receipt["logs"] = []*ethtypes.Log{}
 	}
 
 	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
@@ -957,6 +957,147 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	return receipt, nil
+}
+
+// GetTransactionReceiptsByBlock returns all the transaction receipts included in the block.
+func (e *PublicAPI) GetTransactionReceiptsByBlock(blockNrOrHash rpctypes.BlockNumberOrHash) ([]map[string]interface{}, error) {
+	var receipts []map[string]interface{}
+
+	e.logger.Debug("eth_getTransactionReceiptsByBlock", "blockNrOrHash", blockNrOrHash)
+
+	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+
+	resBlock, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
+	if err != nil {
+		e.logger.Debug("block not found", "height", blockNum, "error", err.Error())
+		return nil, nil
+	}
+
+	blockNumber := resBlock.Block.Height
+	blockHash := common.BytesToHash(resBlock.Block.Header.Hash()).Hex()
+
+	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, blockNum.TmHeight())
+	if err != nil {
+		e.logger.Debug("failed to retrieve block results", "height", blockNum, "error", err.Error())
+		return nil, nil
+	}
+
+	baseFee, err := e.backend.BaseFee(blockNum.Int64())
+	if err != nil {
+		return nil, err
+	}
+
+	txIndex := uint64(0)
+	cumulativeGasUsed := uint64(0)
+	for i, tx := range resBlock.Block.Txs {
+		txResult := blockRes.TxsResults[i]
+		if txResult.Code != 0 {
+			// skip failed transaction
+			continue
+		}
+
+		tx, err := e.clientCtx.TxConfig.TxDecoder()(tx)
+		if err != nil {
+			e.logger.Debug("decoding failed", "error", err.Error())
+			return nil, fmt.Errorf("failed to decode tx: %w", err)
+		}
+
+		msgEvents, err := rpctypes.ParseEthTxEvents(txResult.Events)
+		if err != nil {
+			e.logger.Debug("parse tx events failed", "txIndex", txIndex, "error", err.Error())
+			return nil, fmt.Errorf("failed to parse tx events: %d %w", txIndex, err)
+		}
+
+		if len(msgEvents) != len(tx.GetMsgs()) {
+			return nil, fmt.Errorf("wrong number of tx events: %d", txIndex)
+		}
+
+		msgCumulativeGasUsed := uint64(0)
+		for msgIndex, msg := range tx.GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				e.logger.Debug(fmt.Sprintf("invalid tx type: %T", msg))
+				return nil, fmt.Errorf("invalid tx type: %T", msg)
+			}
+
+			txData, err := evmtypes.UnpackTxData(ethMsg.Data)
+			if err != nil {
+				e.logger.Error("failed to unpack tx data", "error", err.Error())
+				return nil, err
+			}
+
+			var gasUsed uint64
+			if len(tx.GetMsgs()) == 1 {
+				// backward compatibility
+				gasUsed = uint64(txResult.GasUsed)
+			} else {
+				gasUsed = msgEvents[msgIndex].GasUsed
+			}
+
+			// Get the transaction result from the log
+			var status hexutil.Uint
+			if msgEvents[msgIndex].Failed {
+				status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
+			} else {
+				status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
+			}
+
+			from, err := ethMsg.GetSender(e.chainIDEpoch)
+			if err != nil {
+				return nil, err
+			}
+
+			logs := msgEvents[msgIndex].Logs
+			if logs == nil {
+				logs = []*ethtypes.Log{}
+			}
+			receipt := map[string]interface{}{
+				// Consensus fields: These fields are defined by the Yellow Paper
+				"status":            status,
+				"cumulativeGasUsed": hexutil.Uint64(cumulativeGasUsed + msgCumulativeGasUsed),
+				"logsBloom":         ethtypes.BytesToBloom(ethtypes.LogsBloom(logs)),
+				"logs":              logs,
+
+				// Implementation fields: These fields are added by geth when processing a transaction.
+				// They are stored in the chain database.
+				"transactionHash": ethMsg.Hash,
+				"contractAddress": nil,
+				"gasUsed":         hexutil.Uint64(gasUsed),
+				"type":            hexutil.Uint(txData.TxType()),
+
+				// Inclusion information: These fields provide information about the inclusion of the
+				// transaction corresponding to this receipt.
+				"blockHash":        blockHash,
+				"blockNumber":      hexutil.Uint64(blockNumber),
+				"transactionIndex": hexutil.Uint64(txIndex),
+
+				// sender and receiver (contract or EOA) addreses
+				"from": from,
+				"to":   txData.GetTo(),
+			}
+
+			// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
+			if txData.GetTo() == nil {
+				receipt["contractAddress"] = crypto.CreateAddress(from, txData.GetNonce())
+			}
+
+			if dynamicTx, ok := txData.(*evmtypes.DynamicFeeTx); ok {
+				receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
+			}
+
+			receipts = append(receipts, receipt)
+
+			msgCumulativeGasUsed += gasUsed
+			txIndex++
+		}
+		cumulativeGasUsed += msgCumulativeGasUsed
+		msgCumulativeGasUsed = 0
+	}
+
+	return receipts, nil
 }
 
 // GetPendingTransactions returns the transactions that are in the transaction pool

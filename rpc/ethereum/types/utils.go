@@ -16,12 +16,21 @@ import (
 
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/tharsis/ethermint/rpc/ethereum/backend"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
+
+// EthMsgEventParsed defines the attributes parsed from tx event.
+type EthMsgEventParsed struct {
+	Logs    []*ethtypes.Log
+	GasUsed uint64
+	TxIndex uint64
+	Failed  bool
+}
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
 func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) ([]*evmtypes.MsgEthereumTx, error) {
@@ -280,6 +289,44 @@ func FindTxAttributes(events []abci.Event, txHash string) (int, map[string]strin
 	}
 	// not found
 	return -1, nil
+}
+
+// ParseEthTxEvents parse eth attributes and logs for all messages in cosmos events.
+func ParseEthTxEvents(events []abci.Event)(msgs []EthMsgEventParsed, error) {
+	var msg *EthMsgEventParsed
+	for _, event := range events {
+		if event.Type == evmtypes.EventTypeEthereumTx {
+			// begining of a new message, finalize the last one
+			if msg != nil {
+				msgs = append(msgs, *msg)
+			}
+			msg = &EthMsgEventParsed{}
+			for _, attr := range event.Attributes {
+				if attr == byte[](evmtypes.AttributeKeyTxGasUsed) {
+					msg.GasUsed, err := strconv.ParseUint(value, 10, 64)
+					if err != nil {
+						return nil, err
+					}
+				} else if attr == byte[](evmtypes.AttributeKeyTxIndex) {
+					msg.TxIndex, err := strconv.ParseUint(value, 10, 64)
+					if err != nil {
+						return nil, err
+					}
+				} else if attr == byte[](evmtypes.AttributeKeyEthereumTxFailed) {
+					msg.Failed = true;
+				}
+			}
+		} else if event.Type == evmtypes.EventTypeTxLog {
+			msg.Logs, err := backend.ParseTxLogsFromEvent(event)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	if msg != nil {
+		msgs = append(msgs, *msg)
+	}
+	return
 }
 
 // FindTxAttributesByIndex search the msg in tx events by txIndex
