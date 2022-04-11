@@ -315,37 +315,52 @@ func (suite *MsgsTestSuite) TestFromEthereumTx() {
 		buildTx    func() *ethtypes.Transaction
 	}{
 		{"success, normal tx", true, func() *ethtypes.Transaction {
-			tx := ethtypes.NewTransaction(
-				0,
-				common.BigToAddress(big.NewInt(1)),
-				big.NewInt(10),
-				21000, big.NewInt(0),
-				nil,
-			)
+			tx := ethtypes.NewTx(&ethtypes.AccessListTx{
+				Nonce:    0,
+				Data:     nil,
+				To:       &suite.to,
+				Value:    big.NewInt(10),
+				GasPrice: big.NewInt(1),
+				Gas:      21000,
+			})
 			tx, err := ethtypes.SignTx(tx, ethtypes.NewEIP2930Signer(suite.chainID), ethPriv)
 			suite.Require().NoError(err)
 			return tx
 		}},
+		{"success, DynamicFeeTx", true, func() *ethtypes.Transaction {
+			tx := ethtypes.NewTx(&ethtypes.DynamicFeeTx{
+				Nonce: 0,
+				Data:  nil,
+				To:    &suite.to,
+				Value: big.NewInt(10),
+				Gas:   21000,
+			})
+			tx, err := ethtypes.SignTx(tx, ethtypes.NewLondonSigner(suite.chainID), ethPriv)
+			suite.Require().NoError(err)
+			return tx
+		}},
 		{"fail, value bigger than 256bits", false, func() *ethtypes.Transaction {
-			tx := ethtypes.NewTransaction(
-				0,
-				common.BigToAddress(big.NewInt(1)),
-				exp_10_80,
-				21000, big.NewInt(0),
-				nil,
-			)
+			tx := ethtypes.NewTx(&ethtypes.AccessListTx{
+				Nonce:    0,
+				Data:     nil,
+				To:       &suite.to,
+				Value:    exp_10_80,
+				GasPrice: big.NewInt(1),
+				Gas:      21000,
+			})
 			tx, err := ethtypes.SignTx(tx, ethtypes.NewEIP2930Signer(suite.chainID), ethPriv)
 			suite.Require().NoError(err)
 			return tx
 		}},
 		{"fail, gas price bigger than 256bits", false, func() *ethtypes.Transaction {
-			tx := ethtypes.NewTransaction(
-				0,
-				common.BigToAddress(big.NewInt(1)),
-				big.NewInt(10),
-				21000, exp_10_80,
-				nil,
-			)
+			tx := ethtypes.NewTx(&ethtypes.AccessListTx{
+				Nonce:    0,
+				Data:     nil,
+				To:       &suite.to,
+				Value:    big.NewInt(1),
+				GasPrice: exp_10_80,
+				Gas:      21000,
+			})
 			tx, err := ethtypes.SignTx(tx, ethtypes.NewEIP2930Signer(suite.chainID), ethPriv)
 			suite.Require().NoError(err)
 			return tx
