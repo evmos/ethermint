@@ -63,6 +63,7 @@ jobs:
       with:
         repository: celestiaorg/ephemeral-cluster
         path: ephemeral-cluster
+        ref: ethermint
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
@@ -71,9 +72,9 @@ jobs:
       run: |
         wget https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -O docker-compose
         chmod +x docker-compose
+        docker-compose -v
         export EVMOS_IMAGE_TAG=ethermint-$(git rev-parse --short "$GITHUB_SHA")
-        cd ephemeral-cluster
-        scripts/minimal-cevmos.sh
+        ephemeral-cluster/scripts/minimal-cevmos.sh
     - name: "Test Cluster"
       run: | 
         docker ps -a
