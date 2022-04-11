@@ -69,6 +69,7 @@ jobs:
         go-version: 1.17
     - name: "Setup Cluster"
       run: |
+        curl -fL https://raw.githubusercontent.com/docker/compose-switch/master/install_on_linux.sh | sh
         export EVMOS_IMAGE_TAG=ethermint-$(git rev-parse --short "$GITHUB_SHA")
         cd ephemeral-cluster
         scripts/minimal-cevmos.sh
