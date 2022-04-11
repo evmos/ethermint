@@ -70,13 +70,8 @@ jobs:
         go-version: 1.17
     - name: "Setup Cluster"
       run: |
-        wget https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-linux-x86_64 -O docker-compose
-        chmod +x docker-compose
-        echo "docker-compose -v"
-        docker-compose -v
-        echo "docker compose version"
-        docker compose version
         export EVMOS_IMAGE_TAG=ethermint-$(git rev-parse --short "$GITHUB_SHA")
+        echo $EVMOS_IMAGE_TAG
         cd ephemeral-cluster
         scripts/minimal-cevmos.sh
     - name: "Test Cluster"
