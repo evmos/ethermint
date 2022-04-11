@@ -1,14 +1,12 @@
-name: build-test-evmos
+name: docker-build-test
 
 on:
   push:
     branches:
-      - '**'
-    tags:
-      - 'v*.*.*'
+      - main
   pull_request:
-    branches:
-      - 'main'
+  release:
+    types: [published]
   workflow_dispatch:
 
 env:
@@ -29,20 +27,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - name: Clone evmos repo
-        uses: actions/checkout@v2
-        with:
-          repository: jbowen93/evmos
-          path: evmos
-      - name: Move Stuff and Tidy
-        run: |
-          ls
-          mv evmos ..
-          cd ..
-          cp -R ethermint evmos
-          cd evmos
-          go mod edit -replace=github.com/tharsis/ethermint=./ethermint
-          go mod tidy -compat=1.17 -e
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
@@ -63,12 +47,10 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ../evmos
           platforms: linux/amd64, linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          file: ../evmos/docker/Dockerfile
-
+          file: docker/Dockerfile
 
   test:
     needs: build
@@ -81,7 +63,7 @@ jobs:
       with:
         repository: celestiaorg/ephemeral-cluster
         path: ephemeral-cluster
-        ref: ethermint-chain
+        ref: ethermint
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
@@ -89,8 +71,9 @@ jobs:
     - name: "Setup Cluster"
       run: |
         export EVMOS_IMAGE_TAG=ethermint-$(git rev-parse --short "$GITHUB_SHA")
+        echo $EVMOS_IMAGE_TAG
         cd ephemeral-cluster
-        ./debug-start-cluster.sh 
+        scripts/minimal-cevmos.sh
     - name: "Test Cluster"
       run: | 
         docker ps -a
