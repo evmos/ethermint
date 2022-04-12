@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/version"
 
+	tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
@@ -28,6 +29,8 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 		sdkserver.ShowValidatorCmd(),
 		sdkserver.ShowAddressCmd(),
 		sdkserver.VersionCmd(),
+		tmcmd.ResetAllCmd,
+		tmcmd.ResetStateCmd,
 	)
 
 	startCmd := StartCmd(appCreator, defaultNodeHome)
@@ -35,7 +38,6 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 
 	rootCmd.AddCommand(
 		startCmd,
-		sdkserver.UnsafeResetAllCmd(),
 		tendermintCmd,
 		sdkserver.ExportCmd(appExport, defaultNodeHome),
 		version.NewVersionCommand(),
