@@ -2,54 +2,18 @@ package types
 
 import (
 	"math/big"
-	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/suite"
-	"github.com/tharsis/ethermint/tests"
 )
 
-type AccessListTxTestSuite struct {
-	suite.Suite
-
-	sdkInt         sdk.Int
-	uint64         uint64
-	bigInt         *big.Int
-	overflowBigInt *big.Int
-	sdkZeroInt     sdk.Int
-	sdkMinusOneInt sdk.Int
-	invalidAddr    string
-	addr           common.Address
-	hexAddr        string
-}
-
-func (suite *AccessListTxTestSuite) SetupTest() {
-	suite.sdkInt = sdk.NewInt(100)
-	suite.uint64 = suite.sdkInt.Uint64()
-	suite.bigInt = big.NewInt(1)
-	suite.overflowBigInt = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(256), nil)
-	suite.sdkZeroInt = sdk.ZeroInt()
-	suite.sdkMinusOneInt = sdk.NewInt(-1)
-	suite.invalidAddr = "123456"
-	suite.addr = tests.GenerateAddress()
-	suite.hexAddr = suite.addr.Hex()
-}
-
-func TestAccessListTxTestSuite(t *testing.T) {
-	suite.Run(t, new(AccessListTxTestSuite))
-}
-
-func (suite *AccessListTxTestSuite) TestAccessListTxCopy() {
+func (suite *TxDataTestSuite) TestAccessListTxCopy() {
 	tx := &AccessListTx{}
 	txCopy := tx.Copy()
 
 	suite.Require().Equal(&AccessListTx{}, txCopy)
-	// TODO: Test for different pointers
 }
 
-func (suite *AccessListTxTestSuite) TestAccessListTxGetGasTipCap() {
+func (suite *TxDataTestSuite) TestAccessListTxGetGasTipCap() {
 	testCases := []struct {
 		name string
 		tx   AccessListTx
@@ -71,7 +35,7 @@ func (suite *AccessListTxTestSuite) TestAccessListTxGetGasTipCap() {
 	}
 }
 
-func (suite *AccessListTxTestSuite) TestAccessListTxGetGasFeeCap() {
+func (suite *TxDataTestSuite) TestAccessListTxGetGasFeeCap() {
 	testCases := []struct {
 		name string
 		tx   AccessListTx
@@ -93,7 +57,7 @@ func (suite *AccessListTxTestSuite) TestAccessListTxGetGasFeeCap() {
 	}
 }
 
-func (suite *AccessListTxTestSuite) TestAccessListTxCost() {
+func (suite *TxDataTestSuite) TestAccessListTxCost() {
 	testCases := []struct {
 		name string
 		tx   AccessListTx
@@ -117,7 +81,7 @@ func (suite *AccessListTxTestSuite) TestAccessListTxCost() {
 	}
 }
 
-func (suite *AccessListTxTestSuite) TestAccessListTxEffectiveCost() {
+func (suite *TxDataTestSuite) TestAccessListTxEffectiveCost() {
 	testCases := []struct {
 		name    string
 		tx      AccessListTx
@@ -143,7 +107,7 @@ func (suite *AccessListTxTestSuite) TestAccessListTxEffectiveCost() {
 	}
 }
 
-func (suite *AccessListTxTestSuite) TestAccessListTxType() {
+func (suite *TxDataTestSuite) TestAccessListTxType() {
 	testCases := []struct {
 		name string
 		tx   AccessListTx
