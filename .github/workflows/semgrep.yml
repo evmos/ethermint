@@ -34,7 +34,7 @@ jobs:
           generateSarif: "1"
         if: "env.GIT_DIFF_FILTERED != ''"
       # Upload findings to GitHub Advanced Security Dashboard [step 2/2]
-      - name: Upload SARIF file for GitHub Advanced Security Dashboard
+      - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v1
         with:
           sarif_file: semgrep.sarif
