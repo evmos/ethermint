@@ -11,11 +11,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: celestiaorg/evmos
-  TAG_PREFIX: ethermint-
+  IMAGE_NAME: celestiaorg/ethermint
 
 jobs:
   build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: "ubuntu-latest"
     permissions:
       contents: write 
@@ -33,7 +33,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,prefix=${{ env.TAG_PREFIX }}
+            type=sha
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -53,6 +53,7 @@ jobs:
           file: docker/Dockerfile
 
   test:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -70,10 +71,10 @@ jobs:
         go-version: 1.17
     - name: "Setup Cluster"
       run: |
-        export EVMOS_IMAGE_TAG=ethermint-$(git rev-parse --short "$GITHUB_SHA")
-        echo $EVMOS_IMAGE_TAG
+        export ETHERMINT_IMAGE_TAG=sha-$(git rev-parse --short "$GITHUB_SHA")
+        echo $ETHERMINT_IMAGE_TAG
         cd ephemeral-cluster
-        scripts/minimal-cevmos.sh
+        scripts/minimal-ethermint.sh
     - name: "Test Cluster"
       run: | 
         docker ps -a
@@ -85,8 +86,8 @@ jobs:
         docker logs light0
         echo "------------- docker logs dalc0 -------------"
         docker logs dalc0
-        echo "------------- docker logs evmos0 -------------"
-        docker logs evmos0
+        echo "------------- docker logs ethermint0 -------------"
+        docker logs ethermint0
         cd /home/runner/work/ethermint/ethermint
         echo "------------- go test ./tests/rpc/... -------------"
         MODE=rpc HOST=http://127.0.0.1:8545 go test ./tests/rpc/... -v

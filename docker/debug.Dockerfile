@@ -10,15 +10,11 @@ ENV COSMOS_BUILD_OPTIONS nostrip
 # Set working directory for the build
 WORKDIR /src 
 
-COPY go.mod go.sum ./
-RUN go mod download
 COPY . .
+RUN go mod download
 
 # Build Delve
 RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH go install github.com/go-delve/delve/cmd/dlv@latest
-
-# Add source files
-COPY . .
 
 # Make the binary
 RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH make build 
