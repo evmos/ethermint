@@ -227,8 +227,8 @@ message EstimateGasResponse {
 message QueryTraceTxRequest {
   // msgEthereumTx for the requested transaction
   MsgEthereumTx msg = 1;
-  // transaction index
-  uint64 tx_index = 2 [deprecated = true];
+  // tx_index is not necessary anymore
+  reserved 2;
   // TraceConfig holds extra parameters to trace functions.
   TraceConfig trace_config = 3;
   // the predecessor transactions included in the same block
