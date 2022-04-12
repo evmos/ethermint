@@ -43,7 +43,6 @@ jobs:
       - uses: technote-space/get-diff-action@v6.0.1
         with:
           PATTERNS: |
-            **/**.sol
             **/**.go
             go.mod
             go.sum
@@ -69,71 +68,13 @@ jobs:
       - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
         with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
       - name: test-importer
         run: |
           make test-import
-        if: env.GIT_DIFF
-
-  test-solidity:
-    runs-on: ubuntu-latest
-    timeout-minutes: 240
-    strategy:
-      fail-fast: false
-      matrix:
-        batch: ['1-3', '2-3', '3-3']
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: 1.17
-          check-latest: true
-      - uses: technote-space/get-diff-action@v6.0.1
-        id: git_diff
-        with:
-          PATTERNS: |
-            **/**.sol
-            **/**.go
-            tests/solidity/**/*.js
-            tests/solidity/**/*.sh
-            go.mod
-            go.sum
-      - name: test-solidity
-        run: |
-          ./scripts/run-solidity-tests.sh --batch=${{ matrix.batch }}
-        if: env.GIT_DIFF
-
-  liveness-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: 1.17
-          check-latest: true
-      - uses: technote-space/get-diff-action@v6.0.1
-        id: git_diff
-        with:
-          PATTERNS: |
-            **/**.go
-            go.mod
-            go.sum
-      - name: Install Starport
-        run: |
-          curl https://get.starport.network/starport! | bash
-        if: env.GIT_DIFF
-      - name: Start Local Network via Starport
-        run: |
-          starport chain serve --reset-once -v -c ./starport.yml > starport.out 2>&1 &
-        if: env.GIT_DIFF
-      - name: Test Local Network Liveness
-        run: |
-          sleep 2m
-          ./contrib/scripts/test_localnet_liveness.sh 100 5 50 localhost
         if: env.GIT_DIFF
       
   test-rpc:
