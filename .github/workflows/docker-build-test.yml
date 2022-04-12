@@ -74,7 +74,7 @@ jobs:
         export ETHERMINT_IMAGE_TAG=sha-$(git rev-parse --short "$GITHUB_SHA")
         echo $ETHERMINT_IMAGE_TAG
         cd ephemeral-cluster
-        scripts/minimal-astria.sh
+        scripts/minimal-ethermint.sh
     - name: "Test Cluster"
       run: | 
         docker ps -a
@@ -86,8 +86,8 @@ jobs:
         docker logs light0
         echo "------------- docker logs dalc0 -------------"
         docker logs dalc0
-        echo "------------- docker logs evmos0 -------------"
-        docker logs evmos0
+        echo "------------- docker logs ethermint0 -------------"
+        docker logs ethermint0
         cd /home/runner/work/ethermint/ethermint
         echo "------------- go test ./tests/rpc/... -------------"
         MODE=rpc HOST=http://127.0.0.1:8545 go test ./tests/rpc/... -v
