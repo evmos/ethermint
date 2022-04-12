@@ -16,7 +16,7 @@ env:
 
 jobs:
   build:
-    if: ! github.event.pull_request.head.repo.fork
+    if: "! github.event.pull_request.head.repo.fork"
     runs-on: "ubuntu-latest"
     permissions:
       contents: write 
@@ -54,7 +54,7 @@ jobs:
           file: docker/Dockerfile
 
   test:
-    if: ! github.event.pull_request.head.repo.fork
+    if: "! github.event.pull_request.head.repo.fork"
     needs: build
     runs-on: ubuntu-latest
     steps:
