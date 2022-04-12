@@ -185,9 +185,8 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 		}
 
 		var msg map[string]interface{}
-		err = json.Unmarshal(mb, &msg)
-		if err != nil {
-			s.sendErrResponse(wsConn, "invalid request")
+		if err = json.Unmarshal(mb, &msg); err != nil {
+			s.sendErrResponse(wsConn, err.Error())
 			continue
 		}
 
@@ -195,20 +194,32 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 		method, ok := msg["method"].(string)
 		if !ok {
 			// otherwise, call the usual rpc server to respond
-			err = s.tcpGetAndSendResponse(wsConn, mb)
-			if err != nil {
+			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
 				s.sendErrResponse(wsConn, err.Error())
 			}
 
 			continue
 		}
 
-		connID := msg["id"].(float64)
+		connID, ok := msg["id"].(float64)
+		if !ok {
+			s.sendErrResponse(
+				wsConn,
+				fmt.Errorf("invalid type for connection ID: %T", msg["id"]).Error(),
+			)
+			continue
+		}
+
 		switch method {
 		case "eth_subscribe":
-			params := msg["params"].([]interface{})
-			if len(params) == 0 {
+			params, ok := msg["params"].([]interface{})
+			if !ok {
 				s.sendErrResponse(wsConn, "invalid parameters")
+				continue
+			}
+
+			if len(params) == 0 {
+				s.sendErrResponse(wsConn, "empty parameters")
 				continue
 			}
 
@@ -235,6 +246,12 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 				s.sendErrResponse(wsConn, "invalid parameters")
 				continue
 			}
+
+			if len(params) == 0 {
+				s.sendErrResponse(wsConn, "empty parameters")
+				continue
+			}
+
 			id, ok := params[0].(string)
 			if !ok {
 				s.sendErrResponse(wsConn, "invalid parameters")
@@ -247,6 +264,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 				delete(subscriptions, subID)
 				unsubFn()
 			}
+
 			res := &SubscriptionResponseJSON{
 				Jsonrpc: "2.0",
 				ID:      connID,
@@ -258,8 +276,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			}
 		default:
 			// otherwise, call the usual rpc server to respond
-			err = s.tcpGetAndSendResponse(wsConn, mb)
-			if err != nil {
+			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
 				s.sendErrResponse(wsConn, err.Error())
 			}
 		}
@@ -426,9 +443,9 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, subID rpc.ID, extra interfac
 		}
 
 		if params["address"] != nil {
-			address, ok := params["address"].(string)
-			addresses, sok := params["address"].([]interface{})
-			if !ok && !sok {
+			address, isString := params["address"].(string)
+			addresses, isSlice := params["address"].([]interface{})
+			if !isString && !isSlice {
 				err := errors.New("invalid addresses; must be address or array of addresses")
 				api.logger.Debug("invalid addresses", "type", fmt.Sprintf("%T", params["address"]))
 				return nil, err
@@ -438,7 +455,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, subID rpc.ID, extra interfac
 				crit.Addresses = []common.Address{common.HexToAddress(address)}
 			}
 
-			if sok {
+			if isSlice {
 				crit.Addresses = []common.Address{}
 				for _, addr := range addresses {
 					address, ok := addr.(string)
@@ -590,7 +607,12 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID rpc.ID)
 		for {
 			select {
 			case ev := <-txsCh:
-				data, _ := ev.Data.(tmtypes.EventDataTx)
+				data, ok := ev.Data.(tmtypes.EventDataTx)
+				if !ok {
+					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
+					continue
+				}
+
 				ethTxs, err := types.RawTxToEthTx(api.clientCtx, data.Tx)
 				if err != nil {
 					// not ethereum tx

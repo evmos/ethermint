@@ -24,10 +24,10 @@ jobs:
       - uses: technote-space/get-diff-action@v6.0.1
         id: git_diff
         with:
-          SUFFIX_FILTER: |
-            .go
-            .mod
-            .sum
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
       - run: |
           make build
         if: env.GIT_DIFF
