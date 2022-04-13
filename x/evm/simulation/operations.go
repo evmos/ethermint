@@ -41,9 +41,8 @@ const (
 )
 
 const (
-	WeightMsgEthSimpleTransfer = 100
-	WeightMsgEthCreateContract = 100
-	WeightMsgEthCallContract   = 100
+	WeightMsgEthSimpleTransfer = 50
+	WeightMsgEthCreateContract = 50
 )
 
 var ErrNoEnoughBalance = fmt.Errorf("no enough balance")
@@ -65,7 +64,6 @@ func WeightedOperations(
 	var (
 		weightMsgEthSimpleTransfer int
 		weightMsgEthCreateContract int
-		weightMsgEthCallContract   int
 	)
 
 	appParams.GetOrGenerate(cdc, OpWeightMsgEthSimpleTransfer, &weightMsgEthSimpleTransfer, nil,
@@ -77,12 +75,6 @@ func WeightedOperations(
 	appParams.GetOrGenerate(cdc, OpWeightMsgEthCreateContract, &weightMsgEthCreateContract, nil,
 		func(_ *rand.Rand) {
 			weightMsgEthCreateContract = WeightMsgEthCreateContract
-		},
-	)
-
-	appParams.GetOrGenerate(cdc, OpWeightMsgEthCallContract, &weightMsgEthCallContract, nil,
-		func(_ *rand.Rand) {
-			weightMsgEthCallContract = WeightMsgEthCallContract
 		},
 	)
 
