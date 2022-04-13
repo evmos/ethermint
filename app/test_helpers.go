@@ -76,7 +76,7 @@ func Setup(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState)
 }
 
 // RandomGenesisAccounts is used by the auth module to create random genesis accounts in simulation when a genesis.json is not specified.
-// In contrast, the default auth module's RandomGenesisAccounts implementation creates only base accounts and vestings accounts. 
+// In contrast, the default auth module's RandomGenesisAccounts implementation creates only base accounts and vestings accounts.
 func RandomGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAccounts {
 	emptyCodeHash := crypto.Keccak256(nil)
 	genesisAccs := make(authtypes.GenesisAccounts, len(simState.Accounts))
