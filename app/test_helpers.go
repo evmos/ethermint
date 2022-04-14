@@ -5,13 +5,16 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/tharsis/ethermint/encoding"
 	ethermint "github.com/tharsis/ethermint/types"
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -114,4 +117,59 @@ func RandomAccounts(r *rand.Rand, n int) []simtypes.Account {
 	}
 
 	return accs
+}
+
+// AppStateFn returns the initial application state using a genesis or the simulation parameters.
+// It is a wrapper of simapp.AppStateFn to replace evm param EvmDenom with staking param BondDenom.
+func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes.AppStateFn {
+	return func(r *rand.Rand, accs []simtypes.Account, config simtypes.Config,
+	) (appState json.RawMessage, simAccs []simtypes.Account, chainID string, genesisTimestamp time.Time) {
+		appStateFn := simapp.AppStateFn(cdc, simManager)
+		appState, accounts, chainID, genesisTimestamp := appStateFn(r, simAccs, config)
+
+		rawState := make(map[string]json.RawMessage)
+		err := json.Unmarshal(appState, &rawState)
+		if err != nil {
+			panic(err)
+		}
+
+		stakingStateBz, ok := rawState[stakingtypes.ModuleName]
+		if !ok {
+			panic("staking genesis state is missing")
+		}
+
+		stakingState := new(stakingtypes.GenesisState)
+		err = cdc.UnmarshalJSON(stakingStateBz, stakingState)
+		if err != nil {
+			panic(err)
+		}
+
+		// we should get the BondDenom and make it the evmdenom.
+		// thus simulation accounts could have positive amount of gas token.
+		bondDenom := stakingState.Params.BondDenom
+
+		evmStateBz, ok := rawState[evmtypes.ModuleName]
+		if !ok {
+			panic("staking genesis state is missing")
+		}
+
+		evmState := new(evmtypes.GenesisState)
+		err = cdc.UnmarshalJSON(evmStateBz, evmState)
+		if err != nil {
+			panic(err)
+		}
+
+		// we should replace the EvmDenom with BondDenom
+		evmState.Params.EvmDenom = bondDenom
+
+		// change appState back
+		rawState[evmtypes.ModuleName] = cdc.MustMarshalJSON(evmState)
+
+		// replace appstate
+		appState, err = json.Marshal(rawState)
+		if err != nil {
+			panic(err)
+		}
+		return appState, accounts, chainID, genesisTimestamp
+	}
 }
