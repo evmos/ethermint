@@ -42,6 +42,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (deps) [tharsis#1046](https://github.com/tharsis/ethermint/pull/1046) Bump Cosmos SDK version to [`v0.45.3`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.3)
 
+### Bug Fixes
+* (rpc) [tharsis#1050](https://github.com/tharsis/ethermint/pull/1050) `eth_getBlockByNumber` fix on batch transactions
+
 ## [v0.13.0] - 2022-04-05
 
 ### API Breaking
