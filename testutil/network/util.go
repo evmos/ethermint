@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
+	pvm "github.com/tendermint/tendermint/privval"
+
 	opticonf "github.com/celestiaorg/optimint/config"
 	opticonv "github.com/celestiaorg/optimint/conv"
 	optinode "github.com/celestiaorg/optimint/node"
@@ -45,7 +47,20 @@ func startInProcess(cfg Config, val *Validator) error {
 		return err
 	}
 
-	nodeKey, err := p2p.LoadOrGenNodeKey(tmCfg.PrivValidatorKeyFile())
+	nodeKey, err := p2p.LoadOrGenNodeKey(tmCfg.NodeKeyFile())
+	if err != nil {
+		return err
+	}
+	pval := pvm.LoadOrGenFilePV(tmCfg.PrivValidatorKeyFile(), tmCfg.PrivValidatorStateFile())
+	if err != nil {
+		return err
+	}
+	// keys in optimint format
+	p2pKey, err := opticonv.GetNodeKey(nodeKey)
+	if err != nil {
+		return err
+	}
+	signingKey, err := opticonv.GetNodeKey(&p2p.NodeKey{PrivKey: pval.Key.PrivKey})
 	if err != nil {
 		return err
 	}
@@ -54,10 +69,7 @@ func startInProcess(cfg Config, val *Validator) error {
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(tmCfg)
 	// node key in optimint format
-	oNodeKey, err := opticonv.GetNodeKey(nodeKey)
-	if err != nil {
-		return err
-	}
+
 	genesis, err := genDocProvider()
 	if err != nil {
 		return err
@@ -78,7 +90,8 @@ func startInProcess(cfg Config, val *Validator) error {
 	tmNode, err := optinode.NewNode(
 		context.Background(),
 		nodeConfig,
-		oNodeKey,
+		p2pKey,
+		signingKey,
 		proxy.NewLocalClientCreator(app),
 		genesis,
 		logger,

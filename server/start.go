@@ -11,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tendermint/tendermint/p2p"
+	pvm "github.com/tendermint/tendermint/privval"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
@@ -22,7 +25,6 @@ import (
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/proxy"
 	dbm "github.com/tendermint/tm-db"
 
@@ -292,18 +294,25 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
 
-	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.PrivValidatorKeyFile())
+	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
 	if err != nil {
-		logger.Error("failed load or gen key", "error", err.Error())
+		return err
+	}
+	pval := pvm.LoadOrGenFilePV(cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile())
+	if err != nil {
+		return err
+	}
+	// keys in optimint format
+	p2pKey, err := opticonv.GetNodeKey(nodeKey)
+	if err != nil {
+		return err
+	}
+	signingKey, err := opticonv.GetNodeKey(&p2p.NodeKey{PrivKey: pval.Key.PrivKey})
+	if err != nil {
 		return err
 	}
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(cfg)
-	// node key in optimint format
-	oNodeKey, err := opticonv.GetNodeKey(nodeKey)
-	if err != nil {
-		return err
-	}
 	genesis, err := genDocProvider()
 	if err != nil {
 		return err
@@ -321,7 +330,8 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	tmNode, err := optinode.NewNode(
 		context.Background(),
 		nodeConfig,
-		oNodeKey,
+		p2pKey,
+		signingKey,
 		proxy.NewLocalClientCreator(app),
 		genesis,
 		ctx.Logger,
