@@ -90,7 +90,7 @@ func WeightedOperations(
 	}
 }
 
-// SimulateEthSimpleTransfer simulate simple eth account transfering gas token.
+// SimulateEthSimpleTransfer simulate simple eth account transferring gas token.
 // It randomly choose sender, recipient and transferable amount.
 // Other tx details like nonce, gasprice, gaslimit are calculated to get valid value.
 func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtypes.Operation {
