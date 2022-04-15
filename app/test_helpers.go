@@ -125,7 +125,7 @@ func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simty
 	return func(r *rand.Rand, accs []simtypes.Account, config simtypes.Config,
 	) (appState json.RawMessage, simAccs []simtypes.Account, chainID string, genesisTimestamp time.Time) {
 		appStateFn := simapp.AppStateFn(cdc, simManager)
-		appState, accounts, chainID, genesisTimestamp := appStateFn(r, simAccs, config)
+		appState, simAccs, chainID, genesisTimestamp = appStateFn(r, accs, config)
 
 		rawState := make(map[string]json.RawMessage)
 		err := json.Unmarshal(appState, &rawState)
@@ -170,6 +170,6 @@ func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simty
 		if err != nil {
 			panic(err)
 		}
-		return appState, accounts, chainID, genesisTimestamp
+		return appState, simAccs, chainID, genesisTimestamp
 	}
 }
