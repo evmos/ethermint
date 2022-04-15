@@ -752,7 +752,7 @@ func (s *IntegrationTestSuite) TestPendingTransactionFilter() {
 	s.Require().Equal([]common.Hash{signedTx.Hash()}, filterResult)
 }
 
-//TODO add transactionIndex tests once we have OpenRPC interfaces
+// TODO: add transactionIndex tests once we have OpenRPC interfaces
 func (s *IntegrationTestSuite) TestBatchETHTransactions() {
 	const ethTxs = 2
 	txBuilder := s.network.Validators[0].ClientCtx.TxConfig.NewTxBuilder()
@@ -805,7 +805,7 @@ func (s *IntegrationTestSuite) TestBatchETHTransactions() {
 
 	fees := make(sdk.Coins, 0)
 	if feeAmount.Sign() > 0 {
-		fees = append(fees, sdk.NewCoin(res.GetParams().EvmDenom, feeAmount))
+		fees = feees.Add(sdk.Coin{Denom: res.Params.EvmDenom,  Amount: feeAmount})
 	}
 
 	builder.SetExtensionOptions(option)
