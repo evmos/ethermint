@@ -136,7 +136,6 @@ func (s *IntegrationTestSuite) TestBlock() {
 	s.Require().NotNil(blockByNum)
 
 	// compare the ethereum header with the tendermint header
-	s.Require().Equal(len(block.Block.Txs), len(blockByNum.Body().Transactions))
 	s.Require().Equal(block.Block.LastBlockID.Hash.Bytes(), blockByNum.Header().ParentHash.Bytes())
 
 	hash := common.BytesToHash(block.Block.Hash())
@@ -147,7 +146,12 @@ func (s *IntegrationTestSuite) TestBlock() {
 	blockByHash, err := s.network.Validators[0].JSONRPCClient.BlockByHash(s.ctx, hash)
 	s.Require().NoError(err)
 	s.Require().NotNil(blockByHash)
-	s.Require().Equal(blockByNum, blockByHash)
+
+	//Compare blockByNumber and blockByHash results
+	s.Require().Equal(blockByNum.Hash(), blockByHash.Hash())
+	s.Require().Equal(blockByNum.Transactions().Len(), blockByHash.Transactions().Len())
+	s.Require().Equal(blockByNum.ParentHash(), blockByHash.ParentHash())
+	s.Require().Equal(blockByNum.Root(), blockByHash.Root())
 
 	// TODO: parse Tm block to Ethereum and compare
 }
@@ -805,7 +809,7 @@ func (s *IntegrationTestSuite) TestBatchETHTransactions() {
 
 	fees := make(sdk.Coins, 0)
 	if feeAmount.Sign() > 0 {
-		fees = feees.Add(sdk.Coin{Denom: res.Params.EvmDenom,  Amount: feeAmount})
+		fees = fees.Add(sdk.Coin{Denom: res.Params.EvmDenom, Amount: feeAmount})
 	}
 
 	builder.SetExtensionOptions(option)
