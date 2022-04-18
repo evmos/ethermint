@@ -140,7 +140,6 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 
 	traceTxRequest := evmtypes.QueryTraceTxRequest{
 		Msg:          ethMessage,
-		TxIndex:      uint64(transaction.Index),
 		Predecessors: predecessors,
 		BlockNumber:  blk.Block.Height,
 		BlockTime:    blk.Block.Time,
