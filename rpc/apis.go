@@ -3,6 +3,8 @@
 package rpc
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 
@@ -35,102 +37,119 @@ const (
 	apiVersion = "1.0"
 )
 
-// GetRPCAPIs returns the list of all APIs
-func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
-	nonceLock := new(types.AddrLocker)
-	evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+// APICreator creates the json-rpc api implementations.
+type APICreator = func(*server.Context, client.Context, *rpcclient.WSClient) []rpc.API
 
-	var apis []rpc.API
-	// remove duplicates
-	selectedAPIs = unique(selectedAPIs)
+// apiCreators defines the json-rpc api namespaces.
+var apiCreators map[string]APICreator
 
-	for index := range selectedAPIs {
-		switch selectedAPIs[index] {
-		case EthNamespace:
-			apis = append(apis,
-				rpc.API{
+func init() {
+	apiCreators = map[string]APICreator{
+		EthNamespace: func(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
+			nonceLock := new(types.AddrLocker)
+			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			return []rpc.API{
+				{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
 					Service:   eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock),
 					Public:    true,
 				},
-				rpc.API{
+				{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
 					Service:   filters.NewPublicAPI(ctx.Logger, clientCtx, tmWSClient, evmBackend),
 					Public:    true,
 				},
-			)
-		case Web3Namespace:
-			apis = append(apis,
-				rpc.API{
+			}
+		},
+		Web3Namespace: func(*server.Context, client.Context, *rpcclient.WSClient) []rpc.API {
+			return []rpc.API{
+				{
 					Namespace: Web3Namespace,
 					Version:   apiVersion,
 					Service:   web3.NewPublicAPI(),
 					Public:    true,
 				},
-			)
-		case NetNamespace:
-			apis = append(apis,
-				rpc.API{
+			}
+		},
+		NetNamespace: func(_ *server.Context, clientCtx client.Context, _ *rpcclient.WSClient) []rpc.API {
+			return []rpc.API{
+				{
 					Namespace: NetNamespace,
 					Version:   apiVersion,
 					Service:   net.NewPublicAPI(clientCtx),
 					Public:    true,
 				},
-			)
-		case PersonalNamespace:
-			apis = append(apis,
-				rpc.API{
+			}
+		},
+		PersonalNamespace: func(ctx *server.Context, clientCtx client.Context, _ *rpcclient.WSClient) []rpc.API {
+			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			return []rpc.API{
+				{
 					Namespace: PersonalNamespace,
 					Version:   apiVersion,
 					Service:   personal.NewAPI(ctx.Logger, clientCtx, evmBackend),
 					Public:    false,
 				},
-			)
-		case TxPoolNamespace:
-			apis = append(apis,
-				rpc.API{
+			}
+		},
+		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ *rpcclient.WSClient) []rpc.API {
+			return []rpc.API{
+				{
 					Namespace: TxPoolNamespace,
 					Version:   apiVersion,
 					Service:   txpool.NewPublicAPI(ctx.Logger),
 					Public:    true,
 				},
-			)
-		case DebugNamespace:
-			apis = append(apis,
-				rpc.API{
+			}
+		},
+		DebugNamespace: func(ctx *server.Context, clientCtx client.Context, _ *rpcclient.WSClient) []rpc.API {
+			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			return []rpc.API{
+				{
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
 					Service:   debug.NewAPI(ctx, evmBackend, clientCtx),
 					Public:    true,
 				},
-			)
-		case MinerNamespace:
-			apis = append(apis,
-				rpc.API{
+			}
+		},
+		MinerNamespace: func(ctx *server.Context, clientCtx client.Context, _ *rpcclient.WSClient) []rpc.API {
+			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			return []rpc.API{
+				{
 					Namespace: MinerNamespace,
 					Version:   apiVersion,
 					Service:   miner.NewPrivateAPI(ctx, clientCtx, evmBackend),
 					Public:    false,
 				},
-			)
-		default:
-			ctx.Logger.Error("invalid namespace value", "namespace", selectedAPIs[index])
+			}
+		},
+	}
+}
+
+// GetRPCAPIs returns the list of all APIs
+func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
+	var apis []rpc.API
+
+	for _, ns := range selectedAPIs {
+		if creator, ok := apiCreators[ns]; ok {
+			apis = append(apis, creator(ctx, clientCtx, tmWSClient)...)
+		} else {
+			ctx.Logger.Error("invalid namespace value", "namespace", ns)
 		}
 	}
 
 	return apis
 }
 
-func unique(intSlice []string) []string {
-	keys := make(map[string]bool)
-	var list []string
-	for _, entry := range intSlice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
+// RegisterAPINamespace registers a new API namespace with the API creator.
+// This function fails if the namespace is already registered.
+func RegisterAPINamespace(ns string, creator APICreator) error {
+	if _, ok := apiCreators[ns]; ok {
+		return fmt.Errorf("duplicated api namespace %s", ns)
 	}
-	return list
+	apiCreators[ns] = creator
+	return nil
 }
