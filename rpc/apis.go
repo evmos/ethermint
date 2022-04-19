@@ -132,8 +132,6 @@ func init() {
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, selectedAPIs []string) []rpc.API {
 	var apis []rpc.API
-	// remove duplicates
-	selectedAPIs = unique(selectedAPIs)
 
 	for _, ns := range selectedAPIs {
 		if creator, ok := apiCreators[ns]; ok {
@@ -146,7 +144,8 @@ func GetRPCAPIs(ctx *server.Context, clientCtx client.Context, tmWSClient *rpccl
 	return apis
 }
 
-// RegisterAPINamespace registers an api namespace with the api creator.
+// RegisterAPINamespace registers a new API namespace with the API creator.
+// This function fails if the namespace is already registered.
 func RegisterAPINamespace(ns string, creator APICreator) error {
 	if _, ok := apiCreators[ns]; ok {
 		return fmt.Errorf("duplicated api namespace %s", ns)
