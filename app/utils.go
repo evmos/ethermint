@@ -139,10 +139,7 @@ func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simty
 		}
 
 		stakingState := new(stakingtypes.GenesisState)
-		err = cdc.UnmarshalJSON(stakingStateBz, stakingState)
-		if err != nil {
-			panic(err)
-		}
+		cdc.MustUnmarshalJSON(stakingStateBz, stakingState)
 
 		// we should get the BondDenom and make it the evmdenom.
 		// thus simulation accounts could have positive amount of gas token.
@@ -154,10 +151,7 @@ func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simty
 		}
 
 		evmState := new(evmtypes.GenesisState)
-		err = cdc.UnmarshalJSON(evmStateBz, evmState)
-		if err != nil {
-			panic(err)
-		}
+		cdc.MustUnmarshalJSON(evmStateBz, evmState)
 
 		// we should replace the EvmDenom with BondDenom
 		evmState.Params.EvmDenom = bondDenom
