@@ -85,6 +85,37 @@ func TestValidateAddress(t *testing.T) {
 	}
 }
 
+func TestValidateNonZeroAddress(t *testing.T) {
+	testCases := []struct {
+		name     string
+		address  string
+		expError bool
+	}{
+		{
+			"empty string", "", true,
+		},
+		{
+			"invalid address", "0x", true,
+		},
+		{
+			"zero address", common.Address{}.String(), true,
+		},
+		{
+			"valid address", tests.GenerateAddress().Hex(), false,
+		},
+	}
+
+	for _, tc := range testCases {
+		err := ValidateNonZeroAddress(tc.address)
+
+		if tc.expError {
+			require.Error(t, err, tc.name)
+		} else {
+			require.NoError(t, err, tc.name)
+		}
+	}
+}
+
 func TestSafeInt64(t *testing.T) {
 	testCases := []struct {
 		name     string
