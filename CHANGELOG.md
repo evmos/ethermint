@@ -45,7 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [tharsis#1050](https://github.com/tharsis/ethermint/pull/1050) `eth_getBlockByNumber` fix on batch transactions
-* (app) [tharsis#996](https://github.com/tharsis/ethermint/pull/996) Support simulations for the EVM.
+* (app) [tharsis#658](https://github.com/tharsis/ethermint/issues/658) Support simulations for the EVM.
 
 ### API Breaking
 
