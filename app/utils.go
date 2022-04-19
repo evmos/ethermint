@@ -119,9 +119,9 @@ func RandomAccounts(r *rand.Rand, n int) []simtypes.Account {
 	return accs
 }
 
-// AppStateFn returns the initial application state using a genesis or the simulation parameters.
+// StateFn returns the initial application state using a genesis or the simulation parameters.
 // It is a wrapper of simapp.AppStateFn to replace evm param EvmDenom with staking param BondDenom.
-func AppStateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes.AppStateFn {
+func StateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes.AppStateFn {
 	return func(r *rand.Rand, accs []simtypes.Account, config simtypes.Config,
 	) (appState json.RawMessage, simAccs []simtypes.Account, chainID string, genesisTimestamp time.Time) {
 		appStateFn := simapp.AppStateFn(cdc, simManager)
