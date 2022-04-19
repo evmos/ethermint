@@ -783,7 +783,6 @@ QueryTraceTxRequest defines TraceTx request
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `msg` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) |  | msgEthereumTx for the requested transaction |
-| `tx_index` | [uint64](#uint64) |  | transaction index |
 | `trace_config` | [TraceConfig](#ethermint.evm.v1.TraceConfig) |  | TraceConfig holds extra parameters to trace functions. |
 | `predecessors` | [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx) | repeated | the predecessor transactions included in the same block need to be replayed first to get correct context for tracing. |
 | `block_number` | [int64](#int64) |  | block number of requested transaction |
