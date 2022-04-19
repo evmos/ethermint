@@ -15,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
@@ -72,6 +71,8 @@ func TestFullAppSimulation(t *testing.T) {
 	}
 	require.NoError(t, err, "simulation setup failed")
 
+	config.ChainID = SimAppChainID
+
 	defer func() {
 		db.Close()
 		require.NoError(t, os.RemoveAll(dir))
@@ -85,8 +86,8 @@ func TestFullAppSimulation(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		simapp.AppStateFn(app.AppCodec(), app.SimulationManager()),
-		simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
+		StateFn(app.AppCodec(), app.SimulationManager()),
+		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
 		simapp.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
@@ -110,6 +111,8 @@ func TestAppImportExport(t *testing.T) {
 	}
 	require.NoError(t, err, "simulation setup failed")
 
+	config.ChainID = SimAppChainID
+
 	defer func() {
 		db.Close()
 		require.NoError(t, os.RemoveAll(dir))
@@ -123,8 +126,8 @@ func TestAppImportExport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		simapp.AppStateFn(app.AppCodec(), app.SimulationManager()),
-		simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
+		StateFn(app.AppCodec(), app.SimulationManager()),
+		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
 		simapp.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
@@ -163,8 +166,8 @@ func TestAppImportExport(t *testing.T) {
 	err = json.Unmarshal(exported.AppState, &genesisState)
 	require.NoError(t, err)
 
-	ctxA := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
-	ctxB := newApp.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
+	ctxA := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight(), ChainID: SimAppChainID})
+	ctxB := newApp.NewContext(true, tmproto.Header{Height: app.LastBlockHeight(), ChainID: SimAppChainID})
 	newApp.mm.InitGenesis(ctxB, app.AppCodec(), genesisState)
 	newApp.StoreConsensusParams(ctxB, exported.ConsensusParams)
 
@@ -210,6 +213,8 @@ func TestAppSimulationAfterImport(t *testing.T) {
 	}
 	require.NoError(t, err, "simulation setup failed")
 
+	config.ChainID = SimAppChainID
+
 	defer func() {
 		db.Close()
 		require.NoError(t, os.RemoveAll(dir))
@@ -223,8 +228,8 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		simapp.AppStateFn(app.AppCodec(), app.SimulationManager()),
-		simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
+		StateFn(app.AppCodec(), app.SimulationManager()),
+		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
 		simapp.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
@@ -264,6 +269,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 	require.Equal(t, appName, newApp.Name())
 
 	newApp.InitChain(abci.RequestInitChain{
+		ChainId:       SimAppChainID,
 		AppStateBytes: exported.AppState,
 	})
 
@@ -271,8 +277,8 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		t,
 		os.Stdout,
 		newApp.BaseApp,
-		simapp.AppStateFn(app.AppCodec(), app.SimulationManager()),
-		simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
+		StateFn(app.AppCodec(), app.SimulationManager()),
+		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
 		simapp.SimulationOperations(newApp, newApp.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
@@ -322,8 +328,8 @@ func TestAppStateDeterminism(t *testing.T) {
 				t,
 				os.Stdout,
 				app.BaseApp,
-				simapp.AppStateFn(app.AppCodec(), app.SimulationManager()),
-				simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
+				StateFn(app.AppCodec(), app.SimulationManager()),
+				RandomAccounts, // Replace with own random account function if using keys other than secp256k1
 				simapp.SimulationOperations(app, app.AppCodec(), config),
 				app.ModuleAccountAddrs(),
 				config,
