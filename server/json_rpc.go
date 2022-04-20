@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net"
 	"net/http"
 	"time"
 
@@ -50,6 +51,25 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEn
 		}
 	}
 
+	ln, err := net.Listen("tcp", config.JSONRPC.Address)
+	if err != nil {
+		ctx.Logger.Error("failed to start JSON-RPC server", "error", err.Error())
+		return nil, nil, err
+	}
+
+	// register OpenRPC Discover endpoint
+	openRPCDoc := rpc.NewOpenRPCDocument()
+	rpc.RegisterOpenRPCAPIs(openRPCDoc, apis)
+	discoverService := rpc.NewDiscoveryService(openRPCDoc)
+	openRPCDoc.RegisterListener(ln)
+	if err := rpcServer.RegisterName("rpc", discoverService); err != nil {
+		ctx.Logger.Error(
+			"failed to register discovery service",
+		)
+		return nil, nil, err
+	}
+	openRPCDoc.WithMeta(rpc.MetaRegistererForURL("http://"))
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", rpcServer.ServeHTTP).Methods("POST")
 
@@ -70,7 +90,7 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEn
 	errCh := make(chan error)
 	go func() {
 		ctx.Logger.Info("Starting JSON-RPC server", "address", config.JSONRPC.Address)
-		if err := httpSrv.ListenAndServe(); err != nil {
+		if err := httpSrv.Serve(ln); err != nil {
 			if err == http.ErrServerClosed {
 				close(httpSrvDone)
 				return
