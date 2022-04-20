@@ -93,11 +93,7 @@ endif
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))
 
-BUILD_FLAGS := -tags "$(build_tags)"
-## check for nostrip option
-#ifeq (,$(findstring nostrip,$(COSMOS_BUILD_OPTIONS)))
-#  BUILD_FLAGS += -trimpath
-#endif
+BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
 # # The below include contains the tools and runsim targets.
 # include contrib/devtools/Makefile
