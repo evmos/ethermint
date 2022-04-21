@@ -960,7 +960,7 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 // mitigate the base fee changes.
 func (e *EVMBackend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 	if baseFee == nil {
-		// london hardfork not enabled or feemarket not enabeld
+		// london hardfork not enabled or feemarket not enabled
 		return big.NewInt(0), nil
 	}
 
