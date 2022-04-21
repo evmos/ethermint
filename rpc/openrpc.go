@@ -13,19 +13,19 @@ import (
 	meta_schema "github.com/open-rpc/meta-schema"
 )
 
-// RPCDiscoveryService defines a receiver type used for RPC discovery by reflection.
-type RPCDiscoveryService struct {
+// DiscoveryService defines a receiver type used for RPC discovery by reflection.
+type DiscoveryService struct {
 	d *go_openrpc_reflect.Document
 }
 
-func NewDiscoveryService(d *go_openrpc_reflect.Document) *RPCDiscoveryService {
-	return &RPCDiscoveryService{
+func NewDiscoveryService(d *go_openrpc_reflect.Document) *DiscoveryService {
+	return &DiscoveryService{
 		d,
 	}
 }
 
 // Discover exposes a Discover method to the RPC receiver registration.
-func (r *RPCDiscoveryService) Discover() (*meta_schema.OpenrpcDocument, error) {
+func (r *DiscoveryService) Discover() (*meta_schema.OpenrpcDocument, error) {
 	return r.d.Discover()
 }
 
