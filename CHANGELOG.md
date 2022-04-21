@@ -50,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (ci, evm) [tharsis#1063](https://github.com/tharsis/ethermint/pull/1063) Run simulations on CI.
+* (ante) [tharsis#1060](https://github.com/tharsis/ethermint/pull/1060) Check EnableCreate/EnableCall in ante handler.
 
 ### Bug Fixes
 
