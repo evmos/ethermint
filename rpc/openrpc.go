@@ -1,12 +1,15 @@
 package rpc
 
 import (
-	"github.com/ethereum/go-ethereum/rpc"
 	"go/ast"
 	"net"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/ethereum/go-ethereum/rpc"
 
 	go_openrpc_reflect "github.com/etclabscore/go-openrpc-reflect"
 	"github.com/ethereum/go-ethereum/params"
@@ -57,7 +60,7 @@ var sharedMetaRegisterer = &go_openrpc_reflect.MetaT{
 // Since we can't get the protocol scheme from the net.Listener itself, we have to define this for each
 // transport-specific document.
 func MetaRegistererForURL(scheme string) *go_openrpc_reflect.MetaT {
-	var metaRegisterer = *sharedMetaRegisterer
+	metaRegisterer := *sharedMetaRegisterer
 	metaRegisterer.GetServersFn = func() func(listeners []net.Listener) (*meta_schema.Servers, error) {
 		return func(listeners []net.Listener) (*meta_schema.Servers, error) {
 			servers := []meta_schema.ServerObject{}
