@@ -16,19 +16,24 @@ import (
 func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	params := k.GetParams(ctx)
 
-	// Ignore the calculation if not enable
+	// Ignore the calculation if not enabled
 	if !params.IsBaseFeeEnabled(ctx.BlockHeight()) {
 		return nil
 	}
 
 	consParams := ctx.ConsensusParams()
 
-	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
+	// If the current block is the first EIP-1559 block, return the base fee
+	// defined in the parameters (DefaultBaseFee if it hasn't been changed by
+	// governance).
 	if ctx.BlockHeight() == params.EnableHeight {
 		return params.BaseFee.BigInt()
 	}
 
 	// get the block gas used and the base fee values for the parent block.
+	// NOTE: this is not the parent's base fee but the current block's base fee,
+	// as it is retrieved from the transient store, which is committed to the
+	// persistent KVStore after EndBlock (ABCI Commit).
 	parentBaseFee := params.BaseFee.BigInt()
 	if parentBaseFee == nil {
 		return nil
@@ -37,10 +42,14 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	parentGasUsed := k.GetBlockGasUsed(ctx)
 
 	gasLimit := new(big.Int).SetUint64(math.MaxUint64)
+
+	// NOTE: a MaxGas equal to -1 means that block gas is unlimited
 	if consParams != nil && consParams.Block.MaxGas > -1 {
 		gasLimit = big.NewInt(consParams.Block.MaxGas)
 	}
 
+	// CONTRACT: ElasticityMultiplier cannot be 0 as it's checked in the params
+	// validation
 	parentGasTargetBig := new(big.Int).Div(gasLimit, new(big.Int).SetUint64(uint64(params.ElasticityMultiplier)))
 	if !parentGasTargetBig.IsUint64() {
 		return nil
