@@ -77,7 +77,7 @@ func TestAppStateFn(t *testing.T) {
 	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, simapp.FlagPeriodValue, MakeEncodingConfig(), simapp.EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
-	appStateFn := AppStateFn(app.AppCodec(), app.SimulationManager())
+	appStateFn := StateFn(app.AppCodec(), app.SimulationManager())
 	r := rand.New(rand.NewSource(seed))
 	accounts := RandomAccounts(r, rand.Intn(maxTestingAccounts))
 	appState, _, _, _ := appStateFn(r, accounts, config)
