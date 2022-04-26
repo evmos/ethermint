@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+* (rpc) [tharsis#1059](https://github.com/tharsis/ethermint/pull/1059) Remove unnecessary event filtering logic on the `eth_baseFee` JSON-RPC endpoint.
+
 ## [v0.14.0] - 2022-04-19
 
 ### API Breaking
