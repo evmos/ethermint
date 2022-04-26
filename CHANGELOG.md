@@ -38,19 +38,25 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Bug Fixes
+
+* (rpc) [tharsis#1059](https://github.com/tharsis/ethermint/pull/1059) Remove unnecessary event filtering logic on the `eth_baseFee` JSON-RPC endpoint.
+
+## [v0.14.0] - 2022-04-19
+
+### API Breaking
+
+* (evm) [tharsis#1051](https://github.com/tharsis/ethermint/pull/1051) Context block height fix on TraceTx. Removes `tx_index` on `QueryTraceTxRequest` proto type.
+
 ### Improvements
 
 * (deps) [tharsis#1046](https://github.com/tharsis/ethermint/pull/1046) Bump Cosmos SDK version to [`v0.45.3`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.3)
-* (rpc) [tharsis#1056](https://github.com/tharsis/ethermint/pull/1056) Make json-rpc namespaces extensible
+* (rpc) [tharsis#1056](https://github.com/tharsis/ethermint/pull/1056) Make json-rpc namespaces extensible
 
 ### Bug Fixes
 
 * (rpc) [tharsis#1050](https://github.com/tharsis/ethermint/pull/1050) `eth_getBlockByNumber` fix on batch transactions
 * (app) [tharsis#658](https://github.com/tharsis/ethermint/issues/658) Support simulations for the EVM.
-
-### API Breaking
-
-* (evm) [tharsis#1051](https://github.com/tharsis/ethermint/pull/1051) Context block height fix on TraceTx. Removes `tx_index` on `QueryTraceTxRequest` proto type.
 
 ## [v0.13.0] - 2022-04-05
 

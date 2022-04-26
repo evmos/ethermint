@@ -960,7 +960,7 @@ func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 // mitigate the base fee changes.
 func (e *EVMBackend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 	if baseFee == nil {
-		// london hardfork not enabled or feemarket not enabeld
+		// london hardfork not enabled or feemarket not enabled
 		return big.NewInt(0), nil
 	}
 
@@ -986,42 +986,27 @@ func (e *EVMBackend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 	return big.NewInt(maxDelta), nil
 }
 
-// BaseFee returns the base fee tracked by the Fee Market module. If the base fee is not enabled,
-// it returns the initial base fee amount. Return nil if London is not activated.
+// BaseFee returns the base fee tracked by the Fee Market module.
+// If the base fee is not enabled globally, the query returns nil.
+// If the London hard fork is not activated at the current height, the query will
+// return nil.
 func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
 	cfg := e.ChainConfig()
 	if !cfg.IsLondon(new(big.Int).SetInt64(height)) {
 		return nil, nil
 	}
 
-	// Checks the feemarket param NoBaseFee settings, return 0 if it is enabled.
-	resParams, err := e.queryClient.FeeMarket.Params(types.ContextWithHeight(height), &feemarkettypes.QueryParamsRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	if resParams.Params.NoBaseFee {
-		return big.NewInt(0), nil
-	}
-
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &height)
-	if err != nil {
-		return nil, err
-	}
-
-	baseFee := types.BaseFeeFromEvents(blockRes.BeginBlockEvents)
-	if baseFee != nil {
-		return baseFee, nil
-	}
-
-	// If we cannot find in events, we tried to get it from the state.
-	// It will return feemarket.baseFee if london is activated but feemarket is not enable
+	// return BaseFee if London hard fork is activated and feemarket is not enabled
 	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
-	if err == nil && res.BaseFee != nil {
-		return res.BaseFee.BigInt(), nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil
+	if res.BaseFee == nil {
+		return nil, nil
+	}
+
+	return res.BaseFee.BigInt(), nil
 }
 
 // GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
