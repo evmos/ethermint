@@ -15,13 +15,13 @@ func NewDecodeStore() func(kvA, kvB kv.Pair) string {
 	return func(kvA, kvB kv.Pair) string {
 		switch {
 		case bytes.Equal(kvA.Key[:1], types.KeyPrefixStorage):
-			storageHashA := common.BytesToHash(kvA.Value).Hex()
-			storageHashB := common.BytesToHash(kvB.Value).Hex()
+			storageA := common.BytesToHash(kvA.Value).Hex()
+			storageB := common.BytesToHash(kvB.Value).Hex()
 
-			return fmt.Sprintf("%v\n%v", storageHashA, storageHashB)
+			return fmt.Sprintf("%v\n%v", storageA, storageB)
 		case bytes.Equal(kvA.Key[:1], types.KeyPrefixCode):
-			codeHashA := common.BytesToHash(kvA.Value).Hex()
-			codeHashB := common.BytesToHash(kvB.Value).Hex()
+			codeHashA := common.Bytes2Hex(kvA.Value)
+			codeHashB := common.Bytes2Hex(kvB.Value)
 
 			return fmt.Sprintf("%v\n%v", codeHashA, codeHashB)
 		default:
