@@ -11,13 +11,11 @@ import (
 )
 
 const (
-	enableCreateKey = "enable_create"
-	enableCallKey   = "enable_call"
-	extraEIPsKey    = "extra_eips"
+	extraEIPsKey = "extra_eips"
 )
 
 // GenExtraEIPs randomly generates specific extra eips or not.
-func genExtraEIPs(r *rand.Rand) []int64 {
+func GenExtraEIPs(r *rand.Rand) []int64 {
 	var extraEIPs []int64
 	// 50% chance of having extra eips
 	if r.Intn(2) == 0 {
@@ -26,13 +24,13 @@ func genExtraEIPs(r *rand.Rand) []int64 {
 	return extraEIPs
 }
 
-func genEnableCreate(r *rand.Rand) bool {
+func GenEnableCreate(r *rand.Rand) bool {
 	// 80% chance of enabling create contract
 	enableCreate := r.Intn(100) < 80
 	return enableCreate
 }
 
-func genEnableCall(r *rand.Rand) bool {
+func GenEnableCall(r *rand.Rand) bool {
 	// 80% chance of enabling evm account transfer and calling contract
 	enableCall := r.Intn(100) < 80
 	return enableCall
@@ -47,7 +45,7 @@ func RandomizedGenState(simState *module.SimulationState) {
 
 	simState.AppParams.GetOrGenerate(
 		simState.Cdc, extraEIPsKey, &extraEIPs, simState.Rand,
-		func(r *rand.Rand) { extraEIPs = genExtraEIPs(r) },
+		func(r *rand.Rand) { extraEIPs = GenExtraEIPs(r) },
 	)
 
 	params := types.NewParams(types.DefaultEVMDenom, true, true, types.DefaultChainConfig(), extraEIPs...)
