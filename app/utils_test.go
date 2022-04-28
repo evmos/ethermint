@@ -59,7 +59,7 @@ func TestRandomGenesisAccounts(t *testing.T) {
 	}
 }
 
-func TestAppStateFn(t *testing.T) {
+func TestStateFn(t *testing.T) {
 	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
 	if skip {
 		t.Skip("skipping AppStateFn testing")
