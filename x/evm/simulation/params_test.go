@@ -11,6 +11,7 @@ import (
 	"github.com/tharsis/ethermint/x/evm/simulation"
 )
 
+// TestParamChanges tests the paramChanges are generated as expected.
 func TestParamChanges(t *testing.T) {
 	s := rand.NewSource(1)
 	r := rand.New(s)
