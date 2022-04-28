@@ -18,7 +18,7 @@ func ParamChanges(r *rand.Rand) []simtypes.ParamChange {
 	return []simtypes.ParamChange{
 		simulation.NewSimParamChange(types.ModuleName, string(types.ParamStoreKeyExtraEIPs),
 			func(r *rand.Rand) string {
-				extraEIPs := genExtraEIPs(r)
+				extraEIPs := GenExtraEIPs(r)
 				amino := amino.NewLegacyAmino()
 				bz, err := amino.MarshalJSON(extraEIPs)
 				if err != nil {
@@ -29,12 +29,12 @@ func ParamChanges(r *rand.Rand) []simtypes.ParamChange {
 		),
 		simulation.NewSimParamChange(types.ModuleName, string(types.ParamStoreKeyEnableCreate),
 			func(r *rand.Rand) string {
-				return fmt.Sprintf("%v", genEnableCreate(r))
+				return fmt.Sprintf("%v", GenEnableCreate(r))
 			},
 		),
 		simulation.NewSimParamChange(types.ModuleName, string(types.ParamStoreKeyEnableCall),
 			func(r *rand.Rand) string {
-				return fmt.Sprintf("%v", genEnableCall(r))
+				return fmt.Sprintf("%v", GenEnableCall(r))
 			},
 		),
 	}
