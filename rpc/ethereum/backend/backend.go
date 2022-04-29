@@ -991,7 +991,7 @@ func (e *EVMBackend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 // If the London hard fork is not activated at the current height, the query will
 // return nil.
 func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
-	// return BaseFee if London hard fork is activated and feemarket is not enabled
+	// return BaseFee if London hard fork is activated and feemarket is enabled
 	res, err := e.queryClient.BaseFee(types.ContextWithHeight(height), &evmtypes.QueryBaseFeeRequest{})
 	if err != nil {
 		return nil, err
