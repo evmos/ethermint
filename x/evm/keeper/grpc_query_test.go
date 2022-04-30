@@ -944,7 +944,7 @@ func (suite *KeeperTestSuite) TestQueryBaseFee() {
 			true, true, false,
 		},
 		{
-			"pass - nil Base Fee when feemarket not activated",
+			"pass - zero Base Fee when feemarket not activated",
 			func() {
 				baseFee := sdk.ZeroInt()
 				expRes = &types.QueryBaseFeeResponse{BaseFee: &baseFee}
