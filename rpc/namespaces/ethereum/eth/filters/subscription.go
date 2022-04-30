@@ -31,7 +31,7 @@ func (s Subscription) ID() rpc.ID {
 }
 
 // Unsubscribe from the current subscription to Tendermint Websocket. It sends an error to the
-// subscription error channel if unsubscription fails.
+// subscription error channel if unsubscribe fails.
 func (s *Subscription) Unsubscribe(es *EventSystem) {
 	go func() {
 	uninstallLoop:
