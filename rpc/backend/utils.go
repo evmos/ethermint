@@ -6,27 +6,47 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/tharsis/ethermint/rpc/ethereum/types"
+	"github.com/tharsis/ethermint/rpc/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
+type txGasAndReward struct {
+	gasUsed uint64
+	reward  *big.Int
+}
+
+type sortGasAndReward []txGasAndReward
+
+func (s sortGasAndReward) Len() int { return len(s) }
+func (s sortGasAndReward) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s sortGasAndReward) Less(i, j int) bool {
+	return s[i].reward.Cmp(s[j].reward) < 0
+}
+
 // SetTxDefaults populates tx message with default values in case they are not
 // provided on the args
-func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error) {
+func (b *Backend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error) {
 	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
 		return args, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
 
-	head := e.CurrentHeader()
+	head := b.CurrentHeader()
 	if head == nil {
 		return args, errors.New("latest header is nil")
 	}
@@ -37,7 +57,7 @@ func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 		// In this clause, user left some fields unspecified.
 		if head.BaseFee != nil && args.GasPrice == nil {
 			if args.MaxPriorityFeePerGas == nil {
-				tip, err := e.SuggestGasTipCap(head.BaseFee)
+				tip, err := b.SuggestGasTipCap(head.BaseFee)
 				if err != nil {
 					return args, err
 				}
@@ -62,7 +82,7 @@ func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 			}
 
 			if args.GasPrice == nil {
-				price, err := e.SuggestGasTipCap(head.BaseFee)
+				price, err := b.SuggestGasTipCap(head.BaseFee)
 				if err != nil {
 					return args, err
 				}
@@ -88,7 +108,7 @@ func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 	if args.Nonce == nil {
 		// get the nonce from the account retriever
 		// ignore error in case tge account doesn't exist yet
-		nonce, _ := e.getAccountNonce(*args.From, true, 0, e.logger)
+		nonce, _ := b.getAccountNonce(*args.From, true, 0, b.logger)
 		args.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 
@@ -131,16 +151,16 @@ func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 		}
 
 		blockNr := types.NewBlockNumber(big.NewInt(0))
-		estimated, err := e.EstimateGas(callArgs, &blockNr)
+		estimated, err := b.EstimateGas(callArgs, &blockNr)
 		if err != nil {
 			return args, err
 		}
 		args.Gas = &estimated
-		e.logger.Debug("estimate gas usage automatically", "gas", args.Gas)
+		b.logger.Debug("estimate gas usage automatically", "gas", args.Gas)
 	}
 
 	if args.ChainID == nil {
-		args.ChainID = (*hexutil.Big)(e.chainID)
+		args.ChainID = (*hexutil.Big)(b.chainID)
 	}
 
 	return args, nil
@@ -150,14 +170,14 @@ func (e *EVMBackend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Tran
 // If the pending value is true, it will iterate over the mempool (pending)
 // txs in order to compute and return the pending tx sequence.
 // Todo: include the ability to specify a blockNumber
-func (e *EVMBackend) getAccountNonce(accAddr common.Address, pending bool, height int64, logger log.Logger) (uint64, error) {
-	queryClient := authtypes.NewQueryClient(e.clientCtx)
+func (b *Backend) getAccountNonce(accAddr common.Address, pending bool, height int64, logger log.Logger) (uint64, error) {
+	queryClient := authtypes.NewQueryClient(b.clientCtx)
 	res, err := queryClient.Account(types.ContextWithHeight(height), &authtypes.QueryAccountRequest{Address: sdk.AccAddress(accAddr.Bytes()).String()})
 	if err != nil {
 		return 0, err
 	}
 	var acc authtypes.AccountI
-	if err := e.clientCtx.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
+	if err := b.clientCtx.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
 		return 0, err
 	}
 
@@ -169,7 +189,7 @@ func (e *EVMBackend) getAccountNonce(accAddr common.Address, pending bool, heigh
 
 	// the account retriever doesn't include the uncommitted transactions on the nonce so we need to
 	// to manually add them.
-	pendingTxs, err := e.PendingTransactions()
+	pendingTxs, err := b.PendingTransactions()
 	if err != nil {
 		logger.Error("failed to fetch pending transactions", "error", err.Error())
 		return nonce, nil
@@ -185,7 +205,7 @@ func (e *EVMBackend) getAccountNonce(accAddr common.Address, pending bool, heigh
 				break
 			}
 
-			sender, err := ethMsg.GetSender(e.chainID)
+			sender, err := ethMsg.GetSender(b.chainID)
 			if err != nil {
 				continue
 			}
@@ -196,6 +216,104 @@ func (e *EVMBackend) getAccountNonce(accAddr common.Address, pending bool, heigh
 	}
 
 	return nonce, nil
+}
+
+// output: targetOneFeeHistory
+func (b *Backend) processBlock(
+	tendermintBlock *tmrpctypes.ResultBlock,
+	ethBlock *map[string]interface{},
+	rewardPercentiles []float64,
+	tendermintBlockResult *tmrpctypes.ResultBlockResults,
+	targetOneFeeHistory *types.OneFeeHistory,
+) error {
+	blockHeight := tendermintBlock.Block.Height
+	blockBaseFee, err := b.BaseFee(blockHeight)
+	if err != nil {
+		return err
+	}
+
+	// set basefee
+	targetOneFeeHistory.BaseFee = blockBaseFee
+
+	// set gas used ratio
+	gasLimitUint64, ok := (*ethBlock)["gasLimit"].(hexutil.Uint64)
+	if !ok {
+		return fmt.Errorf("invalid gas limit type: %T", (*ethBlock)["gasLimit"])
+	}
+
+	gasUsedBig, ok := (*ethBlock)["gasUsed"].(*hexutil.Big)
+	if !ok {
+		return fmt.Errorf("invalid gas used type: %T", (*ethBlock)["gasUsed"])
+	}
+
+	gasusedfloat, _ := new(big.Float).SetInt(gasUsedBig.ToInt()).Float64()
+
+	if gasLimitUint64 <= 0 {
+		return fmt.Errorf("gasLimit of block height %d should be bigger than 0 , current gaslimit %d", blockHeight, gasLimitUint64)
+	}
+
+	gasUsedRatio := gasusedfloat / float64(gasLimitUint64)
+	blockGasUsed := gasusedfloat
+	targetOneFeeHistory.GasUsedRatio = gasUsedRatio
+
+	rewardCount := len(rewardPercentiles)
+	targetOneFeeHistory.Reward = make([]*big.Int, rewardCount)
+	for i := 0; i < rewardCount; i++ {
+		targetOneFeeHistory.Reward[i] = big.NewInt(0)
+	}
+
+	// check tendermintTxs
+	tendermintTxs := tendermintBlock.Block.Txs
+	tendermintTxResults := tendermintBlockResult.TxsResults
+	tendermintTxCount := len(tendermintTxs)
+
+	var sorter sortGasAndReward
+
+	for i := 0; i < tendermintTxCount; i++ {
+		eachTendermintTx := tendermintTxs[i]
+		eachTendermintTxResult := tendermintTxResults[i]
+
+		tx, err := b.clientCtx.TxConfig.TxDecoder()(eachTendermintTx)
+		if err != nil {
+			b.logger.Debug("failed to decode transaction in block", "height", blockHeight, "error", err.Error())
+			continue
+		}
+		txGasUsed := uint64(eachTendermintTxResult.GasUsed)
+		for _, msg := range tx.GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				continue
+			}
+			tx := ethMsg.AsTransaction()
+			reward := tx.EffectiveGasTipValue(blockBaseFee)
+			if reward == nil {
+				reward = big.NewInt(0)
+			}
+			sorter = append(sorter, txGasAndReward{gasUsed: txGasUsed, reward: reward})
+		}
+	}
+
+	// return an all zero row if there are no transactions to gather data from
+	ethTxCount := len(sorter)
+	if ethTxCount == 0 {
+		return nil
+	}
+
+	sort.Sort(sorter)
+
+	var txIndex int
+	sumGasUsed := sorter[0].gasUsed
+
+	for i, p := range rewardPercentiles {
+		thresholdGasUsed := uint64(blockGasUsed * p / 100)
+		for sumGasUsed < thresholdGasUsed && txIndex < ethTxCount-1 {
+			txIndex++
+			sumGasUsed += sorter[txIndex].gasUsed
+		}
+		targetOneFeeHistory.Reward[i] = sorter[txIndex].reward
+	}
+
+	return nil
 }
 
 // AllTxLogsFromEvents parses all ethereum logs from cosmos events

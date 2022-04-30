@@ -10,22 +10,28 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/tharsis/ethermint/rpc/ethereum/backend"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/debug"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/eth"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/eth/filters"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/miner"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/net"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/personal"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/txpool"
-	"github.com/tharsis/ethermint/rpc/ethereum/namespaces/web3"
-	"github.com/tharsis/ethermint/rpc/ethereum/types"
+	"github.com/tharsis/ethermint/rpc/backend"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/debug"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/eth"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/eth/filters"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/miner"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/net"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/personal"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/txpool"
+	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/web3"
+	"github.com/tharsis/ethermint/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
 
 // RPC namespaces and API version
 const (
+	// Cosmos namespaces
+
+	CosmosNamespace = "cosmos"
+
+	// Ethereum namespaces
+
 	Web3Namespace     = "web3"
 	EthNamespace      = "eth"
 	PersonalNamespace = "personal"
@@ -37,17 +43,17 @@ const (
 	apiVersion = "1.0"
 )
 
-// APICreator creates the json-rpc api implementations.
+// APICreator creates the JSON-RPC API implementations.
 type APICreator = func(*server.Context, client.Context, *rpcclient.WSClient) []rpc.API
 
-// apiCreators defines the json-rpc api namespaces.
+// apiCreators defines the JSON-RPC API namespaces.
 var apiCreators map[string]APICreator
 
 func init() {
 	apiCreators = map[string]APICreator{
 		EthNamespace: func(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient) []rpc.API {
 			nonceLock := new(types.AddrLocker)
-			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx)
 			return []rpc.API{
 				{
 					Namespace: EthNamespace,
@@ -84,7 +90,7 @@ func init() {
 			}
 		},
 		PersonalNamespace: func(ctx *server.Context, clientCtx client.Context, _ *rpcclient.WSClient) []rpc.API {
-			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx)
 			return []rpc.API{
 				{
 					Namespace: PersonalNamespace,
@@ -105,7 +111,7 @@ func init() {
 			}
 		},
 		DebugNamespace: func(ctx *server.Context, clientCtx client.Context, _ *rpcclient.WSClient) []rpc.API {
-			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx)
 			return []rpc.API{
 				{
 					Namespace: DebugNamespace,
@@ -116,7 +122,7 @@ func init() {
 			}
 		},
 		MinerNamespace: func(ctx *server.Context, clientCtx client.Context, _ *rpcclient.WSClient) []rpc.API {
-			evmBackend := backend.NewEVMBackend(ctx, ctx.Logger, clientCtx)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx)
 			return []rpc.API{
 				{
 					Namespace: MinerNamespace,

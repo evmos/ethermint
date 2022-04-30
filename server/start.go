@@ -41,7 +41,7 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ethdebug "github.com/tharsis/ethermint/rpc/ethereum/namespaces/debug"
+	ethdebug "github.com/tharsis/ethermint/rpc/namespaces/ethereum/debug"
 	"github.com/tharsis/ethermint/server/config"
 	srvflags "github.com/tharsis/ethermint/server/flags"
 )
