@@ -263,7 +263,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
-		baseFee := ctd.evmKeeper.BaseFee(ctx, ethCfg)
+		baseFee := ctd.evmKeeper.GetBaseFee(ctx, ethCfg)
 
 		coreMsg, err := msgEthTx.AsMessage(signer, baseFee)
 		if err != nil {
@@ -427,7 +427,7 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 			params := vbd.evmKeeper.GetParams(ctx)
 			chainID := vbd.evmKeeper.ChainID()
 			ethCfg := params.ChainConfig.EthereumConfig(chainID)
-			baseFee := vbd.evmKeeper.BaseFee(ctx, ethCfg)
+			baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
 			if baseFee == nil && txData.TxType() == ethtypes.DynamicFeeTxType {
 				return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
 			}
@@ -511,7 +511,7 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 	if ctx.IsCheckTx() && !simulate {
 		params := mfd.evmKeeper.GetParams(ctx)
 		ethCfg := params.ChainConfig.EthereumConfig(mfd.evmKeeper.ChainID())
-		baseFee := mfd.evmKeeper.BaseFee(ctx, ethCfg)
+		baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
 		if baseFee == nil {
 			for _, msg := range tx.GetMsgs() {
 				ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)

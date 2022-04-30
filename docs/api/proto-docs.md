@@ -39,6 +39,8 @@
     - [QueryAccountResponse](#ethermint.evm.v1.QueryAccountResponse)
     - [QueryBalanceRequest](#ethermint.evm.v1.QueryBalanceRequest)
     - [QueryBalanceResponse](#ethermint.evm.v1.QueryBalanceResponse)
+    - [QueryBaseFeeRequest](#ethermint.evm.v1.QueryBaseFeeRequest)
+    - [QueryBaseFeeResponse](#ethermint.evm.v1.QueryBaseFeeResponse)
     - [QueryCodeRequest](#ethermint.evm.v1.QueryCodeRequest)
     - [QueryCodeResponse](#ethermint.evm.v1.QueryCodeResponse)
     - [QueryCosmosAccountRequest](#ethermint.evm.v1.QueryCosmosAccountRequest)
@@ -618,6 +620,32 @@ QueryBalanceResponse is the response type for the Query/Balance RPC method.
 
 
 
+<a name="ethermint.evm.v1.QueryBaseFeeRequest"></a>
+
+### QueryBaseFeeRequest
+QueryBaseFeeRequest defines the request type for querying the EIP1559 base
+fee.
+
+
+
+
+
+
+<a name="ethermint.evm.v1.QueryBaseFeeResponse"></a>
+
+### QueryBaseFeeResponse
+BaseFeeResponse returns the EIP1559 base fee.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `base_fee` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="ethermint.evm.v1.QueryCodeRequest"></a>
 
 ### QueryCodeRequest
@@ -899,6 +927,7 @@ Query defines the gRPC querier service.
 | `EstimateGas` | [EthCallRequest](#ethermint.evm.v1.EthCallRequest) | [EstimateGasResponse](#ethermint.evm.v1.EstimateGasResponse) | EstimateGas implements the `eth_estimateGas` rpc api | GET|/ethermint/evm/v1/estimate_gas|
 | `TraceTx` | [QueryTraceTxRequest](#ethermint.evm.v1.QueryTraceTxRequest) | [QueryTraceTxResponse](#ethermint.evm.v1.QueryTraceTxResponse) | TraceTx implements the `debug_traceTransaction` rpc api | GET|/ethermint/evm/v1/trace_tx|
 | `TraceBlock` | [QueryTraceBlockRequest](#ethermint.evm.v1.QueryTraceBlockRequest) | [QueryTraceBlockResponse](#ethermint.evm.v1.QueryTraceBlockResponse) | TraceBlock implements the `debug_traceBlockByNumber` and `debug_traceBlockByHash` rpc api | GET|/ethermint/evm/v1/trace_block|
+| `BaseFee` | [QueryBaseFeeRequest](#ethermint.evm.v1.QueryBaseFeeRequest) | [QueryBaseFeeResponse](#ethermint.evm.v1.QueryBaseFeeResponse) | BaseFee queries the base fee of the parent block of the current block, it's similar to feemarket module's method, but also checks london hardfork status. | GET|/ethermint/evm/v1/base_fee|
 
  <!-- end services -->
 
