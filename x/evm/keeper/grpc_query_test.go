@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/tharsis/ethermint/x/evm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -605,7 +606,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 	var (
 		txMsg        *types.MsgEthereumTx
 		traceConfig  *types.TraceConfig
-		txIndex      uint64
 		predecessors []*types.MsgEthereumTx
 	)
 
@@ -619,7 +619,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		{
 			msg: "default trace",
 			malleate: func() {
-				txIndex = 0
 				traceConfig = nil
 				predecessors = []*types.MsgEthereumTx{}
 			},
@@ -629,7 +628,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		{
 			msg: "default trace with filtered response",
 			malleate: func() {
-				txIndex = 0
 				traceConfig = &types.TraceConfig{
 					DisableStack:   true,
 					DisableStorage: true,
@@ -644,7 +642,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		{
 			msg: "javascript tracer",
 			malleate: func() {
-				txIndex = 0
 				traceConfig = &types.TraceConfig{
 					Tracer: "{data: [], fault: function(log) {}, step: function(log) { if(log.op.toString() == \"CALL\") this.data.push(log.stack.peek(0)); }, result: function() { return this.data; }}",
 				}
@@ -656,7 +653,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		{
 			msg: "default trace with enableFeemarket",
 			malleate: func() {
-				txIndex = 0
 				traceConfig = &types.TraceConfig{
 					DisableStack:   true,
 					DisableStorage: true,
@@ -671,7 +667,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		{
 			msg: "javascript tracer with enableFeemarket",
 			malleate: func() {
-				txIndex = 0
 				traceConfig = &types.TraceConfig{
 					Tracer: "{data: [], fault: function(log) {}, step: function(log) { if(log.op.toString() == \"CALL\") this.data.push(log.stack.peek(0)); }, result: function() { return this.data; }}",
 				}
@@ -684,7 +679,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		{
 			msg: "default tracer with predecessors",
 			malleate: func() {
-				txIndex = 1
 				traceConfig = nil
 
 				// increase nonce to avoid address collision
@@ -722,7 +716,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			traceReq := types.QueryTraceTxRequest{
 				Msg:          txMsg,
 				TraceConfig:  traceConfig,
-				TxIndex:      txIndex,
 				Predecessors: predecessors,
 			}
 			res, err := suite.queryClient.TraceTx(sdk.WrapSDKContext(suite.ctx), &traceReq)
@@ -906,4 +899,77 @@ func (suite *KeeperTestSuite) TestNonceInQuery() {
 		GasCap: uint64(config.DefaultGasCap),
 	})
 	suite.Require().NoError(err)
+}
+
+func (suite *KeeperTestSuite) TestQueryBaseFee() {
+	var (
+		aux    sdk.Int
+		expRes *types.QueryBaseFeeResponse
+	)
+
+	testCases := []struct {
+		name            string
+		malleate        func()
+		expPass         bool
+		enableFeemarket bool
+		enableLondonHF  bool
+	}{
+		{
+			"pass - default Base Fee",
+			func() {
+				initialBaseFee := sdk.NewInt(ethparams.InitialBaseFee)
+				expRes = &types.QueryBaseFeeResponse{BaseFee: &initialBaseFee}
+			},
+			true, true, true,
+		},
+		{
+			"pass - non-nil Base Fee",
+			func() {
+				baseFee := sdk.OneInt().BigInt()
+				suite.app.FeeMarketKeeper.SetBaseFee(suite.ctx, baseFee)
+
+				aux = sdk.NewIntFromBigInt(baseFee)
+				expRes = &types.QueryBaseFeeResponse{BaseFee: &aux}
+			},
+			true, true, true,
+		},
+		{
+			"pass - nil Base Fee when london hardfork not activated",
+			func() {
+				baseFee := sdk.OneInt().BigInt()
+				suite.app.FeeMarketKeeper.SetBaseFee(suite.ctx, baseFee)
+
+				expRes = &types.QueryBaseFeeResponse{}
+			},
+			true, true, false,
+		},
+		{
+			"pass - zero Base Fee when feemarket not activated",
+			func() {
+				baseFee := sdk.ZeroInt()
+				expRes = &types.QueryBaseFeeResponse{BaseFee: &baseFee}
+			},
+			true, false, true,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.enableFeemarket = tc.enableFeemarket
+			suite.enableLondonHF = tc.enableLondonHF
+			suite.SetupTest()
+
+			tc.malleate()
+
+			res, err := suite.queryClient.BaseFee(suite.ctx.Context(), &types.QueryBaseFeeRequest{})
+			if tc.expPass {
+				suite.Require().NotNil(res)
+				suite.Require().Equal(expRes, res, tc.name)
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+	suite.enableFeemarket = false
+	suite.enableLondonHF = true
 }

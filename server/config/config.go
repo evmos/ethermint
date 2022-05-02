@@ -237,7 +237,7 @@ func (c JSONRPCConfig) Validate() error {
 		return errors.New("JSON-RPC HTTP idle timeout duration cannot be negative")
 	}
 
-	// TODO: validate APIs
+	// check for duplicates
 	seenAPIs := make(map[string]bool)
 	for _, api := range c.API {
 		if seenAPIs[api] {

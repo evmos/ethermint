@@ -21,8 +21,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/tharsis/ethermint/rpc/ethereum/backend"
-	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
+	"github.com/tharsis/ethermint/rpc/backend"
+	rpctypes "github.com/tharsis/ethermint/rpc/types"
 	"github.com/tharsis/ethermint/server/config"
 )
 
@@ -31,14 +31,14 @@ type API struct {
 	ctx       *server.Context
 	logger    log.Logger
 	clientCtx client.Context
-	backend   backend.Backend
+	backend   backend.EVMBackend
 }
 
 // NewPrivateAPI creates an instance of the Miner API.
 func NewPrivateAPI(
 	ctx *server.Context,
 	clientCtx client.Context,
-	backend backend.Backend,
+	backend backend.EVMBackend,
 ) *API {
 	return &API{
 		ctx:       ctx,
