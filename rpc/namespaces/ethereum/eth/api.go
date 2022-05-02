@@ -36,8 +36,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/tharsis/ethermint/crypto/hd"
-	"github.com/tharsis/ethermint/rpc/ethereum/backend"
-	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
+	"github.com/tharsis/ethermint/rpc/backend"
+	rpctypes "github.com/tharsis/ethermint/rpc/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
@@ -49,7 +49,7 @@ type PublicAPI struct {
 	queryClient  *rpctypes.QueryClient
 	chainIDEpoch *big.Int
 	logger       log.Logger
-	backend      backend.Backend
+	backend      backend.EVMBackend
 	nonceLock    *rpctypes.AddrLocker
 	signer       ethtypes.Signer
 }
@@ -58,7 +58,7 @@ type PublicAPI struct {
 func NewPublicAPI(
 	logger log.Logger,
 	clientCtx client.Context,
-	backend backend.Backend,
+	backend backend.EVMBackend,
 	nonceLock *rpctypes.AddrLocker,
 ) *PublicAPI {
 	eip155ChainID, err := ethermint.ParseChainID(clientCtx.ChainID)

@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/tharsis/ethermint/rpc/ethereum/backend"
+	"github.com/tharsis/ethermint/rpc/backend"
 
 	"github.com/cosmos/cosmos-sdk/client"
 
@@ -31,13 +31,17 @@ import (
 // PrivateAccountAPI is the personal_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PrivateAccountAPI struct {
 	clientCtx  client.Context
-	backend    backend.Backend
+	backend    backend.EVMBackend
 	logger     log.Logger
 	hdPathIter ethermint.HDPathIterator
 }
 
 // NewAPI creates an instance of the public Personal Eth API.
-func NewAPI(logger log.Logger, clientCtx client.Context, backend backend.Backend) *PrivateAccountAPI {
+func NewAPI(
+	logger log.Logger,
+	clientCtx client.Context,
+	backend backend.EVMBackend,
+) *PrivateAccountAPI {
 	cfg := sdk.GetConfig()
 	basePath := cfg.GetFullBIP44Path()
 

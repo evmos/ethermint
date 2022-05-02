@@ -38,6 +38,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### API Breaking
+
+* (rpc) [tharsis#1070](https://github.com/tharsis/ethermint/pull/1070) Refactor `rpc/` package:
+  * `Backend` interface is now `BackendI`, which implements `EVMBackend` (for Ethereum namespaces) and `CosmosBackend` (for Cosmos namespaces)
+  * Previous `EVMBackend` type is now `Backend`, which is the concrete implementation of `BackendI`
+  * Move `rpc/ethereum/types` -> `rpc/types`
+  * Move `rpc/ethereum/backend` -> `rpc/backend`
+  * Move `rpc/ethereum/namespaces` -> `rpc/namespaces/ethereum`
+
 ### Bug Fixes
 
 * (rpc) [tharsis#1059](https://github.com/tharsis/ethermint/pull/1059) Remove unnecessary event filtering logic on the `eth_baseFee` JSON-RPC endpoint.

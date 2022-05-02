@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	"github.com/tharsis/ethermint/rpc/ethereum/types"
-	"math/big"
-	"testing"
+	"github.com/tharsis/ethermint/rpc/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
@@ -147,7 +148,7 @@ func (s *IntegrationTestSuite) TestBlock() {
 	s.Require().NoError(err)
 	s.Require().NotNil(blockByHash)
 
-	//Compare blockByNumber and blockByHash results
+	// Compare blockByNumber and blockByHash results
 	s.Require().Equal(blockByNum.Hash(), blockByHash.Hash())
 	s.Require().Equal(blockByNum.Transactions().Len(), blockByHash.Transactions().Len())
 	s.Require().Equal(blockByNum.ParentHash(), blockByHash.ParentHash())
@@ -382,7 +383,7 @@ func (s *IntegrationTestSuite) TestGetBalance() {
 }
 
 func (s *IntegrationTestSuite) TestGetLogs() {
-	//TODO create tests to cover different filterQuery params
+	// TODO create tests to cover different filterQuery params
 	_, contractAddr := s.deployERC20Contract()
 
 	blockNum, err := s.network.Validators[0].JSONRPCClient.BlockNumber(s.ctx)
@@ -408,7 +409,7 @@ func (s *IntegrationTestSuite) TestGetLogs() {
 }
 
 func (s *IntegrationTestSuite) TestTransactionReceiptERC20Transfer() {
-	//start with clean block
+	// start with clean block
 	err := s.network.WaitForNextBlock()
 	s.Require().NoError(err)
 	// deploy erc20 contract
@@ -641,7 +642,6 @@ func (s *IntegrationTestSuite) transferERC20Transaction(contractAddr, to common.
 	receipt := s.expectSuccessReceipt(ercTransferTx.AsTransaction().Hash())
 	s.Require().NotEmpty(receipt.Logs)
 	return ercTransferTx.AsTransaction().Hash()
-
 }
 
 func (s *IntegrationTestSuite) storeValueStorageContract(contractAddr common.Address, amount *big.Int) common.Hash {
