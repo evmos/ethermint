@@ -210,7 +210,7 @@ func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amou
 	gasLimit := estimateGas + uint64(ctx.rand.Intn(int(sdktx.MaxGasWanted-estimateGas)))
 	ethChainID := ctx.keeper.ChainID()
 	chainConfig := ctx.keeper.GetParams(ctx.context).ChainConfig.EthereumConfig(ethChainID)
-	gasPrice := ctx.keeper.BaseFee(ctx.context, chainConfig)
+	gasPrice := ctx.keeper.GetBaseFee(ctx.context, chainConfig)
 	gasFeeCap := new(big.Int).Add(gasPrice, big.NewInt(int64(ctx.rand.Int())))
 	gasTipCap := big.NewInt(int64(ctx.rand.Int()))
 	nonce := ctx.keeper.GetNonce(ctx.context, *from)
