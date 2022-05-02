@@ -107,7 +107,7 @@ func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context
 		ctx:         context.Background(),
 		clientCtx:   clientCtx,
 		queryClient: types.NewQueryClient(clientCtx),
-		logger:      logger.With("module", "evm-backend"),
+		logger:      logger.With("module", "backend"),
 		chainID:     chainID,
 		cfg:         appConf,
 	}
