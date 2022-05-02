@@ -28,8 +28,8 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tharsis/ethermint/rpc/ethereum/backend"
-	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
+	"github.com/tharsis/ethermint/rpc/backend"
+	rpctypes "github.com/tharsis/ethermint/rpc/types"
 )
 
 // HandlerT keeps track of the cpu profiler and trace execution
@@ -45,7 +45,7 @@ type HandlerT struct {
 type API struct {
 	ctx         *server.Context
 	logger      log.Logger
-	backend     backend.Backend
+	backend     backend.EVMBackend
 	clientCtx   client.Context
 	queryClient *rpctypes.QueryClient
 	handler     *HandlerT
@@ -54,7 +54,7 @@ type API struct {
 // NewAPI creates a new API definition for the tracing methods of the Ethereum service.
 func NewAPI(
 	ctx *server.Context,
-	backend backend.Backend,
+	backend backend.EVMBackend,
 	clientCtx client.Context,
 ) *API {
 	return &API{

@@ -17,7 +17,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	rpctypes "github.com/tharsis/ethermint/rpc/ethereum/types"
+	rpctypes "github.com/tharsis/ethermint/rpc/types"
 	ethermint "github.com/tharsis/ethermint/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
