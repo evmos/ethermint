@@ -945,7 +945,7 @@ func (e *EVMBackend) RPCMinGasPrice() int64 {
 	return amt
 }
 
-// ChainConfig return the ethereum chain configuration
+// ChainConfig return the latest ethereum chain configuration
 func (e *EVMBackend) ChainConfig() *params.ChainConfig {
 	params, err := e.queryClient.Params(e.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
@@ -991,13 +991,8 @@ func (e *EVMBackend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 // If the London hard fork is not activated at the current height, the query will
 // return nil.
 func (e *EVMBackend) BaseFee(height int64) (*big.Int, error) {
-	cfg := e.ChainConfig()
-	if !cfg.IsLondon(new(big.Int).SetInt64(height)) {
-		return nil, nil
-	}
-
-	// return BaseFee if London hard fork is activated and feemarket is not enabled
-	res, err := e.queryClient.FeeMarket.BaseFee(types.ContextWithHeight(height), &feemarkettypes.QueryBaseFeeRequest{})
+	// return BaseFee if London hard fork is activated and feemarket is enabled
+	res, err := e.queryClient.BaseFee(types.ContextWithHeight(height), &evmtypes.QueryBaseFeeRequest{})
 	if err != nil {
 		return nil, err
 	}

@@ -71,6 +71,13 @@ service Query {
   rpc TraceBlock(QueryTraceBlockRequest) returns (QueryTraceBlockResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/trace_block";
   }
+
+  // BaseFee queries the base fee of the parent block of the current block,
+  // it's similar to feemarket module's method, but also checks london hardfork status.
+  rpc BaseFee(QueryBaseFeeRequest) returns (QueryBaseFeeResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1/base_fee";
+  }
+
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -271,3 +278,12 @@ message QueryTraceBlockResponse {
   bytes data = 1;
 }
 
+// QueryBaseFeeRequest defines the request type for querying the EIP1559 base
+// fee.
+message QueryBaseFeeRequest {}
+
+// BaseFeeResponse returns the EIP1559 base fee.
+message QueryBaseFeeResponse {
+  string base_fee = 1
+      [ (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int" ];
+}

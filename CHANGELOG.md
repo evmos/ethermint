@@ -42,6 +42,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [tharsis#1059](https://github.com/tharsis/ethermint/pull/1059) Remove unnecessary event filtering logic on the `eth_baseFee` JSON-RPC endpoint.
 
+### API Breaking
+
+* (rpc) [tharsis#1068](https://github.com/tharsis/ethermint/pull/1068) Fix london hardfork check logic in json-rpc apis.
+
 ## [v0.14.0] - 2022-04-19
 
 ### API Breaking
