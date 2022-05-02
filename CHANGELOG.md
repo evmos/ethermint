@@ -46,6 +46,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * Move `rpc/ethereum/types` -> `rpc/types`
   * Move `rpc/ethereum/backend` -> `rpc/backend`
   * Move `rpc/ethereum/namespaces` -> `rpc/namespaces/ethereum`
+* (rpc) [tharsis#1068](https://github.com/tharsis/ethermint/pull/1068) Fix London hard-fork check logic in JSON-RPC APIs.
 
 ### Improvements
 
@@ -54,10 +55,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [tharsis#1059](https://github.com/tharsis/ethermint/pull/1059) Remove unnecessary event filtering logic on the `eth_baseFee` JSON-RPC endpoint.
-
-### API Breaking
-
-* (rpc) [tharsis#1068](https://github.com/tharsis/ethermint/pull/1068) Fix london hardfork check logic in json-rpc apis.
 
 ## [v0.14.0] - 2022-04-19
 
