@@ -10,7 +10,7 @@ import (
 )
 
 // NewDecodeStore returns a decoder function closure that unmarshals the KVPair's
-// Value to the corresponding evm type.
+// value to the corresponding EVM type.
 func NewDecodeStore() func(kvA, kvB kv.Pair) string {
 	return func(kvA, kvB kv.Pair) string {
 		switch {

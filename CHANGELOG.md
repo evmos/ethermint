@@ -47,6 +47,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * Move `rpc/ethereum/backend` -> `rpc/backend`
   * Move `rpc/ethereum/namespaces` -> `rpc/namespaces/ethereum`
 
+### Improvements
+
+* (ci, evm) [tharsis#1063](https://github.com/tharsis/ethermint/pull/1063) Run simulations on CI.
+
 ### Bug Fixes
 
 * (rpc) [tharsis#1059](https://github.com/tharsis/ethermint/pull/1059) Remove unnecessary event filtering logic on the `eth_baseFee` JSON-RPC endpoint.
@@ -65,7 +69,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (deps) [tharsis#1046](https://github.com/tharsis/ethermint/pull/1046) Bump Cosmos SDK version to [`v0.45.3`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.3)
 * (rpc) [tharsis#1056](https://github.com/tharsis/ethermint/pull/1056) Make json-rpc namespaces extensible
-* (app) [https://github.com/tharsis/ethermint/pull/1063] Update github actions to run evm simulation, add more tests for evm simulation, use random gascap in simulation.
 
 ### Bug Fixes
 

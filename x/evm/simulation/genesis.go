@@ -14,22 +14,24 @@ const (
 	extraEIPsKey = "extra_eips"
 )
 
-// GenExtraEIPs randomly generates specific extra eips or not.
+// GenExtraEIPs defines a set of extra EIPs with 50% probability
 func GenExtraEIPs(r *rand.Rand) []int64 {
 	var extraEIPs []int64
-	// 50% chance of having extra eips
+	// 50% chance of having extra EIPs
 	if r.Intn(2) == 0 {
 		extraEIPs = []int64{1344, 1884, 2200, 2929, 3198, 3529}
 	}
 	return extraEIPs
 }
 
+// GenEnableCreate enables the EnableCreate param with 80% probability
 func GenEnableCreate(r *rand.Rand) bool {
 	// 80% chance of enabling create contract
 	enableCreate := r.Intn(100) < 80
 	return enableCreate
 }
 
+// GenEnableCall enables the EnableCall param with 80% probability
 func GenEnableCall(r *rand.Rand) bool {
 	// 80% chance of enabling evm account transfer and calling contract
 	enableCall := r.Intn(100) < 80
@@ -39,9 +41,7 @@ func GenEnableCall(r *rand.Rand) bool {
 // RandomizedGenState generates a random GenesisState for the EVM module
 func RandomizedGenState(simState *module.SimulationState) {
 	// evm params
-	var (
-		extraEIPs []int64
-	)
+	var extraEIPs []int64
 
 	simState.AppParams.GetOrGenerate(
 		simState.Cdc, extraEIPsKey, &extraEIPs, simState.Rand,
