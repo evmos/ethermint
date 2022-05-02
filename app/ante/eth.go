@@ -68,17 +68,15 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 
 // EthAccountVerificationDecorator validates an account balance checks
 type EthAccountVerificationDecorator struct {
-	ak         evmtypes.AccountKeeper
-	bankKeeper evmtypes.BankKeeper
-	evmKeeper  EVMKeeper
+	ak        evmtypes.AccountKeeper
+	evmKeeper EVMKeeper
 }
 
 // NewEthAccountVerificationDecorator creates a new EthAccountVerificationDecorator
-func NewEthAccountVerificationDecorator(ak evmtypes.AccountKeeper, bankKeeper evmtypes.BankKeeper, ek EVMKeeper) EthAccountVerificationDecorator {
+func NewEthAccountVerificationDecorator(ak evmtypes.AccountKeeper, ek EVMKeeper) EthAccountVerificationDecorator {
 	return EthAccountVerificationDecorator{
-		ak:         ak,
-		bankKeeper: bankKeeper,
-		evmKeeper:  ek,
+		ak:        ak,
+		evmKeeper: ek,
 	}
 }
 
