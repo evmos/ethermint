@@ -210,6 +210,15 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) types
 	return storage
 }
 
+// GetAccountStorage return state storage associated with an account
+func (k Keeper) GetAccountSequence(ctx sdk.Context, from common.Address) (uint64, error) {
+	nonce, err := k.accountKeeper.GetSequence(ctx, from.Bytes())
+	if err != nil {
+		return 0, err
+	}
+	return nonce, err
+}
+
 // ----------------------------------------------------------------------------
 // Account
 // ----------------------------------------------------------------------------
