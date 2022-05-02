@@ -201,7 +201,7 @@ RUNSIM         = $(TOOLS_DESTDIR)/runsim
 runsim: $(RUNSIM)
 $(RUNSIM):
 	@echo "Installing runsim..."
-	@(cd /tmp && ${GO_MOD} go get github.com/cosmos/tools/cmd/runsim@master)
+	@(cd /tmp && ${GO_MOD} go install github.com/cosmos/tools/cmd/runsim@master)
 
 statik: $(STATIK)
 $(STATIK):
@@ -343,7 +343,7 @@ test-sim-nondeterminism:
 		-NumBlocks=100 -BlockSize=200 -Commit=true -Period=0 -v -timeout 24h
 
 test-sim-random-genesis-fast:
-	@echo "Running custom genesis simulation..."
+	@echo "Running random genesis simulation..."
 	@go test -mod=readonly $(SIMAPP) -run TestFullAppSimulation \
 		-Enabled=true -NumBlocks=100 -BlockSize=200 -Commit=true -Seed=99 -Period=5 -v -timeout 24h
 

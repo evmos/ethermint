@@ -25,7 +25,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tharsis/ethermint/encoding"
-	"github.com/tharsis/ethermint/server/config"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/keeper"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -203,10 +202,12 @@ func SimulateEthTx(
 
 // CreateRandomValidEthTx create the ethereum tx with valid random values
 func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes) (ethTx *types.MsgEthereumTx, err error) {
-	estimateGas, err := EstimateGas(ctx, from, to, data)
+	gasCap := ctx.rand.Uint64()
+	estimateGas, err := EstimateGas(ctx, from, to, data, gasCap)
 	if err != nil {
 		return nil, err
 	}
+	// we suppose that gasLimit should be larger than estimateGas to ensure tx validity
 	gasLimit := estimateGas + uint64(ctx.rand.Intn(int(sdktx.MaxGasWanted-estimateGas)))
 	ethChainID := ctx.keeper.ChainID()
 	chainConfig := ctx.keeper.GetParams(ctx.context).ChainConfig.EthereumConfig(ethChainID)
@@ -216,7 +217,7 @@ func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amou
 	nonce := ctx.keeper.GetNonce(ctx.context, *from)
 
 	if amount == nil {
-		amount, err = RandomTransferableAmount(ctx, *from, gasLimit, gasFeeCap)
+		amount, err = RandomTransferableAmount(ctx, *from, estimateGas, gasFeeCap)
 		if err != nil {
 			return nil, err
 		}
@@ -228,7 +229,7 @@ func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amou
 }
 
 // EstimateGas estimates the gas used by quering the keeper.
-func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.Bytes) (gas uint64, err error) {
+func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.Bytes, gasCap uint64) (gas uint64, err error) {
 	args, err := json.Marshal(&types.TransactionArgs{To: to, From: from, Data: data})
 	if err != nil {
 		return 0, err
@@ -236,7 +237,7 @@ func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.B
 
 	res, err := ctx.keeper.EstimateGas(sdk.WrapSDKContext(ctx.context), &types.EthCallRequest{
 		Args:   args,
-		GasCap: config.DefaultGasCap,
+		GasCap: gasCap,
 	})
 	if err != nil {
 		return 0, err
@@ -246,9 +247,9 @@ func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.B
 
 // RandomTransferableAmount generates a random valid transferable amount.
 // Transferable amount is between the range [0, spendable), spendable = balance - gasFeeCap * GasLimit.
-func RandomTransferableAmount(ctx *simulateContext, address common.Address, gasLimit uint64, gasFeeCap *big.Int) (amount *big.Int, err error) {
+func RandomTransferableAmount(ctx *simulateContext, address common.Address, estimateGas uint64, gasFeeCap *big.Int) (amount *big.Int, err error) {
 	balance := ctx.keeper.GetBalance(ctx.context, address)
-	feeLimit := new(big.Int).Mul(gasFeeCap, big.NewInt(int64(gasLimit)))
+	feeLimit := new(big.Int).Mul(gasFeeCap, big.NewInt(int64(estimateGas)))
 	if (feeLimit.Cmp(balance)) > 0 {
 		return nil, ErrNoEnoughBalance
 	}

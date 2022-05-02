@@ -108,7 +108,7 @@ func RandomAccounts(r *rand.Rand, n int) []simtypes.Account {
 
 		prv := secp256k1.GenPrivKeyFromSecret(privkeySeed)
 		ethPrv := &ethsecp256k1.PrivKey{}
-		_ = ethPrv.UnmarshalAmino(prv.Bytes())
+		_ = ethPrv.UnmarshalAmino(prv.Bytes()) // UnmarshalAmino simply copies the bytes and assigns them to ethPrv.Key
 		accs[i].PrivKey = ethPrv
 		accs[i].PubKey = accs[i].PrivKey.PubKey()
 		accs[i].Address = sdk.AccAddress(accs[i].PubKey.Address())
