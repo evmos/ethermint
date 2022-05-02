@@ -36,7 +36,7 @@ func GenEnableCall(r *rand.Rand) bool {
 	return enableCall
 }
 
-// RandomizedGenState generates a random GenesisState for nft
+// RandomizedGenState generates a random GenesisState for the EVM module
 func RandomizedGenState(simState *module.SimulationState) {
 	// evm params
 	var (
