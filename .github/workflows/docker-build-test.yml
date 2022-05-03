@@ -64,7 +64,6 @@ jobs:
       with:
         repository: celestiaorg/ephemeral-cluster
         path: ephemeral-cluster
-        ref: ethermint
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
