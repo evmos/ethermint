@@ -185,6 +185,16 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			}, false, true, true,
 		},
 		{
+			"fail - CheckTx (gas price under minimum)",
+			func() sdk.Tx {
+				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 8, &to, big.NewInt(10), 100000, MinimumGasPrice.Sub(sdk.NewInt(1)).BigInt(), nil, nil, nil, nil)
+				signedTx.From = addr.Hex()
+
+				txBuilder := suite.CreateTestTxBuilder(signedTx, privKey, 1, false)
+				return txBuilder.GetTx()
+			}, true, false, false,
+		},
+		{
 			"fail - CheckTx (cosmos tx is not valid)",
 			func() sdk.Tx {
 				signedTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 8, &to, big.NewInt(10), 100000, MinimumGasPrice.BigInt(), nil, nil, nil, nil)
