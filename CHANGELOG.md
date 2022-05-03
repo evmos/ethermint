@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+* (ante) [tharsis#1060](https://github.com/tharsis/ethermint/pull/1060) Check `EnableCreate`/`EnableCall` in `AnteHandler` to short-circuit EVM transactions.
+
 ### API Breaking
 
 * (rpc) [tharsis#1070](https://github.com/tharsis/ethermint/pull/1070) Refactor `rpc/` package:
