@@ -51,6 +51,7 @@ type AnteTestSuite struct {
 	ethSigner       ethtypes.Signer
 	enableFeemarket bool
 	enableLondonHF  bool
+	evmParamsOption func(*evmtypes.Params)
 }
 
 func (suite *AnteTestSuite) StateDB() *statedb.StateDB {
@@ -71,14 +72,17 @@ func (suite *AnteTestSuite) SetupTest() {
 			suite.Require().NoError(err)
 			genesis[feemarkettypes.ModuleName] = app.AppCodec().MustMarshalJSON(feemarketGenesis)
 		}
+		evmGenesis := evmtypes.DefaultGenesisState()
 		if !suite.enableLondonHF {
-			evmGenesis := evmtypes.DefaultGenesisState()
 			maxInt := sdk.NewInt(math.MaxInt64)
 			evmGenesis.Params.ChainConfig.LondonBlock = &maxInt
 			evmGenesis.Params.ChainConfig.ArrowGlacierBlock = &maxInt
 			evmGenesis.Params.ChainConfig.MergeForkBlock = &maxInt
-			genesis[evmtypes.ModuleName] = app.AppCodec().MustMarshalJSON(evmGenesis)
 		}
+		if suite.evmParamsOption != nil {
+			suite.evmParamsOption(&evmGenesis.Params)
+		}
+		genesis[evmtypes.ModuleName] = app.AppCodec().MustMarshalJSON(evmGenesis)
 		return genesis
 	})
 
