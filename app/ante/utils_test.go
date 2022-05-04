@@ -218,6 +218,22 @@ func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgDelegate(from sdk.AccAdd
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgSend)
 }
 
+func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	// Build MsgCreateValidator
+	valAddr := sdk.ValAddress(from.Bytes())
+	msgSend, error := types3.NewMsgCreateValidator(
+		valAddr,
+		priv.PubKey(),
+		sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)),
+		// TODO: can this values be empty strings?
+		types3.NewDescription("moniker", "indentity", "website", "security_contract", "details"),
+		types3.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
+		sdk.OneInt(),
+	)
+	suite.Require().NoError(error)
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgSend)
+}
+
 func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins, msg sdk.Msg,
 ) client.TxBuilder {
@@ -232,6 +248,10 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 
 	// GenerateTypedData TypedData
 	var ethermintCodec codec.ProtoCodecMarshaler
+	registry := codectypes.NewInterfaceRegistry()
+	types.RegisterInterfaces(registry)
+	ethermintCodec = codec.NewProtoCodec(registry)
+
 	fee := legacytx.NewStdFee(gas, gasAmount)
 	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
 
