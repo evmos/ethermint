@@ -201,7 +201,7 @@ func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 		result *big.Int
 		err    error
 	)
-	if head := e.backend.CurrentHeader(); head.BaseFee != nil {
+	if head := e.backend.CurrentHeader(); head.BaseFee != nil && head.BaseFee.BitLen() > 0 {
 		result, err = e.backend.SuggestGasTipCap(head.BaseFee)
 		if err != nil {
 			return nil, err
