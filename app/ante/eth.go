@@ -410,11 +410,17 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		txFee := sdk.Coins{}
 		txGasLimit := uint64(0)
 
+		params := vbd.evmKeeper.GetParams(ctx)
+		chainID := vbd.evmKeeper.ChainID()
+		ethCfg := params.ChainConfig.EthereumConfig(chainID)
+		baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
+
 		for _, msg := range protoTx.GetMsgs() {
 			msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 			if !ok {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 			}
+
 			txGasLimit += msgEthTx.GetGas()
 
 			txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
@@ -422,10 +428,13 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 				return ctx, sdkerrors.Wrap(err, "failed to unpack MsgEthereumTx Data")
 			}
 
-			params := vbd.evmKeeper.GetParams(ctx)
-			chainID := vbd.evmKeeper.ChainID()
-			ethCfg := params.ChainConfig.EthereumConfig(chainID)
-			baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
+			// return error if contract creation or call are disabled through governance
+			if !params.EnableCreate && txData.GetTo() == nil {
+				return ctx, sdkerrors.Wrap(evmtypes.ErrCreateDisabled, "failed to create new contract")
+			} else if !params.EnableCall && txData.GetTo() != nil {
+				return ctx, sdkerrors.Wrap(evmtypes.ErrCallDisabled, "failed to call contract")
+			}
+
 			if baseFee == nil && txData.TxType() == ethtypes.DynamicFeeTxType {
 				return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
 			}

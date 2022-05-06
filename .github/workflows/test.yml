@@ -121,7 +121,7 @@ jobs:
 
   test-sim-nondeterminism:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/setup-go@v3
         with:
@@ -134,14 +134,14 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - name: Test x/evm simulation nondeterminism
+      - name: Test simulation nondeterminism
         run: |
           make test-sim-nondeterminism
         if: env.GIT_DIFF
 
   test-sim-random-genesis-fast:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/setup-go@v3
         with:
@@ -154,14 +154,14 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - name: Test x/evm simulation with random genesis 
+      - name: Test simulation with random genesis 
         run: |
           make test-sim-random-genesis-fast
         if: env.GIT_DIFF
 
   test-sim-import-export:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/setup-go@v3
         with:
@@ -174,14 +174,14 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - name: Test x/evm simulation import and export
+      - name: Simulation of import and export genesis
         run: |
           make test-sim-import-export
         if: env.GIT_DIFF
 
   test-sim-after-import:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/setup-go@v3
         with:
@@ -194,7 +194,7 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - name: Test x/evm simulation after import
+      - name: Test simulation after import
         run: |
           make test-sim-after-import
         if: env.GIT_DIFF
