@@ -38,6 +38,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+## [v0.15.0] - 2022-05-09
+
 ### State Machine Breaking
 
 * (ante) [tharsis#1060](https://github.com/tharsis/ethermint/pull/1060) Check `EnableCreate`/`EnableCall` in `AnteHandler` to short-circuit EVM transactions.
