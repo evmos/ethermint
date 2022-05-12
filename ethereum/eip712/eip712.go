@@ -322,8 +322,12 @@ func traverseFields(
 				fieldTypedef = sanitizeTypedef(fieldPrefix)
 			}
 
-			// TODO: improve the solution, this is a patch to demo the error
+			//// TODO: improve the solution, this is a patch to demo the error
 			if fieldTypedef == "TypePubkey" {
+				fieldTypedef = "string"
+			}
+
+			if fieldTypedef == "TypeAllowance" {
 				fieldTypedef = "string"
 			}
 

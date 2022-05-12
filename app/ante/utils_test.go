@@ -1,6 +1,8 @@
 package ante_test
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	types4 "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"math"
 	"testing"
 	"time"
@@ -221,7 +223,7 @@ func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgDelegate(from sdk.AccAdd
 func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
 	// Build MsgCreateValidator
 	valAddr := sdk.ValAddress(from.Bytes())
-	msgSend, error := types3.NewMsgCreateValidator(
+	msgCreate, err := types3.NewMsgCreateValidator(
 		valAddr,
 		priv.PubKey(),
 		sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)),
@@ -230,8 +232,28 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator(from sdk.AccAddre
 		types3.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 		sdk.OneInt(),
 	)
-	suite.Require().NoError(error)
-	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgSend)
+	suite.Require().NoError(err)
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgCreate)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712SubmitProposal(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins, deposit sdk.Coins) client.TxBuilder {
+	msgSubmit, err := types4.NewMsgSubmitProposal(types4.ContentFromProposalType("My proposal", "My description", types4.ProposalTypeText), deposit, from)
+	suite.Require().NoError(err)
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgSubmit)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712GrantAllowance(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	spendLimit := sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 10))
+	threeHours := time.Now().Add(3 * time.Hour)
+	basic := &feegrant.BasicAllowance{
+		SpendLimit: spendLimit,
+		Expiration: &threeHours,
+	}
+	granted := tests.GenerateAddress()
+	grantedAddr := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, granted.Bytes())
+	msgGrant, err := feegrant.NewMsgGrantAllowance(basic, from, grantedAddr.GetAddress())
+	suite.Require().NoError(err)
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgGrant)
 }
 
 func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
