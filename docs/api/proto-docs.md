@@ -79,6 +79,9 @@
 - [ethermint/types/v1/account.proto](#ethermint/types/v1/account.proto)
     - [EthAccount](#ethermint.types.v1.EthAccount)
   
+- [ethermint/types/v1/indexer.proto](#ethermint/types/v1/indexer.proto)
+    - [TxResult](#ethermint.types.v1.TxResult)
+  
 - [ethermint/types/v1/web3.proto](#ethermint/types/v1/web3.proto)
     - [ExtensionOptionsWeb3Tx](#ethermint.types.v1.ExtensionOptionsWeb3Tx)
   
@@ -1129,6 +1132,43 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 | ----- | ---- | ----- | ----------- |
 | `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
 | `code_hash` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethermint/types/v1/indexer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethermint/types/v1/indexer.proto
+
+
+
+<a name="ethermint.types.v1.TxResult"></a>
+
+### TxResult
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  |  |
+| `tx_index` | [uint32](#uint32) |  |  |
+| `msg_index` | [uint32](#uint32) |  |  |
+| `eth_tx_index` | [int32](#int32) |  | eth tx index, -1 if not found |
+| `failed` | [bool](#bool) |  |  |
+| `gas_used` | [uint64](#uint64) |  |  |
+| `cumulative_gas_used` | [uint64](#uint64) |  | the cumulative gas used within current batch tx |
 
 
 
