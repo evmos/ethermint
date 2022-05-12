@@ -56,7 +56,7 @@ func (suite *BackendTestSuite) SetupTest() {
 
 	allowUnprotectedTxs := false
 
-	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
+	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, nil)
 	suite.backend.queryClient.QueryClient = mocks.NewQueryClient(suite.T())
 	suite.backend.clientCtx.Client = mocks.NewClient(suite.T())
 	suite.backend.ctx = rpctypes.ContextWithHeight(1)

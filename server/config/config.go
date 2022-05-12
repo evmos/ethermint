@@ -103,6 +103,8 @@ type JSONRPCConfig struct {
 	// AllowUnprotectedTxs restricts unprotected (non EIP155 signed) transactions to be submitted via
 	// the node's RPC when global parameter is disabled.
 	AllowUnprotectedTxs bool `mapstructure:"allow-unprotected-txs"`
+	// EnableIndexer defines if enable the custom indexer service.
+	EnableIndexer bool `mapstructure:"enable-indexer"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -202,6 +204,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		HTTPTimeout:         DefaultHTTPTimeout,
 		HTTPIdleTimeout:     DefaultHTTPIdleTimeout,
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
+		EnableIndexer:       false,
 	}
 }
 
@@ -305,6 +308,7 @@ func GetConfig(v *viper.Viper) Config {
 			BlockRangeCap:   v.GetInt32("json-rpc.block-range-cap"),
 			HTTPTimeout:     v.GetDuration("json-rpc.http-timeout"),
 			HTTPIdleTimeout: v.GetDuration("json-rpc.http-idle-timeout"),
+			EnableIndexer:   v.GetBool("json-rpc.enable-indexer"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
