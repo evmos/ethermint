@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### API Breaking
+
+- (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) Deduplicate some json-rpc logic codes, cleanup several dead functions.
+
 ### Improvements
 
 * (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
