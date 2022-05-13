@@ -586,7 +586,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransactio
 					common.Hash{},
 					uint64(0),
 					uint64(0),
-					b.chainID,
+					nil,
 				)
 				if err != nil {
 					return nil, err
@@ -649,12 +649,17 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransactio
 		return nil, errors.New("can't find index of ethereum tx")
 	}
 
+	baseFee, err := b.BaseFee(block.Block.Height)
+	if err != nil {
+		return nil, err
+	}
+
 	return types.NewTransactionFromMsg(
 		msg,
 		common.BytesToHash(block.BlockID.Hash.Bytes()),
 		uint64(res.Height),
 		txIndex,
-		b.chainID,
+		baseFee,
 	)
 }
 

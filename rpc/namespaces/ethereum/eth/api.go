@@ -764,12 +764,17 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 		msg = ethMsgs[i]
 	}
 
+	baseFee, err := e.backend.BaseFee(block.Block.Height)
+	if err != nil {
+		return nil, err
+	}
+
 	return rpctypes.NewTransactionFromMsg(
 		msg,
 		common.BytesToHash(block.Block.Hash()),
 		uint64(block.Block.Height),
 		uint64(idx),
-		e.chainIDEpoch,
+		baseFee,
 	)
 }
 
@@ -983,7 +988,7 @@ func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error)
 				common.Hash{},
 				uint64(0),
 				uint64(0),
-				e.chainIDEpoch,
+				nil,
 			)
 			if err != nil {
 				return nil, err
