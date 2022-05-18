@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	math2 "github.com/ethereum/go-ethereum/common/math"
 	"math"
 	"math/big"
 
@@ -415,6 +416,13 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 			return nil, sdkerrors.Wrap(err, "failed to commit stateDB")
 		}
 	}
+
+	intGasLimit := new(big.Int).SetUint64(msg.Gas())
+	// MinGasDenominator can not be 0 as it is validated on Validate params
+	intMinDenominatorParam := new(big.Int).SetUint64(cfg.Params.MinGasDenominator)
+	intGasUsed := new(big.Int).SetUint64(gasUsed)
+	minGasUsed := new(big.Int).Div(intGasLimit, intMinDenominatorParam)
+	gasUsed = math2.BigMax(minGasUsed, intGasUsed).Uint64()
 
 	return &types.MsgEthereumTxResponse{
 		GasUsed: gasUsed,

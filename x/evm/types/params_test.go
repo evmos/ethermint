@@ -22,7 +22,7 @@ func TestParamsValidate(t *testing.T) {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344),
+			NewParams("ara", true, true, DefaultChainConfig(), 2, 2929, 1884, 1344),
 			false,
 		},
 		{
@@ -47,8 +47,13 @@ func TestParamsValidate(t *testing.T) {
 		},
 		{
 			"invalid chain config",
-			NewParams("ara", true, true, ChainConfig{}, 2929, 1884, 1344),
+			NewParams("ara", true, true, ChainConfig{}, 2, 2929, 1884, 1344),
 			false,
+		},
+		{
+			"invalid min gas denominator",
+			NewParams("ara", true, true, ChainConfig{}, 0, 2929, 1884, 1344),
+			true,
 		},
 	}
 
@@ -64,7 +69,7 @@ func TestParamsValidate(t *testing.T) {
 }
 
 func TestParamsEIPs(t *testing.T) {
-	params := NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344)
+	params := NewParams("ara", true, true, DefaultChainConfig(), 556, 2929, 1884, 1344)
 	actual := params.EIPs()
 
 	require.Equal(t, []int([]int{2929, 1884, 1344}), actual)
@@ -77,6 +82,7 @@ func TestParamsValidatePriv(t *testing.T) {
 	require.NoError(t, validateBool(true))
 	require.Error(t, validateEIPs(""))
 	require.NoError(t, validateEIPs([]int64{1884}))
+	require.Error(t, validateMinGasDenominator(-1))
 }
 
 func TestValidateChainConfig(t *testing.T) {

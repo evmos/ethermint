@@ -24,6 +24,9 @@ message Params {
     (gogoproto.moretags) = "yaml:\"chain_config\"",
     (gogoproto.nullable) = false
   ];
+  // min gas denominator bounds the minimum gasUsed to be charge
+  // to senders based on GasLimit
+  uint64 min_gas_denominator = 6 [ (gogoproto.moretags) = "yaml:\"min_gas_denominator\"" ];
 }
 
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values

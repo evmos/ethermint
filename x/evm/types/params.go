@@ -15,16 +15,18 @@ import (
 var _ paramtypes.ParamSet = &Params{}
 
 const (
-	DefaultEVMDenom = types.AttoPhoton
+	DefaultEVMDenom          = types.AttoPhoton
+	DefaultMinGasDenominator = 2
 )
 
 // Parameter keys
 var (
-	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
-	ParamStoreKeyEnableCreate = []byte("EnableCreate")
-	ParamStoreKeyEnableCall   = []byte("EnableCall")
-	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
-	ParamStoreKeyChainConfig  = []byte("ChainConfig")
+	ParamStoreKeyEVMDenom          = []byte("EVMDenom")
+	ParamStoreKeyEnableCreate      = []byte("EnableCreate")
+	ParamStoreKeyEnableCall        = []byte("EnableCall")
+	ParamStoreKeyExtraEIPs         = []byte("EnableExtraEIPs")
+	ParamStoreKeyChainConfig       = []byte("ChainConfig")
+	ParamStoreKeyMinGasDenominator = []byte("MinGasDenominator")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
 	// EVM interpreter. These EIPs are applied in order and can override the
@@ -40,13 +42,14 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, minGasDenom uint64, extraEIPs ...int64) Params {
 	return Params{
-		EvmDenom:     evmDenom,
-		EnableCreate: enableCreate,
-		EnableCall:   enableCall,
-		ExtraEIPs:    extraEIPs,
-		ChainConfig:  config,
+		EvmDenom:          evmDenom,
+		EnableCreate:      enableCreate,
+		EnableCall:        enableCall,
+		ExtraEIPs:         extraEIPs,
+		ChainConfig:       config,
+		MinGasDenominator: minGasDenom,
 	}
 }
 
@@ -54,11 +57,12 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfi
 // ExtraEIPs is empty to prevent overriding the latest hard fork instruction set
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:     DefaultEVMDenom,
-		EnableCreate: true,
-		EnableCall:   true,
-		ChainConfig:  DefaultChainConfig(),
-		ExtraEIPs:    nil,
+		EvmDenom:          DefaultEVMDenom,
+		EnableCreate:      true,
+		EnableCall:        true,
+		ChainConfig:       DefaultChainConfig(),
+		ExtraEIPs:         nil,
+		MinGasDenominator: DefaultMinGasDenominator,
 	}
 }
 
@@ -70,6 +74,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
+		paramtypes.NewParamSetPair(ParamStoreKeyMinGasDenominator, &p.MinGasDenominator, validateMinGasDenominator),
 	}
 }
 
@@ -80,6 +85,10 @@ func (p Params) Validate() error {
 	}
 
 	if err := validateEIPs(p.ExtraEIPs); err != nil {
+		return err
+	}
+
+	if err := validateMinGasDenominator(p.MinGasDenominator); err != nil {
 		return err
 	}
 
@@ -124,6 +133,18 @@ func validateEIPs(i interface{}) error {
 		}
 	}
 
+	return nil
+}
+
+func validateMinGasDenominator(i interface{}) error {
+	gasDenom, ok := i.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter Minimum gas denominator type: %T", i)
+	}
+
+	if gasDenom <= 0 {
+		return fmt.Errorf("min gas denominator can not be smaller than 0")
+	}
 	return nil
 }
 
