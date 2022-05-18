@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Improvements
+
+* (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
+
 ## [v0.15.0] - 2022-05-09
 
 ### State Machine Breaking
