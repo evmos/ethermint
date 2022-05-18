@@ -57,6 +57,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   * Move `rpc/ethereum/backend` -> `rpc/backend`
   * Move `rpc/ethereum/namespaces` -> `rpc/namespaces/ethereum`
 * (rpc) [tharsis#1068](https://github.com/tharsis/ethermint/pull/1068) Fix London hard-fork check logic in JSON-RPC APIs.
+* (evm) [tharsis#1087](https://github.com/tharsis/ethermint/pull/1087) Minimum GasUsed proportional to GasLimit and `MinGasDenominator` EVM module param.
 
 ### Improvements
 
