@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Improvements
+
+* (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
+
 ### Bug Fixes
 
 * (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
