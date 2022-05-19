@@ -416,11 +416,12 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 		}
 	}
 
+	// calculate a minimum amount of gas to be charged to sender if GasLimit
+	// is considerably higher than GasUsed to stay more aligned with Tendermint gas mechanics
+	// NOTE: MinGasDenominator can not be negative as it is validated on ValidateParams
 	decGasLimit := sdk.NewDec(int64(msg.Gas()))
 	minimumGasUsed := decGasLimit.Mul(cfg.Params.MinGasDenominator)
-
 	decGasUsed := sdk.NewDec(int64(gasUsed))
-	// MinGasDenominator can not be negative as it is validated on ValidateParams
 	gasUsed = sdk.MaxDec(minimumGasUsed, decGasUsed).RoundInt().Uint64()
 
 	return &types.MsgEthereumTxResponse{
