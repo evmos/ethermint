@@ -47,13 +47,8 @@ func TestParamsValidate(t *testing.T) {
 			true,
 		},
 		{
-			"invalid chain config",
-			NewParams("ara", true, true, ChainConfig{}, sdk.NewDecWithPrec(50, 2), 2929, 1884, 1344),
-			false,
-		},
-		{
 			"invalid min gas denominator",
-			NewParams("ara", true, true, ChainConfig{}, sdk.NewDec(2), 2929, 1884, 1344),
+			NewParams("ara", true, true, DefaultChainConfig(), sdk.NewDec(2), 2929, 1884, 1344),
 			true,
 		},
 	}
