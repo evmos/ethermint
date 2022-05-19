@@ -420,10 +420,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	// is considerably higher than GasUsed to stay more aligned with Tendermint gas mechanics
 	// for more info https://github.com/tharsis/ethermint/issues/1085
 	// NOTE: MinGasDenominator can not be negative as it is validated on ValidateParams
-	decGasLimit := sdk.NewDec(int64(msg.Gas()))
-	minimumGasUsed := decGasLimit.Mul(cfg.Params.MinGasDenominator)
-	decGasUsed := sdk.NewDec(int64(gasUsed))
-	gasUsed = sdk.MaxDec(minimumGasUsed, decGasUsed).RoundInt().Uint64()
+	gasLimit := sdk.NewDec(int64(msg.Gas()))
+	minimumGasUsed := gasLimit.Mul(cfg.Params.MinGasDenominator)
+	gasUsed = sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(gasUsed))).RoundInt().Uint64()
 
 	return &types.MsgEthereumTxResponse{
 		GasUsed: gasUsed,
