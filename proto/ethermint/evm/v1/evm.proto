@@ -26,7 +26,7 @@ message Params {
   ];
   // min gas denominator bounds the minimum gasUsed to be charged
   // to senders based on GasLimit
-  string min_gas_denominator = 6 [
+  string min_gas_multiplier = 6 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];

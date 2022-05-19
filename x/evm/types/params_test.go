@@ -47,7 +47,7 @@ func TestParamsValidate(t *testing.T) {
 			true,
 		},
 		{
-			"invalid min gas denominator",
+			"invalid min gas multplier",
 			NewParams("ara", true, true, DefaultChainConfig(), sdk.NewDec(2), 2929, 1884, 1344),
 			true,
 		},
@@ -78,7 +78,7 @@ func TestParamsValidatePriv(t *testing.T) {
 	require.NoError(t, validateBool(true))
 	require.Error(t, validateEIPs(""))
 	require.NoError(t, validateEIPs([]int64{1884}))
-	require.Error(t, validateMinGasDenominator(sdk.NewDec(-5)))
+	require.Error(t, validateMinGasMultiplier(sdk.NewDec(-5)))
 }
 
 func TestValidateChainConfig(t *testing.T) {
