@@ -15,8 +15,7 @@ import (
 var _ paramtypes.ParamSet = &Params{}
 
 const (
-	DefaultEVMDenom          = types.AttoPhoton
-	DefaultMinGasDenominator = 2
+	DefaultEVMDenom = types.AttoPhoton
 )
 
 // Parameter keys
@@ -42,7 +41,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, minGasDenom uint64, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, minGasDenom sdk.Dec, extraEIPs ...int64) Params {
 	return Params{
 		EvmDenom:          evmDenom,
 		EnableCreate:      enableCreate,
@@ -62,7 +61,7 @@ func DefaultParams() Params {
 		EnableCall:        true,
 		ChainConfig:       DefaultChainConfig(),
 		ExtraEIPs:         nil,
-		MinGasDenominator: DefaultMinGasDenominator,
+		MinGasDenominator: sdk.NewDecWithPrec(50, 2),
 	}
 }
 
@@ -137,13 +136,22 @@ func validateEIPs(i interface{}) error {
 }
 
 func validateMinGasDenominator(i interface{}) error {
-	gasDenom, ok := i.(uint64)
+	v, ok := i.(sdk.Dec)
+
 	if !ok {
-		return fmt.Errorf("invalid parameter Minimum gas denominator type: %T", i)
+		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if gasDenom <= 0 {
-		return fmt.Errorf("min gas denominator can not be smaller than 0")
+	if v.IsNil() {
+		return fmt.Errorf("invalid parameter: nil")
+	}
+
+	if v.IsNegative() {
+		return fmt.Errorf("value cannot be negative: %T", i)
+	}
+
+	if v.GT(sdk.OneDec()) {
+		return fmt.Errorf("value cannot be greater than 1: %T", i)
 	}
 	return nil
 }
