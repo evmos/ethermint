@@ -420,7 +420,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	minimumGasUsed := decGasLimit.Mul(cfg.Params.MinGasDenominator)
 
 	decGasUsed := sdk.NewDec(int64(gasUsed))
-	// MinGasDenominator can not be negative as it is validated on Validate params
+	// MinGasDenominator can not be negative as it is validated on ValidateParams
 	gasUsed = sdk.MaxDec(minimumGasUsed, decGasUsed).RoundInt().Uint64()
 
 	return &types.MsgEthereumTxResponse{
