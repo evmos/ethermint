@@ -23,7 +23,7 @@ func TestParamsValidate(t *testing.T) {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams("ara", true, true, DefaultChainConfig(), sdk.NewDecWithPrec(50, 2), 2929, 1884, 1344),
+			NewParams("ara", true, true, DefaultChainConfig(), DefaultMinGasMultiplier(), 2929, 1884, 1344),
 			false,
 		},
 		{
@@ -65,7 +65,7 @@ func TestParamsValidate(t *testing.T) {
 }
 
 func TestParamsEIPs(t *testing.T) {
-	params := NewParams("ara", true, true, DefaultChainConfig(), sdk.NewDecWithPrec(50, 2), 2929, 1884, 1344)
+	params := NewParams("ara", true, true, DefaultChainConfig(), DefaultMinGasMultiplier(), 2929, 1884, 1344)
 	actual := params.EIPs()
 
 	require.Equal(t, []int([]int{2929, 1884, 1344}), actual)

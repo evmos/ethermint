@@ -61,8 +61,12 @@ func DefaultParams() Params {
 		EnableCall:       true,
 		ChainConfig:      DefaultChainConfig(),
 		ExtraEIPs:        nil,
-		MinGasMultiplier: sdk.NewDecWithPrec(50, 2),
+		MinGasMultiplier: DefaultMinGasMultiplier(),
 	}
+}
+
+func DefaultMinGasMultiplier() sdk.Dec {
+	return sdk.NewDecWithPrec(50, 2)
 }
 
 // ParamSetPairs returns the parameter set pairs.
