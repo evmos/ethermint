@@ -37,7 +37,7 @@ type Params struct {
 	ExtraEIPs []int64 `protobuf:"varint,4,rep,packed,name=extra_eips,json=extraEips,proto3" json:"extra_eips,omitempty" yaml:"extra_eips"`
 	// chain config defines the EVM chain configuration parameters
 	ChainConfig ChainConfig `protobuf:"bytes,5,opt,name=chain_config,json=chainConfig,proto3" json:"chain_config" yaml:"chain_config"`
-	// min gas denominator bounds the minimum gasUsed to be charge
+	// min gas denominator bounds the minimum gasUsed to be charged
 	// to senders based on GasLimit
 	MinGasDenominator github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,6,opt,name=min_gas_denominator,json=minGasDenominator,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"min_gas_denominator"`
 }
