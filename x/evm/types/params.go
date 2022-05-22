@@ -65,6 +65,8 @@ func DefaultParams() Params {
 	}
 }
 
+// DefaultMinGasMultiplier returns default value for MinGasMultiplier.
+// Default value is 0.5 or 50%
 func DefaultMinGasMultiplier() sdk.Dec {
 	return sdk.NewDecWithPrec(50, 2)
 }
