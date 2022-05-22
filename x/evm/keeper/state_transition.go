@@ -396,12 +396,12 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	if msg.Gas() < leftoverGas {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
-	gasUsed := msg.Gas() - leftoverGas
-	refund := GasToRefund(stateDB.GetRefund(), gasUsed, refundQuotient)
-	if refund > gasUsed {
+	temporaryGasUsed := msg.Gas() - leftoverGas
+	refund := GasToRefund(stateDB.GetRefund(), temporaryGasUsed, refundQuotient)
+	if refund > temporaryGasUsed {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
-	gasUsed -= refund
+	temporaryGasUsed -= refund
 
 	// EVM execution error needs to be available for the JSON-RPC client
 	var vmError string
@@ -422,7 +422,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	// NOTE: MinGasDenominator can not be negative as it is validated on ValidateParams
 	gasLimit := sdk.NewDec(int64(msg.Gas()))
 	minimumGasUsed := gasLimit.Mul(cfg.Params.MinGasMultiplier)
-	gasUsed = sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(gasUsed))).TruncateInt().Uint64()
+	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
 
 	return &types.MsgEthereumTxResponse{
 		GasUsed: gasUsed,
