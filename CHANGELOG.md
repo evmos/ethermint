@@ -42,6 +42,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
 
+### Bug Fixes
+
+* (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
+* (evm) [tharsis#1088](https://github.com/tharsis/ethermint/pull/1088) Fix ability to append log in tx post processing.
+
 ## [v0.15.0] - 2022-05-09
 
 ### State Machine Breaking
