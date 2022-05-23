@@ -18,6 +18,9 @@ const (
 	DefaultEVMDenom = types.AttoPhoton
 )
 
+// DefaultMinGasMultiplier is 0.5 or 50%
+var DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
+
 // Parameter keys
 var (
 	ParamStoreKeyEVMDenom         = []byte("EVMDenom")
@@ -61,14 +64,8 @@ func DefaultParams() Params {
 		EnableCall:       true,
 		ChainConfig:      DefaultChainConfig(),
 		ExtraEIPs:        nil,
-		MinGasMultiplier: DefaultMinGasMultiplier(),
+		MinGasMultiplier: DefaultMinGasMultiplier,
 	}
-}
-
-// DefaultMinGasMultiplier returns default value for MinGasMultiplier.
-// Default value is 0.5 or 50%
-func DefaultMinGasMultiplier() sdk.Dec {
-	return sdk.NewDecWithPrec(50, 2)
 }
 
 // ParamSetPairs returns the parameter set pairs.

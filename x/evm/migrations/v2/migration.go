@@ -13,6 +13,6 @@ func AddMinGasMultiplierParam(ctx sdk.Context, paramStore *paramtypes.Subspace) 
 		paramStore = &ps
 	}
 
-	paramStore.Set(ctx, types.ParamStoreKeyMinGasMultiplier, types.DefaultMinGasMultiplier())
+	paramStore.Set(ctx, types.ParamStoreKeyMinGasMultiplier, types.DefaultMinGasMultiplier)
 	return nil
 }

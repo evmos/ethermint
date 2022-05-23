@@ -42,5 +42,5 @@ func TestAddMinGasMultiplierParam(t *testing.T) {
 	})
 
 	// check the params is up
-	require.Equal(t, minGasMultiplier, types.DefaultMinGasMultiplier())
+	require.Equal(t, minGasMultiplier, types.DefaultMinGasMultiplier)
 }
