@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### API Breaking
+
+- (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) Deduplicate some json-rpc logic codes, cleanup several dead functions.
+
 ### Improvements
 
 * (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
@@ -46,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
 * (evm) [tharsis#1088](https://github.com/tharsis/ethermint/pull/1088) Fix ability to append log in tx post processing.
+* (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
 
 ## [v0.15.0] - 2022-05-09
 

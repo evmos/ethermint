@@ -172,7 +172,7 @@ func (f *Filter) blockLogs(height int64, bloom ethtypes.Bloom) ([]*ethtypes.Log,
 
 	// DANGER: do not call GetLogs(header.Hash())
 	// eth header's hash doesn't match tm block hash
-	logsList, err := f.backend.GetLogsByNumber(types.BlockNumber(height))
+	logsList, err := f.backend.GetLogsByHeight(&height)
 	if err != nil {
 		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", height)
 	}
