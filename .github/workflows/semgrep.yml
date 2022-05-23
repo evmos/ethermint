@@ -13,6 +13,8 @@ jobs:
   semgrep:
     name: Scan
     runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
     if: (github.actor != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@v3
@@ -26,15 +28,11 @@ jobs:
             **/*.sol
             go.mod
             go.sum
-      - uses: returntocorp/semgrep-action@v1
-        with:
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-           # Upload findings to GitHub Advanced Security Dashboard [step 1/2]
-          # See also the next step.
-          generateSarif: "1"
+      - run: semgrep scan --sarif --output=semgrep.sarif
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         if: "env.GIT_DIFF_FILTERED != ''"
-      # Upload findings to GitHub Advanced Security Dashboard [step 2/2]
-      - name: Upload SARIF file
+      - name: Upload SARIF file for GitHub Advanced Security Dashboard
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: semgrep.sarif
