@@ -155,12 +155,23 @@ func (p *ParsedTxs) GetTxByHash(hash common.Hash) *ParsedTx {
 	return nil
 }
 
-// GetTxByIndex returns ParsedTx by index
-func (p *ParsedTxs) GetTxByIndex(i int) *ParsedTx {
-	if i >= len(p.Txs) {
+// GetTxByMsgIndex returns ParsedTx by msg index
+func (p *ParsedTxs) GetTxByMsgIndex(i int) *ParsedTx {
+	if i < 0 || i >= len(p.Txs) {
 		return nil
 	}
 	return &p.Txs[i]
+}
+
+// GetTxByTxIndex returns ParsedTx by tx index
+func (p *ParsedTxs) GetTxByTxIndex(i int) *ParsedTx {
+	// assuming the `EthTxIndex` continuously increment.
+	if len(p.Txs) == 0 {
+		return nil
+	}
+	msgIndex := i - int(p.Txs[0].EthTxIndex)
+	// GetTxByMsgIndex will check the bound
+	return p.GetTxByMsgIndex(msgIndex)
 }
 
 // AccumulativeGasUsed calculate the accumulated gas used within the batch

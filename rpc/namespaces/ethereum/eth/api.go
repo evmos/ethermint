@@ -752,7 +752,7 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 			return nil, fmt.Errorf("failed to parse tx events: %d, %v", idx, err)
 		}
 
-		parsedTx := parsedTxs.GetTxByIndex(int(idx))
+		parsedTx := parsedTxs.GetTxByTxIndex(int(idx))
 		if parsedTx == nil {
 			return nil, fmt.Errorf("ethereum tx not found in msgs: %d", idx)
 		}
