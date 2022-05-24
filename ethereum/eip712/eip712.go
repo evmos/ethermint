@@ -365,7 +365,7 @@ func sanitizeTypedef(str string) string {
 
 		subparts := strings.Split(part, "_")
 		for _, subpart := range subparts {
-			buf.WriteString(strings.Title(subpart)) // nolint: staticcheck
+			buf.WriteString(strings.Title(subpart)) // nolint
 		}
 	}
 
@@ -380,7 +380,7 @@ var (
 	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
 )
 
-// typToEth supports only basic types and arrays of basic types.
+// typToEth supports only basic types and arrays of basic types
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
 func typToEth(typ reflect.Type) string {
 	const str = "string"
