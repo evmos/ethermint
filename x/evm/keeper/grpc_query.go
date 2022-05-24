@@ -102,18 +102,16 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 
 	ctx := sdk.UnwrapSDKContext(c)
 
-	valOperator, found := k.GetValidatorOperatorByConsAddr(ctx, consAddr)
+	valOperator, found := k.getValidatorOperatorByConsAddr(ctx, consAddr)
 	if !found {
 		return nil, nil
 	}
 
-	accAddr := sdk.AccAddress(valOperator)
-
 	res := types.QueryValidatorAccountResponse{
-		AccountAddress: accAddr.String(),
+		AccountAddress: valOperator.String(),
 	}
 
-	account := k.accountKeeper.GetAccount(ctx, accAddr)
+	account := k.accountKeeper.GetAccount(ctx, valOperator)
 	if account != nil {
 		res.Sequence = account.GetSequence()
 		res.AccountNumber = account.GetAccountNumber()

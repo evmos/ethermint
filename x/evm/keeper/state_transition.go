@@ -120,7 +120,7 @@ func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, cfg *types.EVMConfig
 //  2. The requested height is from an previous height from the same chain epoch
 //  3. The requested height is from a height greater than the latest one
 func (k Keeper) GetHashFn(ctx sdk.Context) vm.GetHashFunc {
-	return k.GetHashFunc(ctx)
+	return k.getHashFunc(ctx)
 }
 
 // ApplyTransaction runs and attempts to perform a state transition with the given transaction (i.e Message), that will
@@ -461,7 +461,7 @@ func (k *Keeper) ResetGasMeterAndConsumeGas(ctx sdk.Context, gasUsed uint64) {
 // GetCoinbaseAddress returns the block proposer's validator operator address.
 func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
 	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
-	valOperatorAddr, found := k.GetValidatorOperatorByConsAddr(ctx, consAddr)
+	valOperatorAddr, found := k.getValidatorOperatorByConsAddr(ctx, consAddr)
 	if !found {
 		return common.Address{}, sdkerrors.Wrapf(
 			stakingtypes.ErrNoValidatorFound,

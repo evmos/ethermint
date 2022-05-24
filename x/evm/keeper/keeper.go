@@ -55,8 +55,8 @@ type Keeper struct {
 	hooks types.EvmHooks
 
 	// Custom Logic to Remove the Staking Keeper
-	GetHashFunc                    func(ctx sdk.Context) vm.GetHashFunc
-	GetValidatorOperatorByConsAddr func(sdk.Context, sdk.ConsAddress) (sdk.AccAddress, bool)
+	getHashFunc                    func(ctx sdk.Context) vm.GetHashFunc
+	getValidatorOperatorByConsAddr func(sdk.Context, sdk.ConsAddress) (sdk.AccAddress, bool)
 }
 
 // NewKeeper generates new evm module keeper
@@ -64,7 +64,7 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey sdk.StoreKey, paramSpace paramtypes.Subspace,
 	ak types.AccountKeeper, bankKeeper types.BankKeeper,
-	fmk types.FeeMarketKeeper, GetHashFunc func(ctx sdk.Context) vm.GetHashFunc, GetValidatorOperatorByConsAddr func(sdk.Context, sdk.ConsAddress) (sdk.AccAddress, bool),
+	fmk types.FeeMarketKeeper, getHashFunc func(ctx sdk.Context) vm.GetHashFunc, getValidatorOperatorByConsAddr func(sdk.Context, sdk.ConsAddress) (sdk.AccAddress, bool),
 	tracer string,
 ) *Keeper {
 	// ensure evm module account is set
@@ -87,8 +87,8 @@ func NewKeeper(
 		storeKey:                       storeKey,
 		transientKey:                   transientKey,
 		tracer:                         tracer,
-		GetHashFunc:                    GetHashFunc,
-		GetValidatorOperatorByConsAddr: GetValidatorOperatorByConsAddr,
+		getHashFunc:                    getHashFunc,
+		getValidatorOperatorByConsAddr: getValidatorOperatorByConsAddr,
 	}
 }
 

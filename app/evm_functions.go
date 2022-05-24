@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	tmtypes "github.com/tendermint/tendermint/types"
-	_ "github.com/tharsis/ethermint/client/docs/statik"
 	ethermint "github.com/tharsis/ethermint/types"
 
 	// Force-load the tracer engines to trigger registration due to Go-Ethereum v1.10.15 changes
