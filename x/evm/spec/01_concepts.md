@@ -6,33 +6,33 @@ order: 1
 
 ## EVM
 
-The Ethereum Virtual Machine (EVM) is a computation engine which can be thought of as one single entity maintained by thousands of connected computers (nodes) running an Ethereum client. As a virtual machine ([VM](https://en.wikipedia.org/wiki/Virtual_machine)), it is responisble for computing changes to the state deterministically regardless of the environment (hardware and OS). This means that every node has to get the exact same result given an identical starting state and transaction.
+The Ethereum Virtual Machine (EVM) is a computation engine which can be thought of as one single entity maintained by thousands of connected computers (nodes) running an Ethereum client. As a virtual machine ([VM](https://en.wikipedia.org/wiki/Virtual_machine)), the EVM is responisble for computing changes to the state deterministically regardless of its environment (hardware and OS). This means that every node has to get the exact same result given an identical starting state and transaction (tx).
 
 The EVM is considered to be the part of the Ethereum protocol that handles the deployment and execution of [smart contracts](https://ethereum.org/en/developers/docs/smart-contracts/). To make a clear distinction:
 
 * The Ethereum protocol describes a blockchain, in which all Ethereum accounts and smart contracts live. It has only one canonical state (a data structure, which keeps all accounts) at any given block in the chain.
 * The EVM, however, is the [state machine](https://en.wikipedia.org/wiki/Finite-state_machine) that defines the rules for computing a new valid state from block to block. It is an isolated runtime, which means that code running inside the EVM has no access to network, filesystem, or other processes (not external APIs).
 
-The `x/evm` module implements the EVM as a Cosmos SDK module. It allows users to interact with the EVM by submitting Ethereum transactions and executing their containing messages on the given state to evoke a state transition.
+The `x/evm` module implements the EVM as a Cosmos SDK module. It allows users to interact with the EVM by submitting Ethereum txs and executing their containing messages on the given state to evoke a state transition.
+
+### State
+
+The Ethereum state is a data structure, implemented as a [Merkle Patricia Trie](https://en.wikipedia.org/wiki/Merkle_tree), that keeps all accounts on the chain. The EVM makes changes to this data structure resulting in a new state with a different State Root. Ethereum can therefore be seen as a state chain that transitions from one state to another by executing transations in a block using the EVM. A new block of txs can be described through its Block header (parent hash, block number, time stamp, nonce, receipts,...).
 
 ### Accounts
 
 There are two types of accounts that can be stored in state at a given address:
 
-* **Externally Owned Account (EOA)**: Has nonce (transaction counter) and balance
+* **Externally Owned Account (EOA)**: Has nonce (tx counter) and balance
 * **Smart Contract**: Has nonce, balance, (immutable) code hash, storage root (another Merkle Patricia Trie)
 
-Smart contracts are just like regular accounts on the blockchain, which additionally store executable code in an Ethereum-specific binary format (EVM bytecode). They are typically written in an Ethereum high level language like Solidity which is compiled down to **EVM bytecode** and deployed on the blockchain, by submitting a transaction using an Ethereum client.
-
-### State
-
-The Ethereum state is a data structure, implemented as a [Merkle Patricia Trie](https://en.wikipedia.org/wiki/Merkle_tree), that keeps all accounts on the chain. The EVM makes changes to this data structure resulting in a new state with a different State Root. Ethereum can therefore be seen as a state chain that transitions from one state to another by executing transations in a block using the EVM. Any new block of transaction can be described through its Block hearder (parent hash, block number, time stamp, nonce, receipts,...).
+Smart contracts are just like regular accounts on the blockchain, which additionally store executable code in an Ethereum-specific binary format, known as **EVM bytecode**. They are typically written in an Ethereum high level language such as Solidity which is compiled down to EVM bytecode and deployed on the blockchain, by submitting a tx using an Ethereum client.
 
 ### Architecture
 
 The EVM operates as a stack-based machine. It's main architecture components consist of:
 
-- Virtual ROM: Contract code is pulled into this read only memory during processing Txs
+- Virtual ROM: contract code is pulled into this read only memory when processing txs
 - Machine state (volatile): changes as the EVM runs and is wiped clean after processing each tx
   - Program counter (PC)
   - Gas: keeps track of how much gas is used
@@ -41,11 +41,11 @@ The EVM operates as a stack-based machine. It's main architecture components con
 
 ### State Transitions with Smart Contracts
 
-Typically smart contracts expose a public ABI, which is a list of supported ways a user can interact with a contract. To interact with a contract and invoke a state transition, a user will submit a transaction carrying any amount of gas and a data payload formatted according to the ABI, specifying the type of interaction and any additional parameters. When the transaction is received, the EVM executes the smart contracts's EVM bytecode using the transaction payload.
+Typically smart contracts expose a public ABI, which is a list of supported ways a user can interact with a contract. To interact with a contract and invoke a state transition, a user will submit a tx carrying any amount of gas and a data payload formatted according to the ABI, specifying the type of interaction and any additional parameters. When the tx is received, the EVM executes the smart contracts's EVM bytecode using the tx payload.
 
 ### Executing EVM bytecode
 
-The contracts' EVM bytecode consists of basic operations (add, multiply, store, etc...), called **Opcodes**. Each Opcode execution requires gas that needs to be payed with the transaction. The EVM is therefore considered quasi-turing complete, as it allows any arbitrary computation, but the amount of computations during a contract execution is limited to the amount gas provided in the transaction. Each Opcode's [**gas cost**](https://www.evm.codes/) reflects the cost of running these operations on actual computer hardware (e.g. `ADD = 3gas` and `SSTORE = 100gas`). To calculate the gas consumption of a transaction, the gas cost is multiplied by the **gas price**, which can change depending on the demand of the network at the time. If the network is under heavy load, you might have to pay a highter gas price to get your transaction executed. If the gas limit is hit (out of gas execption) no changes to the Ethereum state are applied, except that the sender's nonce increments and their balance goes down to pay for wasting the EVM's time.
+A contract's EVM bytecode consists of basic operations (add, multiply, store, etc...), called **Opcodes**. Each Opcode execution requires gas that needs to be payed with the tx. The EVM is therefore considered quasi-turing complete, as it allows any arbitrary computation, but the amount of computations during a contract execution is limited to the amount of gas provided in the tx. Each Opcode's [**gas cost**](https://www.evm.codes/) reflects the cost of running these operations on actual computer hardware (e.g. `ADD = 3gas` and `SSTORE = 100gas`). To calculate the gas consumption of a tx, the gas cost is multiplied by the **gas price**, which can change depending on the demand of the network at the time. If the network is under heavy load, you might have to pay a highter gas price to get your tx executed. If the gas limit is hit (out of gas execption) no changes to the Ethereum state are applied, except that the sender's nonce increments and their balance goes down to pay for wasting the EVM's time.
 
 Smart contracts can also call other smart contracts. Each call to a new contract creates a new instance of the EVM (including a new stack and memory). Each call passes the sandbox state to the next EVM. If the gas runs out, all state changes are discareded. Otherwise they are kept.
 
@@ -56,23 +56,19 @@ For further reading, please refer to:
 - [What is Ethereum](https://ethdocs.org/en/latest/introduction/what-is-ethereum.html#what-is-ethereum)
 - [Opcodes](https://www.ethervm.io/)
 
-## Ethermint as geth implementation
+## Ethermint as Geth implementation
 
-Ethermint is an implementation of the [Etherum protocal in Golang](https://geth.ethereum.org/docs/getting-started) (Geth) as a Cosmos SDK module. Geth includes an implementation of the EVM to compute state transitions. Have a look at the [go-etheruem source code](https://github.com/ethereum/go-ethereum/blob/master/core/vm/instructions.go) to see how the EVM opcodes are implemented. Just as Geth can be run as an Etherum node, Ethermint can be run as a node to compute state transitions with the EVM.
-
-To be Web3 and EVM compatible, Ethermint supports Geth's standard [Ethereum JSON-RPC APIs](https://docs.evmos.org/developers/json-rpc/endpoints.html).
+Ethermint is an implementation of the [Etherum protocal in Golang](https://geth.ethereum.org/docs/getting-started) (Geth) as a Cosmos SDK module. Geth includes an implementation of the EVM to compute state transitions. Have a look at the [go-etheruem source code](https://github.com/ethereum/go-ethereum/blob/master/core/vm/instructions.go) to see how the EVM opcodes are implemented. Just as Geth can be run as an Etherum node, Ethermint can be run as a node to compute state transitions with the EVM. Ethermint supports Geth's standard [Ethereum JSON-RPC APIs](https://docs.evmos.org/developers/json-rpc/endpoints.html) in order to be Web3 and EVM compatible.
 
 ### JSON-RPC
 
 JSON-RPC is a stateless, lightweight remote procedure call (RPC) protocol. Primarily this specification defines several data structures and the rules around their processing. It is transport agnostic in that the concepts can be used within the same process, over sockets, over HTTP, or in many various message passing environments. It uses JSON (RFC 4627) as a data format.
 
-Ethermint supports all standard web3 [JSON-RPC](https://evmos.dev/api/json-rpc/server.html) APIs. For more info check the client section.
+#### JSON-RPC Example: `eth_call`
 
-#### Example `eth_call`
+The JSON-RPC method [`eth_call`](https://docs.evmos.org/developers/json-rpc/endpoints.html#eth-call) allows you to execute messages against contracts. Usually, you need to send a transaction to a Geth node to include it in the mempool, then nodes gossip between each other and eventually the transaction is included in a block and gets executed. `eth_call` however lets you send data to a contract and see what happens without commiting a transaction.
 
-The JSON-RPC method [`eth_call`](https://docs.evmos.org/developers/json-rpc/endpoints.html#eth-call) allows you to execute messages against contracts. Usually, you need to send a transaction to a geth node to include it in the mempool, then nodes gossip between each other and eventually the transaction is included in a block and gets executed. `eth_call` however lets you send data to a contract and see what happens without commiting a transaction.
-
-In the geth implementation, calling the endpoint roughly goes through the following steps:
+In the Geth implementation, calling the endpoint roughly goes through the following steps:
 
 1. The `eth_call` request is transformed to call the `func (s *PublicBlockchainAPI) Call()` function using the `eth` namespace
 2. [`Call()`](https://github.com/ethereum/go-ethereum/blob/master/internal/ethapi/api.go#L982) is given the transaction arguments, the block to call against and optional overides that modify the state to call against. It then calls `DoCall()`
@@ -83,13 +79,13 @@ In the geth implementation, calling the endpoint roughly goes through the follow
 7. [`Run()`](https://github.com/ethereum/go-ethereum/blob/d575a2d3bc76dfbdefdd68b6cffff115542faf75/core/vm/interpreter.go#L116) performs a loop to execute the opcodes.
 
 
-The ethermint implementatiom is similar and makes use of the grpc query client included in the Cosmos SDK:
+The ethermint implementatiom is similar and makes use of the gRPC query client which is included in the Cosmos SDK:
 
 1. `eth_call` request is transformed to call the `func (e *PublicAPI) Call` function using the `eth` namespace
 2. [`Call()`](https://github.com/tharsis/ethermint/blob/main/rpc/namespaces/ethereum/eth/api.go#L639) calls `doCall()`
 3. [`doCall()`](https://github.com/tharsis/ethermint/blob/main/rpc/namespaces/ethereum/eth/api.go#L656) transforms the arguments into a `EthCallRequest` and calls `EthCall()` using the query client of the evm module.
 4. [`EthCall()`](https://github.com/tharsis/ethermint/blob/main/x/evm/keeper/grpc_query.go#L212) transforms the arguments into a `ethtypes.message` and calls `ApplyMessageWithConfig()
-5. [`ApplyMessageWithConfig()`](https://github.com/tharsis/ethermint/blob/d5598932a7f06158b7a5e3aa031bbc94eaaae32c/x/evm/keeper/state_transition.go#L341) instantiates an EVM and either `Create()`s a new contract or `Call()`s a contract using the geth implementation.
+5. [`ApplyMessageWithConfig()`](https://github.com/tharsis/ethermint/blob/d5598932a7f06158b7a5e3aa031bbc94eaaae32c/x/evm/keeper/state_transition.go#L341) instantiates an EVM and either `Create()`s a new contract or `Call()`s a contract using the Geth implementation.
 
 ### StateDB
 
