@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -130,37 +129,6 @@ func FormatBlock(
 	}
 
 	return result
-}
-
-type DataError interface {
-	Error() string          // returns the message
-	ErrorData() interface{} // returns the error data
-}
-
-type dataError struct {
-	msg  string
-	data string
-}
-
-func (d *dataError) Error() string {
-	return d.msg
-}
-
-func (d *dataError) ErrorData() interface{} {
-	return d.data
-}
-
-type SDKTxLogs struct {
-	Log string `json:"log"`
-}
-
-const LogRevertedFlag = "transaction reverted"
-
-func ErrRevertedWith(data []byte) DataError {
-	return &dataError{
-		msg:  "VM execution error.",
-		data: fmt.Sprintf("0x%s", hex.EncodeToString(data)),
-	}
 }
 
 // NewTransactionFromMsg returns a transaction that will serialize to the RPC
