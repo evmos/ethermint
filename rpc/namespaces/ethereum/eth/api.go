@@ -342,7 +342,7 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
 	e.logger.Debug("eth_getBlockTransactionCountByNumber", "height", blockNum.Int64())
-	block, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
+	block, err := e.backend.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
 		return nil
@@ -800,7 +800,7 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
 
-	block, err := e.clientCtx.Client.Block(e.ctx, blockNum.TmHeight())
+	block, err := e.backend.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
 		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
 		return nil, nil
