@@ -82,6 +82,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### API Breaking
 
 * (evm) [tharsis#1051](https://github.com/tharsis/ethermint/pull/1051) Context block height fix on TraceTx. Removes `tx_index` on `QueryTraceTxRequest` proto type.
+* (evm) [tharsis#1091](https://github.com/tharsis/ethermint/pull/1091) Add query params command on EVM Module
 
 ### Improvements
 
