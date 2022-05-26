@@ -1,6 +1,7 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/params"
@@ -22,7 +23,7 @@ func TestParamsValidate(t *testing.T) {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344),
+			NewParams("ara", true, true, DefaultChainConfig(), DefaultMinGasMultiplier, 2929, 1884, 1344),
 			false,
 		},
 		{
@@ -46,9 +47,9 @@ func TestParamsValidate(t *testing.T) {
 			true,
 		},
 		{
-			"invalid chain config",
-			NewParams("ara", true, true, ChainConfig{}, 2929, 1884, 1344),
-			false,
+			"invalid min gas multplier",
+			NewParams("ara", true, true, DefaultChainConfig(), sdk.NewDec(2), 2929, 1884, 1344),
+			true,
 		},
 	}
 
@@ -64,7 +65,7 @@ func TestParamsValidate(t *testing.T) {
 }
 
 func TestParamsEIPs(t *testing.T) {
-	params := NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344)
+	params := NewParams("ara", true, true, DefaultChainConfig(), DefaultMinGasMultiplier, 2929, 1884, 1344)
 	actual := params.EIPs()
 
 	require.Equal(t, []int([]int{2929, 1884, 1344}), actual)
@@ -77,6 +78,7 @@ func TestParamsValidatePriv(t *testing.T) {
 	require.NoError(t, validateBool(true))
 	require.Error(t, validateEIPs(""))
 	require.NoError(t, validateEIPs([]int64{1884}))
+	require.Error(t, validateMinGasMultiplier(sdk.NewDec(-5)))
 }
 
 func TestValidateChainConfig(t *testing.T) {

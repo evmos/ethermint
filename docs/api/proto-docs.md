@@ -227,6 +227,7 @@ Params defines the EVM module parameters
 | `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
 | `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
 | `chain_config` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
+| `min_gas_multiplier` | [string](#string) |  | min gas denominator bounds the minimum gasUsed to be charged to senders based on GasLimit |
 
 
 

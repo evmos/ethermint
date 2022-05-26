@@ -58,6 +58,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (ante) [tharsis#1060](https://github.com/tharsis/ethermint/pull/1060) Check `EnableCreate`/`EnableCall` in `AnteHandler` to short-circuit EVM transactions.
+* (evm) [tharsis#1087](https://github.com/tharsis/ethermint/pull/1087) Minimum GasUsed proportional to GasLimit and `MinGasDenominator` EVM module param.
 
 ### API Breaking
 
@@ -82,6 +83,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### API Breaking
 
 * (evm) [tharsis#1051](https://github.com/tharsis/ethermint/pull/1051) Context block height fix on TraceTx. Removes `tx_index` on `QueryTraceTxRequest` proto type.
+* (evm) [tharsis#1091](https://github.com/tharsis/ethermint/pull/1091) Add query params command on EVM Module
 
 ### Improvements
 
