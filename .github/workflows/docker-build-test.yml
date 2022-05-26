@@ -64,6 +64,7 @@ jobs:
       with:
         repository: celestiaorg/ephemeral-cluster
         path: ephemeral-cluster
+        ref: jbowen93/mess
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
