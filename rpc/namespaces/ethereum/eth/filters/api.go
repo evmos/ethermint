@@ -29,7 +29,7 @@ type Backend interface {
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
-	GetLogsByNumber(blockNum types.BlockNumber) ([][]*ethtypes.Log, error)
+	GetLogsByHeight(*int64) ([][]*ethtypes.Log, error)
 	BlockBloom(height *int64) (ethtypes.Bloom, error)
 
 	BloomStatus() (uint64, uint64)
