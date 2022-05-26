@@ -45,6 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
+* (specs) [tharsis#1095](https://github.com/tharsis/ethermint/pull/1095) Add more evm specs concepts.
 
 ### Bug Fixes
 
