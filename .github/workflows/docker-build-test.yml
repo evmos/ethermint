@@ -80,10 +80,6 @@ jobs:
         docker ps -a
         echo "------------- docker logs core0 -------------"
         docker logs core0
-        echo "------------- docker logs bridge0 -------------"
-        docker logs bridge0
-        echo "------------- docker logs light0 -------------"
-        docker logs light0
         echo "------------- docker logs dalc0 -------------"
         docker logs dalc0
         echo "------------- docker logs ethermint0 -------------"
