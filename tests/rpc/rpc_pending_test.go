@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -269,8 +270,9 @@ func TestEth_Pending_GetTransactionByBlockNumberAndIndex(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionByHash(t *testing.T) {
+	sleep := 0 * time.Second
 	// negative case, check that it returns empty.
-	rpcRes := Call(t, "eth_getTransactionByHash", []interface{}{"0xec5fa15e1368d6ac314f9f64118c5794f076f63c02e66f97ea5fe1de761a8973"})
+	rpcRes := CallWithSleep(t, "eth_getTransactionByHash", []interface{}{"0xec5fa15e1368d6ac314f9f64118c5794f076f63c02e66f97ea5fe1de761a8973"}, sleep)
 	var tx map[string]interface{}
 	err := json.Unmarshal(rpcRes.Result, &tx)
 	require.NoError(t, err)
@@ -281,17 +283,17 @@ func TestEth_Pending_GetTransactionByHash(t *testing.T) {
 	param := makePendingTxParams(t)
 	param[0]["data"] = data
 
-	txRes := Call(t, "eth_sendTransaction", param)
+	txRes := CallWithSleep(t, "eth_sendTransaction", param, sleep)
 	var txHash common.Hash
 	err = txHash.UnmarshalJSON(txRes.Result)
 	require.NoError(t, err)
 
-	rpcRes = Call(t, "eth_getTransactionByHash", []interface{}{txHash})
+	rpcRes = CallWithSleep(t, "eth_getTransactionByHash", []interface{}{txHash}, sleep)
 	var pendingTx map[string]interface{}
 	err = json.Unmarshal(rpcRes.Result, &pendingTx)
 	require.NoError(t, err)
 
-	txsRes := Call(t, "eth_getPendingTransactions", []interface{}{})
+	txsRes := CallWithSleep(t, "eth_getPendingTransactions", []interface{}{}, sleep)
 	var pendingTxs []map[string]interface{}
 	err = json.Unmarshal(txsRes.Result, &pendingTxs)
 	require.NoError(t, err)
