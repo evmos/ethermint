@@ -1,8 +1,9 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/suite"
@@ -29,7 +30,7 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams(true, 7, 3, 2000000000, int64(544435345345435345)),
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), sdk.NewDecWithPrec(20, 4)),
 			false,
 		},
 		{
@@ -39,7 +40,12 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 		},
 		{
 			"base fee change denominator is 0 ",
-			NewParams(true, 0, 3, 2000000000, int64(544435345345435345)),
+			NewParams(true, 0, 3, 2000000000, int64(544435345345435345), sdk.NewDecWithPrec(20, 4)),
+			true,
+		},
+		{
+			"invalid: min gas price negative",
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), sdk.NewDecFromInt(sdk.NewInt(-1))),
 			true,
 		},
 	}
@@ -70,4 +76,31 @@ func (suite *ParamsTestSuite) TestParamsValidatePriv() {
 	suite.Require().Error(validateEnableHeight(""))
 	suite.Require().Error(validateEnableHeight(int64(-544435345345435345)))
 	suite.Require().NoError(validateEnableHeight(int64(544435345345435345)))
+}
+
+func (suite *ParamsTestSuite) TestParamsValidateMinGasPrice() {
+	testCases := []struct {
+		name     string
+		value    interface{}
+		expError bool
+	}{
+		{"default", DefaultParams().MinGasPrice, false},
+		{"valid", sdk.NewDecFromInt(sdk.NewInt(1)), false},
+		{"invalid - wrong type - bool", false, true},
+		{"invalid - wrong type - string", "", true},
+		{"invalid - wrong type - int64", int64(123), true},
+		{"invalid - wrong type - sdk.Int", sdk.NewInt(1), true},
+		{"invalid - is nil", nil, true},
+		{"invalid - is negative", sdk.NewDecFromInt(sdk.NewInt(-1)), true},
+	}
+
+	for _, tc := range testCases {
+		err := validateMinGasPrice(tc.value)
+
+		if tc.expError {
+			suite.Require().Error(err, tc.name)
+		} else {
+			suite.Require().NoError(err, tc.name)
+		}
+	}
 }

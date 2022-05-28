@@ -17,6 +17,7 @@ var (
 	ParamStoreKeyElasticityMultiplier     = []byte("ElasticityMultiplier")
 	ParamStoreKeyBaseFee                  = []byte("BaseFee")
 	ParamStoreKeyEnableHeight             = []byte("EnableHeight")
+	ParamStoreKeyMinGasPrice              = []byte("MinGasPrice")
 )
 
 // ParamKeyTable returns the parameter key table.
@@ -25,13 +26,21 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(noBaseFee bool, baseFeeChangeDenom, elasticityMultiplier uint32, baseFee uint64, enableHeight int64) Params {
+func NewParams(
+	noBaseFee bool,
+	baseFeeChangeDenom,
+	elasticityMultiplier uint32,
+	baseFee uint64,
+	enableHeight int64,
+	minGasPrice sdk.Dec,
+) Params {
 	return Params{
 		NoBaseFee:                noBaseFee,
 		BaseFeeChangeDenominator: baseFeeChangeDenom,
 		ElasticityMultiplier:     elasticityMultiplier,
 		BaseFee:                  sdk.NewIntFromUint64(baseFee),
 		EnableHeight:             enableHeight,
+		MinGasPrice:              minGasPrice,
 	}
 }
 
@@ -43,6 +52,7 @@ func DefaultParams() Params {
 		ElasticityMultiplier:     params.ElasticityMultiplier,
 		BaseFee:                  sdk.NewIntFromUint64(params.InitialBaseFee),
 		EnableHeight:             0,
+		MinGasPrice:              sdk.ZeroDec(),
 	}
 }
 
@@ -54,6 +64,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyElasticityMultiplier, &p.ElasticityMultiplier, validateElasticityMultiplier),
 		paramtypes.NewParamSetPair(ParamStoreKeyBaseFee, &p.BaseFee, validateBaseFee),
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableHeight, &p.EnableHeight, validateEnableHeight),
+		paramtypes.NewParamSetPair(ParamStoreKeyMinGasPrice, &p.MinGasPrice, validateMinGasPrice),
 	}
 }
 
@@ -71,7 +82,7 @@ func (p Params) Validate() error {
 		return fmt.Errorf("enable height cannot be negative: %d", p.EnableHeight)
 	}
 
-	return nil
+	return validateMinGasPrice(p.MinGasPrice)
 }
 
 func (p *Params) IsBaseFeeEnabled(height int64) bool {
@@ -128,6 +139,24 @@ func validateEnableHeight(i interface{}) error {
 
 	if value < 0 {
 		return fmt.Errorf("enable height cannot be negative: %d", value)
+	}
+
+	return nil
+}
+
+func validateMinGasPrice(i interface{}) error {
+	v, ok := i.(sdk.Dec)
+
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.IsNil() {
+		return fmt.Errorf("invalid parameter: nil")
+	}
+
+	if v.IsNegative() {
+		return fmt.Errorf("value cannot be negative: %s", i)
 	}
 
 	return nil
