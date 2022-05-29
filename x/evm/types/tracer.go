@@ -156,3 +156,9 @@ func (dt NoOpTracer) CaptureEnter(typ vm.OpCode, from common.Address, to common.
 
 // CaptureExit implements vm.Tracer interface
 func (dt NoOpTracer) CaptureExit(output []byte, gasUsed uint64, err error) {}
+
+// CaptureTxStart implements vm.Tracer interface
+func (dt NoOpTracer) CaptureTxStart(gasLimit uint64) {}
+
+// CaptureTxEnd implements vm.Tracer interface
+func (dt NoOpTracer) CaptureTxEnd(restGas uint64) {}
