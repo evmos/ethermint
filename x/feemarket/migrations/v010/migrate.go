@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/tharsis/ethermint/x/feemarket/migrations/v010/types"
 	v09types "github.com/tharsis/ethermint/x/feemarket/migrations/v09/types"
-	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // KeyPrefixBaseFeeV1 is the base fee key prefix used in version 1
