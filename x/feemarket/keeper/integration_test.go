@@ -39,7 +39,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		msg     banktypes.MsgSend
 	)
 
-	var setupChain = func(checkTx bool, cliMinGasPricesStr string) {
+	var setupChain = func(cliMinGasPricesStr string) {
 		// Initialize the app, so we can use SetMinGasPrices to set the
 		// validator-specific min-gas-prices setting
 		db := dbm.NewMemDB()
@@ -76,8 +76,8 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		s.SetupApp(false)
 	}
 
-	var setupTest = func(checkTx bool, cliMinGasPrices string) {
-		setupChain(checkTx, cliMinGasPrices)
+	var setupTest = func(cliMinGasPrices string) {
+		setupChain(cliMinGasPrices)
 
 		privKey, address = generateKey()
 		amount, ok := sdk.NewIntFromString("10000000000000000000")
@@ -99,8 +99,8 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		s.Commit()
 	}
 
-	var setupContext = func(isCheck bool, cliMinGasPrice string, minGasPrice sdk.Dec) {
-		setupTest(isCheck, cliMinGasPrice+s.denom)
+	var setupContext = func(cliMinGasPrice string, minGasPrice sdk.Dec) {
+		setupTest(cliMinGasPrice + s.denom)
 		params := types.DefaultParams()
 		params.MinGasPrice = minGasPrice
 		s.app.FeeMarketKeeper.SetParams(s.ctx, params)
@@ -111,11 +111,11 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		Context("min-gas-prices (local) < MinGasPrices (feemarket param)", func() {
 			cliMinGasPrice := "1"
 			minGasPrice := sdk.NewDecWithPrec(3, 0)
-			Context("during CheckTx", func() {
-				BeforeEach(func() {
-					setupContext(true, cliMinGasPrice, minGasPrice)
-				})
+			BeforeEach(func() {
+				setupContext(cliMinGasPrice, minGasPrice)
+			})
 
+			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
@@ -134,10 +134,6 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
-				BeforeEach(func() {
-					setupContext(false, cliMinGasPrice, minGasPrice)
-				})
-
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
@@ -159,11 +155,11 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		Context("with min-gas-prices (local) == MinGasPrices (feemarket param)", func() {
 			cliMinGasPrice := "3"
 			minGasPrice := sdk.NewDecWithPrec(3, 0)
-			Context("during CheckTx", func() {
-				BeforeEach(func() {
-					setupContext(true, cliMinGasPrice, minGasPrice)
-				})
+			BeforeEach(func() {
+				setupContext(cliMinGasPrice, minGasPrice)
+			})
 
+			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < min-gas-prices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
@@ -182,10 +178,6 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
-				BeforeEach(func() {
-					setupContext(false, cliMinGasPrice, minGasPrice)
-				})
-
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
@@ -207,11 +199,10 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		Context("with MinGasPrices (feemarket param) < min-gas-prices (local)", func() {
 			cliMinGasPrice := "5"
 			minGasPrice := sdk.NewDecWithPrec(3, 0)
+			BeforeEach(func() {
+				setupContext(cliMinGasPrice, minGasPrice)
+			})
 			Context("during CheckTx", func() {
-				BeforeEach(func() {
-					setupContext(true, cliMinGasPrice, minGasPrice)
-				})
-
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
@@ -223,7 +214,6 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 				})
 
 				It("should reject transactions with MinGasPrices < gasPrice < min-gas-prices", func() {
-					setupContext(true, cliMinGasPrice, minGasPrice)
 					gasPrice := sdk.NewInt(4)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
@@ -241,10 +231,6 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
-				BeforeEach(func() {
-					setupContext(false, cliMinGasPrice, minGasPrice)
-				})
-
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
@@ -285,13 +271,13 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			return s.app.EvmKeeper.GetBaseFee(s.ctx, ethCfg).Int64()
 		}
 		Context("with BaseFee (feemarket) < MinGasPrices (feemarket param)", func() {
-			Context("during CheckTx", func() {
-				var baseFee int64
-				BeforeEach(func() {
-					baseFee = getBaseFee()
-					setupContext(true, "1", sdk.NewDecWithPrec(baseFee+30000000000, 0))
-				})
+			var baseFee int64
+			BeforeEach(func() {
+				baseFee = getBaseFee()
+				setupContext("1", sdk.NewDecWithPrec(baseFee+30000000000, 0))
+			})
 
+			Context("during CheckTx", func() {
 				DescribeTable("should reject transactions with EffectivePrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
@@ -336,12 +322,6 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
-				var baseFee int64
-				BeforeEach(func() {
-					baseFee = getBaseFee()
-					setupContext(false, "1", sdk.NewDecWithPrec(baseFee+30000000000, 0))
-				})
-
 				DescribeTable("should reject transactions with gasPrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
@@ -389,14 +369,14 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 
 		Context("with MinGasPrices (feemarket param) < BaseFee (feemarket)", func() {
-			Context("during CheckTx", func() {
-				var baseFee int64
-				BeforeEach(func() {
-					baseFee = getBaseFee()
-					s.Require().Greater(baseFee, int64(10))
-					setupContext(true, "5", sdk.NewDecWithPrec(10, 0))
-				})
+			var baseFee int64
+			BeforeEach(func() {
+				baseFee = getBaseFee()
+				s.Require().Greater(baseFee, int64(10))
+				setupContext("5", sdk.NewDecWithPrec(10, 0))
+			})
 
+			Context("during CheckTx", func() {
 				DescribeTable("should reject transactions with gasPrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
@@ -455,13 +435,6 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
-				var baseFee int64
-				BeforeEach(func() {
-					baseFee = getBaseFee()
-					s.Require().Greater(baseFee, int64(10))
-					setupContext(false, "5", sdk.NewDecWithPrec(10, 0))
-				})
-
 				DescribeTable("should reject transactions with gasPrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
