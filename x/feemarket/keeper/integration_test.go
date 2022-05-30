@@ -39,7 +39,9 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		msg     banktypes.MsgSend
 	)
 
-	var setupChain = func(cliMinGasPrices string) {
+	var setupChain = func(checkTx bool, cliMinGasPricesStr string) {
+		// Initialize the app, so we can use SetMinGasPrices to set the
+		// validator-specific min-gas-prices setting
 		db := dbm.NewMemDB()
 		newapp := app.NewEthermintApp(
 			log.NewNopLogger(),
@@ -51,7 +53,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			5,
 			encoding.MakeConfig(app.ModuleBasics),
 			simapp.EmptyAppOptions{},
-			baseapp.SetMinGasPrices(cliMinGasPrices),
+			baseapp.SetMinGasPrices(cliMinGasPricesStr),
 		)
 
 		genesisState := app.NewDefaultGenesisState()
@@ -63,7 +65,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		// Initialize the chain
 		newapp.InitChain(
 			abci.RequestInitChain{
-				ChainId:         "evmos_9001-1",
+				ChainId:         "ethermint_9000-1",
 				Validators:      []abci.ValidatorUpdate{},
 				AppStateBytes:   stateBytes,
 				ConsensusParams: simapp.DefaultConsensusParams,
@@ -71,11 +73,11 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		)
 
 		s.app = newapp
-		s.SetupTest()
+		s.SetupApp(false)
 	}
 
-	var setupTest = func(cliMinGasPrices string) {
-		setupChain(cliMinGasPrices)
+	var setupTest = func(checkTx bool, cliMinGasPrices string) {
+		setupChain(checkTx, cliMinGasPrices)
 
 		privKey, address = generateKey()
 		amount, ok := sdk.NewIntFromString("10000000000000000000")
@@ -97,17 +99,23 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		s.Commit()
 	}
 
+	var setupContext = func(isCheck bool, cliMinGasPrice string, minGasPrice sdk.Dec) {
+		setupTest(isCheck, cliMinGasPrice+s.denom)
+		params := types.DefaultParams()
+		params.MinGasPrice = minGasPrice
+		s.app.FeeMarketKeeper.SetParams(s.ctx, params)
+		s.Commit()
+	}
+
 	Context("with Cosmos transactions", func() {
 		Context("min-gas-prices (local) < MinGasPrices (feemarket param)", func() {
-			BeforeEach(func() {
-				setupTest("1" + s.denom)
-				params := types.DefaultParams()
-				params.MinGasPrice = sdk.NewDecWithPrec(3, 0)
-				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
-				s.Commit()
-			})
-
+			cliMinGasPrice := "1"
+			minGasPrice := sdk.NewDecWithPrec(3, 0)
 			Context("during CheckTx", func() {
+				BeforeEach(func() {
+					setupContext(true, cliMinGasPrice, minGasPrice)
+				})
+
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
@@ -126,6 +134,10 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
+				BeforeEach(func() {
+					setupContext(false, cliMinGasPrice, minGasPrice)
+				})
+
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
@@ -145,15 +157,13 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 
 		Context("with min-gas-prices (local) == MinGasPrices (feemarket param)", func() {
-			BeforeEach(func() {
-				setupTest("3" + s.denom)
-				params := types.DefaultParams()
-				params.MinGasPrice = sdk.NewDecWithPrec(3, 0)
-				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
-				s.Commit()
-			})
-
+			cliMinGasPrice := "3"
+			minGasPrice := sdk.NewDecWithPrec(3, 0)
 			Context("during CheckTx", func() {
+				BeforeEach(func() {
+					setupContext(true, cliMinGasPrice, minGasPrice)
+				})
+
 				It("should reject transactions with gasPrice < min-gas-prices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
@@ -172,6 +182,10 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
+				BeforeEach(func() {
+					setupContext(false, cliMinGasPrice, minGasPrice)
+				})
+
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
@@ -191,15 +205,13 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 
 		Context("with MinGasPrices (feemarket param) < min-gas-prices (local)", func() {
-			BeforeEach(func() {
-				setupTest("5" + s.denom)
-				params := types.DefaultParams()
-				params.MinGasPrice = sdk.NewDecWithPrec(3, 0)
-				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
-				s.Commit()
-			})
-
+			cliMinGasPrice := "5"
+			minGasPrice := sdk.NewDecWithPrec(3, 0)
 			Context("during CheckTx", func() {
+				BeforeEach(func() {
+					setupContext(true, cliMinGasPrice, minGasPrice)
+				})
+
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
@@ -211,6 +223,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 				})
 
 				It("should reject transactions with MinGasPrices < gasPrice < min-gas-prices", func() {
+					setupContext(true, cliMinGasPrice, minGasPrice)
 					gasPrice := sdk.NewInt(4)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
@@ -228,6 +241,10 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			})
 
 			Context("during DeliverTx", func() {
+				BeforeEach(func() {
+					setupContext(false, cliMinGasPrice, minGasPrice)
+				})
+
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdk.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
@@ -261,7 +278,6 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			accesses  *ethtypes.AccessList
 		}
 		type getprices func() txParams
-		var baseFee int64
 
 		getBaseFee := func() int64 {
 			paramsEvm := s.app.EvmKeeper.GetParams(s.ctx)
@@ -269,15 +285,13 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			return s.app.EvmKeeper.GetBaseFee(s.ctx, ethCfg).Int64()
 		}
 		Context("with BaseFee (feemarket) < MinGasPrices (feemarket param)", func() {
-			BeforeEach(func() {
-				setupTest("1" + s.denom)
-				params := types.DefaultParams()
-				baseFee = getBaseFee()
-				params.MinGasPrice = sdk.NewDecWithPrec(baseFee+1000, 0)
-				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
-				s.Commit()
-			})
 			Context("during CheckTx", func() {
+				var baseFee int64
+				BeforeEach(func() {
+					baseFee = getBaseFee()
+					setupContext(true, "1", sdk.NewDecWithPrec(baseFee+30000000000, 0))
+				})
+
 				DescribeTable("should reject transactions with EffectivePrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
@@ -291,16 +305,16 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						).To(BeTrue(), res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 10), nil, nil, nil}
+						return txParams{big.NewInt(baseFee + 20000000000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 10), big.NewInt(0), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 20000000000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 					Entry("dynamic tx with GasFeeCap < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 900), big.NewInt(2000), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 29000000000), big.NewInt(29000000000), &ethtypes.AccessList{}}
 					}),
 					Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 2000), big.NewInt(0), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 40000000000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 				)
 
@@ -313,15 +327,21 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 2000), nil, nil, nil}
+						return txParams{big.NewInt(baseFee + 31000000000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 2000), big.NewInt(2000), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 31000000000), big.NewInt(31000000000), &ethtypes.AccessList{}}
 					}),
 				)
 			})
 
 			Context("during DeliverTx", func() {
+				var baseFee int64
+				BeforeEach(func() {
+					baseFee = getBaseFee()
+					setupContext(false, "1", sdk.NewDecWithPrec(baseFee+30000000000, 0))
+				})
+
 				DescribeTable("should reject transactions with gasPrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
@@ -335,21 +355,16 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						).To(BeTrue(), res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 10), nil, nil, nil}
+						return txParams{big.NewInt(baseFee + 20000000000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 10), big.NewInt(10), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 20000000000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 					Entry("dynamic tx with GasFeeCap < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 900), big.NewInt(2000), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 29000000000), big.NewInt(29000000000), &ethtypes.AccessList{}}
 					}),
 					Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 2000), big.NewInt(0), &ethtypes.AccessList{}}
-					}),
-					// the base fee decreases in this test and even if 1001 > 1000 (MinGasPrices)
-					// the effective gas price value is < MinGasPrices
-					Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 1001), big.NewInt(1001), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 40000000000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 				)
 
@@ -362,29 +377,26 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 1001), nil, nil, nil}
+						return txParams{big.NewInt(baseFee + 30000000001), nil, nil, nil}
 					}),
 					// the base fee decreases in this test, so we use a large gas tip
 					// to maintain an EffectivePrice > MinGasPrices
 					Entry("dynamic tx, EffectivePrice > MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 875000000), big.NewInt(875000000), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 30000000001), big.NewInt(30000000001), &ethtypes.AccessList{}}
 					}),
 				)
 			})
 		})
 
 		Context("with MinGasPrices (feemarket param) < BaseFee (feemarket)", func() {
-			BeforeEach(func() {
-				setupTest("5" + s.denom)
-				params := types.DefaultParams()
-				baseFee = getBaseFee()
-				s.Require().Greater(baseFee, int64(10))
-				params.MinGasPrice = sdk.NewDecWithPrec(10, 0)
-				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
-				s.Commit()
-			})
-
 			Context("during CheckTx", func() {
+				var baseFee int64
+				BeforeEach(func() {
+					baseFee = getBaseFee()
+					s.Require().Greater(baseFee, int64(10))
+					setupContext(true, "5", sdk.NewDecWithPrec(10, 0))
+				})
+
 				DescribeTable("should reject transactions with gasPrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
@@ -434,15 +446,22 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 10), nil, nil, nil}
+						return txParams{big.NewInt(baseFee + 1000000000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 10), big.NewInt(10), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 1000000000), big.NewInt(10), &ethtypes.AccessList{}}
 					}),
 				)
 			})
 
 			Context("during DeliverTx", func() {
+				var baseFee int64
+				BeforeEach(func() {
+					baseFee = getBaseFee()
+					s.Require().Greater(baseFee, int64(10))
+					setupContext(false, "5", sdk.NewDecWithPrec(10, 0))
+				})
+
 				DescribeTable("should reject transactions with gasPrice < MinGasPrices",
 					func(malleate getprices) {
 						p := malleate()
