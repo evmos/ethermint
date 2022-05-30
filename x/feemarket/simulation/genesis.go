@@ -12,7 +12,7 @@ import (
 
 // RandomizedGenState generates a random GenesisState for nft
 func RandomizedGenState(simState *module.SimulationState) {
-	params := types.NewParams(simState.Rand.Uint32()%2 == 0, simState.Rand.Uint32(), simState.Rand.Uint32(), simState.Rand.Uint64(), simState.Rand.Int63(), sdk.NewDecFromInt(sdk.NewInt(simState.Rand.Int63())))
+	params := types.NewParams(simState.Rand.Uint32()%2 == 0, simState.Rand.Uint32(), simState.Rand.Uint32(), simState.Rand.Uint64(), simState.Rand.Int63(), sdk.ZeroDec())
 
 	blockGas := simState.Rand.Uint64()
 	feemarketGenesis := types.NewGenesisState(params, blockGas)
