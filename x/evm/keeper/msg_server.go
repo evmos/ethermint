@@ -9,6 +9,8 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	"github.com/armon/go-metrics"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -28,10 +30,37 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	tx := msg.AsTransaction()
 	txIndex := k.GetTxIndexTransient(ctx)
 
+	labels := []metrics.Label{telemetry.NewLabel("tx_type", fmt.Sprintf("%d", tx.Type()))}
+	if tx.To() == nil {
+		labels = []metrics.Label{
+			telemetry.NewLabel("execution", "create"),
+		}
+	} else {
+		labels = []metrics.Label{
+			telemetry.NewLabel("execution", "call"),
+			telemetry.NewLabel("to", tx.To().Hex()), // recipient address (contract or account)
+		}
+	}
+
 	response, err := k.ApplyTransaction(ctx, tx)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to apply transaction")
 	}
+
+	defer func() {
+		if tx.Value().IsInt64() {
+			telemetry.SetGauge(
+				float32(tx.Value().Int64()),
+				"tx", "msg", "ethereum_tx",
+			)
+		}
+
+		telemetry.IncrCounterWithLabels(
+			[]string{types.ModuleName, "ethereum_tx"},
+			1,
+			labels,
+		)
+	}()
 
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(sdk.AttributeKeyAmount, tx.Value().String()),

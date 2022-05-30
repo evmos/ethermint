@@ -45,6 +45,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
+* (specs) [tharsis#1095](https://github.com/tharsis/ethermint/pull/1095) Add more evm specs concepts.
+* (evm) [tharsis#1101](https://github.com/tharsis/ethermint/pull/1101) Add tx_type, gas and counter telemetry for ethereum txs.
 
 ### Bug Fixes
 
