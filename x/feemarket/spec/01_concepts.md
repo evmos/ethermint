@@ -33,3 +33,6 @@ Transactions specify a maximum fee per gas they are willing to pay total (aka: m
 
 Reference: [EIP1559](https://eips.ethereum.org/EIPS/eip-1559)
 
+## Global Minimum Gas Price
+
+The minimum gas price needed for transactions to be processed. It applies to both Cosmos and EVM transactions. Governance can change this `feemarket` module parameter value. If the effective gas price or the minimum gas price is lower than the global `MinGasPrice` (`min-gas-price (local) < MinGasPrice (global) OR EffectiveGasPrice < MinGasPrice`), then `MinGasPrice` is used as a lower bound. If transactions are rejected due to having a gas price lower than `MinGasPrice`, users need to resend the transactions with a gas price higher than `MinGasPrice`. In the case of EIP-1559 (dynamic fee transactions), users must increase the priority fee for their transactions to be valid.
