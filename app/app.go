@@ -507,6 +507,11 @@ func NewEthermintApp(
 		govtypes.ModuleName,
 		minttypes.ModuleName,
 		ibchost.ModuleName,
+		// evm module denomination is used by the feemarket module, in AnteHandle
+		evmtypes.ModuleName,
+		// NOTE: feemarket need to be initialized before genutil module:
+		// gentx transactions use MinGasPriceDecorator.AnteHandle
+		feemarkettypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
@@ -515,10 +520,6 @@ func NewEthermintApp(
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
-		// Ethermint modules
-		evmtypes.ModuleName,
-		feemarkettypes.ModuleName,
-
 		// NOTE: crisis module must go at the end to check for invariants on each module
 		crisistypes.ModuleName,
 	)
