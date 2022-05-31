@@ -871,7 +871,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	if res.TxResult.Code != 0 {
 		// tx failed, we should return gas limit as gas used, because that's how the fee get deducted.
 		for i := 0; i <= parsedTx.MsgIndex; i++ {
-			gasLimit := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx).GetGas()
+			gasLimit := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx).GetGas()
 			parsedTxs.Txs[i].GasUsed = gasLimit
 		}
 	}
