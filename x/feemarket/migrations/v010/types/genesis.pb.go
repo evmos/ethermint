@@ -79,14 +79,6 @@ func (m *GenesisState) GetBlockGas() uint64 {
 	return 0
 }
 
-func init() {
-	proto.RegisterType((*GenesisState)(nil), "ethermint.feemarket.v1.GenesisState")
-}
-
-func init() {
-	proto.RegisterFile("ethermint/feemarket/v1/genesis.proto", fileDescriptor_6241c21661288629)
-}
-
 var fileDescriptor_6241c21661288629 = []byte{
 	// 246 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x49, 0x2d, 0xc9, 0x48,

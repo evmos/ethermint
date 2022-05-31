@@ -101,14 +101,6 @@ func (m *Params) GetEnableHeight() int64 {
 	return 0
 }
 
-func init() {
-	proto.RegisterType((*Params)(nil), "ethermint.feemarket.v1.Params")
-}
-
-func init() {
-	proto.RegisterFile("ethermint/feemarket/v1/feemarket.proto", fileDescriptor_4feb8b20cf98e6e1)
-}
-
 var fileDescriptor_4feb8b20cf98e6e1 = []byte{
 	// 343 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x91, 0xcf, 0x6a, 0xea, 0x40,
