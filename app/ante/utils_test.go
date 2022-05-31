@@ -2,6 +2,7 @@ package ante_test
 
 import (
 	"math"
+	"math/big"
 	"testing"
 	"time"
 
@@ -123,6 +124,38 @@ func TestAnteTestSuite(t *testing.T) {
 	})
 }
 
+func (s *AnteTestSuite) BuildTestEthTx(
+	from common.Address,
+	to common.Address,
+	amount *big.Int,
+	input []byte,
+	gasPrice *big.Int,
+	gasFeeCap *big.Int,
+	gasTipCap *big.Int,
+	accesses *ethtypes.AccessList,
+) *evmtypes.MsgEthereumTx {
+	chainID := s.app.EvmKeeper.ChainID()
+	nonce := s.app.EvmKeeper.GetNonce(
+		s.ctx,
+		common.BytesToAddress(from.Bytes()),
+	)
+	gasLimit := uint64(100000)
+	msgEthereumTx := evmtypes.NewTx(
+		chainID,
+		nonce,
+		&to,
+		amount,
+		gasLimit,
+		gasPrice,
+		gasFeeCap,
+		gasTipCap,
+		input,
+		accesses,
+	)
+	msgEthereumTx.From = from.String()
+	return msgEthereumTx
+}
+
 // CreateTestTx is a helper function to create a tx given multiple inputs.
 func (suite *AnteTestSuite) CreateTestTx(
 	msg *evmtypes.MsgEthereumTx, priv cryptotypes.PrivKey, accNum uint64, signCosmosTx bool,
@@ -200,6 +233,18 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 		suite.Require().NoError(err)
 	}
 
+	return txBuilder
+}
+
+func (suite *AnteTestSuite) CreateTestCosmosTxBuilder(gasPrice sdk.Int, denom string, msgs ...sdk.Msg) client.TxBuilder {
+	gasLimit := uint64(1000000)
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+
+	txBuilder.SetGasLimit(gasLimit)
+	fees := &sdk.Coins{{Denom: denom, Amount: gasPrice.MulRaw(int64(gasLimit))}}
+	txBuilder.SetFeeAmount(*fees)
+	err := txBuilder.SetMsgs(msgs...)
+	suite.Require().NoError(err)
 	return txBuilder
 }
 

@@ -15,7 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
-	// . "github.com/onsi/ginkgo"
+	// . "github.com/onsi/ginkgo/v2"
 	// . "github.com/onsi/gomega"
 
 	"github.com/stretchr/testify/suite"

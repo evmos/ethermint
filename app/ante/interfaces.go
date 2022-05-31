@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/tharsis/ethermint/x/evm/statedb"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
 
 // EVMKeeper defines the expected keeper interface used on the Eth AnteHandler
@@ -31,4 +32,9 @@ type EVMKeeper interface {
 
 type protoTxProvider interface {
 	GetProtoTx() *tx.Tx
+}
+
+// FeeMarketKeeper defines the expected keeper interface used on the AnteHandler
+type FeeMarketKeeper interface {
+	GetParams(ctx sdk.Context) (params feemarkettypes.Params)
 }
