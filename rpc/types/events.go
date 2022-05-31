@@ -178,7 +178,7 @@ func (p *ParsedTxs) GetTxByTxIndex(txIndex int) *ParsedTx {
 	return p.GetTxByMsgIndex(msgIndex)
 }
 
-// AccumulativeGasUsed calculate the accumulated gas used within the batch
+// AccumulativeGasUsed calculates the accumulated gas used within the batch of txs
 func (p *ParsedTxs) AccumulativeGasUsed(msgIndex int) (result uint64) {
 	for i := 0; i <= msgIndex; i++ {
 		result += p.Txs[i].GasUsed
