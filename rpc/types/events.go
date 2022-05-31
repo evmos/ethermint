@@ -192,7 +192,7 @@ func (p *ParsedTxs) AccumulativeGasUsed(msgIndex int) (result uint64) {
 	for i := 0; i <= msgIndex; i++ {
 		result += p.Txs[i].GasUsed
 	}
-	return
+	return result
 }
 
 // fillTxAttribute parse attributes by name, less efficient than hardcode the index, but more stable against event
@@ -232,5 +232,5 @@ func parseRawLogs(attrs []abci.EventAttribute) (logs [][]byte) {
 	for _, attr := range attrs {
 		logs = append(logs, attr.Value)
 	}
-	return
+	return logs
 }
