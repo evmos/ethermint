@@ -92,8 +92,10 @@ func ParseTxResult(result *abci.ResponseDeliverTx) (*ParsedTxs, error) {
 	format := eventFormatUnknown
 	// the index of current ethereum_tx event in format 1 or the second part of format 2
 	eventIndex := -1
-	var txs []ParsedTx
-	txHashes := make(map[common.Hash]int)
+
+	p := &ParsedTxs{
+		TxHashes: make(map[common.Hash]int),
+	}
 	for _, event := range result.Events {
 		switch event.Type {
 		case evmtypes.EventTypeEthereumTx:
@@ -108,46 +110,53 @@ func ParseTxResult(result *abci.ResponseDeliverTx) (*ParsedTxs, error) {
 
 			if len(event.Attributes) == 2 {
 				// the first part of format 2
-				msgIndex := len(txs)
-				tx := NewParsedTx(msgIndex)
-				if err := fillTxAttributes(&tx, event.Attributes); err != nil {
+				if err := p.newTx(event.Attributes); err != nil {
 					return nil, err
 				}
-				txs = append(txs, tx)
-				txHashes[tx.Hash] = msgIndex
 			} else {
 				// format 1 or second part of format 2
 				eventIndex++
 				if format == eventFormat1 {
 					// append tx
-					msgIndex := len(txs)
-					tx := NewParsedTx(msgIndex)
-					if err := fillTxAttributes(&tx, event.Attributes); err != nil {
+					if err := p.newTx(event.Attributes); err != nil {
 						return nil, err
 					}
-					txs = append(txs, tx)
-					txHashes[tx.Hash] = msgIndex
 				} else {
 					// the second part of format 2, update tx fields
-					if err := fillTxAttributes(&txs[eventIndex], event.Attributes); err != nil {
+					if err := p.updateTx(eventIndex, event.Attributes); err != nil {
 						return nil, err
 					}
 				}
 			}
 		case evmtypes.EventTypeTxLog:
 			// reuse the eventIndex set by previous ethereum_tx event
-			txs[eventIndex].RawLogs = parseRawLogs(event.Attributes)
+			p.Txs[eventIndex].RawLogs = parseRawLogs(event.Attributes)
 		}
 	}
 
 	// some old versions miss some events, fill it with tx result
-	if len(txs) == 1 {
-		txs[0].GasUsed = uint64(result.GasUsed)
+	if len(p.Txs) == 1 {
+		p.Txs[0].GasUsed = uint64(result.GasUsed)
 	}
 
-	return &ParsedTxs{
-		Txs: txs, TxHashes: txHashes,
-	}, nil
+	return p, nil
+}
+
+// newTx parse a new tx from events, called during parsing.
+func (p *ParsedTxs) newTx(attrs []abci.EventAttribute) error {
+	msgIndex := len(p.Txs)
+	tx := NewParsedTx(msgIndex)
+	if err := fillTxAttributes(&tx, attrs); err != nil {
+		return err
+	}
+	p.Txs = append(p.Txs, tx)
+	p.TxHashes[tx.Hash] = msgIndex
+	return nil
+}
+
+// updateTx updates an exiting tx from events, called during parsing.
+func (p *ParsedTxs) updateTx(eventIndex int, attrs []abci.EventAttribute) error {
+	return fillTxAttributes(&p.Txs[eventIndex], attrs)
 }
 
 // GetTxByHash find ParsedTx by tx hash, returns nil if not exists.
