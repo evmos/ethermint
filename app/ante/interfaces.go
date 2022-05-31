@@ -26,6 +26,7 @@ type EVMKeeper interface {
 	GetBaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int
 	GetBalance(ctx sdk.Context, addr common.Address) *big.Int
 	ResetTransientGasUsed(ctx sdk.Context)
+	GetTxIndexTransient(ctx sdk.Context) uint64
 }
 
 type protoTxProvider interface {
