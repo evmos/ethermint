@@ -10,13 +10,16 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
-// EventFormat is the format version of the events
+// EventFormat is the format version of the events.
+//
+// To fix the issue of tx exceeds block gas limit, we changed the event format in a breaking way.
+// But to avoid forcing clients to re-sync from scatch, we make json-rpc logic to be compatible with both formats.
 type EventFormat int
 
 const (
 	eventFormatUnknown EventFormat = iota
 
-	// Event Format 1:
+	// Event Format 1 (the format used before PR #1062):
 	// ```
 	// ethereum_tx(amount, ethereumTxHash, [txIndex, txGasUsed], txHash, [receipient], ethereumTxFailed)
 	// tx_log(txLog, txLog, ...)
@@ -26,7 +29,7 @@ const (
 	// ```
 	eventFormat1
 
-	// Event Format 2:
+	// Event Format 2 (the format used after PR #1062):
 	// ```
 	// ethereum_tx(ethereumTxHash, txIndex)
 	// ethereum_tx(ethereumTxHash, txIndex)
@@ -164,12 +167,13 @@ func (p *ParsedTxs) GetTxByMsgIndex(i int) *ParsedTx {
 }
 
 // GetTxByTxIndex returns ParsedTx by tx index
-func (p *ParsedTxs) GetTxByTxIndex(i int) *ParsedTx {
-	// assuming the `EthTxIndex` continuously increment.
+func (p *ParsedTxs) GetTxByTxIndex(txIndex int) *ParsedTx {
 	if len(p.Txs) == 0 {
 		return nil
 	}
-	msgIndex := i - int(p.Txs[0].EthTxIndex)
+	// assuming the `EthTxIndex` increase continuously,
+	// convert TxIndex to MsgIndex by substract the begin TxIndex.
+	msgIndex := txIndex - int(p.Txs[0].EthTxIndex)
 	// GetTxByMsgIndex will check the bound
 	return p.GetTxByMsgIndex(msgIndex)
 }
