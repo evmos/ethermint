@@ -181,7 +181,7 @@ func (p *ParsedTxs) GetTxByTxIndex(txIndex int) *ParsedTx {
 		return nil
 	}
 	// assuming the `EthTxIndex` increase continuously,
-	// convert TxIndex to MsgIndex by substract the begin TxIndex.
+	// convert TxIndex to MsgIndex by subtract the begin TxIndex.
 	msgIndex := txIndex - int(p.Txs[0].EthTxIndex)
 	// GetTxByMsgIndex will check the bound
 	return p.GetTxByMsgIndex(msgIndex)
