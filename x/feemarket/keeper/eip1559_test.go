@@ -35,7 +35,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 				suite.ctx = suite.ctx.WithBlockHeight(1)
 
 				// Set gas used
-				suite.app.FeeMarketKeeper.SetBlockGasUsed(suite.ctx, 100)
+				suite.app.FeeMarketKeeper.SetBlockGasWanted(suite.ctx, 100)
 
 				// Set target/gasLimit through Consensus Param MaxGas
 				blockParams := abci.BlockParams{
@@ -58,7 +58,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(1)
 
-				suite.app.FeeMarketKeeper.SetBlockGasUsed(suite.ctx, 200)
+				suite.app.FeeMarketKeeper.SetBlockGasWanted(suite.ctx, 200)
 
 				blockParams := abci.BlockParams{
 					MaxGas:   100,
@@ -79,7 +79,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(1)
 
-				suite.app.FeeMarketKeeper.SetBlockGasUsed(suite.ctx, 50)
+				suite.app.FeeMarketKeeper.SetBlockGasWanted(suite.ctx, 50)
 
 				blockParams := abci.BlockParams{
 					MaxGas:   100,
