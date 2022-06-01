@@ -38,8 +38,6 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 		return
 	}
 
-	//gasUsed := ctx.BlockGasMeter().GasConsumedToLimit()
-
 	gasWanted := k.GetTransientGasWanted(ctx)
 
 	k.SetBlockGasWanted(ctx, gasWanted)
