@@ -235,6 +235,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	ctx = ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
 	ctx.GasMeter().ConsumeGas(gasConsumed, "copy gas consumed")
 
+	// Add total gasWanted to cumulative in block transientStore for BaseFee calculation
 	if london {
 		_, err = egcd.feeMaker.AddTransientGasWanted(ctx, gasWanted)
 		if err != nil {
