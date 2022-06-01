@@ -287,7 +287,7 @@ func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	return coin.Amount.BigInt()
 }
 
-// BaseFee returns current base fee, return values:
+// GetBaseFee returns current base fee, return values:
 // - `nil`: london hardfork not enabled.
 // - `0`: london hardfork enabled but feemarket is not enabled.
 // - `n`: both london hardfork and feemarket are enabled.
