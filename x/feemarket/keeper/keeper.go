@@ -89,9 +89,3 @@ func (k Keeper) AddTransientGasWanted(ctx sdk.Context, gasWanted uint64) (uint64
 	k.SetTransientBlockGasWanted(ctx, result)
 	return result, nil
 }
-
-//// ResetTransientGasWanted reset gas wanted to prepare for execution, called in ante handler.
-//func (k Keeper) ResetTransientGasWanted(ctx sdk.Context) {
-//	store := ctx.TransientStore(k.transientKey)
-//	store.Delete(types.KeyPrefixTransientBlockGasWanted)
-//}
