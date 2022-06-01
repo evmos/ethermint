@@ -134,16 +134,19 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 // gas consumption.
 type EthGasConsumeDecorator struct {
 	evmKeeper    EVMKeeper
+	feeMaker     FeeMarketKeeper
 	maxGasWanted uint64
 }
 
 // NewEthGasConsumeDecorator creates a new EthGasConsumeDecorator
 func NewEthGasConsumeDecorator(
 	evmKeeper EVMKeeper,
+	feeMarket FeeMarketKeeper,
 	maxGasWanted uint64,
 ) EthGasConsumeDecorator {
 	return EthGasConsumeDecorator{
 		evmKeeper,
+		feeMarket,
 		maxGasWanted,
 	}
 }
@@ -231,6 +234,13 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	gasConsumed := ctx.GasMeter().GasConsumed()
 	ctx = ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
 	ctx.GasMeter().ConsumeGas(gasConsumed, "copy gas consumed")
+
+	if london {
+		_, err = egcd.feeMaker.AddTransientGasWanted(ctx, gasWanted)
+		if err != nil {
+			return ctx, sdkerrors.Wrapf(err, "failed to add gas wanted to transient store")
+		}
+	}
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	return next(ctx, tx, simulate)
@@ -473,11 +483,13 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 // by setting the gas meter to infinite
 type EthSetupContextDecorator struct {
 	evmKeeper EVMKeeper
+	feeMarket FeeMarketKeeper
 }
 
-func NewEthSetUpContextDecorator(evmKeeper EVMKeeper) EthSetupContextDecorator {
+func NewEthSetUpContextDecorator(evmKeeper EVMKeeper, feeMarket FeeMarketKeeper) EthSetupContextDecorator {
 	return EthSetupContextDecorator{
 		evmKeeper: evmKeeper,
+		feeMarket: feeMarket,
 	}
 }
 

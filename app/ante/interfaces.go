@@ -37,4 +37,5 @@ type protoTxProvider interface {
 // FeeMarketKeeper defines the expected keeper interface used on the AnteHandler
 type FeeMarketKeeper interface {
 	GetParams(ctx sdk.Context) (params feemarkettypes.Params)
+	AddTransientGasWanted(ctx sdk.Context, gasWanted uint64) (uint64, error)
 }
