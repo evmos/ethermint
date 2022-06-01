@@ -48,7 +48,7 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 
 			req := abci.RequestEndBlock{Height: 1}
 			suite.app.FeeMarketKeeper.EndBlock(suite.ctx, req)
-			gasUsed := suite.app.FeeMarketKeeper.GetBlockGasUsed(suite.ctx)
+			gasUsed := suite.app.FeeMarketKeeper.GetBlockGasWanted(suite.ctx)
 			suite.Require().Equal(tc.expGasUsed, gasUsed, tc.name)
 		})
 	}

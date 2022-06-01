@@ -43,7 +43,6 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	gasWanted := k.GetTransientGasWanted(ctx)
 
 	k.SetBlockGasWanted(ctx, gasWanted)
-	fmt.Printf("--------- Block gasWanted ---- %v", gasWanted)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		"block_gas",
