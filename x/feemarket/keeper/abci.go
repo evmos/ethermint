@@ -32,14 +32,13 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // EndBlock update block gas wanted.
 // The EVM end block logic doesn't update the validator set, thus it returns
 // an empty slice.
-func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
+func (k *Keeper) EndBlock(ctx sdk.Context) {
 	if ctx.BlockGasMeter() == nil {
 		k.Logger(ctx).Error("block gas meter is nil when setting block gas used")
 		return
 	}
 
 	gasWanted := k.GetTransientGasWanted(ctx)
-
 	k.SetBlockGasWanted(ctx, gasWanted)
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(

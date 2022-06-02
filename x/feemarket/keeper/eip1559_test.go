@@ -28,7 +28,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
 		},
 		{
-			"with BaseFee - parent block used the same gas as its target",
+			"with BaseFee - parent block wanted the same gas as its target",
 			false,
 			func() {
 				// non initial block
@@ -53,7 +53,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
 		},
 		{
-			"with BaseFee - parent block used more gas than its target",
+			"with BaseFee - parent block wanted more gas than its target",
 			false,
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(1)
@@ -74,7 +74,7 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			big.NewInt(1125000000),
 		},
 		{
-			"with BaseFee - Parent gas used smaller than parent gas target",
+			"with BaseFee - Parent gas wanted smaller than parent gas target",
 			false,
 			func() {
 				suite.ctx = suite.ctx.WithBlockHeight(1)

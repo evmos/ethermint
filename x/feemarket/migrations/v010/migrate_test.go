@@ -28,7 +28,7 @@ func TestMigrateStore(t *testing.T) {
 	paramstore := paramtypes.NewSubspace(
 		encCfg.Marshaler, encCfg.Amino, feemarketKey, tFeeMarketKey, "feemarket",
 	)
-	fmKeeper := feemarketkeeper.NewKeeper(encCfg.Marshaler, feemarketKey, paramstore)
+	fmKeeper := feemarketkeeper.NewKeeper(encCfg.Marshaler, paramstore, feemarketKey, tFeeMarketKey)
 	fmKeeper.SetParams(ctx, types.DefaultParams())
 	require.True(t, paramstore.HasKeyTable())
 
