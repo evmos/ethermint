@@ -48,18 +48,19 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	}
 
 	defer func() {
-		if tx.Value().IsInt64() {
-			telemetry.SetGauge(
-				float32(tx.Value().Int64()),
-				"tx", "msg", "ethereum_tx",
-			)
-		}
-
 		telemetry.IncrCounterWithLabels(
-			[]string{types.ModuleName, "ethereum_tx"},
+			[]string{"tx", "msg", "ethereum_tx", "total"},
 			1,
 			labels,
 		)
+
+		if response.GasUsed != 0 {
+			telemetry.IncrCounterWithLabels(
+				[]string{"tx", "msg", "ethereum_tx", "gas_used", "total"},
+				float32(response.GasUsed),
+				labels,
+			)
+		}
 	}()
 
 	attrs := []sdk.Attribute{
