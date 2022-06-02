@@ -62,8 +62,8 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 				labels,
 			)
 
-			// Observe which users define a gas limit >> gas used. Note, that gas
-			// limit is always > 0
+			// Observe which users define a gas limit >> gas used. Note, that
+			// gas_limit and gas_used are always > 0
 			gasLimit := sdk.NewDec(int64(tx.Gas()))
 			gasRatio, err := gasLimit.QuoInt64(int64(response.GasUsed)).Float64()
 			if err == nil {
