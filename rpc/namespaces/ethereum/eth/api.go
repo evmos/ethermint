@@ -216,8 +216,9 @@ func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 	if err != nil {
 		return nil, err
 	}
-	if result.Cmp(minGasPrice.BigInt()) == -1 {
-		result = minGasPrice.BigInt()
+	minGasPriceInt := minGasPrice.BigInt()
+	if result.Cmp(minGasPriceInt) < 0 {
+		result = minGasPriceInt
 	}
 
 	return (*hexutil.Big)(result), nil
