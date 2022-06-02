@@ -49,13 +49,13 @@ func (options HandlerOptions) Validate() error {
 
 func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
-		NewEthSetUpContextDecorator(options.EvmKeeper, options.FeeMarketKeeper), // outermost AnteDecorator. SetUpContext must be called first
-		NewEthMempoolFeeDecorator(options.EvmKeeper),                            // Check eth effective gas price against minimal-gas-prices
-		NewEthMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),  // Check eth effective gas price against the global MinGasPrice
+		NewEthSetUpContextDecorator(options.EvmKeeper),                         // outermost AnteDecorator. SetUpContext must be called first
+		NewEthMempoolFeeDecorator(options.EvmKeeper),                           // Check eth effective gas price against minimal-gas-prices
+		NewEthMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper), // Check eth effective gas price against the global MinGasPrice
 		NewEthValidateBasicDecorator(options.EvmKeeper),
 		NewEthSigVerificationDecorator(options.EvmKeeper),
 		NewEthAccountVerificationDecorator(options.AccountKeeper, options.EvmKeeper),
-		NewEthGasConsumeDecorator(options.EvmKeeper, options.FeeMarketKeeper, options.MaxTxGasWanted),
+		NewEthGasConsumeDecorator(options.EvmKeeper, options.MaxTxGasWanted),
 		NewCanTransferDecorator(options.EvmKeeper),
 		NewEthIncrementSenderSequenceDecorator(options.AccountKeeper), // innermost AnteDecorator.
 		NewEthEmitEventDecorator(options.EvmKeeper),                   // emit eth tx hash and index at the very last ante handler.
