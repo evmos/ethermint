@@ -34,11 +34,13 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	if tx.To() == nil {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "create"),
+			telemetry.NewLabel("from", sender),
 		}
 	} else {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "call"),
 			telemetry.NewLabel("to", tx.To().Hex()), // recipient address (contract or account)
+			telemetry.NewLabel("from", sender),
 		}
 	}
 
@@ -60,6 +62,16 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 				float32(response.GasUsed),
 				labels,
 			)
+
+			gasUsed := sdk.NewDec(int64(response.GasUsed))
+			gasRatio, err := gasUsed.QuoInt64(int64(tx.Gas())).Float64()
+			if err == nil {
+				telemetry.SetGaugeWithLabels(
+					[]string{"tx", "msg", "ethereum_tx", "gas_used", "per", "gas_limit"},
+					float32(gasRatio),
+					labels,
+				)
+			}
 		}
 	}()
 

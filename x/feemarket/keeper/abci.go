@@ -22,7 +22,7 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	k.SetBaseFee(ctx, baseFee)
 
 	defer func() {
-		telemetry.SetGauge(float32(baseFee.Int64()), "fee_market", "base_fee")
+		telemetry.SetGauge(float32(baseFee.Int64()), "feemarket", "base_fee")
 	}()
 
 	// Store current base fee in event
@@ -48,7 +48,7 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	k.SetBlockGasUsed(ctx, gasUsed)
 
 	defer func() {
-		telemetry.SetGauge(float32(gasUsed), "fee_market", "block_gas")
+		telemetry.SetGauge(float32(gasUsed), "feemarket", "block_gas")
 	}()
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
