@@ -211,6 +211,15 @@ func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 		result = big.NewInt(e.backend.RPCMinGasPrice())
 	}
 
+	// return at least GlobalMinGasPrice from FeeMarket module
+	minGasPrice, err := e.backend.GlobalMinGasPrice()
+	if err != nil {
+		return nil, err
+	}
+	if result.Cmp(minGasPrice.BigInt()) == -1 {
+		result = minGasPrice.BigInt()
+	}
+
 	return (*hexutil.Big)(result), nil
 }
 
