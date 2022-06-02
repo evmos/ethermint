@@ -1,9 +1,10 @@
 package ante
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"math/big"
 )
 
 // GasWantedDecorator keeps track of the gasWanted amount on the current block in transient store
