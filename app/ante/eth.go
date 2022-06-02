@@ -235,13 +235,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	ctx = ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
 	ctx.GasMeter().ConsumeGas(gasConsumed, "copy gas consumed")
 
-	// Add total gasWanted to cumulative in block transientStore for BaseFee calculation
-	if london {
-		_, err = egcd.feeMaker.AddTransientGasWanted(ctx, gasWanted)
-		if err != nil {
-			return ctx, sdkerrors.Wrapf(err, "failed to add gas wanted to transient store")
-		}
-	}
+	//// Add total gasWanted to cumulative in block transientStore for BaseFee calculation
+	//if london && !egcd.feeMaker.GetParams(ctx).NoBaseFee {
+	//	if _, err := egcd.feeMaker.AddTransientGasWanted(ctx, gasWanted); err != nil {
+	//		return ctx, sdkerrors.Wrapf(err, "failed to add gas wanted to transient store")
+	//	}
+	//}
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	return next(ctx, tx, simulate)
