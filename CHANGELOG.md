@@ -39,7 +39,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ## Unreleased
 
 ### State Machine Breaking
-- (feemarket) [tharsis#1105](https://github.com/tharsis/ethermint/pull/1105) BaseFee calculation based on GasWanted instead of GasUsed.
+
+- (feemarket) [tharsis#1105](https://github.com/tharsis/ethermint/pull/1105) Update `BaseFee` calculation based on `GasWanted` instead of `GasUsed`.
 
 ### API Breaking
 
