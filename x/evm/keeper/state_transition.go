@@ -6,7 +6,6 @@ import (
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -299,13 +298,6 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 
 	// reset the gas meter for current cosmos transaction
 	k.ResetGasMeterAndConsumeGas(ctx, totalGasUsed)
-
-	defer func() {
-		telemetry.IncrCounter(
-			float32(refund),
-			"tx", "msg", "ethereum", "tx_refund", "total",
-		)
-	}()
 
 	return res, nil
 }
