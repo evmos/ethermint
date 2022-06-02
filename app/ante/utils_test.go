@@ -55,6 +55,8 @@ type AnteTestSuite struct {
 	evmParamsOption func(*evmtypes.Params)
 }
 
+const TestGasLimit uint64 = 100000
+
 func (suite *AnteTestSuite) StateDB() *statedb.StateDB {
 	return statedb.New(suite.ctx, suite.app.EvmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes())))
 }
@@ -139,13 +141,13 @@ func (s *AnteTestSuite) BuildTestEthTx(
 		s.ctx,
 		common.BytesToAddress(from.Bytes()),
 	)
-	gasLimit := uint64(100000)
+
 	msgEthereumTx := evmtypes.NewTx(
 		chainID,
 		nonce,
 		&to,
 		amount,
-		gasLimit,
+		TestGasLimit,
 		gasPrice,
 		gasFeeCap,
 		gasTipCap,
@@ -237,11 +239,10 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 }
 
 func (suite *AnteTestSuite) CreateTestCosmosTxBuilder(gasPrice sdk.Int, denom string, msgs ...sdk.Msg) client.TxBuilder {
-	gasLimit := uint64(1000000)
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
 
-	txBuilder.SetGasLimit(gasLimit)
-	fees := &sdk.Coins{{Denom: denom, Amount: gasPrice.MulRaw(int64(gasLimit))}}
+	txBuilder.SetGasLimit(TestGasLimit)
+	fees := &sdk.Coins{{Denom: denom, Amount: gasPrice.MulRaw(int64(TestGasLimit))}}
 	txBuilder.SetFeeAmount(*fees)
 	err := txBuilder.SetMsgs(msgs...)
 	suite.Require().NoError(err)
@@ -328,6 +329,10 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	suite.Require().NoError(err)
 
 	return builder
+}
+
+func NextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+	return ctx, nil
 }
 
 var _ sdk.Tx = &invalidTx{}

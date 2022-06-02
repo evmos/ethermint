@@ -115,7 +115,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				// s.SetupTest(et.isCheckTx)
 				ctx := s.ctx.WithIsReCheckTx(et.isCheckTx)
 				dec := ante.NewMinGasPriceDecorator(s.app.FeeMarketKeeper, s.app.EvmKeeper)
-				_, err := dec.AnteHandle(ctx, tc.malleate(), et.simulate, nextFn)
+				_, err := dec.AnteHandle(ctx, tc.malleate(), et.simulate, NextFn)
 
 				if tc.expPass {
 					s.Require().NoError(err, tc.name)
@@ -325,7 +325,7 @@ func (s AnteTestSuite) TestEthMinGasPriceDecorator() {
 				// s.SetupTest(et.isCheckTx)
 				s.SetupTest()
 				dec := ante.NewEthMinGasPriceDecorator(s.app.FeeMarketKeeper, s.app.EvmKeeper)
-				_, err := dec.AnteHandle(s.ctx, tc.malleate(), et.simulate, nextFn)
+				_, err := dec.AnteHandle(s.ctx, tc.malleate(), et.simulate, NextFn)
 
 				if tc.expPass {
 					s.Require().NoError(err, tc.name)
