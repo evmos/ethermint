@@ -30,17 +30,16 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	tx := msg.AsTransaction()
 	txIndex := k.GetTxIndexTransient(ctx)
 
-	labels := []metrics.Label{telemetry.NewLabel("tx_type", fmt.Sprintf("%d", tx.Type()))}
+	labels := []metrics.Label{
+		telemetry.NewLabel("tx_type", fmt.Sprintf("%d", tx.Type())),
+		telemetry.NewLabel("from", sender),
+	}
 	if tx.To() == nil {
-		labels = []metrics.Label{
-			telemetry.NewLabel("execution", "create"),
-			telemetry.NewLabel("from", sender),
-		}
+		labels = []metrics.Label{telemetry.NewLabel("execution", "create")}
 	} else {
 		labels = []metrics.Label{
 			telemetry.NewLabel("execution", "call"),
 			telemetry.NewLabel("to", tx.To().Hex()), // recipient address (contract or account)
-			telemetry.NewLabel("from", sender),
 		}
 	}
 
@@ -63,11 +62,13 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 				labels,
 			)
 
-			gasUsed := sdk.NewDec(int64(response.GasUsed))
-			gasRatio, err := gasUsed.QuoInt64(int64(tx.Gas())).Float64()
+			// Observe which users define a gas limit >> gas used. Note, that gas
+			// limit is always > 0
+			gasLimit := sdk.NewDec(int64(tx.Gas()))
+			gasRatio, err := gasLimit.QuoInt64(int64(response.GasUsed)).Float64()
 			if err == nil {
 				telemetry.SetGaugeWithLabels(
-					[]string{"tx", "msg", "ethereum_tx", "gas_used", "per", "gas_limit"},
+					[]string{"tx", "msg", "ethereum_tx", "gas_limit", "per", "gas_used"},
 					float32(gasRatio),
 					labels,
 				)
