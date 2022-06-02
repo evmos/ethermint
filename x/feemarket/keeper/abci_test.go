@@ -2,6 +2,8 @@ package keeper_test
 
 import (
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 func (suite *KeeperTestSuite) TestEndBlock() {
@@ -12,7 +14,7 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 		expGasWanted uint64
 	}{
 		{
-			"basFee nil",
+			"baseFee nil",
 			true,
 			func() {},
 			uint64(0),
@@ -21,6 +23,8 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 			"pass",
 			false,
 			func() {
+				meter := sdk.NewGasMeter(uint64(1000000000))
+				suite.ctx = suite.ctx.WithBlockGasMeter(meter)
 				suite.app.FeeMarketKeeper.SetTransientBlockGasWanted(suite.ctx, 5000000)
 			},
 			uint64(5000000),
@@ -34,8 +38,7 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 			suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 
 			tc.malleate()
-			suite.app.FeeMarketKeeper.EndBlock(suite.ctx)
-
+			suite.app.FeeMarketKeeper.EndBlock(suite.ctx, types.RequestEndBlock{Height: 1})
 			gasWanted := suite.app.FeeMarketKeeper.GetBlockGasWanted(suite.ctx)
 			suite.Require().Equal(tc.expGasWanted, gasWanted, tc.name)
 		})
