@@ -34,7 +34,7 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // an empty slice.
 func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	if ctx.BlockGasMeter() == nil {
-		k.Logger(ctx).Error("block gas meter is nil when setting block gas used")
+		k.Logger(ctx).Error("block gas meter is nil when setting block gas wanted")
 		return
 	}
 
@@ -44,6 +44,6 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		"block_gas",
 		sdk.NewAttribute("height", fmt.Sprintf("%d", ctx.BlockHeight())),
-		sdk.NewAttribute("amount", fmt.Sprintf("%d", ctx.BlockGasMeter().GasConsumedToLimit())),
+		sdk.NewAttribute("amount", fmt.Sprintf("%d", gasWanted)),
 	))
 }
