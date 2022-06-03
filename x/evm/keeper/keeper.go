@@ -303,6 +303,11 @@ func (k Keeper) GetBaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int
 	return baseFee
 }
 
+func (k Keeper) GetMinGasMultiplier(ctx sdk.Context) sdk.Dec {
+	fmkParmas := k.feeMarketKeeper.GetParams(ctx)
+	return fmkParmas.MinGasMultiplier
+}
+
 // ResetTransientGasUsed reset gas used to prepare for execution of current cosmos tx, called in ante handler.
 func (k Keeper) ResetTransientGasUsed(ctx sdk.Context) {
 	store := ctx.TransientStore(k.transientKey)

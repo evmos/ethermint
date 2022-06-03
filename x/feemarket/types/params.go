@@ -18,7 +18,11 @@ var (
 	ParamStoreKeyBaseFee                  = []byte("BaseFee")
 	ParamStoreKeyEnableHeight             = []byte("EnableHeight")
 	ParamStoreKeyMinGasPrice              = []byte("MinGasPrice")
+	ParamStoreKeyMinGasMultiplier         = []byte("MinGasMultiplier")
 )
+
+// DefaultMinGasMultiplier is 0.5 or 50%
+var DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 
 // ParamKeyTable returns the parameter key table.
 func ParamKeyTable() paramtypes.KeyTable {
@@ -33,6 +37,7 @@ func NewParams(
 	baseFee uint64,
 	enableHeight int64,
 	minGasPrice sdk.Dec,
+	minGasPriceMultiplier sdk.Dec,
 ) Params {
 	return Params{
 		NoBaseFee:                noBaseFee,
@@ -41,6 +46,7 @@ func NewParams(
 		BaseFee:                  sdk.NewIntFromUint64(baseFee),
 		EnableHeight:             enableHeight,
 		MinGasPrice:              minGasPrice,
+		MinGasMultiplier:         minGasPriceMultiplier,
 	}
 }
 
@@ -53,6 +59,7 @@ func DefaultParams() Params {
 		BaseFee:                  sdk.NewIntFromUint64(params.InitialBaseFee),
 		EnableHeight:             0,
 		MinGasPrice:              sdk.ZeroDec(),
+		MinGasMultiplier:         DefaultMinGasMultiplier,
 	}
 }
 
@@ -65,6 +72,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyBaseFee, &p.BaseFee, validateBaseFee),
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableHeight, &p.EnableHeight, validateEnableHeight),
 		paramtypes.NewParamSetPair(ParamStoreKeyMinGasPrice, &p.MinGasPrice, validateMinGasPrice),
+		paramtypes.NewParamSetPair(ParamStoreKeyMinGasMultiplier, &p.MinGasMultiplier, validateMinGasPrice),
 	}
 }
 
@@ -80,6 +88,10 @@ func (p Params) Validate() error {
 
 	if p.EnableHeight < 0 {
 		return fmt.Errorf("enable height cannot be negative: %d", p.EnableHeight)
+	}
+
+	if err := validateMinGasMultiplier(p.MinGasMultiplier); err != nil {
+		return err
 	}
 
 	return validateMinGasPrice(p.MinGasPrice)
@@ -159,5 +171,26 @@ func validateMinGasPrice(i interface{}) error {
 		return fmt.Errorf("value cannot be negative: %s", i)
 	}
 
+	return nil
+}
+
+func validateMinGasMultiplier(i interface{}) error {
+	v, ok := i.(sdk.Dec)
+
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v.IsNil() {
+		return fmt.Errorf("invalid parameter: nil")
+	}
+
+	if v.IsNegative() {
+		return fmt.Errorf("value cannot be negative: %T", i)
+	}
+
+	if v.GT(sdk.OneDec()) {
+		return fmt.Errorf("value cannot be greater than 1: %T", i)
+	}
 	return nil
 }

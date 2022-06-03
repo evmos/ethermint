@@ -78,7 +78,6 @@ func TestParamsValidatePriv(t *testing.T) {
 	require.NoError(t, validateBool(true))
 	require.Error(t, validateEIPs(""))
 	require.NoError(t, validateEIPs([]int64{1884}))
-	require.Error(t, validateMinGasMultiplier(sdk.NewDec(-5)))
 }
 
 func TestValidateChainConfig(t *testing.T) {

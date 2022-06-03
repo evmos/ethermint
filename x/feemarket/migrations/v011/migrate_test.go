@@ -32,6 +32,7 @@ func TestMigrateStore(t *testing.T) {
 
 	// check no MinGasPrice param
 	require.False(t, paramstore.Has(ctx, feemarkettypes.ParamStoreKeyMinGasPrice))
+	require.False(t, paramstore.Has(ctx, feemarkettypes.ParamStoreKeyMinGasMultiplier))
 
 	// Run migrations
 	err := v011.MigrateStore(ctx, &paramstore)
@@ -39,12 +40,15 @@ func TestMigrateStore(t *testing.T) {
 
 	// Make sure the params are set
 	require.True(t, paramstore.Has(ctx, feemarkettypes.ParamStoreKeyMinGasPrice))
+	require.True(t, paramstore.Has(ctx, feemarkettypes.ParamStoreKeyMinGasMultiplier))
 
 	var minGasPrice sdk.Dec
+	var minGasMultiplier sdk.Dec
 
 	// Make sure the new params are set
 	require.NotPanics(t, func() {
 		paramstore.Get(ctx, feemarkettypes.ParamStoreKeyMinGasPrice, &minGasPrice)
+		paramstore.Get(ctx, feemarkettypes.ParamStoreKeyMinGasMultiplier, &minGasMultiplier)
 	})
 
 	// check the params are updated
