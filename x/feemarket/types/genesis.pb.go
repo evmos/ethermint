@@ -27,7 +27,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type GenesisState struct {
 	// params defines all the paramaters of the module.
 	Params Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
-	// block gas is the amount of gas used on the last block before the upgrade.
+	// block gas is the amount of gas wanted on the last block before the upgrade.
 	// Zero by default.
 	BlockGas uint64 `protobuf:"varint,3,opt,name=block_gas,json=blockGas,proto3" json:"block_gas,omitempty"`
 }
