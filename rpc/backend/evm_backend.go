@@ -818,6 +818,7 @@ func (b *Backend) BaseFee(height int64) (*big.Int, error) {
 	return res.BaseFee.BigInt(), nil
 }
 
+// GlobalMinGasPrice returns MinGasPrice param from FeeMarket
 func (b *Backend) GlobalMinGasPrice() (sdk.Dec, error) {
 	res, err := b.queryClient.FeeMarket.Params(b.ctx, &feemarkettypes.QueryParamsRequest{})
 	if err != nil {
