@@ -6,6 +6,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -19,6 +20,10 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	}
 
 	k.SetBaseFee(ctx, baseFee)
+
+	defer func() {
+		telemetry.SetGauge(float32(baseFee.Int64()), "feemarket", "base_fee")
+	}()
 
 	// Store current base fee in event
 	ctx.EventManager().EmitEvents(sdk.Events{
@@ -40,6 +45,10 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 
 	gasWanted := k.GetTransientGasWanted(ctx)
 	k.SetBlockGasWanted(ctx, gasWanted)
+
+	defer func() {
+		telemetry.SetGauge(float32(gasUsed), "feemarket", "block_gas")
+	}()
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
 		"block_gas",
