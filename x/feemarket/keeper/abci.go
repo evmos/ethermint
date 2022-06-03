@@ -44,6 +44,14 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	}
 
 	gasWanted := k.GetTransientGasWanted(ctx)
+	gasUsed := ctx.BlockGasMeter().GasConsumedToLimit()
+
+	// to prevent BaseFee manipulation we limit the gasWanted influence
+	// proportional to MinGasMultiplier
+	minGasMultiplier := k.GetParams(ctx).MinGasMultiplier
+	limitedGasWanted := sdk.NewDec(int64(gasWanted)).Mul(minGasMultiplier)
+	// if gas used was higher than limitedGasWanted we use that as gasWanted
+	gasWanted = sdk.MaxDec(limitedGasWanted, sdk.NewDec(int64(gasUsed))).TruncateInt().Uint64()
 	k.SetBlockGasWanted(ctx, gasWanted)
 
 	defer func() {
