@@ -27,7 +27,7 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 				suite.ctx = suite.ctx.WithBlockGasMeter(meter)
 				suite.app.FeeMarketKeeper.SetTransientBlockGasWanted(suite.ctx, 5000000)
 			},
-			uint64(5000000),
+			uint64(2500000),
 		},
 	}
 	for _, tc := range testCases {
