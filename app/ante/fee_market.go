@@ -12,7 +12,7 @@ import (
 // NOTE: This decorator does not perform any validation
 type GasWantedDecorator struct {
 	evmKeeper EVMKeeper
-	feeMaker  FeeMarketKeeper
+	feeMarketKeeper  FeeMarketKeeper
 }
 
 // NewGasWantedDecorator creates a new NewGasWantedDecorator
