@@ -47,7 +47,7 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	k.SetBlockGasWanted(ctx, gasWanted)
 
 	defer func() {
-		telemetry.SetGauge(float32(gasUsed), "feemarket", "block_gas")
+		telemetry.SetGauge(float32(gasWanted), "feemarket", "block_gas")
 	}()
 
 	ctx.EventManager().EmitEvent(sdk.NewEvent(
