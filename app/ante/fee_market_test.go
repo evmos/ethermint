@@ -46,7 +46,7 @@ func (suite AnteTestSuite) TestGasWantedDecorator() {
 			},
 		},
 		{
-			"Ethereum Dynamic Tx",
+			"Ethereum Dynamic Fee Tx (EIP1559)",
 			TestGasLimit,
 			func() sdk.Tx {
 				emptyAccessList := ethtypes.AccessList{}
