@@ -43,7 +43,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, minGasMultiplier sdk.Dec, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
 	return Params{
 		EvmDenom:     evmDenom,
 		EnableCreate: enableCreate,

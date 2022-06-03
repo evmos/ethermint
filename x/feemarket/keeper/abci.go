@@ -47,7 +47,8 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	gasUsed := ctx.BlockGasMeter().GasConsumedToLimit()
 
 	// to prevent BaseFee manipulation we limit the gasWanted influence
-	// proportional to MinGasMultiplier
+	// proportional to MinGasMultiplier to keep synchronization with charged gas
+	// more info here https://github.com/tharsis/ethermint/pull/1105#discussion_r888798925
 	minGasMultiplier := k.GetParams(ctx).MinGasMultiplier
 	limitedGasWanted := sdk.NewDec(int64(gasWanted)).Mul(minGasMultiplier)
 	// if gas used was higher than limitedGasWanted we use that as gasWanted
