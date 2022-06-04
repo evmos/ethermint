@@ -57,6 +57,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
 * (evm) [tharsis#1088](https://github.com/tharsis/ethermint/pull/1088) Fix ability to append log in tx post processing.
 * (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
+* (ante) [tharsis#1111](https://github.com/tharsis/ethermint/pull/1111) Move CanTransfer decorator before GasConsume decorator
 
 ## [v0.15.0] - 2022-05-09
 
