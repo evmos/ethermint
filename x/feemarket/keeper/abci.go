@@ -46,8 +46,8 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	gasWanted := k.GetTransientGasWanted(ctx)
 	gasUsed := ctx.BlockGasMeter().GasConsumedToLimit()
 
-	// to prevent BaseFee manipulation we limit the gasWanted to be the greatest between
-	// gasWanted * MinGasMultiplier or  gasUsed
+	// to prevent BaseFee manipulation we limit the gasWanted so that
+	// gasWanted = max(gasWanted * MinGasMultiplier, gasUsed)
 	// this will be keep BaseFee protected from un-penalized manipulation
 	// more info here https://github.com/tharsis/ethermint/pull/1105#discussion_r888798925
 	minGasMultiplier := k.GetParams(ctx).MinGasMultiplier
