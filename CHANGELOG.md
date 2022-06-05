@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+- (feemarket) [tharsis#1105](https://github.com/tharsis/ethermint/pull/1105) Update `BaseFee` calculation based on `GasWanted` instead of `GasUsed`.
+
 ### API Breaking
 
 - (feemarket) [tharsis#1104](https://github.com/tharsis/ethermint/pull/1104) Enforce a minimum gas price for Cosmos and EVM transactions through the `MinGasPrice` parameter.

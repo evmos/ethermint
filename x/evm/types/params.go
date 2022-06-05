@@ -23,12 +23,11 @@ var DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 
 // Parameter keys
 var (
-	ParamStoreKeyEVMDenom         = []byte("EVMDenom")
-	ParamStoreKeyEnableCreate     = []byte("EnableCreate")
-	ParamStoreKeyEnableCall       = []byte("EnableCall")
-	ParamStoreKeyExtraEIPs        = []byte("EnableExtraEIPs")
-	ParamStoreKeyChainConfig      = []byte("ChainConfig")
-	ParamStoreKeyMinGasMultiplier = []byte("MinGasMultiplier")
+	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
+	ParamStoreKeyEnableCreate = []byte("EnableCreate")
+	ParamStoreKeyEnableCall   = []byte("EnableCall")
+	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
+	ParamStoreKeyChainConfig  = []byte("ChainConfig")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
 	// EVM interpreter. These EIPs are applied in order and can override the
@@ -44,14 +43,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, minGasMultiplier sdk.Dec, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
 	return Params{
-		EvmDenom:         evmDenom,
-		EnableCreate:     enableCreate,
-		EnableCall:       enableCall,
-		ExtraEIPs:        extraEIPs,
-		ChainConfig:      config,
-		MinGasMultiplier: minGasMultiplier,
+		EvmDenom:     evmDenom,
+		EnableCreate: enableCreate,
+		EnableCall:   enableCall,
+		ExtraEIPs:    extraEIPs,
+		ChainConfig:  config,
 	}
 }
 
@@ -59,12 +57,11 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfi
 // ExtraEIPs is empty to prevent overriding the latest hard fork instruction set
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:         DefaultEVMDenom,
-		EnableCreate:     true,
-		EnableCall:       true,
-		ChainConfig:      DefaultChainConfig(),
-		ExtraEIPs:        nil,
-		MinGasMultiplier: DefaultMinGasMultiplier,
+		EvmDenom:     DefaultEVMDenom,
+		EnableCreate: true,
+		EnableCall:   true,
+		ChainConfig:  DefaultChainConfig(),
+		ExtraEIPs:    nil,
 	}
 }
 
@@ -76,7 +73,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
-		paramtypes.NewParamSetPair(ParamStoreKeyMinGasMultiplier, &p.MinGasMultiplier, validateMinGasMultiplier),
 	}
 }
 
@@ -87,10 +83,6 @@ func (p Params) Validate() error {
 	}
 
 	if err := validateEIPs(p.ExtraEIPs); err != nil {
-		return err
-	}
-
-	if err := validateMinGasMultiplier(p.MinGasMultiplier); err != nil {
 		return err
 	}
 
@@ -135,27 +127,6 @@ func validateEIPs(i interface{}) error {
 		}
 	}
 
-	return nil
-}
-
-func validateMinGasMultiplier(i interface{}) error {
-	v, ok := i.(sdk.Dec)
-
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNil() {
-		return fmt.Errorf("invalid parameter: nil")
-	}
-
-	if v.IsNegative() {
-		return fmt.Errorf("value cannot be negative: %T", i)
-	}
-
-	if v.GT(sdk.OneDec()) {
-		return fmt.Errorf("value cannot be greater than 1: %T", i)
-	}
 	return nil
 }
 

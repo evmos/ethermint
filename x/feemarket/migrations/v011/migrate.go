@@ -9,19 +9,24 @@ import (
 )
 
 // MigrateStore adds the MinGasPrice param with a value of 0
+// and MinGasMultiplier to 0,5
 func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace) error {
 	if !paramstore.HasKeyTable() {
 		ps := paramstore.WithKeyTable(types.ParamKeyTable())
 		paramstore = &ps
 	}
 
-	paramstore.Set(ctx, types.ParamStoreKeyMinGasPrice, sdk.ZeroDec())
+	// add MinGasPrice
+	paramstore.Set(ctx, types.ParamStoreKeyMinGasPrice, types.DefaultMinGasPrice)
+	// add MinGasMultiplier
+	paramstore.Set(ctx, types.ParamStoreKeyMinGasMultiplier, types.DefaultMinGasMultiplier)
 	return nil
 }
 
 // MigrateJSON accepts exported v0.10 x/feemarket genesis state and migrates it to
 // v0.11 x/feemarket genesis state. The migration includes:
 // - add MinGasPrice param
+// - add MinGasMultiplier param
 func MigrateJSON(oldState v010types.GenesisState) types.GenesisState {
 	return types.GenesisState{
 		Params: types.Params{
@@ -30,7 +35,8 @@ func MigrateJSON(oldState v010types.GenesisState) types.GenesisState {
 			ElasticityMultiplier:     oldState.Params.ElasticityMultiplier,
 			EnableHeight:             oldState.Params.EnableHeight,
 			BaseFee:                  oldState.Params.BaseFee,
-			MinGasPrice:              sdk.ZeroDec(),
+			MinGasPrice:              types.DefaultMinGasPrice,
+			MinGasMultiplier:         types.DefaultMinGasMultiplier,
 		},
 		BlockGas: oldState.BlockGas,
 	}
