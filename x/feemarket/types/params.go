@@ -21,8 +21,12 @@ var (
 	ParamStoreKeyMinGasMultiplier         = []byte("MinGasMultiplier")
 )
 
-// DefaultMinGasMultiplier is 0.5 or 50%
-var DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
+var (
+	// DefaultMinGasMultiplier is 0.5 or 50%
+	DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
+	// DefaultMinGasPrice is 0 (i.e disabled)
+	DefaultMinGasPrice = sdk.ZeroDec()
+)
 
 // ParamKeyTable returns the parameter key table.
 func ParamKeyTable() paramtypes.KeyTable {
@@ -58,7 +62,7 @@ func DefaultParams() Params {
 		ElasticityMultiplier:     params.ElasticityMultiplier,
 		BaseFee:                  sdk.NewIntFromUint64(params.InitialBaseFee),
 		EnableHeight:             0,
-		MinGasPrice:              sdk.ZeroDec(),
+		MinGasPrice:              DefaultMinGasPrice,
 		MinGasMultiplier:         DefaultMinGasMultiplier,
 	}
 }
@@ -185,8 +189,8 @@ func validateMinGasMultiplier(i interface{}) error {
 		return fmt.Errorf("invalid parameter: nil")
 	}
 
-	if v.IsNegative() {
-		return fmt.Errorf("value cannot be negative: %T", i)
+	if v.IsZero() || v.IsNegative() {
+		return fmt.Errorf("value cannot be zero or negative: %T", i)
 	}
 
 	if v.GT(sdk.OneDec()) {

@@ -17,7 +17,7 @@ func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace) error {
 	}
 
 	// add MinGasPrice
-	paramstore.Set(ctx, types.ParamStoreKeyMinGasPrice, sdk.ZeroDec())
+	paramstore.Set(ctx, types.ParamStoreKeyMinGasPrice, types.DefaultMinGasPrice)
 	// add MinGasMultiplier
 	paramstore.Set(ctx, types.ParamStoreKeyMinGasMultiplier, types.DefaultMinGasMultiplier)
 	return nil
@@ -35,7 +35,7 @@ func MigrateJSON(oldState v010types.GenesisState) types.GenesisState {
 			ElasticityMultiplier:     oldState.Params.ElasticityMultiplier,
 			EnableHeight:             oldState.Params.EnableHeight,
 			BaseFee:                  oldState.Params.BaseFee,
-			MinGasPrice:              sdk.ZeroDec(),
+			MinGasPrice:              types.DefaultMinGasPrice,
 			MinGasMultiplier:         types.DefaultMinGasMultiplier,
 		},
 		BlockGas: oldState.BlockGas,

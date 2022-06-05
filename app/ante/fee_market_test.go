@@ -1,13 +1,14 @@
 package ante_test
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/tharsis/ethermint/app/ante"
 	"github.com/tharsis/ethermint/tests"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-	"math/big"
 )
 
 func (suite AnteTestSuite) TestGasWantedDecorator() {
@@ -22,7 +23,6 @@ func (suite AnteTestSuite) TestGasWantedDecorator() {
 		expectedGasWanted uint64
 		malleate          func() sdk.Tx
 	}{
-
 		{
 			"Cosmos Tx",
 			TestGasLimit,
@@ -42,6 +42,15 @@ func (suite AnteTestSuite) TestGasWantedDecorator() {
 			TestGasLimit,
 			func() sdk.Tx {
 				msg := suite.BuildTestEthTx(from, to, nil, make([]byte, 0), big.NewInt(0), nil, nil, nil)
+				return suite.CreateTestTx(msg, fromPrivKey, 1, false)
+			},
+		},
+		{
+			"Ethereum Access List Tx",
+			TestGasLimit,
+			func() sdk.Tx {
+				emptyAccessList := ethtypes.AccessList{}
+				msg := suite.BuildTestEthTx(from, to, nil, make([]byte, 0), big.NewInt(0), nil, nil, &emptyAccessList)
 				return suite.CreateTestTx(msg, fromPrivKey, 1, false)
 			},
 		},

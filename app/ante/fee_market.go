@@ -34,11 +34,11 @@ func (gwd GasWantedDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	london := ethCfg.IsLondon(blockHeight)
 
 	feeTx, ok := tx.(sdk.FeeTx)
-	if ok {
+	if ok && london {
 		gasWanted := feeTx.GetGas()
-
+		feeMktParams := gwd.feeMarketKeeper.GetParams(ctx)
 		// Add total gasWanted to cumulative in block transientStore in FeeMarket module
-		if london && !gwd.feeMarketKeeper.GetParams(ctx).NoBaseFee {
+		if feeMktParams.IsBaseFeeEnabled(ctx.BlockHeight()) {
 			if _, err := gwd.feeMarketKeeper.AddTransientGasWanted(ctx, gasWanted); err != nil {
 				return ctx, sdkerrors.Wrapf(err, "failed to add gas wanted to transient store")
 			}

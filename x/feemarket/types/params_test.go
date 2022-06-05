@@ -49,7 +49,12 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 			true,
 		},
 		{
-			"invalid ming gas multiplier",
+			"invalid: min gas multiplier zero",
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), DefaultMinGasPrice, sdk.ZeroDec()),
+			true,
+		},
+		{
+			"invalid: min gas multiplier",
 			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), sdk.NewDecWithPrec(20, 4), sdk.NewDec(2)),
 			true,
 		},
@@ -81,7 +86,10 @@ func (suite *ParamsTestSuite) TestParamsValidatePriv() {
 	suite.Require().Error(validateEnableHeight(""))
 	suite.Require().Error(validateEnableHeight(int64(-544435345345435345)))
 	suite.Require().NoError(validateEnableHeight(int64(544435345345435345)))
+	suite.Require().Error(validateMinGasPrice(sdk.Dec{}))
 	suite.Require().Error(validateMinGasMultiplier(sdk.NewDec(-5)))
+	suite.Require().Error(validateMinGasMultiplier(sdk.Dec{}))
+	suite.Require().Error(validateMinGasMultiplier(""))
 }
 
 func (suite *ParamsTestSuite) TestParamsValidateMinGasPrice() {

@@ -303,6 +303,7 @@ func (k Keeper) GetBaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int
 	return baseFee
 }
 
+// GetMinGasMultiplier returns the MinGasMultiplier param from the fee market module
 func (k Keeper) GetMinGasMultiplier(ctx sdk.Context) sdk.Dec {
 	fmkParmas := k.feeMarketKeeper.GetParams(ctx)
 	return fmkParmas.MinGasMultiplier
