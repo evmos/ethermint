@@ -48,6 +48,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) Deduplicate some json-rpc logic codes, cleanup several dead functions.
 - (ante) [tharsis#1062](https://github.com/tharsis/ethermint/pull/1062) Emit event of eth tx hash in ante handler to support query failed transactions.
 - (analytics) [tharsis#1106](https://github.com/tharsis/ethermint/pull/1106) Update telemetry to Ethermint modules.
+- (rpc) [tharsis#1108](https://github.com/tharsis/ethermint/pull/1108) Update GetGasPrice RPC endpoint with global `MinGasPrice`
 
 ### Improvements
 
@@ -60,6 +61,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
 * (evm) [tharsis#1088](https://github.com/tharsis/ethermint/pull/1088) Fix ability to append log in tx post processing.
 * (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
+* (ante) [tharsis#1111](https://github.com/tharsis/ethermint/pull/1111) Move CanTransfer decorator before GasConsume decorator
 
 ## [v0.15.0] - 2022-05-09
 

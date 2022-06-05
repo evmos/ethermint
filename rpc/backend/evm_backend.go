@@ -818,6 +818,15 @@ func (b *Backend) BaseFee(height int64) (*big.Int, error) {
 	return res.BaseFee.BigInt(), nil
 }
 
+// GlobalMinGasPrice returns MinGasPrice param from FeeMarket
+func (b *Backend) GlobalMinGasPrice() (sdk.Dec, error) {
+	res, err := b.queryClient.FeeMarket.Params(b.ctx, &feemarkettypes.QueryParamsRequest{})
+	if err != nil {
+		return sdk.ZeroDec(), err
+	}
+	return res.Params.MinGasPrice, nil
+}
+
 // FeeHistory returns data relevant for fee estimation based on the specified range of blocks.
 func (b *Backend) FeeHistory(
 	userBlockCount rpc.DecimalOrHex, // number blocks to fetch, maximum is 100
