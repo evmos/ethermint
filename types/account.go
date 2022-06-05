@@ -52,6 +52,7 @@ func ProtoAccount() authtypes.AccountI {
 	}
 }
 
+// GetBaseAccount returns base account.
 func (acc EthAccount) GetBaseAccount() *authtypes.BaseAccount {
 	return acc.BaseAccount
 }
