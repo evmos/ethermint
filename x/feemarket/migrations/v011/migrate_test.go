@@ -15,8 +15,14 @@ import (
 	"github.com/tharsis/ethermint/app"
 	v010types "github.com/tharsis/ethermint/x/feemarket/migrations/v010/types"
 	v011 "github.com/tharsis/ethermint/x/feemarket/migrations/v011"
+	"github.com/tharsis/ethermint/x/feemarket/types"
 	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
 )
+
+func init() {
+	// modify defaults through global
+	types.DefaultMinGasPrice = sdk.NewDecWithPrec(25, 3)
+}
 
 func TestMigrateStore(t *testing.T) {
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
@@ -42,8 +48,10 @@ func TestMigrateStore(t *testing.T) {
 	require.True(t, paramstore.Has(ctx, feemarkettypes.ParamStoreKeyMinGasPrice))
 	require.True(t, paramstore.Has(ctx, feemarkettypes.ParamStoreKeyMinGasMultiplier))
 
-	var minGasPrice sdk.Dec
-	var minGasMultiplier sdk.Dec
+	var (
+		minGasPrice      sdk.Dec
+		minGasMultiplier sdk.Dec
+	)
 
 	// Make sure the new params are set
 	require.NotPanics(t, func() {
@@ -52,7 +60,9 @@ func TestMigrateStore(t *testing.T) {
 	})
 
 	// check the params are updated
-	require.True(t, minGasPrice.IsZero())
+	require.Equal(t, types.DefaultMinGasPrice.String(), minGasPrice.String())
+	require.False(t, minGasPrice.IsZero())
+	require.Equal(t, types.DefaultMinGasMultiplier.String(), minGasMultiplier.String())
 }
 
 func TestMigrateJSON(t *testing.T) {
@@ -73,5 +83,6 @@ func TestMigrateJSON(t *testing.T) {
 
 	migratedGenState := v011.MigrateJSON(genState)
 
-	require.True(t, migratedGenState.Params.MinGasPrice.IsZero())
+	require.Equal(t, types.DefaultMinGasPrice, migratedGenState.Params.MinGasPrice)
+	require.Equal(t, types.DefaultMinGasMultiplier, migratedGenState.Params.MinGasMultiplier)
 }
