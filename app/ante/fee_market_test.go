@@ -88,7 +88,7 @@ func (suite AnteTestSuite) TestGasWantedDecorator() {
 
 			gasWanted := suite.app.FeeMarketKeeper.GetTransientGasWanted(suite.ctx)
 			expectedGasWanted += tc.expectedGasWanted
-			suite.Equal(expectedGasWanted, gasWanted)
+			suite.Require().Equal(expectedGasWanted, gasWanted)
 		})
 	}
 }
