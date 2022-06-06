@@ -31,17 +31,20 @@ func (gwd GasWantedDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	ethCfg := params.ChainConfig.EthereumConfig(gwd.evmKeeper.ChainID())
 
 	blockHeight := big.NewInt(ctx.BlockHeight())
-	london := ethCfg.IsLondon(blockHeight)
+	isLondon := ethCfg.IsLondon(blockHeight)
 
 	feeTx, ok := tx.(sdk.FeeTx)
-	if ok && london {
-		gasWanted := feeTx.GetGas()
-		feeMktParams := gwd.feeMarketKeeper.GetParams(ctx)
-		// Add total gasWanted to cumulative in block transientStore in FeeMarket module
-		if feeMktParams.IsBaseFeeEnabled(ctx.BlockHeight()) {
-			if _, err := gwd.feeMarketKeeper.AddTransientGasWanted(ctx, gasWanted); err != nil {
-				return ctx, sdkerrors.Wrapf(err, "failed to add gas wanted to transient store")
-			}
+	if !ok || !isLondon {
+		return next(ctx, tx, simulate)
+	}
+
+	gasWanted := feeTx.GetGas()
+	feeMktParams := gwd.feeMarketKeeper.GetParams(ctx)
+
+	// Add total gasWanted to cumulative in block transientStore in FeeMarket module
+	if feeMktParams.IsBaseFeeEnabled(ctx.BlockHeight()) {
+		if _, err := gwd.feeMarketKeeper.AddTransientGasWanted(ctx, gasWanted); err != nil {
+			return ctx, sdkerrors.Wrapf(err, "failed to add gas wanted to transient store")
 		}
 	}
 

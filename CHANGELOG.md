@@ -40,25 +40,25 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-- (feemarket) [tharsis#1105](https://github.com/tharsis/ethermint/pull/1105) Update `BaseFee` calculation based on `GasWanted` instead of `GasUsed`.
+* (feemarket) [tharsis#1105](https://github.com/tharsis/ethermint/pull/1105) Update `BaseFee` calculation based on `GasWanted` instead of `GasUsed`.
 
 ### API Breaking
 
-- (feemarket) [tharsis#1104](https://github.com/tharsis/ethermint/pull/1104) Enforce a minimum gas price for Cosmos and EVM transactions through the `MinGasPrice` parameter.
-- (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) Deduplicate some json-rpc logic codes, cleanup several dead functions.
-- (ante) [tharsis#1062](https://github.com/tharsis/ethermint/pull/1062) Emit event of eth tx hash in ante handler to support query failed transactions.
-- (analytics) [tharsis#1106](https://github.com/tharsis/ethermint/pull/1106) Update telemetry to Ethermint modules.
-- (rpc) [tharsis#1108](https://github.com/tharsis/ethermint/pull/1108) Update GetGasPrice RPC endpoint with global `MinGasPrice`
+* (feemarket) [tharsis#1104](https://github.com/tharsis/ethermint/pull/1104) Enforce a minimum gas price for Cosmos and EVM transactions through the `MinGasPrice` parameter.
+* (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) Deduplicate some json-rpc logic codes, cleanup several dead functions.
+* (ante) [tharsis#1062](https://github.com/tharsis/ethermint/pull/1062) Emit event of eth tx hash in ante handler to support query failed transactions.
+* (analytics) [tharsis#1106](https://github.com/tharsis/ethermint/pull/1106) Update telemetry to Ethermint modules.
+* (rpc) [tharsis#1108](https://github.com/tharsis/ethermint/pull/1108) Update GetGasPrice RPC endpoint with global `MinGasPrice`
 
 ### Improvements
 
-* (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
-* (specs) [tharsis#1095](https://github.com/tharsis/ethermint/pull/1095) Add more evm specs concepts.
+* (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
+* (specs) [tharsis#1095](https://github.com/tharsis/ethermint/pull/1095) Add more evm specs concepts.
 * (evm) [tharsis#1101](https://github.com/tharsis/ethermint/pull/1101) Add tx_type, gas and counter telemetry for ethereum txs.
 
 ### Bug Fixes
 
-* (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
+* (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
 * (evm) [tharsis#1088](https://github.com/tharsis/ethermint/pull/1088) Fix ability to append log in tx post processing.
 * (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
 * (ante) [tharsis#1111](https://github.com/tharsis/ethermint/pull/1111) Move CanTransfer decorator before GasConsume decorator
@@ -279,9 +279,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
 * (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 * (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
-* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
-* (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
-* (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs
+* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
+* (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
+* (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs
 * (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) Fix debug JSON RPC handler crash on non-existing block
 
 ### Improvements
