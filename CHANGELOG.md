@@ -62,6 +62,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#1088](https://github.com/tharsis/ethermint/pull/1088) Fix ability to append log in tx post processing.
 * (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
 * (ante) [tharsis#1111](https://github.com/tharsis/ethermint/pull/1111) Move CanTransfer decorator before GasConsume decorator
+* (types) [tharsis#1112](https://github.com/cosmos/ethermint/pull/1112) Add `GetBaseAccount` to avoid invalid account error when create vesting account.
 
 ## [v0.15.0] - 2022-05-09
 
