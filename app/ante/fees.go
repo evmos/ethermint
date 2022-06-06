@@ -1,6 +1,8 @@
 package ante
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -23,34 +25,44 @@ func NewMinGasPriceDecorator(fk FeeMarketKeeper, ek EVMKeeper) MinGasPriceDecora
 }
 
 func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	minGasPrice := mpd.feesKeeper.GetParams(ctx).MinGasPrice
-	minGasPrices := sdk.DecCoins{sdk.DecCoin{
-		Denom:  mpd.evmKeeper.GetParams(ctx).EvmDenom,
-		Amount: minGasPrice,
-	}}
-
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
 	}
 
+	minGasPrice := mpd.feesKeeper.GetParams(ctx).MinGasPrice
+
+	// short-circuit if min gas price is 0
+	if minGasPrice.IsZero() {
+		return next(ctx, tx, simulate)
+	}
+
+	evmParams := mpd.evmKeeper.GetParams(ctx)
+	minGasPrices := sdk.DecCoins{
+		{
+			Denom:  evmParams.EvmDenom,
+			Amount: minGasPrice,
+		},
+	}
+
 	feeCoins := feeTx.GetFee()
 	gas := feeTx.GetGas()
 
-	if !minGasPrices.IsZero() {
-		requiredFees := make(sdk.Coins, len(minGasPrices))
+	requiredFees := make(sdk.Coins, 0)
 
-		// Determine the required fees by multiplying each required minimum gas
-		// price by the gas limit, where fee = ceil(minGasPrice * gasLimit).
-		gasLimit := sdk.NewDec(int64(gas))
-		for i, gp := range minGasPrices {
-			fee := gp.Amount.Mul(gasLimit)
-			requiredFees[i] = sdk.NewCoin(gp.Denom, fee.Ceil().RoundInt())
-		}
+	// Determine the required fees by multiplying each required minimum gas
+	// price by the gas limit, where fee = ceil(minGasPrice * gasLimit).
+	gasLimit := sdk.NewDecFromBigInt(new(big.Int).SetUint64(gas))
 
-		if !feeCoins.IsAnyGTE(requiredFees) {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "provided fee < minimum global fee (%s < %s). Please increase the gas price.", feeCoins, requiredFees)
+	for _, gp := range minGasPrices {
+		fee := gp.Amount.Mul(gasLimit).Ceil().RoundInt()
+		if fee.IsPositive() {
+			requiredFees = requiredFees.Add(sdk.Coin{Denom: gp.Denom, Amount: fee})
 		}
+	}
+
+	if !feeCoins.IsAnyGTE(requiredFees) {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "provided fee < minimum global fee (%s < %s). Please increase the gas price.", feeCoins, requiredFees)
 	}
 
 	return next(ctx, tx, simulate)
@@ -73,40 +85,55 @@ func NewEthMinGasPriceDecorator(fk FeeMarketKeeper, ek EVMKeeper) EthMinGasPrice
 func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	minGasPrice := empd.feesKeeper.GetParams(ctx).MinGasPrice
 
-	if !minGasPrice.IsZero() {
-		for _, msg := range tx.GetMsgs() {
-			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-			if !ok {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
-			}
+	// short-circuit if min gas price is 0
+	if minGasPrice.IsZero() {
+		return next(ctx, tx, simulate)
+	}
 
-			feeAmt := ethMsg.GetFee()
+	paramsEvm := empd.evmKeeper.GetParams(ctx)
+	ethCfg := paramsEvm.ChainConfig.EthereumConfig(empd.evmKeeper.ChainID())
+	baseFee := empd.evmKeeper.GetBaseFee(ctx, ethCfg)
 
-			// For dynamic transactions, GetFee() uses the GasFeeCap value, which
-			// is the maximum gas price that the signer can pay. In practice, the
-			// signer can pay less, if the block's BaseFee is lower. So, in this case,
-			// we use the EffectiveFee. If the feemarket formula results in a BaseFee
-			// that lowers EffectivePrice until it is < MinGasPrices, the users must
-			// increase the GasTipCap (priority fee) until EffectivePrice > MinGasPrices.
-			// Transactions with MinGasPrices * gasUsed < tx fees < EffectiveFee are rejected
-			// by the feemarket AnteHandle
-			txData, err := evmtypes.UnpackTxData(ethMsg.Data)
-			if err != nil {
-				return ctx, sdkerrors.Wrapf(err, "failed to unpack tx data %s", ethMsg.Hash)
-			}
-			if txData.TxType() != ethtypes.LegacyTxType {
-				paramsEvm := empd.evmKeeper.GetParams(ctx)
-				ethCfg := paramsEvm.ChainConfig.EthereumConfig(empd.evmKeeper.ChainID())
-				baseFee := empd.evmKeeper.GetBaseFee(ctx, ethCfg)
-				feeAmt = ethMsg.GetEffectiveFee(baseFee)
-			}
+	for _, msg := range tx.GetMsgs() {
+		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrUnknownRequest,
+				"invalid message type %T, expected %T",
+				msg, (*evmtypes.MsgEthereumTx)(nil),
+			)
+		}
 
-			gasLimit := sdk.NewDec(int64(ethMsg.GetGas()))
-			requiredFee := minGasPrice.Mul(gasLimit)
+		feeAmt := ethMsg.GetFee()
 
-			if sdk.NewDecFromBigInt(feeAmt).LT(requiredFee) {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "provided fee < minimum global fee (%s < %s). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)", feeAmt, requiredFee)
-			}
+		// For dynamic transactions, GetFee() uses the GasFeeCap value, which
+		// is the maximum gas price that the signer can pay. In practice, the
+		// signer can pay less, if the block's BaseFee is lower. So, in this case,
+		// we use the EffectiveFee. If the feemarket formula results in a BaseFee
+		// that lowers EffectivePrice until it is < MinGasPrices, the users must
+		// increase the GasTipCap (priority fee) until EffectivePrice > MinGasPrices.
+		// Transactions with MinGasPrices * gasUsed < tx fees < EffectiveFee are rejected
+		// by the feemarket AnteHandle
+
+		txData, err := evmtypes.UnpackTxData(ethMsg.Data)
+		if err != nil {
+			return ctx, sdkerrors.Wrapf(err, "failed to unpack tx data %s", ethMsg.Hash)
+		}
+
+		if txData.TxType() != ethtypes.LegacyTxType {
+			feeAmt = ethMsg.GetEffectiveFee(baseFee)
+		}
+
+		gasLimit := sdk.NewDecFromBigInt(new(big.Int).SetUint64(ethMsg.GetGas()))
+		requiredFee := minGasPrice.Mul(gasLimit)
+		fee := sdk.NewDecFromBigInt(feeAmt)
+
+		if fee.LT(requiredFee) {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrInsufficientFee,
+				"provided fee < minimum global fee (%s < %s). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)",
+				fee, requiredFee,
+			)
 		}
 	}
 
