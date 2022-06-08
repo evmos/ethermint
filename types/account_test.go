@@ -51,8 +51,8 @@ func TestAccountTestSuite(t *testing.T) {
 }
 
 func (suite *AccountTestSuite) TestAccountType() {
-	suite.account.CodeHash = common.Bytes2Hex(crypto.Keccak256(nil))
+	suite.account.CodeHash = common.BytesToHash(crypto.Keccak256(nil)).Hex()
 	suite.Require().Equal(types.AccountTypeEOA, suite.account.Type())
-	suite.account.CodeHash = common.Bytes2Hex(crypto.Keccak256([]byte{1, 2, 3}))
+	suite.account.CodeHash = common.BytesToHash(crypto.Keccak256([]byte{1, 2, 3})).Hex()
 	suite.Require().Equal(types.AccountTypeContract, suite.account.Type())
 }
