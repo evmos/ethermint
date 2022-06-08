@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.16.1] - 2022-06-08
+
+### Bug Fixes
+
+* (types) [tharsis#1118](https://github.com/tharsis/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
+
 ## [v0.16.0] - 2022-06-06
 
 ### State Machine Breaking
