@@ -36,15 +36,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.16.0] - 2022-06-06
+## [v0.16.1] - 2022-06-09
+
+### Improvements
+
+* (feemarket) [tharsis#1120](https://github.com/tharsis/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
 
 ### Bug Fixes
 
 * (evm) [tharsis#1118](https://github.com/tharsis/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
-
-### Improvements
-
-- (feemarket) [tharsis#1120](https://github.com/tharsis/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
 
 ## [v0.16.0] - 2022-06-06
 
