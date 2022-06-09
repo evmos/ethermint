@@ -39,7 +39,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		msg     banktypes.MsgSend
 	)
 
-	var setupChain = func(cliMinGasPricesStr string) {
+	setupChain := func(cliMinGasPricesStr string) {
 		// Initialize the app, so we can use SetMinGasPrices to set the
 		// validator-specific min-gas-prices setting
 		db := dbm.NewMemDB()
@@ -68,7 +68,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 				ChainId:         "ethermint_9000-1",
 				Validators:      []abci.ValidatorUpdate{},
 				AppStateBytes:   stateBytes,
-				ConsensusParams: simapp.DefaultConsensusParams,
+				ConsensusParams: app.DefaultConsensusParams,
 			},
 		)
 
@@ -76,7 +76,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		s.SetupApp(false)
 	}
 
-	var setupTest = func(cliMinGasPrices string) {
+	setupTest := func(cliMinGasPrices string) {
 		setupChain(cliMinGasPrices)
 
 		privKey, address = generateKey()
@@ -99,7 +99,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		s.Commit()
 	}
 
-	var setupContext = func(cliMinGasPrice string, minGasPrice sdk.Dec) {
+	setupContext := func(cliMinGasPrice string, minGasPrice sdk.Dec) {
 		setupTest(cliMinGasPrice + s.denom)
 		params := types.DefaultParams()
 		params.MinGasPrice = minGasPrice
