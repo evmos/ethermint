@@ -189,12 +189,12 @@ func validateMinGasMultiplier(i interface{}) error {
 		return fmt.Errorf("invalid parameter: nil")
 	}
 
-	if v.IsZero() || v.IsNegative() {
-		return fmt.Errorf("value cannot be zero or negative: %T", i)
+	if v.IsNegative() {
+		return fmt.Errorf("value cannot be negative: %s", v)
 	}
 
 	if v.GT(sdk.OneDec()) {
-		return fmt.Errorf("value cannot be greater than 1: %T", i)
+		return fmt.Errorf("value cannot be greater than 1: %s", v)
 	}
 	return nil
 }
