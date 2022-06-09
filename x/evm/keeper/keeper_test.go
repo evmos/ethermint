@@ -131,7 +131,7 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 			abci.RequestInitChain{
 				ChainId:         "ethermint_9000-1",
 				Validators:      []abci.ValidatorUpdate{},
-				ConsensusParams: simapp.DefaultConsensusParams,
+				ConsensusParams: app.DefaultConsensusParams,
 				AppStateBytes:   stateBytes,
 			},
 		)

@@ -38,6 +38,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## [v0.16.0] - 2022-06-06
 
+### Bug Fixes
+
+* (evm) [tharsis#1118](https://github.com/tharsis/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
+
+### Improvements
+
+- (feemarket) [tharsis#1120](https://github.com/tharsis/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
+
+## [v0.16.0] - 2022-06-06
+
 ### State Machine Breaking
 
 * (feemarket) [tharsis#1105](https://github.com/tharsis/ethermint/pull/1105) Update `BaseFee` calculation based on `GasWanted` instead of `GasUsed`.
