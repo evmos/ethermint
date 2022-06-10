@@ -23,6 +23,11 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	err := signedTx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
 
+	unprotectedTx := evmtypes.NewTxContract(nil, 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
+	unprotectedTx.From = addr.Hex()
+	err = unprotectedTx.Sign(ethtypes.HomesteadSigner{}, tests.NewSigner(privKey))
+	suite.Require().NoError(err)
+
 	testCases := []struct {
 		name      string
 		tx        sdk.Tx
@@ -38,6 +43,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 			false,
 		},
 		{"successful signature verification", signedTx, false, true},
+		{"invalid, not replay-protected", unprotectedTx, false, false},
 	}
 
 	for _, tc := range testCases {
