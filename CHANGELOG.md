@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+* (evm) [tharsis#1124](https://github.com/tharsis/ethermint/pull/1124) Reject non-replay-protected tx in ante handler to prevent replay attack
+
 ### Bug Fixes
 
 * (evm) [tharsis#1118](https://github.com/tharsis/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
