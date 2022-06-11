@@ -19,7 +19,7 @@ RUN go mod download
 RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Make the binary
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH make build 
+RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH LEDGER_ENABLED=false make build 
 
 # Final image
 FROM debian

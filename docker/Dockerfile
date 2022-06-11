@@ -16,7 +16,7 @@ COPY . .
 RUN go mod download
 
 # Make the binary
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH make build 
+RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH LEDGER_ENABLED=false make build 
 
 # Final image
 FROM debian
