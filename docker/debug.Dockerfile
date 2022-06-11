@@ -1,5 +1,7 @@
 FROM --platform=$BUILDPLATFORM golang:1.17 AS build-env
 
+ARG TARGETOS TARGETARCH
+
 # Install dependencies
 RUN apt-get update
 RUN apt-get install git
