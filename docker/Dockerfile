@@ -1,6 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.17 AS build-env
-
-ARG TARGETOS TARGETARCH
+FROM golang:1.17 AS build-env
 
 # Install dependencies
 RUN apt-get update
@@ -16,7 +14,7 @@ COPY . .
 RUN go mod download
 
 # Make the binary
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH LEDGER_ENABLED=false make build 
+RUN make build 
 
 # Final image
 FROM debian
