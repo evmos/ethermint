@@ -45,11 +45,6 @@ func TestParamsValidate(t *testing.T) {
 			},
 			true,
 		},
-		{
-			"invalid chain config",
-			NewParams("ara", true, true, ChainConfig{}, 2929, 1884, 1344),
-			false,
-		},
 	}
 
 	for _, tc := range testCases {

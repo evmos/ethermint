@@ -15,7 +15,7 @@ func InitGenesis(
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
 	k.SetParams(ctx, data.Params)
-	k.SetBlockGasUsed(ctx, data.BlockGas)
+	k.SetBlockGasWanted(ctx, data.BlockGas)
 
 	return []abci.ValidatorUpdate{}
 }
@@ -24,6 +24,6 @@ func InitGenesis(
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	return &types.GenesisState{
 		Params:   k.GetParams(ctx),
-		BlockGas: k.GetBlockGasUsed(ctx),
+		BlockGas: k.GetBlockGasWanted(ctx),
 	}
 }

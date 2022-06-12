@@ -52,6 +52,11 @@ func ProtoAccount() authtypes.AccountI {
 	}
 }
 
+// GetBaseAccount returns base account.
+func (acc EthAccount) GetBaseAccount() *authtypes.BaseAccount {
+	return acc.BaseAccount
+}
+
 // EthAddress returns the account address ethereum format.
 func (acc EthAccount) EthAddress() common.Address {
 	return common.BytesToAddress(acc.GetAddress().Bytes())

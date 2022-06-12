@@ -36,12 +36,29 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+<<<<<<< HEAD
 ## [v0.11.0] - 2022-03-06
 
 ### State Machine Breaking
+=======
+## [v0.16.0] - 2022-06-06
+
+### State Machine Breaking
+
+* (feemarket) [tharsis#1105](https://github.com/tharsis/ethermint/pull/1105) Update `BaseFee` calculation based on `GasWanted` instead of `GasUsed`.
+
+### API Breaking
+
+* (feemarket) [tharsis#1104](https://github.com/tharsis/ethermint/pull/1104) Enforce a minimum gas price for Cosmos and EVM transactions through the `MinGasPrice` parameter.
+* (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) Deduplicate some json-rpc logic codes, cleanup several dead functions.
+* (ante) [tharsis#1062](https://github.com/tharsis/ethermint/pull/1062) Emit event of eth tx hash in ante handler to support query failed transactions.
+* (analytics) [tharsis#1106](https://github.com/tharsis/ethermint/pull/1106) Update telemetry to Ethermint modules.
+* (rpc) [tharsis#1108](https://github.com/tharsis/ethermint/pull/1108) Update GetGasPrice RPC endpoint with global `MinGasPrice`
+>>>>>>> v0.16.0
 
 * (ante) [tharsis#964](https://github.com/tharsis/ethermint/pull/964) add NewInfiniteGasMeterWithLimit for storing the user provided gas limit. Fixes block's consumed gas calculation in the block creation phase.
 
+<<<<<<< HEAD
 ### Bug Fixes
 
 * (rpc) [tharsis#975](https://github.com/tharsis/ethermint/pull/975) Fix unexpected `nil` values for `reward`, returned by `EffectiveGasTipValue(blockBaseFee)` in the `eth_feeHistory` RPC method.
@@ -61,6 +78,126 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+=======
+* (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
+* (specs) [tharsis#1095](https://github.com/tharsis/ethermint/pull/1095) Add more evm specs concepts.
+* (evm) [tharsis#1101](https://github.com/tharsis/ethermint/pull/1101) Add tx_type, gas and counter telemetry for ethereum txs.
+
+### Bug Fixes
+
+* (rpc) [tharsis#1082](https://github.com/tharsis/ethermint/pull/1082) fix gas price returned in getTransaction api.
+* (evm) [tharsis#1088](https://github.com/tharsis/ethermint/pull/1088) Fix ability to append log in tx post processing.
+* (rpc) [tharsis#1081](https://github.com/tharsis/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
+* (ante) [tharsis#1111](https://github.com/tharsis/ethermint/pull/1111) Move CanTransfer decorator before GasConsume decorator
+* (types) [tharsis#1112](https://github.com/cosmos/ethermint/pull/1112) Add `GetBaseAccount` to avoid invalid account error when create vesting account.
+
+## [v0.15.0] - 2022-05-09
+
+### State Machine Breaking
+
+* (ante) [tharsis#1060](https://github.com/tharsis/ethermint/pull/1060) Check `EnableCreate`/`EnableCall` in `AnteHandler` to short-circuit EVM transactions.
+* (evm) [tharsis#1087](https://github.com/tharsis/ethermint/pull/1087) Minimum GasUsed proportional to GasLimit and `MinGasDenominator` EVM module param.
+
+### API Breaking
+
+* (rpc) [tharsis#1070](https://github.com/tharsis/ethermint/pull/1070) Refactor `rpc/` package:
+  * `Backend` interface is now `BackendI`, which implements `EVMBackend` (for Ethereum namespaces) and `CosmosBackend` (for Cosmos namespaces)
+  * Previous `EVMBackend` type is now `Backend`, which is the concrete implementation of `BackendI`
+  * Move `rpc/ethereum/types` -> `rpc/types`
+  * Move `rpc/ethereum/backend` -> `rpc/backend`
+  * Move `rpc/ethereum/namespaces` -> `rpc/namespaces/ethereum`
+* (rpc) [tharsis#1068](https://github.com/tharsis/ethermint/pull/1068) Fix London hard-fork check logic in JSON-RPC APIs.
+
+### Improvements
+
+* (ci, evm) [tharsis#1063](https://github.com/tharsis/ethermint/pull/1063) Run simulations on CI.
+
+### Bug Fixes
+
+* (rpc) [tharsis#1059](https://github.com/tharsis/ethermint/pull/1059) Remove unnecessary event filtering logic on the `eth_baseFee` JSON-RPC endpoint.
+
+## [v0.14.0] - 2022-04-19
+
+### API Breaking
+
+* (evm) [tharsis#1051](https://github.com/tharsis/ethermint/pull/1051) Context block height fix on TraceTx. Removes `tx_index` on `QueryTraceTxRequest` proto type.
+* (evm) [tharsis#1091](https://github.com/tharsis/ethermint/pull/1091) Add query params command on EVM Module
+
+### Improvements
+
+* (deps) [tharsis#1046](https://github.com/tharsis/ethermint/pull/1046) Bump Cosmos SDK version to [`v0.45.3`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.3)
+* (rpc) [tharsis#1056](https://github.com/tharsis/ethermint/pull/1056) Make json-rpc namespaces extensible
+
+### Bug Fixes
+
+* (rpc) [tharsis#1050](https://github.com/tharsis/ethermint/pull/1050) `eth_getBlockByNumber` fix on batch transactions
+* (app) [tharsis#658](https://github.com/tharsis/ethermint/issues/658) Support simulations for the EVM.
+
+## [v0.13.0] - 2022-04-05
+
+### API Breaking
+
+* (evm) [tharsis#1027](https://github.com/tharsis/ethermint/pull/1027) Change the `PostTxProcessing` hook interface to include the full message data.
+* (feemarket) [tharsis#1026](https://github.com/tharsis/ethermint/pull/1026) Fix REST endpoints to use `/ethermint/feemarket/*` instead of `/feemarket/evm/*`.
+
+### Improvements
+
+* (deps) [tharsis#1029](https://github.com/tharsis/ethermint/pull/1029) Bump Cosmos SDK version to [`v0.45.2`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.2)
+* (evm) [tharsis#1025](https://github.com/tharsis/ethermint/pull/1025) Allow to append logs after a post processing hook.
+
+## [v0.12.2] - 2022-03-30
+
+### Bug Fixes
+
+* (feemarket) [tharsis#1021](https://github.com/tharsis/ethermint/pull/1021) Fix fee market migration.
+
+## [v0.12.1] - 2022-03-29
+
+### Bug Fixes
+
+* (evm) [tharsis#1016](https://github.com/tharsis/ethermint/pull/1016) Update validate basic check for storage state.
+
+## [v0.12.0] - 2022-03-24
+
+### Bug Fixes
+
+* (rpc) [tharsis#1012](https://github.com/tharsis/ethermint/pull/1012) fix the tx hash in filter entries created by `eth_newPendingTransactionFilter`.
+* (rpc) [tharsis#1006](https://github.com/tharsis/ethermint/pull/1006) Use `string` as the parameters type to correct ambiguous results.
+* (ante) [tharsis#1004](https://github.com/tharsis/ethermint/pull/1004) Make `MaxTxGasWanted` configurable.
+* (ante) [tharsis#991](https://github.com/tharsis/ethermint/pull/991) Set an upper bound to gasWanted to prevent DoS attack.
+* (rpc) [tharsis#990](https://github.com/tharsis/ethermint/pull/990) Calculate reward values from all `MsgEthereumTx` from a block in `eth_feeHistory`.
+
+## [v0.11.0] - 2022-03-06
+
+### State Machine Breaking
+
+* (ante) [tharsis#964](https://github.com/tharsis/ethermint/pull/964) add NewInfiniteGasMeterWithLimit for storing the user provided gas limit. Fixes block's consumed gas calculation in the block creation phase.
+
+### Bug Fixes
+
+* (rpc) [tharsis#975](https://github.com/tharsis/ethermint/pull/975) Fix unexpected `nil` values for `reward`, returned by `EffectiveGasTipValue(blockBaseFee)` in the `eth_feeHistory` RPC method.
+
+### Improvements
+
+- (rpc) [tharsis#979](https://github.com/tharsis/ethermint/pull/979) Add configurable timeouts to http server
+- (rpc) [tharsis#988](https://github.com/tharsis/ethermint/pull/988) json-rpc server always use local rpc client
+
+## [v0.10.1] - 2022-03-04
+
+### Bug Fixes
+
+* (rpc) [tharsis#970](https://github.com/tharsis/ethermint/pull/970) Fix unexpected nil reward values on `eth_feeHistory` response
+* (evm) [tharsis#529](https://github.com/tharsis/ethermint/issues/529) Add support return value on trace tx response.
+
+### Improvements
+
+* (rpc) [tharsis#968](https://github.com/tharsis/ethermint/pull/968) Add some buffer to returned gas price to provide better default UX for client.
+
+## [v0.10.0] - 2022-02-26
+
+### API Breaking
+
+>>>>>>> v0.16.0
 * (ante) [tharsis#866](https://github.com/tharsis/ethermint/pull/866) `NewAnteHandler` constructor now receives a `HandlerOptions` field.
 * (evm) [tharsis#849](https://github.com/tharsis/ethermint/pull/849) `PostTxProcessing` hook now takes an Ethereum tx `Receipt` and a `from` `Address` as arguments.
 * (ante) [tharsis#916](https://github.com/tharsis/ethermint/pull/916) Don't check min-gas-price for eth tx if london hardfork enabled and feemarket enabled.
@@ -170,9 +307,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [tharsis#661](https://github.com/tharsis/ethermint/pull/661) Fix OOM bug when creating too many filters using JSON-RPC.
 * (evm) [tharsis#660](https://github.com/tharsis/ethermint/pull/660) Fix `nil` pointer panic in `ApplyNativeMessage`.
 * (evm, test) [tharsis#649](https://github.com/tharsis/ethermint/pull/649) Test DynamicFeeTx.
-* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
-* (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
-* (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs
+* (evm) [tharsis#702](https://github.com/tharsis/ethermint/pull/702) Fix panic in web3 RPC handlers
+* (rpc) [tharsis#720](https://github.com/tharsis/ethermint/pull/720) Fix `debug_traceTransaction` failure
+* (rpc) [tharsis#741](https://github.com/tharsis/ethermint/pull/741) Fix `eth_getBlockByNumberAndHash` return with non eth txs
 * (rpc) [tharsis#743](https://github.com/tharsis/ethermint/pull/743) Fix debug JSON RPC handler crash on non-existing block
 
 ### Improvements
