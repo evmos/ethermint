@@ -15,7 +15,8 @@ import (
 var _ paramtypes.ParamSet = &Params{}
 
 const (
-	DefaultEVMDenom = types.AttoPhoton
+	DefaultEVMDenom          = types.AttoPhoton
+	DefaultRejectUnprotected = false
 )
 
 // DefaultMinGasMultiplier is 0.5 or 50%
@@ -63,7 +64,7 @@ func DefaultParams() Params {
 		EnableCall:        true,
 		ChainConfig:       DefaultChainConfig(),
 		ExtraEIPs:         nil,
-		RejectUnprotected: false,
+		RejectUnprotected: DefaultRejectUnprotected,
 	}
 }
 
