@@ -29,7 +29,7 @@ var (
 	ParamStoreKeyEnableCall        = []byte("EnableCall")
 	ParamStoreKeyExtraEIPs         = []byte("EnableExtraEIPs")
 	ParamStoreKeyChainConfig       = []byte("ChainConfig")
-	ParamStoreKeyRejectUnprotected = []byte("RejectUnprotected")
+	ParamStoreKeyRejectUnprotectedTx = []byte("RejectUnprotectedTx")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
 	// EVM interpreter. These EIPs are applied in order and can override the
@@ -64,7 +64,7 @@ func DefaultParams() Params {
 		EnableCall:        true,
 		ChainConfig:       DefaultChainConfig(),
 		ExtraEIPs:         nil,
-		RejectUnprotected: DefaultRejectUnprotected,
+		RejectUnprotected: DefaultRejectUnprotectedTx,
 	}
 }
 
@@ -76,7 +76,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
-		paramtypes.NewParamSetPair(ParamStoreKeyRejectUnprotected, &p.RejectUnprotected, validateBool),
+		paramtypes.NewParamSetPair(ParamStoreKeyRejectUnprotectedTx, &p.RejectUnprotectedTx, validateBool),
 	}
 }
 
