@@ -32,7 +32,7 @@ func TestMigrateStore(t *testing.T) {
 
 	require.Panics(t, func() {
 		var result bool
-		paramstore.Get(ctx, types.ParamStoreKeyRejectUnprotected, &result)
+		paramstore.Get(ctx, types.ParamStoreKeyRejectUnprotectedTx, &result)
 	})
 
 	paramstore = paramtypes.NewSubspace(
@@ -42,6 +42,6 @@ func TestMigrateStore(t *testing.T) {
 	require.NoError(t, err)
 
 	var result bool
-	paramstore.Get(ctx, types.ParamStoreKeyRejectUnprotected, &result)
-	require.Equal(t, types.DefaultRejectUnprotected, result)
+	paramstore.Get(ctx, types.ParamStoreKeyRejectUnprotectedTx, &result)
+	require.Equal(t, types.DefaultRejectUnprotectedTx, result)
 }

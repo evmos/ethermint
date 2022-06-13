@@ -25,7 +25,7 @@ message Params {
     (gogoproto.nullable) = false
   ];
   // reject replay-unprotected transactions
-  bool reject_unprotected = 6;
+  bool reject_unprotected_tx = 6;
 }
 
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values

@@ -227,7 +227,7 @@ Params defines the EVM module parameters
 | `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
 | `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
 | `chain_config` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
-| `reject_unprotected` | [bool](#bool) |  | reject replay-unprotected transactions |
+| `reject_unprotected_tx` | [bool](#bool) |  | reject replay-unprotected transactions |
 
 
 

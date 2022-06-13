@@ -51,7 +51,7 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		}
 
 		ethTx := msgEthTx.AsTransaction()
-		if params.RejectUnprotected && !ethTx.Protected() {
+		if params.RejectUnprotectedTx && !ethTx.Protected() {
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "eth tx is not replay-protected")
 		}
 

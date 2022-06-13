@@ -28,11 +28,11 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	suite.Require().NoError(err)
 
 	testCases := []struct {
-		name              string
-		tx                sdk.Tx
-		rejectUnprotected bool
-		reCheckTx         bool
-		expPass           bool
+		name                string
+		tx                  sdk.Tx
+		rejectUnprotectedTx bool
+		reCheckTx           bool
+		expPass             bool
 	}{
 		{"ReCheckTx", &invalidTx{}, true, true, false},
 		{"invalid transaction type", &invalidTx{}, true, false, false},
@@ -51,7 +51,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			suite.evmParamsOption = func(params *evmtypes.Params) {
-				params.RejectUnprotected = tc.rejectUnprotected
+				params.RejectUnprotectedTx = tc.rejectUnprotectedTx
 			}
 			suite.SetupTest()
 			dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
