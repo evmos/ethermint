@@ -17,7 +17,7 @@ func NewMigrator(keeper Keeper) Migrator {
 	}
 }
 
-// Migrate1to2 migrates the store from consensus version v3 to v4
+// Migrate1to2 migrates the store from consensus version v1 to v2
 func (m Migrator) Migrate1to2(ctx sdk.Context) error {
 	paramstore := m.keeper.paramSpace
 	if !paramstore.HasKeyTable() {
