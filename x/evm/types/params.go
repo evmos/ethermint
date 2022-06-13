@@ -23,11 +23,12 @@ var DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 
 // Parameter keys
 var (
-	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
-	ParamStoreKeyEnableCreate = []byte("EnableCreate")
-	ParamStoreKeyEnableCall   = []byte("EnableCall")
-	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
-	ParamStoreKeyChainConfig  = []byte("ChainConfig")
+	ParamStoreKeyEVMDenom          = []byte("EVMDenom")
+	ParamStoreKeyEnableCreate      = []byte("EnableCreate")
+	ParamStoreKeyEnableCall        = []byte("EnableCall")
+	ParamStoreKeyExtraEIPs         = []byte("EnableExtraEIPs")
+	ParamStoreKeyChainConfig       = []byte("ChainConfig")
+	ParamStoreKeyRejectUnprotected = []byte("RejectUnprotected")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
 	// EVM interpreter. These EIPs are applied in order and can override the
@@ -57,11 +58,12 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfi
 // ExtraEIPs is empty to prevent overriding the latest hard fork instruction set
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:     DefaultEVMDenom,
-		EnableCreate: true,
-		EnableCall:   true,
-		ChainConfig:  DefaultChainConfig(),
-		ExtraEIPs:    nil,
+		EvmDenom:          DefaultEVMDenom,
+		EnableCreate:      true,
+		EnableCall:        true,
+		ChainConfig:       DefaultChainConfig(),
+		ExtraEIPs:         nil,
+		RejectUnprotected: false,
 	}
 }
 
@@ -73,6 +75,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
+		paramtypes.NewParamSetPair(ParamStoreKeyRejectUnprotected, &p.RejectUnprotected, validateBool),
 	}
 }
 
