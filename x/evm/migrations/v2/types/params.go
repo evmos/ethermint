@@ -18,21 +18,16 @@ const (
 	DefaultEVMDenom = types.AttoPhoton
 )
 
-var (
-	// DefaultMinGasMultiplier is 0.5 or 50%
-	DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
-
-	DefaultRejectUnprotectedTx = false
-)
+// DefaultMinGasMultiplier is 0.5 or 50%
+var DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 
 // Parameter keys
 var (
-	ParamStoreKeyEVMDenom            = []byte("EVMDenom")
-	ParamStoreKeyEnableCreate        = []byte("EnableCreate")
-	ParamStoreKeyEnableCall          = []byte("EnableCall")
-	ParamStoreKeyExtraEIPs           = []byte("EnableExtraEIPs")
-	ParamStoreKeyChainConfig         = []byte("ChainConfig")
-	ParamStoreKeyRejectUnprotectedTx = []byte("RejectUnprotectedTx")
+	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
+	ParamStoreKeyEnableCreate = []byte("EnableCreate")
+	ParamStoreKeyEnableCall   = []byte("EnableCall")
+	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
+	ParamStoreKeyChainConfig  = []byte("ChainConfig")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
 	// EVM interpreter. These EIPs are applied in order and can override the
@@ -62,12 +57,11 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfi
 // ExtraEIPs is empty to prevent overriding the latest hard fork instruction set
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:            DefaultEVMDenom,
-		EnableCreate:        true,
-		EnableCall:          true,
-		ChainConfig:         DefaultChainConfig(),
-		ExtraEIPs:           nil,
-		RejectUnprotectedTx: DefaultRejectUnprotectedTx,
+		EvmDenom:     DefaultEVMDenom,
+		EnableCreate: true,
+		EnableCall:   true,
+		ChainConfig:  DefaultChainConfig(),
+		ExtraEIPs:    nil,
 	}
 }
 
@@ -79,7 +73,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
-		paramtypes.NewParamSetPair(ParamStoreKeyRejectUnprotectedTx, &p.RejectUnprotectedTx, validateBool),
 	}
 }
 

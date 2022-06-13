@@ -15,7 +15,6 @@ import (
 )
 
 func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
-	dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
 	addr, privKey := tests.NewAddrKey()
 
 	signedTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
@@ -23,25 +22,39 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	err := signedTx.Sign(suite.ethSigner, tests.NewSigner(privKey))
 	suite.Require().NoError(err)
 
+	unprotectedTx := evmtypes.NewTxContract(nil, 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)
+	unprotectedTx.From = addr.Hex()
+	err = unprotectedTx.Sign(ethtypes.HomesteadSigner{}, tests.NewSigner(privKey))
+	suite.Require().NoError(err)
+
 	testCases := []struct {
-		name      string
-		tx        sdk.Tx
-		reCheckTx bool
-		expPass   bool
+		name                string
+		tx                  sdk.Tx
+		rejectUnprotectedTx bool
+		reCheckTx           bool
+		expPass             bool
 	}{
-		{"ReCheckTx", &invalidTx{}, true, false},
-		{"invalid transaction type", &invalidTx{}, false, false},
+		{"ReCheckTx", &invalidTx{}, true, true, false},
+		{"invalid transaction type", &invalidTx{}, true, false, false},
 		{
 			"invalid sender",
 			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
+			true,
 			false,
 			false,
 		},
-		{"successful signature verification", signedTx, false, true},
+		{"successful signature verification", signedTx, true, false, true},
+		{"invalid, not replay-protected", unprotectedTx, true, false, false},
+		{"successful, don't reject unprotected", unprotectedTx, false, false, true},
 	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.evmParamsOption = func(params *evmtypes.Params) {
+				params.RejectUnprotectedTx = tc.rejectUnprotectedTx
+			}
+			suite.SetupTest()
+			dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
 			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, NextFn)
 
 			if tc.expPass {
@@ -51,6 +64,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 			}
 		})
 	}
+	suite.evmParamsOption = nil
 }
 
 func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {

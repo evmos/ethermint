@@ -36,6 +36,7 @@ message MsgEthereumTx {
 }
 
 // LegacyTx is the transaction data of regular Ethereum transactions.
+// NOTE: All non-protected transactions (i.e non EIP155 signed) will fail if the RejectUnprotectedTx parameter is enabled. 
 message LegacyTx {
   option (gogoproto.goproto_getters) = false;
   option (cosmos_proto.implements_interface) = "TxData";

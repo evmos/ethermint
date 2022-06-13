@@ -81,6 +81,7 @@ func (m *MsgEthereumTx) XXX_DiscardUnknown() {
 var xxx_messageInfo_MsgEthereumTx proto.InternalMessageInfo
 
 // LegacyTx is the transaction data of regular Ethereum transactions.
+// NOTE: All non-protected transactions (i.e non EIP155 signed) will fail if the RejectUnprotectedTx parameter is enabled.
 type LegacyTx struct {
 	// nonce corresponds to the account nonce (transaction sequence).
 	Nonce uint64 `protobuf:"varint,1,opt,name=nonce,proto3" json:"nonce,omitempty"`

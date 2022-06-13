@@ -50,7 +50,12 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
-		sender, err := signer.Sender(msgEthTx.AsTransaction())
+		ethTx := msgEthTx.AsTransaction()
+		if params.RejectUnprotectedTx && !ethTx.Protected() {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "eth tx is not replay-protected")
+		}
+
+		sender, err := signer.Sender(ethTx)
 		if err != nil {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrorInvalidSigner,

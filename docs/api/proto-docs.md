@@ -227,6 +227,7 @@ Params defines the EVM module parameters
 | `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
 | `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
 | `chain_config` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
+| `reject_unprotected_tx` | [bool](#bool) |  | reject replay-unprotected transactions |
 
 
 
@@ -443,6 +444,7 @@ DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 
 ### LegacyTx
 LegacyTx is the transaction data of regular Ethereum transactions.
+NOTE: All non-protected transactions (i.e non EIP155 signed) will fail if the RejectUnprotectedTx parameter is enabled.
 
 
 | Field | Type | Label | Description |
