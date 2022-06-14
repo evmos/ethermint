@@ -42,6 +42,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [tharsis#1124](https://github.com/tharsis/ethermint/pull/1124) Reject non-replay-protected tx in ante handler to prevent replay attack
 
+### API Breaking
+
+- (json-rpc) [tharsis#1126](https://github.com/tharsis/ethermint/pull/1126) Make some json-rpc apis work for pruned nodes.
+
 ### Bug Fixes
 
 * (evm) [tharsis#1118](https://github.com/tharsis/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
