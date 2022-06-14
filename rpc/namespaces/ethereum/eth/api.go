@@ -339,7 +339,7 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 		return nil
 	}
 
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil
 	}
@@ -363,7 +363,7 @@ func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumb
 		return nil
 	}
 
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil
 	}
@@ -747,7 +747,7 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 
 // getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
 func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil, nil
 	}
@@ -898,7 +898,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	cumulativeGasUsed := uint64(0)
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &res.Height)
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&res.Height)
 	if err != nil {
 		e.logger.Debug("failed to retrieve block results", "height", res.Height, "error", err.Error())
 		return nil, nil

@@ -70,7 +70,7 @@ func (b *Backend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map
 		return nil, nil
 	}
 
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &resBlock.Block.Height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, nil
 	}
@@ -95,7 +95,7 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 		return nil, nil
 	}
 
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &resBlock.Block.Height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, nil
 	}
@@ -114,7 +114,7 @@ func (b *Backend) BlockByNumber(blockNum types.BlockNumber) (*ethtypes.Block, er
 		return nil, errors.Errorf("block not found for height %d", blockNum)
 	}
 
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &resBlock.Block.Height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, errors.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
@@ -133,7 +133,7 @@ func (b *Backend) BlockByHash(hash common.Hash) (*ethtypes.Block, error) {
 		return nil, errors.Errorf("block not found for hash %s", hash)
 	}
 
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &resBlock.Block.Height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, errors.Errorf("block result not found for hash %s", hash)
 	}
@@ -157,7 +157,7 @@ func (b *Backend) EthBlockFromTm(resBlock *tmrpctypes.ResultBlock, blockRes *tmr
 
 	ethHeader := types.EthHeaderFromTendermint(block.Header, bloom, baseFee)
 
-	resBlockResult, err := b.clientCtx.Client.BlockResults(b.ctx, &block.Height)
+	resBlockResult, err := b.GetTendermintBlockResultByNumber(&block.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (b *Backend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, 
 		return nil, errors.Errorf("block not found for height %d", blockNum)
 	}
 
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &resBlock.Block.Height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, errors.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
@@ -374,7 +374,7 @@ func (b *Backend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error) 
 		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
 	}
 
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &resBlock.Block.Height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, errors.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
@@ -417,7 +417,7 @@ func (b *Backend) PendingTransactions() ([]*sdk.Tx, error) {
 // GetLogsByHeight returns all the logs from all the ethereum transactions in a block.
 func (b *Backend) GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error) {
 	// NOTE: we query the state in case the tx result logs are not persisted after an upgrade.
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(height)
 	if err != nil {
 		return nil, err
 	}
@@ -539,7 +539,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransactio
 		return nil, err
 	}
 
-	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &block.Block.Height)
+	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil, nil
 	}
@@ -917,7 +917,7 @@ func (b *Backend) FeeHistory(
 		}
 
 		// tendermint block result
-		tendermintBlockResult, err := b.clientCtx.Client.BlockResults(b.ctx, &tendermintblock.Block.Height)
+		tendermintBlockResult, err := b.GetTendermintBlockResultByNumber(&tendermintblock.Block.Height)
 		if tendermintBlockResult == nil {
 			b.logger.Debug("block result not found", "height", tendermintblock.Block.Height, "error", err.Error())
 			return nil, err
