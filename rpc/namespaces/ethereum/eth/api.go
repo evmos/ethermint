@@ -747,6 +747,11 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 
 // getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
 func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	if err != nil {
+		return nil, nil
+	}
+
 	var msg *evmtypes.MsgEthereumTx
 	// try /tx_search first
 	res, err := e.backend.GetTxByTxIndex(block.Block.Height, uint(idx))
@@ -775,11 +780,6 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 			return nil, nil
 		}
 	} else {
-		blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
-		if err != nil {
-			return nil, nil
-		}
-
 		i := int(idx)
 		ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(block, blockRes)
 		if i >= len(ethMsgs) {
@@ -790,9 +790,10 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 		msg = ethMsgs[i]
 	}
 
-	baseFee, err := e.backend.BaseFee(block.Block.Height)
+	baseFee, err := e.backend.BaseFee(blockRes)
 	if err != nil {
-		return nil, err
+		// tolerate the error for pruned node.
+		e.logger.Error("fetch basefee failed, node is pruned?", "height", block.Block.Height, "error", err)
 	}
 
 	return rpctypes.NewTransactionFromMsg(
@@ -976,11 +977,13 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	if dynamicTx, ok := txData.(*evmtypes.DynamicFeeTx); ok {
-		baseFee, err := e.backend.BaseFee(res.Height)
+		baseFee, err := e.backend.BaseFee(blockRes)
 		if err != nil {
-			return nil, err
+			// tolerate the error for pruned node.
+			e.logger.Error("fetch basefee failed, node is pruned?", "height", res.Height, "error", err)
+		} else {
+			receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
 		}
-		receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
 	}
 
 	return receipt, nil

@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -28,9 +29,11 @@ type Backend interface {
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
+	GetTendermintBlockByHash(hash common.Hash) (*tmrpctypes.ResultBlock, error)
+	GetTendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 	GetLogsByHeight(*int64) ([][]*ethtypes.Log, error)
-	BlockBloom(height *int64) (ethtypes.Bloom, error)
+	BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.Bloom, error)
 
 	BloomStatus() (uint64, uint64)
 
