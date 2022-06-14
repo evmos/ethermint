@@ -116,7 +116,7 @@ func (b *Backend) BlockByNumber(blockNum types.BlockNumber) (*ethtypes.Block, er
 
 	blockRes, err := b.clientCtx.Client.BlockResults(b.ctx, &resBlock.Block.Height)
 	if err != nil {
-		return nil, errors.Errorf("block result not found for height %s", resBlock.Block.Height)
+		return nil, errors.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
 
 	return b.EthBlockFromTm(resBlock, blockRes)
