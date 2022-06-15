@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (evm) [tharsis#1124](https://github.com/tharsis/ethermint/pull/1124) Reject non-replay-protected tx in ante handler to prevent replay attack
+* (evm) [tharsis#1128](https://github.com/tharsis/ethermint/pull/1128) Clear tx logs if tx failed in post processing hooks
 
 ### Bug Fixes
 
