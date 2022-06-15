@@ -36,11 +36,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-<<<<<<< HEAD
-## [v0.11.0] - 2022-03-06
-
-### State Machine Breaking
-=======
 ## [v0.16.0] - 2022-06-06
 
 ### State Machine Breaking
@@ -54,31 +49,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [tharsis#1062](https://github.com/tharsis/ethermint/pull/1062) Emit event of eth tx hash in ante handler to support query failed transactions.
 * (analytics) [tharsis#1106](https://github.com/tharsis/ethermint/pull/1106) Update telemetry to Ethermint modules.
 * (rpc) [tharsis#1108](https://github.com/tharsis/ethermint/pull/1108) Update GetGasPrice RPC endpoint with global `MinGasPrice`
->>>>>>> v0.16.0
 
 * (ante) [tharsis#964](https://github.com/tharsis/ethermint/pull/964) add NewInfiniteGasMeterWithLimit for storing the user provided gas limit. Fixes block's consumed gas calculation in the block creation phase.
 
-<<<<<<< HEAD
-### Bug Fixes
-
-* (rpc) [tharsis#975](https://github.com/tharsis/ethermint/pull/975) Fix unexpected `nil` values for `reward`, returned by `EffectiveGasTipValue(blockBaseFee)` in the `eth_feeHistory` RPC method.
-
-## [v0.10.1] - 2022-03-04
-
-### Bug Fixes
-
-* (rpc) [tharsis#970](https://github.com/tharsis/ethermint/pull/970) Fix unexpected nil reward values on `eth_feeHistory` response
-* (evm) [tharsis#529](https://github.com/tharsis/ethermint/issues/529) Add support return value on trace tx response.
-
-### Improvements
-
-* (rpc) [tharsis#968](https://github.com/tharsis/ethermint/pull/968) Add some buffer to returned gas price to provide better default UX for client.
-
-## [v0.10.0] - 2022-02-26
-
-### API Breaking
-
-=======
 * (cli) [tharsis#1086](https://github.com/tharsis/ethermint/pull/1086) Add rollback command.
 * (specs) [tharsis#1095](https://github.com/tharsis/ethermint/pull/1095) Add more evm specs concepts.
 * (evm) [tharsis#1101](https://github.com/tharsis/ethermint/pull/1101) Add tx_type, gas and counter telemetry for ethereum txs.
@@ -197,7 +170,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
->>>>>>> v0.16.0
 * (ante) [tharsis#866](https://github.com/tharsis/ethermint/pull/866) `NewAnteHandler` constructor now receives a `HandlerOptions` field.
 * (evm) [tharsis#849](https://github.com/tharsis/ethermint/pull/849) `PostTxProcessing` hook now takes an Ethereum tx `Receipt` and a `from` `Address` as arguments.
 * (ante) [tharsis#916](https://github.com/tharsis/ethermint/pull/916) Don't check min-gas-price for eth tx if london hardfork enabled and feemarket enabled.
