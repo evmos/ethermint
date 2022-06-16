@@ -181,6 +181,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 		_, mb, err := wsConn.ReadMessage()
 		if err != nil {
 			_ = wsConn.Close()
+			s.logger.Error("read message error, breaking read loop", "error", err.Error())
 			return
 		}
 
