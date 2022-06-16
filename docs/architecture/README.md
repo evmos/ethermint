@@ -36,3 +36,4 @@ Please add a entry below in your Pull Request for an ADR.
 
 - [ADR 001: State](adr-001-state.md)
 - [ADR 002: EVM Hooks](adr-002-evm-hooks.md)
+- [ADR 003: Stateful Precompiled Contracts](adr-003-stateful-precompiles.md)
