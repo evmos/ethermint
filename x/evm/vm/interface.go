@@ -64,7 +64,7 @@ type EVM interface {
 		addr common.Address,
 		input []byte,
 		suppliedGas uint64,
-		value *big.Int) (
+		caller common.Address, value *big.Int, readonly bool) (
 		ret []byte, remainingGas uint64, err error,
 	)
 }

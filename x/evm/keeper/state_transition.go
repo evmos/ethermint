@@ -16,7 +16,9 @@
 package keeper
 
 import (
+	"bytes"
 	"math/big"
+	"sort"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -26,7 +28,6 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
-	evm "github.com/evmos/ethermint/x/evm/vm"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -51,7 +52,8 @@ func (k *Keeper) NewEVM(
 	cfg *statedb.EVMConfig,
 	tracer vm.EVMLogger,
 	stateDB vm.StateDB,
-) evm.EVM {
+	contracts map[common.Address]statedb.StatefulPrecompiledContract,
+) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
@@ -70,7 +72,15 @@ func (k *Keeper) NewEVM(
 		tracer = k.Tracer(ctx, msg, cfg.ChainConfig)
 	}
 	vmConfig := k.VMConfig(ctx, msg, cfg, tracer)
-	return k.evmConstructor(blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig, k.customPrecompiles)
+	rules := cfg.ChainConfig.Rules(big.NewInt(ctx.BlockHeight()), cfg.ChainConfig.MergeNetsplitBlock != nil)
+	precompiles := make(map[common.Address]vm.PrecompiledContract)
+	for addr, c := range vm.ActivePrecompiledContracts(rules) {
+		precompiles[addr] = c
+	}
+	for addr, c := range contracts {
+		precompiles[addr] = c
+	}
+	return vm.NewEVMWithPrecompiles(blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig, precompiles)
 }
 
 // GetHashFn implements vm.GetHashFunc for Ethermint. It handles 3 cases:
@@ -329,13 +339,31 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 		return nil, errorsmod.Wrap(types.ErrCallDisabled, "failed to call contract")
 	}
 
-	stateDB := statedb.New(ctx, k, txConfig)
-	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB)
+	// construct precompiles
+	contracts := make(map[common.Address]statedb.StatefulPrecompiledContract, len(k.precompiles))
+	sortedContracts := make([]common.Address, 0, len(k.precompiles))
+	for addr, creator := range k.precompiles {
+		c := creator(ctx)
+		contracts[addr] = c
+		sortedContracts = append(sortedContracts, addr)
+	}
+
+	sort.Slice(sortedContracts, func(i, j int) bool {
+		return bytes.Compare(sortedContracts[i].Bytes(), sortedContracts[j].Bytes()) < 0
+	})
+
+	extStates := make([]statedb.ExtState, len(sortedContracts))
+	for i, addr := range sortedContracts {
+		extStates[i] = contracts[addr]
+	}
+
+	stateDB := k.StateDB(ctx, txConfig, extStates)
+	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB, contracts)
 
 	leftoverGas := msg.Gas()
 
 	// Allow the tracer captures the tx level events, mainly the gas consumption.
-	vmCfg := evm.Config()
+	vmCfg := evm.Config
 	if vmCfg.Debug {
 		vmCfg.Tracer.CaptureTxStart(leftoverGas)
 		defer func() {
@@ -345,7 +373,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
-	isLondon := cfg.ChainConfig.IsLondon(evm.Context().BlockNumber)
+	isLondon := cfg.ChainConfig.IsLondon(evm.Context.BlockNumber)
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(ctx, msg, cfg.ChainConfig, contractCreation)
 	if err != nil {
@@ -363,7 +391,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	// access list preparation is moved from ante handler to here, because it's needed when `ApplyMessage` is called
 	// under contexts where ante handlers are not run, for example `eth_call` and `eth_estimateGas`.
 	if rules := cfg.ChainConfig.Rules(big.NewInt(ctx.BlockHeight()), cfg.ChainConfig.MergeNetsplitBlock != nil); rules.IsBerlin {
-		stateDB.PrepareAccessList(msg.From(), msg.To(), evm.ActivePrecompiles(rules), msg.AccessList())
+		stateDB.PrepareAccessList(msg.From(), msg.To(), vm.ActivePrecompiles(rules), msg.AccessList())
 	}
 
 	if contractCreation {
