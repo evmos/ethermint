@@ -82,8 +82,8 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	y := x.Div(x, parentGasTargetBig)
 	baseFeeDelta := x.Div(y, baseFeeChangeDenominator)
 
-	return math.BigMax(
-		x.Sub(parentBaseFee, baseFeeDelta),
-		common.Big0,
-	)
+	// Set global min gas price as lower bound of the base fee, transactions below
+	// the min gas price don't even reach the mempool.
+	minGasPrice := k.GetParams(ctx).MinGasPrice.BigInt()
+	return math.BigMax(x.Sub(parentBaseFee, baseFeeDelta), minGasPrice)
 }
