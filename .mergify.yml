@@ -19,8 +19,8 @@ pull_request_rules:
   - name: backport patches to v0.16.x branch
     conditions:
       - base=main
-      - label=backport/16.0.x
+      - label=backport/0.16.x
     actions:
       backport:
         branches:
-          - release/v16.0.x
+          - release/v0.16.x
