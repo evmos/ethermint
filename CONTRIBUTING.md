@@ -1,23 +1,23 @@
 # Contributing
 
 - [Contributing](#contributing)
-  - [Architecture Decision Records (ADR)](#architecture-decision-records-adr)
-  - [Pull Requests](#pull-requests)
-    - [Pull Request Templates](#pull-request-templates)
-    - [Requesting Reviews](#requesting-reviews)
-    - [Reviewing Pull Requests](#reviewing-pull-requests)
-    - [Updating Documentation](#updating-documentation)
-  - [Forking](#forking)
-  - [Dependencies](#dependencies)
-  - [Protobuf](#protobuf)
-  - [Testing](#testing)
-  - [Branching Model and Release](#branching-model-and-release)
-    - [PR Targeting](#pr-targeting)
-    - [Development Procedure](#development-procedure)
-    - [Pull Merge Procedure](#pull-merge-procedure)
-    - [Release Procedure](#release-procedure)
-  - [Point Release Procedure](#point-release-procedure)
-  - [Code Owner Membership](#code-owner-membership)
+    - [Architecture Decision Records (ADR)](#architecture-decision-records-adr)
+    - [Pull Requests](#pull-requests)
+        - [Pull Request Templates](#pull-request-templates)
+        - [Requesting Reviews](#requesting-reviews)
+        - [Reviewing Pull Requests](#reviewing-pull-requests)
+        - [Updating Documentation](#updating-documentation)
+    - [Forking](#forking)
+    - [Dependencies](#dependencies)
+    - [Protobuf](#protobuf)
+    - [Testing](#testing)
+    - [Branching Model and Release](#branching-model-and-release)
+        - [PR Targeting](#pr-targeting)
+        - [Development Procedure](#development-procedure)
+        - [Pull Merge Procedure](#pull-merge-procedure)
+        - [Release Procedure](#release-procedure)
+    - [Point Release Procedure](#point-release-procedure)
+    - [Code Owner Membership](#code-owner-membership)
 
 Thank you for considering making contributions to Ethermint!
 
@@ -97,12 +97,12 @@ items. In addition, use the following review explanations:
 
 - `LGTM` without an explicit approval means that the changes look good, but you haven't thoroughly reviewed the reviewer checklist items.
 - `Approval` means that you have completed some or all of the reviewer checklist items. If you only reviewed selected items, you must add your handle next to the items that you have reviewed. In addition, follow these guidelines:
-  - You must also think through anything which ought to be included but is not
-  - You must think through whether any added code could be partially combined (DRYed) with existing code
-  - You must think through any potential security issues or incentive-compatibility flaws introduced by the changes
-  - Naming must be consistent with conventions and the rest of the codebase
-  - Code must live in a reasonable location, considering dependency structures (for example, not importing testing modules in production code, or including example code modules in production code).
-  - If you approve the PR, you are responsible for any issues mentioned here and any issues that should have been addressed after thoroughly reviewing the reviewer checklist items in the pull request template.
+    - You must also think through anything which ought to be included but is not
+    - You must think through whether any added code could be partially combined (DRYed) with existing code
+    - You must think through any potential security issues or incentive-compatibility flaws introduced by the changes
+    - Naming must be consistent with conventions and the rest of the codebase
+    - Code must live in a reasonable location, considering dependency structures (for example, not importing testing modules in production code, or including example code modules in production code).
+    - If you approve the PR, you are responsible for any issues mentioned here and any issues that should have been addressed after thoroughly reviewing the reviewer checklist items in the pull request template.
 - If you sat down with the PR submitter and did a pairing review, add this information in the `Approval` or your PR comments.
 - If you are only making "surface level" reviews, submit any notes as `Comments` without adding a review.
 
@@ -235,10 +235,10 @@ should be targeted against the release candidate branch.
 - Create the release candidate branch `release/v<major>.<minor>.x` (going forward known as **RC**)
   and ensure it's protected against pushing from anyone except the release
   manager/coordinator
-  - **no PRs targeting this branch should be merged unless exceptional circumstances arise**
+    - **no PRs targeting this branch should be merged unless exceptional circumstances arise**
 - On the `RC` branch, prepare a new version section in the `CHANGELOG.md`
-  - All links must be link-ified: `$ python ./scripts/linkify_changelog.py CHANGELOG.md`
-  - Copy the entries into a `RELEASE_CHANGELOG.md`, this is needed so the bot knows which entries to add to the release page on GitHub.
+    - All links must be link-ified: `$ python ./scripts/linkify_changelog.py CHANGELOG.md`
+    - Copy the entries into a `RELEASE_CHANGELOG.md`, this is needed so the bot knows which entries to add to the release page on GitHub.
 - Kick off a large round of simulation testing (e.g. 400 seeds for 2k blocks)
 - If errors are found during the simulation testing, commit the fixes to `main`
   and push the changes to the `RC` branch
@@ -383,8 +383,8 @@ Members must:
 - Be active contributors to Ethermint, and furthermore should be continuously making substantial contributions
   to the project's codebase, review process, documentation and ADRs
 - Have stake in Ethermint, represented by:
-  - Being a client / user of Ethermint
-  - "[giving back](https://www.debian.org/social_contract)" to the software
+    - Being a client / user of Ethermint
+    - "[giving back](https://www.debian.org/social_contract)" to the software
 - Delegate representation in case of vacation or absence
 
 Code owners need to maintain participation in the process, ideally as members of **Concept Approval Committee**

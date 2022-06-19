@@ -170,8 +170,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
-- (rpc) [tharsis#979](https://github.com/evmos/ethermint/pull/979) Add configurable timeouts to http server
-- (rpc) [tharsis#988](https://github.com/evmos/ethermint/pull/988) json-rpc server always use local rpc client
+* (rpc) [tharsis#979](https://github.com/evmos/ethermint/pull/979) Add configurable timeouts to http server
+* (rpc) [tharsis#988](https://github.com/evmos/ethermint/pull/988) json-rpc server always use local rpc client
 
 ## [v0.10.1] - 2022-03-04
 
@@ -473,9 +473,11 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 * (evm) [tharsis#775](https://github.com/cosmos/ethermint/issues/775) MisUse of headHash as blockHash when create EVM context.
 
 ### Features
+
 * (api) [tharsis#821](https://github.com/cosmos/ethermint/pull/821) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
 
 ### Features
+
 * (api) [tharsis#825](https://github.com/cosmos/ethermint/pull/825) Individually enable the api modules. Will be implemented in the latest version of ethermint with the upcoming stargate upgrade.
 
 ## [v0.4.0] - 2020-12-15

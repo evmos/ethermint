@@ -32,12 +32,12 @@ Smart contracts are just like regular accounts on the blockchain, which addition
 
 The EVM operates as a stack-based machine. It's main architecture components consist of:
 
-- Virtual ROM: contract code is pulled into this read only memory when processing txs
-- Machine state (volatile): changes as the EVM runs and is wiped clean after processing each tx
-  - Program counter (PC)
-  - Gas: keeps track of how much gas is used
-  - Stack and Memory: compute state changes
-- Access to account storage (persistent)
+* Virtual ROM: contract code is pulled into this read only memory when processing txs
+* Machine state (volatile): changes as the EVM runs and is wiped clean after processing each tx
+    * Program counter (PC)
+    * Gas: keeps track of how much gas is used
+    * Stack and Memory: compute state changes
+* Access to account storage (persistent)
 
 ### State Transitions with Smart Contracts
 
@@ -51,10 +51,10 @@ Smart contracts can also call other smart contracts. Each call to a new contract
 
 For further reading, please refer to:
 
-- [EVM](https://eth.wiki/concepts/evm/evm)
-- [EVM Architecture](https://cypherpunks-core.github.io/ethereumbook/13evm.html#evm_architecture)
-- [What is Ethereum](https://ethdocs.org/en/latest/introduction/what-is-ethereum.html#what-is-ethereum)
-- [Opcodes](https://www.ethervm.io/)
+* [EVM](https://eth.wiki/concepts/evm/evm)
+* [EVM Architecture](https://cypherpunks-core.github.io/ethereumbook/13evm.html#evm_architecture)
+* [What is Ethereum](https://ethdocs.org/en/latest/introduction/what-is-ethereum.html#what-is-ethereum)
+* [Opcodes](https://www.ethervm.io/)
 
 ## Ethermint as Geth implementation
 
@@ -77,7 +77,6 @@ In the Geth implementation, calling the endpoint roughly goes through the follow
 5. [`TransitionDb()`](https://github.com/ethereum/go-ethereum/blob/d575a2d3bc76dfbdefdd68b6cffff115542faf75/core/state_transition.go#L275) either `Create()`s a new contract or `Call()`s a contract
 6. [`evm.Call()`](https://github.com/ethereum/go-ethereum/blob/d575a2d3bc76dfbdefdd68b6cffff115542faf75/core/vm/evm.go#L168) runs the interpreter `evm.interpreter.Run()` to execute the message. If the execution fails, the state is reverted to a snapshot taken before the execution and gas is consumed.
 7. [`Run()`](https://github.com/ethereum/go-ethereum/blob/d575a2d3bc76dfbdefdd68b6cffff115542faf75/core/vm/interpreter.go#L116) performs a loop to execute the opcodes.
-
 
 The ethermint implementatiom is similar and makes use of the gRPC query client which is included in the Cosmos SDK:
 
