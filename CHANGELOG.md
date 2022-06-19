@@ -40,15 +40,19 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-* (evm) [tharsis#1124](https://github.com/evmos/ethermint/pull/1124) Reject non-replay-protected tx in ante handler to prevent replay attack
+* (evm) [tharsis#1124](https://github.com/evmos/ethermint/pull/1124) Reject non-replay-protected tx in ante handler to prevent replay attack
+
+### API Breaking
+
+* (all) [\#1137](https://github.com/evmos/ethermint/pull/1137) Rename go module to `evmos/ethermint`
+
+### Improvements
+
+* (feemarket) [tharsis#1120](https://github.com/evmos/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
 
 ### Bug Fixes
 
 * (evm) [tharsis#1118](https://github.com/evmos/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
-
-### Improvements
-
-- (feemarket) [tharsis#1120](https://github.com/evmos/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
 
 ## [v0.16.0] - 2022-06-06
 
