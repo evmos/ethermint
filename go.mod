@@ -1,4 +1,4 @@
-module github.com/tharsis/ethermint
+module github.com/evmos/ethermint
 
 go 1.17
 

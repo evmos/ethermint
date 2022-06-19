@@ -41,17 +41,17 @@ The `anteHandler` is run for every transaction. It checks if the `Tx` is an Ethe
 - `EthValidateBasicDecorator(evmKeeper)` validates the fields of a Ethereum type Cosmos `Tx` msg
 - `EthSigVerificationDecorator(evmKeeper)` validates that the registered chain id is the same as the one on the message, and that the signer address matches the one defined on the message. It's not skipped for RecheckTx, because it set `From` address which is critical from other ante handler to work. Failure in RecheckTx will prevent tx to be included into block, especially when CheckTx succeed, in which case user won't see the error message.
 - `EthAccountVerificationDecorator(ak, bankKeeper, evmKeeper)` that the sender balance is greater than the total transaction cost. The account will be set to store if it doesn't exist, i.e cannot be found on store. This AnteHandler decorator will fail if:
-  - any of the msgs is not a MsgEthereumTx
-  - from address is empty
-  - account balance is lower than the transaction cost
+    - any of the msgs is not a MsgEthereumTx
+    - from address is empty
+    - account balance is lower than the transaction cost
 - `EthNonceVerificationDecorator(ak)` validates that the transaction nonces are valid and equivalent to the sender account’s current nonce.
 - `EthGasConsumeDecorator(evmKeeper)` validates that the Ethereum tx message has enough to cover intrinsic gas (during CheckTx only) and that the sender has enough balance to pay for the gas cost. Intrinsic gas for a transaction is the amount of gas that the transaction uses before the transaction is executed. The gas is a constant value plus any cost incurred by additional bytes of data supplied with the transaction. This AnteHandler decorator will fail if:
-  - the transaction contains more than one message
-  - the message is not a MsgEthereumTx
-  - sender account cannot be found
-  - transaction's gas limit is lower than the intrinsic gas
-  - user doesn't have enough balance to deduct the transaction fees (gas_limit * gas_price)
-  - transaction or block gas meter runs out of gas
+    - the transaction contains more than one message
+    - the message is not a MsgEthereumTx
+    - sender account cannot be found
+    - transaction's gas limit is lower than the intrinsic gas
+    - user doesn't have enough balance to deduct the transaction fees (gas_limit * gas_price)
+    - transaction or block gas meter runs out of gas
 - `CanTransferDecorator(evmKeeper, feeMarketKeeper)` creates an EVM from the message and calls the BlockContext CanTransfer function to see if the address can execute the transaction.
 - `EthIncrementSenderSequenceDecorator(ak)`  handles incrementing the sequence of the signer (i.e sender). If the transaction is a contract creation, the nonce will be incremented during the transaction execution and not within this AnteHandler decorator.
 
