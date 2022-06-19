@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 func TestParseTxResult(t *testing.T) {
@@ -25,7 +25,8 @@ func TestParseTxResult(t *testing.T) {
 		response abci.ResponseDeliverTx
 		expTxs   []*ParsedTx // expected parse result, nil means expect error.
 	}{
-		{"format 1 events",
+		{
+			"format 1 events",
 			abci.ResponseDeliverTx{
 				GasUsed: 21000,
 				Events: []abci.Event{
@@ -87,7 +88,8 @@ func TestParseTxResult(t *testing.T) {
 				},
 			},
 		},
-		{"format 2 events",
+		{
+			"format 2 events",
 			abci.ResponseDeliverTx{
 				GasUsed: 21000,
 				Events: []abci.Event{
@@ -133,7 +135,8 @@ func TestParseTxResult(t *testing.T) {
 				},
 			},
 		},
-		{"format 1 events, failed",
+		{
+			"format 1 events, failed",
 			abci.ResponseDeliverTx{
 				GasUsed: 21000,
 				Events: []abci.Event{
@@ -164,7 +167,8 @@ func TestParseTxResult(t *testing.T) {
 			},
 			nil,
 		},
-		{"format 1 events, failed",
+		{
+			"format 1 events, failed",
 			abci.ResponseDeliverTx{
 				GasUsed: 21000,
 				Events: []abci.Event{
@@ -195,7 +199,8 @@ func TestParseTxResult(t *testing.T) {
 			},
 			nil,
 		},
-		{"format 2 events failed",
+		{
+			"format 2 events failed",
 			abci.ResponseDeliverTx{
 				GasUsed: 21000,
 				Events: []abci.Event{
@@ -213,7 +218,8 @@ func TestParseTxResult(t *testing.T) {
 			},
 			nil,
 		},
-		{"format 2 events failed",
+		{
+			"format 2 events failed",
 			abci.ResponseDeliverTx{
 				GasUsed: 21000,
 				Events: []abci.Event{

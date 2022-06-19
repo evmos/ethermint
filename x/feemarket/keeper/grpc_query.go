@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
 var _ types.QueryServer = Keeper{}

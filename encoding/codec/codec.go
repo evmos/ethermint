@@ -6,8 +6,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	cryptocodec "github.com/tharsis/ethermint/crypto/codec"
-	ethermint "github.com/tharsis/ethermint/types"
+	cryptocodec "github.com/evmos/ethermint/crypto/codec"
+	ethermint "github.com/evmos/ethermint/types"
 )
 
 // RegisterLegacyAminoCodec registers Interfaces from types, crypto, and SDK std.
