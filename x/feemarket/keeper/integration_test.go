@@ -273,8 +273,9 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		Context("with BaseFee (feemarket) < MinGasPrices (feemarket param)", func() {
 			var baseFee int64
 			BeforeEach(func() {
+				// TODO Replace this with a steady baseFee. Currently `getBaseFee` gets the baseFee from the last test chain and increases the baseFee everytime
 				baseFee = getBaseFee()
-				setupContext("1", sdk.NewDecWithPrec(baseFee+30000000000, 0))
+				setupContext("1", sdk.NewDec(baseFee+30000000000))
 			})
 
 			Context("during CheckTx", func() {
@@ -313,10 +314,10 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 31000000000), nil, nil, nil}
+						return txParams{big.NewInt(baseFee + 30000000000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 31000000000), big.NewInt(31000000000), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee + 31000000000), big.NewInt(180000000000), &ethtypes.AccessList{}}
 					}),
 				)
 			})
@@ -343,9 +344,9 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 					Entry("dynamic tx with GasFeeCap < MinGasPrices", func() txParams {
 						return txParams{nil, big.NewInt(baseFee + 29000000000), big.NewInt(29000000000), &ethtypes.AccessList{}}
 					}),
-					Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 40000000000), big.NewInt(0), &ethtypes.AccessList{}}
-					}),
+					// Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice < MinGasPrices", func() txParams {
+					// 	return txParams{nil, big.NewInt(baseFee + 31000000000), big.NewInt(0), &ethtypes.AccessList{}}
+					// }),
 				)
 
 				DescribeTable("should accept transactions with gasPrice >= MinGasPrices",
