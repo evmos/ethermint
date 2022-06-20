@@ -32,87 +32,16 @@ import (
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
-var _ = Describe("Ethermint App min gas prices settings: ", func() {
+var _ = Describe("Feemarket", func() {
 	var (
 		privKey *ethsecp256k1.PrivKey
-		address sdk.AccAddress
 		msg     banktypes.MsgSend
 	)
 
-	setupChain := func(cliMinGasPricesStr string) {
-		// Initialize the app, so we can use SetMinGasPrices to set the
-		// validator-specific min-gas-prices setting
-		db := dbm.NewMemDB()
-		newapp := app.NewEthermintApp(
-			log.NewNopLogger(),
-			db,
-			nil,
-			true,
-			map[int64]bool{},
-			app.DefaultNodeHome,
-			5,
-			encoding.MakeConfig(app.ModuleBasics),
-			simapp.EmptyAppOptions{},
-			baseapp.SetMinGasPrices(cliMinGasPricesStr),
-		)
-
-		genesisState := app.NewDefaultGenesisState()
-		genesisState[types.ModuleName] = newapp.AppCodec().MustMarshalJSON(types.DefaultGenesisState())
-
-		stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
-		s.Require().NoError(err)
-
-		// Initialize the chain
-		newapp.InitChain(
-			abci.RequestInitChain{
-				ChainId:         "ethermint_9000-1",
-				Validators:      []abci.ValidatorUpdate{},
-				AppStateBytes:   stateBytes,
-				ConsensusParams: app.DefaultConsensusParams,
-			},
-		)
-
-		s.app = newapp
-		s.SetupApp(false)
-	}
-
-	setupTest := func(cliMinGasPrices string) {
-		setupChain(cliMinGasPrices)
-
-		privKey, address = generateKey()
-		amount, ok := sdk.NewIntFromString("10000000000000000000")
-		s.Require().True(ok)
-		initBalance := sdk.Coins{sdk.Coin{
-			Denom:  s.denom,
-			Amount: amount,
-		}}
-		testutil.FundAccount(s.app.BankKeeper, s.ctx, address, initBalance)
-
-		msg = banktypes.MsgSend{
-			FromAddress: address.String(),
-			ToAddress:   address.String(),
-			Amount: sdk.Coins{sdk.Coin{
-				Denom:  s.denom,
-				Amount: sdk.NewInt(10000),
-			}},
-		}
-		s.Commit()
-	}
-
-	setupContext := func(cliMinGasPrice string, minGasPrice sdk.Dec) {
-		setupTest(cliMinGasPrice + s.denom)
-		params := types.DefaultParams()
-		params.MinGasPrice = minGasPrice
-		s.app.FeeMarketKeeper.SetParams(s.ctx, params)
-		s.Commit()
-	}
-
-	Context("with Cosmos transactions", func() {
-		Context("min-gas-prices (local) < MinGasPrices (feemarket param)", func() {
-			cliMinGasPrice := "1"
-			minGasPrice := sdk.NewDecWithPrec(3, 0)
+	Describe("Performing Cosmos transactions", func() {
+		Context("with min-gas-prices (local) < MinGasPrices (feemarket param)", func() {
 			BeforeEach(func() {
-				setupContext(cliMinGasPrice, minGasPrice)
+				privKey, msg = setupTestWithContext("1", sdk.NewDec(3))
 			})
 
 			Context("during CheckTx", func() {
@@ -153,10 +82,8 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 
 		Context("with min-gas-prices (local) == MinGasPrices (feemarket param)", func() {
-			cliMinGasPrice := "3"
-			minGasPrice := sdk.NewDecWithPrec(3, 0)
 			BeforeEach(func() {
-				setupContext(cliMinGasPrice, minGasPrice)
+				privKey, msg = setupTestWithContext("3", sdk.NewDec(3))
 			})
 
 			Context("during CheckTx", func() {
@@ -197,10 +124,8 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 
 		Context("with MinGasPrices (feemarket param) < min-gas-prices (local)", func() {
-			cliMinGasPrice := "5"
-			minGasPrice := sdk.NewDecWithPrec(3, 0)
 			BeforeEach(func() {
-				setupContext(cliMinGasPrice, minGasPrice)
+				privKey, msg = setupTestWithContext("5", sdk.NewDec(3))
 			})
 			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
@@ -256,7 +181,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 	})
 
-	Context("with EVM transactions", func() {
+	Describe("Performing with EVM transactions", func() {
 		type txParams struct {
 			gasPrice  *big.Int
 			gasFeeCap *big.Int
@@ -275,7 +200,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			BeforeEach(func() {
 				// TODO Replace this with a steady baseFee. Currently `getBaseFee` gets the baseFee from the last test chain and increases the baseFee everytime
 				baseFee = getBaseFee()
-				setupContext("1", sdk.NewDec(baseFee+30000000000))
+				privKey, _ = setupTestWithContext("1", sdk.NewDec(baseFee+30000000000))
 			})
 
 			Context("during CheckTx", func() {
@@ -374,7 +299,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 			BeforeEach(func() {
 				baseFee = getBaseFee()
 				s.Require().Greater(baseFee, int64(10))
-				setupContext("5", sdk.NewDecWithPrec(10, 0))
+				privKey, msg = setupTestWithContext("5", sdk.NewDecWithPrec(10, 0))
 			})
 
 			Context("during CheckTx", func() {
@@ -495,6 +420,78 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 	})
 })
+
+// setupTestWithContext sets up a test chain with an example Cosmos send msg,
+// given a local (validator config) and a gloabl (feemarket param) minGasPrice
+func setupTestWithContext(valMinGasPrice string, minGasPrice sdk.Dec) (*ethsecp256k1.PrivKey, banktypes.MsgSend) {
+	privKey, msg := setupTest(valMinGasPrice + s.denom)
+	params := types.DefaultParams()
+	params.MinGasPrice = minGasPrice
+	s.app.FeeMarketKeeper.SetParams(s.ctx, params)
+	s.Commit()
+	return privKey, msg
+}
+
+func setupTest(localMinGasPrices string) (*ethsecp256k1.PrivKey, banktypes.MsgSend) {
+	setupChain(localMinGasPrices)
+
+	privKey, address := generateKey()
+	amount, ok := sdk.NewIntFromString("10000000000000000000")
+	s.Require().True(ok)
+	initBalance := sdk.Coins{sdk.Coin{
+		Denom:  s.denom,
+		Amount: amount,
+	}}
+	testutil.FundAccount(s.app.BankKeeper, s.ctx, address, initBalance)
+
+	msg := banktypes.MsgSend{
+		FromAddress: address.String(),
+		ToAddress:   address.String(),
+		Amount: sdk.Coins{sdk.Coin{
+			Denom:  s.denom,
+			Amount: sdk.NewInt(10000),
+		}},
+	}
+	s.Commit()
+	return privKey, msg
+}
+
+func setupChain(localMinGasPricesStr string) {
+	// Initialize the app, so we can use SetMinGasPrices to set the
+	// validator-specific min-gas-prices setting
+	db := dbm.NewMemDB()
+	newapp := app.NewEthermintApp(
+		log.NewNopLogger(),
+		db,
+		nil,
+		true,
+		map[int64]bool{},
+		app.DefaultNodeHome,
+		5,
+		encoding.MakeConfig(app.ModuleBasics),
+		simapp.EmptyAppOptions{},
+		baseapp.SetMinGasPrices(localMinGasPricesStr),
+	)
+
+	genesisState := app.NewDefaultGenesisState()
+	genesisState[types.ModuleName] = newapp.AppCodec().MustMarshalJSON(types.DefaultGenesisState())
+
+	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
+	s.Require().NoError(err)
+
+	// Initialize the chain
+	newapp.InitChain(
+		abci.RequestInitChain{
+			ChainId:         "ethermint_9000-1",
+			Validators:      []abci.ValidatorUpdate{},
+			AppStateBytes:   stateBytes,
+			ConsensusParams: app.DefaultConsensusParams,
+		},
+	)
+
+	s.app = newapp
+	s.SetupApp(false)
+}
 
 func generateKey() (*ethsecp256k1.PrivKey, sdk.AccAddress) {
 	address, priv := tests.NewAddrKey()
