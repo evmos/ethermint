@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
 // GetQueryCmd returns the parent command for all x/feemarket CLI query commands.

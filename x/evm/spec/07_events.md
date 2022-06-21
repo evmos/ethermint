@@ -22,7 +22,6 @@ The `x/evm` module emits the Cosmos SDK events after a state execution. The EVM 
 | message     | `"action"`         | `"ethereum"`            |
 | message     | `"module"`         | `"evm"`                 |
 
-
 Additionally, the EVM module emits an event during `EndBlock` for the filter query block bloom.
 
 ## ABCI
