@@ -47,6 +47,8 @@ const (
 	DefaultHTTPTimeout = 30 * time.Second
 
 	DefaultHTTPIdleTimeout = 120 * time.Second
+	// DefaultAllowUnprotectedTxs value is false
+	DefaultAllowUnprotectedTxs = false
 )
 
 var evmTracers = []string{"json", "markdown", "struct", "access_list"}
@@ -98,6 +100,9 @@ type JSONRPCConfig struct {
 	HTTPTimeout time.Duration `mapstructure:"http-timeout"`
 	// HTTPIdleTimeout is the idle timeout of http json-rpc server.
 	HTTPIdleTimeout time.Duration `mapstructure:"http-idle-timeout"`
+	// AllowUnprotectedTxs restricts unprotected (non EIP155 signed) transactions to be submitted via
+	// the node's RPC when global parameter is disabled.
+	AllowUnprotectedTxs bool `mapstructure:"allow-unprotected-txs"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -183,19 +188,20 @@ func GetAPINamespaces() []string {
 // DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
 func DefaultJSONRPCConfig() *JSONRPCConfig {
 	return &JSONRPCConfig{
-		Enable:          true,
-		API:             GetDefaultAPINamespaces(),
-		Address:         DefaultJSONRPCAddress,
-		WsAddress:       DefaultJSONRPCWsAddress,
-		GasCap:          DefaultGasCap,
-		EVMTimeout:      DefaultEVMTimeout,
-		TxFeeCap:        DefaultTxFeeCap,
-		FilterCap:       DefaultFilterCap,
-		FeeHistoryCap:   DefaultFeeHistoryCap,
-		BlockRangeCap:   DefaultBlockRangeCap,
-		LogsCap:         DefaultLogsCap,
-		HTTPTimeout:     DefaultHTTPTimeout,
-		HTTPIdleTimeout: DefaultHTTPIdleTimeout,
+		Enable:              true,
+		API:                 GetDefaultAPINamespaces(),
+		Address:             DefaultJSONRPCAddress,
+		WsAddress:           DefaultJSONRPCWsAddress,
+		GasCap:              DefaultGasCap,
+		EVMTimeout:          DefaultEVMTimeout,
+		TxFeeCap:            DefaultTxFeeCap,
+		FilterCap:           DefaultFilterCap,
+		FeeHistoryCap:       DefaultFeeHistoryCap,
+		BlockRangeCap:       DefaultBlockRangeCap,
+		LogsCap:             DefaultLogsCap,
+		HTTPTimeout:         DefaultHTTPTimeout,
+		HTTPIdleTimeout:     DefaultHTTPIdleTimeout,
+		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 	}
 }
 
