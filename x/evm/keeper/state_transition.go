@@ -268,6 +268,9 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 			// If hooks return error, revert the whole tx.
 			res.VmError = types.ErrPostTxProcessing.Error()
 			k.Logger(ctx).Error("tx post processing failed", "error", err)
+
+			// If the tx failed in post processing hooks, we should clear the logs
+			res.Logs = nil
 		} else if commit != nil {
 			// PostTxProcessing is successful, commit the tmpCtx
 			commit()

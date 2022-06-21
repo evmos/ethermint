@@ -599,6 +599,7 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 
 			suite.Require().True(res.Failed())
 			suite.Require().Equal(tc.expErr, res.VmError)
+			suite.Require().Empty(res.Logs)
 
 			after := k.GetBalance(suite.ctx, suite.from)
 
