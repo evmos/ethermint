@@ -6,7 +6,7 @@ order: 1
 
 ## Base fee
 
-The base fee is a global base fee defined at the consensus level. It is adjusted for each block based on the total gas used in the previous block and gas target (block gas limit divided by elasticity multiplier) 
+The base fee is a global base fee defined at the consensus level. It is adjusted for each block based on the total gas used in the previous block and gas target (block gas limit divided by elasticity multiplier)
 
 - it increases when blocks are above the gas target
 - it decreases when blocks are below the gas target
@@ -22,8 +22,6 @@ The transaction fee in Ethereum is calculated using the following the formula :
 `transaction fee = (baseFee + tip) * gas units (limit)`
 
 In Cosmos SDK there is no notion of prioritization, thus the tip for an EIP-1559 transaction in Ethermint should be zero (`MaxPriorityFeePerGas` JSON-RPC endpoint returns `0`)
-
-
 
 ## EIP-1559
 
