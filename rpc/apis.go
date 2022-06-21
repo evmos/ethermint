@@ -10,16 +10,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/tharsis/ethermint/rpc/backend"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/debug"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/eth"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/eth/filters"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/miner"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/net"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/personal"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/txpool"
-	"github.com/tharsis/ethermint/rpc/namespaces/ethereum/web3"
-	"github.com/tharsis/ethermint/rpc/types"
+	"github.com/evmos/ethermint/rpc/backend"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/eth"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/eth/filters"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/miner"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/net"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/personal"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/txpool"
+	"github.com/evmos/ethermint/rpc/namespaces/ethereum/web3"
+	"github.com/evmos/ethermint/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )

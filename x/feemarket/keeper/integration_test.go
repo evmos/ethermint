@@ -17,19 +17,19 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/tharsis/ethermint/app"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	"github.com/tharsis/ethermint/encoding"
-	"github.com/tharsis/ethermint/tests"
-	"github.com/tharsis/ethermint/testutil"
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	"github.com/evmos/ethermint/encoding"
+	"github.com/evmos/ethermint/tests"
+	"github.com/evmos/ethermint/testutil"
+	"github.com/evmos/ethermint/x/feemarket/types"
 
 	"github.com/cosmos/cosmos-sdk/simapp"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 var _ = Describe("Ethermint App min gas prices settings: ", func() {

@@ -16,7 +16,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	stderrors "github.com/pkg/errors"
@@ -27,9 +27,9 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/evmos/ethermint/rpc/backend"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tharsis/ethermint/rpc/backend"
-	rpctypes "github.com/tharsis/ethermint/rpc/types"
 )
 
 // HandlerT keeps track of the cpu profiler and trace execution
