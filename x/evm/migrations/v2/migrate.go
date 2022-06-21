@@ -6,7 +6,7 @@ import (
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
-// MigrateStore add the default RejectUnprotected parameter.
+// MigrateStore sets the default AllowUnprotectedTxs parameter.
 func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace) error {
 	if !paramstore.HasKeyTable() {
 		ps := paramstore.WithKeyTable(types.ParamKeyTable())
@@ -14,6 +14,6 @@ func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace) error {
 	}
 
 	// add RejectUnprotected
-	paramstore.Set(ctx, types.ParamStoreKeyRejectUnprotectedTx, types.DefaultParams().RejectUnprotectedTx)
+	paramstore.Set(ctx, types.ParamStoreKeyAllowUnprotectedTxs, types.DefaultAllowUnprotectedTxs)
 	return nil
 }

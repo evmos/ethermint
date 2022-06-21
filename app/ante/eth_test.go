@@ -30,12 +30,12 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	testCases := []struct {
 		name                string
 		tx                  sdk.Tx
-		rejectUnprotectedTx bool
+		allowUnprotectedTxs bool
 		reCheckTx           bool
 		expPass             bool
 	}{
-		{"ReCheckTx", &invalidTx{}, true, true, false},
-		{"invalid transaction type", &invalidTx{}, true, false, false},
+		{"ReCheckTx", &invalidTx{}, false, true, false},
+		{"invalid transaction type", &invalidTx{}, false, false, false},
 		{
 			"invalid sender",
 			evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &addr, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
@@ -43,15 +43,15 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 			false,
 			false,
 		},
-		{"successful signature verification", signedTx, true, false, true},
-		{"invalid, not replay-protected", unprotectedTx, true, false, false},
-		{"successful, don't reject unprotected", unprotectedTx, false, false, true},
+		{"successful signature verification", signedTx, false, false, true},
+		{"invalid, reject unprotected txs", unprotectedTx, false, false, false},
+		{"successful, allow unprotected txs", unprotectedTx, true, false, true},
 	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			suite.evmParamsOption = func(params *evmtypes.Params) {
-				params.RejectUnprotectedTx = tc.rejectUnprotectedTx
+				params.AllowUnprotectedTxs = tc.allowUnprotectedTxs
 			}
 			suite.SetupTest()
 			dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
