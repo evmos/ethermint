@@ -216,7 +216,7 @@ func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 	if err != nil {
 		return nil, err
 	}
-	minGasPriceInt := minGasPrice.BigInt()
+	minGasPriceInt := minGasPrice.TruncateInt().BigInt()
 	if result.Cmp(minGasPriceInt) < 0 {
 		result = minGasPriceInt
 	}
