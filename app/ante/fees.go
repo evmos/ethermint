@@ -1,6 +1,7 @@
 package ante
 
 import (
+	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -125,14 +126,19 @@ func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		}
 
 		gasLimit := sdk.NewDecFromBigInt(new(big.Int).SetUint64(ethMsg.GetGas()))
+
 		requiredFee := minGasPrice.Mul(gasLimit)
 		fee := sdk.NewDecFromBigInt(feeAmt)
 
 		if fee.LT(requiredFee) {
+			// effectiveFee = min(basFee+tip, gasFeeCap) * gasLimit
+			fmt.Printf("\nfee: %d = min(baseFee %s + gasTipCap %s), gasFeeCap %s) * gasLimit %d", fee.TruncateInt().Int64(), baseFee, txData.GetGasTipCap(), txData.GetGasFeeCap(), gasLimit.TruncateInt().Int64())
+			fmt.Printf("\nrequiredFee %d = minGasPrice %d * gasLimit %d", requiredFee.TruncateInt().Int64(), minGasPrice.TruncateInt().Int64(), gasLimit.TruncateInt().Int64())
+
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrInsufficientFee,
-				"provided fee < minimum global fee (%s < %s). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)",
-				fee, requiredFee,
+				"provided fee < minimum global fee (%d < %d). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)",
+				fee.TruncateInt().Int64(), requiredFee.TruncateInt().Int64(),
 			)
 		}
 	}
