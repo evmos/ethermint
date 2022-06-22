@@ -34,50 +34,50 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
 		},
 		{
-			"with BaseFee - parent block wanted the same gas as its target",
-			false,
-			1,
-			100,
-			sdk.ZeroDec(),
-			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
-		},
-		{
-			"with BaseFee - parent block wanted the same gas as its target, with higher min gas price",
-			false,
-			1,
-			100,
-			sdk.NewDec(1500000000),
-			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
-		},
-		{
-			"with BaseFee - parent block wanted more gas than its target",
-			false,
-			1,
-			200,
-			sdk.ZeroDec(),
-			big.NewInt(1125000000),
-		},
-		{
-			"with BaseFee - parent block wanted more gas than its target, with higher min gas price",
-			false,
-			1,
-			200,
-			sdk.NewDec(1500000000),
-			big.NewInt(1125000000),
-		},
-		{
-			"with BaseFee - Parent gas wanted smaller than parent gas target",
+			"with BaseFee - parent block wanted the same gas as its target (ElasticityMultiplier = 2)",
 			false,
 			1,
 			50,
+			sdk.ZeroDec(),
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
+		},
+		{
+			"with BaseFee - parent block wanted the same gas as its target, with higher min gas price (ElasticityMultiplier = 2)",
+			false,
+			1,
+			50,
+			sdk.NewDec(1500000000),
+			suite.app.FeeMarketKeeper.GetParams(suite.ctx).BaseFee.BigInt(),
+		},
+		{
+			"with BaseFee - parent block wanted more gas than its target (ElasticityMultiplier = 2)",
+			false,
+			1,
+			100,
+			sdk.ZeroDec(),
+			big.NewInt(1125000000),
+		},
+		{
+			"with BaseFee - parent block wanted more gas than its target, with higher min gas price (ElasticityMultiplier = 2)",
+			false,
+			1,
+			100,
+			sdk.NewDec(1500000000),
+			big.NewInt(1125000000),
+		},
+		{
+			"with BaseFee - Parent gas wanted smaller than parent gas target (ElasticityMultiplier = 2)",
+			false,
+			1,
+			25,
 			sdk.ZeroDec(),
 			big.NewInt(937500000),
 		},
 		{
-			"with BaseFee - Parent gas wanted smaller than parent gas target, with higher min gas price",
+			"with BaseFee - Parent gas wanted smaller than parent gas target, with higher min gas price (ElasticityMultiplier = 2)",
 			false,
 			1,
-			50,
+			25,
 			sdk.NewDec(1500000000),
 			big.NewInt(1500000000),
 		},
@@ -89,7 +89,6 @@ func (suite *KeeperTestSuite) TestCalculateBaseFee() {
 			params := suite.app.FeeMarketKeeper.GetParams(suite.ctx)
 			params.NoBaseFee = tc.NoBaseFee
 			params.MinGasPrice = tc.minGasPrice
-			params.ElasticityMultiplier = 1
 			suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 
 			// Set block height
