@@ -44,6 +44,7 @@ type EVMBackend interface {
 	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
 	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
 	RPCTxFeeCap() float64         // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for send-transaction variants. The unit is ether.
+	UnprotectedAllowed() bool
 
 	RPCMinGasPrice() int64
 	SuggestGasTipCap(baseFee *big.Int) (*big.Int, error)
@@ -86,16 +87,17 @@ var _ BackendI = (*Backend)(nil)
 
 // Backend implements the BackendI interface
 type Backend struct {
-	ctx         context.Context
-	clientCtx   client.Context
-	queryClient *types.QueryClient // gRPC query client
-	logger      log.Logger
-	chainID     *big.Int
-	cfg         config.Config
+	ctx                 context.Context
+	clientCtx           client.Context
+	queryClient         *types.QueryClient // gRPC query client
+	logger              log.Logger
+	chainID             *big.Int
+	cfg                 config.Config
+	allowUnprotectedTxs bool
 }
 
 // NewBackend creates a new Backend instance for cosmos and ethereum namespaces
-func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context) *Backend {
+func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context, allowUnprotectedTxs bool) *Backend {
 	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
@@ -104,11 +106,12 @@ func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context
 	appConf := config.GetConfig(ctx.Viper)
 
 	return &Backend{
-		ctx:         context.Background(),
-		clientCtx:   clientCtx,
-		queryClient: types.NewQueryClient(clientCtx),
-		logger:      logger.With("module", "backend"),
-		chainID:     chainID,
-		cfg:         appConf,
+		ctx:                 context.Background(),
+		clientCtx:           clientCtx,
+		queryClient:         types.NewQueryClient(clientCtx),
+		logger:              logger.With("module", "backend"),
+		chainID:             chainID,
+		cfg:                 appConf,
+		allowUnprotectedTxs: allowUnprotectedTxs,
 	}
 }

@@ -45,12 +45,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (rpc) [\#1143](https://github.com/evmos/ethermint/pull/1143) Restrict unprotected txs on the node JSON-RPC configuration.
 * (all) [\#1137](https://github.com/evmos/ethermint/pull/1137) Rename go module to `evmos/ethermint`
 
 ### Improvements
 
 * (feemarket) [\#1120](https://github.com/evmos/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
 * (feemarket) [\#1135](https://github.com/evmos/ethermint/pull/1135) Set lower bound of base fee to min gas price param
+* (evm) [\#1142](https://github.com/evmos/ethermint/pull/1142) Rename `RejectUnprotectedTx` to `AllowUnprotectedTxs` for consistency with go-ethereum.
 
 ### Bug Fixes
 
