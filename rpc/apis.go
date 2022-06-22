@@ -105,7 +105,7 @@ func init() {
 				},
 			}
 		},
-		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ *rpcclient.WSClient, allowUnprotectedTxs bool) []rpc.API {
+		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ *rpcclient.WSClient, _ bool) []rpc.API {
 			return []rpc.API{
 				{
 					Namespace: TxPoolNamespace,
