@@ -52,6 +52,7 @@ type EVMBackend interface {
 	// Blockchain API
 	BlockNumber() (hexutil.Uint64, error)
 	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
+	GetTendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
 	GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
@@ -68,7 +69,7 @@ type EVMBackend interface {
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	GetTxByTxIndex(height int64, txIndex uint) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
-	BaseFee(height int64) (*big.Int, error)
+	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)
 	GlobalMinGasPrice() (sdk.Dec, error)
 
 	// Fee API

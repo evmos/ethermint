@@ -45,6 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (rpc) [\#1126](https://github.com/evmos/ethermint/pull/1126) Make some JSON-RPC APIS work for pruned nodes.
 * (rpc) [\#1143](https://github.com/evmos/ethermint/pull/1143) Restrict unprotected txs on the node JSON-RPC configuration.
 * (all) [\#1137](https://github.com/evmos/ethermint/pull/1137) Rename go module to `evmos/ethermint`
 

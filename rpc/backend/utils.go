@@ -232,7 +232,7 @@ func (b *Backend) processBlock(
 	targetOneFeeHistory *types.OneFeeHistory,
 ) error {
 	blockHeight := tendermintBlock.Block.Height
-	blockBaseFee, err := b.BaseFee(blockHeight)
+	blockBaseFee, err := b.BaseFee(tendermintBlockResult)
 	if err != nil {
 		return err
 	}
@@ -389,4 +389,19 @@ func TxSuccessOrExceedsBlockGasLimit(res *abci.ResponseDeliverTx) bool {
 // workaround for issue: https://github.com/cosmos/cosmos-sdk/issues/10832
 func ShouldIgnoreGasUsed(res *abci.ResponseDeliverTx) bool {
 	return res.GetCode() == 11 && strings.Contains(res.GetLog(), "no block gas left to run tx: out of gas")
+}
+
+// GetLogsFromBlockResults returns the list of event logs from the tendermint block result response
+func GetLogsFromBlockResults(blockRes *tmrpctypes.ResultBlockResults) ([][]*ethtypes.Log, error) {
+	blockLogs := [][]*ethtypes.Log{}
+	for _, txResult := range blockRes.TxsResults {
+		logs, err := AllTxLogsFromEvents(txResult.Events)
+		if err != nil {
+			return nil, err
+		}
+
+		blockLogs = append(blockLogs, logs...)
+	}
+
+	return blockLogs, nil
 }

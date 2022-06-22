@@ -3,12 +3,15 @@ package filters
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"math/big"
 
+	"github.com/evmos/ethermint/rpc/backend"
 	"github.com/evmos/ethermint/rpc/types"
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -89,28 +92,35 @@ const (
 
 // Logs searches the blockchain for matching log entries, returning all from the
 // first block that contains matches, updating the start of the filter accordingly.
-func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*ethtypes.Log, error) {
+func (f *Filter) Logs(ctx context.Context, logLimit int, blockLimit int64) ([]*ethtypes.Log, error) {
 	logs := []*ethtypes.Log{}
 	var err error
 
 	// If we're doing singleton block filtering, execute and return
 	if f.criteria.BlockHash != nil && *f.criteria.BlockHash != (common.Hash{}) {
-		header, err := f.backend.HeaderByHash(*f.criteria.BlockHash)
+		resBlock, err := f.backend.GetTendermintBlockByHash(*f.criteria.BlockHash)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to fetch header by hash")
+			return nil, fmt.Errorf("failed to fetch header by hash %s: %w", f.criteria.BlockHash, err)
 		}
 
-		if header == nil {
-			return nil, errors.Errorf("unknown block header %s", f.criteria.BlockHash.String())
+		blockRes, err := f.backend.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+		if err != nil {
+			f.logger.Debug("failed to fetch block result from Tendermint", "height", resBlock.Block.Height, "error", err.Error())
+			return nil, nil
 		}
 
-		return f.blockLogs(header.Number.Int64(), header.Bloom)
+		bloom, err := f.backend.BlockBloom(blockRes)
+		if err != nil {
+			return nil, err
+		}
+
+		return f.blockLogs(blockRes, bloom)
 	}
 
 	// Figure out the limits of the filter range
 	header, err := f.backend.HeaderByNumber(types.EthLatestBlockNumber)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch header by number (latest)")
+		return nil, fmt.Errorf("failed to fetch header by number (latest): %w", err)
 	}
 
 	if header == nil || header.Number == nil {
@@ -131,7 +141,7 @@ func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*eth
 	}
 
 	if f.criteria.ToBlock.Int64()-f.criteria.FromBlock.Int64() > blockLimit {
-		return nil, errors.Errorf("maximum [from, to] blocks distance: %d", blockLimit)
+		return nil, fmt.Errorf("maximum [from, to] blocks distance: %d", blockLimit)
 	}
 
 	// check bounds
@@ -145,19 +155,25 @@ func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*eth
 	to := f.criteria.ToBlock.Int64()
 
 	for height := from; height <= to; height++ {
-		bloom, err := f.backend.BlockBloom(&height)
+		blockRes, err := f.backend.GetTendermintBlockResultByNumber(&height)
+		if err != nil {
+			f.logger.Debug("failed to fetch block result from Tendermint", "height", height, "error", err.Error())
+			return nil, nil
+		}
+
+		bloom, err := f.backend.BlockBloom(blockRes)
 		if err != nil {
 			return nil, err
 		}
 
-		filtered, err := f.blockLogs(height, bloom)
+		filtered, err := f.blockLogs(blockRes, bloom)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to fetch block by number %d", height)
 		}
 
 		// check logs limit
 		if len(logs)+len(filtered) > logLimit {
-			return nil, errors.Errorf("query returned more than %d results", logLimit)
+			return nil, fmt.Errorf("query returned more than %d results", logLimit)
 		}
 		logs = append(logs, filtered...)
 	}
@@ -165,16 +181,14 @@ func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*eth
 }
 
 // blockLogs returns the logs matching the filter criteria within a single block.
-func (f *Filter) blockLogs(height int64, bloom ethtypes.Bloom) ([]*ethtypes.Log, error) {
+func (f *Filter) blockLogs(blockRes *tmrpctypes.ResultBlockResults, bloom ethtypes.Bloom) ([]*ethtypes.Log, error) {
 	if !bloomFilter(bloom, f.criteria.Addresses, f.criteria.Topics) {
 		return []*ethtypes.Log{}, nil
 	}
 
-	// DANGER: do not call GetLogs(header.Hash())
-	// eth header's hash doesn't match tm block hash
-	logsList, err := f.backend.GetLogsByHeight(&height)
+	logsList, err := backend.GetLogsFromBlockResults(blockRes)
 	if err != nil {
-		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", height)
+		return []*ethtypes.Log{}, errors.Wrapf(err, "failed to fetch logs block number %d", blockRes.Height)
 	}
 
 	unfiltered := make([]*ethtypes.Log, 0)
