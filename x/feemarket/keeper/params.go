@@ -31,11 +31,7 @@ func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
 		return nil
 	}
 
-	baseFee := params.BaseFee
-
-	baseFeeBig := baseFee.BigInt()
-
-	return baseFeeBig
+	return params.BaseFee.BigInt()
 }
 
 // SetBaseFee set's the base fee in the paramSpace
