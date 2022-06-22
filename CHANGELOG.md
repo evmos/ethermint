@@ -41,7 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (evm) [\#1128](https://github.com/tharsis/ethermint/pull/1128) Clear tx logs if tx failed in post processing hooks
-* (evm) [tharsis#1124](https://github.com/tharsis/ethermint/pull/1124) Reject non-replay-protected tx in `AnteHandler` to prevent replay attack
+* (evm) [\#1124](https://github.com/tharsis/ethermint/pull/1124) Reject non-replay-protected tx in `AnteHandler` to prevent replay attack
 
 ### API Breaking
 
@@ -50,13 +50,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (feemarket) [\#1120](https://github.com/evmos/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
+* (feemarket) [\#1135](https://github.com/evmos/ethermint/pull/1135) Set lower bound of base fee to min gas price param
 * (evm) [\#1142](https://github.com/evmos/ethermint/pull/1142) Rename `RejectUnprotectedTx` to `AllowUnprotectedTxs` for consistency with go-ethereum.
-* (feemarket) [tharsis#1120](https://github.com/evmos/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
 
 ### Bug Fixes
 
-* (evm) [tharsis#1118](https://github.com/evmos/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
-* (rpc) [tharsis#1138](https://github.com/evmos/ethermint/pull/1138) Fix GasPrice calculation with relation to `MinGasPrice`
+* (evm) [\#1118](https://github.com/evmos/ethermint/pull/1118) Fix `Type()` `Account` method `EmptyCodeHash` comparison
+* (rpc) [\#1138](https://github.com/evmos/ethermint/pull/1138) Fix GasPrice calculation with relation to `MinGasPrice`
 
 ## [v0.16.0] - 2022-06-06
 
