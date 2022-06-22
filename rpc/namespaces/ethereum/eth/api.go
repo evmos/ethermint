@@ -798,8 +798,8 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 
 	baseFee, err := e.backend.BaseFee(blockRes)
 	if err != nil {
-		// tolerate the error for pruned node.
-		e.logger.Error("fetch basefee failed, node is pruned?", "height", block.Block.Height, "error", err)
+		// handle the error for pruned node.
+		e.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", block.Block.Height, "error", err)
 	}
 
 	return rpctypes.NewTransactionFromMsg(
