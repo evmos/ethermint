@@ -638,7 +638,15 @@ func (b *Backend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, e
 		return common.Hash{}, err
 	}
 
-	txHash := msg.AsTransaction().Hash()
+	ethTx := msg.AsTransaction()
+
+	// check the local node config in case unprotected txs are disabled
+	if !b.UnprotectedAllowed() && !ethTx.Protected() {
+		// Ensure only eip155 signed transactions are submitted if EIP155Required is set.
+		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
+	}
+
+	txHash := ethTx.Hash()
 
 	// Broadcast transaction in sync mode (default)
 	// NOTE: If error is encountered on the node, the broadcast will not return an error
@@ -955,4 +963,10 @@ func (b *Backend) GetEthereumMsgsFromTendermintBlock(resBlock *tmrpctypes.Result
 	}
 
 	return result
+}
+
+// UnprotectedAllowed returns the node configuration value for allowing
+// unprotected transactions (i.e not replay-protected)
+func (b Backend) UnprotectedAllowed() bool {
+	return b.allowUnprotectedTxs
 }
