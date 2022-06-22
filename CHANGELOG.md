@@ -50,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (feemarket) [tharsis#1120](https://github.com/evmos/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
+* (feemarket) [tharsis#1135](https://github.com/evmos/ethermint/pull/1135) Set lower bound of base fee to min gas price param
 
 ### Bug Fixes
 
