@@ -24,8 +24,9 @@ message Params {
     (gogoproto.moretags) = "yaml:\"chain_config\"",
     (gogoproto.nullable) = false
   ];
-  // reject replay-unprotected transactions
-  bool reject_unprotected_tx = 6;
+  // Allow unprotected transactions defines if replay-protected (i.e non EIP155 
+  // signed) transactions can be executed on the state machine.
+  bool allow_unprotected_txs = 6;
 }
 
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values

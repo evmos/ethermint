@@ -50,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [\#1142](https://github.com/evmos/ethermint/pull/1142) Rename `RejectUnprotectedTx` to `AllowUnprotectedTxs` for consistency with go-ethereum.
 * (feemarket) [tharsis#1120](https://github.com/evmos/ethermint/pull/1120) Make `min-gas-multiplier` parameter accept zero value
 
 ### Bug Fixes
