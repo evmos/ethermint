@@ -10,9 +10,12 @@ on:
   schedule:
     - cron: '0 0 * * 0'
 jobs:
+  # Update from: https://semgrep.dev/docs/semgrep-ci/sample-ci-configs/#github-actions
   semgrep:
     name: Scan
     runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
     if: (github.actor != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@v3
@@ -26,12 +29,11 @@ jobs:
             **/*.sol
             go.mod
             go.sum
-      - uses: returntocorp/semgrep-action@v1
-        with:
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-           # Upload findings to GitHub Advanced Security Dashboard [step 1/2]
-          # See also the next step.
-          generateSarif: "1"
+      - uses: actions/checkout@v3
+      - run: semgrep scan --sarif --output=semgrep.sarif
+        env:
+          # Upload findings to GitHub Advanced Security Dashboard [step 1/2]
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         if: "env.GIT_DIFF_FILTERED != ''"
       # Upload findings to GitHub Advanced Security Dashboard [step 2/2]
       - name: Upload SARIF file
