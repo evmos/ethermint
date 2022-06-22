@@ -525,6 +525,12 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 		return common.Hash{}, err
 	}
 
+	// check the local node config in case unprotected txs are disabled
+	if !e.backend.UnprotectedAllowed() && !tx.Protected() {
+		// Ensure only eip155 signed transactions are submitted if EIP155Required is set.
+		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
+	}
+
 	ethereumTx := &evmtypes.MsgEthereumTx{}
 	if err := ethereumTx.FromEthereumTx(tx); err != nil {
 		e.logger.Error("transaction converting failed", "error", err.Error())
