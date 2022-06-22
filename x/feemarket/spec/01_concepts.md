@@ -39,7 +39,7 @@ In EIP-1559, the `max_priority_fee_per_gas`, often referred to as `tip`, is an a
 
 In the Cosmos SDK, however, there is no notion of prioritization. Thus the tip for an EIP-1559 transaction on Ethermint should be zero (`MaxPriorityFeePerGas` JSON-RPC endpoint returns `0`).
 
-## Effective Gas price TODO
+## Effective Gas price
 
 For EIP-1559 transactions (dynamic fee transactions) the effective gas price descibes the maximum gas price that a transaction is willing to provide. It is derived from the transaction arguments and the base fee parameter. Depending on which one is smaller, the effective gas price is either the `baseFee + tip` or the `gasFeeCap`
 
