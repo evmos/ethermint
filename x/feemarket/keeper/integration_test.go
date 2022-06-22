@@ -410,10 +410,9 @@ var _ = Describe("Feemarket", func() {
 							).To(BeTrue(), res.GetLog())
 						},
 						// Note that the baseFee is not 10_000_000_000 anymore but updates to 8_750_000_000 because of the s.Commit
-						// TODO
-						// Entry("legacy tx", func() txParams {
-						// 	return txParams{big.NewInt(baseFee - 1_000_000_000), nil, nil, nil}
-						// }),
+						Entry("legacy tx", func() txParams {
+							return txParams{big.NewInt(baseFee - 2_000_000_000), nil, nil, nil}
+						}),
 						Entry("dynamic tx", func() txParams {
 							return txParams{nil, big.NewInt(baseFee - 2_000_000_000), big.NewInt(0), &ethtypes.AccessList{}}
 						}),
