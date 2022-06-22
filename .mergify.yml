@@ -4,7 +4,7 @@ queue_rules:
       - "#approved-reviews-by>1"
 
 pull_request_rules:
-  - name: automerge to the base branch with label automerge and branch protection passing
+  - name: automerge to main with label "automerge" and branch protection passing
     conditions:
       - "#approved-reviews-by>1"
       - base=main
@@ -12,22 +12,15 @@ pull_request_rules:
     actions:
       queue:
         name: default
-      merge:
         method: squash
-        commit_message: title+body
-  - name: backport patches to v0.9.x branch
+        commit_message_template: |
+          {{ title }} (#{{ number }})
+          {{ body }}
+  - name: backport patches to v0.16.x branch
     conditions:
       - base=main
-      - label=backport/0.9.x
+      - label=backport/0.16.x
     actions:
       backport:
         branches:
-          - release/v0.9.x
-  - name: backport patches to v0.7.x branch
-    conditions:
-      - base=main
-      - label=backport/0.7.x
-    actions:
-      backport:
-        branches:
-          - release/v0.7.x
+          - release/v0.16.x

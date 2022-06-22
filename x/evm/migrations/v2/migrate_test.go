@@ -10,12 +10,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/tharsis/ethermint/encoding"
+	"github.com/evmos/ethermint/encoding"
 
-	"github.com/tharsis/ethermint/app"
-	v2 "github.com/tharsis/ethermint/x/evm/migrations/v2"
-	v2types "github.com/tharsis/ethermint/x/evm/migrations/v2/types"
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/app"
+	v2 "github.com/evmos/ethermint/x/evm/migrations/v2"
+	v2types "github.com/evmos/ethermint/x/evm/migrations/v2/types"
+	"github.com/evmos/ethermint/x/evm/types"
 )
 
 func TestMigrateStore(t *testing.T) {
@@ -32,7 +32,7 @@ func TestMigrateStore(t *testing.T) {
 
 	require.Panics(t, func() {
 		var result bool
-		paramstore.Get(ctx, types.ParamStoreKeyRejectUnprotectedTx, &result)
+		paramstore.Get(ctx, types.ParamStoreKeyAllowUnprotectedTxs, &result)
 	})
 
 	paramstore = paramtypes.NewSubspace(
@@ -42,6 +42,6 @@ func TestMigrateStore(t *testing.T) {
 	require.NoError(t, err)
 
 	var result bool
-	paramstore.Get(ctx, types.ParamStoreKeyRejectUnprotectedTx, &result)
-	require.Equal(t, types.DefaultRejectUnprotectedTx, result)
+	paramstore.Get(ctx, types.ParamStoreKeyAllowUnprotectedTxs, &result)
+	require.Equal(t, types.DefaultAllowUnprotectedTxs, result)
 }

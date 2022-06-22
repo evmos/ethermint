@@ -9,10 +9,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
-	ethermint "github.com/tharsis/ethermint/types"
-	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
-	"github.com/tharsis/ethermint/x/evm/statedb"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	ethermint "github.com/evmos/ethermint/types"
+	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
+	"github.com/evmos/ethermint/x/evm/statedb"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -51,8 +51,10 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		}
 
 		ethTx := msgEthTx.AsTransaction()
-		if params.RejectUnprotectedTx && !ethTx.Protected() {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "eth tx is not replay-protected")
+		if !params.AllowUnprotectedTxs && !ethTx.Protected() {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrNotSupported,
+				"rejected unprotected Ethereum txs. Please EIP155 sign your transaction to protect it against replay-attacks")
 		}
 
 		sender, err := signer.Sender(ethTx)
