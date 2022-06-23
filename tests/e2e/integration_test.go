@@ -730,6 +730,8 @@ func (s *IntegrationTestSuite) TestWeb3Sha3() {
 	}
 }
 
+/*
+TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/12
 func (s *IntegrationTestSuite) TestPendingTransactionFilter() {
 	var (
 		filterID     string
@@ -755,6 +757,7 @@ func (s *IntegrationTestSuite) TestPendingTransactionFilter() {
 	s.Require().NoError(err)
 	s.Require().Equal([]common.Hash{signedTx.Hash()}, filterResult)
 }
+*/
 
 // TODO: add transactionIndex tests once we have OpenRPC interfaces
 func (s *IntegrationTestSuite) TestBatchETHTransactions() {
