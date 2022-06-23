@@ -50,7 +50,7 @@ jobs:
           platforms: linux/amd64, linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          file: docker/Dockerfile
+          file: docker/fast-build.Dockerfile
 
   test:
     if: github.event.pull_request.head.repo.full_name == github.repository
