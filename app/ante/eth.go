@@ -185,7 +185,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		if err != nil {
 			return ctx, sdkerrors.Wrap(err, "failed to unpack tx data")
 		}
-		gasWanted += txData.GetGas()
 
 		if ctx.IsCheckTx() {
 			// We can't trust the tx gas limit, because we'll refund the unused gas.
