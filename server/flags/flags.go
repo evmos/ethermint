@@ -24,28 +24,32 @@ const (
 	GRPCWebAddress = "grpc-web.address"
 )
 
-// RPCEnable Defines if Cosmos-sdk REST server should be enabled
+// Cosmos API flags
 const (
-	RPCEnable = "api.enable"
+	RPCEnable         = "api.enable"
+	EnabledUnsafeCors = "api.enabled-unsafe-cors"
 )
 
 // JSON-RPC flags
 const (
-	JSONRPCEnable        = "json-rpc.enable"
-	JSONRPCAPI           = "json-rpc.api"
-	JSONRPCAddress       = "json-rpc.address"
-	JSONWsAddress        = "json-rpc.ws-address"
-	JSONRPCGasCap        = "json-rpc.gas-cap"
-	JSONRPCEVMTimeout    = "json-rpc.evm-timeout"
-	JSONRPCTxFeeCap      = "json-rpc.txfee-cap"
-	JSONRPCFilterCap     = "json-rpc.filter-cap"
-	JSONRPCLogsCap       = "json-rpc.logs-cap"
-	JSONRPCBlockRangeCap = "json-rpc.block-range-cap"
+	JSONRPCEnable          = "json-rpc.enable"
+	JSONRPCAPI             = "json-rpc.api"
+	JSONRPCAddress         = "json-rpc.address"
+	JSONWsAddress          = "json-rpc.ws-address"
+	JSONRPCGasCap          = "json-rpc.gas-cap"
+	JSONRPCEVMTimeout      = "json-rpc.evm-timeout"
+	JSONRPCTxFeeCap        = "json-rpc.txfee-cap"
+	JSONRPCFilterCap       = "json-rpc.filter-cap"
+	JSONRPCLogsCap         = "json-rpc.logs-cap"
+	JSONRPCBlockRangeCap   = "json-rpc.block-range-cap"
+	JSONRPCHTTPTimeout     = "json-rpc.http-timeout"
+	JSONRPCHTTPIdleTimeout = "json-rpc.http-idle-timeout"
 )
 
 // EVM flags
 const (
-	EVMTracer = "evm.tracer"
+	EVMTracer         = "evm.tracer"
+	EVMMaxTxGasWanted = "evm.max-tx-gas-wanted"
 )
 
 // TLS flags

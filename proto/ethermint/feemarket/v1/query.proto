@@ -12,17 +12,17 @@ option go_package = "github.com/tharsis/ethermint/x/feemarket/types";
 service Query {
   // Params queries the parameters of x/feemarket module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/feemarket/evm/v1/params";
+    option (google.api.http).get = "/ethermint/feemarket/v1/params";
   }
 
   // BaseFee queries the base fee of the parent block of the current block.
   rpc BaseFee(QueryBaseFeeRequest) returns (QueryBaseFeeResponse) {
-    option (google.api.http).get = "/feemarket/evm/v1/base_fee";
+    option (google.api.http).get = "/ethermint/feemarket/v1/base_fee";
   }
 
   // BlockGas queries the gas used at a given block height
   rpc BlockGas(QueryBlockGasRequest) returns (QueryBlockGasResponse) {
-    option (google.api.http).get = "/feemarket/evm/v1/block_gas";
+    option (google.api.http).get = "/ethermint/feemarket/v1/block_gas";
   }
 }
 

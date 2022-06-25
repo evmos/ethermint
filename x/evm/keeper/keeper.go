@@ -221,11 +221,11 @@ func (k *Keeper) SetHooks(eh types.EvmHooks) *Keeper {
 }
 
 // PostTxProcessing delegate the call to the hooks. If no hook has been registered, this function returns with a `nil` error
-func (k *Keeper) PostTxProcessing(ctx sdk.Context, from common.Address, to *common.Address, receipt *ethtypes.Receipt) error {
+func (k *Keeper) PostTxProcessing(ctx sdk.Context, msg core.Message, receipt *ethtypes.Receipt) error {
 	if k.hooks == nil {
 		return nil
 	}
-	return k.hooks.PostTxProcessing(ctx, from, to, receipt)
+	return k.hooks.PostTxProcessing(ctx, msg, receipt)
 }
 
 // Tracer return a default vm.Tracer based on current keeper state
@@ -287,11 +287,11 @@ func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	return coin.Amount.BigInt()
 }
 
-// BaseFee returns current base fee, return values:
+// GetBaseFee returns current base fee, return values:
 // - `nil`: london hardfork not enabled.
 // - `0`: london hardfork enabled but feemarket is not enabled.
 // - `n`: both london hardfork and feemarket are enabled.
-func (k Keeper) BaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
+func (k Keeper) GetBaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
 	if !types.IsLondon(ethCfg, ctx.BlockHeight()) {
 		return nil
 	}
@@ -301,6 +301,12 @@ func (k Keeper) BaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
 		baseFee = big.NewInt(0)
 	}
 	return baseFee
+}
+
+// GetMinGasMultiplier returns the MinGasMultiplier param from the fee market module
+func (k Keeper) GetMinGasMultiplier(ctx sdk.Context) sdk.Dec {
+	fmkParmas := k.feeMarketKeeper.GetParams(ctx)
+	return fmkParmas.MinGasMultiplier
 }
 
 // ResetTransientGasUsed reset gas used to prepare for execution of current cosmos tx, called in ante handler.

@@ -46,7 +46,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 		return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
 	}
 
-	baseFee := k.BaseFee(ctx, ethCfg)
+	baseFee := k.GetBaseFee(ctx, ethCfg)
 	return &types.EVMConfig{
 		Params:      params,
 		ChainConfig: ethCfg,
@@ -55,7 +55,7 @@ func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
 	}, nil
 }
 
-// TxConfig load `TxConfig` from current transient storage
+// TxConfig loads `TxConfig` from current transient storage
 func (k *Keeper) TxConfig(ctx sdk.Context, txHash common.Hash) statedb.TxConfig {
 	return statedb.NewTxConfig(
 		common.BytesToHash(ctx.HeaderHash()), // BlockHash
@@ -235,42 +235,44 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		bloomReceipt = ethtypes.BytesToBloom(bloom.Bytes())
 	}
 
+	cumulativeGasUsed := res.GasUsed
+	if ctx.BlockGasMeter() != nil {
+		limit := ctx.BlockGasMeter().Limit()
+		consumed := ctx.BlockGasMeter().GasConsumed()
+		cumulativeGasUsed = uint64(math.Min(float64(cumulativeGasUsed+consumed), float64(limit)))
+	}
+
+	var contractAddr common.Address
+	if msg.To() == nil {
+		contractAddr = crypto.CreateAddress(msg.From(), msg.Nonce())
+	}
+
+	receipt := &ethtypes.Receipt{
+		Type:              tx.Type(),
+		PostState:         nil, // TODO: intermediate state root
+		CumulativeGasUsed: cumulativeGasUsed,
+		Bloom:             bloomReceipt,
+		Logs:              logs,
+		TxHash:            txConfig.TxHash,
+		ContractAddress:   contractAddr,
+		GasUsed:           res.GasUsed,
+		BlockHash:         txConfig.BlockHash,
+		BlockNumber:       big.NewInt(ctx.BlockHeight()),
+		TransactionIndex:  txConfig.TxIndex,
+	}
+
 	if !res.Failed() {
-		cumulativeGasUsed := res.GasUsed
-		if ctx.BlockGasMeter() != nil {
-			limit := ctx.BlockGasMeter().Limit()
-			consumed := ctx.BlockGasMeter().GasConsumed()
-			cumulativeGasUsed = uint64(math.Min(float64(cumulativeGasUsed+consumed), float64(limit)))
-		}
-
-		var contractAddr common.Address
-		if msg.To() == nil {
-			contractAddr = crypto.CreateAddress(msg.From(), msg.Nonce())
-		}
-
-		receipt := &ethtypes.Receipt{
-			Type:              tx.Type(),
-			PostState:         nil, // TODO: intermediate state root
-			Status:            ethtypes.ReceiptStatusSuccessful,
-			CumulativeGasUsed: cumulativeGasUsed,
-			Bloom:             bloomReceipt,
-			Logs:              logs,
-			TxHash:            txConfig.TxHash,
-			ContractAddress:   contractAddr,
-			GasUsed:           res.GasUsed,
-			BlockHash:         txConfig.BlockHash,
-			BlockNumber:       big.NewInt(ctx.BlockHeight()),
-			TransactionIndex:  txConfig.TxIndex,
-		}
-
+		receipt.Status = ethtypes.ReceiptStatusSuccessful
 		// Only call hooks if tx executed successfully.
-		if err = k.PostTxProcessing(tmpCtx, msg.From(), tx.To(), receipt); err != nil {
+		if err = k.PostTxProcessing(tmpCtx, msg, receipt); err != nil {
 			// If hooks return error, revert the whole tx.
 			res.VmError = types.ErrPostTxProcessing.Error()
 			k.Logger(ctx).Error("tx post processing failed", "error", err)
 		} else if commit != nil {
 			// PostTxProcessing is successful, commit the tmpCtx
 			commit()
+			// Since the post processing can alter the log, we need to update the result
+			res.Logs = types.NewLogsFromEth(receipt.Logs)
 			ctx.EventManager().EmitEvents(tmpCtx.EventManager().Events())
 		}
 	}
@@ -280,11 +282,10 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		return nil, sdkerrors.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
-	if len(logs) > 0 {
+	if len(receipt.Logs) > 0 {
 		// Update transient block bloom filter
-		k.SetBlockBloomTransient(ctx, bloom)
-
-		k.SetLogSizeTransient(ctx, uint64(txConfig.LogIndex)+uint64(len(logs)))
+		k.SetBlockBloomTransient(ctx, receipt.Bloom.Big())
+		k.SetLogSizeTransient(ctx, uint64(txConfig.LogIndex)+uint64(len(receipt.Logs)))
 	}
 
 	k.SetTxIndexTransient(ctx, uint64(txConfig.TxIndex)+1)
@@ -397,12 +398,12 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	if msg.Gas() < leftoverGas {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
-	gasUsed := msg.Gas() - leftoverGas
-	refund := GasToRefund(stateDB.GetRefund(), gasUsed, refundQuotient)
-	if refund > gasUsed {
+	temporaryGasUsed := msg.Gas() - leftoverGas
+	refund := GasToRefund(stateDB.GetRefund(), temporaryGasUsed, refundQuotient)
+	if refund > temporaryGasUsed {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
-	gasUsed -= refund
+	temporaryGasUsed -= refund
 
 	// EVM execution error needs to be available for the JSON-RPC client
 	var vmError string
@@ -416,6 +417,14 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 			return nil, sdkerrors.Wrap(err, "failed to commit stateDB")
 		}
 	}
+
+	// calculate a minimum amount of gas to be charged to sender if GasLimit
+	// is considerably higher than GasUsed to stay more aligned with Tendermint gas mechanics
+	// for more info https://github.com/tharsis/ethermint/issues/1085
+	gasLimit := sdk.NewDec(int64(msg.Gas()))
+	minGasMultiplier := k.GetMinGasMultiplier(ctx)
+	minimumGasUsed := gasLimit.Mul(minGasMultiplier)
+	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
 
 	return &types.MsgEthereumTxResponse{
 		GasUsed: gasUsed,

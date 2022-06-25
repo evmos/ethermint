@@ -6,16 +6,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/tharsis/ethermint/app/ante"
+	"github.com/tharsis/ethermint/server/config"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/statedb"
 	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
-
-func nextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
-	return ctx, nil
-}
 
 func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	dec := ante.NewEthSigVerificationDecorator(suite.app.EvmKeeper)
@@ -45,7 +42,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, NextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -58,7 +55,7 @@ func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 
 func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 	dec := ante.NewEthAccountVerificationDecorator(
-		suite.app.AccountKeeper, suite.app.BankKeeper, suite.app.EvmKeeper,
+		suite.app.AccountKeeper, suite.app.EvmKeeper,
 	)
 
 	addr := tests.GenerateAddress()
@@ -133,7 +130,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 			tc.malleate()
 			suite.Require().NoError(vmdb.Commit())
 
-			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(tc.checkTx), tc.tx, false, NextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -189,7 +186,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			tc.malleate()
-			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsReCheckTx(tc.reCheckTx), tc.tx, false, NextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -201,7 +198,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 }
 
 func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
-	dec := ante.NewEthGasConsumeDecorator(suite.app.EvmKeeper)
+	dec := ante.NewEthGasConsumeDecorator(suite.app.EvmKeeper, config.DefaultMaxTxGasWanted)
 
 	addr := tests.GenerateAddress()
 
@@ -268,7 +265,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		{
 			"success",
 			tx2,
-			tx2GasLimit,
+			config.DefaultMaxTxGasWanted, // it's capped
 			func() {
 				vmdb.AddBalance(addr, big.NewInt(1000000))
 
@@ -286,12 +283,12 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 
 			if tc.expPanic {
 				suite.Require().Panics(func() {
-					_, _ = dec.AnteHandle(suite.ctx.WithIsCheckTx(true).WithGasMeter(sdk.NewGasMeter(1)), tc.tx, false, nextFn)
+					_, _ = dec.AnteHandle(suite.ctx.WithIsCheckTx(true).WithGasMeter(sdk.NewGasMeter(1)), tc.tx, false, NextFn)
 				})
 				return
 			}
 
-			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true).WithGasMeter(sdk.NewInfiniteGasMeter()), tc.tx, false, nextFn)
+			ctx, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true).WithGasMeter(sdk.NewInfiniteGasMeter()), tc.tx, false, NextFn)
 			if tc.expPass {
 				suite.Require().NoError(err)
 			} else {
@@ -375,7 +372,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 			tc.malleate()
 			suite.Require().NoError(vmdb.Commit())
 
-			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx.WithIsCheckTx(true), tc.tx, false, NextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -454,12 +451,12 @@ func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
 
 			if tc.expPanic {
 				suite.Require().Panics(func() {
-					_, _ = dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+					_, _ = dec.AnteHandle(suite.ctx, tc.tx, false, NextFn)
 				})
 				return
 			}
 
-			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, NextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -496,7 +493,7 @@ func (suite AnteTestSuite) TestEthSetupContextDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, nextFn)
+			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, NextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)

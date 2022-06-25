@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.17 AS build-env
+FROM golang:1.17 AS build-env
 
 # Install dependencies
 RUN apt-get update
@@ -14,10 +14,10 @@ COPY . .
 RUN go mod download
 
 # Build Delve
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH go install github.com/go-delve/delve/cmd/dlv@latest
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Make the binary
-RUN env GOOS=$TARGETOS GOARCH=$TARGETARCH make build 
+RUN LEDGER_ENABLED=false make build 
 
 # Final image
 FROM debian
@@ -25,7 +25,6 @@ FROM debian
 # Install ca-certificates
 RUN apt-get update
 RUN apt-get install jq -y
-
 
 WORKDIR /root
 

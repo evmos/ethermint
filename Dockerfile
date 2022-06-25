@@ -17,7 +17,7 @@ COPY . .
 RUN make build
 
 # Final image
-FROM alpine
+FROM alpine:3.16.0
 
 # Install ca-certificates
 RUN apk add --update ca-certificates jq

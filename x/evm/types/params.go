@@ -18,6 +18,9 @@ const (
 	DefaultEVMDenom = types.AttoPhoton
 )
 
+// DefaultMinGasMultiplier is 0.5 or 50%
+var DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
+
 // Parameter keys
 var (
 	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
