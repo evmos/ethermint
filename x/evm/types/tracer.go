@@ -31,7 +31,7 @@ func NewTracer(tracer string, msg core.Message, cfg *params.ChainConfig, height 
 
 	switch tracer {
 	case TracerAccessList:
-		preCompiles := vm.ActivePrecompiles(cfg.Rules(big.NewInt(height), cfg.MergeForkBlock != nil))
+		preCompiles := vm.ActivePrecompiles(cfg.Rules(big.NewInt(height), cfg.MergeNetsplitBlock != nil))
 		return logger.NewAccessListTracer(msg.AccessList(), msg.From(), *msg.To(), preCompiles)
 	case TracerJSON:
 		return logger.NewJSONLogger(logCfg, os.Stderr)
@@ -156,3 +156,9 @@ func (dt NoOpTracer) CaptureEnter(typ vm.OpCode, from common.Address, to common.
 
 // CaptureExit implements vm.Tracer interface
 func (dt NoOpTracer) CaptureExit(output []byte, gasUsed uint64, err error) {}
+
+// CaptureTxStart implements vm.Tracer interface
+func (dt NoOpTracer) CaptureTxStart(gasLimit uint64) {}
+
+// CaptureTxEnd implements vm.Tracer interface
+func (dt NoOpTracer) CaptureTxEnd(restGas uint64) {}
