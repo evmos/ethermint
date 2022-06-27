@@ -22,7 +22,7 @@ func newLegacyTx(tx *ethtypes.Transaction) (*LegacyTx, error) {
 	}
 
 	if tx.Value() != nil {
-		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		amountInt, err := types.SafeNewIntFromBigInt(tx.Value())
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +30,7 @@ func newLegacyTx(tx *ethtypes.Transaction) (*LegacyTx, error) {
 	}
 
 	if tx.GasPrice() != nil {
-		gasPriceInt, err := SafeNewIntFromBigInt(tx.GasPrice())
+		gasPriceInt, err := types.SafeNewIntFromBigInt(tx.GasPrice())
 		if err != nil {
 			return nil, err
 		}
@@ -166,10 +166,10 @@ func (tx LegacyTx) Validate() error {
 	if gasPrice.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
-	if !IsValidInt256(gasPrice) {
+	if !types.IsValidInt256(gasPrice) {
 		return sdkerrors.Wrap(ErrInvalidGasPrice, "out of bound")
 	}
-	if !IsValidInt256(tx.Fee()) {
+	if !types.IsValidInt256(tx.Fee()) {
 		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
 	}
 
@@ -178,7 +178,7 @@ func (tx LegacyTx) Validate() error {
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
-	if !IsValidInt256(amount) {
+	if !types.IsValidInt256(amount) {
 		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
 	}
 

@@ -5,8 +5,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/evmos/ethermint/types"
 )
 
@@ -23,7 +25,7 @@ func newAccessListTx(tx *ethtypes.Transaction) (*AccessListTx, error) {
 	}
 
 	if tx.Value() != nil {
-		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		amountInt, err := types.SafeNewIntFromBigInt(tx.Value())
 		if err != nil {
 			return nil, err
 		}
@@ -31,7 +33,7 @@ func newAccessListTx(tx *ethtypes.Transaction) (*AccessListTx, error) {
 	}
 
 	if tx.GasPrice() != nil {
-		gasPriceInt, err := SafeNewIntFromBigInt(tx.GasPrice())
+		gasPriceInt, err := types.SafeNewIntFromBigInt(tx.GasPrice())
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +185,7 @@ func (tx AccessListTx) Validate() error {
 	if gasPrice == nil {
 		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
 	}
-	if !IsValidInt256(gasPrice) {
+	if !types.IsValidInt256(gasPrice) {
 		return sdkerrors.Wrap(ErrInvalidGasPrice, "out of bound")
 	}
 
@@ -196,11 +198,11 @@ func (tx AccessListTx) Validate() error {
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
-	if !IsValidInt256(amount) {
+	if !types.IsValidInt256(amount) {
 		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
 	}
 
-	if !IsValidInt256(tx.Fee()) {
+	if !types.IsValidInt256(tx.Fee()) {
 		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
 	}
 
