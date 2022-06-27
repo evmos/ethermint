@@ -206,16 +206,6 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 			true,
 			params.TxGas + params.TxDataNonZeroGasFrontier*1,
 		},
-		// we are not able to test the ErrGasUintOverflow due to RAM limitation
-		// {
-		// 	"with big data size overflow",
-		// 	make([]byte, 271300000000000000),
-		// 	nil,
-		// 	1,
-		// 	false,
-		// 	false,
-		// 	0,
-		// },
 		{
 			"no data, one accesslist, not contract creation, not homestead, not istanbul",
 			nil,

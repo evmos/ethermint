@@ -68,7 +68,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	if feeAmt.Sign() == 0 {
 		// zero fee, no need to deduct
-		return sdk.NewCoins(), nil
+		return sdk.Coins{}, nil
 	}
 
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(feeAmt))}
