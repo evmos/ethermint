@@ -358,7 +358,7 @@ func jsonNameFromTag(tag reflect.StructTag) string {
 func sanitizeTypedef(str string) string {
 	buf := new(bytes.Buffer)
 	parts := strings.Split(str, ".")
-	caser := cases.Title(language.English)
+	caser := cases.Title(language.English, cases.NoLower)
 
 	for _, part := range parts {
 		if part == "_" {
