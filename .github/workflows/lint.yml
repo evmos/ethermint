@@ -50,7 +50,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/**.sol
       - uses: actions/setup-node@v3
+        # Check only if there are differences in the source code
+        if: env.GIT_DIFF
       - run: npm install -g solhint
-      - run: solhint --version
+        # Check only if there are differences in the source code
+        if: env.GIT_DIFF
       - run: solhint '**/**.sol'
+        # Check only if there are differences in the source code
+        if: env.GIT_DIFF
