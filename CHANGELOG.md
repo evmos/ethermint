@@ -59,7 +59,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [\#1138](https://github.com/evmos/ethermint/pull/1138) Fix GasPrice calculation with relation to `MinGasPrice`
 
-
 ## [v0.16.1] - 2022-06-09
 
 ### Improvements
