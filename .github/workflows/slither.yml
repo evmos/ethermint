@@ -1,0 +1,40 @@
+name: Slither Analysis
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  analyze:
+    name: Run Slither
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Get Diff
+        uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/*.sol
+      - name: Node dependencies Install
+        run: |
+          cd contracts && npm i
+          cp -r node_modules/@openzeppelin .
+      - name: Run Slither Action
+        uses: crytic/slither-action@v0.1.1
+        continue-on-error: true
+        id: slither
+        with:
+          sarif: slither.sarif
+          target: contracts/
+        if: "env.GIT_DIFF"
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ${{ steps.slither.outputs.sarif }}
+        if: "env.GIT_DIFF"

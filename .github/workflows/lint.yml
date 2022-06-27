@@ -45,3 +45,12 @@ jobs:
       - uses: articulate/actions-markdownlint@v1.1.0
         # Check only if there are differences in the source code
         if: env.GIT_DIFF
+  solhint:
+    name: runner / solhint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: npm install -g solhint
+      - run: solhint --version
+      - run: solhint '**/**.sol'
