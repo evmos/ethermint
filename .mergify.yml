@@ -16,6 +16,13 @@ pull_request_rules:
         commit_message_template: |
           {{ title }} (#{{ number }})
           {{ body }}
+  - name: backport patches to main branch
+    conditions:
+      - label=backport/main
+    actions:
+      backport:
+        branches:
+          - main
   - name: backport patches to v0.16.x branch
     conditions:
       - base=main

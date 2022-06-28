@@ -8,6 +8,9 @@ import (
 	"reflect"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -355,6 +358,7 @@ func jsonNameFromTag(tag reflect.StructTag) string {
 func sanitizeTypedef(str string) string {
 	buf := new(bytes.Buffer)
 	parts := strings.Split(str, ".")
+	caser := cases.Title(language.English, cases.NoLower)
 
 	for _, part := range parts {
 		if part == "_" {
@@ -364,7 +368,7 @@ func sanitizeTypedef(str string) string {
 
 		subparts := strings.Split(part, "_")
 		for _, subpart := range subparts {
-			buf.WriteString(strings.Title(subpart))
+			buf.WriteString(caser.String(subpart))
 		}
 	}
 

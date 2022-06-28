@@ -15,23 +15,6 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
 
-  install-tparse:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v3
-        with:
-          go-version: 1.18
-          check-latest: true
-      - name: Display Go Version
-        run: go version
-      - name: Install tparse
-        run: |
-          export GO111MODULE="on" && go get github.com/mfridman/tparse@latest
-      - uses: actions/cache@v3
-        with:
-          path: ~/go/bin
-          key: ${{ runner.os }}-go-tparse-binary
-
   test-unit-cover:
     runs-on: ubuntu-latest
     steps:

@@ -26,7 +26,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	}
 
 	if tx.Value() != nil {
-		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		amountInt, err := types.SafeNewIntFromBigInt(tx.Value())
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +34,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	}
 
 	if tx.GasFeeCap() != nil {
-		gasFeeCapInt, err := SafeNewIntFromBigInt(tx.GasFeeCap())
+		gasFeeCapInt, err := types.SafeNewIntFromBigInt(tx.GasFeeCap())
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	}
 
 	if tx.GasTipCap() != nil {
-		gasTipCapInt, err := SafeNewIntFromBigInt(tx.GasTipCap())
+		gasTipCapInt, err := types.SafeNewIntFromBigInt(tx.GasTipCap())
 		if err != nil {
 			return nil, err
 		}
@@ -211,11 +211,11 @@ func (tx DynamicFeeTx) Validate() error {
 		return sdkerrors.Wrapf(ErrInvalidGasCap, "gas fee cap cannot be negative %s", tx.GasFeeCap)
 	}
 
-	if !IsValidInt256(tx.GetGasTipCap()) {
+	if !types.IsValidInt256(tx.GetGasTipCap()) {
 		return sdkerrors.Wrap(ErrInvalidGasCap, "out of bound")
 	}
 
-	if !IsValidInt256(tx.GetGasFeeCap()) {
+	if !types.IsValidInt256(tx.GetGasFeeCap()) {
 		return sdkerrors.Wrap(ErrInvalidGasCap, "out of bound")
 	}
 
@@ -226,7 +226,7 @@ func (tx DynamicFeeTx) Validate() error {
 		)
 	}
 
-	if !IsValidInt256(tx.Fee()) {
+	if !types.IsValidInt256(tx.Fee()) {
 		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
 	}
 
@@ -235,7 +235,7 @@ func (tx DynamicFeeTx) Validate() error {
 	if amount != nil && amount.Sign() == -1 {
 		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
-	if !IsValidInt256(amount) {
+	if !types.IsValidInt256(amount) {
 		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
 	}
 
