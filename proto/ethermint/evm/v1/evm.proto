@@ -118,7 +118,7 @@ message ChainConfig {
   // DEPRECATED: merge fork block was deprecated: https://github.com/ethereum/go-ethereum/pull/24904
   reserved 19;
   reserved "merge_fork_block";
-  //  Eip-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
+  //  EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
   string GrayGlacierBlock = 20 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags) = "yaml:\"gray_glacier_block\""
