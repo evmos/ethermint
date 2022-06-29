@@ -1,7 +1,8 @@
-package v3
+package v3_test
 
 import (
 	"fmt"
+	v3 "github.com/evmos/ethermint/x/evm/migrations/v3"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -33,11 +34,14 @@ func TestMigrateStore(t *testing.T) {
 		var preMigrationConfig types.ChainConfig
 		paramstore.Get(ctx, types.ParamStoreKeyChainConfig, &preMigrationConfig)
 	})
+	var preMigrationConfig v3types.ChainConfig
+	paramstore.Get(ctx, types.ParamStoreKeyChainConfig, &preMigrationConfig)
+	require.NotNil(t, preMigrationConfig.MergeForkBlock)
 
 	paramstore = paramtypes.NewSubspace(
 		encCfg.Marshaler, encCfg.Amino, evmKey, tEvmKey, "evm",
 	).WithKeyTable(types.ParamKeyTable())
-	err := MigrateStore(ctx, &paramstore)
+	err := v3.MigrateStore(ctx, &paramstore)
 	require.NoError(t, err)
 
 	updatedDefaultConfig := types.DefaultChainConfig()
@@ -46,8 +50,8 @@ func TestMigrateStore(t *testing.T) {
 	paramstore.Get(ctx, types.ParamStoreKeyChainConfig, &postMigrationConfig)
 	require.Equal(t, postMigrationConfig.GrayGlacierBlock, updatedDefaultConfig.GrayGlacierBlock)
 	require.Equal(t, postMigrationConfig.MergeNetsplitBlock, updatedDefaultConfig.MergeNetsplitBlock)
-	//require.Panics(t, func() {
-	//	var preMigrationConfig v3types.ChainConfig
-	//	paramstore.Get(ctx, types.ParamStoreKeyChainConfig, &preMigrationConfig)
-	//})
+	require.Panics(t, func() {
+		var preMigrationConfig v3types.ChainConfig
+		paramstore.Get(ctx, types.ParamStoreKeyChainConfig, &preMigrationConfig)
+	})
 }
