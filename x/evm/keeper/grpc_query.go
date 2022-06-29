@@ -496,7 +496,7 @@ func (k *Keeper) traceTx(
 	}
 
 	if traceConfig == nil {
-		traceConfig = &types.TraceConfig{Debug: true}
+		traceConfig = &types.TraceConfig{}
 	}
 
 	if traceConfig.Overrides != nil {
