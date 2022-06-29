@@ -119,12 +119,12 @@ message ChainConfig {
   reserved 19;
   reserved "merge_fork_block";
   //  EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
-  string GrayGlacierBlock = 20 [
+  string gray_glacier_block = 20 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags) = "yaml:\"gray_glacier_block\""
   ];
   // Virtual fork after The Merge to use as a network splitter
-  string MergeNetsplitBlock = 21 [
+  string merge_netsplit_block = 21 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags) = "yaml:\"merge_netsplit_block\""
   ];

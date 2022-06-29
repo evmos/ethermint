@@ -182,8 +182,8 @@ instead of *big.Int.
 | `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
 | `london_block` | [string](#string) |  | London switch block (nil = no fork, 0 = already on london) |
 | `arrow_glacier_block` | [string](#string) |  | Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated) |
-| `GrayGlacierBlock` | [string](#string) |  | Eip-5133 (bomb delay) switch block (nil = no fork, 0 = already activated) |
-| `MergeNetsplitBlock` | [string](#string) |  | Virtual fork after The Merge to use as a network splitter |
+| `gray_glacier_block` | [string](#string) |  | EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated) |
+| `merge_netsplit_block` | [string](#string) |  | Virtual fork after The Merge to use as a network splitter |
 
 
 
