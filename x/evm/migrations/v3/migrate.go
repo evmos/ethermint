@@ -6,7 +6,7 @@ import (
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
-// MigrateStore sets the default AllowUnprotectedTxs parameter.
+// MigrateStore sets the default for GrayGlacierBlock and MergeNetsplitBlock in ChainConfig parameter.
 func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace) error {
 	if !paramstore.HasKeyTable() {
 		ps := paramstore.WithKeyTable(types.ParamKeyTable())
@@ -20,7 +20,6 @@ func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace) error {
 	prevConfig.GrayGlacierBlock = defaultConfig.GrayGlacierBlock
 	prevConfig.MergeNetsplitBlock = defaultConfig.MergeNetsplitBlock
 
-	// add RejectUnprotected
 	paramstore.Set(ctx, types.ParamStoreKeyChainConfig, prevConfig)
 	return nil
 }
