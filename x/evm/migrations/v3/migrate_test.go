@@ -46,4 +46,8 @@ func TestMigrateStore(t *testing.T) {
 	paramstore.Get(ctx, types.ParamStoreKeyChainConfig, &postMigrationConfig)
 	require.Equal(t, postMigrationConfig.GrayGlacierBlock, updatedDefaultConfig.GrayGlacierBlock)
 	require.Equal(t, postMigrationConfig.MergeNetsplitBlock, updatedDefaultConfig.MergeNetsplitBlock)
+	//require.Panics(t, func() {
+	//	var preMigrationConfig v3types.ChainConfig
+	//	paramstore.Get(ctx, types.ParamStoreKeyChainConfig, &preMigrationConfig)
+	//})
 }
