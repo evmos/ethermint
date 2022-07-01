@@ -24,6 +24,10 @@ fee = (baseFee + priorityTip) * gasLimit
 
 , where `baseFee` is the fixed-per-block network fee per gas and `priorityTip` is an additional fee per gas that can be set optionally. Note, that both the base fee and the priority tip are a gas prices. To submit a transaction with EIP-1559, the signer needs to specify the `gasFeeCap` a maximum fee per gas they are willing to pay total and optionally the `priorityTip` , which covers both the priority fee and the block's network fee per gas (aka: base fee).
 
+::: tip
+The Cosmos SDK uses a different terminology for `gas` than Ethereum. What is called `gasLimit` on Ethereum is called `gasWanted` on Cosmos. You might encounter both terminologies on Evmos since it builds Ethereum on top of the SDK, e.g. when using different wallets like Keplr for Cosmos and Metamask for Ethereum.
+:::
+
 ## Base Fee
 
 The base fee per gas (aka base fee) is a global gas price defined at the consensus level. It is stored as a module parameter and is adjusted at the end of each block based on the total gas used in the previous block and gas target (`block gas limit / elasticity multiplier`):
