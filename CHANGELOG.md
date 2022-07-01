@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+* (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
+
 ## [v0.17.0] - 2022-06-27
 
 ### State Machine Breaking
