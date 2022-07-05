@@ -131,11 +131,11 @@ func (kv *KVIndexer) IndexBlock(blk *tmtypes.Block, txResults []*abci.ResponseDe
 			ethMsg := msg.(*evmtypes.MsgEthereumTx)
 			txHash := common.HexToHash(ethMsg.Hash)
 
-			var bz []byte
+			var txResult *ethermint.TxResult
 			if result.Code != abci.CodeTypeOK {
 				// exceeds block gas limit scenario, some old versions don't emit any events, workaround directly.
 				cumulativeGasUsed += ethMsg.GetGas()
-				bz = kv.clientCtx.Codec.MustMarshal(&ethermint.TxResult{
+				txResult = &ethermint.TxResult{
 					Height:            height,
 					TxIndex:           uint32(txIndex),
 					MsgIndex:          uint32(msgIndex),
@@ -143,7 +143,7 @@ func (kv *KVIndexer) IndexBlock(blk *tmtypes.Block, txResults []*abci.ResponseDe
 					GasUsed:           ethMsg.GetGas(),
 					CumulativeGasUsed: cumulativeGasUsed,
 					Failed:            true,
-				})
+				}
 			} else {
 				parsedTx := txs.GetTxByMsgIndex(msgIndex)
 				if parsedTx == nil {
@@ -154,7 +154,7 @@ func (kv *KVIndexer) IndexBlock(blk *tmtypes.Block, txResults []*abci.ResponseDe
 					kv.logger.Error("eth tx index don't match %d != %d\n", parsedTx.EthTxIndex, ethTxIndex)
 				}
 				cumulativeGasUsed += parsedTx.GasUsed
-				bz = kv.clientCtx.Codec.MustMarshal(&ethermint.TxResult{
+				txResult = &ethermint.TxResult{
 					Height:            height,
 					TxIndex:           uint32(txIndex),
 					MsgIndex:          uint32(msgIndex),
@@ -162,12 +162,13 @@ func (kv *KVIndexer) IndexBlock(blk *tmtypes.Block, txResults []*abci.ResponseDe
 					GasUsed:           parsedTx.GasUsed,
 					CumulativeGasUsed: cumulativeGasUsed,
 					Failed:            parsedTx.Failed,
-				})
+				}
 			}
+			bz := kv.clientCtx.Codec.MustMarshal(txResult)
 			if err := batch.Set(TxHashKey(txHash), bz); err != nil {
 				return err
 			}
-			if err := batch.Set(TxIndexKey(height, ethTxIndex), txHash.Bytes()); err != nil {
+			if err := batch.Set(TxIndexKey(txResult.Height, txResult.EthTxIndex), txHash.Bytes()); err != nil {
 				return err
 			}
 			ethTxIndex++
