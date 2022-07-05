@@ -147,7 +147,7 @@ func StateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes
 
 		evmStateBz, ok := rawState[evmtypes.ModuleName]
 		if !ok {
-			panic("staking genesis state is missing")
+			panic("evm genesis state is missing")
 		}
 
 		evmState := new(evmtypes.GenesisState)
