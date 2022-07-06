@@ -30,7 +30,7 @@ Change the `PrecompiledContract` interface like this (need to patch `go-ethereum
  type PrecompiledContract interface {
   	 RequiredGas(input []byte) uint64
 -  	 Run(input []byte) ([]byte, error)
-+  	 Run(input []byte, caller common.Address, value *big.Int, readonly bool) ([]byte, error)
++  	 Run(evm *vm.EVM, input []byte, caller common.Address, value *big.Int, readonly bool) ([]byte, error)
  }
 ```
 
@@ -52,7 +52,109 @@ It's also tricky if not impossible to let two precompiled contracts to write to 
 
 ### Example
 
-TODO
+```golang
+// ExtState manage in memory dirty states which are committed together with StateDB
+type ExtState interface {
+	Commit(sdk.Context) error
+}
+
+// ExtStateDB expose `AppendJournalEntry` api on top of `vm.StateDB` interface
+type ExtStateDB interface {
+	AppendJournalEntry(statedb.JournalEntry)
+}
+
+// BankContract expose native token functionalities to EVM smart contract
+type BankContract struct {
+	ctx        sdk.Context
+	bankKeeper types.BankKeeper
+	balances   map[common.Address]map[common.Address]*Balance
+}
+
+func (bc *BankContract) RequiredGas(input []byte) uint64 {
+	// TODO estimate required gas
+	return 0
+}
+
+func (bc *BankContract) Run(evm *vm.EVM, input []byte, caller common.Address, value *big.Int, readonly bool) ([]byte, error) {
+	stateDB, ok := evm.StateDB.(ExtStateDB)
+	if !ok {
+		return nil, errors.New("not run in ethermint")
+	}
+
+	// parse input
+	methodID := input[:4]
+	if bytes.Equal(methodID, MintMethod.ID) {
+		if readonly {
+			return nil, errors.New("the method is not readonly")
+		}
+		args, err := MintMethod.Inputs.Unpack(input[4:])
+		if err != nil {
+			return nil, errors.New("fail to unpack input arguments")
+		}
+		recipient := args[0].(common.Address)
+		amount := args[1].(*big.Int)
+		if amount.Sign() <= 0 {
+			return nil, errors.New("invalid amount")
+		}
+
+		if _, ok := bc.balances[caller]; !ok {
+			bc.balances[caller] = make(map[common.Address]*Balance)
+		}
+		balances := bc.balances[caller]
+		if balance, ok := balances[recipient]; ok {
+			balance.DirtyAmount = new(big.Int).Add(balance.DirtyAmount, amount)
+		} else {
+			// query original amount
+			addr := sdk.AccAddress(recipient.Bytes())
+			originAmount := bc.bankKeeper.GetBalance(bc.ctx, addr, EVMDenom(caller)).Amount.BigInt()
+			dirtyAmount := new(big.Int).Add(originAmount, amount)
+			balances[recipient] = &Balance{
+				OriginAmount: originAmount,
+				DirtyAmount:  dirtyAmount,
+			}
+		}
+		stateDB.AppendJournalEntry(bankMintChange{bc: bc, caller: caller, recipient: recipient, amount: amount})
+  } else if bytes.Equal(methodID, BalanceOfMethod.ID) {
+		args, err := BalanceOfMethod.Inputs.Unpack(input[4:])
+		if err != nil {
+			return nil, errors.New("fail to unpack input arguments")
+		}
+		token := args[0].(common.Address)
+		addr := args[1].(common.Address)
+		if balances, ok := bc.balances[token]; ok {
+			if balance, ok := balances[addr]; ok {
+				return BalanceOfMethod.Outputs.Pack(balance.DirtyAmount)
+			}
+		}
+		// query from storage
+		amount := bc.bankKeeper.GetBalance(bc.ctx, sdk.AccAddress(addr.Bytes()), EVMDenom(token)).Amount.BigInt()
+		return BalanceOfMethod.Outputs.Pack(amount)
+	} else {
+		return nil, errors.New("unknown method")
+	}
+  return nil, nil
+}
+
+func (bc *BankContract) Commit(ctx sdk.Context) error {
+  // Write the dirty balances through bc.bankKeeper
+}
+
+type bankMintChange struct {
+	bc        *BankContract
+	caller    common.Address
+	recipient common.Address
+	amount    *big.Int
+}
+
+func (ch bankMintChange) Revert(*statedb.StateDB) {
+	balance := ch.bc.balances[ch.caller][ch.recipient]
+	balance.DirtyAmount = new(big.Int).Sub(balance.DirtyAmount, ch.amount)
+}
+
+func (ch bankMintChange) Dirtied() *common.Address {
+	return nil
+}
+```
 
 ## Consequences
 
@@ -73,13 +175,16 @@ TODO
 
 ### Neutral
 
-- Precompiled contract implementation need to be careful with the in memory dirty states.
+- Precompiled contract implementation need to be careful with the in memory dirty states to maintain the invariants.
 
 ## Further Discussions
 
-## Test Cases [optional]
+## Test Cases
 
-Test cases for an implementation are mandatory for ADRs that are affecting consensus changes. Other ADRs can choose to include links to test cases if applicable.
+- Check the state is persisted after tx committed.
+- Check exception revert works.
+- Check multiple precompiled contracts don't intervene each other.
+- Check static call and delegate call don't mutate states.
 
 ## References
 
