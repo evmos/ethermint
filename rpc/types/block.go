@@ -58,7 +58,7 @@ func ContextWithHeight(height int64) context.Context {
 }
 
 // UnmarshalJSON parses the given JSON fragment into a BlockNumber. It supports:
-// - "latest", "earliest" or "pending" as string arguments
+// - "latest", "finalized", "earliest" or "pending" as string arguments
 // - the block number
 // Returned errors:
 // - an invalid block number error when the given argument isn't a known strings
