@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -572,7 +573,7 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 
 	res := &types.QueryBaseFeeResponse{}
 	if baseFee != nil {
-		aux := sdk.NewIntFromBigInt(baseFee)
+		aux := sdkmath.NewIntFromBigInt(baseFee)
 		res.BaseFee = &aux
 	}
 

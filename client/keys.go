@@ -65,6 +65,7 @@ The pass backend requires GnuPG: https://gnupg.org/
 		keys.ListKeysCmd(),
 		keys.ShowKeysCmd(),
 		keys.DeleteKeyCommand(),
+		keys.RenameKeyCommand(),
 		keys.ParseKeyStringCommand(),
 		keys.MigrateCommand(),
 		flags.LineBreak,

@@ -33,14 +33,14 @@ func TestRandomGenesisAccounts(t *testing.T) {
 	accs := RandomAccounts(r, rand.Intn(maxTestingAccounts))
 
 	encodingConfig := MakeEncodingConfig()
-	appCodec := encodingConfig.Marshaler
+	appCodec := encodingConfig.Codec
 	cdc := encodingConfig.Amino
 
 	paramsKeeper := initParamsKeeper(appCodec, cdc, sdk.NewKVStoreKey(paramstypes.StoreKey), sdk.NewTransientStoreKey(paramstypes.StoreKey))
 	subSpace, find := paramsKeeper.GetSubspace(authtypes.ModuleName)
 	require.True(t, find)
 	accountKeeper := authkeeper.NewAccountKeeper(
-		appCodec, sdk.NewKVStoreKey(authtypes.StoreKey), subSpace, ethermint.ProtoAccount, maccPerms,
+		appCodec, sdk.NewKVStoreKey(authtypes.StoreKey), subSpace, ethermint.ProtoAccount, maccPerms, sdk.GetConfig().GetBech32AccountAddrPrefix(),
 	)
 	authModule := auth.NewAppModule(appCodec, accountKeeper, RandomGenesisAccounts)
 

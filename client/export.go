@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -36,8 +35,7 @@ func UnsafeExportEthKeyCommand() *cobra.Command {
 			conf := true
 
 			inBuf := bufio.NewReader(cmd.InOrStdin())
-			keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
-			switch keyringBackend {
+			switch clientCtx.Keyring.Backend() {
 			case keyring.BackendFile:
 				decryptPassword, err = input.GetPassword(
 					"**WARNING this is an unsafe way to export your unencrypted private key**\nEnter key password:",

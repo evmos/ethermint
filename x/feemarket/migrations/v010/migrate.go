@@ -3,6 +3,8 @@ package v010
 import (
 	"math/big"
 
+	sdkmath "cosmossdk.io/math"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -15,7 +17,7 @@ var KeyPrefixBaseFeeV1 = []byte{2}
 
 // MigrateStore migrates the BaseFee value from the store to the params for
 // In-Place Store migration logic.
-func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace, storeKey sdk.StoreKey) error {
+func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace, storeKey storetypes.StoreKey) error {
 	baseFee := types.DefaultParams().BaseFee
 
 	store := ctx.KVStore(storeKey)
@@ -28,7 +30,7 @@ func MigrateStore(ctx sdk.Context, paramstore *paramtypes.Subspace, storeKey sdk
 	switch {
 	case store.Has(KeyPrefixBaseFeeV1):
 		bz := store.Get(KeyPrefixBaseFeeV1)
-		baseFee = sdk.NewIntFromBigInt(new(big.Int).SetBytes(bz))
+		baseFee = sdkmath.NewIntFromBigInt(new(big.Int).SetBytes(bz))
 	case paramstore.Has(ctx, types.ParamStoreKeyNoBaseFee):
 		paramstore.GetIfExists(ctx, types.ParamStoreKeyBaseFee, &baseFee)
 	}

@@ -389,6 +389,7 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 
 				txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
 				if err != nil {
+					api.logger.Error("fail to decode tx response", "error", err)
 					return
 				}
 
@@ -465,6 +466,7 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 
 				txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
 				if err != nil {
+					api.logger.Error("fail to decode tx response", "error", err)
 					return
 				}
 
