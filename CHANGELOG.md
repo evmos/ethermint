@@ -41,6 +41,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 * (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
 
+### Improvements
+
+* (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
+
 ## [v0.17.0] - 2022-06-27
 
 ### State Machine Breaking
