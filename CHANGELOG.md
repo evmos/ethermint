@@ -55,6 +55,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## [v0.17.1] - 2022-07-13
 
+### State Machine Breaking
+* (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
+
 ### Improvements
 
 * (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
