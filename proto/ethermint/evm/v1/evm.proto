@@ -115,11 +115,20 @@ message ChainConfig {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.moretags) = "yaml:\"arrow_glacier_block\""
   ];
-  // EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in merge proceedings)
-  string merge_fork_block = 19 [
+  // DEPRECATED: merge fork block was deprecated: https://github.com/ethereum/go-ethereum/pull/24904
+  reserved 19;
+  reserved "merge_fork_block";
+  //  EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
+  string gray_glacier_block = 20 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
-    (gogoproto.moretags) = "yaml:\"merge_fork_block\""
+    (gogoproto.moretags) = "yaml:\"gray_glacier_block\""
   ];
+  // Virtual fork after The Merge to use as a network splitter
+  string merge_netsplit_block = 21 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"merge_netsplit_block\""
+  ];
+
 }
 
 // State represents a single Storage key value pair item.
