@@ -11,9 +11,9 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	ethermint "github.com/tharsis/ethermint/types"
-	"github.com/tharsis/ethermint/x/evm/statedb"
-	"github.com/tharsis/ethermint/x/evm/types"
+	ethermint "github.com/evmos/ethermint/types"
+	"github.com/evmos/ethermint/x/evm/statedb"
+	"github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -268,6 +268,9 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 			// If hooks return error, revert the whole tx.
 			res.VmError = types.ErrPostTxProcessing.Error()
 			k.Logger(ctx).Error("tx post processing failed", "error", err)
+
+			// If the tx failed in post processing hooks, we should clear the logs
+			res.Logs = nil
 		} else if commit != nil {
 			// PostTxProcessing is successful, commit the tmpCtx
 			commit()
@@ -363,16 +366,18 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 		// should have already been checked on Ante Handler
 		return nil, sdkerrors.Wrap(err, "intrinsic gas failed")
 	}
+
 	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
 	if msg.Gas() < intrinsicGas {
 		// eth_estimateGas will check for this exact error
 		return nil, sdkerrors.Wrap(core.ErrIntrinsicGas, "apply message")
 	}
+
 	leftoverGas := msg.Gas() - intrinsicGas
 
 	// access list preparation is moved from ante handler to here, because it's needed when `ApplyMessage` is called
 	// under contexts where ante handlers are not run, for example `eth_call` and `eth_estimateGas`.
-	if rules := cfg.ChainConfig.Rules(big.NewInt(ctx.BlockHeight()), cfg.ChainConfig.MergeForkBlock != nil); rules.IsBerlin {
+	if rules := cfg.ChainConfig.Rules(big.NewInt(ctx.BlockHeight()), cfg.ChainConfig.MergeNetsplitBlock != nil); rules.IsBerlin {
 		stateDB.PrepareAccessList(msg.From(), msg.To(), vm.ActivePrecompiles(rules), msg.AccessList())
 	}
 
@@ -398,11 +403,13 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	if msg.Gas() < leftoverGas {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
+
 	temporaryGasUsed := msg.Gas() - leftoverGas
 	refund := GasToRefund(stateDB.GetRefund(), temporaryGasUsed, refundQuotient)
 	if refund > temporaryGasUsed {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
+
 	temporaryGasUsed -= refund
 
 	// EVM execution error needs to be available for the JSON-RPC client
@@ -420,10 +427,10 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 
 	// calculate a minimum amount of gas to be charged to sender if GasLimit
 	// is considerably higher than GasUsed to stay more aligned with Tendermint gas mechanics
-	// for more info https://github.com/tharsis/ethermint/issues/1085
-	// NOTE: MinGasDenominator can not be negative as it is validated on ValidateParams
+	// for more info https://github.com/evmos/ethermint/issues/1085
 	gasLimit := sdk.NewDec(int64(msg.Gas()))
-	minimumGasUsed := gasLimit.Mul(cfg.Params.MinGasMultiplier)
+	minGasMultiplier := k.GetMinGasMultiplier(ctx)
+	minimumGasUsed := gasLimit.Mul(minGasMultiplier)
 	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
 
 	return &types.MsgEthereumTxResponse{

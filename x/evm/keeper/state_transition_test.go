@@ -11,12 +11,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/evmos/ethermint/tests"
+	"github.com/evmos/ethermint/x/evm/keeper"
+	"github.com/evmos/ethermint/x/evm/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"github.com/tharsis/ethermint/tests"
-	"github.com/tharsis/ethermint/x/evm/keeper"
-	"github.com/tharsis/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestGetHashFn() {
@@ -206,16 +206,6 @@ func (suite *KeeperTestSuite) TestGetEthIntrinsicGas() {
 			true,
 			params.TxGas + params.TxDataNonZeroGasFrontier*1,
 		},
-		// we are not able to test the ErrGasUintOverflow due to RAM limitation
-		// {
-		// 	"with big data size overflow",
-		// 	make([]byte, 271300000000000000),
-		// 	nil,
-		// 	1,
-		// 	false,
-		// 	false,
-		// 	0,
-		// },
 		{
 			"no data, one accesslist, not contract creation, not homestead, not istanbul",
 			nil,

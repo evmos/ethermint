@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
 var _ types.QueryServer = Keeper{}
@@ -38,7 +38,7 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 // BlockGas implements the Query/BlockGas gRPC method
 func (k Keeper) BlockGas(c context.Context, _ *types.QueryBlockGasRequest) (*types.QueryBlockGasResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	gas := k.GetBlockGasUsed(ctx)
+	gas := k.GetBlockGasWanted(ctx)
 
 	return &types.QueryBlockGasResponse{
 		Gas: int64(gas),

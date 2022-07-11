@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -19,9 +20,13 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/tharsis/ethermint/rpc/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/rpc/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
+
+// ExceedBlockGasLimitError defines the error message when tx execution exceeds the block gas limit.
+// The tx fee is deducted in ante handler, so it shouldn't be ignored in JSON-RPC API.
+const ExceedBlockGasLimitError = "out of gas in location: block gas meter; gasWanted:"
 
 type txGasAndReward struct {
 	gasUsed uint64
@@ -227,7 +232,7 @@ func (b *Backend) processBlock(
 	targetOneFeeHistory *types.OneFeeHistory,
 ) error {
 	blockHeight := tendermintBlock.Block.Height
-	blockBaseFee, err := b.BaseFee(blockHeight)
+	blockBaseFee, err := b.BaseFee(tendermintBlockResult)
 	if err != nil {
 		return err
 	}
@@ -368,4 +373,35 @@ func ParseTxLogsFromEvent(event abci.Event) ([]*ethtypes.Log, error) {
 		logs = append(logs, &log)
 	}
 	return evmtypes.LogsToEthereum(logs), nil
+}
+
+// TxExceedBlockGasLimit returns true if the tx exceeds block gas limit.
+func TxExceedBlockGasLimit(res *abci.ResponseDeliverTx) bool {
+	return strings.Contains(res.Log, ExceedBlockGasLimitError)
+}
+
+// TxSuccessOrExceedsBlockGasLimit returns if the tx should be included in json-rpc responses
+func TxSuccessOrExceedsBlockGasLimit(res *abci.ResponseDeliverTx) bool {
+	return res.Code == 0 || TxExceedBlockGasLimit(res)
+}
+
+// ShouldIgnoreGasUsed returns true if the gasUsed in result should be ignored
+// workaround for issue: https://github.com/cosmos/cosmos-sdk/issues/10832
+func ShouldIgnoreGasUsed(res *abci.ResponseDeliverTx) bool {
+	return res.GetCode() == 11 && strings.Contains(res.GetLog(), "no block gas left to run tx: out of gas")
+}
+
+// GetLogsFromBlockResults returns the list of event logs from the tendermint block result response
+func GetLogsFromBlockResults(blockRes *tmrpctypes.ResultBlockResults) ([][]*ethtypes.Log, error) {
+	blockLogs := [][]*ethtypes.Log{}
+	for _, txResult := range blockRes.TxsResults {
+		logs, err := AllTxLogsFromEvents(txResult.Events)
+		if err != nil {
+			return nil, err
+		}
+
+		blockLogs = append(blockLogs, logs...)
+	}
+
+	return blockLogs, nil
 }

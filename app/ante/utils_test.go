@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 	types4 "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"math"
+	"math/big"
 	"testing"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
 	types3 "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/tharsis/ethermint/ethereum/eip712"
-	"github.com/tharsis/ethermint/types"
+	"github.com/evmos/ethermint/ethereum/eip712"
+	"github.com/evmos/ethermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -32,13 +33,13 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/tharsis/ethermint/app"
-	ante "github.com/tharsis/ethermint/app/ante"
-	"github.com/tharsis/ethermint/encoding"
-	"github.com/tharsis/ethermint/tests"
-	"github.com/tharsis/ethermint/x/evm/statedb"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/app"
+	ante "github.com/evmos/ethermint/app/ante"
+	"github.com/evmos/ethermint/encoding"
+	"github.com/evmos/ethermint/tests"
+	"github.com/evmos/ethermint/x/evm/statedb"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
@@ -55,6 +56,8 @@ type AnteTestSuite struct {
 	enableLondonHF  bool
 	evmParamsOption func(*evmtypes.Params)
 }
+
+const TestGasLimit uint64 = 100000
 
 func (suite *AnteTestSuite) StateDB() *statedb.StateDB {
 	return statedb.New(suite.ctx, suite.app.EvmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes())))
@@ -75,11 +78,13 @@ func (suite *AnteTestSuite) SetupTest() {
 			genesis[feemarkettypes.ModuleName] = app.AppCodec().MustMarshalJSON(feemarketGenesis)
 		}
 		evmGenesis := evmtypes.DefaultGenesisState()
+		evmGenesis.Params.AllowUnprotectedTxs = false
 		if !suite.enableLondonHF {
 			maxInt := sdk.NewInt(math.MaxInt64)
 			evmGenesis.Params.ChainConfig.LondonBlock = &maxInt
 			evmGenesis.Params.ChainConfig.ArrowGlacierBlock = &maxInt
-			evmGenesis.Params.ChainConfig.MergeForkBlock = &maxInt
+			evmGenesis.Params.ChainConfig.GrayGlacierBlock = &maxInt
+			evmGenesis.Params.ChainConfig.MergeNetsplitBlock = &maxInt
 		}
 		if suite.evmParamsOption != nil {
 			suite.evmParamsOption(&evmGenesis.Params)
@@ -123,6 +128,38 @@ func TestAnteTestSuite(t *testing.T) {
 	suite.Run(t, &AnteTestSuite{
 		enableLondonHF: true,
 	})
+}
+
+func (s *AnteTestSuite) BuildTestEthTx(
+	from common.Address,
+	to common.Address,
+	amount *big.Int,
+	input []byte,
+	gasPrice *big.Int,
+	gasFeeCap *big.Int,
+	gasTipCap *big.Int,
+	accesses *ethtypes.AccessList,
+) *evmtypes.MsgEthereumTx {
+	chainID := s.app.EvmKeeper.ChainID()
+	nonce := s.app.EvmKeeper.GetNonce(
+		s.ctx,
+		common.BytesToAddress(from.Bytes()),
+	)
+
+	msgEthereumTx := evmtypes.NewTx(
+		chainID,
+		nonce,
+		&to,
+		amount,
+		TestGasLimit,
+		gasPrice,
+		gasFeeCap,
+		gasTipCap,
+		input,
+		accesses,
+	)
+	msgEthereumTx.From = from.String()
+	return msgEthereumTx
 }
 
 // CreateTestTx is a helper function to create a tx given multiple inputs.
@@ -202,6 +239,17 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 		suite.Require().NoError(err)
 	}
 
+	return txBuilder
+}
+
+func (suite *AnteTestSuite) CreateTestCosmosTxBuilder(gasPrice sdk.Int, denom string, msgs ...sdk.Msg) client.TxBuilder {
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+
+	txBuilder.SetGasLimit(TestGasLimit)
+	fees := &sdk.Coins{{Denom: denom, Amount: gasPrice.MulRaw(int64(TestGasLimit))}}
+	txBuilder.SetFeeAmount(*fees)
+	err := txBuilder.SetMsgs(msgs...)
+	suite.Require().NoError(err)
 	return txBuilder
 }
 
@@ -325,6 +373,10 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	suite.Require().NoError(err)
 
 	return builder
+}
+
+func NextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+	return ctx, nil
 }
 
 var _ sdk.Tx = &invalidTx{}

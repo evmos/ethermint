@@ -2,27 +2,20 @@ package keeper_test
 
 import (
 	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 func (suite *KeeperTestSuite) TestEndBlock() {
 	testCases := []struct {
-		name       string
-		NoBaseFee  bool
-		malleate   func()
-		expGasUsed uint64
+		name         string
+		NoBaseFee    bool
+		malleate     func()
+		expGasWanted uint64
 	}{
 		{
-			"basFee nil",
+			"baseFee nil",
 			true,
-			func() {},
-			uint64(0),
-		},
-		{
-			"Block gas meter is nil",
-			false,
 			func() {},
 			uint64(0),
 		},
@@ -32,9 +25,9 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 			func() {
 				meter := sdk.NewGasMeter(uint64(1000000000))
 				suite.ctx = suite.ctx.WithBlockGasMeter(meter)
-				suite.ctx.BlockGasMeter().ConsumeGas(uint64(5000000), "consume gas")
+				suite.app.FeeMarketKeeper.SetTransientBlockGasWanted(suite.ctx, 5000000)
 			},
-			uint64(5000000),
+			uint64(2500000),
 		},
 	}
 	for _, tc := range testCases {
@@ -45,11 +38,9 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 			suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 
 			tc.malleate()
-
-			req := abci.RequestEndBlock{Height: 1}
-			suite.app.FeeMarketKeeper.EndBlock(suite.ctx, req)
-			gasUsed := suite.app.FeeMarketKeeper.GetBlockGasUsed(suite.ctx)
-			suite.Require().Equal(tc.expGasUsed, gasUsed, tc.name)
+			suite.app.FeeMarketKeeper.EndBlock(suite.ctx, types.RequestEndBlock{Height: 1})
+			gasWanted := suite.app.FeeMarketKeeper.GetBlockGasWanted(suite.ctx)
+			suite.Require().Equal(tc.expGasWanted, gasWanted, tc.name)
 		})
 	}
 }

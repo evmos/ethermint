@@ -26,11 +26,11 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/tharsis/ethermint/rpc/ethereum/pubsub"
-	rpcfilters "github.com/tharsis/ethermint/rpc/namespaces/ethereum/eth/filters"
-	"github.com/tharsis/ethermint/rpc/types"
-	"github.com/tharsis/ethermint/server/config"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/rpc/ethereum/pubsub"
+	rpcfilters "github.com/evmos/ethermint/rpc/namespaces/ethereum/eth/filters"
+	"github.com/evmos/ethermint/rpc/types"
+	"github.com/evmos/ethermint/server/config"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 type WebsocketsServer interface {
@@ -181,6 +181,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 		_, mb, err := wsConn.ReadMessage()
 		if err != nil {
 			_ = wsConn.Close()
+			s.logger.Error("read message error, breaking read loop", "error", err.Error())
 			return
 		}
 

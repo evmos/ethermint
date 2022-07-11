@@ -39,7 +39,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 
 // PackClientState constructs a new Any packed with the given tx data value. It returns
 // an error if the client state can't be casted to a protobuf message or if the concrete
-// implemention is not registered to the protobuf codec.
+// implementation is not registered to the protobuf codec.
 func PackTxData(txData TxData) (*codectypes.Any, error) {
 	msg, ok := txData.(proto.Message)
 	if !ok {

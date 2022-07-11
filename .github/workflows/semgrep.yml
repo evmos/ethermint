@@ -10,14 +10,19 @@ on:
   schedule:
     - cron: '0 0 * * 0'
 jobs:
+  # Update from: https://semgrep.dev/docs/semgrep-ci/sample-ci-configs/#github-actions
   semgrep:
     name: Scan
     runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
     if: (github.actor != 'dependabot[bot]')
     steps:
+      - name: Permission issue fix
+        run: git config --global --add safe.directory /__w/ethermint/ethermint
       - uses: actions/checkout@v3
       - name: Get Diff
-        uses: technote-space/get-diff-action@v6.0.1
+        uses: technote-space/get-diff-action@v6.1.0
         with:
           PATTERNS: |
             **/*.go
@@ -26,12 +31,11 @@ jobs:
             **/*.sol
             go.mod
             go.sum
-      - uses: returntocorp/semgrep-action@v1
-        with:
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-           # Upload findings to GitHub Advanced Security Dashboard [step 1/2]
-          # See also the next step.
-          generateSarif: "1"
+      - uses: actions/checkout@v3
+      - run: semgrep scan --sarif --output=semgrep.sarif
+        env:
+          # Upload findings to GitHub Advanced Security Dashboard [step 1/2]
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         if: "env.GIT_DIFF_FILTERED != ''"
       # Upload findings to GitHub Advanced Security Dashboard [step 2/2]
       - name: Upload SARIF file

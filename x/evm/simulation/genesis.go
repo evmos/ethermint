@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/x/evm/types"
 )
 
 const (
@@ -48,7 +48,7 @@ func RandomizedGenState(simState *module.SimulationState) {
 		func(r *rand.Rand) { extraEIPs = GenExtraEIPs(r) },
 	)
 
-	params := types.NewParams(types.DefaultEVMDenom, true, true, types.DefaultChainConfig(), types.DefaultMinGasMultiplier, extraEIPs...)
+	params := types.NewParams(types.DefaultEVMDenom, true, true, types.DefaultChainConfig(), extraEIPs...)
 	evmGenesis := types.NewGenesisState(params, []types.GenesisAccount{})
 
 	bz, err := json.MarshalIndent(evmGenesis, "", " ")

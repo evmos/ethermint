@@ -16,7 +16,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	stderrors "github.com/pkg/errors"
@@ -27,9 +27,9 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/evmos/ethermint/rpc/backend"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tharsis/ethermint/rpc/backend"
-	rpctypes "github.com/tharsis/ethermint/rpc/types"
 )
 
 // HandlerT keeps track of the cpu profiler and trace execution
@@ -89,8 +89,12 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		return nil, err
 	}
 
-	msgIndex, _ := rpctypes.FindTxAttributes(transaction.TxResult.Events, hash.Hex())
-	if msgIndex < 0 {
+	parsedTxs, err := rpctypes.ParseTxResult(&transaction.TxResult)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse tx events: %s", hash.Hex())
+	}
+	parsedTx := parsedTxs.GetTxByHash(hash)
+	if parsedTx == nil {
 		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hash.Hex())
 	}
 
@@ -124,7 +128,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 	}
 
 	// add predecessor messages in current cosmos tx
-	for i := 0; i < msgIndex; i++ {
+	for i := 0; i < parsedTx.MsgIndex; i++ {
 		ethMsg, ok := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx)
 		if !ok {
 			continue
@@ -132,7 +136,7 @@ func (a *API) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (
 		predecessors = append(predecessors, ethMsg)
 	}
 
-	ethMessage, ok := tx.GetMsgs()[msgIndex].(*evmtypes.MsgEthereumTx)
+	ethMessage, ok := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		a.logger.Debug("invalid transaction type", "type", fmt.Sprintf("%T", tx))
 		return nil, fmt.Errorf("invalid transaction type %T", tx)

@@ -77,7 +77,6 @@ subspace: feemarket
 value: "2"
 ```
 
-
 ## gRPC
 
 ### Queries

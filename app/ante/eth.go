@@ -3,15 +3,16 @@ package ante
 import (
 	"errors"
 	"math/big"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
-	ethermint "github.com/tharsis/ethermint/types"
-	evmkeeper "github.com/tharsis/ethermint/x/evm/keeper"
-	"github.com/tharsis/ethermint/x/evm/statedb"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	ethermint "github.com/evmos/ethermint/types"
+	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
+	"github.com/evmos/ethermint/x/evm/statedb"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -49,7 +50,14 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
-		sender, err := signer.Sender(msgEthTx.AsTransaction())
+		ethTx := msgEthTx.AsTransaction()
+		if !params.AllowUnprotectedTxs && !ethTx.Protected() {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrNotSupported,
+				"rejected unprotected Ethereum txs. Please EIP155 sign your transaction to protect it against replay-attacks")
+		}
+
+		sender, err := signer.Sender(ethTx)
 		if err != nil {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrorInvalidSigner,
@@ -535,6 +543,39 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 				}
 			}
 		}
+	}
+
+	return next(ctx, tx, simulate)
+}
+
+// EthEmitEventDecorator emit events in ante handler in case of tx execution failed (out of block gas limit).
+type EthEmitEventDecorator struct {
+	evmKeeper EVMKeeper
+}
+
+// NewEthEmitEventDecorator creates a new EthEmitEventDecorator
+func NewEthEmitEventDecorator(evmKeeper EVMKeeper) EthEmitEventDecorator {
+	return EthEmitEventDecorator{evmKeeper}
+}
+
+// AnteHandle emits some basic events for the eth messages
+func (eeed EthEmitEventDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	// After eth tx passed ante handler, the fee is deducted and nonce increased, it shouldn't be ignored by json-rpc,
+	// we need to emit some basic events at the very end of ante handler to be indexed by tendermint.
+	txIndex := eeed.evmKeeper.GetTxIndexTransient(ctx)
+	for i, msg := range tx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
+		}
+
+		// emit ethereum tx hash as event, should be indexed by tm tx indexer for query purpose.
+		// it's emitted in ante handler so we can query failed transaction (out of block gas limit).
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			evmtypes.EventTypeEthereumTx,
+			sdk.NewAttribute(evmtypes.AttributeKeyEthereumTxHash, msgEthTx.Hash),
+			sdk.NewAttribute(evmtypes.AttributeKeyTxIndex, strconv.FormatUint(txIndex+uint64(i), 10)),
+		))
 	}
 
 	return next(ctx, tx, simulate)

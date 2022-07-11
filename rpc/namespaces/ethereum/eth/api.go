@@ -7,7 +7,7 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/tharsis/ethermint/ethereum/eip712"
+	"github.com/evmos/ethermint/ethereum/eip712"
 
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
@@ -35,11 +35,11 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/tharsis/ethermint/crypto/hd"
-	"github.com/tharsis/ethermint/rpc/backend"
-	rpctypes "github.com/tharsis/ethermint/rpc/types"
-	ethermint "github.com/tharsis/ethermint/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/crypto/hd"
+	"github.com/evmos/ethermint/rpc/backend"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
+	ethermint "github.com/evmos/ethermint/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 // PublicAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
@@ -211,6 +211,16 @@ func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 		result = big.NewInt(e.backend.RPCMinGasPrice())
 	}
 
+	// return at least GlobalMinGasPrice from FeeMarket module
+	minGasPrice, err := e.backend.GlobalMinGasPrice()
+	if err != nil {
+		return nil, err
+	}
+	minGasPriceInt := minGasPrice.TruncateInt().BigInt()
+	if result.Cmp(minGasPriceInt) < 0 {
+		result = minGasPriceInt
+	}
+
 	return (*hexutil.Big)(result), nil
 }
 
@@ -329,7 +339,7 @@ func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Ui
 		return nil
 	}
 
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil
 	}
@@ -353,7 +363,7 @@ func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumb
 		return nil
 	}
 
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil
 	}
@@ -405,12 +415,23 @@ func (e *PublicAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, err
 		return nil, nil
 	}
 
-	msgIndex, _ := rpctypes.FindTxAttributes(res.TxResult.Events, hexTx)
-	if msgIndex < 0 {
+	if res.TxResult.Code != 0 {
+		// failed, return empty logs
+		return nil, nil
+	}
+
+	parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse tx events: %s, %v", hexTx, err)
+	}
+
+	parsedTx := parsedTxs.GetTxByHash(txHash)
+	if parsedTx == nil {
 		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
 	}
+
 	// parse tx logs from events
-	return backend.TxLogsFromEvents(res.TxResult.Events, msgIndex)
+	return parsedTx.ParseTxLogs()
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
@@ -502,6 +523,12 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 	if err := tx.UnmarshalBinary(data); err != nil {
 		e.logger.Error("transaction decoding failed", "error", err.Error())
 		return common.Hash{}, err
+	}
+
+	// check the local node config in case unprotected txs are disabled
+	if !e.backend.UnprotectedAllowed() && !tx.Protected() {
+		// Ensure only eip155 signed transactions are submitted if EIP155Required is set.
+		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
 	}
 
 	ethereumTx := &evmtypes.MsgEthereumTx{}
@@ -604,7 +631,7 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 	}
 
 	for _, tx := range pending {
-		// FIXME does Resend api possible at all?  https://github.com/tharsis/ethermint/issues/905
+		// FIXME does Resend api possible at all?  https://github.com/evmos/ethermint/issues/905
 		p, err := evmtypes.UnwrapEthereumMsg(tx, common.Hash{})
 		if err != nil {
 			// not valid ethereum tx
@@ -726,6 +753,11 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 
 // getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
 func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
+	if err != nil {
+		return nil, nil
+	}
+
 	var msg *evmtypes.MsgEthereumTx
 	// try /tx_search first
 	res, err := e.backend.GetTxByTxIndex(block.Block.Height, uint(idx))
@@ -735,25 +767,25 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
 			return nil, nil
 		}
-		// find msg index in events
-		msgIndex := rpctypes.FindTxAttributesByIndex(res.TxResult.Events, uint64(idx))
-		if msgIndex < 0 {
-			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
-			return nil, nil
+
+		parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse tx events: %d, %v", idx, err)
 		}
+
+		parsedTx := parsedTxs.GetTxByTxIndex(int(idx))
+		if parsedTx == nil {
+			return nil, fmt.Errorf("ethereum tx not found in msgs: %d", idx)
+		}
+
 		var ok bool
 		// msgIndex is inferred from tx events, should be within bound.
-		msg, ok = tx.GetMsgs()[msgIndex].(*evmtypes.MsgEthereumTx)
+		msg, ok = tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
 		if !ok {
 			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
 			return nil, nil
 		}
 	} else {
-		blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &block.Block.Height)
-		if err != nil {
-			return nil, nil
-		}
-
 		i := int(idx)
 		ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(block, blockRes)
 		if i >= len(ethMsgs) {
@@ -764,9 +796,10 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 		msg = ethMsgs[i]
 	}
 
-	baseFee, err := e.backend.BaseFee(block.Block.Height)
+	baseFee, err := e.backend.BaseFee(blockRes)
 	if err != nil {
-		return nil, err
+		// handle the error for pruned node.
+		e.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", block.Block.Height, "error", err)
 	}
 
 	return rpctypes.NewTransactionFromMsg(
@@ -825,8 +858,18 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, nil
 	}
 
-	msgIndex, attrs := rpctypes.FindTxAttributes(res.TxResult.Events, hexTx)
-	if msgIndex < 0 {
+	// don't ignore the txs which exceed block gas limit.
+	if !backend.TxSuccessOrExceedsBlockGasLimit(&res.TxResult) {
+		return nil, nil
+	}
+
+	parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse tx events: %s, %v", hexTx, err)
+	}
+
+	parsedTx := parsedTxs.GetTxByHash(hash)
+	if parsedTx == nil {
 		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
 	}
 
@@ -842,13 +885,17 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
 
-	// the `msgIndex` is inferred from tx events, should be within the bound.
-	msg := tx.GetMsgs()[msgIndex]
-	ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-	if !ok {
-		e.logger.Debug(fmt.Sprintf("invalid tx type: %T", msg))
-		return nil, fmt.Errorf("invalid tx type: %T", msg)
+	if res.TxResult.Code != 0 {
+		// tx failed, we should return gas limit as gas used, because that's how the fee get deducted.
+		for i := 0; i <= parsedTx.MsgIndex; i++ {
+			gasLimit := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx).GetGas()
+			parsedTxs.Txs[i].GasUsed = gasLimit
+		}
 	}
+
+	// the `msgIndex` is inferred from tx events, should be within the bound,
+	// and the tx is found by eth tx hash, so the msg type must be correct.
+	ethMsg := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
 
 	txData, err := evmtypes.UnpackTxData(ethMsg.Data)
 	if err != nil {
@@ -857,32 +904,19 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	cumulativeGasUsed := uint64(0)
-	blockRes, err := e.clientCtx.Client.BlockResults(e.ctx, &res.Height)
+	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&res.Height)
 	if err != nil {
 		e.logger.Debug("failed to retrieve block results", "height", res.Height, "error", err.Error())
 		return nil, nil
 	}
-
 	for i := 0; i < int(res.Index) && i < len(blockRes.TxsResults); i++ {
 		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
 	}
-	cumulativeGasUsed += rpctypes.AccumulativeGasUsedOfMsg(res.TxResult.Events, msgIndex)
-
-	var gasUsed uint64
-	if len(tx.GetMsgs()) == 1 {
-		// backward compatibility
-		gasUsed = uint64(res.TxResult.GasUsed)
-	} else {
-		gasUsed, err = rpctypes.GetUint64Attribute(attrs, evmtypes.AttributeKeyTxGasUsed)
-		if err != nil {
-			return nil, err
-		}
-	}
+	cumulativeGasUsed += parsedTxs.AccumulativeGasUsed(parsedTx.MsgIndex)
 
 	// Get the transaction result from the log
-	_, found := attrs[evmtypes.AttributeKeyEthereumTxFailed]
 	var status hexutil.Uint
-	if found {
+	if res.TxResult.Code != 0 || parsedTx.Failed {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
@@ -894,28 +928,23 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	// parse tx logs from events
-	logs, err := backend.TxLogsFromEvents(res.TxResult.Events, msgIndex)
+	logs, err := parsedTx.ParseTxLogs()
 	if err != nil {
-		e.logger.Debug("logs not found", "hash", hexTx, "error", err.Error())
+		e.logger.Debug("failed to parse logs", "hash", hexTx, "error", err.Error())
 	}
 
-	// Try to find txIndex from events
-	found = false
-	txIndex, err := rpctypes.GetUint64Attribute(attrs, evmtypes.AttributeKeyTxIndex)
-	if err == nil {
-		found = true
-	} else {
+	if parsedTx.EthTxIndex == -1 {
 		// Fallback to find tx index by iterating all valid eth transactions
 		msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
 		for i := range msgs {
 			if msgs[i].Hash == hexTx {
-				txIndex = uint64(i)
-				found = true
+				parsedTx.EthTxIndex = int64(i)
 				break
 			}
 		}
 	}
-	if !found {
+
+	if parsedTx.EthTxIndex == -1 {
 		return nil, errors.New("can't find index of ethereum tx")
 	}
 
@@ -930,14 +959,14 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		// They are stored in the chain database.
 		"transactionHash": hash,
 		"contractAddress": nil,
-		"gasUsed":         hexutil.Uint64(gasUsed),
+		"gasUsed":         hexutil.Uint64(parsedTx.GasUsed),
 		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
 		"blockHash":        common.BytesToHash(resBlock.Block.Header.Hash()).Hex(),
 		"blockNumber":      hexutil.Uint64(res.Height),
-		"transactionIndex": hexutil.Uint64(txIndex),
+		"transactionIndex": hexutil.Uint64(parsedTx.EthTxIndex),
 
 		// sender and receiver (contract or EOA) addreses
 		"from": from,
@@ -954,11 +983,13 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	if dynamicTx, ok := txData.(*evmtypes.DynamicFeeTx); ok {
-		baseFee, err := e.backend.BaseFee(res.Height)
+		baseFee, err := e.backend.BaseFee(blockRes)
 		if err != nil {
-			return nil, err
+			// tolerate the error for pruned node.
+			e.logger.Error("fetch basefee failed, node is pruned?", "height", res.Height, "error", err)
+		} else {
+			receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
 		}
-		receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
 	}
 
 	return receipt, nil

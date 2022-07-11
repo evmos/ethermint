@@ -13,12 +13,12 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/evmos/ethermint/rpc/types"
+	"github.com/evmos/ethermint/server/config"
+	ethermint "github.com/evmos/ethermint/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
-	"github.com/tharsis/ethermint/rpc/types"
-	"github.com/tharsis/ethermint/server/config"
-	ethermint "github.com/tharsis/ethermint/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
 // BackendI implements the Cosmos and EVM backend.
@@ -30,8 +30,7 @@ type BackendI interface { // nolint: revive
 // CosmosBackend implements the functionality shared within cosmos namespaces
 // as defined by Wallet Connect V2: https://docs.walletconnect.com/2.0/json-rpc/cosmos.
 // Implemented by Backend.
-type CosmosBackend interface {
-	// TODO: define
+type CosmosBackend interface { // TODO: define
 	// GetAccounts()
 	// SignDirect()
 	// SignAmino()
@@ -45,6 +44,7 @@ type EVMBackend interface {
 	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
 	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
 	RPCTxFeeCap() float64         // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for send-transaction variants. The unit is ether.
+	UnprotectedAllowed() bool
 
 	RPCMinGasPrice() int64
 	SuggestGasTipCap(baseFee *big.Int) (*big.Int, error)
@@ -52,6 +52,7 @@ type EVMBackend interface {
 	// Blockchain API
 	BlockNumber() (hexutil.Uint64, error)
 	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
+	GetTendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
 	GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
@@ -68,7 +69,8 @@ type EVMBackend interface {
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	GetTxByTxIndex(height int64, txIndex uint) (*tmrpctypes.ResultTx, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
-	BaseFee(height int64) (*big.Int, error)
+	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)
+	GlobalMinGasPrice() (sdk.Dec, error)
 
 	// Fee API
 	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*types.FeeHistoryResult, error)
@@ -86,16 +88,17 @@ var _ BackendI = (*Backend)(nil)
 
 // Backend implements the BackendI interface
 type Backend struct {
-	ctx         context.Context
-	clientCtx   client.Context
-	queryClient *types.QueryClient // gRPC query client
-	logger      log.Logger
-	chainID     *big.Int
-	cfg         config.Config
+	ctx                 context.Context
+	clientCtx           client.Context
+	queryClient         *types.QueryClient // gRPC query client
+	logger              log.Logger
+	chainID             *big.Int
+	cfg                 config.Config
+	allowUnprotectedTxs bool
 }
 
 // NewBackend creates a new Backend instance for cosmos and ethereum namespaces
-func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context) *Backend {
+func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context, allowUnprotectedTxs bool) *Backend {
 	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)
@@ -104,11 +107,12 @@ func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context
 	appConf := config.GetConfig(ctx.Viper)
 
 	return &Backend{
-		ctx:         context.Background(),
-		clientCtx:   clientCtx,
-		queryClient: types.NewQueryClient(clientCtx),
-		logger:      logger.With("module", "backend"),
-		chainID:     chainID,
-		cfg:         appConf,
+		ctx:                 context.Background(),
+		clientCtx:           clientCtx,
+		queryClient:         types.NewQueryClient(clientCtx),
+		logger:              logger.With("module", "backend"),
+		chainID:             chainID,
+		cfg:                 appConf,
+		allowUnprotectedTxs: allowUnprotectedTxs,
 	}
 }

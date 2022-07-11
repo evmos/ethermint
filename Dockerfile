@@ -4,7 +4,7 @@ FROM golang:alpine AS build-env
 ENV PACKAGES git build-base
 
 # Set working directory for the build
-WORKDIR /go/src/github.com/tharsis/ethermint
+WORKDIR /go/src/github.com/evmos/ethermint
 
 # Install dependencies
 RUN apk add --update $PACKAGES
@@ -17,14 +17,14 @@ COPY . .
 RUN make build
 
 # Final image
-FROM alpine:3.15
+FROM alpine:3.16.0
 
 # Install ca-certificates
 RUN apk add --update ca-certificates jq
 WORKDIR /
 
 # Copy over binaries from the build-env
-COPY --from=build-env /go/src/github.com/tharsis/ethermint/build/ethermintd /usr/bin/ethermintd
+COPY --from=build-env /go/src/github.com/evmos/ethermint/build/ethermintd /usr/bin/ethermintd
 
 # Run ethermintd by default
 CMD ["ethermintd"]

@@ -3,7 +3,7 @@ package ethermint.feemarket.v1;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/tharsis/ethermint/x/feemarket/types";
+option go_package = "github.com/evmos/ethermint/x/feemarket/types";
 
 // Params defines the EVM module parameters
 message Params {
@@ -23,6 +23,17 @@ message Params {
   // base fee for EIP-1559 blocks.
   string base_fee = 6 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+  // min_gas_price defines the minimum gas price value for cosmos and eth transactions
+  string min_gas_price = 7 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+  // min gas denominator bounds the minimum gasUsed to be charged
+  // to senders based on GasLimit
+  string min_gas_multiplier = 8 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable) = false
   ];
 }

@@ -7,7 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -56,7 +56,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 	var feeAmt *big.Int
 
 	feeMktParams := k.feeMarketKeeper.GetParams(ctx)
-	if london && !feeMktParams.NoBaseFee && txData.TxType() == ethtypes.DynamicFeeTxType {
+	if london && feeMktParams.IsBaseFeeEnabled(ctx.BlockHeight()) && txData.TxType() == ethtypes.DynamicFeeTxType {
 		baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
 		if txData.GetGasFeeCap().Cmp(baseFee) < 0 {
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "the tx gasfeecap is lower than the tx baseFee: %s (gasfeecap), %s (basefee) ", txData.GetGasFeeCap(), baseFee)
@@ -68,7 +68,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	if feeAmt.Sign() == 0 {
 		// zero fee, no need to deduct
-		return sdk.NewCoins(), nil
+		return sdk.Coins{}, nil
 	}
 
 	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(feeAmt))}

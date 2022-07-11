@@ -182,7 +182,8 @@ instead of *big.Int.
 | `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
 | `london_block` | [string](#string) |  | London switch block (nil = no fork, 0 = already on london) |
 | `arrow_glacier_block` | [string](#string) |  | Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated) |
-| `merge_fork_block` | [string](#string) |  | EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in merge proceedings) |
+| `gray_glacier_block` | [string](#string) |  | EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated) |
+| `merge_netsplit_block` | [string](#string) |  | Virtual fork after The Merge to use as a network splitter |
 
 
 
@@ -227,7 +228,7 @@ Params defines the EVM module parameters
 | `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
 | `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
 | `chain_config` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
-| `min_gas_multiplier` | [string](#string) |  | min gas denominator bounds the minimum gasUsed to be charged to senders based on GasLimit |
+| `allow_unprotected_txs` | [bool](#bool) |  | Allow unprotected transactions defines if replay-protected (i.e non EIP155 signed) transactions can be executed on the state machine. |
 
 
 
@@ -444,6 +445,8 @@ DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 
 ### LegacyTx
 LegacyTx is the transaction data of regular Ethereum transactions.
+NOTE: All non-protected transactions (i.e non EIP155 signed) will fail if the
+AllowUnprotectedTxs parameter is disabled.
 
 
 | Field | Type | Label | Description |
@@ -954,6 +957,8 @@ Params defines the EVM module parameters
 | `elasticity_multiplier` | [uint32](#uint32) |  | elasticity multiplier bounds the maximum gas limit an EIP-1559 block may have. |
 | `enable_height` | [int64](#int64) |  | height at which the base fee calculation is enabled. |
 | `base_fee` | [string](#string) |  | base fee for EIP-1559 blocks. |
+| `min_gas_price` | [string](#string) |  | min_gas_price defines the minimum gas price value for cosmos and eth transactions |
+| `min_gas_multiplier` | [string](#string) |  | min gas denominator bounds the minimum gasUsed to be charged to senders based on GasLimit |
 
 
 
@@ -985,7 +990,7 @@ GenesisState defines the feemarket module's genesis state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#ethermint.feemarket.v1.Params) |  | params defines all the paramaters of the module. |
-| `block_gas` | [uint64](#uint64) |  | block gas is the amount of gas used on the last block before the upgrade. Zero by default. |
+| `block_gas` | [uint64](#uint64) |  | block gas is the amount of gas wanted on the last block before the upgrade. Zero by default. |
 
 
 

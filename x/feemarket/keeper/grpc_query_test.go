@@ -3,7 +3,7 @@ package keeper_test
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
 func (suite *KeeperTestSuite) TestQueryParams() {
@@ -86,7 +86,7 @@ func (suite *KeeperTestSuite) TestQueryBlockGas() {
 		},
 	}
 	for _, tc := range testCases {
-		gas := suite.app.FeeMarketKeeper.GetBlockGasUsed(suite.ctx)
+		gas := suite.app.FeeMarketKeeper.GetBlockGasWanted(suite.ctx)
 		exp := &types.QueryBlockGasResponse{Gas: int64(gas)}
 
 		res, err := suite.queryClient.BlockGas(suite.ctx.Context(), &types.QueryBlockGasRequest{})
