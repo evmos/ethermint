@@ -1138,11 +1138,11 @@ func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rp
 	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
 		return rpctypes.EthEarliestBlockNumber, fmt.Errorf("types BlockHash and BlockNumber cannot be both nil")
 	case blockNrOrHash.BlockHash != nil:
-		blockHeader, err := e.backend.HeaderByHash(*blockNrOrHash.BlockHash)
+		blockNumber, err := e.backend.GetBlockNumberByHash(*blockNrOrHash.BlockHash)
 		if err != nil {
 			return rpctypes.EthEarliestBlockNumber, err
 		}
-		return rpctypes.NewBlockNumber(blockHeader.Number), nil
+		return rpctypes.NewBlockNumber(blockNumber), nil
 	case blockNrOrHash.BlockNumber != nil:
 		return *blockNrOrHash.BlockNumber, nil
 	default:
