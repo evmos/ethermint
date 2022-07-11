@@ -36,6 +36,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.10.1] - 2022-07-13
+
+* (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
+
 ## [v0.10.1] - 2022-03-04
 
 ### Bug Fixes
