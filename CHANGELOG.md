@@ -39,7 +39,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ## Unreleased
 
 ### State Machine Breaking
+
 * (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
+* (deps) [#1167](https://github.com/evmos/ethermint/pull/1167) Upgrade ibc-go to v4.
 
 ### Improvements
 
