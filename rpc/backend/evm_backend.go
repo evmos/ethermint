@@ -369,6 +369,7 @@ func (b *Backend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, 
 	return ethHeader, nil
 }
 
+// GetBlockNumberByHash returns the block height of given block hash
 func (b *Backend) GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error) {
 	resBlock, err := b.GetTendermintBlockByHash(blockHash)
 	if err != nil {
