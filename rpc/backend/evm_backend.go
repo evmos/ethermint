@@ -618,7 +618,7 @@ func (b *Backend) GetTxByEthHash(hash common.Hash) (*ethermint.TxResult, error) 
 	return result, nil
 }
 
-// GetTxByTxIndex uses `/tx_query` to find transaction by tx index of valid ethereum txs
+// GetTxByTxIndex find transaction by tx index of valid ethereum txs in tx indexer.
 func (b *Backend) GetTxByTxIndex(height int64, index uint) (*ethermint.TxResult, error) {
 	if b.indexer != nil {
 		return b.indexer.GetByBlockAndIndex(height, int32(index))
