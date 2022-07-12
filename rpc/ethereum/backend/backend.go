@@ -62,6 +62,7 @@ type Backend interface {
 	BlockByHash(blockHash common.Hash) (*ethtypes.Block, error)
 	CurrentHeader() *ethtypes.Header
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
+	GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
@@ -504,6 +505,18 @@ func (e *EVMBackend) HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Heade
 
 	ethHeader := types.EthHeaderFromTendermint(resBlock.Block.Header, bloom, baseFee)
 	return ethHeader, nil
+}
+
+// GetBlockNumberByHash returns the block height of given block hash
+func (e *EVMBackend) GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error) {
+	resBlock, err := e.GetTendermintBlockByHash(blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if resBlock == nil {
+		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
+	}
+	return big.NewInt(resBlock.Block.Height), nil
 }
 
 // HeaderByHash returns the block header identified by hash.
