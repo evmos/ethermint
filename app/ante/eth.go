@@ -61,13 +61,10 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		if err != nil {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrorInvalidSigner,
-				"couldn't retrieve sender address ('%s') from the ethereum transaction: %s",
-				msgEthTx.From,
+				"couldn't retrieve sender address from the ethereum transaction: %s",
 				err.Error(),
 			)
 		}
-
-		// set up the sender to the transaction field if not already
 		msgEthTx.From = sender.Hex()
 	}
 
@@ -427,6 +424,20 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 			msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 			if !ok {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
+			}
+
+			// Validate Size_ field, should be kept empty
+			if msgEthTx.Size_ != 0 {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "dirty tx size field %f, expected: 0", msgEthTx.Size_)
+			}
+			// Validate Hash field
+			expHash := msgEthTx.AsTransaction().Hash().Hex()
+			if msgEthTx.Hash != expHash {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid tx hash %s, expected: %s", msgEthTx.Hash, expHash)
+			}
+			// Validate `From` field
+			if msgEthTx.From != "" {
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid From %s, expect empty string", msgEthTx.From)
 			}
 
 			txGasLimit += msgEthTx.GetGas()
