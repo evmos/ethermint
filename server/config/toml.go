@@ -66,7 +66,7 @@ http-idle-timeout = "{{ .JSONRPC.HTTPIdleTimeout }}"
 # the node's RPC when the global parameter is disabled.
 allow-unprotected-txs = {{ .JSONRPC.AllowUnprotectedTxs }}
 
-# EnableIndexer defines if enable the custom indexer for eth tx.
+# EnableIndexer enables the custom transaction indexer for the EVM (ethereum transactions).
 enable-indexer = {{ .JSONRPC.EnableIndexer }}
 
 ###############################################################################
