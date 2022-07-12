@@ -33,7 +33,7 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		BerlinBlock:             getBlockValue(cc.BerlinBlock),
 		LondonBlock:             getBlockValue(cc.LondonBlock),
 		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
-		MergeForkBlock:          getBlockValue(cc.MergeForkBlock),
+		MergeNetsplitBlock:      getBlockValue(cc.MergeForkBlock),
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,

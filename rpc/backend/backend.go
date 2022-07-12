@@ -61,6 +61,7 @@ type EVMBackend interface {
 	CurrentHeader() *ethtypes.Header
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
+	GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
 	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)

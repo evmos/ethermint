@@ -36,6 +36,18 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### State Machine Breaking
+
+* (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
+* (deps) [#1167](https://github.com/evmos/ethermint/pull/1167) Upgrade ibc-go to v4.
+
+### Improvements
+
+* (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
+* (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
+
 ## [v0.17.0] - 2022-06-27
 
 ### State Machine Breaking
