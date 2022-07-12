@@ -30,12 +30,12 @@ const (
 
 var _ ethermint.EVMTxIndexer = &KVIndexer{}
 
-// TxHashKey construct the kv db key for tx hash entry
+// TxHashKey returns the key for db entry: `tx hash -> tx result struct`
 func TxHashKey(hash common.Hash) []byte {
 	return append([]byte{KeyPrefixTxHash}, hash.Bytes()...)
 }
 
-// TxIndexKey construct the kv db key for block-tx-index entry
+// TxIndexKey returns the key for db entry: `(block number, tx index) -> tx hash`
 func TxIndexKey(blockNumber int64, txIndex int32) []byte {
 	bz1 := sdk.Uint64ToBigEndian(uint64(blockNumber))
 	bz2 := sdk.Uint64ToBigEndian(uint64(txIndex))
