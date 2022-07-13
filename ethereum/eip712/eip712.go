@@ -364,7 +364,7 @@ func sanitizeTypedef(str string) string {
 
 		subparts := strings.Split(part, "_")
 		for _, subpart := range subparts {
-			buf.WriteString(strings.Title(subpart))
+			buf.WriteString(strings.Title(subpart)) // nolint: staticcheck
 		}
 	}
 
