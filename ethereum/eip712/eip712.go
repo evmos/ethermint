@@ -96,7 +96,7 @@ type FeeDelegationOptions struct {
 
 func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg) (apitypes.Types, error) {
 	rootTypes := apitypes.Types{
-		"EIP712Domain": {
+		"EIP712Domain": { // nolint: typecheck
 			{
 				Name: "name",
 				Type: "string",
@@ -118,7 +118,7 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 				Type: "string",
 			},
 		},
-		"Tx": {
+		"Tx": { // nolint: typecheck
 			{Name: "account_number", Type: "string"},
 			{Name: "chain_id", Type: "string"},
 			{Name: "fee", Type: "Fee"},
@@ -128,19 +128,19 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 			// Note timeout_height was removed because it was not getting filled with the legacyTx
 			// {Name: "timeout_height", Type: "string"},
 		},
-		"Fee": {
+		"Fee": { // nolint: typecheck
 			{Name: "amount", Type: "Coin[]"},
 			{Name: "gas", Type: "string"},
 		},
-		"Coin": {
+		"Coin": { // nolint: typecheck
 			{Name: "denom", Type: "string"},
 			{Name: "amount", Type: "string"},
 		},
-		"Msg": {
+		"Msg": { // nolint: typecheck
 			{Name: "type", Type: "string"},
 			{Name: "value", Type: msgTypeName},
 		},
-		msgTypeName: {},
+		msgTypeName: {}, // nolint: typecheck
 	}
 
 	if err := walkFields(cdc, rootTypes, msgTypeName, msg); err != nil {

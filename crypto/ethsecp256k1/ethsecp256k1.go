@@ -3,7 +3,7 @@ package ethsecp256k1
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"crypto/subtle"
+	"crypto/subtle" // nolint: typecheck
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
