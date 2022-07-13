@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc" // nolint: typecheck
 
 	ethermint "github.com/tharsis/ethermint/types"
 )
