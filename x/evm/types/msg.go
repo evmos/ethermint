@@ -12,7 +12,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
-	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx" // nolint: typecheck
 
 	"github.com/tharsis/ethermint/types"
 

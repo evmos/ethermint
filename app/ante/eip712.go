@@ -10,10 +10,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx" // nolint: typecheck
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto" // nolint: typecheck
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/ethereum/eip712"

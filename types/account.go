@@ -54,7 +54,7 @@ func ProtoAccount() authtypes.AccountI {
 
 // EthAddress returns the account address ethereum format.
 func (acc EthAccount) EthAddress() common.Address {
-	return common.BytesToAddress(acc.GetAddress().Bytes())
+	return common.BytesToAddress(acc.GetAddress().Bytes()) // nolint: typecheck
 }
 
 // GetCodeHash returns the account code hash in byte format
