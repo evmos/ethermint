@@ -375,7 +375,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 	for i, tc := range testCases {
 		to := common.HexToAddress(tc.from)
 
-		tx := types.NewTx(tc.chainID, 1, &to, tc.amount, 1000, tc.gasPrice, tc.gasFeeCap, tc.gasTipCap, nil, tc.accessList)
+		tx := types.NewTx(tc.chainID, 1, &to, tc.amount, tc.gasLimit, tc.gasPrice, tc.gasFeeCap, tc.gasTipCap, nil, tc.accessList)
 		tx.From = tc.from
 
 		// apply nil assignment here to test ValidateBasic function instead of NewTx
