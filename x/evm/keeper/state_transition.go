@@ -435,7 +435,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	minimumGasUsed := gasLimit.Mul(minGasMultiplier)
 
 	if msg.Gas() < leftoverGas {
-		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
+		return nil, sdkerrors.Wrapf(types.ErrGasOverflow, "message gas limit < leftover gas (%d < %d)", msg.Gas(), leftoverGas)
 	}
 	temporaryGasUsed := msg.Gas() - leftoverGas
 	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
