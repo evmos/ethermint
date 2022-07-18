@@ -48,6 +48,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
 * (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
 
+### Bug Fixes
+
+* (rpc) [\#1190](https://github.com/evmos/ethermint/issues/1190) Fix `UnmarshalJSON` panig of breaking EVM and fee market `Params`.
+
 ## [v0.17.0] - 2022-06-27
 
 ### State Machine Breaking
