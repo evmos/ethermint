@@ -358,6 +358,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB)
 
 	leftoverGas := msg.Gas()
+	// Allow the tracer captures the tx level events, mainly the gas consumption.
 	if evm.Config.Debug {
 		evm.Config.Tracer.CaptureTxStart(leftoverGas)
 		defer func() {
@@ -432,6 +433,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	minGasMultiplier := k.GetMinGasMultiplier(ctx)
 	minimumGasUsed := gasLimit.Mul(minGasMultiplier)
 
+	if msg.Gas() < leftoverGas {
+		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
+	}
 	temporaryGasUsed := msg.Gas() - leftoverGas
 	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
 	// reset leftoverGas, to be used by the tracer
