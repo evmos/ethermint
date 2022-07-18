@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	ethlogger "github.com/ethereum/go-ethereum/eth/tracers/logger"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/evmos/ethermint/x/evm/statedb"
 
@@ -728,6 +729,11 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 					suite.Require().Equal(tc.traceResponse, string(res.Data[:150]))
 				} else {
 					suite.Require().Equal(tc.traceResponse, string(res.Data))
+				}
+				if traceConfig == nil || traceConfig.Tracer == "" {
+					var result ethlogger.ExecutionResult
+					suite.Require().NoError(json.Unmarshal(res.Data, &result))
+					suite.Require().Positive(result.Gas)
 				}
 			} else {
 				suite.Require().Error(err)
