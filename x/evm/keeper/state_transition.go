@@ -357,6 +357,15 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	stateDB := statedb.New(ctx, k, txConfig)
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB)
 
+	leftoverGas := msg.Gas()
+	// Allow the tracer captures the tx level events, mainly the gas consumption.
+	if evm.Config.Debug {
+		evm.Config.Tracer.CaptureTxStart(leftoverGas)
+		defer func() {
+			evm.Config.Tracer.CaptureTxEnd(leftoverGas)
+		}()
+	}
+
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
 	isLondon := cfg.ChainConfig.IsLondon(evm.Context.BlockNumber)
@@ -368,12 +377,11 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	}
 
 	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
-	if msg.Gas() < intrinsicGas {
+	if leftoverGas < intrinsicGas {
 		// eth_estimateGas will check for this exact error
 		return nil, sdkerrors.Wrap(core.ErrIntrinsicGas, "apply message")
 	}
-
-	leftoverGas := msg.Gas() - intrinsicGas
+	leftoverGas -= intrinsicGas
 
 	// access list preparation is moved from ante handler to here, because it's needed when `ApplyMessage` is called
 	// under contexts where ante handlers are not run, for example `eth_call` and `eth_estimateGas`.
@@ -403,14 +411,8 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	if msg.Gas() < leftoverGas {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
-
-	temporaryGasUsed := msg.Gas() - leftoverGas
-	refund := GasToRefund(stateDB.GetRefund(), temporaryGasUsed, refundQuotient)
-	if refund > temporaryGasUsed {
-		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
-	}
-
-	temporaryGasUsed -= refund
+	// refund gas
+	leftoverGas += GasToRefund(stateDB.GetRefund(), msg.Gas()-leftoverGas, refundQuotient)
 
 	// EVM execution error needs to be available for the JSON-RPC client
 	var vmError string
@@ -431,7 +433,14 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	gasLimit := sdk.NewDec(int64(msg.Gas()))
 	minGasMultiplier := k.GetMinGasMultiplier(ctx)
 	minimumGasUsed := gasLimit.Mul(minGasMultiplier)
+
+	if msg.Gas() < leftoverGas {
+		return nil, sdkerrors.Wrapf(types.ErrGasOverflow, "message gas limit < leftover gas (%d < %d)", msg.Gas(), leftoverGas)
+	}
+	temporaryGasUsed := msg.Gas() - leftoverGas
 	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
+	// reset leftoverGas, to be used by the tracer
+	leftoverGas = msg.Gas() - gasUsed
 
 	return &types.MsgEthereumTxResponse{
 		GasUsed: gasUsed,
