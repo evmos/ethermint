@@ -61,12 +61,11 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEn
 	}
 
 	httpSrv := &http.Server{
-		Addr:              config.JSONRPC.Address,
-		Handler:           handlerWithCors.Handler(r),
-		ReadTimeout:       config.JSONRPC.HTTPTimeout,
-		WriteTimeout:      config.JSONRPC.HTTPTimeout,
-		IdleTimeout:       config.JSONRPC.HTTPIdleTimeout,
-		ReadHeaderTimeout: config.JSONRPC.HTTPTimeout,
+		Addr:         config.JSONRPC.Address,
+		Handler:      handlerWithCors.Handler(r),
+		ReadTimeout:  config.JSONRPC.HTTPTimeout,
+		WriteTimeout: config.JSONRPC.HTTPTimeout,
+		IdleTimeout:  config.JSONRPC.HTTPIdleTimeout,
 	}
 	httpSrvDone := make(chan struct{}, 1)
 
