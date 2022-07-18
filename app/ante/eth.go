@@ -65,6 +65,8 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 				err.Error(),
 			)
 		}
+
+		// set up the sender to the transaction field if not already
 		msgEthTx.From = sender.Hex()
 	}
 
@@ -421,23 +423,18 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
 
 		for _, msg := range protoTx.GetMsgs() {
+			if err := msg.ValidateBasic(); err != nil {
+				return ctx, sdkerrors.Wrap(err, "msg basic validation failed")
+			}
+
 			msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 			if !ok {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 			}
 
-			// Validate Size_ field, should be kept empty
-			if msgEthTx.Size_ != 0 {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "dirty tx size field %f, expected: 0", msgEthTx.Size_)
-			}
-			// Validate Hash field
-			expHash := msgEthTx.AsTransaction().Hash().Hex()
-			if msgEthTx.Hash != expHash {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid tx hash %s, expected: %s", msgEthTx.Hash, expHash)
-			}
 			// Validate `From` field
 			if msgEthTx.From != "" {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid From %s, expect empty string", msgEthTx.From)
+				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid From %s, expect empty string", msgEthTx.From)
 			}
 
 			txGasLimit += msgEthTx.GetGas()
@@ -482,6 +479,8 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		if len(sigs) > 0 {
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx Signatures should be empty")
 		}
+	} else {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid tx type %T, didn't implement interface protoTxProvider", tx)
 	}
 
 	return next(ctx, tx, simulate)

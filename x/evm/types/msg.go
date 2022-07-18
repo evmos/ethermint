@@ -165,6 +165,17 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		}
 	}
 
+	// Validate Size_ field, should be kept empty
+	if msg.Size_ != 0 {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "tx size is deprecated")
+	}
+
+	// Validate Hash field
+	txHash := msg.AsTransaction().Hash().Hex()
+	if msg.Hash != txHash {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid tx hash %s, expected: %s", msg.Hash, txHash)
+	}
+
 	txData, err := UnpackTxData(msg.Data)
 	if err != nil {
 		return sdkerrors.Wrap(err, "failed to unpack tx data")
