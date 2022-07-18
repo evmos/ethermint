@@ -44,6 +44,7 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 		},
 	}
 	for _, tc := range testCases {
+		suite.SetupTest()
 
 		blockNumber, err := suite.backend.BlockNumber()
 
