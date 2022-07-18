@@ -411,6 +411,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, trace
 	if msg.Gas() < leftoverGas {
 		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
 	}
+	// refund gas
 	leftoverGas += GasToRefund(stateDB.GetRefund(), msg.Gas()-leftoverGas, refundQuotient)
 
 	// EVM execution error needs to be available for the JSON-RPC client
