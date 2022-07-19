@@ -130,10 +130,12 @@ func newMsgEthereumTx(
 		panic(err)
 	}
 
-	return &MsgEthereumTx{Data: dataAny}
+	msg := MsgEthereumTx{Data: dataAny}
+	msg.Hash = msg.AsTransaction().Hash().Hex()
+	return &msg
 }
 
-// fromEthereumTx populates the message fields from the given ethereum transaction
+// FromEthereumTx populates the message fields from the given ethereum transaction
 func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) error {
 	txData, err := NewTxDataFromTx(tx)
 	if err != nil {
@@ -146,7 +148,6 @@ func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) error {
 	}
 
 	msg.Data = anyTxData
-	msg.Size_ = float64(tx.Size())
 	msg.Hash = tx.Hash().Hex()
 	return nil
 }
@@ -166,6 +167,11 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		}
 	}
 
+	// Validate Size_ field, should be kept empty
+	if msg.Size_ != 0 {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "tx size is deprecated")
+	}
+
 	txData, err := UnpackTxData(msg.Data)
 	if err != nil {
 		return sdkerrors.Wrap(err, "failed to unpack tx data")
@@ -176,7 +182,17 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		return sdkerrors.Wrap(ErrInvalidGasLimit, "gas limit must not be zero")
 	}
 
-	return txData.Validate()
+	if err := txData.Validate(); err != nil {
+		return err
+	}
+
+	// Validate Hash field after validated txData to avoid panic
+	txHash := msg.AsTransaction().Hash().Hex()
+	if msg.Hash != txHash {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid tx hash %s, expected: %s", msg.Hash, txHash)
+	}
+
+	return nil
 }
 
 // GetMsgs returns a single MsgEthereumTx as an sdk.Msg.
@@ -342,6 +358,10 @@ func (msg *MsgEthereumTx) BuildTx(b client.TxBuilder, evmDenom string) (signing.
 	}
 
 	builder.SetExtensionOptions(option)
+
+	// A valid msg should have empty `From`
+	msg.From = ""
+
 	err = builder.SetMsgs(msg)
 	if err != nil {
 		return nil, err
