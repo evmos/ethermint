@@ -190,6 +190,7 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	err = msg.Sign(suite.ethSigner, tests.NewSigner(priv))
 	suite.Require().NoError(err)
 
+	msg.From = ""
 	err = builder.SetMsgs(msg)
 	suite.Require().NoError(err)
 
