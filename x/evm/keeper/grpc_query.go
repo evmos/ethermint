@@ -536,14 +536,13 @@ func (k *Keeper) traceTx(
 
 	// Handle timeouts and RPC cancellations
 	deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
-	defer cancel()
-
 	go func() {
 		<-deadlineCtx.Done()
 		if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
 			tracer.Stop(errors.New("execution timeout"))
 		}
 	}()
+	defer cancel()
 
 	res, err := k.ApplyMessageWithConfig(ctx, msg, tracer, commitMessage, cfg, txConfig)
 	if err != nil {

@@ -296,7 +296,8 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			}, false, false, false,
 		},
 		{
-			"success - DeliverTx EIP712 signed Cosmos Tx with MsgSend",
+			"success - DeliverTx " +
+				"712 signed Cosmos Tx with MsgSend",
 			func() sdk.Tx {
 				from := acc.GetAddress()
 				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
