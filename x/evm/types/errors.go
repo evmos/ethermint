@@ -33,6 +33,7 @@ const (
 	codeErrInvalidBaseFee
 	codeErrGasOverflow
 	codeErrInvalidAccount
+	codeErrInvalidGasLimit
 )
 
 var ErrPostTxProcessing = errors.New("failed to execute post processing")
@@ -97,6 +98,9 @@ var (
 
 	// ErrInvalidAccount returns an error if the account is not an EVM compatible account
 	ErrInvalidAccount = sdkerrors.Register(ModuleName, codeErrInvalidAccount, "account type is not a valid ethereum account")
+
+	// ErrInvalidGasLimit returns an error if gas limit value is invalid
+	ErrInvalidGasLimit = sdkerrors.Register(ModuleName, codeErrInvalidGasLimit, "invalid gas limit")
 )
 
 // NewExecErrorWithReason unpacks the revert return bytes and returns a wrapped error

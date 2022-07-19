@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -31,6 +34,7 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -66,12 +70,31 @@ type KeeperTestSuite struct {
 	enableFeemarket  bool
 	enableLondonHF   bool
 	mintFeeCollector bool
+	denom            string
 }
 
-/// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
-func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
-	checkTx := false
+var s *KeeperTestSuite
 
+func TestKeeperTestSuite(t *testing.T) {
+	s = new(KeeperTestSuite)
+	s.enableFeemarket = false
+	s.enableLondonHF = true
+	suite.Run(t, s)
+
+	// Run Ginkgo integration tests
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Keeper Suite")
+}
+
+func (suite *KeeperTestSuite) SetupTest() {
+	checkTx := false
+	suite.app = app.Setup(checkTx, nil)
+	suite.SetupApp(checkTx)
+}
+
+/// SetupApp setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
+func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
+	t := suite.T()
 	// account key, use a constant account to keep unit test deterministic.
 	ecdsaPriv, err := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	require.NoError(t, err)
@@ -110,18 +133,19 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	if suite.mintFeeCollector {
 		// mint some coin to fee collector
 		coins := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt(int64(params.TxGas)-1)))
-		genesisState := app.ModuleBasics.DefaultGenesis(suite.app.AppCodec())
+		genesisState := app.NewTestGenesisState(suite.app.AppCodec())
 		balances := []banktypes.Balance{
 			{
 				Address: suite.app.AccountKeeper.GetModuleAddress(authtypes.FeeCollectorName).String(),
 				Coins:   coins,
 			},
 		}
-		// update total supply
-		bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdk.NewInt((int64(params.TxGas)-1)))), []banktypes.Metadata{})
-		bz := suite.app.AppCodec().MustMarshalJSON(bankGenesis)
-		require.NotNil(t, bz)
-		genesisState[banktypes.ModuleName] = suite.app.AppCodec().MustMarshalJSON(bankGenesis)
+		var bankGenesis banktypes.GenesisState
+		suite.app.AppCodec().MustUnmarshalJSON(genesisState[banktypes.ModuleName], &bankGenesis)
+		// Update balances and total supply
+		bankGenesis.Balances = append(bankGenesis.Balances, balances...)
+		bankGenesis.Supply = bankGenesis.Supply.Add(coins...)
+		genesisState[banktypes.ModuleName] = suite.app.AppCodec().MustMarshalJSON(&bankGenesis)
 
 		// we marshal the genesisState of all module to a byte array
 		stateBytes, err := tmjson.MarshalIndent(genesisState, "", " ")
@@ -185,10 +209,7 @@ func (suite *KeeperTestSuite) DoSetupTest(t require.TestingT) {
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 	suite.appCodec = encodingConfig.Marshaler
-}
-
-func (suite *KeeperTestSuite) SetupTest() {
-	suite.DoSetupTest(suite.T())
+	suite.denom = evmtypes.DefaultEVMDenom
 }
 
 func (suite *KeeperTestSuite) EvmDenom() string {
@@ -411,11 +432,4 @@ func (suite *KeeperTestSuite) TestBaseFee() {
 	}
 	suite.enableFeemarket = false
 	suite.enableLondonHF = true
-}
-
-func TestKeeperTestSuite(t *testing.T) {
-	suite.Run(t, &KeeperTestSuite{
-		enableFeemarket: false,
-		enableLondonHF:  true,
-	})
 }
