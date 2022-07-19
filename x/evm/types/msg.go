@@ -171,6 +171,11 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "failed to unpack tx data")
 	}
 
+	// prevent txs with 0 gas to fill up the mempool
+	if txData.GetGas() == 0 {
+		return sdkerrors.Wrap(ErrInvalidGasLimit, "gas limit must not be zero")
+	}
+
 	return txData.Validate()
 }
 
