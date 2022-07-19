@@ -395,27 +395,6 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			}, false, false, false,
 		},
 		{
-			"fails - invalid tx hash",
-			func() sdk.Tx {
-				msg := evmtypes.NewTxContract(
-					suite.app.EvmKeeper.ChainID(),
-					1,
-					big.NewInt(10),
-					100000,
-					big.NewInt(150),
-					big.NewInt(200),
-					nil,
-					nil,
-					nil,
-				)
-				msg.From = addr.Hex()
-				tx := suite.CreateTestTx(msg, privKey, 1, false)
-				msg = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-				msg.Hash = "0x00"
-				return tx
-			}, true, false, false,
-		},
-		{
 			"fails - invalid from",
 			func() sdk.Tx {
 				msg := evmtypes.NewTxContract(
@@ -433,27 +412,6 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				tx := suite.CreateTestTx(msg, privKey, 1, false)
 				msg = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
 				msg.From = addr.Hex()
-				return tx
-			}, true, false, false,
-		},
-		{
-			"fails - invalid size",
-			func() sdk.Tx {
-				msg := evmtypes.NewTxContract(
-					suite.app.EvmKeeper.ChainID(),
-					1,
-					big.NewInt(10),
-					100000,
-					big.NewInt(150),
-					big.NewInt(200),
-					nil,
-					nil,
-					nil,
-				)
-				msg.From = addr.Hex()
-				tx := suite.CreateTestTx(msg, privKey, 1, false)
-				msg = tx.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
-				msg.Size_ = 1
 				return tx
 			}, true, false, false,
 		},

@@ -423,10 +423,6 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
 
 		for _, msg := range protoTx.GetMsgs() {
-			if err := msg.ValidateBasic(); err != nil {
-				return ctx, sdkerrors.Wrap(err, "msg basic validation failed")
-			}
-
 			msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 			if !ok {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))

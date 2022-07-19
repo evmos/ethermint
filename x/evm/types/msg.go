@@ -130,7 +130,9 @@ func newMsgEthereumTx(
 		panic(err)
 	}
 
-	return &MsgEthereumTx{Data: dataAny}
+	msg := MsgEthereumTx{Data: dataAny}
+	msg.Hash = msg.AsTransaction().Hash().Hex()
+	return &msg
 }
 
 // FromEthereumTx populates the message fields from the given ethereum transaction
@@ -170,18 +172,22 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "tx size is deprecated")
 	}
 
-	// Validate Hash field
-	txHash := msg.AsTransaction().Hash().Hex()
-	if msg.Hash != txHash {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid tx hash %s, expected: %s", msg.Hash, txHash)
-	}
-
 	txData, err := UnpackTxData(msg.Data)
 	if err != nil {
 		return sdkerrors.Wrap(err, "failed to unpack tx data")
 	}
 
-	return txData.Validate()
+	if err := txData.Validate(); err != nil {
+		return err
+	}
+
+	// Validate Hash field after validated txData to avoid panic
+	txHash := msg.AsTransaction().Hash().Hex()
+	if msg.Hash != txHash {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid tx hash %s, expected: %s", msg.Hash, txHash)
+	}
+
+	return nil
 }
 
 // GetMsgs returns a single MsgEthereumTx as an sdk.Msg.
