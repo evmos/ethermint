@@ -372,24 +372,85 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		},
 	}
 
-	for i, tc := range testCases {
-		to := common.HexToAddress(tc.from)
+	for _, tc := range testCases {
+		suite.Run(tc.msg, func() {
+			to := common.HexToAddress(tc.from)
 
-		tx := types.NewTx(tc.chainID, 1, &to, tc.amount, tc.gasLimit, tc.gasPrice, tc.gasFeeCap, tc.gasTipCap, nil, tc.accessList)
-		tx.From = tc.from
+			tx := types.NewTx(tc.chainID, 1, &to, tc.amount, tc.gasLimit, tc.gasPrice, tc.gasFeeCap, tc.gasTipCap, nil, tc.accessList)
+			tx.From = tc.from
 
-		// apply nil assignment here to test ValidateBasic function instead of NewTx
-		if strings.Contains(tc.msg, "nil tx.Data") {
-			tx.Data = nil
-		}
+			// apply nil assignment here to test ValidateBasic function instead of NewTx
+			if strings.Contains(tc.msg, "nil tx.Data") {
+				tx.Data = nil
+			}
 
-		err := tx.ValidateBasic()
+			err := tx.ValidateBasic()
 
-		if tc.expectPass {
-			suite.Require().NoError(err, "valid test %d failed: %s, %v", i, tc.msg)
-		} else {
-			suite.Require().Error(err, "invalid test %d passed: %s, %v", i, tc.msg)
-		}
+			if tc.expectPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasicAdvanced() {
+	hundredInt := big.NewInt(100)
+	testCases := []struct {
+		msg        string
+		msgBuilder func() *types.MsgEthereumTx
+		expectPass bool
+	}{
+		{
+			"fails - invalid tx hash",
+			func() *types.MsgEthereumTx {
+				msg := types.NewTxContract(
+					hundredInt,
+					1,
+					big.NewInt(10),
+					100000,
+					big.NewInt(150),
+					big.NewInt(200),
+					nil,
+					nil,
+					nil,
+				)
+				msg.Hash = "0x00"
+				return msg
+			},
+			false,
+		},
+		{
+			"fails - invalid size",
+			func() *types.MsgEthereumTx {
+				msg := types.NewTxContract(
+					hundredInt,
+					1,
+					big.NewInt(10),
+					100000,
+					big.NewInt(150),
+					big.NewInt(200),
+					nil,
+					nil,
+					nil,
+				)
+				msg.Size_ = 1
+				return msg
+			},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.msg, func() {
+			err := tc.msgBuilder().ValidateBasic()
+			if tc.expectPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
 	}
 }
 
