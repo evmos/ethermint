@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+* (rpc) [\#1190](https://github.com/evmos/ethermint/issues/1190) Fix `UnmarshalJSON` panic of breaking EVM and fee market `Params`.
+
 ## [v0.17.1] - 2022-07-13
 
 ### Improvements
