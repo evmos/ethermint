@@ -21,12 +21,18 @@ func TestBackendTestSuite(t *testing.T) {
 
 func (suite *BackendTestSuite) SetupTest() {
 	ctx := server.NewDefaultContext()
+	ctx.Viper.Set("telemetry.global-labels", []interface{}{})
 	clientCtx := client.Context{
 		Height:  1,
 		ChainID: "ethermint_9000-1",
 	}
 	allowUnprotectedTxs := false
 	suite.backend = backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
+
+	// queryHelper := baseapp.NewQueryServerTestHelper(suite.ctx, suite.app.InterfaceRegistry())
+	// types.RegisterQueryServer(queryHelper, suite.app.EvmKeeper)
+	// suite.queryClient = types.NewQueryClient(queryHelper)
+
 }
 
 func (suite *BackendTestSuite) TestBlockNumber() {
