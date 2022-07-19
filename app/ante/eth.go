@@ -61,8 +61,7 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 		if err != nil {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrorInvalidSigner,
-				"couldn't retrieve sender address ('%s') from the ethereum transaction: %s",
-				msgEthTx.From,
+				"couldn't retrieve sender address from the ethereum transaction: %s",
 				err.Error(),
 			)
 		}
@@ -403,74 +402,82 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 
 	// For eth type cosmos tx, some fields should be veified as zero values,
 	// since we will only verify the signature against the hash of the MsgEthereumTx.Data
-	if wrapperTx, ok := tx.(protoTxProvider); ok {
-		protoTx := wrapperTx.GetProtoTx()
-		body := protoTx.Body
-		if body.Memo != "" || body.TimeoutHeight != uint64(0) || len(body.NonCriticalExtensionOptions) > 0 {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
-				"for eth tx body Memo TimeoutHeight NonCriticalExtensionOptions should be empty")
+	wrapperTx, ok := tx.(protoTxProvider)
+	if !ok {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid tx type %T, didn't implement interface protoTxProvider", tx)
+	}
+
+	protoTx := wrapperTx.GetProtoTx()
+	body := protoTx.Body
+	if body.Memo != "" || body.TimeoutHeight != uint64(0) || len(body.NonCriticalExtensionOptions) > 0 {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+			"for eth tx body Memo TimeoutHeight NonCriticalExtensionOptions should be empty")
+	}
+
+	if len(body.ExtensionOptions) != 1 {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx length of ExtensionOptions should be 1")
+	}
+
+	txFee := sdk.Coins{}
+	txGasLimit := uint64(0)
+
+	params := vbd.evmKeeper.GetParams(ctx)
+	chainID := vbd.evmKeeper.ChainID()
+	ethCfg := params.ChainConfig.EthereumConfig(chainID)
+	baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
+
+	for _, msg := range protoTx.GetMsgs() {
+		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
-		if len(body.ExtensionOptions) != 1 {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx length of ExtensionOptions should be 1")
+		// Validate `From` field
+		if msgEthTx.From != "" {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid From %s, expect empty string", msgEthTx.From)
 		}
 
-		txFee := sdk.Coins{}
-		txGasLimit := uint64(0)
+		txGasLimit += msgEthTx.GetGas()
 
-		params := vbd.evmKeeper.GetParams(ctx)
-		chainID := vbd.evmKeeper.ChainID()
-		ethCfg := params.ChainConfig.EthereumConfig(chainID)
-		baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
-
-		for _, msg := range protoTx.GetMsgs() {
-			msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
-			if !ok {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
-			}
-
-			txGasLimit += msgEthTx.GetGas()
-
-			txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
-			if err != nil {
-				return ctx, sdkerrors.Wrap(err, "failed to unpack MsgEthereumTx Data")
-			}
-
-			// return error if contract creation or call are disabled through governance
-			if !params.EnableCreate && txData.GetTo() == nil {
-				return ctx, sdkerrors.Wrap(evmtypes.ErrCreateDisabled, "failed to create new contract")
-			} else if !params.EnableCall && txData.GetTo() != nil {
-				return ctx, sdkerrors.Wrap(evmtypes.ErrCallDisabled, "failed to call contract")
-			}
-
-			if baseFee == nil && txData.TxType() == ethtypes.DynamicFeeTxType {
-				return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
-			}
-
-			txFee = txFee.Add(sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee())))
+		txData, err := evmtypes.UnpackTxData(msgEthTx.Data)
+		if err != nil {
+			return ctx, sdkerrors.Wrap(err, "failed to unpack MsgEthereumTx Data")
 		}
 
-		authInfo := protoTx.AuthInfo
-		if len(authInfo.SignerInfos) > 0 {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo SignerInfos should be empty")
+		// return error if contract creation or call are disabled through governance
+		if !params.EnableCreate && txData.GetTo() == nil {
+			return ctx, sdkerrors.Wrap(evmtypes.ErrCreateDisabled, "failed to create new contract")
+		} else if !params.EnableCall && txData.GetTo() != nil {
+			return ctx, sdkerrors.Wrap(evmtypes.ErrCallDisabled, "failed to call contract")
 		}
 
-		if authInfo.Fee.Payer != "" || authInfo.Fee.Granter != "" {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo Fee payer and granter should be empty")
+		if baseFee == nil && txData.TxType() == ethtypes.DynamicFeeTxType {
+			return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
 		}
 
-		if !authInfo.Fee.Amount.IsEqual(txFee) {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee Amount (%s != %s)", authInfo.Fee.Amount, txFee)
-		}
+		txFee = txFee.Add(sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(txData.Fee())))
+	}
 
-		if authInfo.Fee.GasLimit != txGasLimit {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee GasLimit (%d != %d)", authInfo.Fee.GasLimit, txGasLimit)
-		}
+	authInfo := protoTx.AuthInfo
+	if len(authInfo.SignerInfos) > 0 {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo SignerInfos should be empty")
+	}
 
-		sigs := protoTx.Signatures
-		if len(sigs) > 0 {
-			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx Signatures should be empty")
-		}
+	if authInfo.Fee.Payer != "" || authInfo.Fee.Granter != "" {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo Fee payer and granter should be empty")
+	}
+
+	if !authInfo.Fee.Amount.IsEqual(txFee) {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee Amount (%s != %s)", authInfo.Fee.Amount, txFee)
+	}
+
+	if authInfo.Fee.GasLimit != txGasLimit {
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee GasLimit (%d != %d)", authInfo.Fee.GasLimit, txGasLimit)
+	}
+
+	sigs := protoTx.Signatures
+	if len(sigs) > 0 {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx Signatures should be empty")
 	}
 
 	return next(ctx, tx, simulate)
