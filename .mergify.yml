@@ -16,8 +16,6 @@ pull_request_rules:
         commit_message_template: |
           {{ title }} (#{{ number }})
           {{ body }}
-<<<<<<< HEAD
-=======
   - name: backport patches to main branch
     conditions:
       - label=backport/main
@@ -33,7 +31,6 @@ pull_request_rules:
       backport:
         branches:
           - release/v0.17.x
->>>>>>> 73c9ea2 (fix(rpc): fix panic on breaking EVM and feemarket params (#1188))
   - name: backport patches to v0.16.x branch
     conditions:
       - base=main
