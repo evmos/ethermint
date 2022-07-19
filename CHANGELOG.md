@@ -48,6 +48,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
 * (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
+* (rpc) [#]() Set `ReadHeaderTimeout` in JSON-RPC server to `HTTPTimeout` config.
 
 ### Bug Fixes
 
