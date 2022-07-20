@@ -107,7 +107,7 @@ func (suite *AnteTestSuite) SetupTest() {
 
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 
-	options := ante.HandlerOptions{
+	anteHandler, err := ante.NewAnteHandler(ante.HandlerOptions{
 		AccountKeeper:   suite.app.AccountKeeper,
 		BankKeeper:      suite.app.BankKeeper,
 		EvmKeeper:       suite.app.EvmKeeper,
@@ -116,11 +116,10 @@ func (suite *AnteTestSuite) SetupTest() {
 		FeeMarketKeeper: suite.app.FeeMarketKeeper,
 		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
 		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
-	}
+	})
+	suite.Require().NoError(err)
 
-	suite.Require().NoError(options.Validate())
-
-	suite.anteHandler = ante.NewAnteHandler(options)
+	suite.anteHandler = anteHandler
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 }
 
@@ -193,6 +192,7 @@ func (suite *AnteTestSuite) CreateTestTxBuilder(
 	err = msg.Sign(suite.ethSigner, tests.NewSigner(priv))
 	suite.Require().NoError(err)
 
+	msg.From = ""
 	err = builder.SetMsgs(msg)
 	suite.Require().NoError(err)
 

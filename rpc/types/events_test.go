@@ -107,6 +107,8 @@ func TestParseTxResult(t *testing.T) {
 					}},
 					{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
 						{Key: []byte("amount"), Value: []byte("1000")},
+						{Key: []byte("ethereumTxHash"), Value: []byte(txHash.Hex())},
+						{Key: []byte("txIndex"), Value: []byte("0")},
 						{Key: []byte("txGasUsed"), Value: []byte("21000")},
 						{Key: []byte("txHash"), Value: []byte("14A84ED06282645EFBF080E0B7ED80D8D8D6A36337668A12B5F229F81CDD3F57")},
 						{Key: []byte("recipient"), Value: []byte("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
