@@ -56,8 +56,8 @@ def cluster(request, ethermint, geth):
         yield ethermint
     elif provider == "geth":
         yield geth
-    elif provider == "cronos-ws":
-        ethemrint_ws = ethermint.copy()
+    elif provider == "ethermint-ws":
+        ethermint_ws = ethermint.copy()
         ethermint_ws.use_websocket()
         yield ethermint_ws
     else:

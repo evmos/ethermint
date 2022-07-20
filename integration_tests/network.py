@@ -17,9 +17,7 @@ class Ethermint:
         self._w3 = None
         self.base_dir = base_dir
         self.config = json.loads((base_dir / "config.json").read_text())
-        self.enable_auto_deployment = json.loads(
-            (base_dir / "genesis.json").read_text()
-        )["app_state"]["ethermint"]["params"]["enable_auto_deployment"]
+        self.enable_auto_deployment = False
         self._use_websockets = False
 
     def copy(self):
@@ -123,7 +121,7 @@ def setup_custom_ethermint(path, base_port, config, post_init=None, chain_binary
     try:
         wait_for_port(ports.evmrpc_port(base_port))
         wait_for_port(ports.evmrpc_ws_port(base_port))
-        yield Ethermint(path / "ethermint-9000-1")
+        yield Ethermint(path / "ethermint_9000-1")
     finally:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         # proc.terminate()

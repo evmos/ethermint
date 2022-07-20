@@ -8,7 +8,7 @@ let
   pname = "ethermintd";
   tags = [ "ledger" "netgo" ];
   ldflags = lib.concatStringsSep "\n" ([
-    "-X github.com/cosmos/cosmos-sdk/version.Name=cronos"
+    "-X github.com/cosmos/cosmos-sdk/version.Name=ethermint"
     "-X github.com/cosmos/cosmos-sdk/version.AppName=${pname}"
     "-X github.com/cosmos/cosmos-sdk/version.Version=${version}"
     "-X github.com/cosmos/cosmos-sdk/version.BuildTags=${lib.concatStringsSep "," tags}"
@@ -33,6 +33,7 @@ buildGoApplication rec {
     "!../gomod2nix.toml"
   ] ./.);
   modules = ./gomod2nix.toml;
+  doCheck = false;
   pwd = src; # needed to support replace
   subPackages = [ "cmd/ethermintd" ];
   CGO_ENABLED = "1";

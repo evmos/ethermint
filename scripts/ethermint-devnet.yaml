@@ -1,5 +1,5 @@
 dotenv: .env
-cronos_777-1:
+ethermint_9000-1:
   cmd: ethermintd
   start-flags: "--trace"
   app-config:
@@ -36,14 +36,14 @@ cronos_777-1:
     app_state:
       evm:
         params:
-          evm_denom: basetcro
+          evm_denom: basetphoton
       gov:
         voting_params:
           voting_period: "10s"
         deposit_params:
           max_deposit_period: "10s"
           min_deposit:
-            - denom: "basetcro"
+            - denom: "basetphoton"
               amount: "1"
       transfer:
         params:
