@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [\#1190](https://github.com/evmos/ethermint/issues/1190) Fix `UnmarshalJSON` panic of breaking EVM and fee market `Params`.
+* (evm) [\#1187](https://github.com/evmos/ethermint/pull/1187) Fix `TxIndex` value (expected 0, actual 1) when trace the first tx of a block via `debug_traceTransaction` API.
 
 ## [v0.17.1] - 2022-07-13
 
@@ -48,15 +49,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
 
-<<<<<<< HEAD
-=======
-### Bug Fixes
-
-* (evm) [\#1187](https://github.com/evmos/ethermint/pull/1187) Fix `TxIndex` value (expected 0, actual 1) when trace the first tx of a block via `debug_traceTransaction` api
-* (rpc) [\#1190](https://github.com/evmos/ethermint/issues/1190) Fix `UnmarshalJSON` panig of breaking EVM and fee market `Params`.
-* (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
-
->>>>>>> cd41c48 (fix(evm): `TxIndex` is wrong when trace is the first tx of a block (#1187))
 ## [v0.17.0] - 2022-06-27
 
 ### State Machine Breaking
