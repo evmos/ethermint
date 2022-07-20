@@ -1029,6 +1029,7 @@ func (b *Backend) GetEthereumMsgsFromTendermintBlock(resBlock *tmrpctypes.Result
 				continue
 			}
 
+			ethMsg.Hash = ethMsg.AsTransaction().Hash().Hex()
 			result = append(result, ethMsg)
 		}
 	}

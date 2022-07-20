@@ -25,7 +25,7 @@ message MsgEthereumTx {
   google.protobuf.Any data = 1;
   // caches
 
-  // encoded storage size of the transaction
+  // DEPRECATED: encoded storage size of the transaction
   double size = 2 [ (gogoproto.jsontag) = "-" ];
   // transaction hash in hex format
   string hash = 3 [ (gogoproto.moretags) = "rlp:\"-\"" ];

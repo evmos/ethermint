@@ -794,6 +794,8 @@ func (s *IntegrationTestSuite) TestBatchETHTransactions() {
 		err = msgTx.Sign(s.ethSigner, s.network.Validators[0].ClientCtx.Keyring)
 		s.Require().NoError(err)
 
+		// A valid msg should have empty `From`
+		msgTx.From = ""
 		msgs = append(msgs, msgTx.GetMsgs()...)
 		txData, err := evmtypes.UnpackTxData(msgTx.Data)
 		s.Require().NoError(err)

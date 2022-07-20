@@ -15,7 +15,7 @@ import (
 
 func BenchmarkCreateAccountNew(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	b.ResetTimer()
@@ -31,7 +31,7 @@ func BenchmarkCreateAccountNew(b *testing.B) {
 
 func BenchmarkCreateAccountExisting(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	b.ResetTimer()
@@ -44,7 +44,7 @@ func BenchmarkCreateAccountExisting(b *testing.B) {
 
 func BenchmarkAddBalance(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	amt := big.NewInt(10)
@@ -59,7 +59,7 @@ func BenchmarkAddBalance(b *testing.B) {
 
 func BenchmarkSetCode(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	hash := crypto.Keccak256Hash([]byte("code")).Bytes()
@@ -74,7 +74,7 @@ func BenchmarkSetCode(b *testing.B) {
 
 func BenchmarkSetState(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	hash := crypto.Keccak256Hash([]byte("topic")).Bytes()
@@ -89,7 +89,7 @@ func BenchmarkSetState(b *testing.B) {
 
 func BenchmarkAddLog(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	topic := crypto.Keccak256Hash([]byte("topic"))
@@ -116,7 +116,7 @@ func BenchmarkAddLog(b *testing.B) {
 
 func BenchmarkSnapshot(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	b.ResetTimer()
@@ -136,7 +136,7 @@ func BenchmarkSnapshot(b *testing.B) {
 
 func BenchmarkSubBalance(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	amt := big.NewInt(10)
@@ -151,7 +151,7 @@ func BenchmarkSubBalance(b *testing.B) {
 
 func BenchmarkSetNonce(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	b.ResetTimer()
@@ -164,7 +164,7 @@ func BenchmarkSetNonce(b *testing.B) {
 
 func BenchmarkAddRefund(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	b.ResetTimer()
@@ -177,7 +177,7 @@ func BenchmarkAddRefund(b *testing.B) {
 
 func BenchmarkSuicide(b *testing.B) {
 	suite := KeeperTestSuite{}
-	suite.DoSetupTest(b)
+	suite.SetupTest()
 	vmdb := suite.StateDB()
 
 	b.ResetTimer()

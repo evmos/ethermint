@@ -143,10 +143,12 @@ func (args *TransactionArgs) ToTransaction() *MsgEthereumTx {
 		from = args.From.Hex()
 	}
 
-	return &MsgEthereumTx{
+	msg := MsgEthereumTx{
 		Data: any,
 		From: from,
 	}
+	msg.Hash = msg.AsTransaction().Hash().Hex()
+	return &msg
 }
 
 // ToMessage converts the arguments to the Message type used by the core evm.
