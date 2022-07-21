@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -30,15 +29,12 @@ func TestBackendTestSuite(t *testing.T) {
 func (suite *BackendTestSuite) SetupTest() {
 	ctx := server.NewDefaultContext()
 	ctx.Viper.Set("telemetry.global-labels", []interface{}{})
-
 	clientCtx := client.Context{}.WithChainID("ethermint_9000-1")
-
 	allowUnprotectedTxs := false
 
 	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
 
 	queryClient := mocks.NewQueryClient(suite.T())
-
 	var header metadata.MD
 	queryClient.On("Params", context.Background(), &evmtypes.QueryParamsRequest{}, grpc.Header(&header)).Return(&evmtypes.QueryParamsResponse{}, nil)
 
@@ -62,7 +58,6 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 	}
 	for _, tc := range testCases {
 		blockNumber, err := suite.backend.BlockNumber()
-		fmt.Println(blockNumber)
 
 		if tc.expPass {
 			suite.Require().Nil(err)
