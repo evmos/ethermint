@@ -60,12 +60,8 @@ class Geth:
         self.w3 = w3
 
 
-def setup_ethermint(path, base_port, enable_auto_deployment=True):
-    cfg = Path(__file__).parent / (
-        "../scripts/ethermint-devnet.yaml"
-        if enable_auto_deployment
-        else "configs/disable_auto_deployment.jsonnet"
-    )
+def setup_ethermint(path, base_port):
+    cfg = Path(__file__).parent / "../scripts/ethermint-devnet.yaml"
     yield from setup_custom_ethermint(path, base_port, cfg)
 
 def setup_geth(path, base_port):

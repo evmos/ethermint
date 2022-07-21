@@ -113,6 +113,7 @@ jobs:
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
       - name: Run integration tests
         run: make run-integration-tests
+        if: env.GIT_DIFF
       - name: 'Tar debug files'
         if: failure()
         run: tar cfz debug_files.tar.gz -C /tmp/pytest-of-runner .
