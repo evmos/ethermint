@@ -124,5 +124,4 @@ def setup_custom_ethermint(path, base_port, config, post_init=None, chain_binary
         yield Ethermint(path / "ethermint_9000-1")
     finally:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        # proc.terminate()
         proc.wait()
