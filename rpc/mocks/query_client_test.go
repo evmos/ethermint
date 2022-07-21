@@ -12,13 +12,14 @@ E.g. JSON-PRC-CLIENT -> BACKEND -> GRPC CLIENT -> APP
 */
 
 import (
-	context "context"
 	"testing"
 
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/stretchr/testify/require"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+
+	rpc "github.com/evmos/ethermint/rpc/types"
 )
 
 // QueryClient defines a mocked object that implements the grpc QueryCLient
@@ -30,9 +31,9 @@ func TestQueryClient(t *testing.T) {
 	queryClient := NewQueryClient(t)
 
 	var header metadata.MD
-	queryClient.On("Params", context.Background(), &evmtypes.QueryParamsRequest{}, grpc.Header(&header)).Return(&evmtypes.QueryParamsResponse{}, nil)
+	queryClient.On("Params", rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(&header)).Return(&evmtypes.QueryParamsResponse{}, nil)
 
 	// mock calls for abstraction
-	_, err := queryClient.Params(context.Background(), &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
+	_, err := queryClient.Params(rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	require.NoError(t, err)
 }
