@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -10,6 +11,7 @@ import (
 	"github.com/evmos/ethermint/rpc/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
@@ -36,7 +38,9 @@ func (suite *BackendTestSuite) SetupTest() {
 	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
 
 	queryClient := mocks.NewQueryClient(suite.T())
-	queryClient.On("Params", context.Background(), &evmtypes.QueryParamsRequest{}, grpc.HeaderCallOption{}).Return(&evmtypes.QueryParamsResponse{}, nil)
+
+	var header metadata.MD
+	queryClient.On("Params", context.Background(), &evmtypes.QueryParamsRequest{}, grpc.Header(&header)).Return(&evmtypes.QueryParamsResponse{}, nil)
 
 	suite.backend.queryClient.QueryClient = queryClient
 }
@@ -50,17 +54,19 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 	}{
 		{
 			"pass",
-			func() {},
-			hexutil.Uint64(0x9),
+			func() {
+			},
+			0x0,
 			true,
 		},
 	}
 	for _, tc := range testCases {
 		blockNumber, err := suite.backend.BlockNumber()
+		fmt.Println(blockNumber)
 
 		if tc.expPass {
 			suite.Require().Nil(err)
-			suite.Require().Equal(1, blockNumber)
+			suite.Require().Equal(tc.expBlockNumber, blockNumber)
 		} else {
 			suite.Require().NotNil(err)
 		}

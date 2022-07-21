@@ -35,5 +35,4 @@ func TestQueryClient(t *testing.T) {
 	// mock calls for abstraction
 	_, err := queryClient.Params(context.Background(), &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	require.NoError(t, err)
-
 }
