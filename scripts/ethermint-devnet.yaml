@@ -43,7 +43,7 @@ ethermint_9000-1:
         deposit_params:
           max_deposit_period: "10s"
           min_deposit:
-            - denom: "basetphoton"
+            - denom: "aphoton"
               amount: "1"
       transfer:
         params:
