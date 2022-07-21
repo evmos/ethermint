@@ -110,7 +110,6 @@ jobs:
       - uses: cachix/cachix-action@v10
         with:
           name: ethermint
-          extraPullNames: dapp
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
       - name: Run integration tests
         run: make run-integration-tests
