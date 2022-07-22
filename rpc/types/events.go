@@ -155,8 +155,21 @@ func (p *ParsedTxs) newTx(attrs []abci.EventAttribute) error {
 }
 
 // updateTx updates an exiting tx from events, called during parsing.
+// In event format 2, we update the tx with the attributes of the second `ethereum_tx` event,
+// Due to bug https://github.com/evmos/ethermint/issues/1175, the first `ethereum_tx` event may emit incorrect tx hash,
+// so we prefer the second event and override the first one.
 func (p *ParsedTxs) updateTx(eventIndex int, attrs []abci.EventAttribute) error {
-	return fillTxAttributes(&p.Txs[eventIndex], attrs)
+	tx := NewParsedTx(eventIndex)
+	if err := fillTxAttributes(&tx, attrs); err != nil {
+		return err
+	}
+	if tx.Hash != p.Txs[eventIndex].Hash {
+		// if hash is different, index the new one too
+		p.TxHashes[tx.Hash] = eventIndex
+	}
+	// override the tx because the second event is more trustworthy
+	p.Txs[eventIndex] = tx
+	return nil
 }
 
 // GetTxByHash find ParsedTx by tx hash, returns nil if not exists.
