@@ -67,21 +67,18 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 func (suite *BackendTestSuite) TestBlockBloom() {
 	testCases := []struct {
 		mame          string
-		malleate      func()
 		blockRes      *tmrpctypes.ResultBlockResults
 		expBlockBloom ethtypes.Bloom
 		expPass       bool
 	}{
 		{
 			"fail - empty block result",
-			func() {},
 			&tmrpctypes.ResultBlockResults{},
 			ethtypes.Bloom{},
 			false,
 		},
 		{
 			"fail - non block bloom event type",
-			func() {},
 			&tmrpctypes.ResultBlockResults{
 				EndBlockEvents: []types.Event{{Type: evmtypes.EventTypeEthereumTx}},
 			},
@@ -90,7 +87,6 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 		},
 		{
 			"fail - nonblock bloom attribute key",
-			func() {},
 			&tmrpctypes.ResultBlockResults{
 				EndBlockEvents: []types.Event{
 					{
@@ -106,7 +102,6 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 		},
 		{
 			"pass - nonblock bloom attribute key",
-			func() {},
 			&tmrpctypes.ResultBlockResults{
 				EndBlockEvents: []types.Event{
 					{
