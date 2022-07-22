@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
@@ -34,7 +35,7 @@ func (suite *BackendTestSuite) SetupTest() {
 
 	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
 
-	queryClient := NewMockQueryClient(suite.T())
+	queryClient := mocks.NewQueryClient(suite.T())
 	var header metadata.MD
 	RegisterMockQueries(queryClient, &header)
 
@@ -45,11 +46,11 @@ func (suite *BackendTestSuite) SetupTest() {
 // QueryClient defines a mocked object that implements the grpc QueryCLient
 // interface. It's used on tests to test the JSON-RPC without running a grpc
 // client server. E.g. JSON-PRC-CLIENT -> BACKEND -> Mock GRPC CLIENT -> APP
-var _ evmtypes.QueryClient = &MockQueryClient{}
+var _ evmtypes.QueryClient = &mocks.QueryClient{}
 
 // RegisterMockQueries registers the queries and their respective responses,
 // so that they can be called in tests using the queryClient
-func RegisterMockQueries(queryClient *MockQueryClient, header *metadata.MD) {
+func RegisterMockQueries(queryClient *mocks.QueryClient, header *metadata.MD) {
 	queryClient.On("Params", rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
 		Return(&evmtypes.QueryParamsResponse{}, nil).
 		Run(func(args mock.Arguments) {
@@ -62,7 +63,7 @@ func RegisterMockQueries(queryClient *MockQueryClient, header *metadata.MD) {
 }
 
 func TestQueryClient(t *testing.T) {
-	queryClient := NewMockQueryClient(t)
+	queryClient := mocks.NewQueryClient(t)
 	var header metadata.MD
 	RegisterMockQueries(queryClient, &header)
 
