@@ -1,9 +1,13 @@
 package backend
 
 import (
+	"math/big"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 	"github.com/tendermint/tendermint/abci/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -122,6 +126,105 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 		if tc.expPass {
 			suite.Require().Nil(err)
 			suite.Require().Equal(tc.expBlockBloom, blockBloom)
+		} else {
+			suite.Require().NotNil(err)
+		}
+	}
+}
+
+func (suite *BackendTestSuite) TestBaseFee() {
+	baseFee := sdk.NewInt(1)
+
+	testCases := []struct {
+		mame       string
+		blockRes   *tmrpctypes.ResultBlockResults
+		expBaseFee *big.Int
+		expPass    bool
+	}{
+		{
+			"fail - grpc BaseFee error - ",
+			// query client mock returns err for height -1
+			&tmrpctypes.ResultBlockResults{Height: -1},
+			nil,
+			false,
+		},
+		{
+			"fail - grpc BaseFee error - with non feeemarket block event",
+			&tmrpctypes.ResultBlockResults{
+				Height: -1,
+				BeginBlockEvents: []types.Event{
+					{
+						Type: evmtypes.EventTypeBlockBloom,
+					},
+				},
+			},
+			nil,
+			false,
+		},
+		{
+			"fail - grpc BaseFee error - with feeemarket block event",
+			&tmrpctypes.ResultBlockResults{
+				Height: -1,
+				BeginBlockEvents: []types.Event{
+					{
+						Type: feemarkettypes.EventTypeFeeMarket,
+					},
+				},
+			},
+			nil,
+			false,
+		},
+		{
+			"fail - grpc BaseFee error - with feeemarket block event with wrong attribute value",
+			&tmrpctypes.ResultBlockResults{
+				Height: -1,
+				BeginBlockEvents: []types.Event{
+					{
+						Type: feemarkettypes.EventTypeFeeMarket,
+						Attributes: []types.EventAttribute{
+							{Value: []byte{0x1}},
+						},
+					},
+				},
+			},
+			nil,
+			false,
+		},
+		{
+			"fail - grpc BaseFee error - with feeemarket block event with baseFee attribute value",
+			&tmrpctypes.ResultBlockResults{
+				Height: -1,
+				BeginBlockEvents: []types.Event{
+					{
+						Type: feemarkettypes.EventTypeFeeMarket,
+						Attributes: []types.EventAttribute{
+							{Value: []byte(baseFee.String())},
+						},
+					},
+				},
+			},
+			baseFee.BigInt(),
+			true,
+		},
+		{
+			"fail - base fee or london fork not enabled",
+			&tmrpctypes.ResultBlockResults{Height: 0},
+			nil,
+			true,
+		},
+		{
+			"pass",
+			&tmrpctypes.ResultBlockResults{Height: 1},
+			baseFee.BigInt(),
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		baseFee, err := suite.backend.BaseFee(tc.blockRes)
+
+		if tc.expPass {
+			suite.Require().Nil(err)
+			suite.Require().Equal(tc.expBaseFee, baseFee)
 		} else {
 			suite.Require().NotNil(err)
 		}

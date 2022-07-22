@@ -12,8 +12,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
+	"github.com/evmos/ethermint/x/evm/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -60,6 +63,16 @@ func RegisterMockQueries(queryClient *mocks.QueryClient, header *metadata.MD) {
 			h.Set(grpctypes.GRPCBlockHeightHeader, "1")
 			*arg.HeaderAddr = h
 		})
+
+	baseFee := sdk.NewInt(1)
+	queryClient.On("BaseFee", rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{}).
+		Return(&evmtypes.QueryBaseFeeResponse{BaseFee: &baseFee}, nil)
+	// Base fee not enabled
+	queryClient.On("BaseFee", rpc.ContextWithHeight(0), &evmtypes.QueryBaseFeeRequest{}).
+		Return(&evmtypes.QueryBaseFeeResponse{}, nil)
+	// Base fee returns error
+	queryClient.On("BaseFee", rpc.ContextWithHeight(-1), &evmtypes.QueryBaseFeeRequest{}).
+		Return(&evmtypes.QueryBaseFeeResponse{}, types.ErrInvalidBaseFee)
 }
 
 func TestQueryClient(t *testing.T) {
@@ -70,4 +83,11 @@ func TestQueryClient(t *testing.T) {
 	// mock calls for abstraction
 	_, err := queryClient.Params(rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	require.NoError(t, err)
+	_, err = queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
+	require.NoError(t, err)
+	res, err := queryClient.BaseFee(rpc.ContextWithHeight(0), &evmtypes.QueryBaseFeeRequest{})
+	require.NoError(t, err)
+	require.Equal(t, &types.QueryBaseFeeResponse{}, res)
+	_, err = queryClient.BaseFee(rpc.ContextWithHeight(-1), &evmtypes.QueryBaseFeeRequest{})
+	require.Error(t, err)
 }
