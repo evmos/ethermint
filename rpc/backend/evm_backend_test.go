@@ -1,46 +1,6 @@
 package backend
 
-import (
-	"testing"
-
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/evmos/ethermint/rpc/mocks"
-	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
-
-	rpc "github.com/evmos/ethermint/rpc/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
-)
-
-type BackendTestSuite struct {
-	suite.Suite
-
-	backend *Backend
-}
-
-func TestBackendTestSuite(t *testing.T) {
-	suite.Run(t, new(BackendTestSuite))
-}
-
-// Setup Test runs automatically
-func (suite *BackendTestSuite) SetupTest() {
-	ctx := server.NewDefaultContext()
-	ctx.Viper.Set("telemetry.global-labels", []interface{}{})
-	clientCtx := client.Context{}.WithChainID("ethermint_9000-1").WithHeight(1)
-	allowUnprotectedTxs := false
-
-	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
-
-	queryClient := mocks.NewQueryClient(suite.T())
-	var header metadata.MD
-	queryClient.On("Params", rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(&header)).Return(&evmtypes.QueryParamsResponse{}, nil)
-
-	suite.backend.queryClient.QueryClient = queryClient
-	suite.backend.ctx = rpc.ContextWithHeight(1)
-}
+import "github.com/ethereum/go-ethereum/common/hexutil"
 
 func (suite *BackendTestSuite) TestBlockNumber() {
 	testCases := []struct {
