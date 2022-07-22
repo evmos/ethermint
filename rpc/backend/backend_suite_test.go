@@ -18,7 +18,6 @@ import (
 
 type BackendTestSuite struct {
 	suite.Suite
-
 	backend *Backend
 }
 
@@ -26,7 +25,7 @@ func TestBackendTestSuite(t *testing.T) {
 	suite.Run(t, new(BackendTestSuite))
 }
 
-// SetupTest is executed before every Test
+// SetupTest is executed before every BackendTestSuite test
 func (suite *BackendTestSuite) SetupTest() {
 	ctx := server.NewDefaultContext()
 	ctx.Viper.Set("telemetry.global-labels", []interface{}{})
@@ -45,9 +44,7 @@ func (suite *BackendTestSuite) SetupTest() {
 
 // QueryClient defines a mocked object that implements the grpc QueryCLient
 // interface. It's used on tests to test the JSON-RPC without running a grpc
-// client server.
-//
-// E.g. JSON-PRC-CLIENT -> BACKEND -> Mock GRPC CLIENT -> APP
+// client server. E.g. JSON-PRC-CLIENT -> BACKEND -> Mock GRPC CLIENT -> APP
 var _ evmtypes.QueryClient = &MockQueryClient{}
 
 // RegisterMockQueries registers the queries and their respective responses,
