@@ -61,7 +61,7 @@ class Geth:
 
 
 def setup_ethermint(path, base_port):
-    cfg = Path(__file__).parent / "../scripts/ethermint-devnet.yaml"
+    cfg = Path(__file__).parent / "../../scripts/ethermint-devnet.yaml"
     yield from setup_custom_ethermint(path, base_port, cfg)
 
 def setup_geth(path, base_port):

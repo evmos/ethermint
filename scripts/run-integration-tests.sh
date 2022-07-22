@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 export TMPDIR=/tmp
 
 echo "build test contracts"
-cd ../integration_tests/contracts
+cd ../tests/integration_tests/contracts
 HUSKY_SKIP_INSTALL=1 npm install
 npm run typechain
 cd ..

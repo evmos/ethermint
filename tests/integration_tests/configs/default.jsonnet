@@ -1,5 +1,5 @@
 {
-  dotenv: '../../scripts/.env',
+  dotenv: '../../../scripts/.env',
   'ethermintd_777-1': {
     cmd: 'ethermintd',
     'start-flags': '--trace',
