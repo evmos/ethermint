@@ -21,10 +21,10 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 		blockNumber, err := suite.backend.BlockNumber()
 
 		if tc.expPass {
-			suite.Require().Nil(err)
+			suite.Require().NoError(err)
 			suite.Require().Equal(tc.expBlockNumber, blockNumber)
 		} else {
-			suite.Require().NotNil(err)
+			suite.Require().Error(err)
 		}
 	}
 }
