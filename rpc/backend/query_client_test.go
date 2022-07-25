@@ -23,7 +23,7 @@ import (
 var _ evmtypes.QueryClient = &mocks.QueryClient{}
 
 // Params
-func RegisterParamsQueries(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
+func RegisterParams(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
 		Return(&evmtypes.QueryParamsResponse{}, nil).
 		Run(func(args mock.Arguments) {
@@ -35,16 +35,17 @@ func RegisterParamsQueries(queryClient *mocks.QueryClient, header *metadata.MD, 
 		})
 }
 
-func RegisterParamsQueriesError(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
+// Params returns error
+func RegisterParamsError(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
 		Return(nil, sdkerrors.ErrInvalidRequest)
 }
 
-func TestRegisterParamsQueries(t *testing.T) {
+func TestRegisterParams(t *testing.T) {
 	queryClient := mocks.NewQueryClient(t)
 	var header metadata.MD
 	height := int64(1)
-	RegisterParamsQueries(queryClient, &header, height)
+	RegisterParams(queryClient, &header, height)
 
 	_, err := queryClient.Params(rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	require.NoError(t, err)
@@ -53,52 +54,52 @@ func TestRegisterParamsQueries(t *testing.T) {
 	require.Equal(t, height, headerHeight)
 }
 
-func TestRegisterParamsQueriesError(t *testing.T) {
+func TestRegisterParamsError(t *testing.T) {
 	queryClient := mocks.NewQueryClient(t)
-	RegisterBaseFeeQueriesError(queryClient)
+	RegisterBaseFeeError(queryClient)
 	_, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Error(t, err)
 }
 
 // BaseFee
-func RegisterBaseFeeQueries(queryClient *mocks.QueryClient) {
+func RegisterBaseFee(queryClient *mocks.QueryClient) {
 	baseFee := sdk.NewInt(1)
 	queryClient.On("BaseFee", rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{}).
 		Return(&evmtypes.QueryBaseFeeResponse{BaseFee: &baseFee}, nil)
 }
 
 // Base fee returns error
-func RegisterBaseFeeQueriesError(queryClient *mocks.QueryClient) {
+func RegisterBaseFeeError(queryClient *mocks.QueryClient) {
 	queryClient.On("BaseFee", rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{}).
 		Return(&evmtypes.QueryBaseFeeResponse{}, evmtypes.ErrInvalidBaseFee)
 }
 
 // Base fee not enabled
-func RegisterBaseFeeQueriesDisabled(queryClient *mocks.QueryClient) {
+func RegisterBaseFeeDisabled(queryClient *mocks.QueryClient) {
 	queryClient.On("BaseFee", rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{}).
 		Return(&evmtypes.QueryBaseFeeResponse{}, nil)
 }
 
-func TestRegisterBaseFeeQueries(t *testing.T) {
+func TestRegisterBaseFee(t *testing.T) {
 	baseFee := sdk.NewInt(1)
 	queryClient := mocks.NewQueryClient(t)
-	RegisterBaseFeeQueries(queryClient)
+	RegisterBaseFee(queryClient)
 	res, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Equal(t, &evmtypes.QueryBaseFeeResponse{BaseFee: &baseFee}, res)
 	require.NoError(t, err)
 }
 
-func TestRegisterBaseFeeQueriesError(t *testing.T) {
+func TestRegisterBaseFeeError(t *testing.T) {
 	queryClient := mocks.NewQueryClient(t)
-	RegisterBaseFeeQueriesError(queryClient)
+	RegisterBaseFeeError(queryClient)
 	res, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Equal(t, &evmtypes.QueryBaseFeeResponse{}, res)
 	require.Error(t, err)
 }
 
-func TestRegisterBaseFeeQueriesDisabled(t *testing.T) {
+func TestRegisterBaseFeeDisabled(t *testing.T) {
 	queryClient := mocks.NewQueryClient(t)
-	RegisterBaseFeeQueriesDisabled(queryClient)
+	RegisterBaseFeeDisabled(queryClient)
 	res, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Equal(t, &evmtypes.QueryBaseFeeResponse{}, res)
 	require.NoError(t, err)

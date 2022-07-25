@@ -16,31 +16,32 @@ import (
 // CLIENT -> APP
 var _ tmrpcclient.Client = &mocks.Client{}
 
-func TestClient(t *testing.T) {
-	client := mocks.NewClient(t)
-
-	// Register the queries and their respective responses, so that they can be
-	// called in tests using the client
-	height := rpc.BlockNumber(1).Int64()
-	RegisterBlockQueries(client, height)
-
-	block := types.Block{Header: types.Header{Height: height}}
-	res, err := client.Block(rpc.ContextWithHeight(height), &height)
-	require.Equal(t, res, &tmrpctypes.ResultBlock{Block: &block})
-	require.NoError(t, err)
-}
-
-func RegisterBlockQueries(client *mocks.Client, height int64) {
+// Block
+func RegisterBlock(client *mocks.Client, height int64) {
 	block := types.Block{Header: types.Header{Height: height}}
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
 		Return(&tmrpctypes.ResultBlock{Block: &block}, nil)
 }
 
-func RegisterBlockQueriesError(client *mocks.Client, height int64) {
+// Block returns error
+func RegisterBlockError(client *mocks.Client, height int64) {
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
 		Return(nil, sdkerrors.ErrInvalidRequest)
 }
-func RegisterBlockQueriesNotFound(client *mocks.Client, height int64) {
+
+// Block not found
+func RegisterBlockNotFound(client *mocks.Client, height int64) {
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
 		Return(&tmrpctypes.ResultBlock{Block: nil}, nil)
+}
+
+func TestRegisterBlock(t *testing.T) {
+	client := mocks.NewClient(t)
+	height := rpc.BlockNumber(1).Int64()
+	RegisterBlock(client, height)
+
+	block := types.Block{Header: types.Header{Height: height}}
+	res, err := client.Block(rpc.ContextWithHeight(height), &height)
+	require.Equal(t, res, &tmrpctypes.ResultBlock{Block: &block})
+	require.NoError(t, err)
 }

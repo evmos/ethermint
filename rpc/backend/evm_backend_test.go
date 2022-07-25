@@ -20,10 +20,10 @@ import (
 func (suite *BackendTestSuite) TestBlockNumber() {
 
 	testCases := []struct {
-		mame                string
-		registerMockQueries func()
-		expBlockNumber      hexutil.Uint64
-		expPass             bool
+		mame           string
+		registerMock   func()
+		expBlockNumber hexutil.Uint64
+		expPass        bool
 	}{
 		{
 			"pass - app state header height 1",
@@ -32,7 +32,7 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 				height := int64(1)
 				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterParamsQueries(queryClient, &header, int64(height))
+				RegisterParams(queryClient, &header, int64(height))
 			},
 			0x1,
 			true,
@@ -40,7 +40,7 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 	}
 	for _, tc := range testCases {
 		suite.SetupTest() // reset test and queries
-		tc.registerMockQueries()
+		tc.registerMock()
 
 		blockNumber, err := suite.backend.BlockNumber()
 
@@ -57,11 +57,11 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 	var block tmtypes.Block
 
 	testCases := []struct {
-		mame                string
-		blocknumber         ethrpc.BlockNumber
-		registerMockQueries func(ethrpc.BlockNumber)
-		found               bool
-		expPass             bool
+		mame         string
+		blocknumber  ethrpc.BlockNumber
+		registerMock func(ethrpc.BlockNumber)
+		found        bool
+		expPass      bool
 	}{
 		{
 			"fail - client error",
@@ -70,7 +70,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				// Client.Block
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockQueriesError(client, height)
+				RegisterBlockError(client, height)
 			},
 			false,
 			false,
@@ -82,7 +82,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				// Client.Block
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockQueriesNotFound(client, height)
+				RegisterBlockNotFound(client, height)
 			},
 			false,
 			true,
@@ -95,7 +95,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				appHeight := int64(1)
 				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterParamsQueriesError(queryClient, &header, appHeight)
+				RegisterParamsError(queryClient, &header, appHeight)
 			},
 			false,
 			false,
@@ -108,12 +108,12 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				appHeight := int64(1)
 				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterParamsQueries(queryClient, &header, appHeight)
+				RegisterParams(queryClient, &header, appHeight)
 
 				// Client.Block
 				tmHeight := appHeight
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockQueries(client, tmHeight)
+				RegisterBlock(client, tmHeight)
 
 				block = tmtypes.Block{Header: tmtypes.Header{Height: tmHeight}}
 			},
@@ -127,7 +127,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				// Client.Block
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockQueries(client, height)
+				RegisterBlock(client, height)
 
 				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
 			},
@@ -141,7 +141,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				// Client.Block
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockQueries(client, height)
+				RegisterBlock(client, height)
 
 				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
 			},
@@ -156,7 +156,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 		// 		// Client.Block
 		// 		height := blockNum.Int64()
 		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
-		// 		RegisterBlockQueries(client, height)
+		// 		RegisterBlock(client, height)
 
 		// 		block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
 		// 	},
@@ -166,7 +166,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 	for _, tc := range testCases {
 		suite.SetupTest() // reset test and queries
 
-		tc.registerMockQueries(tc.blocknumber)
+		tc.registerMock(tc.blocknumber)
 		resultBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blocknumber)
 
 		if tc.expPass {
@@ -253,18 +253,18 @@ func (suite *BackendTestSuite) TestBaseFee() {
 	baseFee := sdk.NewInt(1)
 
 	testCases := []struct {
-		mame                string
-		blockRes            *tmrpctypes.ResultBlockResults
-		registerMockQueries func()
-		expBaseFee          *big.Int
-		expPass             bool
+		mame         string
+		blockRes     *tmrpctypes.ResultBlockResults
+		registerMock func()
+		expBaseFee   *big.Int
+		expPass      bool
 	}{
 		{
 			"fail - grpc BaseFee error",
 			&tmrpctypes.ResultBlockResults{Height: 1},
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeQueriesError(queryClient)
+				RegisterBaseFeeError(queryClient)
 			},
 			nil,
 			false,
@@ -281,7 +281,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			},
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeQueriesError(queryClient)
+				RegisterBaseFeeError(queryClient)
 			},
 			nil,
 			false,
@@ -298,7 +298,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			},
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeQueriesError(queryClient)
+				RegisterBaseFeeError(queryClient)
 			},
 			nil,
 			false,
@@ -318,7 +318,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			},
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeQueriesError(queryClient)
+				RegisterBaseFeeError(queryClient)
 			},
 			nil,
 			false,
@@ -338,7 +338,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			},
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeQueriesError(queryClient)
+				RegisterBaseFeeError(queryClient)
 			},
 			baseFee.BigInt(),
 			true,
@@ -348,7 +348,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			&tmrpctypes.ResultBlockResults{Height: 1},
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeQueriesDisabled(queryClient)
+				RegisterBaseFeeDisabled(queryClient)
 			},
 			nil,
 			true,
@@ -358,7 +358,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			&tmrpctypes.ResultBlockResults{Height: 1},
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeQueries(queryClient)
+				RegisterBaseFee(queryClient)
 			},
 			baseFee.BigInt(),
 			true,
@@ -366,7 +366,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 	}
 	for _, tc := range testCases {
 		suite.SetupTest() // reset test and queries
-		tc.registerMockQueries()
+		tc.registerMock()
 
 		baseFee, err := suite.backend.BaseFee(tc.blockRes)
 
