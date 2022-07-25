@@ -6,13 +6,20 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/evmos/ethermint/rpc/backend/mocks"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 	"github.com/tendermint/tendermint/abci/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"google.golang.org/grpc/metadata"
 )
 
 func (suite *BackendTestSuite) TestBlockNumber() {
+	// Register mock queries
+	var header metadata.MD
+	queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+	RegisterParamsQueries(queryClient, &header)
+
 	testCases := []struct {
 		mame           string
 		malleate       func()
@@ -133,6 +140,10 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 }
 
 func (suite *BackendTestSuite) TestBaseFee() {
+	// Register mock queries
+	queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+	RegisterBaseFeeQueries(queryClient)
+
 	baseFee := sdk.NewInt(1)
 
 	testCases := []struct {

@@ -5,14 +5,13 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
@@ -37,12 +36,7 @@ func (suite *BackendTestSuite) SetupTest() {
 	allowUnprotectedTxs := false
 
 	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
-
-	queryClient := mocks.NewQueryClient(suite.T())
-	var header metadata.MD
-	RegisterMockQueries(queryClient, &header)
-
-	suite.backend.queryClient.QueryClient = queryClient
+	suite.backend.queryClient.QueryClient = mocks.NewQueryClient(suite.T())
 	suite.backend.ctx = rpc.ContextWithHeight(1)
 }
 
@@ -54,6 +48,11 @@ var _ evmtypes.QueryClient = &mocks.QueryClient{}
 // RegisterMockQueries registers the queries and their respective responses,
 // so that they can be called in tests using the queryClient
 func RegisterMockQueries(queryClient *mocks.QueryClient, header *metadata.MD) {
+	RegisterParamsQueries(queryClient, header)
+	RegisterBaseFeeQueries(queryClient)
+}
+
+func RegisterParamsQueries(queryClient *mocks.QueryClient, header *metadata.MD) {
 	queryClient.On("Params", rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
 		Return(&evmtypes.QueryParamsResponse{}, nil).
 		Run(func(args mock.Arguments) {
@@ -63,7 +62,9 @@ func RegisterMockQueries(queryClient *mocks.QueryClient, header *metadata.MD) {
 			h.Set(grpctypes.GRPCBlockHeightHeader, "1")
 			*arg.HeaderAddr = h
 		})
+}
 
+func RegisterBaseFeeQueries(queryClient *mocks.QueryClient) {
 	baseFee := sdk.NewInt(1)
 	queryClient.On("BaseFee", rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{}).
 		Return(&evmtypes.QueryBaseFeeResponse{BaseFee: &baseFee}, nil)
