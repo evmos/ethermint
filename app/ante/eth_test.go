@@ -212,7 +212,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 }
 
 func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
-	dec := ante.NewEthGasConsumeDecorator(suite.app.EvmKeeper, config.DefaultMaxTxGasWanted)
+	dec := ante.NewEthGasConsumeDecorator(suite.app.EvmKeeper)
 
 	addr := tests.GenerateAddress()
 
