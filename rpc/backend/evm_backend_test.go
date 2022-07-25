@@ -6,7 +6,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tendermint/tendermint/abci/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -19,26 +18,30 @@ import (
 )
 
 func (suite *BackendTestSuite) TestBlockNumber() {
-	// Register mock queries
-	var header metadata.MD
-	queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-	RegisterParamsQueries(queryClient, &header)
 
 	testCases := []struct {
-		mame           string
-		malleate       func()
-		expBlockNumber hexutil.Uint64
-		expPass        bool
+		mame                string
+		registerMockQueries func()
+		expBlockNumber      hexutil.Uint64
+		expPass             bool
 	}{
 		{
-			"pass",
+			"pass - app state header height 1",
 			func() {
+				// Register mock queries
+				height := int64(1)
+				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterParamsQueries(queryClient, &header, int64(height))
 			},
 			0x1,
 			true,
 		},
 	}
 	for _, tc := range testCases {
+		suite.SetupTest() // reset test and queries
+		tc.registerMockQueries()
+
 		blockNumber, err := suite.backend.BlockNumber()
 
 		if tc.expPass {
@@ -51,32 +54,97 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 }
 
 func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
-	height := rpc.BlockNumber(1).Int64()
-	client := suite.backend.clientCtx.Client.(*mocks.Client)
-	RegisterBlockQueries(client, &height)
-	block := tmtypes.Block{}
+	var block tmtypes.Block
 
 	testCases := []struct {
-		mame           string
-		malleate       func()
-		blocknumber    ethrpc.BlockNumber
-		expResultBlock *tmrpctypes.ResultBlock
-		expPass        bool
+		mame                string
+		blocknumber         ethrpc.BlockNumber
+		registerMockQueries func(ethrpc.BlockNumber)
+		expPass             bool
 	}{
 		{
-			"pass",
-			func() {},
-			ethrpc.BlockNumber(1),
-			&tmrpctypes.ResultBlock{Block: &block},
+			"fail - blockNum < 0 with app state height error",
+			ethrpc.BlockNumber(-1),
+			func(blockNum ethrpc.BlockNumber) {
+				// QueryClient.Params
+				appHeight := int64(1)
+				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterParamsQueriesError(queryClient, &header, appHeight)
+			},
+			false,
+		},
+		{
+			"pass - blockNum < 0 with app state height >= 1",
+			ethrpc.BlockNumber(-1),
+			func(blockNum ethrpc.BlockNumber) {
+				// QueryClient.Params
+				appHeight := int64(1)
+				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterParamsQueries(queryClient, &header, appHeight)
+
+				// Client.Block
+				tmHeight := appHeight
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockQueries(client, tmHeight)
+
+				block = tmtypes.Block{Header: tmtypes.Header{Height: tmHeight}}
+			},
 			true,
 		},
+		{
+			"pass - blockNum = 0 (defaults to blockNum = 1 due to a difference between tendermint heights and geth heights",
+			ethrpc.BlockNumber(0),
+			func(blockNum ethrpc.BlockNumber) {
+				// Client.Block
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockQueries(client, height)
+
+				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
+			},
+			true,
+		},
+		{
+			"pass - blockNum = 1",
+			ethrpc.BlockNumber(1),
+			func(blockNum ethrpc.BlockNumber) {
+				// Client.Block
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockQueries(client, height)
+
+				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
+			},
+			true,
+		},
+		// TODO why does the "x-cosmos-block-height" always have to be  "1"?
+		// {
+		// 	"pass - blockNumber > 1",
+		// 	ethrpc.BlockNumber(5),
+		// 	func(blockNum ethrpc.BlockNumber) {
+		// 		// Client.Block
+		// 		height := blockNum.Int64()
+		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
+		// 		RegisterBlockQueries(client, height)
+
+		// 		block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
+		// 	},
+		// 	true,
+		// },
 	}
 	for _, tc := range testCases {
-		resBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blocknumber)
+		suite.SetupTest() // reset test and queries
+
+		tc.registerMockQueries(tc.blocknumber)
+		resultBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blocknumber)
 
 		if tc.expPass {
+			expResultBlock := &tmrpctypes.ResultBlock{Block: &block}
 			suite.Require().Nil(err)
-			suite.Require().Equal(tc.expResultBlock, resBlock)
+			suite.Require().Equal(expResultBlock, resultBlock)
+			suite.Require().Equal(expResultBlock.Block.Header.Height, resultBlock.Block.Header.Height)
 		} else {
 			suite.Require().NotNil(err)
 		}

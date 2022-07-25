@@ -1,11 +1,14 @@
 package backend
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -56,18 +59,17 @@ func TestClient(t *testing.T) {
 	// Register the queries and their respective responses, so that they can be
 	// called in tests using the client
 	height := rpc.BlockNumber(1).Int64()
-	RegisterBlockQueries(client, &height)
+	RegisterBlockQueries(client, height)
 
-	// mock calls for abstraction
-	block := types.Block{}
-	res, err := client.Block(rpc.ContextWithHeight(1), &height)
+	block := types.Block{Header: types.Header{Height: height}}
+	res, err := client.Block(rpc.ContextWithHeight(height), &height)
 	require.Equal(t, res, &tmrpctypes.ResultBlock{Block: &block})
 	require.NoError(t, err)
 }
 
-func RegisterBlockQueries(client *mocks.Client, height *int64) {
-	block := types.Block{}
-	client.On("Block", rpc.ContextWithHeight(1), height).
+func RegisterBlockQueries(client *mocks.Client, height int64) {
+	block := types.Block{Header: types.Header{Height: height}}
+	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
 		Return(&tmrpctypes.ResultBlock{Block: &block}, nil)
 }
 
@@ -82,12 +84,15 @@ func TestQueryClient(t *testing.T) {
 
 	// Register the queries and their respective responses, so that they can be
 	// called in tests using the queryClient
-	RegisterParamsQueries(queryClient, &header)
-	RegisterBaseFeeQueries(queryClient)
-
-	// mock calls for abstraction
-	_, err := queryClient.Params(rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
+	height := int64(1)
+	RegisterParamsQueries(queryClient, &header, height)
+	_, err := queryClient.Params(rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	require.NoError(t, err)
+	blockHeightHeader := header.Get(grpctypes.GRPCBlockHeightHeader)
+	headerHeight, err := strconv.ParseInt(blockHeightHeader[0], 10, 64)
+	require.Equal(t, height, headerHeight)
+
+	RegisterBaseFeeQueries(queryClient)
 	_, err = queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.NoError(t, err)
 	res, err := queryClient.BaseFee(rpc.ContextWithHeight(0), &evmtypes.QueryBaseFeeRequest{})
@@ -97,16 +102,21 @@ func TestQueryClient(t *testing.T) {
 	require.Error(t, err)
 }
 
-func RegisterParamsQueries(queryClient *mocks.QueryClient, header *metadata.MD) {
-	queryClient.On("Params", rpc.ContextWithHeight(1), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
+func RegisterParamsQueries(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
 		Return(&evmtypes.QueryParamsResponse{}, nil).
 		Run(func(args mock.Arguments) {
 			// If Params call is successful, also update the header height
 			arg := args.Get(2).(grpc.HeaderCallOption)
 			h := metadata.MD{}
-			h.Set(grpctypes.GRPCBlockHeightHeader, "1")
+			h.Set(grpctypes.GRPCBlockHeightHeader, fmt.Sprint(height))
 			*arg.HeaderAddr = h
 		})
+}
+
+func RegisterParamsQueriesError(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
+		Return(nil, sdkerrors.ErrInvalidRequest)
 }
 
 func RegisterBaseFeeQueries(queryClient *mocks.QueryClient) {
