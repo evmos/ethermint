@@ -60,18 +60,44 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 		mame                string
 		blocknumber         ethrpc.BlockNumber
 		registerMockQueries func(ethrpc.BlockNumber)
+		found               bool
 		expPass             bool
 	}{
 		{
+			"fail - client error",
+			ethrpc.BlockNumber(1),
+			func(blockNum ethrpc.BlockNumber) {
+				// Client.Block
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockQueriesError(client, height)
+			},
+			false,
+			false,
+		},
+		{
+			"noop - block not found",
+			ethrpc.BlockNumber(1),
+			func(blockNum ethrpc.BlockNumber) {
+				// Client.Block
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockQueriesNotFound(client, height)
+			},
+			false,
+			true,
+		},
+		{
 			"fail - blockNum < 0 with app state height error",
 			ethrpc.BlockNumber(-1),
-			func(blockNum ethrpc.BlockNumber) {
+			func(_ ethrpc.BlockNumber) {
 				// QueryClient.Params
 				appHeight := int64(1)
 				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
 				RegisterParamsQueriesError(queryClient, &header, appHeight)
 			},
+			false,
 			false,
 		},
 		{
@@ -92,6 +118,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				block = tmtypes.Block{Header: tmtypes.Header{Height: tmHeight}}
 			},
 			true,
+			true,
 		},
 		{
 			"pass - blockNum = 0 (defaults to blockNum = 1 due to a difference between tendermint heights and geth heights",
@@ -105,6 +132,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
 			},
 			true,
+			true,
 		},
 		{
 			"pass - blockNum = 1",
@@ -117,6 +145,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 
 				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
 			},
+			true,
 			true,
 		},
 		// TODO why does the "x-cosmos-block-height" always have to be  "1"?
@@ -141,10 +170,15 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 		resultBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blocknumber)
 
 		if tc.expPass {
-			expResultBlock := &tmrpctypes.ResultBlock{Block: &block}
 			suite.Require().Nil(err)
-			suite.Require().Equal(expResultBlock, resultBlock)
-			suite.Require().Equal(expResultBlock.Block.Header.Height, resultBlock.Block.Header.Height)
+
+			if !tc.found {
+				suite.Require().Nil(resultBlock)
+			} else {
+				expResultBlock := &tmrpctypes.ResultBlock{Block: &block}
+				suite.Require().Equal(expResultBlock, resultBlock)
+				suite.Require().Equal(expResultBlock.Block.Header.Height, resultBlock.Block.Header.Height)
+			}
 		} else {
 			suite.Require().NotNil(err)
 		}
@@ -216,34 +250,38 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 }
 
 func (suite *BackendTestSuite) TestBaseFee() {
-	// Register mock queries
-	queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-	RegisterBaseFeeQueries(queryClient)
-
 	baseFee := sdk.NewInt(1)
 
 	testCases := []struct {
-		mame       string
-		blockRes   *tmrpctypes.ResultBlockResults
-		expBaseFee *big.Int
-		expPass    bool
+		mame                string
+		blockRes            *tmrpctypes.ResultBlockResults
+		registerMockQueries func()
+		expBaseFee          *big.Int
+		expPass             bool
 	}{
 		{
-			"fail - grpc BaseFee error - ",
-			// query client mock returns err for height -1
-			&tmrpctypes.ResultBlockResults{Height: -1},
+			"fail - grpc BaseFee error",
+			&tmrpctypes.ResultBlockResults{Height: 1},
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeQueriesError(queryClient)
+			},
 			nil,
 			false,
 		},
 		{
 			"fail - grpc BaseFee error - with non feeemarket block event",
 			&tmrpctypes.ResultBlockResults{
-				Height: -1,
+				Height: 1,
 				BeginBlockEvents: []types.Event{
 					{
 						Type: evmtypes.EventTypeBlockBloom,
 					},
 				},
+			},
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeQueriesError(queryClient)
 			},
 			nil,
 			false,
@@ -251,12 +289,16 @@ func (suite *BackendTestSuite) TestBaseFee() {
 		{
 			"fail - grpc BaseFee error - with feeemarket block event",
 			&tmrpctypes.ResultBlockResults{
-				Height: -1,
+				Height: 1,
 				BeginBlockEvents: []types.Event{
 					{
 						Type: feemarkettypes.EventTypeFeeMarket,
 					},
 				},
+			},
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeQueriesError(queryClient)
 			},
 			nil,
 			false,
@@ -264,7 +306,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 		{
 			"fail - grpc BaseFee error - with feeemarket block event with wrong attribute value",
 			&tmrpctypes.ResultBlockResults{
-				Height: -1,
+				Height: 1,
 				BeginBlockEvents: []types.Event{
 					{
 						Type: feemarkettypes.EventTypeFeeMarket,
@@ -274,13 +316,17 @@ func (suite *BackendTestSuite) TestBaseFee() {
 					},
 				},
 			},
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeQueriesError(queryClient)
+			},
 			nil,
 			false,
 		},
 		{
 			"fail - grpc BaseFee error - with feeemarket block event with baseFee attribute value",
 			&tmrpctypes.ResultBlockResults{
-				Height: -1,
+				Height: 1,
 				BeginBlockEvents: []types.Event{
 					{
 						Type: feemarkettypes.EventTypeFeeMarket,
@@ -290,23 +336,38 @@ func (suite *BackendTestSuite) TestBaseFee() {
 					},
 				},
 			},
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeQueriesError(queryClient)
+			},
 			baseFee.BigInt(),
 			true,
 		},
 		{
 			"fail - base fee or london fork not enabled",
-			&tmrpctypes.ResultBlockResults{Height: 0},
+			&tmrpctypes.ResultBlockResults{Height: 1},
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeQueriesDisabled(queryClient)
+			},
 			nil,
 			true,
 		},
 		{
 			"pass",
 			&tmrpctypes.ResultBlockResults{Height: 1},
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeQueries(queryClient)
+			},
 			baseFee.BigInt(),
 			true,
 		},
 	}
 	for _, tc := range testCases {
+		suite.SetupTest() // reset test and queries
+		tc.registerMockQueries()
+
 		baseFee, err := suite.backend.BaseFee(tc.blockRes)
 
 		if tc.expPass {
