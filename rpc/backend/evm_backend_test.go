@@ -6,12 +6,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/evmos/ethermint/rpc/backend/mocks"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tendermint/tendermint/abci/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/evmos/ethermint/rpc/backend/mocks"
+	ethrpc "github.com/evmos/ethermint/rpc/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 )
 
 func (suite *BackendTestSuite) TestBlockNumber() {
@@ -46,34 +50,38 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 	}
 }
 
-// TODO add Tendermint rpc Client mock
-// func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
-// 	testCases := []struct {
-// 		mame        string
-// 		malleate    func()
-// 		blocknumber types.BlockNumber
-// 		expBlock    *coretypes.ResultBlock
-// 		expPass     bool
-// 	}{
-// 		{
-// 			"pass",
-// 			func() {},
-// 			types.BlockNumber(1),
-// 			nil,
-// 			true,
-// 		},
-// 	}
-// 	for _, tc := range testCases {
-// 		block, err := suite.backend.GetTendermintBlockByNumber(tc.blocknumber)
+func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
+	height := rpc.BlockNumber(1).Int64()
+	client := suite.backend.clientCtx.Client.(*mocks.Client)
+	RegisterBlockQueries(client, &height)
+	block := tmtypes.Block{}
 
-// 		if tc.expPass {
-// 			suite.Require().Nil(err)
-// 			suite.Require().Equal(tc.expBlock, block)
-// 		} else {
-// 			suite.Require().NotNil(err)
-// 		}
-// 	}
-// }
+	testCases := []struct {
+		mame           string
+		malleate       func()
+		blocknumber    ethrpc.BlockNumber
+		expResultBlock *tmrpctypes.ResultBlock
+		expPass        bool
+	}{
+		{
+			"pass",
+			func() {},
+			ethrpc.BlockNumber(1),
+			&tmrpctypes.ResultBlock{Block: &block},
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		resBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blocknumber)
+
+		if tc.expPass {
+			suite.Require().Nil(err)
+			suite.Require().Equal(tc.expResultBlock, resBlock)
+		} else {
+			suite.Require().NotNil(err)
+		}
+	}
+}
 
 func (suite *BackendTestSuite) TestBlockBloom() {
 	testCases := []struct {
