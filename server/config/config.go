@@ -28,8 +28,6 @@ const (
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = ""
 
-	DefaultMaxTxGasWanted = 500000
-
 	DefaultGasCap uint64 = 25000000
 
 	DefaultFilterCap int32 = 200
@@ -161,8 +159,7 @@ func DefaultConfig() *Config {
 // DefaultEVMConfig returns the default EVM configuration
 func DefaultEVMConfig() *EVMConfig {
 	return &EVMConfig{
-		Tracer:         DefaultEVMTracer,
-		MaxTxGasWanted: DefaultMaxTxGasWanted,
+		Tracer: DefaultEVMTracer,
 	}
 }
 
