@@ -12,13 +12,24 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	ethrpc "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 )
+
+// TODO Test Dependency Notes
+// GetBlockByNumber
+// 	GetTendermintBlockByNumber
+
+// 	GetTendermintBlockResultByNumber
+// 		-> Client BlockResults
+// 	EthBlockFromTendermint
+// 		BaseFee
+// 		GetEthereumMsgsFromTendermintBlock
+// 		BlockBloom
+// 		-> queryClient ValidatorAccount
 
 func (suite *BackendTestSuite) TestBlockNumber() {
 	testCases := []struct {
@@ -266,6 +277,8 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 }
 
 func (suite *BackendTestSuite) TestEthBlockFromTendermint() {
+	msgEthereumTx, bz := suite.buildEthereumTx()
+
 	testCases := []struct {
 		name         string
 		resBlock     *tmrpctypes.ResultBlock
@@ -289,7 +302,36 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermint() {
 				TxsResults: []*types.ResponseDeliverTx{
 					{
 						Code:    0,
-						Log:     ExceedBlockGasLimitError,
+						GasUsed: 0,
+					},
+				},
+			},
+			true,
+			func(baseFee sdk.Int, validator sdk.AccAddress, height int64) {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+				RegisterValidatorAccount(queryClient, validator)
+
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterConsensusParams(client, height)
+			},
+			true,
+		},
+		{
+			"pass - block with tx",
+			&tmrpctypes.ResultBlock{
+				Block: tmtypes.MakeBlock(
+					1,
+					[]tmtypes.Tx{bz},
+					nil,
+					nil,
+				),
+			},
+			&tmrpctypes.ResultBlockResults{
+				Height: 1,
+				TxsResults: []*types.ResponseDeliverTx{
+					{
+						Code:    0,
 						GasUsed: 0,
 					},
 				},
@@ -317,48 +359,58 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermint() {
 
 		block, err := suite.backend.EthBlockFromTendermint(tc.resBlock, tc.blockRes, tc.fullTx)
 
+		// Build expected Block
+		header := tc.resBlock.Block.Header
+		gasLimit := int64(^uint32(0)) // for `MaxGas = -1` (DefaultConsensusParams)
+		gasUsed := new(big.Int).SetUint64(uint64(tc.blockRes.TxsResults[0].GasUsed))
+
+		root := common.Hash{}.Bytes()
+		receipt := ethtypes.NewReceipt(root, false, gasUsed.Uint64())
+		bloom := ethtypes.CreateBloom(ethtypes.Receipts{receipt})
+
+		ethRPCTxs := []interface{}{}
+		var transactionsRoot common.Hash
+		if len(tc.resBlock.Block.Txs) == 0 {
+			transactionsRoot = ethtypes.EmptyRootHash
+		} else {
+			transactionsRoot = common.BytesToHash(header.DataHash)
+			rpcTx, err := ethrpc.NewRPCTransaction(
+				msgEthereumTx.AsTransaction(),
+				common.BytesToHash(header.Hash()),
+				uint64(header.Height),
+				uint64(0),
+				baseFee.BigInt(),
+			)
+			suite.Require().NoError(err)
+			ethRPCTxs = []interface{}{rpcTx}
+		}
+
+		expBlock := map[string]interface{}{
+			"number":           hexutil.Uint64(header.Height),
+			"hash":             hexutil.Bytes(header.Hash()),
+			"parentHash":       common.BytesToHash(header.LastBlockID.Hash.Bytes()),
+			"nonce":            ethtypes.BlockNonce{},   // PoW specific
+			"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
+			"logsBloom":        bloom,
+			"stateRoot":        hexutil.Bytes(header.AppHash),
+			"miner":            common.BytesToAddress(validator.Bytes()),
+			"mixHash":          common.Hash{},
+			"difficulty":       (*hexutil.Big)(big.NewInt(0)),
+			"extraData":        "0x",
+			"size":             hexutil.Uint64(tc.resBlock.Block.Size()),
+			"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
+			"gasUsed":          (*hexutil.Big)(gasUsed),
+			"timestamp":        hexutil.Uint64(header.Time.Unix()),
+			"transactionsRoot": transactionsRoot,
+			"receiptsRoot":     ethtypes.EmptyRootHash,
+
+			"uncles":          []common.Hash{},
+			"transactions":    ethRPCTxs,
+			"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
+			"baseFeePerGas":   (*hexutil.Big)(sdk.NewInt(1).BigInt()),
+		}
+
 		if tc.expPass {
-			header := tc.resBlock.Block.Header
-			gasLimit := int64(^uint32(0)) // for `MaxGas = -1` (DefaultConsensusParams)
-			gasUsed := new(big.Int).SetUint64(uint64(tc.blockRes.TxsResults[0].GasUsed))
-
-			root := common.Hash{}.Bytes()
-			receipt := ethtypes.NewReceipt(root, false, gasUsed.Uint64())
-			bloom := ethtypes.CreateBloom(ethtypes.Receipts{receipt})
-
-			var transactionsRoot common.Hash
-			if len(tc.resBlock.Block.Txs) == 0 {
-				transactionsRoot = ethtypes.EmptyRootHash
-			} else {
-				transactionsRoot = common.BytesToHash(header.DataHash)
-			}
-
-			ethRPCTxs := []interface{}{} // TODO Change for tests with txs
-
-			expBlock := map[string]interface{}{
-				"number":           hexutil.Uint64(header.Height),
-				"hash":             hexutil.Bytes(header.Hash()),
-				"parentHash":       common.BytesToHash(header.LastBlockID.Hash.Bytes()),
-				"nonce":            ethtypes.BlockNonce{},   // PoW specific
-				"sha3Uncles":       ethtypes.EmptyUncleHash, // No uncles in Tendermint
-				"logsBloom":        bloom,
-				"stateRoot":        hexutil.Bytes(header.AppHash),
-				"miner":            common.BytesToAddress(validator.Bytes()),
-				"mixHash":          common.Hash{},
-				"difficulty":       (*hexutil.Big)(big.NewInt(0)),
-				"extraData":        "0x",
-				"size":             hexutil.Uint64(tc.resBlock.Block.Size()),
-				"gasLimit":         hexutil.Uint64(gasLimit), // Static gas limit
-				"gasUsed":          (*hexutil.Big)(gasUsed),
-				"timestamp":        hexutil.Uint64(header.Time.Unix()),
-				"transactionsRoot": transactionsRoot,
-				"receiptsRoot":     ethtypes.EmptyRootHash,
-
-				"uncles":          []common.Hash{},
-				"transactions":    ethRPCTxs,
-				"totalDifficulty": (*hexutil.Big)(big.NewInt(0)),
-				"baseFeePerGas":   (*hexutil.Big)(sdk.NewInt(1).BigInt()),
-			}
 
 			suite.Require().Equal(expBlock, block)
 			suite.Require().NoError(err)
@@ -499,36 +551,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 }
 
 func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
-	msgEthereumTx := evmtypes.NewTx(
-		big.NewInt(1),
-		uint64(0),
-		&common.Address{},
-		big.NewInt(0),
-		100000,
-		big.NewInt(1),
-		nil,
-		nil,
-		[]byte{},
-		nil,
-	)
-
-	txBuilder := suite.backend.clientCtx.TxConfig.NewTxBuilder()
-	ethSigner := ethtypes.LatestSignerForChainID(big.NewInt(1))
-
-	address, priv := tests.NewAddrKey()
-	privKey := priv.(*ethsecp256k1.PrivKey)
-
-	// A valid msg should have empty `From`
-	msgEthereumTx.From = address.Hex()
-
-	err := msgEthereumTx.Sign(ethSigner, tests.NewSigner(privKey))
-	suite.Require().NoError(err)
-
-	err = txBuilder.SetMsgs(msgEthereumTx)
-	suite.Require().NoError(err)
-
-	bz, err := suite.backend.clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
-	suite.Require().NoError(err)
+	msgEthereumTx, bz := suite.buildEthereumTx()
 
 	testCases := []struct {
 		name     string
@@ -537,8 +560,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 		expMsgs  []*evmtypes.MsgEthereumTx
 	}{
 		{
-			// TODO understand the !TxSuccessOrExceedsBlockGasLimit check
-			"tx in not included in block - result code 1",
+			"tx in not included in block - unsucessful tx without ExceedBlockGasLimit error",
 			&tmrpctypes.ResultBlock{
 				Block: tmtypes.MakeBlock(
 					1,
@@ -551,33 +573,46 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 				TxsResults: []*types.ResponseDeliverTx{
 					{
 						Code: 1,
-						// Log:  ExceedBlockGasLimitError,
 					},
 				},
 			},
 			[]*evmtypes.MsgEthereumTx(nil),
 		},
-		// TODO DEBUG why the resulting MsgEtherum TX has additional data V: ([]uint8) (len=1)
-		// {
-		// 	"pass",
-		// 	&tmrpctypes.ResultBlock{
-		// 		Block: tmtypes.MakeBlock(
-		// 			1,
-		// 			[]tmtypes.Tx{bz},
-		// 			nil,
-		// 			nil,
-		// 		),
-		// 	},
-		// 	&tmrpctypes.ResultBlockResults{
-		// 		TxsResults: []*types.ResponseDeliverTx{
-		// 			{
-		// 				Code: 0,
-		// 				Log:  ExceedBlockGasLimitError,
-		// 			},
-		// 		},
-		// 	},
-		// 	[]*evmtypes.MsgEthereumTx{msgEthereumTx},
-		// },
+		{
+			"tx included in block - unsucessful tx with ExceedBlockGasLimit error",
+			&tmrpctypes.ResultBlock{
+				Block: tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil),
+			},
+			&tmrpctypes.ResultBlockResults{
+				TxsResults: []*types.ResponseDeliverTx{
+					{
+						Code: 1,
+						Log:  ExceedBlockGasLimitError,
+					},
+				},
+			},
+			[]*evmtypes.MsgEthereumTx{msgEthereumTx},
+		},
+		{
+			"pass",
+			&tmrpctypes.ResultBlock{
+				Block: tmtypes.MakeBlock(
+					1,
+					[]tmtypes.Tx{bz},
+					nil,
+					nil,
+				),
+			},
+			&tmrpctypes.ResultBlockResults{
+				TxsResults: []*types.ResponseDeliverTx{
+					{
+						Code: 0,
+						Log:  ExceedBlockGasLimitError,
+					},
+				},
+			},
+			[]*evmtypes.MsgEthereumTx{msgEthereumTx},
+		},
 	}
 	for _, tc := range testCases {
 		suite.SetupTest() // reset test and queries

@@ -995,8 +995,9 @@ func (b *Backend) GetEthereumMsgsFromTendermintBlock(
 	txResults := blockRes.TxsResults
 
 	for i, tx := range block.Txs {
-		// check tx exists on EVM by cross checking with blockResults
-		// include the tx that exceeds block gas limit
+		// Check if tx exists on EVM by cross checking with blockResults:
+		//  - Include unsucessful tx that exceeds block gas limit
+		//  - Exclude unsucessful tx with any other error but ExceedBlockGasLimit
 		if !TxSuccessOrExceedsBlockGasLimit(txResults[i]) {
 			b.logger.Debug("invalid tx result code", "cosmos-hash", hexutil.Encode(tx.Hash()))
 			continue
