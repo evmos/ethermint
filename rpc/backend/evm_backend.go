@@ -239,7 +239,8 @@ func (b *Backend) BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.
 	return ethtypes.Bloom{}, errors.New("block bloom event is not found")
 }
 
-// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block and its block result.
+// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a
+// given Tendermint block and its block result.
 func (b *Backend) EthBlockFromTendermint(
 	resBlock *tmrpctypes.ResultBlock,
 	blockRes *tmrpctypes.ResultBlockResults,
@@ -981,9 +982,13 @@ func (b *Backend) FeeHistory(
 	return &feeHistory, nil
 }
 
-// GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
-// It also ensures consistency over the correct txs indexes across RPC endpoints
-func (b *Backend) GetEthereumMsgsFromTendermintBlock(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx {
+// GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a
+// Tendermint block. It also ensures consistency over the correct txs indexes
+// across RPC endpoints
+func (b *Backend) GetEthereumMsgsFromTendermintBlock(
+	resBlock *tmrpctypes.ResultBlock,
+	blockRes *tmrpctypes.ResultBlockResults,
+) []*evmtypes.MsgEthereumTx {
 	var result []*evmtypes.MsgEthereumTx
 	block := resBlock.Block
 

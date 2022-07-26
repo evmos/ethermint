@@ -7,6 +7,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
 )
@@ -24,7 +26,12 @@ func TestBackendTestSuite(t *testing.T) {
 func (suite *BackendTestSuite) SetupTest() {
 	ctx := server.NewDefaultContext()
 	ctx.Viper.Set("telemetry.global-labels", []interface{}{})
-	clientCtx := client.Context{}.WithChainID("ethermint_9000-1").WithHeight(1).WithOffline(true)
+
+	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
+	clientCtx := client.Context{}.WithChainID("ethermint_9000-1").
+		WithHeight(1).
+		WithTxConfig(encodingConfig.TxConfig)
+
 	allowUnprotectedTxs := false
 
 	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)

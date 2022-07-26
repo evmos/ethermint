@@ -10,6 +10,7 @@ import (
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
+	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -31,6 +32,29 @@ func RegisterParams(queryClient *mocks.QueryClient, header *metadata.MD, height 
 			arg := args.Get(2).(grpc.HeaderCallOption)
 			h := metadata.MD{}
 			h.Set(grpctypes.GRPCBlockHeightHeader, fmt.Sprint(height))
+			*arg.HeaderAddr = h
+		})
+}
+
+func RegisterParamsInvalidHeader(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
+		Return(&evmtypes.QueryParamsResponse{}, nil).
+		Run(func(args mock.Arguments) {
+			// If Params call is successful, also update the header height
+			arg := args.Get(2).(grpc.HeaderCallOption)
+			h := metadata.MD{}
+			*arg.HeaderAddr = h
+		})
+}
+
+func RegisterParamsInvalidHeight(queryClient *mocks.QueryClient, header *metadata.MD, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
+		Return(&evmtypes.QueryParamsResponse{}, nil).
+		Run(func(args mock.Arguments) {
+			// If Params call is successful, also update the header height
+			arg := args.Get(2).(grpc.HeaderCallOption)
+			h := metadata.MD{}
+			h.Set(grpctypes.GRPCBlockHeightHeader, "invalid")
 			*arg.HeaderAddr = h
 		})
 }
@@ -62,8 +86,7 @@ func TestRegisterParamsError(t *testing.T) {
 }
 
 // BaseFee
-func RegisterBaseFee(queryClient *mocks.QueryClient) {
-	baseFee := sdk.NewInt(1)
+func RegisterBaseFee(queryClient *mocks.QueryClient, baseFee sdk.Int) {
 	queryClient.On("BaseFee", rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{}).
 		Return(&evmtypes.QueryBaseFeeResponse{BaseFee: &baseFee}, nil)
 }
@@ -83,7 +106,7 @@ func RegisterBaseFeeDisabled(queryClient *mocks.QueryClient) {
 func TestRegisterBaseFee(t *testing.T) {
 	baseFee := sdk.NewInt(1)
 	queryClient := mocks.NewQueryClient(t)
-	RegisterBaseFee(queryClient)
+	RegisterBaseFee(queryClient, baseFee)
 	res, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Equal(t, &evmtypes.QueryBaseFeeResponse{BaseFee: &baseFee}, res)
 	require.NoError(t, err)
@@ -102,5 +125,26 @@ func TestRegisterBaseFeeDisabled(t *testing.T) {
 	RegisterBaseFeeDisabled(queryClient)
 	res, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Equal(t, &evmtypes.QueryBaseFeeResponse{}, res)
+	require.NoError(t, err)
+}
+
+// ValidatorAccount
+func RegisterValidatorAccount(queryClient *mocks.QueryClient, validator sdk.AccAddress) {
+	queryClient.On("ValidatorAccount", rpc.ContextWithHeight(1), &evmtypes.QueryValidatorAccountRequest{}).
+		Return(
+			&evmtypes.QueryValidatorAccountResponse{
+				AccountAddress: validator.String(),
+			},
+			nil,
+		)
+}
+
+func TestRegisterValidatorAccount(t *testing.T) {
+	queryClient := mocks.NewQueryClient(t)
+
+	validator := sdk.AccAddress(tests.GenerateAddress().Bytes())
+	RegisterValidatorAccount(queryClient, validator)
+	res, err := queryClient.ValidatorAccount(rpc.ContextWithHeight(1), &evmtypes.QueryValidatorAccountRequest{})
+	require.Equal(t, &evmtypes.QueryValidatorAccountResponse{AccountAddress: validator.String()}, res)
 	require.NoError(t, err)
 }

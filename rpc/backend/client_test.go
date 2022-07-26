@@ -11,7 +11,10 @@ import (
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
-) // interface. It's used on tests to test the JSON-RPC without running a
+)
+
+// Client defines a mocked object that implements the Tenderminet JSON-RPC
+// interface. It's used on tests to test the JSON-RPC without running a
 // tendermint rpc client server. E.g. JSON-PRC-CLIENT -> BACKEND -> Mock GRPC
 // CLIENT -> APP
 var _ tmrpcclient.Client = &mocks.Client{}
@@ -40,8 +43,26 @@ func TestRegisterBlock(t *testing.T) {
 	height := rpc.BlockNumber(1).Int64()
 	RegisterBlock(client, height)
 
-	block := types.Block{Header: types.Header{Height: height}}
 	res, err := client.Block(rpc.ContextWithHeight(height), &height)
+	block := types.Block{Header: types.Header{Height: height}}
 	require.Equal(t, res, &tmrpctypes.ResultBlock{Block: &block})
+	require.NoError(t, err)
+}
+
+// ConsensusParams
+func RegisterConsensusParams(client *mocks.Client, height int64) {
+	consensusParams := types.DefaultConsensusParams()
+	client.On("ConsensusParams", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+		Return(&tmrpctypes.ResultConsensusParams{ConsensusParams: *consensusParams}, nil)
+}
+
+func TestRegisterConsensusParams(t *testing.T) {
+	client := mocks.NewClient(t)
+	height := int64(1)
+	RegisterConsensusParams(client, height)
+
+	res, err := client.ConsensusParams(rpc.ContextWithHeight(height), &height)
+	consensusParams := types.DefaultConsensusParams()
+	require.Equal(t, &tmrpctypes.ResultConsensusParams{ConsensusParams: *consensusParams}, res)
 	require.NoError(t, err)
 }
