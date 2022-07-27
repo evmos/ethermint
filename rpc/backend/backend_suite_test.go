@@ -6,12 +6,16 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
+	ethrpc "github.com/evmos/ethermint/rpc/types"
 	rpc "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
@@ -68,4 +72,49 @@ func (suite *BackendTestSuite) buildEthereumTx() (*evmtypes.MsgEthereumTx, []byt
 	bz, err := suite.backend.clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
 	suite.Require().NoError(err)
 	return msgEthereumTx, bz
+}
+
+func (suite *BackendTestSuite) getFormattedBlock(
+	blockRes *tmrpctypes.ResultBlockResults,
+	resBlock *tmrpctypes.ResultBlock,
+	fullTx bool,
+	tx *evmtypes.MsgEthereumTx,
+	validator sdk.AccAddress,
+	baseFee *big.Int,
+) map[string]interface{} {
+	header := resBlock.Block.Header
+	gasLimit := int64(^uint32(0)) // for `MaxGas = -1` (DefaultConsensusParams)
+	gasUsed := new(big.Int).SetUint64(uint64(blockRes.TxsResults[0].GasUsed))
+
+	root := common.Hash{}.Bytes()
+	receipt := ethtypes.NewReceipt(root, false, gasUsed.Uint64())
+	bloom := ethtypes.CreateBloom(ethtypes.Receipts{receipt})
+
+	ethRPCTxs := []interface{}{}
+	if tx != nil {
+		if fullTx {
+			rpcTx, err := ethrpc.NewRPCTransaction(
+				tx.AsTransaction(),
+				common.BytesToHash(header.Hash()),
+				uint64(header.Height),
+				uint64(0),
+				baseFee,
+			)
+			suite.Require().NoError(err)
+			ethRPCTxs = []interface{}{rpcTx}
+		} else {
+			ethRPCTxs = []interface{}{common.HexToHash(tx.Hash)}
+		}
+	}
+
+	return ethrpc.FormatBlock(
+		header,
+		resBlock.Block.Size(),
+		gasLimit,
+		gasUsed,
+		ethRPCTxs,
+		bloom,
+		common.BytesToAddress(validator.Bytes()),
+		baseFee,
+	)
 }

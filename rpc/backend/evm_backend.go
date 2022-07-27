@@ -177,7 +177,8 @@ func (b *Backend) EthBlockFromTm(resBlock *tmrpctypes.ResultBlock, blockRes *tmr
 	return ethBlock, nil
 }
 
-// GetTendermintBlockByNumber returns a Tendermint format block by block number
+// GetTendermintBlockByNumber returns a Tendermint formatted block for a given
+// block number
 func (b *Backend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error) {
 	height := blockNum.Int64()
 	if height <= 0 {

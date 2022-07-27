@@ -27,6 +27,30 @@ func RegisterBlock(client *mocks.Client, height int64) {
 		Return(&tmrpctypes.ResultBlock{Block: &block}, nil)
 }
 
+func RegisterBlockWithTx(
+	client *mocks.Client,
+	height int64,
+	tx []byte,
+) (*tmrpctypes.ResultBlock, error) {
+	block := types.MakeBlock(height, []types.Tx{tx}, nil, nil)
+	res := &tmrpctypes.ResultBlock{Block: block}
+	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+		Return(res, nil)
+	return res, nil
+}
+
+func RegisterBlockWithoutTx(
+	client *mocks.Client,
+	height int64,
+	tx []byte,
+) (*tmrpctypes.ResultBlock, error) {
+	emptyBlock := types.MakeBlock(height, []types.Tx{}, nil, nil)
+	res := &tmrpctypes.ResultBlock{Block: emptyBlock}
+	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+		Return(res, nil)
+	return res, nil
+}
+
 // Block returns error
 func RegisterBlockError(client *mocks.Client, height int64) {
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
@@ -74,15 +98,18 @@ func TestRegisterConsensusParams(t *testing.T) {
 }
 
 // BlockResults
-func RegisterBlockResults(client *mocks.Client, height int64) {
+func RegisterBlockResults(
+	client *mocks.Client,
+	height int64,
+) (*tmrpctypes.ResultBlockResults, error) {
+	res := &tmrpctypes.ResultBlockResults{
+		Height:     height,
+		TxsResults: []*abci.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
+	}
+
 	client.On("BlockResults", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(
-			&tmrpctypes.ResultBlockResults{
-				Height:     height,
-				TxsResults: []*abci.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
-			},
-			nil,
-		)
+		Return(res, nil)
+	return res, nil
 }
 
 func RegisterBlockResultsError(client *mocks.Client, height int64) {
