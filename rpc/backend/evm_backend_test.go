@@ -802,7 +802,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 		expMsgs  []*evmtypes.MsgEthereumTx
 	}{
 		{
-			"tx in not included in block - unsucessful tx without ExceedBlockGasLimit error",
+			"tx in not included in block - unsuccessful tx without ExceedBlockGasLimit error",
 			&tmrpctypes.ResultBlock{
 				Block: tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil),
 			},
@@ -816,7 +816,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 			[]*evmtypes.MsgEthereumTx(nil),
 		},
 		{
-			"tx included in block - unsucessful tx with ExceedBlockGasLimit error",
+			"tx included in block - unsuccessful tx with ExceedBlockGasLimit error",
 			&tmrpctypes.ResultBlock{
 				Block: tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil),
 			},
