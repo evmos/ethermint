@@ -56,6 +56,11 @@ func RegisterConsensusParams(client *mocks.Client, height int64) {
 		Return(&tmrpctypes.ResultConsensusParams{ConsensusParams: *consensusParams}, nil)
 }
 
+func RegisterConsensusParamsError(client *mocks.Client, height int64) {
+	client.On("ConsensusParams", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 func TestRegisterConsensusParams(t *testing.T) {
 	client := mocks.NewClient(t)
 	height := int64(1)

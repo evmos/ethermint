@@ -15,7 +15,9 @@ import (
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // QueryClient defines a mocked object that implements the grpc QueryCLient
@@ -137,6 +139,11 @@ func RegisterValidatorAccount(queryClient *mocks.QueryClient, validator sdk.AccA
 			},
 			nil,
 		)
+}
+
+func RegisterValidatorAccountError(queryClient *mocks.QueryClient) {
+	queryClient.On("ValidatorAccount", rpc.ContextWithHeight(1), &evmtypes.QueryValidatorAccountRequest{}).
+		Return(nil, status.Error(codes.InvalidArgument, "empty request"))
 }
 
 func TestRegisterValidatorAccount(t *testing.T) {
