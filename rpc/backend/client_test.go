@@ -8,6 +8,7 @@ import (
 	rpc "github.com/evmos/ethermint/rpc/types"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
@@ -69,5 +70,36 @@ func TestRegisterConsensusParams(t *testing.T) {
 	res, err := client.ConsensusParams(rpc.ContextWithHeight(height), &height)
 	consensusParams := types.DefaultConsensusParams()
 	require.Equal(t, &tmrpctypes.ResultConsensusParams{ConsensusParams: *consensusParams}, res)
+	require.NoError(t, err)
+}
+
+// BlockResults
+func RegisterBlockResults(client *mocks.Client, height int64) {
+	client.On("BlockResults", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+		Return(
+			&tmrpctypes.ResultBlockResults{
+				Height:     height,
+				TxsResults: []*abci.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
+			},
+			nil,
+		)
+}
+
+func RegisterBlockResultsError(client *mocks.Client, height int64) {
+	client.On("BlockResults", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
+func TestRegisterBlockResults(t *testing.T) {
+	client := mocks.NewClient(t)
+	height := int64(1)
+	RegisterBlockResults(client, height)
+
+	res, err := client.BlockResults(rpc.ContextWithHeight(height), &height)
+	expRes := &tmrpctypes.ResultBlockResults{
+		Height:     height,
+		TxsResults: []*abci.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
+	}
+	require.Equal(t, expRes, res)
 	require.NoError(t, err)
 }

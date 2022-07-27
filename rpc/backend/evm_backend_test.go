@@ -74,17 +74,19 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 		},
 	}
 	for _, tc := range testCases {
-		suite.SetupTest() // reset test and queries
-		tc.registerMock()
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock()
 
-		blockNumber, err := suite.backend.BlockNumber()
+			blockNumber, err := suite.backend.BlockNumber()
 
-		if tc.expPass {
-			suite.Require().Nil(err)
-			suite.Require().Equal(tc.expBlockNumber, blockNumber)
-		} else {
-			suite.Require().NotNil(err)
-		}
+			if tc.expPass {
+				suite.Require().Nil(err)
+				suite.Require().Equal(tc.expBlockNumber, blockNumber)
+			} else {
+				suite.Require().NotNil(err)
+			}
+		})
 	}
 }
 
@@ -93,7 +95,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 
 	testCases := []struct {
 		name         string
-		blocknumber  ethrpc.BlockNumber
+		blockNumber  ethrpc.BlockNumber
 		registerMock func(ethrpc.BlockNumber)
 		found        bool
 		expPass      bool
@@ -194,8 +196,8 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 	for _, tc := range testCases {
 		suite.SetupTest() // reset test and queries
 
-		tc.registerMock(tc.blocknumber)
-		resultBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blocknumber)
+		tc.registerMock(tc.blockNumber)
+		resultBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blockNumber)
 
 		if tc.expPass {
 			suite.Require().Nil(err)
@@ -210,6 +212,56 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 		} else {
 			suite.Require().NotNil(err)
 		}
+	}
+}
+
+func (suite *BackendTestSuite) TestGetTendermintBlockResultByNumber() {
+	var expBlockRes *tmrpctypes.ResultBlockResults
+
+	testCases := []struct {
+		name         string
+		blockNumber  int64
+		registerMock func(int64)
+		expPass      bool
+	}{
+		{
+			"fail",
+			1,
+			func(blockNum int64) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockResultsError(client, blockNum)
+			},
+			false,
+		},
+		{
+			"pass",
+			1,
+			func(blockNum int64) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockResults(client, blockNum)
+
+				expBlockRes = &tmrpctypes.ResultBlockResults{
+					Height:     blockNum,
+					TxsResults: []*types.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
+				}
+			},
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock(tc.blockNumber)
+
+			blockRes, err := suite.backend.GetTendermintBlockResultByNumber(&tc.blockNumber)
+
+			if tc.expPass {
+				suite.Require().Nil(err)
+				suite.Require().Equal(expBlockRes, blockRes)
+			} else {
+				suite.Require().NotNil(err)
+			}
+		})
 	}
 }
 
@@ -266,14 +318,16 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 		},
 	}
 	for _, tc := range testCases {
-		blockBloom, err := suite.backend.BlockBloom(tc.blockRes)
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			blockBloom, err := suite.backend.BlockBloom(tc.blockRes)
 
-		if tc.expPass {
-			suite.Require().Nil(err)
-			suite.Require().Equal(tc.expBlockBloom, blockBloom)
-		} else {
-			suite.Require().NotNil(err)
-		}
+			if tc.expPass {
+				suite.Require().Nil(err)
+				suite.Require().Equal(tc.expBlockBloom, blockBloom)
+			} else {
+				suite.Require().NotNil(err)
+			}
+		})
 	}
 }
 
@@ -658,17 +712,19 @@ func (suite *BackendTestSuite) TestBaseFee() {
 		},
 	}
 	for _, tc := range testCases {
-		suite.SetupTest() // reset test and queries
-		tc.registerMock()
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock()
 
-		baseFee, err := suite.backend.BaseFee(tc.blockRes)
+			baseFee, err := suite.backend.BaseFee(tc.blockRes)
 
-		if tc.expPass {
-			suite.Require().Nil(err)
-			suite.Require().Equal(tc.expBaseFee, baseFee)
-		} else {
-			suite.Require().NotNil(err)
-		}
+			if tc.expPass {
+				suite.Require().Nil(err)
+				suite.Require().Equal(tc.expBaseFee, baseFee)
+			} else {
+				suite.Require().NotNil(err)
+			}
+		})
 	}
 }
 
@@ -727,9 +783,12 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 		},
 	}
 	for _, tc := range testCases {
-		suite.SetupTest() // reset test and queries
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
 
-		msgs := suite.backend.GetEthereumMsgsFromTendermintBlock(tc.resBlock, tc.blockRes)
-		suite.Require().Equal(tc.expMsgs, msgs)
+			suite.SetupTest() // reset test and queries
+
+			msgs := suite.backend.GetEthereumMsgsFromTendermintBlock(tc.resBlock, tc.blockRes)
+			suite.Require().Equal(tc.expMsgs, msgs)
+		})
 	}
 }
