@@ -201,27 +201,31 @@ def test_getTransaction(ethermint, geth):
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getTransactionByHash", ["0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"])
 
-    # FIXME: s key on json is not in both results
     tx_hash = send_and_get_hash(ethermint.w3)
 
     tx_res = eth_rpc.make_request('eth_getTransactionByHash', [tx_hash])
 
     expected = {
-    'blockHash': '0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd',
-    'blockNumber': 46147,
-    'from': '0xA1E4380A3B1f749673E270229993eE55F35663b4',
-    'gas': 21000,
-    'gasPrice': None,
-    'hash': '0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060',
-    'input': '0x',
-    'maxFeePerGas': 2000000000,
-    'maxPriorityFeePerGas': 1000000000,
-    'nonce': 0,
-    'to': '0x5DF9B87991262F6BA471F09758CDE1c0FC1De734',
-    'transactionIndex': 0,
-    'value': 31337,
+    "jsonrpc": "2.0",
+    "id": 0,
+    "result": {
+        "hash": "0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b",
+        "blockHash": "0x1d59ff54b1eb26b013ce3cb5fc9dab3705b415a67127a003c3e61eb445bb8df2",
+        "blockNumber": "0x5daf3b",
+        "from": "0xa7d9ddbe1f17865597fbd27ec712455208b6b76d",
+        "gas": "0xc350",
+        "gasPrice": "0x4a817c800",
+        "input": "0x68656c6c6f21",
+        "nonce": "0x15",
+        "r": "0x1b5e176d927f8e9ab405058b2d2457392da3e20f328b16ddabcebc33eaac5fea",
+        "s": "0x4ba69724e8f69de52f0125ad8b3c5c2cef33019bac3249e2c0a2192766d1721c",
+        "to": "0xf02c1c8e6114b1dbe8937a39260b5b0a374432bb",
+        "transactionIndex": "0x41",
+        "v": "0x25",
+        "value": "0xf3dbb76162000"
     }
-    res, err = same_types(tx_res['result'], expected)
+    }
+    res, err = same_types(tx_res, expected)
     assert res, err
 
 # NOT IMPLEMENTED
@@ -243,7 +247,6 @@ def test_getTransactionReceipt(ethermint, geth):
     tx_hash = send_and_get_hash(ethermint.w3)
 
     tx_res = eth_rpc.make_request('eth_getTransactionReceipt', [tx_hash])
-
     expected = {
     'blockHash': '0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd',
     'blockNumber': 46147,
@@ -258,7 +261,7 @@ def test_getTransactionReceipt(ethermint, geth):
     'transactionHash': '0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060',
     'transactionIndex': 0,
     }
-    res, err = same_types(tx_res, expected)
+    res, err = same_types(tx_res['result'], expected)
     assert res, err
 
 def test_feeHistory(ethermint, geth):
