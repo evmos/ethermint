@@ -20,9 +20,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// QueryClient defines a mocked object that implements the grpc QueryCLient
-// interface. It's used on tests to test the JSON-RPC without running a grpc
-// client server. E.g. JSON-PRC-CLIENT -> BACKEND -> Mock GRPC CLIENT -> APP
+// QueryClient defines a mocked object that implements the ethermint GRPC
+// QueryClient interface. It allows for performing QueryClient queries without having
+// to run a ethermint GRPC server.
+//
+// To use a mock method it has to be registered in a given test.
 var _ evmtypes.QueryClient = &mocks.QueryClient{}
 
 // Params

@@ -74,7 +74,8 @@ func (suite *BackendTestSuite) buildEthereumTx() (*evmtypes.MsgEthereumTx, []byt
 	return msgEthereumTx, bz
 }
 
-func (suite *BackendTestSuite) getFormattedBlock(
+// buildFormattedBlock returns a formatted block for testing
+func (suite *BackendTestSuite) buildFormattedBlock(
 	blockRes *tmrpctypes.ResultBlockResults,
 	resBlock *tmrpctypes.ResultBlock,
 	fullTx bool,

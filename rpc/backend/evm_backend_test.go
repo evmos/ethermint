@@ -97,6 +97,21 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 		expPass      bool
 	}{
 		{
+			"fail - tendermint block error ",
+			ethrpc.BlockNumber(1),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			nil,
+			nil,
+			func(blockNum ethrpc.BlockNumber, _ sdk.Int, _ sdk.AccAddress, _ []byte) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockError(client, height)
+			},
+			false,
+		},
+		{
 			"pass - without tx",
 			ethrpc.BlockNumber(1),
 			true,
@@ -107,7 +122,7 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				resBlock, _ = RegisterBlockWithoutTx(client, height, txBz)
+				resBlock, _ = RegisterBlock(client, height, txBz)
 				blockRes, _ = RegisterBlockResults(client, blockNum.Int64())
 				RegisterConsensusParams(client, height)
 
@@ -128,7 +143,7 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				resBlock, _ = RegisterBlockWithTx(client, height, txBz)
+				resBlock, _ = RegisterBlock(client, height, txBz)
 				blockRes, _ = RegisterBlockResults(client, blockNum.Int64())
 				RegisterConsensusParams(client, height)
 
@@ -146,16 +161,16 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 
 			block, err := suite.backend.GetBlockByNumber(tc.blockNumber, tc.fullTx)
 
-			expBlock := suite.getFormattedBlock(
-				blockRes,
-				resBlock,
-				tc.fullTx,
-				tc.tx,
-				tc.validator,
-				tc.baseFee,
-			)
-
 			if tc.expPass {
+				expBlock := suite.buildFormattedBlock(
+					blockRes,
+					resBlock,
+					tc.fullTx,
+					tc.tx,
+					tc.validator,
+					tc.baseFee,
+				)
+
 				suite.Require().Equal(expBlock, block)
 				suite.Require().NoError(err)
 			} else {
@@ -166,7 +181,7 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 }
 
 func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
-	var block tmtypes.Block
+	var expResultBlock *tmrpctypes.ResultBlock
 
 	testCases := []struct {
 		name         string
@@ -220,9 +235,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 
 				tmHeight := appHeight
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlock(client, tmHeight)
-
-				block = tmtypes.Block{Header: tmtypes.Header{Height: tmHeight}}
+				expResultBlock, _ = RegisterBlock(client, tmHeight, nil)
 			},
 			true,
 			true,
@@ -233,9 +246,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 			func(blockNum ethrpc.BlockNumber) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlock(client, height)
-
-				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
+				expResultBlock, _ = RegisterBlock(client, height, nil)
 			},
 			true,
 			true,
@@ -246,9 +257,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 			func(blockNum ethrpc.BlockNumber) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlock(client, height)
-
-				block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
+				expResultBlock, _ = RegisterBlock(client, height, nil)
 			},
 			true,
 			true,
@@ -281,7 +290,6 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 				if !tc.found {
 					suite.Require().Nil(resultBlock)
 				} else {
-					expResultBlock := &tmrpctypes.ResultBlock{Block: &block}
 					suite.Require().Equal(expResultBlock, resultBlock)
 					suite.Require().Equal(expResultBlock.Block.Header.Height, resultBlock.Block.Header.Height)
 				}

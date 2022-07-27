@@ -1,4 +1,4 @@
-package backend // Client defines a mocked object that implements the tendermint rpc CLient
+package backend
 
 import (
 	"testing"
@@ -14,38 +14,31 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
-// Client defines a mocked object that implements the Tenderminet JSON-RPC
-// interface. It's used on tests to test the JSON-RPC without running a
-// tendermint rpc client server. E.g. JSON-PRC-CLIENT -> BACKEND -> Mock GRPC
-// CLIENT -> APP
+// Client defines a mocked object that implements the Tendermint JSON-RPC Client
+// interface. It allows for performing Client queries without having to run a
+// Tendermint RPC Client server.
+//
+// To use a mock method it has to be registered in a given test.
 var _ tmrpcclient.Client = &mocks.Client{}
 
 // Block
-func RegisterBlock(client *mocks.Client, height int64) {
-	block := types.Block{Header: types.Header{Height: height}}
-	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(&tmrpctypes.ResultBlock{Block: &block}, nil)
-}
-
-func RegisterBlockWithTx(
+func RegisterBlock(
 	client *mocks.Client,
 	height int64,
 	tx []byte,
 ) (*tmrpctypes.ResultBlock, error) {
+	// without tx
+	if tx == nil {
+		emptyBlock := types.MakeBlock(height, []types.Tx{}, nil, nil)
+		resBlock := &tmrpctypes.ResultBlock{Block: emptyBlock}
+		client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+			Return(resBlock, nil)
+		return resBlock, nil
+	}
+
+	// with tx
 	block := types.MakeBlock(height, []types.Tx{tx}, nil, nil)
 	res := &tmrpctypes.ResultBlock{Block: block}
-	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(res, nil)
-	return res, nil
-}
-
-func RegisterBlockWithoutTx(
-	client *mocks.Client,
-	height int64,
-	tx []byte,
-) (*tmrpctypes.ResultBlock, error) {
-	emptyBlock := types.MakeBlock(height, []types.Tx{}, nil, nil)
-	res := &tmrpctypes.ResultBlock{Block: emptyBlock}
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
 		Return(res, nil)
 	return res, nil
@@ -66,11 +59,13 @@ func RegisterBlockNotFound(client *mocks.Client, height int64) {
 func TestRegisterBlock(t *testing.T) {
 	client := mocks.NewClient(t)
 	height := rpc.BlockNumber(1).Int64()
-	RegisterBlock(client, height)
+	RegisterBlock(client, height, nil)
 
 	res, err := client.Block(rpc.ContextWithHeight(height), &height)
-	block := types.Block{Header: types.Header{Height: height}}
-	require.Equal(t, res, &tmrpctypes.ResultBlock{Block: &block})
+
+	emptyBlock := types.MakeBlock(height, []types.Tx{}, nil, nil)
+	resBlock := &tmrpctypes.ResultBlock{Block: emptyBlock}
+	require.Equal(t, resBlock, res)
 	require.NoError(t, err)
 }
 
