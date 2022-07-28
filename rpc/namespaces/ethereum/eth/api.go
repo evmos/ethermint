@@ -22,6 +22,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -74,6 +75,7 @@ func NewPublicAPI(
 			viper.GetString(flags.FlagKeyringBackend),
 			clientCtx.KeyringDir,
 			clientCtx.Input,
+			clientCtx.Codec,
 			hd.EthSecp256k1Option(),
 		)
 		if err != nil {
@@ -252,7 +254,11 @@ func (e *PublicAPI) Accounts() ([]common.Address, error) {
 	}
 
 	for _, info := range infos {
-		addressBytes := info.GetPubKey().Address().Bytes()
+		pubKey, err := info.GetPubKey()
+		if err != nil {
+			return nil, err
+		}
+		addressBytes := pubKey.Address().Bytes()
 		addresses = append(addresses, common.BytesToAddress(addressBytes))
 	}
 
@@ -283,7 +289,7 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.Bl
 		return nil, err
 	}
 
-	val, ok := sdk.NewIntFromString(res.Balance)
+	val, ok := sdkmath.NewIntFromString(res.Balance)
 	if !ok {
 		return nil, errors.New("invalid balance")
 	}
@@ -1116,7 +1122,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 		accProofStr = proof.String()
 	}
 
-	balance, ok := sdk.NewIntFromString(res.Balance)
+	balance, ok := sdkmath.NewIntFromString(res.Balance)
 	if !ok {
 		return nil, errors.New("invalid balance")
 	}

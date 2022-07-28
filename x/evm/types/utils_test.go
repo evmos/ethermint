@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/evmos/ethermint/app"
@@ -30,11 +31,9 @@ func TestEvmDataEncoding(t *testing.T) {
 		Ret: ret,
 	}
 
-	enc, err := proto.Marshal(data)
-	require.NoError(t, err)
-
+	any := codectypes.UnsafePackAny(data)
 	txData := &sdk.TxMsgData{
-		Data: []*sdk.MsgData{{MsgType: evmtypes.TypeMsgEthereumTx, Data: enc}},
+		MsgResponses: []*codectypes.Any{any},
 	}
 
 	txDataBz, err := proto.Marshal(txData)

@@ -18,6 +18,7 @@ import (
 	// . "github.com/onsi/ginkgo/v2"
 	// . "github.com/onsi/gomega"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ethereum/go-ethereum"
@@ -576,7 +577,7 @@ func (s *IntegrationTestSuite) deployContract(data []byte) (transaction common.H
 // Deploys erc20 contract, commits block and returns contract address
 func (s *IntegrationTestSuite) deployERC20Contract() (transaction common.Hash, contractAddr common.Address) {
 	owner := common.BytesToAddress(s.network.Validators[0].Address)
-	supply := sdk.NewIntWithDecimal(1000, 18).BigInt()
+	supply := sdkmath.NewIntWithDecimal(1000, 18).BigInt()
 
 	ctorArgs, err := evmtypes.ERC20Contract.ABI.Pack("", owner, supply)
 	s.Require().NoError(err)
@@ -799,7 +800,7 @@ func (s *IntegrationTestSuite) TestBatchETHTransactions() {
 		msgs = append(msgs, msgTx.GetMsgs()...)
 		txData, err := evmtypes.UnpackTxData(msgTx.Data)
 		s.Require().NoError(err)
-		feeAmount = feeAmount.Add(sdk.NewIntFromBigInt(txData.Fee()))
+		feeAmount = feeAmount.Add(sdkmath.NewIntFromBigInt(txData.Fee()))
 		gasLimit = gasLimit + txData.GetGas()
 	}
 

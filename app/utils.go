@@ -10,6 +10,7 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -177,13 +178,13 @@ func StateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes
 
 // NewTestGenesisState generate genesis state with single validator
 func NewTestGenesisState(codec codec.Codec) simapp.GenesisState {
-	privVal := ed25519.GenPrivKey()
-	// create validator set with single validator
-	tmPk, err := cryptocodec.ToTmPubKeyInterface(privVal.PubKey())
+	privVal := mock.NewPV()
+	pubKey, err := privVal.GetPubKey()
 	if err != nil {
 		panic(err)
 	}
-	validator := tmtypes.NewValidator(tmPk, 1)
+	// create validator set with single validator
+	validator := tmtypes.NewValidator(pubKey, 1)
 	valSet := tmtypes.NewValidatorSet([]*tmtypes.Validator{validator})
 
 	// generate genesis account

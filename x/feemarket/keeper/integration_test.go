@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -46,7 +47,7 @@ var _ = Describe("Feemarket", func() {
 
 			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -56,7 +57,7 @@ var _ = Describe("Feemarket", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -64,7 +65,7 @@ var _ = Describe("Feemarket", func() {
 
 			Context("during DeliverTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -74,7 +75,7 @@ var _ = Describe("Feemarket", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -88,7 +89,7 @@ var _ = Describe("Feemarket", func() {
 
 			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < min-gas-prices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -98,7 +99,7 @@ var _ = Describe("Feemarket", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -106,7 +107,7 @@ var _ = Describe("Feemarket", func() {
 
 			Context("during DeliverTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -116,7 +117,7 @@ var _ = Describe("Feemarket", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -129,7 +130,7 @@ var _ = Describe("Feemarket", func() {
 			})
 			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -139,7 +140,7 @@ var _ = Describe("Feemarket", func() {
 				})
 
 				It("should reject transactions with MinGasPrices < gasPrice < min-gas-prices", func() {
-					gasPrice := sdk.NewInt(4)
+					gasPrice := sdkmath.NewInt(4)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -149,7 +150,7 @@ var _ = Describe("Feemarket", func() {
 				})
 
 				It("should accept transactions with gasPrice > min-gas-prices", func() {
-					gasPrice := sdk.NewInt(5)
+					gasPrice := sdkmath.NewInt(5)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -157,7 +158,7 @@ var _ = Describe("Feemarket", func() {
 
 			Context("during DeliverTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -167,13 +168,13 @@ var _ = Describe("Feemarket", func() {
 				})
 
 				It("should accept transactions with MinGasPrices < gasPrice < than min-gas-prices", func() {
-					gasPrice := sdk.NewInt(4)
+					gasPrice := sdkmath.NewInt(4)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
 
 				It("should accept transactions with gasPrice >= min-gas-prices", func() {
-					gasPrice := sdk.NewInt(5)
+					gasPrice := sdkmath.NewInt(5)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -204,7 +205,7 @@ var _ = Describe("Feemarket", func() {
 				// 100000`. With the fee calculation `Fee = (baseFee + tip) * gasLimit`,
 				// a `minGasPrices = 40_000_000_000` results in `minGlobalFee =
 				// 4000000000000000`
-				privKey, _ = setupTestWithContext("1", sdk.NewDec(minGasPrices), sdk.NewInt(baseFee))
+				privKey, _ = setupTestWithContext("1", sdk.NewDec(minGasPrices), sdkmath.NewInt(baseFee))
 			})
 
 			Context("during CheckTx", func() {
@@ -312,7 +313,7 @@ var _ = Describe("Feemarket", func() {
 				// 100_000`. With the fee calculation `Fee = (baseFee + tip) * gasLimit`,
 				// a `minGasPrices = 5_000_000_000` results in `minGlobalFee =
 				// 500_000_000_000_000`
-				privKey, _ = setupTestWithContext("1", sdk.NewDec(minGasPrices), sdk.NewInt(baseFee))
+				privKey, _ = setupTestWithContext("1", sdk.NewDec(minGasPrices), sdkmath.NewInt(baseFee))
 			})
 
 			Context("during CheckTx", func() {
@@ -441,7 +442,7 @@ var _ = Describe("Feemarket", func() {
 
 // setupTestWithContext sets up a test chain with an example Cosmos send msg,
 // given a local (validator config) and a gloabl (feemarket param) minGasPrice
-func setupTestWithContext(valMinGasPrice string, minGasPrice sdk.Dec, baseFee sdk.Int) (*ethsecp256k1.PrivKey, banktypes.MsgSend) {
+func setupTestWithContext(valMinGasPrice string, minGasPrice sdk.Dec, baseFee sdkmath.Int) (*ethsecp256k1.PrivKey, banktypes.MsgSend) {
 	privKey, msg := setupTest(valMinGasPrice + s.denom)
 	params := types.DefaultParams()
 	params.MinGasPrice = minGasPrice
@@ -456,7 +457,7 @@ func setupTest(localMinGasPrices string) (*ethsecp256k1.PrivKey, banktypes.MsgSe
 	setupChain(localMinGasPrices)
 
 	privKey, address := generateKey()
-	amount, ok := sdk.NewIntFromString("10000000000000000000")
+	amount, ok := sdkmath.NewIntFromString("10000000000000000000")
 	s.Require().True(ok)
 	initBalance := sdk.Coins{sdk.Coin{
 		Denom:  s.denom,
@@ -469,7 +470,7 @@ func setupTest(localMinGasPrices string) (*ethsecp256k1.PrivKey, banktypes.MsgSe
 		ToAddress:   address.String(),
 		Amount: sdk.Coins{sdk.Coin{
 			Denom:  s.denom,
-			Amount: sdk.NewInt(10000),
+			Amount: sdkmath.NewInt(10000),
 		}},
 	}
 	s.Commit()
@@ -575,7 +576,7 @@ func prepareEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereu
 	s.Require().NoError(err)
 
 	evmDenom := s.app.EvmKeeper.GetParams(s.ctx).EvmDenom
-	fees := sdk.Coins{{Denom: evmDenom, Amount: sdk.NewIntFromBigInt(txData.Fee())}}
+	fees := sdk.Coins{{Denom: evmDenom, Amount: sdkmath.NewIntFromBigInt(txData.Fee())}}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msgEthereumTx.GetGas())
 
@@ -600,7 +601,7 @@ func deliverEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereu
 	return res
 }
 
-func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.Msg) []byte {
+func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdkmath.Int, msgs ...sdk.Msg) []byte {
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	accountAddress := sdk.AccAddress(priv.PubKey().Address().Bytes())
 
@@ -608,7 +609,7 @@ func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.
 
 	txBuilder.SetGasLimit(1000000)
 	if gasPrice == nil {
-		_gasPrice := sdk.NewInt(1)
+		_gasPrice := sdkmath.NewInt(1)
 		gasPrice = &_gasPrice
 	}
 	fees := &sdk.Coins{{Denom: s.denom, Amount: gasPrice.MulRaw(1000000)}}
@@ -659,14 +660,14 @@ func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.
 	return bz
 }
 
-func checkTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.Msg) abci.ResponseCheckTx {
+func checkTx(priv *ethsecp256k1.PrivKey, gasPrice *sdkmath.Int, msgs ...sdk.Msg) abci.ResponseCheckTx {
 	bz := prepareCosmosTx(priv, gasPrice, msgs...)
 	req := abci.RequestCheckTx{Tx: bz}
 	res := s.app.BaseApp.CheckTx(req)
 	return res
 }
 
-func deliverTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.Msg) abci.ResponseDeliverTx {
+func deliverTx(priv *ethsecp256k1.PrivKey, gasPrice *sdkmath.Int, msgs ...sdk.Msg) abci.ResponseDeliverTx {
 	bz := prepareCosmosTx(priv, gasPrice, msgs...)
 	req := abci.RequestDeliverTx{Tx: bz}
 	res := s.app.BaseApp.DeliverTx(req)
