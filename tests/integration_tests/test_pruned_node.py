@@ -68,6 +68,8 @@ def test_pruned_node(ethermint):
     assert expect_log.items() <= txreceipt.logs[0].items()
 
     # check get_balance and eth_call don't work on pruned state
+    # we need to check error message here. 
+    # `get_balance` returns unmarshallJson and thats not what it should
     with pytest.raises(Exception):
         w3.eth.get_balance(ADDRS["validator"],
                            block_identifier=txreceipt.blockNumber)
