@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.18.0] - 2022-08
+
+### State Machine Breaking
+
+* (evm) [\#1174](https://github.com/evmos/ethermint/pull/1174) Don't allow eth txs with 0 in mempool.
+
 ## [v0.17.2] - 2022-07-26
 
 ### Bug Fixes
