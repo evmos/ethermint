@@ -213,6 +213,10 @@ func traverseFields(
 		fieldName := jsonNameFromTag(t.Field(i).Tag)
 
 		if fieldType == cosmosAnyType {
+			// Here is the problem: for proto.messages this works fine, but for pubkey it doesn't work.
+			// The issue is that the transaction values are extracted using
+			// json.Unmarshal(data, &txData) and that's returning for the pubkey pubkey:string
+			// if we unpack the pubkey interface it returns pubkey: {type:string, value:uint8}
 			any, ok := field.Interface().(*codectypes.Any)
 			if !ok {
 				return sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
@@ -320,6 +324,15 @@ func traverseFields(
 				fieldTypedef = sanitizeTypedef(fieldPrefix) + "[]"
 			} else {
 				fieldTypedef = sanitizeTypedef(fieldPrefix)
+			}
+
+			//// TODO: improve the solution, this is a patch to demo the error
+			if fieldTypedef == "TypePubkey" {
+				fieldTypedef = "string"
+			}
+
+			if fieldTypedef == "TypeAllowance" {
+				fieldTypedef = "string"
 			}
 
 			if prefix == typeDefPrefix {
