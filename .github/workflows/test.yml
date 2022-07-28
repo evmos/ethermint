@@ -117,7 +117,7 @@ jobs:
       - name: 'Tar debug files'
         if: failure()
         run: tar cfz debug_files.tar.gz -C /tmp/pytest-of-runner .
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: debug-files
