@@ -1,13 +1,15 @@
 package types
 
 import (
-	"encoding/json"
+	"fmt"
 	"strconv"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // EventFormat is the format version of the events.
@@ -52,30 +54,14 @@ type ParsedTx struct {
 
 	Hash common.Hash
 	// -1 means uninitialized
-	EthTxIndex int64
+	EthTxIndex int32
 	GasUsed    uint64
 	Failed     bool
-	// unparsed tx log json strings
-	RawLogs [][]byte
 }
 
 // NewParsedTx initialize a ParsedTx
 func NewParsedTx(msgIndex int) ParsedTx {
 	return ParsedTx{MsgIndex: msgIndex, EthTxIndex: -1}
-}
-
-// ParseTxLogs decode the raw logs into ethereum format.
-func (p ParsedTx) ParseTxLogs() ([]*ethtypes.Log, error) {
-	logs := make([]*evmtypes.Log, 0, len(p.RawLogs))
-	for _, raw := range p.RawLogs {
-		var log evmtypes.Log
-		if err := json.Unmarshal(raw, &log); err != nil {
-			return nil, err
-		}
-
-		logs = append(logs, &log)
-	}
-	return evmtypes.LogsToEthereum(logs), nil
 }
 
 // ParsedTxs is the tx infos parsed from eth tx events.
@@ -88,7 +74,7 @@ type ParsedTxs struct {
 
 // ParseTxResult parse eth tx infos from cosmos-sdk events.
 // It supports two event formats, the formats are described in the comments of the format constants.
-func ParseTxResult(result *abci.ResponseDeliverTx) (*ParsedTxs, error) {
+func ParseTxResult(result *abci.ResponseDeliverTx, tx sdk.Tx) (*ParsedTxs, error) {
 	format := eventFormatUnknown
 	// the index of current ethereum_tx event in format 1 or the second part of format 2
 	eventIndex := -1
@@ -97,40 +83,38 @@ func ParseTxResult(result *abci.ResponseDeliverTx) (*ParsedTxs, error) {
 		TxHashes: make(map[common.Hash]int),
 	}
 	for _, event := range result.Events {
-		switch event.Type {
-		case evmtypes.EventTypeEthereumTx:
-			if format == eventFormatUnknown {
-				// discover the format version by inspect the first ethereum_tx event.
-				if len(event.Attributes) > 2 {
-					format = eventFormat1
-				} else {
-					format = eventFormat2
-				}
-			}
+		if event.Type != evmtypes.EventTypeEthereumTx {
+			continue
+		}
 
-			if len(event.Attributes) == 2 {
-				// the first part of format 2
+		if format == eventFormatUnknown {
+			// discover the format version by inspect the first ethereum_tx event.
+			if len(event.Attributes) > 2 {
+				format = eventFormat1
+			} else {
+				format = eventFormat2
+			}
+		}
+
+		if len(event.Attributes) == 2 {
+			// the first part of format 2
+			if err := p.newTx(event.Attributes); err != nil {
+				return nil, err
+			}
+		} else {
+			// format 1 or second part of format 2
+			eventIndex++
+			if format == eventFormat1 {
+				// append tx
 				if err := p.newTx(event.Attributes); err != nil {
 					return nil, err
 				}
 			} else {
-				// format 1 or second part of format 2
-				eventIndex++
-				if format == eventFormat1 {
-					// append tx
-					if err := p.newTx(event.Attributes); err != nil {
-						return nil, err
-					}
-				} else {
-					// the second part of format 2, update tx fields
-					if err := p.updateTx(eventIndex, event.Attributes); err != nil {
-						return nil, err
-					}
+				// the second part of format 2, update tx fields
+				if err := p.updateTx(eventIndex, event.Attributes); err != nil {
+					return nil, err
 				}
 			}
-		case evmtypes.EventTypeTxLog:
-			// reuse the eventIndex set by previous ethereum_tx event
-			p.Txs[eventIndex].RawLogs = parseRawLogs(event.Attributes)
 		}
 	}
 
@@ -139,7 +123,40 @@ func ParseTxResult(result *abci.ResponseDeliverTx) (*ParsedTxs, error) {
 		p.Txs[0].GasUsed = uint64(result.GasUsed)
 	}
 
+	// this could only happen if tx exceeds block gas limit
+	if result.Code != 0 && tx != nil {
+		for i := 0; i < len(p.Txs); i++ {
+			p.Txs[i].Failed = true
+
+			// replace gasUsed with gasLimit because that's what's actually deducted.
+			gasLimit := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx).GetGas()
+			p.Txs[i].GasUsed = gasLimit
+		}
+	}
 	return p, nil
+}
+
+// ParseTxIndexerResult parse tm tx result to a format compatible with the custom tx indexer.
+func ParseTxIndexerResult(txResult *tmrpctypes.ResultTx, tx sdk.Tx, getter func(*ParsedTxs) *ParsedTx) (*ethermint.TxResult, error) {
+	txs, err := ParseTxResult(&txResult.TxResult, tx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse tx events: block %d, index %d, %v", txResult.Height, txResult.Index, err)
+	}
+
+	parsedTx := getter(txs)
+	if parsedTx == nil {
+		return nil, fmt.Errorf("ethereum tx not found in msgs: block %d, index %d", txResult.Height, txResult.Index)
+	}
+
+	return &ethermint.TxResult{
+		Height:            txResult.Height,
+		TxIndex:           txResult.Index,
+		MsgIndex:          uint32(parsedTx.MsgIndex),
+		EthTxIndex:        parsedTx.EthTxIndex,
+		Failed:            parsedTx.Failed,
+		GasUsed:           parsedTx.GasUsed,
+		CumulativeGasUsed: txs.AccumulativeGasUsed(parsedTx.MsgIndex),
+	}, nil
 }
 
 // newTx parse a new tx from events, called during parsing.
@@ -215,17 +232,17 @@ func fillTxAttribute(tx *ParsedTx, key []byte, value []byte) error {
 	case evmtypes.AttributeKeyEthereumTxHash:
 		tx.Hash = common.HexToHash(string(value))
 	case evmtypes.AttributeKeyTxIndex:
-		txIndex, err := strconv.ParseInt(string(value), 10, 64)
+		txIndex, err := strconv.ParseUint(string(value), 10, 31)
 		if err != nil {
 			return err
 		}
-		tx.EthTxIndex = txIndex
+		tx.EthTxIndex = int32(txIndex)
 	case evmtypes.AttributeKeyTxGasUsed:
-		gasUsed, err := strconv.ParseInt(string(value), 10, 64)
+		gasUsed, err := strconv.ParseUint(string(value), 10, 64)
 		if err != nil {
 			return err
 		}
-		tx.GasUsed = uint64(gasUsed)
+		tx.GasUsed = gasUsed
 	case evmtypes.AttributeKeyEthereumTxFailed:
 		tx.Failed = len(value) > 0
 	}
@@ -239,11 +256,4 @@ func fillTxAttributes(tx *ParsedTx, attrs []abci.EventAttribute) error {
 		}
 	}
 	return nil
-}
-
-func parseRawLogs(attrs []abci.EventAttribute) (logs [][]byte) {
-	for _, attr := range attrs {
-		logs = append(logs, attr.Value)
-	}
-	return logs
 }

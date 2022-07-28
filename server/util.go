@@ -42,6 +42,9 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 		sdkserver.ExportCmd(appExport, defaultNodeHome),
 		version.NewVersionCommand(),
 		sdkserver.NewRollbackCmd(defaultNodeHome),
+
+		// custom tx indexer command
+		NewIndexTxCmd(),
 	)
 }
 

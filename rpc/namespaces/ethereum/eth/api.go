@@ -421,23 +421,19 @@ func (e *PublicAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, err
 		return nil, nil
 	}
 
-	if res.TxResult.Code != 0 {
+	if res.Failed {
 		// failed, return empty logs
 		return nil, nil
 	}
 
-	parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
+	resBlockResult, err := e.clientCtx.Client.BlockResults(e.ctx, &res.Height)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse tx events: %s, %v", hexTx, err)
-	}
-
-	parsedTx := parsedTxs.GetTxByHash(txHash)
-	if parsedTx == nil {
-		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
+		e.logger.Debug("block result not found", "number", res.Height, "error", err.Error())
+		return nil, nil
 	}
 
 	// parse tx logs from events
-	return parsedTx.ParseTxLogs()
+	return backend.TxLogsFromEvents(resBlockResult.TxsResults[res.TxIndex].Events, int(res.MsgIndex))
 }
 
 // Sign signs the provided data using the private key of address via Geth's signature standard.
@@ -765,28 +761,17 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 	}
 
 	var msg *evmtypes.MsgEthereumTx
-	// try /tx_search first
+	// find in tx indexer
 	res, err := e.backend.GetTxByTxIndex(block.Block.Height, uint(idx))
 	if err == nil {
-		tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+		tx, err := e.clientCtx.TxConfig.TxDecoder()(block.Block.Txs[res.TxIndex])
 		if err != nil {
 			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
 			return nil, nil
 		}
-
-		parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse tx events: %d, %v", idx, err)
-		}
-
-		parsedTx := parsedTxs.GetTxByTxIndex(int(idx))
-		if parsedTx == nil {
-			return nil, fmt.Errorf("ethereum tx not found in msgs: %d", idx)
-		}
-
 		var ok bool
 		// msgIndex is inferred from tx events, should be within bound.
-		msg, ok = tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
+		msg, ok = tx.GetMsgs()[res.MsgIndex].(*evmtypes.MsgEthereumTx)
 		if !ok {
 			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
 			return nil, nil
@@ -864,44 +849,17 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		return nil, nil
 	}
 
-	// don't ignore the txs which exceed block gas limit.
-	if !backend.TxSuccessOrExceedsBlockGasLimit(&res.TxResult) {
-		return nil, nil
-	}
-
-	parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse tx events: %s, %v", hexTx, err)
-	}
-
-	parsedTx := parsedTxs.GetTxByHash(hash)
-	if parsedTx == nil {
-		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
-	}
-
 	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
 	if err != nil {
 		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
 		return nil, nil
 	}
-
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
+	tx, err := e.clientCtx.TxConfig.TxDecoder()(resBlock.Block.Txs[res.TxIndex])
 	if err != nil {
 		e.logger.Debug("decoding failed", "error", err.Error())
 		return nil, fmt.Errorf("failed to decode tx: %w", err)
 	}
-
-	if res.TxResult.Code != 0 {
-		// tx failed, we should return gas limit as gas used, because that's how the fee get deducted.
-		for i := 0; i <= parsedTx.MsgIndex; i++ {
-			gasLimit := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx).GetGas()
-			parsedTxs.Txs[i].GasUsed = gasLimit
-		}
-	}
-
-	// the `msgIndex` is inferred from tx events, should be within the bound,
-	// and the tx is found by eth tx hash, so the msg type must be correct.
-	ethMsg := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
+	ethMsg := tx.GetMsgs()[res.MsgIndex].(*evmtypes.MsgEthereumTx)
 
 	txData, err := evmtypes.UnpackTxData(ethMsg.Data)
 	if err != nil {
@@ -915,14 +873,13 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		e.logger.Debug("failed to retrieve block results", "height", res.Height, "error", err.Error())
 		return nil, nil
 	}
-	for i := 0; i < int(res.Index) && i < len(blockRes.TxsResults); i++ {
-		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
+	for _, txResult := range blockRes.TxsResults[0:res.TxIndex] {
+		cumulativeGasUsed += uint64(txResult.GasUsed)
 	}
-	cumulativeGasUsed += parsedTxs.AccumulativeGasUsed(parsedTx.MsgIndex)
+	cumulativeGasUsed += res.CumulativeGasUsed
 
-	// Get the transaction result from the log
 	var status hexutil.Uint
-	if res.TxResult.Code != 0 || parsedTx.Failed {
+	if res.Failed {
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
@@ -934,23 +891,22 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 	}
 
 	// parse tx logs from events
-	logs, err := parsedTx.ParseTxLogs()
+	logs, err := backend.TxLogsFromEvents(blockRes.TxsResults[res.TxIndex].Events, int(res.MsgIndex))
 	if err != nil {
-		e.logger.Debug("failed to parse logs", "hash", hexTx, "error", err.Error())
+		e.logger.Debug("logs not found", "hash", hexTx, "error", err.Error())
 	}
 
-	if parsedTx.EthTxIndex == -1 {
+	if res.EthTxIndex == -1 {
 		// Fallback to find tx index by iterating all valid eth transactions
 		msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
 		for i := range msgs {
 			if msgs[i].Hash == hexTx {
-				parsedTx.EthTxIndex = int64(i)
+				res.EthTxIndex = int32(i)
 				break
 			}
 		}
 	}
-
-	if parsedTx.EthTxIndex == -1 {
+	if res.EthTxIndex == -1 {
 		return nil, errors.New("can't find index of ethereum tx")
 	}
 
@@ -965,14 +921,14 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 		// They are stored in the chain database.
 		"transactionHash": hash,
 		"contractAddress": nil,
-		"gasUsed":         hexutil.Uint64(parsedTx.GasUsed),
+		"gasUsed":         hexutil.Uint64(res.GasUsed),
 		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
 		"blockHash":        common.BytesToHash(resBlock.Block.Header.Hash()).Hex(),
 		"blockNumber":      hexutil.Uint64(res.Height),
-		"transactionIndex": hexutil.Uint64(parsedTx.EthTxIndex),
+		"transactionIndex": hexutil.Uint64(res.EthTxIndex),
 
 		// sender and receiver (contract or EOA) addreses
 		"from": from,
