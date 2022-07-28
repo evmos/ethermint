@@ -107,7 +107,7 @@ func (m *Params) GetChainConfig() ChainConfig {
 	return ChainConfig{}
 }
 
-// ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
+// ChainConfig defines the Ethereum ChainConfig parameters using *sdkmath.Int values
 // instead of *big.Int.
 type ChainConfig struct {
 	// Homestead switch block (nil no fork, 0 = already homestead)
