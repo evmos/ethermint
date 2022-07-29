@@ -10,9 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -29,7 +27,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
 	"github.com/evmos/ethermint/rpc/types"
 	ethermint "github.com/evmos/ethermint/types"
@@ -50,84 +47,6 @@ func (b *Backend) QueryClient() *types.QueryClient {
 
 func (b *Backend) Ctx() context.Context {
 	return b.ctx
-}
-
-// BlockNumber returns the current block number in abci app state.
-// Because abci app state could lag behind from tendermint latest block, it's more stable
-// for the client to use the latest block number in abci app state than tendermint rpc.
-func (b *Backend) BlockNumber() (hexutil.Uint64, error) {
-	// do any grpc query, ignore the response and use the returned block height
-	var header metadata.MD
-	_, err := b.queryClient.Params(b.ctx, &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
-	if err != nil {
-		return hexutil.Uint64(0), err
-	}
-
-	blockHeightHeader := header.Get(grpctypes.GRPCBlockHeightHeader)
-	if headerLen := len(blockHeightHeader); headerLen != 1 {
-		return 0, fmt.Errorf("unexpected '%s' gRPC header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, headerLen, 1)
-	}
-
-	height, err := strconv.ParseUint(blockHeightHeader[0], 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse block height: %w", err)
-	}
-
-	return hexutil.Uint64(height), nil
-}
-
-// GetBlockByNumber returns the block identified by number.
-func (b *Backend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error) {
-	resBlock, err := b.GetTendermintBlockByNumber(blockNum)
-	if err != nil {
-		return nil, err
-	}
-
-	// return if requested block height is greater than the current one
-	if resBlock == nil || resBlock.Block == nil {
-		return nil, nil
-	}
-
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
-	if err != nil {
-		b.logger.Debug("failed to fetch block result from Tendermint", "height", blockNum, "error", err.Error())
-		return nil, nil
-	}
-
-	res, err := b.EthBlockFromTendermint(resBlock, blockRes, fullTx)
-	if err != nil {
-		b.logger.Debug("EthBlockFromTendermint failed", "height", blockNum, "error", err.Error())
-		return nil, err
-	}
-
-	return res, nil
-}
-
-// GetBlockByHash returns the block identified by hash.
-func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
-	resBlock, err := b.GetTendermintBlockByHash(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	if resBlock == nil {
-		// block not found
-		return nil, nil
-	}
-
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
-	if err != nil {
-		b.logger.Debug("failed to fetch block result from Tendermint", "block-hash", hash.String(), "error", err.Error())
-		return nil, nil
-	}
-
-	res, err := b.EthBlockFromTendermint(resBlock, blockRes, fullTx)
-	if err != nil {
-		b.logger.Debug("EthBlockFromTendermint failed", "hash", hash, "error", err.Error())
-		return nil, err
-	}
-
-	return res, nil
 }
 
 // BlockByNumber returns the block identified by number.
@@ -512,111 +431,6 @@ func (b *Backend) GetCoinbase() (sdk.AccAddress, error) {
 	return address, nil
 }
 
-// GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
-func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
-	res, err := b.GetTxByEthHash(txHash)
-	hexTx := txHash.Hex()
-
-	if err != nil {
-		// try to find tx in mempool
-		txs, err := b.PendingTransactions()
-		if err != nil {
-			b.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
-			return nil, nil
-		}
-
-		for _, tx := range txs {
-			msg, err := evmtypes.UnwrapEthereumMsg(tx, txHash)
-			if err != nil {
-				// not ethereum tx
-				continue
-			}
-
-			if msg.Hash == hexTx {
-				rpctx, err := types.NewTransactionFromMsg(
-					msg,
-					common.Hash{},
-					uint64(0),
-					uint64(0),
-					nil,
-				)
-				if err != nil {
-					return nil, err
-				}
-				return rpctx, nil
-			}
-		}
-
-		b.logger.Debug("tx not found", "hash", hexTx)
-		return nil, nil
-	}
-
-	if !TxSuccessOrExceedsBlockGasLimit(&res.TxResult) {
-		return nil, errors.New("invalid ethereum tx")
-	}
-
-	parsedTxs, err := types.ParseTxResult(&res.TxResult)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse tx events: %s", hexTx)
-	}
-
-	parsedTx := parsedTxs.GetTxByHash(txHash)
-	if parsedTx == nil {
-		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
-	}
-
-	tx, err := b.clientCtx.TxConfig.TxDecoder()(res.Tx)
-	if err != nil {
-		return nil, err
-	}
-
-	// the `msgIndex` is inferred from tx events, should be within the bound.
-	msg, ok := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
-	if !ok {
-		return nil, errors.New("invalid ethereum tx")
-	}
-
-	block, err := b.clientCtx.Client.Block(b.ctx, &res.Height)
-	if err != nil {
-		b.logger.Debug("block not found", "height", res.Height, "error", err.Error())
-		return nil, err
-	}
-
-	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
-	if err != nil {
-		b.logger.Debug("block result not found", "height", block.Block.Height, "error", err.Error())
-		return nil, nil
-	}
-
-	if parsedTx.EthTxIndex == -1 {
-		// Fallback to find tx index by iterating all valid eth transactions
-		msgs := b.GetEthereumMsgsFromTendermintBlock(block, blockRes)
-		for i := range msgs {
-			if msgs[i].Hash == hexTx {
-				parsedTx.EthTxIndex = int64(i)
-				break
-			}
-		}
-	}
-	if parsedTx.EthTxIndex == -1 {
-		return nil, errors.New("can't find index of ethereum tx")
-	}
-
-	baseFee, err := b.BaseFee(blockRes)
-	if err != nil {
-		// handle the error for pruned node.
-		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", blockRes.Height, "error", err)
-	}
-
-	return types.NewTransactionFromMsg(
-		msg,
-		common.BytesToHash(block.BlockID.Hash.Bytes()),
-		uint64(res.Height),
-		uint64(parsedTx.EthTxIndex),
-		baseFee,
-	)
-}
-
 // GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
 // TODO: Don't need to convert once hashing is fixed on Tendermint
 // https://github.com/tendermint/tendermint/issues/6539
@@ -754,29 +568,6 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *ty
 		return 0, err
 	}
 	return hexutil.Uint64(res.Gas), nil
-}
-
-// GetTransactionCount returns the number of transactions at the given address up to the given block number.
-func (b *Backend) GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error) {
-	// Get nonce (sequence) from account
-	from := sdk.AccAddress(address.Bytes())
-	accRet := b.clientCtx.AccountRetriever
-
-	err := accRet.EnsureExists(b.clientCtx, from)
-	if err != nil {
-		// account doesn't exist yet, return 0
-		n := hexutil.Uint64(0)
-		return &n, nil
-	}
-
-	includePending := blockNum == types.EthPendingBlockNumber
-	nonce, err := b.getAccountNonce(address, includePending, blockNum.Int64(), b.logger)
-	if err != nil {
-		return nil, err
-	}
-
-	n := hexutil.Uint64(nonce)
-	return &n, nil
 }
 
 // RPCGasCap is the global gas cap for eth-call variants.

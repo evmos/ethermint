@@ -23,6 +23,17 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
+// FilterAPI gathers
+type FilterAPI interface {
+	GetLogs(ctx context.Context, crit filters.FilterCriteria) ([]*ethtypes.Log, error)
+	GetFilterChanges(id rpc.ID) (interface{}, error)
+	GetFilterLogs(ctx context.Context, id rpc.ID) ([]*ethtypes.Log, error)
+	NewBlockFilter() rpc.ID
+	NewFilter(criteria filters.FilterCriteria) (rpc.ID, error)
+	NewPendingTransactionFilter() rpc.ID
+	UninstallFilter(id rpc.ID) bool
+}
+
 // Backend defines the methods requided by the PublicFilterAPI backend
 type Backend interface {
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
