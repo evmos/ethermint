@@ -172,3 +172,11 @@ message MsgEthereumTxResponse {
   // gas consumed by the transaction
   uint64 gas_used = 5;
 }
+
+// cosmos-sdk tx extension option
+message ExtensionOptionDynamicFeeTx {
+  string max_priority_price = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable) = false
+  ];
+}

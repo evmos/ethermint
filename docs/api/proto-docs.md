@@ -25,6 +25,7 @@
 - [ethermint/evm/v1/tx.proto](#ethermint/evm/v1/tx.proto)
     - [AccessListTx](#ethermint.evm.v1.AccessListTx)
     - [DynamicFeeTx](#ethermint.evm.v1.DynamicFeeTx)
+    - [ExtensionOptionDynamicFeeTx](#ethermint.evm.v1.ExtensionOptionDynamicFeeTx)
     - [ExtensionOptionsEthereumTx](#ethermint.evm.v1.ExtensionOptionsEthereumTx)
     - [LegacyTx](#ethermint.evm.v1.LegacyTx)
     - [MsgEthereumTx](#ethermint.evm.v1.MsgEthereumTx)
@@ -425,6 +426,21 @@ DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 | `v` | [bytes](#bytes) |  | v defines the signature value |
 | `r` | [bytes](#bytes) |  | r defines the signature value |
 | `s` | [bytes](#bytes) |  | s define the signature value |
+
+
+
+
+
+
+<a name="ethermint.evm.v1.ExtensionOptionDynamicFeeTx"></a>
+
+### ExtensionOptionDynamicFeeTx
+cosmos-sdk tx extension option
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `max_priority_price` | [string](#string) |  |  |
 
 
 

@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"math"
 	"math/big"
 
 	sdkmath "cosmossdk.io/math"
@@ -15,19 +16,20 @@ import (
 )
 
 // DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
+// returns (effectiveFee, priority, error)
 func (k Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
 	msgEthTx evmtypes.MsgEthereumTx,
 	txData evmtypes.TxData,
 	denom string,
 	homestead, istanbul, london bool,
-) (sdk.Coins, error) {
+) (sdk.Coins, int64, error) {
 	isContractCreation := txData.GetTo() == nil
 
 	// fetch sender account from signature
 	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, msgEthTx.GetFrom())
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "account not found for sender %s", msgEthTx.From)
+		return nil, 0, sdkerrors.Wrapf(err, "account not found for sender %s", msgEthTx.From)
 	}
 
 	gasLimit := txData.GetGas()
@@ -39,7 +41,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	intrinsicGas, err := core.IntrinsicGas(txData.GetData(), accessList, isContractCreation, homestead, istanbul)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(
+		return nil, 0, sdkerrors.Wrapf(
 			err,
 			"failed to retrieve intrinsic gas, contract creation = %t; homestead = %t, istanbul = %t",
 			isContractCreation, homestead, istanbul,
@@ -48,41 +50,53 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	// intrinsic gas verification during CheckTx
 	if ctx.IsCheckTx() && gasLimit < intrinsicGas {
-		return nil, sdkerrors.Wrapf(
+		return nil, 0, sdkerrors.Wrapf(
 			sdkerrors.ErrOutOfGas,
 			"gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas,
 		)
 	}
 
-	var feeAmt *big.Int
+	var (
+		feeAmt   *big.Int
+		priority int64
+	)
 
-	feeMktParams := k.feeMarketKeeper.GetParams(ctx)
-	if london && feeMktParams.IsBaseFeeEnabled(ctx.BlockHeight()) && txData.TxType() == ethtypes.DynamicFeeTxType {
-		baseFee := k.feeMarketKeeper.GetBaseFee(ctx)
-		if txData.GetGasFeeCap().Cmp(baseFee) < 0 {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "the tx gasfeecap is lower than the tx baseFee: %s (gasfeecap), %s (basefee) ", txData.GetGasFeeCap(), baseFee)
-		}
-		feeAmt = txData.EffectiveFee(baseFee)
-	} else {
-		feeAmt = txData.Fee()
+	baseFee := k.getBaseFee(ctx, london)
+	if baseFee != nil && txData.GetGasFeeCap().Cmp(baseFee) < 0 {
+		return nil, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "the tx gasfeecap is lower than the tx baseFee: %s (gasfeecap), %s (basefee) ", txData.GetGasFeeCap(), baseFee)
 	}
 
+	feeAmt = txData.EffectiveFee(baseFee)
 	if feeAmt.Sign() == 0 {
 		// zero fee, no need to deduct
-		return sdk.Coins{}, nil
+		return sdk.Coins{}, 0, nil
 	}
 
 	fees := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(feeAmt))}
 
 	// deduct the full gas cost from the user balance
 	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
-		return nil, sdkerrors.Wrapf(
+		return nil, 0, sdkerrors.Wrapf(
 			err,
 			"failed to deduct full gas cost %s from the user %s balance",
 			fees, msgEthTx.From,
 		)
 	}
-	return fees, nil
+
+	// calculate priority based on effective gas price
+	tipPrice := txData.EffectiveGasPrice(baseFee)
+	// if london hardfork is not enabled, tipPrice is the gasPrice
+	if baseFee != nil {
+		tipPrice = new(big.Int).Sub(tipPrice, baseFee)
+	}
+	priorityBig := new(big.Int).Quo(tipPrice, authante.DefaultPriorityReduction.BigInt())
+	if !priorityBig.IsInt64() {
+		priority = math.MaxInt64
+	} else {
+		priority = priorityBig.Int64()
+	}
+
+	return fees, priority, nil
 }
 
 // CheckSenderBalance validates that the tx cost value is positive and that the

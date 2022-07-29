@@ -201,6 +201,11 @@ func (tx LegacyTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
 }
 
+// EffectiveGasPrice is the same as GasPrice for LegacyTx
+func (tx LegacyTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	return tx.GetGasPrice()
+}
+
 // EffectiveFee is the same as Fee for LegacyTx
 func (tx LegacyTx) EffectiveFee(baseFee *big.Int) *big.Int {
 	return tx.Fee()
