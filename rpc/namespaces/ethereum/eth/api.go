@@ -37,7 +37,7 @@ import (
 
 	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/rpc/backend"
-	"github.com/evmos/ethermint/rpc/types"
+
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -607,7 +607,7 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 	if gasLimit != nil {
 		gas = uint64(*gasLimit)
 	}
-	if err := types.CheckTxFee(price, gas, e.backend.RPCTxFeeCap()); err != nil {
+	if err := rpctypes.CheckTxFee(price, gas, e.backend.RPCTxFeeCap()); err != nil {
 		return common.Hash{}, err
 	}
 
