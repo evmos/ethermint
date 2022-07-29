@@ -103,7 +103,13 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 		return nil, nil
 	}
 
-	return b.EthBlockFromTendermint(resBlock, blockRes, fullTx)
+	res, err := b.EthBlockFromTendermint(resBlock, blockRes, fullTx)
+	if err != nil {
+		b.logger.Debug("EthBlockFromTendermint failed", "hash", hash, "error", err.Error())
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // BlockByNumber returns the block identified by number.

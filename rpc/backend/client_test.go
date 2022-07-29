@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
 	mock "github.com/stretchr/testify/mock"
@@ -51,9 +52,14 @@ func RegisterBlockError(client *mocks.Client, height int64) {
 }
 
 // Block not found
-func RegisterBlockNotFound(client *mocks.Client, height int64) {
+func RegisterBlockNotFound(
+	client *mocks.Client,
+	height int64,
+) (*tmrpctypes.ResultBlock, error) {
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
 		Return(&tmrpctypes.ResultBlock{Block: nil}, nil)
+
+	return &tmrpctypes.ResultBlock{Block: nil}, nil
 }
 
 func TestRegisterBlock(t *testing.T) {
@@ -124,4 +130,18 @@ func TestRegisterBlockResults(t *testing.T) {
 	}
 	require.Equal(t, expRes, res)
 	require.NoError(t, err)
+}
+
+// BlockByHash
+func RegisterBlockByHash(
+	client *mocks.Client,
+	hash common.Hash,
+	tx []byte,
+) (*tmrpctypes.ResultBlock, error) {
+	block := types.MakeBlock(1, []types.Tx{tx}, nil, nil)
+	resBlock := &tmrpctypes.ResultBlock{Block: block}
+
+	client.On("BlockByHash", rpc.ContextWithHeight(1), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}).
+		Return(resBlock, nil)
+	return resBlock, nil
 }

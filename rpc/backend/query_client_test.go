@@ -79,6 +79,7 @@ func TestRegisterParams(t *testing.T) {
 	require.NoError(t, err)
 	blockHeightHeader := header.Get(grpctypes.GRPCBlockHeightHeader)
 	headerHeight, err := strconv.ParseInt(blockHeightHeader[0], 10, 64)
+	require.NoError(t, err)
 	require.Equal(t, height, headerHeight)
 }
 

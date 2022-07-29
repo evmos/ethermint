@@ -69,10 +69,10 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 			blockNumber, err := suite.backend.BlockNumber()
 
 			if tc.expPass {
-				suite.Require().Nil(err)
+				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expBlockNumber, blockNumber)
 			} else {
-				suite.Require().NotNil(err)
+				suite.Require().Error(err)
 			}
 		})
 	}
@@ -94,10 +94,11 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 		tx           *evmtypes.MsgEthereumTx
 		txBz         []byte
 		registerMock func(ethrpc.BlockNumber, sdk.Int, sdk.AccAddress, []byte)
+		expNoop      bool
 		expPass      bool
 	}{
 		{
-			"fail - tendermint block error ",
+			"fail - tendermint block error",
 			ethrpc.BlockNumber(1),
 			true,
 			sdk.NewInt(1).BigInt(),
@@ -110,6 +111,40 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 				RegisterBlockError(client, height)
 			},
 			false,
+			false,
+		},
+		{
+			"pass - block not found (e.g. request block height that is greater than current one)",
+			ethrpc.BlockNumber(1),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			nil,
+			nil,
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlockNotFound(client, height)
+			},
+			true,
+			true,
+		},
+		{
+			"pass - block results error",
+			ethrpc.BlockNumber(1),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			nil,
+			nil,
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlock(client, height, txBz)
+				RegisterBlockResultsError(client, blockNum.Int64())
+			},
+			true,
+			true,
 		},
 		{
 			"pass - without tx",
@@ -130,6 +165,7 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 				RegisterBaseFee(queryClient, baseFee)
 				RegisterValidatorAccount(queryClient, validator)
 			},
+			false,
 			true,
 		},
 		{
@@ -151,6 +187,7 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 				RegisterBaseFee(queryClient, baseFee)
 				RegisterValidatorAccount(queryClient, validator)
 			},
+			false,
 			true,
 		},
 	}
@@ -162,17 +199,119 @@ func (suite *BackendTestSuite) TestGetBlockByNumber() {
 			block, err := suite.backend.GetBlockByNumber(tc.blockNumber, tc.fullTx)
 
 			if tc.expPass {
-				expBlock := suite.buildFormattedBlock(
-					blockRes,
-					resBlock,
-					tc.fullTx,
-					tc.tx,
-					tc.validator,
-					tc.baseFee,
-				)
-
-				suite.Require().Equal(expBlock, block)
+				if tc.expNoop {
+					suite.Require().Nil(block)
+				} else {
+					expBlock := suite.buildFormattedBlock(
+						blockRes,
+						resBlock,
+						tc.fullTx,
+						tc.tx,
+						tc.validator,
+						tc.baseFee,
+					)
+					suite.Require().Equal(expBlock, block)
+				}
 				suite.Require().NoError(err)
+
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *BackendTestSuite) TestGetBlockByHash() {
+	var (
+		blockRes *tmrpctypes.ResultBlockResults
+		resBlock *tmrpctypes.ResultBlock
+	)
+	msgEthereumTx, bz := suite.buildEthereumTx()
+
+	block := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
+
+	testCases := []struct {
+		name         string
+		hash         common.Hash
+		fullTx       bool
+		baseFee      *big.Int
+		validator    sdk.AccAddress
+		tx           *evmtypes.MsgEthereumTx
+		txBz         []byte
+		registerMock func(common.Hash, sdk.Int, sdk.AccAddress, []byte)
+		expNoop      bool
+		expPass      bool
+	}{
+		{
+			"pass - without tx",
+			common.BytesToHash(block.Hash()),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			nil,
+			nil,
+			func(hash common.Hash, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
+				height := int64(1)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlockByHash(client, hash, txBz)
+
+				blockRes, _ = RegisterBlockResults(client, height)
+				RegisterConsensusParams(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+				RegisterValidatorAccount(queryClient, validator)
+			},
+			false,
+			true,
+		},
+		{
+			"pass - with tx",
+			common.BytesToHash(block.Hash()),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			msgEthereumTx,
+			bz,
+			func(hash common.Hash, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
+				height := int64(1)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlockByHash(client, hash, txBz)
+
+				blockRes, _ = RegisterBlockResults(client, height)
+				RegisterConsensusParams(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+				RegisterValidatorAccount(queryClient, validator)
+			},
+			false,
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock(tc.hash, sdk.NewIntFromBigInt(tc.baseFee), tc.validator, tc.txBz)
+
+			block, err := suite.backend.GetBlockByHash(tc.hash, tc.fullTx)
+
+			if tc.expPass {
+				if tc.expNoop {
+					suite.Require().Nil(block)
+				} else {
+					expBlock := suite.buildFormattedBlock(
+						blockRes,
+						resBlock,
+						tc.fullTx,
+						tc.tx,
+						tc.validator,
+						tc.baseFee,
+					)
+					suite.Require().Equal(expBlock, block)
+				}
+				suite.Require().NoError(err)
+
 			} else {
 				suite.Require().Error(err)
 			}
@@ -262,20 +401,6 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 			true,
 			true,
 		},
-		// TODO why does the "x-cosmos-block-height" always have to be  "1"?
-		// {
-		// 	"pass - blockNumber > 1",
-		// 	ethrpc.BlockNumber(5),
-		// 	func(blockNum ethrpc.BlockNumber) {
-		// 		// Client.Block
-		// 		height := blockNum.Int64()
-		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
-		// 		RegisterBlock(client, height)
-
-		// 		block = tmtypes.Block{Header: tmtypes.Header{Height: height}}
-		// 	},
-		// 	true,
-		// },
 	}
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
@@ -285,7 +410,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 			resultBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blockNumber)
 
 			if tc.expPass {
-				suite.Require().Nil(err)
+				suite.Require().NoError(err)
 
 				if !tc.found {
 					suite.Require().Nil(resultBlock)
@@ -294,7 +419,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 					suite.Require().Equal(expResultBlock.Block.Header.Height, resultBlock.Block.Header.Height)
 				}
 			} else {
-				suite.Require().NotNil(err)
+				suite.Require().Error(err)
 			}
 		})
 	}
@@ -341,10 +466,10 @@ func (suite *BackendTestSuite) TestGetTendermintBlockResultByNumber() {
 			blockRes, err := suite.backend.GetTendermintBlockResultByNumber(&tc.blockNumber)
 
 			if tc.expPass {
-				suite.Require().Nil(err)
+				suite.Require().NoError(err)
 				suite.Require().Equal(expBlockRes, blockRes)
 			} else {
-				suite.Require().NotNil(err)
+				suite.Require().Error(err)
 			}
 		})
 	}
@@ -407,10 +532,10 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 			blockBloom, err := suite.backend.BlockBloom(tc.blockRes)
 
 			if tc.expPass {
-				suite.Require().Nil(err)
+				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expBlockBloom, blockBloom)
 			} else {
-				suite.Require().NotNil(err)
+				suite.Require().Error(err)
 			}
 		})
 	}
@@ -783,10 +908,10 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			baseFee, err := suite.backend.BaseFee(tc.blockRes)
 
 			if tc.expPass {
-				suite.Require().Nil(err)
+				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expBaseFee, baseFee)
 			} else {
-				suite.Require().NotNil(err)
+				suite.Require().Error(err)
 			}
 		})
 	}
