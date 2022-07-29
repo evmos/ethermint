@@ -2,6 +2,7 @@ package backend
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -10,17 +11,21 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -33,6 +38,19 @@ import (
 )
 
 var bAttributeKeyEthereumBloom = []byte(evmtypes.AttributeKeyEthereumBloom)
+
+// ClientCtx returns client context
+func (b *Backend) ClientCtx() client.Context {
+	return b.clientCtx
+}
+
+func (b *Backend) QueryClient() *types.QueryClient {
+	return b.queryClient
+}
+
+func (b *Backend) Ctx() context.Context {
+	return b.ctx
+}
 
 // BlockNumber returns the current block number in abci app state.
 // Because abci app state could lag behind from tendermint latest block, it's more stable
@@ -1034,4 +1052,131 @@ func (b *Backend) GetEthereumMsgsFromTendermintBlock(
 // unprotected transactions (i.e not replay-protected)
 func (b Backend) UnprotectedAllowed() bool {
 	return b.allowUnprotectedTxs
+}
+
+// getBlockNumber returns the BlockNumber from BlockNumberOrHash
+func (b *Backend) GetBlockNumber(blockNrOrHash types.BlockNumberOrHash) (types.BlockNumber, error) {
+	switch {
+	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
+		return types.EthEarliestBlockNumber, fmt.Errorf("types BlockHash and BlockNumber cannot be both nil")
+	case blockNrOrHash.BlockHash != nil:
+		blockNumber, err := b.GetBlockNumberByHash(*blockNrOrHash.BlockHash)
+		if err != nil {
+			return types.EthEarliestBlockNumber, err
+		}
+		return types.NewBlockNumber(blockNumber), nil
+	case blockNrOrHash.BlockNumber != nil:
+		return *blockNrOrHash.BlockNumber, nil
+	default:
+		return types.EthEarliestBlockNumber, nil
+	}
+}
+
+// getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
+func (b *Backend) GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*types.RPCTransaction, error) {
+	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
+	if err != nil {
+		return nil, nil
+	}
+
+	var msg *evmtypes.MsgEthereumTx
+	// try /tx_search first
+	res, err := b.GetTxByTxIndex(block.Block.Height, uint(idx))
+	if err == nil {
+		tx, err := b.clientCtx.TxConfig.TxDecoder()(res.Tx)
+		if err != nil {
+			b.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
+			return nil, nil
+		}
+
+		parsedTxs, err := types.ParseTxResult(&res.TxResult)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse tx events: %d, %v", idx, err)
+		}
+
+		parsedTx := parsedTxs.GetTxByTxIndex(int(idx))
+		if parsedTx == nil {
+			return nil, fmt.Errorf("ethereum tx not found in msgs: %d", idx)
+		}
+
+		var ok bool
+		// msgIndex is inferred from tx events, should be within bound.
+		msg, ok = tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			b.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
+			return nil, nil
+		}
+	} else {
+		i := int(idx)
+		ethMsgs := b.GetEthereumMsgsFromTendermintBlock(block, blockRes)
+		if i >= len(ethMsgs) {
+			b.logger.Debug("block txs index out of bound", "index", i)
+			return nil, nil
+		}
+
+		msg = ethMsgs[i]
+	}
+
+	baseFee, err := b.BaseFee(blockRes)
+	if err != nil {
+		// handle the error for pruned node.
+		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", block.Block.Height, "error", err)
+	}
+
+	return types.NewTransactionFromMsg(
+		msg,
+		common.BytesToHash(block.Block.Hash()),
+		uint64(block.Block.Height),
+		uint64(idx),
+		baseFee,
+	)
+}
+
+// DoCall performs a simulated call operation through the evmtypes. It returns the
+// estimated gas used on the operation or an error if fails.
+func (b *Backend) DoCall(
+	args evmtypes.TransactionArgs, blockNr types.BlockNumber,
+) (*evmtypes.MsgEthereumTxResponse, error) {
+	bz, err := json.Marshal(&args)
+	if err != nil {
+		return nil, err
+	}
+
+	req := evmtypes.EthCallRequest{
+		Args:   bz,
+		GasCap: b.RPCGasCap(),
+	}
+
+	// From ContextWithHeight: if the provided height is 0,
+	// it will return an empty context and the gRPC query will use
+	// the latest block height for querying.
+	ctx := types.ContextWithHeight(blockNr.Int64())
+	timeout := b.RPCEVMTimeout()
+
+	// Setup context so it may be canceled the call has completed
+	// or, in case of unmetered gas, setup a context with a timeout.
+	var cancel context.CancelFunc
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+
+	// Make sure the context is canceled when the call has completed
+	// this makes sure resources are cleaned up.
+	defer cancel()
+
+	res, err := b.queryClient.EthCall(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Failed() {
+		if res.VmError != vm.ErrExecutionReverted.Error() {
+			return nil, status.Error(codes.Internal, res.VmError)
+		}
+		return nil, evmtypes.NewExecErrorWithReason(res.Ret)
+	}
+
+	return res, nil
 }

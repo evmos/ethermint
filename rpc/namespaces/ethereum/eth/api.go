@@ -2,19 +2,14 @@ package eth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"math"
 	"math/big"
 
 	"github.com/evmos/ethermint/ethereum/eip712"
 
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/rpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -27,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -42,6 +36,112 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
+
+// The Ethereum API allows applications to connect to an Evmos node that is
+// part of the Evmos blockchain. Developers can interact with on-chain EVM data
+// and send different types of transactions to the network by utilizing the
+// endpoints provided by the API. The API follows a JSON-RPC standard. If not
+// otherwise specified, the interface is derived from the Alchemy Ethereum API:
+// https://docs.alchemy.com/alchemy/apis/ethereum
+type EthereumAPI interface {
+	// Getting Blocks
+	//
+	// Retrieves information from a particular block in the blockchain.
+	BlockNumber() (hexutil.Uint64, error)
+	GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx bool) (map[string]interface{}, error)
+	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
+
+	// Reading Transactions
+	//
+	// Retrieves information on the state data for addresses regardless of whether
+	// it is a user or a smart contract.
+	GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error)
+	GetTransactionCount(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error)
+	GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error)
+	GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
+	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
+	GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
+	GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
+	// eth_getBlockReceipts
+
+	// Writing Transactions
+	//
+	// Allows developers to both send ETH from one address to another, write data
+	// on-chain, and interact with smart contracts.
+	SendRawTransaction(data hexutil.Bytes) (common.Hash, error)
+	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
+	// eth_sendPrivateTransaction
+	// eth_cancel	PrivateTransaction
+
+	// Account Information
+	//
+	// Returns information regarding an address's stored on-chain data.
+	GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error)
+	GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
+	GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
+	Accounts() ([]common.Address, error)
+	GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error)
+
+	// EVM/Smart Contract Execution
+	//
+	// Allows developers to read data from the blockchain which includes executing
+	// smart contracts. However, no data is published to the Ethereum network.
+	Call(args evmtypes.TransactionArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error)
+
+	// Event Logs
+	//
+	// Returns logs which are records that denote/provide context on specific
+	// events within a smart contract, like a token transfer or a change of
+	// ownership for example.
+	// FilterAPI
+
+	// Chain Information
+	//
+	// Returns information on the Ethereum network and internal settings.
+	ProtocolVersion() hexutil.Uint
+	GasPrice() (*hexutil.Big, error)
+	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
+	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error)
+	MaxPriorityFeePerGas() (*hexutil.Big, error)
+	ChainId() (*hexutil.Big, error)
+
+	// Getting Uncles
+	//
+	// Returns information on uncle blocks are which are network rejected blocks and replaced by a canonical block instead.
+	GetUncleByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) map[string]interface{}
+	GetUncleByBlockNumberAndIndex(number, idx hexutil.Uint) map[string]interface{}
+	GetUncleCountByBlockHash(hash common.Hash) hexutil.Uint
+	GetUncleCountByBlockNumber(blockNum rpctypes.BlockNumber) hexutil.Uint
+
+	// Proof of Work
+	Hashrate() hexutil.Uint64
+	Mining() bool
+
+	// Other
+	Syncing() (interface{}, error)
+	Coinbase() (string, error)
+	Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
+	GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, error)
+	SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error)
+	FillTransaction(args evmtypes.TransactionArgs) (*rpctypes.SignTransactionResult, error)
+	Resend(ctx context.Context, args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error)
+	GetPendingTransactions() ([]*rpctypes.RPCTransaction, error)
+	// eth_signTransaction (on Ethereum.org)
+	// eth_getCompilers (on Ethereum.org)
+	// eth_compileSolidity (on Ethereum.org)
+	// eth_compileLLL (on Ethereum.org)
+	// eth_compileSerpent (on Ethereum.org)
+	// eth_getWork (on Ethereum.org)
+	// eth_submitWork (on Ethereum.org)
+	// eth_submitHashrate (on Ethereum.org)
+
+	// TODO MOVE TO BACKEND
+	getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error)
+	getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
+	doCall(args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
+}
+
+// var _ EthereumAPI = (*PublicAPI)(nil)
 
 // PublicAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicAPI struct {
@@ -106,19 +206,6 @@ func NewPublicAPI(
 	}
 
 	return api
-}
-
-// ClientCtx returns client context
-func (e *PublicAPI) ClientCtx() client.Context {
-	return e.clientCtx
-}
-
-func (e *PublicAPI) QueryClient() *rpctypes.QueryClient {
-	return e.queryClient
-}
-
-func (e *PublicAPI) Ctx() context.Context {
-	return e.ctx
 }
 
 // ProtocolVersion returns the supported Ethereum protocol version.
@@ -275,7 +362,7 @@ func (e *PublicAPI) BlockNumber() (hexutil.Uint64, error) {
 func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error) {
 	e.logger.Debug("eth_getBalance", "address", address.String(), "block number or hash", blockNrOrHash)
 
-	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +388,7 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.Bl
 func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_getStorageAt", "address", address.Hex(), "key", key, "block number or hash", blockNrOrHash)
 
-	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +410,7 @@ func (e *PublicAPI) GetStorageAt(address common.Address, key string, blockNrOrHa
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
 func (e *PublicAPI) GetTransactionCount(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error) {
 	e.logger.Debug("eth_getTransactionCount", "address", address.Hex(), "block number or hash", blockNrOrHash)
-	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +480,7 @@ func (e *PublicAPI) GetUncleCountByBlockNumber(blockNum rpctypes.BlockNumber) he
 func (e *PublicAPI) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_getCode", "address", address.Hex(), "block number or hash", blockNrOrHash)
 
-	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -652,486 +739,14 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 func (e *PublicAPI) Call(args evmtypes.TransactionArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_call", "args", args.String(), "block number or hash", blockNrOrHash)
 
-	blockNum, err := e.getBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
-	data, err := e.doCall(args, blockNum)
+	data, err := e.backend.DoCall(args, blockNum)
 	if err != nil {
 		return []byte{}, err
 	}
 
 	return (hexutil.Bytes)(data.Ret), nil
-}
-
-// DoCall performs a simulated call operation through the evmtypes. It returns the
-// estimated gas used on the operation or an error if fails.
-func (e *PublicAPI) doCall(
-	args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber,
-) (*evmtypes.MsgEthereumTxResponse, error) {
-	bz, err := json.Marshal(&args)
-	if err != nil {
-		return nil, err
-	}
-
-	req := evmtypes.EthCallRequest{
-		Args:   bz,
-		GasCap: e.backend.RPCGasCap(),
-	}
-
-	// From ContextWithHeight: if the provided height is 0,
-	// it will return an empty context and the gRPC query will use
-	// the latest block height for querying.
-	ctx := rpctypes.ContextWithHeight(blockNr.Int64())
-	timeout := e.backend.RPCEVMTimeout()
-
-	// Setup context so it may be canceled the call has completed
-	// or, in case of unmetered gas, setup a context with a timeout.
-	var cancel context.CancelFunc
-	if timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-	} else {
-		ctx, cancel = context.WithCancel(ctx)
-	}
-
-	// Make sure the context is canceled when the call has completed
-	// this makes sure resources are cleaned up.
-	defer cancel()
-
-	res, err := e.queryClient.EthCall(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-
-	if res.Failed() {
-		if res.VmError != vm.ErrExecutionReverted.Error() {
-			return nil, status.Error(codes.Internal, res.VmError)
-		}
-		return nil, evmtypes.NewExecErrorWithReason(res.Ret)
-	}
-
-	return res, nil
-}
-
-// EstimateGas returns an estimate of gas usage for the given smart contract call.
-func (e *PublicAPI) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error) {
-	e.logger.Debug("eth_estimateGas")
-	return e.backend.EstimateGas(args, blockNrOptional)
-}
-
-// GetBlockByHash returns the block identified by hash.
-func (e *PublicAPI) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error) {
-	e.logger.Debug("eth_getBlockByHash", "hash", hash.Hex(), "full", fullTx)
-	return e.backend.GetBlockByHash(hash, fullTx)
-}
-
-// GetBlockByNumber returns the block identified by number.
-func (e *PublicAPI) GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx bool) (map[string]interface{}, error) {
-	e.logger.Debug("eth_getBlockByNumber", "number", ethBlockNum, "full", fullTx)
-	return e.backend.GetBlockByNumber(ethBlockNum, fullTx)
-}
-
-// GetTransactionByHash returns the transaction identified by hash.
-func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error) {
-	e.logger.Debug("eth_getTransactionByHash", "hash", hash.Hex())
-	return e.backend.GetTransactionByHash(hash)
-}
-
-// GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
-func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	e.logger.Debug("eth_getTransactionByBlockHashAndIndex", "hash", hash.Hex(), "index", idx)
-
-	block, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
-	if err != nil {
-		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
-		return nil, nil
-	}
-
-	if block.Block == nil {
-		e.logger.Debug("block not found", "hash", hash.Hex())
-		return nil, nil
-	}
-
-	return e.getTransactionByBlockAndIndex(block, idx)
-}
-
-// GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
-func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	e.logger.Debug("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
-
-	block, err := e.backend.GetTendermintBlockByNumber(blockNum)
-	if err != nil {
-		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
-		return nil, nil
-	}
-
-	if block.Block == nil {
-		e.logger.Debug("block not found", "height", blockNum.Int64())
-		return nil, nil
-	}
-
-	return e.getTransactionByBlockAndIndex(block, idx)
-}
-
-// getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
-func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
-	if err != nil {
-		return nil, nil
-	}
-
-	var msg *evmtypes.MsgEthereumTx
-	// try /tx_search first
-	res, err := e.backend.GetTxByTxIndex(block.Block.Height, uint(idx))
-	if err == nil {
-		tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
-		if err != nil {
-			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
-			return nil, nil
-		}
-
-		parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse tx events: %d, %v", idx, err)
-		}
-
-		parsedTx := parsedTxs.GetTxByTxIndex(int(idx))
-		if parsedTx == nil {
-			return nil, fmt.Errorf("ethereum tx not found in msgs: %d", idx)
-		}
-
-		var ok bool
-		// msgIndex is inferred from tx events, should be within bound.
-		msg, ok = tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
-		if !ok {
-			e.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
-			return nil, nil
-		}
-	} else {
-		i := int(idx)
-		ethMsgs := e.backend.GetEthereumMsgsFromTendermintBlock(block, blockRes)
-		if i >= len(ethMsgs) {
-			e.logger.Debug("block txs index out of bound", "index", i)
-			return nil, nil
-		}
-
-		msg = ethMsgs[i]
-	}
-
-	baseFee, err := e.backend.BaseFee(blockRes)
-	if err != nil {
-		// handle the error for pruned node.
-		e.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", block.Block.Height, "error", err)
-	}
-
-	return rpctypes.NewTransactionFromMsg(
-		msg,
-		common.BytesToHash(block.Block.Hash()),
-		uint64(block.Block.Height),
-		uint64(idx),
-		baseFee,
-	)
-}
-
-// GetTransactionReceipt returns the transaction receipt identified by hash.
-func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
-	hexTx := hash.Hex()
-	e.logger.Debug("eth_getTransactionReceipt", "hash", hexTx)
-
-	res, err := e.backend.GetTxByEthHash(hash)
-	if err != nil {
-		e.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
-		return nil, nil
-	}
-
-	// don't ignore the txs which exceed block gas limit.
-	if !backend.TxSuccessOrExceedsBlockGasLimit(&res.TxResult) {
-		return nil, nil
-	}
-
-	parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse tx events: %s, %v", hexTx, err)
-	}
-
-	parsedTx := parsedTxs.GetTxByHash(hash)
-	if parsedTx == nil {
-		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
-	}
-
-	resBlock, err := e.clientCtx.Client.Block(e.ctx, &res.Height)
-	if err != nil {
-		e.logger.Debug("block not found", "height", res.Height, "error", err.Error())
-		return nil, nil
-	}
-
-	tx, err := e.clientCtx.TxConfig.TxDecoder()(res.Tx)
-	if err != nil {
-		e.logger.Debug("decoding failed", "error", err.Error())
-		return nil, fmt.Errorf("failed to decode tx: %w", err)
-	}
-
-	if res.TxResult.Code != 0 {
-		// tx failed, we should return gas limit as gas used, because that's how the fee get deducted.
-		for i := 0; i <= parsedTx.MsgIndex; i++ {
-			gasLimit := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx).GetGas()
-			parsedTxs.Txs[i].GasUsed = gasLimit
-		}
-	}
-
-	// the `msgIndex` is inferred from tx events, should be within the bound,
-	// and the tx is found by eth tx hash, so the msg type must be correct.
-	ethMsg := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
-
-	txData, err := evmtypes.UnpackTxData(ethMsg.Data)
-	if err != nil {
-		e.logger.Error("failed to unpack tx data", "error", err.Error())
-		return nil, err
-	}
-
-	cumulativeGasUsed := uint64(0)
-	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&res.Height)
-	if err != nil {
-		e.logger.Debug("failed to retrieve block results", "height", res.Height, "error", err.Error())
-		return nil, nil
-	}
-	for i := 0; i < int(res.Index) && i < len(blockRes.TxsResults); i++ {
-		cumulativeGasUsed += uint64(blockRes.TxsResults[i].GasUsed)
-	}
-	cumulativeGasUsed += parsedTxs.AccumulativeGasUsed(parsedTx.MsgIndex)
-
-	// Get the transaction result from the log
-	var status hexutil.Uint
-	if res.TxResult.Code != 0 || parsedTx.Failed {
-		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
-	} else {
-		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
-	}
-
-	from, err := ethMsg.GetSender(e.chainIDEpoch)
-	if err != nil {
-		return nil, err
-	}
-
-	// parse tx logs from events
-	logs, err := parsedTx.ParseTxLogs()
-	if err != nil {
-		e.logger.Debug("failed to parse logs", "hash", hexTx, "error", err.Error())
-	}
-
-	if parsedTx.EthTxIndex == -1 {
-		// Fallback to find tx index by iterating all valid eth transactions
-		msgs := e.backend.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
-		for i := range msgs {
-			if msgs[i].Hash == hexTx {
-				parsedTx.EthTxIndex = int64(i)
-				break
-			}
-		}
-	}
-
-	if parsedTx.EthTxIndex == -1 {
-		return nil, errors.New("can't find index of ethereum tx")
-	}
-
-	receipt := map[string]interface{}{
-		// Consensus fields: These fields are defined by the Yellow Paper
-		"status":            status,
-		"cumulativeGasUsed": hexutil.Uint64(cumulativeGasUsed),
-		"logsBloom":         ethtypes.BytesToBloom(ethtypes.LogsBloom(logs)),
-		"logs":              logs,
-
-		// Implementation fields: These fields are added by geth when processing a transaction.
-		// They are stored in the chain database.
-		"transactionHash": hash,
-		"contractAddress": nil,
-		"gasUsed":         hexutil.Uint64(parsedTx.GasUsed),
-		"type":            hexutil.Uint(txData.TxType()),
-
-		// Inclusion information: These fields provide information about the inclusion of the
-		// transaction corresponding to this receipt.
-		"blockHash":        common.BytesToHash(resBlock.Block.Header.Hash()).Hex(),
-		"blockNumber":      hexutil.Uint64(res.Height),
-		"transactionIndex": hexutil.Uint64(parsedTx.EthTxIndex),
-
-		// sender and receiver (contract or EOA) addreses
-		"from": from,
-		"to":   txData.GetTo(),
-	}
-
-	if logs == nil {
-		receipt["logs"] = [][]*ethtypes.Log{}
-	}
-
-	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
-	if txData.GetTo() == nil {
-		receipt["contractAddress"] = crypto.CreateAddress(from, txData.GetNonce())
-	}
-
-	if dynamicTx, ok := txData.(*evmtypes.DynamicFeeTx); ok {
-		baseFee, err := e.backend.BaseFee(blockRes)
-		if err != nil {
-			// tolerate the error for pruned node.
-			e.logger.Error("fetch basefee failed, node is pruned?", "height", res.Height, "error", err)
-		} else {
-			receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
-		}
-	}
-
-	return receipt, nil
-}
-
-// GetPendingTransactions returns the transactions that are in the transaction pool
-// and have a from address that is one of the accounts this node manages.
-func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error) {
-	e.logger.Debug("eth_getPendingTransactions")
-
-	txs, err := e.backend.PendingTransactions()
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*rpctypes.RPCTransaction, 0, len(txs))
-	for _, tx := range txs {
-		for _, msg := range (*tx).GetMsgs() {
-			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-			if !ok {
-				// not valid ethereum tx
-				break
-			}
-
-			rpctx, err := rpctypes.NewTransactionFromMsg(
-				ethMsg,
-				common.Hash{},
-				uint64(0),
-				uint64(0),
-				nil,
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			result = append(result, rpctx)
-		}
-	}
-
-	return result, nil
-}
-
-// GetUncleByBlockHashAndIndex returns the uncle identified by hash and index. Always returns nil.
-func (e *PublicAPI) GetUncleByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) map[string]interface{} {
-	return nil
-}
-
-// GetUncleByBlockNumberAndIndex returns the uncle identified by number and index. Always returns nil.
-func (e *PublicAPI) GetUncleByBlockNumberAndIndex(number, idx hexutil.Uint) map[string]interface{} {
-	return nil
-}
-
-// GetProof returns an account object with proof and any storage proofs
-func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error) {
-	e.logger.Debug("eth_getProof", "address", address.Hex(), "keys", storageKeys, "block number or hash", blockNrOrHash)
-
-	blockNum, err := e.getBlockNumber(blockNrOrHash)
-	if err != nil {
-		return nil, err
-	}
-
-	height := blockNum.Int64()
-	ctx := rpctypes.ContextWithHeight(height)
-
-	// if the height is equal to zero, meaning the query condition of the block is either "pending" or "latest"
-	if height == 0 {
-		bn, err := e.backend.BlockNumber()
-		if err != nil {
-			return nil, err
-		}
-
-		if bn > math.MaxInt64 {
-			return nil, fmt.Errorf("not able to query block number greater than MaxInt64")
-		}
-
-		height = int64(bn)
-	}
-
-	clientCtx := e.clientCtx.WithHeight(height)
-
-	// query storage proofs
-	storageProofs := make([]rpctypes.StorageResult, len(storageKeys))
-
-	for i, key := range storageKeys {
-		hexKey := common.HexToHash(key)
-		valueBz, proof, err := e.queryClient.GetProof(clientCtx, evmtypes.StoreKey, evmtypes.StateKey(address, hexKey.Bytes()))
-		if err != nil {
-			return nil, err
-		}
-
-		// check for proof
-		var proofStr string
-		if proof != nil {
-			proofStr = proof.String()
-		}
-
-		storageProofs[i] = rpctypes.StorageResult{
-			Key:   key,
-			Value: (*hexutil.Big)(new(big.Int).SetBytes(valueBz)),
-			Proof: []string{proofStr},
-		}
-	}
-
-	// query EVM account
-	req := &evmtypes.QueryAccountRequest{
-		Address: address.String(),
-	}
-
-	res, err := e.queryClient.Account(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	// query account proofs
-	accountKey := authtypes.AddressStoreKey(sdk.AccAddress(address.Bytes()))
-	_, proof, err := e.queryClient.GetProof(clientCtx, authtypes.StoreKey, accountKey)
-	if err != nil {
-		return nil, err
-	}
-
-	// check for proof
-	var accProofStr string
-	if proof != nil {
-		accProofStr = proof.String()
-	}
-
-	balance, ok := sdkmath.NewIntFromString(res.Balance)
-	if !ok {
-		return nil, errors.New("invalid balance")
-	}
-
-	return &rpctypes.AccountResult{
-		Address:      address,
-		AccountProof: []string{accProofStr},
-		Balance:      (*hexutil.Big)(balance.BigInt()),
-		CodeHash:     common.HexToHash(res.CodeHash),
-		Nonce:        hexutil.Uint64(res.Nonce),
-		StorageHash:  common.Hash{}, // NOTE: Ethermint doesn't have a storage hash. TODO: implement?
-		StorageProof: storageProofs,
-	}, nil
-}
-
-// getBlockNumber returns the BlockNumber from BlockNumberOrHash
-func (e *PublicAPI) getBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
-	switch {
-	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
-		return rpctypes.EthEarliestBlockNumber, fmt.Errorf("types BlockHash and BlockNumber cannot be both nil")
-	case blockNrOrHash.BlockHash != nil:
-		blockNumber, err := e.backend.GetBlockNumberByHash(*blockNrOrHash.BlockHash)
-		if err != nil {
-			return rpctypes.EthEarliestBlockNumber, err
-		}
-		return rpctypes.NewBlockNumber(blockNumber), nil
-	case blockNrOrHash.BlockNumber != nil:
-		return *blockNrOrHash.BlockNumber, nil
-	default:
-		return rpctypes.EthEarliestBlockNumber, nil
-	}
 }

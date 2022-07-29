@@ -72,6 +72,9 @@ type EVMBackend interface {
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
 	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)
 	GlobalMinGasPrice() (sdk.Dec, error)
+	GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*types.RPCTransaction, error)
+	GetBlockNumber(blockNrOrHash types.BlockNumberOrHash) (types.BlockNumber, error)
+	DoCall(args evmtypes.TransactionArgs, blockNr types.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
 
 	// Fee API
 	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*types.FeeHistoryResult, error)
