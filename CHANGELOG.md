@@ -45,11 +45,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [\#1174](https://github.com/evmos/ethermint/pull/1174) Don't allow eth txs with 0 in mempool.
 * (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
   recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade cosmos-sdk to v0.46.
 
 ### Improvements
 
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
 * (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
+* (ante) [1208](https://github.com/evmos/ethermint/pull/1208) Change default `maxGasWanted` value 
 
 ### Bug Fixes
 

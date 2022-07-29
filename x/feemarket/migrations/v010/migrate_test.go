@@ -26,9 +26,9 @@ func TestMigrateStore(t *testing.T) {
 	tFeeMarketKey := sdk.NewTransientStoreKey(fmt.Sprintf("%s_test", feemarkettypes.StoreKey))
 	ctx := testutil.DefaultContext(feemarketKey, tFeeMarketKey)
 	paramstore := paramtypes.NewSubspace(
-		encCfg.Marshaler, encCfg.Amino, feemarketKey, tFeeMarketKey, "feemarket",
+		encCfg.Codec, encCfg.Amino, feemarketKey, tFeeMarketKey, "feemarket",
 	)
-	fmKeeper := feemarketkeeper.NewKeeper(encCfg.Marshaler, paramstore, feemarketKey, tFeeMarketKey)
+	fmKeeper := feemarketkeeper.NewKeeper(encCfg.Codec, paramstore, feemarketKey, tFeeMarketKey)
 	fmKeeper.SetParams(ctx, types.DefaultParams())
 	require.True(t, paramstore.HasKeyTable())
 
@@ -60,7 +60,7 @@ func TestMigrateJSON(t *testing.T) {
   }`
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
 	var genState v09types.GenesisState
-	err := encCfg.Marshaler.UnmarshalJSON([]byte(rawJson), &genState)
+	err := encCfg.Codec.UnmarshalJSON([]byte(rawJson), &genState)
 	require.NoError(t, err)
 
 	migratedGenState := v010.MigrateJSON(genState)
