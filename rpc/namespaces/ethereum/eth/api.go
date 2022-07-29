@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,6 +37,7 @@ import (
 
 	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/rpc/backend"
+
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -583,26 +583,6 @@ func (e *PublicAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) 
 	return txHash, nil
 }
 
-// checkTxFee is an internal function used to check whether the fee of
-// the given transaction is _reasonable_(under the cap).
-func checkTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
-	// Short circuit if there is no cap for transaction fee at all.
-	if cap == 0 {
-		return nil
-	}
-	totalfee := new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas)))
-	// 1 photon in 10^18 aphoton
-	oneToken := new(big.Float).SetInt(big.NewInt(params.Ether))
-	// quo = rounded(x/y)
-	feeEth := new(big.Float).Quo(totalfee, oneToken)
-	// no need to check error from parsing
-	feeFloat, _ := feeEth.Float64()
-	if feeFloat > cap {
-		return fmt.Errorf("tx fee (%.2f ether) exceeds the configured cap (%.2f ether)", feeFloat, cap)
-	}
-	return nil
-}
-
 // Resend accepts an existing transaction and a new gas price and limit. It will remove
 // the given transaction from the pool and reinsert it with the new gas price and limit.
 func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error) {
@@ -627,7 +607,7 @@ func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, g
 	if gasLimit != nil {
 		gas = uint64(*gasLimit)
 	}
-	if err := checkTxFee(price, gas, e.backend.RPCTxFeeCap()); err != nil {
+	if err := rpctypes.CheckTxFee(price, gas, e.backend.RPCTxFeeCap()); err != nil {
 		return common.Hash{}, err
 	}
 
@@ -757,6 +737,42 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 	return e.backend.GetTransactionByHash(hash)
 }
 
+// GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
+func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	e.logger.Debug("eth_getTransactionByBlockHashAndIndex", "hash", hash.Hex(), "index", idx)
+
+	block, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
+	if err != nil {
+		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
+		return nil, nil
+	}
+
+	if block.Block == nil {
+		e.logger.Debug("block not found", "hash", hash.Hex())
+		return nil, nil
+	}
+
+	return e.getTransactionByBlockAndIndex(block, idx)
+}
+
+// GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
+func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	e.logger.Debug("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
+
+	block, err := e.backend.GetTendermintBlockByNumber(blockNum)
+	if err != nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil, nil
+	}
+
+	if block.Block == nil {
+		e.logger.Debug("block not found", "height", blockNum.Int64())
+		return nil, nil
+	}
+
+	return e.getTransactionByBlockAndIndex(block, idx)
+}
+
 // getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
 func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	blockRes, err := e.backend.GetTendermintBlockResultByNumber(&block.Block.Height)
@@ -815,42 +831,6 @@ func (e *PublicAPI) getTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock,
 		uint64(idx),
 		baseFee,
 	)
-}
-
-// GetTransactionByBlockHashAndIndex returns the transaction identified by hash and index.
-func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	e.logger.Debug("eth_getTransactionByBlockHashAndIndex", "hash", hash.Hex(), "index", idx)
-
-	block, err := e.clientCtx.Client.BlockByHash(e.ctx, hash.Bytes())
-	if err != nil {
-		e.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
-		return nil, nil
-	}
-
-	if block.Block == nil {
-		e.logger.Debug("block not found", "hash", hash.Hex())
-		return nil, nil
-	}
-
-	return e.getTransactionByBlockAndIndex(block, idx)
-}
-
-// GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
-func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	e.logger.Debug("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
-
-	block, err := e.backend.GetTendermintBlockByNumber(blockNum)
-	if err != nil {
-		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
-		return nil, nil
-	}
-
-	if block.Block == nil {
-		e.logger.Debug("block not found", "height", blockNum.Int64())
-		return nil, nil
-	}
-
-	return e.getTransactionByBlockAndIndex(block, idx)
 }
 
 // GetTransactionReceipt returns the transaction receipt identified by hash.

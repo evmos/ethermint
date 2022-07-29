@@ -103,7 +103,13 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 		return nil, nil
 	}
 
-	return b.EthBlockFromTendermint(resBlock, blockRes, fullTx)
+	res, err := b.EthBlockFromTendermint(resBlock, blockRes, fullTx)
+	if err != nil {
+		b.logger.Debug("EthBlockFromTendermint failed", "hash", hash, "error", err.Error())
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // BlockByNumber returns the block identified by number.
@@ -177,7 +183,8 @@ func (b *Backend) EthBlockFromTm(resBlock *tmrpctypes.ResultBlock, blockRes *tmr
 	return ethBlock, nil
 }
 
-// GetTendermintBlockByNumber returns a Tendermint format block by block number
+// GetTendermintBlockByNumber returns a Tendermint formatted block for a given
+// block number
 func (b *Backend) GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error) {
 	height := blockNum.Int64()
 	if height <= 0 {
@@ -239,7 +246,8 @@ func (b *Backend) BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.
 	return ethtypes.Bloom{}, errors.New("block bloom event is not found")
 }
 
-// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a given Tendermint block and its block result.
+// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a
+// given Tendermint block and its block result.
 func (b *Backend) EthBlockFromTendermint(
 	resBlock *tmrpctypes.ResultBlock,
 	blockRes *tmrpctypes.ResultBlockResults,
@@ -981,17 +989,22 @@ func (b *Backend) FeeHistory(
 	return &feeHistory, nil
 }
 
-// GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a Tendermint block.
-// It also ensures consistency over the correct txs indexes across RPC endpoints
-func (b *Backend) GetEthereumMsgsFromTendermintBlock(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx {
+// GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a
+// Tendermint block. It also ensures consistency over the correct txs indexes
+// across RPC endpoints
+func (b *Backend) GetEthereumMsgsFromTendermintBlock(
+	resBlock *tmrpctypes.ResultBlock,
+	blockRes *tmrpctypes.ResultBlockResults,
+) []*evmtypes.MsgEthereumTx {
 	var result []*evmtypes.MsgEthereumTx
 	block := resBlock.Block
 
 	txResults := blockRes.TxsResults
 
 	for i, tx := range block.Txs {
-		// check tx exists on EVM by cross checking with blockResults
-		// include the tx that exceeds block gas limit
+		// Check if tx exists on EVM by cross checking with blockResults:
+		//  - Include unsuccessful tx that exceeds block gas limit
+		//  - Exclude unsuccessful tx with any other error but ExceedBlockGasLimit
 		if !TxSuccessOrExceedsBlockGasLimit(txResults[i]) {
 			b.logger.Debug("invalid tx result code", "cosmos-hash", hexutil.Encode(tx.Hash()))
 			continue
