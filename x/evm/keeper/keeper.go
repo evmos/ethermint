@@ -283,6 +283,10 @@ func (k *Keeper) GetNonce(ctx sdk.Context, addr common.Address) uint64 {
 func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	params := k.GetParams(ctx)
+	// if node is pruned, params is empty. Return invalid value
+	if params.EvmDenom == "" {
+		return big.NewInt(-1)
+	}
 	coin := k.bankKeeper.GetBalance(ctx, cosmosAddr, params.EvmDenom)
 	return coin.Amount.BigInt()
 }

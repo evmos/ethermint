@@ -9,34 +9,21 @@ from web3.datastructures import AttributeDict
 from .network import setup_custom_ethermint
 from .utils import (
     ADDRS,
-    CONTRACTS_PATHS,
+    CONTRACTS,
     KEYS,
     deploy_contract,
     sign_transaction,
-    wait_for_new_blocks,
+    w3_wait_for_new_blocks,
 )
 
-
-@pytest.fixture(scope="module")
-def ethermint(request, tmp_path_factory):
-    """start-ethermint
-    params: enable_auto_deployment
-    """
-    yield from setup_custom_ethermint(
-        tmp_path_factory.mktemp("pruned"),
-        26900,
-        Path(__file__).parent / "configs/pruned-node.jsonnet",
-    )
-
-
-def test_pruned_node(ethermint):
+def test_pruned_node(pruned):
     """
     test basic json-rpc apis works in pruned node
     """
-    w3 = ethermint.w3
+    w3 = pruned.w3
     erc20 = deploy_contract(
         w3,
-        CONTRACTS_PATHS["TestERC20"],
+        CONTRACTS["TestERC20A"],
         key=KEYS["validator"],
     )
     tx = erc20.functions.transfer(ADDRS["community"], 10).buildTransaction(
@@ -44,12 +31,12 @@ def test_pruned_node(ethermint):
     )
     signed = sign_transaction(w3, tx, KEYS["validator"])
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
-
     print("wait for prunning happens")
-    wait_for_new_blocks(ethermint.cosmos_cli(0), 10)
+    w3_wait_for_new_blocks(w3, 10)
 
-    txreceipt = w3.eth.wait_for_transaction_receipt(txhash)
-    assert len(txreceipt.logs) == 1
+    #txreceipt = w3.eth.wait_for_transaction_receipt(txhash.hex())
+    tx_receipt = w3.eth.get_transaction_receipt(txhash.hex())
+    assert len(tx_receipt.logs) == 1
     expect_log = {
         "address": erc20.address,
         "topics": [
@@ -65,22 +52,29 @@ def test_pruned_node(ethermint):
         "logIndex": 0,
         "removed": False,
     }
-    assert expect_log.items() <= txreceipt.logs[0].items()
+    assert expect_log.items() <= tx_receipt.logs[0].items()
 
     # check get_balance and eth_call don't work on pruned state
     # we need to check error message here. 
     # `get_balance` returns unmarshallJson and thats not what it should
+    res = w3.eth.get_balance(ADDRS["validator"], 'latest')
+    assert res > 0
+
+    pruned_res = pruned.w3.provider.make_request("eth_getBalance", [ADDRS["validator"], hex(tx_receipt.blockNumber)])
+    print(pruned_res)
+    assert 'error' in pruned_res
+    assert pruned_res['error']['message']=='pruned node, cant get balance of pruned states'
+
     with pytest.raises(Exception):
-        w3.eth.get_balance(ADDRS["validator"],
-                           block_identifier=txreceipt.blockNumber)
-    with pytest.raises(Exception):
-        erc20.caller(block_identifier=txreceipt.blockNumber).balanceOf(
+        erc20.caller(block_identifier=tx_receipt.blockNumber).balanceOf(
             ADDRS["validator"]
         )
 
     # check block bloom
-    block = w3.eth.get_block(txreceipt.blockNumber)
-    assert "baseFeePerGas" in block
+    block = w3.eth.get_block(tx_receipt.blockNumber)
+    
+    # Pruned node doesnt keep baseFeePerGas for pruned blocks
+    assert "baseFeePerGas" not in block
     assert block.miner == "0x0000000000000000000000000000000000000000"
     bloom = BloomFilter(big_endian_to_int(block.logsBloom))
     assert HexBytes(erc20.address) in bloom
@@ -89,12 +83,12 @@ def test_pruned_node(ethermint):
 
     tx1 = w3.eth.get_transaction(txhash)
     tx2 = w3.eth.get_transaction_by_block(
-        txreceipt.blockNumber, txreceipt.transactionIndex
+        tx_receipt.blockNumber, tx_receipt.transactionIndex
     )
     exp_tx = AttributeDict(
         {
             "from": "0x57f96e6B86CdeFdB3d412547816a82E3E0EbF9D2",
-            "gas": 51520,
+            "gas": 51503,
             "input": (
                 "0xa9059cbb000000000000000000000000378c50d9264c63f3f92b806d4ee56e"
                 "9d86ffb3ec000000000000000000000000000000000000000000000000000000"
@@ -106,7 +100,7 @@ def test_pruned_node(ethermint):
             "value": 0,
             "type": "0x2",
             "accessList": [],
-            "chainId": "0x309",
+            "chainId": "0x2328",
         }
     )
     assert tx1 == tx2
@@ -115,6 +109,6 @@ def test_pruned_node(ethermint):
 
     print(
         w3.eth.get_logs(
-            {"fromBlock": txreceipt.blockNumber, "toBlock": txreceipt.blockNumber}
+            {"fromBlock": tx_receipt.blockNumber, "toBlock": tx_receipt.blockNumber}
         )
     )
