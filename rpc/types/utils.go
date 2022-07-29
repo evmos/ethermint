@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
@@ -219,6 +220,26 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 				return nil
 			}
 		}
+	}
+	return nil
+}
+
+// CheckTxFee is an internal function used to check whether the fee of
+// the given transaction is _reasonable_(under the cap).
+func CheckTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
+	// Short circuit if there is no cap for transaction fee at all.
+	if cap == 0 {
+		return nil
+	}
+	totalfee := new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas)))
+	// 1 photon in 10^18 aphoton
+	oneToken := new(big.Float).SetInt(big.NewInt(params.Ether))
+	// quo = rounded(x/y)
+	feeEth := new(big.Float).Quo(totalfee, oneToken)
+	// no need to check error from parsing
+	feeFloat, _ := feeEth.Float64()
+	if feeFloat > cap {
+		return fmt.Errorf("tx fee (%.2f ether) exceeds the configured cap (%.2f ether)", feeFloat, cap)
 	}
 	return nil
 }

@@ -380,7 +380,8 @@ func TxExceedBlockGasLimit(res *abci.ResponseDeliverTx) bool {
 	return strings.Contains(res.Log, ExceedBlockGasLimitError)
 }
 
-// TxSuccessOrExceedsBlockGasLimit returns if the tx should be included in json-rpc responses
+// TxSuccessOrExceedsBlockGasLimit returnsrue if the transaction was successful
+// or if it failed with an ExceedBlockGasLimit error
 func TxSuccessOrExceedsBlockGasLimit(res *abci.ResponseDeliverTx) bool {
 	return res.Code == 0 || TxExceedBlockGasLimit(res)
 }
