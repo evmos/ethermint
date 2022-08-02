@@ -2,6 +2,7 @@ import pytest
 
 from .network import setup_ethermint, setup_geth
 
+
 @pytest.fixture(scope="session")
 def ethermint(tmp_path_factory):
     path = tmp_path_factory.mktemp("ethermint")
