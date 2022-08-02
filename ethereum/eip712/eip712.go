@@ -9,8 +9,6 @@ import (
 	"strings"
 
 	sdkmath "cosmossdk.io/math"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -359,7 +357,7 @@ func jsonNameFromTag(tag reflect.StructTag) string {
 func sanitizeTypedef(str string) string {
 	buf := new(bytes.Buffer)
 	parts := strings.Split(str, ".")
-	caser := cases.Title(language.English, cases.NoLower)
+	// caser := cases.Title(language.English, cases.NoLower)
 
 	for _, part := range parts {
 		if part == "_" {
@@ -369,7 +367,7 @@ func sanitizeTypedef(str string) string {
 
 		subparts := strings.Split(part, "_")
 		for _, subpart := range subparts {
-			buf.WriteString(caser.String(subpart))
+			buf.WriteString(strings.Title(subpart)) // nolint: staticcheck
 		}
 	}
 
@@ -384,7 +382,7 @@ var (
 	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
 )
 
-// typToEth supports only basic types and arrays of basic types.
+// typToEth supports only basic types and arrays of basic types
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
 func typToEth(typ reflect.Type) string {
 	const str = "string"

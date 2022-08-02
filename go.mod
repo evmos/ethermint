@@ -33,7 +33,6 @@ require (
 	github.com/tendermint/tendermint v0.34.20
 	github.com/tendermint/tm-db v0.6.7
 	github.com/tyler-smith/go-bip39 v1.1.0
-	golang.org/x/text v0.3.7
 	google.golang.org/genproto v0.0.0-20220628213854-d9e0b6570c03
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.1
@@ -172,6 +171,7 @@ require (
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 // indirect
 	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/api v0.81.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

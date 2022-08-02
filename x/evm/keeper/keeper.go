@@ -42,7 +42,7 @@ type Keeper struct {
 	// update balance and accounting operations with coins
 	bankKeeper types.BankKeeper
 	// access historical headers for EVM state transition execution
-	stakingKeeper types.StakingKeeper
+	// stakingKeeper types.StakingKeeper
 	// fetch EIP1559 base fee and parameters
 	feeMarketKeeper types.FeeMarketKeeper
 
@@ -54,14 +54,18 @@ type Keeper struct {
 
 	// EVM Hooks for tx post-processing
 	hooks types.EvmHooks
+
+	// Custom Logic to Remove the Staking Keeper
+	getHashFunc                    func(ctx sdk.Context) vm.GetHashFunc
+	getValidatorOperatorByConsAddr func(sdk.Context, sdk.ConsAddress) (sdk.AccAddress, bool)
 }
 
 // NewKeeper generates new evm module keeper
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey storetypes.StoreKey, paramSpace paramtypes.Subspace,
-	ak types.AccountKeeper, bankKeeper types.BankKeeper, sk types.StakingKeeper,
-	fmk types.FeeMarketKeeper,
+	ak types.AccountKeeper, bankKeeper types.BankKeeper,
+	fmk types.FeeMarketKeeper, getHashFunc func(ctx sdk.Context) vm.GetHashFunc, getValidatorOperatorByConsAddr func(sdk.Context, sdk.ConsAddress) (sdk.AccAddress, bool),
 	tracer string,
 ) *Keeper {
 	// ensure evm module account is set
@@ -76,15 +80,16 @@ func NewKeeper(
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
-		cdc:             cdc,
-		paramSpace:      paramSpace,
-		accountKeeper:   ak,
-		bankKeeper:      bankKeeper,
-		stakingKeeper:   sk,
-		feeMarketKeeper: fmk,
-		storeKey:        storeKey,
-		transientKey:    transientKey,
-		tracer:          tracer,
+		cdc:                            cdc,
+		paramSpace:                     paramSpace,
+		accountKeeper:                  ak,
+		bankKeeper:                     bankKeeper,
+		feeMarketKeeper:                fmk,
+		storeKey:                       storeKey,
+		transientKey:                   transientKey,
+		tracer:                         tracer,
+		getHashFunc:                    getHashFunc,
+		getValidatorOperatorByConsAddr: getValidatorOperatorByConsAddr,
 	}
 }
 
@@ -204,6 +209,15 @@ func (k Keeper) GetAccountStorage(ctx sdk.Context, address common.Address) types
 	})
 
 	return storage
+}
+
+// GetAccountStorage return state storage associated with an account
+func (k Keeper) GetAccountSequence(ctx sdk.Context, from common.Address) (uint64, error) {
+	nonce, err := k.accountKeeper.GetSequence(ctx, from.Bytes())
+	if err != nil {
+		return 0, err
+	}
+	return nonce, err
 }
 
 // ----------------------------------------------------------------------------
