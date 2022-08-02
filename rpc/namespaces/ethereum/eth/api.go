@@ -89,13 +89,6 @@ type EthereumAPI interface {
 	// smart contracts. However, no data is published to the Ethereum network.
 	Call(args evmtypes.TransactionArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error)
 
-	// Event Logs
-	//
-	// Returns logs which are records that denote/provide context on specific
-	// events within a smart contract, like a token transfer or a change of
-	// ownership for example.
-	// FilterAPI
-
 	// Chain Information
 	//
 	// Returns information on the Ethereum network and internal settings.
