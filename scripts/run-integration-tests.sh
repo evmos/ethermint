@@ -10,4 +10,4 @@ cd ../tests/integration_tests/contracts
 HUSKY_SKIP_INSTALL=1 npm install
 npm run typechain
 cd ..
-nix-shell --run "pytest -vv -s"
+pytest -vv -s
