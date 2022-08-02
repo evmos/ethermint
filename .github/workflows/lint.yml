@@ -29,7 +29,7 @@ jobs:
           args: --timeout 10m
           github-token: ${{ secrets.github_token }}
         # Check only if there are differences in the source code
-        if: "env.GIT_DIFF"
+        if: env.GIT_DIFF
   markdown-lint:
     name: Run markdown-lint
     runs-on: ubuntu-latest
@@ -58,9 +58,11 @@ jobs:
         with:
           PATTERNS: |
             **/**.py
+            
       - run: |
-          nix-shell -I nixpkgs=./nix -p test-env --run "make lint-py"
-        if: env.GIT_DIFF
+        nix-shell -I nixpkgs=./nix -p test-env --run "make lint-py"
+      if: env.GIT_DIFF 
+
   gomod2nix:
     name: Check gomod2nix.toml file is up to date
     runs-on: ubuntu-latest
