@@ -403,7 +403,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 
-			fees, err := suite.app.EvmKeeper.DeductTxCostsFromUserBalance(
+			fees, priority, err := suite.app.EvmKeeper.DeductTxCostsFromUserBalance(
 				suite.ctx,
 				*tx,
 				txData,
@@ -424,6 +424,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 						),
 						"valid test %d failed, fee value is wrong ", i,
 					)
+					suite.Require().Equal(int64(0), priority)
 				} else {
 					suite.Require().Equal(
 						fees,

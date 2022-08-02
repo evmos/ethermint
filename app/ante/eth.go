@@ -2,6 +2,7 @@ package ante
 
 import (
 	"errors"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -170,7 +171,7 @@ func NewEthGasConsumeDecorator(
 // - user doesn't have enough balance to deduct the transaction fees (gas_limit * gas_price)
 // - transaction or block gas meter runs out of gas
 // - sets the gas meter limit
-func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	params := egcd.evmKeeper.GetParams(ctx)
 
 	ethCfg := params.ChainConfig.EthereumConfig(egcd.evmKeeper.ChainID())
@@ -182,6 +183,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	evmDenom := params.EvmDenom
 	gasWanted := uint64(0)
 	var events sdk.Events
+
+	// Use the lowest priority of all the messages as the final one.
+	minPriority := int64(math.MaxInt64)
 
 	for _, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -205,7 +209,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			gasWanted += txData.GetGas()
 		}
 
-		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
+		fees, priority, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
 			*msgEthTx,
 			txData,
@@ -219,6 +223,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		}
 
 		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))
+		if priority < minPriority {
+			minPriority = priority
+		}
 	}
 
 	// TODO: change to typed events
@@ -240,8 +247,10 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	ctx = ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
 	ctx.GasMeter().ConsumeGas(gasConsumed, "copy gas consumed")
 
+	newCtx := ctx.WithPriority(minPriority)
+
 	// we know that we have enough gas on the pool to cover the intrinsic gas
-	return next(ctx, tx, simulate)
+	return next(newCtx, tx, simulate)
 }
 
 // CanTransferDecorator checks if the sender is allowed to transfer funds according to the EVM block
