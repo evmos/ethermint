@@ -1,21 +1,27 @@
-name: Lint
-# Lint runs golangci-lint over the entire ethermint repository This workflow is
-# run on every pull request and push to main The `golangci` will pass without
-# running if no *.{go, mod, sum} files have been changed.
+name: Tests
 on:
   pull_request:
   push:
     branches:
       - main
+      - release/**
+
 jobs:
-  golangci:
-    name: Run golangci-lint
+  cleanup-runs:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    steps:
+      - uses: rokroskar/workflow-run-cleanup-action@master
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
+
+  test-unit-cover:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.18
+          check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.0
         with:
@@ -23,54 +29,185 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - uses: golangci/golangci-lint-action@v3
+      - name: Test and Create Coverage Report
+        run: |
+          make test-unit-cover
+        if: env.GIT_DIFF
+      - uses: codecov/codecov-action@v3
         with:
-          version: latest
-          args: --timeout 10m
-          github-token: ${{ secrets.github_token }}
-        # Check only if there are differences in the source code
-        if: "env.GIT_DIFF"
-  markdown-lint:
-    name: Run markdown-lint
+          file: ./coverage.txt
+          fail_ci_if_error: true
+        if: env.GIT_DIFF
+
+  test-importer:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          check-latest: true
+      - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6.1.0
+        id: git_diff
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: test-importer
+        run: |
+          make test-import
+        if: env.GIT_DIFF
+      
+  test-rpc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.0
         with:
           PATTERNS: |
-            docs/**/*.md
-            x/**/*.md
-            README.md
-      - uses: articulate/actions-markdownlint@v1.1.0
-        # Check only if there are differences in the source code
+            **/**.sol
+            **/**.go
+            go.mod
+            go.sum
+      - name: Test rpc endpoint
+        run: |
+          make test-rpc
         if: env.GIT_DIFF
-  python-lint:
-    name: Run flake8 on python integration tests
+
+  test-e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v15
-      - uses: cachix/cachix-action@v10
+      - uses: actions/setup-go@v3
         with:
-          name: ethermint
+          go-version: 1.18
+          check-latest: true
+      - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.0
         with:
           PATTERNS: |
-            **/**.py
-      - run: |
-        nix-shell -I nixpkgs=./nix -p test-env --run "make lint-py"
+            **/**.sol
+            **/**.go
+            go.mod
+            go.sum
+      - name: Test e2e
+        run: |
+          make test-integration
         if: env.GIT_DIFF
-  gomod2nix:
-    name: Check gomod2nix.toml file is up to date
+
+  integration_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: cachix/install-nix-action@v15
+      - uses: actions/checkout@v2
+      - uses: cachix/install-nix-action@v17
       - uses: cachix/cachix-action@v10
         with:
           name: ethermint
-      - name: run gomod2nix
+          signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
+      - uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/**.sol
+            **/**.go
+            go.mod
+            go.sum
+            tests/integration_tests/**
+      - name: Run integration tests
+        run: make run-integration-tests
+        if: env.GIT_DIFF
+      - name: 'Tar debug files'
+        if: failure()
+        run: tar cfz debug_files.tar.gz -C /tmp/pytest-of-runner .
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: debug-files
+          path: debug_files.tar.gz
+          if-no-files-found: ignore
+
+  test-sim-nondeterminism:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          check-latest: true
+      - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: Test simulation nondeterminism
         run: |
-          nix run -f ./nix gomod2nix
-          git diff --no-ext-diff --exit-code
+          make test-sim-nondeterminism
+        if: env.GIT_DIFF
+
+  test-sim-random-genesis-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          check-latest: true
+      - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: Test simulation with random genesis 
+        run: |
+          make test-sim-random-genesis-fast
+        if: env.GIT_DIFF
+
+  test-sim-import-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          check-latest: true
+      - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: Simulation of import and export genesis
+        run: |
+          make test-sim-import-export
+        if: env.GIT_DIFF
+
+  test-sim-after-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+          check-latest: true
+      - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/**.go
+            go.mod
+            go.sum
+      - name: Test simulation after import
+        run: |
+          make test-sim-after-import
+        if: env.GIT_DIFF
