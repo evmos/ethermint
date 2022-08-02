@@ -140,8 +140,6 @@ type PublicAPI struct {
 	chainIDEpoch *big.Int
 	logger       log.Logger
 	backend      backend.EVMBackend
-	nonceLock    *rpctypes.AddrLocker
-	signer       ethtypes.Signer
 }
 
 // NewPublicAPI creates an instance of the public ETH Web3 API.
@@ -149,7 +147,6 @@ func NewPublicAPI(
 	logger log.Logger,
 	clientCtx client.Context,
 	backend backend.EVMBackend,
-	nonceLock *rpctypes.AddrLocker,
 ) *PublicAPI {
 	eip155ChainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
@@ -174,15 +171,6 @@ func NewPublicAPI(
 		clientCtx = clientCtx.WithKeyring(kr)
 	}
 
-	// The signer used by the API should always be the 'latest' known one because we expect
-	// signers to be backwards-compatible with old transactions.
-	cfg := backend.ChainConfig()
-	if cfg == nil {
-		cfg = evmtypes.DefaultChainConfig().EthereumConfig(eip155ChainID)
-	}
-
-	signer := ethtypes.LatestSigner(cfg)
-
 	api := &PublicAPI{
 		ctx:          context.Background(),
 		clientCtx:    clientCtx,
@@ -190,8 +178,6 @@ func NewPublicAPI(
 		chainIDEpoch: eip155ChainID,
 		logger:       logger.With("client", "json-rpc"),
 		backend:      backend,
-		nonceLock:    nonceLock,
-		signer:       signer,
 	}
 
 	return api
@@ -839,67 +825,9 @@ func (e *PublicAPI) FillTransaction(args evmtypes.TransactionArgs) (*rpctypes.Si
 
 // Resend accepts an existing transaction and a new gas price and limit. It will remove
 // the given transaction from the pool and reinsert it with the new gas price and limit.
-func (e *PublicAPI) Resend(ctx context.Context, args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error) {
+func (e *PublicAPI) Resend(_ context.Context, args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error) {
 	e.logger.Debug("eth_resend", "args", args.String())
-	if args.Nonce == nil {
-		return common.Hash{}, fmt.Errorf("missing transaction nonce in transaction spec")
-	}
-
-	args, err := e.backend.SetTxDefaults(args)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	matchTx := args.ToTransaction().AsTransaction()
-
-	// Before replacing the old transaction, ensure the _new_ transaction fee is reasonable.
-	price := matchTx.GasPrice()
-	if gasPrice != nil {
-		price = gasPrice.ToInt()
-	}
-	gas := matchTx.Gas()
-	if gasLimit != nil {
-		gas = uint64(*gasLimit)
-	}
-	if err := rpctypes.CheckTxFee(price, gas, e.backend.RPCTxFeeCap()); err != nil {
-		return common.Hash{}, err
-	}
-
-	pending, err := e.backend.PendingTransactions()
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	for _, tx := range pending {
-		// FIXME does Resend api possible at all?  https://github.com/evmos/ethermint/issues/905
-		p, err := evmtypes.UnwrapEthereumMsg(tx, common.Hash{})
-		if err != nil {
-			// not valid ethereum tx
-			continue
-		}
-
-		pTx := p.AsTransaction()
-
-		wantSigHash := e.signer.Hash(matchTx)
-		pFrom, err := ethtypes.Sender(e.signer, pTx)
-		if err != nil {
-			continue
-		}
-
-		if pFrom == *args.From && e.signer.Hash(pTx) == wantSigHash {
-			// Match. Re-sign and send the transaction.
-			if gasPrice != nil && (*big.Int)(gasPrice).Sign() != 0 {
-				args.GasPrice = gasPrice
-			}
-			if gasLimit != nil && *gasLimit != 0 {
-				args.Gas = gasLimit
-			}
-
-			return e.backend.SendTransaction(args) // TODO: this calls SetTxDefaults again, refactor to avoid calling it twice
-		}
-	}
-
-	return common.Hash{}, fmt.Errorf("transaction %#x not found", matchTx.Hash())
+	return e.backend.Resend(args, gasPrice, gasLimit)
 }
 
 // GetPendingTransactions returns the transactions that are in the transaction pool

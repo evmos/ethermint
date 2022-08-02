@@ -971,3 +971,79 @@ func (b *Backend) DoCall(
 
 	return res, nil
 }
+
+func (b *Backend) Resend(args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error) {
+	if args.Nonce == nil {
+		return common.Hash{}, fmt.Errorf("missing transaction nonce in transaction spec")
+	}
+
+	args, err := b.SetTxDefaults(args)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	// The signer used should always be the 'latest' known one because we expect
+	// signers to be backwards-compatible with old transactions.
+	eip155ChainID, err := ethermint.ParseChainID(b.clientCtx.ChainID)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	cfg := b.ChainConfig()
+	if cfg == nil {
+		cfg = evmtypes.DefaultChainConfig().EthereumConfig(eip155ChainID)
+	}
+
+	signer := ethtypes.LatestSigner(cfg)
+
+	matchTx := args.ToTransaction().AsTransaction()
+
+	// Before replacing the old transaction, ensure the _new_ transaction fee is reasonable.
+	price := matchTx.GasPrice()
+	if gasPrice != nil {
+		price = gasPrice.ToInt()
+	}
+	gas := matchTx.Gas()
+	if gasLimit != nil {
+		gas = uint64(*gasLimit)
+	}
+	if err := types.CheckTxFee(price, gas, b.RPCTxFeeCap()); err != nil {
+		return common.Hash{}, err
+	}
+
+	pending, err := b.PendingTransactions()
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	for _, tx := range pending {
+		// FIXME does Resend api possible at all?  https://github.com/evmos/ethermint/issues/905
+		p, err := evmtypes.UnwrapEthereumMsg(tx, common.Hash{})
+		if err != nil {
+			// not valid ethereum tx
+			continue
+		}
+
+		pTx := p.AsTransaction()
+
+		wantSigHash := signer.Hash(matchTx)
+		pFrom, err := ethtypes.Sender(signer, pTx)
+		if err != nil {
+			continue
+		}
+
+		if pFrom == *args.From && signer.Hash(pTx) == wantSigHash {
+			// Match. Re-sign and send the transaction.
+			if gasPrice != nil && (*big.Int)(gasPrice).Sign() != 0 {
+				args.GasPrice = gasPrice
+			}
+			if gasLimit != nil && *gasLimit != 0 {
+				args.Gas = gasLimit
+			}
+
+			return b.SendTransaction(args) // TODO: this calls SetTxDefaults again, refactor to avoid calling it twice
+		}
+	}
+
+	return common.Hash{}, fmt.Errorf("transaction %#x not found", matchTx.Hash())
+}
