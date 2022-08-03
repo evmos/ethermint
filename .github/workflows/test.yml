@@ -111,6 +111,14 @@ jobs:
         with:
           name: ethermint
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
+      - uses: technote-space/get-diff-action@v6.1.0
+        with:
+          PATTERNS: |
+            **/**.sol
+            **/**.go
+            go.mod
+            go.sum
+            tests/integration_tests/**
       - name: Run integration tests
         run: make run-integration-tests
         if: env.GIT_DIFF

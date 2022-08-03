@@ -183,7 +183,7 @@ func setupChain(localMinGasPricesStr string) {
 		baseapp.SetMinGasPrices(localMinGasPricesStr),
 	)
 
-	genesisState := app.NewDefaultGenesisState()
+	genesisState := app.NewTestGenesisState(newapp.AppCodec())
 	genesisState[types.ModuleName] = newapp.AppCodec().MustMarshalJSON(types.DefaultGenesisState())
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")

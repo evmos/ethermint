@@ -3,8 +3,9 @@ package miner
 import (
 	"math/big"
 
-	"github.com/cosmos/cosmos-sdk/client"
+	sdkmath "cosmossdk.io/math"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -114,7 +115,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 	txFactory = txFactory.WithGas(gas)
 
 	value := new(big.Int).SetUint64(gas * minGasPriceValue.Ceil().TruncateInt().Uint64())
-	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(value))}
+	fees := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(value))}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(gas)
 
@@ -124,7 +125,7 @@ func (api *API) SetEtherbase(etherbase common.Address) bool {
 		return false
 	}
 
-	if err := tx.Sign(txFactory, keyInfo.GetName(), builder, false); err != nil {
+	if err := tx.Sign(txFactory, keyInfo.Name, builder, false); err != nil {
 		api.logger.Debug("failed to sign tx", "error", err.Error())
 		return false
 	}
@@ -177,7 +178,7 @@ func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
 		unit = minGasPrices[0].Denom
 	}
 
-	c := sdk.NewDecCoin(unit, sdk.NewIntFromBigInt(gasPrice.ToInt()))
+	c := sdk.NewDecCoin(unit, sdkmath.NewIntFromBigInt(gasPrice.ToInt()))
 
 	appConf.SetMinGasPrices(sdk.DecCoins{c})
 	sdkconfig.WriteConfigFile(api.ctx.Viper.ConfigFileUsed(), appConf)

@@ -45,6 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [\#1174](https://github.com/evmos/ethermint/pull/1174) Don't allow eth txs with 0 in mempool.
 * (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
   recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade cosmos-sdk to v0.46.
 
 ### Improvements
 

@@ -28,7 +28,7 @@ const (
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = ""
 
-	DefaultMaxTxGasWanted = 500000
+	DefaultMaxTxGasWanted = 0
 
 	DefaultGasCap uint64 = 25000000
 
