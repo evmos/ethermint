@@ -105,8 +105,11 @@ def test_pruned_node(pruned):
     for name in exp_tx.keys():
         assert tx1[name] == tx2[name] == exp_tx[name]
 
-    print(
-        w3.eth.get_logs(
+    logs = w3.eth.get_logs(
             {"fromBlock": tx_receipt.blockNumber, "toBlock": tx_receipt.blockNumber}
-        )
-    )
+        )[0]
+    assert 'address' in logs and logs['address'] == '0x68542BD12B41F5D51D6282Ec7D91D7d0D78E4503'
+    assert 'topics' in logs and len(logs['topics']) == 3
+    assert logs['topics'][0] == HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef')
+    assert logs['topics'][1] == HexBytes('0x00000000000000000000000057f96e6b86cdefdb3d412547816a82e3e0ebf9d2')
+    assert logs['topics'][2] == HexBytes('0x000000000000000000000000378c50d9264c63f3f92b806d4ee56e9d86ffb3ec')
