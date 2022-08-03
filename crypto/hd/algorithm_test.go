@@ -11,15 +11,24 @@ import (
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	amino "github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
 	cryptocodec "github.com/evmos/ethermint/crypto/codec"
+	enccodec "github.com/evmos/ethermint/encoding/codec"
 	ethermint "github.com/evmos/ethermint/types"
 )
 
+var TestCodec codec.Codec
+
 func init() {
-	amino := codec.NewLegacyAmino()
-	cryptocodec.RegisterCrypto(amino)
+	cdc := codec.NewLegacyAmino()
+	cryptocodec.RegisterCrypto(cdc)
+
+	interfaceRegistry := types.NewInterfaceRegistry()
+	TestCodec = amino.NewProtoCodec(interfaceRegistry)
+	enccodec.RegisterInterfaces(interfaceRegistry)
 }
 
 const mnemonic = "picnic rent average infant boat squirrel federal assault mercy purity very motor fossil wheel verify upset box fresh horse vivid copy predict square regret"
@@ -28,7 +37,7 @@ func TestKeyring(t *testing.T) {
 	dir := t.TempDir()
 	mockIn := strings.NewReader("")
 
-	kr, err := keyring.New("ethermint", keyring.BackendTest, dir, mockIn, EthSecp256k1Option())
+	kr, err := keyring.New("ethermint", keyring.BackendTest, dir, mockIn, TestCodec, EthSecp256k1Option())
 	require.NoError(t, err)
 
 	// fail in retrieving key
@@ -40,9 +49,11 @@ func TestKeyring(t *testing.T) {
 	info, mnemonic, err := kr.NewMnemonic("foo", keyring.English, ethermint.BIP44HDPath, keyring.DefaultBIP39Passphrase, EthSecp256k1)
 	require.NoError(t, err)
 	require.NotEmpty(t, mnemonic)
-	require.Equal(t, "foo", info.GetName())
+	require.Equal(t, "foo", info.Name)
 	require.Equal(t, "local", info.GetType().String())
-	require.Equal(t, EthSecp256k1Type, info.GetAlgo())
+	pubKey, err := info.GetPubKey()
+	require.NoError(t, err)
+	require.Equal(t, string(EthSecp256k1Type), pubKey.Type())
 
 	hdPath := ethermint.BIP44HDPath
 

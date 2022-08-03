@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"math"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -234,25 +235,25 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		expPass  bool
 		expPanic bool
 	}{
-		{"invalid transaction type", &invalidTx{}, 0, func() {}, false, false},
+		{"invalid transaction type", &invalidTx{}, math.MaxUint64, func() {}, false, false},
 		{
 			"sender not found",
 			evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil),
-			0,
+			math.MaxUint64,
 			func() {},
 			false, false,
 		},
 		{
 			"gas limit too low",
 			tx,
-			0,
+			math.MaxUint64,
 			func() {},
 			false, false,
 		},
 		{
 			"not enough balance for fees",
 			tx2,
-			0,
+			math.MaxUint64,
 			func() {},
 			false, false,
 		},
@@ -279,7 +280,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		{
 			"success",
 			tx2,
-			config.DefaultMaxTxGasWanted, // it's capped
+			tx2GasLimit, // it's capped
 			func() {
 				vmdb.AddBalance(addr, big.NewInt(1000000))
 
