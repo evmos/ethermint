@@ -26,7 +26,7 @@ Rejects EVM transactions with transactions fees lower than `MinGasPrice * GasLim
 
 ### `EthGasConsumeDecorator`
 
-Calculate the effective fees to deduct and the tx priority according to EIP-1559 spec, then deduct the fees and set the tx priority in the response.
+Calculates the effective fees to deduct and the tx priority according to EIP-1559 spec, then deducts the fees and sets the tx priority in the response.
 
 ```
 effectivePrice = min(baseFee + tipFeeCap, gasFeeCap)
