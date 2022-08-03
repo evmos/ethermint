@@ -119,7 +119,7 @@ func init() {
 				{
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
-					Service:   debug.NewAPI(ctx, evmBackend, clientCtx),
+					Service:   debug.NewAPI(ctx, evmBackend),
 					Public:    true,
 				},
 			}
