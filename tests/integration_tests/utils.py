@@ -26,7 +26,7 @@ TEST_CONTRACTS = {
 def contract_path(name, filename):
     return (
         Path(__file__).parent
-        / "contracts/artifacts/"
+        / "contracts/artifacts/contracts/"
         / filename
         / (name + ".json")
     )

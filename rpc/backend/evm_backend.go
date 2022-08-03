@@ -879,10 +879,6 @@ func (b *Backend) BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, er
 		return nil, err
 	}
 
-	if res.BaseFee == nil {
-		return nil, errors.New("pruned node")
-	}
-
 	return res.BaseFee.BigInt(), nil
 }
 

@@ -61,7 +61,6 @@ def test_pruned_node(pruned):
     assert res > 0
 
     pruned_res = pruned.w3.provider.make_request("eth_getBalance", [ADDRS["validator"], hex(tx_receipt.blockNumber)])
-    print(pruned_res)
     assert 'error' in pruned_res
     assert pruned_res['error']['message']=='pruned node, cant get balance of pruned states'
 
@@ -73,8 +72,7 @@ def test_pruned_node(pruned):
     # check block bloom
     block = w3.eth.get_block(tx_receipt.blockNumber)
     
-    # Pruned node doesnt keep baseFeePerGas for pruned blocks
-    assert "baseFeePerGas" not in block
+    assert "baseFeePerGas" in block
     assert block.miner == "0x0000000000000000000000000000000000000000"
     bloom = BloomFilter(big_endian_to_int(block.logsBloom))
     assert HexBytes(erc20.address) in bloom
@@ -88,7 +86,7 @@ def test_pruned_node(pruned):
     exp_tx = AttributeDict(
         {
             "from": "0x57f96e6B86CdeFdB3d412547816a82E3E0EbF9D2",
-            "gas": 51503,
+            "gas": 51542,
             "input": (
                 "0xa9059cbb000000000000000000000000378c50d9264c63f3f92b806d4ee56e"
                 "9d86ffb3ec000000000000000000000000000000000000000000000000000000"
