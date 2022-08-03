@@ -98,7 +98,7 @@ func init() {
 				{
 					Namespace: PersonalNamespace,
 					Version:   apiVersion,
-					Service:   personal.NewAPI(ctx.Logger, clientCtx, evmBackend),
+					Service:   personal.NewAPI(ctx.Logger, evmBackend),
 					Public:    false,
 				},
 			}

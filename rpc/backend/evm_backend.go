@@ -30,12 +30,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/ethermint/rpc/types"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
@@ -1389,8 +1392,6 @@ func (b *Backend) ChainId() (*hexutil.Big, error) {
 
 // SetEtherbase sets the etherbase of the miner
 func (b *Backend) SetEtherbase(etherbase common.Address) bool {
-	b.logger.Debug("miner_setEtherbase")
-
 	delAddr, err := b.GetCoinbase()
 	if err != nil {
 		b.logger.Debug("failed to get coinbase address", "error", err.Error())
@@ -1490,4 +1491,69 @@ func (b *Backend) SetEtherbase(etherbase common.Address) bool {
 
 	b.logger.Debug("broadcasted tx to set miner withdraw address (etherbase)", "hash", tmHash.String())
 	return true
+}
+
+// ImportRawKey armors and encrypts a given raw hex encoded ECDSA key and stores it into the key directory.
+// The name of the key will have the format "personal_<length-keys>", where <length-keys> is the total number of
+// keys stored on the keyring.
+//
+// NOTE: The key will be both armored and encrypted using the same passphrase.
+func (b *Backend) ImportRawKey(privkey, password string) (common.Address, error) {
+	priv, err := crypto.HexToECDSA(privkey)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	privKey := &ethsecp256k1.PrivKey{Key: crypto.FromECDSA(priv)}
+
+	addr := sdk.AccAddress(privKey.PubKey().Address().Bytes())
+	ethereumAddr := common.BytesToAddress(addr)
+
+	// return if the key has already been imported
+	if _, err := b.clientCtx.Keyring.KeyByAddress(addr); err == nil {
+		return ethereumAddr, nil
+	}
+
+	// ignore error as we only care about the length of the list
+	list, _ := b.clientCtx.Keyring.List()
+	privKeyName := fmt.Sprintf("personal_%d", len(list))
+
+	armor := sdkcrypto.EncryptArmorPrivKey(privKey, password, ethsecp256k1.KeyType)
+
+	if err := b.clientCtx.Keyring.ImportPrivKey(privKeyName, armor, password); err != nil {
+		return common.Address{}, err
+	}
+
+	b.logger.Info("key successfully imported", "name", privKeyName, "address", ethereumAddr.String())
+
+	return ethereumAddr, nil
+}
+
+// ListAccounts will return a list of addresses for accounts this node manages.
+func (b *Backend) ListAccounts() ([]common.Address, error) {
+	addrs := []common.Address{}
+
+	list, err := b.clientCtx.Keyring.List()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, info := range list {
+		pubKey, err := info.GetPubKey()
+		if err != nil {
+			return nil, err
+		}
+		addrs = append(addrs, common.BytesToAddress(pubKey.Address()))
+	}
+
+	return addrs, nil
+}
+
+// NewAccount will create a new account and returns the address for the new account.
+func (b *Backend) NewMnemonic(uid string, language keyring.Language, hdPath, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, error) {
+	info, _, err := b.clientCtx.Keyring.NewMnemonic(uid, keyring.English, bip39Passphrase, bip39Passphrase, algo)
+	if err != nil {
+		return nil, err
+	}
+	return info, err
 }

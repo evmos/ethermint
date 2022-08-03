@@ -62,6 +62,9 @@ type EVMBackend interface {
 	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
 	SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error)
 	SetEtherbase(etherbase common.Address) bool
+	ImportRawKey(privkey, password string) (common.Address, error)
+	ListAccounts() ([]common.Address, error)
+	NewMnemonic(uid string, language keyring.Language, hdPath, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, error)
 
 	// Blockchain API
 	ChainId() (*hexutil.Big, error)
