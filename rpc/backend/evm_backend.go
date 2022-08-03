@@ -862,8 +862,9 @@ func (b *Backend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 func (b *Backend) BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error) {
 	// return BaseFee if London hard fork is activated and feemarket is enabled
 	res, err := b.queryClient.BaseFee(types.ContextWithHeight(blockRes.Height), &evmtypes.QueryBaseFeeRequest{})
-	if err != nil {
-		// fallback to parsing from begin blocker event, could happen on pruned nodes.
+	if err != nil || res.BaseFee == nil {
+		// we can't tell if it's london HF not enabled or the state is pruned,
+		// in either case, we'll fallback to parsing from begin blocker event,
 		// faster to iterate reversely
 		for i := len(blockRes.BeginBlockEvents) - 1; i >= 0; i-- {
 			evt := blockRes.BeginBlockEvents[i]
