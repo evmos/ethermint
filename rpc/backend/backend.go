@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,11 +15,14 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/rpc/types"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -50,7 +55,15 @@ type EVMBackend interface {
 	RPCMinGasPrice() int64
 	SuggestGasTipCap(baseFee *big.Int) (*big.Int, error)
 
+	// Node specific queries
+	Accounts() ([]common.Address, error)
+	Syncing() (interface{}, error)
+	Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
+	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
+	SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error)
+
 	// Blockchain API
+	ChainId() (*hexutil.Big, error)
 	BlockNumber() (hexutil.Uint64, error)
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
@@ -65,7 +78,6 @@ type EVMBackend interface {
 	GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
-	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
 	GetCoinbase() (sdk.AccAddress, error)
 	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
@@ -81,7 +93,14 @@ type EVMBackend interface {
 	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
 	GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
+	GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error)
+	GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
+	GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
+	GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error)
+
+	// Send Transaction
 	Resend(args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error)
+	SendRawTransaction(data hexutil.Bytes) (common.Hash, error)
 
 	// Fee API
 	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*types.FeeHistoryResult, error)
@@ -116,6 +135,23 @@ func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context
 	}
 
 	appConf := config.GetConfig(ctx.Viper)
+
+	algos, _ := clientCtx.Keyring.SupportedAlgorithms()
+	if !algos.Contains(hd.EthSecp256k1) {
+		kr, err := keyring.New(
+			sdk.KeyringServiceName(),
+			viper.GetString(flags.FlagKeyringBackend),
+			clientCtx.KeyringDir,
+			clientCtx.Input,
+			clientCtx.Codec,
+			hd.EthSecp256k1Option(),
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		clientCtx = clientCtx.WithKeyring(kr)
+	}
 
 	return &Backend{
 		ctx:                 context.Background(),

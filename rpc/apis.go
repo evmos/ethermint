@@ -61,7 +61,7 @@ func init() {
 				{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
-					Service:   eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend),
+					Service:   eth.NewPublicAPI(ctx.Logger, evmBackend),
 					Public:    true,
 				},
 				{
