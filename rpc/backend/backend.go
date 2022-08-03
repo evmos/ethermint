@@ -61,6 +61,7 @@ type EVMBackend interface {
 	Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
 	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
 	SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error)
+	SetEtherbase(etherbase common.Address) bool
 
 	// Blockchain API
 	ChainId() (*hexutil.Big, error)

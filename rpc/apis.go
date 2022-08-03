@@ -130,7 +130,7 @@ func init() {
 				{
 					Namespace: MinerNamespace,
 					Version:   apiVersion,
-					Service:   miner.NewPrivateAPI(ctx, clientCtx, evmBackend),
+					Service:   miner.NewPrivateAPI(ctx, evmBackend),
 					Public:    false,
 				},
 			}

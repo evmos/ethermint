@@ -29,15 +29,21 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/ethermint/rpc/types"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var bAttributeKeyEthereumBloom = []byte(evmtypes.AttributeKeyEthereumBloom)
@@ -1379,4 +1385,109 @@ func (b *Backend) ChainId() (*hexutil.Big, error) {
 	}
 
 	return nil, fmt.Errorf("chain not synced beyond EIP-155 replay-protection fork block")
+}
+
+// SetEtherbase sets the etherbase of the miner
+func (b *Backend) SetEtherbase(etherbase common.Address) bool {
+	b.logger.Debug("miner_setEtherbase")
+
+	delAddr, err := b.GetCoinbase()
+	if err != nil {
+		b.logger.Debug("failed to get coinbase address", "error", err.Error())
+		return false
+	}
+
+	withdrawAddr := sdk.AccAddress(etherbase.Bytes())
+	msg := distributiontypes.NewMsgSetWithdrawAddress(delAddr, withdrawAddr)
+
+	if err := msg.ValidateBasic(); err != nil {
+		b.logger.Debug("tx failed basic validation", "error", err.Error())
+		return false
+	}
+
+	// Assemble transaction from fields
+	builder, ok := b.clientCtx.TxConfig.NewTxBuilder().(authtx.ExtensionOptionsTxBuilder)
+	if !ok {
+		b.logger.Debug("clientCtx.TxConfig.NewTxBuilder returns unsupported builder", "error", err.Error())
+		return false
+	}
+
+	err = builder.SetMsgs(msg)
+	if err != nil {
+		b.logger.Error("builder.SetMsgs failed", "error", err.Error())
+		return false
+	}
+
+	// Fetch minimun gas price to calculate fees using the configuration.
+	minGasPrices := b.cfg.GetMinGasPrices()
+	if len(minGasPrices) == 0 || minGasPrices.Empty() {
+		b.logger.Debug("the minimun fee is not set")
+		return false
+	}
+	minGasPriceValue := minGasPrices[0].Amount
+	denom := minGasPrices[0].Denom
+
+	delCommonAddr := common.BytesToAddress(delAddr.Bytes())
+	nonce, err := b.GetTransactionCount(delCommonAddr, rpctypes.EthPendingBlockNumber)
+	if err != nil {
+		b.logger.Debug("failed to get nonce", "error", err.Error())
+		return false
+	}
+
+	txFactory := tx.Factory{}
+	txFactory = txFactory.
+		WithChainID(b.clientCtx.ChainID).
+		WithKeybase(b.clientCtx.Keyring).
+		WithTxConfig(b.clientCtx.TxConfig).
+		WithSequence(uint64(*nonce)).
+		WithGasAdjustment(1.25)
+
+	_, gas, err := tx.CalculateGas(b.clientCtx, txFactory, msg)
+	if err != nil {
+		b.logger.Debug("failed to calculate gas", "error", err.Error())
+		return false
+	}
+
+	txFactory = txFactory.WithGas(gas)
+
+	value := new(big.Int).SetUint64(gas * minGasPriceValue.Ceil().TruncateInt().Uint64())
+	fees := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(value))}
+	builder.SetFeeAmount(fees)
+	builder.SetGasLimit(gas)
+
+	keyInfo, err := b.clientCtx.Keyring.KeyByAddress(delAddr)
+	if err != nil {
+		b.logger.Debug("failed to get the wallet address using the keyring", "error", err.Error())
+		return false
+	}
+
+	if err := tx.Sign(txFactory, keyInfo.Name, builder, false); err != nil {
+		b.logger.Debug("failed to sign tx", "error", err.Error())
+		return false
+	}
+
+	// Encode transaction by default Tx encoder
+	txEncoder := b.clientCtx.TxConfig.TxEncoder()
+	txBytes, err := txEncoder(builder.GetTx())
+	if err != nil {
+		b.logger.Debug("failed to encode eth tx using default encoder", "error", err.Error())
+		return false
+	}
+
+	tmHash := common.BytesToHash(tmtypes.Tx(txBytes).Hash())
+
+	// Broadcast transaction in sync mode (default)
+	// NOTE: If error is encountered on the node, the broadcast will not return an error
+	syncCtx := b.clientCtx.WithBroadcastMode(flags.BroadcastSync)
+	rsp, err := syncCtx.BroadcastTx(txBytes)
+	if rsp != nil && rsp.Code != 0 {
+		err = sdkerrors.ABCIError(rsp.Codespace, rsp.Code, rsp.RawLog)
+	}
+	if err != nil {
+		b.logger.Debug("failed to broadcast tx", "error", err.Error())
+		return false
+	}
+
+	b.logger.Debug("broadcasted tx to set miner withdraw address (etherbase)", "hash", tmHash.String())
+	return true
 }
