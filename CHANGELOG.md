@@ -42,6 +42,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (evm) [\#1174](https://github.com/evmos/ethermint/pull/1174) Don't allow eth txs with 0 in mempool.
 
+### Improvements
+
+* (ante) [\#1208](https://github.com/evmos/ethermint/pull/1208) Change default `MaxGasWanted` value.
+
 ## [v0.17.2] - 2022-07-26
 
 ### Bug Fixes
