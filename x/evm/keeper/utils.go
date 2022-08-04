@@ -3,6 +3,7 @@ package keeper
 import (
 	"math/big"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -71,7 +72,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 		return sdk.Coins{}, nil
 	}
 
-	fees := sdk.Coins{sdk.NewCoin(denom, sdk.NewIntFromBigInt(feeAmt))}
+	fees := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(feeAmt))}
 
 	// deduct the full gas cost from the user balance
 	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
@@ -87,7 +88,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 // CheckSenderBalance validates that the tx cost value is positive and that the
 // sender has enough funds to pay for the fees and value of the transaction.
 func CheckSenderBalance(
-	balance sdk.Int,
+	balance sdkmath.Int,
 	txData evmtypes.TxData,
 ) error {
 	cost := txData.Cost()
