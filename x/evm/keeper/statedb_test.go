@@ -15,6 +15,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
 	"github.com/tharsis/ethermint/tests"
 	"github.com/tharsis/ethermint/x/evm/statedb"
 	"github.com/tharsis/ethermint/x/evm/types"
@@ -423,9 +424,23 @@ func (suite *KeeperTestSuite) TestSuicide() {
 	// Call Suicide
 	suite.Require().Equal(true, db.Suicide(suite.address))
 
+	// Generate 2nd address
+	privkey, _ := ethsecp256k1.GenerateKey()
+	key, err := privkey.ToECDSA()
+	suite.Require().NoError(err)
+	addr2 := crypto.PubkeyToAddress(key.PublicKey)
+
+	// Add code and state to account 2
+	db.SetCode(addr2, code)
+	suite.Require().Equal(code, db.GetCode(addr2))
+	for i := 0; i < 5; i++ {
+		db.SetState(addr2, common.BytesToHash([]byte(fmt.Sprintf("key%d", i))), common.BytesToHash([]byte(fmt.Sprintf("value%d", i))))
+	}
+
 	// Check suicided is marked
 	suite.Require().Equal(true, db.HasSuicided(suite.address))
 
+	// Commit state
 	suite.Require().NoError(db.Commit())
 	db = suite.StateDB()
 
@@ -441,6 +456,10 @@ func (suite *KeeperTestSuite) TestSuicide() {
 
 	// Check account is deleted
 	suite.Require().Equal(common.Hash{}, db.GetCodeHash(suite.address))
+
+	// Check code is still present in addr2 and suicided is false
+	suite.Require().NotNil(db.GetCode(addr2))
+	suite.Require().Equal(false, db.HasSuicided(addr2))
 }
 
 func (suite *KeeperTestSuite) TestExist() {
