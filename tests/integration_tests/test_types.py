@@ -9,8 +9,6 @@ from .utils import (
     w3_wait_for_new_blocks,
 )
 
-txhash = ""
-
 def test_block(ethermint, geth):
     get_blocks(ethermint, geth, False)
     get_blocks(ethermint, geth, True)
@@ -175,21 +173,29 @@ def test_getBlockTransactionCountByNumber(ethermint, geth):
     tx_hash = send_and_get_hash(ethermint.w3)
 
     tx_res = eth_rpc.make_request('eth_getTransactionByHash', [tx_hash])
-    block_hash = tx_res['result']['blockNumber']
-    block_res = eth_rpc.make_request('eth_getBlockTransactionCountByNumber', [block_hash])
-    
+    block_number = tx_res['result']['blockNumber']
+    block_hash = tx_res['result']['blockHash']
+    block_res = eth_rpc.make_request('eth_getBlockTransactionCountByNumber', [block_number])
 
     expected = {    
     "id": "1",
     "jsonrpc": "2.0",
-    "result": "0x0"
+    "result": "0x1"
+    }
+    res, err = same_types(block_res, expected)
+    assert res, err
+
+    make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBlockTransactionCountByHash", ["0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd"])
+    block_res = eth_rpc.make_request('eth_getBlockTransactionCountByHash', [block_hash])
+    expected = {    
+    "id": "1",
+    "jsonrpc": "2.0",
+    "result": "0x1"
     }
     res, err = same_types(block_res, expected)
     assert res, err
 
 
-# TODO: BYHASH
-# def test_getBlockTransactionCountByHash
 
 
 def test_getTransaction(ethermint, geth):
@@ -223,16 +229,6 @@ def test_getTransaction(ethermint, geth):
     }
     res, err = same_types(tx_res, expected)
     assert res, err
-
-# NOT IMPLEMENTED
-# def test_getTransactionRaw(ethermint, geth):
-#     eth_rpc = ethermint.w3.provider
-#     geth_rpc = geth.w3.provider
-#     eth_rsp, geth_rsp = make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getRawTransactionByHash", ["0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"])
-#     res, err = same_types(eth_rsp, geth_rsp)
-#     print(eth_rsp)
-#     print(geth_rsp)
-#     assert res, err
 
 def test_getTransactionReceipt(ethermint, geth):
     eth_rpc = ethermint.w3.provider
