@@ -8,14 +8,5 @@ config {
         'snapshot-interval': 0,
       },
     },
-    genesis+: {
-      app_state+: {
-        feemarket+: {
-          params+: {
-            min_gas_multiplier: '0',
-          },
-        },
-      },
-    },
   },
 }

@@ -879,6 +879,10 @@ func (b *Backend) BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, er
 		return nil, err
 	}
 
+	if res.BaseFee == nil {
+		return nil, nil
+	}
+
 	return res.BaseFee.BigInt(), nil
 }
 

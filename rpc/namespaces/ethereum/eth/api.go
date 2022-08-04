@@ -295,7 +295,7 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.Bl
 	}
 
 	// balance can only be negative in case of pruned node
-	if !val.GTE(sdk.NewIntFromUint64(0)) {
+	if val.IsNegative() {
 		return nil, errors.New("pruned node, cant get balance of pruned states")
 	}
 

@@ -14,19 +14,9 @@ def geth(tmp_path_factory):
     path = tmp_path_factory.mktemp("geth")
     yield from setup_geth(path, 8545)
 
-@pytest.fixture(scope="session")
-def pruned(request, tmp_path_factory):
-    """start-ethermint
-    params: enable_auto_deployment
-    """
-    yield from setup_custom_ethermint(
-        tmp_path_factory.mktemp("pruned"),
-        26900,
-        Path(__file__).parent / "configs/pruned_node.jsonnet",
-    )
 
-@pytest.fixture(scope="session", params=["ethermint", "geth", "pruned", "ethermint-ws"])
-def cluster(request, ethermint, geth, pruned):
+@pytest.fixture(scope="session", params=["ethermint", "geth", "ethermint-ws"])
+def cluster(request, ethermint, geth):
     """
     run on both ethermint and geth
     """
@@ -35,8 +25,6 @@ def cluster(request, ethermint, geth, pruned):
         yield ethermint
     elif provider == "geth":
         yield geth
-    elif provider == "pruned":
-        yield pruned
     elif provider == "ethermint-ws":
         ethermint_ws = ethermint.copy()
         ethermint_ws.use_websocket()

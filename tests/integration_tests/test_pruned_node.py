@@ -16,6 +16,18 @@ from .utils import (
     w3_wait_for_new_blocks,
 )
 
+@pytest.fixture(scope="module")
+def pruned(request, tmp_path_factory):
+    """start-cronos
+    params: enable_auto_deployment
+    """
+    yield from setup_custom_ethermint(
+        tmp_path_factory.mktemp("pruned"),
+        26900,
+        Path(__file__).parent / "configs/pruned_node.jsonnet",
+    )
+
+
 def test_pruned_node(pruned):
     """
     test basic json-rpc apis works in pruned node
