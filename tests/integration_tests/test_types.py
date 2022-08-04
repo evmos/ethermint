@@ -20,9 +20,6 @@ def get_blocks(ethermint, geth, with_transactions):
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBlockByNumber", ['0x0', with_transactions])
     
-    # FIXME: Fails 
-    # {'jsonrpc': '2.0', 'id': 20, 'error': {'code': -32000, 'message': 'height 10000 must be less than or equal to the current blockchain height 18'}}
-    # {'jsonrpc': '2.0', 'id': 2, 'result': None}
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBlockByNumber", ['0x2710', with_transactions])
     
     ethermint_blk = ethermint.w3.eth.get_block(1)
@@ -84,7 +81,6 @@ def test_balance(ethermint, geth):
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBalance", ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", '0x0'])
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBalance", ["0",'0x0'])
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBalance", ["0x9907a0cf64ec9fbf6ed8fd4971090de88222a9ac",'0x0'])
-    # FIXME: BAD ERROR
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBalance", ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", '0x10000'])
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBalance", ["0",'0x10000'])
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getBalance", ["0x9907a0cf64ec9fbf6ed8fd4971090de88222a9ac",'0x10000'])
@@ -243,7 +239,6 @@ def test_getTransactionReceipt(ethermint, geth):
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_getTransactionReceipt", ["0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"])
 
-    # FIXME: 'type': '0x0' not in expected, status key on json is not in ethermint
     tx_hash = send_and_get_hash(ethermint.w3)
 
     tx_res = eth_rpc.make_request('eth_getTransactionReceipt', [tx_hash])
