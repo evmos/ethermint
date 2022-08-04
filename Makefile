@@ -320,6 +320,12 @@ test-rpc:
 test-integration:
 	./scripts/integration-test-all.sh -t "integration" -q 1 -z 1 -s 2 -m "integration" -r "true"
 
+run-integration-tests:
+	@nix-shell ./tests/integration_tests/shell.nix --run ./scripts/run-integration-tests.sh
+
+.PHONY: run-integration-tests
+
+
 test-rpc-pending:
 	./scripts/integration-test-all.sh -t "pending" -q 1 -z 1 -s 2 -m "pending" -r "true"
 
@@ -388,12 +394,16 @@ lint:
 	@@test -n "$$golangci-lint version | awk '$4 >= 1.42')"
 	golangci-lint run --out-format=tab -n
 
+lint-py:
+	flake8 --show-source --count --statistics \
+          --format="::error file=%(path)s,line=%(row)d,col=%(col)d::%(path)s:%(row)d:%(col)d: %(code)s %(text)s" \
+
 format:
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs gofumpt -d -e -extra
 
 lint-fix:
 	golangci-lint run --fix --out-format=tab --issues-exit-code=0
-.PHONY: lint lint-fix
+.PHONY: lint lint-fix lint-py
 
 format-fix:
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs gofumpt -w -s

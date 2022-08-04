@@ -44,7 +44,7 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(_ *codec.LegacyAmino) {
 
 // ConsensusVersion returns the consensus state-breaking version for the module.
 func (AppModuleBasic) ConsensusVersion() uint64 {
-	return 2
+	return 3
 }
 
 // DefaultGenesis returns default genesis state as raw bytes for the evm
@@ -125,6 +125,10 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 	m := keeper.NewMigrator(*am.keeper)
 	err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
+	if err != nil {
+		panic(err)
+	}
+	err = cfg.RegisterMigration(types.ModuleName, 2, m.Migrate2to3)
 	if err != nil {
 		panic(err)
 	}

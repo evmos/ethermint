@@ -24,7 +24,7 @@ func TestMigrateStore(t *testing.T) {
 	tFeeMarketKey := sdk.NewTransientStoreKey(fmt.Sprintf("%s_test", types.StoreKey))
 	ctx := testutil.DefaultContext(feemarketKey, tFeeMarketKey)
 	paramstore := paramtypes.NewSubspace(
-		encCfg.Marshaler, encCfg.Amino, feemarketKey, tFeeMarketKey, "evm",
+		encCfg.Codec, encCfg.Amino, feemarketKey, tFeeMarketKey, "evm",
 	).WithKeyTable(v2types.ParamKeyTable())
 
 	params := v2types.DefaultParams()
@@ -36,7 +36,7 @@ func TestMigrateStore(t *testing.T) {
 	})
 
 	paramstore = paramtypes.NewSubspace(
-		encCfg.Marshaler, encCfg.Amino, feemarketKey, tFeeMarketKey, "evm",
+		encCfg.Codec, encCfg.Amino, feemarketKey, tFeeMarketKey, "evm",
 	).WithKeyTable(types.ParamKeyTable())
 	err := v2.MigrateStore(ctx, &paramstore)
 	require.NoError(t, err)

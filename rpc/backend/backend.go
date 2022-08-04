@@ -51,16 +51,17 @@ type EVMBackend interface {
 
 	// Blockchain API
 	BlockNumber() (hexutil.Uint64, error)
+	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	GetTendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
 	GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
-	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	BlockByNumber(blockNum types.BlockNumber) (*ethtypes.Block, error)
 	BlockByHash(blockHash common.Hash) (*ethtypes.Block, error)
 	CurrentHeader() *ethtypes.Header
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
+	GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
 	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)

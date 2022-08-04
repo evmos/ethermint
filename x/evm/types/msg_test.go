@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -104,7 +105,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_BuildTx() {
 			suite.Require().Empty(tx.GetMemo())
 			suite.Require().Empty(tx.GetTimeoutHeight())
 			suite.Require().Equal(uint64(100000), tx.GetGas())
-			suite.Require().Equal(sdk.NewCoins(sdk.NewCoin("aphoton", sdk.NewInt(100000))), tx.GetFee())
+			suite.Require().Equal(sdk.NewCoins(sdk.NewCoin("aphoton", sdkmath.NewInt(100000))), tx.GetFee())
 		}
 	}
 }
@@ -119,6 +120,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		msg        string
 		to         string
 		amount     *big.Int
+		gasLimit   uint64
 		gasPrice   *big.Int
 		gasFeeCap  *big.Int
 		gasTipCap  *big.Int
@@ -131,6 +133,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "pass with recipient - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   hundredInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -140,6 +143,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "pass with recipient - AccessList Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -151,6 +155,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "pass with recipient - DynamicFee Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  hundredInt,
 			gasTipCap:  zeroInt,
@@ -162,6 +167,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "pass contract - Legacy Tx",
 			to:         "",
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   hundredInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -171,6 +177,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "invalid recipient",
 			to:         invalidFromAddress,
 			amount:     minusOneInt,
+			gasLimit:   1000,
 			gasPrice:   hundredInt,
 			expectPass: false,
 		},
@@ -178,6 +185,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "nil amount - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     nil,
+			gasLimit:   1000,
 			gasPrice:   hundredInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -187,6 +195,17 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "negative amount - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     minusOneInt,
+			gasLimit:   1000,
+			gasPrice:   hundredInt,
+			gasFeeCap:  nil,
+			gasTipCap:  nil,
+			expectPass: false,
+		},
+		{
+			msg:        "zero gas limit - Legacy Tx",
+			to:         suite.to.Hex(),
+			amount:     hundredInt,
+			gasLimit:   0,
 			gasPrice:   hundredInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -196,6 +215,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "nil gas price - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   nil,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -205,6 +225,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "negative gas price - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   minusOneInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -214,6 +235,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "zero gas price - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -223,6 +245,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "invalid from address - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -233,6 +256,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "out of bound gas fee - Legacy Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   exp_2_255,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -242,6 +266,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "nil amount - AccessListTx",
 			to:         suite.to.Hex(),
 			amount:     nil,
+			gasLimit:   1000,
 			gasPrice:   hundredInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -253,6 +278,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "negative amount - AccessListTx",
 			to:         suite.to.Hex(),
 			amount:     minusOneInt,
+			gasLimit:   1000,
 			gasPrice:   hundredInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -261,9 +287,22 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			expectPass: false,
 		},
 		{
+			msg:        "zero gas limit - AccessListTx",
+			to:         suite.to.Hex(),
+			amount:     hundredInt,
+			gasLimit:   0,
+			gasPrice:   zeroInt,
+			gasFeeCap:  nil,
+			gasTipCap:  nil,
+			accessList: &ethtypes.AccessList{},
+			chainID:    hundredInt,
+			expectPass: false,
+		},
+		{
 			msg:        "nil gas price - AccessListTx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   nil,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -275,6 +314,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "negative gas price - AccessListTx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   minusOneInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -286,6 +326,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "zero gas price - AccessListTx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -297,6 +338,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "invalid from address - AccessListTx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -309,6 +351,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "chain ID not set on AccessListTx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -320,6 +363,7 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 			msg:        "nil tx.Data - AccessList Tx",
 			to:         suite.to.Hex(),
 			amount:     hundredInt,
+			gasLimit:   1000,
 			gasPrice:   zeroInt,
 			gasFeeCap:  nil,
 			gasTipCap:  nil,
@@ -329,24 +373,85 @@ func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasic() {
 		},
 	}
 
-	for i, tc := range testCases {
-		to := common.HexToAddress(tc.from)
+	for _, tc := range testCases {
+		suite.Run(tc.msg, func() {
+			to := common.HexToAddress(tc.from)
 
-		tx := types.NewTx(tc.chainID, 1, &to, tc.amount, 1000, tc.gasPrice, tc.gasFeeCap, tc.gasTipCap, nil, tc.accessList)
-		tx.From = tc.from
+			tx := types.NewTx(tc.chainID, 1, &to, tc.amount, tc.gasLimit, tc.gasPrice, tc.gasFeeCap, tc.gasTipCap, nil, tc.accessList)
+			tx.From = tc.from
 
-		// apply nil assignment here to test ValidateBasic function instead of NewTx
-		if strings.Contains(tc.msg, "nil tx.Data") {
-			tx.Data = nil
-		}
+			// apply nil assignment here to test ValidateBasic function instead of NewTx
+			if strings.Contains(tc.msg, "nil tx.Data") {
+				tx.Data = nil
+			}
 
-		err := tx.ValidateBasic()
+			err := tx.ValidateBasic()
 
-		if tc.expectPass {
-			suite.Require().NoError(err, "valid test %d failed: %s, %v", i, tc.msg)
-		} else {
-			suite.Require().Error(err, "invalid test %d passed: %s, %v", i, tc.msg)
-		}
+			if tc.expectPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *MsgsTestSuite) TestMsgEthereumTx_ValidateBasicAdvanced() {
+	hundredInt := big.NewInt(100)
+	testCases := []struct {
+		msg        string
+		msgBuilder func() *types.MsgEthereumTx
+		expectPass bool
+	}{
+		{
+			"fails - invalid tx hash",
+			func() *types.MsgEthereumTx {
+				msg := types.NewTxContract(
+					hundredInt,
+					1,
+					big.NewInt(10),
+					100000,
+					big.NewInt(150),
+					big.NewInt(200),
+					nil,
+					nil,
+					nil,
+				)
+				msg.Hash = "0x00"
+				return msg
+			},
+			false,
+		},
+		{
+			"fails - invalid size",
+			func() *types.MsgEthereumTx {
+				msg := types.NewTxContract(
+					hundredInt,
+					1,
+					big.NewInt(10),
+					100000,
+					big.NewInt(150),
+					big.NewInt(200),
+					nil,
+					nil,
+					nil,
+				)
+				msg.Size_ = 1
+				return msg
+			},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.msg, func() {
+			err := tc.msgBuilder().ValidateBasic()
+			if tc.expectPass {
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
 	}
 }
 

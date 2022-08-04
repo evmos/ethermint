@@ -6,7 +6,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
 
@@ -49,7 +48,7 @@ The pass backend requires GnuPG: https://gnupg.org/
 	addCmd := keys.AddKeyCommand()
 
 	// update the default signing algorithm value to "eth_secp256k1"
-	algoFlag := addCmd.Flag("algo")
+	algoFlag := addCmd.Flag(flags.FlagKeyAlgorithm)
 	algoFlag.DefValue = string(hd.EthSecp256k1Type)
 	err := algoFlag.Value.Set(string(hd.EthSecp256k1Type))
 	if err != nil {
@@ -65,8 +64,8 @@ The pass backend requires GnuPG: https://gnupg.org/
 		keys.ImportKeyCommand(),
 		keys.ListKeysCmd(),
 		keys.ShowKeysCmd(),
-		flags.LineBreak,
 		keys.DeleteKeyCommand(),
+		keys.RenameKeyCommand(),
 		keys.ParseKeyStringCommand(),
 		keys.MigrateCommand(),
 		flags.LineBreak,
@@ -82,23 +81,11 @@ The pass backend requires GnuPG: https://gnupg.org/
 }
 
 func runAddCmd(cmd *cobra.Command, args []string) error {
-	buf := bufio.NewReader(cmd.InOrStdin())
-	clientCtx := client.GetClientContextFromCmd(cmd)
-
-	var (
-		kr  keyring.Keyring
-		err error
-	)
-
-	dryRun, _ := cmd.Flags().GetBool(flags.FlagDryRun)
-	if dryRun {
-		kr, err = keyring.New(sdk.KeyringServiceName(), keyring.BackendMemory, clientCtx.KeyringDir, buf, hd.EthSecp256k1Option())
-		clientCtx = clientCtx.WithKeyring(kr)
-	}
-
+	clientCtx := client.GetClientContextFromCmd(cmd).WithKeyringOptions(hd.EthSecp256k1Option())
+	clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 	if err != nil {
 		return err
 	}
-
+	buf := bufio.NewReader(clientCtx.Input)
 	return clientkeys.RunAddCmd(clientCtx, cmd, args, buf)
 }

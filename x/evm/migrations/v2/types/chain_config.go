@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -33,7 +35,7 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		BerlinBlock:             getBlockValue(cc.BerlinBlock),
 		LondonBlock:             getBlockValue(cc.LondonBlock),
 		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
-		MergeForkBlock:          getBlockValue(cc.MergeForkBlock),
+		MergeNetsplitBlock:      getBlockValue(cc.MergeForkBlock),
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,
@@ -77,7 +79,7 @@ func DefaultChainConfig() ChainConfig {
 	}
 }
 
-func getBlockValue(block *sdk.Int) *big.Int {
+func getBlockValue(block *sdkmath.Int) *big.Int {
 	if block == nil || block.IsNegative() {
 		return nil
 	}
@@ -149,7 +151,7 @@ func validateHash(hex string) error {
 	return nil
 }
 
-func validateBlock(block *sdk.Int) error {
+func validateBlock(block *sdkmath.Int) error {
 	// nil value means that the fork has not yet been applied
 	if block == nil {
 		return nil

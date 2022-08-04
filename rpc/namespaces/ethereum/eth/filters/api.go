@@ -157,7 +157,7 @@ func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {
 					for _, msg := range tx.GetMsgs() {
 						ethTx, ok := msg.(*evmtypes.MsgEthereumTx)
 						if ok {
-							f.hashes = append(f.hashes, common.HexToHash(ethTx.Hash))
+							f.hashes = append(f.hashes, ethTx.AsTransaction().Hash())
 						}
 					}
 				}
@@ -221,7 +221,7 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 				for _, msg := range tx.GetMsgs() {
 					ethTx, ok := msg.(*evmtypes.MsgEthereumTx)
 					if ok {
-						_ = notifier.Notify(rpcSub.ID, common.HexToHash(ethTx.Hash))
+						_ = notifier.Notify(rpcSub.ID, ethTx.AsTransaction().Hash())
 					}
 				}
 			case <-rpcSub.Err():
@@ -389,6 +389,7 @@ func (api *PublicFilterAPI) Logs(ctx context.Context, crit filters.FilterCriteri
 
 				txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
 				if err != nil {
+					api.logger.Error("fail to decode tx response", "error", err)
 					return
 				}
 
@@ -465,6 +466,7 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 
 				txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
 				if err != nil {
+					api.logger.Error("fail to decode tx response", "error", err)
 					return
 				}
 

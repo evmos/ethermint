@@ -182,7 +182,8 @@ instead of *big.Int.
 | `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
 | `london_block` | [string](#string) |  | London switch block (nil = no fork, 0 = already on london) |
 | `arrow_glacier_block` | [string](#string) |  | Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated) |
-| `merge_fork_block` | [string](#string) |  | EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in merge proceedings) |
+| `gray_glacier_block` | [string](#string) |  | EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated) |
+| `merge_netsplit_block` | [string](#string) |  | Virtual fork after The Merge to use as a network splitter |
 
 
 
@@ -476,7 +477,7 @@ MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
 | `data` | [google.protobuf.Any](#google.protobuf.Any) |  | inner transaction data
 
 caches |
-| `size` | [double](#double) |  | encoded storage size of the transaction |
+| `size` | [double](#double) |  | DEPRECATED: encoded storage size of the transaction |
 | `hash` | [string](#string) |  | transaction hash in hex format |
 | `from` | [string](#string) |  | ethereum signer address in hex format. This address value is checked against the address derived from the signature (V, R, S) using the secp256k1 elliptic curve |
 
