@@ -296,7 +296,7 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.Bl
 
 	// balance can only be negative in case of pruned node
 	if val.IsNegative() {
-		return nil, errors.New("pruned node, cant get balance of pruned states")
+		return nil, errors.New("couldn't fetch balance. Node state is pruned")
 	}
 
 	return (*hexutil.Big)(val.BigInt()), nil
