@@ -29,9 +29,7 @@ import (
 )
 
 var _ = Describe("Feemarket", func() {
-	var (
-		privKey *ethsecp256k1.PrivKey
-	)
+	var privKey *ethsecp256k1.PrivKey
 
 	Describe("Performing EVM transactions", func() {
 		type txParams struct {
