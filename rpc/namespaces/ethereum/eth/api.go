@@ -128,7 +128,7 @@ func (e *PublicAPI) ProtocolVersion() hexutil.Uint {
 }
 
 // ChainId is the EIP-155 replay-protection chain id for the current ethereum chain config.
-func (e *PublicAPI) ChainId() (*hexutil.Big, error) { // nolint
+func (e *PublicAPI) ChainId() (*hexutil.Big, error) { //nolint
 	e.logger.Debug("eth_chainId")
 	// if current block is at or past the EIP-155 replay-protection fork block, return chainID from config
 	bn, err := e.backend.BlockNumber()
