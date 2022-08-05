@@ -38,6 +38,21 @@ CONTRACTS = {
     },
 }
 
+from eth_account import Account
+from web3._utils.transactions import fill_nonce, fill_transaction_defaults
+
+Account.enable_unaudited_hdwallet_features()
+
+ACCOUNTS = {
+    "validator": Account.from_mnemonic(os.getenv("VALIDATOR1_MNEMONIC")),
+    "community": Account.from_mnemonic(os.getenv("COMMUNITY_MNEMONIC")),
+    "signer1": Account.from_mnemonic(os.getenv("SIGNER1_MNEMONIC")),
+    "signer2": Account.from_mnemonic(os.getenv("SIGNER2_MNEMONIC")),
+}
+KEYS = {name: account.key for name, account in ACCOUNTS.items()}
+ADDRS = {name: account.address for name, account in ACCOUNTS.items()}
+
+
 def wait_for_port(port, host="127.0.0.1", timeout=40.0):
     start_time = time.perf_counter()
     while True:
@@ -73,13 +88,15 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     address = txreceipt.contractAddress
     return w3.eth.contract(address=address, abi=info["abi"])
 
+def fill_defaults(w3, tx):
+    return fill_nonce(w3, fill_transaction_defaults(w3, tx))
+
 
 def sign_transaction(w3, tx, key=KEYS["validator"]):
     "fill default fields and sign"
     acct = Account.from_key(key)
     tx["from"] = acct.address
-    tx = fill_transaction_defaults(w3, tx)
-    tx = fill_nonce(w3, tx)
+    tx = fill_defaults(w3, tx)
     return acct.sign_transaction(tx)
 
 
