@@ -59,8 +59,8 @@ jobs:
           PATTERNS: |
             **/**.py
       - run: |
-        nix-shell -I nixpkgs=./nix -p test-env --run "make lint-py"
-        if: env.GIT_DIFF
+          nix-shell -I nixpkgs=./nix -p test-env --run "make lint-py"
+          if: env.GIT_DIFF
   gomod2nix:
     name: Check gomod2nix.toml file is up to date
     runs-on: ubuntu-latest
