@@ -16,6 +16,7 @@ from .utils import (
     w3_wait_for_new_blocks,
 )
 
+
 @pytest.fixture(scope="module")
 def pruned(request, tmp_path_factory):
     """start-cronos
@@ -46,15 +47,13 @@ def test_pruned_node(pruned):
     print("wait for prunning happens")
     w3_wait_for_new_blocks(w3, 10)
 
-    #txreceipt = w3.eth.wait_for_transaction_receipt(txhash.hex())
     tx_receipt = w3.eth.get_transaction_receipt(txhash.hex())
     assert len(tx_receipt.logs) == 1
     expect_log = {
         "address": erc20.address,
         "topics": [
             HexBytes(
-                abi.event_signature_to_log_topic(
-                    "Transfer(address,address,uint256)")
+                abi.event_signature_to_log_topic("Transfer(address,address,uint256)")
             ),
             HexBytes(b"\x00" * 12 + HexBytes(ADDRS["validator"])),
             HexBytes(b"\x00" * 12 + HexBytes(ADDRS["community"])),
@@ -67,14 +66,18 @@ def test_pruned_node(pruned):
     assert expect_log.items() <= tx_receipt.logs[0].items()
 
     # check get_balance and eth_call don't work on pruned state
-    # we need to check error message here. 
+    # we need to check error message here.
     # `get_balance` returns unmarshallJson and thats not what it should
-    res = w3.eth.get_balance(ADDRS["validator"], 'latest')
+    res = w3.eth.get_balance(ADDRS["validator"], "latest")
     assert res > 0
 
-    pruned_res = pruned.w3.provider.make_request("eth_getBalance", [ADDRS["validator"], hex(tx_receipt.blockNumber)])
-    assert 'error' in pruned_res
-    assert pruned_res['error']['message']=="couldn't fetch balance. Node state is pruned"
+    pruned_res = pruned.w3.provider.make_request(
+        "eth_getBalance", [ADDRS["validator"], hex(tx_receipt.blockNumber)]
+    )
+    assert "error" in pruned_res
+    assert (
+        pruned_res["error"]["message"] == "couldn't fetch balance. Node state is pruned"
+    )
 
     with pytest.raises(Exception):
         erc20.caller(block_identifier=tx_receipt.blockNumber).balanceOf(
@@ -83,7 +86,7 @@ def test_pruned_node(pruned):
 
     # check block bloom
     block = w3.eth.get_block(tx_receipt.blockNumber)
-    
+
     assert "baseFeePerGas" in block
     assert block.miner == "0x0000000000000000000000000000000000000000"
     bloom = BloomFilter(big_endian_to_int(block.logsBloom))
@@ -118,10 +121,22 @@ def test_pruned_node(pruned):
         assert tx1[name] == tx2[name] == exp_tx[name]
 
     logs = w3.eth.get_logs(
-            {"fromBlock": tx_receipt.blockNumber, "toBlock": tx_receipt.blockNumber}
-        )[0]
-    assert 'address' in logs and logs['address'] == '0x68542BD12B41F5D51D6282Ec7D91D7d0D78E4503'
-    assert 'topics' in logs and len(logs['topics']) == 3
-    assert logs['topics'][0] == HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef')
-    assert logs['topics'][1] == HexBytes('0x00000000000000000000000057f96e6b86cdefdb3d412547816a82e3e0ebf9d2')
-    assert logs['topics'][2] == HexBytes('0x000000000000000000000000378c50d9264c63f3f92b806d4ee56e9d86ffb3ec')
+        {
+            "fromBlock": tx_receipt.blockNumber,
+            "toBlock": tx_receipt.blockNumber,
+        }
+    )[0]
+    assert (
+        "address" in logs
+        and logs["address"] == "0x68542BD12B41F5D51D6282Ec7D91D7d0D78E4503"
+    )
+    assert "topics" in logs and len(logs["topics"]) == 3
+    assert logs["topics"][0] == HexBytes(
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    )
+    assert logs["topics"][1] == HexBytes(
+        "0x00000000000000000000000057f96e6b86cdefdb3d412547816a82e3e0ebf9d2"
+    )
+    assert logs["topics"][2] == HexBytes(
+        "0x000000000000000000000000378c50d9264c63f3f92b806d4ee56e9d86ffb3ec"
+    )

@@ -23,6 +23,7 @@ TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
 }
 
+
 def contract_path(name, filename):
     return (
         Path(__file__).parent
@@ -37,9 +38,6 @@ CONTRACTS = {
         name: contract_path(name, filename) for name, filename in TEST_CONTRACTS.items()
     },
 }
-
-from eth_account import Account
-from web3._utils.transactions import fill_nonce, fill_transaction_defaults
 
 Account.enable_unaudited_hdwallet_features()
 
@@ -67,6 +65,7 @@ def wait_for_port(port, host="127.0.0.1", timeout=40.0):
                     "connections.".format(port, host)
                 ) from ex
 
+
 def w3_wait_for_new_blocks(w3, n):
     begin_height = w3.eth.block_number
     while True:
@@ -74,6 +73,7 @@ def w3_wait_for_new_blocks(w3, n):
         cur_height = w3.eth.block_number
         if cur_height - begin_height >= n:
             break
+
 
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     """
@@ -87,6 +87,7 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     assert txreceipt.status == 1
     address = txreceipt.contractAddress
     return w3.eth.contract(address=address, abi=info["abi"])
+
 
 def fill_defaults(w3, tx):
     return fill_nonce(w3, fill_transaction_defaults(w3, tx))

@@ -1,6 +1,6 @@
 import pytest
-from pathlib import Path
-from .network import setup_ethermint, setup_geth, setup_custom_ethermint
+
+from .network import setup_ethermint, setup_geth
 
 
 @pytest.fixture(scope="session")
