@@ -1,5 +1,5 @@
 from .network import Ethermint
-from .utils import KEYS, sign_transaction
+from .utils import ADDRS, KEYS, eth_to_bech32, sign_transaction, wait_for_new_blocks
 
 PRIORITY_REDUCTION = 1000000
 
@@ -105,10 +105,80 @@ def test_priority(ethermint: Ethermint):
 
 
 def included_earlier(receipt1, receipt2):
-    "returns true if receipt1 is earlier than receipt2"
-    if receipt1.blockNumber < receipt2.blockNumber:
-        return True
-    elif receipt1.blockNumber == receipt2.blockNumber:
-        return receipt1.transactionIndex < receipt2.transactionIndex
-    else:
-        return False
+    "returns true if receipt1 is included earlier than receipt2"
+    return (receipt1.blockNumber, receipt1.transactionIndex) < (
+        receipt2.blockNumber,
+        receipt2.transactionIndex,
+    )
+
+
+def test_native_tx_priority(ethermint: Ethermint):
+    cli = ethermint.cosmos_cli()
+    base_fee = cli.query_base_fee()
+    print("base_fee", base_fee)
+    test_cases = [
+        {
+            "from": eth_to_bech32(ADDRS["validator"]),
+            "to": eth_to_bech32(ADDRS["community"]),
+            "amount": "1000aphoton",
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
+            "max_priority_price": None,  # no extension, lowest priority
+        },
+        {
+            "from": eth_to_bech32(ADDRS["community"]),
+            "to": eth_to_bech32(ADDRS["validator"]),
+            "amount": "1000aphoton",
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
+            "max_priority_price": PRIORITY_REDUCTION * 2,
+        },
+        {
+            "from": eth_to_bech32(ADDRS["signer1"]),
+            "to": eth_to_bech32(ADDRS["signer2"]),
+            "amount": "1000aphoton",
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 4}aphoton",
+            "max_priority_price": PRIORITY_REDUCTION * 4,
+        },
+        {
+            "from": eth_to_bech32(ADDRS["signer2"]),
+            "to": eth_to_bech32(ADDRS["signer1"]),
+            "amount": "1000aphoton",
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
+            "max_priority_price": PRIORITY_REDUCTION * 6,
+        },
+    ]
+    txs = []
+    expect_priorities = []
+    for tc in test_cases:
+        tx = cli.transfer(
+            tc["from"],
+            tc["to"],
+            tc["amount"],
+            gas_prices=tc["gas_prices"],
+            generate_only=True,
+        )
+        txs.append(
+            cli.sign_tx_json(
+                tx, tc["from"], max_priority_price=tc.get("max_priority_price")
+            )
+        )
+        gas_price = int(tc["gas_prices"].removesuffix("aphoton"))
+        expect_priorities.append(
+            min(tc.get("max_priority_price") or 0, gas_price - base_fee)
+            // PRIORITY_REDUCTION
+        )
+    assert expect_priorities == [0, 2, 4, 6]
+
+    txhashes = []
+    for tx in txs:
+        rsp = cli.broadcast_tx_json(tx, broadcast_mode="sync")
+        assert rsp["code"] == 0, rsp["raw_log"]
+        txhashes.append(rsp["txhash"])
+
+    print("wait for two new blocks, so the sent txs are all included")
+    wait_for_new_blocks(cli, 2)
+
+    tx_results = [cli.tx_search_rpc(f"tx.hash='{txhash}'")[0] for txhash in txhashes]
+    tx_indexes = [(int(r["height"]), r["index"]) for r in tx_results]
+    print(tx_indexes)
+    # the first sent tx are included later, because of lower priority
+    assert all(i1 > i2 for i1, i2 in zip(tx_indexes, tx_indexes[1:]))

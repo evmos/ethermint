@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	ethermint "github.com/evmos/ethermint/types"
 
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 )
@@ -27,6 +28,15 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	if err := options.validate(); err != nil {
 		return nil, err
 	}
+
+	if options.ExtensionOptionChecker == nil {
+		options.ExtensionOptionChecker = ethermint.HasDynamicFeeExtensionOption
+	}
+
+	if options.TxFeeChecker == nil {
+		options.TxFeeChecker = NewSDKTxFeeChecker(options.EvmKeeper)
+	}
+
 	return func(
 		ctx sdk.Context, tx sdk.Tx, sim bool,
 	) (newCtx sdk.Context, err error) {
@@ -45,6 +55,9 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 				case "/ethermint.types.v1.ExtensionOptionsWeb3Tx":
 					// handle as normal Cosmos SDK tx, except signature is checked for EIP712 representation
 					anteHandler = newCosmosAnteHandlerEip712(options)
+				case "/ethermint.types.v1.ExtensionOptionDynamicFeeTx":
+					// cosmos-sdk tx with dynamic fee extension
+					anteHandler = newCosmosAnteHandler(options)
 				default:
 					return ctx, sdkerrors.Wrapf(
 						sdkerrors.ErrUnknownExtensionOptions,
