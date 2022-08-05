@@ -74,7 +74,7 @@ def test_pruned_node(pruned):
 
     pruned_res = pruned.w3.provider.make_request("eth_getBalance", [ADDRS["validator"], hex(tx_receipt.blockNumber)])
     assert 'error' in pruned_res
-    assert pruned_res['error']['message']=='pruned node, cant get balance of pruned states'
+    assert pruned_res['error']['message']=="couldn't fetch balance. Node state is pruned"
 
     with pytest.raises(Exception):
         erc20.caller(block_identifier=tx_receipt.blockNumber).balanceOf(
