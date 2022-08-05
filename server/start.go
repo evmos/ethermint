@@ -45,8 +45,6 @@ import (
 	srvflags "github.com/evmos/ethermint/server/flags"
 )
 
-const FlagAppDBBackend = "app-db-backend"
-
 // StartCmd runs the service passed in, either stand-alone or in-process with
 // Tendermint.
 func StartCmd(appCreator types.AppCreator, defaultNodeHome string) *cobra.Command {
