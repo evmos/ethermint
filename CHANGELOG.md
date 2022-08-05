@@ -50,7 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
-* (cli) []() Add custom app db backend flag.
+* (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
 
 ### Bug Fixes
 

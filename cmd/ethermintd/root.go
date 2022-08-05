@@ -210,8 +210,7 @@ func (a appCreator) newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer,
 	}
 
 	snapshotDir := filepath.Join(cast.ToString(appOpts.Get(flags.FlagHome)), "data", "snapshots")
-	err = os.MkdirAll(snapshotDir, os.ModePerm)
-	if err != nil {
+	if err = os.MkdirAll(snapshotDir, os.ModePerm); err != nil {
 		panic(err)
 	}
 

@@ -7,13 +7,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Tendermint full-node start flags
+// Tendermint/cosmos-sdk full-node start flags
 const (
 	WithTendermint = "with-tendermint"
 	Address        = "address"
 	Transport      = "transport"
 	TraceStore     = "trace-store"
 	CPUProfile     = "cpu-profile"
+	AppDBBackend   = "app-db-backend"
 )
 
 // GRPC-related flags.
