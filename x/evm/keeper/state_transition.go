@@ -178,7 +178,7 @@ func (k Keeper) GetHashFn(ctx sdk.Context) vm.GetHashFunc {
 // ApplyTransaction runs and attempts to perform a state transition with the given transaction (i.e Message), that will
 // only be persisted (committed) to the underlying KVStore if the transaction does not fail.
 //
-// Gas tracking
+// # Gas tracking
 //
 // Ethereum consumes gas according to the EVM opcodes instead of general reads and writes to store. Because of this, the
 // state transition needs to ignore the SDK gas consumption mechanism defined by the GasKVStore and instead consume the
@@ -309,18 +309,18 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 // If the message fails, the VM execution error with the reason will be returned to the client
 // and the transaction won't be committed to the store.
 //
-// Reverted state
+// # Reverted state
 //
 // The snapshot and rollback are supported by the `statedb.StateDB`.
 //
-// Different Callers
+// # Different Callers
 //
 // It's called in three scenarios:
 // 1. `ApplyTransaction`, in the transaction processing flow.
 // 2. `EthCall/EthEstimateGas` grpc query handler.
 // 3. Called by other native modules directly.
 //
-// Prechecks and Preprocessing
+// # Prechecks and Preprocessing
 //
 // All relevant state transition prechecks for the MsgEthereumTx are performed on the AnteHandler,
 // prior to running the transaction against the state. The prechecks run are the following:
@@ -336,11 +336,11 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 //
 // 1. set up the initial access list (iff fork > Berlin)
 //
-// Tracer parameter
+// # Tracer parameter
 //
 // It should be a `vm.Tracer` object or nil, if pass `nil`, it'll create a default one based on keeper options.
 //
-// Commit parameter
+// # Commit parameter
 //
 // If commit is true, the `StateDB` will be committed, otherwise discarded.
 func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool, cfg *types.EVMConfig, txConfig statedb.TxConfig) (*types.MsgEthereumTxResponse, error) {
