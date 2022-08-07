@@ -28,7 +28,6 @@ jobs:
           version: latest
           args: --timeout 10m
           github-token: ${{ secrets.github_token }}
-          skip-cache: true
         # Check only if there are differences in the source code
         if: "env.GIT_DIFF"
   markdown-lint:
