@@ -232,6 +232,11 @@ func (tx AccessListTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
 }
 
+// EffectiveGasPrice is the same as GasPrice for AccessListTx
+func (tx AccessListTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	return tx.GetGasPrice()
+}
+
 // EffectiveFee is the same as Fee for AccessListTx
 func (tx AccessListTx) EffectiveFee(baseFee *big.Int) *big.Int {
 	return tx.Fee()

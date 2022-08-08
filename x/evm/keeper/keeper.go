@@ -283,8 +283,13 @@ func (k *Keeper) GetNonce(ctx sdk.Context, addr common.Address) uint64 {
 // GetBalance load account's balance of gas token
 func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
-	params := k.GetParams(ctx)
-	coin := k.bankKeeper.GetBalance(ctx, cosmosAddr, params.EvmDenom)
+	evmDenom := ""
+	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEVMDenom, &evmDenom)
+	// if node is pruned, params is empty. Return invalid value
+	if evmDenom == "" {
+		return big.NewInt(-1)
+	}
+	coin := k.bankKeeper.GetBalance(ctx, cosmosAddr, evmDenom)
 	return coin.Amount.BigInt()
 }
 
@@ -293,7 +298,11 @@ func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 // - `0`: london hardfork enabled but feemarket is not enabled.
 // - `n`: both london hardfork and feemarket are enabled.
 func (k Keeper) GetBaseFee(ctx sdk.Context, ethCfg *params.ChainConfig) *big.Int {
-	if !types.IsLondon(ethCfg, ctx.BlockHeight()) {
+	return k.getBaseFee(ctx, types.IsLondon(ethCfg, ctx.BlockHeight()))
+}
+
+func (k Keeper) getBaseFee(ctx sdk.Context, london bool) *big.Int {
+	if !london {
 		return nil
 	}
 	baseFee := k.feeMarketKeeper.GetBaseFee(ctx)

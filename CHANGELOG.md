@@ -47,9 +47,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
   recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade cosmos-sdk to v0.46.
 
+### API Breaking
+
+* (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to evm transactions.
+
 ### Improvements
 
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
+* (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
 
 ### Bug Fixes
 

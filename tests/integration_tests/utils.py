@@ -23,10 +23,11 @@ TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
 }
 
+
 def contract_path(name, filename):
     return (
         Path(__file__).parent
-        / "contracts/artifacts/contracts"
+        / "contracts/artifacts/contracts/"
         / filename
         / (name + ".json")
     )
@@ -37,6 +38,18 @@ CONTRACTS = {
         name: contract_path(name, filename) for name, filename in TEST_CONTRACTS.items()
     },
 }
+
+Account.enable_unaudited_hdwallet_features()
+
+ACCOUNTS = {
+    "validator": Account.from_mnemonic(os.getenv("VALIDATOR1_MNEMONIC")),
+    "community": Account.from_mnemonic(os.getenv("COMMUNITY_MNEMONIC")),
+    "signer1": Account.from_mnemonic(os.getenv("SIGNER1_MNEMONIC")),
+    "signer2": Account.from_mnemonic(os.getenv("SIGNER2_MNEMONIC")),
+}
+KEYS = {name: account.key for name, account in ACCOUNTS.items()}
+ADDRS = {name: account.address for name, account in ACCOUNTS.items()}
+
 
 def wait_for_port(port, host="127.0.0.1", timeout=40.0):
     start_time = time.perf_counter()
@@ -52,6 +65,7 @@ def wait_for_port(port, host="127.0.0.1", timeout=40.0):
                     "connections.".format(port, host)
                 ) from ex
 
+
 def w3_wait_for_new_blocks(w3, n):
     begin_height = w3.eth.block_number
     while True:
@@ -59,6 +73,7 @@ def w3_wait_for_new_blocks(w3, n):
         cur_height = w3.eth.block_number
         if cur_height - begin_height >= n:
             break
+
 
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     """
@@ -72,6 +87,10 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     assert txreceipt.status == 1
     address = txreceipt.contractAddress
     return w3.eth.contract(address=address, abi=info["abi"])
+
+
+def fill_defaults(w3, tx):
+    return fill_nonce(w3, fill_transaction_defaults(w3, tx))
 
 
 def sign_transaction(w3, tx, key=KEYS["validator"]):

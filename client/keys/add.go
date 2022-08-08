@@ -38,14 +38,16 @@ const (
 	mnemonicEntropySize = 256
 )
 
-/* RunAddCmd
+/*
+RunAddCmd
 input
-	- bip39 mnemonic
-	- bip39 passphrase
-	- bip44 path
-	- local encryption password
+  - bip39 mnemonic
+  - bip39 passphrase
+  - bip44 path
+  - local encryption password
+
 output
-	- armor encrypted private key (saved to file)
+  - armor encrypted private key (saved to file)
 */
 func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *bufio.Reader) error {
 	var err error

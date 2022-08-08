@@ -380,7 +380,6 @@ var _ = Describe("Feemarket", func() {
 			Context("during DeliverTx", func() {
 				DescribeTable("should reject transactions with gasPrice < MinGasPrices",
 					func(malleate getprices) {
-
 						p := malleate()
 						to := tests.GenerateAddress()
 						msgEthereumTx := buildEthTx(privKey, &to, p.gasPrice, p.gasFeeCap, p.gasTipCap, p.accesses)

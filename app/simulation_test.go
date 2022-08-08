@@ -154,7 +154,7 @@ func TestAppImportExport(t *testing.T) {
 
 	fmt.Printf("importing genesis...\n")
 
-	// nolint: dogsled
+	//nolint: dogsled
 	_, newDB, newDir, _, _, err := simapp.SetupSimulation("leveldb-app-sim-2", "Simulation-2")
 	require.NoError(t, err, "simulation setup failed")
 

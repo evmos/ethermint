@@ -128,7 +128,7 @@ func (e *PublicAPI) ProtocolVersion() hexutil.Uint {
 }
 
 // ChainId is the EIP-155 replay-protection chain id for the current ethereum chain config.
-func (e *PublicAPI) ChainId() (*hexutil.Big, error) { // nolint
+func (e *PublicAPI) ChainId() (*hexutil.Big, error) { //nolint
 	e.logger.Debug("eth_chainId")
 	// if current block is at or past the EIP-155 replay-protection fork block, return chainID from config
 	bn, err := e.backend.BlockNumber()
@@ -297,6 +297,11 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.Bl
 	val, ok := sdkmath.NewIntFromString(res.Balance)
 	if !ok {
 		return nil, errors.New("invalid balance")
+	}
+
+	// balance can only be negative in case of pruned node
+	if val.IsNegative() {
+		return nil, errors.New("couldn't fetch balance. Node state is pruned")
 	}
 
 	return (*hexutil.Big)(val.BigInt()), nil
@@ -978,7 +983,7 @@ func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interfac
 			// tolerate the error for pruned node.
 			e.logger.Error("fetch basefee failed, node is pruned?", "height", res.Height, "error", err)
 		} else {
-			receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
+			receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.EffectiveGasPrice(baseFee))
 		}
 	}
 
