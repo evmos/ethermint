@@ -286,7 +286,7 @@ func (e *PublicAPI) GetBalance(address common.Address, blockNrOrHash rpctypes.Bl
 
 	_, err = e.backend.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
-		return nil, errors.New("header not found")
+		return nil, err
 	}
 
 	res, err := e.queryClient.Balance(rpctypes.ContextWithHeight(blockNum.Int64()), req)
@@ -1047,6 +1047,12 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	}
 
 	height := blockNum.Int64()
+	_, err = e.backend.GetTendermintBlockByNumber(blockNum)
+	if err != nil {
+		// Get 'latest' proof if query is in the future
+		// this imitates geth behaviour
+		height = 0
+	}
 	ctx := rpctypes.ContextWithHeight(height)
 
 	// if the height is equal to zero, meaning the query condition of the block is either "pending" or "latest"
