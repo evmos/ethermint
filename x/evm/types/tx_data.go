@@ -71,8 +71,9 @@ func NewTxDataFromTx(tx *ethtypes.Transaction) (TxData, error) {
 //
 // CONTRACT: v value is either:
 //
-//  - {0,1} + CHAIN_ID * 2 + 35, if EIP155 is used
-//  - {0,1} + 27, otherwise
+//   - {0,1} + CHAIN_ID * 2 + 35, if EIP155 is used
+//   - {0,1} + 27, otherwise
+//
 // Ref: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
 func DeriveChainID(v *big.Int) *big.Int {
 	if v == nil || v.Sign() < 1 {
