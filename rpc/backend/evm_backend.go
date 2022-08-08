@@ -1377,8 +1377,8 @@ func (b *Backend) SignTypedData(address common.Address, typedData apitypes.Typed
 	return signature, nil
 }
 
-// ChainId is the EIP-155 replay-protection chain id for the current ethereum chain config.
-func (b *Backend) ChainId() (*hexutil.Big, error) {
+// ChainID is the EIP-155 replay-protection chain id for the current ethereum chain config.
+func (b *Backend) ChainID() (*hexutil.Big, error) {
 	eip155ChainID, err := ethermint.ParseChainID(b.clientCtx.ChainID)
 	if err != nil {
 		panic(err)
