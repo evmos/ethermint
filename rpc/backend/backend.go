@@ -45,24 +45,23 @@ type CosmosBackend interface { // TODO: define
 // as defined by EIP-1474: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1474.md
 // Implemented by Backend.
 type EVMBackend interface {
-	// General Ethereum API
-	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
-	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
-	RPCTxFeeCap() float64         // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for send-transaction variants. The unit is ether.
-	RPCMinGasPrice() int64
-	SuggestGasTipCap(baseFee *big.Int) (*big.Int, error)
-
 	// Node specific queries
 	Accounts() ([]common.Address, error)
 	Syncing() (interface{}, error)
-	Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
-	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
-	SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error)
 	SetEtherbase(etherbase common.Address) bool
 	ImportRawKey(privkey, password string) (common.Address, error)
 	ListAccounts() ([]common.Address, error)
 	NewMnemonic(uid string, language keyring.Language, hdPath, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, error)
 	UnprotectedAllowed() bool
+	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
+	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
+	RPCTxFeeCap() float64         // RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for send-transaction variants. The unit is ether.
+	RPCMinGasPrice() int64
+
+	// Sign Tx
+	Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error)
+	SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error)
+	SignTypedData(address common.Address, typedData apitypes.TypedData) (hexutil.Bytes, error)
 
 	// Blocks Info
 	BlockNumber() (hexutil.Uint64, error)
@@ -78,45 +77,50 @@ type EVMBackend interface {
 	GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
 	BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.Bloom, error)
+	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
+	HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error)
+	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
+	EthBlockFromTendermint(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults, fullTx bool) (map[string]interface{}, error)
+	EthBlockFromTm(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) (*ethtypes.Block, error)
+
+	// Account Info
+	GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
+	GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error)
+	GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
+	GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error)
+	GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error)
 
 	// Chain Info
 	ChainID() (*hexutil.Big, error)
+	ChainConfig() *params.ChainConfig
+	GlobalMinGasPrice() (sdk.Dec, error)
+	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)
 	CurrentHeader() *ethtypes.Header
-	HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error)
-	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
-	GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error)
 	GetCoinbase() (sdk.AccAddress, error)
+	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error)
+	SuggestGasTipCap(baseFee *big.Int) (*big.Int, error)
+
+	// Tx Info
 	GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	GetTxByTxIndex(height int64, txIndex uint) (*tmrpctypes.ResultTx, error)
-	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
-	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)
-	GlobalMinGasPrice() (sdk.Dec, error)
 	GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
-	DoCall(args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
 	GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error)
 	GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
-	GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error)
-	GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
-	GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
-	GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error)
-	ChainConfig() *params.ChainConfig
-	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
 
 	// Send Transaction
 	Resend(args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error)
 	SendRawTransaction(data hexutil.Bytes) (common.Hash, error)
-
-	// Fee API
-	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error)
+	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
+	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
+	DoCall(args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
 
 	// Filter API
-	BloomStatus() (uint64, uint64)
 	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)
 	GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error)
-	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
+	BloomStatus() (uint64, uint64)
 
 	// Tracing
 	TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (interface{}, error)
@@ -124,6 +128,8 @@ type EVMBackend interface {
 }
 
 var _ BackendI = (*Backend)(nil)
+
+var bAttributeKeyEthereumBloom = []byte(evmtypes.AttributeKeyEthereumBloom)
 
 // Backend implements the BackendI interface
 type Backend struct {

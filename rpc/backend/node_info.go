@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"math/big"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -13,15 +14,13 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
+	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	"github.com/pkg/errors"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -70,109 +69,6 @@ func (b *Backend) Syncing() (interface{}, error) {
 		// "pulledStates":  nil, // NA
 		// "knownStates":   nil, // NA
 	}, nil
-}
-
-// Sign signs the provided data using the private key of address via Geth's signature standard.
-func (b *Backend) Sign(address common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-	from := sdk.AccAddress(address.Bytes())
-
-	_, err := b.clientCtx.Keyring.KeyByAddress(from)
-	if err != nil {
-		b.logger.Error("failed to find key in keyring", "address", address.String())
-		return nil, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
-	}
-
-	// Sign the requested hash with the wallet
-	signature, _, err := b.clientCtx.Keyring.SignByAddress(from, data)
-	if err != nil {
-		b.logger.Error("keyring.SignByAddress failed", "address", address.Hex())
-		return nil, err
-	}
-
-	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
-	return signature, nil
-}
-
-// SendTransaction sends transaction based on received args using Node's key to sign it
-func (b *Backend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, error) {
-	// Look up the wallet containing the requested signer
-	_, err := b.clientCtx.Keyring.KeyByAddress(sdk.AccAddress(args.From.Bytes()))
-	if err != nil {
-		b.logger.Error("failed to find key in keyring", "address", args.From, "error", err.Error())
-		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
-	}
-
-	args, err = b.SetTxDefaults(args)
-	if err != nil {
-		return common.Hash{}, err
-	}
-
-	msg := args.ToTransaction()
-	if err := msg.ValidateBasic(); err != nil {
-		b.logger.Debug("tx failed basic validation", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	bn, err := b.BlockNumber()
-	if err != nil {
-		b.logger.Debug("failed to fetch latest block number", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	signer := ethtypes.MakeSigner(b.ChainConfig(), new(big.Int).SetUint64(uint64(bn)))
-
-	// Sign transaction
-	if err := msg.Sign(signer, b.clientCtx.Keyring); err != nil {
-		b.logger.Debug("failed to sign tx", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	// Query params to use the EVM denomination
-	res, err := b.queryClient.QueryClient.Params(b.ctx, &evmtypes.QueryParamsRequest{})
-	if err != nil {
-		b.logger.Error("failed to query evm params", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	// Assemble transaction from fields
-	tx, err := msg.BuildTx(b.clientCtx.TxConfig.NewTxBuilder(), res.Params.EvmDenom)
-	if err != nil {
-		b.logger.Error("build cosmos tx failed", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	// Encode transaction by default Tx encoder
-	txEncoder := b.clientCtx.TxConfig.TxEncoder()
-	txBytes, err := txEncoder(tx)
-	if err != nil {
-		b.logger.Error("failed to encode eth tx using default encoder", "error", err.Error())
-		return common.Hash{}, err
-	}
-
-	ethTx := msg.AsTransaction()
-
-	// check the local node config in case unprotected txs are disabled
-	if !b.UnprotectedAllowed() && !ethTx.Protected() {
-		// Ensure only eip155 signed transactions are submitted if EIP155Required is set.
-		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
-	}
-
-	txHash := ethTx.Hash()
-
-	// Broadcast transaction in sync mode (default)
-	// NOTE: If error is encountered on the node, the broadcast will not return an error
-	syncCtx := b.clientCtx.WithBroadcastMode(flags.BroadcastSync)
-	rsp, err := syncCtx.BroadcastTx(txBytes)
-	if rsp != nil && rsp.Code != 0 {
-		err = sdkerrors.ABCIError(rsp.Codespace, rsp.Code, rsp.RawLog)
-	}
-	if err != nil {
-		b.logger.Error("failed to broadcast tx", "error", err.Error())
-		return txHash, err
-	}
-
-	// Return transaction hash
-	return txHash, nil
 }
 
 // SetEtherbase sets the etherbase of the miner
@@ -347,4 +243,57 @@ func (b *Backend) NewMnemonic(uid string, language keyring.Language, hdPath, bip
 // unprotected transactions (i.e not replay-protected)
 func (b Backend) UnprotectedAllowed() bool {
 	return b.allowUnprotectedTxs
+}
+
+// RPCGasCap is the global gas cap for eth-call variants.
+func (b *Backend) RPCGasCap() uint64 {
+	return b.cfg.JSONRPC.GasCap
+}
+
+// RPCEVMTimeout is the global evm timeout for eth-call variants.
+func (b *Backend) RPCEVMTimeout() time.Duration {
+	return b.cfg.JSONRPC.EVMTimeout
+}
+
+// RPCGasCap is the global gas cap for eth-call variants.
+func (b *Backend) RPCTxFeeCap() float64 {
+	return b.cfg.JSONRPC.TxFeeCap
+}
+
+// RPCFilterCap is the limit for total number of filters that can be created
+func (b *Backend) RPCFilterCap() int32 {
+	return b.cfg.JSONRPC.FilterCap
+}
+
+// RPCFeeHistoryCap is the limit for total number of blocks that can be fetched
+func (b *Backend) RPCFeeHistoryCap() int32 {
+	return b.cfg.JSONRPC.FeeHistoryCap
+}
+
+// RPCLogsCap defines the max number of results can be returned from single `eth_getLogs` query.
+func (b *Backend) RPCLogsCap() int32 {
+	return b.cfg.JSONRPC.LogsCap
+}
+
+// RPCBlockRangeCap defines the max block range allowed for `eth_getLogs` query.
+func (b *Backend) RPCBlockRangeCap() int32 {
+	return b.cfg.JSONRPC.BlockRangeCap
+}
+
+// RPCMinGasPrice returns the minimum gas price for a transaction obtained from
+// the node config. If set value is 0, it will default to 20.
+
+func (b *Backend) RPCMinGasPrice() int64 {
+	evmParams, err := b.queryClient.Params(b.ctx, &evmtypes.QueryParamsRequest{})
+	if err != nil {
+		return ethermint.DefaultGasPrice
+	}
+
+	minGasPrice := b.cfg.GetMinGasPrices()
+	amt := minGasPrice.AmountOf(evmParams.Params.EvmDenom).TruncateInt64()
+	if amt == 0 {
+		return ethermint.DefaultGasPrice
+	}
+
+	return amt
 }

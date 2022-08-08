@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strconv"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -278,4 +279,234 @@ func (b *Backend) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber
 	ethMsgs := b.GetEthereumMsgsFromTendermintBlock(block, blockRes)
 	n := hexutil.Uint(len(ethMsgs))
 	return &n
+}
+
+// GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a
+// Tendermint block. It also ensures consistency over the correct txs indexes
+// across RPC endpoints
+func (b *Backend) GetEthereumMsgsFromTendermintBlock(
+	resBlock *tmrpctypes.ResultBlock,
+	blockRes *tmrpctypes.ResultBlockResults,
+) []*evmtypes.MsgEthereumTx {
+	var result []*evmtypes.MsgEthereumTx
+	block := resBlock.Block
+
+	txResults := blockRes.TxsResults
+
+	for i, tx := range block.Txs {
+		// Check if tx exists on EVM by cross checking with blockResults:
+		//  - Include unsuccessful tx that exceeds block gas limit
+		//  - Exclude unsuccessful tx with any other error but ExceedBlockGasLimit
+		if !TxSuccessOrExceedsBlockGasLimit(txResults[i]) {
+			b.logger.Debug("invalid tx result code", "cosmos-hash", hexutil.Encode(tx.Hash()))
+			continue
+		}
+
+		tx, err := b.clientCtx.TxConfig.TxDecoder()(tx)
+		if err != nil {
+			b.logger.Debug("failed to decode transaction in block", "height", block.Height, "error", err.Error())
+			continue
+		}
+
+		for _, msg := range tx.GetMsgs() {
+			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			if !ok {
+				continue
+			}
+
+			ethMsg.Hash = ethMsg.AsTransaction().Hash().Hex()
+			result = append(result, ethMsg)
+		}
+	}
+
+	return result
+}
+
+// HeaderByNumber returns the block header identified by height.
+func (b *Backend) HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error) {
+	resBlock, err := b.GetTendermintBlockByNumber(blockNum)
+	if err != nil {
+		return nil, err
+	}
+
+	if resBlock == nil {
+		return nil, errors.Errorf("block not found for height %d", blockNum)
+	}
+
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	if err != nil {
+		return nil, fmt.Errorf("block result not found for height %d", resBlock.Block.Height)
+	}
+
+	bloom, err := b.BlockBloom(blockRes)
+	if err != nil {
+		b.logger.Debug("HeaderByNumber BlockBloom failed", "height", resBlock.Block.Height)
+	}
+
+	baseFee, err := b.BaseFee(blockRes)
+	if err != nil {
+		// handle the error for pruned node.
+		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", resBlock.Block.Height, "error", err)
+	}
+
+	ethHeader := rpctypes.EthHeaderFromTendermint(resBlock.Block.Header, bloom, baseFee)
+	return ethHeader, nil
+}
+
+// HeaderByHash returns the block header identified by hash.
+func (b *Backend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error) {
+	resBlock, err := b.GetTendermintBlockByHash(blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if resBlock == nil {
+		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
+	}
+
+	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	if err != nil {
+		return nil, errors.Errorf("block result not found for height %d", resBlock.Block.Height)
+	}
+
+	bloom, err := b.BlockBloom(blockRes)
+	if err != nil {
+		b.logger.Debug("HeaderByHash BlockBloom failed", "height", resBlock.Block.Height)
+	}
+
+	baseFee, err := b.BaseFee(blockRes)
+	if err != nil {
+		// handle the error for pruned node.
+		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", resBlock.Block.Height, "error", err)
+	}
+
+	ethHeader := rpctypes.EthHeaderFromTendermint(resBlock.Block.Header, bloom, baseFee)
+	return ethHeader, nil
+}
+
+// EthBlockFromTendermint returns a JSON-RPC compatible Ethereum block from a
+// given Tendermint block and its block result.
+func (b *Backend) EthBlockFromTendermint(
+	resBlock *tmrpctypes.ResultBlock,
+	blockRes *tmrpctypes.ResultBlockResults,
+	fullTx bool,
+) (map[string]interface{}, error) {
+	ethRPCTxs := []interface{}{}
+	block := resBlock.Block
+
+	baseFee, err := b.BaseFee(blockRes)
+	if err != nil {
+		// handle the error for pruned node.
+		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", block.Height, "error", err)
+	}
+
+	msgs := b.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
+	for txIndex, ethMsg := range msgs {
+		if !fullTx {
+			hash := common.HexToHash(ethMsg.Hash)
+			ethRPCTxs = append(ethRPCTxs, hash)
+			continue
+		}
+
+		tx := ethMsg.AsTransaction()
+		rpcTx, err := rpctypes.NewRPCTransaction(
+			tx,
+			common.BytesToHash(block.Hash()),
+			uint64(block.Height),
+			uint64(txIndex),
+			baseFee,
+		)
+		if err != nil {
+			b.logger.Debug("NewTransactionFromData for receipt failed", "hash", tx.Hash().Hex(), "error", err.Error())
+			continue
+		}
+		ethRPCTxs = append(ethRPCTxs, rpcTx)
+	}
+
+	bloom, err := b.BlockBloom(blockRes)
+	if err != nil {
+		b.logger.Debug("failed to query BlockBloom", "height", block.Height, "error", err.Error())
+	}
+
+	req := &evmtypes.QueryValidatorAccountRequest{
+		ConsAddress: sdk.ConsAddress(block.Header.ProposerAddress).String(),
+	}
+
+	var validatorAccAddr sdk.AccAddress
+
+	ctx := rpctypes.ContextWithHeight(block.Height)
+	res, err := b.queryClient.ValidatorAccount(ctx, req)
+	if err != nil {
+		b.logger.Debug(
+			"failed to query validator operator address",
+			"height", block.Height,
+			"cons-address", req.ConsAddress,
+			"error", err.Error(),
+		)
+		// use zero address as the validator operator address
+		validatorAccAddr = sdk.AccAddress(common.Address{}.Bytes())
+	} else {
+		validatorAccAddr, err = sdk.AccAddressFromBech32(res.AccountAddress)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	validatorAddr := common.BytesToAddress(validatorAccAddr)
+
+	gasLimit, err := rpctypes.BlockMaxGasFromConsensusParams(ctx, b.clientCtx, block.Height)
+	if err != nil {
+		b.logger.Error("failed to query consensus params", "error", err.Error())
+	}
+
+	gasUsed := uint64(0)
+
+	for _, txsResult := range blockRes.TxsResults {
+		// workaround for cosmos-sdk bug. https://github.com/cosmos/cosmos-sdk/issues/10832
+		if ShouldIgnoreGasUsed(txsResult) {
+			// block gas limit has exceeded, other txs must have failed with same reason.
+			break
+		}
+		gasUsed += uint64(txsResult.GetGasUsed())
+	}
+
+	formattedBlock := rpctypes.FormatBlock(
+		block.Header, block.Size(),
+		gasLimit, new(big.Int).SetUint64(gasUsed),
+		ethRPCTxs, bloom, validatorAddr, baseFee,
+	)
+	return formattedBlock, nil
+}
+
+// Returns and Ethereum Block type from Tendermint block
+func (b *Backend) EthBlockFromTm(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) (*ethtypes.Block, error) {
+	block := resBlock.Block
+	height := block.Height
+	bloom, err := b.BlockBloom(blockRes)
+	if err != nil {
+		b.logger.Debug("HeaderByNumber BlockBloom failed", "height", height)
+	}
+
+	baseFee, err := b.BaseFee(blockRes)
+	if err != nil {
+		// handle error for pruned node and log
+		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", height, "error", err)
+	}
+
+	ethHeader := rpctypes.EthHeaderFromTendermint(block.Header, bloom, baseFee)
+
+	resBlockResult, err := b.GetTendermintBlockResultByNumber(&block.Height)
+	if err != nil {
+		return nil, err
+	}
+
+	msgs := b.GetEthereumMsgsFromTendermintBlock(resBlock, resBlockResult)
+
+	txs := make([]*ethtypes.Transaction, len(msgs))
+	for i, ethMsg := range msgs {
+		txs[i] = ethMsg.AsTransaction()
+	}
+
+	// TODO: add tx receipts
+	ethBlock := ethtypes.NewBlock(ethHeader, txs, nil, nil, nil)
+	return ethBlock, nil
 }

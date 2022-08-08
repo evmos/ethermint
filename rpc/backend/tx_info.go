@@ -3,7 +3,6 @@ package backend
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -11,6 +10,7 @@ import (
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
+	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
@@ -116,29 +116,6 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransac
 		uint64(parsedTx.EthTxIndex),
 		baseFee,
 	)
-}
-
-// GetTransactionCount returns the number of transactions at the given address up to the given block number.
-func (b *Backend) GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error) {
-	// Get nonce (sequence) from account
-	from := sdk.AccAddress(address.Bytes())
-	accRet := b.clientCtx.AccountRetriever
-
-	err := accRet.EnsureExists(b.clientCtx, from)
-	if err != nil {
-		// account doesn't exist yet, return 0
-		n := hexutil.Uint64(0)
-		return &n, nil
-	}
-
-	includePending := blockNum == rpctypes.EthPendingBlockNumber
-	nonce, err := b.getAccountNonce(address, includePending, blockNum.Int64(), b.logger)
-	if err != nil {
-		return nil, err
-	}
-
-	n := hexutil.Uint64(nonce)
-	return &n, nil
 }
 
 // GetTransactionReceipt returns the transaction receipt identified by hash.
@@ -322,4 +299,95 @@ func (b *Backend) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNum
 	}
 
 	return b.GetTransactionByBlockAndIndex(block, idx)
+}
+
+// GetTxByEthHash uses `/tx_query` to find transaction by ethereum tx hash
+// TODO: Don't need to convert once hashing is fixed on Tendermint
+// https://github.com/tendermint/tendermint/issues/6539
+func (b *Backend) GetTxByEthHash(hash common.Hash) (*tmrpctypes.ResultTx, error) {
+	query := fmt.Sprintf("%s.%s='%s'", evmtypes.TypeMsgEthereumTx, evmtypes.AttributeKeyEthereumTxHash, hash.Hex())
+	resTxs, err := b.clientCtx.Client.TxSearch(b.ctx, query, false, nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resTxs.Txs) == 0 {
+		return nil, errors.Errorf("ethereum tx not found for hash %s", hash.Hex())
+	}
+	return resTxs.Txs[0], nil
+}
+
+// GetTxByTxIndex uses `/tx_query` to find transaction by tx index of valid ethereum txs
+func (b *Backend) GetTxByTxIndex(height int64, index uint) (*tmrpctypes.ResultTx, error) {
+	query := fmt.Sprintf("tx.height=%d AND %s.%s=%d",
+		height, evmtypes.TypeMsgEthereumTx,
+		evmtypes.AttributeKeyTxIndex, index,
+	)
+	resTxs, err := b.clientCtx.Client.TxSearch(b.ctx, query, false, nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resTxs.Txs) == 0 {
+		return nil, errors.Errorf("ethereum tx not found for block %d index %d", height, index)
+	}
+	return resTxs.Txs[0], nil
+}
+
+// getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
+func (b *Backend) GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
+	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
+	if err != nil {
+		return nil, nil
+	}
+
+	var msg *evmtypes.MsgEthereumTx
+	// try /tx_search first
+	res, err := b.GetTxByTxIndex(block.Block.Height, uint(idx))
+	if err == nil {
+		tx, err := b.clientCtx.TxConfig.TxDecoder()(res.Tx)
+		if err != nil {
+			b.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
+			return nil, nil
+		}
+
+		parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse tx events: %d, %v", idx, err)
+		}
+
+		parsedTx := parsedTxs.GetTxByTxIndex(int(idx))
+		if parsedTx == nil {
+			return nil, fmt.Errorf("ethereum tx not found in msgs: %d", idx)
+		}
+
+		var ok bool
+		// msgIndex is inferred from tx events, should be within bound.
+		msg, ok = tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
+		if !ok {
+			b.logger.Debug("invalid ethereum tx", "height", block.Block.Header, "index", idx)
+			return nil, nil
+		}
+	} else {
+		i := int(idx)
+		ethMsgs := b.GetEthereumMsgsFromTendermintBlock(block, blockRes)
+		if i >= len(ethMsgs) {
+			b.logger.Debug("block txs index out of bound", "index", i)
+			return nil, nil
+		}
+
+		msg = ethMsgs[i]
+	}
+
+	baseFee, err := b.BaseFee(blockRes)
+	if err != nil {
+		// handle the error for pruned node.
+		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", block.Block.Height, "error", err)
+	}
+
+	return rpctypes.NewTransactionFromMsg(
+		msg,
+		common.BytesToHash(block.Block.Hash()),
+		uint64(block.Block.Height),
+		uint64(idx),
+		baseFee,
+	)
 }
