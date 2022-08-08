@@ -62,7 +62,7 @@ func (b *Backend) BlockNumber() (hexutil.Uint64, error) {
 func (b *Backend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error) {
 	resBlock, err := b.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
 
 	// return if requested block height is greater than the current one
@@ -939,15 +939,15 @@ func (b *Backend) FeeHistory(
 	// fetch block
 	for blockID := blockStart; blockID < blockEnd; blockID++ {
 		index := int32(blockID - blockStart)
-		// eth block
-		ethBlock, err := b.GetBlockByNumber(types.BlockNumber(blockID), true)
-		if ethBlock == nil {
-			return nil, err
-		}
-
 		// tendermint block
 		tendermintblock, err := b.GetTendermintBlockByNumber(types.BlockNumber(blockID))
 		if tendermintblock == nil {
+			return nil, err
+		}
+
+		// eth block
+		ethBlock, err := b.GetBlockByNumber(types.BlockNumber(blockID), true)
+		if ethBlock == nil {
 			return nil, err
 		}
 
