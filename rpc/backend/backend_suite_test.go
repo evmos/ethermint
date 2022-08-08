@@ -21,8 +21,7 @@ import (
 	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
-	ethrpc "github.com/evmos/ethermint/rpc/types"
-	rpc "github.com/evmos/ethermint/rpc/types"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -60,7 +59,7 @@ func (suite *BackendTestSuite) SetupTest() {
 	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
 	suite.backend.queryClient.QueryClient = mocks.NewQueryClient(suite.T())
 	suite.backend.clientCtx.Client = mocks.NewClient(suite.T())
-	suite.backend.ctx = rpc.ContextWithHeight(1)
+	suite.backend.ctx = rpctypes.ContextWithHeight(1)
 }
 
 // buildEthereumTx returns an example legacy Ethereum transaction
@@ -110,7 +109,7 @@ func (suite *BackendTestSuite) buildFormattedBlock(
 	ethRPCTxs := []interface{}{}
 	if tx != nil {
 		if fullTx {
-			rpcTx, err := ethrpc.NewRPCTransaction(
+			rpcTx, err := rpctypes.NewRPCTransaction(
 				tx.AsTransaction(),
 				common.BytesToHash(header.Hash()),
 				uint64(header.Height),
@@ -124,7 +123,7 @@ func (suite *BackendTestSuite) buildFormattedBlock(
 		}
 	}
 
-	return ethrpc.FormatBlock(
+	return rpctypes.FormatBlock(
 		header,
 		resBlock.Block.Size(),
 		gasLimit,
