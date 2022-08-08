@@ -1153,7 +1153,7 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash types.BlockNu
 		return nil, err
 	}
 
-	res, err := b.queryClient.Balance(types.ContextWithHeight(blockNum.Int64()), req)
+	res, err := b.queryClient.Balance(rpctypes.ContextWithHeight(blockNum.Int64()), req)
 	if err != nil {
 		return nil, err
 	}
@@ -1161,6 +1161,11 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash types.BlockNu
 	val, ok := sdkmath.NewIntFromString(res.Balance)
 	if !ok {
 		return nil, errors.New("invalid balance")
+	}
+
+	// balance can only be negative in case of pruned node
+	if val.IsNegative() {
+		return nil, errors.New("couldn't fetch balance. Node state is pruned")
 	}
 
 	return (*hexutil.Big)(val.BigInt()), nil
