@@ -25,7 +25,7 @@ jobs:
             go.sum
       - uses: golangci/golangci-lint-action@v3
         with:
-          version: latest
+          version: v1.48.0
           args: --timeout 10m
           github-token: ${{ secrets.github_token }}
         # Check only if there are differences in the source code
@@ -59,7 +59,7 @@ jobs:
           PATTERNS: |
             **/**.py
       - run: |
-        nix-shell -I nixpkgs=./nix -p test-env --run "make lint-py"
+          nix-shell -I nixpkgs=./nix -p test-env --run "make lint-py"
         if: env.GIT_DIFF
   gomod2nix:
     name: Check gomod2nix.toml file is up to date
