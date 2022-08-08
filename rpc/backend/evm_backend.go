@@ -1208,14 +1208,19 @@ func (b *Backend) GetCode(address common.Address, blockNrOrHash types.BlockNumbe
 
 // GetProof returns an account object with proof and any storage proofs
 func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNrOrHash types.BlockNumberOrHash) (*types.AccountResult, error) {
-	// TODO refractor this function into smaller blocks
 	blockNum, err := b.GetBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
 
 	height := blockNum.Int64()
-	ctx := types.ContextWithHeight(height)
+	_, err = b.GetTendermintBlockByNumber(blockNum)
+	if err != nil {
+		// Get 'latest' proof if query is in the future
+		// this imitates geth behavior
+		height = 0
+	}
+	ctx := rpctypes.ContextWithHeight(height)
 
 	// if the height is equal to zero, meaning the query condition of the block is either "pending" or "latest"
 	if height == 0 {
@@ -1234,7 +1239,7 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 	clientCtx := b.clientCtx.WithHeight(height)
 
 	// query storage proofs
-	storageProofs := make([]types.StorageResult, len(storageKeys))
+	storageProofs := make([]rpctypes.StorageResult, len(storageKeys))
 
 	for i, key := range storageKeys {
 		hexKey := common.HexToHash(key)
@@ -1249,7 +1254,7 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 			proofStr = proof.String()
 		}
 
-		storageProofs[i] = types.StorageResult{
+		storageProofs[i] = rpctypes.StorageResult{
 			Key:   key,
 			Value: (*hexutil.Big)(new(big.Int).SetBytes(valueBz)),
 			Proof: []string{proofStr},
@@ -1284,7 +1289,7 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 		return nil, errors.New("invalid balance")
 	}
 
-	return &types.AccountResult{
+	return &rpctypes.AccountResult{
 		Address:      address,
 		AccountProof: []string{accProofStr},
 		Balance:      (*hexutil.Big)(balance.BigInt()),
