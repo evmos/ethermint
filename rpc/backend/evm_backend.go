@@ -755,15 +755,15 @@ func (b *Backend) FeeHistory(
 	// fetch block
 	for blockID := blockStart; blockID < blockEnd; blockID++ {
 		index := int32(blockID - blockStart)
-		// eth block
-		ethBlock, err := b.GetBlockByNumber(types.BlockNumber(blockID), true)
-		if ethBlock == nil {
-			return nil, err
-		}
-
 		// tendermint block
 		tendermintblock, err := b.GetTendermintBlockByNumber(types.BlockNumber(blockID))
 		if tendermintblock == nil {
+			return nil, err
+		}
+
+		// eth block
+		ethBlock, err := b.GetBlockByNumber(types.BlockNumber(blockID), true)
+		if ethBlock == nil {
 			return nil, err
 		}
 
@@ -1146,6 +1146,11 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash types.BlockNu
 
 	req := &evmtypes.QueryBalanceRequest{
 		Address: address.String(),
+	}
+
+	_, err = b.GetTendermintBlockByNumber(blockNum)
+	if err != nil {
+		return nil, err
 	}
 
 	res, err := b.queryClient.Balance(types.ContextWithHeight(blockNum.Int64()), req)
