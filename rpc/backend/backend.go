@@ -28,7 +28,7 @@ import (
 )
 
 // BackendI implements the Cosmos and EVM backend.
-type BackendI interface { // nolint: revive
+type BackendI interface { //nolint: revive
 	CosmosBackend
 	EVMBackend
 }
