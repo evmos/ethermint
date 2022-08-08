@@ -48,7 +48,7 @@ func (b *Backend) BlockNumber() (hexutil.Uint64, error) {
 func (b *Backend) GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error) {
 	resBlock, err := b.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
 
 	// return if requested block height is greater than the current one
