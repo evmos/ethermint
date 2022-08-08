@@ -255,7 +255,6 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		"transactionHash": hash,
 		"contractAddress": nil,
 		"gasUsed":         hexutil.Uint64(parsedTx.GasUsed),
-		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
@@ -283,7 +282,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 			// tolerate the error for pruned node.
 			b.logger.Error("fetch basefee failed, node is pruned?", "height", res.Height, "error", err)
 		} else {
-			receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.GetEffectiveGasPrice(baseFee))
+			receipt["effectiveGasPrice"] = hexutil.Big(*dynamicTx.EffectiveGasPrice(baseFee))
 		}
 	}
 
