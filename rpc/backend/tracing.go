@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
-	"github.com/evmos/ethermint/x/evm/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -86,7 +85,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		return nil, fmt.Errorf("invalid transaction type %T", tx)
 	}
 
-	traceTxRequest := types.QueryTraceTxRequest{
+	traceTxRequest := evmtypes.QueryTraceTxRequest{
 		Msg:          ethMessage,
 		Predecessors: predecessors,
 		BlockNumber:  blk.Block.Height,
