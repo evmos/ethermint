@@ -73,14 +73,14 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 
 	// add predecessor messages in current cosmos tx
 	for i := 0; i < parsedTx.MsgIndex; i++ {
-		ethMsg, ok := tx.GetMsgs()[i].(*types.MsgEthereumTx)
+		ethMsg, ok := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx)
 		if !ok {
 			continue
 		}
 		predecessors = append(predecessors, ethMsg)
 	}
 
-	ethMessage, ok := tx.GetMsgs()[parsedTx.MsgIndex].(*types.MsgEthereumTx)
+	ethMessage, ok := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		b.logger.Debug("invalid transaction type", "type", fmt.Sprintf("%T", tx))
 		return nil, fmt.Errorf("invalid transaction type %T", tx)

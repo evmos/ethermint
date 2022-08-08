@@ -8,14 +8,13 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/rpc/types"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
 )
 
 // GetTransactionByHash returns the Ethereum format transaction identified by Ethereum transaction hash
-func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error) {
+func (b *Backend) GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransaction, error) {
 	res, err := b.GetTxByEthHash(txHash)
 	hexTx := txHash.Hex()
 
@@ -35,7 +34,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransactio
 			}
 
 			if msg.Hash == hexTx {
-				rpctx, err := types.NewTransactionFromMsg(
+				rpctx, err := rpctypes.NewTransactionFromMsg(
 					msg,
 					common.Hash{},
 					uint64(0),
@@ -57,7 +56,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransactio
 		return nil, errors.New("invalid ethereum tx")
 	}
 
-	parsedTxs, err := types.ParseTxResult(&res.TxResult)
+	parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse tx events: %s", hexTx)
 	}
@@ -110,7 +109,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransactio
 		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", blockRes.Height, "error", err)
 	}
 
-	return types.NewTransactionFromMsg(
+	return rpctypes.NewTransactionFromMsg(
 		msg,
 		common.BytesToHash(block.BlockID.Hash.Bytes()),
 		uint64(res.Height),
@@ -120,7 +119,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*types.RPCTransactio
 }
 
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
-func (b *Backend) GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error) {
+func (b *Backend) GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error) {
 	// Get nonce (sequence) from account
 	from := sdk.AccAddress(address.Bytes())
 	accRet := b.clientCtx.AccountRetriever
@@ -132,7 +131,7 @@ func (b *Backend) GetTransactionCount(address common.Address, blockNum types.Blo
 		return &n, nil
 	}
 
-	includePending := blockNum == types.EthPendingBlockNumber
+	includePending := blockNum == rpctypes.EthPendingBlockNumber
 	nonce, err := b.getAccountNonce(address, includePending, blockNum.Int64(), b.logger)
 	if err != nil {
 		return nil, err
