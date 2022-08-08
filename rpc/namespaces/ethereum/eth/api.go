@@ -1050,7 +1050,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 	_, err = e.backend.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
 		// Get 'latest' proof if query is in the future
-		// this imitates geth behaviour
+		// this imitates geth behavior
 		height = 0
 	}
 	ctx := rpctypes.ContextWithHeight(height)
