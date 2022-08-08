@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethermint/crypto/hd"
-	"github.com/evmos/ethermint/rpc/types"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
@@ -69,29 +68,29 @@ type EVMBackend interface {
 	// Blockchain API
 	ChainId() (*hexutil.Big, error)
 	BlockNumber() (hexutil.Uint64, error)
-	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
-	GetTendermintBlockByNumber(blockNum types.BlockNumber) (*tmrpctypes.ResultBlock, error)
+	GetBlockByNumber(blockNum rpctypes.BlockNumber, fullTx bool) (map[string]interface{}, error)
+	GetTendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	GetTendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
 	GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
-	BlockByNumber(blockNum types.BlockNumber) (*ethtypes.Block, error)
+	BlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error)
 	BlockByHash(blockHash common.Hash) (*ethtypes.Block, error)
 	CurrentHeader() *ethtypes.Header
-	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
+	HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error)
 	PendingTransactions() ([]*sdk.Tx, error)
-	GetTransactionCount(address common.Address, blockNum types.BlockNumber) (*hexutil.Uint64, error)
+	GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error)
 	GetCoinbase() (sdk.AccAddress, error)
-	GetTransactionByHash(txHash common.Hash) (*types.RPCTransaction, error)
+	GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*tmrpctypes.ResultTx, error)
 	GetTxByTxIndex(height int64, txIndex uint) (*tmrpctypes.ResultTx, error)
-	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *types.BlockNumber) (hexutil.Uint64, error)
+	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
 	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)
 	GlobalMinGasPrice() (sdk.Dec, error)
-	GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*types.RPCTransaction, error)
-	GetBlockNumber(blockNrOrHash types.BlockNumberOrHash) (types.BlockNumber, error)
-	DoCall(args evmtypes.TransactionArgs, blockNr types.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
+	GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
+	GetBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error)
+	DoCall(args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
 	GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error)
 	GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
@@ -107,7 +106,7 @@ type EVMBackend interface {
 	SendRawTransaction(data hexutil.Bytes) (common.Hash, error)
 
 	// Fee API
-	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*types.FeeHistoryResult, error)
+	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error)
 
 	// Filter API
 	BloomStatus() (uint64, uint64)
@@ -128,7 +127,7 @@ var _ BackendI = (*Backend)(nil)
 type Backend struct {
 	ctx                 context.Context
 	clientCtx           client.Context
-	queryClient         *types.QueryClient // gRPC query client
+	queryClient         *rpctypes.QueryClient // gRPC query client
 	logger              log.Logger
 	chainID             *big.Int
 	cfg                 config.Config
@@ -164,7 +163,7 @@ func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context
 	return &Backend{
 		ctx:                 context.Background(),
 		clientCtx:           clientCtx,
-		queryClient:         types.NewQueryClient(clientCtx),
+		queryClient:         rpctypes.NewQueryClient(clientCtx),
 		logger:              logger.With("module", "backend"),
 		chainID:             chainID,
 		cfg:                 appConf,
