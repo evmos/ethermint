@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/evmos/ethermint/rpc/types"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -272,7 +271,7 @@ func (b *Backend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Transac
 			AccessList:           args.AccessList,
 		}
 
-		blockNr := types.NewBlockNumber(big.NewInt(0))
+		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))
 		estimated, err := b.EstimateGas(callArgs, &blockNr)
 		if err != nil {
 			return args, err
