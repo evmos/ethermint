@@ -3,17 +3,16 @@ package types
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
 var defaultEIP150Hash = common.Hash{}.String()
 
-func newIntPtr(i int64) *sdk.Int {
-	v := sdk.NewInt(i)
+func newIntPtr(i int64) *sdkmath.Int {
+	v := sdkmath.NewInt(i)
 	return &v
 }
 

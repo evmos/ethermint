@@ -21,15 +21,12 @@ func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 		return nil, err
 	}
 
-	data := txMsgData.GetData()
-	if len(data) == 0 {
+	if len(txMsgData.MsgResponses) == 0 {
 		return &MsgEthereumTxResponse{}, nil
 	}
 
 	var res MsgEthereumTxResponse
-
-	err := proto.Unmarshal(data[0].GetData(), &res)
-	if err != nil {
+	if err := proto.Unmarshal(txMsgData.MsgResponses[0].Value, &res); err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to unmarshal tx response message data")
 	}
 
@@ -41,7 +38,7 @@ func EncodeTransactionLogs(res *TransactionLogs) ([]byte, error) {
 	return proto.Marshal(res)
 }
 
-// DecodeTxResponse decodes an protobuf-encoded byte slice into TransactionLogs
+// DecodeTransactionLogs decodes an protobuf-encoded byte slice into TransactionLogs
 func DecodeTransactionLogs(data []byte) (TransactionLogs, error) {
 	var logs TransactionLogs
 	err := proto.Unmarshal(data, &logs)

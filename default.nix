@@ -1,12 +1,11 @@
 { lib
 , buildGoApplication
-, nix-gitignore
 , rev ? "dirty"
 }:
 let
   version = "v0.17.1";
   pname = "ethermintd";
-  tags = [ "ledger" "netgo" ];
+  tags = [ "netgo" ];
   ldflags = lib.concatStringsSep "\n" ([
     "-X github.com/cosmos/cosmos-sdk/version.Name=ethermint"
     "-X github.com/cosmos/cosmos-sdk/version.AppName=${pname}"
@@ -17,21 +16,10 @@ let
 in
 buildGoApplication rec {
   inherit pname version tags ldflags;
-  src = (nix-gitignore.gitignoreSourcePure [
-    "../*" # ignore all, then add whitelists
-    "!../x/"
-    "!../app/"
-    "!../cmd/"
-    "!../client/"
-    "!../server/"
-    "!../crypto/"
-    "!../rpc/"
-    "!../types/"
-    "!../encoding/"
-    "!../go.mod"
-    "!../go.sum"
-    "!../gomod2nix.toml"
-  ] ./.);
+  src = lib.sourceByRegex ./. [
+    "^(x|app|cmd|client|server|crypto|rpc|types|encoding|ethereum|testutil|version|go.mod|go.sum|gomod2nix.toml)($|/.*)"
+    "^tests(/.*[.]go)?$"
+  ];
   modules = ./gomod2nix.toml;
   doCheck = false;
   pwd = src; # needed to support replace

@@ -3,6 +3,7 @@ package ante_test
 import (
 	"math/big"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -31,9 +32,9 @@ func (suite AnteTestSuite) TestGasWantedDecorator() {
 				testMsg := banktypes.MsgSend{
 					FromAddress: "evmos1x8fhpj9nmhqk8z9kpgjt95ck2xwyue0ptzkucp",
 					ToAddress:   "evmos1dx67l23hz9l0k9hcher8xz04uj7wf3yu26l2yn",
-					Amount:      sdk.Coins{sdk.Coin{Amount: sdk.NewInt(10), Denom: denom}},
+					Amount:      sdk.Coins{sdk.Coin{Amount: sdkmath.NewInt(10), Denom: denom}},
 				}
-				txBuilder := suite.CreateTestCosmosTxBuilder(sdk.NewInt(10), "stake", &testMsg)
+				txBuilder := suite.CreateTestCosmosTxBuilder(sdkmath.NewInt(10), "stake", &testMsg)
 				return txBuilder.GetTx()
 			},
 		},
@@ -67,7 +68,7 @@ func (suite AnteTestSuite) TestGasWantedDecorator() {
 			"EIP712 message",
 			200000,
 			func() sdk.Tx {
-				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)))
+				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(20)))
 				gas := uint64(200000)
 				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, from.Bytes())
 				suite.Require().NoError(acc.SetSequence(1))

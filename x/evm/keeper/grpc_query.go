@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -88,6 +89,7 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 	return &res, nil
 }
 
+// ValidatorAccount implements the Query/Balance gRPC method
 func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAccountRequest) (*types.QueryValidatorAccountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -572,7 +574,7 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 
 	res := &types.QueryBaseFeeResponse{}
 	if baseFee != nil {
-		aux := sdk.NewIntFromBigInt(baseFee)
+		aux := sdkmath.NewIntFromBigInt(baseFee)
 		res.BaseFee = &aux
 	}
 
