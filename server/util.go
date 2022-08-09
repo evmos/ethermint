@@ -1,12 +1,15 @@
 package server
 
 import (
+	"net"
 	"net/http"
 	"time"
 
+	"github.com/evmos/ethermint/server/config"
 	"github.com/gorilla/mux"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/netutil"
 
 	sdkserver "github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/types"
@@ -96,4 +99,18 @@ func MountGRPCWebServices(
 			}
 		})
 	}
+}
+
+func Listen(addr string, config *config.Config) (net.Listener, error) {
+	if addr == "" {
+		addr = ":http"
+	}
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	if config.JSONRPC.MaxOpenConnections > 0 {
+		ln = netutil.LimitListener(ln, config.JSONRPC.MaxOpenConnections)
+	}
+	return ln, err
 }
