@@ -1,10 +1,15 @@
 package backend
 
 import (
+	"bufio"
+	"fmt"
 	"math/big"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,10 +18,10 @@ import (
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
-	ethrpc "github.com/evmos/ethermint/rpc/types"
-	rpc "github.com/evmos/ethermint/rpc/types"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -34,17 +39,27 @@ func (suite *BackendTestSuite) SetupTest() {
 	ctx := server.NewDefaultContext()
 	ctx.Viper.Set("telemetry.global-labels", []interface{}{})
 
+	baseDir := suite.T().TempDir()
+	nodeDirName := fmt.Sprintf("node")
+	clientDir := filepath.Join(baseDir, nodeDirName, "evmoscli")
+	keyRing, err := suite.generateTestKeyring(clientDir)
+	if err != nil {
+		panic(err)
+	}
+
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	clientCtx := client.Context{}.WithChainID("ethermint_9000-1").
 		WithHeight(1).
-		WithTxConfig(encodingConfig.TxConfig)
+		WithTxConfig(encodingConfig.TxConfig).
+		WithKeyringDir(clientDir).
+		WithKeyring(keyRing)
 
 	allowUnprotectedTxs := false
 
 	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
 	suite.backend.queryClient.QueryClient = mocks.NewQueryClient(suite.T())
 	suite.backend.clientCtx.Client = mocks.NewClient(suite.T())
-	suite.backend.ctx = rpc.ContextWithHeight(1)
+	suite.backend.ctx = rpctypes.ContextWithHeight(1)
 }
 
 // buildEthereumTx returns an example legacy Ethereum transaction
@@ -94,7 +109,7 @@ func (suite *BackendTestSuite) buildFormattedBlock(
 	ethRPCTxs := []interface{}{}
 	if tx != nil {
 		if fullTx {
-			rpcTx, err := ethrpc.NewRPCTransaction(
+			rpcTx, err := rpctypes.NewRPCTransaction(
 				tx.AsTransaction(),
 				common.BytesToHash(header.Hash()),
 				uint64(header.Height),
@@ -108,7 +123,7 @@ func (suite *BackendTestSuite) buildFormattedBlock(
 		}
 	}
 
-	return ethrpc.FormatBlock(
+	return rpctypes.FormatBlock(
 		header,
 		resBlock.Block.Size(),
 		gasLimit,
@@ -118,4 +133,10 @@ func (suite *BackendTestSuite) buildFormattedBlock(
 		common.BytesToAddress(validator.Bytes()),
 		baseFee,
 	)
+}
+
+func (suite *BackendTestSuite) generateTestKeyring(clientDir string) (keyring.Keyring, error) {
+	buf := bufio.NewReader(os.Stdin)
+	encCfg := encoding.MakeConfig(app.ModuleBasics)
+	return keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, clientDir, buf, encCfg.Codec, []keyring.Option{hd.EthSecp256k1Option()}...)
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/evmos/ethermint/rpc/namespaces/ethereum/personal"
 	"github.com/evmos/ethermint/rpc/namespaces/ethereum/txpool"
 	"github.com/evmos/ethermint/rpc/namespaces/ethereum/web3"
-	"github.com/evmos/ethermint/rpc/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
@@ -57,13 +56,12 @@ var apiCreators map[string]APICreator
 func init() {
 	apiCreators = map[string]APICreator{
 		EthNamespace: func(ctx *server.Context, clientCtx client.Context, tmWSClient *rpcclient.WSClient, allowUnprotectedTxs bool) []rpc.API {
-			nonceLock := new(types.AddrLocker)
 			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
 			return []rpc.API{
 				{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
-					Service:   eth.NewPublicAPI(ctx.Logger, clientCtx, evmBackend, nonceLock),
+					Service:   eth.NewPublicAPI(ctx.Logger, evmBackend),
 					Public:    true,
 				},
 				{
@@ -100,7 +98,7 @@ func init() {
 				{
 					Namespace: PersonalNamespace,
 					Version:   apiVersion,
-					Service:   personal.NewAPI(ctx.Logger, clientCtx, evmBackend),
+					Service:   personal.NewAPI(ctx.Logger, evmBackend),
 					Public:    false,
 				},
 			}
@@ -121,7 +119,7 @@ func init() {
 				{
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
-					Service:   debug.NewAPI(ctx, evmBackend, clientCtx),
+					Service:   debug.NewAPI(ctx, evmBackend),
 					Public:    true,
 				},
 			}
@@ -132,7 +130,7 @@ func init() {
 				{
 					Namespace: MinerNamespace,
 					Version:   apiVersion,
-					Service:   miner.NewPrivateAPI(ctx, clientCtx, evmBackend),
+					Service:   miner.NewPrivateAPI(ctx, evmBackend),
 					Public:    false,
 				},
 			}
