@@ -1,11 +1,13 @@
 package server
 
 import (
+	"net"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"golang.org/x/net/netutil"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -70,10 +72,22 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEn
 	}
 	httpSrvDone := make(chan struct{}, 1)
 
+	if httpSrv.Addr == "" {
+		httpSrv.Addr = ":http"
+	}
+	ln, err := net.Listen("tcp", httpSrv.Addr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if config.JSONRPC.MaxOpenConnections > 0 {
+		ln = netutil.LimitListener(ln, config.JSONRPC.MaxOpenConnections)
+	}
+
 	errCh := make(chan error)
 	go func() {
 		ctx.Logger.Info("Starting JSON-RPC server", "address", config.JSONRPC.Address)
-		if err := httpSrv.ListenAndServe(); err != nil {
+		if err := httpSrv.Serve(ln); err != nil {
 			if err == http.ErrServerClosed {
 				close(httpSrvDone)
 				return
