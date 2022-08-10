@@ -49,6 +49,8 @@ const (
 	DefaultHTTPIdleTimeout = 120 * time.Second
 	// DefaultAllowUnprotectedTxs value is false
 	DefaultAllowUnprotectedTxs = false
+	// DefaultMaxOpenConnections represents the amount of open connections (unlimited = 0)
+	DefaultMaxOpenConnections = 0
 )
 
 var evmTracers = []string{"json", "markdown", "struct", "access_list"}
@@ -103,6 +105,9 @@ type JSONRPCConfig struct {
 	// AllowUnprotectedTxs restricts unprotected (non EIP155 signed) transactions to be submitted via
 	// the node's RPC when global parameter is disabled.
 	AllowUnprotectedTxs bool `mapstructure:"allow-unprotected-txs"`
+	// MaxOpenConnections sets the maximum number of simultaneous connections
+	// for the server listener.
+	MaxOpenConnections int `mapstructure:"max-open-connections"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -202,6 +207,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		HTTPTimeout:         DefaultHTTPTimeout,
 		HTTPIdleTimeout:     DefaultHTTPIdleTimeout,
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
+		MaxOpenConnections:  DefaultMaxOpenConnections,
 	}
 }
 
@@ -292,19 +298,20 @@ func GetConfig(v *viper.Viper) Config {
 			MaxTxGasWanted: v.GetUint64("evm.max-tx-gas-wanted"),
 		},
 		JSONRPC: JSONRPCConfig{
-			Enable:          v.GetBool("json-rpc.enable"),
-			API:             v.GetStringSlice("json-rpc.api"),
-			Address:         v.GetString("json-rpc.address"),
-			WsAddress:       v.GetString("json-rpc.ws-address"),
-			GasCap:          v.GetUint64("json-rpc.gas-cap"),
-			FilterCap:       v.GetInt32("json-rpc.filter-cap"),
-			FeeHistoryCap:   v.GetInt32("json-rpc.feehistory-cap"),
-			TxFeeCap:        v.GetFloat64("json-rpc.txfee-cap"),
-			EVMTimeout:      v.GetDuration("json-rpc.evm-timeout"),
-			LogsCap:         v.GetInt32("json-rpc.logs-cap"),
-			BlockRangeCap:   v.GetInt32("json-rpc.block-range-cap"),
-			HTTPTimeout:     v.GetDuration("json-rpc.http-timeout"),
-			HTTPIdleTimeout: v.GetDuration("json-rpc.http-idle-timeout"),
+			Enable:             v.GetBool("json-rpc.enable"),
+			API:                v.GetStringSlice("json-rpc.api"),
+			Address:            v.GetString("json-rpc.address"),
+			WsAddress:          v.GetString("json-rpc.ws-address"),
+			GasCap:             v.GetUint64("json-rpc.gas-cap"),
+			FilterCap:          v.GetInt32("json-rpc.filter-cap"),
+			FeeHistoryCap:      v.GetInt32("json-rpc.feehistory-cap"),
+			TxFeeCap:           v.GetFloat64("json-rpc.txfee-cap"),
+			EVMTimeout:         v.GetDuration("json-rpc.evm-timeout"),
+			LogsCap:            v.GetInt32("json-rpc.logs-cap"),
+			BlockRangeCap:      v.GetInt32("json-rpc.block-range-cap"),
+			HTTPTimeout:        v.GetDuration("json-rpc.http-timeout"),
+			HTTPIdleTimeout:    v.GetDuration("json-rpc.http-idle-timeout"),
+			MaxOpenConnections: v.GetInt("json-rpc.max-open-connections"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),

@@ -18,7 +18,7 @@ import (
 )
 
 // StartJSONRPC starts the JSON-RPC server
-func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEndpoint string, config config.Config) (*http.Server, chan struct{}, error) {
+func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEndpoint string, config *config.Config) (*http.Server, chan struct{}, error) {
 	tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
 
 	logger := ctx.Logger.With("module", "geth")
@@ -70,10 +70,15 @@ func StartJSONRPC(ctx *server.Context, clientCtx client.Context, tmRPCAddr, tmEn
 	}
 	httpSrvDone := make(chan struct{}, 1)
 
+	ln, err := Listen(httpSrv.Addr, config)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	errCh := make(chan error)
 	go func() {
 		ctx.Logger.Info("Starting JSON-RPC server", "address", config.JSONRPC.Address)
-		if err := httpSrv.ListenAndServe(); err != nil {
+		if err := httpSrv.Serve(ln); err != nil {
 			if err == http.ErrServerClosed {
 				close(httpSrvDone)
 				return
