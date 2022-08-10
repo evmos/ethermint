@@ -20,7 +20,7 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
 
-// add server commands
+// AddCommands adds server commands
 func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator types.AppCreator, appExport types.AppExporter, addStartFlags types.ModuleInitFlags) {
 	tendermintCmd := &cobra.Command{
 		Use:   "tendermint",
@@ -101,6 +101,8 @@ func MountGRPCWebServices(
 	}
 }
 
+// Listen starts a net.Listener on the tcp network on the given address.
+// If there is a specified MaxOpenConnections in the config, it will also set the limitListener.
 func Listen(addr string, config *config.Config) (net.Listener, error) {
 	if addr == "" {
 		addr = ":http"
