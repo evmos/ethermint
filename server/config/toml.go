@@ -66,6 +66,10 @@ http-idle-timeout = "{{ .JSONRPC.HTTPIdleTimeout }}"
 # the node's RPC when the global parameter is disabled.
 allow-unprotected-txs = {{ .JSONRPC.AllowUnprotectedTxs }}
 
+# MaxOpenConnections sets the maximum number of simultaneous connections
+# for the server listener.
+max-open-connections = {{ .JSONRPC.MaxOpenConnections }}
+
 ###############################################################################
 ###                             TLS Configuration                           ###
 ###############################################################################
