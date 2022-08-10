@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	ethermint "github.com/evmos/ethermint/types"
 
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 )
@@ -27,14 +26,6 @@ const (
 func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	if err := options.validate(); err != nil {
 		return nil, err
-	}
-
-	if options.ExtensionOptionChecker == nil {
-		options.ExtensionOptionChecker = ethermint.HasDynamicFeeExtensionOption
-	}
-
-	if options.TxFeeChecker == nil {
-		options.TxFeeChecker = NewDynamicFeeChecker(options.EvmKeeper)
 	}
 
 	return func(
