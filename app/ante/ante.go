@@ -34,7 +34,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	}
 
 	if options.TxFeeChecker == nil {
-		options.TxFeeChecker = NewSDKTxFeeChecker(options.EvmKeeper)
+		options.TxFeeChecker = NewDynamicFeeChecker(options.EvmKeeper)
 	}
 
 	return func(
