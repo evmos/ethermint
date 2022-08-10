@@ -16,8 +16,6 @@ import (
 // NewDynamicFeeChecker returns a `TxFeeChecker` that applies a dynamic fee to
 // Cosmos txs using the EIP-1559 fee market logic.
 // This can be called in both CheckTx and deliverTx modes.
-//
-//
 // a) feeCap = tx.fees / tx.gas
 // b) tipFeeCap = tx.MaxPriorityPrice (default) or MaxInt64
 // - when `ExtensionOptionDynamicFeeTx` is omitted, `tipFeeCap` defaults to `MaxInt64`.
