@@ -22,7 +22,7 @@ import (
 // - when `ExtensionOptionDynamicFeeTx` is omitted, `tipFeeCap` defaults to `MaxInt64`.
 // - when london hardfork is not enabled, it fallbacks to sdk default behaviour (validator min-gas-prices).
 // - tx priority is set to `effectiveGasPrice / DefaultPriorityReduction`.
-func NewSDKTxFeeChecker(k EVMKeeper) authante.TxFeeChecker {
+func NewSDKTxFeeChecker(k DynamicFeeEVMKeeper) authante.TxFeeChecker {
 	return func(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error) {
 		if ctx.BlockHeight() == 0 {
 			// genesis transactions: fallback to min-gas-price logic
