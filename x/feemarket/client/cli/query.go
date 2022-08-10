@@ -1,16 +1,10 @@
 package cli
 
 import (
-	"context"
-	"fmt"
-	"strconv"
-
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
 	"github.com/evmos/ethermint/x/feemarket/types"
 )
@@ -36,27 +30,20 @@ func GetQueryCmd() *cobra.Command {
 // GetBlockGasCmd queries the gas used in a block
 func GetBlockGasCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "block-gas [height]",
+		Use:   "block-gas",
 		Short: "Get the block gas used at a given block height",
 		Long: `Get the block gas used at a given block height.
 If the height is not provided, it will use the latest height from context`,
-		Args: cobra.RangeArgs(0, 1),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			ctx := cmd.Context()
-			if len(args) == 1 {
-				ctx, err = getContextHeight(ctx, args[0])
-				if err != nil {
-					return err
-				}
-			}
-
 			queryClient := types.NewQueryClient(clientCtx)
 
+			ctx := cmd.Context()
 			res, err := queryClient.BlockGas(ctx, &types.QueryBlockGasRequest{})
 			if err != nil {
 				return err
@@ -101,27 +88,20 @@ func GetParamsCmd() *cobra.Command {
 // GetBaseFeeCmd queries the base fee at a given height
 func GetBaseFeeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "base-fee [height]",
+		Use:   "base-fee",
 		Short: "Get the base fee amount at a given block height",
 		Long: `Get the base fee amount at a given block height.
 If the height is not provided, it will use the latest height from context.`,
-		Args: cobra.RangeArgs(0, 1),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			ctx := cmd.Context()
-			if len(args) == 1 {
-				ctx, err = getContextHeight(ctx, args[0])
-				if err != nil {
-					return err
-				}
-			}
-
 			queryClient := types.NewQueryClient(clientCtx)
 
+			ctx := cmd.Context()
 			res, err := queryClient.BaseFee(ctx, &types.QueryBaseFeeRequest{})
 			if err != nil {
 				return err
@@ -133,13 +113,4 @@ If the height is not provided, it will use the latest height from context.`,
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
-}
-
-func getContextHeight(ctx context.Context, height string) (context.Context, error) {
-	_, err := strconv.ParseInt(height, 10, 64)
-	if err != nil {
-		return ctx, fmt.Errorf("invalid height: %w", err)
-	}
-
-	return metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, height), nil
 }
