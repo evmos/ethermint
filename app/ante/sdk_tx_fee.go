@@ -17,10 +17,10 @@ import (
 // could be called in both checkTx and deliverTx modes.
 //
 // - use the same eip-1559 mechanism as the evm transactions:
-//   - feeCap = tx.fees / tx.gas
-//   - tipFeeCap = tx.extOpt.MaxPriorityPrice or MaxInt64
+// a) feeCap = tx.fees / tx.gas
+// b) tipFeeCap = tx.extOpt.MaxPriorityPrice or MaxInt64
 // - when `ExtensionOptionDynamicFeeTx` is omitted, `tipFeeCap` defaults to `MaxInt64`.
-// - when london hardfork is not enabled, it fallbacks to sdk default behaviour (validator min-gas-prices).
+// - when london hardfork is not enabled, it fallbacks to sdk default behavior (validator min-gas-prices).
 // - tx priority is set to `effectiveGasPrice / DefaultPriorityReduction`.
 func NewSDKTxFeeChecker(k DynamicFeeEVMKeeper) authante.TxFeeChecker {
 	return func(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error) {
