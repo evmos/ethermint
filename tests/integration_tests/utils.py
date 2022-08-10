@@ -21,8 +21,8 @@ ADDRS = {name: account.address for name, account in ACCOUNTS.items()}
 ETHERMINT_ADDRESS_PREFIX = "ethm"
 TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
+    "Greeter": "Greeter.sol",
 }
-
 
 def contract_path(name, filename):
     return (

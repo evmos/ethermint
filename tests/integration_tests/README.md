@@ -24,8 +24,6 @@ For linux:
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
 
-
-
 ## Run Local
 
 Fist time run (can take a while):
