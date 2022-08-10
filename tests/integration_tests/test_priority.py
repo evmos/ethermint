@@ -1,3 +1,5 @@
+import sys
+
 from .network import Ethermint
 from .utils import ADDRS, KEYS, eth_to_bech32, sign_transaction, wait_for_new_blocks
 
@@ -166,7 +168,10 @@ def test_native_tx_priority(ethermint: Ethermint):
         )
         gas_price = int(tc["gas_prices"].removesuffix("aphoton"))
         expect_priorities.append(
-            min(tc.get("max_priority_price") or 0, gas_price - base_fee)
+            min(
+                get_max_priority_price(tc.get("max_priority_price")),
+                gas_price - base_fee,
+            )
             // PRIORITY_REDUCTION
         )
     assert expect_priorities == [0, 2, 4, 6]
@@ -185,3 +190,8 @@ def test_native_tx_priority(ethermint: Ethermint):
     print(tx_indexes)
     # the first sent tx are included later, because of lower priority
     assert all(i1 > i2 for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
+
+
+def get_max_priority_price(max_priority_price):
+    "default to max int64 if None"
+    return max_priority_price if max_priority_price is not None else sys.maxsize
