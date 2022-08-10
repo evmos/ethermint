@@ -99,10 +99,10 @@ func (kv *KVIndexer) FirstIndexedBlock() (int64, error) {
 }
 
 // IndexBlock index all the eth txs in a block through the following steps:
-//  - Iterates over all of the Txs in Block
-//  - Parses eth Tx infos from cosmos-sdk events for every TxResult
-//  - Iterates over all the messages of the Tx
-//  - Builds and stores a indexer.TxResult based on parsed events for every message
+// - Iterates over all of the Txs in Block
+// - Parses eth Tx infos from cosmos-sdk events for every TxResult
+// - Iterates over all the messages of the Tx
+// - Builds and stores a indexer.TxResult based on parsed events for every message
 func (kv *KVIndexer) IndexBlock(blk *tmtypes.Block, txResults []*abci.ResponseDeliverTx) error {
 	height := blk.Header.Height
 
