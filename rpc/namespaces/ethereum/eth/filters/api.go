@@ -25,11 +25,11 @@ import (
 
 // FilterAPI gathers
 type FilterAPI interface {
-	GetLogs(ctx context.Context, crit filters.FilterCriteria) ([]*ethtypes.Log, error)
+	NewFilter(criteria filters.FilterCriteria) (rpc.ID, error)
 	GetFilterChanges(id rpc.ID) (interface{}, error)
 	GetFilterLogs(ctx context.Context, id rpc.ID) ([]*ethtypes.Log, error)
+	GetLogs(ctx context.Context, crit filters.FilterCriteria) ([]*ethtypes.Log, error)
 	NewBlockFilter() rpc.ID
-	NewFilter(criteria filters.FilterCriteria) (rpc.ID, error)
 	NewPendingTransactionFilter() rpc.ID
 	UninstallFilter(id rpc.ID) bool
 }
