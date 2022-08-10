@@ -172,7 +172,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 	// parse tx logs from events
 	logs, err := TxLogsFromEvents(blockRes.TxsResults[res.TxIndex].Events, int(res.MsgIndex))
 	if err != nil {
-		b.logger.Debug("logs not found", "hash", hexTx, "error", err.Error())
+		b.logger.Debug("failed to parse logs", "hash", hexTx, "error", err.Error())
 	}
 
 	if res.EthTxIndex == -1 {
@@ -201,7 +201,6 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		"transactionHash": hash,
 		"contractAddress": nil,
 		"gasUsed":         hexutil.Uint64(res.GasUsed),
-		"type":            hexutil.Uint(txData.TxType()),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
