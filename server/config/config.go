@@ -108,7 +108,7 @@ type JSONRPCConfig struct {
 	// MaxOpenConnections sets the maximum number of simultaneous connections
 	// for the server listener.
 	MaxOpenConnections int `mapstructure:"max-open-connections"`
-  // EnableIndexer defines if enable the custom indexer service.
+	// EnableIndexer defines if enable the custom indexer service.
 	EnableIndexer bool `mapstructure:"enable-indexer"`
 }
 
@@ -315,7 +315,7 @@ func GetConfig(v *viper.Viper) Config {
 			HTTPTimeout:        v.GetDuration("json-rpc.http-timeout"),
 			HTTPIdleTimeout:    v.GetDuration("json-rpc.http-idle-timeout"),
 			MaxOpenConnections: v.GetInt("json-rpc.max-open-connections"),
- 			EnableIndexer:      v.GetBool("json-rpc.enable-indexer"),
+			EnableIndexer:      v.GetBool("json-rpc.enable-indexer"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
