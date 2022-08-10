@@ -30,52 +30,6 @@ const (
 
 var _ ethermint.EVMTxIndexer = &KVIndexer{}
 
-// TxHashKey returns the key for db entry: `tx hash -> tx result struct`
-func TxHashKey(hash common.Hash) []byte {
-	return append([]byte{KeyPrefixTxHash}, hash.Bytes()...)
-}
-
-// TxIndexKey returns the key for db entry: `(block number, tx index) -> tx hash`
-func TxIndexKey(blockNumber int64, txIndex int32) []byte {
-	bz1 := sdk.Uint64ToBigEndian(uint64(blockNumber))
-	bz2 := sdk.Uint64ToBigEndian(uint64(txIndex))
-	return append(append([]byte{KeyPrefixTxIndex}, bz1...), bz2...)
-}
-
-func parseBlockNumberFromKey(key []byte) (int64, error) {
-	if len(key) != TxIndexKeyLength {
-		return 0, fmt.Errorf("wrong tx index key length, expect: %d, got: %d", TxIndexKeyLength, len(key))
-	}
-
-	return int64(sdk.BigEndianToUint64(key[1:9])), nil
-}
-
-// LoadLastBlock returns the latest indexed block number, returns -1 if db is empty
-func LoadLastBlock(db dbm.DB) (int64, error) {
-	it, err := db.ReverseIterator([]byte{KeyPrefixTxIndex}, []byte{KeyPrefixTxIndex + 1})
-	if err != nil {
-		return 0, sdkerrors.Wrap(err, "LoadLastBlock")
-	}
-	defer it.Close()
-	if !it.Valid() {
-		return -1, nil
-	}
-	return parseBlockNumberFromKey(it.Key())
-}
-
-// LoadFirstBlock loads the first indexed block, returns -1 if db is empty
-func LoadFirstBlock(db dbm.DB) (int64, error) {
-	it, err := db.Iterator([]byte{KeyPrefixTxIndex}, []byte{KeyPrefixTxIndex + 1})
-	if err != nil {
-		return 0, sdkerrors.Wrap(err, "LoadFirstBlock")
-	}
-	defer it.Close()
-	if !it.Valid() {
-		return -1, nil
-	}
-	return parseBlockNumberFromKey(it.Key())
-}
-
 // KVIndexer implements a eth tx indexer on a KV db.
 type KVIndexer struct {
 	db        dbm.DB
@@ -88,39 +42,31 @@ func NewKVIndexer(db dbm.DB, logger log.Logger, clientCtx client.Context) *KVInd
 	return &KVIndexer{db, logger, clientCtx}
 }
 
-// LastIndexedBlock returns the latest indexed block number, returns -1 if db is empty
-func (kv *KVIndexer) LastIndexedBlock() (int64, error) {
-	return LoadLastBlock(kv.db)
-}
-
-// FirstIndexedBlock returns the first indexed block number, returns -1 if db is empty
-func (kv *KVIndexer) FirstIndexedBlock() (int64, error) {
-	return LoadFirstBlock(kv.db)
-}
-
 // IndexBlock index all the eth txs in a block through the following steps:
 // - Iterates over all of the Txs in Block
 // - Parses eth Tx infos from cosmos-sdk events for every TxResult
 // - Iterates over all the messages of the Tx
 // - Builds and stores a indexer.TxResult based on parsed events for every message
-func (kv *KVIndexer) IndexBlock(blk *tmtypes.Block, txResults []*abci.ResponseDeliverTx) error {
-	height := blk.Header.Height
+func (kv *KVIndexer) IndexBlock(block *tmtypes.Block, txResults []*abci.ResponseDeliverTx) error {
+	height := block.Header.Height
 
 	batch := kv.db.NewBatch()
 	defer batch.Close()
 
 	// record index of valid eth tx during the iteration
 	var ethTxIndex int32
-	for txIndex, tx := range blk.Txs {
+	for txIndex, tx := range block.Txs {
 		result := txResults[txIndex]
 		if !backend.TxSuccessOrExceedsBlockGasLimit(result) {
 			continue
 		}
+
 		tx, err := kv.clientCtx.TxConfig.TxDecoder()(tx)
 		if err != nil {
 			kv.logger.Error("Fail to decode tx", "err", err, "block", height, "txIndex", txIndex)
 			continue
 		}
+
 		if !isEthTx(tx) {
 			continue
 		}
@@ -170,9 +116,19 @@ func (kv *KVIndexer) IndexBlock(blk *tmtypes.Block, txResults []*abci.ResponseDe
 		}
 	}
 	if err := batch.Write(); err != nil {
-		return sdkerrors.Wrapf(err, "IndexBlock %d, write batch", blk.Height)
+		return sdkerrors.Wrapf(err, "IndexBlock %d, write batch", block.Height)
 	}
 	return nil
+}
+
+// LastIndexedBlock returns the latest indexed block number, returns -1 if db is empty
+func (kv *KVIndexer) LastIndexedBlock() (int64, error) {
+	return LoadLastBlock(kv.db)
+}
+
+// FirstIndexedBlock returns the first indexed block number, returns -1 if db is empty
+func (kv *KVIndexer) FirstIndexedBlock() (int64, error) {
+	return LoadFirstBlock(kv.db)
 }
 
 // isEthTx check if the tx is an eth tx
@@ -226,4 +182,50 @@ func (kv *KVIndexer) GetByBlockAndIndex(blockNumber int64, txIndex int32) (*ethe
 		return nil, fmt.Errorf("tx not found, block: %d, eth-index: %d", blockNumber, txIndex)
 	}
 	return kv.GetByTxHash(common.BytesToHash(bz))
+}
+
+// TxHashKey returns the key for db entry: `tx hash -> tx result struct`
+func TxHashKey(hash common.Hash) []byte {
+	return append([]byte{KeyPrefixTxHash}, hash.Bytes()...)
+}
+
+// TxIndexKey returns the key for db entry: `(block number, tx index) -> tx hash`
+func TxIndexKey(blockNumber int64, txIndex int32) []byte {
+	bz1 := sdk.Uint64ToBigEndian(uint64(blockNumber))
+	bz2 := sdk.Uint64ToBigEndian(uint64(txIndex))
+	return append(append([]byte{KeyPrefixTxIndex}, bz1...), bz2...)
+}
+
+func parseBlockNumberFromKey(key []byte) (int64, error) {
+	if len(key) != TxIndexKeyLength {
+		return 0, fmt.Errorf("wrong tx index key length, expect: %d, got: %d", TxIndexKeyLength, len(key))
+	}
+
+	return int64(sdk.BigEndianToUint64(key[1:9])), nil
+}
+
+// LoadLastBlock returns the latest indexed block number, returns -1 if db is empty
+func LoadLastBlock(db dbm.DB) (int64, error) {
+	it, err := db.ReverseIterator([]byte{KeyPrefixTxIndex}, []byte{KeyPrefixTxIndex + 1})
+	if err != nil {
+		return 0, sdkerrors.Wrap(err, "LoadLastBlock")
+	}
+	defer it.Close()
+	if !it.Valid() {
+		return -1, nil
+	}
+	return parseBlockNumberFromKey(it.Key())
+}
+
+// LoadFirstBlock loads the first indexed block, returns -1 if db is empty
+func LoadFirstBlock(db dbm.DB) (int64, error) {
+	it, err := db.Iterator([]byte{KeyPrefixTxIndex}, []byte{KeyPrefixTxIndex + 1})
+	if err != nil {
+		return 0, sdkerrors.Wrap(err, "LoadFirstBlock")
+	}
+	defer it.Close()
+	if !it.Valid() {
+		return -1, nil
+	}
+	return parseBlockNumberFromKey(it.Key())
 }
