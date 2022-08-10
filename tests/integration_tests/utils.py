@@ -4,8 +4,10 @@ import socket
 import time
 from pathlib import Path
 
+import bech32
 from dotenv import load_dotenv
 from eth_account import Account
+from hexbytes import HexBytes
 from web3._utils.transactions import fill_nonce, fill_transaction_defaults
 
 load_dotenv(Path(__file__).parent.parent.parent / "scripts/.env")
@@ -64,6 +66,15 @@ def w3_wait_for_new_blocks(w3, n):
             break
 
 
+def wait_for_new_blocks(cli, n):
+    begin_height = int((cli.status())["SyncInfo"]["latest_block_height"])
+    while True:
+        time.sleep(0.5)
+        cur_height = int((cli.status())["SyncInfo"]["latest_block_height"])
+        if cur_height - begin_height >= n:
+            break
+
+
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     """
     deploy contract and return the deployed contract instance
@@ -95,3 +106,8 @@ def send_transaction(w3, tx, key=KEYS["validator"]):
     signed = sign_transaction(w3, tx, key)
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
     return w3.eth.wait_for_transaction_receipt(txhash)
+
+
+def eth_to_bech32(addr, prefix=ETHERMINT_ADDRESS_PREFIX):
+    bz = bech32.convertbits(HexBytes(addr), 8, 5)
+    return bech32.bech32_encode(prefix, bz)

@@ -9,7 +9,6 @@ import (
 	"github.com/evmos/ethermint/app/ante"
 	"github.com/evmos/ethermint/server/config"
 	"github.com/evmos/ethermint/tests"
-	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
@@ -227,7 +226,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 	baseFee := suite.app.EvmKeeper.GetBaseFee(suite.ctx, ethCfg)
 	suite.Require().Equal(int64(1000000000), baseFee.Int64())
 
-	gasPrice := new(big.Int).Add(baseFee, evmkeeper.DefaultPriorityReduction.BigInt())
+	gasPrice := new(big.Int).Add(baseFee, evmtypes.DefaultPriorityReduction.BigInt())
 
 	tx2GasLimit := uint64(1000000)
 	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx2GasLimit, gasPrice, nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
@@ -236,8 +235,8 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 
 	dynamicFeeTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx2GasLimit,
 		nil, // gasPrice
-		new(big.Int).Add(baseFee, big.NewInt(evmkeeper.DefaultPriorityReduction.Int64()*2)), // gasFeeCap
-		evmkeeper.DefaultPriorityReduction.BigInt(),                                         // gasTipCap
+		new(big.Int).Add(baseFee, big.NewInt(evmtypes.DefaultPriorityReduction.Int64()*2)), // gasFeeCap
+		evmtypes.DefaultPriorityReduction.BigInt(),                                         // gasTipCap
 		nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
 	dynamicFeeTx.From = addr.Hex()
 	dynamicFeeTxPriority := int64(1)
