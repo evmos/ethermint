@@ -55,6 +55,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
 * (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
+* (cli) [#1230](https://github.com/evmos/ethermint/pull/1230) Remove redundant positional height parameter from feemarket's query cli.
 
 ### Bug Fixes
 
