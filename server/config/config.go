@@ -49,7 +49,7 @@ const (
 	DefaultHTTPIdleTimeout = 120 * time.Second
 	// DefaultAllowUnprotectedTxs value is false
 	DefaultAllowUnprotectedTxs = false
-	// 0 Max open connections represents unlimited amount of connections
+	// DefaultMaxOpenConnections represents the amount of open connections (unlimited = 0)
 	DefaultMaxOpenConnections = 0
 )
 
