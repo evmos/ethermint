@@ -27,6 +27,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	if err := options.validate(); err != nil {
 		return nil, err
 	}
+
 	return func(
 		ctx sdk.Context, tx sdk.Tx, sim bool,
 	) (newCtx sdk.Context, err error) {
@@ -45,6 +46,9 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 				case "/ethermint.types.v1.ExtensionOptionsWeb3Tx":
 					// handle as normal Cosmos SDK tx, except signature is checked for EIP712 representation
 					anteHandler = newCosmosAnteHandlerEip712(options)
+				case "/ethermint.types.v1.ExtensionOptionDynamicFeeTx":
+					// cosmos-sdk tx with dynamic fee extension
+					anteHandler = newCosmosAnteHandler(options)
 				default:
 					return ctx, sdkerrors.Wrapf(
 						sdkerrors.ErrUnknownExtensionOptions,
