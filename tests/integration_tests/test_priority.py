@@ -101,7 +101,10 @@ def test_priority(ethermint: Ethermint):
 
     # the later txs should be included earlier because of higher priority
     # FIXME there's some non-deterministics due to mempool logic
-    assert all(included_earlier(r2, r1) for r1, r2 in zip(receipts, receipts[1:]))
+    tx_indexes = [(r.blockNumber, r.transactionIndex) for r in receipts]
+    print(tx_indexes)
+    # the first sent tx are included later, because of lower priority
+    assert all(i1 > i2 for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
 
 
 def included_earlier(receipt1, receipt2):
@@ -118,32 +121,32 @@ def test_native_tx_priority(ethermint: Ethermint):
     print("base_fee", base_fee)
     test_cases = [
         {
-            "from": eth_to_bech32(ADDRS["validator"]),
-            "to": eth_to_bech32(ADDRS["community"]),
-            "amount": "1000aphoton",
-            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
-            "max_priority_price": None,  # no extension, lowest priority
-        },
-        {
             "from": eth_to_bech32(ADDRS["community"]),
             "to": eth_to_bech32(ADDRS["validator"]),
             "amount": "1000aphoton",
             "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
-            "max_priority_price": PRIORITY_REDUCTION * 2,
+            "max_priority_price": 0,
         },
         {
             "from": eth_to_bech32(ADDRS["signer1"]),
             "to": eth_to_bech32(ADDRS["signer2"]),
             "amount": "1000aphoton",
-            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 4}aphoton",
-            "max_priority_price": PRIORITY_REDUCTION * 4,
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
+            "max_priority_price": PRIORITY_REDUCTION * 2,
         },
         {
             "from": eth_to_bech32(ADDRS["signer2"]),
             "to": eth_to_bech32(ADDRS["signer1"]),
             "amount": "1000aphoton",
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 4}aphoton",
+            "max_priority_price": PRIORITY_REDUCTION * 4,
+        },
+        {
+            "from": eth_to_bech32(ADDRS["validator"]),
+            "to": eth_to_bech32(ADDRS["community"]),
+            "amount": "1000aphoton",
             "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
-            "max_priority_price": PRIORITY_REDUCTION * 6,
+            "max_priority_price": None,  # no extension, maximum tipFeeCap
         },
     ]
     txs = []
