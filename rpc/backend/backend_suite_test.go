@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	dbm "github.com/tendermint/tm-db"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -20,6 +22,7 @@ import (
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/encoding"
+	"github.com/evmos/ethermint/indexer"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -56,7 +59,9 @@ func (suite *BackendTestSuite) SetupTest() {
 
 	allowUnprotectedTxs := false
 
-	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs)
+	idxer := indexer.NewKVIndexer(dbm.NewMemDB(), ctx.Logger, clientCtx)
+
+	suite.backend = NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, idxer)
 	suite.backend.queryClient.QueryClient = mocks.NewQueryClient(suite.T())
 	suite.backend.clientCtx.Client = mocks.NewClient(suite.T())
 	suite.backend.ctx = rpctypes.ContextWithHeight(1)
