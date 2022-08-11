@@ -8,6 +8,7 @@ import web3
 from pystarport import ports
 from web3.middleware import geth_poa_middleware
 
+from .cosmoscli import CosmosCLI
 from .utils import wait_for_port
 
 
@@ -52,6 +53,9 @@ class Ethermint:
     def use_websocket(self, use=True):
         self._w3 = None
         self._use_websockets = use
+
+    def cosmos_cli(self, i=0):
+        return CosmosCLI(self.base_dir / f"node{i}", self.node_rpc(i), "ethermintd")
 
 
 class Geth:
