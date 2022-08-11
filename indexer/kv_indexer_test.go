@@ -1,4 +1,4 @@
-package server_test
+package indexer_test
 
 import (
 	"math/big"
@@ -11,7 +11,7 @@ import (
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	evmenc "github.com/evmos/ethermint/encoding"
-	"github.com/evmos/ethermint/server"
+	"github.com/evmos/ethermint/indexer"
 	"github.com/evmos/ethermint/tests"
 	"github.com/evmos/ethermint/x/evm/types"
 	"github.com/stretchr/testify/require"
@@ -151,31 +151,31 @@ func TestKVIndexer(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			db := dbm.NewMemDB()
-			indexer := server.NewKVIndexer(db, tmlog.NewNopLogger(), clientCtx)
+			idxer := indexer.NewKVIndexer(db, tmlog.NewNopLogger(), clientCtx)
 
-			err = indexer.IndexBlock(tc.block, tc.blockResult)
+			err = idxer.IndexBlock(tc.block, tc.blockResult)
 			require.NoError(t, err)
 			if !tc.expSuccess {
-				first, err := indexer.FirstIndexedBlock()
+				first, err := idxer.FirstIndexedBlock()
 				require.NoError(t, err)
 				require.Equal(t, int64(-1), first)
 
-				last, err := indexer.LastIndexedBlock()
+				last, err := idxer.LastIndexedBlock()
 				require.NoError(t, err)
 				require.Equal(t, int64(-1), last)
 			} else {
-				first, err := indexer.FirstIndexedBlock()
+				first, err := idxer.FirstIndexedBlock()
 				require.NoError(t, err)
 				require.Equal(t, tc.block.Header.Height, first)
 
-				last, err := indexer.LastIndexedBlock()
+				last, err := idxer.LastIndexedBlock()
 				require.NoError(t, err)
 				require.Equal(t, tc.block.Header.Height, last)
 
-				res1, err := indexer.GetByTxHash(txHash)
+				res1, err := idxer.GetByTxHash(txHash)
 				require.NoError(t, err)
 				require.NotNil(t, res1)
-				res2, err := indexer.GetByBlockAndIndex(1, 0)
+				res2, err := idxer.GetByBlockAndIndex(1, 0)
 				require.NoError(t, err)
 				require.Equal(t, res1, res2)
 			}
