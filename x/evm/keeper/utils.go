@@ -15,11 +15,6 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// DefaultPriorityReduction is the default amount of price values required for 1 unit of priority.
-// Because priority is `int64` while price is `big.Int`, it's necessary to scale down the range to keep it more pratical.
-// The default value is the same as the `sdk.DefaultPowerReduction`.
-var DefaultPriorityReduction = sdk.DefaultPowerReduction
-
 // DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
 // returns (effectiveFee, priority, error)
 func (k Keeper) DeductTxCostsFromUserBalance(
@@ -91,7 +86,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 	if baseFee != nil {
 		tipPrice = new(big.Int).Sub(tipPrice, baseFee)
 	}
-	priorityBig := new(big.Int).Quo(tipPrice, DefaultPriorityReduction.BigInt())
+	priorityBig := new(big.Int).Quo(tipPrice, evmtypes.DefaultPriorityReduction.BigInt())
 	if !priorityBig.IsInt64() {
 		priority = math.MaxInt64
 	} else {

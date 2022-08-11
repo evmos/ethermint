@@ -79,6 +79,9 @@
 - [ethermint/types/v1/account.proto](#ethermint/types/v1/account.proto)
     - [EthAccount](#ethermint.types.v1.EthAccount)
   
+- [ethermint/types/v1/dynamic_fee.proto](#ethermint/types/v1/dynamic_fee.proto)
+    - [ExtensionOptionDynamicFeeTx](#ethermint.types.v1.ExtensionOptionDynamicFeeTx)
+  
 - [ethermint/types/v1/web3.proto](#ethermint/types/v1/web3.proto)
     - [ExtensionOptionsWeb3Tx](#ethermint.types.v1.ExtensionOptionsWeb3Tx)
   
@@ -1129,6 +1132,37 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 | ----- | ---- | ----- | ----------- |
 | `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
 | `code_hash` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethermint/types/v1/dynamic_fee.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethermint/types/v1/dynamic_fee.proto
+
+
+
+<a name="ethermint.types.v1.ExtensionOptionDynamicFeeTx"></a>
+
+### ExtensionOptionDynamicFeeTx
+ExtensionOptionDynamicFeeTx is an extension option that specify the maxPrioPrice for cosmos tx
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `max_priority_price` | [string](#string) |  | the same as `max_priority_fee_per_gas` in eip-1559 spec |
 
 
 
