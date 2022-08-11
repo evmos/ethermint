@@ -4,7 +4,7 @@ The RPC integration test suite uses nix and python to send identical queries to 
 
 ## Installation
 
-Multi-user installation:
+Nix Multi-user installation:
 
 ```
 sh <(curl -L https://nixos.org/nix/install) --daemon
@@ -26,16 +26,18 @@ sh <(curl -L https://nixos.org/nix/install) --no-daemon
 
 ## Run Local
 
-Fist time run (can take a while):
+First time run (can take a while):
 
 ```
 make run-integration-tests
 ```
 
-Once you've run them once, you can run.
+Once you've run them once and, you can run:
 
 ```
 nix-shell tests/integration_tests/shell.nix
 cd tests/integration_tests
 pytest -s -vv
 ```
+
+If you're changing anything on the ethermint rpc, rerun the first command.
