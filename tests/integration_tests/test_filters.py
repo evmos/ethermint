@@ -2,18 +2,20 @@ from web3 import Web3
 
 import pytest
 from .utils import (
+    ADDRS,
     CONTRACTS,
     deploy_contract,
     send_transaction,
     send_successful_transaction,
 )
 
+
 def test_pending_transaction_filter(cluster):
     w3: Web3 = cluster.w3
     flt = w3.eth.filter("pending")
 
     # without tx
-    assert flt.get_new_entries() == [] # GetFilterChanges
+    assert flt.get_new_entries() == []  # GetFilterChanges
 
     # with tx
     txhash = send_successful_transaction(w3)
@@ -51,8 +53,8 @@ def test_event_log_filter_by_contract(cluster):
     )
 
     # without tx
-    assert flt.get_new_entries() == [] # GetFilterChanges
-    assert flt.get_all_entries() == [] # GetFilterLogs
+    assert flt.get_new_entries() == []  # GetFilterChanges
+    assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
     tx = myContract.functions.setGreeting("world").buildTransaction()
@@ -72,8 +74,8 @@ def test_event_log_filter_by_contract(cluster):
     assert flt.get_all_entries() == new_entries
 
     # Uninstall
-    assert w3.eth.uninstall_filter(flt.filter_id) == True
-    assert w3.eth.uninstall_filter(flt.filter_id) == False
+    assert w3.eth.uninstall_filter(flt.filter_id)
+    assert not w3.eth.uninstall_filter(flt.filter_id)
     with pytest.raises(Exception):
         flt.get_all_entries()
 
@@ -85,11 +87,11 @@ def test_event_log_filter_by_address(cluster):
     assert myContract.caller.greet() == "Hello"
 
     flt = w3.eth.filter({"address": myContract.address})
-    flt2 = w3.eth.filter({"address": "0x0000000000000000000000000000000000000000"})
+    flt2 = w3.eth.filter({"address": ADDRS["validator"]})
 
     # without tx
-    assert flt.get_new_entries() == [] # GetFilterChanges
-    assert flt.get_all_entries() == [] # GetFilterLogs
+    assert flt.get_new_entries() == []  # GetFilterChanges
+    assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
     tx = myContract.functions.setGreeting("world").buildTransaction()
@@ -107,7 +109,7 @@ def test_get_logs(cluster):
 
     # without tx
     assert w3.eth.get_logs({"address": myContract.address}) == []
-    assert w3.eth.get_logs({"address": "0x0000000000000000000000000000000000000000"}) == []
+    assert w3.eth.get_logs({"address": ADDRS["validator"]}) == []
 
     # with tx
     tx = myContract.functions.setGreeting("world").buildTransaction()
@@ -115,4 +117,4 @@ def test_get_logs(cluster):
     assert receipt.status == 1
 
     assert len(w3.eth.get_logs({"address": myContract.address})) == 1
-    assert len(w3.eth.get_logs({"address": "0x0000000000000000000000000000000000000000"})) == 0
+    assert len(w3.eth.get_logs({"address": ADDRS["validator"]})) == 0

@@ -24,6 +24,7 @@ TEST_CONTRACTS = {
     "Greeter": "Greeter.sol",
 }
 
+
 def contract_path(name, filename):
     return (
         Path(__file__).parent
