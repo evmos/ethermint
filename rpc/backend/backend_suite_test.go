@@ -137,6 +137,5 @@ func (suite *BackendTestSuite) buildFormattedBlock(
 
 func (suite *BackendTestSuite) generateTestKeyring(clientDir string) (keyring.Keyring, error) {
 	buf := bufio.NewReader(os.Stdin)
-	encCfg := encoding.MakeConfig(app.ModuleBasics)
-	return keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, clientDir, buf, encCfg.Codec, []keyring.Option{hd.EthSecp256k1Option()}...)
+	return keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, clientDir, buf, []keyring.Option{hd.EthSecp256k1Option()}...)
 }

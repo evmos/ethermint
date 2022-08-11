@@ -51,7 +51,7 @@ type EVMBackend interface {
 	SetEtherbase(etherbase common.Address) bool
 	ImportRawKey(privkey, password string) (common.Address, error)
 	ListAccounts() ([]common.Address, error)
-	NewMnemonic(uid string, language keyring.Language, hdPath, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, error)
+	NewMnemonic(uid string, language keyring.Language, hdPath, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, error)
 	UnprotectedAllowed() bool
 	RPCGasCap() uint64            // global gas cap for eth_call over rpc: DoS protection
 	RPCEVMTimeout() time.Duration // global timeout for eth_call over rpc: DoS protection
@@ -158,7 +158,6 @@ func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context
 			viper.GetString(flags.FlagKeyringBackend),
 			clientCtx.KeyringDir,
 			clientCtx.Input,
-			clientCtx.Codec,
 			hd.EthSecp256k1Option(),
 		)
 		if err != nil {
