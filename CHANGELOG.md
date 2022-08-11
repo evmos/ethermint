@@ -92,6 +92,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [\#1143](https://github.com/evmos/ethermint/pull/1143) Restrict unprotected txs on the node JSON-RPC configuration.
 * (all) [\#1137](https://github.com/evmos/ethermint/pull/1137) Rename go module to `evmos/ethermint`
 
+### API Breaking
+
+- (json-rpc) [tharsis#1121](https://github.com/tharsis/ethermint/pull/1121) Store eth tx index separately
+
 ### Improvements
 
 * (deps) [\#1147](https://github.com/evmos/ethermint/pull/1147) Bump Go version to `1.18`.

@@ -82,6 +82,9 @@
 - [ethermint/types/v1/dynamic_fee.proto](#ethermint/types/v1/dynamic_fee.proto)
     - [ExtensionOptionDynamicFeeTx](#ethermint.types.v1.ExtensionOptionDynamicFeeTx)
   
+- [ethermint/types/v1/indexer.proto](#ethermint/types/v1/indexer.proto)
+    - [TxResult](#ethermint.types.v1.TxResult)
+  
 - [ethermint/types/v1/web3.proto](#ethermint/types/v1/web3.proto)
     - [ExtensionOptionsWeb3Tx](#ethermint.types.v1.ExtensionOptionsWeb3Tx)
   
@@ -1163,6 +1166,43 @@ ExtensionOptionDynamicFeeTx is an extension option that specify the maxPrioPrice
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `max_priority_price` | [string](#string) |  | the same as `max_priority_fee_per_gas` in eip-1559 spec |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethermint/types/v1/indexer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethermint/types/v1/indexer.proto
+
+
+
+<a name="ethermint.types.v1.TxResult"></a>
+
+### TxResult
+TxResult is the value stored in eth tx indexer
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  | the block height |
+| `tx_index` | [uint32](#uint32) |  | cosmos tx index |
+| `msg_index` | [uint32](#uint32) |  | the msg index in a batch tx |
+| `eth_tx_index` | [int32](#int32) |  | eth tx index, the index in the list of valid eth tx in the block, aka. the transaction list returned by eth_getBlock api. |
+| `failed` | [bool](#bool) |  | if the eth tx is failed |
+| `gas_used` | [uint64](#uint64) |  | gas used by tx, if exceeds block gas limit, it's set to gas limit which is what's actually deducted by ante handler. |
+| `cumulative_gas_used` | [uint64](#uint64) |  | the cumulative gas used within current batch tx |
 
 
 
