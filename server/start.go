@@ -44,6 +44,7 @@ import (
 	ethdebug "github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
 	"github.com/evmos/ethermint/server/config"
 	srvflags "github.com/evmos/ethermint/server/flags"
+	ethermint "github.com/evmos/ethermint/types"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -332,6 +333,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		app.RegisterTendermintService(clientCtx)
 	}
 
+	var idxer ethermint.EVMTxIndexer
 	if config.JSONRPC.EnableIndexer {
 		idxDB, err := OpenIndexerDB(home, server.GetAppDBBackend(ctx.Viper))
 		if err != nil {
@@ -339,7 +341,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			return err
 		}
 		idxLogger := ctx.Logger.With("module", "evmindex")
-		idxer := indexer.NewKVIndexer(idxDB, idxLogger, clientCtx)
+		idxer = indexer.NewKVIndexer(idxDB, idxLogger, clientCtx)
 		indexerService := NewEVMIndexerService(idxer, clientCtx.Client)
 		indexerService.SetLogger(idxLogger)
 
@@ -454,7 +456,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
-		httpSrv, httpSrvDone, err = StartJSONRPC(ctx, clientCtx, tmRPCAddr, tmEndpoint, &config, indexer)
+		httpSrv, httpSrvDone, err = StartJSONRPC(ctx, clientCtx, tmRPCAddr, tmEndpoint, &config, idxer)
 		if err != nil {
 			return err
 		}
