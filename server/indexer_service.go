@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	Subscriber = "EVMIndexerService"
+	ServiceName = "EVMIndexerService"
 
 	NewBlockWaitTimeout = 60 * time.Second
 )
@@ -31,7 +31,7 @@ func NewEVMIndexerService(
 	client rpcclient.Client,
 ) *EVMIndexerService {
 	is := &EVMIndexerService{txIdxr: txIdxr, client: client}
-	is.BaseService = *service.NewBaseService(nil, "EVMIndexerService", is)
+	is.BaseService = *service.NewBaseService(nil, ServiceName, is)
 	return is
 }
 
@@ -51,7 +51,7 @@ func (eis *EVMIndexerService) OnStart() error {
 	// sometimes happen when there are no other subscribers.
 	blockHeadersChan, err := eis.client.Subscribe(
 		ctx,
-		Subscriber,
+		ServiceName,
 		types.QueryForEvent(types.EventNewBlockHeader).String(),
 		0)
 	if err != nil {
