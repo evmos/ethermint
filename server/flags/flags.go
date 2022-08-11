@@ -48,6 +48,7 @@ const (
 	JSONRPCHTTPIdleTimeout     = "json-rpc.http-idle-timeout"
 	JSONRPCAllowUnprotectedTxs = "json-rpc.allow-unprotected-txs"
 	JSONRPCMaxOpenConnections  = "json-rpc.max-open-connections"
+	JSONRPCEnableIndexer       = "json-rpc.enable-indexer"
 )
 
 // EVM flags
