@@ -40,10 +40,10 @@ import (
 	servergrpc "github.com/cosmos/cosmos-sdk/server/grpc"
 	"github.com/cosmos/cosmos-sdk/server/types"
 
+	"github.com/evmos/ethermint/indexer"
 	ethdebug "github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
 	"github.com/evmos/ethermint/server/config"
 	srvflags "github.com/evmos/ethermint/server/flags"
-	ethermint "github.com/evmos/ethermint/types"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -332,7 +332,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		app.RegisterTendermintService(clientCtx)
 	}
 
-	var indexer ethermint.EVMTxIndexer
 	if config.JSONRPC.EnableIndexer {
 		idxDB, err := OpenIndexerDB(home, server.GetAppDBBackend(ctx.Viper))
 		if err != nil {
@@ -340,8 +339,8 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			return err
 		}
 		idxLogger := ctx.Logger.With("module", "evmindex")
-		indexer = NewKVIndexer(idxDB, idxLogger, clientCtx)
-		indexerService := NewEVMIndexerService(indexer, clientCtx.Client)
+		idxer := indexer.NewKVIndexer(idxDB, idxLogger, clientCtx)
+		indexerService := NewEVMIndexerService(idxer, clientCtx.Client)
 		indexerService.SetLogger(idxLogger)
 
 		errCh := make(chan error)
@@ -510,6 +509,7 @@ func openDB(rootDir string, backendType dbm.BackendType) (dbm.DB, error) {
 	return dbm.NewDB("application", backendType, dataDir)
 }
 
+// OpenIndexerDB opens the custom eth indexer db, using the same db backend as the main app
 func OpenIndexerDB(rootDir string, backendType dbm.BackendType) (dbm.DB, error) {
 	dataDir := filepath.Join(rootDir, "data")
 	return dbm.NewDB("evmindexer", backendType, dataDir)

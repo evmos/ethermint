@@ -1199,7 +1199,7 @@ TxResult is the value stored in eth tx indexer
 | `height` | [int64](#int64) |  | the block height |
 | `tx_index` | [uint32](#uint32) |  | cosmos tx index |
 | `msg_index` | [uint32](#uint32) |  | the msg index in a batch tx |
-| `eth_tx_index` | [int32](#int32) |  | eth tx index |
+| `eth_tx_index` | [int32](#int32) |  | eth tx index, the index in the list of valid eth tx in the block, aka. the transaction list returned by eth_getBlock api. |
 | `failed` | [bool](#bool) |  | if the eth tx is failed |
 | `gas_used` | [uint64](#uint64) |  | gas used by tx, if exceeds block gas limit, it's set to gas limit which is what's actually deducted by ante handler. |
 | `cumulative_gas_used` | [uint64](#uint64) |  | the cumulative gas used within current batch tx |

@@ -31,7 +31,8 @@ type TxResult struct {
 	TxIndex uint32 `protobuf:"varint,2,opt,name=tx_index,json=txIndex,proto3" json:"tx_index,omitempty"`
 	// the msg index in a batch tx
 	MsgIndex uint32 `protobuf:"varint,3,opt,name=msg_index,json=msgIndex,proto3" json:"msg_index,omitempty"`
-	// eth tx index
+	// eth tx index, the index in the list of valid eth tx in the block,
+	// aka. the transaction list returned by eth_getBlock api.
 	EthTxIndex int32 `protobuf:"varint,4,opt,name=eth_tx_index,json=ethTxIndex,proto3" json:"eth_tx_index,omitempty"`
 	// if the eth tx is failed
 	Failed bool `protobuf:"varint,5,opt,name=failed,proto3" json:"failed,omitempty"`

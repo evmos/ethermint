@@ -57,6 +57,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransac
 			}
 		}
 	}
+	// if we still unable to find the eth tx index, return error, shouldn't happen.
 	if res.EthTxIndex == -1 {
 		return nil, errors.New("can't find index of ethereum tx")
 	}
@@ -94,6 +95,7 @@ func (b *Backend) getTransactionByHashPending(txHash common.Hash) (*rpctypes.RPC
 		}
 
 		if msg.Hash == hexTx {
+			// use zero block values since it's not included in a block yet
 			rpctx, err := rpctypes.NewTransactionFromMsg(
 				msg,
 				common.Hash{},
@@ -185,6 +187,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 			}
 		}
 	}
+	// return error if still unable to find the eth tx index
 	if res.EthTxIndex == -1 {
 		return nil, errors.New("can't find index of ethereum tx")
 	}
@@ -320,7 +323,7 @@ func (b *Backend) queryTendermintTxIndexer(query string, txGetter func(*rpctypes
 		return nil, errors.New("ethereum tx not found")
 	}
 	txResult := resTxs.Txs[0]
-	if !TxSuccessOrExceedsBlockGasLimit(&txResult.TxResult) {
+	if !rpctypes.TxSuccessOrExceedsBlockGasLimit(&txResult.TxResult) {
 		return nil, errors.New("invalid ethereum tx")
 	}
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
+	"github.com/evmos/ethermint/indexer"
 	tmnode "github.com/tendermint/tendermint/node"
 	sm "github.com/tendermint/tendermint/state"
 	tmstore "github.com/tendermint/tendermint/store"
@@ -28,6 +29,11 @@ func NewIndexTxCmd() *cobra.Command {
 				return err
 			}
 
+			direction := args[0]
+			if direction != "backward" && direction != "forward" {
+				return fmt.Errorf("unknown index direction, expect: backward|forward, got: %s", direction)
+			}
+
 			cfg := serverCtx.Config
 			home := cfg.RootDir
 			logger := serverCtx.Logger
@@ -36,7 +42,7 @@ func NewIndexTxCmd() *cobra.Command {
 				logger.Error("failed to open evm indexer DB", "error", err.Error())
 				return err
 			}
-			indexer := NewKVIndexer(idxDB, logger.With("module", "evmindex"), clientCtx)
+			idxer := indexer.NewKVIndexer(idxDB, logger.With("module", "evmindex"), clientCtx)
 
 			// open local tendermint db, because the local rpc won't be available.
 			tmdb, err := tmnode.DefaultDBProvider(&tmnode.DBContext{ID: "blockstore", Config: cfg})
@@ -60,7 +66,7 @@ func NewIndexTxCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				if err := indexer.IndexBlock(blk, resBlk.DeliverTxs); err != nil {
+				if err := idxer.IndexBlock(blk, resBlk.DeliverTxs); err != nil {
 					return err
 				}
 				fmt.Println(height)
@@ -69,7 +75,7 @@ func NewIndexTxCmd() *cobra.Command {
 
 			switch args[0] {
 			case "backward":
-				first, err := indexer.FirstIndexedBlock()
+				first, err := idxer.FirstIndexedBlock()
 				if err != nil {
 					return err
 				}
@@ -82,7 +88,7 @@ func NewIndexTxCmd() *cobra.Command {
 					}
 				}
 			case "forward":
-				latest, err := indexer.LastIndexedBlock()
+				latest, err := idxer.LastIndexedBlock()
 				if err != nil {
 					return err
 				}

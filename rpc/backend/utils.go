@@ -23,10 +23,6 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
-// ExceedBlockGasLimitError defines the error message when tx execution exceeds the block gas limit.
-// The tx fee is deducted in ante handler, so it shouldn't be ignored in JSON-RPC API.
-const ExceedBlockGasLimitError = "out of gas in location: block gas meter; gasWanted:"
-
 type txGasAndReward struct {
 	gasUsed uint64
 	reward  *big.Int
@@ -245,17 +241,6 @@ func ParseTxLogsFromEvent(event abci.Event) ([]*ethtypes.Log, error) {
 		logs = append(logs, &log)
 	}
 	return evmtypes.LogsToEthereum(logs), nil
-}
-
-// TxExceedBlockGasLimit returns true if the tx exceeds block gas limit.
-func TxExceedBlockGasLimit(res *abci.ResponseDeliverTx) bool {
-	return strings.Contains(res.Log, ExceedBlockGasLimitError)
-}
-
-// TxSuccessOrExceedsBlockGasLimit returnsrue if the transaction was successful
-// or if it failed with an ExceedBlockGasLimit error
-func TxSuccessOrExceedsBlockGasLimit(res *abci.ResponseDeliverTx) bool {
-	return res.Code == 0 || TxExceedBlockGasLimit(res)
 }
 
 // ShouldIgnoreGasUsed returns true if the gasUsed in result should be ignored

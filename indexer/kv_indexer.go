@@ -1,4 +1,4 @@
-package server
+package indexer
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/evmos/ethermint/rpc/backend"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -57,7 +56,7 @@ func (kv *KVIndexer) IndexBlock(block *tmtypes.Block, txResults []*abci.Response
 	var ethTxIndex int32
 	for txIndex, tx := range block.Txs {
 		result := txResults[txIndex]
-		if !backend.TxSuccessOrExceedsBlockGasLimit(result) {
+		if !rpctypes.TxSuccessOrExceedsBlockGasLimit(result) {
 			continue
 		}
 
@@ -131,31 +130,6 @@ func (kv *KVIndexer) FirstIndexedBlock() (int64, error) {
 	return LoadFirstBlock(kv.db)
 }
 
-// isEthTx check if the tx is an eth tx
-func isEthTx(tx sdk.Tx) bool {
-	extTx, ok := tx.(authante.HasExtensionOptionsTx)
-	if !ok {
-		return false
-	}
-	opts := extTx.GetExtensionOptions()
-	if len(opts) != 1 || opts[0].GetTypeUrl() != "/ethermint.evm.v1.ExtensionOptionsEthereumTx" {
-		return false
-	}
-	return true
-}
-
-// saveTxResult index the txResult into the kv db batch
-func saveTxResult(codec codec.Codec, batch dbm.Batch, txHash common.Hash, txResult *ethermint.TxResult) error {
-	bz := codec.MustMarshal(txResult)
-	if err := batch.Set(TxHashKey(txHash), bz); err != nil {
-		return sdkerrors.Wrap(err, "set tx-hash key")
-	}
-	if err := batch.Set(TxIndexKey(txResult.Height, txResult.EthTxIndex), txHash.Bytes()); err != nil {
-		return sdkerrors.Wrap(err, "set tx-index key")
-	}
-	return nil
-}
-
 // GetByTxHash finds eth tx by eth tx hash
 func (kv *KVIndexer) GetByTxHash(hash common.Hash) (*ethermint.TxResult, error) {
 	bz, err := kv.db.Get(TxHashKey(hash))
@@ -196,14 +170,6 @@ func TxIndexKey(blockNumber int64, txIndex int32) []byte {
 	return append(append([]byte{KeyPrefixTxIndex}, bz1...), bz2...)
 }
 
-func parseBlockNumberFromKey(key []byte) (int64, error) {
-	if len(key) != TxIndexKeyLength {
-		return 0, fmt.Errorf("wrong tx index key length, expect: %d, got: %d", TxIndexKeyLength, len(key))
-	}
-
-	return int64(sdk.BigEndianToUint64(key[1:9])), nil
-}
-
 // LoadLastBlock returns the latest indexed block number, returns -1 if db is empty
 func LoadLastBlock(db dbm.DB) (int64, error) {
 	it, err := db.ReverseIterator([]byte{KeyPrefixTxIndex}, []byte{KeyPrefixTxIndex + 1})
@@ -228,4 +194,37 @@ func LoadFirstBlock(db dbm.DB) (int64, error) {
 		return -1, nil
 	}
 	return parseBlockNumberFromKey(it.Key())
+}
+
+// isEthTx check if the tx is an eth tx
+func isEthTx(tx sdk.Tx) bool {
+	extTx, ok := tx.(authante.HasExtensionOptionsTx)
+	if !ok {
+		return false
+	}
+	opts := extTx.GetExtensionOptions()
+	if len(opts) != 1 || opts[0].GetTypeUrl() != "/ethermint.evm.v1.ExtensionOptionsEthereumTx" {
+		return false
+	}
+	return true
+}
+
+// saveTxResult index the txResult into the kv db batch
+func saveTxResult(codec codec.Codec, batch dbm.Batch, txHash common.Hash, txResult *ethermint.TxResult) error {
+	bz := codec.MustMarshal(txResult)
+	if err := batch.Set(TxHashKey(txHash), bz); err != nil {
+		return sdkerrors.Wrap(err, "set tx-hash key")
+	}
+	if err := batch.Set(TxIndexKey(txResult.Height, txResult.EthTxIndex), txHash.Bytes()); err != nil {
+		return sdkerrors.Wrap(err, "set tx-index key")
+	}
+	return nil
+}
+
+func parseBlockNumberFromKey(key []byte) (int64, error) {
+	if len(key) != TxIndexKeyLength {
+		return 0, fmt.Errorf("wrong tx index key length, expect: %d, got: %d", TxIndexKeyLength, len(key))
+	}
+
+	return int64(sdk.BigEndianToUint64(key[1:9])), nil
 }

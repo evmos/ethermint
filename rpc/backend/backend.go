@@ -144,7 +144,13 @@ type Backend struct {
 }
 
 // NewBackend creates a new Backend instance for cosmos and ethereum namespaces
-func NewBackend(ctx *server.Context, logger log.Logger, clientCtx client.Context, allowUnprotectedTxs bool, indexer ethermint.EVMTxIndexer) *Backend {
+func NewBackend(
+	ctx *server.Context,
+	logger log.Logger,
+	clientCtx client.Context,
+	allowUnprotectedTxs bool,
+	indexer ethermint.EVMTxIndexer,
+) *Backend {
 	chainID, err := ethermint.ParseChainID(clientCtx.ChainID)
 	if err != nil {
 		panic(err)

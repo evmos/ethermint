@@ -16,7 +16,8 @@ message TxResult {
     // the msg index in a batch tx
     uint32 msg_index = 3;
 
-    // eth tx index
+    // eth tx index, the index in the list of valid eth tx in the block, 
+    // aka. the transaction list returned by eth_getBlock api.
     int32 eth_tx_index = 4;
     // if the eth tx is failed
     bool failed = 5;
