@@ -181,7 +181,6 @@ def test_get_proof(ethermint, geth):
     wait_for_block(ethermint.cosmos_cli(), 3)
     eth_rpc = ethermint.w3.provider
     geth_rpc = geth.w3.provider
-    print(ethermint.w3.eth.block_number, geth.w3.eth.block_number)
     make_same_rpc_calls(
         eth_rpc,
         geth_rpc,
@@ -318,8 +317,6 @@ def test_estimate_gas(ethermint, geth):
 def make_same_rpc_calls(rpc1, rpc2, method, params):
     res1 = rpc1.make_request(method, params)
     res2 = rpc2.make_request(method, params)
-    print("res1", res1)
-    print("res2", res2)
     res, err = same_types(res1, res2)
     assert res, err
 
