@@ -49,6 +49,7 @@ type EVMBackend interface {
 	Accounts() ([]common.Address, error)
 	Syncing() (interface{}, error)
 	SetEtherbase(etherbase common.Address) bool
+	SetGasPrice(gasPrice hexutil.Big) bool
 	ImportRawKey(privkey, password string) (common.Address, error)
 	ListAccounts() ([]common.Address, error)
 	NewMnemonic(uid string, language keyring.Language, hdPath, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, error)
