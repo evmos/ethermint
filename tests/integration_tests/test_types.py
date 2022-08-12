@@ -12,6 +12,7 @@ from .utils import (
     deploy_contract,
     send_transaction,
     w3_wait_for_new_blocks,
+    wait_for_block,
 )
 
 
@@ -177,6 +178,7 @@ def send_and_get_hash(w3, tx_value=10):
 
 
 def test_get_proof(ethermint, geth):
+    wait_for_block(ethermint.cosmos_cli(), 3)
     eth_rpc = ethermint.w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
