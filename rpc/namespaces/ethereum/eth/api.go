@@ -2,7 +2,6 @@ package eth
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
@@ -453,23 +452,19 @@ func (e *PublicAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, err
 		return nil, nil
 	}
 
-	if res.TxResult.Code != 0 {
+	if res.Failed {
 		// failed, return empty logs
 		return nil, nil
 	}
 
-	parsedTxs, err := rpctypes.ParseTxResult(&res.TxResult)
+	resBlockResult, err := e.backend.GetTendermintBlockResultByNumber(&res.Height)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse tx events: %s, %v", hexTx, err)
-	}
-
-	parsedTx := parsedTxs.GetTxByHash(txHash)
-	if parsedTx == nil {
-		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hexTx)
+		e.logger.Debug("block result not found", "number", res.Height, "error", err.Error())
+		return nil, nil
 	}
 
 	// parse tx logs from events
-	return parsedTx.ParseTxLogs()
+	return backend.TxLogsFromEvents(resBlockResult.TxsResults[res.TxIndex].Events, int(res.MsgIndex))
 }
 
 // SignTypedData signs EIP-712 conformant typed data

@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"fmt"
 	"math/big"
 
@@ -188,7 +187,7 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 	}
 
 	// NOTE: only Ethereum accounts (contracts) can be selfdestructed
-	ethAcct, ok := acct.(ethermint.EthAccountI)
+	_, ok := acct.(ethermint.EthAccountI)
 	if !ok {
 		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
 	}
@@ -196,12 +195,6 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 	// clear balance
 	if err := k.SetBalance(ctx, addr, new(big.Int)); err != nil {
 		return err
-	}
-
-	// remove code
-	codeHashBz := ethAcct.GetCodeHash().Bytes()
-	if !bytes.Equal(codeHashBz, types.EmptyCodeHash) {
-		k.SetCode(ctx, codeHashBz, nil)
 	}
 
 	// clear storage

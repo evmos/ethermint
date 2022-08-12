@@ -32,23 +32,14 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		return nil, err
 	}
 
-	parsedTxs, err := rpctypes.ParseTxResult(&transaction.TxResult)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse tx events: %s", hash.Hex())
-	}
-	parsedTx := parsedTxs.GetTxByHash(hash)
-	if parsedTx == nil {
-		return nil, fmt.Errorf("ethereum tx not found in msgs: %s", hash.Hex())
-	}
-
 	// check tx index is not out of bound
-	if uint32(len(blk.Block.Txs)) < transaction.Index {
-		b.logger.Debug("tx index out of bounds", "index", transaction.Index, "hash", hash.String(), "height", blk.Block.Height)
+	if uint32(len(blk.Block.Txs)) < transaction.TxIndex {
+		b.logger.Debug("tx index out of bounds", "index", transaction.TxIndex, "hash", hash.String(), "height", blk.Block.Height)
 		return nil, fmt.Errorf("transaction not included in block %v", blk.Block.Height)
 	}
 
 	var predecessors []*evmtypes.MsgEthereumTx
-	for _, txBz := range blk.Block.Txs[:transaction.Index] {
+	for _, txBz := range blk.Block.Txs[:transaction.TxIndex] {
 		tx, err := b.clientCtx.TxConfig.TxDecoder()(txBz)
 		if err != nil {
 			b.logger.Debug("failed to decode transaction in block", "height", blk.Block.Height, "error", err.Error())
@@ -64,14 +55,14 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		}
 	}
 
-	tx, err := b.clientCtx.TxConfig.TxDecoder()(transaction.Tx)
+	tx, err := b.clientCtx.TxConfig.TxDecoder()(blk.Block.Txs[transaction.TxIndex])
 	if err != nil {
 		b.logger.Debug("tx not found", "hash", hash)
 		return nil, err
 	}
 
 	// add predecessor messages in current cosmos tx
-	for i := 0; i < parsedTx.MsgIndex; i++ {
+	for i := 0; i < int(transaction.MsgIndex); i++ {
 		ethMsg, ok := tx.GetMsgs()[i].(*evmtypes.MsgEthereumTx)
 		if !ok {
 			continue
@@ -79,7 +70,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		predecessors = append(predecessors, ethMsg)
 	}
 
-	ethMessage, ok := tx.GetMsgs()[parsedTx.MsgIndex].(*evmtypes.MsgEthereumTx)
+	ethMessage, ok := tx.GetMsgs()[transaction.MsgIndex].(*evmtypes.MsgEthereumTx)
 	if !ok {
 		b.logger.Debug("invalid transaction type", "type", fmt.Sprintf("%T", tx))
 		return nil, fmt.Errorf("invalid transaction type %T", tx)

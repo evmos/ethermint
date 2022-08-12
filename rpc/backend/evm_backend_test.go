@@ -949,7 +949,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 				TxsResults: []*types.ResponseDeliverTx{
 					{
 						Code: 1,
-						Log:  ExceedBlockGasLimitError,
+						Log:  ethrpc.ExceedBlockGasLimitError,
 					},
 				},
 			},
@@ -964,7 +964,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 				TxsResults: []*types.ResponseDeliverTx{
 					{
 						Code: 0,
-						Log:  ExceedBlockGasLimitError,
+						Log:  ethrpc.ExceedBlockGasLimitError,
 					},
 				},
 			},
@@ -973,7 +973,6 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 	}
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
-
 			suite.SetupTest() // reset test and queries
 
 			msgs := suite.backend.GetEthereumMsgsFromTendermintBlock(tc.resBlock, tc.blockRes)

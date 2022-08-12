@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Improvements
+
+* (rpc) [#1229](https://github.com/evmos/ethermint/pull/1229) Add support for configuring RPC `MaxOpenConnections`
+
 ### State Machine Breaking
 
 * (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
@@ -46,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
   recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade cosmos-sdk to v0.46.
+* (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 
 ### API Breaking
 
@@ -86,6 +91,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [\#1126](https://github.com/evmos/ethermint/pull/1126) Make some JSON-RPC APIS work for pruned nodes.
 * (rpc) [\#1143](https://github.com/evmos/ethermint/pull/1143) Restrict unprotected txs on the node JSON-RPC configuration.
 * (all) [\#1137](https://github.com/evmos/ethermint/pull/1137) Rename go module to `evmos/ethermint`
+
+### API Breaking
+
+- (json-rpc) [tharsis#1121](https://github.com/tharsis/ethermint/pull/1121) Store eth tx index separately
 
 ### Improvements
 
