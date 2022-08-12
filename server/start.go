@@ -336,7 +336,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	var idxer ethermint.EVMTxIndexer
 	if config.JSONRPC.EnableIndexer {
-		idxDB, err := OpenIndexerDB(home, server.GetAppDBBackend(ctx.Viper))
+		idxDB, err := OpenIndexerDB(home)
 		if err != nil {
 			logger.Error("failed to open evm indexer DB", "error", err.Error())
 			return err
@@ -513,9 +513,9 @@ func openDB(rootDir string) (dbm.DB, error) {
 }
 
 // OpenIndexerDB opens the custom eth indexer db, using the same db backend as the main app
-func OpenIndexerDB(rootDir string, backendType dbm.BackendType) (dbm.DB, error) {
+func OpenIndexerDB(rootDir string) (dbm.DB, error) {
 	dataDir := filepath.Join(rootDir, "data")
-	return dbm.NewDB("evmindexer", backendType, dataDir)
+	return sdk.NewLevelDB("evmindexer", dataDir)
 }
 
 func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
