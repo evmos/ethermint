@@ -47,20 +47,20 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
-* (json-rpc) [#1121](https://github.com/tharsis/ethermint/pull/1121) Store eth tx index separately
+* (rpc) [#1121](https://github.com/tharsis/ethermint/pull/1121) Implement Ethereum tx indexer
 
 ### Bug Fixes
 
-* (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
+* (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in `debug_traceTransaction` response.
 
 ### Improvements
 
 * (test) [#1196](https://github.com/evmos/ethermint/pull/1196) Integration tests setup
-* (test) [#1199](https://github.com/evmos/ethermint/pull/1199) Add backend test suite with mock grpc query client
-* (test) [#1189](https://github.com/evmos/ethermint/pull/1189) JSON rpc unit tests
-* (test) [#1212](https://github.com/evmos/ethermint/pull/1212) Prune Node Integration Tests
-* (test) [#1207](https://github.com/evmos/ethermint/pull/1207) Rpc types integration tests
-* (test) [#1218](https://github.com/evmos/ethermint/pull/1218) ENG 119 restructure json rpc api
+* (test) [#1199](https://github.com/evmos/ethermint/pull/1199) Add backend test suite with mock gRPC query client
+* (test) [#1189](https://github.com/evmos/ethermint/pull/1189) JSON-RPC unit tests
+* (test) [#1212](https://github.com/evmos/ethermint/pull/1212) Prune node integration tests
+* (test) [#1207](https://github.com/evmos/ethermint/pull/1207) JSON-RPC types integration tests
+* (test) [#1218](https://github.com/evmos/ethermint/pull/1218) Restructure JSON-RPC API
 * (rpc) [#1229](https://github.com/evmos/ethermint/pull/1229) Add support for configuring RPC `MaxOpenConnections`
 * (cli) [#1230](https://github.com/evmos/ethermint/pull/1230) Remove redundant positional height parameter from feemarket's query cli.
 * (test)[#1233](https://github.com/evmos/ethermint/pull/1233) Add filters integration tests
