@@ -11,6 +11,7 @@ from .utils import (
     KEYS,
     deploy_contract,
     send_transaction,
+    w3_wait_for_block,
     w3_wait_for_new_blocks,
 )
 
@@ -177,6 +178,9 @@ def send_and_get_hash(w3, tx_value=10):
 
 
 def test_get_proof(ethermint, geth):
+    # on ethermint the proof query will fail for block numbers <= 2
+    # so we must wait for several blocks
+    w3_wait_for_block(ethermint.w3, 3)
     eth_rpc = ethermint.w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
@@ -190,7 +194,7 @@ def test_get_proof(ethermint, geth):
         eth_rpc,
         geth_rpc,
         "eth_getProof",
-        ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", ["0x0"], "0x32"],
+        ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", ["0x0"], "0x1024"],
     )
 
     _ = send_and_get_hash(ethermint.w3)
