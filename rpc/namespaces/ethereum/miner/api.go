@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -33,4 +34,10 @@ func NewPrivateAPI(
 func (api *API) SetEtherbase(etherbase common.Address) bool {
 	api.logger.Debug("miner_setEtherbase")
 	return api.backend.SetEtherbase(etherbase)
+}
+
+// SetGasPrice sets the minimum accepted gas price for the miner.
+func (api *API) SetGasPrice(gasPrice hexutil.Big) bool {
+	api.logger.Info(api.ctx.Viper.ConfigFileUsed())
+	return api.backend.SetGasPrice(gasPrice)
 }
