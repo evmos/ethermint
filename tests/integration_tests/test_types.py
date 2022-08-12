@@ -319,8 +319,6 @@ def test_estimate_gas(ethermint, geth):
 def make_same_rpc_calls(rpc1, rpc2, method, params):
     res1 = rpc1.make_request(method, params)
     res2 = rpc2.make_request(method, params)
-    print("res1", res1)
-    print("res2", res2)
     res, err = same_types(res1, res2)
     assert res, err
 
