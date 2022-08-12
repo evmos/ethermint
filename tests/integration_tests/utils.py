@@ -92,6 +92,21 @@ def wait_for_block(cli, height, timeout=240):
         raise TimeoutError(f"wait for block {height} timeout")
 
 
+def w3_wait_for_block(w3, height, timeout=240):
+    for i in range(timeout * 2):
+        try:
+            current_height = w3.eth.block_number
+        except Exception as e:
+            print(f"get json-rpc block number failed: {e}", file=sys.stderr)
+        else:
+            if current_height >= height:
+                break
+            print("current block height", current_height)
+        time.sleep(0.5)
+    else:
+        raise TimeoutError(f"wait for block {height} timeout")
+
+
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     """
     deploy contract and return the deployed contract instance
