@@ -1,6 +1,7 @@
 import json
 import os
 import socket
+import sys
 import time
 from pathlib import Path
 
@@ -73,6 +74,22 @@ def wait_for_new_blocks(cli, n):
         cur_height = int((cli.status())["SyncInfo"]["latest_block_height"])
         if cur_height - begin_height >= n:
             break
+
+
+def wait_for_block(cli, height, timeout=240):
+    for i in range(timeout * 2):
+        try:
+            status = cli.status()
+        except AssertionError as e:
+            print(f"get sync status failed: {e}", file=sys.stderr)
+        else:
+            current_height = int(status["SyncInfo"]["latest_block_height"])
+            if current_height >= height:
+                break
+            print("current block height", current_height)
+        time.sleep(0.5)
+    else:
+        raise TimeoutError(f"wait for block {height} timeout")
 
 
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
