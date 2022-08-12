@@ -43,7 +43,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (deps) [#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
 * (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
   recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
-* (ante) [##1173](https://github.com/evmos/ethermint/pull/1173) Make NewAnteHandler returns error if input is invalid
+* (ante) [#1173](https://github.com/evmos/ethermint/pull/1173) Make `NewAnteHandler` return error if input is invalid
 
 ### API Breaking
 
