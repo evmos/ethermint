@@ -1,12 +1,12 @@
+import pytest
 from web3 import Web3
 
-import pytest
 from .utils import (
     ADDRS,
     CONTRACTS,
     deploy_contract,
-    send_transaction,
     send_successful_transaction,
+    send_transaction,
 )
 
 
@@ -43,31 +43,29 @@ def test_block_filter(cluster):
 
 def test_event_log_filter_by_contract(cluster):
     w3: Web3 = cluster.w3
-    myContract = deploy_contract(w3, CONTRACTS["Greeter"])
-    assert myContract.caller.greet() == "Hello"
+    contract = deploy_contract(w3, CONTRACTS["Greeter"])
+    assert contract.caller.greet() == "Hello"
 
     # Create new filter from contract
     current_height = hex(w3.eth.get_block_number())
-    flt = myContract.events.ChangeGreeting.createFilter(
-        fromBlock=current_height
-    )
+    flt = contract.events.ChangeGreeting.createFilter(fromBlock=current_height)
 
     # without tx
     assert flt.get_new_entries() == []  # GetFilterChanges
     assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
-    tx = myContract.functions.setGreeting("world").buildTransaction()
+    tx = contract.functions.setGreeting("world").buildTransaction()
     tx_receipt = send_transaction(w3, tx)
     assert tx_receipt.status == 1
 
-    log = myContract.events.ChangeGreeting().processReceipt(tx_receipt)[0]
+    log = contract.events.ChangeGreeting().processReceipt(tx_receipt)[0]
     assert log["event"] == "ChangeGreeting"
 
     new_entries = flt.get_new_entries()
     assert len(new_entries) == 1
     assert new_entries[0] == log
-    assert myContract.caller.greet() == "world"
+    assert contract.caller.greet() == "world"
 
     # without new txs since last call
     assert flt.get_new_entries() == []
@@ -83,10 +81,10 @@ def test_event_log_filter_by_contract(cluster):
 def test_event_log_filter_by_address(cluster):
     w3: Web3 = cluster.w3
 
-    myContract = deploy_contract(w3, CONTRACTS["Greeter"])
-    assert myContract.caller.greet() == "Hello"
+    contract = deploy_contract(w3, CONTRACTS["Greeter"])
+    assert contract.caller.greet() == "Hello"
 
-    flt = w3.eth.filter({"address": myContract.address})
+    flt = w3.eth.filter({"address": contract.address})
     flt2 = w3.eth.filter({"address": ADDRS["validator"]})
 
     # without tx
@@ -94,7 +92,7 @@ def test_event_log_filter_by_address(cluster):
     assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
-    tx = myContract.functions.setGreeting("world").buildTransaction()
+    tx = contract.functions.setGreeting("world").buildTransaction()
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
@@ -105,16 +103,16 @@ def test_event_log_filter_by_address(cluster):
 def test_get_logs(cluster):
     w3: Web3 = cluster.w3
 
-    myContract = deploy_contract(w3, CONTRACTS["Greeter"])
+    contract = deploy_contract(w3, CONTRACTS["Greeter"])
 
     # without tx
-    assert w3.eth.get_logs({"address": myContract.address}) == []
+    assert w3.eth.get_logs({"address": contract.address}) == []
     assert w3.eth.get_logs({"address": ADDRS["validator"]}) == []
 
     # with tx
-    tx = myContract.functions.setGreeting("world").buildTransaction()
+    tx = contract.functions.setGreeting("world").buildTransaction()
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
-    assert len(w3.eth.get_logs({"address": myContract.address})) == 1
+    assert len(w3.eth.get_logs({"address": contract.address})) == 1
     assert len(w3.eth.get_logs({"address": ADDRS["validator"]})) == 0
