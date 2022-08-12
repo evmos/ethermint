@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdkconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -19,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
+	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -237,6 +239,35 @@ func (b *Backend) NewMnemonic(uid string, language keyring.Language, hdPath, bip
 		return nil, err
 	}
 	return info, err
+}
+
+// SetGasPrice sets the minimum accepted gas price for the miner.
+// NOTE: this function accepts only integers to have the same interface than go-eth
+// to use float values, the gas prices must be configured using the configuration file
+func (b *Backend) SetGasPrice(gasPrice hexutil.Big) bool {
+	appConf := config.GetConfig(b.clientCtx.Viper)
+
+	var unit string
+	minGasPrices := appConf.GetMinGasPrices()
+
+	// fetch the base denom from the sdk Config in case it's not currently defined on the node config
+	if len(minGasPrices) == 0 || minGasPrices.Empty() {
+		var err error
+		unit, err = sdk.GetBaseDenom()
+		if err != nil {
+			b.logger.Debug("could not get the denom of smallest unit registered", "error", err.Error())
+			return false
+		}
+	} else {
+		unit = minGasPrices[0].Denom
+	}
+
+	c := sdk.NewDecCoin(unit, sdk.NewIntFromBigInt(gasPrice.ToInt()))
+
+	appConf.SetMinGasPrices(sdk.DecCoins{c})
+	sdkconfig.WriteConfigFile(b.clientCtx.Viper.ConfigFileUsed(), appConf)
+	b.logger.Info("Your configuration file was modified. Please RESTART your node.", "gas-price", c.String())
+	return true
 }
 
 // UnprotectedAllowed returns the node configuration value for allowing
