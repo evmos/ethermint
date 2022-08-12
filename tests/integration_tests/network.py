@@ -4,7 +4,6 @@ import signal
 import subprocess
 from pathlib import Path
 
-import tomlkit
 import web3
 from pystarport import ports
 from web3.middleware import geth_poa_middleware
@@ -61,7 +60,7 @@ class Geth:
 
 
 def setup_ethermint(path, base_port):
-    cfg = Path(__file__).parent / "../../scripts/ethermint-devnet.yaml"
+    cfg = Path(__file__).parent / "configs/default.jsonnet"
     yield from setup_custom_ethermint(path, base_port, cfg)
 
 def setup_geth(path, base_port):
