@@ -1,6 +1,8 @@
 # RPC Integration tests
 
-The RPC integration test suite uses nix and python to send identical queries to both an Ethermint and a [Geth](https://github.com/ethereum/go-ethereum) client and compare the responses. It allows for quickly assessing the compatibility with Geth.
+The RPC integration test suite uses nix for reproducible and configurable
+builds allowing to run integration tests using python web3 library against
+different Ethermint and [Geth](https://github.com/ethereum/go-ethereum) clients with multiple configurations.
 
 ## Installation
 
