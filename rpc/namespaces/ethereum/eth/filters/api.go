@@ -25,13 +25,13 @@ import (
 
 // FilterAPI gathers
 type FilterAPI interface {
-	GetLogs(ctx context.Context, crit filters.FilterCriteria) ([]*ethtypes.Log, error)
-	GetFilterChanges(id rpc.ID) (interface{}, error)
-	GetFilterLogs(ctx context.Context, id rpc.ID) ([]*ethtypes.Log, error)
+	NewPendingTransactionFilter() rpc.ID
 	NewBlockFilter() rpc.ID
 	NewFilter(criteria filters.FilterCriteria) (rpc.ID, error)
-	NewPendingTransactionFilter() rpc.ID
+	GetFilterChanges(id rpc.ID) (interface{}, error)
+	GetFilterLogs(ctx context.Context, id rpc.ID) ([]*ethtypes.Log, error)
 	UninstallFilter(id rpc.ID) bool
+	GetLogs(ctx context.Context, crit filters.FilterCriteria) ([]*ethtypes.Log, error)
 }
 
 // Backend defines the methods requided by the PublicFilterAPI backend
