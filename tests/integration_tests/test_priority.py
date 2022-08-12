@@ -30,6 +30,9 @@ def tx_priority(tx, base_fee):
 def test_priority(ethermint: Ethermint):
     """
     test priorities of different tx types
+
+    use a relatively large priority number to counter
+    the effect of base fee change during the testing.
     """
     w3 = ethermint.w3
     amount = 10000
@@ -44,7 +47,7 @@ def test_priority(ethermint: Ethermint):
                 "to": "0x0000000000000000000000000000000000000000",
                 "value": amount,
                 "gas": 21000,
-                "maxFeePerGas": base_fee + PRIORITY_REDUCTION * 6,
+                "maxFeePerGas": base_fee + PRIORITY_REDUCTION * 600000,
                 "maxPriorityFeePerGas": 0,
             },
         ),
@@ -54,7 +57,7 @@ def test_priority(ethermint: Ethermint):
                 "to": "0x0000000000000000000000000000000000000000",
                 "value": amount,
                 "gas": 21000,
-                "gasPrice": base_fee + PRIORITY_REDUCTION * 2,
+                "gasPrice": base_fee + PRIORITY_REDUCTION * 200000,
             },
         ),
         (
@@ -62,7 +65,7 @@ def test_priority(ethermint: Ethermint):
             {
                 "to": "0x0000000000000000000000000000000000000000",
                 "value": amount,
-                "gasPrice": base_fee + PRIORITY_REDUCTION * 4,
+                "gasPrice": base_fee + PRIORITY_REDUCTION * 400000,
                 "accessList": [
                     {
                         "address": "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
@@ -82,15 +85,15 @@ def test_priority(ethermint: Ethermint):
                 "to": "0x0000000000000000000000000000000000000000",
                 "value": amount,
                 "gas": 21000,
-                "maxFeePerGas": base_fee + PRIORITY_REDUCTION * 6,
-                "maxPriorityFeePerGas": PRIORITY_REDUCTION * 6,
+                "maxFeePerGas": base_fee + PRIORITY_REDUCTION * 600000,
+                "maxPriorityFeePerGas": PRIORITY_REDUCTION * 600000,
             },
         ),
     ]
 
     # test cases are ordered by priority
-    priorities = [tx_priority(tx, base_fee) for _, tx in test_cases]
-    assert all(a < b for a, b in zip(priorities, priorities[1:]))
+    expect_priorities = [tx_priority(tx, base_fee) for _, tx in test_cases]
+    assert expect_priorities == [0, 200000, 400000, 600000]
 
     signed = [sign_transaction(w3, tx, key=KEYS[sender]) for sender, tx in test_cases]
     # send the txs from low priority to high,
@@ -109,14 +112,6 @@ def test_priority(ethermint: Ethermint):
     assert all(i1 > i2 for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
 
 
-def included_earlier(receipt1, receipt2):
-    "returns true if receipt1 is included earlier than receipt2"
-    return (receipt1.blockNumber, receipt1.transactionIndex) < (
-        receipt2.blockNumber,
-        receipt2.transactionIndex,
-    )
-
-
 def test_native_tx_priority(ethermint: Ethermint):
     cli = ethermint.cosmos_cli()
     base_fee = cli.query_base_fee()
@@ -126,28 +121,28 @@ def test_native_tx_priority(ethermint: Ethermint):
             "from": eth_to_bech32(ADDRS["community"]),
             "to": eth_to_bech32(ADDRS["validator"]),
             "amount": "1000aphoton",
-            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 600000}aphoton",
             "max_priority_price": 0,
         },
         {
             "from": eth_to_bech32(ADDRS["signer1"]),
             "to": eth_to_bech32(ADDRS["signer2"]),
             "amount": "1000aphoton",
-            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
-            "max_priority_price": PRIORITY_REDUCTION * 2,
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 600000}aphoton",
+            "max_priority_price": PRIORITY_REDUCTION * 200000,
         },
         {
             "from": eth_to_bech32(ADDRS["signer2"]),
             "to": eth_to_bech32(ADDRS["signer1"]),
             "amount": "1000aphoton",
-            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 4}aphoton",
-            "max_priority_price": PRIORITY_REDUCTION * 4,
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 400000}aphoton",
+            "max_priority_price": PRIORITY_REDUCTION * 400000,
         },
         {
             "from": eth_to_bech32(ADDRS["validator"]),
             "to": eth_to_bech32(ADDRS["community"]),
             "amount": "1000aphoton",
-            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 6}aphoton",
+            "gas_prices": f"{base_fee + PRIORITY_REDUCTION * 600000}aphoton",
             "max_priority_price": None,  # no extension, maximum tipFeeCap
         },
     ]
@@ -174,7 +169,7 @@ def test_native_tx_priority(ethermint: Ethermint):
             )
             // PRIORITY_REDUCTION
         )
-    assert expect_priorities == [0, 2, 4, 6]
+    assert expect_priorities == [0, 200000, 400000, 600000]
 
     txhashes = []
     for tx in txs:
