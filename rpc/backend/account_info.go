@@ -44,9 +44,8 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 	height := blockNum.Int64()
 	_, err = b.GetTendermintBlockByNumber(blockNum)
 	if err != nil {
-		// Get 'latest' proof if query is in the future
-		// this imitates geth behavior
-		height = 0
+		// the error message imitates geth behavior
+		return nil, errors.New("header not found")
 	}
 	ctx := rpctypes.ContextWithHeight(height)
 
