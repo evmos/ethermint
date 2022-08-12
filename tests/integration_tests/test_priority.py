@@ -31,7 +31,8 @@ def test_priority(ethermint: Ethermint):
     """
     test priorities of different tx types
 
-    use relatively large priority number to counter the effect of base fee change during the testing.
+    use a relatively large priority number to counter
+    the effect of base fee change during the testing.
     """
     w3 = ethermint.w3
     amount = 10000
