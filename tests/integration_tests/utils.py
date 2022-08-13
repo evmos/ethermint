@@ -2,6 +2,7 @@ import json
 import os
 import socket
 import time
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -21,6 +22,7 @@ ADDRS = {name: account.address for name, account in ACCOUNTS.items()}
 ETHERMINT_ADDRESS_PREFIX = "ethm"
 TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
+    "Greeter": "Greeter.sol",
 }
 
 
@@ -64,6 +66,46 @@ def w3_wait_for_new_blocks(w3, n):
             break
 
 
+def wait_for_new_blocks(cli, n):
+    begin_height = int((cli.status())["SyncInfo"]["latest_block_height"])
+    while True:
+        time.sleep(0.5)
+        cur_height = int((cli.status())["SyncInfo"]["latest_block_height"])
+        if cur_height - begin_height >= n:
+            break
+
+
+def wait_for_block(cli, height, timeout=240):
+    for i in range(timeout * 2):
+        try:
+            status = cli.status()
+        except AssertionError as e:
+            print(f"get sync status failed: {e}", file=sys.stderr)
+        else:
+            current_height = int(status["SyncInfo"]["latest_block_height"])
+            if current_height >= height:
+                break
+            print("current block height", current_height)
+        time.sleep(0.5)
+    else:
+        raise TimeoutError(f"wait for block {height} timeout")
+
+
+def w3_wait_for_block(w3, height, timeout=240):
+    for i in range(timeout * 2):
+        try:
+            current_height = w3.eth.block_number
+        except Exception as e:
+            print(f"get json-rpc block number failed: {e}", file=sys.stderr)
+        else:
+            if current_height >= height:
+                break
+            print("current block height", current_height)
+        time.sleep(0.5)
+    else:
+        raise TimeoutError(f"wait for block {height} timeout")
+
+
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     """
     deploy contract and return the deployed contract instance
@@ -95,3 +137,11 @@ def send_transaction(w3, tx, key=KEYS["validator"]):
     signed = sign_transaction(w3, tx, key)
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
     return w3.eth.wait_for_transaction_receipt(txhash)
+
+
+def send_successful_transaction(w3):
+    signed = sign_transaction(w3, {"to": ADDRS["community"], "value": 1000})
+    txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
+    receipt = w3.eth.wait_for_transaction_receipt(txhash)
+    assert receipt.status == 1
+    return txhash

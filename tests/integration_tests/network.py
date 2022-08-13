@@ -63,6 +63,7 @@ def setup_ethermint(path, base_port):
     cfg = Path(__file__).parent / "configs/default.jsonnet"
     yield from setup_custom_ethermint(path, base_port, cfg)
 
+
 def setup_geth(path, base_port):
     with (path / "geth.log").open("w") as logfile:
         cmd = [

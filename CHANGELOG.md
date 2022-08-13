@@ -38,17 +38,38 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### State Machine Breaking
+
+* (deps) [#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
+* (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
+  recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
+* (ante) [#1173](https://github.com/evmos/ethermint/pull/1173) Make `NewAnteHandler` return error if input is invalid
+
+### API Breaking
+
+* (rpc) [#1121](https://github.com/tharsis/ethermint/pull/1121) Implement Ethereum tx indexer
+
+### Bug Fixes
+
+* (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in `debug_traceTransaction` response.
+
 ### Improvements
-* (cli) [#1230](https://github.com/evmos/ethermint/pull/1230) Remove redundant positional height parameter from feemarket's query cli.
+
+* (test) [#1196](https://github.com/evmos/ethermint/pull/1196) Integration tests setup
+* (test) [#1199](https://github.com/evmos/ethermint/pull/1199) Add backend test suite with mock gRPC query client
+* (test) [#1189](https://github.com/evmos/ethermint/pull/1189) JSON-RPC unit tests
+* (test) [#1212](https://github.com/evmos/ethermint/pull/1212) Prune node integration tests
+* (test) [#1207](https://github.com/evmos/ethermint/pull/1207) JSON-RPC types integration tests
+* (test) [#1218](https://github.com/evmos/ethermint/pull/1218) Restructure JSON-RPC API
 * (rpc) [#1229](https://github.com/evmos/ethermint/pull/1229) Add support for configuring RPC `MaxOpenConnections`
+* (cli) [#1230](https://github.com/evmos/ethermint/pull/1230) Remove redundant positional height parameter from feemarket's query cli.
+* (test)[#1233](https://github.com/evmos/ethermint/pull/1233) Add filters integration tests
 
 ## [v0.18.0] - 2022-08-04
 
 ### State Machine Breaking
 
 * (evm) [\#1174](https://github.com/evmos/ethermint/pull/1174) Don't allow eth txs with 0 in mempool.
-* (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
-  recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
 
 ### Improvements
 
@@ -63,16 +84,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## [v0.17.1] - 2022-07-13
 
-### State Machine Breaking
-* (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
-
 ### Improvements
 
 * (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
-
-### Bug Fixes
-
-* (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 
 ## [v0.17.0] - 2022-06-27
 
@@ -86,10 +100,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [\#1126](https://github.com/evmos/ethermint/pull/1126) Make some JSON-RPC APIS work for pruned nodes.
 * (rpc) [\#1143](https://github.com/evmos/ethermint/pull/1143) Restrict unprotected txs on the node JSON-RPC configuration.
 * (all) [\#1137](https://github.com/evmos/ethermint/pull/1137) Rename go module to `evmos/ethermint`
-
-### API Breaking
-
-- (json-rpc) [tharsis#1121](https://github.com/tharsis/ethermint/pull/1121) Store eth tx index separately
 
 ### Improvements
 
