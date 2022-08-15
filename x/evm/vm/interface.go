@@ -9,11 +9,13 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// EVM defines the interface for the Ethereum Virtual Machine used by the module.
+// EVM defines the interface for the Ethereum Virtual Machine used by the EVM module.
 type EVM interface {
 	Config() vm.Config
 	Context() vm.BlockContext
 	TxContext() vm.TxContext
+	ActivePrecompiles(rules params.Rules) []common.Address
+	Precompile(addr common.Address) (vm.PrecompiledContract, bool)
 
 	Reset(txCtx vm.TxContext, statedb vm.StateDB)
 	Cancel()
@@ -27,3 +29,14 @@ type EVM interface {
 	Create2(caller vm.ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error)
 	ChainConfig() *params.ChainConfig
 }
+
+// Constructor defines the function used to instantiate the EVM on
+// each state transition.
+type Constructor func(
+	blockCtx vm.BlockContext,
+	txCtx vm.TxContext,
+	stateDB vm.StateDB,
+	chainConfig *params.ChainConfig,
+	config vm.Config,
+	customPrecompiles PrecompiledContracts,
+) EVM
