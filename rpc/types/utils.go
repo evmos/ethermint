@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -19,7 +20,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
+
+// ExceedBlockGasLimitError defines the error message when tx execution exceeds the block gas limit.
+// The tx fee is deducted in ante handler, so it shouldn't be ignored in JSON-RPC API.
+const ExceedBlockGasLimitError = "out of gas in location: block gas meter; gasWanted:"
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
 func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) ([]*evmtypes.MsgEthereumTx, error) {
@@ -34,6 +40,7 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) ([]*evmtypes.MsgEth
 		if !ok {
 			return nil, fmt.Errorf("invalid message type %T, expected %T", msg, &evmtypes.MsgEthereumTx{})
 		}
+		ethTx.Hash = ethTx.AsTransaction().Hash().Hex()
 		ethTxs[i] = ethTx
 	}
 	return ethTxs, nil
@@ -220,4 +227,35 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 		}
 	}
 	return nil
+}
+
+// CheckTxFee is an internal function used to check whether the fee of
+// the given transaction is _reasonable_(under the cap).
+func CheckTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
+	// Short circuit if there is no cap for transaction fee at all.
+	if cap == 0 {
+		return nil
+	}
+	totalfee := new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas)))
+	// 1 photon in 10^18 aphoton
+	oneToken := new(big.Float).SetInt(big.NewInt(params.Ether))
+	// quo = rounded(x/y)
+	feeEth := new(big.Float).Quo(totalfee, oneToken)
+	// no need to check error from parsing
+	feeFloat, _ := feeEth.Float64()
+	if feeFloat > cap {
+		return fmt.Errorf("tx fee (%.2f ether) exceeds the configured cap (%.2f ether)", feeFloat, cap)
+	}
+	return nil
+}
+
+// TxExceedBlockGasLimit returns true if the tx exceeds block gas limit.
+func TxExceedBlockGasLimit(res *abci.ResponseDeliverTx) bool {
+	return strings.Contains(res.Log, ExceedBlockGasLimitError)
+}
+
+// TxSuccessOrExceedsBlockGasLimit returnsrue if the transaction was successful
+// or if it failed with an ExceedBlockGasLimit error
+func TxSuccessOrExceedsBlockGasLimit(res *abci.ResponseDeliverTx) bool {
+	return res.Code == 0 || TxExceedBlockGasLimit(res)
 }

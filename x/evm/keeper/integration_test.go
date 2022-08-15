@@ -29,9 +29,7 @@ import (
 )
 
 var _ = Describe("Feemarket", func() {
-	var (
-		privKey *ethsecp256k1.PrivKey
-	)
+	var privKey *ethsecp256k1.PrivKey
 
 	Describe("Performing EVM transactions", func() {
 		type txParams struct {
@@ -183,7 +181,7 @@ func setupChain(localMinGasPricesStr string) {
 		baseapp.SetMinGasPrices(localMinGasPricesStr),
 	)
 
-	genesisState := app.NewDefaultGenesisState()
+	genesisState := app.NewTestGenesisState(newapp.AppCodec())
 	genesisState[types.ModuleName] = newapp.AppCodec().MustMarshalJSON(types.DefaultGenesisState())
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
@@ -257,6 +255,8 @@ func prepareEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereu
 	err = msgEthereumTx.Sign(s.ethSigner, tests.NewSigner(priv))
 	s.Require().NoError(err)
 
+	// A valid msg should have empty `From`
+	msgEthereumTx.From = ""
 	err = txBuilder.SetMsgs(msgEthereumTx)
 	s.Require().NoError(err)
 

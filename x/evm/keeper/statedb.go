@@ -1,9 +1,10 @@
 package keeper
 
 import (
-	"bytes"
 	"fmt"
 	"math/big"
+
+	sdkmath "cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -79,7 +80,7 @@ func (k *Keeper) SetBalance(ctx sdk.Context, addr common.Address, amount *big.In
 	switch delta.Sign() {
 	case 1:
 		// mint
-		coins := sdk.NewCoins(sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(delta)))
+		coins := sdk.NewCoins(sdk.NewCoin(params.EvmDenom, sdkmath.NewIntFromBigInt(delta)))
 		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, coins); err != nil {
 			return err
 		}
@@ -88,7 +89,7 @@ func (k *Keeper) SetBalance(ctx sdk.Context, addr common.Address, amount *big.In
 		}
 	case -1:
 		// burn
-		coins := sdk.NewCoins(sdk.NewCoin(params.EvmDenom, sdk.NewIntFromBigInt(new(big.Int).Neg(delta))))
+		coins := sdk.NewCoins(sdk.NewCoin(params.EvmDenom, sdkmath.NewIntFromBigInt(new(big.Int).Neg(delta))))
 		if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, cosmosAddr, types.ModuleName, coins); err != nil {
 			return err
 		}
@@ -186,7 +187,7 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 	}
 
 	// NOTE: only Ethereum accounts (contracts) can be selfdestructed
-	ethAcct, ok := acct.(ethermint.EthAccountI)
+	_, ok := acct.(ethermint.EthAccountI)
 	if !ok {
 		return sdkerrors.Wrapf(types.ErrInvalidAccount, "type %T, address %s", acct, addr)
 	}
@@ -194,12 +195,6 @@ func (k *Keeper) DeleteAccount(ctx sdk.Context, addr common.Address) error {
 	// clear balance
 	if err := k.SetBalance(ctx, addr, new(big.Int)); err != nil {
 		return err
-	}
-
-	// remove code
-	codeHashBz := ethAcct.GetCodeHash().Bytes()
-	if !bytes.Equal(codeHashBz, types.EmptyCodeHash) {
-		k.SetCode(ctx, codeHashBz, nil)
 	}
 
 	// clear storage

@@ -41,17 +41,50 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
-* (deps) [#1167](https://github.com/evmos/ethermint/pull/1167) Upgrade ibc-go to v4.
-* (evm) [\#1174](https://github.com/evmos/ethermint/pull/1174) Don't allow eth txs with 0 in mempool.
+* (deps) [#1167](https://github.com/evmos/ethermint/pull/1167) Bump ibc-go to [`v4.0.0-rc2`](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0-rc2)
+* (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
+  recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade cosmos-sdk to v0.46.
+* (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
+
+### API Breaking
+
+* (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to evm transactions.
 
 ### Improvements
 
+* (rpc) [#1229](https://github.com/evmos/ethermint/pull/1229) Add support for configuring RPC `MaxOpenConnections`
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
-* (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
+* (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
+* (cli) [#1230](https://github.com/evmos/ethermint/pull/1230) Remove redundant positional height parameter from feemarket's query cli.
 
 ### Bug Fixes
 
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
+
+## [v0.18.0] - 2022-08-04
+
+### State Machine Breaking
+
+* (evm) [\#1234](https://github.com/evmos/ethermint/pull/1234) Fix [CVE-2022-35936](https://github.com/evmos/ethermint/security/advisories/GHSA-f92v-grc2-w2fg) security vulnerability.
+* (evm) [\#1174](https://github.com/evmos/ethermint/pull/1174) Don't allow eth txs with 0 in mempool.
+
+### Improvements
+
+* (ante) [\#1208](https://github.com/evmos/ethermint/pull/1208) Change default `MaxGasWanted` value.
+
+## [v0.17.2] - 2022-07-26
+
+### Bug Fixes
+
+* (rpc) [\#1190](https://github.com/evmos/ethermint/issues/1190) Fix `UnmarshalJSON` panic of breaking EVM and fee market `Params`.
+* (evm) [\#1187](https://github.com/evmos/ethermint/pull/1187) Fix `TxIndex` value (expected 0, actual 1) when trace the first tx of a block via `debug_traceTransaction` API.
+
+## [v0.17.1] - 2022-07-13
+
+### Improvements
+
+* (rpc) [\#1169](https://github.com/evmos/ethermint/pull/1169) Remove unnecessary queries from `getBlockNumber` function
 
 ## [v0.17.0] - 2022-06-27
 
@@ -65,6 +98,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [\#1126](https://github.com/evmos/ethermint/pull/1126) Make some JSON-RPC APIS work for pruned nodes.
 * (rpc) [\#1143](https://github.com/evmos/ethermint/pull/1143) Restrict unprotected txs on the node JSON-RPC configuration.
 * (all) [\#1137](https://github.com/evmos/ethermint/pull/1137) Rename go module to `evmos/ethermint`
+
+### API Breaking
+
+- (json-rpc) [tharsis#1121](https://github.com/tharsis/ethermint/pull/1121) Store eth tx index separately
 
 ### Improvements
 

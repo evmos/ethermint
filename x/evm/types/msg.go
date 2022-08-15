@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
+	sdkmath "cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -62,7 +64,7 @@ func newMsgEthereumTx(
 	gasLimit uint64, gasPrice, gasFeeCap, gasTipCap *big.Int, input []byte, accesses *ethtypes.AccessList,
 ) *MsgEthereumTx {
 	var (
-		cid, amt, gp *sdk.Int
+		cid, amt, gp *sdkmath.Int
 		toAddr       string
 		txData       TxData
 	)
@@ -72,17 +74,17 @@ func newMsgEthereumTx(
 	}
 
 	if amount != nil {
-		amountInt := sdk.NewIntFromBigInt(amount)
+		amountInt := sdkmath.NewIntFromBigInt(amount)
 		amt = &amountInt
 	}
 
 	if chainID != nil {
-		chainIDInt := sdk.NewIntFromBigInt(chainID)
+		chainIDInt := sdkmath.NewIntFromBigInt(chainID)
 		cid = &chainIDInt
 	}
 
 	if gasPrice != nil {
-		gasPriceInt := sdk.NewIntFromBigInt(gasPrice)
+		gasPriceInt := sdkmath.NewIntFromBigInt(gasPrice)
 		gp = &gasPriceInt
 	}
 
@@ -97,8 +99,8 @@ func newMsgEthereumTx(
 			Data:     input,
 		}
 	case accesses != nil && gasFeeCap != nil && gasTipCap != nil:
-		gtc := sdk.NewIntFromBigInt(gasTipCap)
-		gfc := sdk.NewIntFromBigInt(gasFeeCap)
+		gtc := sdkmath.NewIntFromBigInt(gasTipCap)
+		gfc := sdkmath.NewIntFromBigInt(gasFeeCap)
 
 		txData = &DynamicFeeTx{
 			ChainID:   cid,
@@ -130,10 +132,12 @@ func newMsgEthereumTx(
 		panic(err)
 	}
 
-	return &MsgEthereumTx{Data: dataAny}
+	msg := MsgEthereumTx{Data: dataAny}
+	msg.Hash = msg.AsTransaction().Hash().Hex()
+	return &msg
 }
 
-// fromEthereumTx populates the message fields from the given ethereum transaction
+// FromEthereumTx populates the message fields from the given ethereum transaction
 func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) error {
 	txData, err := NewTxDataFromTx(tx)
 	if err != nil {
@@ -146,7 +150,6 @@ func (msg *MsgEthereumTx) FromEthereumTx(tx *ethtypes.Transaction) error {
 	}
 
 	msg.Data = anyTxData
-	msg.Size_ = float64(tx.Size())
 	msg.Hash = tx.Hash().Hex()
 	return nil
 }
@@ -166,6 +169,11 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		}
 	}
 
+	// Validate Size_ field, should be kept empty
+	if msg.Size_ != 0 {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "tx size is deprecated")
+	}
+
 	txData, err := UnpackTxData(msg.Data)
 	if err != nil {
 		return sdkerrors.Wrap(err, "failed to unpack tx data")
@@ -176,7 +184,17 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 		return sdkerrors.Wrap(ErrInvalidGasLimit, "gas limit must not be zero")
 	}
 
-	return txData.Validate()
+	if err := txData.Validate(); err != nil {
+		return err
+	}
+
+	// Validate Hash field after validated txData to avoid panic
+	txHash := msg.AsTransaction().Hash().Hex()
+	if msg.Hash != txHash {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid tx hash %s, expected: %s", msg.Hash, txHash)
+	}
+
+	return nil
 }
 
 // GetMsgs returns a single MsgEthereumTx as an sdk.Msg.
@@ -336,12 +354,16 @@ func (msg *MsgEthereumTx) BuildTx(b client.TxBuilder, evmDenom string) (signing.
 		return nil, err
 	}
 	fees := make(sdk.Coins, 0)
-	feeAmt := sdk.NewIntFromBigInt(txData.Fee())
+	feeAmt := sdkmath.NewIntFromBigInt(txData.Fee())
 	if feeAmt.Sign() > 0 {
 		fees = append(fees, sdk.NewCoin(evmDenom, feeAmt))
 	}
 
 	builder.SetExtensionOptions(option)
+
+	// A valid msg should have empty `From`
+	msg.From = ""
+
 	err = builder.SetMsgs(msg)
 	if err != nil {
 		return nil, err
