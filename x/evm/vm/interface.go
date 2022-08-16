@@ -9,13 +9,19 @@ import (
 	"github.com/holiman/uint256"
 )
 
+// PrecompiledContracts defines a map of address -> precompiled contract
+type PrecompiledContracts map[common.Address]vm.PrecompiledContract
+
+type StatefulPrecompiledContract interface {
+	vm.PrecompiledContract
+	RunStateful(evm EVM, addr common.Address, input []byte, value *big.Int) (ret []byte, err error)
+}
+
 // EVM defines the interface for the Ethereum Virtual Machine used by the EVM module.
 type EVM interface {
 	Config() vm.Config
 	Context() vm.BlockContext
 	TxContext() vm.TxContext
-	ActivePrecompiles(rules params.Rules) []common.Address
-	Precompile(addr common.Address) (vm.PrecompiledContract, bool)
 
 	Reset(txCtx vm.TxContext, statedb vm.StateDB)
 	Cancel()
@@ -28,6 +34,10 @@ type EVM interface {
 	Create(caller vm.ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error)
 	Create2(caller vm.ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error)
 	ChainConfig() *params.ChainConfig
+
+	ActivePrecompiles(rules params.Rules) []common.Address
+	Precompile(addr common.Address) (vm.PrecompiledContract, bool)
+	RunPrecompileContract(p StatefulPrecompiledContract, addr common.Address, input []byte, suppliedGas uint64, value *big.Int) (ret []byte, remainingGas uint64, err error)
 }
 
 // Constructor defines the function used to instantiate the EVM on
