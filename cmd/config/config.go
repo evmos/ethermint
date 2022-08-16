@@ -40,7 +40,7 @@ func SetBech32Prefixes(config *sdk.Config) {
 func SetBip44CoinType(config *sdk.Config) {
 	config.SetCoinType(ethermint.Bip44CoinType)
 	config.SetPurpose(sdk.Purpose)                      // Shared
-	config.SetFullFundraiserPath(ethermint.BIP44HDPath) // nolint: staticcheck
+	config.SetFullFundraiserPath(ethermint.BIP44HDPath) //nolint: staticcheck
 }
 
 // RegisterDenoms registers the base and display denominations to the SDK.
