@@ -237,11 +237,11 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 	for _, tc := range testCases {
 		suite.Run(tc.msg, func() {
 			suite.SetupTest() // reset
-			//nolint
+			// nolint
 			tc.malleate()
 			res, err := suite.handler(suite.ctx, tx)
 
-			//nolint
+			// nolint
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().NotNil(res)
