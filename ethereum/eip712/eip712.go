@@ -7,11 +7,12 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
-	sdkmath "cosmossdk.io/math"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	sdkmath "cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -20,6 +21,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/tendermint/tendermint/crypto/sr25519"
 )
 
 // ComputeTypedDataHash computes keccak hash of typed data for signing.
@@ -38,6 +43,30 @@ func ComputeTypedDataHash(typedData apitypes.TypedData) ([]byte, error) {
 
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	return crypto.Keccak256(rawData), nil
+}
+
+func getAminoMap(data map[string]interface{}, topFieldName string, aminoMap map[string]bool) {
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		fmt.Println("Recovered in f", r)
+	// 	}
+	// }()
+
+	if _, ok := data["type"]; ok && len(data) == 2 {
+		aminoMap[topFieldName] = true
+	}
+
+	// switch field.(type)
+	for fieldName, field := range data {
+		switch field.(type) {
+		case map[string]interface{}:
+			getAminoMap(field.(map[string]interface{}), fieldName, aminoMap)
+		case []map[string]interface{}:
+			for _, i := range field.([]map[string]interface{}) {
+				getAminoMap(i, fieldName, aminoMap)
+			}
+		}
+	}
 }
 
 // WrapTxToTypedData is an ultimate method that wraps Amino-encoded Cosmos Tx JSON data
@@ -63,7 +92,14 @@ func WrapTxToTypedData(
 		Salt:              "0",
 	}
 
-	msgTypes, err := extractMsgTypes(cdc, "MsgValue", msg)
+	aminoMap := make(map[string]bool)
+	q := txData["msgs"].([]interface{})
+	for _, imsg := range q {
+		msgInterface := imsg.(map[string]interface{})
+		getAminoMap(msgInterface, "msg", aminoMap)
+	}
+
+	msgTypes, err := extractMsgTypes(cdc, "MsgValue", msg, txData, aminoMap)
 	if err != nil {
 		return apitypes.TypedData{}, err
 	}
@@ -98,7 +134,8 @@ type FeeDelegationOptions struct {
 	FeePayer sdk.AccAddress
 }
 
-func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg) (apitypes.Types, error) {
+func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg, txData map[string]interface{}, aminoMap map[string]bool) (apitypes.Types, error) {
+
 	rootTypes := apitypes.Types{
 		"EIP712Domain": {
 			{
@@ -122,16 +159,6 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 				Type: "string",
 			},
 		},
-		"Tx": {
-			{Name: "account_number", Type: "string"},
-			{Name: "chain_id", Type: "string"},
-			{Name: "fee", Type: "Fee"},
-			{Name: "memo", Type: "string"},
-			{Name: "msgs", Type: "Msg[]"},
-			{Name: "sequence", Type: "string"},
-			// Note timeout_height was removed because it was not getting filled with the legacyTx
-			// {Name: "timeout_height", Type: "string"},
-		},
 		"Fee": {
 			{Name: "amount", Type: "Coin[]"},
 			{Name: "gas", Type: "string"},
@@ -140,14 +167,37 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 			{Name: "denom", Type: "string"},
 			{Name: "amount", Type: "string"},
 		},
-		"Msg": {
-			{Name: "type", Type: "string"},
-			{Name: "value", Type: msgTypeName},
-		},
 		msgTypeName: {},
 	}
+	if _, ok := aminoMap["msg"]; ok {
+		rootTypes["Tx"] = []apitypes.Type{
+			{Name: "account_number", Type: "string"},
+			{Name: "chain_id", Type: "string"},
+			{Name: "fee", Type: "Fee"},
+			{Name: "memo", Type: "string"},
+			{Name: "msgs", Type: "Msg[]"},
+			{Name: "sequence", Type: "string"},
+			// Note timeout_height was removed because it was not getting filled with the legacyTx
+			// {Name: "timeout_height", Type: "string"},
+		}
+		rootTypes["Msg"] = []apitypes.Type{
+			{Name: "type", Type: "string"},
+			{Name: "value", Type: msgTypeName},
+		}
+	} else {
+		rootTypes["Tx"] = []apitypes.Type{
+			{Name: "account_number", Type: "string"},
+			{Name: "chain_id", Type: "string"},
+			{Name: "fee", Type: "Fee"},
+			{Name: "memo", Type: "string"},
+			{Name: "msgs", Type: msgTypeName + "[]"},
+			{Name: "sequence", Type: "string"},
+			// Note timeout_height was removed because it was not getting filled with the legacyTx
+			// {Name: "timeout_height", Type: "string"},
+		}
+	}
 
-	if err := walkFields(cdc, rootTypes, msgTypeName, msg); err != nil {
+	if err := walkFields(cdc, rootTypes, msgTypeName, msg, aminoMap); err != nil {
 		return nil, err
 	}
 
@@ -156,7 +206,7 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 
 const typeDefPrefix = "_"
 
-func walkFields(cdc codectypes.AnyUnpacker, typeMap apitypes.Types, rootType string, in interface{}) (err error) {
+func walkFields(cdc codectypes.AnyUnpacker, typeMap apitypes.Types, rootType string, in interface{}, aminoMap map[string]bool) (err error) {
 	defer doRecover(&err)
 
 	t := reflect.TypeOf(in)
@@ -174,7 +224,7 @@ func walkFields(cdc codectypes.AnyUnpacker, typeMap apitypes.Types, rootType str
 		break
 	}
 
-	return traverseFields(cdc, typeMap, rootType, typeDefPrefix, t, v)
+	return traverseFields(cdc, typeMap, rootType, typeDefPrefix, t, v, aminoMap)
 }
 
 type cosmosAnyWrapper struct {
@@ -189,6 +239,7 @@ func traverseFields(
 	prefix string,
 	t reflect.Type,
 	v reflect.Value,
+	aminoMap map[string]bool,
 ) error {
 	n := t.NumField()
 
@@ -213,22 +264,33 @@ func traverseFields(
 		fieldName := jsonNameFromTag(t.Field(i).Tag)
 
 		if fieldType == cosmosAnyType {
+
 			any, ok := field.Interface().(*codectypes.Any)
 			if !ok {
 				return sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
 			}
 
-			anyWrapper := &cosmosAnyWrapper{
-				Type: any.TypeUrl,
+			if _, ok := aminoMap[fieldName]; ok {
+				anyWrapper := &cosmosAnyWrapper{
+					Type: any.TypeUrl,
+				}
+
+				if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
+					return sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
+				}
+
+				fieldType = reflect.TypeOf(anyWrapper)
+				field = reflect.ValueOf(anyWrapper)
+			} else {
+
+				var Value interface{}
+				if err := cdc.UnpackAny(any, &Value); err != nil {
+					return sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
+				}
+
+				fieldType = reflect.TypeOf(Value)
+				field = reflect.ValueOf(Value)
 			}
-
-			if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
-				return sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
-			}
-
-			fieldType = reflect.TypeOf(anyWrapper)
-			field = reflect.ValueOf(anyWrapper)
-
 			// then continue as normal
 		}
 
@@ -335,7 +397,7 @@ func traverseFields(
 				})
 			}
 
-			if err := traverseFields(cdc, typeMap, rootType, fieldPrefix, fieldType, field); err != nil {
+			if err := traverseFields(cdc, typeMap, rootType, fieldPrefix, fieldType, field, aminoMap); err != nil {
 				return err
 			}
 
@@ -381,7 +443,13 @@ var (
 	addressType   = reflect.TypeOf(common.Address{})
 	bigIntType    = reflect.TypeOf(big.Int{})
 	cosmIntType   = reflect.TypeOf(sdkmath.Int{})
+	cosmDecType   = reflect.TypeOf(sdk.Dec{})
 	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
+	timeType      = reflect.TypeOf(time.Time{})
+
+	edType   = reflect.TypeOf(ed25519.PubKey{})
+	secpType = reflect.TypeOf(secp256k1.PubKey{})
+	srType   = reflect.TypeOf(sr25519.PubKey{})
 )
 
 // typToEth supports only basic types and arrays of basic types.
@@ -426,6 +494,11 @@ func typToEth(typ reflect.Type) string {
 		}
 	case reflect.Ptr:
 		if typ.Elem().ConvertibleTo(bigIntType) ||
+			typ.Elem().ConvertibleTo(timeType) ||
+			typ.Elem().ConvertibleTo(edType) ||
+			typ.Elem().ConvertibleTo(srType) ||
+			typ.Elem().ConvertibleTo(secpType) ||
+			typ.Elem().ConvertibleTo(cosmDecType) ||
 			typ.Elem().ConvertibleTo(cosmIntType) {
 			return str
 		}
@@ -433,6 +506,11 @@ func typToEth(typ reflect.Type) string {
 		if typ.ConvertibleTo(hashType) ||
 			typ.ConvertibleTo(addressType) ||
 			typ.ConvertibleTo(bigIntType) ||
+			typ.ConvertibleTo(timeType) ||
+			typ.ConvertibleTo(edType) ||
+			typ.ConvertibleTo(srType) ||
+			typ.ConvertibleTo(secpType) ||
+			typ.ConvertibleTo(cosmDecType) ||
 			typ.ConvertibleTo(cosmIntType) {
 			return str
 		}

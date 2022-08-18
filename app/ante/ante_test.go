@@ -323,6 +323,41 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			}, false, false, true,
 		},
 		{
+			"success- DeliverTx EIP712 create validator",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				amount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712MsgCreateValidator(from, privKey, "ethermint_9000-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 MsgSubmitProposal",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				gasAmount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				//reusing the gasAmount for deposit
+				deposit := sdk.NewCoins(coinAmount)
+				txBuilder := suite.CreateTestEIP712SubmitProposal(from, privKey, "ethermint_9000-1", gas, gasAmount, deposit)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 MsgGrantAllowance",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				gasAmount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712GrantAllowance(from, privKey, "ethermint_9000-1", gas, gasAmount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
 			"fails - DeliverTx EIP712 signed Cosmos Tx with wrong Chain ID",
 			func() sdk.Tx {
 				from := acc.GetAddress()
