@@ -308,6 +308,19 @@ func (suite *AnteTestSuite) CreateTestEIP712GrantAllowance(from sdk.AccAddress, 
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgGrant)
 }
 
+func (suite *AnteTestSuite) CreateTestEIP712MsgEditValidator(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	valAddr := sdk.ValAddress(from.Bytes())
+	// one := sdk.OneDec()
+	// two := sdkmath.NewInt(2)
+	msgEdit := types3.NewMsgEditValidator(
+		valAddr,
+		types3.NewDescription("moniker", "identity", "website", "security_contract", "details"),
+		nil, // &one,
+		nil, // &two,
+	)
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgEdit)
+}
+
 func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins, msg sdk.Msg,
 ) client.TxBuilder {

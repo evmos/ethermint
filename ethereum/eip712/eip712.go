@@ -294,6 +294,11 @@ func traverseFields(
 			// then continue as normal
 		}
 
+		// If its a nil pointer, do not include in types
+		if fieldType.Kind() == reflect.Ptr && field.IsNil() {
+			continue
+		}
+
 		for {
 			if fieldType.Kind() == reflect.Ptr {
 				fieldType = fieldType.Elem()
