@@ -336,7 +336,7 @@ func TestEth_IncompleteSendTransaction(t *testing.T) {
 	// make tx params without from address
 	param := make([]map[string]string, 1)
 	param[0] = make(map[string]string)
-	param[0]["from"] = nil
+	param[0]["from"] = ""
 	param[0]["to"] = "0x1122334455667788990011223344556677889900"
 	param[0]["value"] = "0x1"
 	param[0]["gasPrice"] = gasPrice

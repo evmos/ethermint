@@ -94,6 +94,7 @@ func (s *websocketsServer) Start() {
 
 	go func() {
 		var err error
+		/* #nosec G114 -- no support for timeouts */
 		if s.certFile == "" || s.keyFile == "" {
 			err = http.ListenAndServe(s.wsAddr, ws)
 		} else {
