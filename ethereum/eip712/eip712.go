@@ -58,9 +58,9 @@ func getAminoMap(data map[string]interface{}, topFieldName string, aminoMap map[
 
 	// switch field.(type)
 	for fieldName, field := range data {
-		switch field.(type) {
+		switch x := field.(type) {
 		case map[string]interface{}:
-			getAminoMap(field.(map[string]interface{}), fieldName, aminoMap)
+			getAminoMap(x, fieldName, aminoMap)
 		case []map[string]interface{}:
 			for _, i := range field.([]map[string]interface{}) {
 				getAminoMap(i, fieldName, aminoMap)
@@ -135,7 +135,6 @@ type FeeDelegationOptions struct {
 }
 
 func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg, txData map[string]interface{}, aminoMap map[string]bool) (apitypes.Types, error) {
-
 	rootTypes := apitypes.Types{
 		"EIP712Domain": {
 			{
