@@ -176,6 +176,7 @@ def send_and_get_hash(w3, tx_value=10):
     tx = {"to": ADDRS["community"], "value": tx_value, "gasPrice": gas_price}
     return send_transaction(w3, tx, KEYS["validator"])["transactionHash"].hex()
 
+
 def test_get_proof(ethermint, geth):
     # on ethermint the proof query will fail for block numbers <= 2
     # so we must wait for several blocks
@@ -321,6 +322,7 @@ def make_same_rpc_calls(rpc1, rpc2, method, params):
     res, err = same_types(res1, res2)
     assert res, err
 
+
 def test_incomplete_send_transaction(ethermint, geth):
     # Send ethereum tx with no from field
     eth_rpc = ethermint.w3.provider
@@ -328,6 +330,7 @@ def test_incomplete_send_transaction(ethermint, geth):
     gas_price = ethermint.w3.eth.gas_price
     tx = {"from": "", "to": ADDRS["community"], "value": 0, "gasPrice": gas_price}
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_sendTransaction", [tx])
+
 
 def same_types(object_a, object_b):
 
