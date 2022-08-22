@@ -345,8 +345,6 @@ func TestEth_IncompleteSendTransaction(t *testing.T) {
 	// require well-formatted error (should not be "method handler crashed")
 	require.Error(t, err)
 	require.NotEqual(t, err.Error(), "method handler crashed", "no from field dealt with incorrectly")
-	fmt.Println(err.Error())
-	return
 }
 
 func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
