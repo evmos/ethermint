@@ -9,6 +9,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	types5 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -344,6 +346,21 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				deposit := sdk.NewCoins(coinAmount)
 				txBuilder := suite.CreateTestEIP712SubmitProposal(from, privKey, "ethermint_9000-1", gas, gasAmount, deposit)
 				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 MsgSubmitProposal not text",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				gasAmount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				//reusing the gasAmount for deposit
+				deposit := sdk.NewCoins(coinAmount)
+				proposal := distrtypes.NewCommunityPoolSpendProposal("My proposal", "My description", from, gasAmount)
+				msgSubmit, err := types5.NewMsgSubmitProposal(proposal, deposit, from)
+				suite.Require().NoError(err)
+				return suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9000-1", gas, gasAmount, msgSubmit).GetTx()
 			}, false, false, true,
 		},
 		{
