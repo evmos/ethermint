@@ -324,7 +324,7 @@ def make_same_rpc_calls(rpc1, rpc2, method, params):
 
 
 def test_incomplete_send_transaction(ethermint, geth):
-    # Send ethereum tx with no from field
+    # Send ethereum tx with nothing in from field
     eth_rpc = ethermint.w3.provider
     geth_rpc = geth.w3.provider
     gas_price = ethermint.w3.eth.gas_price
