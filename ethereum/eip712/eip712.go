@@ -46,12 +46,6 @@ func ComputeTypedDataHash(typedData apitypes.TypedData) ([]byte, error) {
 }
 
 func getAminoMap(data map[string]interface{}, topFieldName string, aminoMap map[string]bool) {
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		fmt.Println("Recovered in f", r)
-	// 	}
-	// }()
-
 	if _, ok := data["type"]; ok && len(data) == 2 {
 		aminoMap[topFieldName] = true
 	}

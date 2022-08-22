@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
+	evtypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	types3 "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/evmos/ethermint/ethereum/eip712"
@@ -42,6 +43,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 	types5 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
@@ -310,15 +312,26 @@ func (suite *AnteTestSuite) CreateTestEIP712GrantAllowance(from sdk.AccAddress, 
 
 func (suite *AnteTestSuite) CreateTestEIP712MsgEditValidator(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
 	valAddr := sdk.ValAddress(from.Bytes())
-	// one := sdk.OneDec()
-	// two := sdkmath.NewInt(2)
 	msgEdit := types3.NewMsgEditValidator(
 		valAddr,
 		types3.NewDescription("moniker", "identity", "website", "security_contract", "details"),
-		nil, // &one,
-		nil, // &two,
+		nil,
+		nil,
 	)
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgEdit)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712MsgSubmitEvidence(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	pk := ed25519.GenPrivKey()
+	msgEvidence, err := evtypes.NewMsgSubmitEvidence(from, &evtypes.Equivocation{
+		Height:           11,
+		Time:             time.Now().UTC(),
+		Power:            100,
+		ConsensusAddress: pk.PubKey().Address().String(),
+	})
+	suite.Require().NoError(err)
+
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgEvidence)
 }
 
 func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
