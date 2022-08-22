@@ -4,16 +4,19 @@ import (
 	"errors"
 	"math/big"
 	"strings"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	types5 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/evmos/ethermint/tests"
@@ -363,6 +366,24 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				return suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9000-1", gas, gasAmount, msgSubmit).GetTx()
 			}, false, false, true,
 		},
+		{
+			"success- DeliverTx EIP712 MsgGrant",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				grantee := sdk.AccAddress("_______grantee______")
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				gasAmount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				blockTime := time.Date(1, 1, 1, 1, 1, 1, 1, time.UTC)
+				expiresAt := blockTime.Add(time.Hour)
+				msg, err := authz.NewMsgGrant(
+					from, grantee, &banktypes.SendAuthorization{SpendLimit: gasAmount}, &expiresAt,
+				)
+				suite.Require().NoError(err)
+				return suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9000-1", gas, gasAmount, msg).GetTx()
+			}, false, false, true,
+		},
+
 		{
 			"success- DeliverTx EIP712 MsgGrantAllowance",
 			func() sdk.Tx {
