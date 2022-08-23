@@ -356,6 +356,11 @@ func traverseFields(
 
 		ethTyp := typToEth(fieldType)
 		if len(ethTyp) > 0 {
+			// Support array of uint64
+			if isCollection && fieldType.Kind() != reflect.Slice && fieldType.Kind() != reflect.Array {
+				ethTyp += "[]"
+			}
+
 			if prefix == typeDefPrefix {
 				typeMap[rootType] = append(typeMap[rootType], apitypes.Type{
 					Name: fieldName,
