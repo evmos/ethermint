@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/gorilla/mux"
@@ -32,6 +33,17 @@ import (
 	"github.com/evmos/ethermint/server/config"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
+
+const (
+	wsReadBuffer       = 1024
+	wsWriteBuffer      = 1024
+	wsPingInterval     = 60 * time.Second
+	wsPingWriteTimeout = 5 * time.Second
+	wsPongTimeout      = 30 * time.Second
+	wsMessageSizeLimit = 15 * 1024 * 1024
+)
+
+var wsBufferPool = new(sync.Pool)
 
 type WebsocketsServer interface {
 	Start()
@@ -112,6 +124,9 @@ func (s *websocketsServer) Start() {
 
 func (s *websocketsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
+		ReadBufferSize:  wsReadBuffer,
+		WriteBufferSize: wsWriteBuffer,
+		WriteBufferPool: wsBufferPool,
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
@@ -168,6 +183,8 @@ func (w *wsConn) ReadMessage() (messageType int, p []byte, err error) {
 }
 
 func (s *websocketsServer) readLoop(wsConn *wsConn) {
+	timer := time.NewTimer(wsPingInterval)
+	defer timer.Stop()
 	// subscriptions of current connection
 	subscriptions := make(map[rpc.ID]pubsub.UnsubscribeFunc)
 	defer func() {
@@ -210,6 +227,10 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			)
 			continue
 		}
+
+		wsConn.conn.SetWriteDeadline(time.Now().Add(wsPingWriteTimeout)) //nolint:errcheck
+		wsConn.conn.WriteMessage(websocket.PingMessage, nil)             //nolint:errcheck
+		wsConn.conn.SetReadDeadline(time.Now().Add(wsPongTimeout))       //nolint:errcheck
 
 		switch method {
 		case "eth_subscribe":
