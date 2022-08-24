@@ -47,7 +47,7 @@ func (b *Backend) BlockNumber() (hexutil.Uint64, error) {
 // block number. Depending on fullTx it either returns the full transaction
 // objects or if false only the hashes of the transactions.
 func (b *Backend) GetBlockByNumber(blockNum rpctypes.BlockNumber, fullTx bool) (map[string]interface{}, error) {
-	resBlock, err := b.GetTendermintBlockByNumber(blockNum)
+	resBlock, err := b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		return nil, nil
 	}
@@ -100,9 +100,9 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 	return res, nil
 }
 
-// GetTendermintBlockByNumber returns a Tendermint-formatted block for a given
+// TendermintBlockByNumber returns a Tendermint-formatted block for a given
 // block number
-func (b *Backend) GetTendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpctypes.ResultBlock, error) {
+func (b *Backend) TendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpctypes.ResultBlock, error) {
 	height := blockNum.Int64()
 	if height <= 0 {
 		// fetch the latest block number from the app state, more accurate than the tendermint block store state.
@@ -119,7 +119,7 @@ func (b *Backend) GetTendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tm
 	}
 
 	if resBlock.Block == nil {
-		b.logger.Debug("GetTendermintBlockByNumber block not found", "height", height)
+		b.logger.Debug("TendermintBlockByNumber block not found", "height", height)
 		return nil, nil
 	}
 
@@ -150,7 +150,7 @@ func (b *Backend) GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.R
 
 // BlockByNumber returns the block identified by number.
 func (b *Backend) BlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error) {
-	resBlock, err := b.GetTendermintBlockByNumber(blockNum)
+	resBlock, err := b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (b *Backend) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
-	block, err := b.GetTendermintBlockByNumber(blockNum)
+	block, err := b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		b.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
 		return nil
@@ -305,7 +305,7 @@ func (b *Backend) GetEthereumMsgsFromTendermintBlock(
 
 // HeaderByNumber returns the block header identified by height.
 func (b *Backend) HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error) {
-	resBlock, err := b.GetTendermintBlockByNumber(blockNum)
+	resBlock, err := b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		return nil, err
 	}

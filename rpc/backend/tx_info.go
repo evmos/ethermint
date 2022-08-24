@@ -25,7 +25,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransac
 		return b.getTransactionByHashPending(txHash)
 	}
 
-	block, err := b.GetTendermintBlockByNumber(rpctypes.BlockNumber(res.Height))
+	block, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(res.Height))
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		return nil, nil
 	}
 
-	resBlock, err := b.GetTendermintBlockByNumber(rpctypes.BlockNumber(res.Height))
+	resBlock, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(res.Height))
 	if err != nil {
 		b.logger.Debug("block not found", "height", res.Height, "error", err.Error())
 		return nil, nil
@@ -260,7 +260,7 @@ func (b *Backend) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexuti
 func (b *Backend) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	b.logger.Debug("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
 
-	block, err := b.GetTendermintBlockByNumber(blockNum)
+	block, err := b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		b.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
 		return nil, nil

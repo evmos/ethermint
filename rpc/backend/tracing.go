@@ -26,7 +26,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		return nil, errors.New("genesis is not traceable")
 	}
 
-	blk, err := b.GetTendermintBlockByNumber(rpctypes.BlockNumber(transaction.Height))
+	blk, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(transaction.Height))
 	if err != nil {
 		b.logger.Debug("block not found", "height", transaction.Height)
 		return nil, err

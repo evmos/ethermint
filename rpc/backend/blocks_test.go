@@ -366,7 +366,7 @@ func (suite *BackendTestSuite) TestGetBlockByHash() {
 	}
 }
 
-func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
+func (suite *BackendTestSuite) TestTendermintBlockByNumber() {
 	var expResultBlock *tmrpctypes.ResultBlock
 
 	testCases := []struct {
@@ -454,7 +454,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockByNumber() {
 			suite.SetupTest() // reset test and queries
 
 			tc.registerMock(tc.blockNumber)
-			resultBlock, err := suite.backend.GetTendermintBlockByNumber(tc.blockNumber)
+			resultBlock, err := suite.backend.TendermintBlockByNumber(tc.blockNumber)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -523,7 +523,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockResultByNumber() {
 }
 
 // BlockByNumber
-// GetTendermintBlockByNumber
+// TendermintBlockByNumber
 // GetTendermintBlockResultByNumber
 // EthBlockFromTendermint
 

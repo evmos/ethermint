@@ -183,7 +183,7 @@ func (b *Backend) FeeHistory(
 	for blockID := blockStart; blockID < blockEnd; blockID++ {
 		index := int32(blockID - blockStart)
 		// tendermint block
-		tendermintblock, err := b.GetTendermintBlockByNumber(rpctypes.BlockNumber(blockID))
+		tendermintblock, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(blockID))
 		if tendermintblock == nil {
 			return nil, err
 		}
