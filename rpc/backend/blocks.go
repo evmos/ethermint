@@ -148,8 +148,8 @@ func (b *Backend) TendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.Resu
 	return resBlock, nil
 }
 
-// BlockByNumber returns the block identified by number.
-func (b *Backend) BlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error) {
+// EthBlockByNumber returns the Ethereum Block identified by number.
+func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error) {
 	resBlock, err := b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		return nil, err
