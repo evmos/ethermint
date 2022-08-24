@@ -837,7 +837,7 @@ func (suite *BackendTestSuite) TestGetEthBlockFromTendermint() {
 	}
 }
 
-func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
+func (suite *BackendTestSuite) TestEthMsgsFromTendermintBlock() {
 	msgEthereumTx, bz := suite.buildEthereumTx()
 
 	testCases := []struct {
@@ -895,7 +895,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
 			suite.SetupTest() // reset test and queries
 
-			msgs := suite.backend.GetEthereumMsgsFromTendermintBlock(tc.resBlock, tc.blockRes)
+			msgs := suite.backend.EthMsgsFromTendermintBlock(tc.resBlock, tc.blockRes)
 			suite.Require().Equal(tc.expMsgs, msgs)
 		})
 	}
@@ -931,7 +931,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 // 				// TendermintBlockResultByNumber
 // 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 // 				RegisterBlockResults(client, blockNum)
-// 				// GetEthereumMsgsFromTendermintBlock
+// 				// EthMsgsFromTendermintBlock
 
 // 				// height := int64(1)
 // 				// var header metadata.MD

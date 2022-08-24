@@ -100,6 +100,53 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 	return res, nil
 }
 
+// GetBlockTransactionCountByHash returns the number of transactions in the
+// block identified by hash.
+func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
+	block, err := b.clientCtx.Client.BlockByHash(b.ctx, hash.Bytes())
+	if err != nil {
+		b.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
+		return nil
+	}
+
+	if block.Block == nil {
+		b.logger.Debug("block not found", "hash", hash.Hex())
+		return nil
+	}
+
+	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
+	if err != nil {
+		return nil
+	}
+
+	ethMsgs := b.EthMsgsFromTendermintBlock(block, blockRes)
+	n := hexutil.Uint(len(ethMsgs))
+	return &n
+}
+
+// GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
+func (b *Backend) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
+	block, err := b.TendermintBlockByNumber(blockNum)
+	if err != nil {
+		b.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
+		return nil
+	}
+
+	if block.Block == nil {
+		b.logger.Debug("block not found", "height", blockNum.Int64())
+		return nil
+	}
+
+	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
+	if err != nil {
+		return nil
+	}
+
+	ethMsgs := b.EthMsgsFromTendermintBlock(block, blockRes)
+	n := hexutil.Uint(len(ethMsgs))
+	return &n
+}
+
 // TendermintBlockByNumber returns a Tendermint-formatted block for a given
 // block number
 func (b *Backend) TendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpctypes.ResultBlock, error) {
@@ -216,56 +263,10 @@ func (b *Backend) BlockNumberFromTendermint(blockNrOrHash rpctypes.BlockNumberOr
 	}
 }
 
-// GetBlockTransactionCountByHash returns the number of transactions in the block identified by hash.
-func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
-	block, err := b.clientCtx.Client.BlockByHash(b.ctx, hash.Bytes())
-	if err != nil {
-		b.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
-		return nil
-	}
-
-	if block.Block == nil {
-		b.logger.Debug("block not found", "hash", hash.Hex())
-		return nil
-	}
-
-	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
-	if err != nil {
-		return nil
-	}
-
-	ethMsgs := b.GetEthereumMsgsFromTendermintBlock(block, blockRes)
-	n := hexutil.Uint(len(ethMsgs))
-	return &n
-}
-
-// GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
-func (b *Backend) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
-	block, err := b.TendermintBlockByNumber(blockNum)
-	if err != nil {
-		b.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
-		return nil
-	}
-
-	if block.Block == nil {
-		b.logger.Debug("block not found", "height", blockNum.Int64())
-		return nil
-	}
-
-	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
-	if err != nil {
-		return nil
-	}
-
-	ethMsgs := b.GetEthereumMsgsFromTendermintBlock(block, blockRes)
-	n := hexutil.Uint(len(ethMsgs))
-	return &n
-}
-
-// GetEthereumMsgsFromTendermintBlock returns all real MsgEthereumTxs from a
+// EthMsgsFromTendermintBlock returns all real MsgEthereumTxs from a
 // Tendermint block. It also ensures consistency over the correct txs indexes
 // across RPC endpoints
-func (b *Backend) GetEthereumMsgsFromTendermintBlock(
+func (b *Backend) EthMsgsFromTendermintBlock(
 	resBlock *tmrpctypes.ResultBlock,
 	blockRes *tmrpctypes.ResultBlockResults,
 ) []*evmtypes.MsgEthereumTx {
@@ -396,7 +397,7 @@ func (b *Backend) GetEthBlockFromTendermint(
 		b.logger.Error("failed to fetch Base Fee from prunned block. Check node prunning configuration", "height", block.Height, "error", err)
 	}
 
-	msgs := b.GetEthereumMsgsFromTendermintBlock(resBlock, blockRes)
+	msgs := b.EthMsgsFromTendermintBlock(resBlock, blockRes)
 	for txIndex, ethMsg := range msgs {
 		if !fullTx {
 			hash := common.HexToHash(ethMsg.Hash)
@@ -499,7 +500,7 @@ func (b *Backend) EthBlockFromTendermint(
 		return nil, err
 	}
 
-	msgs := b.GetEthereumMsgsFromTendermintBlock(resBlock, resBlockResult)
+	msgs := b.EthMsgsFromTendermintBlock(resBlock, resBlockResult)
 
 	txs := make([]*ethtypes.Transaction, len(msgs))
 	for i, ethMsg := range msgs {
