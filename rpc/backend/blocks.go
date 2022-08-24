@@ -214,25 +214,6 @@ func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Blo
 	return b.EthBlockFromTendermintBlock(resBlock, blockRes)
 }
 
-// EthBlockByHash returns the block identified by hash.
-func (b *Backend) EthBlockByHash(hash common.Hash) (*ethtypes.Block, error) {
-	resBlock, err := b.TendermintBlockByHash(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	if resBlock == nil || resBlock.Block == nil {
-		return nil, fmt.Errorf("block not found for hash %s", hash)
-	}
-
-	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
-	if err != nil {
-		return nil, fmt.Errorf("block result not found for hash %s", hash)
-	}
-
-	return b.EthBlockFromTendermintBlock(resBlock, blockRes)
-}
-
 // BlockNumberFromTendermintByHash returns the block height of given block hash
 func (b *Backend) BlockNumberFromTendermintByHash(blockHash common.Hash) (*big.Int, error) {
 	resBlock, err := b.TendermintBlockByHash(blockHash)

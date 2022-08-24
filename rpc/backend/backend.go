@@ -74,7 +74,6 @@ type EVMBackend interface {
 	TendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
 	TendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
 	EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error)
-	EthBlockByHash(blockHash common.Hash) (*ethtypes.Block, error)
 	BlockNumberFromTendermintByHash(blockHash common.Hash) (*big.Int, error)
 	BlockNumberFromTendermint(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error)
 	EthMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
