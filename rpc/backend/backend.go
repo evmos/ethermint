@@ -81,8 +81,8 @@ type EVMBackend interface {
 	GetEthereumMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
 	HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
-	EthBlockFromTendermint(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults, fullTx bool) (map[string]interface{}, error)
-	EthBlockFromTm(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) (*ethtypes.Block, error)
+	GetEthBlockFromTendermint(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults, fullTx bool) (map[string]interface{}, error)
+	EthBlockFromTendermint(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) (*ethtypes.Block, error)
 
 	// Account Info
 	GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error)
@@ -117,6 +117,7 @@ type EVMBackend interface {
 	SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.TransactionArgs, error)
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
 	DoCall(args evmtypes.TransactionArgs, blockNr rpctypes.BlockNumber) (*evmtypes.MsgEthereumTxResponse, error)
+	GasPrice() (*hexutil.Big, error)
 
 	// Filter API
 	GetLogs(hash common.Hash) ([][]*ethtypes.Log, error)

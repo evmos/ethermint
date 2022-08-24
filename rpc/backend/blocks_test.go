@@ -17,7 +17,6 @@ import (
 	ethrpc "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 )
 
 func (suite *BackendTestSuite) TestBlockNumber() {
@@ -242,6 +241,54 @@ func (suite *BackendTestSuite) TestGetBlockByHash() {
 		expNoop      bool
 		expPass      bool
 	}{
+		{
+			"fail - tendermint failed to get block",
+			common.BytesToHash(block.Hash()),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			nil,
+			nil,
+			func(hash common.Hash, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockByHashError(client, hash, txBz)
+			},
+			false,
+			false,
+		},
+		{
+			"noop - tendermint blockres not found",
+			common.BytesToHash(block.Hash()),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			nil,
+			nil,
+			func(hash common.Hash, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockByHashNotFound(client, hash, txBz)
+			},
+			true,
+			true,
+		},
+		{
+			"noop - tendermint failed to fetch block result",
+			common.BytesToHash(block.Hash()),
+			true,
+			sdk.NewInt(1).BigInt(),
+			sdk.AccAddress(tests.GenerateAddress().Bytes()),
+			nil,
+			nil,
+			func(hash common.Hash, baseFee sdk.Int, validator sdk.AccAddress, txBz []byte) {
+				height := int64(1)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlockByHash(client, hash, txBz)
+
+				RegisterBlockResultsError(client, height)
+			},
+			true,
+			true,
+		},
 		{
 			"pass - without tx",
 			common.BytesToHash(block.Hash()),
@@ -475,6 +522,11 @@ func (suite *BackendTestSuite) TestGetTendermintBlockResultByNumber() {
 	}
 }
 
+// BlockByNumber
+// GetTendermintBlockByNumber
+// GetTendermintBlockResultByNumber
+// EthBlockFromTendermint
+
 func (suite *BackendTestSuite) TestBlockBloom() {
 	testCases := []struct {
 		name          string
@@ -541,7 +593,7 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 	}
 }
 
-func (suite *BackendTestSuite) TestEthBlockFromTendermint() {
+func (suite *BackendTestSuite) TestGetEthBlockFromTendermint() {
 	msgEthereumTx, bz := suite.buildEthereumTx()
 	emptyBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{}, nil, nil)
 
@@ -735,7 +787,7 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermint() {
 			suite.SetupTest() // reset test and queries
 			tc.registerMock(sdk.NewIntFromBigInt(tc.baseFee), tc.validator, tc.height)
 
-			block, err := suite.backend.EthBlockFromTendermint(tc.resBlock, tc.blockRes, tc.fullTx)
+			block, err := suite.backend.GetEthBlockFromTendermint(tc.resBlock, tc.blockRes, tc.fullTx)
 
 			var expBlock map[string]interface{}
 			header := tc.resBlock.Block.Header
@@ -778,138 +830,6 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermint() {
 			if tc.expPass {
 				suite.Require().Equal(expBlock, block)
 				suite.Require().NoError(err)
-			} else {
-				suite.Require().Error(err)
-			}
-		})
-	}
-}
-
-func (suite *BackendTestSuite) TestBaseFee() {
-	baseFee := sdk.NewInt(1)
-
-	testCases := []struct {
-		name         string
-		blockRes     *tmrpctypes.ResultBlockResults
-		registerMock func()
-		expBaseFee   *big.Int
-		expPass      bool
-	}{
-		{
-			"fail - grpc BaseFee error",
-			&tmrpctypes.ResultBlockResults{Height: 1},
-			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeError(queryClient)
-			},
-			nil,
-			false,
-		},
-		{
-			"fail - grpc BaseFee error - with non feemarket block event",
-			&tmrpctypes.ResultBlockResults{
-				Height: 1,
-				BeginBlockEvents: []types.Event{
-					{
-						Type: evmtypes.EventTypeBlockBloom,
-					},
-				},
-			},
-			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeError(queryClient)
-			},
-			nil,
-			false,
-		},
-		{
-			"fail - grpc BaseFee error - with feemarket block event",
-			&tmrpctypes.ResultBlockResults{
-				Height: 1,
-				BeginBlockEvents: []types.Event{
-					{
-						Type: feemarkettypes.EventTypeFeeMarket,
-					},
-				},
-			},
-			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeError(queryClient)
-			},
-			nil,
-			false,
-		},
-		{
-			"fail - grpc BaseFee error - with feemarket block event with wrong attribute value",
-			&tmrpctypes.ResultBlockResults{
-				Height: 1,
-				BeginBlockEvents: []types.Event{
-					{
-						Type: feemarkettypes.EventTypeFeeMarket,
-						Attributes: []types.EventAttribute{
-							{Value: []byte{0x1}},
-						},
-					},
-				},
-			},
-			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeError(queryClient)
-			},
-			nil,
-			false,
-		},
-		{
-			"fail - grpc baseFee error - with feemarket block event with baseFee attribute value",
-			&tmrpctypes.ResultBlockResults{
-				Height: 1,
-				BeginBlockEvents: []types.Event{
-					{
-						Type: feemarkettypes.EventTypeFeeMarket,
-						Attributes: []types.EventAttribute{
-							{Value: []byte(baseFee.String())},
-						},
-					},
-				},
-			},
-			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeError(queryClient)
-			},
-			baseFee.BigInt(),
-			true,
-		},
-		{
-			"fail - base fee or london fork not enabled",
-			&tmrpctypes.ResultBlockResults{Height: 1},
-			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFeeDisabled(queryClient)
-			},
-			nil,
-			true,
-		},
-		{
-			"pass",
-			&tmrpctypes.ResultBlockResults{Height: 1},
-			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFee(queryClient, baseFee)
-			},
-			baseFee.BigInt(),
-			true,
-		},
-	}
-	for _, tc := range testCases {
-		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
-			suite.SetupTest() // reset test and queries
-			tc.registerMock()
-
-			baseFee, err := suite.backend.BaseFee(tc.blockRes)
-
-			if tc.expPass {
-				suite.Require().NoError(err)
-				suite.Require().Equal(tc.expBaseFee, baseFee)
 			} else {
 				suite.Require().Error(err)
 			}
@@ -980,3 +900,61 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 		})
 	}
 }
+
+// func (suite *BackendTestSuite) TestEthBlockFromTendermint() {
+// 	_, bz := suite.buildEthereumTx()
+// 	// emptyBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{}, nil, nil)
+
+// 	testCases := []struct {
+// 		name         string
+// 		baseFee      *big.Int
+// 		resBlock     *tmrpctypes.ResultBlock
+// 		blockRes     *tmrpctypes.ResultBlockResults
+// 		registerMock func(sdk.Int, int64)
+// 		expEthBlock  *ethtypes.Block
+// 		expPass      bool
+// 	}{
+// 		{
+// 			"pass - block with tx",
+// 			sdk.NewInt(1).BigInt(),
+// 			&tmrpctypes.ResultBlock{
+// 				Block: tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil),
+// 			},
+// 			&tmrpctypes.ResultBlockResults{
+// 				Height:     1,
+// 				TxsResults: []*types.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
+// 			},
+// 			func(baseFee sdk.Int, blockNum int64) {
+// 				// BaseFee
+// 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+// 				RegisterBaseFee(queryClient, baseFee)
+// 				// GetTendermintBlockResultByNumber
+// 				client := suite.backend.clientCtx.Client.(*mocks.Client)
+// 				RegisterBlockResults(client, blockNum)
+// 				// GetEthereumMsgsFromTendermintBlock
+
+// 				// height := int64(1)
+// 				// var header metadata.MD
+// 				// queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+// 				// RegisterParams(queryClient, &header, int64(height))
+// 			},
+// 			nil,
+// 			true,
+// 		},
+// 	}
+// 	for _, tc := range testCases {
+// 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+// 			suite.SetupTest() // reset test and queries
+// 			tc.registerMock(sdk.NewIntFromBigInt(tc.baseFee), tc.blockRes.Height)
+
+// 			ethBlock, err := suite.backend.EthBlockFromTendermint(tc.resBlock, tc.blockRes)
+
+// 			if tc.expPass {
+// 				suite.Require().NoError(err)
+// 				suite.Require().Equal(tc.expEthBlock, ethBlock)
+// 			} else {
+// 				suite.Require().Error(err)
+// 			}
+// 		})
+// 	}
+// }
