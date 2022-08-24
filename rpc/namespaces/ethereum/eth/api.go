@@ -167,7 +167,7 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
 func (e *PublicAPI) GetTransactionCount(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error) {
 	e.logger.Debug("eth_getTransactionCount", "address", address.Hex(), "block number or hash", blockNrOrHash)
-	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 func (e *PublicAPI) Call(args evmtypes.TransactionArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_call", "args", args.String(), "block number or hash", blockNrOrHash)
 
-	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}

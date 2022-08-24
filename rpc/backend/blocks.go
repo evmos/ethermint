@@ -198,8 +198,8 @@ func (b *Backend) BlockNumberFromTendermintByHash(blockHash common.Hash) (*big.I
 	return big.NewInt(resBlock.Block.Height), nil
 }
 
-// GetBlockNumber returns the BlockNumber from BlockNumberOrHash
-func (b *Backend) GetBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
+// BlockNumberFromTendermint returns the BlockNumber from BlockNumberOrHash
+func (b *Backend) BlockNumberFromTendermint(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
 	switch {
 	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
 		return rpctypes.EthEarliestBlockNumber, fmt.Errorf("types BlockHash and BlockNumber cannot be both nil")
