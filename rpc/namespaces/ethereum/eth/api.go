@@ -414,7 +414,7 @@ func (e *PublicAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, err
 		return nil, nil
 	}
 
-	resBlockResult, err := e.backend.GetTendermintBlockResultByNumber(&res.Height)
+	resBlockResult, err := e.backend.TendermintBlockResultByNumber(&res.Height)
 	if err != nil {
 		e.logger.Debug("block result not found", "number", res.Height, "error", err.Error())
 		return nil, nil

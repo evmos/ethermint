@@ -57,7 +57,7 @@ func (b *Backend) GetBlockByNumber(blockNum rpctypes.BlockNumber, fullTx bool) (
 		return nil, nil
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		b.logger.Debug("failed to fetch block result from Tendermint", "height", blockNum, "error", err.Error())
 		return nil, nil
@@ -85,7 +85,7 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 		return nil, nil
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		b.logger.Debug("failed to fetch block result from Tendermint", "block-hash", hash.String(), "error", err.Error())
 		return nil, nil
@@ -126,9 +126,9 @@ func (b *Backend) TendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpc
 	return resBlock, nil
 }
 
-// GetTendermintBlockResultByNumber returns a Tendermint-formatted block result
+// TendermintBlockResultByNumber returns a Tendermint-formatted block result
 // by block number
-func (b *Backend) GetTendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error) {
+func (b *Backend) TendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error) {
 	return b.clientCtx.Client.BlockResults(b.ctx, height)
 }
 
@@ -159,7 +159,7 @@ func (b *Backend) BlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block,
 		return nil, fmt.Errorf("block not found for height %d", blockNum)
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, fmt.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
@@ -178,7 +178,7 @@ func (b *Backend) BlockByHash(hash common.Hash) (*ethtypes.Block, error) {
 		return nil, fmt.Errorf("block not found for hash %s", hash)
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, fmt.Errorf("block result not found for hash %s", hash)
 	}
@@ -229,7 +229,7 @@ func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 		return nil
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil
 	}
@@ -252,7 +252,7 @@ func (b *Backend) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber
 		return nil
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil
 	}
@@ -314,7 +314,7 @@ func (b *Backend) HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Heade
 		return nil, errors.Errorf("block not found for height %d", blockNum)
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, fmt.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
@@ -344,7 +344,7 @@ func (b *Backend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error) 
 		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
 	if err != nil {
 		return nil, errors.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
@@ -494,7 +494,7 @@ func (b *Backend) EthBlockFromTendermint(
 
 	ethHeader := rpctypes.EthHeaderFromTendermint(block.Header, bloom, baseFee)
 
-	resBlockResult, err := b.GetTendermintBlockResultByNumber(&block.Height)
+	resBlockResult, err := b.TendermintBlockResultByNumber(&block.Height)
 	if err != nil {
 		return nil, err
 	}

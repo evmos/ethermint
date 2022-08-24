@@ -472,7 +472,7 @@ func (suite *BackendTestSuite) TestTendermintBlockByNumber() {
 	}
 }
 
-func (suite *BackendTestSuite) TestGetTendermintBlockResultByNumber() {
+func (suite *BackendTestSuite) TestTendermintBlockResultByNumber() {
 	var expBlockRes *tmrpctypes.ResultBlockResults
 
 	testCases := []struct {
@@ -510,7 +510,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockResultByNumber() {
 			suite.SetupTest() // reset test and queries
 			tc.registerMock(tc.blockNumber)
 
-			blockRes, err := suite.backend.GetTendermintBlockResultByNumber(&tc.blockNumber)
+			blockRes, err := suite.backend.TendermintBlockResultByNumber(&tc.blockNumber)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -524,7 +524,7 @@ func (suite *BackendTestSuite) TestGetTendermintBlockResultByNumber() {
 
 // BlockByNumber
 // TendermintBlockByNumber
-// GetTendermintBlockResultByNumber
+// TendermintBlockResultByNumber
 // EthBlockFromTendermint
 
 func (suite *BackendTestSuite) TestBlockBloom() {
@@ -928,7 +928,7 @@ func (suite *BackendTestSuite) TestGetEthereumMsgsFromTendermintBlock() {
 // 				// BaseFee
 // 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
 // 				RegisterBaseFee(queryClient, baseFee)
-// 				// GetTendermintBlockResultByNumber
+// 				// TendermintBlockResultByNumber
 // 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 // 				RegisterBlockResults(client, blockNum)
 // 				// GetEthereumMsgsFromTendermintBlock

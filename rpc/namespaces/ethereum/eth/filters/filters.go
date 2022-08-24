@@ -103,7 +103,7 @@ func (f *Filter) Logs(ctx context.Context, logLimit int, blockLimit int64) ([]*e
 			return nil, fmt.Errorf("failed to fetch header by hash %s: %w", f.criteria.BlockHash, err)
 		}
 
-		blockRes, err := f.backend.GetTendermintBlockResultByNumber(&resBlock.Block.Height)
+		blockRes, err := f.backend.TendermintBlockResultByNumber(&resBlock.Block.Height)
 		if err != nil {
 			f.logger.Debug("failed to fetch block result from Tendermint", "height", resBlock.Block.Height, "error", err.Error())
 			return nil, nil
@@ -155,7 +155,7 @@ func (f *Filter) Logs(ctx context.Context, logLimit int, blockLimit int64) ([]*e
 	to := f.criteria.ToBlock.Int64()
 
 	for height := from; height <= to; height++ {
-		blockRes, err := f.backend.GetTendermintBlockResultByNumber(&height)
+		blockRes, err := f.backend.TendermintBlockResultByNumber(&height)
 		if err != nil {
 			f.logger.Debug("failed to fetch block result from Tendermint", "height", height, "error", err.Error())
 			return nil, nil

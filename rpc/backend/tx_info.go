@@ -41,7 +41,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransac
 		return nil, errors.New("invalid ethereum tx")
 	}
 
-	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		b.logger.Debug("block result not found", "height", block.Block.Height, "error", err.Error())
 		return nil, nil
@@ -144,7 +144,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 	}
 
 	cumulativeGasUsed := uint64(0)
-	blockRes, err := b.GetTendermintBlockResultByNumber(&res.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&res.Height)
 	if err != nil {
 		b.logger.Debug("failed to retrieve block results", "height", res.Height, "error", err.Error())
 		return nil, nil
@@ -341,7 +341,7 @@ func (b *Backend) queryTendermintTxIndexer(query string, txGetter func(*rpctypes
 
 // getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
 func (b *Backend) GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
-	blockRes, err := b.GetTendermintBlockResultByNumber(&block.Block.Height)
+	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil, nil
 	}

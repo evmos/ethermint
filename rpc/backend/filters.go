@@ -22,7 +22,7 @@ func (b *Backend) GetLogs(hash common.Hash) ([][]*ethtypes.Log, error) {
 // GetLogsByHeight returns all the logs from all the ethereum transactions in a block.
 func (b *Backend) GetLogsByHeight(height *int64) ([][]*ethtypes.Log, error) {
 	// NOTE: we query the state in case the tx result logs are not persisted after an upgrade.
-	blockRes, err := b.GetTendermintBlockResultByNumber(height)
+	blockRes, err := b.TendermintBlockResultByNumber(height)
 	if err != nil {
 		return nil, err
 	}
