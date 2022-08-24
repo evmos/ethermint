@@ -475,6 +475,7 @@ func (b *Backend) BlockFromTendermintBlock(
 	return formattedBlock, nil
 }
 
+// TODO Endpoints using this are failing with transactions in a block
 // EthBlockFromTendermintBlock returns an Ethereum Block type from Tendermint block
 // EthBlockFromTendermintBlock
 func (b *Backend) EthBlockFromTendermintBlock(
