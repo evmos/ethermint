@@ -211,7 +211,7 @@ func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Blo
 		return nil, fmt.Errorf("block result not found for height %d", resBlock.Block.Height)
 	}
 
-	return b.EthBlockFromTendermint(resBlock, blockRes)
+	return b.EthBlockFromTendermintBlock(resBlock, blockRes)
 }
 
 // EthBlockByHash returns the block identified by hash.
@@ -230,7 +230,7 @@ func (b *Backend) EthBlockByHash(hash common.Hash) (*ethtypes.Block, error) {
 		return nil, fmt.Errorf("block result not found for hash %s", hash)
 	}
 
-	return b.EthBlockFromTendermint(resBlock, blockRes)
+	return b.EthBlockFromTendermintBlock(resBlock, blockRes)
 }
 
 // BlockNumberFromTendermintByHash returns the block height of given block hash
@@ -475,8 +475,9 @@ func (b *Backend) BlockFromTendermintBlock(
 	return formattedBlock, nil
 }
 
-// Returns an Ethereum Block type from Tendermint block
-func (b *Backend) EthBlockFromTendermint(
+// EthBlockFromTendermintBlock returns an Ethereum Block type from Tendermint block
+// EthBlockFromTendermintBlock
+func (b *Backend) EthBlockFromTendermintBlock(
 	resBlock *tmrpctypes.ResultBlock,
 	blockRes *tmrpctypes.ResultBlockResults,
 ) (*ethtypes.Block, error) {
