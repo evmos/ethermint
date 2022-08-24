@@ -151,6 +151,7 @@ func (s *websocketsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // pingLoop sends periodic ping frames when the connection is idle.
 // this is the thing that is keeping ethereum websocket connections alive
+// It has been adapted from geth: https://github.com/ethereum/go-ethereum/blob/4c114af5024943a7471aeccdf5e536584c1e21b4/rpc/websocket.go#L290-L314
 func (s *websocketsServer) pingLoop(wsConn *wsConn) {
 	timer := time.NewTimer(wsPingInterval)
 	defer timer.Stop()
