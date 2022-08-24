@@ -98,7 +98,7 @@ func (f *Filter) Logs(ctx context.Context, logLimit int, blockLimit int64) ([]*e
 
 	// If we're doing singleton block filtering, execute and return
 	if f.criteria.BlockHash != nil && *f.criteria.BlockHash != (common.Hash{}) {
-		resBlock, err := f.backend.GetTendermintBlockByHash(*f.criteria.BlockHash)
+		resBlock, err := f.backend.TendermintBlockByHash(*f.criteria.BlockHash)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch header by hash %s: %w", f.criteria.BlockHash, err)
 		}

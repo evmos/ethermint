@@ -39,7 +39,7 @@ type Backend interface {
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
-	GetTendermintBlockByHash(hash common.Hash) (*coretypes.ResultBlock, error)
+	TendermintBlockByHash(hash common.Hash) (*coretypes.ResultBlock, error)
 	TendermintBlockResultByNumber(height *int64) (*coretypes.ResultBlockResults, error)
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 	GetLogsByHeight(*int64) ([][]*ethtypes.Log, error)

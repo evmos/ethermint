@@ -70,7 +70,7 @@ type EVMBackend interface {
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	TendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	TendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
-	GetTendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
+	TendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
 	BlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error)
 	BlockByHash(blockHash common.Hash) (*ethtypes.Block, error)
 	GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error)

@@ -8,7 +8,7 @@ import (
 
 // GetLogs returns all the logs from all the ethereum transactions in a block.
 func (b *Backend) GetLogs(hash common.Hash) ([][]*ethtypes.Log, error) {
-	resBlock, err := b.GetTendermintBlockByHash(hash)
+	resBlock, err := b.TendermintBlockByHash(hash)
 	if err != nil {
 		return nil, err
 	}

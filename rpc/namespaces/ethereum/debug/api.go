@@ -88,7 +88,7 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 func (a *API) TraceBlockByHash(hash common.Hash, config *evmtypes.TraceConfig) ([]*evmtypes.TxTraceResult, error) {
 	a.logger.Debug("debug_traceBlockByHash", "hash", hash)
 	// Get Tendermint Block
-	resBlock, err := a.backend.GetTendermintBlockByHash(hash)
+	resBlock, err := a.backend.TendermintBlockByHash(hash)
 	if err != nil {
 		a.logger.Debug("get block failed", "hash", hash.Hex(), "error", err.Error())
 		return nil, err
