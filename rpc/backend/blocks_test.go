@@ -441,7 +441,6 @@ func (suite *BackendTestSuite) TestGetBlockTransactionCountByHash() {
 	}
 }
 
-// GetBlockTransactionCountByNumber
 func (suite *BackendTestSuite) TestGetBlockTransactionCountByNumber() {
 	_, bz := suite.buildEthereumTx()
 	block := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
@@ -672,6 +671,70 @@ func (suite *BackendTestSuite) TestTendermintBlockResultByNumber() {
 		})
 	}
 }
+
+// TODO EthBlockByNumber => blocked because of EthBlockFromTendermintBlock
+// TODO BlockNumberFromTendermintByHash
+func (suite *BackendTestSuite) TestBlockNumberFromTendermintByHash() {
+	var resBlock *tmrpctypes.ResultBlock
+
+	_, bz := suite.buildEthereumTx()
+	block := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
+	emptyBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{}, nil, nil)
+
+	testCases := []struct {
+		name         string
+		hash         common.Hash
+		registerMock func(common.Hash)
+		expPass      bool
+	}{
+		{
+			"fail - tendermint client failed to get block",
+			common.BytesToHash(block.Hash()),
+			func(hash common.Hash) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockByHashError(client, hash, bz)
+			},
+			false,
+		},
+		{
+			"pass - block without tx",
+			common.BytesToHash(emptyBlock.Hash()),
+			func(hash common.Hash) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlockByHash(client, hash, bz)
+			},
+			true,
+		},
+		{
+			"pass - block with tx",
+			common.BytesToHash(block.Hash()),
+			func(hash common.Hash) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlockByHash(client, hash, bz)
+			},
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+
+			tc.registerMock(tc.hash)
+			blockNum, err := suite.backend.BlockNumberFromTendermintByHash(tc.hash)
+			if tc.expPass {
+				expHeight := big.NewInt(resBlock.Block.Height)
+				suite.Require().NoError(err)
+				suite.Require().Equal(expHeight, blockNum)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+// TODO BlockNumberFromTendermint
+// TODO HeaderByNumber
+// TODO HeaderByHash
 
 func (suite *BackendTestSuite) TestBlockBloom() {
 	testCases := []struct {

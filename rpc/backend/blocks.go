@@ -195,6 +195,7 @@ func (b *Backend) TendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.Resu
 	return resBlock, nil
 }
 
+// TODO This fails for blocks with txs becuase of EthBlockFromTendermintBlock
 // EthBlockByNumber returns the Ethereum Block identified by number.
 func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error) {
 	resBlock, err := b.TendermintBlockByNumber(blockNum)
