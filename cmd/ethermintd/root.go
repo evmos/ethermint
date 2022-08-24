@@ -130,6 +130,9 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	// add rosetta
 	rootCmd.AddCommand(sdkserver.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
 
+	// add eip712 utility commands
+	rootCmd.AddCommand(ethermintclient.EIP712Commands())
+
 	return rootCmd, encodingConfig
 }
 

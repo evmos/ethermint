@@ -64,25 +64,9 @@ func WrapTxToTypedData(
 		Salt:              "0",
 	}
 
-	msgTypes, err := extractMsgTypes(cdc, "MsgValue", msg)
+	msgTypes, err := ExtractMsgTypes(cdc, "MsgValue", msg, feeDelegation != nil)
 	if err != nil {
 		return apitypes.TypedData{}, err
-	}
-
-	if feeDelegation != nil {
-		feeInfo, ok := txData["fee"].(map[string]interface{})
-		if !ok {
-			return apitypes.TypedData{}, sdkerrors.Wrap(sdkerrors.ErrInvalidType, "cannot parse fee from tx data")
-		}
-
-		feeInfo["feePayer"] = feeDelegation.FeePayer.String()
-
-		// also patching msgTypes to include feePayer
-		msgTypes["Fee"] = []apitypes.Type{
-			{Name: "feePayer", Type: "string"},
-			{Name: "amount", Type: "Coin[]"},
-			{Name: "gas", Type: "string"},
-		}
 	}
 
 	typedData := apitypes.TypedData{
@@ -99,7 +83,7 @@ type FeeDelegationOptions struct {
 	FeePayer sdk.AccAddress
 }
 
-func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg) (apitypes.Types, error) {
+func ExtractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg, feeDelegation bool) (apitypes.Types, error) {
 	rootTypes := apitypes.Types{
 		"EIP712Domain": {
 			{
@@ -150,6 +134,14 @@ func extractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg
 
 	if err := walkFields(cdc, rootTypes, msgTypeName, msg); err != nil {
 		return nil, err
+	}
+
+	if feeDelegation {
+		rootTypes["Fee"] = []apitypes.Type{
+			{Name: "feePayer", Type: "string"},
+			{Name: "amount", Type: "Coin[]"},
+			{Name: "gas", Type: "string"},
+		}
 	}
 
 	return rootTypes, nil
