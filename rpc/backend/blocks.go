@@ -186,8 +186,8 @@ func (b *Backend) EthBlockByHash(hash common.Hash) (*ethtypes.Block, error) {
 	return b.EthBlockFromTendermint(resBlock, blockRes)
 }
 
-// GetBlockNumberByHash returns the block height of given block hash
-func (b *Backend) GetBlockNumberByHash(blockHash common.Hash) (*big.Int, error) {
+// BlockNumberFromTendermintByHash returns the block height of given block hash
+func (b *Backend) BlockNumberFromTendermintByHash(blockHash common.Hash) (*big.Int, error) {
 	resBlock, err := b.TendermintBlockByHash(blockHash)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func (b *Backend) GetBlockNumber(blockNrOrHash rpctypes.BlockNumberOrHash) (rpct
 	case blockNrOrHash.BlockHash == nil && blockNrOrHash.BlockNumber == nil:
 		return rpctypes.EthEarliestBlockNumber, fmt.Errorf("types BlockHash and BlockNumber cannot be both nil")
 	case blockNrOrHash.BlockHash != nil:
-		blockNumber, err := b.GetBlockNumberByHash(*blockNrOrHash.BlockHash)
+		blockNumber, err := b.BlockNumberFromTendermintByHash(*blockNrOrHash.BlockHash)
 		if err != nil {
 			return rpctypes.EthEarliestBlockNumber, err
 		}
