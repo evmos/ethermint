@@ -167,8 +167,8 @@ func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Blo
 	return b.EthBlockFromTendermint(resBlock, blockRes)
 }
 
-// BlockByHash returns the block identified by hash.
-func (b *Backend) BlockByHash(hash common.Hash) (*ethtypes.Block, error) {
+// EthBlockByHash returns the block identified by hash.
+func (b *Backend) EthBlockByHash(hash common.Hash) (*ethtypes.Block, error) {
 	resBlock, err := b.TendermintBlockByHash(hash)
 	if err != nil {
 		return nil, err
