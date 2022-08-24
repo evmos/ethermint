@@ -787,7 +787,7 @@ func (suite *BackendTestSuite) TestGetEthBlockFromTendermint() {
 			suite.SetupTest() // reset test and queries
 			tc.registerMock(sdk.NewIntFromBigInt(tc.baseFee), tc.validator, tc.height)
 
-			block, err := suite.backend.GetEthBlockFromTendermint(tc.resBlock, tc.blockRes, tc.fullTx)
+			block, err := suite.backend.BlockFromTendermintBlock(tc.resBlock, tc.blockRes, tc.fullTx)
 
 			var expBlock map[string]interface{}
 			header := tc.resBlock.Block.Header
