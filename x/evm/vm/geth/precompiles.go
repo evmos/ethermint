@@ -9,7 +9,7 @@ import (
 	evm "github.com/evmos/ethermint/x/evm/vm"
 )
 
-// getPrecompiles returns all the precompiled contracts defined given the
+// GetPrecompiles returns all the precompiled contracts defined given the
 // current chain configuration and block height.
 func GetPrecompiles(cfg *params.ChainConfig, blockNumber *big.Int) evm.PrecompiledContracts {
 	var precompiles evm.PrecompiledContracts

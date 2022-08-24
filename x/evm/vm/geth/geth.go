@@ -20,7 +20,7 @@ type EVM struct {
 	*vm.EVM
 }
 
-// NewGeth defines the constructor function for the go-ethereum EVM. It uses the
+// NewEVM defines the constructor function for the go-ethereum EVM. It uses the
 // default precompiled contracts and the EVM from go-ethereum.
 func NewEVM(
 	blockCtx vm.BlockContext,
@@ -40,7 +40,7 @@ func (e EVM) Context() vm.BlockContext {
 	return e.EVM.Context
 }
 
-// Context returns the EVM's Tx Context
+// TxContext returns the EVM's Tx Context
 func (e EVM) TxContext() vm.TxContext {
 	return e.EVM.TxContext
 }
