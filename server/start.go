@@ -280,7 +280,11 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		return err
 	}
 
-	config := config.GetConfig(ctx.Viper)
+	config, err := config.GetConfig(ctx.Viper)
+	if err != nil {
+		logger.Error("failed to get server config", "error", err.Error())
+		return err
+	}
 
 	if err := config.ValidateBasic(); err != nil {
 		if strings.Contains(err.Error(), "set min gas price in app.toml or flag or env variable") {
