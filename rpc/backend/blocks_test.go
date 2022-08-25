@@ -15,7 +15,6 @@ import (
 
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	ethrpc "github.com/evmos/ethermint/rpc/types"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
@@ -448,14 +447,14 @@ func (suite *BackendTestSuite) TestGetBlockTransactionCountByNumber() {
 
 	testCases := []struct {
 		name         string
-		blockNum     rpctypes.BlockNumber
+		blockNum     ethrpc.BlockNumber
 		registerMock func(ethrpc.BlockNumber)
 		expCount     hexutil.Uint
 		expPass      bool
 	}{
 		{
 			"fail - block not found",
-			rpctypes.BlockNumber(emptyBlock.Height),
+			ethrpc.BlockNumber(emptyBlock.Height),
 			func(blockNum ethrpc.BlockNumber) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
@@ -466,7 +465,7 @@ func (suite *BackendTestSuite) TestGetBlockTransactionCountByNumber() {
 		},
 		{
 			"fail - tendermint client failed to get block result",
-			rpctypes.BlockNumber(emptyBlock.Height),
+			ethrpc.BlockNumber(emptyBlock.Height),
 			func(blockNum ethrpc.BlockNumber) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
@@ -478,7 +477,7 @@ func (suite *BackendTestSuite) TestGetBlockTransactionCountByNumber() {
 		},
 		{
 			"pass - block without tx",
-			rpctypes.BlockNumber(emptyBlock.Height),
+			ethrpc.BlockNumber(emptyBlock.Height),
 			func(blockNum ethrpc.BlockNumber) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
@@ -490,7 +489,7 @@ func (suite *BackendTestSuite) TestGetBlockTransactionCountByNumber() {
 		},
 		{
 			"pass - block with tx",
-			rpctypes.BlockNumber(block.Height),
+			ethrpc.BlockNumber(block.Height),
 			func(blockNum ethrpc.BlockNumber) {
 				height := blockNum.Int64()
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
@@ -679,12 +678,12 @@ func (suite *BackendTestSuite) TestBlockNumberFromTendermint() {
 
 	_, bz := suite.buildEthereumTx()
 	block := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
-	blockNum := rpctypes.NewBlockNumber(big.NewInt(block.Height))
+	blockNum := ethrpc.NewBlockNumber(big.NewInt(block.Height))
 	blockHash := common.BytesToHash(block.Hash())
 
 	testCases := []struct {
 		name         string
-		blockNum     *rpctypes.BlockNumber
+		blockNum     *ethrpc.BlockNumber
 		hash         *common.Hash
 		registerMock func(*common.Hash)
 		expPass      bool
@@ -728,7 +727,7 @@ func (suite *BackendTestSuite) TestBlockNumberFromTendermint() {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
 			suite.SetupTest() // reset test and queries
 
-			blockNrOrHash := rpctypes.BlockNumberOrHash{
+			blockNrOrHash := ethrpc.BlockNumberOrHash{
 				BlockNumber: tc.blockNum,
 				BlockHash:   tc.hash,
 			}
@@ -741,7 +740,7 @@ func (suite *BackendTestSuite) TestBlockNumberFromTendermint() {
 				if tc.hash == nil {
 					suite.Require().Equal(*tc.blockNum, blockNum)
 				} else {
-					expHeight := rpctypes.NewBlockNumber(big.NewInt(resBlock.Block.Height))
+					expHeight := ethrpc.NewBlockNumber(big.NewInt(resBlock.Block.Height))
 					suite.Require().Equal(expHeight, blockNum)
 				}
 			} else {
@@ -1186,8 +1185,227 @@ func (suite *BackendTestSuite) TestEthMsgsFromTendermintBlock() {
 	}
 }
 
+func (suite *BackendTestSuite) TestHeaderByNumber() {
+	var expResultBlock *tmrpctypes.ResultBlock
+
+	_, bz := suite.buildEthereumTx()
+
+	testCases := []struct {
+		name         string
+		blockNumber  ethrpc.BlockNumber
+		baseFee      *big.Int
+		registerMock func(ethrpc.BlockNumber, sdk.Int)
+		expPass      bool
+	}{
+		{
+			"fail - tendermint client failed to get block",
+			ethrpc.BlockNumber(1),
+			sdk.NewInt(1).BigInt(),
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockError(client, height)
+			},
+			false,
+		},
+		{
+			"fail - block not found for height",
+			ethrpc.BlockNumber(1),
+			sdk.NewInt(1).BigInt(),
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockNotFound(client, height)
+			},
+			false,
+		},
+		{
+			"fail - block not found for height",
+			ethrpc.BlockNumber(1),
+			sdk.NewInt(1).BigInt(),
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlock(client, height, nil)
+				RegisterBlockResultsError(client, height)
+			},
+			false,
+		},
+		{
+			"pass - without Base Fee, failed to fetch from prunned block",
+			ethrpc.BlockNumber(1),
+			nil,
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				expResultBlock, _ = RegisterBlock(client, height, nil)
+				RegisterBlockResults(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeError(queryClient)
+			},
+			true,
+		},
+		{
+			"pass - blockNum = 1, without tx",
+			ethrpc.BlockNumber(1),
+			sdk.NewInt(1).BigInt(),
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				expResultBlock, _ = RegisterBlock(client, height, nil)
+				RegisterBlockResults(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+			},
+			true,
+		},
+		{
+			"pass - blockNum = 1, with tx",
+			ethrpc.BlockNumber(1),
+			sdk.NewInt(1).BigInt(),
+			func(blockNum ethrpc.BlockNumber, baseFee sdk.Int) {
+				height := blockNum.Int64()
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				expResultBlock, _ = RegisterBlock(client, height, bz)
+				RegisterBlockResults(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+			},
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+
+			tc.registerMock(tc.blockNumber, sdk.NewIntFromBigInt(tc.baseFee))
+			header, err := suite.backend.HeaderByNumber(tc.blockNumber)
+
+			if tc.expPass {
+				expHeader := ethrpc.EthHeaderFromTendermint(expResultBlock.Block.Header, ethtypes.Bloom{}, tc.baseFee)
+				suite.Require().NoError(err)
+				suite.Require().Equal(expHeader, header)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *BackendTestSuite) TestHeaderByHash() {
+	var expResultBlock *tmrpctypes.ResultBlock
+
+	_, bz := suite.buildEthereumTx()
+	block := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
+	emptyBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{}, nil, nil)
+
+	testCases := []struct {
+		name         string
+		hash         common.Hash
+		baseFee      *big.Int
+		registerMock func(common.Hash, sdk.Int)
+		expPass      bool
+	}{
+		{
+			"fail - tendermint client failed to get block",
+			common.BytesToHash(block.Hash()),
+			sdk.NewInt(1).BigInt(),
+			func(hash common.Hash, baseFee sdk.Int) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockByHashError(client, hash, bz)
+			},
+			false,
+		},
+		{
+			"fail - block not found for height",
+			common.BytesToHash(block.Hash()),
+			sdk.NewInt(1).BigInt(),
+			func(hash common.Hash, baseFee sdk.Int) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockByHashNotFound(client, hash, bz)
+			},
+			false,
+		},
+		{
+			"fail - block not found for height",
+			common.BytesToHash(block.Hash()),
+			sdk.NewInt(1).BigInt(),
+			func(hash common.Hash, baseFee sdk.Int) {
+				height := int64(1)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockByHash(client, hash, bz)
+				RegisterBlockResultsError(client, height)
+			},
+			false,
+		},
+		{
+			"pass - without Base Fee, failed to fetch from prunned block",
+			common.BytesToHash(block.Hash()),
+			nil,
+			func(hash common.Hash, baseFee sdk.Int) {
+				height := int64(1)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				expResultBlock, _ = RegisterBlockByHash(client, hash, bz)
+				RegisterBlockResults(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFeeError(queryClient)
+			},
+			true,
+		},
+		{
+			"pass - blockNum = 1, without tx",
+			common.BytesToHash(emptyBlock.Hash()),
+			sdk.NewInt(1).BigInt(),
+			func(hash common.Hash, baseFee sdk.Int) {
+				height := int64(1)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				expResultBlock, _ = RegisterBlockByHash(client, hash, nil)
+				RegisterBlockResults(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+			},
+			true,
+		},
+		{
+			"pass - with tx",
+			common.BytesToHash(block.Hash()),
+			sdk.NewInt(1).BigInt(),
+			func(hash common.Hash, baseFee sdk.Int) {
+				height := int64(1)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				expResultBlock, _ = RegisterBlockByHash(client, hash, bz)
+				RegisterBlockResults(client, height)
+
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+			},
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+
+			tc.registerMock(tc.hash, sdk.NewIntFromBigInt(tc.baseFee))
+			header, err := suite.backend.HeaderByHash(tc.hash)
+
+			if tc.expPass {
+				expHeader := ethrpc.EthHeaderFromTendermint(expResultBlock.Block.Header, ethtypes.Bloom{}, tc.baseFee)
+				suite.Require().NoError(err)
+				suite.Require().Equal(expHeader, header)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
 func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
-	// _, bz := suite.buildEthereumTx()
 	emptyBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{}, nil, nil)
 
 	testCases := []struct {
@@ -1235,7 +1453,7 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
 				RegisterBlockResults(client, blockNum)
 			},
 			ethtypes.NewBlock(
-				rpctypes.EthHeaderFromTendermint(
+				ethrpc.EthHeaderFromTendermint(
 					emptyBlock.Header,
 					ethtypes.Bloom{},
 					sdk.NewInt(1).BigInt(),
