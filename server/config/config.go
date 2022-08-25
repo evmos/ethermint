@@ -60,9 +60,10 @@ var evmTracers = []string{"json", "markdown", "struct", "access_list"}
 type Config struct {
 	config.Config
 
-	EVM     EVMConfig     `mapstructure:"evm"`
-	JSONRPC JSONRPCConfig `mapstructure:"json-rpc"`
-	TLS     TLSConfig     `mapstructure:"tls"`
+	EVM       EVMConfig       `mapstructure:"evm"`
+	JSONRPC   JSONRPCConfig   `mapstructure:"json-rpc"`
+	TLS       TLSConfig       `mapstructure:"tls"`
+	WebSocket WebSocketConfig `mapstructure:"web-socket"`
 }
 
 // EVMConfig defines the application configuration values for the EVM.
@@ -72,6 +73,22 @@ type EVMConfig struct {
 	Tracer string `mapstructure:"tracer"`
 	// MaxTxGasWanted defines the gas wanted for each eth tx returned in ante handler in check tx mode.
 	MaxTxGasWanted uint64 `mapstructure:"max-tx-gas-wanted"`
+}
+
+// WebSocketConfig defines the application configuration values for the web socket.
+type WebSocketConfig struct {
+	// ReadBuffer defines
+	ReadBuffer int `mapstructure:"read-buffer"`
+
+	WriteBuffer int `mapstructure:"write-buffer"`
+
+	PingInterval time.Duration `mapstructure:"ping-interval"`
+
+	PingWriteTimeout time.Duration `mapstructure:"ping-write-timeout"`
+
+	PongTimeout time.Duration `mapstructure:"pong-timeout"`
+
+	MessageSizeLimit int `mapstructure:"message-size-limit"`
 }
 
 // JSONRPCConfig defines configuration for the EVM RPC server.
@@ -144,10 +161,11 @@ func AppConfig(denom string) (string, interface{}) {
 	}
 
 	customAppConfig := Config{
-		Config:  *srvCfg,
-		EVM:     *DefaultEVMConfig(),
-		JSONRPC: *DefaultJSONRPCConfig(),
-		TLS:     *DefaultTLSConfig(),
+		Config:    *srvCfg,
+		EVM:       *DefaultEVMConfig(),
+		JSONRPC:   *DefaultJSONRPCConfig(),
+		TLS:       *DefaultTLSConfig(),
+		WebSocket: *DefaultWebSocketConfig(),
 	}
 
 	customAppTemplate := config.DefaultConfigTemplate + DefaultConfigTemplate
@@ -158,10 +176,11 @@ func AppConfig(denom string) (string, interface{}) {
 // DefaultConfig returns server's default configuration.
 func DefaultConfig() *Config {
 	return &Config{
-		Config:  *config.DefaultConfig(),
-		EVM:     *DefaultEVMConfig(),
-		JSONRPC: *DefaultJSONRPCConfig(),
-		TLS:     *DefaultTLSConfig(),
+		Config:    *config.DefaultConfig(),
+		EVM:       *DefaultEVMConfig(),
+		JSONRPC:   *DefaultJSONRPCConfig(),
+		TLS:       *DefaultTLSConfig(),
+		WebSocket: *DefaultWebSocketConfig(),
 	}
 }
 
@@ -290,6 +309,47 @@ func (c TLSConfig) Validate() error {
 	return nil
 }
 
+// DefaultWebSocketConfig returns the default web socket configuration
+func DefaultWebSocketConfig() *WebSocketConfig {
+	return &WebSocketConfig{
+		ReadBuffer:       1024,
+		WriteBuffer:      1024,
+		PingInterval:     60 * time.Second,
+		PingWriteTimeout: 5 * time.Second,
+		PongTimeout:      30 * time.Second,
+		MessageSizeLimit: 15 * 1024 * 1024,
+	}
+}
+
+// Validate returns an error if the any of fields in web socket configuration is zero or negative
+func (c WebSocketConfig) Validate() error {
+	if c.ReadBuffer <= 0 {
+		return fmt.Errorf("read buffer must be greater than zero")
+	}
+
+	if c.WriteBuffer <= 0 {
+		return fmt.Errorf("write buffer must be greater than zero")
+	}
+
+	if c.MessageSizeLimit <= 0 {
+		return fmt.Errorf("message size limit must be greater than zero")
+	}
+
+	if c.PingInterval.Nanoseconds() == 0 {
+		return fmt.Errorf("ping interval must not be zero")
+	}
+
+	if c.PingWriteTimeout.Nanoseconds() == 0 {
+		return fmt.Errorf("ping write timeout must not be zero")
+	}
+
+	if c.PongTimeout.Nanoseconds() == 0 {
+		return fmt.Errorf("pong timeout must not be zero")
+	}
+
+	return nil
+}
+
 // GetConfig returns a fully parsed Config object.
 func GetConfig(v *viper.Viper) (Config, error) {
 	cfg, err := config.GetConfig(v)
@@ -324,6 +384,14 @@ func GetConfig(v *viper.Viper) (Config, error) {
 			CertificatePath: v.GetString("tls.certificate-path"),
 			KeyPath:         v.GetString("tls.key-path"),
 		},
+		WebSocket: WebSocketConfig{
+			ReadBuffer:       v.GetInt("web-socket.read-buffer"),
+			WriteBuffer:      v.GetInt("web-socket.write-buffer"),
+			PingInterval:     v.GetDuration("web-socket.ping-interval"),
+			PingWriteTimeout: v.GetDuration("web-socket.ping-write-timeout"),
+			PongTimeout:      v.GetDuration("web-socket.pong-timeout"),
+			MessageSizeLimit: v.GetInt("web-socket.message-size-limit"),
+		},
 	}, nil
 }
 
@@ -348,6 +416,10 @@ func (c Config) ValidateBasic() error {
 
 	if err := c.TLS.Validate(); err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid tls config value: %s", err.Error())
+	}
+
+	if err := c.WebSocket.Validate(); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid web-socket config value: %s", err.Error())
 	}
 
 	return c.Config.ValidateBasic()
