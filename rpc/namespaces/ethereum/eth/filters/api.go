@@ -136,7 +136,12 @@ func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {
 		return rpc.ID(fmt.Sprintf("error creating pending tx filter: %s", err.Error()))
 	}
 
-	api.filters[pendingTxSub.ID()] = &filter{typ: filters.PendingTransactionsSubscription, deadline: time.NewTimer(deadline), hashes: make([]common.Hash, 0), s: pendingTxSub}
+	api.filters[pendingTxSub.ID()] = &filter{
+		typ:      filters.PendingTransactionsSubscription,
+		deadline: time.NewTimer(deadline),
+		hashes:   make([]common.Hash, 0),
+		s:        pendingTxSub,
+	}
 
 	go func(txsCh <-chan coretypes.ResultEvent, errCh <-chan error) {
 		defer cancelSubs()

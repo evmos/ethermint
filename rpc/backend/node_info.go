@@ -233,7 +233,12 @@ func (b *Backend) ListAccounts() ([]common.Address, error) {
 }
 
 // NewAccount will create a new account and returns the address for the new account.
-func (b *Backend) NewMnemonic(uid string, language keyring.Language, hdPath, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, error) {
+func (b *Backend) NewMnemonic(uid string,
+	language keyring.Language,
+	hdPath,
+	bip39Passphrase string,
+	algo keyring.SignatureAlgo,
+) (*keyring.Record, error) {
 	info, _, err := b.clientCtx.Keyring.NewMnemonic(uid, keyring.English, bip39Passphrase, bip39Passphrase, algo)
 	if err != nil {
 		return nil, err
