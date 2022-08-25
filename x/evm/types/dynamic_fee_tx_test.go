@@ -581,6 +581,84 @@ func (suite *TxDataTestSuite) TestDynamicFeeTxValidate() {
 	}
 }
 
+func (suite *TxDataTestSuite) TestDynamicFeeTxEffectiveGasPrice() {
+	testCases := []struct {
+		name    string
+		tx      DynamicFeeTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty dynamic fee tx",
+			DynamicFeeTx{
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveGasPrice(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestDynamicFeeTxEffectiveFee() {
+	testCases := []struct {
+		name    string
+		tx      DynamicFeeTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty dynamic fee tx",
+			DynamicFeeTx{
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				GasLimit: uint64(1),
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveFee(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestDynamicFeeTxEffectiveCost() {
+	testCases := []struct {
+		name    string
+		tx      DynamicFeeTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty dynamic fee tx",
+			DynamicFeeTx{
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				GasLimit: uint64(1),
+				Amount:   &suite.sdkZeroInt,
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveCost(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
 func (suite *TxDataTestSuite) TestDynamicFeeTxFeeCost() {
 	tx := &DynamicFeeTx{}
 	suite.Require().Panics(func() { tx.Fee() }, "should panic")
