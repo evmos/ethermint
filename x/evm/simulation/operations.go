@@ -275,7 +275,12 @@ func RandomTransferableAmount(ctx *simulateContext, address common.Address, esti
 }
 
 // GetSignedTx sign the ethereum tx and packs it as a signing.Tx .
-func GetSignedTx(ctx *simulateContext, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
+func GetSignedTx(
+	ctx *simulateContext,
+	txBuilder client.TxBuilder,
+	msg *types.MsgEthereumTx,
+	prv cryptotypes.PrivKey,
+) (signedTx signing.Tx, err error) {
 	builder, ok := txBuilder.(tx.ExtensionOptionsTxBuilder)
 	if !ok {
 		return nil, fmt.Errorf("can not initiate ExtensionOptionsTxBuilder")

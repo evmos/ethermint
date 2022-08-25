@@ -33,16 +33,10 @@ linters:
     - varcheck
     - nolintlint
     - asciicheck
-    # - exhaustive
     - exportloopref
     - gofumpt
     - gomodguard
-    # - nestif
-    # - nlreturn
-    # - noctx
-    # - rowserrcheck
-    # - whitespace
-    # - wsl
+    - whitespace
 
 issues:
   exclude-rules:

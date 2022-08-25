@@ -460,7 +460,13 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 
 	filterID = logsSub.ID()
 
-	api.filters[filterID] = &filter{typ: filters.LogsSubscription, crit: criteria, deadline: time.NewTimer(deadline), hashes: []common.Hash{}, s: logsSub}
+	api.filters[filterID] = &filter{
+		typ:      filters.LogsSubscription,
+		crit:     criteria,
+		deadline: time.NewTimer(deadline),
+		hashes:   []common.Hash{},
+		s:        logsSub,
+	}
 
 	go func(eventCh <-chan coretypes.ResultEvent) {
 		defer cancelSubs()
