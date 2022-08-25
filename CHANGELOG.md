@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
 * (deps) [\#1159](https://github.com/evmos/ethermint/pull/1159) Bump Geth version to `v1.10.19`.
 * (deps) [#1167](https://github.com/evmos/ethermint/pull/1167) Bump ibc-go to [`v4.0.0-rc2`](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0-rc2)
 * (ante) [#1176](https://github.com/evmos/ethermint/pull/1176) Fix invalid tx hashes; Remove `Size_` field and validate `Hash`/`From` fields in ante handler,
