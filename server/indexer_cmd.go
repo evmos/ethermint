@@ -55,7 +55,9 @@ func NewIndexTxCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			stateStore := sm.NewStore(stateDB)
+			stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+				DiscardABCIResponses: cfg.Storage.DiscardABCIResponses,
+			})
 
 			indexBlock := func(height int64) error {
 				blk := blockStore.LoadBlock(height)
