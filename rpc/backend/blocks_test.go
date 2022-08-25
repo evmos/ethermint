@@ -673,7 +673,84 @@ func (suite *BackendTestSuite) TestTendermintBlockResultByNumber() {
 }
 
 // TODO EthBlockByNumber => blocked because of EthBlockFromTendermintBlock
-// TODO BlockNumberFromTendermintByHash
+
+func (suite *BackendTestSuite) TestBlockNumberFromTendermint() {
+	var resBlock *tmrpctypes.ResultBlock
+
+	_, bz := suite.buildEthereumTx()
+	block := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
+	blockNum := rpctypes.NewBlockNumber(big.NewInt(block.Height))
+	blockHash := common.BytesToHash(block.Hash())
+
+	testCases := []struct {
+		name         string
+		blockNum     *rpctypes.BlockNumber
+		hash         *common.Hash
+		registerMock func(*common.Hash)
+		expPass      bool
+	}{
+		{
+			"error - without blockHash or blockNum",
+			nil,
+			nil,
+			func(hash *common.Hash) {},
+			false,
+		},
+		{
+			"error - with blockHash, tendermint client failed to get block",
+			nil,
+			&blockHash,
+			func(hash *common.Hash) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockByHashError(client, *hash, bz)
+			},
+			false,
+		},
+		{
+			"pass - with blockHash",
+			nil,
+			&blockHash,
+			func(hash *common.Hash) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				resBlock, _ = RegisterBlockByHash(client, *hash, bz)
+			},
+			true,
+		},
+		{
+			"pass - without blockHash & with blockNumber",
+			&blockNum,
+			nil,
+			func(hash *common.Hash) {},
+			true,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+
+			blockNrOrHash := rpctypes.BlockNumberOrHash{
+				BlockNumber: tc.blockNum,
+				BlockHash:   tc.hash,
+			}
+
+			tc.registerMock(tc.hash)
+			blockNum, err := suite.backend.BlockNumberFromTendermint(blockNrOrHash)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+				if tc.hash == nil {
+					suite.Require().Equal(*tc.blockNum, blockNum)
+				} else {
+					expHeight := rpctypes.NewBlockNumber(big.NewInt(resBlock.Block.Height))
+					suite.Require().Equal(expHeight, blockNum)
+				}
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
 func (suite *BackendTestSuite) TestBlockNumberFromTendermintByHash() {
 	var resBlock *tmrpctypes.ResultBlock
 
@@ -732,7 +809,6 @@ func (suite *BackendTestSuite) TestBlockNumberFromTendermintByHash() {
 	}
 }
 
-// TODO BlockNumberFromTendermint
 // TODO HeaderByNumber
 // TODO HeaderByHash
 

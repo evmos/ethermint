@@ -215,18 +215,6 @@ func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Blo
 	return b.EthBlockFromTendermintBlock(resBlock, blockRes)
 }
 
-// BlockNumberFromTendermintByHash returns the block height of given block hash
-func (b *Backend) BlockNumberFromTendermintByHash(blockHash common.Hash) (*big.Int, error) {
-	resBlock, err := b.TendermintBlockByHash(blockHash)
-	if err != nil {
-		return nil, err
-	}
-	if resBlock == nil {
-		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
-	}
-	return big.NewInt(resBlock.Block.Height), nil
-}
-
 // BlockNumberFromTendermint returns the BlockNumber from BlockNumberOrHash
 func (b *Backend) BlockNumberFromTendermint(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
 	switch {
@@ -243,6 +231,18 @@ func (b *Backend) BlockNumberFromTendermint(blockNrOrHash rpctypes.BlockNumberOr
 	default:
 		return rpctypes.EthEarliestBlockNumber, nil
 	}
+}
+
+// BlockNumberFromTendermintByHash returns the block height of given block hash
+func (b *Backend) BlockNumberFromTendermintByHash(blockHash common.Hash) (*big.Int, error) {
+	resBlock, err := b.TendermintBlockByHash(blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if resBlock == nil {
+		return nil, errors.Errorf("block not found for hash %s", blockHash.Hex())
+	}
+	return big.NewInt(resBlock.Block.Height), nil
 }
 
 // EthMsgsFromTendermintBlock returns all real MsgEthereumTxs from a
