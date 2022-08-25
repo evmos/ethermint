@@ -245,7 +245,11 @@ func (b *Backend) NewMnemonic(uid string, language keyring.Language, hdPath, bip
 // NOTE: this function accepts only integers to have the same interface than go-eth
 // to use float values, the gas prices must be configured using the configuration file
 func (b *Backend) SetGasPrice(gasPrice hexutil.Big) bool {
-	appConf := config.GetConfig(b.clientCtx.Viper)
+	appConf, err := config.GetConfig(b.clientCtx.Viper)
+	if err != nil {
+		b.logger.Debug("could not get the server config", "error", err.Error())
+		return false
+	}
 
 	var unit string
 	minGasPrices := appConf.GetMinGasPrices()
