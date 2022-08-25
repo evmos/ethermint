@@ -67,6 +67,6 @@ func (EVM) ActivePrecompiles(rules params.Rules) []common.Address {
 
 // RunPrecompileContract runs a stateless precompiled contract and ignores the address and
 // value arguments. It uses the RunPrecompiledContract function from the vm package.
-func (EVM) RunPrecompileContract(p evm.StatefulPrecompiledContract, _ common.Address, input []byte, suppliedGas uint64, _ *big.Int) (ret []byte, remainingGas uint64, err error) {
+func (EVM) RunPrecompiledContract(p evm.StatefulPrecompiledContract, _ common.Address, input []byte, suppliedGas uint64, _ *big.Int) (ret []byte, remainingGas uint64, err error) {
 	return vm.RunPrecompiledContract(p, input, suppliedGas)
 }
