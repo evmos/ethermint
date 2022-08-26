@@ -46,6 +46,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
   recompute eth tx hashes in JSON-RPC APIs to fix old blocks.
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade cosmos-sdk to v0.46.
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
+* (eth) [#1305](https://github.com/evmos/ethermint/pull/1305) Added support for optional params, basic types arrays and `time` type on eip712.
 
 ### API Breaking
 
