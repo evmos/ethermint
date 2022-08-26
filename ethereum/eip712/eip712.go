@@ -256,13 +256,8 @@ func traverseFields(
 
 		var isCollection bool
 		if fieldType.Kind() == reflect.Array || fieldType.Kind() == reflect.Slice {
-			if field.Len() == 0 {
-				// skip empty collections from type mapping
-				continue
-			}
-
 			fieldType = fieldType.Elem()
-			field = field.Index(0)
+			field = reflect.Zero(fieldType)
 			isCollection = true
 		}
 
