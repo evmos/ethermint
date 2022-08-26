@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/trie"
 	"github.com/tendermint/tendermint/abci/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -808,9 +809,6 @@ func (suite *BackendTestSuite) TestBlockNumberFromTendermintByHash() {
 	}
 }
 
-// TODO HeaderByNumber
-// TODO HeaderByHash
-
 func (suite *BackendTestSuite) TestBlockBloom() {
 	testCases := []struct {
 		name          string
@@ -1406,6 +1404,7 @@ func (suite *BackendTestSuite) TestHeaderByHash() {
 }
 
 func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
+	msgEthereumTx, bz := suite.buildEthereumTx()
 	emptyBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{}, nil, nil)
 
 	testCases := []struct {
@@ -1417,25 +1416,6 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
 		expEthBlock  *ethtypes.Block
 		expPass      bool
 	}{
-		{
-			"fail - block results error",
-			sdk.NewInt(1).BigInt(),
-			&tmrpctypes.ResultBlock{
-				Block: emptyBlock,
-			},
-			&tmrpctypes.ResultBlockResults{
-				Height:     1,
-				TxsResults: []*types.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
-			},
-			func(baseFee sdk.Int, blockNum int64) {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterBaseFee(queryClient, baseFee)
-				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockResultsError(client, blockNum)
-			},
-			nil,
-			false,
-		},
 		{
 			"pass - block without tx",
 			sdk.NewInt(1).BigInt(),
@@ -1449,8 +1429,6 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
 			func(baseFee sdk.Int, blockNum int64) {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
 				RegisterBaseFee(queryClient, baseFee)
-				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockResults(client, blockNum)
 			},
 			ethtypes.NewBlock(
 				ethrpc.EthHeaderFromTendermint(
@@ -1465,41 +1443,42 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
 			),
 			true,
 		},
-		// {
-		// 	"pass - block with tx",
-		// 	sdk.NewInt(1).BigInt(),
-		// 	&tmrpctypes.ResultBlock{
-		// 		Block: tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil),
-		// 	},
-		// 	&tmrpctypes.ResultBlockResults{
-		// 		Height:     1,
-		// 		TxsResults: []*types.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
-		// 		EndBlockEvents: []types.Event{
-		// 			{
-		// 				Type: evmtypes.EventTypeBlockBloom,
-		// 				Attributes: []types.EventAttribute{
-		// 					{Key: []byte(bAttributeKeyEthereumBloom)},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	func(baseFee sdk.Int, blockNum int64) {
-		// 		// BaseFee
-		// 		queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-		// 		RegisterBaseFee(queryClient, baseFee)
-		// 		// TendermintBlockResultByNumber
-		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
-		// 		RegisterBlockResults(client, blockNum)
-		// 		// EthMsgsFromTendermintBlock
-
-		// 		// height := int64(1)
-		// 		// var header metadata.MD
-		// 		// queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-		// 		// RegisterParams(queryClient, &header, int64(height))
-		// 	},
-		// 	nil,
-		// 	true,
-		// },
+		{
+			"pass - block with tx",
+			sdk.NewInt(1).BigInt(),
+			&tmrpctypes.ResultBlock{
+				Block: tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil),
+			},
+			&tmrpctypes.ResultBlockResults{
+				Height:     1,
+				TxsResults: []*types.ResponseDeliverTx{{Code: 0, GasUsed: 0}},
+				EndBlockEvents: []types.Event{
+					{
+						Type: evmtypes.EventTypeBlockBloom,
+						Attributes: []types.EventAttribute{
+							{Key: []byte(bAttributeKeyEthereumBloom)},
+						},
+					},
+				},
+			},
+			func(baseFee sdk.Int, blockNum int64) {
+				// BaseFee
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBaseFee(queryClient, baseFee)
+			},
+			ethtypes.NewBlock(
+				ethrpc.EthHeaderFromTendermint(
+					emptyBlock.Header,
+					ethtypes.Bloom{},
+					sdk.NewInt(1).BigInt(),
+				),
+				[]*ethtypes.Transaction{msgEthereumTx.AsTransaction()},
+				nil,
+				nil,
+				trie.NewStackTrie(nil),
+			),
+			true,
+		},
 	}
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
@@ -1510,7 +1489,13 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
 
 			if tc.expPass {
 				suite.Require().NoError(err)
-				suite.Require().Equal(tc.expEthBlock, ethBlock)
+				suite.Require().Equal(tc.expEthBlock.Header(), ethBlock.Header())
+				suite.Require().Equal(tc.expEthBlock.Uncles(), ethBlock.Uncles())
+				suite.Require().Equal(tc.expEthBlock.ReceiptHash(), ethBlock.ReceiptHash())
+				for i, tx := range tc.expEthBlock.Transactions() {
+					suite.Require().Equal(tx.Data(), ethBlock.Transactions()[i].Data())
+				}
+
 			} else {
 				suite.Require().Error(err)
 			}

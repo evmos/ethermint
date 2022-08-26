@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/trie"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
@@ -457,7 +458,6 @@ func (b *Backend) BlockFromTendermintBlock(
 	return formattedBlock, nil
 }
 
-// TODO Endpoints using this are failing with transactions in a block
 // EthBlockFromTendermintBlock returns an Ethereum Block type from Tendermint block
 // EthBlockFromTendermintBlock
 func (b *Backend) EthBlockFromTendermintBlock(
@@ -478,13 +478,7 @@ func (b *Backend) EthBlockFromTendermintBlock(
 	}
 
 	ethHeader := rpctypes.EthHeaderFromTendermint(block.Header, bloom, baseFee)
-
-	resBlockResult, err := b.TendermintBlockResultByNumber(&block.Height)
-	if err != nil {
-		return nil, err
-	}
-
-	msgs := b.EthMsgsFromTendermintBlock(resBlock, resBlockResult)
+	msgs := b.EthMsgsFromTendermintBlock(resBlock, blockRes)
 
 	txs := make([]*ethtypes.Transaction, len(msgs))
 	for i, ethMsg := range msgs {
@@ -492,6 +486,6 @@ func (b *Backend) EthBlockFromTendermintBlock(
 	}
 
 	// TODO: add tx receipts
-	ethBlock := ethtypes.NewBlock(ethHeader, txs, nil, nil, nil)
+	ethBlock := ethtypes.NewBlock(ethHeader, txs, nil, nil, trie.NewStackTrie(nil))
 	return ethBlock, nil
 }
