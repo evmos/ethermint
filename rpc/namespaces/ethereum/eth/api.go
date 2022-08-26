@@ -269,7 +269,10 @@ func (e *PublicAPI) GetCode(address common.Address, blockNrOrHash rpctypes.Block
 }
 
 // GetProof returns an account object with proof and any storage proofs
-func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error) {
+func (e *PublicAPI) GetProof(address common.Address,
+	storageKeys []string,
+	blockNrOrHash rpctypes.BlockNumberOrHash,
+) (*rpctypes.AccountResult, error) {
 	e.logger.Debug("eth_getProof", "address", address.Hex(), "keys", storageKeys, "block number or hash", blockNrOrHash)
 	return e.backend.GetProof(address, storageKeys, blockNrOrHash)
 }
@@ -279,7 +282,10 @@ func (e *PublicAPI) GetProof(address common.Address, storageKeys []string, block
 ///////////////////////////////////////////////////////////////////////////////
 
 // Call performs a raw contract call.
-func (e *PublicAPI) Call(args evmtypes.TransactionArgs, blockNrOrHash rpctypes.BlockNumberOrHash, _ *rpctypes.StateOverride) (hexutil.Bytes, error) {
+func (e *PublicAPI) Call(args evmtypes.TransactionArgs,
+	blockNrOrHash rpctypes.BlockNumberOrHash,
+	_ *rpctypes.StateOverride,
+) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_call", "args", args.String(), "block number or hash", blockNrOrHash)
 
 	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
@@ -345,7 +351,10 @@ func (e *PublicAPI) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *
 	return e.backend.EstimateGas(args, blockNrOptional)
 }
 
-func (e *PublicAPI) FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error) {
+func (e *PublicAPI) FeeHistory(blockCount rpc.DecimalOrHex,
+	lastBlock rpc.BlockNumber,
+	rewardPercentiles []float64,
+) (*rpctypes.FeeHistoryResult, error) {
 	e.logger.Debug("eth_feeHistory")
 	return e.backend.FeeHistory(blockCount, lastBlock, rewardPercentiles)
 }
@@ -499,7 +508,11 @@ func (e *PublicAPI) FillTransaction(args evmtypes.TransactionArgs) (*rpctypes.Si
 
 // Resend accepts an existing transaction and a new gas price and limit. It will remove
 // the given transaction from the pool and reinsert it with the new gas price and limit.
-func (e *PublicAPI) Resend(_ context.Context, args evmtypes.TransactionArgs, gasPrice *hexutil.Big, gasLimit *hexutil.Uint64) (common.Hash, error) {
+func (e *PublicAPI) Resend(_ context.Context,
+	args evmtypes.TransactionArgs,
+	gasPrice *hexutil.Big,
+	gasLimit *hexutil.Uint64,
+) (common.Hash, error) {
 	e.logger.Debug("eth_resend", "args", args.String())
 	return e.backend.Resend(args, gasPrice, gasLimit)
 }

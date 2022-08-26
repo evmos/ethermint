@@ -53,6 +53,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (lint) [#1298](https://github.com/evmos/ethermint/pull/1298) 150 character line length limit, gofumpt, and linting
 * (rpc) [#1229](https://github.com/evmos/ethermint/pull/1229) Add support for configuring RPC `MaxOpenConnections`
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology for gas in Cosmos and Ethereum.
 * (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.

@@ -313,7 +313,6 @@ func traverseFields(
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-
 			var fieldTypedef string
 
 			if isCollection {

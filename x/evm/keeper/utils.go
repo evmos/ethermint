@@ -60,7 +60,10 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 
 	baseFee := k.getBaseFee(ctx, london)
 	if baseFee != nil && txData.GetGasFeeCap().Cmp(baseFee) < 0 {
-		return nil, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "the tx gasfeecap is lower than the tx baseFee: %s (gasfeecap), %s (basefee) ", txData.GetGasFeeCap(), baseFee)
+		return nil, 0, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee,
+			"the tx gasfeecap is lower than the tx baseFee: %s (gasfeecap), %s (basefee) ",
+			txData.GetGasFeeCap(),
+			baseFee)
 	}
 
 	feeAmt = txData.EffectiveFee(baseFee)
