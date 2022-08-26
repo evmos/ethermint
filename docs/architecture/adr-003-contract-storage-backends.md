@@ -20,10 +20,10 @@ In cosmos-sdk, the iavl tree roots are indexed with the block numbers, and user 
 
 A simple benchmark[^2] shows that the result db size varies a lot between these two solutions, for example, commits 100 blocks with each block do 100 storage slot writes, the result db size difference is nearly 10 times.
 
-|      | Number of nodes | Total size of key-value pairs |
-| ---- | --------------- | ----------------------------- |
-| IAVL | 280713          | 35939674                      |
-| MPT  | 35981           | 4266564                       |
+|      | Number of kv pairs | Total size of kv pairs |
+| ---- | ------------------ | ---------------------- |
+| IAVL | 280713             | 35939674               |
+| MPT  | 35981              | 4266564                |
 
 Another consequence of this is go-ethereum has constant complexity when destruct a contract, while ethermint need `O(N)` complexity to delete storage slots one by one.
 
@@ -88,4 +88,3 @@ The custom db backend can support pruning to delete obsoleted storage tries, it 
 
 [^1]: https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/
 [^2]: https://github.com/yihuang/ethermint/tree/geth-mpt
-
