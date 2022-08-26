@@ -15,7 +15,7 @@ import (
 func DataTypeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "data-type <msg-url>",
-		Short: "Generate eip712 data types for specified msg url",
+		Short: "Generate EIP-712 data types for specified msg url",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
