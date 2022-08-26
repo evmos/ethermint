@@ -196,26 +196,6 @@ func (b *Backend) TendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.Resu
 	return resBlock, nil
 }
 
-// TODO This fails for blocks with txs becuase of EthBlockFromTendermintBlock
-// EthBlockByNumber returns the Ethereum Block identified by number.
-func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error) {
-	resBlock, err := b.TendermintBlockByNumber(blockNum)
-	if err != nil {
-		return nil, err
-	}
-	if resBlock == nil {
-		// block not found
-		return nil, fmt.Errorf("block not found for height %d", blockNum)
-	}
-
-	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
-	if err != nil {
-		return nil, fmt.Errorf("block result not found for height %d", resBlock.Block.Height)
-	}
-
-	return b.EthBlockFromTendermintBlock(resBlock, blockRes)
-}
-
 // BlockNumberFromTendermint returns the BlockNumber from BlockNumberOrHash
 func (b *Backend) BlockNumberFromTendermint(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error) {
 	switch {
@@ -456,6 +436,25 @@ func (b *Backend) BlockFromTendermintBlock(
 		ethRPCTxs, bloom, validatorAddr, baseFee,
 	)
 	return formattedBlock, nil
+}
+
+// EthBlockByNumber returns the Ethereum Block identified by number.
+func (b *Backend) EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error) {
+	resBlock, err := b.TendermintBlockByNumber(blockNum)
+	if err != nil {
+		return nil, err
+	}
+	if resBlock == nil {
+		// block not found
+		return nil, fmt.Errorf("block not found for height %d", blockNum)
+	}
+
+	blockRes, err := b.TendermintBlockResultByNumber(&resBlock.Block.Height)
+	if err != nil {
+		return nil, fmt.Errorf("block result not found for height %d", resBlock.Block.Height)
+	}
+
+	return b.EthBlockFromTendermintBlock(resBlock, blockRes)
 }
 
 // EthBlockFromTendermintBlock returns an Ethereum Block type from Tendermint block

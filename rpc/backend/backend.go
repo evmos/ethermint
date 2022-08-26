@@ -73,7 +73,6 @@ type EVMBackend interface {
 	TendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpctypes.ResultBlock, error)
 	TendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error)
 	TendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
-	EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error)
 	BlockNumberFromTendermint(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error)
 	BlockNumberFromTendermintByHash(blockHash common.Hash) (*big.Int, error)
 	EthMsgsFromTendermintBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
@@ -81,6 +80,7 @@ type EVMBackend interface {
 	HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
 	BlockFromTendermintBlock(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults, fullTx bool) (map[string]interface{}, error)
+	EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error)
 	EthBlockFromTendermintBlock(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) (*ethtypes.Block, error)
 
 	// Account Info
