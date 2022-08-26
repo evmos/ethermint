@@ -16,6 +16,11 @@ import (
 
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
+	"github.com/slok/go-http-metrics/middleware"
+	"github.com/slok/go-http-metrics/middleware/std"
 )
 
 // StartJSONRPC starts the JSON-RPC server
@@ -66,10 +71,13 @@ func StartJSONRPC(ctx *server.Context,
 	if config.API.EnableUnsafeCORS {
 		handlerWithCors = cors.AllowAll()
 	}
+	httpHandler := handlerWithCors.Handler(r)
+
+	httpHandler = WrapWithMetrics(httpHandler)
 
 	httpSrv := &http.Server{
 		Addr:              config.JSONRPC.Address,
-		Handler:           handlerWithCors.Handler(r),
+		Handler:           httpHandler,
 		ReadHeaderTimeout: config.JSONRPC.HTTPTimeout,
 		ReadTimeout:       config.JSONRPC.HTTPTimeout,
 		WriteTimeout:      config.JSONRPC.HTTPTimeout,
@@ -109,5 +117,32 @@ func StartJSONRPC(ctx *server.Context,
 	tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
 	wsSrv := rpc.NewWebsocketsServer(clientCtx, ctx.Logger, tmWsClient, config)
 	wsSrv.Start()
+
+	// metrics server
+	metricsErrCh := make(chan error)
+	go func() {
+		ctx.Logger.Info("Starting metrics server", "address", ":8787")
+		if err := http.ListenAndServe(":8787", promhttp.Handler()); err != nil {
+			ctx.Logger.Error("failed to start metrics server", "error", err.Error())
+			metricsErrCh <- err
+		}
+	}()
+
+	select {
+	case err := <-metricsErrCh:
+		ctx.Logger.Error("failed to start metrics server", "error", err.Error())
+		return nil, nil, err
+	case <-time.After(types.ServerStartTime): // assume metrics server started successfully
+	}
+
 	return httpSrv, httpSrvDone, nil
+}
+
+func WrapWithMetrics(h http.Handler) http.Handler {
+	// Create our middleware.
+	mdlw := middleware.New(middleware.Config{
+		Recorder: metrics.NewRecorder(metrics.Config{}),
+	})
+
+	return std.Handler("", mdlw, h)
 }
