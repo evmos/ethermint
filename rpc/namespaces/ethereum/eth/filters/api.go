@@ -136,7 +136,12 @@ func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {
 		return rpc.ID(fmt.Sprintf("error creating pending tx filter: %s", err.Error()))
 	}
 
-	api.filters[pendingTxSub.ID()] = &filter{typ: filters.PendingTransactionsSubscription, deadline: time.NewTimer(deadline), hashes: make([]common.Hash, 0), s: pendingTxSub}
+	api.filters[pendingTxSub.ID()] = &filter{
+		typ:      filters.PendingTransactionsSubscription,
+		deadline: time.NewTimer(deadline),
+		hashes:   make([]common.Hash, 0),
+		s:        pendingTxSub,
+	}
 
 	go func(txsCh <-chan coretypes.ResultEvent, errCh <-chan error) {
 		defer cancelSubs()
@@ -455,7 +460,13 @@ func (api *PublicFilterAPI) NewFilter(criteria filters.FilterCriteria) (rpc.ID, 
 
 	filterID = logsSub.ID()
 
-	api.filters[filterID] = &filter{typ: filters.LogsSubscription, crit: criteria, deadline: time.NewTimer(deadline), hashes: []common.Hash{}, s: logsSub}
+	api.filters[filterID] = &filter{
+		typ:      filters.LogsSubscription,
+		crit:     criteria,
+		deadline: time.NewTimer(deadline),
+		hashes:   []common.Hash{},
+		s:        logsSub,
+	}
 
 	go func(eventCh <-chan coretypes.ResultEvent) {
 		defer cancelSubs()
