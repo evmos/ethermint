@@ -36,6 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.19.1] - 2022-08-26
+
+### State Machine Breaking
+
+* (eth) [#1305](https://github.com/evmos/ethermint/pull/1305) Added support for optional params, basic types arrays and `time` type on eip712.
+
 ## [v0.19.0] - 2022-08-15
 
 ### State Machine Breaking
