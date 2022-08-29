@@ -12,11 +12,19 @@ import (
 	"github.com/evmos/ethermint/ethereum/eip712"
 )
 
+// DataTypeCommand returns the command to generate EIP-712 data types for any msg
 func DataTypeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "data-type <msg-url>",
 		Short: "Generate EIP-712 data types for specified msg url",
-		Args:  cobra.ExactArgs(1),
+		Long: `Generate EIP-712 data type schemas for specified msg url, the returned schema json can be used in client to build EIP-712 transactions.
+
+If enable '--fee-delegation', it'll add the schema for fee payer.
+
+Example:
+	ethermintd eip712 data-type "/cosmos.bank.v1beta1.MsgSend"
+	`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx := client.GetClientContextFromCmd(cmd)
 

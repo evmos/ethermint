@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// EIP712Commands returns the sub-command for EIP-712 metatransactions utility commands.
 func EIP712Commands() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "eip-712",
