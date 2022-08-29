@@ -157,7 +157,10 @@ func NewBackend(
 		panic(err)
 	}
 
-	appConf := config.GetConfig(ctx.Viper)
+	appConf, err := config.GetConfig(ctx.Viper)
+	if err != nil {
+		panic(err)
+	}
 
 	algos, _ := clientCtx.Keyring.SupportedAlgorithms()
 	if !algos.Contains(hd.EthSecp256k1) {

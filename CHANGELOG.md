@@ -42,6 +42,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (eth) [#1305](https://github.com/evmos/ethermint/pull/1305) Added support for optional params, basic types arrays and `time` type on eip712.
 
+### Improvements
+
+* (deps) [1301](https://github.com/evmos/ethermint/pull/1301) Bumb sdk to `v0.45.8`, tendermint to `v0.34.21`, iavl to `v0.19.1` & store options
+
 ## [v0.19.0] - 2022-08-15
 
 ### State Machine Breaking
