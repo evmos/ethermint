@@ -64,7 +64,7 @@ func WrapTxToTypedData(
 		Salt:              "0",
 	}
 
-	msgTypes, err := ExtractMsgTypes(cdc, "MsgValue", msg, feeDelegation != nil)
+	msgTypes, err := ExtractMsgTypes(cdc, msg, feeDelegation != nil)
 	if err != nil {
 		return apitypes.TypedData{}, err
 	}
@@ -83,7 +83,8 @@ type FeeDelegationOptions struct {
 	FeePayer sdk.AccAddress
 }
 
-func ExtractMsgTypes(cdc codectypes.AnyUnpacker, msgTypeName string, msg sdk.Msg, feeDelegation bool) (apitypes.Types, error) {
+func ExtractMsgTypes(cdc codectypes.AnyUnpacker, msg sdk.Msg, feeDelegation bool) (apitypes.Types, error) {
+	msgTypeName := "MsgValue"
 	rootTypes := apitypes.Types{
 		"EIP712Domain": {
 			{

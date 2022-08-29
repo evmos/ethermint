@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/evmos/ethermint/client/flags"
 	"github.com/evmos/ethermint/ethereum/eip712"
 )
@@ -36,27 +37,28 @@ Example:
 			typeURL := args[0]
 			protoMsg, err := clientCtx.InterfaceRegistry.Resolve(typeURL)
 			if err != nil {
-				return err
+				return sdkerrors.Wrapf(err, "fail to resolve type url %s", typeURL)
 			}
 			msg, ok := protoMsg.(sdk.Msg)
 			if !ok {
 				return fmt.Errorf("the type is not a msg %s", typeURL)
 			}
 
-			typeData, err := eip712.ExtractMsgTypes(clientCtx.Codec, "MsgValue", msg, feeDelegation)
+			typeData, err := eip712.ExtractMsgTypes(clientCtx.Codec, msg, feeDelegation)
 			if err != nil {
-				return err
+				return sdkerrors.Wrap(err, "fail to extract msg types")
 			}
 
 			bz, err := json.Marshal(typeData)
 			if err != nil {
-				return err
+				return sdkerrors.Wrap(err, "fail to json encode the type data")
 			}
 
 			fmt.Println(string(bz))
 			return nil
 		},
 	}
+
 	cmd.Flags().Bool(flags.FlagFeeDelegation, false, "enable fee delegation")
 	return cmd
 }
