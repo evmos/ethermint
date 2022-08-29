@@ -229,10 +229,6 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			continue
 		}
 
-		wsConn.conn.SetWriteDeadline(time.Now().Add(wsPingWriteTimeout)) //nolint:errcheck
-		wsConn.conn.WriteMessage(websocket.PingMessage, nil)             //nolint:errcheck
-		wsConn.conn.SetReadDeadline(time.Now().Add(wsPongTimeout))       //nolint:errcheck
-
 		switch method {
 		case "eth_subscribe":
 			params, ok := msg["params"].([]interface{})
