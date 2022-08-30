@@ -12,6 +12,14 @@ def ethermint(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
+def ethermint_mempool(tmp_path_factory):
+    path = tmp_path_factory.mktemp("ethermint")
+    yield from setup_custom_ethermint(
+        path, 26670, Path(__file__).parent / "configs/longer_timeout_commit.jsonnet"
+    )
+
+
+@pytest.fixture(scope="session")
 def ethermint_indexer(tmp_path_factory):
     path = tmp_path_factory.mktemp("indexer")
     yield from setup_custom_ethermint(

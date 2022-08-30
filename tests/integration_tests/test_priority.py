@@ -27,14 +27,14 @@ def tx_priority(tx, base_fee):
         return (tx["gasPrice"] - base_fee) // PRIORITY_REDUCTION
 
 
-def test_priority(ethermint: Ethermint):
+def test_priority(ethermint_mempool: Ethermint):
     """
     test priorities of different tx types
 
     use a relatively large priority number to counter
     the effect of base fee change during the testing.
     """
-    w3 = ethermint.w3
+    w3 = ethermint_mempool.w3
     amount = 10000
     base_fee = w3.eth.get_block("latest").baseFeePerGas
 
@@ -112,8 +112,8 @@ def test_priority(ethermint: Ethermint):
     assert all(i1 > i2 for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
 
 
-def test_native_tx_priority(ethermint: Ethermint):
-    cli = ethermint.cosmos_cli()
+def test_native_tx_priority(ethermint_mempool: Ethermint):
+    cli = ethermint_mempool.cosmos_cli()
     base_fee = cli.query_base_fee()
     print("base_fee", base_fee)
     test_cases = [
