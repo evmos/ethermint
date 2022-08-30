@@ -1,6 +1,7 @@
 import json
 import os
 import socket
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -152,3 +153,10 @@ def send_successful_transaction(w3):
 def eth_to_bech32(addr, prefix=ETHERMINT_ADDRESS_PREFIX):
     bz = bech32.convertbits(HexBytes(addr), 8, 5)
     return bech32.bech32_encode(prefix, bz)
+
+
+def supervisorctl(inipath, *args):
+    subprocess.run(
+        (sys.executable, "-msupervisor.supervisorctl", "-c", inipath, *args),
+        check=True,
+    )

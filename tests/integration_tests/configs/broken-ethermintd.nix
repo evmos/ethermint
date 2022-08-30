@@ -1,5 +1,5 @@
-{ pkgs ? import ../../nix { } }:
-let ethermintd = (pkgs.callPackage ../../. { });
+{ pkgs ? import ../../../nix { } }:
+let ethermintd = (pkgs.callPackage ../../../. { });
 in
 ethermintd.overrideAttrs (oldAttrs: {
   patches = oldAttrs.patches or [ ] ++ [

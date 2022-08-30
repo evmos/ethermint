@@ -53,7 +53,7 @@ def custom_ethermint(tmp_path_factory):
     yield from setup_custom_ethermint(
         path,
         26300,
-        Path(__file__).parent / "configs/rollback-test-network.jsonnet",
+        Path(__file__).parent / "configs/rollback-test.jsonnet",
         post_init=post_init(broken_binary),
         wait_port=False,
     )
