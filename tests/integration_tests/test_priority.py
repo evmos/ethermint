@@ -1,7 +1,14 @@
 import sys
 
 from .network import Ethermint
-from .utils import ADDRS, KEYS, eth_to_bech32, sign_transaction, wait_for_new_blocks
+from .utils import (
+    ADDRS,
+    KEYS,
+    eth_to_bech32,
+    sign_transaction,
+    wait_for_block,
+    wait_for_new_blocks,
+)
 
 PRIORITY_REDUCTION = 1000000
 
@@ -35,6 +42,9 @@ def test_priority(ethermint_mempool: Ethermint):
     the effect of base fee change during the testing.
     """
     w3 = ethermint_mempool.w3
+    cli = ethermint_mempool.cosmos_cli()
+    wait_for_block(cli, 1)
+
     amount = 10000
     base_fee = w3.eth.get_block("latest").baseFeePerGas
 
@@ -114,6 +124,8 @@ def test_priority(ethermint_mempool: Ethermint):
 
 def test_native_tx_priority(ethermint_mempool: Ethermint):
     cli = ethermint_mempool.cosmos_cli()
+    wait_for_block(cli, 1)
+
     base_fee = cli.query_base_fee()
     print("base_fee", base_fee)
     test_cases = [
