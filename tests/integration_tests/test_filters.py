@@ -10,6 +10,16 @@ from .utils import (
 )
 
 
+def wait_filter(flt):
+    res = []
+    for i in range(10):
+        print(i)
+        res = flt.get_new_entries()
+        if len(res) > 0:
+            break
+    return res
+
+
 def test_pending_transaction_filter(cluster):
     w3: Web3 = cluster.w3
     flt = w3.eth.filter("pending")
@@ -19,8 +29,8 @@ def test_pending_transaction_filter(cluster):
 
     # with tx
     txhash = send_successful_transaction(w3)
-    assert txhash in flt.get_new_entries()
-
+    txhashes = wait_filter(flt)
+    assert txhash in txhashes
     # without new txs since last call
     assert flt.get_new_entries() == []
 
@@ -34,7 +44,7 @@ def test_block_filter(cluster):
 
     # with tx
     send_successful_transaction(w3)
-    blocks = flt.get_new_entries()
+    blocks = wait_filter(flt)
     assert len(blocks) >= 1
 
     # without new txs since last call
