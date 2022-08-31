@@ -18,8 +18,6 @@ package filters
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -32,12 +30,10 @@ type Subscription struct {
 	event     string
 	created   time.Time
 	logsCrit  filters.FilterCriteria
-	logs      chan []*ethtypes.Log
-	hashes    chan []common.Hash
-	headers   chan *ethtypes.Header
 	installed chan struct{} // closed when the filter is installed
-	eventCh   <-chan coretypes.ResultEvent
+	eventCh   <-chan *coretypes.ResultEvents
 	err       chan error
+	after     string
 }
 
 // ID returns the underlying subscription RPC identifier.
@@ -58,9 +54,6 @@ func (s *Subscription) Unsubscribe(es *EventSystem) {
 			select {
 			case es.uninstall <- s:
 				break uninstallLoop
-			case <-s.logs:
-			case <-s.hashes:
-			case <-s.headers:
 			}
 		}
 	}()
@@ -72,6 +65,6 @@ func (s *Subscription) Err() <-chan error {
 }
 
 // Event returns the tendermint result event channel
-func (s *Subscription) Event() <-chan coretypes.ResultEvent {
+func (s *Subscription) Event() <-chan *coretypes.ResultEvents {
 	return s.eventCh
 }
