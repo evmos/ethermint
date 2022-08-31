@@ -36,7 +36,7 @@ require (
 	golang.org/x/net v0.0.0-20220726230323-06994584191e
 	golang.org/x/text v0.3.7
 	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -192,3 +192,5 @@ replace (
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 )
+
+replace github.com/tendermint/tendermint => github.com/mmsqe/tendermint v0.34.21-rc0

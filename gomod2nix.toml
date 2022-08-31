@@ -445,8 +445,9 @@ schema = 3
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
   [mod."github.com/tendermint/tendermint"]
-    version = "v0.34.21"
-    hash = "sha256-C1KW6Wd4TwsFC09IHt8Jo3dozEk/Q2ZVdTapM8btEJ0="
+    version = "v0.34.21-rc0"
+    hash = "sha256-P0cI38X5g7zE/5/EQv+gGBggrNQ4fq4i6tiuOpsk64M="
+    replaced = "github.com/mmsqe/tendermint"
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"
     hash = "sha256-hl/3RrBrpkk2zA6dmrNlIYKs1/GfqegSscDSkA5Pjlo="
@@ -508,8 +509,8 @@ schema = 3
     version = "v0.0.0-20220725144611-272f38e5d71b"
     hash = "sha256-/6ELCTRAvCdKnJQohk71UEJobDkAF2Gx09/SDXit6Go="
   [mod."google.golang.org/grpc"]
-    version = "v1.48.0"
-    hash = "sha256-sF2W+L5IHiCO1t/SsHpmht1tPiXJ2RBiiosk+BngfKA="
+    version = "v1.49.0"
+    hash = "sha256-x4+/XjxI2HY8fZYMiEV7Kv+2SrnlmaTJX3tBl+dPUoI="
   [mod."google.golang.org/protobuf"]
     version = "v1.28.1"
     hash = "sha256-sTJYgvlv5is7vHNxcuigF2lNASp0QonhUgnrguhfHSU="
