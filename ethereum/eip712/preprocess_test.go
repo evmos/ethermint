@@ -22,6 +22,7 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
+// Test standard payload preprocessing for Ledger EIP-712-signed transactions
 func TestPreprocessLedger(t *testing.T) {
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	ctx := client.Context{}.WithTxConfig(encodingConfig.TxConfig)
@@ -137,5 +138,28 @@ func TestPreprocessLedger(t *testing.T) {
 	// Verify signature is blank
 	if len(formattedSig.Signature) != 0 {
 		t.Errorf("Expected blank signature, but got %v", formattedSig)
+	}
+
+	// Verify tx fields are unchanged
+	tx := txBuilder.GetTx()
+
+	if tx.FeePayer().String() != feePayer.String() {
+		t.Errorf("Fee payer changed in Tx Builder")
+	}
+
+	if tx.GetGas() != 200000 {
+		t.Errorf("Gas field changed in Tx Builder")
+	}
+
+	if tx.GetFee().AmountOf("aphoton") != math.NewInt(2000) {
+		t.Errorf("Fee amount changed in Tx Builder")
+	}
+
+	if tx.GetMemo() != "" {
+		t.Errorf("Memo changed in Tx Builder")
+	}
+
+	if len(tx.GetMsgs()) != 1 || tx.GetMsgs()[0].String() != msgSend.String() {
+		t.Errorf("Messages changed in Tx Builder")
 	}
 }
