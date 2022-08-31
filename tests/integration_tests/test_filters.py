@@ -96,6 +96,16 @@ def test_get_logs_by_topic(cluster):
     assert len(logs) == 0
 
 
+def wait_filter(flt):
+    res = []
+    for i in range(10):
+        print(i)
+        res = flt.get_new_entries()
+        if len(res) > 0:
+            break
+    return res
+
+
 def test_pending_transaction_filter(cluster):
     w3: Web3 = cluster.w3
     flt = w3.eth.filter("pending")
@@ -106,7 +116,9 @@ def test_pending_transaction_filter(cluster):
     w3_wait_for_new_blocks(w3, 1, sleep=0.1)
     # with tx
     txhash = send_successful_transaction(w3)
-    assert txhash in flt.get_new_entries()
+    txhashes = wait_filter(flt)
+    assert txhash in txhashes
+
 
     # check if tx_hash is valid
     tx = w3.eth.get_transaction(txhash)
@@ -125,7 +137,7 @@ def test_block_filter(cluster):
 
     # with tx
     send_successful_transaction(w3)
-    block_hashes = flt.get_new_entries()
+    block_hashes = wait_filter(flt)
     assert len(block_hashes) >= 1
 
     # check if the returned block hash is correct
