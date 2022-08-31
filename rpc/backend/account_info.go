@@ -35,7 +35,10 @@ func (b *Backend) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNu
 }
 
 // GetProof returns an account object with proof and any storage proofs
-func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error) {
+func (b *Backend) GetProof(address common.Address,
+	storageKeys []string,
+	blockNrOrHash rpctypes.BlockNumberOrHash,
+) (*rpctypes.AccountResult, error) {
 	blockNum, err := b.GetBlockNumber(blockNrOrHash)
 	if err != nil {
 		return nil, err

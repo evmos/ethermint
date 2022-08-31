@@ -93,7 +93,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 	suite.SetupApp(checkTx)
 }
 
-/// SetupApp setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
+// SetupApp setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
 func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 	t := suite.T()
 	// account key, use a constant account to keep unit test deterministic.

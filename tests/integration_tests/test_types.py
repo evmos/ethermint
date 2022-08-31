@@ -323,6 +323,15 @@ def make_same_rpc_calls(rpc1, rpc2, method, params):
     assert res, err
 
 
+def test_incomplete_send_transaction(ethermint, geth):
+    # Send ethereum tx with nothing in from field
+    eth_rpc = ethermint.w3.provider
+    geth_rpc = geth.w3.provider
+    gas_price = ethermint.w3.eth.gas_price
+    tx = {"from": "", "to": ADDRS["community"], "value": 0, "gasPrice": gas_price}
+    make_same_rpc_calls(eth_rpc, geth_rpc, "eth_sendTransaction", [tx])
+
+
 def same_types(object_a, object_b):
 
     if isinstance(object_a, dict):
