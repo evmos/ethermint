@@ -291,8 +291,11 @@ func (c TLSConfig) Validate() error {
 }
 
 // GetConfig returns a fully parsed Config object.
-func GetConfig(v *viper.Viper) Config {
-	cfg := config.GetConfig(v)
+func GetConfig(v *viper.Viper) (Config, error) {
+	cfg, err := config.GetConfig(v)
+	if err != nil {
+		return Config{}, err
+	}
 
 	return Config{
 		Config: cfg,
@@ -321,7 +324,7 @@ func GetConfig(v *viper.Viper) Config {
 			CertificatePath: v.GetString("tls.certificate-path"),
 			KeyPath:         v.GetString("tls.key-path"),
 		},
-	}
+	}, nil
 }
 
 // ParseConfig retrieves the default environment configuration for the
