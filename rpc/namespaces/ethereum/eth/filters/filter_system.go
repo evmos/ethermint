@@ -112,23 +112,28 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 			close(eventCh)
 		}()
 		for {
-			filter := coretypes.EventFilter{Query: query}
-			res, err := es.client.Events(ctx, &coretypes.RequestEvents{
-				Filter:   &filter,
-				MaxItems: 100,
-				After:    sub.after,
-				WaitTime: 1000 * time.Second,
-			})
-			if err != nil {
-				sub.err <- err
+			select {
+			case <-ctx.Done():
 				return
-			}
-			eventCh <- res
 
-			if len(res.Items) == 0 {
-				return
+			default:
+				filter := coretypes.EventFilter{Query: query}
+				res, err := es.client.Events(ctx, &coretypes.RequestEvents{
+					Filter:   &filter,
+					MaxItems: 100,
+					After:    sub.after,
+					WaitTime: 1000 * time.Second,
+				})
+				if err != nil {
+					sub.err <- err
+					return
+				}
+				eventCh <- res
+
+				if len(res.Items) > 0 {
+					sub.after = res.Items[len(res.Items)-1].Cursor
+				}
 			}
-			sub.after = res.Items[len(res.Items)-1].Cursor
 		}
 	}()
 	sub.eventCh = eventCh
