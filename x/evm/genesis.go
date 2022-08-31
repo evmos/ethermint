@@ -54,7 +54,9 @@ func InitGenesis(
 		accountCodeHash := ethAcct.GetCodeHash().Bytes()
 
 		if checkCodeHash(codeHash.Bytes(), accountCodeHash) && !bytes.Equal(accountCodeHash, codeHash.Bytes()) {
-			panic(fmt.Sprintf("the evm state code doesn't match with the codehash\n account: %s, evm state codehash: %v, ethAccount codehash: %v, ethAccount code: %s, evm state code: %s\n", account.Address, codeHash, ethAcct.GetCodeHash(), account.Code, evmStateCode))
+			panic(fmt.Sprintf(`the evm state code doesn't match with the codehash\n account: %s 
+			, evm state codehash: %v, ethAccount codehash: %v, ethAccount code: %s, evm state code: %s\n`,
+				account.Address, codeHash, ethAcct.GetCodeHash(), account.Code, evmStateCode))
 		}
 
 		k.SetCode(ctx, codeHash.Bytes(), evmStateCode)
