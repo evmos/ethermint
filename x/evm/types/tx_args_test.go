@@ -9,7 +9,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-func (suite *TxDataTestSuite) TextTxArgsString() {
+func (suite *TxDataTestSuite) TestTxArgsString() {
 	testCases := []struct {
 		name             string
 		txArgs           TransactionArgs
@@ -18,7 +18,7 @@ func (suite *TxDataTestSuite) TextTxArgsString() {
 		{
 			"empty tx args",
 			TransactionArgs{},
-			"TransactionArgs{From:, To:, Gas:, Nonce:, Data:, Input:, AccessList:}",
+			"TransactionArgs{From:<nil>, To:<nil>, Gas:<nil>, Nonce:<nil>, Data:<nil>, Input:<nil>, AccessList:<nil>}",
 		},
 		{
 			"tx args with fields",
@@ -36,9 +36,9 @@ func (suite *TxDataTestSuite) TextTxArgsString() {
 							&suite.addr,
 							&suite.hexUint64,
 							&suite.hexUint64,
-							&suite.hexInputBytes,
 							&suite.hexDataBytes,
-							ethtypes.AccessList{}),
+							&suite.hexInputBytes,
+							&ethtypes.AccessList{}),
 		},
 	}
 	for _, tc := range testCases {
@@ -47,7 +47,7 @@ func (suite *TxDataTestSuite) TextTxArgsString() {
 	}
 }
 
-func (suite *TxDataTestSuite) TextConvertTxArgsEthTx() {
+func (suite *TxDataTestSuite) TestConvertTxArgsEthTx() {
 	testCases := []struct {
 		name      string
 		txArgs    TransactionArgs
@@ -93,7 +93,7 @@ func (suite *TxDataTestSuite) TextConvertTxArgsEthTx() {
 	}
 	for _, tc := range testCases {
 		res := tc.txArgs.ToTransaction()
-		suite.Require().Nil(res)
+		suite.Require().NotNil(res)
 	}
 }
 
