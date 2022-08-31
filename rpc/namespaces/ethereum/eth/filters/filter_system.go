@@ -6,17 +6,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-
-	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
-	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
 
@@ -28,7 +23,7 @@ import (
 
 var (
 	txEvents  = tmtypes.QueryForEvent(tmtypes.EventTx).String()
-	evmEvents = tmquery.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
+	evmEvents = tmquery.MustCompile(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
 		tmtypes.EventTypeKey,
 		tmtypes.EventTx,
 		sdk.EventTypeMessage,
@@ -39,9 +34,9 @@ var (
 // EventSystem creates subscriptions, processes events and broadcasts them to the
 // subscription which match the subscription criteria using the Tendermint's RPC client.
 type EventSystem struct {
-	logger     log.Logger
-	ctx        context.Context
-	tmWSClient *rpcclient.WSClient
+	logger log.Logger
+	ctx    context.Context
+	client rpcclient.Client
 
 	// light client mode
 	lightMode bool
@@ -62,7 +57,7 @@ type EventSystem struct {
 //
 // The returned manager has a loop that needs to be stopped with the Stop function
 // or by stopping the given mux.
-func NewEventSystem(logger log.Logger, tmWSClient *rpcclient.WSClient) *EventSystem {
+func NewEventSystem(logger log.Logger, client rpcclient.Client) *EventSystem {
 	index := make(filterIndex)
 	for i := filters.UnknownSubscription; i < filters.LastIndexSubscription; i++ {
 		index[i] = make(map[rpc.ID]*Subscription)
@@ -71,7 +66,7 @@ func NewEventSystem(logger log.Logger, tmWSClient *rpcclient.WSClient) *EventSys
 	es := &EventSystem{
 		logger:     logger,
 		ctx:        context.Background(),
-		tmWSClient: tmWSClient,
+		client:     client,
 		lightMode:  false,
 		index:      index,
 		topicChans: make(map[string]chan<- coretypes.ResultEvent, len(index)),
@@ -80,9 +75,6 @@ func NewEventSystem(logger log.Logger, tmWSClient *rpcclient.WSClient) *EventSys
 		uninstall:  make(chan *Subscription),
 		eventBus:   pubsub.NewEventBus(),
 	}
-
-	go es.eventLoop()
-	go es.consumeEvents()
 	return es
 }
 
@@ -101,49 +93,39 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 	)
 
 	ctx, cancelFn := context.WithCancel(context.Background())
-	defer cancelFn()
-
-	existingSubs := es.eventBus.Topics()
-	for _, topic := range existingSubs {
-		if topic == sub.event {
-			eventCh, unsubFn, err := es.eventBus.Subscribe(sub.event)
-			if err != nil {
-				err := errors.Wrapf(err, "failed to subscribe to topic: %s", sub.event)
-				return nil, nil, err
-			}
-
-			sub.eventCh = eventCh
-			return sub, unsubFn, nil
-		}
-	}
-
+	var query string
 	switch sub.typ {
-	case filters.LogsSubscription:
-		err = es.tmWSClient.Subscribe(ctx, sub.event)
-	case filters.BlocksSubscription:
-		err = es.tmWSClient.Subscribe(ctx, sub.event)
-	case filters.PendingTransactionsSubscription:
-		err = es.tmWSClient.Subscribe(ctx, sub.event)
+	case filters.LogsSubscription, filters.BlocksSubscription, filters.PendingTransactionsSubscription:
+		query = sub.event
 	default:
 		err = fmt.Errorf("invalid filter subscription type %d", sub.typ)
 	}
 
 	if err != nil {
 		sub.err <- err
-		return nil, nil, err
+		return nil, func() { cancelFn() }, err
 	}
 
-	// wrap events in a go routine to prevent blocking
-	es.install <- sub
-	<-sub.installed
-
-	eventCh, unsubFn, err := es.eventBus.Subscribe(sub.event)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to subscribe to topic after installed: %s", sub.event)
-	}
-
+	eventCh := make(chan *coretypes.ResultEvents, 0)
+	go func() {
+		defer func() {
+			close(eventCh)
+		}()
+		filter := coretypes.EventFilter{Query: query}
+		res, err := es.client.Events(ctx, &coretypes.RequestEvents{
+			Filter:   &filter,
+			MaxItems: 100,
+			After:    sub.after,
+			WaitTime: 10 * time.Second,
+		})
+		if err != nil {
+			sub.err <- err
+			return
+		}
+		eventCh <- res
+	}()
 	sub.eventCh = eventCh
-	return sub, unsubFn, nil
+	return sub, func() { cancelFn() }, nil
 }
 
 // SubscribeLogs creates a subscription that will write all logs matching the
@@ -184,7 +166,6 @@ func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription
 		event:     evmEvents,
 		logsCrit:  crit,
 		created:   time.Now().UTC(),
-		logs:      make(chan []*ethtypes.Log),
 		installed: make(chan struct{}, 1),
 		err:       make(chan error, 1),
 	}
@@ -198,7 +179,6 @@ func (es EventSystem) SubscribeNewHeads() (*Subscription, pubsub.UnsubscribeFunc
 		typ:       filters.BlocksSubscription,
 		event:     headerEvents,
 		created:   time.Now().UTC(),
-		headers:   make(chan *ethtypes.Header),
 		installed: make(chan struct{}, 1),
 		err:       make(chan error, 1),
 	}
@@ -212,7 +192,6 @@ func (es EventSystem) SubscribePendingTxs() (*Subscription, pubsub.UnsubscribeFu
 		typ:       filters.PendingTransactionsSubscription,
 		event:     txEvents,
 		created:   time.Now().UTC(),
-		hashes:    make(chan []common.Hash),
 		installed: make(chan struct{}, 1),
 		err:       make(chan error, 1),
 	}
@@ -220,89 +199,3 @@ func (es EventSystem) SubscribePendingTxs() (*Subscription, pubsub.UnsubscribeFu
 }
 
 type filterIndex map[filters.Type]map[rpc.ID]*Subscription
-
-// eventLoop (un)installs filters and processes mux events.
-func (es *EventSystem) eventLoop() {
-	for {
-		select {
-		case f := <-es.install:
-			es.indexMux.Lock()
-			es.index[f.typ][f.id] = f
-			ch := make(chan coretypes.ResultEvent)
-			es.topicChans[f.event] = ch
-			if err := es.eventBus.AddTopic(f.event, ch); err != nil {
-				es.logger.Error("failed to add event topic to event bus", "topic", f.event, "error", err.Error())
-			}
-			es.indexMux.Unlock()
-			close(f.installed)
-		case f := <-es.uninstall:
-			es.indexMux.Lock()
-			delete(es.index[f.typ], f.id)
-
-			var channelInUse bool
-			for _, sub := range es.index[f.typ] {
-				if sub.event == f.event {
-					channelInUse = true
-					break
-				}
-			}
-
-			// remove topic only when channel is not used by other subscriptions
-			if !channelInUse {
-				if err := es.tmWSClient.Unsubscribe(es.ctx, f.event); err != nil {
-					es.logger.Error("failed to unsubscribe from query", "query", f.event, "error", err.Error())
-				}
-
-				ch, ok := es.topicChans[f.event]
-				if ok {
-					es.eventBus.RemoveTopic(f.event)
-					close(ch)
-					delete(es.topicChans, f.event)
-				}
-			}
-
-			es.indexMux.Unlock()
-			close(f.err)
-		}
-	}
-}
-
-func (es *EventSystem) consumeEvents() {
-	for {
-		for rpcResp := range es.tmWSClient.ResponsesCh {
-			var ev coretypes.ResultEvent
-
-			if rpcResp.Error != nil {
-				time.Sleep(5 * time.Second)
-				continue
-			} else if err := tmjson.Unmarshal(rpcResp.Result, &ev); err != nil {
-				es.logger.Error("failed to JSON unmarshal ResponsesCh result event", "error", err.Error())
-				continue
-			}
-
-			if len(ev.Query) == 0 {
-				// skip empty responses
-				continue
-			}
-
-			es.indexMux.RLock()
-			ch, ok := es.topicChans[ev.Query]
-			es.indexMux.RUnlock()
-			if !ok {
-				es.logger.Debug("channel for subscription not found", "topic", ev.Query)
-				es.logger.Debug("list of available channels", "channels", es.eventBus.Topics())
-				continue
-			}
-
-			// gracefully handle lagging subscribers
-			t := time.NewTimer(time.Second)
-			select {
-			case <-t.C:
-				es.logger.Debug("dropped event during lagging subscription", "topic", ev.Query)
-			case ch <- ev:
-			}
-		}
-
-		time.Sleep(time.Second)
-	}
-}

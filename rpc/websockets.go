@@ -23,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/tendermint/tendermint/libs/log"
-	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/evmos/ethermint/rpc/ethereum/pubsub"
@@ -74,7 +73,7 @@ type websocketsServer struct {
 	logger   log.Logger
 }
 
-func NewWebsocketsServer(clientCtx client.Context, logger log.Logger, tmWSClient *rpcclient.WSClient, cfg *config.Config) WebsocketsServer {
+func NewWebsocketsServer(clientCtx client.Context, logger log.Logger, cfg *config.Config) WebsocketsServer {
 	logger = logger.With("api", "websocket-server")
 	_, port, _ := net.SplitHostPort(cfg.JSONRPC.Address)
 
@@ -83,7 +82,7 @@ func NewWebsocketsServer(clientCtx client.Context, logger log.Logger, tmWSClient
 		wsAddr:   cfg.JSONRPC.WsAddress,
 		certFile: cfg.TLS.CertificatePath,
 		keyFile:  cfg.TLS.KeyPath,
-		api:      newPubSubAPI(clientCtx, logger, tmWSClient),
+		api:      newPubSubAPI(clientCtx, logger),
 		logger:   logger,
 	}
 }
@@ -324,10 +323,10 @@ type pubSubAPI struct {
 }
 
 // newPubSubAPI creates an instance of the ethereum PubSub API.
-func newPubSubAPI(clientCtx client.Context, logger log.Logger, tmWSClient *rpcclient.WSClient) *pubSubAPI {
+func newPubSubAPI(clientCtx client.Context, logger log.Logger) *pubSubAPI {
 	logger = logger.With("module", "websocket-client")
 	return &pubSubAPI{
-		events:    rpcfilters.NewEventSystem(logger, tmWSClient),
+		events:    rpcfilters.NewEventSystem(logger, clientCtx.Client),
 		logger:    logger,
 		clientCtx: clientCtx,
 	}
@@ -375,34 +374,33 @@ func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn, subID rpc.ID) (pubsub.Un
 				if !ok {
 					return
 				}
+				for _, item := range event.Items {
+					var data tmtypes.EventDataNewBlockHeader
+					if err := json.Unmarshal(item.Data, &data); err != nil {
+						api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", item.Data))
+						continue
+					}
+					header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
+					// write to ws conn
+					res := &SubscriptionNotification{
+						Jsonrpc: "2.0",
+						Method:  "eth_subscription",
+						Params: &SubscriptionResult{
+							Subscription: subID,
+							Result:       header,
+						},
+					}
 
-				data, ok := event.Data.(tmtypes.EventDataNewBlockHeader)
-				if !ok {
-					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", event.Data))
-					continue
-				}
+					err = wsConn.WriteJSON(res)
+					if err != nil {
+						api.logger.Error("error writing header, will drop peer", "error", err.Error())
 
-				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
-
-				// write to ws conn
-				res := &SubscriptionNotification{
-					Jsonrpc: "2.0",
-					Method:  "eth_subscription",
-					Params: &SubscriptionResult{
-						Subscription: subID,
-						Result:       header,
-					},
-				}
-
-				err = wsConn.WriteJSON(res)
-				if err != nil {
-					api.logger.Error("error writing header, will drop peer", "error", err.Error())
-
-					try(func() {
-						if err != websocket.ErrCloseSent {
-							_ = wsConn.Close()
-						}
-					}, api.logger, "closing websocket peer sub")
+						try(func() {
+							if err != websocket.ErrCloseSent {
+								_ = wsConn.Close()
+							}
+						}, api.logger, "closing websocket peer sub")
+					}
 				}
 			case err, ok := <-errCh:
 				if !ok {
@@ -548,41 +546,42 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, subID rpc.ID, extra interfac
 				if !ok {
 					return
 				}
-
-				dataTx, ok := event.Data.(tmtypes.EventDataTx)
-				if !ok {
-					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", event.Data))
-					continue
-				}
-
-				txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
-				if err != nil {
-					api.logger.Error("failed to decode tx response", "error", err.Error())
-					return
-				}
-
-				logs := rpcfilters.FilterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
-				if len(logs) == 0 {
-					continue
-				}
-
-				for _, ethLog := range logs {
-					res := &SubscriptionNotification{
-						Jsonrpc: "2.0",
-						Method:  "eth_subscription",
-						Params: &SubscriptionResult{
-							Subscription: subID,
-							Result:       ethLog,
-						},
+				for _, item := range event.Items {
+					var dataTx tmtypes.EventDataTx
+					if err := json.Unmarshal(item.Data, &dataTx); err != nil {
+						api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", item.Data))
+						continue
 					}
 
-					err = wsConn.WriteJSON(res)
+					txResponse, err := evmtypes.DecodeTxResponse(dataTx.TxResult.Result.Data)
 					if err != nil {
-						try(func() {
-							if err != websocket.ErrCloseSent {
-								_ = wsConn.Close()
-							}
-						}, api.logger, "closing websocket peer sub")
+						api.logger.Error("failed to decode tx response", "error", err.Error())
+						return
+					}
+
+					logs := rpcfilters.FilterLogs(evmtypes.LogsToEthereum(txResponse.Logs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
+					if len(logs) == 0 {
+						continue
+					}
+
+					for _, ethLog := range logs {
+						res := &SubscriptionNotification{
+							Jsonrpc: "2.0",
+							Method:  "eth_subscription",
+							Params: &SubscriptionResult{
+								Subscription: subID,
+								Result:       ethLog,
+							},
+						}
+
+						err = wsConn.WriteJSON(res)
+						if err != nil {
+							try(func() {
+								if err != websocket.ErrCloseSent {
+									_ = wsConn.Close()
+								}
+							}, api.logger, "closing websocket peer sub")
+						}
 					}
 				}
 			case err, ok := <-errCh:
@@ -609,38 +608,39 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID rpc.ID)
 		for {
 			select {
 			case ev := <-txsCh:
-				data, ok := ev.Data.(tmtypes.EventDataTx)
-				if !ok {
-					api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", ev.Data))
-					continue
-				}
-
-				ethTxs, err := types.RawTxToEthTx(api.clientCtx, data.Tx)
-				if err != nil {
-					// not ethereum tx
-					continue
-				}
-
-				for _, ethTx := range ethTxs {
-					// write to ws conn
-					res := &SubscriptionNotification{
-						Jsonrpc: "2.0",
-						Method:  "eth_subscription",
-						Params: &SubscriptionResult{
-							Subscription: subID,
-							Result:       ethTx.Hash,
-						},
+				for _, item := range ev.Items {
+					var data tmtypes.EventDataTx
+					if err := json.Unmarshal(item.Data, &data); err != nil {
+						api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", item.Data))
+						continue
+					}
+					ethTxs, err := types.RawTxToEthTx(api.clientCtx, data.Tx)
+					if err != nil {
+						// not ethereum tx
+						continue
 					}
 
-					err = wsConn.WriteJSON(res)
-					if err != nil {
-						api.logger.Debug("error writing header, will drop peer", "error", err.Error())
+					for _, ethTx := range ethTxs {
+						// write to ws conn
+						res := &SubscriptionNotification{
+							Jsonrpc: "2.0",
+							Method:  "eth_subscription",
+							Params: &SubscriptionResult{
+								Subscription: subID,
+								Result:       ethTx.Hash,
+							},
+						}
 
-						try(func() {
-							if err != websocket.ErrCloseSent {
-								_ = wsConn.Close()
-							}
-						}, api.logger, "closing websocket peer sub")
+						err = wsConn.WriteJSON(res)
+						if err != nil {
+							api.logger.Debug("error writing header, will drop peer", "error", err.Error())
+
+							try(func() {
+								if err != websocket.ErrCloseSent {
+									_ = wsConn.Close()
+								}
+							}, api.logger, "closing websocket peer sub")
+						}
 					}
 				}
 			case err, ok := <-errCh:
