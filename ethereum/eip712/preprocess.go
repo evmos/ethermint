@@ -42,7 +42,7 @@ func PreprocessLedgerTx(chainID string, keyType cosmoskr.KeyType, txBuilder clie
 	// Parse Chain ID as big.Int
 	chainIDInt, err := types.ParseChainID(chainID)
 	if err != nil {
-		return fmt.Errorf("could not parse chain id: %v", err)
+		return fmt.Errorf("could not parse chain id: %w", err)
 	}
 
 	// Add ExtensionOptionsWeb3Tx extension with signature
@@ -52,6 +52,10 @@ func PreprocessLedgerTx(chainID string, keyType cosmoskr.KeyType, txBuilder clie
 		TypedDataChainID: chainIDInt.Uint64(),
 		FeePayerSig:      sigBytes,
 	})
+	if err != nil {
+		return fmt.Errorf("could not set extension as any: %w", err)
+	}
+
 	extensionBuilder.SetExtensionOptions(option)
 
 	// Set blank signature with Amino Sign Type
@@ -68,7 +72,7 @@ func PreprocessLedgerTx(chainID string, keyType cosmoskr.KeyType, txBuilder clie
 
 	err = txBuilder.SetSignatures(sig)
 	if err != nil {
-		return fmt.Errorf("unable to set signatures on payload: %v", err)
+		return fmt.Errorf("unable to set signatures on payload: %w", err)
 	}
 
 	return nil
