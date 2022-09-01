@@ -96,7 +96,9 @@ def setup_geth(path, base_port):
             proc.wait()
 
 
-def setup_custom_ethermint(path, base_port, config, post_init=None, chain_binary=None):
+def setup_custom_ethermint(
+    path, base_port, config, post_init=None, chain_binary=None, wait_port=True
+):
     cmd = [
         "pystarport",
         "init",
@@ -119,8 +121,9 @@ def setup_custom_ethermint(path, base_port, config, post_init=None, chain_binary
         preexec_fn=os.setsid,
     )
     try:
-        wait_for_port(ports.evmrpc_port(base_port))
-        wait_for_port(ports.evmrpc_ws_port(base_port))
+        if wait_port:
+            wait_for_port(ports.evmrpc_port(base_port))
+            wait_for_port(ports.evmrpc_ws_port(base_port))
         yield Ethermint(path / "ethermint_9000-1")
     finally:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
