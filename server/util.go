@@ -50,7 +50,7 @@ func AddCommands(
 		tendermintCmd,
 		sdkserver.ExportCmd(appExport, defaultNodeHome),
 		version.NewVersionCommand(),
-		sdkserver.NewRollbackCmd(defaultNodeHome),
+		sdkserver.NewRollbackCmd(appCreator, defaultNodeHome),
 
 		// custom tx indexer command
 		NewIndexTxCmd(),
