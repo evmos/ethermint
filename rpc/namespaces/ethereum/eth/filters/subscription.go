@@ -10,15 +10,14 @@ import (
 
 // Subscription defines a wrapper for the private subscription
 type Subscription struct {
-	id        rpc.ID
-	typ       filters.Type
-	event     string
-	created   time.Time
-	logsCrit  filters.FilterCriteria
-	installed chan struct{} // closed when the filter is installed
-	eventCh   <-chan *coretypes.ResultEvents
-	err       chan error
-	after     string
+	id       rpc.ID
+	typ      filters.Type
+	event    string
+	created  time.Time
+	logsCrit filters.FilterCriteria
+	eventCh  <-chan *coretypes.ResultEvents
+	err      chan error
+	after    string
 }
 
 // ID returns the underlying subscription RPC identifier.
