@@ -90,8 +90,9 @@ schema = 3
     version = "v1.0.0-alpha7"
     hash = "sha256-2wCH+toTF2A6MfFjOa13muEH5oBCcxAhZEqirNOrBA0="
   [mod."github.com/cosmos/cosmos-sdk"]
-    version = "v0.46.1"
-    hash = "sha256-AZm3KzGee03chXTi6S/m0AZoGRkx4XLS6Rh2sBAWc30="
+    version = "v0.46.2-0.20220831122102-a95c62680975"
+    hash = "sha256-S4tzkiGbaLuCzYBN/9na6LSZCJaZLmK4DIiMitozFl8="
+    replaced = "github.com/cosmos/cosmos-sdk"
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -343,11 +344,11 @@ schema = 3
     version = "v0.0.5"
     hash = "sha256-/5i70IkH/qSW5KjGzv8aQNKh9tHoz98tqtL0K2DMFn4="
   [mod."github.com/onsi/ginkgo/v2"]
-    version = "v2.1.4"
-    hash = "sha256-b/5ByIRFvmRp++0oGZCYcHhAFbk4Cborj2BmvmvVzV0="
+    version = "v2.1.6"
+    hash = "sha256-3g0WFID8e1qGnW8aUTljMrG0hF+dKFgEXj/pds4iRVE="
   [mod."github.com/onsi/gomega"]
-    version = "v1.20.0"
-    hash = "sha256-cuUF+eUZ9p0kCpAFW+STmdG+wtu6s5xic7AQWtD2RAU="
+    version = "v1.20.1"
+    hash = "sha256-HFjxj1pjHnY/weEqMM8hkhI+me+302fpg9hTZkJBVNw="
   [mod."github.com/pelletier/go-toml"]
     version = "v1.9.5"
     hash = "sha256-RJ9K1BTId0Mled7S66iGgxHkZ5JKEIsrrNaEfM8aImc="
