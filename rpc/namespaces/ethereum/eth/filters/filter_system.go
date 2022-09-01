@@ -116,6 +116,16 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 		err = fmt.Errorf("invalid filter subscription type %d", sub.typ)
 	}
 
+	defaultAfter := ""
+	after := sub.after
+	if err == nil && after == defaultAfter {
+		var res *coretypes.ResultBlock
+		res, err = es.client.Block(ctx, nil)
+		if err == nil {
+			after = fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), res.Block.Height)
+		}
+	}
+
 	if err != nil {
 		sub.err <- err
 		return nil, func() { cancelFn() }, err
@@ -136,7 +146,7 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 				res, err := es.client.Events(ctx, &coretypes.RequestEvents{
 					Filter:   &filter,
 					MaxItems: 100,
-					After:    sub.after,
+					After:    after,
 					WaitTime: 1000 * time.Second,
 				})
 				if err != nil {
@@ -146,7 +156,7 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 				eventCh <- res
 
 				if len(res.Items) > 0 {
-					sub.after = res.Items[len(res.Items)-1].Cursor
+					after = res.Items[len(res.Items)-1].Cursor
 				}
 			}
 		}
@@ -188,13 +198,13 @@ func (es *EventSystem) SubscribeLogs(crit filters.FilterCriteria) (*Subscription
 // given criteria to the given logs channel.
 func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription, pubsub.UnsubscribeFunc, error) {
 	sub := &Subscription{
-		id:        rpc.NewID(),
-		typ:       filters.LogsSubscription,
-		event:     evmEvents,
-		logsCrit:  crit,
-		created:   time.Now().UTC(),
-		installed: make(chan struct{}, 1),
-		err:       make(chan error, 1),
+		id:       rpc.NewID(),
+		typ:      filters.LogsSubscription,
+		event:    evmEvents,
+		logsCrit: crit,
+		created:  time.Now().UTC(),
+		after:    "",
+		err:      make(chan error, 1),
 	}
 	return es.subscribe(sub)
 }
@@ -202,12 +212,12 @@ func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription
 // SubscribeNewHeads subscribes to new block headers events.
 func (es EventSystem) SubscribeNewHeads() (*Subscription, pubsub.UnsubscribeFunc, error) {
 	sub := &Subscription{
-		id:        rpc.NewID(),
-		typ:       filters.BlocksSubscription,
-		event:     headerEvents,
-		created:   time.Now().UTC(),
-		installed: make(chan struct{}, 1),
-		err:       make(chan error, 1),
+		id:      rpc.NewID(),
+		typ:     filters.BlocksSubscription,
+		event:   headerEvents,
+		created: time.Now().UTC(),
+		after:   "",
+		err:     make(chan error, 1),
 	}
 	return es.subscribe(sub)
 }
@@ -215,12 +225,12 @@ func (es EventSystem) SubscribeNewHeads() (*Subscription, pubsub.UnsubscribeFunc
 // SubscribePendingTxs subscribes to new pending transactions events from the mempool.
 func (es EventSystem) SubscribePendingTxs() (*Subscription, pubsub.UnsubscribeFunc, error) {
 	sub := &Subscription{
-		id:        rpc.NewID(),
-		typ:       filters.PendingTransactionsSubscription,
-		event:     txEvents,
-		created:   time.Now().UTC(),
-		installed: make(chan struct{}, 1),
-		err:       make(chan error, 1),
+		id:      rpc.NewID(),
+		typ:     filters.PendingTransactionsSubscription,
+		event:   txEvents,
+		created: time.Now().UTC(),
+		after:   "",
+		err:     make(chan error, 1),
 	}
 	return es.subscribe(sub)
 }
