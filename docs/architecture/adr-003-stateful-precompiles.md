@@ -172,6 +172,7 @@ func (ch bankMintChange) Dirtied() *common.Address {
 ### Negative
 
 - Need to patch `go-ethereum`.
+- Don't work well with external EVM implementations if we'll support them through evmc interface, unless we patch them all somehow.
 
 ### Neutral
 
