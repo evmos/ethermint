@@ -115,9 +115,10 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 		sub.err <- err
 		return nil, func() { cancelFn() }, err
 	}
-
 	eventCh := make(chan *coretypes.ResultEvents)
 	go func() {
+		maxRetry := 3
+		retry := maxRetry
 		defer func() {
 			close(eventCh)
 		}()
@@ -135,9 +136,13 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 					WaitTime: 1000 * time.Second,
 				})
 				if err != nil {
+					if retry--; retry >= 0 {
+						continue
+					}
 					sub.err <- err
 					return
 				}
+				retry = maxRetry
 				eventCh <- res
 
 				if len(res.Items) > 0 {
