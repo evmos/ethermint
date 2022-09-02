@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/evmos/ethermint/tests"
 	"github.com/stretchr/testify/suite"
@@ -18,25 +19,33 @@ type TxDataTestSuite struct {
 
 	sdkInt         sdkmath.Int
 	uint64         uint64
+	hexUint64      hexutil.Uint64
 	bigInt         *big.Int
+	hexBigInt      hexutil.Big
 	overflowBigInt *big.Int
 	sdkZeroInt     sdkmath.Int
 	sdkMinusOneInt sdkmath.Int
 	invalidAddr    string
 	addr           common.Address
 	hexAddr        string
+	hexDataBytes   hexutil.Bytes
+	hexInputBytes  hexutil.Bytes
 }
 
 func (suite *TxDataTestSuite) SetupTest() {
 	suite.sdkInt = sdkmath.NewInt(100)
 	suite.uint64 = suite.sdkInt.Uint64()
+	suite.hexUint64 = hexutil.Uint64(100)
 	suite.bigInt = big.NewInt(1)
+	suite.hexBigInt = hexutil.Big(*big.NewInt(1))
 	suite.overflowBigInt = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(256), nil)
 	suite.sdkZeroInt = sdk.ZeroInt()
 	suite.sdkMinusOneInt = sdkmath.NewInt(-1)
 	suite.invalidAddr = "123456"
 	suite.addr = tests.GenerateAddress()
 	suite.hexAddr = suite.addr.Hex()
+	suite.hexDataBytes = hexutil.Bytes([]byte("data"))
+	suite.hexInputBytes = hexutil.Bytes([]byte("input"))
 }
 
 func TestTxDataTestSuite(t *testing.T) {
@@ -578,6 +587,84 @@ func (suite *TxDataTestSuite) TestDynamicFeeTxValidate() {
 		}
 
 		suite.Require().NoError(err, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestDynamicFeeTxEffectiveGasPrice() {
+	testCases := []struct {
+		name    string
+		tx      DynamicFeeTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty dynamic fee tx",
+			DynamicFeeTx{
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveGasPrice(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestDynamicFeeTxEffectiveFee() {
+	testCases := []struct {
+		name    string
+		tx      DynamicFeeTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty dynamic fee tx",
+			DynamicFeeTx{
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				GasLimit: uint64(1),
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveFee(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestDynamicFeeTxEffectiveCost() {
+	testCases := []struct {
+		name    string
+		tx      DynamicFeeTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty dynamic fee tx",
+			DynamicFeeTx{
+				GasTipCap: &suite.sdkInt,
+				GasFeeCap: &suite.sdkInt,
+				GasLimit: uint64(1),
+				Amount:   &suite.sdkZeroInt,
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveCost(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
 	}
 }
 

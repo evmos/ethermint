@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
 	"golang.org/x/text/cases"
@@ -232,6 +233,11 @@ func traverseFields(
 			// then continue as normal
 		}
 
+		// If its a nil pointer, do not include in types
+		if fieldType.Kind() == reflect.Ptr && field.IsNil() {
+			continue
+		}
+
 		for {
 			if fieldType.Kind() == reflect.Ptr {
 				fieldType = fieldType.Elem()
@@ -296,6 +302,11 @@ func traverseFields(
 
 		ethTyp := typToEth(fieldType)
 		if len(ethTyp) > 0 {
+			// Support array of uint64
+			if isCollection && fieldType.Kind() != reflect.Slice && fieldType.Kind() != reflect.Array {
+				ethTyp += "[]"
+			}
+
 			if prefix == typeDefPrefix {
 				typeMap[rootType] = append(typeMap[rootType], apitypes.Type{
 					Name: fieldName,
@@ -381,6 +392,7 @@ var (
 	bigIntType    = reflect.TypeOf(big.Int{})
 	cosmIntType   = reflect.TypeOf(sdkmath.Int{})
 	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
+	timeType      = reflect.TypeOf(time.Time{})
 )
 
 // typToEth supports only basic types and arrays of basic types.
@@ -425,6 +437,7 @@ func typToEth(typ reflect.Type) string {
 		}
 	case reflect.Ptr:
 		if typ.Elem().ConvertibleTo(bigIntType) ||
+			typ.Elem().ConvertibleTo(timeType) ||
 			typ.Elem().ConvertibleTo(cosmIntType) {
 			return str
 		}
@@ -432,6 +445,7 @@ func typToEth(typ reflect.Type) string {
 		if typ.ConvertibleTo(hashType) ||
 			typ.ConvertibleTo(addressType) ||
 			typ.ConvertibleTo(bigIntType) ||
+			typ.ConvertibleTo(timeType) ||
 			typ.ConvertibleTo(cosmIntType) {
 			return str
 		}

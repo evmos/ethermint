@@ -54,10 +54,10 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [package.extras]
-dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "zope.interface", "furo", "sphinx", "sphinx-notfound-page", "pre-commit", "cloudpickle"]
-docs = ["furo", "sphinx", "zope.interface", "sphinx-notfound-page"]
-tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "zope.interface", "cloudpickle"]
-tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "cloudpickle"]
+dev = ["cloudpickle", "coverage[toml] (>=5.0.2)", "furo", "hypothesis", "mypy", "pre-commit", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "six", "sphinx", "sphinx-notfound-page", "zope.interface"]
+docs = ["furo", "sphinx", "sphinx-notfound-page", "zope.interface"]
+tests = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "six", "zope.interface"]
+tests_no_zope = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "six"]
 
 [[package]]
 name = "base58"
@@ -68,7 +68,7 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-tests = ["mypy", "PyHamcrest (>=2.0.2)", "pytest (>=4.6)", "pytest-benchmark", "pytest-cov", "pytest-flake8"]
+tests = ["PyHamcrest (>=2.0.2)", "mypy", "pytest (>=4.6)", "pytest-benchmark", "pytest-cov", "pytest-flake8"]
 
 [[package]]
 name = "bech32"
@@ -175,7 +175,7 @@ websocket-client = ">=0.32.0"
 
 [package.extras]
 ssh = ["paramiko (>=2.4.2)"]
-tls = ["pyOpenSSL (>=17.5.0)", "cryptography (>=3.4.7)", "idna (>=2.0.0)"]
+tls = ["cryptography (>=3.4.7)", "idna (>=2.0.0)", "pyOpenSSL (>=17.5.0)"]
 
 [[package]]
 name = "durations"
@@ -199,22 +199,22 @@ eth-utils = ">=1.2.0,<2.0.0"
 parsimonious = ">=0.8.0,<0.9.0"
 
 [package.extras]
-dev = ["bumpversion (>=0.5.3,<1)", "pytest-watch (>=4.1.0,<5)", "wheel", "twine", "ipython", "pytest (==4.4.1)", "pytest-pythonpath (>=0.7.1)", "pytest-xdist (==1.22.3)", "tox (>=2.9.1,<3)", "eth-hash", "hypothesis (>=3.6.1,<4)", "flake8 (==3.4.1)", "isort (>=4.2.15,<5)", "mypy (==0.701)", "pydocstyle (>=3.0.0,<4)", "Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)", "towncrier (>=19.2.0,<20)"]
+dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "eth-hash", "flake8 (==3.4.1)", "hypothesis (>=3.6.1,<4)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.701)", "pydocstyle (>=3.0.0,<4)", "pytest (==4.4.1)", "pytest-pythonpath (>=0.7.1)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist (==1.22.3)", "sphinx-rtd-theme (>=0.1.9)", "towncrier (>=19.2.0,<20)", "tox (>=2.9.1,<3)", "twine", "wheel"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)", "towncrier (>=19.2.0,<20)"]
 lint = ["flake8 (==3.4.1)", "isort (>=4.2.15,<5)", "mypy (==0.701)", "pydocstyle (>=3.0.0,<4)"]
-test = ["pytest (==4.4.1)", "pytest-pythonpath (>=0.7.1)", "pytest-xdist (==1.22.3)", "tox (>=2.9.1,<3)", "eth-hash", "hypothesis (>=3.6.1,<4)"]
+test = ["eth-hash", "hypothesis (>=3.6.1,<4)", "pytest (==4.4.1)", "pytest-pythonpath (>=0.7.1)", "pytest-xdist (==1.22.3)", "tox (>=2.9.1,<3)"]
 tools = ["hypothesis (>=3.6.1,<4)"]
 
 [[package]]
 name = "eth-account"
-version = "0.5.7"
+version = "0.5.9"
 description = "eth-account: Sign Ethereum transactions and messages with local private keys"
 category = "main"
 optional = false
 python-versions = ">=3.6, <4"
 
 [package.dependencies]
-bitarray = ">=1.2.1,<1.3.0"
+bitarray = ">=1.2.1,<3"
 eth-abi = ">=2.0.0b7,<3"
 eth-keyfile = ">=0.5.0,<0.6.0"
 eth-keys = ">=0.3.4,<0.4.0"
@@ -224,9 +224,9 @@ hexbytes = ">=0.1.0,<1"
 rlp = ">=1.0.0,<3"
 
 [package.extras]
-dev = ["bumpversion (>=0.5.3,<1)", "pytest-watch (>=4.1.0,<5)", "wheel", "twine", "ipython", "hypothesis (>=4.18.0,<5)", "pytest (>=6.2.5,<7)", "pytest-xdist", "tox (==3.14.6)", "flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)", "Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)"]
-doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)"]
-lint = ["flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)"]
+dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "flake8 (==3.7.9)", "hypothesis (>=4.18.0,<5)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.910)", "pydocstyle (>=5.0.0,<6)", "pytest (>=6.2.5,<7)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=21.9.0)", "tox (==3.14.6)", "twine", "wheel"]
+doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=21.9.0)"]
+lint = ["flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.910)", "pydocstyle (>=5.0.0,<6)"]
 test = ["hypothesis (>=4.18.0,<5)", "pytest (>=6.2.5,<7)", "pytest-xdist", "tox (==3.14.6)"]
 
 [[package]]
@@ -242,9 +242,9 @@ eth-hash = {version = ">=0.3.1,<0.4.0", extras = ["pycryptodome"]}
 
 [package.extras]
 deploy = ["bumpversion (>=0.5.3,<1.0.0)", "wheel (>=0.30.0,<1.0.0)"]
-dev = ["bumpversion (>=0.5.3,<1.0.0)", "wheel (>=0.30.0,<1.0.0)", "twine", "pytest (==3.0.7)", "hypothesis (==3.7.0)", "tox (==2.6.0)", "flake8 (>=3.5.0,<4.0.0)", "mypy (<0.600)"]
+dev = ["bumpversion (>=0.5.3,<1.0.0)", "flake8 (>=3.5.0,<4.0.0)", "hypothesis (==3.7.0)", "mypy (<0.600)", "pytest (==3.0.7)", "tox (==2.6.0)", "twine", "wheel (>=0.30.0,<1.0.0)"]
 lint = ["flake8 (>=3.5.0,<4.0.0)", "mypy (<0.600)"]
-test = ["pytest (==3.0.7)", "hypothesis (==3.7.0)", "tox (==2.6.0)"]
+test = ["hypothesis (==3.7.0)", "pytest (==3.0.7)", "tox (==2.6.0)"]
 
 [[package]]
 name = "eth-hash"
@@ -258,7 +258,7 @@ python-versions = ">=3.5, <4"
 pycryptodome = {version = ">=3.6.6,<4", optional = true, markers = "extra == \"pycryptodome\""}
 
 [package.extras]
-dev = ["bumpversion (>=0.5.3,<1)", "pytest-watch (>=4.1.0,<5)", "wheel", "twine", "ipython", "pytest (==5.4.1)", "pytest-xdist", "tox (==3.14.6)", "flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)", "Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)"]
+dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "flake8 (==3.7.9)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)", "pytest (==5.4.1)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)", "tox (==3.14.6)", "twine", "wheel"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)"]
 lint = ["flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)"]
 pycryptodome = ["pycryptodome (>=3.6.6,<4)"]
@@ -293,10 +293,10 @@ eth-utils = ">=1.8.2,<2.0.0"
 
 [package.extras]
 coincurve = ["coincurve (>=7.0.0,<13.0.0)"]
-dev = ["tox (==3.20.0)", "bumpversion (==0.5.3)", "twine", "eth-utils (>=1.8.2,<2.0.0)", "eth-typing (>=2.2.1,<3.0.0)", "flake8 (==3.0.4)", "mypy (==0.782)", "asn1tools (>=0.146.2,<0.147)", "factory-boy (>=3.0.1,<3.1)", "pyasn1 (>=0.4.5,<0.5)", "pytest (==5.4.1)", "hypothesis (>=5.10.3,<6.0.0)", "eth-hash", "eth-hash"]
-eth-keys = ["eth-utils (>=1.8.2,<2.0.0)", "eth-typing (>=2.2.1,<3.0.0)"]
+dev = ["asn1tools (>=0.146.2,<0.147)", "bumpversion (==0.5.3)", "eth-hash", "eth-hash", "eth-typing (>=2.2.1,<3.0.0)", "eth-utils (>=1.8.2,<2.0.0)", "factory-boy (>=3.0.1,<3.1)", "flake8 (==3.0.4)", "hypothesis (>=5.10.3,<6.0.0)", "mypy (==0.782)", "pyasn1 (>=0.4.5,<0.5)", "pytest (==5.4.1)", "tox (==3.20.0)", "twine"]
+eth-keys = ["eth-typing (>=2.2.1,<3.0.0)", "eth-utils (>=1.8.2,<2.0.0)"]
 lint = ["flake8 (==3.0.4)", "mypy (==0.782)"]
-test = ["asn1tools (>=0.146.2,<0.147)", "factory-boy (>=3.0.1,<3.1)", "pyasn1 (>=0.4.5,<0.5)", "pytest (==5.4.1)", "hypothesis (>=5.10.3,<6.0.0)", "eth-hash", "eth-hash"]
+test = ["asn1tools (>=0.146.2,<0.147)", "eth-hash", "eth-hash", "factory-boy (>=3.0.1,<3.1)", "hypothesis (>=5.10.3,<6.0.0)", "pyasn1 (>=0.4.5,<0.5)", "pytest (==5.4.1)"]
 
 [[package]]
 name = "eth-rlp"
@@ -312,10 +312,10 @@ hexbytes = ">=0.1.0,<1"
 rlp = ">=0.6.0,<3"
 
 [package.extras]
-dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "eth-hash", "flake8 (==3.7.9)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=3.0.0,<4)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "pytest (==5.4.1)", "sphinx-rtd-theme (>=0.1.9)", "towncrier (>=19.2.0,<20)", "tox (==3.14.6)", "twine", "wheel"]
+dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "eth-hash", "flake8 (==3.7.9)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=3.0.0,<4)", "pytest (==5.4.1)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "sphinx-rtd-theme (>=0.1.9)", "towncrier (>=19.2.0,<20)", "tox (==3.14.6)", "twine", "wheel"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)", "towncrier (>=19.2.0,<20)"]
 lint = ["flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=3.0.0,<4)"]
-test = ["eth-hash", "pytest-xdist", "pytest (==5.4.1)", "tox (==3.14.6)"]
+test = ["eth-hash", "pytest (==5.4.1)", "pytest-xdist", "tox (==3.14.6)"]
 
 [[package]]
 name = "eth-typing"
@@ -326,7 +326,7 @@ optional = false
 python-versions = ">=3.5, <4"
 
 [package.extras]
-dev = ["bumpversion (>=0.5.3,<1)", "pytest-watch (>=4.1.0,<5)", "wheel", "twine", "ipython", "pytest (>=4.4,<4.5)", "pytest-xdist", "tox (>=2.9.1,<3)", "flake8 (==3.8.3)", "isort (>=4.2.15,<5)", "mypy (==0.782)", "pydocstyle (>=3.0.0,<4)", "Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)"]
+dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "flake8 (==3.8.3)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.782)", "pydocstyle (>=3.0.0,<4)", "pytest (>=4.4,<4.5)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "sphinx-rtd-theme (>=0.1.9)", "tox (>=2.9.1,<3)", "twine", "wheel"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)"]
 lint = ["flake8 (==3.8.3)", "isort (>=4.2.15,<5)", "mypy (==0.782)", "pydocstyle (>=3.0.0,<4)"]
 test = ["pytest (>=4.4,<4.5)", "pytest-xdist", "tox (>=2.9.1,<3)"]
@@ -346,7 +346,7 @@ eth-typing = ">=2.2.1,<3.0.0"
 toolz = {version = ">0.8.2,<1", markers = "implementation_name == \"pypy\""}
 
 [package.extras]
-dev = ["bumpversion (>=0.5.3,<1)", "pytest-watch (>=4.1.0,<5)", "wheel (>=0.30.0,<1.0.0)", "twine (>=1.13,<2)", "ipython", "hypothesis (>=4.43.0,<5.0.0)", "pytest (==5.4.1)", "pytest-xdist", "tox (==3.14.6)", "black (>=18.6b4,<19)", "flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.720)", "pydocstyle (>=5.0.0,<6)", "pytest (>=3.4.1,<4.0.0)", "Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<2)", "towncrier (>=19.2.0,<20)"]
+dev = ["Sphinx (>=1.6.5,<2)", "black (>=18.6b4,<19)", "bumpversion (>=0.5.3,<1)", "flake8 (==3.7.9)", "hypothesis (>=4.43.0,<5.0.0)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.720)", "pydocstyle (>=5.0.0,<6)", "pytest (==5.4.1)", "pytest (>=3.4.1,<4.0.0)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "sphinx-rtd-theme (>=0.1.9,<2)", "towncrier (>=19.2.0,<20)", "tox (==3.14.6)", "twine (>=1.13,<2)", "wheel (>=0.30.0,<1.0.0)"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<2)", "towncrier (>=19.2.0,<20)"]
 lint = ["black (>=18.6b4,<19)", "flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.720)", "pydocstyle (>=5.0.0,<6)", "pytest (>=3.4.1,<4.0.0)"]
 test = ["hypothesis (>=4.43.0,<5.0.0)", "pytest (==5.4.1)", "pytest-xdist", "tox (==3.14.6)"]
@@ -447,10 +447,10 @@ optional = false
 python-versions = ">=3.6, <4"
 
 [package.extras]
-dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "eth-utils (>=1.0.1,<2)", "flake8 (==3.7.9)", "hypothesis (>=3.44.24,<4)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "pytest (==5.4.1)", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)", "tox (==3.14.6)", "twine", "wheel"]
+dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "eth-utils (>=1.0.1,<2)", "flake8 (==3.7.9)", "hypothesis (>=3.44.24,<4)", "ipython", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)", "pytest (==5.4.1)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)", "tox (==3.14.6)", "twine", "wheel"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9,<1)", "towncrier (>=19.2.0,<20)"]
 lint = ["flake8 (==3.7.9)", "isort (>=4.2.15,<5)", "mypy (==0.770)", "pydocstyle (>=5.0.0,<6)"]
-test = ["eth-utils (>=1.0.1,<2)", "hypothesis (>=3.44.24,<4)", "pytest-xdist", "pytest (==5.4.1)", "tox (==3.14.6)"]
+test = ["eth-utils (>=1.0.1,<2)", "hypothesis (>=3.44.24,<4)", "pytest (==5.4.1)", "pytest-xdist", "tox (==3.14.6)"]
 
 [[package]]
 name = "idna"
@@ -472,8 +472,8 @@ python-versions = ">=3.7"
 zipp = {version = ">=3.1.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
-docs = ["sphinx", "jaraco.packaging (>=9)", "rst.linker (>=1.9)"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
+docs = ["jaraco.packaging (>=9)", "rst.linker (>=1.9)", "sphinx"]
+testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.0.1)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [[package]]
 name = "iniconfig"
@@ -504,10 +504,10 @@ optional = false
 python-versions = ">=3.6.1,<4.0"
 
 [package.extras]
-pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
-requirements_deprecated_finder = ["pipreqs", "pip-api"]
 colors = ["colorama (>=0.4.3,<0.5.0)"]
+pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
 plugins = ["setuptools"]
+requirements_deprecated_finder = ["pip-api", "pipreqs"]
 
 [[package]]
 name = "jsonmerge"
@@ -660,8 +660,8 @@ optional = false
 python-versions = ">=3.7"
 
 [package.extras]
-docs = ["furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx-autodoc-typehints (>=1.12)", "sphinx (>=4)"]
-test = ["appdirs (==1.4.4)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)", "pytest (>=6)"]
+docs = ["furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx (>=4)", "sphinx-autodoc-typehints (>=1.12)"]
+test = ["appdirs (==1.4.4)", "pytest (>=6)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)"]
 
 [[package]]
 name = "pluggy"
@@ -724,7 +724,7 @@ optional = false
 python-versions = ">=3.6.8"
 
 [package.extras]
-diagrams = ["railroad-diagrams", "jinja2"]
+diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pyrsistent"
@@ -887,7 +887,7 @@ python-versions = "*"
 eth-utils = ">=1.0.2,<2"
 
 [package.extras]
-dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "flake8 (==3.4.1)", "hypothesis (==5.19.0)", "ipython", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "pytest (==5.4.3)", "setuptools (>=36.2.0)", "sphinx-rtd-theme (>=0.1.9)", "tox (>=2.9.1,<3)", "twine", "wheel"]
+dev = ["Sphinx (>=1.6.5,<2)", "bumpversion (>=0.5.3,<1)", "flake8 (==3.4.1)", "hypothesis (==5.19.0)", "ipython", "pytest (==5.4.3)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist", "setuptools (>=36.2.0)", "sphinx-rtd-theme (>=0.1.9)", "tox (>=2.9.1,<3)", "twine", "wheel"]
 doc = ["Sphinx (>=1.6.5,<2)", "sphinx-rtd-theme (>=0.1.9)"]
 lint = ["flake8 (==3.4.1)"]
 rust-backend = ["rusty-rlp (>=0.1.15,<0.2)"]
@@ -929,9 +929,9 @@ optional = false
 python-versions = "*"
 
 [package.extras]
-build = ["setuptools-git", "wheel", "twine"]
-docs = ["sphinx", "zope.component", "sybil", "twisted", "mock", "django (<2)", "django"]
-test = ["pytest (>=3.6)", "pytest-cov", "pytest-django", "zope.component", "sybil", "twisted", "mock", "django (<2)", "django"]
+build = ["setuptools-git", "twine", "wheel"]
+docs = ["django", "django (<2)", "mock", "sphinx", "sybil", "twisted", "zope.component"]
+test = ["django", "django (<2)", "mock", "pytest (>=3.6)", "pytest-cov", "pytest-django", "sybil", "twisted", "zope.component"]
 
 [[package]]
 name = "toml"
@@ -982,8 +982,8 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 
 [package.extras]
-brotli = ["brotlicffi (>=0.8.0)", "brotli (>=1.0.9)", "brotlipy (>=0.6.0)"]
-secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "ipaddress"]
+brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)", "brotlipy (>=0.6.0)"]
+secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "pyOpenSSL (>=0.14)"]
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
@@ -1019,9 +1019,9 @@ requests = ">=2.16.0,<3.0.0"
 websockets = ">=9.1,<10"
 
 [package.extras]
-dev = ["eth-tester[py-evm] (==v0.6.0-beta.6)", "py-geth (>=3.7.0,<4)", "flake8 (==3.8.3)", "isort (>=4.2.15,<4.3.5)", "mypy (==0.910)", "types-setuptools (>=57.4.4,<58)", "types-requests (>=2.26.1,<3)", "types-protobuf (==3.19.13)", "mock", "sphinx-better-theme (>=0.1.4)", "click (>=5.1)", "configparser (==3.5.0)", "contextlib2 (>=0.5.4)", "py-geth (>=3.6.0,<4)", "py-solc (>=0.4.0)", "pytest (>=4.4.0,<5.0.0)", "sphinx (>=3.0,<4)", "sphinx-rtd-theme (>=0.1.9)", "toposort (>=1.4)", "towncrier (==18.5.0)", "urllib3", "wheel", "bumpversion", "flaky (>=3.7.0,<4)", "hypothesis (>=3.31.2,<6)", "pytest-asyncio (>=0.10.0,<0.11)", "pytest-mock (>=1.10,<2)", "pytest-pythonpath (>=0.3)", "pytest-watch (>=4.2,<5)", "pytest-xdist (>=1.29,<2)", "setuptools (>=38.6.0)", "tox (>=1.8.0)", "tqdm (>4.32,<5)", "twine (>=1.13,<2)", "pluggy (==0.13.1)", "when-changed (>=0.3.0,<0.4)"]
-docs = ["mock", "sphinx-better-theme (>=0.1.4)", "click (>=5.1)", "configparser (==3.5.0)", "contextlib2 (>=0.5.4)", "py-geth (>=3.6.0,<4)", "py-solc (>=0.4.0)", "pytest (>=4.4.0,<5.0.0)", "sphinx (>=3.0,<4)", "sphinx-rtd-theme (>=0.1.9)", "toposort (>=1.4)", "towncrier (==18.5.0)", "urllib3", "wheel"]
-linter = ["flake8 (==3.8.3)", "isort (>=4.2.15,<4.3.5)", "mypy (==0.910)", "types-setuptools (>=57.4.4,<58)", "types-requests (>=2.26.1,<3)", "types-protobuf (==3.19.13)"]
+dev = ["bumpversion", "click (>=5.1)", "configparser (==3.5.0)", "contextlib2 (>=0.5.4)", "eth-tester[py-evm] (==v0.6.0-beta.6)", "flake8 (==3.8.3)", "flaky (>=3.7.0,<4)", "hypothesis (>=3.31.2,<6)", "isort (>=4.2.15,<4.3.5)", "mock", "mypy (==0.910)", "pluggy (==0.13.1)", "py-geth (>=3.6.0,<4)", "py-geth (>=3.7.0,<4)", "py-solc (>=0.4.0)", "pytest (>=4.4.0,<5.0.0)", "pytest-asyncio (>=0.10.0,<0.11)", "pytest-mock (>=1.10,<2)", "pytest-pythonpath (>=0.3)", "pytest-watch (>=4.2,<5)", "pytest-xdist (>=1.29,<2)", "setuptools (>=38.6.0)", "sphinx (>=3.0,<4)", "sphinx-better-theme (>=0.1.4)", "sphinx-rtd-theme (>=0.1.9)", "toposort (>=1.4)", "towncrier (==18.5.0)", "tox (>=1.8.0)", "tqdm (>4.32,<5)", "twine (>=1.13,<2)", "types-protobuf (==3.19.13)", "types-requests (>=2.26.1,<3)", "types-setuptools (>=57.4.4,<58)", "urllib3", "wheel", "when-changed (>=0.3.0,<0.4)"]
+docs = ["click (>=5.1)", "configparser (==3.5.0)", "contextlib2 (>=0.5.4)", "mock", "py-geth (>=3.6.0,<4)", "py-solc (>=0.4.0)", "pytest (>=4.4.0,<5.0.0)", "sphinx (>=3.0,<4)", "sphinx-better-theme (>=0.1.4)", "sphinx-rtd-theme (>=0.1.9)", "toposort (>=1.4)", "towncrier (==18.5.0)", "urllib3", "wheel"]
+linter = ["flake8 (==3.8.3)", "isort (>=4.2.15,<4.3.5)", "mypy (==0.910)", "types-protobuf (==3.19.13)", "types-requests (>=2.26.1,<3)", "types-setuptools (>=57.4.4,<58)"]
 tester = ["eth-tester[py-evm] (==v0.6.0-beta.6)", "py-geth (>=3.7.0,<4)"]
 
 [[package]]
@@ -1066,8 +1066,8 @@ optional = false
 python-versions = ">=3.7"
 
 [package.extras]
-docs = ["sphinx", "jaraco.packaging (>=9)", "rst.linker (>=1.9)"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
+docs = ["jaraco.packaging (>=9)", "rst.linker (>=1.9)", "sphinx"]
+testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.0.1)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [metadata]
 lock-version = "1.1"
@@ -1232,8 +1232,8 @@ eth-abi = [
     {file = "eth_abi-2.1.1.tar.gz", hash = "sha256:4bb1d87bb6605823379b07f6c02c8af45df01a27cc85bd6abb7cf1446ce7d188"},
 ]
 eth-account = [
-    {file = "eth-account-0.5.7.tar.gz", hash = "sha256:c86b59ff92f1bb14dea2632c2df657be6a98c450cfe24e2536fb69b6207364e7"},
-    {file = "eth_account-0.5.7-py3-none-any.whl", hash = "sha256:a82ff2500d7e7a54535ec3d4ea0a58feaf6e94f3ff65ae999f2a508e9b2e1ec1"},
+    {file = "eth-account-0.5.9.tar.gz", hash = "sha256:ee62e121d977ca452f600043338af36f9349aa1f8409c5096d75df6576c79f1b"},
+    {file = "eth_account-0.5.9-py3-none-any.whl", hash = "sha256:42f9eefbf0e1c84a278bf27a25eccc2e0c20b18c17e2ab6f46044a534479e95a"},
 ]
 eth-bloom = [
     {file = "eth-bloom-1.0.4.tar.gz", hash = "sha256:688317306d87b823da63d24e1ad706defadbd865887ed4bddf7fbd0410b2093c"},
