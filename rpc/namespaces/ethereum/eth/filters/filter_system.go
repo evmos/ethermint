@@ -104,11 +104,7 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 	defaultAfter := ""
 	after := sub.after
 	if err == nil && after == defaultAfter {
-		var res *coretypes.ResultBlock
-		res, err = es.client.Block(ctx, nil)
-		if err == nil {
-			after = fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), res.Block.Height)
-		}
+		after = fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), 0)
 	}
 
 	if err != nil {
@@ -131,9 +127,9 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 				filter := coretypes.EventFilter{Query: query}
 				res, err := es.client.Events(ctx, &coretypes.RequestEvents{
 					Filter:   &filter,
-					MaxItems: 100,
+					MaxItems: 1,
 					After:    after,
-					WaitTime: 1000 * time.Second,
+					WaitTime: 300 * time.Second,
 				})
 				if err != nil {
 					if retry--; retry >= 0 {
