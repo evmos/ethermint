@@ -20,9 +20,10 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// BlockNumber returns the current block number in abci app state.
-// Because abci app state could lag behind from tendermint latest block, it's more stable
-// for the client to use the latest block number in abci app state than tendermint rpc.
+// BlockNumber returns the current block number in abci app state. Because abci
+// app state could lag behind from tendermint latest block, it's more stable for
+// the client to use the latest block number in abci app state than tendermint
+// rpc.
 func (b *Backend) BlockNumber() (hexutil.Uint64, error) {
 	// do any grpc query, ignore the response and use the returned block height
 	var header metadata.MD
@@ -101,8 +102,8 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 	return res, nil
 }
 
-// GetBlockTransactionCountByHash returns the number of transactions in the
-// block identified by hash.
+// GetBlockTransactionCountByHash returns the number of Ethereum transactions in
+// the block identified by hash.
 func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
 	block, err := b.clientCtx.Client.BlockByHash(b.ctx, hash.Bytes())
 	if err != nil {
@@ -125,7 +126,8 @@ func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 	return &n
 }
 
-// GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
+// GetBlockTransactionCountByNumber returns the number of Ethereum transactions
+// in the block identified by number.
 func (b *Backend) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
 	block, err := b.TendermintBlockByNumber(blockNum)
 	if err != nil {
