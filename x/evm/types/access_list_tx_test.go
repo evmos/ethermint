@@ -57,6 +57,25 @@ func (suite *TxDataTestSuite) TestAccessListTxGetGasFeeCap() {
 	}
 }
 
+func (suite *TxDataTestSuite) TestEmptyAccessList() {
+	testCases := []struct {
+		name string
+		tx AccessListTx
+	}{
+		{
+			"empty access list tx",
+			AccessListTx{
+				Accesses: nil,
+			},
+		},
+	}
+	for _, tc := range testCases {
+		actual := tc.tx.GetAccessList()
+
+		suite.Require().Nil(actual, tc.name)
+	}
+}
+
 func (suite *TxDataTestSuite) TestAccessListTxCost() {
 	testCases := []struct {
 		name string
@@ -78,6 +97,28 @@ func (suite *TxDataTestSuite) TestAccessListTxCost() {
 		actual := tc.tx.Cost()
 
 		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestAccessListEffectiveGasPrice() {
+	testCases := []struct {
+		name    string
+		tx      AccessListTx
+		baseFee *big.Int
+	}{
+		{
+			"non-empty access list tx",
+			AccessListTx{
+				GasPrice: &suite.sdkInt,
+			},
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveGasPrice(tc.baseFee)
+
+		suite.Require().Equal(tc.tx.GetGasPrice(), actual, tc.name)
 	}
 }
 
