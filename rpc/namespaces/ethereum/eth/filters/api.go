@@ -190,6 +190,72 @@ func (api *PublicFilterAPI) NewPendingTransactionFilter() rpc.ID {
 	return pendingTxSub.ID()
 }
 
+// NewPendingTransactions creates a subscription that is triggered each time a transaction
+// enters the transaction pool and was signed from one of the transactions this nodes manages.
+func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Subscription, error) {
+	notifier, supported := rpc.NotifierFromContext(ctx)
+	if !supported {
+		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
+	}
+
+	rpcSub := notifier.CreateSubscription()
+
+	ctx, cancelFn := context.WithTimeout(context.Background(), deadline)
+	defer cancelFn()
+
+	api.events.WithContext(ctx)
+
+	pendingTxSub, cancelSubs, err := api.events.SubscribePendingTxs()
+	if err != nil {
+		return nil, err
+	}
+
+	go func(txsCh <-chan *coretypes.ResultEvents) {
+		defer cancelSubs()
+
+		for {
+			select {
+			case ev, ok := <-txsCh:
+				if !ok {
+					api.filtersMu.Lock()
+					delete(api.filters, pendingTxSub.ID())
+					api.filtersMu.Unlock()
+					return
+				}
+
+				for _, item := range ev.Items {
+					var data tmtypes.EventDataTx
+					if err := json.Unmarshal(item.Data, &data); err != nil {
+						api.logger.Debug("event data type mismatch", "type", fmt.Sprintf("%T", item.Data))
+						continue
+					}
+
+					tx, err := api.clientCtx.TxConfig.TxDecoder()(data.Tx)
+					if err != nil {
+						api.logger.Debug("fail to decode tx", "error", err.Error())
+						continue
+					}
+
+					for _, msg := range tx.GetMsgs() {
+						ethTx, ok := msg.(*evmtypes.MsgEthereumTx)
+						if ok {
+							_ = notifier.Notify(rpcSub.ID, ethTx.AsTransaction().Hash())
+						}
+					}
+				}
+			case <-rpcSub.Err():
+				pendingTxSub.Unsubscribe(api.events)
+				return
+			case <-notifier.Closed():
+				pendingTxSub.Unsubscribe(api.events)
+				return
+			}
+		}
+	}(pendingTxSub.eventCh)
+
+	return rpcSub, err
+}
+
 // NewBlockFilter creates a filter that fetches blocks that are imported into the chain.
 // It is part of the filter package since polling goes with eth_getFilterChanges.
 //
