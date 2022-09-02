@@ -116,14 +116,7 @@ func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 		return nil
 	}
 
-	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
-	if err != nil {
-		return nil
-	}
-
-	ethMsgs := b.EthMsgsFromTendermintBlock(block, blockRes)
-	n := hexutil.Uint(len(ethMsgs))
-	return &n
+	return b.GetBlockTransactionCount(block)
 }
 
 // GetBlockTransactionCountByNumber returns the number of Ethereum transactions
@@ -140,6 +133,12 @@ func (b *Backend) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber
 		return nil
 	}
 
+	return b.GetBlockTransactionCount(block)
+}
+
+// GetBlockTransactionCount returns the number of Ethereum transactions in a
+// given block.
+func (b *Backend) GetBlockTransactionCount(block *tmrpctypes.ResultBlock) *hexutil.Uint {
 	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		return nil
