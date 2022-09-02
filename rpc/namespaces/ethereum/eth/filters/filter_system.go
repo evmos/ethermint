@@ -116,7 +116,7 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 		return nil, func() { cancelFn() }, err
 	}
 
-	eventCh := make(chan *coretypes.ResultEvents, 0)
+	eventCh := make(chan *coretypes.ResultEvents)
 	go func() {
 		defer func() {
 			close(eventCh)

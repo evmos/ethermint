@@ -30,15 +30,12 @@ func (s Subscription) ID() rpc.ID {
 func (s *Subscription) Unsubscribe(es *EventSystem) {
 	go func() {
 	uninstallLoop:
-		for {
+		for range es.uninstall {
 			// write uninstall request and consume logs/hashes. This prevents
 			// the eventLoop broadcast method to deadlock when writing to the
 			// filter event channel while the subscription loop is waiting for
 			// this method to return (and thus not reading these events).
-			select {
-			case es.uninstall <- s:
-				break uninstallLoop
-			}
+			break uninstallLoop
 		}
 	}()
 }
