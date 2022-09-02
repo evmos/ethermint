@@ -35,9 +35,6 @@ schema = 3
   [mod."github.com/VictoriaMetrics/fastcache"]
     version = "v1.6.0"
     hash = "sha256-u1dkRJ2Y5+hnYlkyMPm14HxKkAv999bjN622nZDjaBo="
-  [mod."github.com/Workiva/go-datastructures"]
-    version = "v1.0.53"
-    hash = "sha256-W6qOvqu8sokMlZrpOF1SWG138H0/BotywKNLlDF8Zug="
   [mod."github.com/armon/go-metrics"]
     version = "v0.4.0"
     hash = "sha256-mB6EFtn8BZ0u9TcJ6QTYw2SNAr4CnTVOMpiRKaoNH7k="
@@ -365,17 +362,17 @@ schema = 3
     version = "v1.0.0"
     hash = "sha256-/FtmHnaGjdvEIKAJtrUfEhV7EVo5A/eYrtdnUkuxLDA="
   [mod."github.com/prometheus/client_golang"]
-    version = "v1.12.2"
-    hash = "sha256-d8xHyML/FImuPmFOy7UGW/y85NPLzJYL6IFhR3s7XzE="
+    version = "v1.13.0"
+    hash = "sha256-5nC5FuGuAB71k6Dm4vBcmpPpBAKfvArO/yr7e9rfQfg="
   [mod."github.com/prometheus/client_model"]
     version = "v0.2.0"
     hash = "sha256-LTHxYPRgoggl+v89ly2/RkyPIuJlmZRdGs6ZRtK3zkk="
   [mod."github.com/prometheus/common"]
-    version = "v0.34.0"
-    hash = "sha256-M+v+7DntUBmiQNzfNmG3aLLufbl0XBQOubtYoNTzJDA="
+    version = "v0.37.0"
+    hash = "sha256-B2v0WsP8uKWYBpZcrog/sQXStIXwWZcVLmfPgnh1ZZA="
   [mod."github.com/prometheus/procfs"]
-    version = "v0.7.3"
-    hash = "sha256-ik0WpnpSjMwifPYfQTfu/eb5ilNj+eLJF0d5Dftp8A8="
+    version = "v0.8.0"
+    hash = "sha256-hgrilokQsXCOCCvwgOSfuErxoFAQpXM/+zNJKcMVHyM="
   [mod."github.com/prometheus/tsdb"]
     version = "v0.7.1"
     hash = "sha256-BPz7YJbfMZgeR+u9YaeWeipVzHIS73EdgXD7VSJSLbA="
@@ -446,8 +443,8 @@ schema = 3
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
   [mod."github.com/tendermint/tendermint"]
-    version = "v0.34.21-rc0"
-    hash = "sha256-P0cI38X5g7zE/5/EQv+gGBggrNQ4fq4i6tiuOpsk64M="
+    version = "v0.34.21-rc1"
+    hash = "sha256-s+sm/ji9cwYPVNedZvKA9fM6NLxKtTKkcsDcg+dJHwM="
     replaced = "github.com/mmsqe/tendermint"
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"
