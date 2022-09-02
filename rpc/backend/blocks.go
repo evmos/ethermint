@@ -65,7 +65,7 @@ func (b *Backend) GetBlockByNumber(blockNum rpctypes.BlockNumber, fullTx bool) (
 		return nil, nil
 	}
 
-	res, err := b.BlockFromTendermintBlock(resBlock, blockRes, fullTx)
+	res, err := b.RPCBlockFromTendermintBlock(resBlock, blockRes, fullTx)
 	if err != nil {
 		b.logger.Debug("GetEthBlockFromTendermint failed", "height", blockNum, "error", err.Error())
 		return nil, err
@@ -93,7 +93,7 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 		return nil, nil
 	}
 
-	res, err := b.BlockFromTendermintBlock(resBlock, blockRes, fullTx)
+	res, err := b.RPCBlockFromTendermintBlock(resBlock, blockRes, fullTx)
 	if err != nil {
 		b.logger.Debug("GetEthBlockFromTendermint failed", "hash", hash, "error", err.Error())
 		return nil, err
@@ -345,9 +345,9 @@ func (b *Backend) BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.
 	return ethtypes.Bloom{}, errors.New("block bloom event is not found")
 }
 
-// BlockFromTendermintBlock returns a JSON-RPC compatible Ethereum block from a
+// RPCBlockFromTendermintBlock returns a JSON-RPC compatible Ethereum block from a
 // given Tendermint block and its block result.
-func (b *Backend) BlockFromTendermintBlock(
+func (b *Backend) RPCBlockFromTendermintBlock(
 	resBlock *tmrpctypes.ResultBlock,
 	blockRes *tmrpctypes.ResultBlockResults,
 	fullTx bool,
