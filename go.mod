@@ -7,7 +7,7 @@ require (
 	github.com/armon/go-metrics v0.4.0
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/cosmos/cosmos-sdk v0.46.1
+	github.com/cosmos/cosmos-sdk v0.46.2-0.20220831122102-a95c62680975
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/ibc-go/v5 v5.0.0-rc0
 	github.com/davecgh/go-spew v1.1.1
@@ -19,8 +19,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
-	github.com/onsi/ginkgo/v2 v2.1.4
-	github.com/onsi/gomega v1.20.0
+	github.com/onsi/ginkgo/v2 v2.1.6
+	github.com/onsi/gomega v1.20.1
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/regen-network/cosmos-proto v0.3.1
@@ -36,7 +36,7 @@ require (
 	golang.org/x/net v0.0.0-20220726230323-06994584191e
 	golang.org/x/text v0.3.7
 	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
 	sigs.k8s.io/yaml v1.3.0
 )
