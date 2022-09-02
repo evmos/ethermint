@@ -101,10 +101,21 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 		err = fmt.Errorf("invalid filter subscription type %d", sub.typ)
 	}
 
+	filter := coretypes.EventFilter{Query: query}
 	defaultAfter := ""
+	defaultMaxItems := 1
 	after := sub.after
-	if err == nil && after == defaultAfter {
-		after = fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), 0)
+	if after == defaultAfter {
+		res, resErr := es.client.Events(ctx, &coretypes.RequestEvents{
+			Filter:   &filter,
+			MaxItems: defaultMaxItems,
+			Before:   fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), 0),
+		})
+		if resErr == nil {
+			after = res.Newest
+		} else {
+			err = resErr
+		}
 	}
 
 	if err != nil {
@@ -124,12 +135,11 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 				return
 
 			default:
-				filter := coretypes.EventFilter{Query: query}
 				res, err := es.client.Events(ctx, &coretypes.RequestEvents{
 					Filter:   &filter,
-					MaxItems: 1,
+					MaxItems: defaultMaxItems,
 					After:    after,
-					WaitTime: 300 * time.Second,
+					WaitTime: 30 * time.Second,
 				})
 				if err != nil {
 					if retry--; retry >= 0 {
