@@ -152,7 +152,11 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 				eventCh <- res
 
 				if len(res.Items) > 0 {
-					after = res.Items[len(res.Items)-1].Cursor
+					if !res.More {
+						after = res.Newest
+					} else {
+						after = res.Items[len(res.Items)-1].Cursor
+					}
 				}
 			}
 		}
