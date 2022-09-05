@@ -17,7 +17,7 @@ import (
 
 // GetCode returns the contract code at the given address and block number.
 func (b *Backend) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) {
-	blockNum, err := b.GetBlockNumber(blockNrOrHash)
+	blockNum, err := b.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -35,17 +35,14 @@ func (b *Backend) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNu
 }
 
 // GetProof returns an account object with proof and any storage proofs
-func (b *Backend) GetProof(address common.Address,
-	storageKeys []string,
-	blockNrOrHash rpctypes.BlockNumberOrHash,
-) (*rpctypes.AccountResult, error) {
-	blockNum, err := b.GetBlockNumber(blockNrOrHash)
+func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNrOrHash rpctypes.BlockNumberOrHash) (*rpctypes.AccountResult, error) {
+	blockNum, err := b.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
 
 	height := blockNum.Int64()
-	_, err = b.GetTendermintBlockByNumber(blockNum)
+	_, err = b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		// the error message imitates geth behavior
 		return nil, errors.New("header not found")
@@ -132,7 +129,7 @@ func (b *Backend) GetProof(address common.Address,
 
 // GetStorageAt returns the contract storage at the given address, block number, and key.
 func (b *Backend) GetStorageAt(address common.Address, key string, blockNrOrHash rpctypes.BlockNumberOrHash) (hexutil.Bytes, error) {
-	blockNum, err := b.GetBlockNumber(blockNrOrHash)
+	blockNum, err := b.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +150,7 @@ func (b *Backend) GetStorageAt(address common.Address, key string, blockNrOrHash
 
 // GetBalance returns the provided account's balance up to the provided block number.
 func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Big, error) {
-	blockNum, err := b.GetBlockNumber(blockNrOrHash)
+	blockNum, err := b.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +159,7 @@ func (b *Backend) GetBalance(address common.Address, blockNrOrHash rpctypes.Bloc
 		Address: address.String(),
 	}
 
-	_, err = b.GetTendermintBlockByNumber(blockNum)
+	_, err = b.TendermintBlockByNumber(blockNum)
 	if err != nil {
 		return nil, err
 	}
