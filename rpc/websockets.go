@@ -186,100 +186,106 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			return
 		}
 
-		var msg map[string]interface{}
-		if err = json.Unmarshal(mb, &msg); err != nil {
-			s.sendErrResponse(wsConn, err.Error())
-			continue
-		}
-
-		// check if method == eth_subscribe or eth_unsubscribe
-		method, ok := msg["method"].(string)
-		if !ok {
-			// otherwise, call the usual rpc server to respond
+		if isBatch(mb) {
 			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
 				s.sendErrResponse(wsConn, err.Error())
 			}
-
-			continue
-		}
-
-		connID, ok := msg["id"].(float64)
-		if !ok {
-			s.sendErrResponse(
-				wsConn,
-				fmt.Errorf("invalid type for connection ID: %T", msg["id"]).Error(),
-			)
-			continue
-		}
-
-		switch method {
-		case "eth_subscribe":
-			params, ok := msg["params"].([]interface{})
-			if !ok {
-				s.sendErrResponse(wsConn, "invalid parameters")
-				continue
-			}
-
-			if len(params) == 0 {
-				s.sendErrResponse(wsConn, "empty parameters")
-				continue
-			}
-
-			subID := rpc.NewID()
-			unsubFn, err := s.api.subscribe(wsConn, subID, params)
-			if err != nil {
+		} else {
+			var msg map[string]interface{}
+			if err = json.Unmarshal(mb, &msg); err != nil {
 				s.sendErrResponse(wsConn, err.Error())
 				continue
 			}
-			subscriptions[subID] = unsubFn
 
-			res := &SubscriptionResponseJSON{
-				Jsonrpc: "2.0",
-				ID:      connID,
-				Result:  subID,
-			}
-
-			if err := wsConn.WriteJSON(res); err != nil {
-				break
-			}
-		case "eth_unsubscribe":
-			params, ok := msg["params"].([]interface{})
+			// check if method == eth_subscribe or eth_unsubscribe
+			method, ok := msg["method"].(string)
 			if !ok {
-				s.sendErrResponse(wsConn, "invalid parameters")
+				// otherwise, call the usual rpc server to respond
+				if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
+					s.sendErrResponse(wsConn, err.Error())
+				}
+
 				continue
 			}
 
-			if len(params) == 0 {
-				s.sendErrResponse(wsConn, "empty parameters")
-				continue
-			}
-
-			id, ok := params[0].(string)
+			connID, ok := msg["id"].(float64)
 			if !ok {
-				s.sendErrResponse(wsConn, "invalid parameters")
+				s.sendErrResponse(
+					wsConn,
+					fmt.Errorf("invalid type for connection ID: %T", msg["id"]).Error(),
+				)
 				continue
 			}
 
-			subID := rpc.ID(id)
-			unsubFn, ok := subscriptions[subID]
-			if ok {
-				delete(subscriptions, subID)
-				unsubFn()
-			}
+			switch method {
+			case "eth_subscribe":
+				params, ok := msg["params"].([]interface{})
+				if !ok {
+					s.sendErrResponse(wsConn, "invalid parameters")
+					continue
+				}
 
-			res := &SubscriptionResponseJSON{
-				Jsonrpc: "2.0",
-				ID:      connID,
-				Result:  ok,
-			}
+				if len(params) == 0 {
+					s.sendErrResponse(wsConn, "empty parameters")
+					continue
+				}
 
-			if err := wsConn.WriteJSON(res); err != nil {
-				break
-			}
-		default:
-			// otherwise, call the usual rpc server to respond
-			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
-				s.sendErrResponse(wsConn, err.Error())
+				subID := rpc.NewID()
+				unsubFn, err := s.api.subscribe(wsConn, subID, params)
+				if err != nil {
+					s.sendErrResponse(wsConn, err.Error())
+					continue
+				}
+				subscriptions[subID] = unsubFn
+
+				res := &SubscriptionResponseJSON{
+					Jsonrpc: "2.0",
+					ID:      connID,
+					Result:  subID,
+				}
+
+				if err := wsConn.WriteJSON(res); err != nil {
+					break
+				}
+			case "eth_unsubscribe":
+				params, ok := msg["params"].([]interface{})
+				if !ok {
+					s.sendErrResponse(wsConn, "invalid parameters")
+					continue
+				}
+
+				if len(params) == 0 {
+					s.sendErrResponse(wsConn, "empty parameters")
+					continue
+				}
+
+				id, ok := params[0].(string)
+				if !ok {
+					s.sendErrResponse(wsConn, "invalid parameters")
+					continue
+				}
+
+				subID := rpc.ID(id)
+				unsubFn, ok := subscriptions[subID]
+				if ok {
+					delete(subscriptions, subID)
+					unsubFn()
+				}
+
+				res := &SubscriptionResponseJSON{
+					Jsonrpc: "2.0",
+					ID:      connID,
+					Result:  ok,
+				}
+
+				if err := wsConn.WriteJSON(res); err != nil {
+					break
+				}
+			default:
+				// otherwise, call the usual rpc server to respond
+				if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
+					s.sendErrResponse(wsConn, err.Error())
+				}
 			}
 		}
 	}
@@ -657,4 +663,17 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID rpc.ID)
 
 func (api *pubSubAPI) subscribeSyncing(wsConn *wsConn, subID rpc.ID) (pubsub.UnsubscribeFunc, error) {
 	return nil, errors.New("syncing subscription is not implemented")
+}
+
+// copy from github.com/ethereum/go-ethereum/rpc/json.go
+// isBatch returns true when the first non-whitespace characters is '['
+func isBatch(raw []byte) bool {
+	for _, c := range raw {
+		// skip insignificant whitespace (http://www.ietf.org/rfc/rfc4627.txt)
+		if c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d {
+			continue
+		}
+		return c == '['
+	}
+	return false
 }
