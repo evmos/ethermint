@@ -104,15 +104,14 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 	filter := coretypes.EventFilter{Query: query}
 	defaultAfter := ""
 	defaultMaxItems := 1
-	after := sub.after
-	if after == defaultAfter {
+	if sub.after == defaultAfter {
 		res, resErr := es.client.Events(ctx, &coretypes.RequestEvents{
 			Filter:   &filter,
 			MaxItems: defaultMaxItems,
 			Before:   fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), 0),
 		})
 		if resErr == nil {
-			after = res.Newest
+			sub.after = res.Newest
 		} else {
 			err = resErr
 		}
@@ -138,7 +137,7 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 				res, err := es.client.Events(ctx, &coretypes.RequestEvents{
 					Filter:   &filter,
 					MaxItems: defaultMaxItems,
-					After:    after,
+					After:    sub.after,
 					WaitTime: 30 * time.Second,
 				})
 				if err != nil {
@@ -149,15 +148,35 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 					return
 				}
 				retry = maxRetry
-				eventCh <- res
 
+				items := res.Items
+				newest := res.Newest
 				if len(res.Items) > 0 {
-					if !res.More {
-						after = res.Newest
-					} else {
-						after = res.Items[len(res.Items)-1].Cursor
+					var before string
+					for res.More {
+						if res != nil {
+							before = res.Items[len(res.Items)-1].Cursor
+						}
+						res, err = es.client.Events(ctx, &coretypes.RequestEvents{
+							Filter:   &filter,
+							MaxItems: 100,
+							After:    sub.after,
+							Before:   before,
+						})
+						if err != nil {
+							if retry--; retry >= 0 {
+								continue
+							}
+							sub.err <- err
+							return
+						}
+						retry = maxRetry
+						items = append(items, res.Items...)
 					}
 				}
+				res.Items = items
+				sub.after = newest
+				eventCh <- res
 			}
 		}
 	}()
