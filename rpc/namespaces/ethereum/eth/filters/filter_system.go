@@ -102,11 +102,12 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 	}
 
 	filter := coretypes.EventFilter{Query: query}
+	defaultFilter := coretypes.EventFilter{Query: ""}
 	defaultAfter := ""
 	defaultMaxItems := 1
 	if sub.after == defaultAfter {
 		res, resErr := es.client.Events(ctx, &coretypes.RequestEvents{
-			Filter:   &filter,
+			Filter:   &defaultFilter,
 			MaxItems: defaultMaxItems,
 			Before:   fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), 0),
 		})
