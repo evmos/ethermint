@@ -2,7 +2,6 @@ package eip712_test
 
 import (
 	"encoding/hex"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -20,37 +19,181 @@ import (
 	"github.com/evmos/ethermint/tests"
 	"github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/stretchr/testify/require"
 )
 
+// Testing Constants
 var chainId = "ethermint_9000-1"
 var ctx = client.Context{}.WithTxConfig(
 	encoding.MakeConfig(app.ModuleBasics).TxConfig,
 )
 var feePayerAddress = "ethm17xpfvakm2amg962yls6f84z3kell8c5lthdzgl"
 
-func initTestConfig() {
-	sdk.GetConfig().SetBech32PrefixForAccount("ethm", "")
+type TestCaseStruct struct {
+	txBuilder              client.TxBuilder
+	expectedFeePayer       string
+	expectedGas            uint64
+	expectedFee            math.Int
+	expectedMemo           string
+	expectedMsg            string
+	expectedSignatureBytes []byte
 }
 
-// Test standard payload preprocessing for Ledger EIP-712-signed transactions
-func TestPreprocessLedger(t *testing.T) {
-	initTestConfig()
+func TestLedgerPreprocessing(t *testing.T) {
+	// Update bech32 prefix
+	sdk.GetConfig().SetBech32PrefixForAccount("ethm", "")
+
+	testCases := []TestCaseStruct{
+		createBasicTestCase(t),
+		createPopulatedTestCase(t),
+	}
+
+	for _, tc := range testCases {
+		// Run pre-processing
+		err := eip712.PreprocessLedgerTx(
+			chainId,
+			keyring.TypeLedger,
+			tc.txBuilder,
+		)
+
+		require.NoError(t, err)
+
+		// Verify Web3 extension matches expected
+		hasExtOptsTx, ok := tc.txBuilder.(ante.HasExtensionOptionsTx)
+		require.True(t, ok)
+		require.True(t, len(hasExtOptsTx.GetExtensionOptions()) == 1)
+
+		expectedExt := types.ExtensionOptionsWeb3Tx{
+			TypedDataChainID: 9000,
+			FeePayer:         feePayerAddress,
+			FeePayerSig:      tc.expectedSignatureBytes,
+		}
+
+		expectedExtAny, err := codectypes.NewAnyWithValue(&expectedExt)
+		require.NoError(t, err)
+
+		actualExtAny := hasExtOptsTx.GetExtensionOptions()[0]
+		require.Equal(t, expectedExtAny, actualExtAny)
+
+		// Verify signature type matches expected
+		signatures, err := tc.txBuilder.GetTx().GetSignaturesV2()
+		require.NoError(t, err)
+		require.Equal(t, len(signatures), 1)
+
+		txSig := signatures[0].Data.(*signing.SingleSignatureData)
+		require.Equal(t, txSig.SignMode, signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON)
+
+		// Verify signature is blank
+		require.Equal(t, len(txSig.Signature), 0)
+
+		// Verify tx fields are unchanged
+		tx := tc.txBuilder.GetTx()
+
+		require.Equal(t, tx.FeePayer().String(), tc.expectedFeePayer)
+		require.Equal(t, tx.GetGas(), tc.expectedGas)
+		require.Equal(t, tx.GetFee().AmountOf(evmtypes.DefaultParams().EvmDenom), tc.expectedFee)
+		require.Equal(t, tx.GetMemo(), tc.expectedMemo)
+
+		// Verify message is unchanged
+		if tc.expectedMsg != "" {
+			require.Equal(t, len(tx.GetMsgs()), 1)
+			require.Equal(t, tx.GetMsgs()[0].String(), tc.expectedMsg)
+		} else {
+			require.Equal(t, len(tx.GetMsgs()), 0)
+		}
+	}
+}
+
+func TestBlankTxBuilder(t *testing.T) {
 	txBuilder := ctx.TxConfig.NewTxBuilder()
+
+	err := eip712.PreprocessLedgerTx(
+		chainId,
+		keyring.TypeLedger,
+		txBuilder,
+	)
+
+	require.Error(t, err)
+}
+
+func TestNonLedgerTxBuilder(t *testing.T) {
+	txBuilder := ctx.TxConfig.NewTxBuilder()
+
+	err := eip712.PreprocessLedgerTx(
+		chainId,
+		keyring.TypeLocal,
+		txBuilder,
+	)
+
+	require.NoError(t, err)
+}
+
+func TestInvalidChainId(t *testing.T) {
+	txBuilder := ctx.TxConfig.NewTxBuilder()
+
+	err := eip712.PreprocessLedgerTx(
+		"invalid-chain-id",
+		keyring.TypeLedger,
+		txBuilder,
+	)
+
+	require.Error(t, err)
+}
+
+func createBasicTestCase(t *testing.T) TestCaseStruct {
+	t.Helper()
+	txBuilder := ctx.TxConfig.NewTxBuilder()
+
+	feePayer, err := sdk.AccAddressFromBech32(feePayerAddress)
+	require.NoError(t, err)
+
+	txBuilder.SetFeePayer(feePayer)
+
+	// Create signature unrelated to payload for testing
+	signatureHex := strings.Repeat("01", 65)
+	signatureBytes, err := hex.DecodeString(signatureHex)
+	require.NoError(t, err)
+
+	_, privKey := tests.NewAddrKey()
+	sigsV2 := signing.SignatureV2{
+		PubKey: privKey.PubKey(), // Use unrelated public key for testing
+		Data: &signing.SingleSignatureData{
+			SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
+			Signature: signatureBytes,
+		},
+		Sequence: 0,
+	}
+
+	txBuilder.SetSignatures(sigsV2)
+	return TestCaseStruct{
+		txBuilder:              txBuilder,
+		expectedFeePayer:       feePayer.String(),
+		expectedGas:            0,
+		expectedFee:            math.NewInt(0),
+		expectedMemo:           "",
+		expectedMsg:            "",
+		expectedSignatureBytes: signatureBytes,
+	}
+}
+
+func createPopulatedTestCase(t *testing.T) TestCaseStruct {
+	t.Helper()
+	basicTestCase := createBasicTestCase(t)
+	txBuilder := basicTestCase.txBuilder
+
+	gasLimit := uint64(200000)
+	memo := ""
+	denom := evmtypes.DefaultParams().EvmDenom
+	feeAmount := math.NewInt(2000)
 
 	txBuilder.SetFeeAmount(sdk.NewCoins(
 		sdk.NewCoin(
-			evmtypes.DefaultParams().EvmDenom,
-			math.NewInt(2000)),
-	))
+			denom,
+			feeAmount,
+		)))
 
-	feePayer, err := sdk.AccAddressFromBech32(feePayerAddress)
-	if err != nil {
-		t.Errorf("Invalid bech32 address: %v", err)
-	}
-
-	txBuilder.SetFeePayer(feePayer)
-	txBuilder.SetGasLimit(200000)
-	txBuilder.SetMemo("")
+	txBuilder.SetGasLimit(gasLimit)
+	txBuilder.SetMemo(memo)
 
 	msgSend := banktypes.MsgSend{
 		FromAddress: feePayerAddress,
@@ -65,237 +208,13 @@ func TestPreprocessLedger(t *testing.T) {
 
 	txBuilder.SetMsgs(&msgSend)
 
-	// Create signature unrelated to payload for testing
-	signatureHex := strings.Repeat("01", 65)
-	signatureBytes, err := hex.DecodeString(signatureHex)
-	if err != nil {
-		t.Errorf("Could not decode hex bytes: %v", err)
-	}
-
-	_, privKey := tests.NewAddrKey()
-	sigsV2 := signing.SignatureV2{
-		PubKey: privKey.PubKey(), // Use unrelated public key for testing
-		Data: &signing.SingleSignatureData{
-			SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
-			Signature: signatureBytes,
-		},
-		Sequence: 0,
-	}
-
-	txBuilder.SetSignatures(sigsV2)
-
-	// Run pre-processing
-	err = eip712.PreprocessLedgerTx(
-		chainId,
-		keyring.TypeLedger,
-		txBuilder,
-	)
-
-	if err != nil {
-		t.Errorf("Could not preprocess Ledger Tx: %v", err)
-	}
-
-	// Verify Web3 Extension
-	hasExtOptsTx, ok := txBuilder.(ante.HasExtensionOptionsTx)
-	if !ok {
-		t.Errorf("Tx does not have extension after preprocessing as Ledger")
-	}
-
-	hasOneExt := len(hasExtOptsTx.GetExtensionOptions()) == 1
-	if !hasOneExt {
-		t.Errorf("Invalid number of extensions, expected 1")
-	}
-
-	expectedExt := types.ExtensionOptionsWeb3Tx{
-		TypedDataChainID: 9000,
-		FeePayer:         feePayerAddress,
-		FeePayerSig:      signatureBytes,
-	}
-
-	expectedExtAny, err := codectypes.NewAnyWithValue(&expectedExt)
-	if err != nil {
-		t.Errorf("Could not decode extension with err: %v", err)
-	}
-
-	extensionAny := hasExtOptsTx.GetExtensionOptions()[0]
-
-	if !reflect.DeepEqual(expectedExtAny, extensionAny) {
-		t.Errorf(
-			"Extension does not match expected:\n Expected: %v\n, Actual: %v\n", expectedExtAny.GetCachedValue(), extensionAny.GetCachedValue(),
-		)
-	}
-
-	// Verify signature type
-	formattedSigs, err := txBuilder.GetTx().GetSignaturesV2()
-	if err != nil {
-		t.Errorf("Could not get signatures from Tx Builder: %v", err)
-	}
-
-	if len(formattedSigs) != 1 {
-		t.Errorf("Invalid number of signatures from Tx Builder, expected 1 but got %v", len(formattedSigs))
-	}
-
-	formattedSig := formattedSigs[0].Data.(*signing.SingleSignatureData)
-	if formattedSig.SignMode != signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON {
-		t.Errorf("Invalid sign mode, expected LEGACY_AMINO_JSON")
-	}
-
-	// Verify signature is blank
-	if len(formattedSig.Signature) != 0 {
-		t.Errorf("Expected blank signature, but got %v", formattedSig)
-	}
-
-	// Verify tx fields are unchanged
-	tx := txBuilder.GetTx()
-
-	if tx.FeePayer().String() != feePayer.String() {
-		t.Errorf("Fee payer changed in Tx Builder")
-	}
-
-	if tx.GetGas() != 200000 {
-		t.Errorf("Gas field changed in Tx Builder")
-	}
-
-	if !reflect.DeepEqual(tx.GetFee().AmountOf(evmtypes.DefaultParams().EvmDenom), math.NewInt(2000)) {
-		t.Errorf("Fee amount changed in Tx Builder")
-	}
-
-	if tx.GetMemo() != "" {
-		t.Errorf("Memo changed in Tx Builder")
-	}
-
-	if len(tx.GetMsgs()) != 1 || tx.GetMsgs()[0].String() != msgSend.String() {
-		t.Errorf("Messages changed in Tx Builder")
-	}
-}
-
-func TestBlankTxBuilder(t *testing.T) {
-	txBuilder := ctx.TxConfig.NewTxBuilder()
-
-	err := eip712.PreprocessLedgerTx(
-		chainId,
-		keyring.TypeLedger,
-		txBuilder,
-	)
-
-	if err == nil {
-		t.Errorf("Expected error preprocessing tx")
-	}
-}
-
-func TestNonLedgerTxBuilder(t *testing.T) {
-	txBuilder := ctx.TxConfig.NewTxBuilder()
-
-	err := eip712.PreprocessLedgerTx(
-		chainId,
-		keyring.TypeLocal,
-		txBuilder,
-	)
-
-	if err != nil {
-		t.Errorf("Expected short-circuit due to non-Ledger tx")
-	}
-}
-
-func TestInvalidChainId(t *testing.T) {
-	txBuilder := ctx.TxConfig.NewTxBuilder()
-
-	err := eip712.PreprocessLedgerTx(
-		"invalid-chain-id",
-		keyring.TypeLedger,
-		txBuilder,
-	)
-
-	if err == nil {
-		t.Errorf("Expected error on invalid chain id")
-	}
-}
-
-// Test preprocessing a tx builder with only signature field and fee payer,
-// which should still work
-func TestMinimalPreprocess(t *testing.T) {
-	initTestConfig()
-	txBuilder := ctx.TxConfig.NewTxBuilder()
-
-	feePayer, err := sdk.AccAddressFromBech32(feePayerAddress)
-	if err != nil {
-		t.Errorf("Invalid bech32 address: %v", err)
-	}
-
-	txBuilder.SetFeePayer(feePayer)
-
-	// Create signature unrelated to payload for testing
-	signatureHex := strings.Repeat("01", 65)
-	signatureBytes, err := hex.DecodeString(signatureHex)
-	if err != nil {
-		t.Errorf("Could not decode hex bytes: %v", err)
-	}
-
-	_, privKey := tests.NewAddrKey()
-	sigsV2 := signing.SignatureV2{
-		PubKey: privKey.PubKey(), // Use unrelated public key for testing
-		Data: &signing.SingleSignatureData{
-			SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
-			Signature: signatureBytes,
-		},
-		Sequence: 0,
-	}
-
-	txBuilder.SetSignatures(sigsV2)
-
-	err = eip712.PreprocessLedgerTx(
-		chainId,
-		keyring.TypeLedger,
-		txBuilder,
-	)
-
-	if err != nil {
-		t.Errorf("Could not preprocess Ledger Tx: %v", err)
-	}
-
-	// Verify Web3 Extension
-	hasExtOptsTx, ok := txBuilder.(ante.HasExtensionOptionsTx)
-	if !ok {
-		t.Errorf("Tx does not have extension after preprocessing as Ledger")
-	}
-
-	hasOneExt := len(hasExtOptsTx.GetExtensionOptions()) == 1
-	if !hasOneExt {
-		t.Errorf("Invalid number of extensions, expected 1")
-	}
-
-	extensionAny := hasExtOptsTx.GetExtensionOptions()[0]
-	extension := extensionAny.GetCachedValue().(*types.ExtensionOptionsWeb3Tx)
-
-	if extension.FeePayer != feePayerAddress {
-		t.Errorf("Expected blank feePayer, got %v", extension.FeePayer)
-	}
-
-	if !reflect.DeepEqual(extension.FeePayerSig, signatureBytes) {
-		t.Errorf("Expected fee payer signature to match")
-	}
-
-	if extension.TypedDataChainID != 9000 {
-		t.Errorf("Expected chain id to match")
-	}
-
-	// Verify signature type
-	formattedSigs, err := txBuilder.GetTx().GetSignaturesV2()
-	if err != nil {
-		t.Errorf("Could not get signatures from Tx Builder: %v", err)
-	}
-
-	if len(formattedSigs) != 1 {
-		t.Errorf("Invalid number of signatures from Tx Builder, expected 1 but got %v", len(formattedSigs))
-	}
-
-	formattedSig := formattedSigs[0].Data.(*signing.SingleSignatureData)
-	if formattedSig.SignMode != signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON {
-		t.Errorf("Invalid sign mode, expected LEGACY_AMINO_JSON")
-	}
-
-	// Verify signature is blank
-	if len(formattedSig.Signature) != 0 {
-		t.Errorf("Expected blank signature, but got %v", formattedSig)
+	return TestCaseStruct{
+		txBuilder:              txBuilder,
+		expectedFeePayer:       basicTestCase.expectedFeePayer,
+		expectedGas:            gasLimit,
+		expectedFee:            feeAmount,
+		expectedMemo:           memo,
+		expectedMsg:            msgSend.String(),
+		expectedSignatureBytes: basicTestCase.expectedSignatureBytes,
 	}
 }
