@@ -31,6 +31,8 @@ var (
 	headerEvents = tmtypes.QueryForEvent(tmtypes.EventNewBlockHeader).String()
 )
 
+const defaultAfter = ""
+
 // EventSystem creates subscriptions, processes events and broadcasts them to the
 // subscription which match the subscription criteria using the Tendermint's RPC client.
 type EventSystem struct {
@@ -103,7 +105,6 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 
 	filter := coretypes.EventFilter{Query: query}
 	defaultFilter := coretypes.EventFilter{Query: ""}
-	defaultAfter := ""
 	defaultMaxItems := 1
 	if sub.after == defaultAfter {
 		res, resErr := es.client.Events(ctx, &coretypes.RequestEvents{
@@ -223,7 +224,7 @@ func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription
 		event:    evmEvents,
 		logsCrit: crit,
 		created:  time.Now().UTC(),
-		after:    "",
+		after:    defaultAfter,
 		err:      make(chan error, 1),
 	}
 	return es.subscribe(sub)
@@ -236,7 +237,7 @@ func (es EventSystem) SubscribeNewHeads() (*Subscription, pubsub.UnsubscribeFunc
 		typ:     filters.BlocksSubscription,
 		event:   headerEvents,
 		created: time.Now().UTC(),
-		after:   "",
+		after:   defaultAfter,
 		err:     make(chan error, 1),
 	}
 	return es.subscribe(sub)
@@ -249,7 +250,7 @@ func (es EventSystem) SubscribePendingTxs() (*Subscription, pubsub.UnsubscribeFu
 		typ:     filters.PendingTransactionsSubscription,
 		event:   txEvents,
 		created: time.Now().UTC(),
-		after:   "",
+		after:   defaultAfter,
 		err:     make(chan error, 1),
 	}
 	return es.subscribe(sub)
