@@ -3,7 +3,6 @@ package filters
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/tendermint/tendermint/libs/log"
@@ -39,18 +38,6 @@ type EventSystem struct {
 	logger log.Logger
 	ctx    context.Context
 	client rpcclient.Client
-
-	// light client mode
-	lightMode bool
-
-	index      filterIndex
-	topicChans map[string]chan<- coretypes.ResultEvent
-	indexMux   *sync.RWMutex
-
-	// Channels
-	install   chan *Subscription // install filter for event notification
-	uninstall chan *Subscription // remove filter for event notification
-	eventBus  pubsub.EventBus
 }
 
 // NewEventSystem creates a new manager that listens for event on the given mux,
@@ -60,22 +47,10 @@ type EventSystem struct {
 // The returned manager has a loop that needs to be stopped with the Stop function
 // or by stopping the given mux.
 func NewEventSystem(logger log.Logger, client rpcclient.Client) *EventSystem {
-	index := make(filterIndex)
-	for i := filters.UnknownSubscription; i < filters.LastIndexSubscription; i++ {
-		index[i] = make(map[rpc.ID]*Subscription)
-	}
-
 	es := &EventSystem{
-		logger:     logger,
-		ctx:        context.Background(),
-		client:     client,
-		lightMode:  false,
-		index:      index,
-		topicChans: make(map[string]chan<- coretypes.ResultEvent, len(index)),
-		indexMux:   new(sync.RWMutex),
-		install:    make(chan *Subscription),
-		uninstall:  make(chan *Subscription),
-		eventBus:   pubsub.NewEventBus(),
+		logger: logger,
+		ctx:    context.Background(),
+		client: client,
 	}
 	return es
 }
@@ -255,5 +230,3 @@ func (es EventSystem) SubscribePendingTxs() (*Subscription, pubsub.UnsubscribeFu
 	}
 	return es.subscribe(sub)
 }
-
-type filterIndex map[filters.Type]map[rpc.ID]*Subscription
