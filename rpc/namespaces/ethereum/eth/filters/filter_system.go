@@ -168,7 +168,9 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 				}
 				res.Items = items
 				sub.after = newest
-				eventCh <- res
+				if ctx.Err() == nil {
+					eventCh <- res
+				}
 			}
 		}
 	}()
