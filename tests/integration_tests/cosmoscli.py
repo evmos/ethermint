@@ -826,3 +826,6 @@ class CosmosCLI:
                 )
             )["base_fee"]
         )
+
+    def rollback(self):
+        self.raw("rollback", home=self.data_dir)
