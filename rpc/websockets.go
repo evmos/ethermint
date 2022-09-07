@@ -190,105 +190,110 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
 				s.sendErrResponse(wsConn, err.Error())
 			}
-		} else {
-			var msg map[string]interface{}
-			if err = json.Unmarshal(mb, &msg); err != nil {
+			continue
+		}
+
+		var msg map[string]interface{}
+		if err = json.Unmarshal(mb, &msg); err != nil {
+			s.sendErrResponse(wsConn, err.Error())
+			continue
+		}
+
+		// check if method == eth_subscribe or eth_unsubscribe
+		method, ok := msg["method"].(string)
+		if !ok {
+			// otherwise, call the usual rpc server to respond
+			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
+				s.sendErrResponse(wsConn, err.Error())
+			}
+
+			continue
+		}
+
+		connID, ok := msg["id"].(float64)
+		if !ok {
+			s.sendErrResponse(
+				wsConn,
+				fmt.Errorf("invalid type for connection ID: %T", msg["id"]).Error(),
+			)
+			continue
+		}
+
+		switch method {
+		case "eth_subscribe":
+			params, ok := s.getParamsAndCheckValid(msg, wsConn)
+			if !ok {
+				continue
+			}
+
+			subID := rpc.NewID()
+			unsubFn, err := s.api.subscribe(wsConn, subID, params)
+			if err != nil {
 				s.sendErrResponse(wsConn, err.Error())
 				continue
 			}
+			subscriptions[subID] = unsubFn
 
-			// check if method == eth_subscribe or eth_unsubscribe
-			method, ok := msg["method"].(string)
+			res := &SubscriptionResponseJSON{
+				Jsonrpc: "2.0",
+				ID:      connID,
+				Result:  subID,
+			}
+
+			if err := wsConn.WriteJSON(res); err != nil {
+				break
+			}
+		case "eth_unsubscribe":
+			params, ok := s.getParamsAndCheckValid(msg, wsConn)
 			if !ok {
-				// otherwise, call the usual rpc server to respond
-				if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
-					s.sendErrResponse(wsConn, err.Error())
-				}
-
 				continue
 			}
 
-			connID, ok := msg["id"].(float64)
+			id, ok := params[0].(string)
 			if !ok {
-				s.sendErrResponse(
-					wsConn,
-					fmt.Errorf("invalid type for connection ID: %T", msg["id"]).Error(),
-				)
+				s.sendErrResponse(wsConn, "invalid parameters")
 				continue
 			}
 
-			switch method {
-			case "eth_subscribe":
-				params, ok := msg["params"].([]interface{})
-				if !ok {
-					s.sendErrResponse(wsConn, "invalid parameters")
-					continue
-				}
+			subID := rpc.ID(id)
+			unsubFn, ok := subscriptions[subID]
+			if ok {
+				delete(subscriptions, subID)
+				unsubFn()
+			}
 
-				if len(params) == 0 {
-					s.sendErrResponse(wsConn, "empty parameters")
-					continue
-				}
+			res := &SubscriptionResponseJSON{
+				Jsonrpc: "2.0",
+				ID:      connID,
+				Result:  ok,
+			}
 
-				subID := rpc.NewID()
-				unsubFn, err := s.api.subscribe(wsConn, subID, params)
-				if err != nil {
-					s.sendErrResponse(wsConn, err.Error())
-					continue
-				}
-				subscriptions[subID] = unsubFn
-
-				res := &SubscriptionResponseJSON{
-					Jsonrpc: "2.0",
-					ID:      connID,
-					Result:  subID,
-				}
-
-				if err := wsConn.WriteJSON(res); err != nil {
-					break
-				}
-			case "eth_unsubscribe":
-				params, ok := msg["params"].([]interface{})
-				if !ok {
-					s.sendErrResponse(wsConn, "invalid parameters")
-					continue
-				}
-
-				if len(params) == 0 {
-					s.sendErrResponse(wsConn, "empty parameters")
-					continue
-				}
-
-				id, ok := params[0].(string)
-				if !ok {
-					s.sendErrResponse(wsConn, "invalid parameters")
-					continue
-				}
-
-				subID := rpc.ID(id)
-				unsubFn, ok := subscriptions[subID]
-				if ok {
-					delete(subscriptions, subID)
-					unsubFn()
-				}
-
-				res := &SubscriptionResponseJSON{
-					Jsonrpc: "2.0",
-					ID:      connID,
-					Result:  ok,
-				}
-
-				if err := wsConn.WriteJSON(res); err != nil {
-					break
-				}
-			default:
-				// otherwise, call the usual rpc server to respond
-				if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
-					s.sendErrResponse(wsConn, err.Error())
-				}
+			if err := wsConn.WriteJSON(res); err != nil {
+				break
+			}
+		default:
+			// otherwise, call the usual rpc server to respond
+			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
+				s.sendErrResponse(wsConn, err.Error())
 			}
 		}
 	}
+}
+
+// tcpGetAndSendResponse sends error response to client if params is invalid
+func (s *websocketsServer) getParamsAndCheckValid(msg map[string]interface{}, wsConn *wsConn) ([]interface{}, bool) {
+	params, ok := msg["params"].([]interface{})
+	if !ok {
+		s.sendErrResponse(wsConn, "invalid parameters")
+		return nil, false
+	}
+
+	if len(params) == 0 {
+		s.sendErrResponse(wsConn, "empty parameters")
+		return nil, false
+	}
+
+	return params, true
 }
 
 // tcpGetAndSendResponse connects to the rest-server over tcp, posts a JSON-RPC request, and sends the response
