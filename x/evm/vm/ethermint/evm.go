@@ -20,6 +20,9 @@ var (
 // EVM is the wrapper for the go-ethereum EVM.
 type EVM struct {
 	*vm.EVM
+
+	// Depth is the current call stack
+	depth int
 }
 
 // NewEVM defines the constructor function for the go-ethereum EVM. It uses the
@@ -103,7 +106,7 @@ func (evm *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 	}
 
 	if isPrecompile {
-		ret, gas, err = evm.RunPrecompiledContract(p, input, gas)
+		ret, gas, err = evm.RunPrecompiledContract(p, addr, input, gas, value)
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
@@ -166,7 +169,7 @@ func (evm *EVM) CallCode(caller vm.ContractRef, addr common.Address, input []byt
 
 	// It is allowed to call precompiles, even via delegatecall
 	if p, isPrecompile := evm.Precompile(addr); isPrecompile {
-		ret, gas, err = evm.RunPrecompiledContract(p, input, gas)
+		ret, gas, err = evm.RunPrecompiledContract(p, addr, input, gas, value)
 	} else {
 		addrCopy := addr
 		// Initialise a new contract and set the code that is to be used by the EVM.
@@ -207,7 +210,7 @@ func (evm *EVM) DelegateCall(caller vm.ContractRef, addr common.Address, input [
 
 	// It is allowed to call precompiles, even via delegatecall
 	if p, isPrecompile := evm.Precompile(addr); isPrecompile {
-		ret, gas, err = evm.RunPrecompiledContract(p, caller.Address(), input, gas, nil)
+		ret, gas, err = evm.RunPrecompiledContract(p, addr, input, gas, nil) // TODO: should value be
 	} else {
 		addrCopy := addr
 		// Initialise a new contract and make initialise the delegate values
