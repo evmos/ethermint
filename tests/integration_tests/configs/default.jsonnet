@@ -2,7 +2,7 @@
   dotenv: '../../../scripts/.env',
   'ethermint_9000-1': {
     cmd: 'ethermintd',
-    'start-flags': '--trace',
+    'start-flags': '--trace --log_level debug',
     config: {
       consensus: {
         // larger timeout for more stable mempool tests

@@ -30,8 +30,6 @@ var (
 	headerEvents = tmtypes.QueryForEvent(tmtypes.EventNewBlockHeader).String()
 )
 
-const defaultAfter = ""
-
 // EventSystem creates subscriptions, processes events and broadcasts them to the
 // subscription which match the subscription criteria using the Tendermint's RPC client.
 type EventSystem struct {
@@ -78,27 +76,12 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 		err = fmt.Errorf("invalid filter subscription type %d", sub.typ)
 	}
 
-	filter := coretypes.EventFilter{Query: query}
-	defaultFilter := coretypes.EventFilter{Query: ""}
-	defaultMaxItems := 1
-	if sub.after == defaultAfter {
-		res, resErr := es.client.Events(ctx, &coretypes.RequestEvents{
-			Filter:   &defaultFilter,
-			MaxItems: defaultMaxItems,
-			Before:   fmt.Sprintf("%016x-%04x", time.Now().UnixNano(), 0),
-		})
-		if resErr == nil {
-			sub.after = res.Newest
-		} else {
-			err = resErr
-		}
-	}
-
 	if err != nil {
 		sub.err <- err
 		return nil, func() { cancelFn() }, err
 	}
 	eventCh := make(chan *coretypes.ResultEvents)
+	filter := coretypes.EventFilter{Query: query}
 	go func() {
 		maxRetry := 3
 		retry := maxRetry
@@ -113,9 +96,10 @@ func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.Unsub
 			default:
 				res, err := es.client.Events(ctx, &coretypes.RequestEvents{
 					Filter:   &filter,
-					MaxItems: defaultMaxItems,
+					MaxItems: 1,
 					After:    sub.after,
 					WaitTime: 30 * time.Second,
+					IsLatest: true,
 				})
 				if err != nil {
 					if retry--; retry >= 0 {
@@ -201,7 +185,6 @@ func (es *EventSystem) subscribeLogs(crit filters.FilterCriteria) (*Subscription
 		event:    evmEvents,
 		logsCrit: crit,
 		created:  time.Now().UTC(),
-		after:    defaultAfter,
 		err:      make(chan error, 1),
 	}
 	return es.subscribe(sub)
@@ -214,7 +197,6 @@ func (es EventSystem) SubscribeNewHeads() (*Subscription, pubsub.UnsubscribeFunc
 		typ:     filters.BlocksSubscription,
 		event:   headerEvents,
 		created: time.Now().UTC(),
-		after:   defaultAfter,
 		err:     make(chan error, 1),
 	}
 	return es.subscribe(sub)
@@ -227,7 +209,6 @@ func (es EventSystem) SubscribePendingTxs() (*Subscription, pubsub.UnsubscribeFu
 		typ:     filters.PendingTransactionsSubscription,
 		event:   txEvents,
 		created: time.Now().UTC(),
-		after:   defaultAfter,
 		err:     make(chan error, 1),
 	}
 	return es.subscribe(sub)
