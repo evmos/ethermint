@@ -509,8 +509,8 @@ schema = 3
     version = "v0.0.0-20220725144611-272f38e5d71b"
     hash = "sha256-/6ELCTRAvCdKnJQohk71UEJobDkAF2Gx09/SDXit6Go="
   [mod."google.golang.org/grpc"]
-    version = "v1.48.0"
-    hash = "sha256-sF2W+L5IHiCO1t/SsHpmht1tPiXJ2RBiiosk+BngfKA="
+    version = "v1.49.0"
+    hash = "sha256-x4+/XjxI2HY8fZYMiEV7Kv+2SrnlmaTJX3tBl+dPUoI="
   [mod."google.golang.org/protobuf"]
     version = "v1.28.1"
     hash = "sha256-sTJYgvlv5is7vHNxcuigF2lNASp0QonhUgnrguhfHSU="
