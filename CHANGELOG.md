@@ -60,6 +60,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
 * (cli) [#1230](https://github.com/evmos/ethermint/pull/1230) Remove redundant positional height parameter from feemarket's query cli.
 * (test) [#1311](https://github.com/evmos/ethermint/pull/1311) add integration test for the rollback cmd
+* (ledger) [#1277](https://github.com/evmos/ethermint/pull/1277) Add Ledger preprocessing transaction hook for EIP-712-signed Cosmos payloads.
 
 ### Bug Fixes
 

@@ -37,7 +37,11 @@ func PreprocessLedgerTx(chainID string, keyType cosmoskr.KeyType, txBuilder clie
 	}
 
 	signature := sigs[0]
-	sigBytes := signature.Data.(*signing.SingleSignatureData).Signature
+	sigData, ok := signature.Data.(*signing.SingleSignatureData)
+	if !ok {
+		return fmt.Errorf("unexpected signature type, expected SingleSignatureData")
+	}
+	sigBytes := sigData.Signature
 
 	// Parse Chain ID as big.Int
 	chainIDInt, err := types.ParseChainID(chainID)
