@@ -446,8 +446,8 @@ schema = 3
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
   [mod."github.com/tendermint/tendermint"]
-    version = "v0.34.21-rc7"
-    hash = "sha256-KuZ6G+tNvVqE7NhBfdRyL188/3XABO9HFKIV2zJk7UE="
+    version = "v0.34.21-rc8"
+    hash = "sha256-/Ah2uK9pOfWC6qHRR/xPXccFjpoK1BM79xc42K240IY="
     replaced = "github.com/mmsqe/tendermint"
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"

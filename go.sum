@@ -768,8 +768,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mitchellh/pointerstructure v1.2.0 h1:O+i9nHnXS3l/9Wu7r4NrEdwA2VFTicjUEN1uBnDo34A=
 github.com/mitchellh/pointerstructure v1.2.0/go.mod h1:BRAsLI5zgXmw97Lf6s25bs8ohIXc3tViBH44KcwB2g4=
-github.com/mmsqe/tendermint v0.34.21-rc7 h1:ra1Ss2Ij42XDqd9M76owI269N0KgOb0IRnubn7/xNPY=
-github.com/mmsqe/tendermint v0.34.21-rc7/go.mod h1:JnQJLTRdLvgoAVgfCWo8C9yNxhB61ZBVlblJJ4kiPrI=
+github.com/mmsqe/tendermint v0.34.21-rc8 h1:pDn23IH5HiAS7RMALDae5WPoNfl8NuEbyVCDveMMWz0=
+github.com/mmsqe/tendermint v0.34.21-rc8/go.mod h1:JnQJLTRdLvgoAVgfCWo8C9yNxhB61ZBVlblJJ4kiPrI=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
