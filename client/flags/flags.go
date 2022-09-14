@@ -1,3 +1,3 @@
 package flags
 
-const FlagFeeDelegation = "--fee-delegation"
+const FlagFeeDelegation = "fee-delegation"

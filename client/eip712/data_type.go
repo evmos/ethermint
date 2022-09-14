@@ -23,7 +23,7 @@ func DataTypeCommand() *cobra.Command {
 If enable '--fee-delegation', it'll add the schema for fee payer.
 
 Example:
-	ethermintd eip712 data-type "/cosmos.bank.v1beta1.MsgSend"
+	ethermintd eip-712 data-type "/cosmos.bank.v1beta1.MsgSend"
 	`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
