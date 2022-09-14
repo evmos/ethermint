@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
@@ -157,4 +158,10 @@ func TestRegisterValidatorAccount(t *testing.T) {
 	res, err := queryClient.ValidatorAccount(rpc.ContextWithHeight(1), &evmtypes.QueryValidatorAccountRequest{})
 	require.Equal(t, &evmtypes.QueryValidatorAccountResponse{AccountAddress: validator.String()}, res)
 	require.NoError(t, err)
+}
+
+// Code
+func RegisterCode(queryClient *mocks.QueryClient, addr common.Address, code []byte) {
+	queryClient.On("Code", rpc.ContextWithHeight(1), &evmtypes.QueryCodeRequest{Address: addr.String()}).
+		Return(&evmtypes.QueryCodeResponse{Code: code}, nil)
 }
