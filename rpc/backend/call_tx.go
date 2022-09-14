@@ -303,6 +303,12 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		GasCap: b.RPCGasCap(),
 	}
 
+	_, err = b.TendermintBlockByNumber(blockNr)
+	if err != nil {
+		// the error message imitates geth behavior
+		return 0, errors.New("header not found")
+	}
+
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
