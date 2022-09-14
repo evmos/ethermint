@@ -166,8 +166,13 @@ func RegisterCode(queryClient *mocks.QueryClient, addr common.Address, code []by
 		Return(&evmtypes.QueryCodeResponse{Code: code}, nil)
 }
 
-// Code
 func RegisterCodeError(queryClient *mocks.QueryClient, addr common.Address) {
 	queryClient.On("Code", rpc.ContextWithHeight(1), &evmtypes.QueryCodeRequest{Address: addr.String()}).
 		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
+// Storage
+func RegisterStorageAt(queryClient *mocks.QueryClient, addr common.Address, key string, storage string) {
+	queryClient.On("Storage", rpc.ContextWithHeight(1), &evmtypes.QueryStorageRequest{Address: addr.String(), Key: key}).
+		Return(&evmtypes.QueryStorageResponse{Value: storage}, nil)
 }

@@ -12,7 +12,6 @@ import (
 )
 
 func (suite *BackendTestSuite) TestGetCode() {
-
 	blockNr := rpctypes.NewBlockNumber(big.NewInt(1))
 	contractCode := []byte("0xef616c92f3cfc9e92dc270d6acff9cea213cecc7020a76ee4395af09bdceb4837a1ebdb5735e11e7d3adb6104e0c3ac55180b4ddf5e54d022cc5e8837f6a4f971b")
 
@@ -64,6 +63,47 @@ func (suite *BackendTestSuite) TestGetCode() {
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expCode, code)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *BackendTestSuite) TestGetStorageAt() {
+	blockNr := rpctypes.NewBlockNumber(big.NewInt(1))
+
+	testCases := []struct {
+		name          string
+		addr          common.Address
+		key           string
+		blockNrOrHash rpctypes.BlockNumberOrHash
+		registerMock  func(common.Address, string, string)
+		expPass       bool
+		expStorage    hexutil.Bytes
+	}{
+		{
+			"pass",
+			tests.GenerateAddress(),
+			"0x0",
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(addr common.Address, key string, storage string) {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterStorageAt(queryClient, addr, key, storage)
+			},
+			true,
+			hexutil.Bytes{0x0},
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
+			tc.registerMock(tc.addr, tc.key, tc.expStorage.String())
+
+			storage, err := suite.backend.GetStorageAt(tc.addr, tc.key, tc.blockNrOrHash)
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().Equal(tc.expStorage, storage)
 			} else {
 				suite.Require().Error(err)
 			}
