@@ -26,7 +26,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		return nil, errors.New("genesis is not traceable")
 	}
 
-	blk, err := b.GetTendermintBlockByNumber(rpctypes.BlockNumber(transaction.Height))
+	blk, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(transaction.Height))
 	if err != nil {
 		b.logger.Debug("block not found", "height", transaction.Height)
 		return nil, err
@@ -113,7 +113,10 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 // traceBlock configures a new tracer according to the provided configuration, and
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requested tracer.
-func (b *Backend) TraceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, block *tmrpctypes.ResultBlock) ([]*evmtypes.TxTraceResult, error) {
+func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
+	config *evmtypes.TraceConfig,
+	block *tmrpctypes.ResultBlock,
+) ([]*evmtypes.TxTraceResult, error) {
 	txs := block.Block.Txs
 	txsLength := len(txs)
 

@@ -62,7 +62,7 @@ func TestKVIndexer(t *testing.T) {
 			"success, format 1",
 			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz}}},
 			[]*abci.ResponseDeliverTx{
-				&abci.ResponseDeliverTx{
+				{
 					Code: 0,
 					Events: []abci.Event{
 						{Type: types.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
@@ -82,7 +82,7 @@ func TestKVIndexer(t *testing.T) {
 			"success, format 2",
 			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz}}},
 			[]*abci.ResponseDeliverTx{
-				&abci.ResponseDeliverTx{
+				{
 					Code: 0,
 					Events: []abci.Event{
 						{Type: types.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
@@ -104,7 +104,7 @@ func TestKVIndexer(t *testing.T) {
 			"success, exceed block gas limit",
 			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz}}},
 			[]*abci.ResponseDeliverTx{
-				&abci.ResponseDeliverTx{
+				{
 					Code:   11,
 					Log:    "out of gas in location: block gas meter; gasWanted: 21000",
 					Events: []abci.Event{},
@@ -116,7 +116,7 @@ func TestKVIndexer(t *testing.T) {
 			"fail, failed eth tx",
 			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz}}},
 			[]*abci.ResponseDeliverTx{
-				&abci.ResponseDeliverTx{
+				{
 					Code:   15,
 					Log:    "nonce mismatch",
 					Events: []abci.Event{},
@@ -128,7 +128,7 @@ func TestKVIndexer(t *testing.T) {
 			"fail, invalid events",
 			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz}}},
 			[]*abci.ResponseDeliverTx{
-				&abci.ResponseDeliverTx{
+				{
 					Code:   0,
 					Events: []abci.Event{},
 				},
@@ -139,7 +139,7 @@ func TestKVIndexer(t *testing.T) {
 			"fail, not eth tx",
 			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz2}}},
 			[]*abci.ResponseDeliverTx{
-				&abci.ResponseDeliverTx{
+				{
 					Code:   0,
 					Events: []abci.Event{},
 				},

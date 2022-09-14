@@ -196,7 +196,6 @@ func (b *Backend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Transac
 			if args.MaxFeePerGas.ToInt().Cmp(args.MaxPriorityFeePerGas.ToInt()) < 0 {
 				return args, fmt.Errorf("maxFeePerGas (%v) < maxPriorityFeePerGas (%v)", args.MaxFeePerGas, args.MaxPriorityFeePerGas)
 			}
-
 		} else {
 			if args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil {
 				return args, errors.New("maxFeePerGas or maxPriorityFeePerGas specified but london is not active yet")
@@ -361,4 +360,33 @@ func (b *Backend) DoCall(
 	}
 
 	return res, nil
+}
+
+// GasPrice returns the current gas price based on Ethermint's gas price oracle.
+func (b *Backend) GasPrice() (*hexutil.Big, error) {
+	var (
+		result *big.Int
+		err    error
+	)
+	if head := b.CurrentHeader(); head.BaseFee != nil {
+		result, err = b.SuggestGasTipCap(head.BaseFee)
+		if err != nil {
+			return nil, err
+		}
+		result = result.Add(result, head.BaseFee)
+	} else {
+		result = big.NewInt(b.RPCMinGasPrice())
+	}
+
+	// return at least GlobalMinGasPrice from FeeMarket module
+	minGasPrice, err := b.GlobalMinGasPrice()
+	if err != nil {
+		return nil, err
+	}
+	minGasPriceInt := minGasPrice.TruncateInt().BigInt()
+	if result.Cmp(minGasPriceInt) < 0 {
+		result = minGasPriceInt
+	}
+
+	return (*hexutil.Big)(result), nil
 }
