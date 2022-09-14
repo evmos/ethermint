@@ -35,7 +35,7 @@ type JournalEntry interface {
 }
 
 // journal contains the list of state modifications applied since the last state
-// commit. These are tracked to be able to be Reverted in the case of an execution
+// commit. These are tracked to be able to be reverted in the case of an execution
 // exception or request for reversal.
 type journal struct {
 	entries []JournalEntry         // Current changes tracked by the journal
