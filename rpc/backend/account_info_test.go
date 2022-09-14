@@ -14,7 +14,7 @@ import (
 func (suite *BackendTestSuite) TestGetCode() {
 
 	blockNr := rpctypes.NewBlockNumber(big.NewInt(1))
-	contract := []byte("0xef616c92f3cfc9e92dc270d6acff9cea213cecc7020a76ee4395af09bdceb4837a1ebdb5735e11e7d3adb6104e0c3ac55180b4ddf5e54d022cc5e8837f6a4f971b")
+	contractCode := []byte("0xef616c92f3cfc9e92dc270d6acff9cea213cecc7020a76ee4395af09bdceb4837a1ebdb5735e11e7d3adb6104e0c3ac55180b4ddf5e54d022cc5e8837f6a4f971b")
 
 	testCases := []struct {
 		name          string
@@ -25,15 +25,34 @@ func (suite *BackendTestSuite) TestGetCode() {
 		expCode       hexutil.Bytes
 	}{
 		{
+			"fail - BlockHash and BlockNumber are both nil ",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{},
+			func(addr common.Address) {},
+			false,
+			nil,
+		},
+		{
+			"fail - query client errors on getting Code",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(addr common.Address) {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterCodeError(queryClient, addr)
+			},
+			false,
+			nil,
+		},
+		{
 			"pass",
 			tests.GenerateAddress(),
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
 			func(addr common.Address) {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-				RegisterCode(queryClient, addr, contract)
+				RegisterCode(queryClient, addr, contractCode)
 			},
 			true,
-			contract,
+			contractCode,
 		},
 	}
 	for _, tc := range testCases {

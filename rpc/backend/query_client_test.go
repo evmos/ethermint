@@ -165,3 +165,9 @@ func RegisterCode(queryClient *mocks.QueryClient, addr common.Address, code []by
 	queryClient.On("Code", rpc.ContextWithHeight(1), &evmtypes.QueryCodeRequest{Address: addr.String()}).
 		Return(&evmtypes.QueryCodeResponse{Code: code}, nil)
 }
+
+// Code
+func RegisterCodeError(queryClient *mocks.QueryClient, addr common.Address) {
+	queryClient.On("Code", rpc.ContextWithHeight(1), &evmtypes.QueryCodeRequest{Address: addr.String()}).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
