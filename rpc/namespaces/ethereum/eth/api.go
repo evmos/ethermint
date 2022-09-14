@@ -2,7 +2,6 @@ package eth
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
@@ -34,6 +33,8 @@ type EthereumAPI interface {
 	BlockNumber() (hexutil.Uint64, error)
 	GetBlockByNumber(ethBlockNum rpctypes.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
+	GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
+	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
 
 	// Reading Transactions
 	//
@@ -42,8 +43,6 @@ type EthereumAPI interface {
 	GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransaction, error)
 	GetTransactionCount(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error)
 	GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error)
-	GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
-	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
 	GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	// eth_getBlockReceipts
@@ -123,10 +122,7 @@ type PublicAPI struct {
 }
 
 // NewPublicAPI creates an instance of the public ETH Web3 API.
-func NewPublicAPI(
-	logger log.Logger,
-	backend backend.EVMBackend,
-) *PublicAPI {
+func NewPublicAPI(logger log.Logger, backend backend.EVMBackend) *PublicAPI {
 	api := &PublicAPI{
 		ctx:     context.Background(),
 		logger:  logger.With("client", "json-rpc"),
@@ -171,7 +167,7 @@ func (e *PublicAPI) GetTransactionByHash(hash common.Hash) (*rpctypes.RPCTransac
 // GetTransactionCount returns the number of transactions at the given address up to the given block number.
 func (e *PublicAPI) GetTransactionCount(address common.Address, blockNrOrHash rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error) {
 	e.logger.Debug("eth_getTransactionCount", "address", address.Hex(), "block number or hash", blockNrOrHash)
-	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -182,21 +178,18 @@ func (e *PublicAPI) GetTransactionCount(address common.Address, blockNrOrHash rp
 func (e *PublicAPI) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	hexTx := hash.Hex()
 	e.logger.Debug("eth_getTransactionReceipt", "hash", hexTx)
-
 	return e.backend.GetTransactionReceipt(hash)
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions in the block identified by hash.
 func (e *PublicAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
 	e.logger.Debug("eth_getBlockTransactionCountByHash", "hash", hash.Hex())
-
 	return e.backend.GetBlockTransactionCountByHash(hash)
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block identified by number.
 func (e *PublicAPI) GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint {
 	e.logger.Debug("eth_getBlockTransactionCountByNumber", "height", blockNum.Int64())
-
 	return e.backend.GetBlockTransactionCountByNumber(blockNum)
 }
 
@@ -209,19 +202,7 @@ func (e *PublicAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexu
 // GetTransactionByBlockNumberAndIndex returns the transaction identified by number and index.
 func (e *PublicAPI) GetTransactionByBlockNumberAndIndex(blockNum rpctypes.BlockNumber, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	e.logger.Debug("eth_getTransactionByBlockNumberAndIndex", "number", blockNum, "index", idx)
-
-	block, err := e.backend.GetTendermintBlockByNumber(blockNum)
-	if err != nil {
-		e.logger.Debug("block not found", "height", blockNum.Int64(), "error", err.Error())
-		return nil, nil
-	}
-
-	if block.Block == nil {
-		e.logger.Debug("block not found", "height", blockNum.Int64())
-		return nil, nil
-	}
-
-	return e.backend.GetTransactionByBlockAndIndex(block, idx)
+	return e.backend.GetTransactionByBlockNumberAndIndex(blockNum, idx)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -288,7 +269,7 @@ func (e *PublicAPI) Call(args evmtypes.TransactionArgs,
 ) (hexutil.Bytes, error) {
 	e.logger.Debug("eth_call", "args", args.String(), "block number or hash", blockNrOrHash)
 
-	blockNum, err := e.backend.GetBlockNumber(blockNrOrHash)
+	blockNum, err := e.backend.BlockNumberFromTendermint(blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -303,10 +284,10 @@ func (e *PublicAPI) Call(args evmtypes.TransactionArgs,
 ///////////////////////////////////////////////////////////////////////////////
 ///                           Event Logs													          ///
 ///////////////////////////////////////////////////////////////////////////////
-// FILTER API
+// FILTER API at ./filters/api.go
 
 ///////////////////////////////////////////////////////////////////////////////
-///                           Chain Information													          ///
+///                           Chain Information										          ///
 ///////////////////////////////////////////////////////////////////////////////
 
 // ProtocolVersion returns the supported Ethereum protocol version.
@@ -318,31 +299,7 @@ func (e *PublicAPI) ProtocolVersion() hexutil.Uint {
 // GasPrice returns the current gas price based on Ethermint's gas price oracle.
 func (e *PublicAPI) GasPrice() (*hexutil.Big, error) {
 	e.logger.Debug("eth_gasPrice")
-	var (
-		result *big.Int
-		err    error
-	)
-	if head := e.backend.CurrentHeader(); head.BaseFee != nil {
-		result, err = e.backend.SuggestGasTipCap(head.BaseFee)
-		if err != nil {
-			return nil, err
-		}
-		result = result.Add(result, head.BaseFee)
-	} else {
-		result = big.NewInt(e.backend.RPCMinGasPrice())
-	}
-
-	// return at least GlobalMinGasPrice from FeeMarket module
-	minGasPrice, err := e.backend.GlobalMinGasPrice()
-	if err != nil {
-		return nil, err
-	}
-	minGasPriceInt := minGasPrice.TruncateInt().BigInt()
-	if result.Cmp(minGasPriceInt) < 0 {
-		result = minGasPriceInt
-	}
-
-	return (*hexutil.Big)(result), nil
+	return e.backend.GasPrice()
 }
 
 // EstimateGas returns an estimate of gas usage for the given smart contract call.
@@ -466,7 +423,7 @@ func (e *PublicAPI) GetTransactionLogs(txHash common.Hash) ([]*ethtypes.Log, err
 		return nil, nil
 	}
 
-	resBlockResult, err := e.backend.GetTendermintBlockResultByNumber(&res.Height)
+	resBlockResult, err := e.backend.TendermintBlockResultByNumber(&res.Height)
 	if err != nil {
 		e.logger.Debug("block result not found", "number", res.Height, "error", err.Error())
 		return nil, nil
