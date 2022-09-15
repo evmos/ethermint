@@ -328,6 +328,9 @@ test-import:
 test-rpc:
 	./scripts/integration-test-all.sh -t "rpc" -q 1 -z 1 -s 2 -m "rpc" -r "true"
 
+test-ws:
+	./scripts/integration-test-all.sh -t "ethws" -q 1 -z 1 -s 5 -m "ethws" -r "true"
+
 test-integration:
 	./scripts/integration-test-all.sh -t "integration" -q 1 -z 1 -s 2 -m "integration" -r "true"
 
