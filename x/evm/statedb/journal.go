@@ -24,21 +24,21 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// journalEntry is a modification entry in the state change journal that can be
-// reverted on demand.
-type journalEntry interface {
-	// revert undoes the changes introduced by this journal entry.
-	revert(*StateDB)
+// JournalEntry is a modification entry in the state change journal that can be
+// Reverted on demand.
+type JournalEntry interface {
+	// Revert undoes the changes introduced by this journal entry.
+	Revert(*StateDB)
 
-	// dirtied returns the Ethereum address modified by this journal entry.
-	dirtied() *common.Address
+	// Dirtied returns the Ethereum address modified by this journal entry.
+	Dirtied() *common.Address
 }
 
 // journal contains the list of state modifications applied since the last state
 // commit. These are tracked to be able to be reverted in the case of an execution
 // exception or request for reversal.
 type journal struct {
-	entries []journalEntry         // Current changes tracked by the journal
+	entries []JournalEntry         // Current changes tracked by the journal
 	dirties map[common.Address]int // Dirty accounts and the number of changes
 }
 
@@ -64,22 +64,22 @@ func (j *journal) sortedDirties() []common.Address {
 }
 
 // append inserts a new modification entry to the end of the change journal.
-func (j *journal) append(entry journalEntry) {
+func (j *journal) append(entry JournalEntry) {
 	j.entries = append(j.entries, entry)
-	if addr := entry.dirtied(); addr != nil {
+	if addr := entry.Dirtied(); addr != nil {
 		j.dirties[*addr]++
 	}
 }
 
-// revert undoes a batch of journalled modifications along with any reverted
+// Revert undoes a batch of journalled modifications along with any Reverted
 // dirty handling too.
-func (j *journal) revert(statedb *StateDB, snapshot int) {
+func (j *journal) Revert(statedb *StateDB, snapshot int) {
 	for i := len(j.entries) - 1; i >= snapshot; i-- {
 		// Undo the changes made by the operation
-		j.entries[i].revert(statedb)
+		j.entries[i].Revert(statedb)
 
 		// Drop any dirty tracking induced by the change
-		if addr := j.entries[i].dirtied(); addr != nil {
+		if addr := j.entries[i].Dirtied(); addr != nil {
 			if j.dirties[*addr]--; j.dirties[*addr] == 0 {
 				delete(j.dirties, *addr)
 			}
@@ -141,23 +141,23 @@ type (
 	}
 )
 
-func (ch createObjectChange) revert(s *StateDB) {
+func (ch createObjectChange) Revert(s *StateDB) {
 	delete(s.stateObjects, *ch.account)
 }
 
-func (ch createObjectChange) dirtied() *common.Address {
+func (ch createObjectChange) Dirtied() *common.Address {
 	return ch.account
 }
 
-func (ch resetObjectChange) revert(s *StateDB) {
+func (ch resetObjectChange) Revert(s *StateDB) {
 	s.setStateObject(ch.prev)
 }
 
-func (ch resetObjectChange) dirtied() *common.Address {
+func (ch resetObjectChange) Dirtied() *common.Address {
 	return nil
 }
 
-func (ch suicideChange) revert(s *StateDB) {
+func (ch suicideChange) Revert(s *StateDB) {
 	obj := s.getStateObject(*ch.account)
 	if obj != nil {
 		obj.suicided = ch.prev
@@ -165,59 +165,59 @@ func (ch suicideChange) revert(s *StateDB) {
 	}
 }
 
-func (ch suicideChange) dirtied() *common.Address {
+func (ch suicideChange) Dirtied() *common.Address {
 	return ch.account
 }
 
-func (ch balanceChange) revert(s *StateDB) {
+func (ch balanceChange) Revert(s *StateDB) {
 	s.getStateObject(*ch.account).setBalance(ch.prev)
 }
 
-func (ch balanceChange) dirtied() *common.Address {
+func (ch balanceChange) Dirtied() *common.Address {
 	return ch.account
 }
 
-func (ch nonceChange) revert(s *StateDB) {
+func (ch nonceChange) Revert(s *StateDB) {
 	s.getStateObject(*ch.account).setNonce(ch.prev)
 }
 
-func (ch nonceChange) dirtied() *common.Address {
+func (ch nonceChange) Dirtied() *common.Address {
 	return ch.account
 }
 
-func (ch codeChange) revert(s *StateDB) {
+func (ch codeChange) Revert(s *StateDB) {
 	s.getStateObject(*ch.account).setCode(common.BytesToHash(ch.prevhash), ch.prevcode)
 }
 
-func (ch codeChange) dirtied() *common.Address {
+func (ch codeChange) Dirtied() *common.Address {
 	return ch.account
 }
 
-func (ch storageChange) revert(s *StateDB) {
+func (ch storageChange) Revert(s *StateDB) {
 	s.getStateObject(*ch.account).setState(ch.key, ch.prevalue)
 }
 
-func (ch storageChange) dirtied() *common.Address {
+func (ch storageChange) Dirtied() *common.Address {
 	return ch.account
 }
 
-func (ch refundChange) revert(s *StateDB) {
+func (ch refundChange) Revert(s *StateDB) {
 	s.refund = ch.prev
 }
 
-func (ch refundChange) dirtied() *common.Address {
+func (ch refundChange) Dirtied() *common.Address {
 	return nil
 }
 
-func (ch addLogChange) revert(s *StateDB) {
+func (ch addLogChange) Revert(s *StateDB) {
 	s.logs = s.logs[:len(s.logs)-1]
 }
 
-func (ch addLogChange) dirtied() *common.Address {
+func (ch addLogChange) Dirtied() *common.Address {
 	return nil
 }
 
-func (ch accessListAddAccountChange) revert(s *StateDB) {
+func (ch accessListAddAccountChange) Revert(s *StateDB) {
 	/*
 		One important invariant here, is that whenever a (addr, slot) is added, if the
 		addr is not already present, the add causes two journal entries:
@@ -230,14 +230,14 @@ func (ch accessListAddAccountChange) revert(s *StateDB) {
 	s.accessList.DeleteAddress(*ch.address)
 }
 
-func (ch accessListAddAccountChange) dirtied() *common.Address {
+func (ch accessListAddAccountChange) Dirtied() *common.Address {
 	return nil
 }
 
-func (ch accessListAddSlotChange) revert(s *StateDB) {
+func (ch accessListAddSlotChange) Revert(s *StateDB) {
 	s.accessList.DeleteSlot(*ch.address, *ch.slot)
 }
 
-func (ch accessListAddSlotChange) dirtied() *common.Address {
+func (ch accessListAddSlotChange) Dirtied() *common.Address {
 	return nil
 }
