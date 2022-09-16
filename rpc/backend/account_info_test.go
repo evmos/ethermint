@@ -83,6 +83,27 @@ func (suite *BackendTestSuite) TestGetStorageAt() {
 		expStorage    hexutil.Bytes
 	}{
 		{
+			"fail - BlockHash and BlockNumber are both nil",
+			tests.GenerateAddress(),
+			"0x0",
+			rpctypes.BlockNumberOrHash{},
+			func(addr common.Address, key string, storage string) {},
+			false,
+			nil,
+		},
+		{
+			"fail - query client errors on getting Storage",
+			tests.GenerateAddress(),
+			"0x0",
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(addr common.Address, key string, storage string) {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterStorageAtError(queryClient, addr, key)
+			},
+			false,
+			nil,
+		},
+		{
 			"pass",
 			tests.GenerateAddress(),
 			"0x0",
@@ -92,7 +113,7 @@ func (suite *BackendTestSuite) TestGetStorageAt() {
 				RegisterStorageAt(queryClient, addr, key, storage)
 			},
 			true,
-			hexutil.Bytes{0x0},
+			hexutil.Bytes{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		},
 	}
 	for _, tc := range testCases {
