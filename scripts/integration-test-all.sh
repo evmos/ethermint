@@ -160,21 +160,9 @@ if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
 
     for i in $(seq 1 "$TEST_QTD"); do
         HOST_RPC=http://$IP_ADDR:$RPC_PORT"$i"
-        echo "going to test ethermint node $HOST_RPC ..."
-        MODE=$MODE HOST=$HOST_RPC go test ./tests/rpc/... -timeout=$time_out -v -short
-
-        TEST_FAIL=$?
-    done
-fi
-
-# Ethereum JSONRPC Websocket
-if [[ $TEST == "ethws" ]]; then
-    time_out=300s
-
-    for i in $(seq 1 "$TEST_QTD"); do
         HOST_WS=$IP_ADDR:$WS_PORT"$i"
-        echo "going to test ethermint websocket $HOST_WS ..."
-        MODE=$MODE HOST=$HOST_WS go test ./tests/ws/... -timeout=$time_out -v -short
+        echo "going to test ethermint node rpc=$HOST_RPC ws=$HOST_WS ..."
+        MODE=$MODE HOST=$HOST_RPC HOST_WS=$HOST_WS go test ./tests/rpc/... -run "^TestWs" -timeout=$time_out -v -short
 
         TEST_FAIL=$?
     done
@@ -198,7 +186,7 @@ for i in "${arr[@]}"; do
     stop_func "$i"
 done
 
-if [[ (-z $TEST || $TEST == "rpc" || $TEST == "integration" || $TEST == "ethws" ) && $TEST_FAIL -ne 0 ]]; then
+if [[ (-z $TEST || $TEST == "rpc" || $TEST == "integration" ) && $TEST_FAIL -ne 0 ]]; then
     exit $TEST_FAIL
 else
     exit 0
