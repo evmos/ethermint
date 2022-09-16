@@ -3,7 +3,18 @@ package statedb
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 )
+
+// ExtStateDB defines an extension to the interface provided by the go-ethereum
+// codebase to support additional state transition functionalities. In particular
+// it supports appending a new entry to the state journal through
+// AppendJournalEntry so that the state can be reverted after running
+// stateful precompiled contracts.
+type ExtStateDB interface {
+	vm.StateDB
+	AppendJournalEntry(JournalEntry)
+}
 
 // Keeper provide underlying storage of StateDB
 type Keeper interface {
