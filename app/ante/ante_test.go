@@ -4,11 +4,13 @@ import (
 	"errors"
 	"math/big"
 	"strings"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -16,6 +18,8 @@ import (
 	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
+
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {
@@ -319,6 +323,81 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(100*int64(gas)))
 				amount := sdk.NewCoins(coinAmount)
 				txBuilder := suite.CreateTestEIP712TxBuilderMsgDelegate(from, privKey, "ethermint_9000-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 create validator",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				amount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712MsgCreateValidator(from, privKey, "ethermint_9000-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 MsgSubmitProposal",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				gasAmount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				//reusing the gasAmount for deposit
+				deposit := sdk.NewCoins(coinAmount)
+				txBuilder := suite.CreateTestEIP712SubmitProposal(from, privKey, "ethermint_9000-1", gas, gasAmount, deposit)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 MsgGrant",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				grantee := sdk.AccAddress("_______grantee______")
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				gasAmount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				blockTime := time.Date(1, 1, 1, 1, 1, 1, 1, time.UTC)
+				expiresAt := blockTime.Add(time.Hour)
+				msg, err := authz.NewMsgGrant(
+					from, grantee, &banktypes.SendAuthorization{SpendLimit: gasAmount}, &expiresAt,
+				)
+				suite.Require().NoError(err)
+				return suite.CreateTestEIP712CosmosTxBuilder(from, privKey, "ethermint_9000-1", gas, gasAmount, msg).GetTx()
+			}, false, false, true,
+		},
+
+		{
+			"success- DeliverTx EIP712 MsgGrantAllowance",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				gasAmount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712GrantAllowance(from, privKey, "ethermint_9000-1", gas, gasAmount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 edit validator",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				amount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712MsgEditValidator(from, privKey, "ethermint_9000-1", gas, amount)
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"success- DeliverTx EIP712 submit evidence",
+			func() sdk.Tx {
+				from := acc.GetAddress()
+				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+				amount := sdk.NewCoins(coinAmount)
+				gas := uint64(200000)
+				txBuilder := suite.CreateTestEIP712MsgEditValidator(from, privKey, "ethermint_9000-1", gas, amount)
 				return txBuilder.GetTx()
 			}, false, false, true,
 		},
