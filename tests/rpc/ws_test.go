@@ -97,20 +97,7 @@ func TestWsEth_subscribe_newHeads(t *testing.T) {
 	_, ok = msg["id"].(uint32)
 	require.False(t, ok)
 
-	// eth_unsubscribe
-	log.Printf("eth_unsubscribe %s", subscribeId)
-	err = wc.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"id":1,"method":"eth_unsubscribe","params":["%s"]}`, subscribeId)))
-	require.NoError(t, err)
-
-	time.Sleep(1 * time.Second)
-	_, mb, err = wc.ReadMessage()
-	require.NoError(t, err)
-	log.Printf("recv: %s", mb)
-	err = json.Unmarshal(mb, &msg)
-	require.NoError(t, err)
-	result, ok := msg["result"].(bool)
-	require.True(t, ok)
-	require.True(t, result)
+	wsUnsubscribe(t, wc, subscribeId) // eth_unsubscribe
 }
 
 func TestWsEth_subscribe_log(t *testing.T) {
@@ -153,15 +140,19 @@ func TestWsEth_subscribe_log(t *testing.T) {
 	_, ok = msg["id"].(uint32)
 	require.False(t, ok)
 
-	// eth_unsubscribe
+	wsUnsubscribe(t, wc, subscribeId) // eth_unsubscribe
+}
+
+func wsUnsubscribe(t *testing.T, wc *websocket.Conn, subscribeId string) {
 	log.Printf("eth_unsubscribe %s", subscribeId)
-	err = wc.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"id":1,"method":"eth_unsubscribe","params":["%s"]}`, subscribeId)))
+	err := wc.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"id":1,"method":"eth_unsubscribe","params":["%s"]}`, subscribeId)))
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
-	_, mb, err = wc.ReadMessage()
+	_, mb, err := wc.ReadMessage()
 	require.NoError(t, err)
 	log.Printf("recv: %s", mb)
+	var msg map[string]interface{}
 	err = json.Unmarshal(mb, &msg)
 	require.NoError(t, err)
 	result, ok := msg["result"].(bool)

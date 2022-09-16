@@ -162,7 +162,7 @@ if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
         HOST_RPC=http://$IP_ADDR:$RPC_PORT"$i"
         HOST_WS=$IP_ADDR:$WS_PORT"$i"
         echo "going to test ethermint node rpc=$HOST_RPC ws=$HOST_WS ..."
-        MODE=$MODE HOST=$HOST_RPC HOST_WS=$HOST_WS go test ./tests/rpc/... -run "^TestWs" -timeout=$time_out -v -short
+        MODE=$MODE HOST=$HOST_RPC HOST_WS=$HOST_WS go test ./tests/rpc/... -timeout=$time_out -v -short
 
         TEST_FAIL=$?
     done
