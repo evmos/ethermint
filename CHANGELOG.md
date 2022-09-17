@@ -44,6 +44,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (deps) [#1167](https://github.com/evmos/ethermint/pull/1167) Bump ibc-go to [`v4.0.0-rc2`](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0-rc2)
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to `v0.46`.
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
+* (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
 
 ### API Breaking
 
