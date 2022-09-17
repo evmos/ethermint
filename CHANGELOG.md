@@ -63,6 +63,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
+* (rpc) [#1340](https://github.com/evmos/ethermint/pull/1340) Fix error response when `eth_estimateGas` height provided is not found.
 
 ## [v0.19.2] - 2022-08-29
 
