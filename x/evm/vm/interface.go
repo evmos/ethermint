@@ -32,12 +32,26 @@ type EVM interface {
 	DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error)
 	StaticCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error)
 	Create(caller vm.ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error)
-	Create2(caller vm.ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error)
+	Create2(
+		caller vm.ContractRef,
+		code []byte,
+		gas uint64,
+		endowment *big.Int,
+		salt *uint256.Int) (
+		ret []byte, contractAddr common.Address, leftOverGas uint64, err error,
+	)
 	ChainConfig() *params.ChainConfig
 
 	ActivePrecompiles(rules params.Rules) []common.Address
 	Precompile(addr common.Address) (vm.PrecompiledContract, bool)
-	RunPrecompiledContract(p vm.PrecompiledContract, addr common.Address, input []byte, suppliedGas uint64, value *big.Int) (ret []byte, remainingGas uint64, err error)
+	RunPrecompiledContract(
+		p StatefulPrecompiledContract,
+		addr common.Address,
+		input []byte,
+		suppliedGas uint64,
+		value *big.Int) (
+		ret []byte, remainingGas uint64, err error,
+	)
 }
 
 // Constructor defines the function used to instantiate the EVM on

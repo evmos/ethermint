@@ -21,7 +21,13 @@ import (
 )
 
 // AddCommands adds server commands
-func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator types.AppCreator, appExport types.AppExporter, addStartFlags types.ModuleInitFlags) {
+func AddCommands(
+	rootCmd *cobra.Command,
+	defaultNodeHome string,
+	appCreator types.AppCreator,
+	appExport types.AppExporter,
+	addStartFlags types.ModuleInitFlags,
+) {
 	tendermintCmd := &cobra.Command{
 		Use:   "tendermint",
 		Short: "Tendermint subcommands",
@@ -44,7 +50,7 @@ func AddCommands(rootCmd *cobra.Command, defaultNodeHome string, appCreator type
 		tendermintCmd,
 		sdkserver.ExportCmd(appExport, defaultNodeHome),
 		version.NewVersionCommand(),
-		sdkserver.NewRollbackCmd(defaultNodeHome),
+		sdkserver.NewRollbackCmd(appCreator, defaultNodeHome),
 
 		// custom tx indexer command
 		NewIndexTxCmd(),
@@ -86,7 +92,6 @@ func MountGRPCWebServices(
 	logger tmlog.Logger,
 ) {
 	for _, res := range grpcResources {
-
 		logger.Info("[GRPC Web] HTTP POST mounted", "resource", res)
 
 		s := router.Methods("POST").Subrouter()
