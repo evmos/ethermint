@@ -313,6 +313,8 @@ def test_estimate_gas(ethermint, geth):
     eth_rpc = ethermint.w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_estimateGas", [tx])
+    make_same_rpc_calls(eth_rpc, geth_rpc, "eth_estimateGas", [tx, "0x0"])
+    make_same_rpc_calls(eth_rpc, geth_rpc, "eth_estimateGas", [tx, "0x5000"])
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_estimateGas", [{}])
 
 
