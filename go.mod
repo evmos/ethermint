@@ -11,6 +11,7 @@ require (
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/ibc-go/v5 v5.0.0
 	github.com/davecgh/go-spew v1.1.1
+	github.com/deckarep/golang-set v1.8.0
 	github.com/ethereum/go-ethereum v1.10.19
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
@@ -39,8 +40,11 @@ require (
 	google.golang.org/genproto v0.0.0-20220815135757-37a418bb8959
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
+	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 	sigs.k8s.io/yaml v1.3.0
 )
+
+require github.com/gin-gonic/gin v1.7.4 // indirect
 
 require (
 	cloud.google.com/go v0.102.1 // indirect
@@ -75,7 +79,6 @@ require (
 	github.com/cosmos/ledger-go v0.9.2 // indirect
 	github.com/creachadair/taskgroup v0.3.2 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
-	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
@@ -157,7 +160,6 @@ require (
 	github.com/rs/zerolog v1.27.0 // indirect
 	github.com/sasha-s/go-deadlock v0.2.1-0.20190427202633-1595213edefa // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
-	github.com/slok/go-http-metrics v0.10.0
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

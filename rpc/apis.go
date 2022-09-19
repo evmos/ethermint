@@ -8,8 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 
-	"github.com/ethereum/go-ethereum/rpc"
-
 	"github.com/evmos/ethermint/rpc/backend"
 	"github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
 	"github.com/evmos/ethermint/rpc/namespaces/ethereum/eth"
@@ -50,7 +48,7 @@ type APICreator = func(
 	tendermintWebsocketClient *rpcclient.WSClient,
 	allowUnprotectedTxs bool,
 	indexer ethermint.EVMTxIndexer,
-) []rpc.API
+) []API
 
 // apiCreators defines the JSON-RPC API namespaces.
 var apiCreators map[string]APICreator
@@ -62,9 +60,9 @@ func init() {
 			tmWSClient *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
-		) []rpc.API {
+		) []API {
 			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
-			return []rpc.API{
+			return []API{
 				{
 					Namespace: EthNamespace,
 					Version:   apiVersion,
@@ -79,8 +77,8 @@ func init() {
 				},
 			}
 		},
-		Web3Namespace: func(*server.Context, client.Context, *rpcclient.WSClient, bool, ethermint.EVMTxIndexer) []rpc.API {
-			return []rpc.API{
+		Web3Namespace: func(*server.Context, client.Context, *rpcclient.WSClient, bool, ethermint.EVMTxIndexer) []API {
+			return []API{
 				{
 					Namespace: Web3Namespace,
 					Version:   apiVersion,
@@ -89,8 +87,8 @@ func init() {
 				},
 			}
 		},
-		NetNamespace: func(_ *server.Context, clientCtx client.Context, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
-			return []rpc.API{
+		NetNamespace: func(_ *server.Context, clientCtx client.Context, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []API {
+			return []API{
 				{
 					Namespace: NetNamespace,
 					Version:   apiVersion,
@@ -104,9 +102,9 @@ func init() {
 			_ *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
-		) []rpc.API {
+		) []API {
 			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
-			return []rpc.API{
+			return []API{
 				{
 					Namespace: PersonalNamespace,
 					Version:   apiVersion,
@@ -115,8 +113,8 @@ func init() {
 				},
 			}
 		},
-		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
-			return []rpc.API{
+		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []API {
+			return []API{
 				{
 					Namespace: TxPoolNamespace,
 					Version:   apiVersion,
@@ -130,9 +128,9 @@ func init() {
 			_ *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
-		) []rpc.API {
+		) []API {
 			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
-			return []rpc.API{
+			return []API{
 				{
 					Namespace: DebugNamespace,
 					Version:   apiVersion,
@@ -146,9 +144,9 @@ func init() {
 			_ *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
-		) []rpc.API {
+		) []API {
 			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
-			return []rpc.API{
+			return []API{
 				{
 					Namespace: MinerNamespace,
 					Version:   apiVersion,
@@ -167,8 +165,8 @@ func GetRPCAPIs(ctx *server.Context,
 	allowUnprotectedTxs bool,
 	indexer ethermint.EVMTxIndexer,
 	selectedAPIs []string,
-) []rpc.API {
-	var apis []rpc.API
+) []API {
+	var apis []API
 
 	for _, ns := range selectedAPIs {
 		if creator, ok := apiCreators[ns]; ok {

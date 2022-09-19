@@ -11,16 +11,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/types"
 	ethlog "github.com/ethereum/go-ethereum/log"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/metrics/prometheus"
 	"github.com/evmos/ethermint/rpc"
 
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
-	"github.com/slok/go-http-metrics/middleware"
-	"github.com/slok/go-http-metrics/middleware/std"
 )
 
 // StartJSONRPC starts the JSON-RPC server
@@ -46,7 +42,20 @@ func StartJSONRPC(ctx *server.Context,
 		return nil
 	}))
 
-	rpcServer := ethrpc.NewServer()
+	rpcServer := rpc.NewServer()
+
+	if config.JSONRPC.EnableMetrics {
+		registry := metrics.NewRegistry()
+		rpcServer.WithMetrics(registry)
+		metricsErrChan := setupMetricsServer(ctx, config.JSONRPC.MetricsAddress, registry)
+
+		select {
+		case err := <-metricsErrChan:
+			ctx.Logger.Error("failed to boot JSON-RPC metrics server", "error", err.Error())
+			return nil, nil, err
+		case <-time.After(types.ServerStartTime): // assume JSON RPC server started successfully
+		}
+	}
 
 	allowUnprotectedTxs := config.JSONRPC.AllowUnprotectedTxs
 	rpcAPIArr := config.JSONRPC.API
@@ -71,13 +80,10 @@ func StartJSONRPC(ctx *server.Context,
 	if config.API.EnableUnsafeCORS {
 		handlerWithCors = cors.AllowAll()
 	}
-	httpHandler := handlerWithCors.Handler(r)
-
-	httpHandler = WrapWithMetrics(httpHandler)
 
 	httpSrv := &http.Server{
 		Addr:              config.JSONRPC.Address,
-		Handler:           httpHandler,
+		Handler:           handlerWithCors.Handler(r),
 		ReadHeaderTimeout: config.JSONRPC.HTTPTimeout,
 		ReadTimeout:       config.JSONRPC.HTTPTimeout,
 		WriteTimeout:      config.JSONRPC.HTTPTimeout,
@@ -118,31 +124,24 @@ func StartJSONRPC(ctx *server.Context,
 	wsSrv := rpc.NewWebsocketsServer(clientCtx, ctx.Logger, tmWsClient, config)
 	wsSrv.Start()
 
-	// metrics server
+	return httpSrv, httpSrvDone, nil
+}
+
+func setupMetricsServer(ctx *server.Context, address string, registry metrics.Registry) chan error {
+	m := http.NewServeMux()
+	m.Handle("/metrics", prometheus.Handler(registry))
 	metricsErrCh := make(chan error)
 	go func() {
-		ctx.Logger.Info("Starting metrics server", "address", ":8787")
-		if err := http.ListenAndServe(":8787", promhttp.Handler()); err != nil {
-			ctx.Logger.Error("failed to start metrics server", "error", err.Error())
+		ctx.Logger.Info("Starting JSON-RPC metrics server", "address", address)
+		if err := http.ListenAndServe(address, m); err != nil {
+			if err == http.ErrServerClosed {
+				return
+			}
+
+			ctx.Logger.Error("failed to start JSON-RPC metrics server", "error", err.Error())
 			metricsErrCh <- err
 		}
 	}()
 
-	select {
-	case err := <-metricsErrCh:
-		ctx.Logger.Error("failed to start metrics server", "error", err.Error())
-		return nil, nil, err
-	case <-time.After(types.ServerStartTime): // assume metrics server started successfully
-	}
-
-	return httpSrv, httpSrvDone, nil
-}
-
-func WrapWithMetrics(h http.Handler) http.Handler {
-	// Create our middleware.
-	mdlw := middleware.New(middleware.Config{
-		Recorder: metrics.NewRecorder(metrics.Config{}),
-	})
-
-	return std.Handler("", mdlw, h)
+	return metricsErrCh
 }

@@ -20,7 +20,6 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/tendermint/tendermint/libs/log"
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -50,7 +49,7 @@ type SubscriptionNotification struct {
 }
 
 type SubscriptionResult struct {
-	Subscription rpc.ID      `json:"subscription"`
+	Subscription ID          `json:"subscription"`
 	Result       interface{} `json:"result"`
 }
 
@@ -170,7 +169,7 @@ func (w *wsConn) ReadMessage() (messageType int, p []byte, err error) {
 
 func (s *websocketsServer) readLoop(wsConn *wsConn) {
 	// subscriptions of current connection
-	subscriptions := make(map[rpc.ID]pubsub.UnsubscribeFunc)
+	subscriptions := make(map[ID]pubsub.UnsubscribeFunc)
 	defer func() {
 		// cancel all subscriptions when connection closed
 		for _, unsubFn := range subscriptions {
@@ -226,7 +225,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 				continue
 			}
 
-			subID := rpc.NewID()
+			subID := NewID()
 			unsubFn, err := s.api.subscribe(wsConn, subID, params)
 			if err != nil {
 				s.sendErrResponse(wsConn, err.Error())
@@ -255,7 +254,7 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 				continue
 			}
 
-			subID := rpc.ID(id)
+			subID := ID(id)
 			unsubFn, ok := subscriptions[subID]
 			if ok {
 				delete(subscriptions, subID)
@@ -344,7 +343,7 @@ func newPubSubAPI(clientCtx client.Context, logger log.Logger, tmWSClient *rpccl
 	}
 }
 
-func (api *pubSubAPI) subscribe(wsConn *wsConn, subID rpc.ID, params []interface{}) (pubsub.UnsubscribeFunc, error) {
+func (api *pubSubAPI) subscribe(wsConn *wsConn, subID ID, params []interface{}) (pubsub.UnsubscribeFunc, error) {
 	method, ok := params[0].(string)
 	if !ok {
 		return nil, errors.New("invalid parameters")
@@ -368,7 +367,7 @@ func (api *pubSubAPI) subscribe(wsConn *wsConn, subID rpc.ID, params []interface
 	}
 }
 
-func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn, subID rpc.ID) (pubsub.UnsubscribeFunc, error) {
+func (api *pubSubAPI) subscribeNewHeads(wsConn *wsConn, subID ID) (pubsub.UnsubscribeFunc, error) {
 	sub, unsubFn, err := api.events.SubscribeNewHeads()
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating block filter")
@@ -444,7 +443,7 @@ func try(fn func(), l log.Logger, desc string) {
 	fn()
 }
 
-func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, subID rpc.ID, extra interface{}) (pubsub.UnsubscribeFunc, error) {
+func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, subID ID, extra interface{}) (pubsub.UnsubscribeFunc, error) {
 	crit := filters.FilterCriteria{}
 
 	if extra != nil {
@@ -608,7 +607,7 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, subID rpc.ID, extra interfac
 	return unsubFn, nil
 }
 
-func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID rpc.ID) (pubsub.UnsubscribeFunc, error) {
+func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID ID) (pubsub.UnsubscribeFunc, error) {
 	sub, unsubFn, err := api.events.SubscribePendingTxs()
 	if err != nil {
 		return nil, errors.Wrap(err, "error creating block filter: %s")
@@ -666,7 +665,7 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID rpc.ID)
 	return unsubFn, nil
 }
 
-func (api *pubSubAPI) subscribeSyncing(wsConn *wsConn, subID rpc.ID) (pubsub.UnsubscribeFunc, error) {
+func (api *pubSubAPI) subscribeSyncing(wsConn *wsConn, subID ID) (pubsub.UnsubscribeFunc, error) {
 	return nil, errors.New("syncing subscription is not implemented")
 }
 
