@@ -39,10 +39,10 @@ func RegisterBlock(
 
 	// with tx
 	block := types.MakeBlock(height, []types.Tx{tx}, nil, nil)
-	res := &tmrpctypes.ResultBlock{Block: block}
+	resBlock := &tmrpctypes.ResultBlock{Block: block}
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(res, nil)
-	return res, nil
+		Return(resBlock, nil)
+	return resBlock, nil
 }
 
 // Block returns error

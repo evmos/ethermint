@@ -70,6 +70,68 @@ func (suite *BackendTestSuite) TestGetCode() {
 	}
 }
 
+func (suite *BackendTestSuite) TestGetProof() {
+	blockNrInvalid := rpctypes.NewBlockNumber(big.NewInt(1))
+	// blockNr := rpctypes.NewBlockNumber(big.NewInt(4))
+	// _, bz := suite.buildEthereumTx()
+
+	testCases := []struct {
+		name          string
+		addr          common.Address
+		storageKeys   []string
+		blockNrOrHash rpctypes.BlockNumberOrHash
+		registerMock  func(rpctypes.BlockNumber, common.Address)
+		expPass       bool
+		expAccRes     *rpctypes.AccountResult
+	}{
+		// fail - invalidBlockNumber
+		{
+			"fail - BlockNumeber = 1",
+			tests.GenerateAddress(),
+			[]string{},
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNrInvalid},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlock(client, bn.Int64(), nil)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterAccount(queryClient, addr, blockNrInvalid.Int64())
+			},
+			false,
+			&rpctypes.AccountResult{},
+		},
+		// TODO How can I pass block height >=2 here? RegisterBlock doesn't accept it
+		// {
+		// 	"pass",
+		// 	tests.GenerateAddress(),
+		// 	[]string{},
+		// 	rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+		// 	func(addr common.Address) {
+		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
+		// 		RegisterBlock(client, blockNr.Int64(), nil)
+		// 		queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+		// 		RegisterAccount(queryClient, addr, blockNr.Int64())
+		// 	},
+		// 	true,
+		// 	&rpctypes.AccountResult{},
+		// },
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
+			tc.registerMock(*tc.blockNrOrHash.BlockNumber, tc.addr)
+
+			accRes, err := suite.backend.GetProof(tc.addr, tc.storageKeys, tc.blockNrOrHash)
+
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().Equal(tc.expAccRes, accRes)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
 func (suite *BackendTestSuite) TestGetStorageAt() {
 	blockNr := rpctypes.NewBlockNumber(big.NewInt(1))
 
