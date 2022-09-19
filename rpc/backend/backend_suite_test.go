@@ -25,12 +25,14 @@ import (
 	"github.com/evmos/ethermint/indexer"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
+	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 type BackendTestSuite struct {
 	suite.Suite
 	backend *Backend
+	acc     sdk.AccAddress
 }
 
 func TestBackendTestSuite(t *testing.T) {
@@ -50,12 +52,22 @@ func (suite *BackendTestSuite) SetupTest() {
 		panic(err)
 	}
 
+	// Create Account with set sequence
+	suite.acc = sdk.AccAddress(tests.GenerateAddress().Bytes())
+	accounts := map[string]client.TestAccount{}
+	accounts[suite.acc.String()] = client.TestAccount{
+		Address: suite.acc,
+		Num:     uint64(1),
+		Seq:     uint64(1),
+	}
+
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	clientCtx := client.Context{}.WithChainID("ethermint_9000-1").
 		WithHeight(1).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithKeyringDir(clientDir).
-		WithKeyring(keyRing)
+		WithKeyring(keyRing).
+		WithAccountRetriever(client.TestAccountRetriever{Accounts: accounts})
 
 	allowUnprotectedTxs := false
 

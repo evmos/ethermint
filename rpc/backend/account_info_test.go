@@ -297,3 +297,61 @@ func (suite *BackendTestSuite) TestGetBalance() {
 		})
 	}
 }
+
+func (suite *BackendTestSuite) TestGetTransactionCount() {
+	testCases := []struct {
+		name         string
+		accExists    bool
+		blockNum     rpctypes.BlockNumber
+		registerMock func(common.Address, rpctypes.BlockNumber)
+		expPass      bool
+		expTxCount   hexutil.Uint64
+	}{
+		{
+			"pass - account doesn't exist",
+			false,
+			rpctypes.NewBlockNumber(big.NewInt(1)),
+			func(addr common.Address, bn rpctypes.BlockNumber) {},
+			true,
+			hexutil.Uint64(0),
+		},
+		// TODO Check how to mock RegisterABCIQueryWithOptions correctly
+		// {
+		// 	"pass",
+		// 	true,
+		// 	rpctypes.NewBlockNumber(big.NewInt(1)),
+		// 	func(addr common.Address, bn rpctypes.BlockNumber) {
+		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
+		// 		RegisterABCIQueryWithOptions(
+		// 			client,
+		// 			bn.Int64(),
+		// 			"/cosmos.auth.v1beta1.Query/Account",
+		// 			bytes.HexBytes{},
+		// 			tmrpcclient.ABCIQueryOptions{Height: bn.Int64(), Prove: false},
+		// 		)
+		// 	},
+		// 	true,
+		// 	hexutil.Uint64(1),
+		// },
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
+
+			addr := tests.GenerateAddress()
+			if tc.accExists {
+				addr = common.BytesToAddress(suite.acc.Bytes())
+			}
+
+			tc.registerMock(addr, tc.blockNum)
+
+			txCount, err := suite.backend.GetTransactionCount(addr, tc.blockNum)
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().Equal(tc.expTxCount, *txCount)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
