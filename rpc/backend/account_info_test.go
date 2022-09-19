@@ -215,6 +215,56 @@ func (suite *BackendTestSuite) TestGetBalance() {
 			nil,
 		},
 		{
+			"fail - tendermint client failed to get block",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockError(client, bn.Int64())
+			},
+			false,
+			nil,
+		},
+		{
+			"fail - query client failed to get balance",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlock(client, bn.Int64(), nil)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBalanceError(queryClient, addr, bn.Int64())
+			},
+			false,
+			nil,
+		},
+		{
+			"fail - invalid balance",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlock(client, bn.Int64(), nil)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBalanceInvalid(queryClient, addr, bn.Int64())
+			},
+			false,
+			nil,
+		},
+		{
+			"fail - pruned node state",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlock(client, bn.Int64(), nil)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBalanceNegative(queryClient, addr, bn.Int64())
+			},
+			false,
+			nil,
+		},
+		{
 			"pass",
 			tests.GenerateAddress(),
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},

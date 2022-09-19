@@ -193,7 +193,23 @@ func RegisterAccount(queryClient *mocks.QueryClient, addr common.Address, height
 		)
 }
 
+// Balance
 func RegisterBalance(queryClient *mocks.QueryClient, addr common.Address, height int64) {
 	queryClient.On("Balance", rpc.ContextWithHeight(height), &evmtypes.QueryBalanceRequest{Address: addr.String()}).
 		Return(&evmtypes.QueryBalanceResponse{Balance: "1"}, nil)
+}
+
+func RegisterBalanceInvalid(queryClient *mocks.QueryClient, addr common.Address, height int64) {
+	queryClient.On("Balance", rpc.ContextWithHeight(height), &evmtypes.QueryBalanceRequest{Address: addr.String()}).
+		Return(&evmtypes.QueryBalanceResponse{Balance: "invalid"}, nil)
+}
+
+func RegisterBalanceNegative(queryClient *mocks.QueryClient, addr common.Address, height int64) {
+	queryClient.On("Balance", rpc.ContextWithHeight(height), &evmtypes.QueryBalanceRequest{Address: addr.String()}).
+		Return(&evmtypes.QueryBalanceResponse{Balance: "-1"}, nil)
+}
+
+func RegisterBalanceError(queryClient *mocks.QueryClient, addr common.Address, height int64) {
+	queryClient.On("Balance", rpc.ContextWithHeight(height), &evmtypes.QueryBalanceRequest{Address: addr.String()}).
+		Return(nil, sdkerrors.ErrInvalidRequest)
 }
