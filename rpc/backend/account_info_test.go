@@ -193,3 +193,57 @@ func (suite *BackendTestSuite) TestGetStorageAt() {
 		})
 	}
 }
+
+func (suite *BackendTestSuite) TestGetBalance() {
+	blockNr := rpctypes.NewBlockNumber(big.NewInt(1))
+
+	testCases := []struct {
+		name          string
+		addr          common.Address
+		blockNrOrHash rpctypes.BlockNumberOrHash
+		registerMock  func(rpctypes.BlockNumber, common.Address)
+		expPass       bool
+		expBalance    *hexutil.Big
+	}{
+		{
+			"fail - BlockHash and BlockNumber are both nil",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+			},
+			false,
+			nil,
+		},
+		{
+			"pass",
+			tests.GenerateAddress(),
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlock(client, bn.Int64(), nil)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterBalance(queryClient, addr, bn.Int64())
+			},
+			true,
+			(*hexutil.Big)(big.NewInt(1)),
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
+
+			// avoid nil pointer reference
+			if tc.blockNrOrHash.BlockNumber != nil {
+				tc.registerMock(*tc.blockNrOrHash.BlockNumber, tc.addr)
+			}
+
+			balance, err := suite.backend.GetBalance(tc.addr, tc.blockNrOrHash)
+			if tc.expPass {
+				suite.Require().NoError(err)
+				suite.Require().Equal(tc.expBalance, balance)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}

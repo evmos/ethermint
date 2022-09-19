@@ -192,3 +192,8 @@ func RegisterAccount(queryClient *mocks.QueryClient, addr common.Address, height
 			nil,
 		)
 }
+
+func RegisterBalance(queryClient *mocks.QueryClient, addr common.Address, height int64) {
+	queryClient.On("Balance", rpc.ContextWithHeight(height), &evmtypes.QueryBalanceRequest{Address: addr.String()}).
+		Return(&evmtypes.QueryBalanceResponse{Balance: "1"}, nil)
+}
