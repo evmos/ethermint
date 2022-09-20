@@ -63,6 +63,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (test) [#1311](https://github.com/evmos/ethermint/pull/1311) add integration test for the rollback cmd
 * (ledger) [#1277](https://github.com/evmos/ethermint/pull/1277) Add Ledger preprocessing transaction hook for EIP-712-signed Cosmos payloads.
 * (rpc) [#1296](https://github.com/evmos/ethermint/pull/1296) add backend blocks.go unit tests.
+* (rpc) [#]() Make grape queries run concurrently.
 
 ### Bug Fixes
 
