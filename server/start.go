@@ -392,7 +392,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 				return err
 			}
 			clientCtx = clientCtx.WithGRPCClient(grpcClient)
-			ctx.Logger.Debug("grpc client assigned to client context", "target", grpcAddress)
+			ctx.Logger.Debug("gRPC client assigned to client context", "address", grpcAddress)
 		}
 	}
 
