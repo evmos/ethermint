@@ -8,19 +8,20 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 
-	evm "github.com/evmos/ethermint/x/evm/vm"
+	eevm "github.com/evmos/ethermint/x/evm/vm"
 	"github.com/evmos/ethermint/x/evm/vm/geth"
 )
 
 var (
-	_ evm.EVM         = (*EVM)(nil)
-	_ evm.Constructor = NewEVM
+	_ eevm.EVM         = (*EVM)(nil)
+	_ eevm.Constructor = NewEVM
 )
 
 // EVM is the wrapper for the go-ethereum EVM.
 type EVM struct {
 	*vm.EVM
 
+	precompiledContracts eevm.PrecompiledContracts
 	// Depth is the current call stack
 	depth int
 }
@@ -33,10 +34,11 @@ func NewEVM(
 	stateDB vm.StateDB,
 	chainConfig *params.ChainConfig,
 	config vm.Config,
-	_ evm.PrecompiledContracts,
-) evm.EVM {
+	pc eevm.PrecompiledContracts,
+) eevm.EVM {
 	return &EVM{
-		EVM: vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
+		EVM:                  vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
+		precompiledContracts: pc,
 	}
 }
 
@@ -72,7 +74,7 @@ func (evm *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 	p, isPrecompile := evm.Precompile(addr)
 
 	if !evm.StateDB.Exist(addr) {
-		if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0 {
+		if !isPrecompile && evm.ChainConfig().Rules(evm.EVM.Context.BlockNumber, false).IsEIP158 && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if evm.Config().Debug {
 				if evm.depth == 0 {
@@ -123,6 +125,7 @@ func (evm *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 			gas = contract.Gas
 		}
 	}
+
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
@@ -172,19 +175,21 @@ func (evm *EVM) CallCode(caller vm.ContractRef, addr common.Address, input []byt
 		ret, gas, err = evm.RunPrecompiledContract(p, addr, input, gas, value)
 	} else {
 		addrCopy := addr
-		// Initialise a new contract and set the code that is to be used by the EVM.
+		// Initialize a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
 		contract := vm.NewContract(caller, vm.AccountRef(caller.Address()), value, gas)
 		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), evm.StateDB.GetCode(addrCopy))
 		ret, err = evm.Interpreter().Run(contract, input, false)
 		gas = contract.Gas
 	}
+
 	if err != nil {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != vm.ErrExecutionReverted {
 			gas = 0
 		}
 	}
+
 	return ret, gas, err
 }
 
@@ -198,6 +203,7 @@ func (evm *EVM) DelegateCall(caller vm.ContractRef, addr common.Address, input [
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
+
 	snapshot := evm.StateDB.Snapshot()
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
@@ -208,17 +214,20 @@ func (evm *EVM) DelegateCall(caller vm.ContractRef, addr common.Address, input [
 		}(gas)
 	}
 
-	// It is allowed to call precompiles, even via delegatecall
-	if p, isPrecompile := evm.Precompile(addr); isPrecompile {
+	// It is allowed to call precompiles, even via delegate call
+	p, isPrecompile := evm.Precompile(addr)
+
+	if isPrecompile && p.(vm.StatefulPrecompiledContract) {
 		ret, gas, err = evm.RunPrecompiledContract(p, addr, input, gas, nil) // TODO: should value be
 	} else {
 		addrCopy := addr
-		// Initialise a new contract and make initialise the delegate values
+		// Initialize a new contract and make initialize the delegate values
 		contract := vm.NewContract(caller, vm.AccountRef(caller.Address()), nil, gas).AsDelegate()
 		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), evm.StateDB.GetCode(addrCopy))
 		ret, err = evm.Interpreter().Run(contract, input, false)
 		gas = contract.Gas
 	}
+
 	if err != nil {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != vm.ErrExecutionReverted {
@@ -240,22 +249,23 @@ func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bo
 // ActivePrecompiles returns a list of all the active precompiled contract addresses
 // for the current chain configuration.
 func (EVM) ActivePrecompiles(rules params.Rules) []common.Address {
+	// TODO: add new precompiles
 	return vm.ActivePrecompiles(rules)
 }
 
 // RunPrecompileContract runs a stateless precompiled contract and ignores the address and
 // value arguments. It uses the RunPrecompiledContract function from the vm package.
-func (e *EVM) RunPrecompiledContract(p vm.PrecompiledContract, addr common.Address, input []byte, suppliedGas uint64, value *big.Int) (ret []byte, remainingGas uint64, err error) {
-	gasCost := p.RequiredGas(input)
+func (e *EVM) RunPrecompiledContract(pc vm.PrecompiledContract, addr common.Address, input []byte, suppliedGas uint64, value *big.Int) (ret []byte, remainingGas uint64, err error) {
+	gasCost := pc.RequiredGas(input)
 	if suppliedGas < gasCost {
 		return nil, 0, vm.ErrOutOfGas
 	}
 
-	sp, isStateful := p.(evm.StatefulPrecompiledContract)
+	sp, isStateful := pc.(evm.StatefulPrecompiledContract)
 	if isStateful {
 		ret, err = sp.RunStateful(e, addr, input, value)
 	} else {
-		ret, err = p.Run(input)
+		ret, err = pc.Run(input)
 	}
 
 	suppliedGas -= gasCost

@@ -20,15 +20,16 @@ type EVM struct {
 	*vm.EVM
 }
 
-// NewEVM defines the constructor function for the go-ethereum EVM. It uses the
-// default precompiled contracts and the EVM from go-ethereum.
+// NewEVM defines the constructor function for the go-ethereum (geth) EVM. It uses
+// the default precompiled contracts and the EVM concrete implementation from
+// geth.
 func NewEVM(
 	blockCtx vm.BlockContext,
 	txCtx vm.TxContext,
 	stateDB vm.StateDB,
 	chainConfig *params.ChainConfig,
 	config vm.Config,
-	_ evm.PrecompiledContracts,
+	_ evm.PrecompiledContracts, // unused
 ) evm.EVM {
 	return &EVM{
 		EVM: vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
@@ -54,7 +55,7 @@ func (e EVM) Config() vm.Config {
 // and the current chain configuration. If the contract cannot be found it returns
 // nil.
 func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bool) {
-	precompiles := GetPrecompiles(e.ChainConfig(), e.Context().BlockNumber)
+	precompiles := GetPrecompiles(e.ChainConfig(), e.EVM.Context.BlockNumber)
 	p, found = precompiles[addr]
 	return p, found
 }
@@ -65,8 +66,14 @@ func (EVM) ActivePrecompiles(rules params.Rules) []common.Address {
 	return vm.ActivePrecompiles(rules)
 }
 
-// RunPrecompileContract runs a stateless precompiled contract and ignores the address and
-// value arguments. It uses the RunPrecompiledContract function from the vm package.
-func (EVM) RunPrecompiledContract(p vm.PrecompiledContract, _ common.Address, input []byte, suppliedGas uint64, _ *big.Int) (ret []byte, remainingGas uint64, err error) {
+// RunPrecompiledContract runs a stateless precompiled contract and ignores the address and
+// value arguments. It uses the RunPrecompiledContract function from the geth vm package.
+func (EVM) RunPrecompiledContract(
+	p vm.PrecompiledContract,
+	_ common.Address, // address arg is unused
+	input []byte,
+	suppliedGas uint64,
+	_ *big.Int, // 	value arg is unused
+) (ret []byte, remainingGas uint64, err error) {
 	return vm.RunPrecompiledContract(p, input, suppliedGas)
 }
