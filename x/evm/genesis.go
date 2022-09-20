@@ -49,17 +49,17 @@ func InitGenesis(
 			)
 		}
 
-		evmStateCode := common.Hex2Bytes(account.Code)
-		codeHash := crypto.Keccak256Hash(evmStateCode)
-		accountCodeHash := ethAcct.GetCodeHash().Bytes()
+		code := common.Hex2Bytes(account.Code)
+		codeHash := crypto.Keccak256Hash(code)
 
-		if checkCodeHash(codeHash.Bytes(), accountCodeHash) && !bytes.Equal(accountCodeHash, codeHash.Bytes()) {
+		// we ignore the empty Code hash checking, see ethermint PR#1234
+		if len(account.Code) != 0 && !bytes.Equal(ethAcct.GetCodeHash().Bytes(), codeHash.Bytes()) {
 			panic(fmt.Sprintf(`the evm state code doesn't match with the codehash\n account: %s 
-			, evm state codehash: %v, ethAccount codehash: %v, ethAccount code: %s, evm state code: %s\n`,
-				account.Address, codeHash, ethAcct.GetCodeHash(), account.Code, evmStateCode))
+			, evm state codehash: %v, ethAccount codehash: %v, evm state code: %s\n`,
+				account.Address, codeHash, ethAcct.GetCodeHash(), account.Code))
 		}
 
-		k.SetCode(ctx, codeHash.Bytes(), evmStateCode)
+		k.SetCode(ctx, codeHash.Bytes(), code)
 
 		for _, storage := range account.Storage {
 			k.SetState(ctx, address, common.HexToHash(storage.Key), common.HexToHash(storage.Value).Bytes())
@@ -97,20 +97,4 @@ func ExportGenesis(ctx sdk.Context, k *keeper.Keeper, ak types.AccountKeeper) *t
 		Accounts: ethGenAccounts,
 		Params:   k.GetParams(ctx),
 	}
-}
-
-var (
-	emptyCodeHash  = crypto.Keccak256(nil)
-	patchCodeHash1 = common.HexToHash("0x1d93f60f105899172f7255c030301c3af4564edd4a48577dbdc448aec7ddb0ac").Bytes()
-	patchCodeHash2 = common.HexToHash("0x6dbb3be328225977ada143a45a62c99ace929f536b75a27c09b6a09187dc70b0").Bytes()
-)
-
-// checkCodeHash return false if the evm state code was been deleted, see ethermint PR#1234
-func checkCodeHash(evmCodeHash []byte, accountCodeHash []byte) bool {
-	if bytes.Equal(evmCodeHash, emptyCodeHash) &&
-		(bytes.Equal(accountCodeHash, patchCodeHash1) || bytes.Equal(accountCodeHash, patchCodeHash2)) {
-		return false
-	}
-
-	return true
 }
