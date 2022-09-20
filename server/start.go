@@ -377,6 +377,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			WithChainID(genDoc.ChainID)
 
 		// Set `GRPCClient` to `clientCtx` to enjoy concurrent grpc query.
+		// only use it if gRPC server is enabled.
 		if config.GRPC.Enable {
 			_, port, err := net.SplitHostPort(config.GRPC.Address)
 			if err != nil {
