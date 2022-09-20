@@ -383,16 +383,33 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			if err != nil {
 				return sdkerrors.Wrapf(err, "invalid grpc address %s", config.GRPC.Address)
 			}
+
+			maxSendMsgSize := config.GRPC.MaxSendMsgSize
+			if maxSendMsgSize == 0 {
+				maxSendMsgSize = serverconfig.DefaultGRPCMaxSendMsgSize
+			}
+
+			maxRecvMsgSize := config.GRPC.MaxRecvMsgSize
+			if maxRecvMsgSize == 0 {
+				maxRecvMsgSize = serverconfig.DefaultGRPCMaxRecvMsgSize
+			}
+
 			grpcAddress := fmt.Sprintf("127.0.0.1:%s", port)
+
 			// If grpc is enabled, configure grpc client for grpc gateway and json-rpc.
 			grpcClient, err := grpc.Dial(
 				grpcAddress,
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithDefaultCallOptions(grpc.ForceCodec(codec.NewProtoCodec(clientCtx.InterfaceRegistry).GRPCCodec())),
+				grpc.WithDefaultCallOptions(
+					grpc.ForceCodec(codec.NewProtoCodec(clientCtx.InterfaceRegistry).GRPCCodec()),
+					grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
+					grpc.MaxCallSendMsgSize(maxSendMsgSize),
+				),
 			)
 			if err != nil {
 				return err
 			}
+
 			clientCtx = clientCtx.WithGRPCClient(grpcClient)
 			ctx.Logger.Debug("gRPC client assigned to client context", "address", grpcAddress)
 		}
