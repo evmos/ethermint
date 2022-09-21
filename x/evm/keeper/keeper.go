@@ -330,6 +330,10 @@ func (k Keeper) getBaseFee(ctx sdk.Context, london bool) *big.Int {
 // GetMinGasMultiplier returns the MinGasMultiplier param from the fee market module
 func (k Keeper) GetMinGasMultiplier(ctx sdk.Context) sdk.Dec {
 	fmkParmas := k.feeMarketKeeper.GetParams(ctx)
+	if fmkParmas.MinGasMultiplier.IsNil() {
+		// in case we are executing eth_call on a legacy block, returns a zero value.
+		return sdk.ZeroDec()
+	}
 	return fmkParmas.MinGasMultiplier
 }
 
