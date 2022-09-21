@@ -96,6 +96,24 @@ func (suite *EvmTestSuite) TestInitGenesis() {
 			},
 			true,
 		},
+		{
+			"ignore empty account code checking",
+			func() {
+				acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, address.Bytes())
+
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+			},
+			&types.GenesisState{
+				Params: types.DefaultParams(),
+				Accounts: []types.GenesisAccount{
+					{
+						Address: address.String(),
+						Code:    "",
+					},
+				},
+			},
+			false,
+		},
 	}
 
 	for _, tc := range testCases {
