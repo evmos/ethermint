@@ -33,7 +33,7 @@ import sources.nixpkgs {
         name = "cosmovisor";
         src = sources.cosmos-sdk + "/cosmovisor";
         subPackages = [ "./cmd/cosmovisor" ];
-        vendorSha256 = "sha256-b5WxrM1L2e/J6ZrOKwzmi85YuoRw/bPor20zNIenYS8=";
+        vendorSha256 = "sha256-OAXWrwpartjgSP7oeNvDJ7cTR9lyYVNhEM8HUnv3acE=";
         doCheck = false;
       };
     })

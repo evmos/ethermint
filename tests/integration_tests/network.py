@@ -11,14 +11,17 @@ from web3.middleware import geth_poa_middleware
 from .cosmoscli import CosmosCLI
 from .utils import wait_for_port
 
+DEFAULT_CHAIN_BINARY = "ethermintd"
+
 
 class Ethermint:
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, chain_binary=DEFAULT_CHAIN_BINARY):
         self._w3 = None
         self.base_dir = base_dir
         self.config = json.loads((base_dir / "config.json").read_text())
         self.enable_auto_deployment = False
         self._use_websockets = False
+        self.chain_binary = chain_binary
 
     def copy(self):
         return Ethermint(self.base_dir)
@@ -55,7 +58,9 @@ class Ethermint:
         self._use_websockets = use
 
     def cosmos_cli(self, i=0):
-        return CosmosCLI(self.base_dir / f"node{i}", self.node_rpc(i), "ethermintd")
+        return CosmosCLI(
+            self.base_dir / f"node{i}", self.node_rpc(i), self.chain_binary
+        )
 
 
 class Geth:
@@ -124,7 +129,9 @@ def setup_custom_ethermint(
         if wait_port:
             wait_for_port(ports.evmrpc_port(base_port))
             wait_for_port(ports.evmrpc_ws_port(base_port))
-        yield Ethermint(path / "ethermint_9000-1")
+        yield Ethermint(
+            path / "ethermint_9000-1", chain_binary=chain_binary or DEFAULT_CHAIN_BINARY
+        )
     finally:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         proc.wait()
