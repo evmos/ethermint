@@ -829,3 +829,6 @@ class CosmosCLI:
 
     def rollback(self):
         self.raw("rollback", home=self.data_dir)
+
+    def migrate_keystore(self):
+        return self.raw("keys", "migrate", home=self.data_dir)
