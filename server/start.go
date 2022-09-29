@@ -339,6 +339,13 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			logger.Error("failed start tendermint server", "error", err.Error())
 			return err
 		}
+
+		defer func() {
+			if tmNode.IsRunning() {
+				_ = tmNode.Stop()
+			}
+			logger.Info("Bye!")
+		}()
 	}
 
 	// Add the tx service to the gRPC router. We only need to register this
@@ -545,14 +552,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		case <-time.After(types.ServerStartTime): // assume server started successfully
 		}
 	}
-
-	defer func() {
-		if tmNode != nil && tmNode.IsRunning() {
-			_ = tmNode.Stop()
-		}
-		logger.Info("Bye!")
-	}()
-
 	// Wait for SIGINT or SIGTERM signal
 	return server.WaitForQuitSignals()
 }
