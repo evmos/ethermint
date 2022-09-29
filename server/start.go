@@ -462,12 +462,18 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if err != nil {
 			return err
 		}
+		defer grpcSrv.Stop()
 		if config.GRPCWeb.Enable {
 			grpcWebSrv, err = servergrpc.StartGRPCWeb(grpcSrv, config.Config)
 			if err != nil {
 				ctx.Logger.Error("failed to start grpc-web http server", "error", err)
 				return err
 			}
+			defer func() {
+				if err := grpcWebSrv.Close(); err != nil {
+					logger.Error("failed to close the grpcWebSrc", "error", err.Error())
+				}
+			}()
 		}
 	}
 
@@ -490,6 +496,19 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if err != nil {
 			return err
 		}
+		defer func() {
+			shutdownCtx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancelFn()
+			if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+				logger.Error("HTTP server shutdown produced a warning", "error", err.Error())
+			} else {
+				logger.Info("HTTP server shut down, waiting 5 sec")
+				select {
+				case <-time.Tick(5 * time.Second):
+				case <-httpSrvDone:
+				}
+			}
+		}()
 	}
 
 	// At this point it is safe to block the process if we're in gRPC or JSON-RPC only mode as
@@ -547,31 +566,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if apiSrv != nil {
 			_ = apiSrv.Close()
 		}
-
-		if grpcSrv != nil {
-			grpcSrv.Stop()
-			if grpcWebSrv != nil {
-				if err := grpcWebSrv.Close(); err != nil {
-					logger.Error("failed to close the grpcWebSrc", "error", err.Error())
-				}
-			}
-		}
-
-		if httpSrv != nil {
-			shutdownCtx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancelFn()
-
-			if err := httpSrv.Shutdown(shutdownCtx); err != nil {
-				logger.Error("HTTP server shutdown produced a warning", "error", err.Error())
-			} else {
-				logger.Info("HTTP server shut down, waiting 5 sec")
-				select {
-				case <-time.Tick(5 * time.Second):
-				case <-httpSrvDone:
-				}
-			}
-		}
-
 		logger.Info("Bye!")
 	}()
 
