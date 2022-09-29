@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const (
@@ -236,7 +238,10 @@ func (c *jsonCodec) writeJSON(ctx context.Context, v interface{}) error {
 	if !ok {
 		deadline = time.Now().Add(defaultWriteTimeout)
 	}
-	c.conn.SetWriteDeadline(deadline)
+	err := c.conn.SetWriteDeadline(deadline)
+	if err != nil {
+		log.Trace("set write deadline failed for json", "err", err)
+	}
 	return c.encode(v)
 }
 
@@ -259,15 +264,21 @@ func (c *jsonCodec) closed() <-chan interface{} {
 func parseMessage(raw json.RawMessage) ([]*jsonrpcMessage, bool) {
 	if !isBatch(raw) {
 		msgs := []*jsonrpcMessage{{}}
-		json.Unmarshal(raw, &msgs[0])
+		err := json.Unmarshal(raw, &msgs[0])
+		if err != nil {
+			log.Trace("unmarshal json message failed", "err", err)
+		}
 		return msgs, false
 	}
 	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.Token() // skip '['
+	dec.Token() //nolint:errcheck
 	var msgs []*jsonrpcMessage
 	for dec.More() {
 		msgs = append(msgs, new(jsonrpcMessage))
-		dec.Decode(&msgs[len(msgs)-1])
+		err := dec.Decode(&msgs[len(msgs)-1])
+		if err != nil {
+			log.Trace("decode msg failed", "err", err)
+		}
 	}
 	return msgs, true
 }

@@ -29,6 +29,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var (
@@ -50,7 +52,7 @@ func NewID() ID {
 
 // randomIDGenerator returns a function generates a random IDs.
 func randomIDGenerator() func() ID {
-	var buf = make([]byte, 8)
+	buf := make([]byte, 8)
 	var seed int64
 	if _, err := crand.Read(buf); err == nil {
 		seed = int64(binary.BigEndian.Uint64(buf))
@@ -60,7 +62,7 @@ func randomIDGenerator() func() ID {
 
 	var (
 		mu  sync.Mutex
-		rng = rand.New(rand.NewSource(seed))
+		rng = rand.New(rand.NewSource(seed)) //nolint:gosec // not fixed to prevent unclear errors as code copied from go-ethereum
 	)
 	return func() ID {
 		mu.Lock()
@@ -299,7 +301,10 @@ func (sub *ClientSubscription) run() {
 
 	// Call the unsubscribe method on the server.
 	if unsubscribe {
-		sub.requestUnsubscribe()
+		err := sub.requestUnsubscribe()
+		if err != nil {
+			log.Trace("client request unsubscribe failed", "err", err)
+		}
 	}
 
 	// Send the error.

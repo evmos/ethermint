@@ -48,7 +48,7 @@ var wsBufferPool = new(sync.Pool)
 // allowedOrigins should be a comma-separated list of allowed origin URLs.
 // To allow connections with any origin, pass "*".
 func (s *Server) WebsocketHandler(allowedOrigins []string) http.Handler {
-	var upgrader = websocket.Upgrader{
+	upgrader := websocket.Upgrader{
 		ReadBufferSize:  wsReadBuffer,
 		WriteBufferSize: wsWriteBuffer,
 		WriteBufferPool: wsBufferPool,
@@ -242,7 +242,7 @@ func newClientTransportWS(endpoint string, cfg *clientConfig) (reconnectFunc, er
 				return nil, err
 			}
 		}
-		conn, resp, err := dialer.DialContext(ctx, dialURL, header)
+		conn, resp, err := dialer.DialContext(ctx, dialURL, header) //nolint:bodyclose // not fixed as imported from go-ethereum
 		if err != nil {
 			hErr := wsHandshakeError{err: err}
 			if resp != nil {
@@ -284,7 +284,10 @@ type websocketCodec struct {
 func newWebsocketCodec(conn *websocket.Conn, host string, req http.Header) ServerCodec {
 	conn.SetReadLimit(wsMessageSizeLimit)
 	conn.SetPongHandler(func(appData string) error {
-		conn.SetReadDeadline(time.Time{})
+		err := conn.SetReadDeadline(time.Time{})
+		if err != nil {
+			log.Trace("set read deadline for websocket codec failed", "err", err)
+		}
 		return nil
 	})
 	wc := &websocketCodec{
@@ -329,7 +332,7 @@ func (wc *websocketCodec) writeJSON(ctx context.Context, v interface{}) error {
 
 // pingLoop sends periodic ping frames when the connection is idle.
 func (wc *websocketCodec) pingLoop() {
-	var timer = time.NewTimer(wsPingInterval)
+	timer := time.NewTimer(wsPingInterval)
 	defer wc.wg.Done()
 	defer timer.Stop()
 
@@ -344,9 +347,18 @@ func (wc *websocketCodec) pingLoop() {
 			timer.Reset(wsPingInterval)
 		case <-timer.C:
 			wc.jsonCodec.encMu.Lock()
-			wc.conn.SetWriteDeadline(time.Now().Add(wsPingWriteTimeout))
-			wc.conn.WriteMessage(websocket.PingMessage, nil)
-			wc.conn.SetReadDeadline(time.Now().Add(wsPongTimeout))
+			err := wc.conn.SetWriteDeadline(time.Now().Add(wsPingWriteTimeout))
+			if err != nil {
+				log.Trace("set write deadline for ping failed", "err", err)
+			}
+			err = wc.conn.WriteMessage(websocket.PingMessage, nil)
+			if err != nil {
+				log.Trace("write message for ping failed", "err", err)
+			}
+			err = wc.conn.SetReadDeadline(time.Now().Add(wsPongTimeout))
+			if err != nil {
+				log.Trace("set read deadline for ping failed", "err", err)
+			}
 			wc.jsonCodec.encMu.Unlock()
 			timer.Reset(wsPingInterval)
 		}

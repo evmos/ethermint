@@ -26,7 +26,7 @@ const (
 	DefaultJSONRPCWsAddress = "0.0.0.0:8546"
 
 	// DefaultJsonRPCMetricsAddress is the default address the JSON-RPC Metrics server binds to.
-	DefaultJsonRPCMetricsAddress = "0.0.0.0:6065"
+	DefaultJSONRPCMetricsAddress = "0.0.0.0:6065"
 
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = ""
@@ -219,7 +219,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		MaxOpenConnections:  DefaultMaxOpenConnections,
 		EnableIndexer:       false,
 		EnableMetrics:       false,
-		MetricsAddress:      DefaultJsonRPCMetricsAddress,
+		MetricsAddress:      DefaultJSONRPCMetricsAddress,
 	}
 }
 

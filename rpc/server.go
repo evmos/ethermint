@@ -26,8 +26,10 @@ import (
 	"github.com/ethereum/go-ethereum/metrics"
 )
 
-const MetadataApi = "rpc"
-const EngineApi = "engine"
+const (
+	MetadataAPI = "rpc"
+	EngineAPI   = "engine"
+)
 
 // CodecOption specifies which type of messages a codec supports.
 //
@@ -55,8 +57,11 @@ func NewServer() *Server {
 	server := &Server{idgen: randomIDGenerator(), codecs: mapset.NewSet(), run: 1}
 	// Register the default service providing meta information about the RPC service such
 	// as the services and methods it offers.
-	rpcService := &RPCService{server}
-	server.RegisterName(MetadataApi, rpcService)
+	Service := &Service{server}
+	err := server.RegisterName(MetadataAPI, Service)
+	if err != nil {
+		log.Trace("register name for server failed", "err", err)
+	}
 	return server
 }
 
@@ -111,7 +116,10 @@ func (s *Server) serveSingleRequest(ctx context.Context, codec ServerCodec) {
 	reqs, batch, err := codec.readBatch()
 	if err != nil {
 		if err != io.EOF {
-			codec.writeJSON(ctx, errorMessage(&invalidMessageError{"parse error"}))
+			err := codec.writeJSON(ctx, errorMessage(&invalidMessageError{"parse error"}))
+			if err != nil {
+				log.Trace("write json for codec failed", "err", err)
+			}
 		}
 		return
 	}
@@ -135,14 +143,14 @@ func (s *Server) Stop() {
 	}
 }
 
-// RPCService gives meta information about the server.
+// Service gives meta information about the server.
 // e.g. gives information about the loaded modules.
-type RPCService struct {
+type Service struct {
 	server *Server
 }
 
 // Modules returns the list of RPC services with their version number
-func (s *RPCService) Modules() map[string]string {
+func (s *Service) Modules() map[string]string {
 	s.server.services.mu.Lock()
 	defer s.server.services.mu.Unlock()
 

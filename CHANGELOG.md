@@ -49,6 +49,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### API Breaking
 
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
+* (rpc)  [#1303](https://github.com/evmos/ethermint/pull/1303) Add support for EVM RPC metrics
 
 ### Improvements
 

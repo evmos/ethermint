@@ -167,6 +167,10 @@ schema = 3
   [mod."github.com/gballet/go-libpcsclite"]
     version = "v0.0.0-20190607065134-2772fd86a8ff"
     hash = "sha256-Nr5ocU9s1F2Lhx/Zq6/nIo+KkKEqMjDYOEs3yWRC48g="
+  [mod."github.com/gin-gonic/gin"]
+    version = "v1.7.0"
+    hash = "sha256-mElV7VxhkWjGqCWEXcGVo8Bn1iEp8jyyyigc0yp/Xn4="
+    replaced = "github.com/gin-gonic/gin"
   [mod."github.com/go-kit/kit"]
     version = "v0.12.0"
     hash = "sha256-5RkXo6s0oye8etgD5qy+AvkkkNsQ6jc0kWJj6flA4GM="

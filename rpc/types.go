@@ -187,18 +187,18 @@ func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
 			}
 			bnh.BlockHash = &hash
 			return nil
-		} else {
-			blckNum, err := hexutil.DecodeUint64(input)
-			if err != nil {
-				return err
-			}
-			if blckNum > math.MaxInt64 {
-				return fmt.Errorf("blocknumber too high")
-			}
-			bn := BlockNumber(blckNum)
-			bnh.BlockNumber = &bn
-			return nil
 		}
+
+		blckNum, err := hexutil.DecodeUint64(input)
+		if err != nil {
+			return err
+		}
+		if blckNum > math.MaxInt64 {
+			return fmt.Errorf("blocknumber too high")
+		}
+		bn := BlockNumber(blckNum)
+		bnh.BlockNumber = &bn
+		return nil
 	}
 }
 

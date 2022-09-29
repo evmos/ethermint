@@ -47,7 +47,7 @@ func StartJSONRPC(ctx *server.Context,
 	if config.JSONRPC.EnableMetrics {
 		registry := metrics.NewRegistry()
 		rpcServer.WithMetrics(registry)
-		metricsErrChan := setupMetricsServer(ctx, config.JSONRPC.MetricsAddress, registry)
+		metricsErrChan := setupMetricsServer(ctx, config, registry)
 
 		select {
 		case err := <-metricsErrChan:
@@ -127,13 +127,27 @@ func StartJSONRPC(ctx *server.Context,
 	return httpSrv, httpSrvDone, nil
 }
 
-func setupMetricsServer(ctx *server.Context, address string, registry metrics.Registry) chan error {
+func setupMetricsServer(ctx *server.Context, config *config.Config, registry metrics.Registry) chan error {
+	address := config.JSONRPC.MetricsAddress
+
 	m := http.NewServeMux()
 	m.Handle("/metrics", prometheus.Handler(registry))
+
 	metricsErrCh := make(chan error)
+
 	go func() {
 		ctx.Logger.Info("Starting JSON-RPC metrics server", "address", address)
-		if err := http.ListenAndServe(address, m); err != nil {
+
+		server := &http.Server{
+			Addr:              address,
+			Handler:           m,
+			ReadHeaderTimeout: config.JSONRPC.HTTPTimeout,
+			ReadTimeout:       config.JSONRPC.HTTPTimeout,
+			WriteTimeout:      config.JSONRPC.HTTPTimeout,
+			IdleTimeout:       config.JSONRPC.HTTPIdleTimeout,
+		}
+
+		if err := server.ListenAndServe(); err != nil {
 			if err == http.ErrServerClosed {
 				return
 			}

@@ -96,7 +96,10 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 	// Emit error response for empty batches:
 	if len(msgs) == 0 {
 		h.startCallProc(func(cp *callProc) {
-			h.conn.writeJSON(cp.ctx, errorMessage(&invalidRequestError{"empty batch"}))
+			err := h.conn.writeJSON(cp.ctx, errorMessage(&invalidRequestError{"empty batch"}))
+			if err != nil {
+				log.Trace("batch handler failed to write json when empty msgs", "err", err)
+			}
 		})
 		return
 	}
@@ -121,10 +124,16 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 		}
 		h.addSubscriptions(cp.notifiers)
 		if len(answers) > 0 {
-			h.conn.writeJSON(cp.ctx, answers)
+			err := h.conn.writeJSON(cp.ctx, answers)
+			if err != nil {
+				log.Trace("batch handler failed to write json", "err", err)
+			}
 		}
 		for _, n := range cp.notifiers {
-			n.activate()
+			err := n.activate()
+			if err != nil {
+				log.Trace("call proc notifier failed to activate", "err", err)
+			}
 		}
 	})
 }
@@ -138,10 +147,16 @@ func (h *handler) handleMsg(msg *jsonrpcMessage) {
 		answer := h.handleCallMsg(cp, msg)
 		h.addSubscriptions(cp.notifiers)
 		if answer != nil {
-			h.conn.writeJSON(cp.ctx, answer)
+			err := h.conn.writeJSON(cp.ctx, answer)
+			if err != nil {
+				log.Trace("handler failed to write json", "err", err)
+			}
 		}
 		for _, n := range cp.notifiers {
-			n.activate()
+			err := n.activate()
+			if err != nil {
+				log.Trace("call proc notifier failed to activate", "err", err)
+			}
 		}
 	})
 }
