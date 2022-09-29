@@ -668,16 +668,3 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID ID) (pu
 func (api *pubSubAPI) subscribeSyncing(wsConn *wsConn, subID ID) (pubsub.UnsubscribeFunc, error) {
 	return nil, errors.New("syncing subscription is not implemented")
 }
-
-// copy from github.com/ethereum/go-ethereum/rpc/json.go
-// isBatch returns true when the first non-whitespace characters is '['
-func isBatch(raw []byte) bool {
-	for _, c := range raw {
-		// skip insignificant whitespace (http://www.ietf.org/rfc/rfc4627.txt)
-		if c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d {
-			continue
-		}
-		return c == '['
-	}
-	return false
-}
