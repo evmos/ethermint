@@ -18,10 +18,11 @@ const (
 	AppDBBackend = "app-db-backend"
 )
 
-const QueryOnly = "query-only"
+const JSONRPCOnly = " json-rpc-only"
 
 // GRPC-related flags.
 const (
+	GRPCOnly       = "grpc-only"
 	GRPCEnable     = "grpc.enable"
 	GRPCAddress    = "grpc.address"
 	GRPCWebEnable  = "grpc-web.enable"

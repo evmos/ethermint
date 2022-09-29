@@ -14,7 +14,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"golang.org/x/exp/slices"
 
 	"github.com/spf13/cobra"
 
@@ -149,8 +148,8 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Uint64(server.FlagMinRetainBlocks, 0, "Minimum block height offset during ABCI commit to prune Tendermint blocks")
 	cmd.Flags().String(srvflags.AppDBBackend, "", "The type of database for application and snapshots databases")
 
-	cmd.Flags().String(srvflags.QueryOnly, "", "Start the node in query only mode without Tendermint process (grpc|jsonrpc|grpc,jsonrpc)")
-
+	cmd.Flags().Bool(srvflags.JSONRPCOnly, false, "Start the node in query only mode without Tendermint process")
+	cmd.Flags().Bool(srvflags.GRPCOnly, false, "Start the node in gRPC query only mode without Tendermint process")
 	cmd.Flags().Bool(srvflags.GRPCEnable, true, "Define if the gRPC server should be enabled")
 	cmd.Flags().String(srvflags.GRPCAddress, serverconfig.DefaultGRPCAddress, "the gRPC server address to listen on")
 	cmd.Flags().Bool(srvflags.GRPCWebEnable, true, "Define if the gRPC-Web server should be enabled. (Note: gRPC must also be enabled.)")
@@ -314,17 +313,14 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(cfg)
 	var (
-		tmNode *node.Node
-		modes  = strings.Split(ctx.Viper.GetString(srvflags.QueryOnly), ",")
+		tmNode      *node.Node
+		jsonRPCOnly = ctx.Viper.GetBool(srvflags.JSONRPCOnly)
+		gRPCOnly    = ctx.Viper.GetBool(srvflags.GRPCOnly)
 	)
-	gRPCQueryMode := slices.Contains(modes, "grpc")
-	jsonRPCMode := slices.Contains(modes, "jsonrpc")
-	if gRPCQueryMode || jsonRPCMode {
-		ctx.Logger.Info(fmt.Sprintf("starting node in %s query only mode; Tendermint is disabled", modes))
-		if gRPCQueryMode {
-			config.GRPC.Enable = true
-		}
-		if jsonRPCMode {
+	if jsonRPCOnly || gRPCOnly {
+		ctx.Logger.Info("starting node in query only mode; Tendermint is disabled")
+		config.GRPC.Enable = true
+		if jsonRPCOnly {
 			config.JSONRPC.Enable = true
 		}
 	} else {
@@ -511,9 +507,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}()
 	}
 
-	// At this point it is safe to block the process if we're in gRPC or JSON-RPC only mode as
+	// At this point it is safe to block the process if we're in query only mode as
 	// we do not need to start Rosetta or handle any Tendermint related processes.
-	if gRPCQueryMode || jsonRPCMode {
+	if jsonRPCOnly || gRPCOnly {
 		// wait for signal capture and gracefully return
 		return server.WaitForQuitSignals()
 	}
