@@ -435,7 +435,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		apiSrv = api.New(clientCtx, ctx.Logger.With("server", "api"))
 		app.RegisterAPIRoutes(apiSrv, config.API)
 		errCh := make(chan error)
-
 		go func() {
 			if err := apiSrv.Start(config.Config); err != nil {
 				errCh <- err
@@ -447,6 +446,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			return err
 		case <-time.After(types.ServerStartTime): // assume server started successfully
 		}
+		defer apiSrv.Close()
 	}
 
 	var (
@@ -557,10 +557,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 		if cpuProfileCleanup != nil {
 			_ = cpuProfileCleanup()
-		}
-
-		if apiSrv != nil {
-			_ = apiSrv.Close()
 		}
 		logger.Info("Bye!")
 	}()
