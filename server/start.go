@@ -319,6 +319,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if jsonRPCOnly {
 			config.JSONRPC.Enable = true
 		}
+		config.JSONRPC.EnableIndexer = false
 	} else {
 		tmNode, err = node.NewNode(
 			cfg,
