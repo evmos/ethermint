@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
+
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 func (suite *BackendTestSuite) TestGetCode() {
@@ -72,8 +77,8 @@ func (suite *BackendTestSuite) TestGetCode() {
 
 func (suite *BackendTestSuite) TestGetProof() {
 	blockNrInvalid := rpctypes.NewBlockNumber(big.NewInt(1))
-	// blockNr := rpctypes.NewBlockNumber(big.NewInt(4))
-	// _, bz := suite.buildEthereumTx()
+	blockNr := rpctypes.NewBlockNumber(big.NewInt(4))
+	address1 := tests.GenerateAddress()
 
 	testCases := []struct {
 		name          string
@@ -87,7 +92,7 @@ func (suite *BackendTestSuite) TestGetProof() {
 		// fail - invalidBlockNumber
 		{
 			"fail - BlockNumeber = 1",
-			tests.GenerateAddress(),
+			address1,
 			[]string{},
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNrInvalid},
 			func(bn rpctypes.BlockNumber, addr common.Address) {
@@ -99,21 +104,53 @@ func (suite *BackendTestSuite) TestGetProof() {
 			false,
 			&rpctypes.AccountResult{},
 		},
-		// TODO How can I pass block height >=2 here? RegisterBlock doesn't accept it
-		// {
-		// 	"pass",
-		// 	tests.GenerateAddress(),
-		// 	[]string{},
-		// 	rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
-		// 	func(addr common.Address) {
-		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
-		// 		RegisterBlock(client, blockNr.Int64(), nil)
-		// 		queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
-		// 		RegisterAccount(queryClient, addr, blockNr.Int64())
-		// 	},
-		// 	true,
-		// 	&rpctypes.AccountResult{},
-		// },
+		{
+			"pass",
+			address1,
+			[]string{"0x0"},
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				suite.backend.ctx = rpctypes.ContextWithHeight(bn.Int64())
+
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlock(client, bn.Int64(), nil)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				RegisterAccount(queryClient, addr, bn.Int64())
+
+				// Use the IAVL height if a valid tendermint height is passed in.
+				ivalHeight := bn.Int64() - 1
+				RegisterABCIQueryWithOptions(
+					client,
+					bn.Int64(),
+					"store/evm/key",
+					evmtypes.StateKey(address1, common.HexToHash("0x0").Bytes()),
+					tmrpcclient.ABCIQueryOptions{Height: ivalHeight, Prove: true},
+				)
+				RegisterABCIQueryWithOptions(
+					client,
+					bn.Int64(),
+					"store/acc/key",
+					authtypes.AddressStoreKey(sdk.AccAddress(address1.Bytes())),
+					tmrpcclient.ABCIQueryOptions{Height: ivalHeight, Prove: true},
+				)
+			},
+			true,
+			&rpctypes.AccountResult{
+				Address:      address1,
+				AccountProof: []string{""},
+				Balance:      (*hexutil.Big)(big.NewInt(0)),
+				CodeHash:     common.HexToHash(""),
+				Nonce:        0x0,
+				StorageHash:  common.Hash{},
+				StorageProof: []rpctypes.StorageResult{
+					{
+						Key:   "0x0",
+						Value: (*hexutil.Big)(big.NewInt(2)),
+						Proof: []string{""},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {

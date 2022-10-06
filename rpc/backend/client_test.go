@@ -159,7 +159,7 @@ func RegisterBlockByHashNotFound(client *mocks.Client, hash common.Hash, tx []by
 }
 
 func RegisterABCIQueryWithOptions(client *mocks.Client, height int64, path string, data bytes.HexBytes, opts tmrpcclient.ABCIQueryOptions) {
-	client.On("ABCIQueryWithOptions", context.Background(), path, mock.AnythingOfType("bytes.HexBytes"), opts).
+	client.On("ABCIQueryWithOptions", context.Background(), path, data, opts).
 		Return(&tmrpctypes.ResultABCIQuery{
 			Response: abci.ResponseQuery{
 				Value:  []byte{2},
