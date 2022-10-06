@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cast"
@@ -16,17 +17,17 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
-
-	ethermint "github.com/evmos/ethermint/types"
 )
 
 // BlockNumber represents decoding hex string to block values
 type BlockNumber int64
 
 const (
-	EthPendingBlockNumber  = BlockNumber(-2)
-	EthLatestBlockNumber   = BlockNumber(-1)
-	EthEarliestBlockNumber = BlockNumber(0)
+	EthSafeBlockNumber      = BlockNumber(-4)
+	EthFinalizedBlockNumber = BlockNumber(-3)
+	EthPendingBlockNumber   = BlockNumber(-2)
+	EthLatestBlockNumber    = BlockNumber(-1)
+	EthEarliestBlockNumber  = BlockNumber(0)
 )
 
 const (
@@ -34,6 +35,7 @@ const (
 	BlockParamLatest    = "latest"
 	BlockParamFinalized = "finalized"
 	BlockParamPending   = "pending"
+	BlockParamSafe      = "safe"
 )
 
 // NewBlockNumber creates a new BlockNumber instance.
@@ -73,11 +75,17 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	case BlockParamEarliest:
 		*bn = EthEarliestBlockNumber
 		return nil
-	case BlockParamLatest, BlockParamFinalized:
+	case BlockParamLatest:
 		*bn = EthLatestBlockNumber
+		return nil
+	case BlockParamFinalized:
+		*bn = EthFinalizedBlockNumber
 		return nil
 	case BlockParamPending:
 		*bn = EthPendingBlockNumber
+		return nil
+	case BlockParamSafe:
+		*bn = EthSafeBlockNumber
 		return nil
 	}
 
@@ -94,6 +102,26 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	*bn = BlockNumber(blckNum)
 
 	return nil
+}
+
+// MarshalText implements encoding.TextMarshaler. It marshals:
+// - "latest", "earliest" or "pending" as strings
+// - other numbers as hex
+func (bn BlockNumber) MarshalText() ([]byte, error) {
+	switch bn {
+	case EthEarliestBlockNumber:
+		return []byte("earliest"), nil
+	case EthLatestBlockNumber:
+		return []byte("latest"), nil
+	case EthPendingBlockNumber:
+		return []byte("pending"), nil
+	case EthFinalizedBlockNumber:
+		return []byte("finalized"), nil
+	case EthSafeBlockNumber:
+		return []byte("safe"), nil
+	default:
+		return hexutil.Uint64(bn).MarshalText()
+	}
 }
 
 // Int64 converts block number to primitive type
@@ -121,8 +149,9 @@ func (bn BlockNumber) TmHeight() *int64 {
 
 // BlockNumberOrHash represents a block number or a block hash.
 type BlockNumberOrHash struct {
-	BlockNumber *BlockNumber `json:"blockNumber,omitempty"`
-	BlockHash   *common.Hash `json:"blockHash,omitempty"`
+	BlockNumber      *BlockNumber `json:"blockNumber,omitempty"`
+	BlockHash        *common.Hash `json:"blockHash,omitempty"`
+	RequireCanonical bool         `json:"requireCanonical,omitempty"`
 }
 
 func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
@@ -156,17 +185,27 @@ func (bnh *BlockNumberOrHash) checkUnmarshal(e BlockNumberOrHash) error {
 
 func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 	switch input {
-	case BlockParamEarliest:
+	case "earliest":
 		bn := EthEarliestBlockNumber
 		bnh.BlockNumber = &bn
-	case BlockParamLatest:
+		return nil
+	case "latest":
 		bn := EthLatestBlockNumber
 		bnh.BlockNumber = &bn
-	case BlockParamPending:
+		return nil
+	case "pending":
 		bn := EthPendingBlockNumber
 		bnh.BlockNumber = &bn
+		return nil
+	case "finalized":
+		bn := EthFinalizedBlockNumber
+		bnh.BlockNumber = &bn
+		return nil
+	case "safe":
+		bn := EthSafeBlockNumber
+		bnh.BlockNumber = &bn
+		return nil
 	default:
-		// check if the input is a block hash
 		if len(input) == 66 {
 			hash := common.Hash{}
 			err := hash.UnmarshalText([]byte(input))
@@ -174,21 +213,58 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 				return err
 			}
 			bnh.BlockHash = &hash
-			break
+			return nil
 		}
-		// otherwise take the hex string has int64 value
-		blockNumber, err := hexutil.DecodeUint64(input)
+
+		blckNum, err := hexutil.DecodeUint64(input)
 		if err != nil {
 			return err
 		}
-
-		bnInt, err := ethermint.SafeInt64(blockNumber)
-		if err != nil {
-			return err
+		if blckNum > math.MaxInt64 {
+			return fmt.Errorf("blocknumber too high")
 		}
-
-		bn := BlockNumber(bnInt)
+		bn := BlockNumber(blckNum)
 		bnh.BlockNumber = &bn
+		return nil
 	}
-	return nil
+}
+
+func (bnh *BlockNumberOrHash) Number() (BlockNumber, bool) {
+	if bnh.BlockNumber != nil {
+		return *bnh.BlockNumber, true
+	}
+	return BlockNumber(0), false
+}
+
+func (bnh *BlockNumberOrHash) String() string {
+	if bnh.BlockNumber != nil {
+		return strconv.Itoa(int(*bnh.BlockNumber))
+	}
+	if bnh.BlockHash != nil {
+		return bnh.BlockHash.String()
+	}
+	return "nil"
+}
+
+func (bnh *BlockNumberOrHash) Hash() (common.Hash, bool) {
+	if bnh.BlockHash != nil {
+		return *bnh.BlockHash, true
+	}
+	return common.Hash{}, false
+}
+
+func BlockNumberOrHashWithNumber(blockNr BlockNumber) BlockNumberOrHash {
+	return BlockNumberOrHash{
+		BlockNumber:      &blockNr,
+		BlockHash:        nil,
+		RequireCanonical: false,
+	}
+}
+
+func BlockNumberOrHashWithHash(hash common.Hash, canonical bool) BlockNumberOrHash {
+	return BlockNumberOrHash{
+		BlockNumber:      nil,
+		BlockHash:        &hash,
+		RequireCanonical: canonical,
+	}
 }

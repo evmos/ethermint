@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/metrics/prometheus"
 	"github.com/evmos/ethermint/rpc"
+	rpcServer "github.com/evmos/ethermint/rpc/server"
 
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
@@ -42,7 +43,7 @@ func StartJSONRPC(ctx *server.Context,
 		return nil
 	}))
 
-	rpcServer := rpc.NewServer()
+	rpcServer := rpcServer.NewServer()
 
 	if config.JSONRPC.EnableMetrics {
 		registry := metrics.NewRegistry()

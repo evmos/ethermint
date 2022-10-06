@@ -41,6 +41,15 @@ const (
 	apiVersion = "1.0"
 )
 
+// API describes the set of methods offered over the RPC interface
+type API struct {
+	Namespace     string      // namespace under which the rpc methods of Service are exposed
+	Version       string      // deprecated - this field is no longer used, but retained for compatibility
+	Service       interface{} // receiver instance which holds the methods
+	Public        bool        // deprecated - this field is no longer used, but retained for compatibility
+	Authenticated bool        // whether the api should only be available behind authentication.
+}
+
 // APICreator creates the JSON-RPC API implementations.
 type APICreator = func(
 	ctx *server.Context,
