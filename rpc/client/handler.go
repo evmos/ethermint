@@ -297,7 +297,11 @@ func (h *Handler) handleResponse(msg *codec.JsonrpcMessage) {
 		op.err = msg.Error
 		return
 	}
-	if op.err = json.Unmarshal(msg.Result, &op.sub.Subid); op.err == nil {
+	err := json.Unmarshal(msg.Result, &op.sub.Subid)
+	op.err = err
+	if err != nil {
+		log.Trace("unmarshal msg result for json rpc failed", "err", err)
+	} else {
 		go op.sub.run()
 		h.clientSubs[op.sub.Subid] = op.sub
 	}

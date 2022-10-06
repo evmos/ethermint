@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
@@ -35,6 +36,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/log"
 
+	"github.com/evmos/ethermint/rpc/client"
 	rpcClient "github.com/evmos/ethermint/rpc/client"
 	"github.com/evmos/ethermint/rpc/codec"
 	rpcServer "github.com/evmos/ethermint/rpc/server"
@@ -708,7 +710,7 @@ func ipcTestClient(srv *rpcServer.Server, fl *flakeyListener) (*rpcClient.Client
 	} else {
 		endpoint = os.TempDir() + "/" + endpoint
 	}
-	l, err := rpcClient.IpcListen(endpoint)
+	l, err := IpcListen(endpoint)
 	if err != nil {
 		panic(err)
 	}
@@ -746,4 +748,31 @@ func (l *flakeyListener) Accept() (net.Conn, error) {
 		})
 	}
 	return c, err
+}
+
+// ipcListen will create a Unix socket on the given endpoint.
+func IpcListen(endpoint string) (net.Listener, error) {
+	if len(endpoint) > int(client.MaxPathSize) {
+		log.Warn(fmt.Sprintf("The ipc endpoint is longer than %d characters. ", client.MaxPathSize),
+			"endpoint", endpoint)
+	}
+
+	// Ensure the IPC path exists and remove any previous leftover
+	if err := os.MkdirAll(filepath.Dir(endpoint), 0o750); err != nil {
+		return nil, err
+	}
+	err := os.Remove(endpoint)
+	if err != nil {
+		log.Trace("endpoint remove failed", "err", err)
+	}
+	l, err := net.Listen("unix", endpoint)
+	if err != nil {
+		return nil, err
+	}
+	err = os.Chmod(endpoint, 0o600)
+	if err != nil {
+		log.Trace("update ipc file permissions failed", "err", err)
+		return nil, err
+	}
+	return l, nil
 }

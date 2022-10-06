@@ -185,23 +185,23 @@ func (bnh *BlockNumberOrHash) checkUnmarshal(e BlockNumberOrHash) error {
 
 func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 	switch input {
-	case "earliest":
+	case BlockParamEarliest:
 		bn := EthEarliestBlockNumber
 		bnh.BlockNumber = &bn
 		return nil
-	case "latest":
+	case BlockParamLatest:
 		bn := EthLatestBlockNumber
 		bnh.BlockNumber = &bn
 		return nil
-	case "pending":
+	case BlockParamPending:
 		bn := EthPendingBlockNumber
 		bnh.BlockNumber = &bn
 		return nil
-	case "finalized":
+	case BlockParamFinalized:
 		bn := EthFinalizedBlockNumber
 		bnh.BlockNumber = &bn
 		return nil
-	case "safe":
+	case BlockParamSafe:
 		bn := EthSafeBlockNumber
 		bnh.BlockNumber = &bn
 		return nil

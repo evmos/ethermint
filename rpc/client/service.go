@@ -62,7 +62,8 @@ func (r *ServiceRegistry) RegisterName(name string, rcvr interface{}) error {
 		}
 		r.Services[name] = svc
 	}
-	for name, cb := range callbacks {
+	for name := range callbacks {
+		cb := callbacks[name]
 		if cb.IsSubscribe {
 			svc.subscriptions[name] = cb
 		} else {

@@ -196,7 +196,12 @@ func (s *Service) Modules() map[string]string {
 	defer s.server.services.Mu.Unlock()
 
 	modules := make(map[string]string)
+
+	serviceNames := make([]string, 0, len(s.server.services.Services))
 	for name := range s.server.services.Services {
+		serviceNames = append(serviceNames, name)
+	}
+	for _, name := range serviceNames {
 		modules[name] = "1.0"
 	}
 	return modules

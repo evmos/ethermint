@@ -29,4 +29,4 @@ return sizeof(s.sun_path);
 */
 import "C"
 
-var maxPathSize = C.max_socket_path_size()
+var MaxPathSize = C.max_socket_path_size()

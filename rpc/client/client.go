@@ -396,7 +396,11 @@ func (c *Client) BatchCallContext(ctx context.Context, b []BatchElem) error {
 			elem.Error = ErrNoResult
 			continue
 		}
-		elem.Error = json.Unmarshal(resp.Result, elem.Result)
+		err := json.Unmarshal(resp.Result, elem.Result)
+		if err != nil {
+			log.Trace("unmarshal response result failed for jsonrpc message", "err", err)
+		}
+		elem.Error = err
 	}
 	return err
 }

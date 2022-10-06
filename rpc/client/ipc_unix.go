@@ -21,40 +21,8 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"net"
-	"os"
-	"path/filepath"
-
-	"github.com/ethereum/go-ethereum/log"
 )
-
-// ipcListen will create a Unix socket on the given endpoint.
-func IpcListen(endpoint string) (net.Listener, error) {
-	if len(endpoint) > int(maxPathSize) {
-		log.Warn(fmt.Sprintf("The ipc endpoint is longer than %d characters. ", maxPathSize),
-			"endpoint", endpoint)
-	}
-
-	// Ensure the IPC path exists and remove any previous leftover
-	if err := os.MkdirAll(filepath.Dir(endpoint), 0o750); err != nil {
-		return nil, err
-	}
-	err := os.Remove(endpoint)
-	if err != nil {
-		log.Trace("endpoint remove failed", "err", err)
-	}
-	l, err := net.Listen("unix", endpoint)
-	if err != nil {
-		return nil, err
-	}
-	err = os.Chmod(endpoint, 0o600)
-	if err != nil {
-		log.Trace("update ipc file permissions failed", "err", err)
-		return nil, err
-	}
-	return l, nil
-}
 
 // newIPCConnection will connect to a Unix socket on the given endpoint.
 func newIPCConnection(ctx context.Context, endpoint string) (net.Conn, error) {
