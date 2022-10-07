@@ -162,7 +162,7 @@ func RegisterABCIQueryWithOptions(client *mocks.Client, height int64, path strin
 	client.On("ABCIQueryWithOptions", context.Background(), path, data, opts).
 		Return(&tmrpctypes.ResultABCIQuery{
 			Response: abci.ResponseQuery{
-				Value:  []byte{2},
+				Value:  []byte{2}, // TODO replace with data.Bytes(),
 				Height: height,
 			},
 		}, nil)

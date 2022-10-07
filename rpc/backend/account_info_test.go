@@ -8,6 +8,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/stretchr/testify/mock"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 
 	"github.com/evmos/ethermint/rpc/backend/mocks"
@@ -41,7 +42,7 @@ func (suite *BackendTestSuite) TestGetCode() {
 			tests.GenerateAddress(),
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
 			func(addr common.Address) {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterCodeError(queryClient, addr)
 			},
 			false,
@@ -52,7 +53,7 @@ func (suite *BackendTestSuite) TestGetCode() {
 			tests.GenerateAddress(),
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
 			func(addr common.Address) {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterCode(queryClient, addr, contractCode)
 			},
 			true,
@@ -89,16 +90,15 @@ func (suite *BackendTestSuite) TestGetProof() {
 		expPass       bool
 		expAccRes     *rpctypes.AccountResult
 	}{
-		// fail - invalidBlockNumber
 		{
-			"fail - BlockNumeber = 1",
+			"fail - BlockNumeber = 1 (invalidBlockNumber)",
 			address1,
 			[]string{},
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNrInvalid},
 			func(bn rpctypes.BlockNumber, addr common.Address) {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlock(client, bn.Int64(), nil)
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterAccount(queryClient, addr, blockNrInvalid.Int64())
 			},
 			false,
@@ -114,7 +114,7 @@ func (suite *BackendTestSuite) TestGetProof() {
 
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlock(client, bn.Int64(), nil)
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterAccount(queryClient, addr, bn.Int64())
 
 				// Use the IAVL height if a valid tendermint height is passed in.
@@ -196,7 +196,7 @@ func (suite *BackendTestSuite) TestGetStorageAt() {
 			"0x0",
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
 			func(addr common.Address, key string, storage string) {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterStorageAtError(queryClient, addr, key)
 			},
 			false,
@@ -208,7 +208,7 @@ func (suite *BackendTestSuite) TestGetStorageAt() {
 			"0x0",
 			rpctypes.BlockNumberOrHash{BlockNumber: &blockNr},
 			func(addr common.Address, key string, storage string) {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterStorageAt(queryClient, addr, key, storage)
 			},
 			true,
@@ -269,7 +269,7 @@ func (suite *BackendTestSuite) TestGetBalance() {
 			func(bn rpctypes.BlockNumber, addr common.Address) {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlock(client, bn.Int64(), nil)
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBalanceError(queryClient, addr, bn.Int64())
 			},
 			false,
@@ -282,7 +282,7 @@ func (suite *BackendTestSuite) TestGetBalance() {
 			func(bn rpctypes.BlockNumber, addr common.Address) {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlock(client, bn.Int64(), nil)
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBalanceInvalid(queryClient, addr, bn.Int64())
 			},
 			false,
@@ -295,7 +295,7 @@ func (suite *BackendTestSuite) TestGetBalance() {
 			func(bn rpctypes.BlockNumber, addr common.Address) {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlock(client, bn.Int64(), nil)
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBalanceNegative(queryClient, addr, bn.Int64())
 			},
 			false,
@@ -308,7 +308,7 @@ func (suite *BackendTestSuite) TestGetBalance() {
 			func(bn rpctypes.BlockNumber, addr common.Address) {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlock(client, bn.Int64(), nil)
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBalance(queryClient, addr, bn.Int64())
 			},
 			true,
@@ -344,32 +344,45 @@ func (suite *BackendTestSuite) TestGetTransactionCount() {
 		expPass      bool
 		expTxCount   hexutil.Uint64
 	}{
-		{
-			"pass - account doesn't exist",
-			false,
-			rpctypes.NewBlockNumber(big.NewInt(1)),
-			func(addr common.Address, bn rpctypes.BlockNumber) {},
-			true,
-			hexutil.Uint64(0),
-		},
-		// TODO Check how to mock RegisterABCIQueryWithOptions correctly
 		// {
-		// 	"pass",
-		// 	true,
+		// 	"pass - account doesn't exist",
+		// 	false,
 		// 	rpctypes.NewBlockNumber(big.NewInt(1)),
-		// 	func(addr common.Address, bn rpctypes.BlockNumber) {
-		// 		client := suite.backend.clientCtx.Client.(*mocks.Client)
-		// 		RegisterABCIQueryWithOptions(
-		// 			client,
-		// 			bn.Int64(),
-		// 			"/cosmos.auth.v1beta1.Query/Account",
-		// 			bytes.HexBytes{},
-		// 			tmrpcclient.ABCIQueryOptions{Height: bn.Int64(), Prove: false},
-		// 		)
-		// 	},
+		// 	func(addr common.Address, bn rpctypes.BlockNumber) {},
 		// 	true,
-		// 	hexutil.Uint64(1),
+		// 	hexutil.Uint64(0),
 		// },
+		// TODO Check how to mock RegisterABCIQueryWithOptions correctly
+		{
+			"pass",
+			true,
+			rpctypes.NewBlockNumber(big.NewInt(1)),
+			func(addr common.Address, bn rpctypes.BlockNumber) {
+
+				mockAuthQueryClient := &mocks.AuthQueryClient{
+					ClientConnInterface: suite.backend.clientCtx.GRPCClient,
+				}
+
+				// suite.backend.clientCtx.Invoke()
+				mockAuthQueryClient.On("Invoke", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				// client := suite.backend.clientCtx.Client.(*mocks.Client)
+				// bacc := authtypes.NewBaseAccountWithAddress(suite.acc)
+				// acc := authtypes.AccountI(bacc)
+				// msg, _ := acc.(proto.Message)
+				// any, _ := codectypes.NewAnyWithValue(msg)
+				// bz, _ := any.Marshal()
+				// RegisterABCIQueryWithOptions(
+				// 	client,
+				// 	bn.Int64(),
+				// 	"/cosmos.auth.v1beta1.Query/Account",
+				// 	bz,
+				// 	tmrpcclient.ABCIQueryOptions{Height: bn.Int64(), Prove: false},
+				// )
+			},
+			true,
+			hexutil.Uint64(1),
+		},
 	}
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
