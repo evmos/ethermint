@@ -93,6 +93,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### API Breaking
 
 * (rpc) [#1121](https://github.com/tharsis/ethermint/pull/1121) Implement Ethereum tx indexer
+* (rpc) [#1367](https://github.com/evmos/ethermint/pull/1367) Add support for EVM RPC metrics
 
 ### Bug Fixes
 

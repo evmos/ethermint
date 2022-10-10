@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/VictoriaMetrics/metrics"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 
@@ -11,8 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/types"
 	ethlog "github.com/ethereum/go-ethereum/log"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/evmos/ethermint/rpc"
+	ethrpc "github.com/ledgerwatch/erigon/rpc"
 
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
@@ -41,7 +42,18 @@ func StartJSONRPC(ctx *server.Context,
 		return nil
 	}))
 
-	rpcServer := ethrpc.NewServer()
+	rpcServer := ethrpc.NewServer(50, false, true)
+
+	if config.JSONRPC.EnableMetrics {
+		metricsErrChan := setupMetricsServer(ctx, config)
+
+		select {
+		case err := <-metricsErrChan:
+			ctx.Logger.Error("failed to boot JSON-RPC metrics server", "error", err.Error())
+			return nil, nil, err
+		case <-time.After(types.ServerStartTime): // assume JSON RPC server started successfully
+		}
+	}
 
 	allowUnprotectedTxs := config.JSONRPC.AllowUnprotectedTxs
 	rpcAPIArr := config.JSONRPC.API
@@ -109,5 +121,41 @@ func StartJSONRPC(ctx *server.Context,
 	tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint, ctx.Logger)
 	wsSrv := rpc.NewWebsocketsServer(clientCtx, ctx.Logger, tmWsClient, config)
 	wsSrv.Start()
+
 	return httpSrv, httpSrvDone, nil
+}
+
+func setupMetricsServer(ctx *server.Context, config *config.Config) chan error {
+	address := config.JSONRPC.MetricsAddress
+
+	m := http.NewServeMux()
+	m.Handle("/metrics", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		metrics.WritePrometheus(w, true)
+	}))
+
+	metricsErrCh := make(chan error)
+
+	go func() {
+		ctx.Logger.Info("Starting JSON-RPC metrics server", "address", address)
+
+		server := &http.Server{
+			Addr:              address,
+			Handler:           m,
+			ReadHeaderTimeout: config.JSONRPC.HTTPTimeout,
+			ReadTimeout:       config.JSONRPC.HTTPTimeout,
+			WriteTimeout:      config.JSONRPC.HTTPTimeout,
+			IdleTimeout:       config.JSONRPC.HTTPIdleTimeout,
+		}
+
+		if err := server.ListenAndServe(); err != nil {
+			if err == http.ErrServerClosed {
+				return
+			}
+
+			ctx.Logger.Error("failed to start JSON-RPC metrics server", "error", err.Error())
+			metricsErrCh <- err
+		}
+	}()
+
+	return metricsErrCh
 }

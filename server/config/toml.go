@@ -73,6 +73,11 @@ max-open-connections = {{ .JSONRPC.MaxOpenConnections }}
 # EnableIndexer enables the custom transaction indexer for the EVM (ethereum transactions).
 enable-indexer = {{ .JSONRPC.EnableIndexer }}
 
+# EnableMetrics enables the metric server for EVM RPC
+enable-metrics = {{ .JSONRPC.EnableMetrics }}
+# MetricsAddress defines the EVM Metrics server address to bind to.
+metrics-address = "{{ .JSONRPC.MetricsAddress }}"
+
 ###############################################################################
 ###                             TLS Configuration                           ###
 ###############################################################################
