@@ -8,8 +8,10 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/stretchr/testify/mock"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
+
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	proto "github.com/gogo/protobuf/proto"
 
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
@@ -359,26 +361,26 @@ func (suite *BackendTestSuite) TestGetTransactionCount() {
 			rpctypes.NewBlockNumber(big.NewInt(1)),
 			func(addr common.Address, bn rpctypes.BlockNumber) {
 
-				mockAuthQueryClient := &mocks.AuthQueryClient{
-					ClientConnInterface: suite.backend.clientCtx.GRPCClient,
-				}
+				// mockAuthQueryClient := &mocks.AuthQueryClient{
+				// 	ClientConnInterface: suite.backend.clientCtx.GRPCClient,
+				// }
 
-				// suite.backend.clientCtx.Invoke()
-				mockAuthQueryClient.On("Invoke", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				// // suite.backend.clientCtx.Invoke()
+				// mockAuthQueryClient.On("Invoke", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-				// client := suite.backend.clientCtx.Client.(*mocks.Client)
-				// bacc := authtypes.NewBaseAccountWithAddress(suite.acc)
-				// acc := authtypes.AccountI(bacc)
-				// msg, _ := acc.(proto.Message)
-				// any, _ := codectypes.NewAnyWithValue(msg)
-				// bz, _ := any.Marshal()
-				// RegisterABCIQueryWithOptions(
-				// 	client,
-				// 	bn.Int64(),
-				// 	"/cosmos.auth.v1beta1.Query/Account",
-				// 	bz,
-				// 	tmrpcclient.ABCIQueryOptions{Height: bn.Int64(), Prove: false},
-				// )
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				bacc := authtypes.NewBaseAccountWithAddress(suite.acc)
+				acc := authtypes.AccountI(bacc)
+				msg, _ := acc.(proto.Message)
+				any, _ := codectypes.NewAnyWithValue(msg)
+				bz, _ := any.Marshal()
+				RegisterABCIQueryWithOptions(
+					client,
+					bn.Int64(),
+					"/cosmos.auth.v1beta1.Query/Account",
+					bz,
+					tmrpcclient.ABCIQueryOptions{Height: bn.Int64(), Prove: false},
+				)
 			},
 			true,
 			hexutil.Uint64(1),
