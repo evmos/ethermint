@@ -10,9 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	proto "github.com/gogo/protobuf/proto"
-
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
@@ -346,44 +343,13 @@ func (suite *BackendTestSuite) TestGetTransactionCount() {
 		expPass      bool
 		expTxCount   hexutil.Uint64
 	}{
-		// {
-		// 	"pass - account doesn't exist",
-		// 	false,
-		// 	rpctypes.NewBlockNumber(big.NewInt(1)),
-		// 	func(addr common.Address, bn rpctypes.BlockNumber) {},
-		// 	true,
-		// 	hexutil.Uint64(0),
-		// },
-		// TODO Check how to mock RegisterABCIQueryWithOptions correctly
 		{
-			"pass",
-			true,
+			"pass - account doesn't exist",
+			false,
 			rpctypes.NewBlockNumber(big.NewInt(1)),
-			func(addr common.Address, bn rpctypes.BlockNumber) {
-
-				// mockAuthQueryClient := &mocks.AuthQueryClient{
-				// 	ClientConnInterface: suite.backend.clientCtx.GRPCClient,
-				// }
-
-				// // suite.backend.clientCtx.Invoke()
-				// mockAuthQueryClient.On("Invoke", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				bacc := authtypes.NewBaseAccountWithAddress(suite.acc)
-				acc := authtypes.AccountI(bacc)
-				msg, _ := acc.(proto.Message)
-				any, _ := codectypes.NewAnyWithValue(msg)
-				bz, _ := any.Marshal()
-				RegisterABCIQueryWithOptions(
-					client,
-					bn.Int64(),
-					"/cosmos.auth.v1beta1.Query/Account",
-					bz,
-					tmrpcclient.ABCIQueryOptions{Height: bn.Int64(), Prove: false},
-				)
-			},
+			func(addr common.Address, bn rpctypes.BlockNumber) {},
 			true,
-			hexutil.Uint64(1),
+			hexutil.Uint64(0),
 		},
 	}
 	for _, tc := range testCases {
