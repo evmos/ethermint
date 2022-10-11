@@ -40,8 +40,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.0.0)
 * (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
-* (deps) [#1167](https://github.com/evmos/ethermint/pull/1167) Bump ibc-go to [`v4.0.0-rc2`](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0-rc2)
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to `v0.46`.
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
@@ -59,12 +59,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (test) [#1311](https://github.com/evmos/ethermint/pull/1311) Add integration test for the `rollback` cmd
 * (ledger) [#1277](https://github.com/evmos/ethermint/pull/1277) Add Ledger preprocessing transaction hook for EIP-712-signed Cosmos payloads.
 * (rpc) [#1296](https://github.com/evmos/ethermint/pull/1296) Add RPC Backend unit tests.
+* (rpc) [#1352](https://github.com/evmos/ethermint/pull/1352) Make the grpc queries run concurrently, don't block the consensus state machine.
 
 ### Bug Fixes
 
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
 * (rpc) [#1340](https://github.com/evmos/ethermint/pull/1340) Fix error response when `eth_estimateGas` height provided is not found.
+* (rpc) [#1354](https://github.com/evmos/ethermint/pull/1354) Fix grpc query failure(`BaseFee` and `EthCall`) on legacy block states.
+* (cli) [#1362](https://github.com/evmos/ethermint/pull/1362) Fix `index-eth-tx` error when the indexer db is empty.
 
 ## [v0.19.2] - 2022-08-29
 
