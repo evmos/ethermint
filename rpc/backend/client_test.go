@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -10,6 +11,7 @@ import (
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/bytes"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
@@ -39,10 +41,10 @@ func RegisterBlock(
 
 	// with tx
 	block := types.MakeBlock(height, []types.Tx{tx}, nil, nil)
-	res := &tmrpctypes.ResultBlock{Block: block}
+	resBlock := &tmrpctypes.ResultBlock{Block: block}
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(res, nil)
-	return res, nil
+		Return(resBlock, nil)
+	return resBlock, nil
 }
 
 // Block returns error
@@ -154,4 +156,14 @@ func RegisterBlockByHashError(client *mocks.Client, hash common.Hash, tx []byte)
 func RegisterBlockByHashNotFound(client *mocks.Client, hash common.Hash, tx []byte) {
 	client.On("BlockByHash", rpc.ContextWithHeight(1), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}).
 		Return(nil, nil)
+}
+
+func RegisterABCIQueryWithOptions(client *mocks.Client, height int64, path string, data bytes.HexBytes, opts tmrpcclient.ABCIQueryOptions) {
+	client.On("ABCIQueryWithOptions", context.Background(), path, data, opts).
+		Return(&tmrpctypes.ResultABCIQuery{
+			Response: abci.ResponseQuery{
+				Value:  []byte{2}, // TODO replace with data.Bytes(),
+				Height: height,
+			},
+		}, nil)
 }
