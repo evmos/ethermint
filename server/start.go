@@ -33,7 +33,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/rosetta"
 	crgserver "github.com/cosmos/cosmos-sdk/server/rosetta/lib/server"
 
-	ethmetrics "github.com/ethereum/go-ethereum/metrics"
 	ethmetricsexp "github.com/ethereum/go-ethereum/metrics/exp"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -344,8 +343,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		app.RegisterTendermintService(clientCtx)
 	}
 
-	if ctx.Viper.GetBool(srvflags.JSONRPCEnableMetrics) {
-		ethmetrics.Enabled = true
+	// Enable metrics if JSONRPC is enabled and --metrics is passed
+	// Flag not added in config to avoid user enabling in config without passing in CLI
+	if config.JSONRPC.Enable && ctx.Viper.GetBool(srvflags.JSONRPCEnableMetrics) {
 		ethmetricsexp.Setup(config.JSONRPC.MetricsAddress)
 	}
 
