@@ -32,7 +32,7 @@ jobs:
             go.mod
             go.sum
       - uses: actions/checkout@v3
-      - run: semgrep scan --sarif --output=semgrep.sarif
+      - run: semgrep scan --sarif --output=semgrep.sarif --config auto
         env:
           # Upload findings to GitHub Advanced Security Dashboard [step 1/2]
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

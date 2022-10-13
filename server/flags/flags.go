@@ -49,6 +49,7 @@ const (
 	JSONRPCAllowUnprotectedTxs = "json-rpc.allow-unprotected-txs"
 	JSONRPCMaxOpenConnections  = "json-rpc.max-open-connections"
 	JSONRPCEnableIndexer       = "json-rpc.enable-indexer"
+	JSONRPCEnableMetrics       = "metrics"
 )
 
 // EVM flags
