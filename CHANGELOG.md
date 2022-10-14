@@ -36,6 +36,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
+## [v0.19.3] - 2022-10-14
+
+* (deps) [1381](https://github.com/evmos/ethermint/pull/1381) Bump sdk to `v0.45.9`
+
 ## [v0.19.2] - 2022-08-29
 
 ### Improvements
