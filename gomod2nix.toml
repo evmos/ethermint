@@ -505,8 +505,8 @@ schema = 3
     version = "v0.0.0-20220722155259-a9ba230a4035"
     hash = "sha256-9uM1OONzbsa6bz2iKk767hAaCuafi58bdTF7at03fWY="
   [mod."golang.org/x/text"]
-    version = "v0.3.7"
-    hash = "sha256-XH2pUzzQx95O0rak00grQvfACfL+EmZiV7ZzJBkX+XY="
+    version = "v0.3.8"
+    hash = "sha256-KKHU0OMfT4oxTIzIVqan8MY8wNvgBW00s24hF+kWbMA="
   [mod."golang.org/x/xerrors"]
     version = "v0.0.0-20220609144429-65e65417b02f"
     hash = "sha256-tl8pv3oddbz2+KoIp7PFDKsxjQF8ocjPF8XPsY3sw38="
