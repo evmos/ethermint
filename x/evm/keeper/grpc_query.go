@@ -526,8 +526,10 @@ func (k *Keeper) traceTx(
 		TxHash:    txConfig.TxHash,
 	}
 
+	tmpCfg := json.RawMessage{}
+
 	if traceConfig.Tracer != "" {
-		if tracer, err = tracers.New(traceConfig.Tracer, tCtx); err != nil {
+		if tracer, err = tracers.New(traceConfig.Tracer, tCtx, tmpCfg); err != nil {
 			return nil, 0, status.Error(codes.Internal, err.Error())
 		}
 	}
