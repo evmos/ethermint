@@ -1,11 +1,10 @@
 package keeper
 
 import (
-	"math/big"
-
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/evmos/ethermint/x/feemarket/types"
+	"math/big"
 )
 
 // GetParams returns the total set of fee market parameters.
@@ -27,6 +26,22 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 // Parent Base Fee
 // Required by EIP1559 base fee calculation.
 // ----------------------------------------------------------------------------
+
+// GetBaseFeeEnabled returns true if base fee is enabled
+func (k Keeper) GetBaseFeeEnabled(ctx sdk.Context) bool {
+	noBaseFee := false
+	enableHeight := int64(0)
+	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyNoBaseFee, &noBaseFee)
+	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEnableHeight, &enableHeight)
+	return noBaseFee && ctx.BlockHeight() >= enableHeight
+}
+
+// GetMinGasPrice returns the minimum gas price from the paramSpace
+func (k Keeper) GetMinGasPrice(ctx sdk.Context) sdk.Dec {
+	minGasPrice := sdk.Dec{}
+	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyNoBaseFee, &minGasPrice)
+	return minGasPrice
+}
 
 // GetBaseFee get's the base fee from the paramSpace
 // return nil if base fee is not enabled
