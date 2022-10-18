@@ -30,7 +30,7 @@ func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
 	}
 
-	minGasPrice := mpd.feesKeeper.GetMinGasPrices(ctx)
+	minGasPrice := mpd.feesKeeper.GetParams(ctx).MinGasPrice
 
 	// Short-circuit if min gas price is 0 or if simulating
 	if minGasPrice.IsZero() || simulate {

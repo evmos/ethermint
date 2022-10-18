@@ -36,13 +36,6 @@ func (k Keeper) GetBaseFeeEnabled(ctx sdk.Context) bool {
 	return noBaseFee && ctx.BlockHeight() >= enableHeight
 }
 
-// GetMinGasPrice returns the minimum gas price from the paramSpace
-func (k Keeper) GetMinGasPrice(ctx sdk.Context) sdk.Dec {
-	minGasPrice := sdk.Dec{}
-	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyNoBaseFee, &minGasPrice)
-	return minGasPrice
-}
-
 // GetBaseFee get's the base fee from the paramSpace
 // return nil if base fee is not enabled
 func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
