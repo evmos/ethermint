@@ -62,7 +62,7 @@ type EvmTestSuite struct {
 	dynamicTxFee bool
 }
 
-/// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
+// DoSetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
 func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 	checkTx := false
 

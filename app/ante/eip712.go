@@ -49,7 +49,11 @@ func NewEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandle
 
 // AnteHandle handles validation of EIP712 signed cosmos txs.
 // it is not run on RecheckTx
-func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
+	tx sdk.Tx,
+	simulate bool,
+	next sdk.AnteHandler,
+) (newCtx sdk.Context, err error) {
 	// no need to verify signatures on recheck tx
 	if ctx.IsReCheckTx() {
 		return next(ctx, tx, simulate)

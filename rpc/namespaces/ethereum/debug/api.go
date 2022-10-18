@@ -74,7 +74,7 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 		return nil, errors.New("genesis is not traceable")
 	}
 	// Get Tendermint Block
-	resBlock, err := a.backend.GetTendermintBlockByNumber(height)
+	resBlock, err := a.backend.TendermintBlockByNumber(height)
 	if err != nil {
 		a.logger.Debug("get block failed", "height", height, "error", err.Error())
 		return nil, err
@@ -88,7 +88,7 @@ func (a *API) TraceBlockByNumber(height rpctypes.BlockNumber, config *evmtypes.T
 func (a *API) TraceBlockByHash(hash common.Hash, config *evmtypes.TraceConfig) ([]*evmtypes.TxTraceResult, error) {
 	a.logger.Debug("debug_traceBlockByHash", "hash", hash)
 	// Get Tendermint Block
-	resBlock, err := a.backend.GetTendermintBlockByHash(hash)
+	resBlock, err := a.backend.TendermintBlockByHash(hash)
 	if err != nil {
 		a.logger.Debug("get block failed", "hash", hash.Hex(), "error", err.Error())
 		return nil, err
@@ -298,7 +298,7 @@ func (a *API) GetHeaderRlp(number uint64) (hexutil.Bytes, error) {
 
 // GetBlockRlp retrieves the RLP encoded for of a single block.
 func (a *API) GetBlockRlp(number uint64) (hexutil.Bytes, error) {
-	block, err := a.backend.BlockByNumber(rpctypes.BlockNumber(number))
+	block, err := a.backend.EthBlockByNumber(rpctypes.BlockNumber(number))
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func (a *API) GetBlockRlp(number uint64) (hexutil.Bytes, error) {
 
 // PrintBlock retrieves a block and returns its pretty printed form.
 func (a *API) PrintBlock(number uint64) (string, error) {
-	block, err := a.backend.BlockByNumber(rpctypes.BlockNumber(number))
+	block, err := a.backend.EthBlockByNumber(rpctypes.BlockNumber(number))
 	if err != nil {
 		return "", err
 	}

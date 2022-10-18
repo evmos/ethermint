@@ -106,7 +106,7 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
-		return nil, nil
+		return nil, fmt.Errorf("validator not found for %s", consAddr.String())
 	}
 
 	accAddr := sdk.AccAddress(validator.GetOperator())

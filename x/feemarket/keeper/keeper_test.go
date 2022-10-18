@@ -69,7 +69,7 @@ func TestKeeperTestSuite(t *testing.T) {
 	RunSpecs(t, "Keeper Suite")
 }
 
-/// SetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
+// SetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
 func (suite *KeeperTestSuite) SetupTest() {
 	checkTx := false
 	suite.app = app.Setup(checkTx, nil)

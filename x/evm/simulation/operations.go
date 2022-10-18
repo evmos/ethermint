@@ -115,7 +115,8 @@ func SimulateEthSimpleTransfer(ak types.AccountKeeper, k *keeper.Keeper) simtype
 }
 
 // SimulateEthCreateContract simulate create an ERC20 contract.
-// It makes operationSimulateEthCallContract the future operations of SimulateEthCreateContract to ensure valid contract call.
+// It makes operationSimulateEthCallContract the future operations of SimulateEthCreateContract
+// to ensure valid contract call.
 func SimulateEthCreateContract(ak types.AccountKeeper, k *keeper.Keeper) simtypes.Operation {
 	return func(
 		r *rand.Rand, bapp *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
@@ -203,7 +204,12 @@ func SimulateEthTx(
 }
 
 // CreateRandomValidEthTx create the ethereum tx with valid random values
-func CreateRandomValidEthTx(ctx *simulateContext, from, to *common.Address, amount *big.Int, data *hexutil.Bytes) (ethTx *types.MsgEthereumTx, err error) {
+func CreateRandomValidEthTx(ctx *simulateContext,
+	from,
+	to *common.Address,
+	amount *big.Int,
+	data *hexutil.Bytes,
+) (ethTx *types.MsgEthereumTx, err error) {
 	gasCap := ctx.rand.Uint64()
 	estimateGas, err := EstimateGas(ctx, from, to, data, gasCap)
 	if err != nil {
@@ -269,7 +275,12 @@ func RandomTransferableAmount(ctx *simulateContext, address common.Address, esti
 }
 
 // GetSignedTx sign the ethereum tx and packs it as a signing.Tx .
-func GetSignedTx(ctx *simulateContext, txBuilder client.TxBuilder, msg *types.MsgEthereumTx, prv cryptotypes.PrivKey) (signedTx signing.Tx, err error) {
+func GetSignedTx(
+	ctx *simulateContext,
+	txBuilder client.TxBuilder,
+	msg *types.MsgEthereumTx,
+	prv cryptotypes.PrivKey,
+) (signedTx signing.Tx, err error) {
 	builder, ok := txBuilder.(tx.ExtensionOptionsTxBuilder)
 	if !ok {
 		return nil, fmt.Errorf("can not initiate ExtensionOptionsTxBuilder")

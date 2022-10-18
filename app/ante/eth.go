@@ -96,7 +96,12 @@ func NewEthAccountVerificationDecorator(ak evmtypes.AccountKeeper, ek EVMKeeper)
 // - any of the msgs is not a MsgEthereumTx
 // - from address is empty
 // - account balance is lower than the transaction cost
-func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+func (avd EthAccountVerificationDecorator) AnteHandle(
+	ctx sdk.Context,
+	tx sdk.Tx,
+	simulate bool,
+	next sdk.AnteHandler,
+) (newCtx sdk.Context, err error) {
 	if !ctx.IsCheckTx() {
 		return next(ctx, tx, simulate)
 	}
@@ -134,7 +139,6 @@ func (avd EthAccountVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx
 		if err := evmkeeper.CheckSenderBalance(sdkmath.NewIntFromBigInt(acct.Balance), txData); err != nil {
 			return ctx, sdkerrors.Wrap(err, "failed to check sender balance")
 		}
-
 	}
 	return next(ctx, tx, simulate)
 }
@@ -301,7 +305,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
-		if coreMsg.Value().Sign() > 0 && !evm.Context.CanTransfer(stateDB, coreMsg.From(), coreMsg.Value()) {
+		if coreMsg.Value().Sign() > 0 && !evm.Context().CanTransfer(stateDB, coreMsg.From(), coreMsg.Value()) {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrInsufficientFunds,
 				"failed to transfer %s from address %s using the EVM block context transfer function",

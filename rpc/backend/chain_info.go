@@ -183,7 +183,7 @@ func (b *Backend) FeeHistory(
 	for blockID := blockStart; blockID < blockEnd; blockID++ {
 		index := int32(blockID - blockStart)
 		// tendermint block
-		tendermintblock, err := b.GetTendermintBlockByNumber(rpctypes.BlockNumber(blockID))
+		tendermintblock, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(blockID))
 		if tendermintblock == nil {
 			return nil, err
 		}
@@ -195,7 +195,7 @@ func (b *Backend) FeeHistory(
 		}
 
 		// tendermint block result
-		tendermintBlockResult, err := b.GetTendermintBlockResultByNumber(&tendermintblock.Block.Height)
+		tendermintBlockResult, err := b.TendermintBlockResultByNumber(&tendermintblock.Block.Height)
 		if tendermintBlockResult == nil {
 			b.logger.Debug("block result not found", "height", tendermintblock.Block.Height, "error", err.Error())
 			return nil, err

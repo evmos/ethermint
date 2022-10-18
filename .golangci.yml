@@ -5,7 +5,7 @@ run:
 
 linters:
   enable:
-    # - bodyclose
+    - bodyclose
     - deadcode
     - depguard
     - dogsled
@@ -13,38 +13,30 @@ linters:
     - errcheck
     - goconst
     - gocritic
-    - gofmt
-    - goimports
+    - gofumpt
     - revive
     - gosec
     - gosimple
     - govet
     - ineffassign
-    # - lll TODO: enable
+    - lll
     - misspell
     - nakedret
     - prealloc
     - exportloopref
     - staticcheck
-    # - structcheck
     - stylecheck
-    # - typecheck #TODO: enable
+    - typecheck
     - unconvert
-    # - unparam
+    - unparam
     - unused
     - varcheck
     - nolintlint
     - asciicheck
-    # - exhaustive
     - exportloopref
     - gofumpt
     - gomodguard
-    # - nestif
-    # - nlreturn
-    # - noctx
-    # - rowserrcheck
-    # - whitespace
-    # - wsl
+    - whitespace
 
 issues:
   exclude-rules:
@@ -57,6 +49,8 @@ issues:
   max-same-issues: 50
 
 linters-settings:
+  lll:
+    line-length: 150
   dogsled:
     max-blank-identifiers: 3
   golint:

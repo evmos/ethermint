@@ -247,7 +247,9 @@ func printCreate(cmd *cobra.Command, k *keyring.Record, showMnemonic bool, mnemo
 
 		// print mnemonic unless requested not to.
 		if showMnemonic {
-			if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "\n**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.\n\n%s\n\n", mnemonic); err != nil {
+			if _, err := fmt.Fprintf(cmd.ErrOrStderr(),
+				"\n**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.\n\n%s\n\n", //nolint:lll
+				mnemonic); err != nil {
 				return fmt.Errorf("failed to print mnemonic: %v", err)
 			}
 		}

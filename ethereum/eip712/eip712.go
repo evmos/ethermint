@@ -7,8 +7,10 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -232,6 +234,11 @@ func traverseFields(
 			// then continue as normal
 		}
 
+		// If its a nil pointer, do not include in types
+		if fieldType.Kind() == reflect.Ptr && field.IsNil() {
+			continue
+		}
+
 		for {
 			if fieldType.Kind() == reflect.Ptr {
 				fieldType = fieldType.Elem()
@@ -296,6 +303,11 @@ func traverseFields(
 
 		ethTyp := typToEth(fieldType)
 		if len(ethTyp) > 0 {
+			// Support array of uint64
+			if isCollection && fieldType.Kind() != reflect.Slice && fieldType.Kind() != reflect.Array {
+				ethTyp += "[]"
+			}
+
 			if prefix == typeDefPrefix {
 				typeMap[rootType] = append(typeMap[rootType], apitypes.Type{
 					Name: fieldName,
@@ -313,7 +325,6 @@ func traverseFields(
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-
 			var fieldTypedef string
 
 			if isCollection {
@@ -381,7 +392,11 @@ var (
 	addressType   = reflect.TypeOf(common.Address{})
 	bigIntType    = reflect.TypeOf(big.Int{})
 	cosmIntType   = reflect.TypeOf(sdkmath.Int{})
+	cosmDecType   = reflect.TypeOf(sdk.Dec{})
 	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
+	timeType      = reflect.TypeOf(time.Time{})
+
+	edType = reflect.TypeOf(ed25519.PubKey{})
 )
 
 // typToEth supports only basic types and arrays of basic types.
@@ -426,6 +441,9 @@ func typToEth(typ reflect.Type) string {
 		}
 	case reflect.Ptr:
 		if typ.Elem().ConvertibleTo(bigIntType) ||
+			typ.Elem().ConvertibleTo(timeType) ||
+			typ.Elem().ConvertibleTo(edType) ||
+			typ.Elem().ConvertibleTo(cosmDecType) ||
 			typ.Elem().ConvertibleTo(cosmIntType) {
 			return str
 		}
@@ -433,6 +451,9 @@ func typToEth(typ reflect.Type) string {
 		if typ.ConvertibleTo(hashType) ||
 			typ.ConvertibleTo(addressType) ||
 			typ.ConvertibleTo(bigIntType) ||
+			typ.ConvertibleTo(edType) ||
+			typ.ConvertibleTo(timeType) ||
+			typ.ConvertibleTo(cosmDecType) ||
 			typ.ConvertibleTo(cosmIntType) {
 			return str
 		}

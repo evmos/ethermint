@@ -46,6 +46,14 @@ func TestTransactionLogsValidate(t *testing.T) {
 			false,
 		},
 		{
+			"nil log",
+			TransactionLogs{
+				Hash: common.BytesToHash([]byte("tx_hash")).String(),
+				Logs: []*Log{nil},
+			},
+			false,
+		},
+		{
 			"invalid log",
 			TransactionLogs{
 				Hash: common.BytesToHash([]byte("tx_hash")).String(),
@@ -158,3 +166,36 @@ func TestValidateLog(t *testing.T) {
 		}
 	}
 }
+
+func TestConversionFunctions(t *testing.T) {
+	addr := tests.GenerateAddress().String()
+
+	txLogs := TransactionLogs{
+		Hash: common.BytesToHash([]byte("tx_hash")).String(),
+		Logs: []*Log{
+			{
+				Address:     addr,
+				Topics:      []string{common.BytesToHash([]byte("topic")).String()},
+				Data:        []byte("data"),
+				BlockNumber: 1,
+				TxHash:      common.BytesToHash([]byte("tx_hash")).String(),
+				TxIndex:     1,
+				BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
+				Index:       1,
+				Removed:     false,
+			},
+		},
+	}
+
+	// convert valid log to eth logs and back (and validate)
+	conversionLogs := NewTransactionLogsFromEth(common.BytesToHash([]byte("tx_hash")), txLogs.EthLogs())
+	conversionErr := conversionLogs.Validate()
+
+	// create new transaction logs as copy of old valid one (and validate)
+	copyLogs := NewTransactionLogs(common.BytesToHash([]byte("tx_hash")), txLogs.Logs)
+	copyErr := copyLogs.Validate()
+
+	require.Nil(t, conversionErr)
+	require.Nil(t, copyErr)
+}
+

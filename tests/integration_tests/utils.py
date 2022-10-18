@@ -1,11 +1,13 @@
 import json
 import os
 import socket
+import subprocess
 import sys
 import time
 from pathlib import Path
 
 import bech32
+from dateutil.parser import isoparse
 from dotenv import load_dotenv
 from eth_account import Account
 from hexbytes import HexBytes
@@ -108,6 +110,16 @@ def w3_wait_for_block(w3, height, timeout=240):
         raise TimeoutError(f"wait for block {height} timeout")
 
 
+def wait_for_block_time(cli, t):
+    print("wait for block time", t)
+    while True:
+        now = isoparse((cli.status())["SyncInfo"]["latest_block_time"])
+        print("block time now:", now)
+        if now >= t:
+            break
+        time.sleep(0.5)
+
+
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     """
     deploy contract and return the deployed contract instance
@@ -152,3 +164,17 @@ def send_successful_transaction(w3):
 def eth_to_bech32(addr, prefix=ETHERMINT_ADDRESS_PREFIX):
     bz = bech32.convertbits(HexBytes(addr), 8, 5)
     return bech32.bech32_encode(prefix, bz)
+
+
+def supervisorctl(inipath, *args):
+    subprocess.run(
+        (sys.executable, "-msupervisor.supervisorctl", "-c", inipath, *args),
+        check=True,
+    )
+
+
+def parse_events(logs):
+    return {
+        ev["type"]: {attr["key"]: attr["value"] for attr in ev["attributes"]}
+        for ev in logs[0]["events"]
+    }

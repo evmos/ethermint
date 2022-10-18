@@ -32,8 +32,8 @@ func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 
 	minGasPrice := mpd.feesKeeper.GetParams(ctx).MinGasPrice
 
-	// short-circuit if min gas price is 0
-	if minGasPrice.IsZero() {
+	// Short-circuit if min gas price is 0 or if simulating
+	if minGasPrice.IsZero() || simulate {
 		return next(ctx, tx, simulate)
 	}
 
@@ -62,7 +62,10 @@ func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	}
 
 	if !feeCoins.IsAnyGTE(requiredFees) {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "provided fee < minimum global fee (%s < %s). Please increase the gas price.", feeCoins, requiredFees)
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee,
+			"provided fee < minimum global fee (%s < %s). Please increase the gas price.",
+			feeCoins,
+			requiredFees)
 	}
 
 	return next(ctx, tx, simulate)
@@ -132,7 +135,7 @@ func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		if fee.LT(requiredFee) {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrInsufficientFee,
-				"provided fee < minimum global fee (%d < %d). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)",
+				"provided fee < minimum global fee (%d < %d). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)", //nolint:lll
 				fee.TruncateInt().Int64(), requiredFee.TruncateInt().Int64(),
 			)
 		}

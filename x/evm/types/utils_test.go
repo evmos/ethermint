@@ -14,6 +14,8 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	proto "github.com/gogo/protobuf/proto"
 
+	"github.com/evmos/ethermint/tests"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -83,4 +85,32 @@ func TestBinSearch(t *testing.T) {
 	gas, err = evmtypes.BinSearch(20000, 21001, failed_executable)
 	require.Error(t, err)
 	require.Equal(t, gas, uint64(0))
+}
+
+func TestTransactionLogsEncodeDecode(t *testing.T) {
+	addr := tests.GenerateAddress().String()
+
+	txLogs := evmtypes.TransactionLogs{
+		Hash: common.BytesToHash([]byte("tx_hash")).String(),
+		Logs: []*evmtypes.Log{
+			{
+				Address:     addr,
+				Topics:      []string{common.BytesToHash([]byte("topic")).String()},
+				Data:        []byte("data"),
+				BlockNumber: 1,
+				TxHash:      common.BytesToHash([]byte("tx_hash")).String(),
+				TxIndex:     1,
+				BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
+				Index:       1,
+				Removed:     false,
+			},
+		},
+	}
+
+	txLogsEncoded, encodeErr := evmtypes.EncodeTransactionLogs(&txLogs)
+	require.Nil(t, encodeErr)
+
+	txLogsEncodedDecoded, decodeErr := evmtypes.DecodeTransactionLogs(txLogsEncoded)
+	require.Nil(t, decodeErr)
+	require.Equal(t, txLogs, txLogsEncodedDecoded)
 }

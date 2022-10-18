@@ -116,6 +116,11 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass:  false,
 		},
 		{
+			name: "copied genesis",
+			genState: NewGenesisState(DefaultGenesisState().Params, DefaultGenesisState().Accounts),
+			expPass: true,
+		},
+		{
 			name: "invalid genesis",
 			genState: &GenesisState{
 				Accounts: []GenesisAccount{

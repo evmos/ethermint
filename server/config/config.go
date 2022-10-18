@@ -25,6 +25,9 @@ const (
 	// DefaultJSONRPCWsAddress is the default address the JSON-RPC WebSocket server binds to.
 	DefaultJSONRPCWsAddress = "0.0.0.0:8546"
 
+	// DefaultJsonRPCMetricsAddress is the default address the JSON-RPC Metrics server binds to.
+	DefaultJSONRPCMetricsAddress = "0.0.0.0:6065"
+
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = ""
 
@@ -110,6 +113,8 @@ type JSONRPCConfig struct {
 	MaxOpenConnections int `mapstructure:"max-open-connections"`
 	// EnableIndexer defines if enable the custom indexer service.
 	EnableIndexer bool `mapstructure:"enable-indexer"`
+	// MetricsAddress defines the metrics server to listen on
+	MetricsAddress string `mapstructure:"metrics-address"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -211,6 +216,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 		MaxOpenConnections:  DefaultMaxOpenConnections,
 		EnableIndexer:       false,
+		MetricsAddress:      DefaultJSONRPCMetricsAddress,
 	}
 }
 
@@ -291,8 +297,11 @@ func (c TLSConfig) Validate() error {
 }
 
 // GetConfig returns a fully parsed Config object.
-func GetConfig(v *viper.Viper) Config {
-	cfg := config.GetConfig(v)
+func GetConfig(v *viper.Viper) (Config, error) {
+	cfg, err := config.GetConfig(v)
+	if err != nil {
+		return Config{}, err
+	}
 
 	return Config{
 		Config: cfg,
@@ -316,12 +325,13 @@ func GetConfig(v *viper.Viper) Config {
 			HTTPIdleTimeout:    v.GetDuration("json-rpc.http-idle-timeout"),
 			MaxOpenConnections: v.GetInt("json-rpc.max-open-connections"),
 			EnableIndexer:      v.GetBool("json-rpc.enable-indexer"),
+			MetricsAddress:     v.GetString("json-rpc.metrics-address"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
 			KeyPath:         v.GetString("tls.key-path"),
 		},
-	}
+	}, nil
 }
 
 // ParseConfig retrieves the default environment configuration for the

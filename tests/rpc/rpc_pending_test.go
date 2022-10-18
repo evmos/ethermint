@@ -1,7 +1,5 @@
 // This is a test utility for Ethermint's Web3 JSON-RPC services.
-//
 // To run these tests please first ensure you have the ethermintd running
-//
 // You can configure the desired HOST and MODE as well in integration-test-all.sh
 package rpc
 
