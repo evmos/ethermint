@@ -271,6 +271,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 		accessList      *ethtypes.AccessList
 		expectPass      bool
 		enableFeemarket bool
+		from            string
 	}{
 		{
 			name:       "Enough balance",
@@ -279,6 +280,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			cost:       &oneInt,
 			accessList: &ethtypes.AccessList{},
 			expectPass: true,
+			from:       suite.address.String(),
 		},
 		{
 			name:       "Equal balance",
@@ -287,6 +289,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			cost:       &oneInt,
 			accessList: &ethtypes.AccessList{},
 			expectPass: true,
+			from:       suite.address.String(),
 		},
 		{
 			name:       "Higher gas limit, not enough balance",
@@ -295,6 +298,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			cost:       &oneInt,
 			accessList: &ethtypes.AccessList{},
 			expectPass: false,
+			from:       suite.address.String(),
 		},
 		{
 			name:       "Higher gas price, enough balance",
@@ -303,6 +307,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			cost:       &oneInt,
 			accessList: &ethtypes.AccessList{},
 			expectPass: true,
+			from:       suite.address.String(),
 		},
 		{
 			name:       "Higher gas price, not enough balance",
@@ -311,6 +316,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			cost:       &oneInt,
 			accessList: &ethtypes.AccessList{},
 			expectPass: false,
+			from:       suite.address.String(),
 		},
 		// This case is expected to be true because the fees can be deducted, but the tx
 		// execution is going to fail because there is no more balance to pay the cost
@@ -321,6 +327,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			cost:       &fiftyInt,
 			accessList: &ethtypes.AccessList{},
 			expectPass: true,
+			from:       suite.address.String(),
 		},
 		//  testcases with enableFeemarket enabled.
 		{
@@ -332,6 +339,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			accessList:      &ethtypes.AccessList{},
 			expectPass:      false,
 			enableFeemarket: true,
+			from:            suite.address.String(),
 		},
 		{
 			name:            "empty tip fee is valid to deduct",
@@ -342,6 +350,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			accessList:      &ethtypes.AccessList{},
 			expectPass:      true,
 			enableFeemarket: true,
+			from:            suite.address.String(),
 		},
 		{
 			name:            "effectiveTip equal to gasTipCap",
@@ -351,6 +360,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			accessList:      &ethtypes.AccessList{},
 			expectPass:      true,
 			enableFeemarket: true,
+			from:            suite.address.String(),
 		},
 		{
 			name:            "effectiveTip equal to (gasFeeCap - baseFee)",
@@ -361,6 +371,16 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			accessList:      &ethtypes.AccessList{},
 			expectPass:      true,
 			enableFeemarket: true,
+			from:            suite.address.String(),
+		},
+		{
+			name:       "Invalid from address",
+			gasLimit:   10,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
+			from:       "",
 		},
 	}
 
@@ -399,7 +419,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			vmdb.Commit()
 
 			tx := evmtypes.NewTx(zeroInt.BigInt(), 1, &suite.address, amount, tc.gasLimit, gasPrice, gasFeeCap, gasTipCap, nil, tc.accessList)
-			tx.From = suite.address.String()
+			tx.From = tc.from
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 

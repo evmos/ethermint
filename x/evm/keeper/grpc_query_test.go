@@ -491,9 +491,11 @@ func (suite *KeeperTestSuite) TestQueryValidatorAccount() {
 
 func (suite *KeeperTestSuite) TestEstimateGas() {
 	gasHelper := hexutil.Uint64(20000)
+	higherGas := hexutil.Uint64(25000)
+	hexBigInt := hexutil.Big(*big.NewInt(1))
 
 	var (
-		args   types.TransactionArgs
+		args   interface{}
 		gasCap uint64
 	)
 	testCases := []struct {
@@ -504,9 +506,13 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		enableFeemarket bool
 	}{
 		// should success, because transfer value is zero
-		{"default args", func() {
+		{"default args - special case for ErrIntrinsicGas on contract creation, raise gas limit", func() {
+			args = types.TransactionArgs{}
+		}, true, ethparams.TxGasContractCreation, false},
+		// should success, because transfer value is zero
+		{"default args with 'to' address", func() {
 			args = types.TransactionArgs{To: &common.Address{}}
-		}, true, 21000, false},
+		}, true, ethparams.TxGas, false},
 		// should fail, because the default From address(zero address) don't have fund
 		{"not enough balance", func() {
 			args = types.TransactionArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
@@ -518,7 +524,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		// should success, because gas limit lower than 21000 is ignored
 		{"gas exceed allowance", func() {
 			args = types.TransactionArgs{To: &common.Address{}, Gas: &gasHelper}
-		}, true, 21000, false},
+		}, true, ethparams.TxGas, false},
 		// should fail, invalid gas cap
 		{"gas exceed global allowance", func() {
 			args = types.TransactionArgs{To: &common.Address{}}
@@ -546,7 +552,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		// repeated tests with enableFeemarket
 		{"default args w/ enableFeemarket", func() {
 			args = types.TransactionArgs{To: &common.Address{}}
-		}, true, 21000, true},
+		}, true, ethparams.TxGas, true},
 		{"not enough balance w/ enableFeemarket", func() {
 			args = types.TransactionArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
 		}, false, 0, true},
@@ -555,7 +561,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		}, false, 0, true},
 		{"gas exceed allowance w/ enableFeemarket", func() {
 			args = types.TransactionArgs{To: &common.Address{}, Gas: &gasHelper}
-		}, true, 21000, true},
+		}, true, ethparams.TxGas, true},
 		{"gas exceed global allowance w/ enableFeemarket", func() {
 			args = types.TransactionArgs{To: &common.Address{}}
 			gasCap = 20000
@@ -576,6 +582,38 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			suite.Require().NoError(err)
 			args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
 		}, true, 51880, true},
+		{"contract creation but 'create' param disabled", func() {
+			ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+			suite.Require().NoError(err)
+			data := append(types.ERC20Contract.Bin, ctorArgs...)
+			args = types.TransactionArgs{
+				From: &suite.address,
+				Data: (*hexutil.Bytes)(&data),
+			}
+			params := suite.app.EvmKeeper.GetParams(suite.ctx)
+			params.EnableCreate = false
+			suite.app.EvmKeeper.SetParams(suite.ctx, params)
+		}, false, 0, false},
+		{"specified gas in args higher than ethparams.TxGas (21,000)", func() {
+			args = types.TransactionArgs{
+				To:  &common.Address{},
+				Gas: &higherGas,
+			}
+		}, true, ethparams.TxGas, false},
+		{"specified gas in args higher than request gasCap", func() {
+			gasCap = 22_000
+			args = types.TransactionArgs{
+				To:  &common.Address{},
+				Gas: &higherGas,
+			}
+		}, true, ethparams.TxGas, false},
+		{"invalid args - specified both gasPrice and maxFeePerGas", func() {
+			args = types.TransactionArgs{
+				To:           &common.Address{},
+				GasPrice:     &hexBigInt,
+				MaxFeePerGas: &hexBigInt,
+			}
+		}, false, 0, false},
 	}
 
 	for _, tc := range testCases {
@@ -702,6 +740,88 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			traceResponse:   "{\"gas\":34828,\"failed\":false,\"returnValue\":\"0000000000000000000000000000000000000000000000000000000000000001\",\"structLogs\":[{\"pc\":0,\"op\":\"PUSH1\",\"gas\":",
 			enableFeemarket: false,
 		},
+		{
+			msg: "invalid trace config - Negative Limit",
+			malleate: func() {
+				traceConfig = &types.TraceConfig{
+					DisableStack:   true,
+					DisableStorage: true,
+					EnableMemory:   false,
+					Limit:          -1,
+				}
+			},
+			expPass: false,
+		},
+		{
+			msg: "invalid trace config - Invalid Tracer",
+			malleate: func() {
+				traceConfig = &types.TraceConfig{
+					DisableStack:   true,
+					DisableStorage: true,
+					EnableMemory:   false,
+					Tracer:         "invalid_tracer",
+				}
+			},
+			expPass: false,
+		},
+		{
+			msg: "invalid trace config - Invalid Timeout",
+			malleate: func() {
+				traceConfig = &types.TraceConfig{
+					DisableStack:   true,
+					DisableStorage: true,
+					EnableMemory:   false,
+					Timeout:        "wrong_time",
+				}
+			},
+			expPass: false,
+		},
+		{
+			msg: "trace config - Execution Timeout",
+			malleate: func() {
+				traceConfig = &types.TraceConfig{
+					DisableStack:   true,
+					DisableStorage: true,
+					EnableMemory:   false,
+					Timeout:        "0s",
+				}
+			},
+			expPass: false,
+		},
+		{
+			msg: "default tracer with contract creation tx as predecessor but 'create' param disabled",
+			malleate: func() {
+				traceConfig = nil
+
+				// increase nonce to avoid address collision
+				vmdb := suite.StateDB()
+				vmdb.SetNonce(suite.address, vmdb.GetNonce(suite.address)+1)
+				suite.Require().NoError(vmdb.Commit())
+
+				chainID := suite.app.EvmKeeper.ChainID()
+				nonce := suite.app.EvmKeeper.GetNonce(suite.ctx, suite.address)
+				data := types.ERC20Contract.Bin
+				contractTx := types.NewTxContract(
+					chainID,
+					nonce,
+					nil,                             // amount
+					ethparams.TxGasContractCreation, // gasLimit
+					nil,                             // gasPrice
+					nil, nil,
+					data, // input
+					nil,  // accesses
+				)
+
+				predecessors = append(predecessors, contractTx)
+				suite.Commit()
+
+				params := suite.app.EvmKeeper.GetParams(suite.ctx)
+				params.EnableCreate = false
+				suite.app.EvmKeeper.SetParams(suite.ctx, params)
+			},
+			expPass:       true,
+			traceResponse: "{\"gas\":34828,\"failed\":false,\"returnValue\":\"0000000000000000000000000000000000000000000000000000000000000001\",\"structLogs\":[{\"pc\":0,\"op\":\"PUSH1\",\"gas\":",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -722,7 +842,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 				Predecessors: predecessors,
 			}
 			res, err := suite.queryClient.TraceTx(sdk.WrapSDKContext(suite.ctx), &traceReq)
-			suite.Require().NoError(err)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -835,6 +954,31 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			expPass:         true,
 			traceResponse:   "[{\"result\":{\"gas\":34828,\"failed\":false,\"returnValue\":\"0000000000000000000000000000000000000000000000000000000000000001\",\"structLogs\":[{\"pc\":0,\"op\":\"PU",
 			enableFeemarket: false,
+		},
+		{
+			msg: "invalid trace config - Negative Limit",
+			malleate: func() {
+				traceConfig = &types.TraceConfig{
+					DisableStack:   true,
+					DisableStorage: true,
+					EnableMemory:   false,
+					Limit:          -1,
+				}
+			},
+			expPass: false,
+		},
+		{
+			msg: "invalid trace config - Invalid Tracer",
+			malleate: func() {
+				traceConfig = &types.TraceConfig{
+					DisableStack:   true,
+					DisableStorage: true,
+					EnableMemory:   false,
+					Tracer:         "invalid_tracer",
+				}
+			},
+			expPass:       true,
+			traceResponse: "[]",
 		},
 	}
 
@@ -980,4 +1124,87 @@ func (suite *KeeperTestSuite) TestQueryBaseFee() {
 	}
 	suite.enableFeemarket = false
 	suite.enableLondonHF = true
+}
+
+func (suite *KeeperTestSuite) TestEthCall() {
+	var (
+		req *types.EthCallRequest
+	)
+
+	suite.SetupTest()
+
+	priv, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+	address := common.BytesToAddress(priv.PubKey().Address().Bytes())
+	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(suite.ctx, address))
+	supply := sdkmath.NewIntWithDecimal(1000, 18).BigInt()
+
+	hexBigInt := hexutil.Big(*big.NewInt(1))
+	ctorArgs, err := types.ERC20Contract.ABI.Pack("", address, supply)
+	suite.Require().NoError(err)
+
+	data := append(types.ERC20Contract.Bin, ctorArgs...)
+
+	testCases := []struct {
+		name     string
+		malleate func()
+		expPass  bool
+	}{
+		{
+			"invalid args",
+			func() {
+				req = &types.EthCallRequest{Args: []byte("invalid args"), GasCap: uint64(config.DefaultGasCap)}
+			},
+			false,
+		},
+		{
+			"invalid args - specified both gasPrice and maxFeePerGas",
+			func() {
+
+				args, err := json.Marshal(&types.TransactionArgs{
+					From:         &address,
+					Data:         (*hexutil.Bytes)(&data),
+					GasPrice:     &hexBigInt,
+					MaxFeePerGas: &hexBigInt,
+				})
+
+				suite.Require().NoError(err)
+				req = &types.EthCallRequest{Args: args, GasCap: uint64(config.DefaultGasCap)}
+			},
+			false,
+		},
+		{
+			"set param EnableCreate = false",
+			func() {
+
+				args, err := json.Marshal(&types.TransactionArgs{
+					From: &address,
+					Data: (*hexutil.Bytes)(&data),
+				})
+
+				suite.Require().NoError(err)
+				req = &types.EthCallRequest{Args: args, GasCap: uint64(config.DefaultGasCap)}
+
+				params := suite.app.EvmKeeper.GetParams(suite.ctx)
+				params.EnableCreate = false
+				suite.app.EvmKeeper.SetParams(suite.ctx, params)
+			},
+			false,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+
+			tc.malleate()
+
+			res, err := suite.queryClient.EthCall(suite.ctx, req)
+			if tc.expPass {
+				suite.Require().NotNil(res)
+				suite.Require().NoError(err)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+
 }
