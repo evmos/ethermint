@@ -330,7 +330,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 // 2. caller has enough balance to cover transaction fee(gaslimit * gasprice)
 // 3. the amount of gas required is available in the block
 // 4. the purchased gas is enough to cover intrinsic usage
-// 5. there is no overflow when calculating intrinsiEthSetUpContextDecoratorc gas
+// 5. there is no overflow when calculating intrinsic gas
 // 6. caller has enough balance to cover asset transfer for **topmost** call
 //
 // The preprocessing steps performed by the AnteHandler are:
