@@ -355,11 +355,11 @@ schema = 3
     version = "v0.0.5"
     hash = "sha256-/5i70IkH/qSW5KjGzv8aQNKh9tHoz98tqtL0K2DMFn4="
   [mod."github.com/onsi/ginkgo/v2"]
-    version = "v2.3.0"
-    hash = "sha256-p+nSJxatUh/+aXFSUsSrSd1a/Gk/mgnxLAm+JG9YEOw="
+    version = "v2.3.1"
+    hash = "sha256-0JzxU9l2XXQhCyYJLXsW/GR6BKuUQYq2R8JdNpswNmM="
   [mod."github.com/onsi/gomega"]
-    version = "v1.21.1"
-    hash = "sha256-APBk26BUd6gWaMqMB/CbnoGBsOdU5sDlInfQEHBZgy8="
+    version = "v1.22.0"
+    hash = "sha256-K6vUlS8B07uRUDeTaHBN3a+0N57g25RIXAeTCEI8v04="
   [mod."github.com/pelletier/go-toml"]
     version = "v1.9.5"
     hash = "sha256-RJ9K1BTId0Mled7S66iGgxHkZ5JKEIsrrNaEfM8aImc="
