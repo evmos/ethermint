@@ -34,7 +34,7 @@ func (k Keeper) GetBaseFeeEnabled(ctx sdk.Context) bool {
 	enableHeight := int64(0)
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyNoBaseFee, &noBaseFee)
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEnableHeight, &enableHeight)
-	return noBaseFee && ctx.BlockHeight() >= enableHeight
+	return !noBaseFee && ctx.BlockHeight() >= enableHeight
 }
 
 // GetBaseFee get's the base fee from the paramSpace
