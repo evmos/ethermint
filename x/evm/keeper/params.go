@@ -43,7 +43,7 @@ func (k Keeper) GetEnableCall(ctx sdk.Context) bool {
 	return enableCall
 }
 
-// GetEnableCall returns true if the EVM Create contract operation is enabled.
+// GetEnableCreate returns true if the EVM Create contract operation is enabled.
 func (k Keeper) GetEnableCreate(ctx sdk.Context) bool {
 	enableCreate := false
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEnableCreate, &enableCreate)
