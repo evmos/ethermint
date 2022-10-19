@@ -88,7 +88,7 @@ func (suite *KeeperTestSuite) TestParams() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			outcome := reflect.DeepEqual(tc.paramsFun(), tc.getFun())
-			suite.Equal(tc.expected, outcome)
+			suite.Require().Equal(tc.expected, outcome)
 		})
 	}
 
