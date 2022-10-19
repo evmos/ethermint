@@ -25,7 +25,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -35,6 +37,7 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	cryptocodec "github.com/evmos/ethermint/crypto/codec"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	evtypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
@@ -111,6 +114,7 @@ func (suite *AnteTestSuite) SetupTest() {
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	// We're using TestMsg amino encoding in some tests, so register it here.
 	encodingConfig.Amino.RegisterConcrete(&testdata.TestMsg{}, "testdata.TestMsg", nil)
+	eip712.SetEncodingConfig(encodingConfig)
 
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 
@@ -446,6 +450,152 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	suite.Require().NoError(err)
 
 	return builder
+}
+
+// Generate a set of pub/priv keys to be used in creating multi-keys
+func (suite *AnteTestSuite) GenerateMultipleKeys(n int) ([]cryptotypes.PrivKey, []cryptotypes.PubKey) {
+	privKeys := make([]cryptotypes.PrivKey, n)
+	pubKeys := make([]cryptotypes.PubKey, n)
+	for i := 0; i < n; i++ {
+		privKey, err := ethsecp256k1.GenerateKey()
+		if err != nil {
+			panic("Could not generate ethsecp256k1 private key")
+		}
+		privKeys[i] = privKey
+		pubKeys[i] = privKey.PubKey()
+	}
+	return privKeys, pubKeys
+}
+
+// Signs a set of messages using each private key within a given multi-key
+func generateMultikeySignatures(signMode signing.SignMode, privKeys []cryptotypes.PrivKey, msgs [][]byte, mixSignatures bool) (signatures []signing.SignatureData) {
+	n := len(privKeys)
+	signatures = make([]signing.SignatureData, n)
+
+	for i := 0; i < n; i++ {
+		privKey, err := ethsecp256k1.GenerateKey()
+		if err != nil {
+			panic("Could not generate ethsecp256k1 private key")
+		}
+
+		msg, err := eip712.GetEIP712HashForMsg(msgs[i])
+		if err != nil {
+			panic("Could not generate EIP712 hash for message")
+		}
+
+		// If mixing signatures, sign standard payload for every other iteration
+		if mixSignatures && i%2 == 0 {
+			msg = msgs[i]
+		}
+
+		sig, _ := privKey.Sign(msg)
+		signatures[i] = &signing.SingleSignatureData{
+			SignMode:  signMode,
+			Signature: sig,
+		}
+	}
+
+	return signatures
+}
+
+func (suite *AnteTestSuite) CreateTestSignedMultisigTx(privKeys []cryptotypes.PrivKey, pubKeys []cryptotypes.PubKey, signMode signing.SignMode, msg sdk.Msg, chainId string, gas uint64) client.TxBuilder {
+	if len(privKeys) != len(pubKeys) {
+		panic("length of private keys and public keys do not match")
+	}
+
+	// Re-derive multikey
+	numKeys := len(privKeys)
+	pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+	// Create accounts for each pubkey
+	for _, pubKey := range pubKeys {
+		_ = suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, pubKey.Bytes())
+	}
+
+	// Create multi-key account
+	multiKeyAcc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, pk.Bytes())
+	suite.Require().NoError(multiKeyAcc.SetSequence(1))
+	suite.app.AccountKeeper.SetAccount(suite.ctx, multiKeyAcc)
+
+	// Update balance for multikey account
+	suite.app.EvmKeeper.SetBalance(suite.ctx, common.BytesToAddress(pk.Address()), big.NewInt(10000000000))
+
+	// Set nonce to hard-coded value
+	nonce := 1
+
+	// Init builder
+	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
+
+	// Set fees
+	txBuilder.SetGasLimit(gas)
+	txBuilder.SetFeePayer(sdk.AccAddress(pk.Address()))
+	txBuilder.SetFeeAmount(sdk.NewCoins(
+		sdk.NewCoin(
+			"aphoton",
+			sdk.NewInt(10000),
+		),
+	))
+
+	// Set message
+	err := txBuilder.SetMsgs([]sdk.Msg{msg}...)
+	if err != nil {
+		panic(fmt.Sprintf("could not set messages with error %v", err))
+	}
+
+	// Set memo and tip
+	txBuilder.SetMemo("")
+
+	// Prepare signature field
+	sig := multisig.NewMultisig(len(pubKeys))
+	txBuilder.SetSignatures(signing.SignatureV2{
+		PubKey:   pk,
+		Data:     sig,
+		Sequence: uint64(nonce),
+	})
+
+	// Create signer infos
+	signerInfos := make([]authsigning.SignerData, numKeys)
+	for i, pubKey := range pubKeys {
+		signerInfos[i] = authsigning.SignerData{
+			Address:       sdk.AccAddress(pubKey.Address()).String(),
+			ChainID:       chainId,
+			AccountNumber: uint64(i + 1),
+			Sequence:      1,
+			PubKey:        pubKey,
+		}
+	}
+
+	// Create signer bytes
+	signerBytes := make([][]byte, numKeys)
+	for i, signerInfo := range signerInfos {
+		bz, err := suite.clientCtx.TxConfig.SignModeHandler().GetSignBytes(
+			signMode,
+			signerInfo,
+			txBuilder.GetTx(),
+		)
+
+		if err != nil {
+			panic(fmt.Sprintf("could not get signer bytes with err %v\n", err))
+		}
+
+		signerBytes[i] = bz
+	}
+
+	// Update signature field
+	sigs := generateMultikeySignatures(signMode, privKeys, signerBytes, true)
+	bitArray := cryptotypes.NewCompactBitArray(numKeys)
+	for i := 0; i < numKeys; i++ {
+		bitArray.SetIndex(i, true)
+	}
+	sig.BitArray = bitArray
+	sig.Signatures = sigs
+	txBuilder.SetSignatures(signing.SignatureV2{
+		PubKey:   pk,
+		Data:     sig,
+		Sequence: uint64(nonce),
+	})
+
+	return txBuilder
 }
 
 func NextFn(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {

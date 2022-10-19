@@ -19,6 +19,7 @@ import (
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
+	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
@@ -495,6 +496,35 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				msg.From = addr.Hex()
 				return tx
 			}, true, false, false,
+		},
+		{
+			"passes - EIP-712 multi-key",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					pubKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
 		},
 	}
 
