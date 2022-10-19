@@ -50,8 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v17
-      - uses: cachix/cachix-action@v10
+      - uses: cachix/install-nix-action@v18
+      - uses: cachix/cachix-action@v11
         with:
           name: ethermint
       - uses: technote-space/get-diff-action@v6.1.1
@@ -66,8 +66,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: cachix/install-nix-action@v17
-      - uses: cachix/cachix-action@v10
+      - uses: cachix/install-nix-action@v18
+      - uses: cachix/cachix-action@v11
         with:
           name: ethermint
       - name: run gomod2nix
