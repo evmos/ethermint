@@ -460,9 +460,9 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		// return error if contract creation or call are disabled through governance
 		enableCreate := vbd.evmKeeper.GetEnableCreate(ctx)
 		enableCall := vbd.evmKeeper.GetEnableCall(ctx)
-		if enableCreate && txData.GetTo() == nil {
+		if !enableCreate && txData.GetTo() == nil {
 			return ctx, sdkerrors.Wrap(evmtypes.ErrCreateDisabled, "failed to create new contract")
-		} else if enableCall && txData.GetTo() != nil {
+		} else if !enableCall && txData.GetTo() != nil {
 			return ctx, sdkerrors.Wrap(evmtypes.ErrCallDisabled, "failed to call contract")
 		}
 

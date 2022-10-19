@@ -36,21 +36,21 @@ func (k Keeper) GetEVMDenom(ctx sdk.Context) string {
 	return evmDenom
 }
 
-// GetEnableCall returns status of
+// GetEnableCall returns true if the EVM Call operation is enabled.
 func (k Keeper) GetEnableCall(ctx sdk.Context) bool {
 	enableCall := false
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEnableCall, &enableCall)
 	return enableCall
 }
 
-// GetEnableCreate returns status of
+// GetEnableCall returns true if the EVM Create contract operation is enabled.
 func (k Keeper) GetEnableCreate(ctx sdk.Context) bool {
 	enableCreate := false
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEnableCreate, &enableCreate)
 	return enableCreate
 }
 
-// GetAllowUnprotectedTxs returns
+// GetAllowUnprotectedTxs returns true if unprotected txs (i.e non-replay protected as per EIP-155) are supported by the chain.
 func (k Keeper) GetAllowUnprotectedTxs(ctx sdk.Context) bool {
 	allowUnprotectedTx := false
 	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyAllowUnprotectedTxs, &allowUnprotectedTx)
