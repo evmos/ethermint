@@ -344,7 +344,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
 				gasAmount := sdk.NewCoins(coinAmount)
 				gas := uint64(200000)
-				//reusing the gasAmount for deposit
+				// reusing the gasAmount for deposit
 				deposit := sdk.NewCoins(coinAmount)
 				txBuilder := suite.CreateTestEIP712SubmitProposal(from, privKey, "ethermint_9000-1", gas, gasAmount, deposit)
 				return txBuilder.GetTx()

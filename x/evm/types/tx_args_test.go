@@ -11,9 +11,9 @@ import (
 
 func (suite *TxDataTestSuite) TestTxArgsString() {
 	testCases := []struct {
-		name             string
-		txArgs           TransactionArgs
-		expectedString   string
+		name           string
+		txArgs         TransactionArgs
+		expectedString string
 	}{
 		{
 			"empty tx args",
@@ -32,25 +32,25 @@ func (suite *TxDataTestSuite) TestTxArgsString() {
 				AccessList: &ethtypes.AccessList{},
 			},
 			fmt.Sprintf("TransactionArgs{From:%v, To:%v, Gas:%v, Nonce:%v, Data:%v, Input:%v, AccessList:%v}",
-							&suite.addr,
-							&suite.addr,
-							&suite.hexUint64,
-							&suite.hexUint64,
-							&suite.hexDataBytes,
-							&suite.hexInputBytes,
-							&ethtypes.AccessList{}),
+				&suite.addr,
+				&suite.addr,
+				&suite.hexUint64,
+				&suite.hexUint64,
+				&suite.hexDataBytes,
+				&suite.hexInputBytes,
+				&ethtypes.AccessList{}),
 		},
 	}
 	for _, tc := range testCases {
 		outputString := tc.txArgs.String()
-		suite.Require().Equal(outputString, tc.expectedString) 
+		suite.Require().Equal(outputString, tc.expectedString)
 	}
 }
 
 func (suite *TxDataTestSuite) TestConvertTxArgsEthTx() {
 	testCases := []struct {
-		name      string
-		txArgs    TransactionArgs
+		name   string
+		txArgs TransactionArgs
 	}{
 		{
 			"empty tx args",
@@ -227,9 +227,9 @@ func (suite *TxDataTestSuite) TestToMessageEVM() {
 
 func (suite *TxDataTestSuite) TestGetFrom() {
 	testCases := []struct {
-		name         string
-		txArgs       TransactionArgs
-		expAddress   common.Address
+		name       string
+		txArgs     TransactionArgs
+		expAddress common.Address
 	}{
 		{
 			"empty from field",
