@@ -811,3 +811,102 @@ func (suite *KeeperTestSuite) _TestForEachStorage() {
 		storage = types.Storage{}
 	}
 }
+
+func (suite *KeeperTestSuite) TestSetBalance() {
+	suite.SetupTest()
+	amount := big.NewInt(-10)
+
+	testCases := []struct {
+		name     string
+		addr     common.Address
+		malleate func()
+		expErr   bool
+	}{
+		{
+			"address without funds - invalid amount",
+			suite.address,
+			func() {},
+			true,
+		},
+		{
+			"mint to address",
+			suite.address,
+			func() {
+				amount = big.NewInt(100)
+			},
+			false,
+		},
+		{
+			"burn from address",
+			suite.address,
+			func() {
+				amount = big.NewInt(60)
+			},
+			false,
+		},
+		{
+			"address with funds - invalid amount",
+			suite.address,
+			func() {
+				amount = big.NewInt(-10)
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			tc.malleate()
+			err := suite.app.EvmKeeper.SetBalance(suite.ctx, tc.addr, amount)
+			if tc.expErr {
+				suite.Require().Error(err)
+			} else {
+				balance := suite.app.EvmKeeper.GetBalance(suite.ctx, tc.addr)
+				suite.Require().NoError(err)
+				suite.Require().Equal(amount, balance)
+			}
+
+		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestDeleteAccount() {
+	suite.SetupTest()
+	supply := big.NewInt(100)
+	contractAddr := suite.DeployTestContract(suite.T(), suite.address, supply)
+
+	testCases := []struct {
+		name   string
+		addr   common.Address
+		expErr bool
+	}{
+		{
+			"remove address",
+			suite.address,
+			false,
+		},
+		{
+			"remove unexistent address - returns nil error",
+			common.HexToAddress("unexistent_address"),
+			false,
+		},
+		{
+			"remove deployed contract",
+			contractAddr,
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			err := suite.app.EvmKeeper.DeleteAccount(suite.ctx, tc.addr)
+			if tc.expErr {
+				suite.Require().Error(err)
+			} else {
+				suite.Require().NoError(err)
+				balance := suite.app.EvmKeeper.GetBalance(suite.ctx, tc.addr)
+				suite.Require().Equal(new(big.Int), balance)
+			}
+		})
+	}
+}

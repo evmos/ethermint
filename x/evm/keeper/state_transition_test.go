@@ -502,3 +502,89 @@ func (suite *KeeperTestSuite) TestContractDeployment() {
 	db := suite.StateDB()
 	suite.Require().Greater(db.GetCodeSize(contractAddress), 0)
 }
+
+// define an ethMessage struct that implements core.Message interface to test ApplyMessage
+type ethMessage struct {
+	from common.Address
+	to *common.Address
+	gasPrice *big.Int
+	gasFeeCap *big.Int
+	gasTipCap *big.Int
+	gas uint64
+	value *big.Int
+	nonce uint64
+	isFake bool
+	data []byte
+	accessList ethtypes.AccessList	
+}
+
+func (msg ethMessage) From() common.Address {
+	return msg.from
+}
+
+func (msg ethMessage) To() *common.Address {
+	return msg.to
+}
+
+func (msg ethMessage) GasPrice() *big.Int {
+	return msg.gasPrice
+}
+
+func (msg ethMessage) GasFeeCap() *big.Int {
+	return msg.gasFeeCap
+}
+
+func (msg ethMessage) GasTipCap() *big.Int {
+	return msg.gasTipCap
+}
+
+func (msg ethMessage) Gas() uint64 {
+	return msg.gas
+}
+
+func (msg ethMessage) Value() *big.Int {
+	return msg.value
+}
+
+func (msg ethMessage) Nonce() uint64 {
+	return msg.nonce
+}
+
+func (msg ethMessage) IsFake() bool {
+	return msg.isFake
+}
+
+func (msg ethMessage) Data() []byte {
+	return msg.data
+}
+
+func (msg ethMessage) AccessList() ethtypes.AccessList {
+	return msg.accessList
+}
+
+func (suite *KeeperTestSuite) TestApplyMessage() {
+	suite.SetupTest()
+	amount := big.NewInt(1000)
+	gasPrice := big.NewInt(100_000)
+	var gas uint64 = 100_000
+	contractAddr := suite.DeployTestContract(suite.T(), suite.address, amount)
+
+	msg := ethMessage{
+		from: suite.address,
+		to: &contractAddr,
+		gasPrice: gasPrice,
+		gas: gas,
+		value: amount,
+	}
+
+	expectedGasUsed := uint64(50_000)
+
+	config, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
+	suite.Require().NoError(err)
+	tracer := suite.app.EvmKeeper.Tracer(suite.ctx, msg, config.ChainConfig)
+	
+	res, err := suite.app.EvmKeeper.ApplyMessage(suite.ctx, msg, tracer, true)
+
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedGasUsed, res.GasUsed)
+}
