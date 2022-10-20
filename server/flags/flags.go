@@ -20,6 +20,7 @@ const (
 
 // GRPC-related flags.
 const (
+	GRPCOnly       = "grpc-only"
 	GRPCEnable     = "grpc.enable"
 	GRPCAddress    = "grpc.address"
 	GRPCWebEnable  = "grpc-web.enable"
