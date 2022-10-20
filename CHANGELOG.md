@@ -64,6 +64,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (cli) [#1360](https://github.com/evmos/ethermint/pull/1360) Introduce a new `grpc-only` flag, such that when enabled, will start the node in a query-only mode. Note, gRPC MUST be enabled with this flag.
 * (rpc) [#1378](https://github.com/evmos/ethermint/pull/1378) Add support for EVM RPC metrics
 * (ante) [#1390](https://github.com/evmos/ethermint/pull/1390) Added multisig tx support.
+* (test) [#1396](https://github.com/evmos/ethermint/pull/1396) Increase test coverage for the EVM module `keeper`
 
 ### Bug Fixes
 
