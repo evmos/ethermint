@@ -60,7 +60,7 @@ func (suite *TxDataTestSuite) TestAccessListTxGetGasFeeCap() {
 func (suite *TxDataTestSuite) TestEmptyAccessList() {
 	testCases := []struct {
 		name string
-		tx AccessListTx
+		tx   AccessListTx
 	}{
 		{
 			"empty access list tx",

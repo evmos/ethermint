@@ -27,7 +27,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			"fail - grpc BaseFee error",
 			&tmrpctypes.ResultBlockResults{Height: 1},
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBaseFeeError(queryClient)
 			},
 			nil,
@@ -44,7 +44,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 				},
 			},
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBaseFeeError(queryClient)
 			},
 			nil,
@@ -61,7 +61,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 				},
 			},
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBaseFeeError(queryClient)
 			},
 			nil,
@@ -81,7 +81,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 				},
 			},
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBaseFeeError(queryClient)
 			},
 			nil,
@@ -101,7 +101,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 				},
 			},
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBaseFeeError(queryClient)
 			},
 			baseFee.BigInt(),
@@ -111,7 +111,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			"fail - base fee or london fork not enabled",
 			&tmrpctypes.ResultBlockResults{Height: 1},
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBaseFeeDisabled(queryClient)
 			},
 			nil,
@@ -121,7 +121,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 			"pass",
 			&tmrpctypes.ResultBlockResults{Height: 1},
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.QueryClient)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBaseFee(queryClient, baseFee)
 			},
 			baseFee.BigInt(),
