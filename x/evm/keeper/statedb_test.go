@@ -6,6 +6,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -313,6 +314,41 @@ func (suite *KeeperTestSuite) TestSetCode() {
 			}
 
 			suite.Require().Equal(len(post), vmdb.GetCodeSize(tc.address))
+		})
+	}
+}
+
+
+func (suite *KeeperTestSuite) TestKeeperSetCode() {
+	addr := tests.GenerateAddress()
+	baseAcc := &authtypes.BaseAccount{Address: sdk.AccAddress(addr.Bytes()).String()}
+	suite.app.AccountKeeper.SetAccount(suite.ctx, baseAcc)
+
+	testCases := []struct {
+		name    string
+		codeHash []byte
+		code    []byte
+	}{
+		{
+			"set code",
+			[]byte("codeHash"),
+			[]byte("this is the code"),
+		},
+		{
+			"delete code",
+			[]byte("codeHash"),
+			nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.app.EvmKeeper.SetCode(suite.ctx, tc.codeHash, tc.code)
+			key := suite.app.GetKey(types.StoreKey)
+			store := prefix.NewStore(suite.ctx.KVStore(key), types.KeyPrefixCode)
+			code := store.Get(tc.codeHash)
+
+			suite.Require().Equal(tc.code, code)
 		})
 	}
 }

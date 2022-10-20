@@ -272,6 +272,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 		expectPass      bool
 		enableFeemarket bool
 		from            string
+		malleate        func()
 	}{
 		{
 			name:       "Enough balance",
@@ -382,6 +383,32 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			expectPass: false,
 			from:       "",
 		},
+		{
+			name:     "Enough balance - with access list",
+			gasLimit: 10,
+			gasPrice: &oneInt,
+			cost:     &oneInt,
+			accessList: &ethtypes.AccessList{
+				ethtypes.AccessTuple{
+					Address:     suite.address,
+					StorageKeys: []common.Hash{},
+				},
+			},
+			expectPass: true,
+			from:       suite.address.String(),
+		},
+		{
+			name:       "gasLimit < intrinsicGas during IsCheckTx",
+			gasLimit:   1,
+			gasPrice:   &oneInt,
+			cost:       &oneInt,
+			accessList: &ethtypes.AccessList{},
+			expectPass: false,
+			from:       suite.address.String(),
+			malleate: func() {
+				suite.ctx = suite.ctx.WithIsCheckTx(true)
+			},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -390,6 +417,9 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			suite.SetupTest()
 			vmdb := suite.StateDB()
 
+			if tc.malleate != nil {
+				tc.malleate()
+			}
 			var amount, gasPrice, gasFeeCap, gasTipCap *big.Int
 			if tc.cost != nil {
 				amount = tc.cost.BigInt()
