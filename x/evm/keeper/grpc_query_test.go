@@ -1208,3 +1208,81 @@ func (suite *KeeperTestSuite) TestEthCall() {
 	}
 
 }
+
+func (suite *KeeperTestSuite) TestEmptyRequest() {
+	suite.SetupTest()
+	k := suite.app.EvmKeeper
+
+	testCases := []struct {
+		name      string
+		queryFunc func() (interface{}, error)
+	}{
+		{
+			"Account method",
+			func() (interface{}, error) {
+				return k.Account(suite.ctx, nil)
+			},
+		},
+		{
+			"CosmosAccount method",
+			func() (interface{}, error) {
+				return k.CosmosAccount(suite.ctx, nil)
+			},
+		},
+		{
+			"ValidatorAccount method",
+			func() (interface{}, error) {
+				return k.ValidatorAccount(suite.ctx, nil)
+			},
+		},
+		{
+			"Balance method",
+			func() (interface{}, error) {
+				return k.Balance(suite.ctx, nil)
+			},
+		},
+		{
+			"Storage method",
+			func() (interface{}, error) {
+				return k.Storage(suite.ctx, nil)
+			},
+		},
+		{
+			"Code method",
+			func() (interface{}, error) {
+				return k.Code(suite.ctx, nil)
+			},
+		},
+		{
+			"EthCall method",
+			func() (interface{}, error) {
+				return k.EthCall(suite.ctx, nil)
+			},
+		},
+		{
+			"EstimateGas method",
+			func() (interface{}, error) {
+				return k.EstimateGas(suite.ctx, nil)
+			},
+		},
+		{
+			"TraceTx method",
+			func() (interface{}, error) {
+				return k.TraceTx(suite.ctx, nil)
+			},
+		},
+		{
+			"TraceBlock method",
+			func() (interface{}, error) {
+				return k.TraceBlock(suite.ctx, nil)
+			},
+		},		
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			_, err := tc.queryFunc()
+			suite.Require().Error(err)
+		})
+	}
+}
