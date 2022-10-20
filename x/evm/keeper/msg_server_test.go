@@ -11,12 +11,12 @@ import (
 
 func (suite *KeeperTestSuite) TestEthereumTx() {
 	var (
-		err      error
-		msg      *types.MsgEthereumTx
-		signer   ethtypes.Signer
-		vmdb     *statedb.StateDB
-		chainCfg *params.ChainConfig
-        expectedGasUsed uint64
+		err             error
+		msg             *types.MsgEthereumTx
+		signer          ethtypes.Signer
+		vmdb            *statedb.StateDB
+		chainCfg        *params.ChainConfig
+		expectedGasUsed uint64
 	)
 
 	testCases := []struct {
@@ -37,7 +37,7 @@ func (suite *KeeperTestSuite) TestEthereumTx() {
 			},
 			true,
 		},
-        {
+		{
 			"Transfer funds tx",
 			func() {
 				msg, _, err = newEthMsgTx(
@@ -52,7 +52,7 @@ func (suite *KeeperTestSuite) TestEthereumTx() {
 					nil,
 				)
 				suite.Require().NoError(err)
-                expectedGasUsed = params.TxGas
+				expectedGasUsed = params.TxGas
 			},
 			false,
 		},
