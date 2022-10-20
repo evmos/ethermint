@@ -52,6 +52,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
 * (lint) [#1298](https://github.com/evmos/ethermint/pull/1298) 150 character line length limit, `gofumpt`, and linting
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology in Cosmos and Ethereum.
 * (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
@@ -60,6 +61,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ledger) [#1277](https://github.com/evmos/ethermint/pull/1277) Add Ledger preprocessing transaction hook for EIP-712-signed Cosmos payloads.
 * (rpc) [#1296](https://github.com/evmos/ethermint/pull/1296) Add RPC Backend unit tests.
 * (rpc) [#1352](https://github.com/evmos/ethermint/pull/1352) Make the grpc queries run concurrently, don't block the consensus state machine.
+* (cli) [#1360](https://github.com/evmos/ethermint/pull/1360) Introduce a new `grpc-only` flag, such that when enabled, will start the node in a query-only mode. Note, gRPC MUST be enabled with this flag.
+* (rpc) [#1378](https://github.com/evmos/ethermint/pull/1378) Add support for EVM RPC metrics
+* (ante) [#1390](https://github.com/evmos/ethermint/pull/1390) Added multisig tx support.
 
 ### Bug Fixes
 
@@ -68,6 +72,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1340](https://github.com/evmos/ethermint/pull/1340) Fix error response when `eth_estimateGas` height provided is not found.
 * (rpc) [#1354](https://github.com/evmos/ethermint/pull/1354) Fix grpc query failure(`BaseFee` and `EthCall`) on legacy block states.
 * (cli) [#1362](https://github.com/evmos/ethermint/pull/1362) Fix `index-eth-tx` error when the indexer db is empty.
+* (state) [#1320](https://github.com/evmos/ethermint/pull/1320) Fix codehash check mismatch when the code has been deleted in the evm state.
 
 ## [v0.19.2] - 2022-08-29
 

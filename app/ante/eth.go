@@ -40,10 +40,8 @@ func NewEthSigVerificationDecorator(ek EVMKeeper) EthSigVerificationDecorator {
 // won't see the error message.
 func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	chainID := esvd.evmKeeper.ChainID()
-
-	params := esvd.evmKeeper.GetParams(ctx)
-
-	ethCfg := params.ChainConfig.EthereumConfig(chainID)
+	chainCfg := esvd.evmKeeper.GetChainConfig(ctx)
+	ethCfg := chainCfg.EthereumConfig(chainID)
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
 
@@ -53,8 +51,9 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
+		allowUnprotectedTxs := esvd.evmKeeper.GetAllowUnprotectedTxs(ctx)
 		ethTx := msgEthTx.AsTransaction()
-		if !params.AllowUnprotectedTxs && !ethTx.Protected() {
+		if !allowUnprotectedTxs && !ethTx.Protected() {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrNotSupported,
 				"rejected unprotected Ethereum txs. Please EIP155 sign your transaction to protect it against replay-attacks")
@@ -176,15 +175,13 @@ func NewEthGasConsumeDecorator(
 // - transaction or block gas meter runs out of gas
 // - sets the gas meter limit
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	params := egcd.evmKeeper.GetParams(ctx)
-
-	ethCfg := params.ChainConfig.EthereumConfig(egcd.evmKeeper.ChainID())
+	chainCfg := egcd.evmKeeper.GetChainConfig(ctx)
+	ethCfg := chainCfg.EthereumConfig(egcd.evmKeeper.ChainID())
 
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
 	london := ethCfg.IsLondon(blockHeight)
-	evmDenom := params.EvmDenom
 	gasWanted := uint64(0)
 	var events sdk.Events
 
@@ -213,6 +210,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			gasWanted += txData.GetGas()
 		}
 
+		evmDenom := egcd.evmKeeper.GetEVMDenom(ctx)
 		fees, priority, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
 			*msgEthTx,
@@ -436,9 +434,9 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	txFee := sdk.Coins{}
 	txGasLimit := uint64(0)
 
-	params := vbd.evmKeeper.GetParams(ctx)
+	chainCfg := vbd.evmKeeper.GetChainConfig(ctx)
 	chainID := vbd.evmKeeper.ChainID()
-	ethCfg := params.ChainConfig.EthereumConfig(chainID)
+	ethCfg := chainCfg.EthereumConfig(chainID)
 	baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
 
 	for _, msg := range protoTx.GetMsgs() {
@@ -460,9 +458,12 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		}
 
 		// return error if contract creation or call are disabled through governance
-		if !params.EnableCreate && txData.GetTo() == nil {
+		enableCreate := vbd.evmKeeper.GetEnableCreate(ctx)
+		enableCall := vbd.evmKeeper.GetEnableCall(ctx)
+
+		if !enableCreate && txData.GetTo() == nil {
 			return ctx, sdkerrors.Wrap(evmtypes.ErrCreateDisabled, "failed to create new contract")
-		} else if !params.EnableCall && txData.GetTo() != nil {
+		} else if !enableCall && txData.GetTo() != nil {
 			return ctx, sdkerrors.Wrap(evmtypes.ErrCallDisabled, "failed to call contract")
 		}
 
@@ -470,7 +471,8 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 			return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
 		}
 
-		txFee = txFee.Add(sdk.NewCoin(params.EvmDenom, sdkmath.NewIntFromBigInt(txData.Fee())))
+		evmDenom := vbd.evmKeeper.GetEVMDenom(ctx)
+		txFee = txFee.Add(sdk.NewCoin(evmDenom, sdkmath.NewIntFromBigInt(txData.Fee())))
 	}
 
 	authInfo := protoTx.AuthInfo
@@ -546,8 +548,8 @@ func NewEthMempoolFeeDecorator(ek EVMKeeper) EthMempoolFeeDecorator {
 // It only do the check if london hardfork not enabled or feemarket not enabled, because in that case feemarket will take over the task.
 func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	if ctx.IsCheckTx() && !simulate {
-		params := mfd.evmKeeper.GetParams(ctx)
-		ethCfg := params.ChainConfig.EthereumConfig(mfd.evmKeeper.ChainID())
+		chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
+		ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
 		baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
 		if baseFee == nil {
 			for _, msg := range tx.GetMsgs() {
@@ -556,7 +558,7 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 					return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 				}
 
-				evmDenom := params.EvmDenom
+				evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
 				feeAmt := ethMsg.GetFee()
 				glDec := sdk.NewDec(int64(ethMsg.GetGas()))
 				requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
