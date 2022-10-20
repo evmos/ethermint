@@ -33,6 +33,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -468,67 +469,66 @@ func (suite *AnteTestSuite) GenerateMultipleKeys(n int) ([]cryptotypes.PrivKey, 
 }
 
 // Signs a set of messages using each private key within a given multi-key
-func generateMultikeySignatures(signMode signing.SignMode, privKeys []cryptotypes.PrivKey, msgs [][]byte, mixSignatures bool) (signatures []signing.SignatureData) {
+func generateMultikeySignatures(signMode signing.SignMode, privKeys []cryptotypes.PrivKey, signDocBytes []byte, signType string) (signatures []signing.SignatureV2) {
+	var (
+		msg []byte
+		err error
+	)
+
 	n := len(privKeys)
-	signatures = make([]signing.SignatureData, n)
+	signatures = make([]signing.SignatureV2, n)
 
 	for i := 0; i < n; i++ {
-		privKey, err := ethsecp256k1.GenerateKey()
-		if err != nil {
-			panic("Could not generate ethsecp256k1 private key")
+		privKey := privKeys[i]
+
+		msg = signDocBytes
+
+		if signType == "EIP-712" || (signType == "mixed" && i%2 == 0) {
+			msg, err = eip712.GetEIP712HashForMsg(signDocBytes)
+			if err != nil {
+				panic(fmt.Sprintf("Could not generate EIP712 hash for message: %v\n", err))
+			}
 		}
 
-		msg, err := eip712.GetEIP712HashForMsg(msgs[i])
-		if err != nil {
-			panic("Could not generate EIP712 hash for message")
-		}
-
-		// If mixing signatures, sign standard payload for every other iteration
-		if mixSignatures && i%2 == 0 {
-			msg = msgs[i]
-		}
-
-		sig, _ := privKey.Sign(msg)
-		signatures[i] = &signing.SingleSignatureData{
+		sigBytes, _ := privKey.Sign(msg)
+		sigData := &signing.SingleSignatureData{
 			SignMode:  signMode,
-			Signature: sig,
+			Signature: sigBytes,
+		}
+
+		signatures[i] = signing.SignatureV2{
+			PubKey: privKey.PubKey(),
+			Data:   sigData,
 		}
 	}
 
 	return signatures
 }
 
-func (suite *AnteTestSuite) CreateTestSignedMultisigTx(privKeys []cryptotypes.PrivKey, pubKeys []cryptotypes.PubKey, signMode signing.SignMode, msg sdk.Msg, chainId string, gas uint64) client.TxBuilder {
-	if len(privKeys) != len(pubKeys) {
-		panic("length of private keys and public keys do not match")
+// Create and sign a multi-signed tx for the given message. `signType` indicates whether to use standard signing ("Standard"),
+// EIP-712 signing ("EIP-712"), or a mix of the two ("mixed").
+func (suite *AnteTestSuite) CreateTestSignedMultisigTx(privKeys []cryptotypes.PrivKey, signMode signing.SignMode, msg sdk.Msg, chainId string, gas uint64, signType string) client.TxBuilder {
+	pubKeys := make([]cryptotypes.PubKey, len(privKeys))
+	for i, privKey := range privKeys {
+		pubKeys[i] = privKey.PubKey()
 	}
 
 	// Re-derive multikey
 	numKeys := len(privKeys)
-	pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
-
-	// Create accounts for each pubkey
-	for _, pubKey := range pubKeys {
-		_ = suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, pubKey.Bytes())
-	}
+	multiKey := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
 
 	// Create multi-key account
-	multiKeyAcc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, pk.Bytes())
-	suite.Require().NoError(multiKeyAcc.SetSequence(1))
+	multiKeyAcc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, sdk.AccAddress(multiKey.Address()))
 	suite.app.AccountKeeper.SetAccount(suite.ctx, multiKeyAcc)
 
 	// Update balance for multikey account
-	suite.app.EvmKeeper.SetBalance(suite.ctx, common.BytesToAddress(pk.Address()), big.NewInt(10000000000))
-
-	// Set nonce to hard-coded value
-	nonce := 1
+	suite.app.EvmKeeper.SetBalance(suite.ctx, common.BytesToAddress(multiKey.Address()), big.NewInt(10000000000))
 
 	// Init builder
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
 
 	// Set fees
 	txBuilder.SetGasLimit(gas)
-	txBuilder.SetFeePayer(sdk.AccAddress(pk.Address()))
 	txBuilder.SetFeeAmount(sdk.NewCoins(
 		sdk.NewCoin(
 			"aphoton",
@@ -538,9 +538,7 @@ func (suite *AnteTestSuite) CreateTestSignedMultisigTx(privKeys []cryptotypes.Pr
 
 	// Set message
 	err := txBuilder.SetMsgs([]sdk.Msg{msg}...)
-	if err != nil {
-		panic(fmt.Sprintf("could not set messages with error %v", err))
-	}
+	suite.Require().NoError(err)
 
 	// Set memo and tip
 	txBuilder.SetMemo("")
@@ -548,51 +546,38 @@ func (suite *AnteTestSuite) CreateTestSignedMultisigTx(privKeys []cryptotypes.Pr
 	// Prepare signature field
 	sig := multisig.NewMultisig(len(pubKeys))
 	txBuilder.SetSignatures(signing.SignatureV2{
-		PubKey:   pk,
-		Data:     sig,
-		Sequence: uint64(nonce),
+		PubKey: multiKey,
+		Data:   sig,
 	})
 
-	// Create signer infos
-	signerInfos := make([]authsigning.SignerData, numKeys)
-	for i, pubKey := range pubKeys {
-		signerInfos[i] = authsigning.SignerData{
-			Address:       sdk.AccAddress(pubKey.Address()).String(),
-			ChainID:       chainId,
-			AccountNumber: uint64(i + 1),
-			Sequence:      1,
-			PubKey:        pubKey,
-		}
-	}
-
 	// Create signer bytes
-	signerBytes := make([][]byte, numKeys)
-	for i, signerInfo := range signerInfos {
-		bz, err := suite.clientCtx.TxConfig.SignModeHandler().GetSignBytes(
-			signMode,
-			signerInfo,
-			txBuilder.GetTx(),
-		)
-
-		if err != nil {
-			panic(fmt.Sprintf("could not get signer bytes with err %v\n", err))
-		}
-
-		signerBytes[i] = bz
+	acc, err := sdkante.GetSignerAcc(suite.ctx, suite.app.AccountKeeper, sdk.AccAddress(multiKey.Address()))
+	suite.Require().NoError(err)
+	signerInfo := authsigning.SignerData{
+		Address:       sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), acc.GetAddress().Bytes()),
+		ChainID:       chainId,
+		AccountNumber: acc.GetAccountNumber(),
+		Sequence:      acc.GetSequence(),
+		PubKey:        multiKey,
 	}
 
-	// Update signature field
-	sigs := generateMultikeySignatures(signMode, privKeys, signerBytes, true)
-	bitArray := cryptotypes.NewCompactBitArray(numKeys)
-	for i := 0; i < numKeys; i++ {
-		bitArray.SetIndex(i, true)
+	signerBytes, err := suite.clientCtx.TxConfig.SignModeHandler().GetSignBytes(
+		signMode,
+		signerInfo,
+		txBuilder.GetTx(),
+	)
+	suite.Require().NoError(err)
+
+	// Sign for each key and update signature field
+	sigs := generateMultikeySignatures(signMode, privKeys, signerBytes, signType)
+	for _, pkSig := range sigs {
+		err = multisig.AddSignatureV2(sig, pkSig, pubKeys)
+		suite.Require().NoError(err)
 	}
-	sig.BitArray = bitArray
-	sig.Signatures = sigs
+
 	txBuilder.SetSignatures(signing.SignatureV2{
-		PubKey:   pk,
-		Data:     sig,
-		Sequence: uint64(nonce),
+		PubKey: multiKey,
+		Data:   sig,
 	})
 
 	return txBuilder

@@ -30,7 +30,6 @@ import (
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
-	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
@@ -514,6 +513,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				numKeys := 5
 				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
 				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
 				msg := banktypes.NewMsgSend(
 					sdk.AccAddress(pk.Address()),
 					addr[:],
@@ -527,11 +527,41 @@ func (suite AnteTestSuite) TestAnteHandler() {
 
 				txBuilder := suite.CreateTestSignedMultisigTx(
 					privKeys,
-					pubKeys,
-					signing.SignMode_SIGN_MODE_DIRECT,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 					msg,
 					"ethermint_9000-1",
 					2000000,
+					"EIP-712",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"passes - Mixed multi-key",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"mixed", // Combine EIP-712 and standard signatures
 				)
 
 				return txBuilder.GetTx()
@@ -969,7 +999,7 @@ func (suite *AnteTestSuite) TestConsumeSignatureVerificationGas() {
 	multisigKey1 := kmultisig.NewLegacyAminoPubKey(2, pkSet1)
 	multisignature1 := multisig.NewMultisig(len(pkSet1))
 	expectedCost1 := expectedGasCostByKeys(pkSet1)
-	
+
 	for i := 0; i < len(pkSet1); i++ {
 		stdSig := legacytx.StdSignature{PubKey: pkSet1[i], Signature: sigSet1[i]}
 		sigV2, err := legacytx.StdSignatureToSignatureV2(cdc, stdSig)

@@ -38,7 +38,18 @@ func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
 		return make([]byte, 0), errors.New(fmt.Sprintf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v\n", errAmino, errProtobuf))
 	}
 
-	return typedData.TypeHash("Tx"), nil
+	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("could not hash EIP-712 domain: %v", err))
+	}
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
+
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("could not hash EIP-712 primary type: %v", err))
+	}
+	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
+
+	return rawData, nil
 }
 
 // Attempt to decode the SignDoc bytes as an Amino SignDoc and return an error on failure

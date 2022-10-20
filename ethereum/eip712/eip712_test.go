@@ -94,7 +94,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 		msgs          []sdk.Msg
 		accountNumber uint64
 		sequence      uint64
-		tip           txtypes.Tip
 		expectSuccess bool
 	}{
 		{
@@ -102,7 +101,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			fee: txtypes.Fee{
 				Amount:   makeCoins(t, "aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
-				Payer:    sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
 			},
 			memo: "",
 			msgs: []sdk.Msg{
@@ -114,10 +112,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			},
 			accountNumber: 8,
 			sequence:      5,
-			tip: txtypes.Tip{
-				Amount: makeCoins(t, "aphoton", math.NewInt(20000)),
-				Tipper: sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
-			},
 			expectSuccess: true,
 		},
 		{
@@ -125,7 +119,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			fee: txtypes.Fee{
 				Amount:   makeCoins(t, "aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
-				Payer:    sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
 			},
 			memo: "",
 			msgs: []sdk.Msg{
@@ -137,10 +130,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			},
 			accountNumber: 25,
 			sequence:      78,
-			tip: txtypes.Tip{
-				Amount: makeCoins(t, "aphoton", math.NewInt(500000)),
-				Tipper: sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
-			},
 			expectSuccess: true,
 		},
 		{
@@ -148,7 +137,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			fee: txtypes.Fee{
 				Amount:   makeCoins(t, "aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
-				Payer:    sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
 			},
 			memo: "",
 			msgs: []sdk.Msg{
@@ -165,10 +153,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			},
 			accountNumber: 25,
 			sequence:      78,
-			tip: txtypes.Tip{
-				Amount: makeCoins(t, "aphoton", math.NewInt(500000)),
-				Tipper: sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
-			},
 			expectSuccess: false, // Multiple messages (check for multiple signers in AnteHandler)
 		},
 		{
@@ -176,7 +160,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			fee: txtypes.Fee{
 				Amount:   makeCoins(t, "aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
-				Payer:    sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
 			},
 			memo: "",
 			msgs: []sdk.Msg{
@@ -193,10 +176,6 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			},
 			accountNumber: 25,
 			sequence:      78,
-			tip: txtypes.Tip{
-				Amount: makeCoins(t, "aphoton", math.NewInt(500000)),
-				Tipper: sdk.MustBech32ifyAddressBytes("ethm", createTestAddress(t)),
-			},
 			expectSuccess: false, // Multiple messages
 		},
 	}
@@ -208,18 +187,16 @@ func TestEIP712SignatureVerification(t *testing.T) {
 			// Init tx builder
 			txBuilder := clientCtx.TxConfig.NewTxBuilder()
 
-			// Set fees
+			// Set gas and fees
 			txBuilder.SetGasLimit(tc.fee.GasLimit)
-			txBuilder.SetFeePayer(sdk.MustAccAddressFromBech32(tc.fee.Payer))
 			txBuilder.SetFeeAmount(tc.fee.Amount)
 
 			// Set messages
 			err := txBuilder.SetMsgs(tc.msgs...)
 			require.NoError(t, err)
 
-			// Set memo and tip
+			// Set memo
 			txBuilder.SetMemo(tc.memo)
-			txBuilder.SetTip(&tc.tip)
 
 			// Prepare signature field
 			txSigData := signing.SingleSignatureData{
