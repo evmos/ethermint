@@ -2,13 +2,22 @@ package ante_test
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256r1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
+	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
+
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
@@ -16,6 +25,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
+	"github.com/evmos/ethermint/app/ante"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
@@ -913,4 +924,94 @@ func (suite AnteTestSuite) TestAnteHandlerWithParams() {
 		})
 	}
 	suite.evmParamsOption = nil
+}
+
+func (suite *AnteTestSuite) TestConsumeSignatureVerificationGas() {
+	params := authtypes.DefaultParams()
+	msg := []byte{1, 2, 3, 4}
+	cdc := simapp.MakeTestEncodingConfig().Amino
+
+	p := authtypes.DefaultParams()
+	skR1, _ := secp256r1.GenPrivKey()
+	pkSet1, sigSet1, err := generatePubKeysAndSignatures(5, msg, false)
+	suite.Require().NoError(err)
+
+	multisigKey1 := kmultisig.NewLegacyAminoPubKey(2, pkSet1)
+	multisignature1 := multisig.NewMultisig(len(pkSet1))
+	expectedCost1 := expectedGasCostByKeys(pkSet1)
+	
+	for i := 0; i < len(pkSet1); i++ {
+		stdSig := legacytx.StdSignature{PubKey: pkSet1[i], Signature: sigSet1[i]}
+		sigV2, err := legacytx.StdSignatureToSignatureV2(cdc, stdSig)
+		suite.Require().NoError(err)
+		err = multisig.AddSignatureV2(multisignature1, sigV2, pkSet1)
+		suite.Require().NoError(err)
+	}
+
+	type args struct {
+		meter  sdk.GasMeter
+		sig    signing.SignatureData
+		pubkey cryptotypes.PubKey
+		params authtypes.Params
+	}
+	tests := []struct {
+		name        string
+		args        args
+		gasConsumed uint64
+		shouldErr   bool
+	}{
+		{"PubKeyEd25519", args{sdk.NewInfiniteGasMeter(), nil, ed25519.GenPrivKey().PubKey(), params}, p.SigVerifyCostED25519, true},
+		{"PubKeyEthSecp256k1", args{sdk.NewInfiniteGasMeter(), nil, pkSet1[0], params}, 21_000, false},
+		{"PubKeySecp256r1", args{sdk.NewInfiniteGasMeter(), nil, skR1.PubKey(), params}, p.SigVerifyCostSecp256r1(), false},
+		{"Multisig", args{sdk.NewInfiniteGasMeter(), multisignature1, multisigKey1, params}, expectedCost1, false},
+		{"unknown key", args{sdk.NewInfiniteGasMeter(), nil, nil, params}, 0, true},
+	}
+	for _, tt := range tests {
+		sigV2 := signing.SignatureV2{
+			PubKey:   tt.args.pubkey,
+			Data:     tt.args.sig,
+			Sequence: 0, // Arbitrary account sequence
+		}
+		err := ante.DefaultSigVerificationGasConsumer(tt.args.meter, sigV2, tt.args.params)
+
+		if tt.shouldErr {
+			suite.Require().NotNil(err)
+		} else {
+			suite.Require().Nil(err)
+			suite.Require().Equal(tt.gasConsumed, tt.args.meter.GasConsumed(), fmt.Sprintf("%d != %d", tt.gasConsumed, tt.args.meter.GasConsumed()))
+		}
+	}
+}
+
+func generatePubKeysAndSignatures(n int, msg []byte, _ bool) (pubkeys []cryptotypes.PubKey, signatures [][]byte, err error) {
+	pubkeys = make([]cryptotypes.PubKey, n)
+	signatures = make([][]byte, n)
+	for i := 0; i < n; i++ {
+		privkey, err := ethsecp256k1.GenerateKey()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		pubkeys[i] = privkey.PubKey()
+		signatures[i], _ = privkey.Sign(msg)
+	}
+	return
+}
+
+func expectedGasCostByKeys(pubkeys []cryptotypes.PubKey) uint64 {
+	cost := uint64(0)
+	for _, pubkey := range pubkeys {
+		pubkeyType := strings.ToLower(fmt.Sprintf("%T", pubkey))
+		switch {
+		case strings.Contains(pubkeyType, "ed25519"):
+			cost += authtypes.DefaultParams().SigVerifyCostED25519
+		case strings.Contains(pubkeyType, "ethsecp256k1"):
+			cost += 21_000
+		case strings.Contains(pubkeyType, "secp256k1"):
+			cost += authtypes.DefaultParams().SigVerifyCostSecp256k1
+		default:
+			panic("unexpected key type")
+		}
+	}
+	return cost
 }
