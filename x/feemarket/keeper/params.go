@@ -28,6 +28,15 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 // Required by EIP1559 base fee calculation.
 // ----------------------------------------------------------------------------
 
+// GetBaseFeeEnabled returns true if base fee is enabled
+func (k Keeper) GetBaseFeeEnabled(ctx sdk.Context) bool {
+	var noBaseFee bool
+	var enableHeight int64
+	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyNoBaseFee, &noBaseFee)
+	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEnableHeight, &enableHeight)
+	return !noBaseFee && ctx.BlockHeight() >= enableHeight
+}
+
 // GetBaseFee get's the base fee from the paramSpace
 // return nil if base fee is not enabled
 func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
@@ -36,7 +45,13 @@ func (k Keeper) GetBaseFee(ctx sdk.Context) *big.Int {
 		return nil
 	}
 
-	return params.BaseFee.BigInt()
+	baseFee := params.BaseFee.BigInt()
+	if baseFee == nil || baseFee.Sign() == 0 {
+		// try v1 format
+		return k.GetBaseFeeV1(ctx)
+	}
+
+	return baseFee
 }
 
 // SetBaseFee set's the base fee in the paramSpace
