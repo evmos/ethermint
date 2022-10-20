@@ -1,20 +1,3 @@
-from .expected_constants import (
-    EXPECTED_FEE_HISTORY,
-    EXPECTED_GET_PROOF,
-    EXPECTED_GET_STORAGE_AT,
-    EXPECTED_GET_TRANSACTION,
-    EXPECTED_GET_TRANSACTION_RECEIPT,
-)
-from .utils import (
-    ADDRS,
-    CONTRACTS,
-    KEYS,
-    deploy_contract,
-    send_transaction,
-    w3_wait_for_block,
-    w3_wait_for_new_blocks,
-)
-
 def test_single_request_netversion(ethermint):
     ethermint.use_websocket()
     eth_ws = ethermint.w3.provider
