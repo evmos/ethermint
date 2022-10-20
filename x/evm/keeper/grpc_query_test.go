@@ -842,6 +842,7 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 				Predecessors: predecessors,
 			}
 			res, err := suite.queryClient.TraceTx(sdk.WrapSDKContext(suite.ctx), &traceReq)
+			suite.Require().NoError(err)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -1276,7 +1277,7 @@ func (suite *KeeperTestSuite) TestEmptyRequest() {
 			func() (interface{}, error) {
 				return k.TraceBlock(suite.ctx, nil)
 			},
-		},		
+		},
 	}
 
 	for _, tc := range testCases {
