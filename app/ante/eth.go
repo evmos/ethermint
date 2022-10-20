@@ -438,6 +438,9 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	chainID := vbd.evmKeeper.ChainID()
 	ethCfg := chainCfg.EthereumConfig(chainID)
 	baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
+	enableCreate := vbd.evmKeeper.GetEnableCreate(ctx)
+	enableCall := vbd.evmKeeper.GetEnableCall(ctx)
+	evmDenom := vbd.evmKeeper.GetEVMDenom(ctx)
 
 	for _, msg := range protoTx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -458,9 +461,6 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		}
 
 		// return error if contract creation or call are disabled through governance
-		enableCreate := vbd.evmKeeper.GetEnableCreate(ctx)
-		enableCall := vbd.evmKeeper.GetEnableCall(ctx)
-
 		if !enableCreate && txData.GetTo() == nil {
 			return ctx, sdkerrors.Wrap(evmtypes.ErrCreateDisabled, "failed to create new contract")
 		} else if !enableCall && txData.GetTo() != nil {
@@ -471,7 +471,6 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 			return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
 		}
 
-		evmDenom := vbd.evmKeeper.GetEVMDenom(ctx)
 		txFee = txFee.Add(sdk.NewCoin(evmDenom, sdkmath.NewIntFromBigInt(txData.Fee())))
 	}
 
@@ -551,6 +550,8 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 		chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
 		ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
 		baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
+		evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
+
 		if baseFee == nil {
 			for _, msg := range tx.GetMsgs() {
 				ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -558,7 +559,6 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 					return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 				}
 
-				evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
 				feeAmt := ethMsg.GetFee()
 				glDec := sdk.NewDec(int64(ethMsg.GetGas()))
 				requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
