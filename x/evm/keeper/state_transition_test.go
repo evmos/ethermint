@@ -157,8 +157,8 @@ func (suite *KeeperTestSuite) TestGetCoinbaseAddress() {
 			suite.SetupTest() // reset
 
 			tc.malleate()
-
-			coinbase, err := suite.app.EvmKeeper.GetCoinbaseAddress(suite.ctx)
+			proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+			coinbase, err := suite.app.EvmKeeper.GetCoinbaseAddress(suite.ctx, sdk.ConsAddress(proposerAddress))
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(valOpAddr, coinbase)
@@ -487,7 +487,8 @@ func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 
 func (suite *KeeperTestSuite) TestEVMConfig() {
 	suite.SetupTest()
-	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
+	proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx, proposerAddress)
 	suite.Require().NoError(err)
 	suite.Require().Equal(types.DefaultParams(), cfg.Params)
 	// london hardfork is enabled by default
