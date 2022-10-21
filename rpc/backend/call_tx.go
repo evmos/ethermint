@@ -305,7 +305,6 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		return 0, errors.New("header not found")
 	}
 
-
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
