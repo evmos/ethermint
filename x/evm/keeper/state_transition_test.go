@@ -516,7 +516,6 @@ func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 }
 
 func (suite *KeeperTestSuite) TestEVMConfig() {
-	suite.SetupTest()
 	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
 	suite.Require().NoError(err)
 	suite.Require().Equal(types.DefaultParams(), cfg.Params)
@@ -527,14 +526,12 @@ func (suite *KeeperTestSuite) TestEVMConfig() {
 }
 
 func (suite *KeeperTestSuite) TestContractDeployment() {
-	suite.SetupTest()
 	contractAddress := suite.DeployTestContract(suite.T(), suite.address, big.NewInt(10000000000000))
 	db := suite.StateDB()
 	suite.Require().Greater(db.GetCodeSize(contractAddress), 0)
 }
 
 func (suite *KeeperTestSuite) TestApplyMessage() {
-	suite.SetupTest()
 	expectedGasUsed := params.TxGas
 	var msg core.Message
 
@@ -568,7 +565,6 @@ func (suite *KeeperTestSuite) TestApplyMessage() {
 }
 
 func (suite *KeeperTestSuite) TestApplyMessageWithConfig() {
-	suite.SetupTest()
 	var (
 		msg             core.Message
 		err             error

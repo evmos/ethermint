@@ -437,8 +437,6 @@ func (suite *KeeperTestSuite) TestBaseFee() {
 }
 
 func (suite *KeeperTestSuite) TestGetAccountStorage() {
-	suite.SetupTest()
-
 	testCases := []struct {
 		name     string
 		malleate func()
@@ -461,6 +459,7 @@ func (suite *KeeperTestSuite) TestGetAccountStorage() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.SetupTest()
 			tc.malleate()
 			i := 0
 			suite.app.AccountKeeper.IterateAccounts(suite.ctx, func(account authtypes.AccountI) bool {
@@ -484,7 +483,6 @@ func (suite *KeeperTestSuite) TestGetAccountStorage() {
 }
 
 func (suite *KeeperTestSuite) TestGetAccountOrEmpty() {
-	suite.SetupTest()
 	empty := statedb.Account{
 		Balance:  new(big.Int),
 		CodeHash: types.EmptyCodeHash,
@@ -522,4 +520,3 @@ func (suite *KeeperTestSuite) TestGetAccountOrEmpty() {
 		})
 	}
 }
-

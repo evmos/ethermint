@@ -849,7 +849,6 @@ func (suite *KeeperTestSuite) _TestForEachStorage() {
 }
 
 func (suite *KeeperTestSuite) TestSetBalance() {
-	suite.SetupTest()
 	amount := big.NewInt(-10)
 
 	testCases := []struct {
@@ -892,6 +891,7 @@ func (suite *KeeperTestSuite) TestSetBalance() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.SetupTest()
 			tc.malleate()
 			err := suite.app.EvmKeeper.SetBalance(suite.ctx, tc.addr, amount)
 			if tc.expErr {
