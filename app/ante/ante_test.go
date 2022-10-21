@@ -31,6 +31,7 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {
@@ -566,6 +567,121 @@ func (suite AnteTestSuite) TestAnteHandler() {
 
 				return txBuilder.GetTx()
 			}, false, false, true,
+		},
+		{
+			"passes - Mixed multi-key with MsgVote",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := govtypes.NewMsgVote(
+					sdk.AccAddress(pk.Address()),
+					1,
+					govtypes.OptionYes,
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"mixed", // Combine EIP-712 and standard signatures
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"Fails - Multi-Key with incorrect Chain ID",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9005-1",
+					2000000,
+					"mixed",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Multi-Key with incorrect sign mode",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"mixed",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Multi-Key with too little gas",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"mixed", // Combine EIP-712 and standard signatures
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
 		},
 	}
 
