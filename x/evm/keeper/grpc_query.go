@@ -224,7 +224,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	cfg, err := k.EVMConfig(ctx, req.ProposerAddress)
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
