@@ -1130,7 +1130,6 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 }
 
 func (suite *KeeperTestSuite) TestNonceInQuery() {
-	suite.SetupTest()
 	address := tests.GenerateAddress()
 	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(suite.ctx, address))
 	supply := sdkmath.NewIntWithDecimal(1000, 18).BigInt()

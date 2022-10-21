@@ -318,16 +318,15 @@ func (suite *KeeperTestSuite) TestSetCode() {
 	}
 }
 
-
 func (suite *KeeperTestSuite) TestKeeperSetCode() {
 	addr := tests.GenerateAddress()
 	baseAcc := &authtypes.BaseAccount{Address: sdk.AccAddress(addr.Bytes()).String()}
 	suite.app.AccountKeeper.SetAccount(suite.ctx, baseAcc)
 
 	testCases := []struct {
-		name    string
+		name     string
 		codeHash []byte
-		code    []byte
+		code     []byte
 	}{
 		{
 			"set code",
@@ -420,8 +419,6 @@ func (suite *KeeperTestSuite) TestState() {
 }
 
 func (suite *KeeperTestSuite) TestCommittedState() {
-	suite.SetupTest()
-
 	key := common.BytesToHash([]byte("key"))
 	value1 := common.BytesToHash([]byte("value1"))
 	value2 := common.BytesToHash([]byte("value2"))
@@ -523,8 +520,6 @@ func (suite *KeeperTestSuite) TestExist() {
 }
 
 func (suite *KeeperTestSuite) TestEmpty() {
-	suite.SetupTest()
-
 	testCases := []struct {
 		name     string
 		address  common.Address
@@ -543,6 +538,7 @@ func (suite *KeeperTestSuite) TestEmpty() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.SetupTest()
 			vmdb := suite.StateDB()
 			tc.malleate(vmdb)
 
@@ -907,7 +903,6 @@ func (suite *KeeperTestSuite) TestSetBalance() {
 }
 
 func (suite *KeeperTestSuite) TestDeleteAccount() {
-	suite.SetupTest()
 	supply := big.NewInt(100)
 	contractAddr := suite.DeployTestContract(suite.T(), suite.address, supply)
 
@@ -935,6 +930,7 @@ func (suite *KeeperTestSuite) TestDeleteAccount() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.SetupTest()
 			err := suite.app.EvmKeeper.DeleteAccount(suite.ctx, tc.addr)
 			if tc.expErr {
 				suite.Require().Error(err)
