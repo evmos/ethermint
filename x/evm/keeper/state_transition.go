@@ -519,8 +519,9 @@ func (k *Keeper) ResetGasMeterAndConsumeGas(ctx sdk.Context, gasUsed uint64) {
 	ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
 }
 
-func getProposerAddress(ctx sdk.Context, proposerAddress []byte) []byte {
-	if proposerAddress == nil {
+// GetProposerAddress returns current block proposer's address when provided proposer address is empty.
+func GetProposerAddress(ctx sdk.Context, proposerAddress []byte) []byte {
+	if len(proposerAddress) == 0 {
 		proposerAddress = ctx.BlockHeader().ProposerAddress
 	}
 	return proposerAddress
@@ -528,7 +529,7 @@ func getProposerAddress(ctx sdk.Context, proposerAddress []byte) []byte {
 
 // GetCoinbaseAddress returns the block proposer's validator operator address.
 func (k Keeper) GetCoinbaseAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) (common.Address, error) {
-	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, getProposerAddress(ctx, proposerAddress))
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, GetProposerAddress(ctx, proposerAddress))
 	if !found {
 		return common.Address{}, sdkerrors.Wrapf(
 			stakingtypes.ErrNoValidatorFound,

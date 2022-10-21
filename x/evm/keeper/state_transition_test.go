@@ -503,3 +503,35 @@ func (suite *KeeperTestSuite) TestContractDeployment() {
 	db := suite.StateDB()
 	suite.Require().Greater(db.GetCodeSize(contractAddress), 0)
 }
+
+func (suite *KeeperTestSuite) TestGetProposerAddress() {
+	var a sdk.ConsAddress
+	address := suite.address.Bytes()
+	proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+	testCases := []struct {
+		msg    string
+		adr    []byte
+		expAdr []byte
+	}{
+		{
+			"proposer address provided",
+			address,
+			address,
+		},
+		{
+			"nil proposer address provided",
+			nil,
+			proposerAddress,
+		},
+		{
+			"typed nil proposer address provided",
+			a,
+			proposerAddress,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.Require().Equal(tc.expAdr, keeper.GetProposerAddress(suite.ctx, tc.adr))
+		})
+	}
+}
