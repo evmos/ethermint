@@ -9,10 +9,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/evmos/ethermint/tests"
 	"github.com/evmos/ethermint/x/evm/keeper"
+	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -346,40 +348,63 @@ func (suite *KeeperTestSuite) TestGasToRefund() {
 }
 
 func (suite *KeeperTestSuite) TestRefundGas() {
+	var (
+		m   core.Message
+		err error
+	)
+
 	testCases := []struct {
 		name           string
 		leftoverGas    uint64
 		refundQuotient uint64
 		noError        bool
 		expGasRefund   uint64
+		malleate       func()
 	}{
 		{
-			"leftoverGas more than tx gas limit",
-			params.TxGas + 1,
-			params.RefundQuotient,
-			false,
-			params.TxGas + 1,
+			name:           "leftoverGas more than tx gas limit",
+			leftoverGas:    params.TxGas + 1,
+			refundQuotient: params.RefundQuotient,
+			noError:        false,
+			expGasRefund:   params.TxGas + 1,
 		},
 		{
-			"leftoverGas equal to tx gas limit, insufficient fee collector account",
-			params.TxGas,
-			params.RefundQuotient,
-			true,
-			0,
+			name:           "leftoverGas equal to tx gas limit, insufficient fee collector account",
+			leftoverGas:    params.TxGas,
+			refundQuotient: params.RefundQuotient,
+			noError:        true,
+			expGasRefund:   0,
 		},
 		{
-			"leftoverGas less than to tx gas limit",
-			params.TxGas - 1,
-			params.RefundQuotient,
-			true,
-			0,
+			name:           "leftoverGas less than to tx gas limit",
+			leftoverGas:    params.TxGas - 1,
+			refundQuotient: params.RefundQuotient,
+			noError:        true,
+			expGasRefund:   0,
 		},
 		{
-			"no leftoverGas, refund half used gas ",
-			0,
-			params.RefundQuotient,
-			true,
-			params.TxGas / params.RefundQuotient,
+			name:           "no leftoverGas, refund half used gas ",
+			leftoverGas:    0,
+			refundQuotient: params.RefundQuotient,
+			noError:        true,
+			expGasRefund:   params.TxGas / params.RefundQuotient,
+		},
+		{
+			name:           "invalid Gas value in msg",
+			leftoverGas:    0,
+			refundQuotient: params.RefundQuotient,
+			noError:        false,
+			expGasRefund:   params.TxGas,
+			malleate: func() {
+				keeperParams := suite.app.EvmKeeper.GetParams(suite.ctx)
+				m, err = suite.createContractGethMsg(
+					suite.StateDB().GetNonce(suite.address),
+					ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID()),
+					keeperParams.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID()),
+					big.NewInt(-100),
+				)
+				suite.Require().NoError(err)
+			},
 		},
 	}
 
@@ -393,7 +418,7 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 			signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 			vmdb := suite.StateDB()
 
-			m, err := newNativeMessage(
+			m, err = newNativeMessage(
 				vmdb.GetNonce(suite.address),
 				suite.ctx.BlockHeight(),
 				suite.address,
@@ -411,6 +436,11 @@ func (suite *KeeperTestSuite) TestRefundGas() {
 			if tc.leftoverGas > m.Gas() {
 				return
 			}
+
+			if tc.malleate != nil {
+				tc.malleate()
+			}
+
 			gasUsed := m.Gas() - tc.leftoverGas
 			refund := keeper.GasToRefund(vmdb.GetRefund(), gasUsed, tc.refundQuotient)
 			suite.Require().Equal(tc.expGasRefund, refund)
@@ -486,7 +516,6 @@ func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 }
 
 func (suite *KeeperTestSuite) TestEVMConfig() {
-	suite.SetupTest()
 	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
 	suite.Require().NoError(err)
 	suite.Require().Equal(types.DefaultParams(), cfg.Params)
@@ -497,8 +526,165 @@ func (suite *KeeperTestSuite) TestEVMConfig() {
 }
 
 func (suite *KeeperTestSuite) TestContractDeployment() {
-	suite.SetupTest()
 	contractAddress := suite.DeployTestContract(suite.T(), suite.address, big.NewInt(10000000000000))
 	db := suite.StateDB()
 	suite.Require().Greater(db.GetCodeSize(contractAddress), 0)
+}
+
+func (suite *KeeperTestSuite) TestApplyMessage() {
+	expectedGasUsed := params.TxGas
+	var msg core.Message
+
+	config, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
+	suite.Require().NoError(err)
+
+	keeperParams := suite.app.EvmKeeper.GetParams(suite.ctx)
+	chainCfg := keeperParams.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+	signer := ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+	tracer := suite.app.EvmKeeper.Tracer(suite.ctx, msg, config.ChainConfig)
+	vmdb := suite.StateDB()
+
+	msg, err = newNativeMessage(
+		vmdb.GetNonce(suite.address),
+		suite.ctx.BlockHeight(),
+		suite.address,
+		chainCfg,
+		suite.signer,
+		signer,
+		ethtypes.AccessListTxType,
+		nil,
+		nil,
+	)
+	suite.Require().NoError(err)
+
+	res, err := suite.app.EvmKeeper.ApplyMessage(suite.ctx, msg, tracer, true)
+
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedGasUsed, res.GasUsed)
+	suite.Require().False(res.Failed())
+}
+
+func (suite *KeeperTestSuite) TestApplyMessageWithConfig() {
+	var (
+		msg             core.Message
+		err             error
+		expectedGasUsed uint64
+		config          *types.EVMConfig
+		keeperParams    types.Params
+		signer          ethtypes.Signer
+		vmdb            *statedb.StateDB
+		txConfig        statedb.TxConfig
+		chainCfg        *params.ChainConfig
+	)
+
+	testCases := []struct {
+		name     string
+		malleate func()
+		expErr   bool
+	}{
+		{
+			"messsage applied ok",
+			func() {
+				msg, err = newNativeMessage(
+					vmdb.GetNonce(suite.address),
+					suite.ctx.BlockHeight(),
+					suite.address,
+					chainCfg,
+					suite.signer,
+					signer,
+					ethtypes.AccessListTxType,
+					nil,
+					nil,
+				)
+				suite.Require().NoError(err)
+			},
+			false,
+		},
+		{
+			"call contract tx with config param EnableCall = false",
+			func() {
+				config.Params.EnableCall = false
+				msg, err = newNativeMessage(
+					vmdb.GetNonce(suite.address),
+					suite.ctx.BlockHeight(),
+					suite.address,
+					chainCfg,
+					suite.signer,
+					signer,
+					ethtypes.AccessListTxType,
+					nil,
+					nil,
+				)
+				suite.Require().NoError(err)
+			},
+			true,
+		},
+		{
+			"create contract tx with config param EnableCreate = false",
+			func() {
+				msg, err = suite.createContractGethMsg(vmdb.GetNonce(suite.address), signer, chainCfg, big.NewInt(1))
+				suite.Require().NoError(err)
+				config.Params.EnableCreate = false
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
+			expectedGasUsed = params.TxGas
+
+			config, err = suite.app.EvmKeeper.EVMConfig(suite.ctx)
+			suite.Require().NoError(err)
+
+			keeperParams = suite.app.EvmKeeper.GetParams(suite.ctx)
+			chainCfg = keeperParams.ChainConfig.EthereumConfig(suite.app.EvmKeeper.ChainID())
+			signer = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+			vmdb = suite.StateDB()
+			txConfig = suite.app.EvmKeeper.TxConfig(suite.ctx, common.Hash{})
+
+			tc.malleate()
+			res, err := suite.app.EvmKeeper.ApplyMessageWithConfig(suite.ctx, msg, nil, true, config, txConfig)
+
+			if tc.expErr {
+				suite.Require().Error(err)
+				return
+			}
+
+			suite.Require().NoError(err)
+			suite.Require().False(res.Failed())
+			suite.Require().Equal(expectedGasUsed, res.GasUsed)
+		})
+	}
+
+}
+
+func (suite *KeeperTestSuite) createContractGethMsg(nonce uint64, signer ethtypes.Signer, cfg *params.ChainConfig, gasPrice *big.Int) (core.Message, error) {
+
+	ethMsg, err := suite.createContractMsgTx(nonce, signer, cfg, gasPrice)
+
+	if err != nil {
+		return nil, err
+	}
+
+	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(suite.ctx.BlockHeight()))
+	return ethMsg.AsMessage(msgSigner, nil)
+}
+
+func (suite *KeeperTestSuite) createContractMsgTx(nonce uint64, signer ethtypes.Signer, cfg *params.ChainConfig, gasPrice *big.Int) (*types.MsgEthereumTx, error) {
+
+	contractCreateTx := &ethtypes.AccessListTx{
+		GasPrice: gasPrice,
+		Gas:      params.TxGasContractCreation,
+		To:       nil,
+		Data:     []byte("contract_data"),
+		Nonce:    nonce,
+	}
+	ethTx := ethtypes.NewTx(contractCreateTx)
+	ethMsg := &types.MsgEthereumTx{}
+	ethMsg.FromEthereumTx(ethTx)
+	ethMsg.From = suite.address.Hex()
+
+	return ethMsg, ethMsg.Sign(signer, suite.signer)
 }

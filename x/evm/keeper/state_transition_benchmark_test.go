@@ -75,7 +75,7 @@ func newSignedEthTx(
 	return ethTx, nil
 }
 
-func newNativeMessage(
+func newEthMsgTx(
 	nonce uint64,
 	blockHeight int64,
 	address common.Address,
@@ -85,14 +85,11 @@ func newNativeMessage(
 	txType byte,
 	data []byte,
 	accessList ethtypes.AccessList,
-) (core.Message, error) {
-	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
-
+) (*evmtypes.MsgEthereumTx, *big.Int, error) {
 	var (
 		ethTx   *ethtypes.Transaction
 		baseFee *big.Int
 	)
-
 	switch txType {
 	case ethtypes.LegacyTxType:
 		templateLegacyTx.Nonce = nonce
@@ -122,14 +119,32 @@ func newNativeMessage(
 		ethTx = ethtypes.NewTx(templateDynamicFeeTx)
 		baseFee = big.NewInt(3)
 	default:
-		return nil, errors.New("unsupport tx type")
+		return nil, baseFee, errors.New("unsupport tx type")
 	}
 
 	msg := &evmtypes.MsgEthereumTx{}
 	msg.FromEthereumTx(ethTx)
 	msg.From = address.Hex()
 
-	if err := msg.Sign(ethSigner, krSigner); err != nil {
+	return msg, baseFee, msg.Sign(ethSigner, krSigner)
+}
+
+func newNativeMessage(
+	nonce uint64,
+	blockHeight int64,
+	address common.Address,
+	cfg *params.ChainConfig,
+	krSigner keyring.Signer,
+	ethSigner ethtypes.Signer,
+	txType byte,
+	data []byte,
+	accessList ethtypes.AccessList,
+) (core.Message, error) {
+	msgSigner := ethtypes.MakeSigner(cfg, big.NewInt(blockHeight))
+
+	msg, baseFee, err := newEthMsgTx(nonce, blockHeight, address, cfg, krSigner, ethSigner, txType, data, accessList)
+
+	if err != nil {
 		return nil, err
 	}
 
