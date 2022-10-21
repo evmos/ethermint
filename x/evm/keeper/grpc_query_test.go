@@ -18,7 +18,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
 	"github.com/evmos/ethermint/x/evm/types"
@@ -1239,9 +1238,7 @@ func (suite *KeeperTestSuite) TestEthCall() {
 		req *types.EthCallRequest
 	)
 
-	priv, err := ethsecp256k1.GenerateKey()
-	suite.Require().NoError(err)
-	address := common.BytesToAddress(priv.PubKey().Address().Bytes())
+	address := tests.GenerateAddress()
 	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(suite.ctx, address))
 	supply := sdkmath.NewIntWithDecimal(1000, 18).BigInt()
 
