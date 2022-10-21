@@ -735,8 +735,9 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			args, err := json.Marshal(&args)
 			suite.Require().NoError(err)
 			req := types.EthCallRequest{
-				Args:   args,
-				GasCap: gasCap,
+				Args:            args,
+				GasCap:          gasCap,
+				ProposerAddress: suite.ctx.BlockHeader().ProposerAddress,
 			}
 
 			rsp, err := suite.queryClient.EstimateGas(sdk.WrapSDKContext(suite.ctx), &req)
@@ -1145,16 +1146,18 @@ func (suite *KeeperTestSuite) TestNonceInQuery() {
 		Data: (*hexutil.Bytes)(&data),
 	})
 	suite.Require().NoError(err)
-
+	proposerAddress := suite.ctx.BlockHeader().ProposerAddress
 	_, err = suite.queryClient.EstimateGas(sdk.WrapSDKContext(suite.ctx), &types.EthCallRequest{
-		Args:   args,
-		GasCap: uint64(config.DefaultGasCap),
+		Args:            args,
+		GasCap:          uint64(config.DefaultGasCap),
+		ProposerAddress: proposerAddress,
 	})
 	suite.Require().NoError(err)
 
 	_, err = suite.queryClient.EthCall(sdk.WrapSDKContext(suite.ctx), &types.EthCallRequest{
-		Args:   args,
-		GasCap: uint64(config.DefaultGasCap),
+		Args:            args,
+		GasCap:          uint64(config.DefaultGasCap),
+		ProposerAddress: proposerAddress,
 	})
 	suite.Require().NoError(err)
 }

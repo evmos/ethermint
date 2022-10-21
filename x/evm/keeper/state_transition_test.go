@@ -159,8 +159,8 @@ func (suite *KeeperTestSuite) TestGetCoinbaseAddress() {
 			suite.SetupTest() // reset
 
 			tc.malleate()
-
-			coinbase, err := suite.app.EvmKeeper.GetCoinbaseAddress(suite.ctx)
+			proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+			coinbase, err := suite.app.EvmKeeper.GetCoinbaseAddress(suite.ctx, sdk.ConsAddress(proposerAddress))
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(valOpAddr, coinbase)
@@ -516,7 +516,8 @@ func (suite *KeeperTestSuite) TestResetGasMeterAndConsumeGas() {
 }
 
 func (suite *KeeperTestSuite) TestEVMConfig() {
-	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
+	proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+	cfg, err := suite.app.EvmKeeper.EVMConfig(suite.ctx, proposerAddress)
 	suite.Require().NoError(err)
 	suite.Require().Equal(types.DefaultParams(), cfg.Params)
 	// london hardfork is enabled by default
@@ -535,7 +536,8 @@ func (suite *KeeperTestSuite) TestApplyMessage() {
 	expectedGasUsed := params.TxGas
 	var msg core.Message
 
-	config, err := suite.app.EvmKeeper.EVMConfig(suite.ctx)
+	proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+	config, err := suite.app.EvmKeeper.EVMConfig(suite.ctx, proposerAddress)
 	suite.Require().NoError(err)
 
 	keeperParams := suite.app.EvmKeeper.GetParams(suite.ctx)
@@ -635,7 +637,8 @@ func (suite *KeeperTestSuite) TestApplyMessageWithConfig() {
 			suite.SetupTest()
 			expectedGasUsed = params.TxGas
 
-			config, err = suite.app.EvmKeeper.EVMConfig(suite.ctx)
+			proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+			config, err = suite.app.EvmKeeper.EVMConfig(suite.ctx, proposerAddress)
 			suite.Require().NoError(err)
 
 			keeperParams = suite.app.EvmKeeper.GetParams(suite.ctx)
@@ -687,4 +690,36 @@ func (suite *KeeperTestSuite) createContractMsgTx(nonce uint64, signer ethtypes.
 	ethMsg.From = suite.address.Hex()
 
 	return ethMsg, ethMsg.Sign(signer, suite.signer)
+}
+
+func (suite *KeeperTestSuite) TestGetProposerAddress() {
+	var a sdk.ConsAddress
+	address := sdk.ConsAddress(suite.address.Bytes())
+	proposerAddress := sdk.ConsAddress(suite.ctx.BlockHeader().ProposerAddress)
+	testCases := []struct {
+		msg    string
+		adr    sdk.ConsAddress
+		expAdr sdk.ConsAddress
+	}{
+		{
+			"proposer address provided",
+			address,
+			address,
+		},
+		{
+			"nil proposer address provided",
+			nil,
+			proposerAddress,
+		},
+		{
+			"typed nil proposer address provided",
+			a,
+			proposerAddress,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.Require().Equal(tc.expAdr, keeper.GetProposerAddress(suite.ctx, tc.adr))
+		})
+	}
 }

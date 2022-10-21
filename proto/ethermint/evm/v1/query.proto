@@ -221,6 +221,8 @@ message EthCallRequest {
   bytes args = 1;
   // the default gas cap to be used
   uint64 gas_cap = 2;
+  // the proposer of the requested block
+  bytes proposer_address = 3 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
 }
 
 // EstimateGasResponse defines EstimateGas response
@@ -247,6 +249,8 @@ message QueryTraceTxRequest {
   string block_hash = 6;
   // block time of requested transaction
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  // the proposer of the requested block
+  bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
 }
 
 // QueryTraceTxResponse defines TraceTx response
@@ -267,6 +271,8 @@ message QueryTraceBlockRequest {
   string block_hash = 6;
   // block time
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  // the proposer of the requested block
+  bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
 }
 
 // QueryTraceBlockResponse defines TraceBlock response

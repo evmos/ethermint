@@ -74,6 +74,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1354](https://github.com/evmos/ethermint/pull/1354) Fix grpc query failure(`BaseFee` and `EthCall`) on legacy block states.
 * (cli) [#1362](https://github.com/evmos/ethermint/pull/1362) Fix `index-eth-tx` error when the indexer db is empty.
 * (state) [#1320](https://github.com/evmos/ethermint/pull/1320) Fix codehash check mismatch when the code has been deleted in the evm state.
+* (rpc) [#1392](https://github.com/evmos/ethermint/pull/1392) Allow fill the proposer address in json-rpc through tendermint api, and pass explicitly to grpc query handler.
 
 ## [v0.19.2] - 2022-08-29
 
