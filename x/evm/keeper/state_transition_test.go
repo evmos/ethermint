@@ -506,12 +506,12 @@ func (suite *KeeperTestSuite) TestContractDeployment() {
 
 func (suite *KeeperTestSuite) TestGetProposerAddress() {
 	var a sdk.ConsAddress
-	address := suite.address.Bytes()
-	proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+	address := sdk.ConsAddress(suite.address.Bytes())
+	proposerAddress := sdk.ConsAddress(suite.ctx.BlockHeader().ProposerAddress)
 	testCases := []struct {
 		msg    string
-		adr    []byte
-		expAdr []byte
+		adr    sdk.ConsAddress
+		expAdr sdk.ConsAddress
 	}{
 		{
 			"proposer address provided",

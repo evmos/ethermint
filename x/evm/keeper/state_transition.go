@@ -520,7 +520,7 @@ func (k *Keeper) ResetGasMeterAndConsumeGas(ctx sdk.Context, gasUsed uint64) {
 }
 
 // GetProposerAddress returns current block proposer's address when provided proposer address is empty.
-func GetProposerAddress(ctx sdk.Context, proposerAddress []byte) []byte {
+func GetProposerAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) sdk.ConsAddress {
 	if len(proposerAddress) == 0 {
 		proposerAddress = ctx.BlockHeader().ProposerAddress
 	}

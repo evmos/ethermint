@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -82,7 +83,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		BlockNumber:     blk.Block.Height,
 		BlockTime:       blk.Block.Time,
 		BlockHash:       common.Bytes2Hex(blk.BlockID.Hash),
-		ProposerAddress: blk.Block.ProposerAddress,
+		ProposerAddress: sdk.ConsAddress(blk.Block.ProposerAddress),
 	}
 
 	if config != nil {
@@ -160,7 +161,7 @@ func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
 		BlockNumber:     block.Block.Height,
 		BlockTime:       block.Block.Time,
 		BlockHash:       common.Bytes2Hex(block.BlockID.Hash),
-		ProposerAddress: block.Block.ProposerAddress,
+		ProposerAddress: sdk.ConsAddress(block.Block.ProposerAddress),
 	}
 
 	res, err := b.queryClient.TraceBlock(ctxWithHeight, traceBlockRequest)

@@ -8,6 +8,7 @@ import (
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -303,10 +304,11 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		// the error message imitates geth behavior
 		return 0, errors.New("header not found")
 	}
+
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
-		ProposerAddress: header.Block.ProposerAddress,
+		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -336,7 +338,7 @@ func (b *Backend) DoCall(
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
-		ProposerAddress: header.Block.ProposerAddress,
+		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
