@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	ethlogger "github.com/ethereum/go-ethereum/eth/tracers/logger"
 	ethparams "github.com/ethereum/go-ethereum/params"
+	"github.com/evmos/ethermint/tests"
 	"github.com/evmos/ethermint/x/evm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -506,114 +507,223 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 		enableFeemarket bool
 	}{
 		// should success, because transfer value is zero
-		{"default args - special case for ErrIntrinsicGas on contract creation, raise gas limit", func() {
-			args = types.TransactionArgs{}
-		}, true, ethparams.TxGasContractCreation, false},
+		{
+			"default args - special case for ErrIntrinsicGas on contract creation, raise gas limit",
+			func() {
+				args = types.TransactionArgs{}
+			},
+			true,
+			ethparams.TxGasContractCreation,
+			false,
+		},
 		// should success, because transfer value is zero
-		{"default args with 'to' address", func() {
-			args = types.TransactionArgs{To: &common.Address{}}
-		}, true, ethparams.TxGas, false},
+		{
+			"default args with 'to' address",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}}
+			},
+			true,
+			ethparams.TxGas,
+			false,
+		},
 		// should fail, because the default From address(zero address) don't have fund
-		{"not enough balance", func() {
-			args = types.TransactionArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
-		}, false, 0, false},
+		{
+			"not enough balance",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
+			},
+			false,
+			0,
+			false,
+		},
 		// should success, enough balance now
-		{"enough balance", func() {
-			args = types.TransactionArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
-		}, false, 0, false},
+		{
+			"enough balance",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
+			}, false, 0, false},
 		// should success, because gas limit lower than 21000 is ignored
-		{"gas exceed allowance", func() {
-			args = types.TransactionArgs{To: &common.Address{}, Gas: &gasHelper}
-		}, true, ethparams.TxGas, false},
+		{
+			"gas exceed allowance",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}, Gas: &gasHelper}
+			},
+			true,
+			ethparams.TxGas,
+			false,
+		},
 		// should fail, invalid gas cap
-		{"gas exceed global allowance", func() {
-			args = types.TransactionArgs{To: &common.Address{}}
-			gasCap = 20000
-		}, false, 0, false},
+		{
+			"gas exceed global allowance",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}}
+				gasCap = 20000
+			},
+			false,
+			0,
+			false,
+		},
 		// estimate gas of an erc20 contract deployment, the exact gas number is checked with geth
-		{"contract deployment", func() {
-			ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
-			suite.Require().NoError(err)
-			data := append(types.ERC20Contract.Bin, ctorArgs...)
-			args = types.TransactionArgs{
-				From: &suite.address,
-				Data: (*hexutil.Bytes)(&data),
-			}
-		}, true, 1186778, false},
+		{
+			"contract deployment",
+			func() {
+				ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+				suite.Require().NoError(err)
+				data := append(types.ERC20Contract.Bin, ctorArgs...)
+				args = types.TransactionArgs{
+					From: &suite.address,
+					Data: (*hexutil.Bytes)(&data),
+				}
+			},
+			true,
+			1186778,
+			false,
+		},
 		// estimate gas of an erc20 transfer, the exact gas number is checked with geth
-		{"erc20 transfer", func() {
-			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
-			suite.Commit()
-			transferData, err := types.ERC20Contract.ABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
-			suite.Require().NoError(err)
-			args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
-		}, true, 51880, false},
-
+		{
+			"erc20 transfer",
+			func() {
+				contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+				suite.Commit()
+				transferData, err := types.ERC20Contract.ABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
+				suite.Require().NoError(err)
+				args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
+			},
+			true,
+			51880,
+			false,
+		},
 		// repeated tests with enableFeemarket
-		{"default args w/ enableFeemarket", func() {
-			args = types.TransactionArgs{To: &common.Address{}}
-		}, true, ethparams.TxGas, true},
-		{"not enough balance w/ enableFeemarket", func() {
-			args = types.TransactionArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
-		}, false, 0, true},
-		{"enough balance w/ enableFeemarket", func() {
-			args = types.TransactionArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
-		}, false, 0, true},
-		{"gas exceed allowance w/ enableFeemarket", func() {
-			args = types.TransactionArgs{To: &common.Address{}, Gas: &gasHelper}
-		}, true, ethparams.TxGas, true},
-		{"gas exceed global allowance w/ enableFeemarket", func() {
-			args = types.TransactionArgs{To: &common.Address{}}
-			gasCap = 20000
-		}, false, 0, true},
-		{"contract deployment w/ enableFeemarket", func() {
-			ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
-			suite.Require().NoError(err)
-			data := append(types.ERC20Contract.Bin, ctorArgs...)
-			args = types.TransactionArgs{
-				From: &suite.address,
-				Data: (*hexutil.Bytes)(&data),
-			}
-		}, true, 1186778, true},
-		{"erc20 transfer w/ enableFeemarket", func() {
-			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
-			suite.Commit()
-			transferData, err := types.ERC20Contract.ABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
-			suite.Require().NoError(err)
-			args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
-		}, true, 51880, true},
-		{"contract creation but 'create' param disabled", func() {
-			ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
-			suite.Require().NoError(err)
-			data := append(types.ERC20Contract.Bin, ctorArgs...)
-			args = types.TransactionArgs{
-				From: &suite.address,
-				Data: (*hexutil.Bytes)(&data),
-			}
-			params := suite.app.EvmKeeper.GetParams(suite.ctx)
-			params.EnableCreate = false
-			suite.app.EvmKeeper.SetParams(suite.ctx, params)
-		}, false, 0, false},
-		{"specified gas in args higher than ethparams.TxGas (21,000)", func() {
-			args = types.TransactionArgs{
-				To:  &common.Address{},
-				Gas: &higherGas,
-			}
-		}, true, ethparams.TxGas, false},
-		{"specified gas in args higher than request gasCap", func() {
-			gasCap = 22_000
-			args = types.TransactionArgs{
-				To:  &common.Address{},
-				Gas: &higherGas,
-			}
-		}, true, ethparams.TxGas, false},
-		{"invalid args - specified both gasPrice and maxFeePerGas", func() {
-			args = types.TransactionArgs{
-				To:           &common.Address{},
-				GasPrice:     &hexBigInt,
-				MaxFeePerGas: &hexBigInt,
-			}
-		}, false, 0, false},
+		{
+			"default args w/ enableFeemarket",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}}
+			},
+			true,
+			ethparams.TxGas,
+			true,
+		},
+		{
+			"not enough balance w/ enableFeemarket",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}, Value: (*hexutil.Big)(big.NewInt(100))}
+			},
+			false,
+			0,
+			true,
+		},
+		{
+			"enough balance w/ enableFeemarket",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
+			},
+			false,
+			0,
+			true,
+		},
+		{
+			"gas exceed allowance w/ enableFeemarket",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}, Gas: &gasHelper}
+			},
+			true,
+			ethparams.TxGas,
+			true,
+		},
+		{
+			"gas exceed global allowance w/ enableFeemarket",
+			func() {
+				args = types.TransactionArgs{To: &common.Address{}}
+				gasCap = 20000
+			},
+			false,
+			0,
+			true,
+		},
+		{
+			"contract deployment w/ enableFeemarket",
+			func() {
+				ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+				suite.Require().NoError(err)
+				data := append(types.ERC20Contract.Bin, ctorArgs...)
+				args = types.TransactionArgs{
+					From: &suite.address,
+					Data: (*hexutil.Bytes)(&data),
+				}
+			},
+			true,
+			1186778,
+			true,
+		},
+		{
+			"erc20 transfer w/ enableFeemarket",
+			func() {
+				contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+				suite.Commit()
+				transferData, err := types.ERC20Contract.ABI.Pack("transfer", common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), big.NewInt(1000))
+				suite.Require().NoError(err)
+				args = types.TransactionArgs{To: &contractAddr, From: &suite.address, Data: (*hexutil.Bytes)(&transferData)}
+			},
+			true,
+			51880,
+			true,
+		},
+		{
+			"contract creation but 'create' param disabled",
+			func() {
+				ctorArgs, err := types.ERC20Contract.ABI.Pack("", &suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+				suite.Require().NoError(err)
+				data := append(types.ERC20Contract.Bin, ctorArgs...)
+				args = types.TransactionArgs{
+					From: &suite.address,
+					Data: (*hexutil.Bytes)(&data),
+				}
+				params := suite.app.EvmKeeper.GetParams(suite.ctx)
+				params.EnableCreate = false
+				suite.app.EvmKeeper.SetParams(suite.ctx, params)
+			},
+			false,
+			0,
+			false,
+		},
+		{
+			"specified gas in args higher than ethparams.TxGas (21,000)",
+			func() {
+				args = types.TransactionArgs{
+					To:  &common.Address{},
+					Gas: &higherGas,
+				}
+			},
+			true,
+			ethparams.TxGas,
+			false,
+		},
+		{
+			"specified gas in args higher than request gasCap",
+			func() {
+				gasCap = 22_000
+				args = types.TransactionArgs{
+					To:  &common.Address{},
+					Gas: &higherGas,
+				}
+			},
+			true,
+			ethparams.TxGas,
+			false,
+		},
+		{
+			"invalid args - specified both gasPrice and maxFeePerGas",
+			func() {
+				args = types.TransactionArgs{
+					To:           &common.Address{},
+					GasPrice:     &hexBigInt,
+					MaxFeePerGas: &hexBigInt,
+				}
+			},
+			false,
+			0,
+			false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -1022,9 +1132,7 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 
 func (suite *KeeperTestSuite) TestNonceInQuery() {
 	suite.SetupTest()
-	priv, err := ethsecp256k1.GenerateKey()
-	suite.Require().NoError(err)
-	address := common.BytesToAddress(priv.PubKey().Address().Bytes())
+	address := tests.GenerateAddress()
 	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(suite.ctx, address))
 	supply := sdkmath.NewIntWithDecimal(1000, 18).BigInt()
 
@@ -1131,8 +1239,6 @@ func (suite *KeeperTestSuite) TestEthCall() {
 		req *types.EthCallRequest
 	)
 
-	suite.SetupTest()
-
 	priv, err := ethsecp256k1.GenerateKey()
 	suite.Require().NoError(err)
 	address := common.BytesToAddress(priv.PubKey().Address().Bytes())
@@ -1160,7 +1266,6 @@ func (suite *KeeperTestSuite) TestEthCall() {
 		{
 			"invalid args - specified both gasPrice and maxFeePerGas",
 			func() {
-
 				args, err := json.Marshal(&types.TransactionArgs{
 					From:         &address,
 					Data:         (*hexutil.Bytes)(&data),
@@ -1176,7 +1281,6 @@ func (suite *KeeperTestSuite) TestEthCall() {
 		{
 			"set param EnableCreate = false",
 			func() {
-
 				args, err := json.Marshal(&types.TransactionArgs{
 					From: &address,
 					Data: (*hexutil.Bytes)(&data),
@@ -1194,7 +1298,7 @@ func (suite *KeeperTestSuite) TestEthCall() {
 	}
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-
+			suite.SetupTest()
 			tc.malleate()
 
 			res, err := suite.queryClient.EthCall(suite.ctx, req)
@@ -1210,7 +1314,6 @@ func (suite *KeeperTestSuite) TestEthCall() {
 }
 
 func (suite *KeeperTestSuite) TestEmptyRequest() {
-	suite.SetupTest()
 	k := suite.app.EvmKeeper
 
 	testCases := []struct {
@@ -1281,6 +1384,7 @@ func (suite *KeeperTestSuite) TestEmptyRequest() {
 
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
 			_, err := tc.queryFunc()
 			suite.Require().Error(err)
 		})
