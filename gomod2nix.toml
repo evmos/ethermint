@@ -93,8 +93,8 @@ schema = 3
     version = "v1.0.0-alpha7"
     hash = "sha256-2wCH+toTF2A6MfFjOa13muEH5oBCcxAhZEqirNOrBA0="
   [mod."github.com/cosmos/cosmos-sdk"]
-    version = "v0.46.2"
-    hash = "sha256-Lgn4+Vd5PUUkfHc+lTdK2G6/nymZekFVTe1FxWRqh2w="
+    version = "v0.46.3"
+    hash = "sha256-OdM5Kr6g73d5+xNkBBPzO1Y/Qao2u80VjSTJukO0VBM="
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -102,8 +102,8 @@ schema = 3
     version = "v1.2.0"
     hash = "sha256-209TcVuXc5s/TcOvNlaQ1HEJAUDTEK3nxPhs+d8TEcY="
   [mod."github.com/cosmos/iavl"]
-    version = "v0.19.2-0.20220916140702-9b6be3095313"
-    hash = "sha256-49xr/7/4L1wZ45eW5lE7C4SlcbGf4gBY+662SfJiWPQ="
+    version = "v0.19.3"
+    hash = "sha256-rmW2KoKmm4YXmYIYE1vXMOCaDyP1ym0qsW224PYc9rg="
   [mod."github.com/cosmos/ibc-go/v5"]
     version = "v5.0.0"
     hash = "sha256-sDZdmuGohaaBF7bxrjo9PWJnmoF+VOkjySYhsFixPz4="
@@ -319,8 +319,8 @@ schema = 3
     version = "v0.9.0"
     hash = "sha256-Fe2OPoyRExZejwtUBivKhfJAJW7o9b1eyYpgDlWQ1No="
   [mod."github.com/mattn/go-colorable"]
-    version = "v0.1.12"
-    hash = "sha256-Y1vCt0ShrCz4wSmwsppCfeLPLKrWusc2zM2lUFwDMyI="
+    version = "v0.1.13"
+    hash = "sha256-qb3Qbo0CELGRIzvw7NVM1g/aayaz4Tguppk9MD2/OI8="
   [mod."github.com/mattn/go-isatty"]
     version = "v0.0.16"
     hash = "sha256-YMaPZvShDfA98vqw1+zWWl7M1IT4nHPGBrAt7kHo8Iw="
@@ -334,8 +334,8 @@ schema = 3
     version = "v0.1.1"
     hash = "sha256-SoKy4Mwkbm0J2yQLDcIcBbo/J6auTNdlZslTvJrSknM="
   [mod."github.com/mimoo/StrobeGo"]
-    version = "v0.0.0-20181016162300-f8f6d4d2b643"
-    hash = "sha256-ih5WfC48IniPuAHUpC6upOabZA1/DssTAcxhZe6A/dE="
+    version = "v0.0.0-20210601165009-122bf33a46e0"
+    hash = "sha256-rmw70RHsbeOnema++aFCPdswADMVKtb7KGF3msOI7ak="
   [mod."github.com/minio/highwayhash"]
     version = "v1.0.2"
     hash = "sha256-UeHeepKtToyA5e/w3KdmpbCn+4medesZG0cAcU6P2cY="
@@ -394,8 +394,8 @@ schema = 3
     version = "v0.1.7"
     hash = "sha256-/bfnXHBmN8vviPL7D85IzcEVXCaWyjbPPNyauzEcQ8Q="
   [mod."github.com/rcrowley/go-metrics"]
-    version = "v0.0.0-20200313005456-10cdbea86bc0"
-    hash = "sha256-xHqWWd4/RyAxqb80zjnrqHnHtWPfVTyByE+vDfbT52E="
+    version = "v0.0.0-20201227073835-cf1acfcdf475"
+    hash = "sha256-10ytHQ1SpMKYTiKuOPdEMuOVa8HVvv9ryYSIF9BHEBI="
   [mod."github.com/regen-network/cosmos-proto"]
     version = "v0.3.1"
     hash = "sha256-Bchbq/Hg72EA7Hevs8+PNuENuQaZAzk3qeVjMqFMUxc="
@@ -409,8 +409,8 @@ schema = 3
     version = "v1.27.0"
     hash = "sha256-BxQtP2TROeSSpj9l1irocuSfxn55UL4ugzB/og7r8eE="
   [mod."github.com/sasha-s/go-deadlock"]
-    version = "v0.2.1-0.20190427202633-1595213edefa"
-    hash = "sha256-BBOohTR+ktgJHAoYWh39/ui8MczcJECloc7tvxVBE50="
+    version = "v0.3.1"
+    hash = "sha256-2CBEi9/iN/OMt7wEIG+hRjgDH6CRWIgibGGGy1dQ78I="
   [mod."github.com/shirou/gopsutil"]
     version = "v3.21.4-0.20210419000835-c7a38de76ee5+incompatible"
     hash = "sha256-oqIqyFquWabIE6DID6uTEc8oFEmM1rVu2ATn3toiCEg="
@@ -457,8 +457,8 @@ schema = 3
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
   [mod."github.com/tendermint/tendermint"]
-    version = "v0.34.21"
-    hash = "sha256-C1KW6Wd4TwsFC09IHt8Jo3dozEk/Q2ZVdTapM8btEJ0="
+    version = "v0.34.22"
+    hash = "sha256-4p4cpyCWjBbNQUpYN2gDJvnyj+Pov9hw5uRjHrrO++Y="
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"
     hash = "sha256-hl/3RrBrpkk2zA6dmrNlIYKs1/GfqegSscDSkA5Pjlo="
@@ -496,8 +496,8 @@ schema = 3
     version = "v0.0.0-20220622183110-fd043fe589d2"
     hash = "sha256-VLffpTpx3DlUzXB8mKiJfFzm4ZmgnLSUuLB5Ir0WQUg="
   [mod."golang.org/x/sync"]
-    version = "v0.0.0-20220722155255-886fb9371eb4"
-    hash = "sha256-ZZyIlxh+nqsOiWHstW7eHXN7RhHnbSL2eDIzcve07Q0="
+    version = "v0.0.0-20220819030929-7fc1605a5dde"
+    hash = "sha256-5EOxO8FRdaLW9v/DhwBmWiT2G34A2ofxSCaC7ovvpb0="
   [mod."golang.org/x/sys"]
     version = "v0.1.0"
     hash = "sha256-nZbEJ/2PuWrDLD4ujeVvcFGoIsfVoIH/Lcp4FjD7hpU="
