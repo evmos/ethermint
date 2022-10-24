@@ -30,10 +30,11 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 	}
 
 	testCases := []struct {
-		name     string
-		malleate func() sdk.Tx
-		expPass  bool
-		errMsg   string
+		name                string
+		malleate            func() sdk.Tx
+		expPass             bool
+		errMsg              string
+		allowPassOnSimulate bool
 	}{
 		{
 			"invalid cosmos tx type",
@@ -42,6 +43,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 			},
 			false,
 			"must be a FeeTx",
+			false,
 		},
 		{
 			"valid cosmos tx with MinGasPrices = 0, gasPrice = 0",
@@ -55,6 +57,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 			},
 			true,
 			"",
+			false,
 		},
 		{
 			"valid cosmos tx with MinGasPrices = 0, gasPrice > 0",
@@ -68,6 +71,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 			},
 			true,
 			"",
+			false,
 		},
 		{
 			"valid cosmos tx with MinGasPrices = 10, gasPrice = 10",
@@ -81,6 +85,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 			},
 			true,
 			"",
+			false,
 		},
 		{
 			"invalid cosmos tx with MinGasPrices = 10, gasPrice = 0",
@@ -94,6 +99,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 			},
 			false,
 			"provided fee < minimum global fee",
+			true,
 		},
 		{
 			"invalid cosmos tx with wrong denom",
@@ -107,6 +113,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 			},
 			false,
 			"provided fee < minimum global fee",
+			true,
 		},
 	}
 
@@ -118,7 +125,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				dec := ante.NewMinGasPriceDecorator(s.app.FeeMarketKeeper, s.app.EvmKeeper)
 				_, err := dec.AnteHandle(ctx, tc.malleate(), et.simulate, NextFn)
 
-				if tc.expPass {
+				if tc.expPass || (et.simulate && tc.allowPassOnSimulate) {
 					s.Require().NoError(err, tc.name)
 				} else {
 					s.Require().Error(err, tc.name)

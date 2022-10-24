@@ -186,6 +186,13 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			return
 		}
 
+		if isBatch(mb) {
+			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
+				s.sendErrResponse(wsConn, err.Error())
+			}
+			continue
+		}
+
 		var msg map[string]interface{}
 		if err = json.Unmarshal(mb, &msg); err != nil {
 			s.sendErrResponse(wsConn, err.Error())
@@ -214,14 +221,8 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 
 		switch method {
 		case "eth_subscribe":
-			params, ok := msg["params"].([]interface{})
+			params, ok := s.getParamsAndCheckValid(msg, wsConn)
 			if !ok {
-				s.sendErrResponse(wsConn, "invalid parameters")
-				continue
-			}
-
-			if len(params) == 0 {
-				s.sendErrResponse(wsConn, "empty parameters")
 				continue
 			}
 
@@ -243,14 +244,8 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 				break
 			}
 		case "eth_unsubscribe":
-			params, ok := msg["params"].([]interface{})
+			params, ok := s.getParamsAndCheckValid(msg, wsConn)
 			if !ok {
-				s.sendErrResponse(wsConn, "invalid parameters")
-				continue
-			}
-
-			if len(params) == 0 {
-				s.sendErrResponse(wsConn, "empty parameters")
 				continue
 			}
 
@@ -283,6 +278,22 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 			}
 		}
 	}
+}
+
+// tcpGetAndSendResponse sends error response to client if params is invalid
+func (s *websocketsServer) getParamsAndCheckValid(msg map[string]interface{}, wsConn *wsConn) ([]interface{}, bool) {
+	params, ok := msg["params"].([]interface{})
+	if !ok {
+		s.sendErrResponse(wsConn, "invalid parameters")
+		return nil, false
+	}
+
+	if len(params) == 0 {
+		s.sendErrResponse(wsConn, "empty parameters")
+		return nil, false
+	}
+
+	return params, true
 }
 
 // tcpGetAndSendResponse connects to the rest-server over tcp, posts a JSON-RPC request, and sends the response
@@ -657,4 +668,17 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID rpc.ID)
 
 func (api *pubSubAPI) subscribeSyncing(wsConn *wsConn, subID rpc.ID) (pubsub.UnsubscribeFunc, error) {
 	return nil, errors.New("syncing subscription is not implemented")
+}
+
+// copy from github.com/ethereum/go-ethereum/rpc/json.go
+// isBatch returns true when the first non-whitespace characters is '['
+func isBatch(raw []byte) bool {
+	for _, c := range raw {
+		// skip insignificant whitespace (http://www.ietf.org/rfc/rfc4627.txt)
+		if c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d {
+			continue
+		}
+		return c == '['
+	}
+	return false
 }
