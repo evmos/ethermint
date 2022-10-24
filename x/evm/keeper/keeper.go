@@ -86,6 +86,10 @@ func NewKeeper(
 		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
 	}
 
+	if customPrecompiles == nil {
+		customPrecompiles = make(evm.PrecompiledContracts)
+	}
+
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
 		cdc:               cdc,
@@ -368,4 +372,11 @@ func (k Keeper) AddTransientGasUsed(ctx sdk.Context, gasUsed uint64) (uint64, er
 	}
 	k.SetTransientGasUsed(ctx, result)
 	return result, nil
+}
+
+// SetPrecompiles stores custom precompiles in the evm keeper.
+func (k Keeper) SetPrecompiles(precompiles evm.PrecompiledContracts) {
+	for addr, contract := range precompiles {
+		k.customPrecompiles[addr] = contract
+	}
 }

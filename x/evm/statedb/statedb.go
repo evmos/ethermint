@@ -124,6 +124,11 @@ func (s *StateDB) GetBalance(addr common.Address) *big.Int {
 	return common.Big0
 }
 
+// GetContext retrieves the cosmos sdk context
+func (s *StateDB) GetContext() sdk.Context {
+	return s.ctx
+}
+
 // GetNonce returns the nonce of account, 0 if not exists.
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
 	stateObject := s.getStateObject(addr)

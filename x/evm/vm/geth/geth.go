@@ -18,6 +18,7 @@ var (
 // EVM is the wrapper for the go-ethereum EVM.
 type EVM struct {
 	*vm.EVM
+	precompiles evm.PrecompiledContracts
 }
 
 // NewEVM defines the constructor function for the go-ethereum (geth) EVM. It uses
@@ -29,10 +30,11 @@ func NewEVM(
 	stateDB vm.StateDB,
 	chainConfig *params.ChainConfig,
 	config vm.Config,
-	_ evm.PrecompiledContracts, // unused
+	precompiles evm.PrecompiledContracts,
 ) evm.EVM {
 	return &EVM{
-		EVM: vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
+		EVM:         vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
+		precompiles: precompiles,
 	}
 }
 
@@ -57,7 +59,10 @@ func (e EVM) Config() vm.Config {
 func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bool) {
 	precompiles := GetPrecompiles(e.ChainConfig(), e.EVM.Context.BlockNumber)
 	p, found = precompiles[addr]
-	return p, found
+	if !found {
+		p, found = e.precompiles[addr]
+	}
+	return
 }
 
 // ActivePrecompiles returns a list of all the active precompiled contract addresses
@@ -68,12 +73,22 @@ func (EVM) ActivePrecompiles(rules params.Rules) []common.Address {
 
 // RunPrecompiledContract runs a stateless precompiled contract and ignores the address and
 // value arguments. It uses the RunPrecompiledContract function from the geth vm package.
-func (EVM) RunPrecompiledContract(
-	p evm.StatefulPrecompiledContract,
-	_ common.Address, // address arg is unused
+func (e EVM) RunPrecompiledContract(
+	p vm.PrecompiledContract,
+	addr common.Address, // address arg is unused
 	input []byte,
 	suppliedGas uint64,
-	_ *big.Int, // 	value arg is unused
+	value *big.Int, // 	value arg is unused
 ) (ret []byte, remainingGas uint64, err error) {
+	precompile, isStateful := p.(evm.StatefulPrecompiledContract)
+	if isStateful {
+		gasCost := precompile.RequiredGas(input)
+		if suppliedGas < gasCost {
+			return nil, 0, vm.ErrOutOfGas
+		}
+		suppliedGas -= gasCost
+		output, err := precompile.RunStateful(e, addr, input, value)
+		return output, suppliedGas, err
+	}
 	return vm.RunPrecompiledContract(p, input, suppliedGas)
 }
