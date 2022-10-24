@@ -459,9 +459,7 @@ func (suite *AnteTestSuite) GenerateMultipleKeys(n int) ([]cryptotypes.PrivKey, 
 	pubKeys := make([]cryptotypes.PubKey, n)
 	for i := 0; i < n; i++ {
 		privKey, err := ethsecp256k1.GenerateKey()
-		if err != nil {
-			panic("Could not generate ethsecp256k1 private key")
-		}
+		suite.Require().NoError(err)
 		privKeys[i] = privKey
 		pubKeys[i] = privKey.PubKey()
 	}
@@ -469,7 +467,7 @@ func (suite *AnteTestSuite) GenerateMultipleKeys(n int) ([]cryptotypes.PrivKey, 
 }
 
 // Signs a set of messages using each private key within a given multi-key
-func generateMultikeySignatures(signMode signing.SignMode, privKeys []cryptotypes.PrivKey, signDocBytes []byte, signType string) (signatures []signing.SignatureV2) {
+func (suite *AnteTestSuite) generateMultikeySignatures(signMode signing.SignMode, privKeys []cryptotypes.PrivKey, signDocBytes []byte, signType string) (signatures []signing.SignatureV2) {
 	var (
 		msg []byte
 		err error
@@ -485,9 +483,7 @@ func generateMultikeySignatures(signMode signing.SignMode, privKeys []cryptotype
 
 		if signType == "EIP-712" || (signType == "mixed" && i%2 == 0) {
 			msg, err = eip712.GetEIP712HashForMsg(signDocBytes)
-			if err != nil {
-				panic(fmt.Sprintf("Could not generate EIP712 hash for message: %v\n", err))
-			}
+			suite.Require().NoError(err)
 		}
 
 		sigBytes, _ := privKey.Sign(msg)
@@ -569,7 +565,7 @@ func (suite *AnteTestSuite) CreateTestSignedMultisigTx(privKeys []cryptotypes.Pr
 	suite.Require().NoError(err)
 
 	// Sign for each key and update signature field
-	sigs := generateMultikeySignatures(signMode, privKeys, signerBytes, signType)
+	sigs := suite.generateMultikeySignatures(signMode, privKeys, signerBytes, signType)
 	for _, pkSig := range sigs {
 		err = multisig.AddSignatureV2(sig, pkSig, pubKeys)
 		suite.Require().NoError(err)

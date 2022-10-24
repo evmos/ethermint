@@ -241,13 +241,14 @@ func verifyEIP712SignatureVerification(t *testing.T, expectedSuccess bool, privK
 
 	// Convert to EIP712 hash and sign
 	eip712Hash, err := eip712.GetEIP712HashForMsg(signBytes)
-	if expectedSuccess {
-		require.NoError(t, err)
-	} else {
+	if !expectedSuccess {
 		// Expect failure generating EIP-712 hash
 		require.Error(t, err)
 		return
 	}
+
+	require.NoError(t, err)
+
 	sigHash := crypto.Keccak256Hash(eip712Hash)
 	sig, err := privKey.Sign(sigHash.Bytes())
 	require.NoError(t, err)
@@ -264,6 +265,7 @@ func verifyEIP712SignatureVerification(t *testing.T, expectedSuccess bool, privK
 	// Verify against random bytes to ensure it does not pass unexpectedly (sanity check).
 	randBytes := make([]byte, len(signBytes))
 	copy(randBytes, signBytes)
+	// Change the first element of signBytes to a different value
 	randBytes[0] = (signBytes[0] + 10) % 128
 	res = pubKey.VerifySignature(randBytes, sig)
 	require.False(t, res)
