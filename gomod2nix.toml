@@ -176,6 +176,9 @@ schema = 3
   [mod."github.com/go-logfmt/logfmt"]
     version = "v0.5.1"
     hash = "sha256-t50m9ffvW8PiGvO+2svnLI+N/XaWaBS+ZlhwrEQn2gU="
+  [mod."github.com/go-logr/logr"]
+    version = "v1.2.3"
+    hash = "sha256-2L7k6GfrcW3GXXYr1FYIu20aZBjIF0cTKdte6D4riH8="
   [mod."github.com/go-ole/go-ole"]
     version = "v1.2.6"
     hash = "sha256-+oxitLeJxYF19Z6g+6CgmCHJ1Y5D8raMi2Cb3M6nXCs="
@@ -355,8 +358,8 @@ schema = 3
     version = "v0.0.5"
     hash = "sha256-/5i70IkH/qSW5KjGzv8aQNKh9tHoz98tqtL0K2DMFn4="
   [mod."github.com/onsi/ginkgo/v2"]
-    version = "v2.3.1"
-    hash = "sha256-0JzxU9l2XXQhCyYJLXsW/GR6BKuUQYq2R8JdNpswNmM="
+    version = "v2.4.0"
+    hash = "sha256-Z+bch118Akc5wGkOM7ZePNqw7vW5euXE7ec4Y297HNw="
   [mod."github.com/onsi/gomega"]
     version = "v1.22.1"
     hash = "sha256-5bxEd2MIvBqTbtuI74Hx7ZN+cSGLU+iTKK0YaTPbVx8="
