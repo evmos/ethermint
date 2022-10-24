@@ -202,7 +202,7 @@ def test_get_proof(ethermint, geth):
     proof = eth_rpc.make_request(
         "eth_getProof", [ADDRS["validator"], ["0x0"], "latest"]
     )
-    res, err = same_types(proof["result"], EXPECTED_GET_PROOF)
+    res, err = same_types(proof, EXPECTED_GET_PROOF)
     assert res, err
 
 
@@ -219,7 +219,7 @@ def test_get_code(ethermint, geth):
     # Do an ethereum transfer
     contract = deploy_and_wait(ethermint.w3)
     code = eth_rpc.make_request("eth_getCode", [contract.address, "latest"])
-    expected = {"id": "4", "jsonrpc": "2.0", "result": "0x"}
+    expected = {"id": 4, "jsonrpc": "2.0", "result": "0x"}
     res, err = same_types(code, expected)
     assert res, err
 
@@ -244,7 +244,7 @@ def test_get_block_transaction_count(ethermint, geth):
         "eth_getBlockTransactionCountByNumber", [block_number]
     )
 
-    expected = {"id": "1", "jsonrpc": "2.0", "result": "0x1"}
+    expected = {"id": 1, "jsonrpc": "2.0", "result": "0x1"}
     res, err = same_types(block_res, expected)
     assert res, err
 
@@ -255,7 +255,7 @@ def test_get_block_transaction_count(ethermint, geth):
         ["0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd"],
     )
     block_res = eth_rpc.make_request("eth_getBlockTransactionCountByHash", [block_hash])
-    expected = {"id": "1", "jsonrpc": "2.0", "result": "0x1"}
+    expected = {"id": 1, "jsonrpc": "2.0", "result": "0x1"}
     res, err = same_types(block_res, expected)
     assert res, err
 
@@ -273,7 +273,8 @@ def test_get_transaction(ethermint, geth):
     tx_hash = send_and_get_hash(ethermint.w3)
 
     tx_res = eth_rpc.make_request("eth_getTransactionByHash", [tx_hash])
-    res, err = same_types(tx_res, EXPECTED_GET_TRANSACTION)
+
+    res, err = same_types(EXPECTED_GET_TRANSACTION, tx_res)
     assert res, err
 
 
@@ -290,7 +291,7 @@ def test_get_transaction_receipt(ethermint, geth):
     tx_hash = send_and_get_hash(ethermint.w3)
 
     tx_res = eth_rpc.make_request("eth_getTransactionReceipt", [tx_hash])
-    res, err = same_types(tx_res["result"], EXPECTED_GET_TRANSACTION_RECEIPT)
+    res, err = same_types(tx_res, EXPECTED_GET_TRANSACTION_RECEIPT)
     assert res, err
 
 
@@ -301,9 +302,10 @@ def test_fee_history(ethermint, geth):
 
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_feeHistory", [4, "0x5000", [10, 90]])
 
-    fee_history = eth_rpc.make_request("eth_feeHistory", [4, "latest", [10, 90]])
+    _ = send_and_get_hash(ethermint.w3)
+    fee_history = eth_rpc.make_request("eth_feeHistory", [4, "latest", [100]])
 
-    res, err = same_types(fee_history["result"], EXPECTED_FEE_HISTORY)
+    res, err = same_types(fee_history, EXPECTED_FEE_HISTORY)
     assert res, err
 
 
@@ -334,37 +336,36 @@ def test_incomplete_send_transaction(ethermint, geth):
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_sendTransaction", [tx])
 
 
-def same_types(object_a, object_b):
-
-    if isinstance(object_a, dict):
-        if not isinstance(object_b, dict):
+def same_types(given, expected):
+    if isinstance(given, dict):
+        if not isinstance(expected, dict):
             return False, "A is dict, B is not"
-        keys = list(set(list(object_a.keys()) + list(object_b.keys())))
+        keys = list(set(list(given.keys()) + list(expected.keys())))
         for key in keys:
-            if key in object_b and key in object_a:
-                if not same_types(object_a[key], object_b[key]):
-                    return False, key + " key on dict are not of same type"
-            else:
-                return False, key + " key on json is not in both results"
+            if (key not in expected or key not in given):
+                return False, key + " key not on both json"
+            res, err = same_types(given[key], expected[key])
+            if not res:
+                return res, key + " key failed. Error: " + err
         return True, ""
-    elif isinstance(object_a, list):
-        if not isinstance(object_b, list):
+    elif isinstance(given, list):
+        if not isinstance(expected, list):
             return False, "A is list, B is not"
-        if len(object_a) == 0 and len(object_b) == 0:
+        if len(given) == 0 and len(expected) == 0:
             return True, ""
-        if len(object_a) > 0 and len(object_b) > 0:
-            return same_types(object_a[0], object_b[0])
+        if len(given) > 0 and len(expected) > 0:
+            return same_types(given[0], expected[0])
         else:
-            return True
-    elif object_a is None and object_b is None:
+            return True, ""
+    elif given is None and expected is None:
         return True, ""
-    elif type(object_a) is type(object_b):
+    elif type(given) is type(expected):
         return True, ""
     else:
         return (
             False,
-            "different types. A is type "
-            + type(object_a).__name__
-            + " B is type "
-            + type(object_b).__name__,
+            "different types. Given object is type "
+            + type(given).__name__
+            + " expected object is type "
+            + type(expected).__name__,
         )

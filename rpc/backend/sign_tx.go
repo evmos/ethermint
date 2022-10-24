@@ -27,6 +27,10 @@ func (b *Backend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, e
 		return common.Hash{}, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
+	if args.ChainID != nil && (b.chainID).Cmp((*big.Int)(args.ChainID)) != 0 {
+		return common.Hash{}, fmt.Errorf("chainId does not match node's (have=%v, want=%v)", args.ChainID, (*hexutil.Big)(b.chainID))
+	}
+
 	args, err = b.SetTxDefaults(args)
 	if err != nil {
 		return common.Hash{}, err
