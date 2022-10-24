@@ -69,10 +69,8 @@ func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bo
 // for the current chain configuration.
 func (e EVM) ActivePrecompiles(rules params.Rules) []common.Address {
 	addrs := make([]common.Address, len(e.precompiles))
-	i := 0
 	for addr := range e.precompiles {
-		addrs[i] = addr
-		i++
+		addrs = append(addrs, addr)
 	}
 	return append(vm.ActivePrecompiles(rules), addrs...)
 }
