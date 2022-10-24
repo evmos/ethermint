@@ -18,7 +18,7 @@ var (
 // EVM is the wrapper for the go-ethereum EVM.
 type EVM struct {
 	*vm.EVM
-	precompiles evm.PrecompiledContracts
+	precompiles *evm.PrecompiledContracts
 }
 
 // NewEVM defines the constructor function for the go-ethereum (geth) EVM. It uses
@@ -30,7 +30,7 @@ func NewEVM(
 	stateDB vm.StateDB,
 	chainConfig *params.ChainConfig,
 	config vm.Config,
-	precompiles evm.PrecompiledContracts,
+	precompiles *evm.PrecompiledContracts,
 ) evm.EVM {
 	return &EVM{
 		EVM:         vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
@@ -60,7 +60,7 @@ func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bo
 	precompiles := GetPrecompiles(e.ChainConfig(), e.EVM.Context.BlockNumber)
 	p, found = precompiles[addr]
 	if !found {
-		p, found = e.precompiles[addr]
+		p, found = (*e.precompiles)[addr]
 	}
 	return
 }
@@ -68,8 +68,8 @@ func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bo
 // ActivePrecompiles returns a list of all the active precompiled contract addresses
 // for the current chain configuration.
 func (e EVM) ActivePrecompiles(rules params.Rules) []common.Address {
-	addrs := make([]common.Address, len(e.precompiles))
-	for addr := range e.precompiles {
+	addrs := make([]common.Address, len(*e.precompiles))
+	for addr := range *e.precompiles {
 		addrs = append(addrs, addr)
 	}
 	return append(vm.ActivePrecompiles(rules), addrs...)
