@@ -436,11 +436,11 @@ schema = 3
     version = "v0.0.0-20200402102358-957c09536969"
     hash = "sha256-yddXXuu6mEFEO2/K6c1tWymeBKzOcvLQnNsFGRjtfXk="
   [mod."github.com/stretchr/objx"]
-    version = "v0.4.0"
-    hash = "sha256-W6ycaeD/okr4udpCAGDsByr3OmiR0fuBzJUXHaHEFC0="
+    version = "v0.5.0"
+    hash = "sha256-nY4mvP0f0Ry1IKMKQAYNuioA5h4red4mmQqeGZw6EF0="
   [mod."github.com/stretchr/testify"]
-    version = "v1.8.0"
-    hash = "sha256-LDxBAebK+A06y4vbH7cd1sVBOameIY81Xm8/9OPZh7o="
+    version = "v1.8.1"
+    hash = "sha256-3e0vOJLgCMAan+GfaGN8RGZdarh5iCavM6flf6YMNPk="
   [mod."github.com/subosito/gotenv"]
     version = "v1.4.1"
     hash = "sha256-aHAUs8Gh+BREUulljWr7vBZQg1BLu/M/8UfNK8CWSn8="
