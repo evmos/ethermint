@@ -63,10 +63,7 @@ func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
 
 // Attempt to decode the SignDoc bytes as an Amino SignDoc and return an error on failure
 func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
-	var (
-		aminoDoc legacytx.StdSignDoc
-		err      error
-	)
+	var aminoDoc legacytx.StdSignDoc
 
 	if err := ethermintAminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc); err != nil {
 		return apitypes.TypedData{}, err
@@ -134,8 +131,7 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 
 	// Decode body
 	body := &txTypes.TxBody{}
-	err = body.Unmarshal(signDoc.BodyBytes)
-	if err != nil {
+	if err := body.Unmarshal(signDoc.BodyBytes); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
