@@ -12,10 +12,6 @@ import (
 // PrecompiledContracts defines a map of address -> precompiled contract
 type PrecompiledContracts map[common.Address]vm.PrecompiledContract
 
-func (a PrecompiledContracts) Len() int           { return len(a) }
-func (a PrecompiledContracts) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a PrecompiledContracts) Less(i, j int) bool { return a[i] < a[j] }
-
 type StatefulPrecompiledContract interface {
 	vm.PrecompiledContract
 	RunStateful(evm EVM, addr common.Address, input []byte, value *big.Int) (ret []byte, err error)

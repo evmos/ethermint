@@ -67,10 +67,12 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 	if e.depth > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
+
 	// Fail if we're trying to transfer more than the available balance
 	if value.Sign() != 0 && !e.Context().CanTransfer(e.StateDB, caller.Address(), value) {
 		return nil, gas, vm.ErrInsufficientBalance
 	}
+
 	snapshot := e.StateDB.Snapshot()
 	p, isPrecompile := e.Precompile(addr)
 
@@ -96,12 +98,14 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 	if e.Config().Debug {
 		if e.depth == 0 {
 			e.Config().Tracer.CaptureStart(e.EVM, caller.Address(), addr, false, input, gas, value)
+
 			defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
 				e.Config().Tracer.CaptureEnd(ret, startGas-gas, time.Since(startTime), err)
 			}(gas, time.Now())
 		} else {
 			// Handle tracer events for entering and exiting a call frame
 			e.Config().Tracer.CaptureEnter(vm.CALL, caller.Address(), addr, input, gas, value)
+
 			defer func(startGas uint64) {
 				e.Config().Tracer.CaptureExit(ret, startGas-gas, err)
 			}(gas)
@@ -111,7 +115,7 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 	if isPrecompile {
 		ret, gas, err = e.RunPrecompiledContract(p, addr, input, gas, value)
 	} else {
-		// Initialise a new contract and set the code that is to be used by the EVM.
+		// Initialize a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
 		code := e.StateDB.GetCode(addr)
 		if len(code) == 0 {
@@ -135,8 +139,9 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 		if err != vm.ErrExecutionReverted {
 			gas = 0
 		}
+
 		// TODO: consider clearing up unused snapshots:
-		//} else {
+		// } else {
 		//	evm.StateDB.DiscardSnapshot(snapshot)
 	}
 	return ret, gas, err
@@ -167,11 +172,13 @@ func (e *EVM) CallCode(
 	if !e.Context().CanTransfer(e.StateDB, caller.Address(), value) {
 		return nil, gas, vm.ErrInsufficientBalance
 	}
+
 	snapshot := e.StateDB.Snapshot()
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
 	if e.Config().Debug {
 		e.Config().Tracer.CaptureEnter(vm.CALLCODE, caller.Address(), addr, input, gas, value)
+
 		defer func(startGas uint64) {
 			e.Config().Tracer.CaptureExit(ret, startGas-gas, err)
 		}(gas)

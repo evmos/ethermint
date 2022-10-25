@@ -13,6 +13,7 @@ import (
 // stateful precompiled contracts.
 type ExtStateDB interface {
 	vm.StateDB
+	Context() sdk.Context
 	AppendJournalEntry(JournalEntry)
 }
 
