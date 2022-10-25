@@ -83,8 +83,7 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	}
 
 	var msg cosmosTypes.Msg
-	err = ethermintAminoCodec.UnmarshalJSON(aminoDoc.Msgs[0], &msg)
-	if err != nil {
+	if err := ethermintAminoCodec.UnmarshalJSON(aminoDoc.Msgs[0], &msg); err != nil {
 		return apitypes.TypedData{}, fmt.Errorf("failed to unmarshal first message: %w", err)
 	}
 
