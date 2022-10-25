@@ -122,8 +122,7 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Decode sign doc
 	signDoc := &txTypes.SignDoc{}
-	err := signDoc.Unmarshal(signDocBytes)
-	if err != nil {
+	if err := signDoc.Unmarshal(signDocBytes); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
