@@ -74,8 +74,7 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 
 	// Unwrap fees
 	var fees legacytx.StdFee
-	err = ethermintAminoCodec.UnmarshalJSON(aminoDoc.Fee, &fees)
-	if err != nil {
+	if err := ethermintAminoCodec.UnmarshalJSON(aminoDoc.Fee, &fees); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
