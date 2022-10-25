@@ -22,7 +22,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 // Tests single-signer EIP-712 signature verification. Multi-signer verification tests are included
@@ -126,6 +128,41 @@ func TestEIP712SignatureVerification(t *testing.T) {
 					createTestAddress(t),
 					5,
 					govtypes.OptionNo,
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: true,
+		},
+		{
+			title: "Standard MsgDelegate",
+			fee: txtypes.Fee{
+				Amount:   makeCoins(t, "aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				stakingtypes.NewMsgDelegate(
+					createTestAddress(t),
+					sdk.ValAddress(createTestAddress(t)),
+					makeCoins(t, "photon", math.NewInt(1))[0],
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: true,
+		},
+		{
+			title: "Standard MsgWithdrawDelegationReward",
+			fee: txtypes.Fee{
+				Amount:   makeCoins(t, "aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				distributiontypes.NewMsgWithdrawDelegatorReward(
+					createTestAddress(t),
+					sdk.ValAddress(createTestAddress(t)),
 				),
 			},
 			accountNumber: 25,
