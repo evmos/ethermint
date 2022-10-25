@@ -128,8 +128,7 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 
 	// Decode auth info
 	authInfo := &txTypes.AuthInfo{}
-	err = authInfo.Unmarshal(signDoc.AuthInfoBytes)
-	if err != nil {
+	if err := authInfo.Unmarshal(signDoc.AuthInfoBytes); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
