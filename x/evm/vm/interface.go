@@ -11,7 +11,6 @@ import (
 
 // PrecompiledContracts defines a map of address -> precompiled contract
 type PrecompiledContracts map[common.Address]vm.PrecompiledContract
-
 type StatefulPrecompiledContract interface {
 	vm.PrecompiledContract
 	RunStateful(evm EVM, addr common.Address, input []byte, value *big.Int) (ret []byte, err error)

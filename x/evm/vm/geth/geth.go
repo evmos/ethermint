@@ -18,6 +18,11 @@ var (
 // EVM is the wrapper for the go-ethereum EVM.
 type EVM struct {
 	*vm.EVM
+
+	// call depth for Ethermint EVM interpreter
+	depth int
+
+	// custom precompiles
 	precompiles *evm.PrecompiledContracts
 }
 
@@ -53,6 +58,14 @@ func (e EVM) Config() vm.Config {
 	return e.EVM.Config
 }
 
+// RunInterpreter runs the EVM interpreter with manual tracking of call depth
+func (e EVM) RunInterpreter(contract *vm.Contract, input []byte, readOnly bool) (ret []byte, err error) {
+	e.depth++
+	defer func() { e.depth-- }()
+
+	return e.Interpreter().Run(contract, input, readOnly)
+}
+
 // Precompile returns the precompiled contract associated with the given address
 // and the current chain configuration. If the contract cannot be found it returns
 // nil.
@@ -75,24 +88,34 @@ func (e EVM) ActivePrecompiles(rules params.Rules) []common.Address {
 	return append(vm.ActivePrecompiles(rules), addrs...)
 }
 
-// RunPrecompiledContract runs a stateless precompiled contract and ignores the address and
-// value arguments. It uses the RunPrecompiledContract function from the geth vm package.
+// RunPrecompiledContract runs a precompiled contract. It uses the RunPrecompiledContract
+// function from the geth vm package for stateless precompiles and InitStateful for stateful.
 func (e EVM) RunPrecompiledContract(
 	p vm.PrecompiledContract,
-	addr common.Address, // address arg is unused
+	addr common.Address,
 	input []byte,
 	suppliedGas uint64,
-	value *big.Int, // 	value arg is unused
+	value *big.Int,
 ) (ret []byte, remainingGas uint64, err error) {
-	precompile, isStateful := p.(evm.StatefulPrecompiledContract)
-	if isStateful {
+	if precompile, isStateful := p.(evm.StatefulPrecompiledContract); isStateful {
 		gasCost := precompile.RequiredGas(input)
 		if suppliedGas < gasCost {
 			return nil, 0, vm.ErrOutOfGas
 		}
 		suppliedGas -= gasCost
-		output, err := precompile.RunStateful(e, addr, input, value)
+		output, err := e.InitStateful(precompile, input, addr, value)
 		return output, suppliedGas, err
 	}
 	return vm.RunPrecompiledContract(p, input, suppliedGas)
+}
+
+func (e EVM) InitStateful(precompile evm.StatefulPrecompiledContract, input []byte, caller common.Address, value *big.Int) ([]byte, error) {
+	output, err := precompile.RunStateful(e, caller, input, value)
+	if err != nil {
+		// revert this contract's state changes
+		return nil, err
+	}
+
+	// precompile executed successully
+	return output, nil
 }
