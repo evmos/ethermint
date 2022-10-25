@@ -68,8 +68,7 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 		err      error
 	)
 
-	err = ethermintAminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc)
-	if err != nil {
+	if err := ethermintAminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
