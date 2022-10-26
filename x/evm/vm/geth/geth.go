@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	evm "github.com/evmos/ethermint/x/evm/vm"
 )
 
@@ -109,13 +110,20 @@ func (e EVM) RunPrecompiledContract(
 	return vm.RunPrecompiledContract(p, input, suppliedGas)
 }
 
-func (e EVM) InitStateful(precompile evm.StatefulPrecompiledContract, input []byte, caller common.Address, value *big.Int) ([]byte, error) {
-	output, err := precompile.RunStateful(e, caller, input, value)
+// InitStateful calls the precompile RunStateful method, passing along evm, input, caller, value
+func (e EVM) InitStateful(
+	precompile evm.StatefulPrecompiledContract,
+	input []byte,
+	caller common.Address,
+	value *big.Int,
+) (output []byte, err error) {
+	// create struct that implements JournalEntry and holds CacheContext()
+	// Revert() --> do nothing [discarding the cacheStore], Dirtied() --> return nothing [handled in CacheKVStore]
+	precompileContext, err := evmtypes.NewPrecompileContext(e.StateDB)
 	if err != nil {
-		// revert this contract's state changes
-		return nil, err
+		return
 	}
-
-	// precompile executed successully
-	return output, nil
+	output, err = precompile.RunStateful(precompileContext.GetCacheCtx(), e, caller, input, value)
+	precompileContext.AppendToJournal()
+	return
 }

@@ -14,6 +14,15 @@ import (
 type ExtStateDB interface {
 	vm.StateDB
 	AppendJournalEntry(JournalEntry)
+	GetContext() sdk.Context
+}
+
+// ExtJournalEntry is used for Stateful Precompiles
+type ExtJournalEntry interface {
+	JournalEntry
+
+	// Commit will commit the dirtied state to Cosmos stores
+	Commit()
 }
 
 // Keeper provide underlying storage of StateDB

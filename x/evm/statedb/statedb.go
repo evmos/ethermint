@@ -124,11 +124,6 @@ func (s *StateDB) GetBalance(addr common.Address) *big.Int {
 	return common.Big0
 }
 
-// GetContext retrieves the cosmos sdk context
-func (s *StateDB) GetContext() sdk.Context {
-	return s.ctx
-}
-
 // GetNonce returns the nonce of account, 0 if not exists.
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
 	stateObject := s.getStateObject(addr)
@@ -464,5 +459,23 @@ func (s *StateDB) Commit() error {
 			}
 		}
 	}
+	for _, je := range s.journal.entries {
+		if extJE, ok := je.(ExtJournalEntry); ok {
+			extJE.Commit()
+		}
+	}
 	return nil
+}
+
+// implements ExtStateDB
+// AppendJournalEntry allow external module to append journal entry,
+// to support snapshot revert for external states.
+func (s *StateDB) AppendJournalEntry(entry JournalEntry) {
+	s.journal.append(entry)
+}
+
+// implements ExtStateDB
+// GetContext retrieves the cosmos sdk context for stateful precompiles
+func (s *StateDB) GetContext() sdk.Context {
+	return s.ctx
 }

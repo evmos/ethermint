@@ -3,6 +3,7 @@ package vm
 import (
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -13,7 +14,7 @@ import (
 type PrecompiledContracts map[common.Address]vm.PrecompiledContract
 type StatefulPrecompiledContract interface {
 	vm.PrecompiledContract
-	RunStateful(evm EVM, addr common.Address, input []byte, value *big.Int) (ret []byte, err error)
+	RunStateful(ctx sdk.Context, evm EVM, addr common.Address, input []byte, value *big.Int) (ret []byte, err error)
 }
 
 // EVM defines the interface for the Ethereum Virtual Machine used by the EVM module.
