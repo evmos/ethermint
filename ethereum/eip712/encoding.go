@@ -44,7 +44,7 @@ func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
 	case errProtobuf == nil:
 		typedData = typedDataProtobuf
 	default:
-		return make([]byte, 0), fmt.Errorf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v\n", errAmino, errProtobuf)
+		return nil, fmt.Errorf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v\n", errAmino, errProtobuf)
 	}
 
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
