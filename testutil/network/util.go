@@ -1,17 +1,18 @@
 package network
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"time"
 
+	abcicli "github.com/tendermint/tendermint/abci/client"
 	"github.com/ethereum/go-ethereum/ethclient"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
@@ -73,7 +74,7 @@ func startInProcess(cfg Config, val *Validator) error {
 		return err
 	}
 
-	nodeConfig := opticonf.NodeConfig{}
+	nodeConfig := rollconf.NodeConfig{}
 	err = nodeConfig.GetViperConfig(val.Ctx.Viper)
 	if err != nil {
 		return err
@@ -94,7 +95,7 @@ func startInProcess(cfg Config, val *Validator) error {
 		nodeConfig,
 		p2pKey,
 		signingKey,
-		proxy.NewLocalClientCreator(app),
+		abcicli.NewLocalClient(nil, app),
 		genesis,
 		logger,
 	)

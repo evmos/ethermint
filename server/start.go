@@ -20,13 +20,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	abcicli "github.com/tendermint/tendermint/abci/client"
 	abciserver "github.com/tendermint/tendermint/abci/server"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/server/rosetta"
@@ -328,59 +328,60 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(cfg)
 	var (
-		tmNode   *node.Node
+		tmNode   *rollnode.Node
 		gRPCOnly = ctx.Viper.GetBool(srvflags.GRPCOnly)
 	)
 	if gRPCOnly {
 		ctx.Logger.Info("starting node in query only mode; Tendermint is disabled")
 		config.GRPC.Enable = true
 		config.JSONRPC.EnableIndexer = false
-	} else {
-		genesis, err := genDocProvider()
-		if err != nil {
-			return err
-		}
-		nodeConfig := rollconf.NodeConfig{}
-		err = nodeConfig.GetViperConfig(ctx.Viper)
-		if err != nil {
-			return err
-		}
-		rollconv.GetNodeConfig(&nodeConfig, cfg)
-		err = rollconv.TranslateAddresses(&nodeConfig)
-		if err != nil {
-			return err
-		}
-		tmNode, err := rollnode.NewNode(
-			context.Background(),
-			nodeConfig,
-			p2pKey,
-			signingKey,
-			proxy.NewLocalClientCreator(app),
-			genesis,
-			ctx.Logger,
-		)
-		if err != nil {
-			return err
-		}
-
-		srv := rollrpc.NewServer(tmNode, cfg.RPC, ctx.Logger)
-		err = srv.Start()
-		if err != nil {
-			return err
-		}
-
-		if err := tmNode.Start(); err != nil {
-			logger.Error("failed start tendermint server", "error", err.Error())
-			return err
-		}
-
-		defer func() {
-			if tmNode.IsRunning() {
-				_ = tmNode.Stop()
-			}
-			logger.Info("Bye!")
-		}()
 	}
+
+	genesis, err := genDocProvider()
+	if err != nil {
+		return err
+	}
+	nodeConfig := rollconf.NodeConfig{}
+	err = nodeConfig.GetViperConfig(ctx.Viper)
+	if err != nil {
+		return err
+	}
+	rollconv.GetNodeConfig(&nodeConfig, cfg)
+	err = rollconv.TranslateAddresses(&nodeConfig)
+	if err != nil {
+		return err
+	}
+	tmNode, err = rollnode.NewNode(
+		context.Background(),
+		nodeConfig,
+		p2pKey,
+		signingKey,
+		abcicli.NewLocalClient(nil, app),
+		genesis,
+		ctx.Logger,
+	)
+	if err != nil {
+		return err
+	}
+
+	srv := rollrpc.NewServer(tmNode, cfg.RPC, ctx.Logger)
+	err = srv.Start()
+	if err != nil {
+		return err
+	}
+
+	if err := tmNode.Start(); err != nil {
+		logger.Error("failed start tendermint server", "error", err.Error())
+		return err
+	}
+
+	defer func() {
+		if tmNode.IsRunning() {
+			_ = tmNode.Stop()
+		}
+		logger.Info("Bye!")
+	}()
+	
 
 	// Add the tx service to the gRPC router. We only need to register this
 	// service if API or gRPC or JSONRPC is enabled, and avoid doing so in the general
