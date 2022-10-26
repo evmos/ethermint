@@ -156,7 +156,7 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Parse ChainID
 	chainID, err := ethermint.ParseChainID(signDoc.ChainId)
 	if err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("invalid chain ID passed as argument %v\n", chainID)
+		return apitypes.TypedData{}, fmt.Errorf("invalid chain ID passed as argument: %w", err)
 	}
 
 	// Create StdFee
