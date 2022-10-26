@@ -33,5 +33,5 @@ COPY --from=build-env /src/build/ethermintd /usr/bin/ethermintd
 
 EXPOSE 26656 26657
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./entrypoint-debug.sh"]
 CMD ["ethermintd"]
