@@ -92,6 +92,9 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionCount(t *testing.T) {
+	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/10
+	t.Skip()
+	
 	prePendingNonce := GetNonce(t, "pending")
 	t.Logf("Pending nonce before tx is %d", prePendingNonce)
 

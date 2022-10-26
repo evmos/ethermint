@@ -23,7 +23,6 @@ import (
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/node"
 	tmclient "github.com/tendermint/tendermint/rpc/client"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
@@ -56,6 +55,8 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/evmos/ethermint/app"
+
+	rollnode "github.com/celestiaorg/rollmint/node"
 )
 
 // package-wide network lock to only allow one test network at a time
@@ -175,7 +176,7 @@ type (
 		RPCClient     tmclient.Client
 		JSONRPCClient *ethclient.Client
 
-		tmNode      *node.Node
+		tmNode      *rollnode.Node
 		api         *api.Server
 		grpc        *grpc.Server
 		grpcWeb     *http.Server

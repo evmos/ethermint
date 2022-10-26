@@ -732,6 +732,8 @@ func (s *IntegrationTestSuite) TestWeb3Sha3() {
 }
 
 func (s *IntegrationTestSuite) TestPendingTransactionFilter() {
+	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/12
+	t.Skip()
 	var (
 		filterID     string
 		filterResult []common.Hash
