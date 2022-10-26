@@ -51,8 +51,8 @@ func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not hash EIP-712 domain: %w", err)
 	}
-	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 
+	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
 		return nil, fmt.Errorf("could not hash EIP-712 primary type: %w", err)
 	}
