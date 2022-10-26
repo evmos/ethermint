@@ -692,8 +692,9 @@ func (s *IntegrationTestSuite) waitForTransaction() {
 	err = s.network.WaitForNextBlock()
 	s.Require().NoError(err)
 }
-
 func TestIntegrationTestSuite(t *testing.T) {
+	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/12
+	t.Skip()
 	suite.Run(t, new(IntegrationTestSuite))
 }
 
@@ -730,10 +731,8 @@ func (s *IntegrationTestSuite) TestWeb3Sha3() {
 		})
 	}
 }
-
+// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/12
 func (s *IntegrationTestSuite) TestPendingTransactionFilter() {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/12
-	t.Skip()
 	var (
 		filterID     string
 		filterResult []common.Hash

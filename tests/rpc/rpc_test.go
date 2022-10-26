@@ -161,9 +161,6 @@ func TestEth_coinbase(t *testing.T) {
 }
 
 func TestEth_GetProof(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/11
-	t.Skip()
-
 	rpcRes := call(t, "eth_sendTransaction", makeEthTxParam())
 
 	var hash hexutil.Bytes
@@ -210,9 +207,6 @@ func TestEth_NewBlockFilter(t *testing.T) {
 }
 
 func TestEth_GetFilterChanges_BlockFilter(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/8
-	t.Skip()
-
 	rpcRes := call(t, "eth_newBlockFilter", []string{})
 
 	var ID string
@@ -354,9 +348,6 @@ func TestEth_IncompleteSendTransaction(t *testing.T) {
 }
 
 func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/8
-	t.Skip()
-
 	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
@@ -437,9 +428,6 @@ func deployTestContractWithFunction(t *testing.T) hexutil.Bytes {
 
 // Tests topics case where there are topics in first two positions
 func TestEth_GetFilterChanges_Topics_AB(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/8
-	t.Skip()
-
 	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
@@ -470,8 +458,6 @@ func TestEth_GetFilterChanges_Topics_AB(t *testing.T) {
 }
 
 func TestEth_GetFilterChanges_Topics_XB(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/8
-	t.Skip()
 	rpcRes := call(t, "eth_blockNumber", []string{})
 
 	var res hexutil.Uint64
@@ -502,9 +488,6 @@ func TestEth_GetFilterChanges_Topics_XB(t *testing.T) {
 }
 
 func TestEth_PendingTransactionFilter(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/12
-	t.Skip()
-
 	rpcRes := call(t, "eth_newPendingTransactionFilter", []string{})
 
 	var ID string
@@ -598,9 +581,6 @@ func TestEth_EthResend(t *testing.T) {
 }
 
 func TestEth_FeeHistory(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/19
-	t.Skip()
-	
 	params := make([]interface{}, 0)
 	params = append(params, 4)
 	params = append(params, "0xa")
