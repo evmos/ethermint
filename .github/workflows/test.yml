@@ -103,35 +103,36 @@ jobs:
           make test-integration
         if: env.GIT_DIFF
 
-  integration_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v18
-      - uses: cachix/cachix-action@v11
-        with:
-          name: ethermint
-          signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
-      - uses: technote-space/get-diff-action@v6.1.1
-        with:
-          PATTERNS: |
-            **/**.sol
-            **/**.go
-            go.mod
-            go.sum
-            tests/integration_tests/**
-      - name: Run integration tests
-        run: make run-integration-tests
-        if: env.GIT_DIFF
-      - name: 'Tar debug files'
-        if: failure()
-        run: tar cfz debug_files.tar.gz -C /tmp/pytest-of-runner .
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: debug-files
-          path: debug_files.tar.gz
-          if-no-files-found: ignore
+  # TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/27
+  # integration_tests:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: cachix/install-nix-action@v18
+  #     - uses: cachix/cachix-action@v11
+  #       with:
+  #         name: ethermint
+  #         signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
+  #     - uses: technote-space/get-diff-action@v6.1.1
+  #       with:
+  #         PATTERNS: |
+  #           **/**.sol
+  #           **/**.go
+  #           go.mod
+  #           go.sum
+  #           tests/integration_tests/**
+  #     - name: Run integration tests
+  #       run: make run-integration-tests
+  #       if: env.GIT_DIFF
+  #     - name: 'Tar debug files'
+  #       if: failure()
+  #       run: tar cfz debug_files.tar.gz -C /tmp/pytest-of-runner .
+  #     - uses: actions/upload-artifact@v3
+  #       if: failure()
+  #       with:
+  #         name: debug-files
+  #         path: debug_files.tar.gz
+  #         if-no-files-found: ignore
 
   upload-cache:
     if: github.event_name == 'push'
