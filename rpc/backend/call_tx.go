@@ -309,6 +309,7 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
+		ChainId:         header.Block.ChainID,
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -339,6 +340,7 @@ func (b *Backend) DoCall(
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
+		ChainId:         header.Block.ChainID,
 	}
 
 	// From ContextWithHeight: if the provided height is 0,

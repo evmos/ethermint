@@ -244,8 +244,10 @@ func EstimateGas(ctx *simulateContext, from, to *common.Address, data *hexutil.B
 	}
 
 	res, err := ctx.keeper.EstimateGas(sdk.WrapSDKContext(ctx.context), &types.EthCallRequest{
-		Args:   args,
-		GasCap: gasCap,
+		Args:            args,
+		GasCap:          gasCap,
+		ProposerAddress: ctx.context.BlockHeader().ProposerAddress,
+		ChainId:         ctx.context.ChainID(),
 	})
 	if err != nil {
 		return 0, err
