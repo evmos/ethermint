@@ -214,8 +214,8 @@ schema = 3
     version = "v1.0.1"
     hash = "sha256-1PIeFGgUL4BK/StL/D12pg9bEQ5HfMT/fMLdus4pZTs="
   [mod."github.com/google/go-cmp"]
-    version = "v0.5.8"
-    hash = "sha256-8zkIo+Sr1NXMnj3PNmvjX2sZKnAKWXOFvmnX7D9bwxQ="
+    version = "v0.5.9"
+    hash = "sha256-lQc4O00R3QSMGs9LP8Sy7A9kj0cqV5rrUdpnGeipIyg="
   [mod."github.com/google/orderedcode"]
     version = "v0.0.1"
     hash = "sha256-KrExYovtUQrHGI1mPQf57jGw8soz7eWOC2xqEaV0uGk="
@@ -361,8 +361,8 @@ schema = 3
     version = "v2.4.0"
     hash = "sha256-Z+bch118Akc5wGkOM7ZePNqw7vW5euXE7ec4Y297HNw="
   [mod."github.com/onsi/gomega"]
-    version = "v1.22.1"
-    hash = "sha256-5bxEd2MIvBqTbtuI74Hx7ZN+cSGLU+iTKK0YaTPbVx8="
+    version = "v1.23.0"
+    hash = "sha256-g5FaFLUK8ZAR9VgFTTH0ax0t45tZkYbIHbq/gANIOTM="
   [mod."github.com/pelletier/go-toml"]
     version = "v1.9.5"
     hash = "sha256-RJ9K1BTId0Mled7S66iGgxHkZ5JKEIsrrNaEfM8aImc="
@@ -424,8 +424,8 @@ schema = 3
     version = "v1.5.0"
     hash = "sha256-Pdp+wC5FWqyJKzyYHb7JCcV9BoJk/sxQw6nLyuLJvuQ="
   [mod."github.com/spf13/cobra"]
-    version = "v1.6.0"
-    hash = "sha256-BidkXU9dFuU3Ah8Hl0PbuDe/EHrTr0B1JLSsdFgCXyI="
+    version = "v1.6.1"
+    hash = "sha256-80B5HcYdFisz6QLYkTyka7f9Dr6AfcVyPwp3QChoXwU="
   [mod."github.com/spf13/jwalterweatherman"]
     version = "v1.1.0"
     hash = "sha256-62BQtqTLF/eVrTOr7pUXE7AiHRjOVC8jQs3/Ehmflfs="
