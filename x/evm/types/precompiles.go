@@ -9,55 +9,70 @@ import (
 	"github.com/evmos/ethermint/x/evm/statedb"
 )
 
+// stateful precompiles can embed the BasePrecompile to avoid explicitly implementing Run
 type BasePrecompile struct{}
 
 func (bpc *BasePrecompile) Run(input []byte) ([]byte, error) {
 	return []byte{}, nil
 }
 
-// ExtJournalEntry is used for Stateful Precompiles
-type ExtJournalEntry interface {
-	statedb.JournalEntry
-
-	// Commit will commit the dirtied state to Cosmos stores
-	Commit()
-}
-
 // holds dirty state of stateful precompile
-type PrecompileContext struct {
-	cacheCtx   sdk.Context
-	commit     func()
-	extStateDB statedb.ExtStateDB
+type PrecompileJournalEntry struct {
+	cacheCtx     sdk.Context
+	commit       func() // only needed for the last valid one
+	extStateDB   statedb.ExtStateDB
+	journalIndex int
 }
 
-// NewPrecompileContext uses CacheContext to generate a temporary context and returns
-// a PrecompileContext struct, which can be used as a journal entry
-func NewPrecompileContext(stateDB vm.StateDB) (*PrecompileContext, error) {
+// NewPrecompileJournalEntry gets the last valid, non-reverted cosmos sdk context from the statedb and
+// uses CacheContext to generate a temporary context
+func NewPrecompileJournalEntry(stateDB vm.StateDB) (*PrecompileJournalEntry, error) {
 	extStateDB, ok := stateDB.(statedb.ExtStateDB)
 	if !ok {
-		return &PrecompileContext{}, errors.New("statedb not of ethermint type")
+		return &PrecompileJournalEntry{}, errors.New("statedb not of external type")
 	}
-	cacheCtx, commit := extStateDB.GetContext().CacheContext()
-	return &PrecompileContext{
-		cacheCtx:   cacheCtx,
-		commit:     commit,
+
+	eje, ok := extStateDB.GetLastValidExtJournalEntry()
+	var (
+		cacheContext sdk.Context
+		commitFunc   func()
+	)
+	if !ok {
+		// use the original context passed in at the beginning of transaction
+		cacheContext, commitFunc = extStateDB.GetContext().CacheContext()
+	} else {
+		ps, ok := eje.(*PrecompileJournalEntry)
+		if !ok {
+			return &PrecompileJournalEntry{}, errors.New("statedb using different external journal entry")
+		}
+		cacheContext, commitFunc = ps.GetCacheCtx().CacheContext()
+	}
+
+	return &PrecompileJournalEntry{
+		cacheCtx:   cacheContext,
+		commit:     commitFunc,
 		extStateDB: extStateDB,
 	}, nil
 }
 
 // GetCacheCtx returns the cached context, to be used in the stateful precompile
-func (ps *PrecompileContext) GetCacheCtx() sdk.Context { return ps.cacheCtx }
-
-// AppendToJournal adds the dirtied state to the statedb journal
-func (ps *PrecompileContext) AppendToJournal() { ps.extStateDB.AppendJournalEntry(ps) }
+func (ps *PrecompileJournalEntry) GetCacheCtx() sdk.Context { return ps.cacheCtx }
 
 // implements ExtJournalEntry
-func (ps *PrecompileContext) Commit() { ps.commit() }
+func (ps *PrecompileJournalEntry) AppendToJournal() {
+	ps.journalIndex = ps.extStateDB.AppendExtJournalEntry(ps)
+}
+
+// implements ExtJournalEntry
+func (ps *PrecompileJournalEntry) GetJournalIndex() int { return ps.journalIndex }
+
+// implements ExtJournalEntry
+func (ps *PrecompileJournalEntry) Commit() { ps.commit() }
 
 // implements ExtJournalEntry
 // garbage collector will delete the unneeded context
-func (ps *PrecompileContext) Revert(*statedb.StateDB) {}
+func (ps *PrecompileJournalEntry) Revert(s *statedb.StateDB) { s.RevertExtJournalEntry(ps) }
 
 // implements ExtJournalEntry
 // nil returned because all dirtied states are handled by cache ctx
-func (ps *PrecompileContext) Dirtied() *common.Address { return nil }
+func (ps *PrecompileJournalEntry) Dirtied() *common.Address { return nil }

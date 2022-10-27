@@ -1,6 +1,7 @@
 package statedb
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -50,6 +51,9 @@ type StateDB struct {
 
 	// Per-transaction access list
 	accessList *accessList
+
+	// stack of non-reverted indexes (in journal) of ExtJournalEntries used by stateful precompiles
+	validExtJournalIndexes []int
 }
 
 // New creates a new state from a given trie.
@@ -459,23 +463,56 @@ func (s *StateDB) Commit() error {
 			}
 		}
 	}
-	for _, je := range s.journal.entries {
-		if extJE, ok := je.(ExtJournalEntry); ok {
-			extJE.Commit()
-		}
+
+	// get the index of last valid external journal entry from the stack
+	lastValidIndex := s.validExtJournalIndexes[len(s.validExtJournalIndexes)-1]
+	eje, ok := s.journal.entries[lastValidIndex].(ExtJournalEntry)
+	if !ok {
+		return errors.New("last valid external journal entry could not be committed")
 	}
+	// only commit the last valid external journal entry to cosmos
+	eje.Commit()
+
 	return nil
 }
 
 // implements ExtStateDB
-// AppendJournalEntry allow external module to append journal entry,
-// to support snapshot revert for external states.
-func (s *StateDB) AppendJournalEntry(entry JournalEntry) {
-	s.journal.append(entry)
+func (s *StateDB) GetContext() sdk.Context {
+	return s.ctx
 }
 
 // implements ExtStateDB
-// GetContext retrieves the cosmos sdk context for stateful precompiles
-func (s *StateDB) GetContext() sdk.Context {
-	return s.ctx
+func (s *StateDB) AppendExtJournalEntry(entry ExtJournalEntry) int {
+	currentJournalIndex := s.journal.length()
+	s.validExtJournalIndexes = append(s.validExtJournalIndexes, currentJournalIndex)
+	s.journal.append(entry)
+	return currentJournalIndex
+}
+
+// implements ExtStateDB
+func (s *StateDB) RevertExtJournalEntry(entry ExtJournalEntry) {
+	// pop all elements in validExtStack until and including entry
+	invalidExtJournalEntry := entry.GetJournalIndex()
+	toRemoveIndex := len(s.validExtJournalIndexes)
+	for ; toRemoveIndex >= 0; toRemoveIndex-- {
+		if s.validExtJournalIndexes[toRemoveIndex] == invalidExtJournalEntry {
+			break
+		}
+	}
+	s.validExtJournalIndexes = s.validExtJournalIndexes[:toRemoveIndex]
+}
+
+// implements ExtStateDB
+func (s *StateDB) GetLastValidExtJournalEntry() (ExtJournalEntry, bool) {
+	// pop from stack to get last valid index
+	stackLen := len(s.validExtJournalIndexes)
+	if stackLen == 0 {
+		return nil, false
+	}
+	lastValidIndex := s.validExtJournalIndexes[stackLen-1]
+	eje, ok := s.journal.entries[lastValidIndex].(ExtJournalEntry)
+	if !ok {
+		return nil, false
+	}
+	return eje, true
 }
