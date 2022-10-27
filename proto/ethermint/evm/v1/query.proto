@@ -223,6 +223,7 @@ message EthCallRequest {
   uint64 gas_cap = 2;
   // the proposer of the requested block
   bytes proposer_address = 3 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // the full chain id in the requested block header
   string chain_id = 4;
 }
 
@@ -252,6 +253,7 @@ message QueryTraceTxRequest {
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
   // the proposer of the requested block
   bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // the full chain id in the requested block header
   string chain_id = 9;
 }
 
@@ -275,6 +277,7 @@ message QueryTraceBlockRequest {
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
   // the proposer of the requested block
   bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // the full chain id in the requested block header
   string chain_id = 9;
 }
 

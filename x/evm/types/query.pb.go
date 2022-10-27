@@ -794,7 +794,8 @@ type EthCallRequest struct {
 	GasCap uint64 `protobuf:"varint,2,opt,name=gas_cap,json=gasCap,proto3" json:"gas_cap,omitempty"`
 	// the proposer of the requested block
 	ProposerAddress github_com_cosmos_cosmos_sdk_types.ConsAddress `protobuf:"bytes,3,opt,name=proposer_address,json=proposerAddress,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ConsAddress" json:"proposer_address,omitempty"`
-	ChainId         string                                         `protobuf:"bytes,4,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// the full chain id in the requested block header
+	ChainId string `protobuf:"bytes,4,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 }
 
 func (m *EthCallRequest) Reset()         { *m = EthCallRequest{} }
@@ -921,7 +922,8 @@ type QueryTraceTxRequest struct {
 	BlockTime time.Time `protobuf:"bytes,7,opt,name=block_time,json=blockTime,proto3,stdtime" json:"block_time"`
 	// the proposer of the requested block
 	ProposerAddress github_com_cosmos_cosmos_sdk_types.ConsAddress `protobuf:"bytes,8,opt,name=proposer_address,json=proposerAddress,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ConsAddress" json:"proposer_address,omitempty"`
-	ChainId         string                                         `protobuf:"bytes,9,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// the full chain id in the requested block header
+	ChainId string `protobuf:"bytes,9,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 }
 
 func (m *QueryTraceTxRequest) Reset()         { *m = QueryTraceTxRequest{} }
@@ -1073,7 +1075,8 @@ type QueryTraceBlockRequest struct {
 	BlockTime time.Time `protobuf:"bytes,7,opt,name=block_time,json=blockTime,proto3,stdtime" json:"block_time"`
 	// the proposer of the requested block
 	ProposerAddress github_com_cosmos_cosmos_sdk_types.ConsAddress `protobuf:"bytes,8,opt,name=proposer_address,json=proposerAddress,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ConsAddress" json:"proposer_address,omitempty"`
-	ChainId         string                                         `protobuf:"bytes,9,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// the full chain id in the requested block header
+	ChainId string `protobuf:"bytes,9,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 }
 
 func (m *QueryTraceBlockRequest) Reset()         { *m = QueryTraceBlockRequest{} }
