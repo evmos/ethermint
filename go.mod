@@ -192,6 +192,9 @@ require (
 replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
 
+	// go-eth patch
+	github.com/ethereum/go-ethereum => github.com/berachain/go-ethereum v0.0.0-20221028222741-7624eca9ba30
+
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
