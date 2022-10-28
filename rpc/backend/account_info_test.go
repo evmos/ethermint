@@ -104,6 +104,18 @@ func (suite *BackendTestSuite) TestGetProof() {
 			&rpctypes.AccountResult{},
 		},
 		{
+			"fail - Block doesn't exist)",
+			address1,
+			[]string{},
+			rpctypes.BlockNumberOrHash{BlockNumber: &blockNrInvalid},
+			func(bn rpctypes.BlockNumber, addr common.Address) {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockError(client, bn.Int64())
+			},
+			false,
+			&rpctypes.AccountResult{},
+		},
+		{
 			"pass",
 			address1,
 			[]string{"0x0"},

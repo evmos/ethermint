@@ -2,19 +2,20 @@ package backend
 
 import (
 	"context"
-	"testing"
-
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/bytes"
+	"github.com/tendermint/tendermint/p2p"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
+	"testing"
 )
 
 // Client defines a mocked object that implements the Tendermint JSON-RPC Client
@@ -23,6 +24,17 @@ import (
 //
 // To use a mock method it has to be registered in a given test.
 var _ tmrpcclient.Client = &mocks.Client{}
+
+//Status
+func RegisterStatus(client *mocks.Client) {
+	resultStatus := &tmrpctypes.ResultStatus{
+		NodeInfo:      p2p.DefaultNodeInfo{},
+		SyncInfo:      tmrpctypes.SyncInfo{},
+		ValidatorInfo: tmrpctypes.ValidatorInfo{},
+	}
+	client.On("Status", rpc.ContextWithHeight(1), mock.AnythingOfType("*int64")).
+		Return(resultStatus)
+}
 
 // Block
 func RegisterBlock(
@@ -101,6 +113,26 @@ func TestRegisterConsensusParams(t *testing.T) {
 }
 
 // BlockResults
+
+func RegisterBlockResultsWithEventLog(client *mocks.Client, height int64) (*tmrpctypes.ResultBlockResults, error) {
+	res := &tmrpctypes.ResultBlockResults{
+		Height: height,
+		TxsResults: []*abci.ResponseDeliverTx{
+			{Code: 0, GasUsed: 0, Events: []abci.Event{{
+				Type: evmtypes.EventTypeTxLog,
+				Attributes: []abci.EventAttribute{{
+					Key:   []byte(evmtypes.AttributeKeyTxLog),
+					Value: []byte{0x7b, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x20, 0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x22, 0x7d}, // Represents {"test": "hello"}
+					Index: true,
+				}},
+			}}},
+		},
+	}
+	client.On("BlockResults", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
+		Return(res, nil)
+	return res, nil
+}
+
 func RegisterBlockResults(
 	client *mocks.Client,
 	height int64,

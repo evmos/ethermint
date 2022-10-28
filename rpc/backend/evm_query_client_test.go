@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"testing"
@@ -64,6 +65,12 @@ func RegisterParamsInvalidHeight(queryClient *mocks.EVMQueryClient, header *meta
 		})
 }
 
+// Params returns error without header
+func RegisterParamsWithoutHeaderError(queryClient *mocks.EVMQueryClient, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 // Params returns error
 func RegisterParamsError(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
@@ -89,6 +96,13 @@ func TestRegisterParamsError(t *testing.T) {
 	RegisterBaseFeeError(queryClient)
 	_, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Error(t, err)
+}
+
+// Estimate Gas
+func RegisterEstimateGas(queryClient *mocks.EVMQueryClient, args evmtypes.TransactionArgs) {
+	bz, _ := json.Marshal(args)
+	queryClient.On("EstimateGas", rpc.ContextWithHeight(1), &evmtypes.EthCallRequest{Args: bz}).
+		Return(&evmtypes.EstimateGasResponse{}, nil)
 }
 
 // BaseFee
