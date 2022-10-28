@@ -8,6 +8,7 @@ import (
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -298,15 +299,16 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		return 0, err
 	}
 
-	req := evmtypes.EthCallRequest{
-		Args:   bz,
-		GasCap: b.RPCGasCap(),
-	}
-
-	_, err = b.TendermintBlockByNumber(blockNr)
+	header, err := b.TendermintBlockByNumber(blockNr)
 	if err != nil {
 		// the error message imitates geth behavior
 		return 0, errors.New("header not found")
+	}
+
+	req := evmtypes.EthCallRequest{
+		Args:            bz,
+		GasCap:          b.RPCGasCap(),
+		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -328,10 +330,15 @@ func (b *Backend) DoCall(
 	if err != nil {
 		return nil, err
 	}
-
+	header, err := b.TendermintBlockByNumber(blockNr)
+	if err != nil {
+		// the error message imitates geth behavior
+		return nil, errors.New("header not found")
+	}
 	req := evmtypes.EthCallRequest{
-		Args:   bz,
-		GasCap: b.RPCGasCap(),
+		Args:            bz,
+		GasCap:          b.RPCGasCap(),
+		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,

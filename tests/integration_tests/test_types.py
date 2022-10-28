@@ -1,3 +1,5 @@
+from web3 import Web3
+
 from .expected_constants import (
     EXPECTED_FEE_HISTORY,
     EXPECTED_GET_PROOF,
@@ -21,8 +23,9 @@ def test_block(ethermint, geth):
     get_blocks(ethermint, geth, True)
 
 
-def get_blocks(ethermint, geth, with_transactions):
-    eth_rpc = ethermint.w3.provider
+def get_blocks(ethermint_rpc_ws, geth, with_transactions):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc, geth_rpc, "eth_getBlockByNumber", ["0x0", with_transactions]
@@ -32,7 +35,7 @@ def get_blocks(ethermint, geth, with_transactions):
         eth_rpc, geth_rpc, "eth_getBlockByNumber", ["0x2710", with_transactions]
     )
 
-    ethermint_blk = ethermint.w3.eth.get_block(1)
+    ethermint_blk = w3.eth.get_block(1)
     # Get existing block, no transactions
     eth_rsp = eth_rpc.make_request(
         "eth_getBlockByHash", [ethermint_blk["hash"].hex(), with_transactions]
@@ -64,44 +67,51 @@ def get_blocks(ethermint, geth, with_transactions):
     )
 
 
-def test_accounts(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_accounts(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_accounts", [])
 
 
-def test_syncing(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_syncing(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_syncing", [])
 
 
-def test_coinbase(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_coinbase(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_coinbase", [])
 
 
-def test_max_priority_fee(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_max_priority_fee(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_maxPriorityFeePerGas", [])
 
 
-def test_gas_price(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_gas_price(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_gasPrice", [])
 
 
-def test_block_number(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_block_number(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_blockNumber", [])
 
 
-def test_balance(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_balance(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc,
@@ -154,8 +164,9 @@ def deploy_and_wait(w3, number=1):
     return contract
 
 
-def test_get_storage_at(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_get_storage_at(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc,
@@ -164,7 +175,7 @@ def test_get_storage_at(ethermint, geth):
         ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", "0x0", "latest"],
     )
 
-    contract = deploy_and_wait(ethermint.w3)
+    contract = deploy_and_wait(w3)
     res = eth_rpc.make_request("eth_getStorageAt", [contract.address, "0x0", "latest"])
     res, err = same_types(res["result"], EXPECTED_GET_STORAGE_AT)
     assert res, err
@@ -177,11 +188,12 @@ def send_and_get_hash(w3, tx_value=10):
     return send_transaction(w3, tx, KEYS["validator"])["transactionHash"].hex()
 
 
-def test_get_proof(ethermint, geth):
+def test_get_proof(ethermint_rpc_ws, geth):
     # on ethermint the proof query will fail for block numbers <= 2
     # so we must wait for several blocks
-    w3_wait_for_block(ethermint.w3, 3)
-    eth_rpc = ethermint.w3.provider
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
+    w3_wait_for_block(w3, 3)
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc,
@@ -197,7 +209,7 @@ def test_get_proof(ethermint, geth):
         ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", ["0x0"], "0x1024"],
     )
 
-    _ = send_and_get_hash(ethermint.w3)
+    _ = send_and_get_hash(w3)
 
     proof = eth_rpc.make_request(
         "eth_getProof", [ADDRS["validator"], ["0x0"], "latest"]
@@ -206,8 +218,9 @@ def test_get_proof(ethermint, geth):
     assert res, err
 
 
-def test_get_code(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_get_code(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc,
@@ -217,15 +230,16 @@ def test_get_code(ethermint, geth):
     )
 
     # Do an ethereum transfer
-    contract = deploy_and_wait(ethermint.w3)
+    contract = deploy_and_wait(w3)
     code = eth_rpc.make_request("eth_getCode", [contract.address, "latest"])
     expected = {"id": "4", "jsonrpc": "2.0", "result": "0x"}
     res, err = same_types(code, expected)
     assert res, err
 
 
-def test_get_block_transaction_count(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_get_block_transaction_count(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc, geth_rpc, "eth_getBlockTransactionCountByNumber", ["0x0"]
@@ -235,7 +249,7 @@ def test_get_block_transaction_count(ethermint, geth):
         eth_rpc, geth_rpc, "eth_getBlockTransactionCountByNumber", ["0x100"]
     )
 
-    tx_hash = send_and_get_hash(ethermint.w3)
+    tx_hash = send_and_get_hash(w3)
 
     tx_res = eth_rpc.make_request("eth_getTransactionByHash", [tx_hash])
     block_number = tx_res["result"]["blockNumber"]
@@ -260,8 +274,9 @@ def test_get_block_transaction_count(ethermint, geth):
     assert res, err
 
 
-def test_get_transaction(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_get_transaction(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc,
@@ -270,15 +285,16 @@ def test_get_transaction(ethermint, geth):
         ["0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"],
     )
 
-    tx_hash = send_and_get_hash(ethermint.w3)
+    tx_hash = send_and_get_hash(w3)
 
     tx_res = eth_rpc.make_request("eth_getTransactionByHash", [tx_hash])
     res, err = same_types(tx_res, EXPECTED_GET_TRANSACTION)
     assert res, err
 
 
-def test_get_transaction_receipt(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_get_transaction_receipt(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(
         eth_rpc,
@@ -287,15 +303,16 @@ def test_get_transaction_receipt(ethermint, geth):
         ["0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"],
     )
 
-    tx_hash = send_and_get_hash(ethermint.w3)
+    tx_hash = send_and_get_hash(w3)
 
     tx_res = eth_rpc.make_request("eth_getTransactionReceipt", [tx_hash])
     res, err = same_types(tx_res["result"], EXPECTED_GET_TRANSACTION_RECEIPT)
     assert res, err
 
 
-def test_fee_history(ethermint, geth):
-    eth_rpc = ethermint.w3.provider
+def test_fee_history(ethermint_rpc_ws, geth):
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_feeHistory", [4, "latest", [10, 90]])
 
@@ -307,10 +324,11 @@ def test_fee_history(ethermint, geth):
     assert res, err
 
 
-def test_estimate_gas(ethermint, geth):
+def test_estimate_gas(ethermint_rpc_ws, geth):
     tx = {"to": ADDRS["community"], "from": ADDRS["validator"]}
 
-    eth_rpc = ethermint.w3.provider
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_estimateGas", [tx])
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_estimateGas", [tx, "0x0"])
@@ -325,11 +343,12 @@ def make_same_rpc_calls(rpc1, rpc2, method, params):
     assert res, err
 
 
-def test_incomplete_send_transaction(ethermint, geth):
+def test_incomplete_send_transaction(ethermint_rpc_ws, geth):
     # Send ethereum tx with nothing in from field
-    eth_rpc = ethermint.w3.provider
+    w3: Web3 = ethermint_rpc_ws.w3
+    eth_rpc = w3.provider
     geth_rpc = geth.w3.provider
-    gas_price = ethermint.w3.eth.gas_price
+    gas_price = w3.eth.gas_price
     tx = {"from": "", "to": ADDRS["community"], "value": 0, "gasPrice": gas_price}
     make_same_rpc_calls(eth_rpc, geth_rpc, "eth_sendTransaction", [tx])
 
