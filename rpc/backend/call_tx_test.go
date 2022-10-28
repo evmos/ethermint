@@ -1,11 +1,13 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"google.golang.org/grpc/metadata"
@@ -51,7 +53,7 @@ func (suite *BackendTestSuite) TestResend() {
 			false,
 		},
 		{
-			"fail - Can't set Tx defaults ",
+			"pass - Can't set Tx defaults ",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
@@ -70,7 +72,7 @@ func (suite *BackendTestSuite) TestResend() {
 			true,
 		},
 		{
-			"fail - Can't set Tx defaults ",
+			"pass - Can't set Tx defaults ",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
@@ -89,7 +91,7 @@ func (suite *BackendTestSuite) TestResend() {
 			true,
 		},
 		{
-			"fail - MaxFeePerGas is nil",
+			"pass - MaxFeePerGas is nil",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
@@ -142,7 +144,7 @@ func (suite *BackendTestSuite) TestResend() {
 			false,
 		},
 		{
-			"fail - MaxFeePerGas is nil",
+			"pass - MaxFeePerGas is nil",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
@@ -185,16 +187,18 @@ func (suite *BackendTestSuite) TestResend() {
 			true,
 		},
 		{
-			"pass - Gas is nil",
+			"fail - Pending transactions error",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				var header metadata.MD
-				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
 				RegisterBaseFee(queryClient, baseFee)
 				RegisterEstimateGas(queryClient, callArgs)
+				RegisterParams(queryClient, &header, 1)
+				RegisterParamsNoHeader(queryClient, 1)
+				RegisterUnconfirmedTxsError(client, nil)
 			},
 			evmtypes.TransactionArgs{
 				Nonce:                &txNonce,
@@ -208,16 +212,162 @@ func (suite *BackendTestSuite) TestResend() {
 			common.Hash{},
 			false,
 		},
+		{
+			"fail - Not Ethereum txs",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				var header metadata.MD
+				RegisterBlock(client, 1, nil)
+				RegisterBlockResults(client, 1)
+				RegisterBaseFee(queryClient, baseFee)
+				RegisterEstimateGas(queryClient, callArgs)
+				RegisterParams(queryClient, &header, 1)
+				RegisterParamsNoHeader(queryClient, 1)
+				RegisterUnconfirmedTxsEmpty(client, nil)
+			},
+			evmtypes.TransactionArgs{
+				Nonce:                &txNonce,
+				To:                   &toAddr,
+				MaxFeePerGas:         gasPrice,
+				MaxPriorityFeePerGas: gasPrice,
+				Gas:                  nil,
+			},
+			gasPrice,
+			nil,
+			common.Hash{},
+			false,
+		},
+		// TODO: Add a passing case with transactions in the mempool
 	}
+
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("case %s", tc.name), func() {
 			suite.SetupTest() // reset test and queries
 			tc.registerMock()
 
 			hash, err := suite.backend.Resend(tc.args, tc.gasPrice, tc.gasLimit)
-			suite.T().Log("hash", hash, "err", err)
+
 			if tc.expPass {
 				suite.Require().Equal(tc.expHash, hash)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *BackendTestSuite) TestSendRawTransaction() {
+	_, bz := suite.buildEthereumTx()
+	//rlpEncodedBz, _ := rlp.EncodeToBytes(tx.Data.Value) // TODO: err typed transaction too short
+
+	testCases := []struct {
+		name         string
+		registerMock func()
+		rawTx        []byte
+		expHash      common.Hash
+		expPass      bool
+	}{
+		{
+			"fail - empty bytes",
+			func() {},
+			[]byte{},
+			common.Hash{},
+			false,
+		},
+		{
+			"fail - no RLP encoded bytes",
+			func() {},
+			bz,
+			common.Hash{},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock()
+
+			hash, err := suite.backend.SendRawTransaction(tc.rawTx)
+			if tc.expPass {
+				suite.Require().Equal(tc.expHash, hash)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *BackendTestSuite) TestDoCall() {
+	_, bz := suite.buildEthereumTx()
+	gasPrice := new(hexutil.Big)
+	toAddr := tests.GenerateAddress()
+	callArgs := evmtypes.TransactionArgs{
+		From:                 nil,
+		To:                   &toAddr,
+		Gas:                  nil,
+		GasPrice:             nil,
+		MaxFeePerGas:         gasPrice,
+		MaxPriorityFeePerGas: gasPrice,
+		Value:                gasPrice,
+		Nonce:                nil,
+		Input:                nil,
+		Data:                 nil,
+		AccessList:           nil,
+	}
+	argsBz, _ := json.Marshal(callArgs)
+
+	testCases := []struct {
+		name         string
+		registerMock func()
+		blockNum     rpctypes.BlockNumber
+		callArgs     evmtypes.TransactionArgs
+		expEthTx     *evmtypes.MsgEthereumTxResponse
+		expPass      bool
+	}{
+		{
+			"fail - Invalid request",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				//var header metadata.MD
+				RegisterBlock(client, 1, bz)
+				RegisterEthCallError(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
+			},
+
+			rpctypes.BlockNumber(1),
+			callArgs,
+			&evmtypes.MsgEthereumTxResponse{},
+			false,
+		},
+		{
+			"pass - Returned transaction response",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				//var header metadata.MD
+				RegisterBlock(client, 1, bz)
+				RegisterEthCall(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
+			},
+
+			rpctypes.BlockNumber(1),
+			callArgs,
+			&evmtypes.MsgEthereumTxResponse{},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock()
+
+			msgEthTx, err := suite.backend.DoCall(tc.callArgs, tc.blockNum)
+			//suite.T().Error("tx", msgEthTx, "err", err)
+
+			if tc.expPass {
+				suite.Require().Equal(tc.expEthTx, msgEthTx)
 			} else {
 				suite.Require().Error(err)
 			}

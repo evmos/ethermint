@@ -188,44 +188,41 @@ func (suite *BackendTestSuite) TestChainId() {
 	}
 }
 
-//func (suite *BackendTestSuite) TestGetCoinbase() {
-//	testCases := []struct {
-//		name         string
-//		registerMock func()
-//		accAddr      sdk.AccAddress
-//		expPass      bool
-//	}{
-//		{
-//			"pass - default chain config ",
-//			func() {
-//				client := suite.backend.clientCtx.Client.(*mocks.Client)
-//				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-//				//var header metadata.MD
-//				//RegisterParams(queryClient, &header, int64(1))
-//				RegisterStatus(client)
-//				RegisterValidatorAccount(queryClient, sdk.AccAddress(tests.GenerateAddress().Bytes()))
-//
-//			},
-//			sdk.AccAddress(tests.GenerateAddress().Bytes()),
-//			true,
-//		},
-//	}
-//
-//	for _, tc := range testCases {
-//		suite.Run(fmt.Sprintf("case %s", tc.name), func() {
-//			suite.SetupTest() // reset test and queries
-//			tc.registerMock()
-//
-//			accAddr, err := suite.backend.GetCoinbase()
-//
-//			if tc.expPass {
-//				suite.Require().Equal(tc.accAddr, accAddr)
-//			} else {
-//				suite.Require().Error(err)
-//			}
-//		})
-//	}
-//}
+func (suite *BackendTestSuite) TestGetCoinbase() {
+	validatorAcc := sdk.AccAddress(tests.GenerateAddress().Bytes())
+	testCases := []struct {
+		name         string
+		registerMock func()
+		accAddr      sdk.AccAddress
+		expPass      bool
+	}{
+		{
+			"fail - Can't retrieve status from node",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterStatusError(client)
+
+			},
+			validatorAcc,
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock()
+
+			accAddr, err := suite.backend.GetCoinbase()
+
+			if tc.expPass {
+				suite.Require().Equal(tc.accAddr, accAddr)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
 
 func (suite *BackendTestSuite) TestSuggestGasTipCap() {
 	testCases := []struct {
@@ -236,7 +233,7 @@ func (suite *BackendTestSuite) TestSuggestGasTipCap() {
 		expPass      bool
 	}{
 		{
-			"fail - London hardfork not enabled or feemarket not enabled ",
+			"pass - London hardfork not enabled or feemarket not enabled ",
 			func() {},
 			nil,
 			big.NewInt(0),
@@ -250,7 +247,7 @@ func (suite *BackendTestSuite) TestSuggestGasTipCap() {
 			tc.registerMock()
 
 			maxDelta, err := suite.backend.SuggestGasTipCap(tc.baseFee)
-			suite.T().Log("maxDelta", maxDelta, "err", err)
+
 			if tc.expPass {
 				suite.Require().Equal(tc.expGasTipCap, maxDelta)
 			} else {
