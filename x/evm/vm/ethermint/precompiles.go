@@ -12,7 +12,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
 
 	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
@@ -38,7 +37,9 @@ func init() {
 	addressType, _ := abi.NewType("address", "", nil)
 	stringType, _ := abi.NewType("string", "", nil)
 	uint256Type, _ := abi.NewType("uint256", "", nil)
-	boolType, _ := abi.NewType("bool", "", nil)
+
+	// TransferMethod defines the ABI method signature for the ICS20 `transfer` function.
+	// It rep
 	TransferMethod = abi.NewMethod(
 		"transfer", // name
 		"transfer", // raw name
@@ -48,88 +49,36 @@ func init() {
 		false,
 		abi.Arguments{
 			{
-				Name: "portID",
-				Type: stringType,
-			},
-			{
-				Name: "channelID",
-				Type: stringType,
-			},
-			{
-				Name: "srcDenom",
-				Type: stringType,
-			},
-			{
-				Name: "ratio",
-				Type: uint256Type,
-			},
-			{
-				Name: "timeout",
-				Type: uint256Type,
-			},
-			{
-				Name: "sender",
-				Type: addressType,
-			},
-			{
-				Name: "receiver",
+				Name: "denom",
 				Type: stringType,
 			},
 			{
 				Name: "amount",
 				Type: uint256Type,
 			},
-		},
-		abi.Arguments{
 			{
-				Name: "sequence",
+				Name: "sender",
+				Type: addressType, // NOTE: sender is always local so we use common.Address instead of the string type
+			},
+			{
+				Name: "receiver",
+				Type: stringType,
+			},
+			{
+				Name: "sourcePort",
+				Type: stringType,
+			},
+			{
+				Name: "sourceChannel",
+				Type: stringType,
+			},
+			{
+				Name: "timeoutHeight",
 				Type: uint256Type,
 			},
-		},
-	)
-	HasCommitMethod = abi.NewMethod(
-		"hasCommit",
-		"hasCommit",
-		abi.Function,
-		"",
-		false,
-		false,
-		abi.Arguments{
 			{
-				Name: "portID",
-				Type: stringType,
-			},
-			{
-				Name: "channelID",
-				Type: stringType,
-			},
-			{
-				Name: "sequence",
+				Name: "timeoutTimestamp",
 				Type: uint256Type,
-			},
-		},
-		abi.Arguments{
-			abi.Argument{
-				Name: "status",
-				Type: boolType,
-			},
-		},
-	)
-	QueryNextSeqMethod = abi.NewMethod(
-		"queryNextSeq",
-		"queryNextSeq",
-		abi.Function,
-		"",
-		false,
-		false,
-		abi.Arguments{
-			{
-				Name: "portID",
-				Type: stringType,
-			},
-			{
-				Name: "channelID",
-				Type: stringType,
 			},
 		},
 		abi.Arguments{
@@ -169,8 +118,8 @@ func (ic *ICS20Precompile) Run(_ []byte) ([]byte, error) {
 	return nil, errors.New("should run with RunStateful")
 }
 
-func (ic *ICS20Precompile) RunStateful(evm *vm.EVM, caller common.Address, input []byte, value *big.Int) ([]byte, error) {
-	stateDB, ok := evm.StateDB.(statedb.ExtStateDB)
+func (ic *ICS20Precompile) RunStateful(evm evm.EVM, caller common.Address, input []byte, value *big.Int) ([]byte, error) {
+	stateDB, ok := evm.StateDB().(statedb.ExtStateDB)
 	if !ok {
 		return nil, errors.New("not run in ethermint")
 	}
@@ -187,23 +136,24 @@ func (ic *ICS20Precompile) RunStateful(evm *vm.EVM, caller common.Address, input
 			return nil, errors.New("fail to unpack input arguments")
 		}
 
+		if len(args) != 8 {
+			return nil, fmt.Errorf("invalid input arguments. Expected 8, got %d", len(args))
+		}
+
+		srcDenom := args[2].(string)
 		portID := args[0].(string)
 		channelID := args[1].(string)
-		srcDenom := args[2].(string)
-		ratio := args[4].(*big.Int)
 		timeout := args[5].(*big.Int)
 		sender := args[6].(common.Address)
 		receiver := args[7].(string)
 		amount := args[8].(*big.Int)
 
-		if amount.Sign() <= 0 {
-			return nil, errors.New("invalid amount")
-		}
+
 
 		timeoutTimestamp := uint64(ctx.BlockTime().UnixNano()) + timeout.Uint64()
 		timeoutHeight := clienttypes.ZeroHeight()
 
-		// Use instance to prevent
+		// Use instance to prevent errors on denom or 
 		token := sdk.Coin{
 			Denom:  srcDenom,
 			Amount: sdk.NewIntFromBigInt(amount),

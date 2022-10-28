@@ -58,6 +58,11 @@ func (e EVM) Config() vm.Config {
 	return e.EVM.Config
 }
 
+// StateDB returns the State Database
+func (e EVM) StateDB() vm.StateDB {
+	return e.EVM.StateDB
+}
+
 // Call executes the contract associated with the addr with the given input as
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
@@ -69,14 +74,14 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 	}
 
 	// Fail if we're trying to transfer more than the available balance
-	if value.Sign() != 0 && !e.Context().CanTransfer(e.StateDB, caller.Address(), value) {
+	if value.Sign() != 0 && !e.Context().CanTransfer(e.StateDB(), caller.Address(), value) {
 		return nil, gas, vm.ErrInsufficientBalance
 	}
 
-	snapshot := e.StateDB.Snapshot()
+	snapshot := e.StateDB().Snapshot()
 	p, isPrecompile := e.Precompile(addr)
 
-	if !e.StateDB.Exist(addr) {
+	if !e.StateDB().Exist(addr) {
 		if !isPrecompile && e.ChainConfig().Rules(e.EVM.Context.BlockNumber, false).IsEIP158 && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if e.Config().Debug {
@@ -90,9 +95,9 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 			}
 			return nil, gas, nil
 		}
-		e.StateDB.CreateAccount(addr)
+		e.StateDB().CreateAccount(addr)
 	}
-	e.Context().Transfer(e.StateDB, caller.Address(), addr, value)
+	e.Context().Transfer(e.StateDB(), caller.Address(), addr, value)
 
 	// Capture the tracer start/end events in debug mode
 	if e.Config().Debug {
@@ -117,7 +122,7 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 	} else {
 		// Initialize a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
-		code := e.StateDB.GetCode(addr)
+		code := e.StateDB().GetCode(addr)
 		if len(code) == 0 {
 			ret, err = nil, nil // gas is unchanged
 		} else {
@@ -125,7 +130,7 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 			// If the account has no code, we can abort here
 			// The depth-check is already done, and precompiles handled above
 			contract := vm.NewContract(caller, vm.AccountRef(addrCopy), value, gas)
-			contract.SetCallCode(&addrCopy, e.StateDB.GetCodeHash(addrCopy), code)
+			contract.SetCallCode(&addrCopy, e.StateDB().GetCodeHash(addrCopy), code)
 			ret, err = e.Interpreter().Run(contract, input, false)
 			gas = contract.Gas
 		}
@@ -135,14 +140,14 @@ func (e *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
-		e.StateDB.RevertToSnapshot(snapshot)
+		e.StateDB().RevertToSnapshot(snapshot)
 		if err != vm.ErrExecutionReverted {
 			gas = 0
 		}
 
 		// TODO: consider clearing up unused snapshots:
 		// } else {
-		//	evm.StateDB.DiscardSnapshot(snapshot)
+		//	evm.StateDB().DiscardSnapshot(snapshot)
 	}
 	return ret, gas, err
 }
@@ -169,11 +174,11 @@ func (e *EVM) CallCode(
 	// Note although it's noop to transfer X ether to caller itself. But
 	// if caller doesn't have enough balance, it would be an error to allow
 	// over-charging itself. So the check here is necessary.
-	if !e.Context().CanTransfer(e.StateDB, caller.Address(), value) {
+	if !e.Context().CanTransfer(e.StateDB(), caller.Address(), value) {
 		return nil, gas, vm.ErrInsufficientBalance
 	}
 
-	snapshot := e.StateDB.Snapshot()
+	snapshot := e.StateDB().Snapshot()
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
 	if e.Config().Debug {
@@ -192,13 +197,13 @@ func (e *EVM) CallCode(
 		// Initialize a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
 		contract := vm.NewContract(caller, vm.AccountRef(caller.Address()), value, gas)
-		contract.SetCallCode(&addrCopy, e.StateDB.GetCodeHash(addrCopy), e.StateDB.GetCode(addrCopy))
+		contract.SetCallCode(&addrCopy, e.StateDB().GetCodeHash(addrCopy), e.StateDB().GetCode(addrCopy))
 		ret, err = e.Interpreter().Run(contract, input, false)
 		gas = contract.Gas
 	}
 
 	if err != nil {
-		e.StateDB.RevertToSnapshot(snapshot)
+		e.StateDB().RevertToSnapshot(snapshot)
 		if err != vm.ErrExecutionReverted {
 			gas = 0
 		}

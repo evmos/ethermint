@@ -22,6 +22,7 @@ type EVM interface {
 	Config() vm.Config
 	Context() vm.BlockContext
 	TxContext() vm.TxContext
+	StateDB() vm.StateDB
 
 	Reset(txCtx vm.TxContext, statedb vm.StateDB)
 	Cancel()

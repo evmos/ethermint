@@ -51,6 +51,11 @@ func (e EVM) Config() vm.Config {
 	return e.EVM.Config
 }
 
+// StateDB returns the State Database
+func (e EVM) StateDB() vm.StateDB {
+	return e.EVM.StateDB
+}
+
 // Precompile returns the precompiled contract associated with the given address
 // and the current chain configuration. If the contract cannot be found it returns
 // nil.
