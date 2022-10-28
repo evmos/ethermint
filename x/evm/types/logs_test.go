@@ -198,4 +198,3 @@ func TestConversionFunctions(t *testing.T) {
 	require.Nil(t, conversionErr)
 	require.Nil(t, copyErr)
 }
-

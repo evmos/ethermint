@@ -3,13 +3,14 @@ package rpc
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/require"
 	"net/url"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/require"
 )
 
 var (

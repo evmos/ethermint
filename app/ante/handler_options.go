@@ -20,7 +20,7 @@ type HandlerOptions struct {
 	AccountKeeper          evmtypes.AccountKeeper
 	BankKeeper             evmtypes.BankKeeper
 	IBCKeeper              *ibckeeper.Keeper
-	FeeMarketKeeper        evmtypes.FeeMarketKeeper
+	FeeMarketKeeper        FeeMarketKeeper
 	EvmKeeper              EVMKeeper
 	FeegrantKeeper         ante.FeegrantKeeper
 	SignModeHandler        authsigning.SignModeHandler
@@ -70,9 +70,9 @@ func newCosmosAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		RejectMessagesDecorator{}, // reject MsgEthereumTxs
 		ante.NewSetUpContextDecorator(),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
-		NewMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
+		NewMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
 		ante.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker),
@@ -93,9 +93,9 @@ func newCosmosAnteHandlerEip712(options HandlerOptions) sdk.AnteHandler {
 		ante.NewSetUpContextDecorator(),
 		// NOTE: extensions option decorator removed
 		// ante.NewRejectExtensionOptionsDecorator(),
-		NewMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
+		NewMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
 		ante.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker),
