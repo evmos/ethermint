@@ -246,9 +246,7 @@ func TestEIP712SignatureVerification(t *testing.T) {
 				Sequence: tc.sequence,
 			}
 
-			err = txBuilder.SetSignatures([]signing.SignatureV2{
-				txSig,
-			}...)
+			err = txBuilder.SetSignatures([]signing.SignatureV2{txSig}...)
 			require.NoError(t, err)
 
 			// Declare signerData

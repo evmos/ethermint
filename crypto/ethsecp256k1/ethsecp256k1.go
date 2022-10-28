@@ -201,6 +201,15 @@ func (pubKey *PubKey) UnmarshalAminoJSON(bz []byte) error {
 	return pubKey.UnmarshalAmino(bz)
 }
 
+// VerifySignature verifies that the ECDSA public key created a given signature over
+// the provided message. It will calculate the Keccak256 hash of the message
+// prior to verification.
+//
+// CONTRACT: The signature should be in [R || S] format.
+func (pubKey PubKey) VerifySignature(msg, sig []byte) bool {
+	return pubKey.verifySignatureECDSA(msg, sig) || pubKey.verifySignatureAsEIP712(msg, sig)
+}
+
 // Verifies the signature as an EIP-712 signature by first converting the message payload
 // to an EIP-712 hashed object, performing ECDSA verification on the hash. This is to support
 // signing a Cosmos payload using EIP-712.
@@ -222,13 +231,4 @@ func (pubKey PubKey) verifySignatureECDSA(msg, sig []byte) bool {
 
 	// the signature needs to be in [R || S] format when provided to VerifySignature
 	return crypto.VerifySignature(pubKey.Key, crypto.Keccak256Hash(msg).Bytes(), sig)
-}
-
-// VerifySignature verifies that the ECDSA public key created a given signature over
-// the provided message. It will calculate the Keccak256 hash of the message
-// prior to verification.
-//
-// CONTRACT: The signature should be in [R || S] format.
-func (pubKey PubKey) VerifySignature(msg, sig []byte) bool {
-	return pubKey.verifySignatureECDSA(msg, sig) || pubKey.verifySignatureAsEIP712(msg, sig)
 }
