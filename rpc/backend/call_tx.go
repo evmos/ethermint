@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"math/big"
 
+	sdkmath "cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -305,11 +307,17 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		return 0, errors.New("header not found")
 	}
 
+	tmp, err := ethermint.ParseChainID(header.Block.ChainID)
+	if err != nil {
+		return 0, sdkerrors.Wrapf(err, "failed to parse chainID: %s", header.Block.ChainID)
+	}
+	chainID := sdkmath.NewIntFromBigInt(tmp)
+
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
-		ChainId:         header.Block.ChainID,
+		ChainId:         &chainID,
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -336,11 +344,18 @@ func (b *Backend) DoCall(
 		// the error message imitates geth behavior
 		return nil, errors.New("header not found")
 	}
+
+	tmp, err := ethermint.ParseChainID(header.Block.ChainID)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "failed to parse chainID: %s", header.Block.ChainID)
+	}
+	chainID := sdkmath.NewIntFromBigInt(tmp)
+
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
-		ChainId:         header.Block.ChainID,
+		ChainId:         &chainID,
 	}
 
 	// From ContextWithHeight: if the provided height is 0,

@@ -39,9 +39,9 @@ func GasToRefund(availableRefund, gasConsumed, refundQuotient uint64) uint64 {
 }
 
 // EVMConfig creates the EVMConfig based on current state
-func (k *Keeper) EVMConfig(ctx sdk.Context, proposerAddress sdk.ConsAddress) (*types.EVMConfig, error) {
+func (k *Keeper) EVMConfig(ctx sdk.Context, proposerAddress sdk.ConsAddress, chainID *big.Int) (*types.EVMConfig, error) {
 	params := k.GetParams(ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+	ethCfg := params.ChainConfig.EthereumConfig(chainID)
 
 	// get the coinbase address from the block proposer
 	coinbase, err := k.GetCoinbaseAddress(ctx, proposerAddress)
@@ -199,7 +199,11 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		bloomReceipt ethtypes.Bloom
 	)
 
-	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress))
+	chainID, err := ethermint.ParseChainID(ctx.ChainID())
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "invalid chain-id %s", ctx.ChainID())
+	}
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), chainID)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
@@ -464,7 +468,12 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 // ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
 func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool) (*types.MsgEthereumTxResponse, error) {
-	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress))
+	chainID, err := ethermint.ParseChainID(ctx.ChainID())
+	if err != nil {
+		return nil, sdkerrors.Wrapf(err, "invalid chain-id %s", ctx.ChainID())
+	}
+
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), chainID)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
