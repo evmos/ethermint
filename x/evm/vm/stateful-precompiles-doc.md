@@ -35,10 +35,20 @@ All of these revert behaviors are handled seamlessly and away from the perspecti
 
 ### Cache Structure
 
-**The max depth of caches is equal to the number of precompiles**
+**The max depth of caches is equal to the number of precompile calls per transaction**
 
-Using this approach, cache contexts are nested, but never nested on invalid cache contexts. This is because, when creating a new cache context for an additional precompile call, only the last valid (non-reverted) cosmos state context is used to nest from. Whenever a revert is called by the EVM interpreter, the statedb `RevertToSnapshot` will omit all necessary cache contexts and future precompile calls will only nest from the previous valid cache context. 
+Using this approach, cache contexts are nested, but never nested on invalid cache contexts. This is because when creating a new cache context for an additional precompile call, only the last valid (non-reverted) cosmos state context is used to nest from. Whenever a revert is called by the EVM interpreter, the statedb `RevertToSnapshot` will omit all necessary cache contexts and future precompile calls will only nest from the previous valid cache context. 
 
 The overhead of this method is holding cache contexts proportional to the number of precompile calls in a single transaction. However, on reverts, unneeded cache contexts are discarded by the garbage collector (as the journal holds no pointer to these objects). Additionally, at the end of the transaction, only the latest valid journal entry (and its corresponding cache context) are committed to Cosmos state. 
 
 With this approach, no unwrapping of contexts are necessary. By tracking the state of the call stack with a journal, we can handle all reverts in the same way the statedb currently does. 
+
+### Necessary Changes
+
+**In order to facilitate storing CacheContexts as a journal entry in the ethermint statedb, these crucial changes were made:**
+
+- `ExtStateDB`: external statedb, implemented by the current ethermint statedb, which requires functions for getting cosmos sdk contexts for stateful precompiles and appending/reverting external journal entries
+- `ExtJournalEntry`: external journal entry, a type that actually stores a cache context, for our use case
+- `statedb.validExtJournalIndexes`: this is a stack holding the indexes of all external journal entries in the `statedb.journal.entries` slice. This is necessary to handle reverts and correctly return the latest valid cache context.
+- `(e EVM) RunPrecompiledContract`: this function is modified to handle stateful precompiles, and properly sets up the external journal entry and appends it to the statedb. In the future, this can all be handled by the `BasePrecompile`, so all stateful precompiles automatically "inherit" this functionality. 
+- Shadowing `Call`, `CallCode`, `StaticCall`, `DelegateCall`: these geth evm functions must be shadowed to hold custom precompiles and properly call stateful ones during execution. Additionally, their corresponding opcodes in the jump table (`opCall`, `opCallCode`, etc.) and the `EVMInterpreter` `Run` method must be shadowed. All of this adds up to essentially rewriting the geth core vm. A simple alternative is to maintain a simple fork which just allows the geth evm to call custom precompiles.
