@@ -8,9 +8,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -596,7 +595,7 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 }
 
 // getChainID parse chainID from current context if not provided
-func getChainID(ctx sdk.Context, chainID *sdk.Int) (*big.Int, error) {
+func getChainID(ctx sdk.Context, chainID *sdkmath.Int) (*big.Int, error) {
 	if chainID == nil {
 		return ethermint.ParseChainID(ctx.ChainID())
 	}
