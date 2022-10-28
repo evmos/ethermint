@@ -10,15 +10,15 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	"github.com/tharsis/ethermint/ethereum/eip712"
-	ethermint "github.com/tharsis/ethermint/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	"github.com/evmos/ethermint/ethereum/eip712"
+	ethermint "github.com/evmos/ethermint/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 var ethermintCodec codec.ProtoCodecMarshaler
@@ -49,7 +49,11 @@ func NewEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandle
 
 // AnteHandle handles validation of EIP712 signed cosmos txs.
 // it is not run on RecheckTx
-func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
+	tx sdk.Tx,
+	simulate bool,
+	next sdk.AnteHandler,
+) (newCtx sdk.Context, err error) {
 	// no need to verify signatures on recheck tx
 	if ctx.IsReCheckTx() {
 		return next(ctx, tx, simulate)
@@ -171,7 +175,7 @@ func VerifySignature(
 				Amount: tx.GetFee(),
 				Gas:    tx.GetGas(),
 			},
-			msgs, tx.GetMemo(),
+			msgs, tx.GetMemo(), tx.GetTip(),
 		)
 
 		signerChainID, err := ethermint.ParseChainID(signerData.ChainID)
@@ -188,13 +192,7 @@ func VerifySignature(
 			return sdkerrors.Wrap(sdkerrors.ErrUnknownExtensionOptions, "tx doesnt contain expected amount of extension options")
 		}
 
-		var optIface ethermint.ExtensionOptionsWeb3TxI
-
-		if err := ethermintCodec.UnpackAny(opts[0], &optIface); err != nil {
-			return sdkerrors.Wrap(err, "failed to proto-unpack ExtensionOptionsWeb3Tx")
-		}
-
-		extOpt, ok := optIface.(*ethermint.ExtensionOptionsWeb3Tx)
+		extOpt, ok := opts[0].GetCachedValue().(*ethermint.ExtensionOptionsWeb3Tx)
 		if !ok {
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidChainID, "unknown extension option")
 		}

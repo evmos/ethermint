@@ -58,13 +58,15 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	parentGasTarget := parentGasTargetBig.Uint64()
 	baseFeeChangeDenominator := new(big.Int).SetUint64(uint64(params.BaseFeeChangeDenominator))
 
-	// If the parent gasUsed is the same as the target, the baseFee remains unchanged.
+	// If the parent gasUsed is the same as the target, the baseFee remains
+	// unchanged.
 	if parentGasUsed == parentGasTarget {
 		return new(big.Int).Set(parentBaseFee)
 	}
 
 	if parentGasUsed > parentGasTarget {
-		// If the parent block used more gas than its target, the baseFee should increase.
+		// If the parent block used more gas than its target, the baseFee should
+		// increase.
 		gasUsedDelta := new(big.Int).SetUint64(parentGasUsed - parentGasTarget)
 		x := new(big.Int).Mul(parentBaseFee, gasUsedDelta)
 		y := x.Div(x, parentGasTargetBig)
@@ -76,14 +78,15 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 		return x.Add(parentBaseFee, baseFeeDelta)
 	}
 
-	// Otherwise if the parent block used less gas than its target, the baseFee should decrease.
+	// Otherwise if the parent block used less gas than its target, the baseFee
+	// should decrease.
 	gasUsedDelta := new(big.Int).SetUint64(parentGasTarget - parentGasUsed)
 	x := new(big.Int).Mul(parentBaseFee, gasUsedDelta)
 	y := x.Div(x, parentGasTargetBig)
 	baseFeeDelta := x.Div(y, baseFeeChangeDenominator)
 
-	return math.BigMax(
-		x.Sub(parentBaseFee, baseFeeDelta),
-		common.Big0,
-	)
+	// Set global min gas price as lower bound of the base fee, transactions below
+	// the min gas price don't even reach the mempool.
+	minGasPrice := params.MinGasPrice.TruncateInt().BigInt()
+	return math.BigMax(x.Sub(parentBaseFee, baseFeeDelta), minGasPrice)
 }

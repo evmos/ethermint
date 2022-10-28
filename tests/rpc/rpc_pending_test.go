@@ -1,7 +1,5 @@
 // This is a test utility for Ethermint's Web3 JSON-RPC services.
-//
 // To run these tests please first ensure you have the ethermintd running
-//
 // You can configure the desired HOST and MODE as well in integration-test-all.sh
 package rpc
 
@@ -16,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
-	rpctypes "github.com/tharsis/ethermint/rpc/types"
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 )
 
 // func TestMain(m *testing.M) {
@@ -94,8 +92,6 @@ func TestEth_Pending_GetBalance(t *testing.T) {
 }
 
 func TestEth_Pending_GetTransactionCount(t *testing.T) {
-	// TODO(jbowen93): https://github.com/celestiaorg/ethermint/issues/10
-	t.Skip()
 	prePendingNonce := GetNonce(t, "pending")
 	t.Logf("Pending nonce before tx is %d", prePendingNonce)
 

@@ -6,12 +6,15 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/encoding"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	proto "github.com/gogo/protobuf/proto"
-	"github.com/tharsis/ethermint/app"
-	"github.com/tharsis/ethermint/encoding"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+
+	"github.com/evmos/ethermint/tests"
 
 	"github.com/stretchr/testify/require"
 
@@ -30,11 +33,9 @@ func TestEvmDataEncoding(t *testing.T) {
 		Ret: ret,
 	}
 
-	enc, err := proto.Marshal(data)
-	require.NoError(t, err)
-
+	any := codectypes.UnsafePackAny(data)
 	txData := &sdk.TxMsgData{
-		Data: []*sdk.MsgData{{MsgType: evmtypes.TypeMsgEthereumTx, Data: enc}},
+		MsgResponses: []*codectypes.Any{any},
 	}
 
 	txDataBz, err := proto.Marshal(txData)
@@ -84,4 +85,32 @@ func TestBinSearch(t *testing.T) {
 	gas, err = evmtypes.BinSearch(20000, 21001, failed_executable)
 	require.Error(t, err)
 	require.Equal(t, gas, uint64(0))
+}
+
+func TestTransactionLogsEncodeDecode(t *testing.T) {
+	addr := tests.GenerateAddress().String()
+
+	txLogs := evmtypes.TransactionLogs{
+		Hash: common.BytesToHash([]byte("tx_hash")).String(),
+		Logs: []*evmtypes.Log{
+			{
+				Address:     addr,
+				Topics:      []string{common.BytesToHash([]byte("topic")).String()},
+				Data:        []byte("data"),
+				BlockNumber: 1,
+				TxHash:      common.BytesToHash([]byte("tx_hash")).String(),
+				TxIndex:     1,
+				BlockHash:   common.BytesToHash([]byte("block_hash")).String(),
+				Index:       1,
+				Removed:     false,
+			},
+		},
+	}
+
+	txLogsEncoded, encodeErr := evmtypes.EncodeTransactionLogs(&txLogs)
+	require.Nil(t, encodeErr)
+
+	txLogsEncodedDecoded, decodeErr := evmtypes.DecodeTransactionLogs(txLogsEncoded)
+	require.Nil(t, decodeErr)
+	require.Equal(t, txLogs, txLogsEncodedDecoded)
 }

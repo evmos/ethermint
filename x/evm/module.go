@@ -19,10 +19,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"github.com/tharsis/ethermint/x/evm/client/cli"
-	"github.com/tharsis/ethermint/x/evm/keeper"
-	"github.com/tharsis/ethermint/x/evm/simulation"
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/x/evm/client/cli"
+	"github.com/evmos/ethermint/x/evm/keeper"
+	"github.com/evmos/ethermint/x/evm/simulation"
+	"github.com/evmos/ethermint/x/evm/types"
 )
 
 var (
@@ -44,7 +44,7 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(_ *codec.LegacyAmino) {
 
 // ConsensusVersion returns the consensus state-breaking version for the module.
 func (AppModuleBasic) ConsensusVersion() uint64 {
-	return 1
+	return 3
 }
 
 // DefaultGenesis returns default genesis state as raw bytes for the evm
@@ -123,7 +123,15 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), am.keeper)
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
-	_ = keeper.NewMigrator(*am.keeper)
+	m := keeper.NewMigrator(*am.keeper)
+	err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
+	if err != nil {
+		panic(err)
+	}
+	err = cfg.RegisterMigration(types.ModuleName, 2, m.Migrate2to3)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Route returns the message routing key for the evm module.

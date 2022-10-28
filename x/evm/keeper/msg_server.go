@@ -14,7 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/x/evm/types"
 )
 
 var _ types.MsgServer = &Keeper{}

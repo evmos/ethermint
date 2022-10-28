@@ -7,7 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 // MinGasPriceDecorator will check if the transaction's fee is at least as large
@@ -32,15 +32,15 @@ func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 
 	minGasPrice := mpd.feesKeeper.GetParams(ctx).MinGasPrice
 
-	// short-circuit if min gas price is 0
-	if minGasPrice.IsZero() {
+	// Short-circuit if min gas price is 0 or if simulating
+	if minGasPrice.IsZero() || simulate {
 		return next(ctx, tx, simulate)
 	}
 
-	evmParams := mpd.evmKeeper.GetParams(ctx)
+	evmDenom := mpd.evmKeeper.GetEVMDenom(ctx)
 	minGasPrices := sdk.DecCoins{
 		{
-			Denom:  evmParams.EvmDenom,
+			Denom:  evmDenom,
 			Amount: minGasPrice,
 		},
 	}
@@ -62,7 +62,10 @@ func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	}
 
 	if !feeCoins.IsAnyGTE(requiredFees) {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "provided fee < minimum global fee (%s < %s). Please increase the gas price.", feeCoins, requiredFees)
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee,
+			"provided fee < minimum global fee (%s < %s). Please increase the gas price.",
+			feeCoins,
+			requiredFees)
 	}
 
 	return next(ctx, tx, simulate)
@@ -90,8 +93,8 @@ func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		return next(ctx, tx, simulate)
 	}
 
-	paramsEvm := empd.evmKeeper.GetParams(ctx)
-	ethCfg := paramsEvm.ChainConfig.EthereumConfig(empd.evmKeeper.ChainID())
+	chainCfg := empd.evmKeeper.GetChainConfig(ctx)
+	ethCfg := chainCfg.EthereumConfig(empd.evmKeeper.ChainID())
 	baseFee := empd.evmKeeper.GetBaseFee(ctx, ethCfg)
 
 	for _, msg := range tx.GetMsgs() {
@@ -125,14 +128,15 @@ func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		}
 
 		gasLimit := sdk.NewDecFromBigInt(new(big.Int).SetUint64(ethMsg.GetGas()))
+
 		requiredFee := minGasPrice.Mul(gasLimit)
 		fee := sdk.NewDecFromBigInt(feeAmt)
 
 		if fee.LT(requiredFee) {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrInsufficientFee,
-				"provided fee < minimum global fee (%s < %s). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)",
-				fee, requiredFee,
+				"provided fee < minimum global fee (%d < %d). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)", //nolint:lll
+				fee.TruncateInt().Int64(), requiredFee.TruncateInt().Int64(),
 			)
 		}
 	}

@@ -11,9 +11,13 @@ ETHERMINT_BINARY = ethermintd
 ETHERMINT_DIR = ethermint
 BUILDDIR ?= $(CURDIR)/build
 SIMAPP = ./app
-HTTPS_GIT := https://github.com/tharsis/ethermint.git
+HTTPS_GIT := https://github.com/evmos/ethermint.git
+PROJECT_NAME = $(shell git remote get-url origin | xargs basename -s .git)
 DOCKER := $(shell which docker)
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf:1.0.0-rc8
+# RocksDB is a native dependency, so we don't assume the library is installed.
+# Instead, it must be explicitly enabled and we warn when it is not.
+ENABLE_ROCKSDB ?= false
 
 export GO111MODULE = on
 
@@ -48,9 +52,6 @@ ifeq ($(LEDGER_ENABLED),true)
   endif
 endif
 
-ifeq (cleveldb,$(findstring cleveldb,$(COSMOS_BUILD_OPTIONS)))
-  build_tags += gcc
-endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 
@@ -68,23 +69,31 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=ethermint \
 			-X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
 			-X github.com/tendermint/tendermint/version.TMCoreSemVer=$(TMVERSION)
 
+ifeq ($(ENABLE_ROCKSDB),true)
+  BUILD_TAGS += rocksdb_build
+  test_tags += rocksdb_build
+else
+  $(warning RocksDB support is disabled; to build and test with RocksDB support, set ENABLE_ROCKSDB=true)
+endif
+
 # DB backend selection
 ifeq (cleveldb,$(findstring cleveldb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
+  BUILD_TAGS += gcc
 endif
 ifeq (badgerdb,$(findstring badgerdb,$(COSMOS_BUILD_OPTIONS)))
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=badgerdb
+  BUILD_TAGS += badgerdb
 endif
 # handle rocksdb
 ifeq (rocksdb,$(findstring rocksdb,$(COSMOS_BUILD_OPTIONS)))
+  ifneq ($(ENABLE_ROCKSDB),true)
+    $(error Cannot use RocksDB backend unless ENABLE_ROCKSDB=true)
+  endif
   CGO_ENABLED=1
   BUILD_TAGS += rocksdb
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=rocksdb
 endif
 # handle boltdb
 ifeq (boltdb,$(findstring boltdb,$(COSMOS_BUILD_OPTIONS)))
   BUILD_TAGS += boltdb
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=boltdb
 endif
 
 ifeq (,$(findstring nostrip,$(COSMOS_BUILD_OPTIONS)))
@@ -92,6 +101,9 @@ ifeq (,$(findstring nostrip,$(COSMOS_BUILD_OPTIONS)))
 endif
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))
+
+build_tags += $(BUILD_TAGS)
+build_tags := $(strip $(build_tags))
 
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 # check for nostrip option
@@ -152,8 +164,8 @@ build-all: tools build lint test
 ###                                Releasing                                ###
 ###############################################################################
 
-PACKAGE_NAME:=github.com/tharsis/ethermint
-GOLANG_CROSS_VERSION  = v1.17.1
+PACKAGE_NAME:=github.com/evmos/ethermint
+GOLANG_CROSS_VERSION = v1.18
 GOPATH ?= '$(HOME)/go'
 release-dry-run:
 	docker run \
@@ -164,8 +176,8 @@ release-dry-run:
 		-v `pwd`:/go/src/$(PACKAGE_NAME) \
 		-v ${GOPATH}/pkg:/go/pkg \
 		-w /go/src/$(PACKAGE_NAME) \
-		ghcr.io/troian/golang-cross:${GOLANG_CROSS_VERSION} \
-		--rm-dist --skip-validate --skip-publish
+		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
+		--rm-dist --skip-validate --skip-publish --snapshot
 
 release:
 	@if [ ! -f ".release-env" ]; then \
@@ -180,7 +192,7 @@ release:
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PACKAGE_NAME) \
 		-w /go/src/$(PACKAGE_NAME) \
-		ghcr.io/troian/golang-cross:${GOLANG_CROSS_VERSION} \
+		ghcr.io/goreleaser/goreleaser-cross:${GOLANG_CROSS_VERSION} \
 		release --rm-dist --skip-validate
 
 .PHONY: release-dry-run release
@@ -237,14 +249,6 @@ else
 	@echo "protoc-gen-go already installed; skipping..."
 endif
 
-ifeq (, $(shell which protoc))
-	@echo "Please istalling protobuf according to your OS"
-	@echo "macOS: brew install protobuf"
-	@echo "linux: apt-get install -f -y protobuf-compiler"
-else
-	@echo "protoc already installed; skipping..."
-endif
-
 ifeq (, $(shell which solcjs))
 	@echo "Installing solcjs..."
 	@npm install -g solc@0.5.11
@@ -268,7 +272,7 @@ tools-clean:
 go.sum: go.mod
 	echo "Ensure dependencies have not been modified ..." >&2
 	go mod verify
-	go mod tidy -compat=1.17
+	go mod tidy
 
 ###############################################################################
 ###                              Documentation                              ###
@@ -285,7 +289,7 @@ update-swagger-docs: statik
 .PHONY: update-swagger-docs
 
 godocs:
-	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/tharsis/ethermint/types"
+	@echo "--> Wait a few seconds and visit http://localhost:6060/pkg/github.com/evmos/ethermint/types"
 	godoc -http=:6060
 
 ###############################################################################
@@ -319,13 +323,19 @@ else
 endif
 
 test-import:
-	go test -run TestImporterTestSuite -v --vet=off github.com/tharsis/ethermint/tests/importer
+	go test -run TestImporterTestSuite -v --vet=off github.com/evmos/ethermint/tests/importer
 
 test-rpc:
 	./scripts/integration-test-all.sh -t "rpc" -q 1 -z 1 -s 2 -m "rpc" -r "true"
 
 test-integration:
 	./scripts/integration-test-all.sh -t "integration" -q 1 -z 1 -s 2 -m "integration" -r "true"
+
+run-integration-tests:
+	@nix-shell ./tests/integration_tests/shell.nix --run ./scripts/run-integration-tests.sh
+
+.PHONY: run-integration-tests
+
 
 test-rpc-pending:
 	./scripts/integration-test-all.sh -t "pending" -q 1 -z 1 -s 2 -m "pending" -r "true"
@@ -395,12 +405,16 @@ lint:
 	@@test -n "$$golangci-lint version | awk '$4 >= 1.42')"
 	golangci-lint run --out-format=tab -n
 
+lint-py:
+	flake8 --show-source --count --statistics \
+          --format="::error file=%(path)s,line=%(row)d,col=%(col)d::%(path)s:%(row)d:%(col)d: %(code)s %(text)s" \
+
 format:
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs gofumpt -d -e -extra
 
 lint-fix:
 	golangci-lint run --fix --out-format=tab --issues-exit-code=0
-.PHONY: lint lint-fix
+.PHONY: lint lint-fix lint-py
 
 format-fix:
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs gofumpt -w -s
@@ -411,17 +425,18 @@ format-fix:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-containerProtoVer=v0.2
-containerProtoImage=tendermintdev/sdk-proto-gen:$(containerProtoVer)
-containerProtoGen=cosmos-sdk-proto-gen-$(containerProtoVer)
-containerProtoGenSwagger=cosmos-sdk-proto-gen-swagger-$(containerProtoVer)
-containerProtoFmt=cosmos-sdk-proto-fmt-$(containerProtoVer)
+protoVer=v0.2
+protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
+containerProtoGen=$(PROJECT_NAME)-proto-gen-$(protoVer)
+containerProtoGenAny=$(PROJECT_NAME)-proto-gen-any-$(protoVer)
+containerProtoGenSwagger=$(PROJECT_NAME)-proto-gen-swagger-$(protoVer)
+containerProtoFmt=$(PROJECT_NAME)-proto-fmt-$(protoVer)
 
 proto-all: proto-format proto-lint proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGen}$$"; then docker start -a $(containerProtoGen); else docker run --name $(containerProtoGen) -v $(CURDIR):/workspace --workdir /workspace $(containerProtoImage) \
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGen}$$"; then docker start -a $(containerProtoGen); else docker run --name $(containerProtoGen) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
 		sh ./scripts/protocgen.sh; fi
 
 proto-swagger-gen:

@@ -1,13 +1,13 @@
 package cli
 
 import (
+	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/spf13/cobra"
-	rpctypes "github.com/tharsis/ethermint/rpc/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/x/evm/types"
 )
 
 // GetQueryCmd returns the parent command for all x/bank CLi query commands.
@@ -33,7 +33,7 @@ func GetStorageCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "storage [address] [key]",
 		Short: "Gets storage for an account with a given key and height",
-		Long:  "Gets storage for an account with a given key and height. If the height is not provided, it will use the latest height from context.",
+		Long:  "Gets storage for an account with a given key and height. If the height is not provided, it will use the latest height from context.", //nolint:lll
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)

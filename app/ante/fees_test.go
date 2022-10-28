@@ -3,12 +3,13 @@ package ante_test
 import (
 	"math/big"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/tharsis/ethermint/app/ante"
-	"github.com/tharsis/ethermint/tests"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/app/ante"
+	"github.com/evmos/ethermint/tests"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 var execTypes = []struct {
@@ -25,14 +26,15 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 	testMsg := banktypes.MsgSend{
 		FromAddress: "evmos1x8fhpj9nmhqk8z9kpgjt95ck2xwyue0ptzkucp",
 		ToAddress:   "evmos1dx67l23hz9l0k9hcher8xz04uj7wf3yu26l2yn",
-		Amount:      sdk.Coins{sdk.Coin{Amount: sdk.NewInt(10), Denom: denom}},
+		Amount:      sdk.Coins{sdk.Coin{Amount: sdkmath.NewInt(10), Denom: denom}},
 	}
 
 	testCases := []struct {
-		name     string
-		malleate func() sdk.Tx
-		expPass  bool
-		errMsg   string
+		name                string
+		malleate            func() sdk.Tx
+		expPass             bool
+		errMsg              string
+		allowPassOnSimulate bool
 	}{
 		{
 			"invalid cosmos tx type",
@@ -41,6 +43,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 			},
 			false,
 			"must be a FeeTx",
+			false,
 		},
 		{
 			"valid cosmos tx with MinGasPrices = 0, gasPrice = 0",
@@ -49,11 +52,12 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				params.MinGasPrice = sdk.ZeroDec()
 				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
 
-				txBuilder := s.CreateTestCosmosTxBuilder(sdk.NewInt(0), denom, &testMsg)
+				txBuilder := s.CreateTestCosmosTxBuilder(sdkmath.NewInt(0), denom, &testMsg)
 				return txBuilder.GetTx()
 			},
 			true,
 			"",
+			false,
 		},
 		{
 			"valid cosmos tx with MinGasPrices = 0, gasPrice > 0",
@@ -62,11 +66,12 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				params.MinGasPrice = sdk.ZeroDec()
 				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
 
-				txBuilder := s.CreateTestCosmosTxBuilder(sdk.NewInt(10), denom, &testMsg)
+				txBuilder := s.CreateTestCosmosTxBuilder(sdkmath.NewInt(10), denom, &testMsg)
 				return txBuilder.GetTx()
 			},
 			true,
 			"",
+			false,
 		},
 		{
 			"valid cosmos tx with MinGasPrices = 10, gasPrice = 10",
@@ -75,11 +80,12 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				params.MinGasPrice = sdk.NewDec(10)
 				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
 
-				txBuilder := s.CreateTestCosmosTxBuilder(sdk.NewInt(10), denom, &testMsg)
+				txBuilder := s.CreateTestCosmosTxBuilder(sdkmath.NewInt(10), denom, &testMsg)
 				return txBuilder.GetTx()
 			},
 			true,
 			"",
+			false,
 		},
 		{
 			"invalid cosmos tx with MinGasPrices = 10, gasPrice = 0",
@@ -88,11 +94,12 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				params.MinGasPrice = sdk.NewDec(10)
 				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
 
-				txBuilder := s.CreateTestCosmosTxBuilder(sdk.NewInt(0), denom, &testMsg)
+				txBuilder := s.CreateTestCosmosTxBuilder(sdkmath.NewInt(0), denom, &testMsg)
 				return txBuilder.GetTx()
 			},
 			false,
 			"provided fee < minimum global fee",
+			true,
 		},
 		{
 			"invalid cosmos tx with wrong denom",
@@ -101,11 +108,12 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				params.MinGasPrice = sdk.NewDec(10)
 				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
 
-				txBuilder := s.CreateTestCosmosTxBuilder(sdk.NewInt(10), "stake", &testMsg)
+				txBuilder := s.CreateTestCosmosTxBuilder(sdkmath.NewInt(10), "stake", &testMsg)
 				return txBuilder.GetTx()
 			},
 			false,
 			"provided fee < minimum global fee",
+			true,
 		},
 	}
 
@@ -117,7 +125,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				dec := ante.NewMinGasPriceDecorator(s.app.FeeMarketKeeper, s.app.EvmKeeper)
 				_, err := dec.AnteHandle(ctx, tc.malleate(), et.simulate, NextFn)
 
-				if tc.expPass {
+				if tc.expPass || (et.simulate && tc.allowPassOnSimulate) {
 					s.Require().NoError(err, tc.name)
 				} else {
 					s.Require().Error(err, tc.name)
@@ -160,9 +168,9 @@ func (s AnteTestSuite) TestEthMinGasPriceDecorator() {
 				testMsg := banktypes.MsgSend{
 					FromAddress: "evmos1x8fhpj9nmhqk8z9kpgjt95ck2xwyue0ptzkucp",
 					ToAddress:   "evmos1dx67l23hz9l0k9hcher8xz04uj7wf3yu26l2yn",
-					Amount:      sdk.Coins{sdk.Coin{Amount: sdk.NewInt(10), Denom: denom}},
+					Amount:      sdk.Coins{sdk.Coin{Amount: sdkmath.NewInt(10), Denom: denom}},
 				}
-				txBuilder := s.CreateTestCosmosTxBuilder(sdk.NewInt(0), denom, &testMsg)
+				txBuilder := s.CreateTestCosmosTxBuilder(sdkmath.NewInt(0), denom, &testMsg)
 				return txBuilder.GetTx()
 			},
 			false,
@@ -291,7 +299,7 @@ func (s AnteTestSuite) TestEthMinGasPriceDecorator() {
 				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
 
 				feemarketParams := s.app.FeeMarketKeeper.GetParams(s.ctx)
-				feemarketParams.BaseFee = sdk.NewInt(10)
+				feemarketParams.BaseFee = sdkmath.NewInt(10)
 				s.app.FeeMarketKeeper.SetParams(s.ctx, feemarketParams)
 
 				msg := s.BuildTestEthTx(from, to, nil, make([]byte, 0), nil, big.NewInt(1000), big.NewInt(0), &emptyAccessList)
@@ -308,7 +316,7 @@ func (s AnteTestSuite) TestEthMinGasPriceDecorator() {
 				s.app.FeeMarketKeeper.SetParams(s.ctx, params)
 
 				feemarketParams := s.app.FeeMarketKeeper.GetParams(s.ctx)
-				feemarketParams.BaseFee = sdk.NewInt(10)
+				feemarketParams.BaseFee = sdkmath.NewInt(10)
 				s.app.FeeMarketKeeper.SetParams(s.ctx, feemarketParams)
 
 				msg := s.BuildTestEthTx(from, to, nil, make([]byte, 0), nil, big.NewInt(1000), big.NewInt(101), &emptyAccessList)

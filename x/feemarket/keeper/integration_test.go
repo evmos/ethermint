@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -17,107 +18,36 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/tharsis/ethermint/app"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	"github.com/tharsis/ethermint/encoding"
-	"github.com/tharsis/ethermint/tests"
-	"github.com/tharsis/ethermint/testutil"
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	"github.com/evmos/ethermint/encoding"
+	"github.com/evmos/ethermint/tests"
+	"github.com/evmos/ethermint/testutil"
+	"github.com/evmos/ethermint/x/feemarket/types"
 
 	"github.com/cosmos/cosmos-sdk/simapp"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
 )
 
-var _ = Describe("Ethermint App min gas prices settings: ", func() {
+var _ = Describe("Feemarket", func() {
 	var (
 		privKey *ethsecp256k1.PrivKey
-		address sdk.AccAddress
 		msg     banktypes.MsgSend
 	)
 
-	var setupChain = func(cliMinGasPricesStr string) {
-		// Initialize the app, so we can use SetMinGasPrices to set the
-		// validator-specific min-gas-prices setting
-		db := dbm.NewMemDB()
-		newapp := app.NewEthermintApp(
-			log.NewNopLogger(),
-			db,
-			nil,
-			true,
-			map[int64]bool{},
-			app.DefaultNodeHome,
-			5,
-			encoding.MakeConfig(app.ModuleBasics),
-			simapp.EmptyAppOptions{},
-			baseapp.SetMinGasPrices(cliMinGasPricesStr),
-		)
-
-		genesisState := app.NewDefaultGenesisState()
-		genesisState[types.ModuleName] = newapp.AppCodec().MustMarshalJSON(types.DefaultGenesisState())
-
-		stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
-		s.Require().NoError(err)
-
-		// Initialize the chain
-		newapp.InitChain(
-			abci.RequestInitChain{
-				ChainId:         "ethermint_9000-1",
-				Validators:      []abci.ValidatorUpdate{},
-				AppStateBytes:   stateBytes,
-				ConsensusParams: simapp.DefaultConsensusParams,
-			},
-		)
-
-		s.app = newapp
-		s.SetupApp(false)
-	}
-
-	var setupTest = func(cliMinGasPrices string) {
-		setupChain(cliMinGasPrices)
-
-		privKey, address = generateKey()
-		amount, ok := sdk.NewIntFromString("10000000000000000000")
-		s.Require().True(ok)
-		initBalance := sdk.Coins{sdk.Coin{
-			Denom:  s.denom,
-			Amount: amount,
-		}}
-		testutil.FundAccount(s.app.BankKeeper, s.ctx, address, initBalance)
-
-		msg = banktypes.MsgSend{
-			FromAddress: address.String(),
-			ToAddress:   address.String(),
-			Amount: sdk.Coins{sdk.Coin{
-				Denom:  s.denom,
-				Amount: sdk.NewInt(10000),
-			}},
-		}
-		s.Commit()
-	}
-
-	var setupContext = func(cliMinGasPrice string, minGasPrice sdk.Dec) {
-		setupTest(cliMinGasPrice + s.denom)
-		params := types.DefaultParams()
-		params.MinGasPrice = minGasPrice
-		s.app.FeeMarketKeeper.SetParams(s.ctx, params)
-		s.Commit()
-	}
-
-	Context("with Cosmos transactions", func() {
-		Context("min-gas-prices (local) < MinGasPrices (feemarket param)", func() {
-			cliMinGasPrice := "1"
-			minGasPrice := sdk.NewDecWithPrec(3, 0)
+	Describe("Performing Cosmos transactions", func() {
+		Context("with min-gas-prices (local) < MinGasPrices (feemarket param)", func() {
 			BeforeEach(func() {
-				setupContext(cliMinGasPrice, minGasPrice)
+				privKey, msg = setupTestWithContext("1", sdk.NewDec(3), sdk.ZeroInt())
 			})
 
 			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -127,7 +57,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -135,7 +65,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 
 			Context("during DeliverTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -145,7 +75,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -153,15 +83,13 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 
 		Context("with min-gas-prices (local) == MinGasPrices (feemarket param)", func() {
-			cliMinGasPrice := "3"
-			minGasPrice := sdk.NewDecWithPrec(3, 0)
 			BeforeEach(func() {
-				setupContext(cliMinGasPrice, minGasPrice)
+				privKey, msg = setupTestWithContext("3", sdk.NewDec(3), sdk.ZeroInt())
 			})
 
 			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < min-gas-prices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -171,7 +99,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -179,7 +107,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 
 			Context("during DeliverTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -189,7 +117,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 				})
 
 				It("should accept transactions with gasPrice >= MinGasPrices", func() {
-					gasPrice := sdk.NewInt(3)
+					gasPrice := sdkmath.NewInt(3)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -197,14 +125,12 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 
 		Context("with MinGasPrices (feemarket param) < min-gas-prices (local)", func() {
-			cliMinGasPrice := "5"
-			minGasPrice := sdk.NewDecWithPrec(3, 0)
 			BeforeEach(func() {
-				setupContext(cliMinGasPrice, minGasPrice)
+				privKey, msg = setupTestWithContext("5", sdk.NewDec(3), sdk.NewInt(5))
 			})
 			Context("during CheckTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -213,8 +139,8 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 					).To(BeTrue(), res.GetLog())
 				})
 
-				It("should reject transactions with MinGasPrices < gasPrice < min-gas-prices", func() {
-					gasPrice := sdk.NewInt(4)
+				It("should reject transactions with MinGasPrices < gasPrice < baseFee", func() {
+					gasPrice := sdkmath.NewInt(4)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -223,8 +149,8 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 					).To(BeTrue(), res.GetLog())
 				})
 
-				It("should accept transactions with gasPrice > min-gas-prices", func() {
-					gasPrice := sdk.NewInt(5)
+				It("should accept transactions with gasPrice >= baseFee", func() {
+					gasPrice := sdkmath.NewInt(5)
 					res := checkTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -232,7 +158,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 
 			Context("during DeliverTx", func() {
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
-					gasPrice := sdk.NewInt(2)
+					gasPrice := sdkmath.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
 					Expect(
@@ -241,14 +167,17 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 					).To(BeTrue(), res.GetLog())
 				})
 
-				It("should accept transactions with MinGasPrices < gasPrice < than min-gas-prices", func() {
-					gasPrice := sdk.NewInt(4)
-					res := deliverTx(privKey, &gasPrice, &msg)
-					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
+				It("should reject transactions with MinGasPrices < gasPrice < baseFee", func() {
+					gasPrice := sdkmath.NewInt(4)
+					res := checkTx(privKey, &gasPrice, &msg)
+					Expect(res.IsOK()).To(Equal(false), "transaction should have failed")
+					Expect(
+						strings.Contains(res.GetLog(),
+							"insufficient fee"),
+					).To(BeTrue(), res.GetLog())
 				})
-
-				It("should accept transactions with gasPrice >= min-gas-prices", func() {
-					gasPrice := sdk.NewInt(5)
+				It("should accept transactions with gasPrice >= baseFee", func() {
+					gasPrice := sdkmath.NewInt(5)
 					res := deliverTx(privKey, &gasPrice, &msg)
 					Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 				})
@@ -256,7 +185,7 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		})
 	})
 
-	Context("with EVM transactions", func() {
+	Describe("Performing EVM transactions", func() {
 		type txParams struct {
 			gasPrice  *big.Int
 			gasFeeCap *big.Int
@@ -265,16 +194,21 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 		}
 		type getprices func() txParams
 
-		getBaseFee := func() int64 {
-			paramsEvm := s.app.EvmKeeper.GetParams(s.ctx)
-			ethCfg := paramsEvm.ChainConfig.EthereumConfig(s.app.EvmKeeper.ChainID())
-			return s.app.EvmKeeper.GetBaseFee(s.ctx, ethCfg).Int64()
-		}
 		Context("with BaseFee (feemarket) < MinGasPrices (feemarket param)", func() {
-			var baseFee int64
+			var (
+				baseFee      int64
+				minGasPrices int64
+			)
+
 			BeforeEach(func() {
-				baseFee = getBaseFee()
-				setupContext("1", sdk.NewDecWithPrec(baseFee+30000000000, 0))
+				baseFee = 10_000_000_000
+				minGasPrices = baseFee + 30_000_000_000
+
+				// Note that the tests run the same transactions with `gasLimit =
+				// 100000`. With the fee calculation `Fee = (baseFee + tip) * gasLimit`,
+				// a `minGasPrices = 40_000_000_000` results in `minGlobalFee =
+				// 4000000000000000`
+				privKey, _ = setupTestWithContext("1", sdk.NewDec(minGasPrices), sdkmath.NewInt(baseFee))
 			})
 
 			Context("during CheckTx", func() {
@@ -291,16 +225,17 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						).To(BeTrue(), res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 20000000000), nil, nil, nil}
+						return txParams{big.NewInt(minGasPrices - 10_000_000_000), nil, nil, nil}
 					}),
-					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 20000000000), big.NewInt(0), &ethtypes.AccessList{}}
+					Entry("dynamic tx with GasFeeCap < MinGasPrices, no gasTipCap", func() txParams {
+						return txParams{nil, big.NewInt(minGasPrices - 10_000_000_000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
-					Entry("dynamic tx with GasFeeCap < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 29000000000), big.NewInt(29000000000), &ethtypes.AccessList{}}
+					Entry("dynamic tx with GasFeeCap < MinGasPrices, max gasTipCap", func() txParams {
+						// Note that max priority fee per gas can't be higher than the max fee per gas (gasFeeCap), i.e. 30_000_000_000)
+						return txParams{nil, big.NewInt(minGasPrices - 10_000_000_000), big.NewInt(30_000_000_000), &ethtypes.AccessList{}}
 					}),
 					Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 40000000000), big.NewInt(0), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(minGasPrices + 10_000_000_000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 				)
 
@@ -313,10 +248,13 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 31000000000), nil, nil, nil}
+						return txParams{big.NewInt(minGasPrices), nil, nil, nil}
 					}),
-					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 31000000000), big.NewInt(31000000000), &ethtypes.AccessList{}}
+					// Note that this tx is not rejected on CheckTx, but not on DeliverTx,
+					// as the baseFee is set to minGasPrices during DeliverTx when baseFee
+					// < minGasPrices
+					Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice > MinGasPrices", func() txParams {
+						return txParams{nil, big.NewInt(minGasPrices), big.NewInt(30_000_000_000), &ethtypes.AccessList{}}
 					}),
 				)
 			})
@@ -335,16 +273,14 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						).To(BeTrue(), res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 20000000000), nil, nil, nil}
+						return txParams{big.NewInt(minGasPrices - 10_000_000_000), nil, nil, nil}
 					}),
-					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 20000000000), big.NewInt(0), &ethtypes.AccessList{}}
+					Entry("dynamic tx with GasFeeCap < MinGasPrices, no gasTipCap", func() txParams {
+						return txParams{nil, big.NewInt(minGasPrices - 10_000_000_000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
-					Entry("dynamic tx with GasFeeCap < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 29000000000), big.NewInt(29000000000), &ethtypes.AccessList{}}
-					}),
-					Entry("dynamic tx with GasFeeCap > MinGasPrices, EffectivePrice < MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 40000000000), big.NewInt(0), &ethtypes.AccessList{}}
+					Entry("dynamic tx with GasFeeCap < MinGasPrices, max gasTipCap", func() txParams {
+						// Note that max priority fee per gas can't be higher than the max fee per gas (gasFeeCap), i.e. 30_000_000_000)
+						return txParams{nil, big.NewInt(minGasPrices - 10_000_000_000), big.NewInt(30_000_000_000), &ethtypes.AccessList{}}
 					}),
 				)
 
@@ -357,23 +293,30 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 30000000001), nil, nil, nil}
+						return txParams{big.NewInt(minGasPrices + 1), nil, nil, nil}
 					}),
-					// the base fee decreases in this test, so we use a large gas tip
-					// to maintain an EffectivePrice > MinGasPrices
 					Entry("dynamic tx, EffectivePrice > MinGasPrices", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 30000000001), big.NewInt(30000000001), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(minGasPrices + 10_000_000_000), big.NewInt(30_000_000_000), &ethtypes.AccessList{}}
 					}),
 				)
 			})
 		})
 
 		Context("with MinGasPrices (feemarket param) < BaseFee (feemarket)", func() {
-			var baseFee int64
+			var (
+				baseFee      int64
+				minGasPrices int64
+			)
+
 			BeforeEach(func() {
-				baseFee = getBaseFee()
-				s.Require().Greater(baseFee, int64(10))
-				setupContext("5", sdk.NewDecWithPrec(10, 0))
+				baseFee = 10_000_000_000
+				minGasPrices = baseFee - 5_000_000_000
+
+				// Note that the tests run the same transactions with `gasLimit =
+				// 100_000`. With the fee calculation `Fee = (baseFee + tip) * gasLimit`,
+				// a `minGasPrices = 5_000_000_000` results in `minGlobalFee =
+				// 500_000_000_000_000`
+				privKey, _ = setupTestWithContext("1", sdk.NewDec(minGasPrices), sdkmath.NewInt(baseFee))
 			})
 
 			Context("during CheckTx", func() {
@@ -390,10 +333,13 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						).To(BeTrue(), res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(2), nil, nil, nil}
+						return txParams{big.NewInt(minGasPrices - 1_000_000_000), nil, nil, nil}
 					}),
-					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(2), big.NewInt(2), &ethtypes.AccessList{}}
+					Entry("dynamic tx with GasFeeCap < MinGasPrices, no gasTipCap", func() txParams {
+						return txParams{nil, big.NewInt(minGasPrices - 1_000_000_000), big.NewInt(0), &ethtypes.AccessList{}}
+					}),
+					Entry("dynamic tx with GasFeeCap < MinGasPrices, max gasTipCap", func() txParams {
+						return txParams{nil, big.NewInt(minGasPrices - 1_000_000_000), big.NewInt(minGasPrices - 1_000_000_000), &ethtypes.AccessList{}}
 					}),
 				)
 
@@ -410,14 +356,14 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						).To(BeTrue(), res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(20), nil, nil, nil}
+						return txParams{big.NewInt(baseFee - 1_000_000_000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee - 1), big.NewInt(20), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee - 1_000_000_000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 				)
 
-				DescribeTable("should accept transactions with gasPrice > EffectivePrice",
+				DescribeTable("should accept transactions with gasPrice >= EffectivePrice",
 					func(malleate getprices) {
 						p := malleate()
 						to := tests.GenerateAddress()
@@ -426,10 +372,10 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 1000000000), nil, nil, nil}
+						return txParams{big.NewInt(baseFee), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 1000000000), big.NewInt(10), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 				)
 			})
@@ -448,10 +394,10 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						).To(BeTrue(), res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(2), nil, nil, nil}
+						return txParams{big.NewInt(minGasPrices - 1_000_000_000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(2), big.NewInt(2), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(minGasPrices - 1_000_000_000), nil, &ethtypes.AccessList{}}
 					}),
 				)
 
@@ -467,15 +413,16 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 								"insufficient fee"),
 						).To(BeTrue(), res.GetLog())
 					},
+					// Note that the baseFee is not 10_000_000_000 anymore but updates to 8_750_000_000 because of the s.Commit
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(20), nil, nil, nil}
+						return txParams{big.NewInt(baseFee - 2_000_000_000), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(20), big.NewInt(20), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee - 2_000_000_000), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 				)
 
-				DescribeTable("should accept transactions with gasPrice > EffectivePrice",
+				DescribeTable("should accept transactions with gasPrice >= EffectivePrice",
 					func(malleate getprices) {
 						p := malleate()
 						to := tests.GenerateAddress()
@@ -484,16 +431,90 @@ var _ = Describe("Ethermint App min gas prices settings: ", func() {
 						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
-						return txParams{big.NewInt(baseFee + 10), nil, nil, nil}
+						return txParams{big.NewInt(baseFee), nil, nil, nil}
 					}),
 					Entry("dynamic tx", func() txParams {
-						return txParams{nil, big.NewInt(baseFee + 10), big.NewInt(10), &ethtypes.AccessList{}}
+						return txParams{nil, big.NewInt(baseFee), big.NewInt(0), &ethtypes.AccessList{}}
 					}),
 				)
 			})
 		})
 	})
 })
+
+// setupTestWithContext sets up a test chain with an example Cosmos send msg,
+// given a local (validator config) and a gloabl (feemarket param) minGasPrice
+func setupTestWithContext(valMinGasPrice string, minGasPrice sdk.Dec, baseFee sdkmath.Int) (*ethsecp256k1.PrivKey, banktypes.MsgSend) {
+	privKey, msg := setupTest(valMinGasPrice + s.denom)
+	params := types.DefaultParams()
+	params.MinGasPrice = minGasPrice
+	s.app.FeeMarketKeeper.SetParams(s.ctx, params)
+	s.app.FeeMarketKeeper.SetBaseFee(s.ctx, baseFee.BigInt())
+	s.Commit()
+
+	return privKey, msg
+}
+
+func setupTest(localMinGasPrices string) (*ethsecp256k1.PrivKey, banktypes.MsgSend) {
+	setupChain(localMinGasPrices)
+
+	privKey, address := generateKey()
+	amount, ok := sdkmath.NewIntFromString("10000000000000000000")
+	s.Require().True(ok)
+	initBalance := sdk.Coins{sdk.Coin{
+		Denom:  s.denom,
+		Amount: amount,
+	}}
+	testutil.FundAccount(s.app.BankKeeper, s.ctx, address, initBalance)
+
+	msg := banktypes.MsgSend{
+		FromAddress: address.String(),
+		ToAddress:   address.String(),
+		Amount: sdk.Coins{sdk.Coin{
+			Denom:  s.denom,
+			Amount: sdkmath.NewInt(10000),
+		}},
+	}
+	s.Commit()
+	return privKey, msg
+}
+
+func setupChain(localMinGasPricesStr string) {
+	// Initialize the app, so we can use SetMinGasPrices to set the
+	// validator-specific min-gas-prices setting
+	db := dbm.NewMemDB()
+	newapp := app.NewEthermintApp(
+		log.NewNopLogger(),
+		db,
+		nil,
+		true,
+		map[int64]bool{},
+		app.DefaultNodeHome,
+		5,
+		encoding.MakeConfig(app.ModuleBasics),
+		simapp.EmptyAppOptions{},
+		baseapp.SetMinGasPrices(localMinGasPricesStr),
+	)
+
+	genesisState := app.NewTestGenesisState(newapp.AppCodec())
+	genesisState[types.ModuleName] = newapp.AppCodec().MustMarshalJSON(types.DefaultGenesisState())
+
+	stateBytes, err := json.MarshalIndent(genesisState, "", "  ")
+	s.Require().NoError(err)
+
+	// Initialize the chain
+	newapp.InitChain(
+		abci.RequestInitChain{
+			ChainId:         "ethermint_9000-1",
+			Validators:      []abci.ValidatorUpdate{},
+			AppStateBytes:   stateBytes,
+			ConsensusParams: app.DefaultConsensusParams,
+		},
+	)
+
+	s.app = newapp
+	s.SetupApp(false)
+}
 
 func generateKey() (*ethsecp256k1.PrivKey, sdk.AccAddress) {
 	address, priv := tests.NewAddrKey()
@@ -549,6 +570,7 @@ func prepareEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereu
 	err = msgEthereumTx.Sign(s.ethSigner, tests.NewSigner(priv))
 	s.Require().NoError(err)
 
+	msgEthereumTx.From = ""
 	err = txBuilder.SetMsgs(msgEthereumTx)
 	s.Require().NoError(err)
 
@@ -556,7 +578,7 @@ func prepareEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereu
 	s.Require().NoError(err)
 
 	evmDenom := s.app.EvmKeeper.GetParams(s.ctx).EvmDenom
-	fees := sdk.Coins{{Denom: evmDenom, Amount: sdk.NewIntFromBigInt(txData.Fee())}}
+	fees := sdk.Coins{{Denom: evmDenom, Amount: sdkmath.NewIntFromBigInt(txData.Fee())}}
 	builder.SetFeeAmount(fees)
 	builder.SetGasLimit(msgEthereumTx.GetGas())
 
@@ -567,13 +589,6 @@ func prepareEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereu
 	return bz
 }
 
-func deliverEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereumTx) abci.ResponseDeliverTx {
-	bz := prepareEthTx(priv, msgEthereumTx)
-	req := abci.RequestDeliverTx{Tx: bz}
-	res := s.app.BaseApp.DeliverTx(req)
-	return res
-}
-
 func checkEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereumTx) abci.ResponseCheckTx {
 	bz := prepareEthTx(priv, msgEthereumTx)
 	req := abci.RequestCheckTx{Tx: bz}
@@ -581,7 +596,14 @@ func checkEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereumT
 	return res
 }
 
-func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.Msg) []byte {
+func deliverEthTx(priv *ethsecp256k1.PrivKey, msgEthereumTx *evmtypes.MsgEthereumTx) abci.ResponseDeliverTx {
+	bz := prepareEthTx(priv, msgEthereumTx)
+	req := abci.RequestDeliverTx{Tx: bz}
+	res := s.app.BaseApp.DeliverTx(req)
+	return res
+}
+
+func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdkmath.Int, msgs ...sdk.Msg) []byte {
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	accountAddress := sdk.AccAddress(priv.PubKey().Address().Bytes())
 
@@ -589,7 +611,7 @@ func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.
 
 	txBuilder.SetGasLimit(1000000)
 	if gasPrice == nil {
-		_gasPrice := sdk.NewInt(1)
+		_gasPrice := sdkmath.NewInt(1)
 		gasPrice = &_gasPrice
 	}
 	fees := &sdk.Coins{{Denom: s.denom, Amount: gasPrice.MulRaw(1000000)}}
@@ -640,16 +662,16 @@ func prepareCosmosTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.
 	return bz
 }
 
-func deliverTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.Msg) abci.ResponseDeliverTx {
-	bz := prepareCosmosTx(priv, gasPrice, msgs...)
-	req := abci.RequestDeliverTx{Tx: bz}
-	res := s.app.BaseApp.DeliverTx(req)
-	return res
-}
-
-func checkTx(priv *ethsecp256k1.PrivKey, gasPrice *sdk.Int, msgs ...sdk.Msg) abci.ResponseCheckTx {
+func checkTx(priv *ethsecp256k1.PrivKey, gasPrice *sdkmath.Int, msgs ...sdk.Msg) abci.ResponseCheckTx {
 	bz := prepareCosmosTx(priv, gasPrice, msgs...)
 	req := abci.RequestCheckTx{Tx: bz}
 	res := s.app.BaseApp.CheckTx(req)
+	return res
+}
+
+func deliverTx(priv *ethsecp256k1.PrivKey, gasPrice *sdkmath.Int, msgs ...sdk.Msg) abci.ResponseDeliverTx {
+	bz := prepareCosmosTx(priv, gasPrice, msgs...)
+	req := abci.RequestDeliverTx{Tx: bz}
+	res := s.app.BaseApp.DeliverTx(req)
 	return res
 }

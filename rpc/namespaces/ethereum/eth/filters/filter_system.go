@@ -22,13 +22,17 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/tharsis/ethermint/rpc/ethereum/pubsub"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/rpc/ethereum/pubsub"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 var (
-	txEvents     = tmtypes.QueryForEvent(tmtypes.EventTx).String()
-	evmEvents    = tmquery.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'", tmtypes.EventTypeKey, tmtypes.EventTx, sdk.EventTypeMessage, sdk.AttributeKeyModule, evmtypes.ModuleName)).String()
+	txEvents  = tmtypes.QueryForEvent(tmtypes.EventTx).String()
+	evmEvents = tmquery.MustParse(fmt.Sprintf("%s='%s' AND %s.%s='%s'",
+		tmtypes.EventTypeKey,
+		tmtypes.EventTx,
+		sdk.EventTypeMessage,
+		sdk.AttributeKeyModule, evmtypes.ModuleName)).String()
 	headerEvents = tmtypes.QueryForEvent(tmtypes.EventNewBlockHeader).String()
 )
 

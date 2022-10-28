@@ -21,13 +21,13 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/tharsis/ethermint/app"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	"github.com/tharsis/ethermint/encoding"
-	"github.com/tharsis/ethermint/tests"
-	ethermint "github.com/tharsis/ethermint/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	"github.com/evmos/ethermint/encoding"
+	"github.com/evmos/ethermint/tests"
+	ethermint "github.com/evmos/ethermint/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -69,7 +69,7 @@ func TestKeeperTestSuite(t *testing.T) {
 	RunSpecs(t, "Keeper Suite")
 }
 
-/// SetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
+// SetupTest setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
 func (suite *KeeperTestSuite) SetupTest() {
 	checkTx := false
 	suite.app = app.Setup(checkTx, nil)
@@ -128,7 +128,8 @@ func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 	validator, err := stakingtypes.NewValidator(valAddr, priv.PubKey(), stakingtypes.Description{})
 	require.NoError(t, err)
 	validator = stakingkeeper.TestingUpdateValidator(suite.app.StakingKeeper, suite.ctx, validator, true)
-	suite.app.StakingKeeper.AfterValidatorCreated(suite.ctx, validator.GetOperator())
+	err = suite.app.StakingKeeper.AfterValidatorCreated(suite.ctx, validator.GetOperator())
+	require.NoError(t, err)
 
 	err = suite.app.StakingKeeper.SetValidatorByConsAddr(suite.ctx, validator)
 	require.NoError(t, err)
@@ -137,7 +138,7 @@ func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
-	suite.appCodec = encodingConfig.Marshaler
+	suite.appCodec = encodingConfig.Codec
 	suite.denom = evmtypes.DefaultEVMDenom
 }
 

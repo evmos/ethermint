@@ -28,55 +28,55 @@ The `StateDB` interface is implemented by the `StateDB` in the `x/evm/statedb` m
 ```go
 // github.com/ethereum/go-ethereum/core/vm/interface.go
 type StateDB interface {
-	CreateAccount(common.Address)
+ CreateAccount(common.Address)
 
-	SubBalance(common.Address, *big.Int)
-	AddBalance(common.Address, *big.Int)
-	GetBalance(common.Address) *big.Int
+ SubBalance(common.Address, *big.Int)
+ AddBalance(common.Address, *big.Int)
+ GetBalance(common.Address) *big.Int
 
-	GetNonce(common.Address) uint64
-	SetNonce(common.Address, uint64)
+ GetNonce(common.Address) uint64
+ SetNonce(common.Address, uint64)
 
-	GetCodeHash(common.Address) common.Hash
-	GetCode(common.Address) []byte
-	SetCode(common.Address, []byte)
-	GetCodeSize(common.Address) int
+ GetCodeHash(common.Address) common.Hash
+ GetCode(common.Address) []byte
+ SetCode(common.Address, []byte)
+ GetCodeSize(common.Address) int
 
-	AddRefund(uint64)
-	SubRefund(uint64)
-	GetRefund() uint64
+ AddRefund(uint64)
+ SubRefund(uint64)
+ GetRefund() uint64
 
-	GetCommittedState(common.Address, common.Hash) common.Hash
-	GetState(common.Address, common.Hash) common.Hash
-	SetState(common.Address, common.Hash, common.Hash)
+ GetCommittedState(common.Address, common.Hash) common.Hash
+ GetState(common.Address, common.Hash) common.Hash
+ SetState(common.Address, common.Hash, common.Hash)
 
-	Suicide(common.Address) bool
-	HasSuicided(common.Address) bool
+ Suicide(common.Address) bool
+ HasSuicided(common.Address) bool
 
-	// Exist reports whether the given account exists in state.
-	// Notably this should also return true for suicided accounts.
-	Exist(common.Address) bool
-	// Empty returns whether the given account is empty. Empty
-	// is defined according to EIP161 (balance = nonce = code = 0).
-	Empty(common.Address) bool
+ // Exist reports whether the given account exists in state.
+ // Notably this should also return true for suicided accounts.
+ Exist(common.Address) bool
+ // Empty returns whether the given account is empty. Empty
+ // is defined according to EIP161 (balance = nonce = code = 0).
+ Empty(common.Address) bool
 
-	PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList)
-	AddressInAccessList(addr common.Address) bool
-	SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool)
-	// AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
-	// even if the feature/fork is not active yet
-	AddAddressToAccessList(addr common.Address)
-	// AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
-	// even if the feature/fork is not active yet
-	AddSlotToAccessList(addr common.Address, slot common.Hash)
+ PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList)
+ AddressInAccessList(addr common.Address) bool
+ SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool)
+ // AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
+ // even if the feature/fork is not active yet
+ AddAddressToAccessList(addr common.Address)
+ // AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
+ // even if the feature/fork is not active yet
+ AddSlotToAccessList(addr common.Address, slot common.Hash)
 
-	RevertToSnapshot(int)
-	Snapshot() int
+ RevertToSnapshot(int)
+ Snapshot() int
 
-	AddLog(*types.Log)
-	AddPreimage(common.Hash, []byte)
+ AddLog(*types.Log)
+ AddPreimage(common.Hash, []byte)
 
-	ForEachStorage(common.Address, func(common.Hash, common.Hash) bool) error
+ ForEachStorage(common.Address, func(common.Hash, common.Hash) bool) error
 }
 ```
 
@@ -137,10 +137,10 @@ marked as suicided.
 Supports a transaction type that contains an [access list](https://eips.ethereum.org/EIPS/eip-2930), a list of addresses, and storage keys that the transaction plans to access. The access list state is kept in memory and discarded after the transaction committed.
 
 - `PrepareAccessList()` handles the preparatory steps for executing a state transition with regards to both EIP-2929 and EIP-2930. This method should only be called if Yolov3/Berlin/2929+2930 is applicable at the current number.
-  - Add sender to access list (EIP-2929)
-  - Add destination to access list (EIP-2929)
-  - Add precompiles to access list (EIP-2929)
-  - Add the contents of the optional tx access list (EIP-2930)
+    - Add sender to access list (EIP-2929)
+    - Add destination to access list (EIP-2929)
+    - Add precompiles to access list (EIP-2929)
+    - Add the contents of the optional tx access list (EIP-2930)
 - `AddressInAccessList()` returns true if the address is registered.
 - `SlotInAccessList()` checks if the address and the slots are registered.
 - `AddAddressToAccessList()` adds the given address to the access list. If the address is already in the access list, this function performs a no-op.
@@ -173,40 +173,40 @@ To support the interface functionality, it imports 4 module Keepers:
 
 ```go
 type Keeper struct {
-	// Protobuf codec
-	cdc codec.BinaryCodec
-	// Store key required for the EVM Prefix KVStore. It is required by:
-	// - storing account's Storage State
-	// - storing account's Code
-	// - storing Bloom filters by block height. Needed for the Web3 API.
-	// For the full list, check the module specification
-	storeKey sdk.StoreKey
+ // Protobuf codec
+ cdc codec.BinaryCodec
+ // Store key required for the EVM Prefix KVStore. It is required by:
+ // - storing account's Storage State
+ // - storing account's Code
+ // - storing Bloom filters by block height. Needed for the Web3 API.
+ // For the full list, check the module specification
+ storeKey sdk.StoreKey
 
-	// key to access the transient store, which is reset on every block during Commit
-	transientKey sdk.StoreKey
+ // key to access the transient store, which is reset on every block during Commit
+ transientKey sdk.StoreKey
 
-	// module specific parameter space that can be configured through governance
-	paramSpace paramtypes.Subspace
-	// access to account state
-	accountKeeper types.AccountKeeper
-	// update balance and accounting operations with coins
-	bankKeeper types.BankKeeper
-	// access historical headers for EVM state transition execution
-	stakingKeeper types.StakingKeeper
-	// fetch EIP1559 base fee and parameters
-	feeMarketKeeper types.FeeMarketKeeper
+ // module specific parameter space that can be configured through governance
+ paramSpace paramtypes.Subspace
+ // access to account state
+ accountKeeper types.AccountKeeper
+ // update balance and accounting operations with coins
+ bankKeeper types.BankKeeper
+ // access historical headers for EVM state transition execution
+ stakingKeeper types.StakingKeeper
+ // fetch EIP1559 base fee and parameters
+ feeMarketKeeper types.FeeMarketKeeper
 
-	// chain ID number obtained from the context's chain id
-	eip155ChainID *big.Int
+ // chain ID number obtained from the context's chain id
+ eip155ChainID *big.Int
 
-	// Tracer used to collect execution traces from the EVM transaction execution
-	tracer string
-	// trace EVM state transition execution. This value is obtained from the `--trace` flag.
-	// For more info check https://geth.ethereum.org/docs/dapp/tracing
-	debug bool
+ // Tracer used to collect execution traces from the EVM transaction execution
+ tracer string
+ // trace EVM state transition execution. This value is obtained from the `--trace` flag.
+ // For more info check https://geth.ethereum.org/docs/dapp/tracing
+ debug bool
 
-	// EVM Hooks for tx post-processing
-	hooks types.EvmHooks
+ // EVM Hooks for tx post-processing
+ hooks types.EvmHooks
 }
 ```
 

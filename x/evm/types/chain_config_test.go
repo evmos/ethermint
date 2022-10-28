@@ -3,17 +3,16 @@ package types
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
 var defaultEIP150Hash = common.Hash{}.String()
 
-func newIntPtr(i int64) *sdk.Int {
-	v := sdk.NewInt(i)
+func newIntPtr(i int64) *sdkmath.Int {
+	v := sdkmath.NewInt(i)
 	return &v
 }
 
@@ -233,6 +232,69 @@ func TestChainConfigValidate(t *testing.T) {
 				MuirGlacierBlock:    newIntPtr(0),
 				BerlinBlock:         newIntPtr(0),
 				LondonBlock:         newIntPtr(-1),
+			},
+			true,
+		},
+		{
+			"invalid ArrowGlacierBlock",
+			ChainConfig{
+				HomesteadBlock:      newIntPtr(0),
+				DAOForkBlock:        newIntPtr(0),
+				EIP150Block:         newIntPtr(0),
+				EIP150Hash:          defaultEIP150Hash,
+				EIP155Block:         newIntPtr(0),
+				EIP158Block:         newIntPtr(0),
+				ByzantiumBlock:      newIntPtr(0),
+				ConstantinopleBlock: newIntPtr(0),
+				PetersburgBlock:     newIntPtr(0),
+				IstanbulBlock:       newIntPtr(0),
+				MuirGlacierBlock:    newIntPtr(0),
+				BerlinBlock:         newIntPtr(0),
+				LondonBlock:         newIntPtr(0),
+				ArrowGlacierBlock:   newIntPtr(-1),
+			},
+			true,
+		},
+		{
+			"invalid GrayGlacierBlock",
+			ChainConfig{
+				HomesteadBlock:      newIntPtr(0),
+				DAOForkBlock:        newIntPtr(0),
+				EIP150Block:         newIntPtr(0),
+				EIP150Hash:          defaultEIP150Hash,
+				EIP155Block:         newIntPtr(0),
+				EIP158Block:         newIntPtr(0),
+				ByzantiumBlock:      newIntPtr(0),
+				ConstantinopleBlock: newIntPtr(0),
+				PetersburgBlock:     newIntPtr(0),
+				IstanbulBlock:       newIntPtr(0),
+				MuirGlacierBlock:    newIntPtr(0),
+				BerlinBlock:         newIntPtr(0),
+				LondonBlock:         newIntPtr(0),
+				ArrowGlacierBlock:   newIntPtr(0),
+				GrayGlacierBlock:    newIntPtr(-1),
+			},
+			true,
+		},
+		{
+			"invalid MergeNetsplitBlock",
+			ChainConfig{
+				HomesteadBlock:      newIntPtr(0),
+				DAOForkBlock:        newIntPtr(0),
+				EIP150Block:         newIntPtr(0),
+				EIP150Hash:          defaultEIP150Hash,
+				EIP155Block:         newIntPtr(0),
+				EIP158Block:         newIntPtr(0),
+				ByzantiumBlock:      newIntPtr(0),
+				ConstantinopleBlock: newIntPtr(0),
+				PetersburgBlock:     newIntPtr(0),
+				IstanbulBlock:       newIntPtr(0),
+				MuirGlacierBlock:    newIntPtr(0),
+				BerlinBlock:         newIntPtr(0),
+				LondonBlock:         newIntPtr(0),
+				ArrowGlacierBlock:   newIntPtr(0),
+				GrayGlacierBlock:    newIntPtr(0),
+				MergeNetsplitBlock:  newIntPtr(-1),
 			},
 			true,
 		},

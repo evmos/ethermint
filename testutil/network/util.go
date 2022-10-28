@@ -7,18 +7,12 @@ import (
 	"path/filepath"
 	"time"
 
-	pvm "github.com/tendermint/tendermint/privval"
-
-	opticonf "github.com/celestiaorg/optimint/config"
-	opticonv "github.com/celestiaorg/optimint/conv"
-	optinode "github.com/celestiaorg/optimint/node"
-	rpcclient "github.com/celestiaorg/optimint/rpc/client"
-
+	abcicli "github.com/tendermint/tendermint/abci/client"
 	"github.com/ethereum/go-ethereum/ethclient"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/proxy"
+	pvm "github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
@@ -31,11 +25,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	mintypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/tharsis/ethermint/server"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/server"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
+
+	rollconf "github.com/celestiaorg/rollmint/config"
+	rollconv "github.com/celestiaorg/rollmint/conv"
+	rollnode "github.com/celestiaorg/rollmint/node"
+	rpcclient "github.com/celestiaorg/rollmint/rpc/client"
 )
 
 func startInProcess(cfg Config, val *Validator) error {
@@ -51,48 +51,51 @@ func startInProcess(cfg Config, val *Validator) error {
 	if err != nil {
 		return err
 	}
+
 	pval := pvm.LoadOrGenFilePV(tmCfg.PrivValidatorKeyFile(), tmCfg.PrivValidatorStateFile())
 	if err != nil {
 		return err
 	}
-	// keys in optimint format
-	p2pKey, err := opticonv.GetNodeKey(nodeKey)
+	// keys in rollmint format
+	p2pKey, err := rollconv.GetNodeKey(nodeKey)
 	if err != nil {
 		return err
 	}
-	signingKey, err := opticonv.GetNodeKey(&p2p.NodeKey{PrivKey: pval.Key.PrivKey})
+	signingKey, err := rollconv.GetNodeKey(&p2p.NodeKey{PrivKey: pval.Key.PrivKey})
 	if err != nil {
 		return err
 	}
-
 	app := cfg.AppConstructor(*val)
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(tmCfg)
-	// node key in optimint format
-
+	// node key in rollmint format
 	genesis, err := genDocProvider()
 	if err != nil {
 		return err
 	}
-	nodeConfig := opticonf.NodeConfig{}
+
+	nodeConfig := rollconf.NodeConfig{}
 	err = nodeConfig.GetViperConfig(val.Ctx.Viper)
 	if err != nil {
 		return err
 	}
-	opticonv.GetNodeConfig(&nodeConfig, tmCfg)
-	err = opticonv.TranslateAddresses(&nodeConfig)
+
+	rollconv.GetNodeConfig(&nodeConfig, tmCfg)
+	err = rollconv.TranslateAddresses(&nodeConfig)
 	if err != nil {
 		return err
 	}
+
 	nodeConfig.DALayer = "mock"
 	nodeConfig.Aggregator = true
 	nodeConfig.BlockTime = 1 * time.Second
-	tmNode, err := optinode.NewNode(
+
+	tmNode, err := rollnode.NewNode(
 		context.Background(),
 		nodeConfig,
 		p2pKey,
 		signingKey,
-		proxy.NewLocalClientCreator(app),
+		abcicli.NewLocalClient(nil, app),
 		genesis,
 		logger,
 	)
@@ -144,7 +147,7 @@ func startInProcess(cfg Config, val *Validator) error {
 	}
 
 	if val.AppConfig.GRPC.Enable {
-		grpcSrv, err := servergrpc.StartGRPCServer(val.ClientCtx, app, val.AppConfig.GRPC.Address)
+		grpcSrv, err := servergrpc.StartGRPCServer(val.ClientCtx, app, val.AppConfig.GRPC)
 		if err != nil {
 			return err
 		}
@@ -167,7 +170,7 @@ func startInProcess(cfg Config, val *Validator) error {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := val.RPCAddress
 
-		val.jsonrpc, val.jsonrpcDone, err = server.StartJSONRPC(val.Ctx, val.ClientCtx, tmRPCAddr, tmEndpoint, *val.AppConfig)
+		val.jsonrpc, val.jsonrpcDone, err = server.StartJSONRPC(val.Ctx, val.ClientCtx, tmRPCAddr, tmEndpoint, val.AppConfig, nil)
 		if err != nil {
 			return err
 		}
@@ -233,6 +236,8 @@ func initGenFiles(cfg Config, genAccounts []authtypes.GenesisAccount, genBalance
 
 	// set the balances in the genesis state
 	var bankGenState banktypes.GenesisState
+	cfg.Codec.MustUnmarshalJSON(cfg.GenesisState[banktypes.ModuleName], &bankGenState)
+
 	bankGenState.Balances = genBalances
 	cfg.GenesisState[banktypes.ModuleName] = cfg.Codec.MustMarshalJSON(&bankGenState)
 
@@ -242,7 +247,7 @@ func initGenFiles(cfg Config, genAccounts []authtypes.GenesisAccount, genBalance
 	stakingGenState.Params.BondDenom = cfg.BondDenom
 	cfg.GenesisState[stakingtypes.ModuleName] = cfg.Codec.MustMarshalJSON(&stakingGenState)
 
-	var govGenState govtypes.GenesisState
+	var govGenState govv1.GenesisState
 	cfg.Codec.MustUnmarshalJSON(cfg.GenesisState[govtypes.ModuleName], &govGenState)
 
 	govGenState.DepositParams.MinDeposit[0].Denom = cfg.BondDenom

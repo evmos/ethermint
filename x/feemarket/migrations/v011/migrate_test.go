@@ -10,13 +10,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/tharsis/ethermint/encoding"
+	"github.com/evmos/ethermint/encoding"
 
-	"github.com/tharsis/ethermint/app"
-	v010types "github.com/tharsis/ethermint/x/feemarket/migrations/v010/types"
-	v011 "github.com/tharsis/ethermint/x/feemarket/migrations/v011"
-	"github.com/tharsis/ethermint/x/feemarket/types"
-	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/app"
+	v010types "github.com/evmos/ethermint/x/feemarket/migrations/v010/types"
+	v011 "github.com/evmos/ethermint/x/feemarket/migrations/v011"
+	"github.com/evmos/ethermint/x/feemarket/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 )
 
 func init() {
@@ -30,7 +30,7 @@ func TestMigrateStore(t *testing.T) {
 	tFeeMarketKey := sdk.NewTransientStoreKey(fmt.Sprintf("%s_test", feemarkettypes.StoreKey))
 	ctx := testutil.DefaultContext(feemarketKey, tFeeMarketKey)
 	paramstore := paramtypes.NewSubspace(
-		encCfg.Marshaler, encCfg.Amino, feemarketKey, tFeeMarketKey, "feemarket",
+		encCfg.Codec, encCfg.Amino, feemarketKey, tFeeMarketKey, "feemarket",
 	)
 
 	paramstore = paramstore.WithKeyTable(feemarkettypes.ParamKeyTable())
@@ -78,7 +78,7 @@ func TestMigrateJSON(t *testing.T) {
   }`
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
 	var genState v010types.GenesisState
-	err := encCfg.Marshaler.UnmarshalJSON([]byte(rawJson), &genState)
+	err := encCfg.Codec.UnmarshalJSON([]byte(rawJson), &genState)
 	require.NoError(t, err)
 
 	migratedGenState := v011.MigrateJSON(genState)

@@ -6,7 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 )
 
 type GenesisTestSuite struct {
@@ -114,6 +114,11 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name:     "empty genesis",
 			genState: &GenesisState{},
 			expPass:  false,
+		},
+		{
+			name:     "copied genesis",
+			genState: NewGenesisState(DefaultGenesisState().Params, DefaultGenesisState().Accounts),
+			expPass:  true,
 		},
 		{
 			name: "invalid genesis",

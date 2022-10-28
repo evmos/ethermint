@@ -14,31 +14,33 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	ethermint "github.com/tharsis/ethermint/types"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	ethermint "github.com/evmos/ethermint/types"
 
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var maxTestingAccounts = 100
-var seed = int64(233)
+var (
+	maxTestingAccounts = 100
+	seed               = int64(233)
+)
 
 func TestRandomGenesisAccounts(t *testing.T) {
 	r := rand.New(rand.NewSource(seed))
 	accs := RandomAccounts(r, rand.Intn(maxTestingAccounts))
 
 	encodingConfig := MakeEncodingConfig()
-	appCodec := encodingConfig.Marshaler
+	appCodec := encodingConfig.Codec
 	cdc := encodingConfig.Amino
 
 	paramsKeeper := initParamsKeeper(appCodec, cdc, sdk.NewKVStoreKey(paramstypes.StoreKey), sdk.NewTransientStoreKey(paramstypes.StoreKey))
 	subSpace, find := paramsKeeper.GetSubspace(authtypes.ModuleName)
 	require.True(t, find)
 	accountKeeper := authkeeper.NewAccountKeeper(
-		appCodec, sdk.NewKVStoreKey(authtypes.StoreKey), subSpace, ethermint.ProtoAccount, maccPerms,
+		appCodec, sdk.NewKVStoreKey(authtypes.StoreKey), subSpace, ethermint.ProtoAccount, maccPerms, sdk.GetConfig().GetBech32AccountAddrPrefix(),
 	)
 	authModule := auth.NewAppModule(appCodec, accountKeeper, RandomGenesisAccounts)
 

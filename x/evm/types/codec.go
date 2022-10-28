@@ -6,14 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	proto "github.com/gogo/protobuf/proto"
 )
 
 var ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
-
-type (
-	ExtensionOptionsEthereumTxI interface{}
-)
 
 // RegisterInterfaces registers the client interfaces to protobuf Any.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
@@ -21,9 +18,8 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		(*sdk.Msg)(nil),
 		&MsgEthereumTx{},
 	)
-	registry.RegisterInterface(
-		"ethermint.evm.v1.ExtensionOptionsEthereumTx",
-		(*ExtensionOptionsEthereumTxI)(nil),
+	registry.RegisterImplementations(
+		(*tx.TxExtensionOptionI)(nil),
 		&ExtensionOptionsEthereumTx{},
 	)
 	registry.RegisterInterface(
@@ -39,7 +35,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 
 // PackClientState constructs a new Any packed with the given tx data value. It returns
 // an error if the client state can't be casted to a protobuf message or if the concrete
-// implemention is not registered to the protobuf codec.
+// implementation is not registered to the protobuf codec.
 func PackTxData(txData TxData) (*codectypes.Any, error) {
 	msg, ok := txData.(proto.Message)
 	if !ok {

@@ -32,12 +32,12 @@ Smart contracts are just like regular accounts on the blockchain, which addition
 
 The EVM operates as a stack-based machine. It's main architecture components consist of:
 
-- Virtual ROM: contract code is pulled into this read only memory when processing txs
-- Machine state (volatile): changes as the EVM runs and is wiped clean after processing each tx
-  - Program counter (PC)
-  - Gas: keeps track of how much gas is used
-  - Stack and Memory: compute state changes
-- Access to account storage (persistent)
+* Virtual ROM: contract code is pulled into this read only memory when processing txs
+* Machine state (volatile): changes as the EVM runs and is wiped clean after processing each tx
+    * Program counter (PC)
+    * Gas: keeps track of how much gas is used
+    * Stack and Memory: compute state changes
+* Access to account storage (persistent)
 
 ### State Transitions with Smart Contracts
 
@@ -51,10 +51,10 @@ Smart contracts can also call other smart contracts. Each call to a new contract
 
 For further reading, please refer to:
 
-- [EVM](https://eth.wiki/concepts/evm/evm)
-- [EVM Architecture](https://cypherpunks-core.github.io/ethereumbook/13evm.html#evm_architecture)
-- [What is Ethereum](https://ethdocs.org/en/latest/introduction/what-is-ethereum.html#what-is-ethereum)
-- [Opcodes](https://www.ethervm.io/)
+* [EVM](https://eth.wiki/concepts/evm/evm)
+* [EVM Architecture](https://cypherpunks-core.github.io/ethereumbook/13evm.html#evm_architecture)
+* [What is Ethereum](https://ethdocs.org/en/latest/introduction/what-is-ethereum.html#what-is-ethereum)
+* [Opcodes](https://www.ethervm.io/)
 
 ## Ethermint as Geth implementation
 
@@ -78,14 +78,13 @@ In the Geth implementation, calling the endpoint roughly goes through the follow
 6. [`evm.Call()`](https://github.com/ethereum/go-ethereum/blob/d575a2d3bc76dfbdefdd68b6cffff115542faf75/core/vm/evm.go#L168) runs the interpreter `evm.interpreter.Run()` to execute the message. If the execution fails, the state is reverted to a snapshot taken before the execution and gas is consumed.
 7. [`Run()`](https://github.com/ethereum/go-ethereum/blob/d575a2d3bc76dfbdefdd68b6cffff115542faf75/core/vm/interpreter.go#L116) performs a loop to execute the opcodes.
 
-
 The ethermint implementatiom is similar and makes use of the gRPC query client which is included in the Cosmos SDK:
 
 1. `eth_call` request is transformed to call the `func (e *PublicAPI) Call` function using the `eth` namespace
-2. [`Call()`](https://github.com/tharsis/ethermint/blob/main/rpc/namespaces/ethereum/eth/api.go#L639) calls `doCall()`
-3. [`doCall()`](https://github.com/tharsis/ethermint/blob/main/rpc/namespaces/ethereum/eth/api.go#L656) transforms the arguments into a `EthCallRequest` and calls `EthCall()` using the query client of the evm module.
-4. [`EthCall()`](https://github.com/tharsis/ethermint/blob/main/x/evm/keeper/grpc_query.go#L212) transforms the arguments into a `ethtypes.message` and calls `ApplyMessageWithConfig()
-5. [`ApplyMessageWithConfig()`](https://github.com/tharsis/ethermint/blob/d5598932a7f06158b7a5e3aa031bbc94eaaae32c/x/evm/keeper/state_transition.go#L341) instantiates an EVM and either `Create()`s a new contract or `Call()`s a contract using the Geth implementation.
+2. [`Call()`](https://github.com/evmos/ethermint/blob/main/rpc/namespaces/ethereum/eth/api.go#L639) calls `doCall()`
+3. [`doCall()`](https://github.com/evmos/ethermint/blob/main/rpc/namespaces/ethereum/eth/api.go#L656) transforms the arguments into a `EthCallRequest` and calls `EthCall()` using the query client of the evm module.
+4. [`EthCall()`](https://github.com/evmos/ethermint/blob/main/x/evm/keeper/grpc_query.go#L212) transforms the arguments into a `ethtypes.message` and calls `ApplyMessageWithConfig()
+5. [`ApplyMessageWithConfig()`](https://github.com/evmos/ethermint/blob/d5598932a7f06158b7a5e3aa031bbc94eaaae32c/x/evm/keeper/state_transition.go#L341) instantiates an EVM and either `Create()`s a new contract or `Call()`s a contract using the Geth implementation.
 
 ### StateDB
 
@@ -110,5 +109,3 @@ Bloom is the bloom filter value in bytes for each block that can be used for fil
 ::: tip
 👉 **Note**: Since they are not stored on state, Transaction Logs and Block Blooms are not persisted after upgrades. A user must use an archival node after upgrades in order to obtain legacy chain events.
 :::
-
-

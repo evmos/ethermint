@@ -41,11 +41,14 @@ type TxData interface {
 	Fee() *big.Int
 	Cost() *big.Int
 
-	// effective fee according to current base fee
+	// effective gasPrice/fee/cost according to current base fee
+	EffectiveGasPrice(baseFee *big.Int) *big.Int
 	EffectiveFee(baseFee *big.Int) *big.Int
 	EffectiveCost(baseFee *big.Int) *big.Int
 }
 
+// NOTE: All non-protected transactions (i.e non EIP155 signed) will fail if the
+// AllowUnprotectedTxs parameter is disabled.
 func NewTxDataFromTx(tx *ethtypes.Transaction) (TxData, error) {
 	var txData TxData
 	var err error
@@ -68,8 +71,9 @@ func NewTxDataFromTx(tx *ethtypes.Transaction) (TxData, error) {
 //
 // CONTRACT: v value is either:
 //
-//  - {0,1} + CHAIN_ID * 2 + 35, if EIP155 is used
-//  - {0,1} + 27, otherwise
+//   - {0,1} + CHAIN_ID * 2 + 35, if EIP155 is used
+//   - {0,1} + 27, otherwise
+//
 // Ref: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
 func DeriveChainID(v *big.Int) *big.Int {
 	if v == nil || v.Sign() < 1 {

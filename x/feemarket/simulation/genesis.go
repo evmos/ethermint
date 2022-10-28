@@ -7,12 +7,18 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/tharsis/ethermint/x/feemarket/types"
+	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
 // RandomizedGenState generates a random GenesisState for nft
 func RandomizedGenState(simState *module.SimulationState) {
-	params := types.NewParams(simState.Rand.Uint32()%2 == 0, simState.Rand.Uint32(), simState.Rand.Uint32(), simState.Rand.Uint64(), simState.Rand.Int63(), sdk.ZeroDec(), types.DefaultMinGasMultiplier)
+	params := types.NewParams(simState.Rand.Uint32()%2 == 0,
+		simState.Rand.Uint32(),
+		simState.Rand.Uint32(),
+		simState.Rand.Uint64(),
+		simState.Rand.Int63(),
+		sdk.ZeroDec(),
+		types.DefaultMinGasMultiplier)
 
 	blockGas := simState.Rand.Uint64()
 	feemarketGenesis := types.NewGenesisState(params, blockGas)

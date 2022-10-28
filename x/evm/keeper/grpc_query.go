@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -24,9 +25,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	ethparams "github.com/ethereum/go-ethereum/params"
 
-	ethermint "github.com/tharsis/ethermint/types"
-	"github.com/tharsis/ethermint/x/evm/statedb"
-	"github.com/tharsis/ethermint/x/evm/types"
+	ethermint "github.com/evmos/ethermint/types"
+	"github.com/evmos/ethermint/x/evm/statedb"
+	"github.com/evmos/ethermint/x/evm/types"
 )
 
 var _ types.QueryServer = Keeper{}
@@ -88,6 +89,7 @@ func (k Keeper) CosmosAccount(c context.Context, req *types.QueryCosmosAccountRe
 	return &res, nil
 }
 
+// ValidatorAccount implements the Query/Balance gRPC method
 func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAccountRequest) (*types.QueryValidatorAccountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -104,7 +106,7 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
 	if !found {
-		return nil, nil
+		return nil, fmt.Errorf("validator not found for %s", consAddr.String())
 	}
 
 	accAddr := sdk.AccAddress(validator.GetOperator())
@@ -222,7 +224,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	cfg, err := k.EVMConfig(ctx)
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -292,8 +294,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		hi = req.GasCap
 	}
 	cap = hi
-
-	cfg, err := k.EVMConfig(ctx)
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to load evm config")
 	}
@@ -373,8 +374,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	ctx = ctx.WithBlockHeight(contextHeight)
 	ctx = ctx.WithBlockTime(req.BlockTime)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-
-	cfg, err := k.EVMConfig(ctx)
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to load evm config: %s", err.Error())
 	}
@@ -398,7 +398,10 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	tx := req.Msg.AsTransaction()
 	txConfig.TxHash = tx.Hash()
-	txConfig.TxIndex++
+	if len(req.Predecessors) > 0 {
+		txConfig.TxIndex++
+	}
+
 	result, _, err := k.traceTx(ctx, cfg, txConfig, signer, tx, req.TraceConfig, false)
 	if err != nil {
 		// error will be returned with detail status from traceTx
@@ -438,8 +441,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	ctx = ctx.WithBlockHeight(contextHeight)
 	ctx = ctx.WithBlockTime(req.BlockTime)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-
-	cfg, err := k.EVMConfig(ctx)
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to load evm config")
 	}
@@ -485,68 +487,65 @@ func (k *Keeper) traceTx(
 ) (*interface{}, uint, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer    vm.EVMLogger
+		tracer    tracers.Tracer
 		overrides *ethparams.ChainConfig
 		err       error
+		timeout   = defaultTraceTimeout
 	)
-
 	msg, err := tx.AsMessage(signer, cfg.BaseFee)
 	if err != nil {
 		return nil, 0, status.Error(codes.Internal, err.Error())
 	}
 
-	if traceConfig != nil && traceConfig.Overrides != nil {
+	if traceConfig == nil {
+		traceConfig = &types.TraceConfig{}
+	}
+
+	if traceConfig.Overrides != nil {
 		overrides = traceConfig.Overrides.EthereumConfig(cfg.ChainConfig.ChainID)
 	}
 
-	switch {
-	case traceConfig != nil && traceConfig.Tracer != "":
-		timeout := defaultTraceTimeout
-		// TODO: change timeout to time.duration
-		// Used string to comply with go ethereum
-		if traceConfig.Timeout != "" {
-			timeout, err = time.ParseDuration(traceConfig.Timeout)
-			if err != nil {
-				return nil, 0, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
-			}
-		}
+	logConfig := logger.Config{
+		EnableMemory:     traceConfig.EnableMemory,
+		DisableStorage:   traceConfig.DisableStorage,
+		DisableStack:     traceConfig.DisableStack,
+		EnableReturnData: traceConfig.EnableReturnData,
+		Debug:            traceConfig.Debug,
+		Limit:            int(traceConfig.Limit),
+		Overrides:        overrides,
+	}
 
-		tCtx := &tracers.Context{
-			BlockHash: txConfig.BlockHash,
-			TxIndex:   int(txConfig.TxIndex),
-			TxHash:    txConfig.TxHash,
-		}
+	tracer = logger.NewStructLogger(&logConfig)
 
-		// Construct the JavaScript tracer to execute with
+	tCtx := &tracers.Context{
+		BlockHash: txConfig.BlockHash,
+		TxIndex:   int(txConfig.TxIndex),
+		TxHash:    txConfig.TxHash,
+	}
+
+	if traceConfig.Tracer != "" {
 		if tracer, err = tracers.New(traceConfig.Tracer, tCtx); err != nil {
 			return nil, 0, status.Error(codes.Internal, err.Error())
 		}
-
-		// Handle timeouts and RPC cancellations
-		deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
-		defer cancel()
-
-		go func() {
-			<-deadlineCtx.Done()
-			if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
-				tracer.(tracers.Tracer).Stop(errors.New("execution timeout"))
-			}
-		}()
-
-	case traceConfig != nil:
-		logConfig := logger.Config{
-			EnableMemory:     traceConfig.EnableMemory,
-			DisableStorage:   traceConfig.DisableStorage,
-			DisableStack:     traceConfig.DisableStack,
-			EnableReturnData: traceConfig.EnableReturnData,
-			Debug:            traceConfig.Debug,
-			Limit:            int(traceConfig.Limit),
-			Overrides:        overrides,
-		}
-		tracer = logger.NewStructLogger(&logConfig)
-	default:
-		tracer = types.NewTracer(types.TracerStruct, msg, cfg.ChainConfig, ctx.BlockHeight())
 	}
+
+	// Define a meaningful timeout of a single transaction trace
+	if traceConfig.Timeout != "" {
+		if timeout, err = time.ParseDuration(traceConfig.Timeout); err != nil {
+			return nil, 0, status.Errorf(codes.InvalidArgument, "timeout value: %s", err.Error())
+		}
+	}
+
+	// Handle timeouts and RPC cancellations
+	deadlineCtx, cancel := context.WithTimeout(ctx.Context(), timeout)
+	defer cancel()
+
+	go func() {
+		<-deadlineCtx.Done()
+		if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
+			tracer.Stop(errors.New("execution timeout"))
+		}
+	}()
 
 	res, err := k.ApplyMessageWithConfig(ctx, msg, tracer, commitMessage, cfg, txConfig)
 	if err != nil {
@@ -554,31 +553,9 @@ func (k *Keeper) traceTx(
 	}
 
 	var result interface{}
-
-	// Depending on the tracer type, format and return the trace result data.
-	switch tracer := tracer.(type) {
-	case *logger.StructLogger:
-		returnVal := ""
-		revert := res.Revert()
-		if len(revert) > 0 {
-			returnVal = fmt.Sprintf("%x", revert)
-		} else {
-			returnVal = fmt.Sprintf("%x", res.Return())
-		}
-		result = types.ExecutionResult{
-			Gas:         res.GasUsed,
-			Failed:      res.Failed(),
-			ReturnValue: returnVal,
-			StructLogs:  types.FormatLogs(tracer.StructLogs()),
-		}
-	case tracers.Tracer:
-		result, err = tracer.GetResult()
-		if err != nil {
-			return nil, 0, status.Error(codes.Internal, err.Error())
-		}
-
-	default:
-		return nil, 0, status.Errorf(codes.InvalidArgument, "invalid tracer type %T", tracer)
+	result, err = tracer.GetResult()
+	if err != nil {
+		return nil, 0, status.Error(codes.Internal, err.Error())
 	}
 
 	return &result, txConfig.LogIndex + uint(len(res.Logs)), nil
@@ -594,7 +571,7 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 
 	res := &types.QueryBaseFeeResponse{}
 	if baseFee != nil {
-		aux := sdk.NewIntFromBigInt(baseFee)
+		aux := sdkmath.NewIntFromBigInt(baseFee)
 		res.BaseFee = &aux
 	}
 

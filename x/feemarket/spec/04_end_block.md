@@ -4,7 +4,7 @@ order: 4
 
 # End block
 
-The block_gas_used value is updated at the end of each block. 
+The block_gas_used value is updated at the end of each block.
 
 ## Block Gas Used
 

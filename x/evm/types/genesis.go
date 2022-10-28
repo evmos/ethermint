@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	ethermint "github.com/tharsis/ethermint/types"
+	ethermint "github.com/evmos/ethermint/types"
 )
 
 // Validate performs a basic validation of a GenesisAccount fields.

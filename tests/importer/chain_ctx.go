@@ -96,8 +96,12 @@ func (cc *ChainContext) Finalize(
 // Note: The block header and state database might be updated to reflect any
 // consensus rules that happen at finalization (e.g. block rewards).
 // TODO: Figure out if this needs to be hooked up to any part of the ABCI?
-func (cc *ChainContext) FinalizeAndAssemble(_ ethcons.ChainHeaderReader, _ *ethtypes.Header, _ *ethstate.StateDB, _ []*ethtypes.Transaction,
-	_ []*ethtypes.Header, _ []*ethtypes.Receipt,
+func (cc *ChainContext) FinalizeAndAssemble(_ ethcons.ChainHeaderReader,
+	_ *ethtypes.Header,
+	_ *ethstate.StateDB,
+	_ []*ethtypes.Transaction,
+	_ []*ethtypes.Header,
+	_ []*ethtypes.Receipt,
 ) (*ethtypes.Block, error) {
 	return nil, nil
 }
