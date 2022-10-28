@@ -582,8 +582,7 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 	ctx := sdk.UnwrapSDKContext(c)
 
 	params := k.GetParams(ctx)
-	// the chainID parameter is not used in this case, just set to nil
-	ethCfg := params.ChainConfig.EthereumConfig(nil)
+	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 	baseFee := k.GetBaseFee(ctx, ethCfg)
 
 	res := &types.QueryBaseFeeResponse{}
