@@ -2,8 +2,7 @@
 
 ### Goal
 
-**Allow stateful precompiles to modify state in Cosmos KV stores seamlessly (i.e. through normal
-calls to native modules).**
+**Allow stateful precompiles to modify state in Cosmos KV stores seamlessly (i.e. through normal calls to native modules).**
 
 To reach this goal, we propose several modifications to the dev ux:
 
@@ -16,54 +15,30 @@ To reach this goal, we propose several modifications to the dev ux:
 
 ### Approach
 
-**Use cosmos sdk CacheKVStore to store 'checkpoints' of cosmos state along the way.**
+**Use cosmos sdk CacheContext to store 'snapshots' of cosmos state along the way.**
 
-There will be a cached state taken before beginning the eth transaction. In case the EVM
-runtime reverts, we can switch back to this state.
+In the same way the ethermint statedb uses journal entries of evm state changes for every _evm call_, a journal entry holding the stateful precompiles' state changes will be added for every _precompile call_. This journal entry is essentially holding a cached cosmos sdk context in which temporary, dirty state changes are added to. Using the same statedb journaling logic, these `CacheContext`s are either reverted during the course of the transaction (by simply removing the cache context) or committed at the end. 
 
-Rather than committing or reverting temporary dirty state (journal) to the cosmos store _after_ the
-completion of the precompile `Run` function, we are proposing to cache the state _before_ any
-precompile call. This way, if any precompile logic throws an error, we can easily revert state to
-immediately before the precompile was called.
-
-Use the cosmos `CacheContext` function to take 'snapshots' and commit the cache if the
-corresponding logic executes successfully.
-
-Cases in which restoring previous state are necessary, and their corresponding desired behaviors
-are below.
+The cosmos `CacheContext` function takes 'snapshots' and is only committed if the calling Solidity call executes successfully. Cases in which restoring previous state are necessary, and their corresponding desired behaviors are below:
 
 - Solidity revert called before calling precompile: effectively no changes are made to Cosmos at
   this point, so no actions are taken
 - Precompile throws error: revert all changes to Cosmos state to the state immediately before
   calling the precompile, and then proceed with solidity execution
 - Solidity revert call after calling precompile: revert all changes to Cosmos state to the state
-  immediately before the eth tx
+  immediately before the Solidity call which invoked the prcompile.
 
-To implement this, we setup a `BasePrecompile` class abstraction and all stateful precompiles
-should inherit from this base class, which has its own `Run` function. The `Run` function, invoked
-by Geth EVM interpreter, will call the custom stateful precompile's `RunStateful` function, which
-includes the actual state-modifiying module-specific logic.
+Note, we also setup a `BasePrecompile` class abstraction and all stateful precompiles
+should inherit from this base class, which has its own `Run` function. Stateful precompiles should only implement the `RunStateful` function, which is given a cosmos sdk context for state changes to be made on.
+
+All of these revert behaviors are handled seamlessly and away from the perspective of a developer writing a stateful precompile. The `RunStateful` function can invoke module functions passing in the sdk context; there is no consideration of handling reverts from the perspective of a developer. 
 
 ### Cache Structure
 
-**The max depth of caches is 2**
+**The max depth of caches is equal to the number of precompiles**
 
-The pseudocode of caching snapshots of cosmos state during an Eth transaction (specifically during
-the execution of `ApplyTransaction()` in Ethermint) is as follows:
+Using this approach, cache contexts are nested, but never nested on invalid cache contexts. This is because, when creating a new cache context for an additional precompile call, only the last valid (non-reverted) cosmos state context is used to nest from. Whenever a revert is called by the EVM interpreter, the statedb `RevertToSnapshot` will omit all necessary cache contexts and future precompile calls will only nest from the previous valid cache context. 
 
-- `ethTxCtx, commitTxState := currCtx.CacheContext()`
-- `ApplyMessageWithConfig(ethTxCtx): // calls into EVM interpreter with newly created ctx`
-  - `for precompileCall in ethTxCtx.evmInterpreter():`
-    - `pcCtx, commitPCState := ethTxCtx.CacheContext() // every call is done on ethTxCtx, NOT currCtx`
-    - `if precompileCall.Success():`
-      - `commitPCState(pcCtx) // commits precompile state to txCtx`
-    - `else:`
-      - `discard(pcCtx)`
-  - `if ethTx.Success():`
-    - `commitTxState(ethTxCtx) // commits eth tx state to currCtx`
-  - `else:`
-    - `discard(ethTxCtx)`
+The overhead of this method is holding cache contexts proportional to the number of precompile calls in a single transaction. However, on reverts, unneeded cache contexts are discarded by the garbage collector (as the journal holds no pointer to these objects). Additionally, at the end of the transaction, only the latest valid journal entry (and its corresponding cache context) are committed to Cosmos state. 
 
-As seen here, the overhead with this approach includes storing extra dirty state in a cache and
-writing/discarding this cache for every precompile (grows linearly with number of precompiles
-called).
+With this approach, no unwrapping of contexts are necessary. By tracking the state of the call stack with a journal, we can handle all reverts in the same way the statedb currently does. 
