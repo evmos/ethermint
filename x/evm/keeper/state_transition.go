@@ -199,11 +199,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		bloomReceipt ethtypes.Bloom
 	)
 
-	chainID, err := ethermint.ParseChainID(ctx.ChainID())
-	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "invalid chain-id %s", ctx.ChainID())
-	}
-	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), chainID)
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), k.eip155ChainID)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
@@ -468,12 +464,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 // ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
 func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool) (*types.MsgEthereumTxResponse, error) {
-	chainID, err := ethermint.ParseChainID(ctx.ChainID())
-	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "invalid chain-id %s", ctx.ChainID())
-	}
-
-	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), chainID)
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), k.eip155ChainID)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
