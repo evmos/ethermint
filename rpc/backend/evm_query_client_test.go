@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -40,6 +41,11 @@ func RegisterParams(queryClient *mocks.EVMQueryClient, header *metadata.MD, heig
 			h.Set(grpctypes.GRPCBlockHeightHeader, fmt.Sprint(height))
 			*arg.HeaderAddr = h
 		})
+}
+
+func RegisterParamsNoHeader(queryClient *mocks.EVMQueryClient, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
+		Return(&evmtypes.QueryParamsResponse{}, nil)
 }
 
 func RegisterParamsInvalidHeader(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
@@ -98,6 +104,19 @@ func TestRegisterParamsError(t *testing.T) {
 	require.Error(t, err)
 }
 
+// ETH Call
+func RegisterEthCall(queryClient *mocks.EVMQueryClient, request *evmtypes.EthCallRequest) {
+	ctx, _ := context.WithCancel(rpc.ContextWithHeight(1))
+	queryClient.On("EthCall", ctx, request).
+		Return(&evmtypes.MsgEthereumTxResponse{}, nil)
+}
+
+func RegisterEthCallError(queryClient *mocks.EVMQueryClient, request *evmtypes.EthCallRequest) {
+	ctx, _ := context.WithCancel(rpc.ContextWithHeight(1))
+	queryClient.On("EthCall", ctx, request).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 // Estimate Gas
 func RegisterEstimateGas(queryClient *mocks.EVMQueryClient, args evmtypes.TransactionArgs) {
 	bz, _ := json.Marshal(args)
@@ -151,12 +170,7 @@ func TestRegisterBaseFeeDisabled(t *testing.T) {
 // ValidatorAccount
 func RegisterValidatorAccount(queryClient *mocks.EVMQueryClient, validator sdk.AccAddress) {
 	queryClient.On("ValidatorAccount", rpc.ContextWithHeight(1), &evmtypes.QueryValidatorAccountRequest{}).
-		Return(
-			&evmtypes.QueryValidatorAccountResponse{
-				AccountAddress: validator.String(),
-			},
-			nil,
-		)
+		Return(&evmtypes.QueryValidatorAccountResponse{AccountAddress: validator.String()}, nil)
 }
 
 func RegisterValidatorAccountError(queryClient *mocks.EVMQueryClient) {

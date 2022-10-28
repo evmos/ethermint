@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/p2p"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
@@ -25,15 +24,28 @@ import (
 // To use a mock method it has to be registered in a given test.
 var _ tmrpcclient.Client = &mocks.Client{}
 
+// Unconfirmed Transactions
+func RegisterUnconfirmedTxsEmpty(client *mocks.Client, limit *int) {
+	client.On("UnconfirmedTxs", rpc.ContextWithHeight(1), limit).
+		Return(&tmrpctypes.ResultUnconfirmedTxs{
+			Txs: make([]types.Tx, 2),
+		}, nil)
+}
+
+func RegisterUnconfirmedTxsError(client *mocks.Client, limit *int) {
+	client.On("UnconfirmedTxs", rpc.ContextWithHeight(1), limit).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 //Status
 func RegisterStatus(client *mocks.Client) {
-	resultStatus := &tmrpctypes.ResultStatus{
-		NodeInfo:      p2p.DefaultNodeInfo{},
-		SyncInfo:      tmrpctypes.SyncInfo{},
-		ValidatorInfo: tmrpctypes.ValidatorInfo{},
-	}
-	client.On("Status", rpc.ContextWithHeight(1), mock.AnythingOfType("*int64")).
-		Return(resultStatus)
+	client.On("Status", rpc.ContextWithHeight(1)).
+		Return(&tmrpctypes.ResultStatus{}, nil)
+}
+
+func RegisterStatusError(client *mocks.Client) {
+	client.On("Status", rpc.ContextWithHeight(1)).
+		Return(nil, sdkerrors.ErrInvalidRequest)
 }
 
 // Block
