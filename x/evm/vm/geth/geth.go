@@ -20,9 +20,6 @@ var (
 type EVM struct {
 	*vm.EVM
 
-	// call depth for Ethermint EVM interpreter
-	depth int
-
 	// custom precompiles
 	precompiles *evm.PrecompiledContracts
 }
@@ -57,14 +54,6 @@ func (e EVM) TxContext() vm.TxContext {
 // Config returns the configuration options for the EVM.
 func (e EVM) Config() vm.Config {
 	return e.EVM.Config
-}
-
-// RunInterpreter runs the EVM interpreter with manual tracking of call depth
-func (e EVM) RunInterpreter(contract *vm.Contract, input []byte, readOnly bool) (ret []byte, err error) {
-	e.depth++
-	defer func() { e.depth-- }()
-
-	return e.Interpreter().Run(contract, input, readOnly)
 }
 
 // Precompile returns the precompiled contract associated with the given address

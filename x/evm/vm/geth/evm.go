@@ -2,7 +2,9 @@ package geth
 
 import (
 	"math/big"
+	"reflect"
 	"time"
+	"unsafe"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
@@ -11,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
+
+const depthField = "depth"
 
 var (
 	// emptyCodeHash is used by create to ensure deployment is disallowed to already
@@ -32,13 +36,24 @@ func (c *codeAndHash) Hash() common.Hash {
 	return c.hash
 }
 
+func (e EVM) getDepth() int {
+	// using approach in https://gist.github.com/CyberLight/1da35b4e0093bc12302f to read the
+	// private depth field of the vm.EVM struct
+	pointerVal := reflect.ValueOf(e.EVM)
+	val := reflect.Indirect(pointerVal)
+	member := val.FieldByName(depthField)
+	ptrToDepth := unsafe.Pointer(member.UnsafeAddr())
+	intPtrToDepth := (*int)(ptrToDepth)
+	return *intPtrToDepth
+}
+
 // Call executes the contract associated with the addr with the given input as
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
 func (e EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if e.depth > int(params.CallCreateDepth) {
+	if e.getDepth() > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
@@ -53,7 +68,7 @@ func (e EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas 
 		if !isPrecompile && chainRules.IsEIP158 && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if e.Config().Debug {
-				if e.depth == 0 {
+				if e.getDepth() == 0 {
 					e.Config().Tracer.CaptureStart(e.EVM, caller.Address(), addr, false, input, gas, value)
 					e.Config().Tracer.CaptureEnd(ret, 0, 0, nil)
 				} else {
@@ -69,7 +84,7 @@ func (e EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas 
 
 	// Capture the tracer start/end events in debug mode
 	if e.Config().Debug {
-		if e.depth == 0 {
+		if e.getDepth() == 0 {
 			e.Config().Tracer.CaptureStart(e.EVM, caller.Address(), addr, false, input, gas, value)
 			defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
 				e.Config().Tracer.CaptureEnd(ret, startGas-gas, time.Since(startTime), err)
@@ -97,7 +112,7 @@ func (e EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas 
 			// The depth-check is already done, and precompiles handled above
 			contract := vm.NewContract(caller, vm.AccountRef(addrCopy), value, gas)
 			contract.SetCallCode(&addrCopy, e.StateDB.GetCodeHash(addrCopy), code)
-			ret, err = e.RunInterpreter(contract, input, false)
+			ret, err = e.Interpreter().Run(contract, input, false)
 			gas = contract.Gas
 		}
 	}
@@ -125,7 +140,7 @@ func (e EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas 
 // code with the caller as context.
 func (e EVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if e.depth > int(params.CallCreateDepth) {
+	if e.getDepth() > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
@@ -154,7 +169,7 @@ func (e EVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, 
 		// The contract is a scoped environment for this execution context only.
 		contract := vm.NewContract(caller, vm.AccountRef(caller.Address()), value, gas)
 		contract.SetCallCode(&addrCopy, e.StateDB.GetCodeHash(addrCopy), e.StateDB.GetCode(addrCopy))
-		ret, err = e.RunInterpreter(contract, input, false)
+		ret, err = e.Interpreter().Run(contract, input, false)
 		gas = contract.Gas
 	}
 	if err != nil {
@@ -173,7 +188,7 @@ func (e EVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, 
 // code with the caller as context and the caller is set to the caller of the caller.
 func (e EVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if e.depth > int(params.CallCreateDepth) {
+	if e.getDepth() > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
 	var snapshot = e.StateDB.Snapshot()
@@ -194,7 +209,7 @@ func (e EVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []by
 		// Initialise a new contract and make initialise the delegate values
 		contract := vm.NewContract(caller, vm.AccountRef(caller.Address()), nil, gas).AsDelegate()
 		contract.SetCallCode(&addrCopy, e.StateDB.GetCodeHash(addrCopy), e.StateDB.GetCode(addrCopy))
-		ret, err = e.RunInterpreter(contract, input, false)
+		ret, err = e.Interpreter().Run(contract, input, false)
 		gas = contract.Gas
 	}
 	if err != nil {
@@ -212,7 +227,7 @@ func (e EVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []by
 // instead of performing the modifications.
 func (e EVM) StaticCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if e.depth > int(params.CallCreateDepth) {
+	if e.getDepth() > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
 	// We take a snapshot here. This is a bit counter-intuitive, and could probably be skipped.
@@ -250,7 +265,7 @@ func (e EVM) StaticCall(caller vm.ContractRef, addr common.Address, input []byte
 		// When an error was returned by the EVM or when setting the creation code
 		// above we revert to the snapshot and consume any gas remaining. Additionally
 		// when we're in Homestead this also counts for code storage gas errors.
-		ret, err = e.RunInterpreter(contract, input, true)
+		ret, err = e.Interpreter().Run(contract, input, true)
 		gas = contract.Gas
 	}
 	if err != nil {
@@ -266,7 +281,7 @@ func (e EVM) StaticCall(caller vm.ContractRef, addr common.Address, input []byte
 func (e EVM) create(caller vm.ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ vm.OpCode) ([]byte, common.Address, uint64, error) {
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
-	if e.depth > int(params.CallCreateDepth) {
+	if e.getDepth() > int(params.CallCreateDepth) {
 		return nil, common.Address{}, gas, vm.ErrDepth
 	}
 	if !e.Context().CanTransfer(e.StateDB, caller.Address(), value) {
@@ -304,7 +319,7 @@ func (e EVM) create(caller vm.ContractRef, codeAndHash *codeAndHash, gas uint64,
 	contract.CodeAddr = &address
 
 	if e.Config().Debug {
-		if e.depth == 0 {
+		if e.getDepth() == 0 {
 			e.Config().Tracer.CaptureStart(e.EVM, caller.Address(), address, true, codeAndHash.code, gas, value)
 		} else {
 			e.Config().Tracer.CaptureEnter(typ, caller.Address(), address, codeAndHash.code, gas, value)
@@ -313,7 +328,7 @@ func (e EVM) create(caller vm.ContractRef, codeAndHash *codeAndHash, gas uint64,
 
 	start := time.Now()
 
-	ret, err := e.RunInterpreter(contract, nil, false)
+	ret, err := e.Interpreter().Run(contract, nil, false)
 
 	// Check whether the max code size has been exceeded, assign err if the case.
 	if err == nil && chainRules.IsEIP158 && len(ret) > params.MaxCodeSize {
@@ -349,7 +364,7 @@ func (e EVM) create(caller vm.ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	if e.Config().Debug {
-		if e.depth == 0 {
+		if e.getDepth() == 0 {
 			e.Config().Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
 		} else {
 			e.Config().Tracer.CaptureExit(ret, gas-contract.Gas, err)
