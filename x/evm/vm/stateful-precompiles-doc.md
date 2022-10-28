@@ -45,7 +45,7 @@ With this approach, no unwrapping of contexts are necessary. By tracking the sta
 
 ### Necessary Changes
 
-**In order to facilitate storing CacheContexts as a journal entry in the ethermint statedb, these crucial changes were made:**
+**In order to facilitate storing CacheContexts as a journal entry in the ethermint statedb, these crucial changes must be made to ethermint:**
 
 - `ExtStateDB`: external statedb, implemented by the current ethermint statedb, which requires functions for getting cosmos sdk contexts for stateful precompiles and appending/reverting external journal entries
 - `ExtJournalEntry`: external journal entry, a type that actually stores a cache context, for our use case
