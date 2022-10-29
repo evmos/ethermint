@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
@@ -197,7 +198,7 @@ func (suite *BackendTestSuite) TestResend() {
 				RegisterBaseFee(queryClient, baseFee)
 				RegisterEstimateGas(queryClient, callArgs)
 				RegisterParams(queryClient, &header, 1)
-				RegisterParamsNoHeader(queryClient, 1)
+				RegisterParamsWithoutHeader(queryClient, 1)
 				RegisterUnconfirmedTxsError(client, nil)
 			},
 			evmtypes.TransactionArgs{
@@ -223,7 +224,7 @@ func (suite *BackendTestSuite) TestResend() {
 				RegisterBaseFee(queryClient, baseFee)
 				RegisterEstimateGas(queryClient, callArgs)
 				RegisterParams(queryClient, &header, 1)
-				RegisterParamsNoHeader(queryClient, 1)
+				RegisterParamsWithoutHeader(queryClient, 1)
 				RegisterUnconfirmedTxsEmpty(client, nil)
 			},
 			evmtypes.TransactionArgs{
@@ -258,8 +259,10 @@ func (suite *BackendTestSuite) TestResend() {
 }
 
 func (suite *BackendTestSuite) TestSendRawTransaction() {
-	_, bz := suite.buildEthereumTx()
-	//rlpEncodedBz, _ := rlp.EncodeToBytes(tx.Data.Value) // TODO: err typed transaction too short
+	ethTx, bz := suite.buildEthereumTx()
+	rlpEncodedBz, _ := rlp.EncodeToBytes(ethTx.AsTransaction())
+	cosmosTx, _ := ethTx.BuildTx(suite.backend.clientCtx.TxConfig.NewTxBuilder(), "aphoton")
+	txBytes, _ := suite.backend.clientCtx.TxConfig.TxEncoder()(cosmosTx)
 
 	testCases := []struct {
 		name         string
@@ -282,6 +285,52 @@ func (suite *BackendTestSuite) TestSendRawTransaction() {
 			common.Hash{},
 			false,
 		},
+		{
+			"fail - unprotected transactions",
+			func() {
+				suite.backend.allowUnprotectedTxs = false
+			},
+			rlpEncodedBz,
+			common.Hash{},
+			false,
+		},
+		{
+			"fail - failed to get evm params",
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				suite.backend.allowUnprotectedTxs = true
+				RegisterParamsWithoutHeaderError(queryClient, 1)
+			},
+			rlpEncodedBz,
+			common.Hash{},
+			false,
+		},
+		{
+			"fail - failed to broadcast transaction",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				suite.backend.allowUnprotectedTxs = true
+				RegisterParamsWithoutHeader(queryClient, 1)
+				RegisterBroadcastTxError(client, txBytes)
+			},
+			rlpEncodedBz,
+			common.HexToHash(ethTx.Hash),
+			false,
+		},
+		{
+			"pass - Gets the correct transaction hash of the eth transaction",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				suite.backend.allowUnprotectedTxs = true
+				RegisterParamsWithoutHeader(queryClient, 1)
+				RegisterBroadcastTx(client, txBytes)
+			},
+			rlpEncodedBz,
+			common.HexToHash(ethTx.Hash),
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -290,6 +339,7 @@ func (suite *BackendTestSuite) TestSendRawTransaction() {
 			tc.registerMock()
 
 			hash, err := suite.backend.SendRawTransaction(tc.rawTx)
+
 			if tc.expPass {
 				suite.Require().Equal(tc.expHash, hash)
 			} else {
@@ -373,4 +423,47 @@ func (suite *BackendTestSuite) TestDoCall() {
 			}
 		})
 	}
+}
+
+func (suite *BackendTestSuite) TestGasPrice() {
+	globalMinGasPrice, _ := suite.backend.GlobalMinGasPrice()
+	defaultGasPrice := (*hexutil.Big)(globalMinGasPrice.BigInt())
+
+	testCases := []struct {
+		name         string
+		registerMock func()
+		expGas       *hexutil.Big
+		expPass      bool
+	}{
+		{
+			"fail - can't get gasFee, need FeeMarket enabled ",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				var header metadata.MD
+				RegisterParams(queryClient, &header, 1)
+				RegisterBlock(client, 1, nil)
+				RegisterBlockResults(client, 1)
+				RegisterBaseFee(queryClient, sdk.NewInt(1))
+			},
+			defaultGasPrice,
+			false,
+		},
+		// TODO: Mock FeeMarket module params
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock()
+
+			gasPrice, err := suite.backend.GasPrice()
+			if tc.expPass {
+				suite.Require().Equal(tc.expGas, gasPrice)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+
 }

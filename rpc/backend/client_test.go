@@ -24,7 +24,17 @@ import (
 // To use a mock method it has to be registered in a given test.
 var _ tmrpcclient.Client = &mocks.Client{}
 
-// Unconfirmed Transactions
+// Broadcast Tx
+func RegisterBroadcastTx(client *mocks.Client, tx types.Tx) {
+	client.On("BroadcastTxSync", context.Background(), tx).
+		Return(&tmrpctypes.ResultBroadcastTx{}, nil)
+}
+
+func RegisterBroadcastTxError(client *mocks.Client, tx types.Tx) {
+	client.On("BroadcastTxSync", context.Background(), tx).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 func RegisterUnconfirmedTxsEmpty(client *mocks.Client, limit *int) {
 	client.On("UnconfirmedTxs", rpc.ContextWithHeight(1), limit).
 		Return(&tmrpctypes.ResultUnconfirmedTxs{

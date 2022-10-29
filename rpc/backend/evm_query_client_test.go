@@ -43,9 +43,9 @@ func RegisterParams(queryClient *mocks.EVMQueryClient, header *metadata.MD, heig
 		})
 }
 
-func RegisterParamsNoHeader(queryClient *mocks.EVMQueryClient, height int64) {
+func RegisterParamsWithoutHeader(queryClient *mocks.EVMQueryClient, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
-		Return(&evmtypes.QueryParamsResponse{}, nil)
+		Return(&evmtypes.QueryParamsResponse{Params: evmtypes.DefaultParams()}, nil)
 }
 
 func RegisterParamsInvalidHeader(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
@@ -71,7 +71,6 @@ func RegisterParamsInvalidHeight(queryClient *mocks.EVMQueryClient, header *meta
 		})
 }
 
-// Params returns error without header
 func RegisterParamsWithoutHeaderError(queryClient *mocks.EVMQueryClient, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
 		Return(nil, sdkerrors.ErrInvalidRequest)
