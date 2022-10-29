@@ -138,3 +138,21 @@ EXPECTED_GET_TRANSACTION_RECEIPT = {
    },
    "id":1
 }
+
+EXPECTED_CALLTRACERS = {
+   "from":"0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2",
+   "gas":"0x0",
+   "gasUsed":"0x0",
+   "input":"0x",
+   "output":"0x",
+   "to":"0x378c50d9264c63f3f92b806d4ee56e9d86ffb3ec",
+   "type":"CALL",
+   "value":"0x64"
+}
+
+EXPECTED_STRUCT_TRACER = {
+   "failed":False,
+   "gas":21000,
+   "returnValue":"",
+   "structLogs":[],
+}
