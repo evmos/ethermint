@@ -40,7 +40,7 @@ Evmos uses the following disclosure process:
 Once the vulnerability severity is defined, the following steps apply:
 
 - For `High` and `Critical`:
-    1. Patches are prepared for supported releases of Evmos in a [temporary private fork](https://docs.github.com/en/code-security/repository-security-advisories/collaborating-in-a-temporary-private-fork-to-resolve-a-repository-security-vulnerability) of the repository. See “Supported Releases” below for more information on which releases are considered eligible.
+    1. Patches are prepared for supported releases of Evmos in a [temporary private fork](https://docs.github.com/en/code-security/repository-security-advisories/collaborating-in-a-temporary-private-fork-to-resolve-a-repository-security-vulnerability) of the repository.
     2. Only relevant parties will be notified about an upcoming upgrade. These being validators, the core developer team, and users directly affected by the vulnerability.
     3. 24 hours following this notification, relevant releases with the patch will be made public.
     4. The nodes and validators update their Evmos and Ethermint dependencies to use these releases.
