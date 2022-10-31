@@ -758,6 +758,7 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		txMsg        *types.MsgEthereumTx
 		traceConfig  *types.TraceConfig
 		predecessors []*types.MsgEthereumTx
+		chainID      *sdkmath.Int
 	)
 
 	testCases := []struct {
@@ -932,6 +933,16 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			expPass:       true,
 			traceResponse: "{\"gas\":34828,\"failed\":false,\"returnValue\":\"0000000000000000000000000000000000000000000000000000000000000001\",\"structLogs\":[{\"pc\":0,\"op\":\"PUSH1\",\"gas\":",
 		},
+		{
+			msg: "invalid chain id",
+			malleate: func() {
+				traceConfig = nil
+				predecessors = []*types.MsgEthereumTx{}
+				tmp := sdkmath.NewInt(1)
+				chainID = &tmp
+			},
+			expPass: false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -945,11 +956,14 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			txMsg = suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdkmath.NewIntWithDecimal(1, 18).BigInt())
 			suite.Commit()
 
+			chainID = nil
+
 			tc.malleate()
 			traceReq := types.QueryTraceTxRequest{
 				Msg:          txMsg,
 				TraceConfig:  traceConfig,
 				Predecessors: predecessors,
+				ChainId:      chainID,
 			}
 			res, err := suite.queryClient.TraceTx(sdk.WrapSDKContext(suite.ctx), &traceReq)
 
@@ -979,6 +993,7 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 	var (
 		txs         []*types.MsgEthereumTx
 		traceConfig *types.TraceConfig
+		chainID     *sdkmath.Int
 	)
 
 	testCases := []struct {
@@ -1088,7 +1103,17 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 				}
 			},
 			expPass:       true,
-			traceResponse: "[]",
+			traceResponse: "[{\"error\":\"rpc error: code = Internal desc = tracer not found\"}]",
+		},
+		{
+			msg: "invalid chain id",
+			malleate: func() {
+				traceConfig = nil
+				tmp := sdkmath.NewInt(1)
+				chainID = &tmp
+			},
+			expPass:       true,
+			traceResponse: "[{\"error\":\"rpc error: code = Internal desc = invalid chain id for signer\"}]",
 		},
 	}
 
@@ -1103,6 +1128,7 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			// Generate token transfer transaction
 			txMsg := suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdkmath.NewIntWithDecimal(1, 18).BigInt())
 			suite.Commit()
+			chainID = nil
 
 			txs = append(txs, txMsg)
 
@@ -1110,6 +1136,7 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			traceReq := types.QueryTraceBlockRequest{
 				Txs:         txs,
 				TraceConfig: traceConfig,
+				ChainId:     chainID,
 			}
 			res, err := suite.queryClient.TraceBlock(sdk.WrapSDKContext(suite.ctx), &traceReq)
 

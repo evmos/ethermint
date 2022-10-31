@@ -473,10 +473,10 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 		traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, signer, ethTx, req.TraceConfig, true)
 		if err != nil {
 			result.Error = err.Error()
-			continue
+		} else {
+			txConfig.LogIndex = logIndex
+			result.Result = traceResult
 		}
-		txConfig.LogIndex = logIndex
-		result.Result = traceResult
 		results = append(results, &result)
 	}
 
