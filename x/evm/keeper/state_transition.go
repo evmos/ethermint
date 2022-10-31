@@ -39,12 +39,12 @@ func GasToRefund(availableRefund, gasConsumed, refundQuotient uint64) uint64 {
 }
 
 // EVMConfig creates the EVMConfig based on current state
-func (k *Keeper) EVMConfig(ctx sdk.Context) (*types.EVMConfig, error) {
+func (k *Keeper) EVMConfig(ctx sdk.Context, proposerAddress sdk.ConsAddress) (*types.EVMConfig, error) {
 	params := k.GetParams(ctx)
 	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
 
 	// get the coinbase address from the block proposer
-	coinbase, err := k.GetCoinbaseAddress(ctx)
+	coinbase, err := k.GetCoinbaseAddress(ctx, proposerAddress)
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
 	}
@@ -199,7 +199,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		bloomReceipt ethtypes.Bloom
 	)
 
-	cfg, err := k.EVMConfig(ctx)
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress))
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
@@ -464,7 +464,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 // ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
 func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool) (*types.MsgEthereumTxResponse, error) {
-	cfg, err := k.EVMConfig(ctx)
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress))
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "failed to load evm config")
 	}
@@ -519,15 +519,22 @@ func (k *Keeper) ResetGasMeterAndConsumeGas(ctx sdk.Context, gasUsed uint64) {
 	ctx.GasMeter().ConsumeGas(gasUsed, "apply evm transaction")
 }
 
+// GetProposerAddress returns current block proposer's address when provided proposer address is empty.
+func GetProposerAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) sdk.ConsAddress {
+	if len(proposerAddress) == 0 {
+		proposerAddress = ctx.BlockHeader().ProposerAddress
+	}
+	return proposerAddress
+}
+
 // GetCoinbaseAddress returns the block proposer's validator operator address.
-func (k Keeper) GetCoinbaseAddress(ctx sdk.Context) (common.Address, error) {
-	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
-	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddr)
+func (k Keeper) GetCoinbaseAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) (common.Address, error) {
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, GetProposerAddress(ctx, proposerAddress))
 	if !found {
 		return common.Address{}, sdkerrors.Wrapf(
 			stakingtypes.ErrNoValidatorFound,
 			"failed to retrieve validator from block proposer address %s",
-			consAddr.String(),
+			proposerAddress.String(),
 		)
 	}
 
