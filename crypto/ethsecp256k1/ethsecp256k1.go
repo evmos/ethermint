@@ -203,7 +203,8 @@ func (pubKey *PubKey) UnmarshalAminoJSON(bz []byte) error {
 
 // VerifySignature verifies that the ECDSA public key created a given signature over
 // the provided message. It will calculate the Keccak256 hash of the message
-// prior to verification.
+// prior to verification and approve verification if the signature can be verified
+// from either the original message or its EIP-712 representation.
 //
 // CONTRACT: The signature should be in [R || S] format.
 func (pubKey PubKey) VerifySignature(msg, sig []byte) bool {

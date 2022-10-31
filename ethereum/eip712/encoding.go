@@ -31,20 +31,9 @@ func SetEncodingConfig(cfg params.EncodingConfig) {
 // an EIP-712 object, then hashing the EIP-712 object to create the bytes to be signed.
 // See https://eips.ethereum.org/EIPS/eip-712 for more.
 func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
-	var typedData apitypes.TypedData
-
-	// Attempt to decode as both Amino and Protobuf since the message format is unknown.
-	// If either decode works, we can move forward with the corresponding typed data.
-	typedDataAmino, errAmino := decodeAminoSignDoc(signDocBytes)
-	typedDataProtobuf, errProtobuf := decodeProtobufSignDoc(signDocBytes)
-
-	switch {
-	case errAmino == nil:
-		typedData = typedDataAmino
-	case errProtobuf == nil:
-		typedData = typedDataProtobuf
-	default:
-		return nil, fmt.Errorf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v\n", errAmino, errProtobuf)
+	typedData, err := GetEIP712TypedDataForMsg(signDocBytes)
+	if err != nil {
+		return nil, err
 	}
 
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
@@ -59,6 +48,23 @@ func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 
 	return rawData, nil
+}
+
+// Get the EIP-712 TypedData representation of the sign doc bytes for either Amino or
+// Protobuf encodings.
+func GetEIP712TypedDataForMsg(signDocBytes []byte) (apitypes.TypedData, error) {
+	// Attempt to decode as both Amino and Protobuf since the message format is unknown.
+	// If either decode works, we can move forward with the corresponding typed data.
+	typedDataAmino, errAmino := decodeAminoSignDoc(signDocBytes)
+	if errAmino == nil {
+		return typedDataAmino, nil
+	}
+	typedDataProtobuf, errProtobuf := decodeProtobufSignDoc(signDocBytes)
+	if errProtobuf == nil {
+		return typedDataProtobuf, nil
+	}
+
+	return apitypes.TypedData{}, fmt.Errorf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
 }
 
 // Attempt to decode the SignDoc bytes as an Amino SignDoc and return an error on failure
