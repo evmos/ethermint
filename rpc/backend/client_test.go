@@ -35,6 +35,12 @@ func RegisterBroadcastTxError(client *mocks.Client, tx types.Tx) {
 		Return(nil, sdkerrors.ErrInvalidRequest)
 }
 
+// Unconfirmed Transactions
+func RegisterUnconfirmedTxs(client *mocks.Client, limit *int, txs []types.Tx) {
+	client.On("UnconfirmedTxs", rpc.ContextWithHeight(1), limit).
+		Return(&tmrpctypes.ResultUnconfirmedTxs{Txs: txs}, nil)
+}
+
 func RegisterUnconfirmedTxsEmpty(client *mocks.Client, limit *int) {
 	client.On("UnconfirmedTxs", rpc.ContextWithHeight(1), limit).
 		Return(&tmrpctypes.ResultUnconfirmedTxs{
