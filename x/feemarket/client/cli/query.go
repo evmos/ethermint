@@ -30,7 +30,7 @@ func GetQueryCmd() *cobra.Command {
 // GetBlockGasCmd queries the gas used in a block
 func GetBlockGasCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "block-gas",
+		Use:   "block-gas [BLOCK_HEIGHT]",
 		Short: "Get the block gas used at a given block height",
 		Long: `Get the block gas used at a given block height.
 If the height is not provided, it will use the latest height from context`,
@@ -88,7 +88,7 @@ func GetParamsCmd() *cobra.Command {
 // GetBaseFeeCmd queries the base fee at a given height
 func GetBaseFeeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "base-fee",
+		Use:   "base-fee [BLOCK_HEIGHT]",
 		Short: "Get the base fee amount at a given block height",
 		Long: `Get the base fee amount at a given block height.
 If the height is not provided, it will use the latest height from context.`,
