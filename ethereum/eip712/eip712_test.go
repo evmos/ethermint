@@ -1,6 +1,8 @@
 package eip712_test
 
 import (
+	"testing"
+
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -34,6 +36,10 @@ type EIP712TestSuite struct {
 
 	config    params.EncodingConfig
 	clientCtx client.Context
+}
+
+func TestEIP712TestSuite(t *testing.T) {
+	suite.Run(t, &EIP712TestSuite{})
 }
 
 // Set up test env to replicate prod. environment
