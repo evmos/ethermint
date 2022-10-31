@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
@@ -59,14 +59,14 @@ jobs:
         run: |
           make test-import
         if: env.GIT_DIFF
-      
+
   test-rpc:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
@@ -87,7 +87,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
@@ -155,7 +155,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
@@ -175,7 +175,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
@@ -184,7 +184,7 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - name: Test simulation with random genesis 
+      - name: Test simulation with random genesis
         run: |
           make test-sim-random-genesis-fast
         if: env.GIT_DIFF
@@ -195,7 +195,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
@@ -215,7 +215,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
