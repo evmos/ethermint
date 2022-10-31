@@ -26,6 +26,7 @@ jobs:
       - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
+            **/**.sol
             **/**.go
             go.mod
             go.sum
