@@ -114,7 +114,7 @@ def wait_for_block_time(cli, t):
     print("wait for block time", t)
     while True:
         now = isoparse((cli.status())["SyncInfo"]["latest_block_time"])
-        print("block time now:", now)
+        print("block time now: ", now)
         if now >= t:
             break
         time.sleep(0.5)

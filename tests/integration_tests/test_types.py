@@ -361,7 +361,7 @@ def same_types(given, expected):
             return False, "A is dict, B is not"
         keys = list(set(list(given.keys()) + list(expected.keys())))
         for key in keys:
-            if (key not in expected or key not in given):
+            if key not in expected or key not in given:
                 return False, key + " key not on both json"
             res, err = same_types(given[key], expected[key])
             if not res:
@@ -380,8 +380,14 @@ def same_types(given, expected):
         return True, ""
     elif type(given) is type(expected):
         return True, ""
-    elif (type(given) is int and type(expected) is float and given == 0 or
-        type(expected) is int and type(given) is float and expected == 0):
+    elif (
+        type(given) is int
+        and type(expected) is float
+        and given == 0
+        or type(expected) is int
+        and type(given) is float
+        and expected == 0
+    ):
         return True, ""
     else:
         return (
