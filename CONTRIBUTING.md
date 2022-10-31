@@ -6,7 +6,6 @@
         - [Pull Request Templates](#pull-request-templates)
         - [Requesting Reviews](#requesting-reviews)
         - [Reviewing Pull Requests](#reviewing-pull-requests)
-        - [Updating Documentation](#updating-documentation)
     - [Forking](#forking)
     - [Dependencies](#dependencies)
     - [Protobuf](#protobuf)

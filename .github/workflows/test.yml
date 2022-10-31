@@ -23,9 +23,10 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
+            **/**.sol
             **/**.go
             go.mod
             go.sum
@@ -48,7 +49,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         id: git_diff
         with:
           PATTERNS: |
@@ -59,7 +60,7 @@ jobs:
         run: |
           make test-import
         if: env.GIT_DIFF
-      
+
   test-rpc:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -69,7 +70,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.sol
@@ -90,7 +91,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.sol
@@ -111,7 +112,7 @@ jobs:
         with:
           name: ethermint
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.sol
@@ -158,7 +159,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
@@ -178,7 +179,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
@@ -198,7 +199,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
@@ -218,7 +219,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
