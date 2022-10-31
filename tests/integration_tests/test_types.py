@@ -155,7 +155,7 @@ def test_balance(ethermint_rpc_ws, geth):
 
 
 def deploy_and_wait(w3, number=1):
-    contract = deploy_contract(
+    contract, _ = deploy_contract(
         w3,
         CONTRACTS["TestERC20A"],
     )
@@ -341,8 +341,6 @@ def test_estimate_gas(ethermint_rpc_ws, geth):
 def make_same_rpc_calls(rpc1, rpc2, method, params):
     res1 = rpc1.make_request(method, params)
     res2 = rpc2.make_request(method, params)
-    print(res1)
-    print(res2)
     res, err = same_types(res1, res2)
     assert res, err
 

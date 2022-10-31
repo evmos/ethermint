@@ -131,7 +131,7 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     txreceipt = send_transaction(w3, tx, key)
     assert txreceipt.status == 1
     address = txreceipt.contractAddress
-    return w3.eth.contract(address=address, abi=info["abi"])
+    return w3.eth.contract(address=address, abi=info["abi"]), txreceipt
 
 
 def fill_defaults(w3, tx):
