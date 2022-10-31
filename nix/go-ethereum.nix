@@ -9,7 +9,7 @@ let
 
 in buildGoModule rec {
   pname = "go-ethereum";
-  version = "1.10.23";
+  version = "1.10.25";
 
   src = fetchFromGitHub {
     owner = "ethereum";
@@ -46,9 +46,14 @@ in buildGoModule rec {
     "cmd/utils"
   ];
 
+  # Following upstream: https://github.com/ethereum/go-ethereum/blob/v1.10.25/build/ci.go#L218
+  tags = [ "urfave_cli_no_docs" ];
+
   # Fix for usb-related segmentation faults on darwin
   propagatedBuildInputs =
     lib.optionals stdenv.isDarwin [ libobjc IOKit ];
+
+  passthru.tests = { inherit (nixosTests) geth; };
 
   meta = with lib; {
     homepage = "https://geth.ethereum.org/";
