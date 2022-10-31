@@ -49,6 +49,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### API Breaking
 
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
+* (evm) [#1405](https://github.com/evmos/ethermint/pull/1405) Add parameter `chainID` to evm keeper's `EVMConfig` method, so caller can choose to not use the cached `eip155ChainID`.
 
 ### Improvements
 
