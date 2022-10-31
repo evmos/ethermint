@@ -1,4 +1,5 @@
 # CODEOWNERS: https://help.github.com/articles/about-codeowners/
 
 # Primary (global) repo maintainers
-*       @evmos/core-engineering
+
+    * @evmos/core-engineering
