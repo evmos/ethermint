@@ -35,10 +35,14 @@ keyring_test_cosmos
 ./**/node_modules
 ./**/dist
 secret.yml
+artifacts/*
+tmp-swagger-gen
+github.com/
 # vue/
 
 # Local docker volume mappings
 localnet-setup
+.testnets
 
 # Testing
 coverage.txt
@@ -56,6 +60,7 @@ vagrant
 # IDE
 .idea/
 *.iml
+*.code-workspace
 
 # Graphviz
 dependency-graph.png
@@ -70,8 +75,8 @@ dependency-graph.png
 *.abi
 
 # Node.js
-tests/**/node_modules/*
-tests-solidity/**/node_modules/*
+**/node_modules
 
-# Nix
-/result
+
+# OpenZeppelin contracts
+contracts/@openzeppelin/*

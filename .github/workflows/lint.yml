@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # Required: setup-go, for all versions v3.0.0+ of golangci-lint
       - uses: actions/setup-go@v3
         with:
           go-version: 1.19
@@ -23,9 +24,10 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - uses: golangci/golangci-lint-action@v3
+      - uses: golangci/golangci-lint-action@v3.3.0
         with:
-          version: v1.48.0
+          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
+          version: v1.46.2
           args: --timeout 10m
           github-token: ${{ secrets.github_token }}
         # Check only if there are differences in the source code
@@ -42,7 +44,11 @@ jobs:
             docs/**/*.md
             x/**/*.md
             README.md
-      - uses: articulate/actions-markdownlint@v1.1.0
+      - uses: nosborn/github-action-markdown-cli@v3.2.0
+        with:
+          files: .
+          config_file: .markdownlint.yml
+          ignore_path: .markdownlintignore
         # Check only if there are differences in the source code
         if: env.GIT_DIFF
   python-lint:
@@ -70,7 +76,12 @@ jobs:
       - uses: cachix/cachix-action@v12
         with:
           name: ethermint
+      - uses: technote-space/get-diff-action@v6.1.1
+        with:
+          PATTERNS: |
+            **/**.py
       - name: run gomod2nix
         run: |
           nix run -f ./nix gomod2nix
           git diff --no-ext-diff --exit-code
+        if: env.GIT_DIFF
