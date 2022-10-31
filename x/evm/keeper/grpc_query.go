@@ -404,7 +404,8 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	var tracerConfig json.RawMessage
 	if req.TraceConfig != nil && req.TraceConfig.TracerJsonConfig != "" {
-		json.Unmarshal([]byte(req.TraceConfig.TracerJsonConfig), &tracerConfig)
+		// ignore error. default to no traceConfig
+		_ = json.Unmarshal([]byte(req.TraceConfig.TracerJsonConfig), &tracerConfig)
 	}
 
 	result, _, err := k.traceTx(ctx, cfg, txConfig, signer, tx, req.TraceConfig, false, tracerConfig)
