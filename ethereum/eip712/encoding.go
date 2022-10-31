@@ -16,8 +16,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
-var ethermintProtoCodec codec.ProtoCodecMarshaler
-var ethermintAminoCodec *codec.LegacyAmino
+var (
+	ethermintProtoCodec codec.ProtoCodecMarshaler
+	ethermintAminoCodec *codec.LegacyAmino
+)
 
 // The process of unmarshaling SignDoc bytes into a SignDoc object requires having a codec
 // populated with all relevant message types. As a result, we must call this method on app
@@ -82,7 +84,7 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	}
 
 	if len(aminoDoc.Msgs) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("Invalid number of messages in SignDoc, expected 1 but got %v\n", len(aminoDoc.Msgs))
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages in SignDoc, expected 1 but got %v", len(aminoDoc.Msgs))
 	}
 
 	var msg cosmosTypes.Msg
@@ -113,9 +115,8 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 		signDocBytes, // Amino StdSignDocBytes
 		feeDelegation,
 	)
-
 	if err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("could not convert to EIP712 representation: %w\n", err)
+		return apitypes.TypedData{}, fmt.Errorf("could not convert to EIP712 representation: %w", err)
 	}
 
 	return typedData, nil
@@ -148,12 +149,12 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 
 	// Verify single message
 	if len(body.Messages) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages, expected 1 got %v\n", len(body.Messages))
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages, expected 1 got %v", len(body.Messages))
 	}
 
 	// Verify single signature (single signer for now)
 	if len(authInfo.SignerInfos) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %v\n", len(authInfo.SignerInfos))
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %v", len(authInfo.SignerInfos))
 	}
 
 	// Decode signer info (single signer for now)
@@ -174,7 +175,7 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Parse Message (single message only)
 	var msg cosmosTypes.Msg
 	if err = ethermintProtoCodec.UnpackAny(body.Messages[0], &msg); err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w\n", err)
+		return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w", err)
 	}
 
 	// Init fee payer
