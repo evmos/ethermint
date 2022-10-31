@@ -66,6 +66,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [#1390](https://github.com/evmos/ethermint/pull/1390) Added multisig tx support.
 * (test) [#1396](https://github.com/evmos/ethermint/pull/1396) Increase test coverage for the EVM module `keeper`
 * (deps) [#1416](https://github.com/evmos/ethermint/pull/1416) Bump Go version to `1.19`
+* (cmd) [\#1417](https://github.com/evmos/ethermint/pull/1417) Apply Google CLI Syntax for required and optional args.
 
 ### Bug Fixes
 

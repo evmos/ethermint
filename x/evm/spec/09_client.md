@@ -19,7 +19,7 @@ The `query` commands allow users to query `evm` state.
 Allows users to query the smart contract code at a given address.
 
 ```go
-ethermintd query evm code [address] [flags]
+ethermintd query evm code ADDRESS [flags]
 ```
 
 ```bash
@@ -35,7 +35,7 @@ code: "0xef616c92f3cfc9e92dc270d6acff9cea213cecc7020a76ee4395af09bdceb4837a1ebdb
 Allows users to query storage for an account with a given key and height.
 
 ```bash
-ethermintd query evm storage [address] [key] [flags]
+ethermintd query evm storage ADDRESS KEY [flags]
 ```
 
 ```bash
@@ -55,7 +55,7 @@ The `tx` commands allow users to interact with the `evm` module.
 Allows users to build cosmos transactions from raw ethereum transaction.
 
 ```bash
-ethermintd tx evm raw [tx-hex] [flags]
+ethermintd tx evm raw TX_HEX [flags]
 ```
 
 ```bash
