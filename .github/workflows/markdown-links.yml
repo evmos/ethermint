@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6.1.1
+        id: git_diff
+        with:
+          PATTERNS: |
+            **/**.md
       - uses: gaurav-nelson/github-action-markdown-link-check@master
         with:
           folder-path: "docs"
@@ -21,3 +26,4 @@ jobs:
           use-quiet-mode: "yes"
           base-branch: "main"
           config-file: "mlc_config.json"
+        if: env.GIT_DIFF
