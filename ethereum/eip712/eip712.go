@@ -10,6 +10,7 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -67,6 +68,15 @@ func WrapTxToTypedData(
 	msgTypes, err := ExtractMsgTypes(cdc, msg, feeDelegation != nil)
 	if err != nil {
 		return apitypes.TypedData{}, err
+	}
+
+	if feeDelegation != nil {
+		feeInfo, ok := txData["fee"].(map[string]interface{})
+		if !ok {
+			return apitypes.TypedData{}, sdkerrors.Wrap(sdkerrors.ErrInvalidType, "cannot parse fee from tx data")
+		}
+
+		feeInfo["feePayer"] = feeDelegation.FeePayer.String()
 	}
 
 	typedData := apitypes.TypedData{
@@ -212,6 +222,12 @@ func traverseFields(
 				return sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
 			}
 
+			if any == nil {
+				// for example, using the cli for "/cosmos.gov.v1beta1.MsgSubmitProposal"
+				// proposal->content will not be instantiated so it won't be able to cast the wrapper
+				return fmt.Errorf("failed to get the any wrapper for %s", fieldName)
+			}
+
 			anyWrapper := &cosmosAnyWrapper{
 				Type: any.TypeUrl,
 			}
@@ -257,8 +273,13 @@ func traverseFields(
 
 		var isCollection bool
 		if fieldType.Kind() == reflect.Array || fieldType.Kind() == reflect.Slice {
+			if field.Len() == 0 {
+				// skip empty collections from type mapping
+				continue
+			}
+
 			fieldType = fieldType.Elem()
-			field = reflect.Zero(fieldType)
+			field = field.Index(0)
 			isCollection = true
 		}
 
@@ -379,8 +400,11 @@ var (
 	addressType   = reflect.TypeOf(common.Address{})
 	bigIntType    = reflect.TypeOf(big.Int{})
 	cosmIntType   = reflect.TypeOf(sdkmath.Int{})
+	cosmDecType   = reflect.TypeOf(sdk.Dec{})
 	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
 	timeType      = reflect.TypeOf(time.Time{})
+
+	edType = reflect.TypeOf(ed25519.PubKey{})
 )
 
 // typToEth supports only basic types and arrays of basic types.
@@ -426,6 +450,8 @@ func typToEth(typ reflect.Type) string {
 	case reflect.Ptr:
 		if typ.Elem().ConvertibleTo(bigIntType) ||
 			typ.Elem().ConvertibleTo(timeType) ||
+			typ.Elem().ConvertibleTo(edType) ||
+			typ.Elem().ConvertibleTo(cosmDecType) ||
 			typ.Elem().ConvertibleTo(cosmIntType) {
 			return str
 		}
@@ -433,7 +459,9 @@ func typToEth(typ reflect.Type) string {
 		if typ.ConvertibleTo(hashType) ||
 			typ.ConvertibleTo(addressType) ||
 			typ.ConvertibleTo(bigIntType) ||
+			typ.ConvertibleTo(edType) ||
 			typ.ConvertibleTo(timeType) ||
+			typ.ConvertibleTo(cosmDecType) ||
 			typ.ConvertibleTo(cosmIntType) {
 			return str
 		}

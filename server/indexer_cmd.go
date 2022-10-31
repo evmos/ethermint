@@ -15,11 +15,14 @@ import (
 
 func NewIndexTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "index-eth-tx [forward|backward]",
+		Use:   "index-eth-tx [backward|forward]",
 		Short: "Index historical eth txs",
 		Long: `Index historical eth txs, it only support two traverse direction to avoid creating gaps in the indexer db if using arbitrary block ranges:
-		- backward: index the blocks from the first indexed block to the earliest block in the chain.
+		- backward: index the blocks from the first indexed block to the earliest block in the chain, if indexer db is empty, start from the latest block.
 		- forward: index the blocks from the latest indexed block to latest block in the chain.
+
+		When start the node, the indexer start from the latest indexed block to avoid creating gap.
+        Backward mode should be used most of the time, so the latest indexed block is always up-to-date.
 		`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -82,7 +85,8 @@ func NewIndexTxCmd() *cobra.Command {
 					return err
 				}
 				if first == -1 {
-					return fmt.Errorf("indexer db is empty")
+					// start from the latest block if indexer db is empty
+					first = blockStore.Height()
 				}
 				for i := first - 1; i > 0; i-- {
 					if err := indexBlock(i); err != nil {

@@ -1,4 +1,5 @@
 [flake8]
+ignore = BLK100, W503
 max-line-length = 88
 extend-ignore = E203
 exclude = .git,__pycache__,node_modules,.direnv

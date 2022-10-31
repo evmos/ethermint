@@ -23,7 +23,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
@@ -48,7 +48,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         id: git_diff
         with:
           PATTERNS: |
@@ -69,7 +69,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.sol
@@ -90,7 +90,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.sol
@@ -106,12 +106,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v17
-      - uses: cachix/cachix-action@v10
+      - uses: cachix/install-nix-action@v18
+      - uses: cachix/cachix-action@v12
         with:
           name: ethermint
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.sol
@@ -132,6 +132,23 @@ jobs:
           path: debug_files.tar.gz
           if-no-files-found: ignore
 
+  upload-cache:
+    if: github.event_name == 'push'
+    needs: ["integration_tests"]
+    strategy:
+      matrix:
+        os: [macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: cachix/install-nix-action@v18
+      - uses: cachix/cachix-action@v12
+        with:
+          name: ethermint
+          signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
+      - name: 'instantiate integration test env'
+        run: nix-store -r $(nix-instantiate tests/integration_tests/shell.nix)
+
   test-sim-nondeterminism:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -141,7 +158,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
@@ -161,7 +178,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
@@ -181,7 +198,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
@@ -201,7 +218,7 @@ jobs:
           go-version: 1.18
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.0
+      - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
             **/**.go
