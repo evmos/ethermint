@@ -65,6 +65,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1378](https://github.com/evmos/ethermint/pull/1378) Add support for EVM RPC metrics
 * (ante) [#1390](https://github.com/evmos/ethermint/pull/1390) Added multisig tx support.
 * (test) [#1396](https://github.com/evmos/ethermint/pull/1396) Increase test coverage for the EVM module `keeper`
+* (cmd) [\#1417](https://github.com/evmos/evmos/pull/1417) Apply Google CLI Syntax for required and optional args.
 
 ### Bug Fixes
 
