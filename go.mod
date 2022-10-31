@@ -1,6 +1,6 @@
 module github.com/evmos/ethermint
 
-go 1.18
+go 1.19
 
 require (
 	cosmossdk.io/math v1.0.0-beta.3
@@ -190,10 +190,11 @@ require (
 )
 
 replace (
+	// use cosmos keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
-
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+	// use cosmos flavored protobufs
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 )
