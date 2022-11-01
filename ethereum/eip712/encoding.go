@@ -52,8 +52,8 @@ func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
 	return rawData, nil
 }
 
-// Get the EIP-712 TypedData representation of the sign doc bytes for either Amino or
-// Protobuf encodings.
+// GetEIP712TypedDataForMsg returns the EIP-712 TypedData representation for either
+// Amino or Protobuf encoded signature doc bytes.
 func GetEIP712TypedDataForMsg(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Attempt to decode as both Amino and Protobuf since the message format is unknown.
 	// If either decode works, we can move forward with the corresponding typed data.
