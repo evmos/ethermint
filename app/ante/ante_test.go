@@ -509,6 +509,32 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			}, true, false, false,
 		},
 		{
+			"passes - Single-signer EIP-712",
+			func() sdk.Tx {
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(privKey.PubKey().Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSingleSignedTx(
+					privKey,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"EIP-712",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
 			"passes - EIP-712 multi-key",
 			func() sdk.Tx {
 				numKeys := 5
@@ -712,6 +738,67 @@ func (suite AnteTestSuite) TestAnteHandler() {
 
 				msg.Amount[0].Amount = sdk.NewInt(5)
 				txBuilder.SetMsgs(msg)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Multi-Key with messages added after signing",
+			func() sdk.Tx {
+				numKeys := 1
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"EIP-712",
+				)
+
+				// Duplicate
+				txBuilder.SetMsgs(msg, msg)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Single-Signer EIP-712 with messages added after signing",
+			func() sdk.Tx {
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(privKey.PubKey().Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSingleSignedTx(
+					privKey,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"EIP-712",
+				)
+
+				txBuilder.SetMsgs(msg, msg)
 
 				return txBuilder.GetTx()
 			}, false, false, false,
