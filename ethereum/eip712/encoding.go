@@ -3,6 +3,7 @@ package eip712
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
@@ -59,11 +60,11 @@ func GetEIP712TypedDataForMsg(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Attempt to decode as both Amino and Protobuf since the message format is unknown.
 	// If either decode works, we can move forward with the corresponding typed data.
 	typedDataAmino, errAmino := decodeAminoSignDoc(signDocBytes)
-	if errAmino == nil {
+	if !reflect.DeepEqual(typedDataAmino, apitypes.TypedData{}) && errAmino == nil {
 		return typedDataAmino, nil
 	}
 	typedDataProtobuf, errProtobuf := decodeProtobufSignDoc(signDocBytes)
-	if errProtobuf == nil {
+	if !reflect.DeepEqual(typedDataProtobuf, apitypes.TypedData{}) && errProtobuf == nil {
 		return typedDataProtobuf, nil
 	}
 
@@ -153,11 +154,6 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages, expected 1 got %v", len(body.Messages))
 	}
 
-	// Verify single signature (single signer for now)
-	if len(authInfo.SignerInfos) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %v", len(authInfo.SignerInfos))
-	}
-
 	// Decode signer info (single signer for now)
 	signerInfo := authInfo.SignerInfos[0]
 
@@ -177,6 +173,11 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	var msg cosmosTypes.Msg
 	if err := ethermintProtoCodec.UnpackAny(body.Messages[0], &msg); err != nil {
 		return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w", err)
+	}
+
+	// Verify single signer (single signer for now)
+	if len(msg.GetSigners()) != 1 {
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %v", len(authInfo.SignerInfos))
 	}
 
 	// Init fee payer

@@ -95,15 +95,17 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 
 	testCases := []struct {
 		title         string
+		chainId       string
 		fee           txtypes.Fee
 		memo          string
 		msgs          []sdk.Msg
 		accountNumber uint64
 		sequence      uint64
+		timeoutHeight uint64
 		expectSuccess bool
 	}{
 		{
-			title: "Standard MsgSend",
+			title: "Succeeds - Standard MsgSend",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -121,7 +123,7 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: true,
 		},
 		{
-			title: "Standard MsgVote",
+			title: "Succeeds - Standard MsgVote",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -139,7 +141,7 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: true,
 		},
 		{
-			title: "Standard MsgDelegate",
+			title: "Succeeds - Standard MsgDelegate",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -157,7 +159,7 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: true,
 		},
 		{
-			title: "Standard MsgWithdrawDelegationReward",
+			title: "Succeeds - Standard MsgWithdrawDelegationReward",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -174,7 +176,7 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: true,
 		},
 		{
-			title: "Two MsgVotes",
+			title: "Fails - Two MsgVotes",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -197,7 +199,7 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: false, // Multiple messages are currently not allowed
 		},
 		{
-			title: "MsgSend + MsgVote",
+			title: "Fails - MsgSend + MsgVote",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -213,6 +215,79 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 					suite.createTestAddress(),
 					suite.createTestAddress(),
 					suite.makeCoins("photon", math.NewInt(50)),
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: false,
+		},
+		{
+			title:   "Fails - Invalid ChainID",
+			chainId: "invalidchainid",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				govtypes.NewMsgVote(
+					suite.createTestAddress(),
+					5,
+					govtypes.OptionNo,
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: false,
+		},
+		{
+			title: "Fails - Includes TimeoutHeight",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				govtypes.NewMsgVote(
+					suite.createTestAddress(),
+					5,
+					govtypes.OptionNo,
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			timeoutHeight: 1000,
+			expectSuccess: false,
+		},
+		{
+			title: "Fails - Single Message / Multi-Signer",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				banktypes.NewMsgMultiSend(
+					[]banktypes.Input{
+						banktypes.NewInput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+						banktypes.NewInput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+					},
+					[]banktypes.Output{
+						banktypes.NewOutput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+						banktypes.NewOutput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+					},
 				),
 			},
 			accountNumber: 25,
@@ -254,9 +329,18 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 				err = txBuilder.SetSignatures([]signing.SignatureV2{txSig}...)
 				suite.Require().NoError(err)
 
+				chainId := "ethermint_9000-1"
+				if tc.chainId != "" {
+					chainId = tc.chainId
+				}
+
+				if tc.timeoutHeight != 0 {
+					txBuilder.SetTimeoutHeight(tc.timeoutHeight)
+				}
+
 				// Declare signerData
 				signerData := authsigning.SignerData{
-					ChainID:       "ethermint_9000-1",
+					ChainID:       chainId,
 					AccountNumber: tc.accountNumber,
 					Sequence:      tc.sequence,
 					PubKey:        pubKey,

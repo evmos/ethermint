@@ -683,6 +683,48 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
+		{
+			"Fails - Multi-Key with multiple signers",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgMultiSend(
+					[]banktypes.Input{
+						banktypes.NewInput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+						banktypes.NewInput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+					},
+					[]banktypes.Output{
+						banktypes.NewOutput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+						banktypes.NewOutput(
+							suite.createTestAddress(),
+							suite.makeCoins("photon", math.NewInt(50)),
+						),
+					},
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"mixed", // Combine EIP-712 and standard signatures
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
 	}
 
 	for _, tc := range testCases {
