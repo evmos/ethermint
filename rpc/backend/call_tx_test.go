@@ -54,7 +54,7 @@ func (suite *BackendTestSuite) TestResend() {
 			false,
 		},
 		{
-			"pass - Can't set Tx defaults ",
+			"pass - Can't set Tx defaults BaseFee disabled",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)

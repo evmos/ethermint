@@ -24,6 +24,17 @@ import (
 // To use a mock method it has to be registered in a given test.
 var _ tmrpcclient.Client = &mocks.Client{}
 
+// Tx Search
+func RegisterTxSearch(client *mocks.Client, query string) {
+	client.On("TxSearch", rpc.ContextWithHeight(1), query, false, (*int)(nil), (*int)(nil), "").
+		Return(&tmrpctypes.ResultTxSearch{}, nil)
+}
+
+func RegisterTxSearchError(client *mocks.Client, query string) {
+	client.On("TxSearch", rpc.ContextWithHeight(1), query, false, (*int)(nil), (*int)(nil), "").
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 // Broadcast Tx
 func RegisterBroadcastTx(client *mocks.Client, tx types.Tx) {
 	client.On("BroadcastTxSync", context.Background(), tx).

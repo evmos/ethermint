@@ -30,6 +30,19 @@ import (
 // To use a mock method it has to be registered in a given test.
 var _ evmtypes.QueryClient = &mocks.EVMQueryClient{}
 
+// TraceBlock
+func RegisterTraceBlock(queryClient *mocks.EVMQueryClient, txs []*evmtypes.MsgEthereumTx) {
+	data := []byte{0x7b, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x20, 0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x22, 0x7d}
+	queryClient.On("TraceBlock", rpc.ContextWithHeight(1),
+		&evmtypes.QueryTraceBlockRequest{Txs: txs, BlockNumber: 1, TraceConfig: &evmtypes.TraceConfig{}}).
+		Return(&evmtypes.QueryTraceBlockResponse{Data: data}, nil)
+}
+
+func RegisterTraceBlockError(queryClient *mocks.EVMQueryClient) {
+	queryClient.On("TraceBlock", rpc.ContextWithHeight(1), &evmtypes.QueryTraceBlockRequest{}).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
 // Params
 func RegisterParams(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
