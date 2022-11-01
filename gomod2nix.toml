@@ -84,8 +84,9 @@ schema = 3
     version = "v0.7.9"
     hash = "sha256-ZWIXIXcHGjeCNgMrpXymry8/8esDDauGFfF/+gEoO1Y="
   [mod."github.com/confio/ics23/go"]
-    version = "v0.7.0"
-    hash = "sha256-FjUQfDKtX+/13+UjJzbYPAkgM4GPZ0vk+dKz7/iRetw="
+    version = "v0.8.0"
+    hash = "sha256-mFKxFHp7RaE1L5NdtH9H9px2Cy6I5uOZVnFOgE8Nrew="
+    replaced = "github.com/cosmos/cosmos-sdk/ics23/go"
   [mod."github.com/cosmos/btcutil"]
     version = "v1.0.4"
     hash = "sha256-JvcBXBdjdmnaW/nyf/tw/uaOAGn1b78yxrtl2/Rs3kA="
@@ -102,11 +103,11 @@ schema = 3
     version = "v1.2.0"
     hash = "sha256-209TcVuXc5s/TcOvNlaQ1HEJAUDTEK3nxPhs+d8TEcY="
   [mod."github.com/cosmos/iavl"]
-    version = "v0.19.3"
-    hash = "sha256-rmW2KoKmm4YXmYIYE1vXMOCaDyP1ym0qsW224PYc9rg="
+    version = "v0.19.4"
+    hash = "sha256-EmpRZ48pjPFq/fIHneut9Vyo5QJATfb3ZO7KzWnqs9g="
   [mod."github.com/cosmos/ibc-go/v5"]
-    version = "v5.0.0"
-    hash = "sha256-sDZdmuGohaaBF7bxrjo9PWJnmoF+VOkjySYhsFixPz4="
+    version = "v5.0.1"
+    hash = "sha256-44Vyj9i4gh6U0BGNsEFqRsHAYdxfuJmLGdtPWxcBfWQ="
   [mod."github.com/cosmos/ledger-cosmos-go"]
     version = "v0.11.1"
     hash = "sha256-yli+VvVtZmHo2LPvCY6lYVUfcCDn3sBLDL+a8KIlqDA="
@@ -214,8 +215,8 @@ schema = 3
     version = "v1.0.1"
     hash = "sha256-1PIeFGgUL4BK/StL/D12pg9bEQ5HfMT/fMLdus4pZTs="
   [mod."github.com/google/go-cmp"]
-    version = "v0.5.8"
-    hash = "sha256-8zkIo+Sr1NXMnj3PNmvjX2sZKnAKWXOFvmnX7D9bwxQ="
+    version = "v0.5.9"
+    hash = "sha256-lQc4O00R3QSMGs9LP8Sy7A9kj0cqV5rrUdpnGeipIyg="
   [mod."github.com/google/orderedcode"]
     version = "v0.0.1"
     hash = "sha256-KrExYovtUQrHGI1mPQf57jGw8soz7eWOC2xqEaV0uGk="
@@ -361,8 +362,8 @@ schema = 3
     version = "v2.4.0"
     hash = "sha256-Z+bch118Akc5wGkOM7ZePNqw7vW5euXE7ec4Y297HNw="
   [mod."github.com/onsi/gomega"]
-    version = "v1.22.1"
-    hash = "sha256-5bxEd2MIvBqTbtuI74Hx7ZN+cSGLU+iTKK0YaTPbVx8="
+    version = "v1.23.0"
+    hash = "sha256-g5FaFLUK8ZAR9VgFTTH0ax0t45tZkYbIHbq/gANIOTM="
   [mod."github.com/pelletier/go-toml"]
     version = "v1.9.5"
     hash = "sha256-RJ9K1BTId0Mled7S66iGgxHkZ5JKEIsrrNaEfM8aImc="
