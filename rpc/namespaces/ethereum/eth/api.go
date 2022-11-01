@@ -14,15 +14,15 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/evmos/ethermint/rpc/backend"
+	"github.com/evoblockchain/ethermint/rpc/backend"
 
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	rpctypes "github.com/evoblockchain/ethermint/rpc/types"
+	ethermint "github.com/evoblockchain/ethermint/types"
+	evmtypes "github.com/evoblockchain/ethermint/x/evm/types"
 )
 
-// The Ethereum API allows applications to connect to an Evmos node that is
-// part of the Evmos blockchain. Developers can interact with on-chain EVM data
+// The Ethereum API allows applications to connect to an Evoblock node that is
+// part of the Evoblock blockchain. Developers can interact with on-chain EVM data
 // and send different types of transactions to the network by utilizing the
 // endpoints provided by the API. The API follows a JSON-RPC standard. If not
 // otherwise specified, the interface is derived from the Alchemy Ethereum API:

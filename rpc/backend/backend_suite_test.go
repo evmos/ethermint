@@ -19,13 +19,13 @@ import (
 	"github.com/stretchr/testify/suite"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/evmos/ethermint/app"
-	"github.com/evmos/ethermint/crypto/hd"
-	"github.com/evmos/ethermint/encoding"
-	"github.com/evmos/ethermint/indexer"
-	"github.com/evmos/ethermint/rpc/backend/mocks"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/evoblockchain/ethermint/app"
+	"github.com/evoblockchain/ethermint/crypto/hd"
+	"github.com/evoblockchain/ethermint/encoding"
+	"github.com/evoblockchain/ethermint/indexer"
+	"github.com/evoblockchain/ethermint/rpc/backend/mocks"
+	rpctypes "github.com/evoblockchain/ethermint/rpc/types"
+	evmtypes "github.com/evoblockchain/ethermint/x/evm/types"
 )
 
 type BackendTestSuite struct {

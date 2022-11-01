@@ -2,7 +2,7 @@ package v3_test
 
 import (
 	"fmt"
-	v3 "github.com/evmos/ethermint/x/evm/migrations/v3"
+	v3 "github.com/evoblockchain/ethermint/x/evm/migrations/v3"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,11 +11,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/evmos/ethermint/encoding"
+	"github.com/evoblockchain/ethermint/encoding"
 
-	"github.com/evmos/ethermint/app"
-	v3types "github.com/evmos/ethermint/x/evm/migrations/v3/types"
-	"github.com/evmos/ethermint/x/evm/types"
+	"github.com/evoblockchain/ethermint/app"
+	v3types "github.com/evoblockchain/ethermint/x/evm/migrations/v3/types"
+	"github.com/evoblockchain/ethermint/x/evm/types"
 )
 
 func TestMigrateStore(t *testing.T) {

@@ -11,8 +11,8 @@ import (
 	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
 	types3 "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/ethereum/eip712"
-	"github.com/evmos/ethermint/types"
+	"github.com/evoblockchain/ethermint/ethereum/eip712"
+	"github.com/evoblockchain/ethermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -31,13 +31,13 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/evmos/ethermint/app"
-	ante "github.com/evmos/ethermint/app/ante"
-	"github.com/evmos/ethermint/encoding"
-	"github.com/evmos/ethermint/tests"
-	"github.com/evmos/ethermint/x/evm/statedb"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	"github.com/evoblockchain/ethermint/app"
+	ante "github.com/evoblockchain/ethermint/app/ante"
+	"github.com/evoblockchain/ethermint/encoding"
+	"github.com/evoblockchain/ethermint/tests"
+	"github.com/evoblockchain/ethermint/x/evm/statedb"
+	evmtypes "github.com/evoblockchain/ethermint/x/evm/types"
+	feemarkettypes "github.com/evoblockchain/ethermint/x/feemarket/types"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )

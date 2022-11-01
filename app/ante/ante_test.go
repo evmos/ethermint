@@ -12,8 +12,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
-	"github.com/evmos/ethermint/tests"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/evoblockchain/ethermint/tests"
+	evmtypes "github.com/evoblockchain/ethermint/x/evm/types"
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {

@@ -20,7 +20,7 @@ The evm module contains the following parameters:
 
 The evm denomination parameter defines the token denomination used on the EVM state transitions and gas consumption for EVM messages.
 
-For example, on Ethereum, the `evm_denom` would be `ETH`. In the case of Ethermint, the default denomination is the **[atto photon](notion://www.notion.so/docs/basics/photon.md)** (used on the Evmos testnets). In terms of precision, the `PHOTON` and `ETH` share the same value, *i.e* `1 PHOTON = 10^18 atto photon` and `1 ETH = 10^18 wei`.
+For example, on Ethereum, the `evm_denom` would be `ETH`. In the case of Ethermint, the default denomination is the **[atto photon](notion://www.notion.so/docs/basics/photon.md)** (used on the Evoblock testnets). In terms of precision, the `PHOTON` and `ETH` share the same value, *i.e* `1 PHOTON = 10^18 atto photon` and `1 ETH = 10^18 wei`.
 
 ::: tip
 Note: SDK applications that want to import the EVM module as a dependency will need to set their own `evm_denom` (i.e not `"aphoton"`).

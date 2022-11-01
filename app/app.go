@@ -94,18 +94,18 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
 
 	// unnamed import of statik for swagger UI support
-	_ "github.com/evmos/ethermint/client/docs/statik"
+	_ "github.com/evoblockchain/ethermint/client/docs/statik"
 
-	"github.com/evmos/ethermint/app/ante"
-	srvflags "github.com/evmos/ethermint/server/flags"
-	ethermint "github.com/evmos/ethermint/types"
-	"github.com/evmos/ethermint/x/evm"
-	evmrest "github.com/evmos/ethermint/x/evm/client/rest"
-	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	"github.com/evmos/ethermint/x/feemarket"
-	feemarketkeeper "github.com/evmos/ethermint/x/feemarket/keeper"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	"github.com/evoblockchain/ethermint/app/ante"
+	srvflags "github.com/evoblockchain/ethermint/server/flags"
+	ethermint "github.com/evoblockchain/ethermint/types"
+	"github.com/evoblockchain/ethermint/x/evm"
+	evmrest "github.com/evoblockchain/ethermint/x/evm/client/rest"
+	evmkeeper "github.com/evoblockchain/ethermint/x/evm/keeper"
+	evmtypes "github.com/evoblockchain/ethermint/x/evm/types"
+	"github.com/evoblockchain/ethermint/x/feemarket"
+	feemarketkeeper "github.com/evoblockchain/ethermint/x/feemarket/keeper"
+	feemarkettypes "github.com/evoblockchain/ethermint/x/feemarket/types"
 
 	// Force-load the tracer engines to trigger registration due to Go-Ethereum v1.10.15 changes
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"

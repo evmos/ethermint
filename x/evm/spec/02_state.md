@@ -153,7 +153,7 @@ The EVM uses state-reverting exceptions to handle errors. Such an exception will
 - `Snapshot()` creates a new snapshot and returns the identifier.
 - `RevertToSnapshot(rev)` undo all the modifications up to the snapshot identified as `rev`.
 
-Evmos adapted the [go-ethereum journal implementation](https://github.com/ethereum/go-ethereum/blob/master/core/state/journal.go#L39) to support this, it uses a list of journal logs to record all the state modification operations done so far,
+Evoblock adapted the [go-ethereum journal implementation](https://github.com/ethereum/go-ethereum/blob/master/core/state/journal.go#L39) to support this, it uses a list of journal logs to record all the state modification operations done so far,
 snapshot is consists of a unique id and an index in the log list, and to revert to a snapshot it just undo the journal logs after the snapshot index in reversed order.
 
 ### Ethereum Transaction logs
@@ -229,7 +229,7 @@ The `GenesisAccount` type corresponds to an adaptation of the Ethereum `GenesisA
 
 Its main difference is that the one on Ethermint uses a custom `Storage` type that uses a slice instead of maps for the evm `State` (due to non-determinism), and that it doesn't contain the private key field.
 
-It is also important to note that since the `auth` module on the Cosmos SDK manages the account state,  the `Address` field must correspond to an existing `EthAccount` that is stored in the `auth`'s module `Keeper` (i.e `AccountKeeper`). Addresses use the **[EIP55](https://eips.ethereum.org/EIPS/eip-55)** hex **[format](https://evmos.dev/basics/accounts.html#address-formats-for-clients)** on `genesis.json`.
+It is also important to note that since the `auth` module on the Cosmos SDK manages the account state,  the `Address` field must correspond to an existing `EthAccount` that is stored in the `auth`'s module `Keeper` (i.e `AccountKeeper`). Addresses use the **[EIP55](https://eips.ethereum.org/EIPS/eip-55)** hex **[format](https://evoblock.dev/basics/accounts.html#address-formats-for-clients)** on `genesis.json`.
 
 ```go
 type GenesisAccount struct {

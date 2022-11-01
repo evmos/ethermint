@@ -14,7 +14,7 @@ Before EIP-1559 the transaction fee is calculated with
 fee = gasPrice * gasLimit
 ```
 
-, where `gasPrice` is the price per gas and `gasLimit` describes the amount of gas required to perform the transaction. The more complex operations a transaction requires, the higher the gasLimit (See [Executing EVM bytecode](https://docs.evmos.org/modules/evm/01_concepts.html#executing-evm-bytecode)). To submit a transaction, the signer needs to specify the `gasPrice`.
+, where `gasPrice` is the price per gas and `gasLimit` describes the amount of gas required to perform the transaction. The more complex operations a transaction requires, the higher the gasLimit (See [Executing EVM bytecode](https://docs.evoblock.org/modules/evm/01_concepts.html#executing-evm-bytecode)). To submit a transaction, the signer needs to specify the `gasPrice`.
 
 With EIP-1559 enabled, the transaction fee is calculated with
 
@@ -31,7 +31,7 @@ The base fee per gas (aka base fee) is a global gas price defined at the consens
 - it increases when blocks are above the gas target,
 - it decreases when blocks are below the gas target.
 
-Instead of burning the base fee (as implemented on Ethereum), the `feemarket` module allocates the base fee for regular [Cosmos SDK fee distribution](https://docs.evmos.org/modules/distribution/).
+Instead of burning the base fee (as implemented on Ethereum), the `feemarket` module allocates the base fee for regular [Cosmos SDK fee distribution](https://docs.evoblock.org/modules/distribution/).
 
 ## Priority Tip
 

@@ -10,17 +10,17 @@ parent:
 ![banner](docs/ethermint.jpg)
 
 <div align="center">
-  <a href="https://github.com/evmos/ethermint/releases/latest">
+  <a href="https://github.com/evoblockchain/ethermint/releases/latest">
     <img alt="Version" src="https://img.shields.io/github/tag/tharsis/ethermint.svg" />
   </a>
-  <a href="https://github.com/evmos/ethermint/blob/main/LICENSE">
+  <a href="https://github.com/evoblockchain/ethermint/blob/main/LICENSE">
     <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/tharsis/ethermint.svg" />
   </a>
-  <a href="https://pkg.go.dev/github.com/evmos/ethermint">
-    <img alt="GoDoc" src="https://godoc.org/github.com/evmos/ethermint?status.svg" />
+  <a href="https://pkg.go.dev/github.com/evoblockchain/ethermint">
+    <img alt="GoDoc" src="https://godoc.org/github.com/evoblockchain/ethermint?status.svg" />
   </a>
-  <a href="https://goreportcard.com/report/github.com/evmos/ethermint">
-    <img alt="Go report card" src="https://goreportcard.com/badge/github.com/evmos/ethermint"/>
+  <a href="https://goreportcard.com/report/github.com/evoblockchain/ethermint">
+    <img alt="Go report card" src="https://goreportcard.com/badge/github.com/evoblockchain/ethermint"/>
   </a>
   <a href="https://bestpractices.coreinfrastructure.org/projects/5018">
     <img alt="Lines of code" src="https://img.shields.io/tokei/lines/github/tharsis/ethermint">
@@ -30,8 +30,8 @@ parent:
   <a href="https://discord.gg/trje9XuAmy">
     <img alt="Discord" src="https://img.shields.io/discord/809048090249134080.svg" />
   </a>
-  <a href="https://github.com/evmos/ethermint/actions?query=branch%3Amain+workflow%3ALint">
-    <img alt="Lint Status" src="https://github.com/evmos/ethermint/actions/workflows/lint.yml/badge.svg?branch=main" />
+  <a href="https://github.com/evoblockchain/ethermint/actions?query=branch%3Amain+workflow%3ALint">
+    <img alt="Lint Status" src="https://github.com/evoblockchain/ethermint/actions/workflows/lint.yml/badge.svg?branch=main" />
   </a>
   <a href="https://codecov.io/gh/tharsis/ethermint">
     <img alt="Code Coverage" src="https://codecov.io/gh/tharsis/ethermint/branch/main/graph/badge.svg" />
@@ -44,35 +44,35 @@ Ethermint is a scalable and interoperable Ethereum library, built on Proof-of-St
 
 ## Installation
 
-For prerequisites and detailed build instructions please read the Evmos [Installation](https://evmos.dev/quickstart/installation.html) instructions. Once the dependencies are installed, run:
+For prerequisites and detailed build instructions please read the Evoblock [Installation](https://evoblock.dev/quickstart/installation.html) instructions. Once the dependencies are installed, run:
 
 ```bash
 make install
 ```
 
-Or check out the latest [release](https://github.com/evmos/ethermint/releases).
+Or check out the latest [release](https://github.com/evoblockchain/ethermint/releases).
 
 ## Quick Start
 
-To learn how the Ethermint works from a high-level perspective, go to the [Introduction](https://evmos.dev/intro/overview.html) section from the documentation. You can also check the instructions to [Run a Node](https://evmos.dev/quickstart/run_node.html).
+To learn how the Ethermint works from a high-level perspective, go to the [Introduction](https://evoblock.dev/intro/overview.html) section from the documentation. You can also check the instructions to [Run a Node](https://evoblock.dev/quickstart/run_node.html).
 
-For an example on how Ethermint can be used on any Cosmos-SDK chain, please refer to [Evmos](https://www.github.com/tharsis/evmos).
+For an example on how Ethermint can be used on any Cosmos-SDK chain, please refer to [Evoblock](https://www.github.com/tharsis/evoblock).
 
 ## Community
 
 The following chat channels and forums are a great spot to ask questions about Ethermint:
 
-- [Evmos Twitter](https://twitter.com/EvmosOrg)
-- [Evmos Discord](https://discord.gg/trje9XuAmy)
-- [Evmos Telegram](https://t.me/EvmosOrg)
+- [Evoblock Twitter](https://twitter.com/EvmosOrg)
+- [Evoblock Discord](https://discord.gg/trje9XuAmy)
+- [Evoblock Telegram](https://t.me/EvmosOrg)
 - [Tharsis Twitter](https://twitter.com/TharsisHQ)
 
 ## Contributing
 
-Looking for a good place to start contributing? Check out some [`good first issues`](https://github.com/evmos/ethermint/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
+Looking for a good place to start contributing? Check out some [`good first issues`](https://github.com/evoblockchain/ethermint/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
 For additional instructions, standards and style guides, please refer to the [Contributing](./CONTRIBUTING.md) document.
 
 ## Careers
 
-See our open positions on [Cosmos Jobs](https://jobs.cosmos.network/project/evmos-d0sk1uxuh-remote/), [Notion](https://tharsis.notion.site), or feel free to [reach out](mailto:careers@thars.is) via email.
+See our open positions on [Cosmos Jobs](https://jobs.cosmos.network/project/evoblock-d0sk1uxuh-remote/), [Notion](https://tharsis.notion.site), or feel free to [reach out](mailto:careers@thars.is) via email.

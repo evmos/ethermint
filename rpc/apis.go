@@ -10,16 +10,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/evmos/ethermint/rpc/backend"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/eth"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/eth/filters"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/miner"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/net"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/personal"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/txpool"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/web3"
-	ethermint "github.com/evmos/ethermint/types"
+	"github.com/evoblockchain/ethermint/rpc/backend"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/debug"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/eth"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/eth/filters"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/miner"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/net"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/personal"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/txpool"
+	"github.com/evoblockchain/ethermint/rpc/namespaces/ethereum/web3"
+	ethermint "github.com/evoblockchain/ethermint/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )
