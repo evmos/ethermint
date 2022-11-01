@@ -18,6 +18,8 @@ import (
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	ethermint "github.com/evmos/ethermint/types"
+    	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -218,7 +220,7 @@ func VerifySignature(
 			return sdkerrors.Wrap(err, "failed to pack tx data in EIP712 object")
 		}
 
-		sigHash, err := eip712.ComputeTypedDataHash(typedData)
+		sigHash,_, err := apitypes.TypedDataAndHash(typedData)
 		if err != nil {
 			return err
 		}
