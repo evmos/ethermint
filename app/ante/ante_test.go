@@ -684,33 +684,21 @@ func (suite AnteTestSuite) TestAnteHandler() {
 			}, false, false, false,
 		},
 		{
-			"Fails - Multi-Key with multiple signers",
+			"Fails - Multi-Key with different payload than one signed",
 			func() sdk.Tx {
-				numKeys := 5
+				numKeys := 1
 				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
 				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
 
-				msg := banktypes.NewMsgMultiSend(
-					[]banktypes.Input{
-						banktypes.NewInput(
-							suite.createTestAddress(),
-							suite.makeCoins("photon", math.NewInt(50)),
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
 						),
-						banktypes.NewInput(
-							suite.createTestAddress(),
-							suite.makeCoins("photon", math.NewInt(50)),
-						),
-					},
-					[]banktypes.Output{
-						banktypes.NewOutput(
-							suite.createTestAddress(),
-							suite.makeCoins("photon", math.NewInt(50)),
-						),
-						banktypes.NewOutput(
-							suite.createTestAddress(),
-							suite.makeCoins("photon", math.NewInt(50)),
-						),
-					},
+					),
 				)
 
 				txBuilder := suite.CreateTestSignedMultisigTx(
@@ -719,8 +707,11 @@ func (suite AnteTestSuite) TestAnteHandler() {
 					msg,
 					"ethermint_9000-1",
 					2000,
-					"mixed", // Combine EIP-712 and standard signatures
+					"EIP-712",
 				)
+
+				msg.Amount[0].Amount = sdk.NewInt(5)
+				txBuilder.SetMsgs(msg)
 
 				return txBuilder.GetTx()
 			}, false, false, false,
