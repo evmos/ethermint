@@ -174,7 +174,7 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 
 	// Parse Message (single message only)
 	var msg cosmosTypes.Msg
-	if err = ethermintProtoCodec.UnpackAny(body.Messages[0], &msg); err != nil {
+	if err := ethermintProtoCodec.UnpackAny(body.Messages[0], &msg); err != nil {
 		return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w", err)
 	}
 
