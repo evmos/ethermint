@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/pkg/errors"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/evmos/ethermint/ethereum/eip712"
+
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	"github.com/pkg/errors"
 )
 
 // SendTransaction sends transaction based on received args using Node's key to sign it
@@ -135,7 +137,7 @@ func (b *Backend) SignTypedData(address common.Address, typedData apitypes.Typed
 		return nil, fmt.Errorf("%s; %s", keystore.ErrNoMatch, err.Error())
 	}
 
-	sigHash, err := eip712.ComputeTypedDataHash(typedData)
+	sigHash, _, err := apitypes.TypedDataAndHash(typedData)
 	if err != nil {
 		return nil, err
 	}

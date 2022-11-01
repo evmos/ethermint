@@ -35,6 +35,8 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
 		GrayGlacierBlock:        getBlockValue(cc.GrayGlacierBlock),
 		MergeNetsplitBlock:      getBlockValue(cc.MergeNetsplitBlock),
+		ShanghaiBlock:           nil, // TODO: add shanghai block
+		CancunBlock:             nil, // TODO: add cancun block
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,
