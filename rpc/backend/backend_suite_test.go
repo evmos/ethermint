@@ -83,6 +83,10 @@ func (suite *BackendTestSuite) SetupTest() {
 	suite.backend.clientCtx.Client = mocks.NewClient(suite.T())
 	suite.backend.ctx = rpctypes.ContextWithHeight(1)
 
+	// Add codec
+	encCfg := encoding.MakeConfig(app.ModuleBasics)
+	suite.backend.clientCtx.Codec = encCfg.Codec
+
 }
 
 // buildEthereumTx returns an example legacy Ethereum transaction

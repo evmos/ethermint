@@ -25,7 +25,13 @@ import (
 var _ tmrpcclient.Client = &mocks.Client{}
 
 // Tx Search
-func RegisterTxSearch(client *mocks.Client, query string) {
+func RegisterTxSearch(client *mocks.Client, query string, txBz []byte) {
+	resulTxs := []*tmrpctypes.ResultTx{{Tx: txBz}}
+	client.On("TxSearch", rpc.ContextWithHeight(1), query, false, (*int)(nil), (*int)(nil), "").
+		Return(&tmrpctypes.ResultTxSearch{Txs: resulTxs, TotalCount: 1}, nil)
+}
+
+func RegisterTxSearchEmpty(client *mocks.Client, query string) {
 	client.On("TxSearch", rpc.ContextWithHeight(1), query, false, (*int)(nil), (*int)(nil), "").
 		Return(&tmrpctypes.ResultTxSearch{}, nil)
 }
