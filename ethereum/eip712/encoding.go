@@ -60,11 +60,11 @@ func GetEIP712TypedDataForMsg(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Attempt to decode as both Amino and Protobuf since the message format is unknown.
 	// If either decode works, we can move forward with the corresponding typed data.
 	typedDataAmino, errAmino := decodeAminoSignDoc(signDocBytes)
-	if !reflect.DeepEqual(typedDataAmino, apitypes.TypedData{}) && errAmino == nil {
+	if errAmino == nil && !reflect.DeepEqual(typedDataAmino, apitypes.TypedData{}){
 		return typedDataAmino, nil
 	}
 	typedDataProtobuf, errProtobuf := decodeProtobufSignDoc(signDocBytes)
-	if !reflect.DeepEqual(typedDataProtobuf, apitypes.TypedData{}) && errProtobuf == nil {
+	if errProtobuf == nil && !reflect.DeepEqual(typedDataProtobuf, apitypes.TypedData{}){
 		return typedDataProtobuf, nil
 	}
 
