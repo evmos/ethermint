@@ -17,7 +17,6 @@ from .utils import (
     w3_wait_for_new_blocks,
 )
 
-
 def test_block(ethermint, geth):
     get_blocks(ethermint, geth, False)
     get_blocks(ethermint, geth, True)
@@ -246,7 +245,7 @@ def test_get_block_transaction_count(ethermint_rpc_ws, geth):
     )
 
     make_same_rpc_calls(
-        eth_rpc, geth_rpc, "eth_getBlockTransactionCountByNumber", ["0x100"]
+        eth_rpc, geth_rpc, "eth_getBlockTransactionCountByNumber", ["0x1000"]
     )
 
     tx_hash = send_and_get_hash(w3)
@@ -342,6 +341,10 @@ def make_same_rpc_calls(rpc1, rpc2, method, params):
     res1 = rpc1.make_request(method, params)
     res2 = rpc2.make_request(method, params)
     res, err = same_types(res1, res2)
+
+    if not res:
+        print(res1)
+        print(res2)
     assert res, err
 
 
