@@ -45,7 +45,7 @@ def test_pruned_node(pruned):
     signed = sign_transaction(w3, tx, KEYS["validator"])
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
     print("wait for prunning happens")
-    w3_wait_for_new_blocks(w3, 10)
+    w3_wait_for_new_blocks(w3, 15)
 
     tx_receipt = w3.eth.get_transaction_receipt(txhash.hex())
     assert len(tx_receipt.logs) == 1
