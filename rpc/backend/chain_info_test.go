@@ -201,7 +201,6 @@ func (suite *BackendTestSuite) TestGetCoinbase() {
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterStatusError(client)
-
 			},
 			validatorAcc,
 			false,
@@ -234,6 +233,13 @@ func (suite *BackendTestSuite) TestSuggestGasTipCap() {
 	}{
 		{
 			"pass - London hardfork not enabled or feemarket not enabled ",
+			func() {},
+			nil,
+			big.NewInt(0),
+			true,
+		},
+		{
+			"pass - Gets the suggest gas tip cap ",
 			func() {},
 			nil,
 			big.NewInt(0),
