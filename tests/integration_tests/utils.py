@@ -80,7 +80,7 @@ def wait_for_new_blocks(cli, n):
 
 
 def wait_for_block(cli, height, timeout=240):
-    for i in range(timeout * 2):
+    for _ in range(timeout * 2):
         try:
             status = cli.status()
         except AssertionError as e:
@@ -96,7 +96,7 @@ def wait_for_block(cli, height, timeout=240):
 
 
 def w3_wait_for_block(w3, height, timeout=240):
-    for i in range(timeout * 2):
+    for _ in range(timeout * 2):
         try:
             current_height = w3.eth.block_number
         except Exception as e:
