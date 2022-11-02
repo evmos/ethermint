@@ -56,7 +56,7 @@ func (suite *BackendTestSuite) TestGetTransactionByHash() {
 			true,
 		},
 		{
-			"pass - Gets the pending transaction by hash with from the EVMTxIndexer",
+			"pass - Gets the pending transaction by hash from the EVMTxIndexer",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)

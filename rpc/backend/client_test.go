@@ -82,6 +82,16 @@ func RegisterStatusError(client *mocks.Client) {
 }
 
 // Block
+func RegisterBlockMultipleTxs(
+	client *mocks.Client,
+	height int64,
+	txs []types.Tx,
+) (*tmrpctypes.ResultBlock, error) {
+	block := types.MakeBlock(height, txs, nil, nil)
+	resBlock := &tmrpctypes.ResultBlock{Block: block}
+	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).Return(resBlock, nil)
+	return resBlock, nil
+}
 func RegisterBlock(
 	client *mocks.Client,
 	height int64,
@@ -91,16 +101,14 @@ func RegisterBlock(
 	if tx == nil {
 		emptyBlock := types.MakeBlock(height, []types.Tx{}, nil, nil)
 		resBlock := &tmrpctypes.ResultBlock{Block: emptyBlock}
-		client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-			Return(resBlock, nil)
+		client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).Return(resBlock, nil)
 		return resBlock, nil
 	}
 
 	// with tx
 	block := types.MakeBlock(height, []types.Tx{tx}, nil, nil)
 	resBlock := &tmrpctypes.ResultBlock{Block: block}
-	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(resBlock, nil)
+	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).Return(resBlock, nil)
 	return resBlock, nil
 }
 
