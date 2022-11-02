@@ -36,7 +36,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## Unreleased
+## [v0.20.0-rc1] - 2022-11-02
 
 ### State Machine Breaking
 
@@ -58,7 +58,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
 * (ante) [#1289](https://github.com/evmos/ethermint/pull/1289) Change the fallback tx priority mechanism to be based on gas price.
 * (test) [#1311](https://github.com/evmos/ethermint/pull/1311) Add integration test for the `rollback` cmd
-* (ledger) [#1277](https://github.com/evmos/ethermint/pull/1277) Add Ledger preprocessing transaction hook for EIP-712-signed Cosmos payloads.
 * (rpc) [#1296](https://github.com/evmos/ethermint/pull/1296) Add RPC Backend unit tests.
 * (rpc) [#1352](https://github.com/evmos/ethermint/pull/1352) Make the grpc queries run concurrently, don't block the consensus state machine.
 * (cli) [#1360](https://github.com/evmos/ethermint/pull/1360) Introduce a new `grpc-only` flag, such that when enabled, will start the node in a query-only mode. Note, gRPC MUST be enabled with this flag.
