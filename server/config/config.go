@@ -148,8 +148,6 @@ func AppConfig(denom string) (string, interface{}) {
 		srvCfg.MinGasPrices = "0" + denom
 	}
 
-	srvCfg.IAVLDisableFastNode = false
-
 	customAppConfig := Config{
 		Config:  *srvCfg,
 		EVM:     *DefaultEVMConfig(),
