@@ -32,7 +32,7 @@ func GetTxCmd() *cobra.Command {
 // NewRawTxCmd command build cosmos transaction from raw ethereum transaction
 func NewRawTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "raw [tx-hex]",
+		Use:   "raw TX_HEX",
 		Short: "Build cosmos transaction from raw ethereum transaction",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
