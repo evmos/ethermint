@@ -36,10 +36,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.20.0-rc1] - 2022-11-02
+## [v0.20.0-rc2] - 2022-11-02
 
 ### State Machine Breaking
 
+* (deps) [#1423](https://github.com/evmos/ethermint/pull/1423) Bump Cosmos SDK to `v0.46.4`
+* (deps) [#1419](https://github.com/evmos/ethermint/pull/1419) Add ics23 patch for dragonberry and bump iavl to v0.19.4
 * (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.0.0)
 * (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to `v0.46`.
