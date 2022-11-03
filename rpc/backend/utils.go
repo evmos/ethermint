@@ -46,6 +46,7 @@ func (s sortGasAndReward) Less(i, j int) bool {
 func (b *Backend) getAccountNonce(accAddr common.Address, pending bool, height int64, logger log.Logger) (uint64, error) {
 	queryClient := authtypes.NewQueryClient(b.clientCtx)
 	res, err := queryClient.Account(types.ContextWithHeight(height), &authtypes.QueryAccountRequest{Address: sdk.AccAddress(accAddr.Bytes()).String()})
+	fmt.Println("err account query", err, "res", res)
 	if err != nil {
 		return 0, err
 	}
@@ -260,6 +261,5 @@ func GetLogsFromBlockResults(blockRes *tmrpctypes.ResultBlockResults) ([][]*etht
 
 		blockLogs = append(blockLogs, logs...)
 	}
-
 	return blockLogs, nil
 }

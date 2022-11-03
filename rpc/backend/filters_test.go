@@ -86,3 +86,32 @@ func (suite *BackendTestSuite) TestGetLogs() {
 		})
 	}
 }
+
+func (suite *BackendTestSuite) TestBloomStatus() {
+	testCases := []struct {
+		name         string
+		registerMock func()
+		expResult    uint64
+		expPass      bool
+	}{
+		{
+			"pass - returns the BloomBitsBlocks and the number of processed sections maintained",
+			func() {},
+			4096,
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.SetupTest()
+
+			tc.registerMock()
+			bloom, _ := suite.backend.BloomStatus()
+
+			if tc.expPass {
+				suite.Require().Equal(tc.expResult, bloom)
+			}
+		})
+	}
+}

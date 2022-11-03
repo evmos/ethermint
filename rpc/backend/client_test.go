@@ -2,7 +2,11 @@ package backend
 
 import (
 	"context"
+	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
@@ -249,6 +253,27 @@ func RegisterABCIQueryWithOptions(client *mocks.Client, height int64, path strin
 			Response: abci.ResponseQuery{
 				Value:  []byte{2}, // TODO replace with data.Bytes(),
 				Height: height,
+			},
+		}, nil)
+}
+
+func RegisterABCIQueryWithOptionsError(clients *mocks.Client, path string, data bytes.HexBytes, opts tmrpcclient.ABCIQueryOptions) {
+	clients.On("ABCIQueryWithOptions", context.Background(), path, data, opts).
+		Return(nil, sdkerrors.ErrInvalidRequest)
+}
+
+func RegisterABCIQueryAccount(clients *mocks.Client, data bytes.HexBytes, opts tmrpcclient.ABCIQueryOptions, acc client.Account) {
+	baseAccount := authtypes.NewBaseAccount(acc.GetAddress(), acc.GetPubKey(), acc.GetAccountNumber(), acc.GetSequence())
+	accAny, _ := codectypes.NewAnyWithValue(baseAccount)
+	accResponse := authtypes.QueryAccountResponse{Account: accAny}
+	respBz, err := accResponse.Marshal()
+	fmt.Println(err)
+	//fmt.Println(baseAccount.AccountNumber, baseAccount.Sequence, baseAccount.GetPubKey(), baseAccount.GetAddress(), baseAccount.GetAccountNumber(), baseAccount.GetSequence())
+	clients.On("ABCIQueryWithOptions", context.Background(), "/cosmos.auth.v1beta1.Query/Account", data, opts).
+		Return(&tmrpctypes.ResultABCIQuery{
+			Response: abci.ResponseQuery{
+				Value:  respBz,
+				Height: 1,
 			},
 		}, nil)
 }
