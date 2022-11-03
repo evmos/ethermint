@@ -6,7 +6,6 @@ run:
 linters:
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - dupl
@@ -30,7 +29,6 @@ linters:
     - unconvert
     - unparam
     - unused
-    - varcheck
     - nolintlint
     - asciicheck
     - exportloopref

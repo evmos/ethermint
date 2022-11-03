@@ -67,7 +67,7 @@ func GetEIP712TypedDataForMsg(signDocBytes []byte) (apitypes.TypedData, error) {
 		return typedDataProtobuf, nil
 	}
 
-	return apitypes.TypedData{}, fmt.Errorf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
+	return apitypes.TypedData{}, fmt.Errorf("could not decode sign doc as either Amino or Protobuf. amino: %v protobuf: %v", errAmino, errProtobuf)
 }
 
 // verifyEIP712Payload ensures that the given TypedData does not contain empty fields from
