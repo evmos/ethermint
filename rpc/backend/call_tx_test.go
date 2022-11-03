@@ -12,6 +12,7 @@ import (
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"google.golang.org/grpc/metadata"
+	"math/big"
 )
 
 func (suite *BackendTestSuite) TestResend() {
@@ -77,8 +78,10 @@ func (suite *BackendTestSuite) TestResend() {
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				feeMarketClient := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
 				var header metadata.MD
 				RegisterParams(queryClient, &header, 1)
+				RegisterFeeMarketParams(feeMarketClient, 1)
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
 				RegisterBaseFee(queryClient, baseFee)
@@ -239,7 +242,6 @@ func (suite *BackendTestSuite) TestResend() {
 			common.Hash{},
 			false,
 		},
-		// TODO: Add a passing case with transactions in the mempool
 	}
 
 	for _, tc := range testCases {
@@ -351,7 +353,7 @@ func (suite *BackendTestSuite) TestSendRawTransaction() {
 
 func (suite *BackendTestSuite) TestDoCall() {
 	_, bz := suite.buildEthereumTx()
-	gasPrice := new(hexutil.Big)
+	gasPrice := (*hexutil.Big)(big.NewInt(1))
 	toAddr := tests.GenerateAddress()
 	callArgs := evmtypes.TransactionArgs{
 		From:                 nil,
@@ -361,7 +363,6 @@ func (suite *BackendTestSuite) TestDoCall() {
 		MaxFeePerGas:         gasPrice,
 		MaxPriorityFeePerGas: gasPrice,
 		Value:                gasPrice,
-		Nonce:                nil,
 		Input:                nil,
 		Data:                 nil,
 		AccessList:           nil,
@@ -396,7 +397,6 @@ func (suite *BackendTestSuite) TestDoCall() {
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				//var header metadata.MD
 				RegisterBlock(client, 1, bz)
 				RegisterEthCall(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
 			},
@@ -414,7 +414,6 @@ func (suite *BackendTestSuite) TestDoCall() {
 			tc.registerMock()
 
 			msgEthTx, err := suite.backend.DoCall(tc.callArgs, tc.blockNum)
-			//suite.T().Error("tx", msgEthTx, "err", err)
 
 			if tc.expPass {
 				suite.Require().Equal(tc.expEthTx, msgEthTx)
@@ -426,8 +425,7 @@ func (suite *BackendTestSuite) TestDoCall() {
 }
 
 func (suite *BackendTestSuite) TestGasPrice() {
-	globalMinGasPrice, _ := suite.backend.GlobalMinGasPrice()
-	defaultGasPrice := (*hexutil.Big)(globalMinGasPrice.BigInt())
+	defaultGasPrice := (*hexutil.Big)(big.NewInt(1))
 
 	testCases := []struct {
 		name         string
@@ -436,11 +434,29 @@ func (suite *BackendTestSuite) TestGasPrice() {
 		expPass      bool
 	}{
 		{
-			"fail - can't get gasFee, need FeeMarket enabled ",
+			"pass - get the default gas price",
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				feeMarketClient := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
 				var header metadata.MD
+				RegisterFeeMarketParams(feeMarketClient, 1)
+				RegisterParams(queryClient, &header, 1)
+				RegisterBlock(client, 1, nil)
+				RegisterBlockResults(client, 1)
+				RegisterBaseFee(queryClient, sdk.NewInt(1))
+			},
+			defaultGasPrice,
+			true,
+		},
+		{
+			"fail - can't get gasFee, FeeMarketParams error",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				feeMarketClient := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
+				var header metadata.MD
+				RegisterFeeMarketParamsError(feeMarketClient, 1)
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
@@ -449,7 +465,6 @@ func (suite *BackendTestSuite) TestGasPrice() {
 			defaultGasPrice,
 			false,
 		},
-		// TODO: Mock FeeMarket module params
 	}
 
 	for _, tc := range testCases {
