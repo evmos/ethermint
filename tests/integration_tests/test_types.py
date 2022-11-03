@@ -17,6 +17,7 @@ from .utils import (
     w3_wait_for_new_blocks,
 )
 
+
 def test_block(ethermint, geth):
     get_blocks(ethermint, geth, False)
     get_blocks(ethermint, geth, True)
