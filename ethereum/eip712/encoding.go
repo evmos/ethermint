@@ -3,7 +3,6 @@ package eip712
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
@@ -60,15 +59,21 @@ func GetEIP712TypedDataForMsg(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Attempt to decode as both Amino and Protobuf since the message format is unknown.
 	// If either decode works, we can move forward with the corresponding typed data.
 	typedDataAmino, errAmino := decodeAminoSignDoc(signDocBytes)
-	if !reflect.DeepEqual(typedDataAmino, apitypes.TypedData{}) && errAmino == nil {
+	if errAmino == nil && verifyEIP712Payload(typedDataAmino) {
 		return typedDataAmino, nil
 	}
 	typedDataProtobuf, errProtobuf := decodeProtobufSignDoc(signDocBytes)
-	if !reflect.DeepEqual(typedDataProtobuf, apitypes.TypedData{}) && errProtobuf == nil {
+	if errProtobuf == nil && verifyEIP712Payload(typedDataProtobuf) {
 		return typedDataProtobuf, nil
 	}
 
 	return apitypes.TypedData{}, fmt.Errorf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
+}
+
+// verifyEIP712Payload ensures that the given TypedData does not contain empty fields from
+// an improper initialization.
+func verifyEIP712Payload(typedData apitypes.TypedData) bool {
+	return len(typedData.Message) != 0 && len(typedData.Types) != 0 && typedData.PrimaryType != "" && typedData.Domain != apitypes.TypedDataDomain{}
 }
 
 // Attempt to decode the SignDoc bytes as an Amino SignDoc and return an error on failure
