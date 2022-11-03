@@ -273,6 +273,24 @@ func traverseFields(
 			fieldType = fieldType.Elem()
 			field = field.Index(0)
 			isCollection = true
+
+			// Handle array of type Any
+			if fieldType == cosmosAnyType {
+				any, ok := field.Interface().(*codectypes.Any)
+				if !ok {
+					return sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
+				}
+
+				// Unwrap directly into object
+				var anyUnwrapped interface{}
+
+				if err := cdc.UnpackAny(any, &anyUnwrapped); err != nil {
+					return sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
+				}
+
+				fieldType = reflect.TypeOf(anyUnwrapped)
+				field = reflect.ValueOf(anyUnwrapped)
+			}
 		}
 
 		for {
