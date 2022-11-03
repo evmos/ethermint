@@ -93,7 +93,7 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
     """
     cli = custom_ethermint.cosmos_cli()
     height = cli.block_height()
-    target_height = height + 5
+    target_height = height + 10
     print("upgrade height", target_height)
 
     w3 = custom_ethermint.w3
