@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -266,9 +265,7 @@ func RegisterABCIQueryAccount(clients *mocks.Client, data bytes.HexBytes, opts t
 	baseAccount := authtypes.NewBaseAccount(acc.GetAddress(), acc.GetPubKey(), acc.GetAccountNumber(), acc.GetSequence())
 	accAny, _ := codectypes.NewAnyWithValue(baseAccount)
 	accResponse := authtypes.QueryAccountResponse{Account: accAny}
-	respBz, err := accResponse.Marshal()
-	fmt.Println(err)
-	//fmt.Println(baseAccount.AccountNumber, baseAccount.Sequence, baseAccount.GetPubKey(), baseAccount.GetAddress(), baseAccount.GetAccountNumber(), baseAccount.GetSequence())
+	respBz, _ := accResponse.Marshal()
 	clients.On("ABCIQueryWithOptions", context.Background(), "/cosmos.auth.v1beta1.Query/Account", data, opts).
 		Return(&tmrpctypes.ResultABCIQuery{
 			Response: abci.ResponseQuery{
