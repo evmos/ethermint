@@ -395,6 +395,7 @@ func mookProofs(num int, withData bool) *crypto.ProofOps {
 }
 
 func (suite *BackendTestSuite) TestGetHexProofs() {
+	defaultRes := []string{""}
 	testCases := []struct {
 		name  string
 		proof *crypto.ProofOps
@@ -403,12 +404,12 @@ func (suite *BackendTestSuite) TestGetHexProofs() {
 		{
 			"no proof provided",
 			mookProofs(0, false),
-			nil,
+			defaultRes,
 		},
 		{
 			"no proof data provided",
-			mookProofs(0, false),
-			nil,
+			mookProofs(1, false),
+			defaultRes,
 		},
 		{
 			"valid proof provided",

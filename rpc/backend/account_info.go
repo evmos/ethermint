@@ -37,14 +37,17 @@ func (b *Backend) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNu
 
 // GetHexProofs returns list of hex data of proof op
 func GetHexProofs(proof *crypto.ProofOps) []string {
+	if proof == nil {
+		return []string{""}
+	}
 	var proofs []string
 	// check for proof
-	if proof != nil {
-		for _, p := range proof.Ops {
-			if len(p.Data) > 0 {
-				proofs = append(proofs, hexutil.Encode(p.Data))
-			}
+	for _, p := range proof.Ops {
+		proof := ""
+		if len(p.Data) > 0 {
+			proof = hexutil.Encode(p.Data)
 		}
+		proofs = append(proofs, proof)
 	}
 	return proofs
 }
