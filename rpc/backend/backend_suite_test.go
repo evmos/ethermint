@@ -3,6 +3,7 @@ package backend
 import (
 	"bufio"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"math/big"
 	"os"
@@ -167,4 +168,32 @@ func (suite *BackendTestSuite) generateTestKeyring(clientDir string) (keyring.Ke
 	buf := bufio.NewReader(os.Stdin)
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
 	return keyring.New(sdk.KeyringServiceName(), keyring.BackendTest, clientDir, buf, encCfg.Codec, []keyring.Option{hd.EthSecp256k1Option()}...)
+}
+
+func (suite *BackendTestSuite) signAndEncodeEthTx(msgEthereumTx *evmtypes.MsgEthereumTx) ([]byte, error) {
+	priv, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+
+	from := common.BytesToAddress(priv.PubKey().Address().Bytes())
+	signer := tests.NewSigner(priv)
+
+	queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+	RegisterParamsWithoutHeader(queryClient, 1)
+
+	armor := crypto.EncryptArmorPrivKey(priv, "", "eth_secp256k1")
+	suite.backend.clientCtx.Keyring.ImportPrivKey("test_key", armor, "")
+
+	ethSigner := ethtypes.LatestSigner(suite.backend.ChainConfig())
+	msgEthereumTx.From = from.String()
+	err = msgEthereumTx.Sign(ethSigner, signer)
+	suite.Require().NoError(err)
+
+	tx, err := msgEthereumTx.BuildTx(suite.backend.clientCtx.TxConfig.NewTxBuilder(), "aphoton")
+	suite.Require().NoError(err)
+
+	txEncoder := suite.backend.clientCtx.TxConfig.TxEncoder()
+	txBz, err := txEncoder(tx)
+	suite.Require().NoError(err)
+
+	return txBz, nil
 }
