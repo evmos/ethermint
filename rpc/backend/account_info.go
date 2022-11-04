@@ -13,6 +13,7 @@ import (
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
 // GetCode returns the contract code at the given address and block number.
@@ -32,6 +33,20 @@ func (b *Backend) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNu
 	}
 
 	return res.Code, nil
+}
+
+// GetHexProofs returns list of hex data of proof op
+func GetHexProofs(proof *crypto.ProofOps) []string {
+	var proofs []string
+	// check for proof
+	if proof != nil {
+		for _, p := range proof.Ops {
+			if len(p.Data) > 0 {
+				proofs = append(proofs, hexutil.Encode(p.Data))
+			}
+		}
+	}
+	return proofs
 }
 
 // GetProof returns an account object with proof and any storage proofs
@@ -75,18 +90,10 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 			return nil, err
 		}
 
-		// check for proof
-		var storeProofs []string
-		if proof != nil {
-			for _, p := range proof.Ops {
-				storeProofs = append(storeProofs, hexutil.Encode(p.Data))
-			}
-		}
-
 		storageProofs[i] = rpctypes.StorageResult{
 			Key:   key,
 			Value: (*hexutil.Big)(new(big.Int).SetBytes(valueBz)),
-			Proof: storeProofs,
+			Proof: GetHexProofs(proof),
 		}
 	}
 
@@ -107,14 +114,6 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 		return nil, err
 	}
 
-	// check for proof
-	var accProofs []string
-	if proof != nil {
-		for _, p := range proof.Ops {
-			accProofs = append(accProofs, hexutil.Encode(p.Data))
-		}
-	}
-
 	balance, ok := sdkmath.NewIntFromString(res.Balance)
 	if !ok {
 		return nil, errors.New("invalid balance")
@@ -122,7 +121,7 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 
 	return &rpctypes.AccountResult{
 		Address:      address,
-		AccountProof: accProofs,
+		AccountProof: GetHexProofs(proof),
 		Balance:      (*hexutil.Big)(balance.BigInt()),
 		CodeHash:     common.HexToHash(res.CodeHash),
 		Nonce:        hexutil.Uint64(res.Nonce),
