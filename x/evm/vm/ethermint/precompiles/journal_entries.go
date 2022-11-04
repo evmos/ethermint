@@ -1,4 +1,4 @@
-package ethermint
+package precompiles
 
 import (
 	"fmt"
