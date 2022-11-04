@@ -13,7 +13,6 @@ import (
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
 // GetCode returns the contract code at the given address and block number.
@@ -33,23 +32,6 @@ func (b *Backend) GetCode(address common.Address, blockNrOrHash rpctypes.BlockNu
 	}
 
 	return res.Code, nil
-}
-
-// GetHexProofs returns list of hex data of proof op
-func GetHexProofs(proof *crypto.ProofOps) []string {
-	if proof == nil {
-		return []string{""}
-	}
-	proofs := []string{}
-	// check for proof
-	for _, p := range proof.Ops {
-		proof := ""
-		if len(p.Data) > 0 {
-			proof = hexutil.Encode(p.Data)
-		}
-		proofs = append(proofs, proof)
-	}
-	return proofs
 }
 
 // GetProof returns an account object with proof and any storage proofs

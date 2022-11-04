@@ -14,7 +14,6 @@ import (
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
 func (suite *BackendTestSuite) TestGetCode() {
@@ -371,55 +370,6 @@ func (suite *BackendTestSuite) TestGetTransactionCount() {
 			} else {
 				suite.Require().Error(err)
 			}
-		})
-	}
-}
-
-func mookProofs(num int, withData bool) *crypto.ProofOps {
-	var proofOps *crypto.ProofOps
-	if num > 0 {
-		proofOps = &crypto.ProofOps{
-			Ops: make([]crypto.ProofOp, num),
-		}
-		for i := 0; i < num; i++ {
-			proof := crypto.ProofOp{
-				Key: []byte{1, 2, 3},
-			}
-			if withData {
-				proof.Data = []byte{4, 5, 6}
-			}
-			proofOps.Ops[i] = proof
-		}
-	}
-	return proofOps
-}
-
-func (suite *BackendTestSuite) TestGetHexProofs() {
-	defaultRes := []string{""}
-	testCases := []struct {
-		name  string
-		proof *crypto.ProofOps
-		exp   []string
-	}{
-		{
-			"no proof provided",
-			mookProofs(0, false),
-			defaultRes,
-		},
-		{
-			"no proof data provided",
-			mookProofs(1, false),
-			defaultRes,
-		},
-		{
-			"valid proof provided",
-			mookProofs(1, true),
-			[]string{"0x040506"},
-		},
-	}
-	for _, tc := range testCases {
-		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
-			suite.Require().Equal(tc.exp, GetHexProofs(tc.proof))
 		})
 	}
 }
