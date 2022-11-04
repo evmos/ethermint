@@ -40,7 +40,7 @@ func GetHexProofs(proof *crypto.ProofOps) []string {
 	if proof == nil {
 		return []string{""}
 	}
-	var proofs []string
+	proofs := []string{}
 	// check for proof
 	for _, p := range proof.Ops {
 		proof := ""
