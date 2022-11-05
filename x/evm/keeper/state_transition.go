@@ -96,7 +96,8 @@ func (k *Keeper) NewEVM(
 		tracer = k.Tracer(ctx, msg, cfg.ChainConfig)
 	}
 	vmConfig := k.VMConfig(ctx, msg, cfg, tracer)
-	return k.evmConstructor(blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig, k.customPrecompiles)
+
+	return k.evmConstructor(ctx, blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig, k.getPrecompilesExtended)
 }
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the

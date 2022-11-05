@@ -56,8 +56,8 @@ type Keeper struct {
 	// EVM Hooks for tx post-processing
 	hooks types.EvmHooks
 
-	// custom stateless precompiled smart contracts
-	customPrecompiles evm.PrecompiledContracts
+	// Precompile extensions
+	getPrecompilesExtended func(ctx sdk.Context, evm *vm.EVM) evm.PrecompiledContracts
 
 	// evm constructor function
 	evmConstructor evm.Constructor
@@ -72,7 +72,7 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	sk types.StakingKeeper,
 	fmk types.FeeMarketKeeper,
-	customPrecompiles evm.PrecompiledContracts,
+	pext func(ctx sdk.Context, evm *vm.EVM) evm.PrecompiledContracts,
 	evmConstructor evm.Constructor,
 	tracer string,
 ) *Keeper {
@@ -88,17 +88,17 @@ func NewKeeper(
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
-		cdc:               cdc,
-		paramSpace:        paramSpace,
-		accountKeeper:     ak,
-		bankKeeper:        bankKeeper,
-		stakingKeeper:     sk,
-		feeMarketKeeper:   fmk,
-		storeKey:          storeKey,
-		transientKey:      transientKey,
-		customPrecompiles: customPrecompiles,
-		evmConstructor:    evmConstructor,
-		tracer:            tracer,
+		cdc:                    cdc,
+		paramSpace:             paramSpace,
+		accountKeeper:          ak,
+		bankKeeper:             bankKeeper,
+		stakingKeeper:          sk,
+		feeMarketKeeper:        fmk,
+		storeKey:               storeKey,
+		transientKey:           transientKey,
+		getPrecompilesExtended: pext,
+		evmConstructor:         evmConstructor,
+		tracer:                 tracer,
 	}
 }
 

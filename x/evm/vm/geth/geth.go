@@ -3,6 +3,8 @@ package geth
 import (
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -18,22 +20,34 @@ var (
 // EVM is the wrapper for the go-ethereum EVM.
 type EVM struct {
 	*vm.EVM
+	precompiles evm.PrecompiledContracts
 }
 
 // NewEVM defines the constructor function for the go-ethereum (geth) EVM. It uses
 // the default precompiled contracts and the EVM concrete implementation from
 // geth.
 func NewEVM(
+	ctx sdk.Context,
 	blockCtx vm.BlockContext,
 	txCtx vm.TxContext,
 	stateDB vm.StateDB,
 	chainConfig *params.ChainConfig,
 	config vm.Config,
-	_ evm.PrecompiledContracts, // unused
+	getPrecompilesExtended func(ctx sdk.Context, evm *vm.EVM) evm.PrecompiledContracts,
 ) evm.EVM {
-	return &EVM{
+	newEvm := &EVM{
 		EVM: vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
 	}
+
+	precompiles := GetPrecompiles(chainConfig, blockCtx.BlockNumber)
+	customPrecompiles := getPrecompilesExtended(ctx, newEvm.EVM)
+
+	for k, v := range customPrecompiles {
+		precompiles[k] = v
+	}
+	newEvm.precompiles = precompiles
+
+	return newEvm
 }
 
 // Context returns the EVM's Block Context
@@ -55,20 +69,24 @@ func (e EVM) Config() vm.Config {
 // and the current chain configuration. If the contract cannot be found it returns
 // nil.
 func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bool) {
-	precompiles := GetPrecompiles(e.ChainConfig(), e.EVM.Context.BlockNumber)
-	p, found = precompiles[addr]
+	p, found = e.precompiles[addr]
 	return p, found
 }
 
 // ActivePrecompiles returns a list of all the active precompiled contract addresses
 // for the current chain configuration.
-func (EVM) ActivePrecompiles(rules params.Rules) []common.Address {
-	return vm.ActivePrecompiles(rules)
+func (e EVM) ActivePrecompiles(rules params.Rules) []common.Address {
+	// TODO e.precompiles
+	precompiles := vm.ActivePrecompiles(rules)
+	for key := range e.precompiles {
+		precompiles = append(precompiles, key)
+	}
+	return precompiles
 }
 
 // RunPrecompiledContract runs a stateless precompiled contract and ignores the address and
 // value arguments. It uses the RunPrecompiledContract function from the geth vm package.
-func (EVM) RunPrecompiledContract(
+func (e *EVM) RunPrecompiledContract(
 	p evm.StatefulPrecompiledContract,
 	_ common.Address, // address arg is unused
 	input []byte,
