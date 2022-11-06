@@ -75,16 +75,10 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 			return nil, err
 		}
 
-		// check for proof
-		var proofStr string
-		if proof != nil {
-			proofStr = proof.String()
-		}
-
 		storageProofs[i] = rpctypes.StorageResult{
 			Key:   key,
 			Value: (*hexutil.Big)(new(big.Int).SetBytes(valueBz)),
-			Proof: []string{proofStr},
+			Proof: GetHexProofs(proof),
 		}
 	}
 
@@ -105,12 +99,6 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 		return nil, err
 	}
 
-	// check for proof
-	var accProofStr string
-	if proof != nil {
-		accProofStr = proof.String()
-	}
-
 	balance, ok := sdkmath.NewIntFromString(res.Balance)
 	if !ok {
 		return nil, errors.New("invalid balance")
@@ -118,7 +106,7 @@ func (b *Backend) GetProof(address common.Address, storageKeys []string, blockNr
 
 	return &rpctypes.AccountResult{
 		Address:      address,
-		AccountProof: []string{accProofStr},
+		AccountProof: GetHexProofs(proof),
 		Balance:      (*hexutil.Big)(balance.BigInt()),
 		CodeHash:     common.HexToHash(res.CodeHash),
 		Nonce:        hexutil.Uint64(res.Nonce),
