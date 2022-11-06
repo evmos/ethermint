@@ -76,7 +76,6 @@ func (e EVM) Precompile(addr common.Address) (p vm.PrecompiledContract, found bo
 // ActivePrecompiles returns a list of all the active precompiled contract addresses
 // for the current chain configuration.
 func (e EVM) ActivePrecompiles(rules params.Rules) []common.Address {
-	// TODO e.precompiles
 	precompiles := vm.ActivePrecompiles(rules)
 	for key := range e.precompiles {
 		precompiles = append(precompiles, key)
