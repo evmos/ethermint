@@ -246,7 +246,7 @@ func (ic *ICS20Precompile) checkArgs(args []interface{}, blockTime time.Time) (*
 	}
 
 	sender, _ := args[4].(common.Address)
-	receiver, ok := args[5].(string)
+	receiver, _ := args[5].(string)
 
 	timeoutHeightRevisionNumber, ok := args[6].(*big.Int)
 	if !ok || timeoutHeightRevisionNumber == nil {
