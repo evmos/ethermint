@@ -524,7 +524,7 @@ func (k *Keeper) traceTx(
 	}
 
 	if traceConfig.Tracer != "" {
-		if tracer, err = tracers.New(traceConfig.Tracer, tCtx); err != nil {
+		if tracer, err = tracers.New(traceConfig.Tracer, tCtx, nil); err != nil {
 			return nil, 0, status.Error(codes.Internal, err.Error())
 		}
 	}

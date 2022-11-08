@@ -157,8 +157,8 @@ schema = 3
     version = "v1.0.0"
     hash = "sha256-k1DYvCqO3BKNcGEve/nMW0RxzMkK2tGfXbUbycqcVSo="
   [mod."github.com/ethereum/go-ethereum"]
-    version = "v1.10.19"
-    hash = "sha256-7FPnTGcCb8Xd1QVR+6PmGTaHdTY1mm/8osFTW1JLuG8="
+    version = "v1.10.24-0.20221109065213-7dc5e785a8fd"
+    hash = "sha256-e0cCYy7vwQBG+n4v9ujgdtTnbmwU4Xg8x7V+CFAUrFs="
   [mod."github.com/felixge/httpsnoop"]
     version = "v1.0.1"
     hash = "sha256-TNXnnC/ZGNY9lInAcES1cBGqIdEljKuh5LH/khVFjVk="
@@ -280,6 +280,9 @@ schema = 3
   [mod."github.com/hdevalence/ed25519consensus"]
     version = "v0.0.0-20220222234857-c00d1f31bab3"
     hash = "sha256-1ec2xc7l9oNtWJwVtx14HnozMZCe2DpfXmu1xI1Z/yo="
+  [mod."github.com/holiman/big"]
+    version = "v0.0.0-20221017200358-a027dc42d04e"
+    hash = "sha256-BPYwQRH3ckgrA7DhEsWkXiIbKmYcBlUT0wqEPiFpRIc="
   [mod."github.com/holiman/bloomfilter/v2"]
     version = "v2.0.3"
     hash = "sha256-5VsJMQzJSNd4F7yAl3iF/q6JodWOlE4dUvTQ0UGPe+k="
