@@ -127,7 +127,7 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     acct = Account.from_key(key)
     info = json.loads(jsonfile.read_text())
     contract = w3.eth.contract(abi=info["abi"], bytecode=info["bytecode"])
-    tx = contract.constructor(*args).buildTransaction({"from": acct.address})
+    tx = contract.constructor(*args).build_transaction({"from": acct.address})
     txreceipt = send_transaction(w3, tx, key)
     assert txreceipt.status == 1
     address = txreceipt.contractAddress
