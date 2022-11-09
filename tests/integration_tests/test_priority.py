@@ -184,7 +184,10 @@ def test_native_tx_priority(ethermint: Ethermint):
     tx_indexes = [(int(r["height"]), r["index"]) for r in tx_results]
     print(tx_indexes)
     # the first sent tx are included later, because of lower priority
-    assert all(i1 > i2 for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
+    # ensure desc within continuous block
+    assert all((
+        i1[0] < i2[0] or i1[0] == i2[0] and i1[1] > i2[1]
+    ) for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
 
 
 def get_max_priority_price(max_priority_price):
