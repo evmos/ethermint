@@ -186,8 +186,8 @@ def test_native_tx_priority(ethermint: Ethermint):
     # the first sent tx are included later, because of lower priority
     # ensure desc within continuous block
     assert all((
-        i1[0] < i2[0] or (i1[0] == i2[0] and i1[1] > i2[1])
-    ) for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
+        b1 < b2 or (b1 == b2 and i1 > i2)
+    ) for (b1, i1), (b2, i2) in zip(tx_indexes, tx_indexes[1:]))
 
 
 def get_max_priority_price(max_priority_price):
