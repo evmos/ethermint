@@ -21,6 +21,7 @@ import (
 
 	"github.com/evmos/ethermint/rpc/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
 type txGasAndReward struct {
@@ -262,4 +263,21 @@ func GetLogsFromBlockResults(blockRes *tmrpctypes.ResultBlockResults) ([][]*etht
 	}
 
 	return blockLogs, nil
+}
+
+// GetHexProofs returns list of hex data of proof op
+func GetHexProofs(proof *crypto.ProofOps) []string {
+	if proof == nil {
+		return []string{""}
+	}
+	proofs := []string{}
+	// check for proof
+	for _, p := range proof.Ops {
+		proof := ""
+		if len(p.Data) > 0 {
+			proof = hexutil.Encode(p.Data)
+		}
+		proofs = append(proofs, proof)
+	}
+	return proofs
 }
