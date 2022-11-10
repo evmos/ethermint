@@ -1301,6 +1301,18 @@ paths:
           required: false
           type: string
           format: uint64
+        - name: proposer_address
+          description: the proposer of the requested block.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/eth_call:
@@ -1599,6 +1611,18 @@ paths:
           required: false
           type: string
           format: uint64
+        - name: proposer_address
+          description: the proposer of the requested block.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/params:
@@ -1713,11 +1737,16 @@ paths:
                         title: >-
                           Eip-4345 (bomb delay) switch block (nil = no fork, 0 =
                           already activated)
-                      merge_fork_block:
+                      gray_glacier_block:
                         type: string
                         title: >-
-                          EIP-3675 (TheMerge) switch block (nil = no fork, 0 =
-                          already in merge proceedings)
+                          EIP-5133 (bomb delay) switch block (nil = no fork, 0 =
+                          already activated)
+                      merge_netsplit_block:
+                        type: string
+                        title: >-
+                          Virtual fork after The Merge to use as a network
+                          splitter
                     description: >-
                       ChainConfig defines the Ethereum ChainConfig parameters
                       using *sdk.Int values
@@ -1727,7 +1756,7 @@ paths:
                     type: boolean
                     description: >-
                       Allow unprotected transactions defines if replay-protected
-                      (i.e non EIP155 
+                      (i.e non EIP155
 
                       signed) transactions can be executed on the state machine.
                 title: Params defines the EVM module parameters
@@ -2481,10 +2510,15 @@ paths:
           in: query
           required: false
           type: string
-        - name: trace_config.overrides.merge_fork_block
+        - name: trace_config.overrides.gray_glacier_block
           description: >-
-            EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in
-            merge proceedings).
+            EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
+            activated).
+          in: query
+          required: false
+          type: string
+        - name: trace_config.overrides.merge_netsplit_block
+          description: Virtual fork after The Merge to use as a network splitter.
           in: query
           required: false
           type: string
@@ -2515,6 +2549,18 @@ paths:
           required: false
           type: string
           format: date-time
+        - name: proposer_address
+          description: the proposer of the requested block.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/trace_tx:
@@ -2783,7 +2829,7 @@ paths:
           type: string
           format: byte
         - name: msg.size
-          description: encoded storage size of the transaction.
+          description: 'DEPRECATED: encoded storage size of the transaction.'
           in: query
           required: false
           type: number
@@ -2927,10 +2973,15 @@ paths:
           in: query
           required: false
           type: string
-        - name: trace_config.overrides.merge_fork_block
+        - name: trace_config.overrides.gray_glacier_block
           description: >-
-            EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in
-            merge proceedings).
+            EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
+            activated).
+          in: query
+          required: false
+          type: string
+        - name: trace_config.overrides.merge_netsplit_block
+          description: Virtual fork after The Merge to use as a network splitter.
           in: query
           required: false
           type: string
@@ -2961,6 +3012,18 @@ paths:
           required: false
           type: string
           format: date-time
+        - name: proposer_address
+          description: the proposer of the requested block.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/validator_account/{cons_address}:
@@ -14111,11 +14174,14 @@ definitions:
         title: >-
           Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
           activated)
-      merge_fork_block:
+      gray_glacier_block:
         type: string
         title: >-
-          EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in merge
-          proceedings)
+          EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
+          activated)
+      merge_netsplit_block:
+        type: string
+        title: Virtual fork after The Merge to use as a network splitter
     description: >-
       ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
       values
@@ -14344,7 +14410,7 @@ definitions:
       size:
         type: number
         format: double
-        title: encoded storage size of the transaction
+        title: 'DEPRECATED: encoded storage size of the transaction'
       hash:
         type: string
         title: transaction hash in hex format
@@ -14515,11 +14581,14 @@ definitions:
             title: >-
               Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
               activated)
-          merge_fork_block:
+          gray_glacier_block:
             type: string
             title: >-
-              EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in
-              merge proceedings)
+              EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
+              activated)
+          merge_netsplit_block:
+            type: string
+            title: Virtual fork after The Merge to use as a network splitter
         description: >-
           ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
           values
@@ -14529,7 +14598,7 @@ definitions:
         type: boolean
         description: >-
           Allow unprotected transactions defines if replay-protected (i.e non
-          EIP155 
+          EIP155
 
           signed) transactions can be executed on the state machine.
     title: Params defines the EVM module parameters
@@ -14684,11 +14753,14 @@ definitions:
                 title: >-
                   Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
                   activated)
-              merge_fork_block:
+              gray_glacier_block:
                 type: string
                 title: >-
-                  EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already
-                  in merge proceedings)
+                  EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
+                  activated)
+              merge_netsplit_block:
+                type: string
+                title: Virtual fork after The Merge to use as a network splitter
             description: >-
               ChainConfig defines the Ethereum ChainConfig parameters using
               *sdk.Int values
@@ -14698,7 +14770,7 @@ definitions:
             type: boolean
             description: >-
               Allow unprotected transactions defines if replay-protected (i.e
-              non EIP155 
+              non EIP155
 
               signed) transactions can be executed on the state machine.
         title: Params defines the EVM module parameters
@@ -14839,11 +14911,14 @@ definitions:
             title: >-
               Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
               activated)
-          merge_fork_block:
+          gray_glacier_block:
             type: string
             title: >-
-              EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in
-              merge proceedings)
+              EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
+              activated)
+          merge_netsplit_block:
+            type: string
+            title: Virtual fork after The Merge to use as a network splitter
         description: >-
           ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
           values

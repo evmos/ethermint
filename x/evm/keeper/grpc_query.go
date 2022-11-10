@@ -594,9 +594,9 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 }
 
 // getChainID parse chainID from current context if not provided
-func getChainID(ctx sdk.Context, chainID *sdkmath.Int) (*big.Int, error) {
-	if chainID == nil {
+func getChainID(ctx sdk.Context, chainID int64) (*big.Int, error) {
+	if chainID == 0 {
 		return ethermint.ParseChainID(ctx.ChainID())
 	}
-	return chainID.BigInt(), nil
+	return big.NewInt(chainID), nil
 }
