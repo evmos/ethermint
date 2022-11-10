@@ -79,7 +79,7 @@ type EthereumAPI interface {
 	EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rpctypes.BlockNumber) (hexutil.Uint64, error)
 	FeeHistory(blockCount rpc.DecimalOrHex, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*rpctypes.FeeHistoryResult, error)
 	MaxPriorityFeePerGas() (*hexutil.Big, error)
-	ChainId() (*hexutil.Big, error)
+	ChainId() *hexutil.Big
 
 	// Getting Uncles
 	//
@@ -328,7 +328,7 @@ func (e *PublicAPI) MaxPriorityFeePerGas() (*hexutil.Big, error) {
 }
 
 // ChainId is the EIP-155 replay-protection chain id for the current ethereum chain config.
-func (e *PublicAPI) ChainId() (*hexutil.Big, error) { //nolint
+func (e *PublicAPI) ChainId() *hexutil.Big { //nolint
 	e.logger.Debug("eth_chainId")
 	return e.backend.ChainID()
 }

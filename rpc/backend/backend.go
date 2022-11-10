@@ -91,7 +91,7 @@ type EVMBackend interface {
 	GetTransactionCount(address common.Address, blockNum rpctypes.BlockNumber) (*hexutil.Uint64, error)
 
 	// Chain Info
-	ChainID() (*hexutil.Big, error)
+	ChainID() *hexutil.Big
 	ChainConfig() *params.ChainConfig
 	GlobalMinGasPrice() (sdk.Dec, error)
 	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)

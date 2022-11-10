@@ -161,10 +161,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
 	}
 
-	chainID, err := b.ChainID()
-	if err != nil {
-		return nil, err
-	}
+	chainID := b.ChainID()
 
 	from, err := ethMsg.GetSender(chainID.ToInt())
 	if err != nil {
