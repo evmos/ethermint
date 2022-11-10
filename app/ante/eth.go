@@ -257,11 +257,9 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	}
 
 	// Set ctx.GasMeter with a limit of GasWanted (gasLimit)
-	gasConsumed := ctx.GasMeter().GasConsumed()
-	ctx = ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
-	ctx.GasMeter().ConsumeGas(gasConsumed, "copy gas consumed")
-
-	newCtx := ctx.WithPriority(minPriority)
+	newCtx := ctx.
+		WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted)).
+		WithPriority(minPriority)
 
 	// we know that we have enough gas on the pool to cover the intrinsic gas
 	return next(newCtx, tx, simulate)
