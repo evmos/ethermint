@@ -1,6 +1,7 @@
 package hd
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -34,6 +35,7 @@ func init() {
 const mnemonic = "picnic rent average infant boat squirrel federal assault mercy purity very motor fossil wheel verify upset box fresh horse vivid copy predict square regret"
 
 func TestKeyring(t *testing.T) {
+	os.Setenv("GO_ETHEREUM_HDWALLET_FIX_ISSUE_179", "true")
 	dir := t.TempDir()
 	mockIn := strings.NewReader("")
 
