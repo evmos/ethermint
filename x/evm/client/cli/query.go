@@ -31,7 +31,7 @@ func GetQueryCmd() *cobra.Command {
 // GetStorageCmd queries a key in an accounts storage
 func GetStorageCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "storage [address] [key]",
+		Use:   "storage ADDRESS KEY",
 		Short: "Gets storage for an account with a given key and height",
 		Long:  "Gets storage for an account with a given key and height. If the height is not provided, it will use the latest height from context.", //nolint:lll
 		Args:  cobra.ExactArgs(2),
@@ -71,7 +71,7 @@ func GetStorageCmd() *cobra.Command {
 // GetCodeCmd queries the code field of a given address
 func GetCodeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "code [address]",
+		Use:   "code ADDRESS",
 		Short: "Gets code from an account",
 		Long:  "Gets code from an account. If the height is not provided, it will use the latest height from context.",
 		Args:  cobra.ExactArgs(1),
