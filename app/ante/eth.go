@@ -249,11 +249,11 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// NOTE: safety check
 	if blockGasLimit > 0 {
 		// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
-		gasPool := sdk.NewGasMeter(blockGasLimit)
-		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "block gas pool check")
+		blockGasPool := sdk.NewGasMeter(blockGasLimit)
+		blockGasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "block gas pool check")
 
 		// return error if the tx gas is greater than the block limit (max gas)
-		if gasPool.IsOutOfGas() {
+		if blockGasPool.IsOutOfGas() {
 			return ctx, sdkerrors.Wrapf(
 				sdkerrors.ErrOutOfGas,
 				"tx gas (%d) exceeds block gas limit (%d)",
