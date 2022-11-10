@@ -164,7 +164,7 @@ func NewEthGasConsumeDecorator(
 // (during CheckTx only) and that the sender has enough balance to pay for the gas cost.
 //
 // Intrinsic gas for a transaction is the amount of gas that the transaction uses before the
-// transaction is executed. The gas is a constant value plus any cost inccured by additional bytes
+// transaction is executed. The gas is a constant value plus any cost incurred by additional bytes
 // of data supplied with the transaction.
 //
 // This AnteHandler decorator will fail if:
@@ -175,6 +175,12 @@ func NewEthGasConsumeDecorator(
 // - transaction or block gas meter runs out of gas
 // - sets the gas meter limit
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	// gas consumption limit already checked during CheckTx so there's no need to
+	// verify it again during ReCheckTx
+	if ctx.IsReCheckTx() {
+		return next(ctx, tx, simulate)
+	}
+
 	chainCfg := egcd.evmKeeper.GetChainConfig(ctx)
 	ethCfg := chainCfg.EthereumConfig(egcd.evmKeeper.ChainID())
 
@@ -224,7 +230,13 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			return ctx, sdkerrors.Wrapf(err, "failed to deduct transaction costs from user balance")
 		}
 
-		events = append(events, sdk.NewEvent(sdk.EventTypeTx, sdk.NewAttribute(sdk.AttributeKeyFee, fees.String())))
+		events = append(events,
+			sdk.NewEvent(
+				sdk.EventTypeTx,
+				sdk.NewAttribute(sdk.AttributeKeyFee, fees.String()),
+			),
+		)
+
 		if priority < minPriority {
 			minPriority = priority
 		}
@@ -548,31 +560,41 @@ func NewEthMempoolFeeDecorator(ek EVMKeeper) EthMempoolFeeDecorator {
 	}
 }
 
-// AnteHandle ensures that the provided fees meet a minimum threshold for the validator,
-// if this is a CheckTx. This is only for local mempool purposes, and thus
-// is only ran on check tx.
-// It only do the check if london hardfork not enabled or feemarket not enabled, because in that case feemarket will take over the task.
+// AnteHandle ensures that the provided fees meet a minimum threshold for the validator.
+// This check only for local mempool purposes, and thus it is only run on (Re)CheckTx.
+// The logic is also skipped if the London hard fork and EIP-1559 are enabled.
 func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	if ctx.IsCheckTx() && !simulate {
-		chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
-		ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
-		baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
-		evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
+	if !ctx.IsCheckTx() || simulate {
+		return next(ctx, tx, simulate)
+	}
 
-		if baseFee == nil {
-			for _, msg := range tx.GetMsgs() {
-				ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-				if !ok {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
-				}
+	chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
+	ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
+	baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
 
-				feeAmt := ethMsg.GetFee()
-				glDec := sdk.NewDec(int64(ethMsg.GetGas()))
-				requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
-				if sdk.NewDecFromBigInt(feeAmt).LT(requiredFee) {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; got: %s required: %s", feeAmt, requiredFee)
-				}
-			}
+	// skip check as the London hard fork and EIP-1559 are enabled
+	if baseFee != nil {
+		return next(ctx, tx, simulate)
+	}
+
+	evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
+
+	for _, msg := range tx.GetMsgs() {
+		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
+		}
+
+		fee := sdk.NewDecFromBigInt(ethMsg.GetFee())
+		gasLimit := sdk.NewDecFromBigInt(new(big.Int).SetUint64(ethMsg.GetGas()))
+		requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(gasLimit)
+
+		if fee.LT(requiredFee) {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrInsufficientFee,
+				"insufficient fees; got: %s required: %s",
+				fee, requiredFee,
+			)
 		}
 	}
 
