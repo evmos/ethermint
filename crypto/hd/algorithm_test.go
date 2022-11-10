@@ -34,7 +34,11 @@ func init() {
 const mnemonic = "picnic rent average infant boat squirrel federal assault mercy purity very motor fossil wheel verify upset box fresh horse vivid copy predict square regret"
 
 func TestKeyring(t *testing.T) {
-	os.Setenv("GO_ETHEREUM_HDWALLET_FIX_ISSUE_179", "true")
+	// hdWalletFixEnv defines whether the standard (correct) bip39
+	// derivation path was used, or if derivation was affected by
+	// https://github.com/btcsuite/btcutil/issues/172
+	const hdWalletFixEnv = "GO_ETHEREUM_HDWALLET_FIX_ISSUE_179"
+	os.Setenv(hdWalletFixEnv, "true")
 	dir := t.TempDir()
 	mockIn := strings.NewReader("")
 
