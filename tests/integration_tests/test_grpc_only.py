@@ -46,13 +46,6 @@ def grpc_eth_call(port: int, args: dict, chain_id=None, proposer_address=None):
     ).json()
 
 
-def get_valid_proposer_address(port: int):
-    hexaddr = requests.get(
-        f"http://localhost:{port}/block", params={"height": "1"}
-    ).json()["result"]["block"]["header"]["proposer_address"]
-    return HexBytes(hexaddr)
-
-
 def test_grpc_mode(custom_ethermint):
     """
     - restart a fullnode in grpc-only mode
