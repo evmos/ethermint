@@ -230,18 +230,25 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		}
 	}
 
-	// TODO: change to typed events
 	ctx.EventManager().EmitEvents(events)
 
-	// TODO: deprecate after https://github.com/cosmos/cosmos-sdk/issues/9514  is fixed on SDK
 	blockGasLimit := ethermint.BlockGasLimit(ctx)
 
 	// NOTE: safety check
 	if blockGasLimit > 0 {
 		// generate a copy of the gas pool (i.e block gas meter) to see if we've run out of gas for this block
-		// if current gas consumed is greater than the limit, this funcion panics and the error is recovered on the Baseapp
 		gasPool := sdk.NewGasMeter(blockGasLimit)
-		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "gas pool check")
+		gasPool.ConsumeGas(ctx.GasMeter().GasConsumedToLimit(), "block gas pool check")
+
+		// return error if the tx gas is greater than the block limit (max gas)
+		if gasPool.IsOutOfGas() {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrOutOfGas,
+				"tx gas (%d) exceeds block gas limit (%d)",
+				ctx.GasMeter().GasConsumed(),
+				blockGasLimit,
+			)
+		}
 	}
 
 	// Set ctx.GasMeter with a limit of GasWanted (gasLimit)
@@ -291,6 +298,22 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			)
 		}
 
+		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) {
+			if baseFee == nil {
+				return ctx, sdkerrors.Wrap(
+					evmtypes.ErrInvalidBaseFee,
+					"base fee is supported but evm block context value is nil",
+				)
+			}
+			if coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
+				return ctx, sdkerrors.Wrapf(
+					sdkerrors.ErrInsufficientFee,
+					"max fee per gas less than block base fee (%s < %s)",
+					coreMsg.GasFeeCap(), baseFee,
+				)
+			}
+		}
+
 		// NOTE: pass in an empty coinbase address and nil tracer as we don't need them for the check below
 		cfg := &evmtypes.EVMConfig{
 			ChainConfig: ethCfg,
@@ -310,22 +333,6 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 				coreMsg.Value(),
 				coreMsg.From(),
 			)
-		}
-
-		if evmtypes.IsLondon(ethCfg, ctx.BlockHeight()) {
-			if baseFee == nil {
-				return ctx, sdkerrors.Wrap(
-					evmtypes.ErrInvalidBaseFee,
-					"base fee is supported but evm block context value is nil",
-				)
-			}
-			if coreMsg.GasFeeCap().Cmp(baseFee) < 0 {
-				return ctx, sdkerrors.Wrapf(
-					sdkerrors.ErrInsufficientFee,
-					"max fee per gas less than block base fee (%s < %s)",
-					coreMsg.GasFeeCap(), baseFee,
-				)
-			}
 		}
 	}
 
