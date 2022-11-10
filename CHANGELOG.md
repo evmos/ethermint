@@ -37,6 +37,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 # Changelog
 
 ## Unreleased
+* (deps) [#1451](https://github.com/evmos/ethermint/pull/1451) Bump geth to [`v1.10.20`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.20)
 
 ### State Machine Breaking
 
