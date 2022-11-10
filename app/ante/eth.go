@@ -247,6 +247,10 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockGasLimit := ethermint.BlockGasLimit(ctx)
 
 	// return error if the tx gas is greater than the block limit (max gas)
+
+	// NOTE: it's important here to use the gas wanted instead of the gas consumed
+	// from the tx gas pool. The later only has the value so far since the
+	// EthSetupContextDecorator so it will never exceed the block gas limit.
 	if gasWanted > blockGasLimit {
 		return ctx, sdkerrors.Wrapf(
 			sdkerrors.ErrOutOfGas,
@@ -256,7 +260,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		)
 	}
 
-	// Set ctx.GasMeter with a limit of GasWanted (gasLimit)
+	// Set tx GasMeter with a limit of GasWanted (i.e gas limit from the Ethereum tx).
+	// The gas consumed will be then reset to the gas used by the state transition
+	// in the EVM.
+
+	// FIXME: use a custom gas configuration that doesn't add any additional gas and only
+	// takes into account the gas consumed at the end of the EVM transaction.
 	newCtx := ctx.
 		WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted)).
 		WithPriority(minPriority)
