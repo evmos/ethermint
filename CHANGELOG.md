@@ -52,6 +52,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [#1444](https://github.com/evmos/ethermint/pull/1444) Improve performance of `eth_estimateGas`
 * (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
 * (lint) [#1298](https://github.com/evmos/ethermint/pull/1298) 150 character line length limit, `gofumpt`, and linting
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology in Cosmos and Ethereum.
@@ -71,6 +72,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (rpc) [#1442](https://github.com/evmos/ethermint/pull/1442) Fix decoding of `finalized` block number.
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
 * (rpc) [#1340](https://github.com/evmos/ethermint/pull/1340) Fix error response when `eth_estimateGas` height provided is not found.
