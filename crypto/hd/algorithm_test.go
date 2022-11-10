@@ -11,7 +11,6 @@ import (
 
 	hdwallet "github.com/miguelmota/go-ethereum-hdwallet"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	amino "github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -21,10 +20,10 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 )
 
-var TestCodec codec.Codec
+var TestCodec amino.Codec
 
 func init() {
-	cdc := codec.NewLegacyAmino()
+	cdc := amino.NewLegacyAmino()
 	cryptocodec.RegisterCrypto(cdc)
 
 	interfaceRegistry := types.NewInterfaceRegistry()
