@@ -956,15 +956,16 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			txMsg = suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdkmath.NewIntWithDecimal(1, 18).BigInt())
 			suite.Commit()
 
-			chainID = nil
-
 			tc.malleate()
 			traceReq := types.QueryTraceTxRequest{
 				Msg:          txMsg,
 				TraceConfig:  traceConfig,
 				Predecessors: predecessors,
-				ChainId:      chainID,
 			}
+			if chainID != nil {
+				traceReq.ChainId = chainID.Int64()
+			}
+			chainID = nil
 			res, err := suite.queryClient.TraceTx(sdk.WrapSDKContext(suite.ctx), &traceReq)
 
 			if tc.expPass {
