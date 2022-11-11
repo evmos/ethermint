@@ -1,11 +1,13 @@
 from web3 import Web3
 
 from .expected_constants import (
+    EXPECTED_ACCOUNT_PROOF,
     EXPECTED_FEE_HISTORY,
     EXPECTED_GET_PROOF,
     EXPECTED_GET_STORAGE_AT,
     EXPECTED_GET_TRANSACTION,
     EXPECTED_GET_TRANSACTION_RECEIPT,
+    EXPECTED_STORAGE_PROOF,
 )
 from .utils import (
     ADDRS,
@@ -181,11 +183,15 @@ def test_get_storage_at(ethermint_rpc_ws, geth):
     assert res, err
 
 
-def send_and_get_hash(w3, tx_value=10):
+def send_tnx(w3, tx_value=10):
     # Do an ethereum transfer
     gas_price = w3.eth.gas_price
     tx = {"to": ADDRS["community"], "value": tx_value, "gasPrice": gas_price}
-    return send_transaction(w3, tx, KEYS["validator"])["transactionHash"].hex()
+    return send_transaction(w3, tx, KEYS["validator"])
+
+
+def send_and_get_hash(w3, tx_value=10):
+    return send_tnx(w3, tx_value)["transactionHash"].hex()
 
 
 def test_get_proof(ethermint_rpc_ws, geth):
@@ -195,26 +201,29 @@ def test_get_proof(ethermint_rpc_ws, geth):
     eth_rpc = w3.provider
     w3_wait_for_block(w3, 3)
     geth_rpc = geth.w3.provider
-    make_same_rpc_calls(
-        eth_rpc,
-        geth_rpc,
-        "eth_getProof",
-        ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", ["0x0"], "latest"],
-    )
+    validator = ADDRS["validator"]
+    method = "eth_getProof"
+    for quantity in ["latest", "0x1024"]:
+        res = make_same_rpc_calls(
+            eth_rpc,
+            geth_rpc,
+            method,
+            [validator, ["0x0"], quantity],
+        )
+    res = send_tnx(w3)
 
-    make_same_rpc_calls(
-        eth_rpc,
-        geth_rpc,
-        "eth_getProof",
-        ["0x57f96e6b86cdefdb3d412547816a82e3e0ebf9d2", ["0x0"], "0x1024"],
-    )
+    proof = (eth_rpc.make_request(
+        method, [validator, ["0x0"], hex(res["blockNumber"])]
+    ))["result"]
+    res, err = same_types(proof, EXPECTED_GET_PROOF)
+    assert res, err
+    assert proof["accountProof"], EXPECTED_ACCOUNT_PROOF
+    assert proof["storageProof"][0]["proof"], EXPECTED_STORAGE_PROOF
 
-    _ = send_and_get_hash(w3)
-
-    proof = eth_rpc.make_request(
-        "eth_getProof", [ADDRS["validator"], ["0x0"], "latest"]
-    )
-    res, err = same_types(proof["result"], EXPECTED_GET_PROOF)
+    proof = (geth_rpc.make_request(
+        method, [validator, ["0x0"], "latest"]
+    ))["result"]
+    res, err = same_types(proof, EXPECTED_GET_PROOF)
     assert res, err
 
 

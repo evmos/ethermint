@@ -31,6 +31,7 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
 func (suite AnteTestSuite) TestAnteHandler() {
@@ -507,6 +508,301 @@ func (suite AnteTestSuite) TestAnteHandler() {
 				return tx
 			}, true, false, false,
 		},
+		{
+			"passes - Single-signer EIP-712",
+			func() sdk.Tx {
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(privKey.PubKey().Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSingleSignedTx(
+					privKey,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"EIP-712",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"passes - EIP-712 multi-key",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"EIP-712",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"passes - Mixed multi-key",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"mixed", // Combine EIP-712 and standard signatures
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"passes - Mixed multi-key with MsgVote",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := govtypes.NewMsgVote(
+					sdk.AccAddress(pk.Address()),
+					1,
+					govtypes.OptionYes,
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"mixed", // Combine EIP-712 and standard signatures
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, true,
+		},
+		{
+			"Fails - Multi-Key with incorrect Chain ID",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					msg,
+					"ethermint_9005-1",
+					2000000,
+					"mixed",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Multi-Key with incorrect sign mode",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000000,
+					"mixed",
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Multi-Key with too little gas",
+			func() sdk.Tx {
+				numKeys := 5
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"mixed", // Combine EIP-712 and standard signatures
+				)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Multi-Key with different payload than one signed",
+			func() sdk.Tx {
+				numKeys := 1
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"EIP-712",
+				)
+
+				msg.Amount[0].Amount = sdk.NewInt(5)
+				txBuilder.SetMsgs(msg)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Multi-Key with messages added after signing",
+			func() sdk.Tx {
+				numKeys := 1
+				privKeys, pubKeys := suite.GenerateMultipleKeys(numKeys)
+				pk := kmultisig.NewLegacyAminoPubKey(numKeys, pubKeys)
+
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(pk.Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSignedMultisigTx(
+					privKeys,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"EIP-712",
+				)
+
+				// Duplicate
+				txBuilder.SetMsgs(msg, msg)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Single-Signer EIP-712 with messages added after signing",
+			func() sdk.Tx {
+				msg := banktypes.NewMsgSend(
+					sdk.AccAddress(privKey.PubKey().Address()),
+					addr[:],
+					sdk.NewCoins(
+						sdk.NewCoin(
+							"photon",
+							sdk.NewInt(1),
+						),
+					),
+				)
+
+				txBuilder := suite.CreateTestSingleSignedTx(
+					privKey,
+					signing.SignMode_SIGN_MODE_DIRECT,
+					msg,
+					"ethermint_9000-1",
+					2000,
+					"EIP-712",
+				)
+
+				txBuilder.SetMsgs(msg, msg)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -939,7 +1235,7 @@ func (suite *AnteTestSuite) TestConsumeSignatureVerificationGas() {
 	multisigKey1 := kmultisig.NewLegacyAminoPubKey(2, pkSet1)
 	multisignature1 := multisig.NewMultisig(len(pkSet1))
 	expectedCost1 := expectedGasCostByKeys(pkSet1)
-	
+
 	for i := 0; i < len(pkSet1); i++ {
 		stdSig := legacytx.StdSignature{PubKey: pkSet1[i], Signature: sigSet1[i]}
 		sigV2, err := legacytx.StdSignatureToSignatureV2(cdc, stdSig)
