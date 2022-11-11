@@ -43,6 +43,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	evtypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	types5 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/evmos/ethermint/app"
 	ante "github.com/evmos/ethermint/app/ante"
@@ -341,6 +342,35 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgSubmitEvidence(from sdk.AccAddres
 	suite.Require().NoError(err)
 
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgEvidence)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712SubmitProposalV1(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	// Build V1 proposal messages. Must all be same-type, since EIP-712
+	// does not support arrays of variable type.
+	recipient1 := sdk.AccAddress(common.Address{}.Bytes())
+	msgSend1 := types2.NewMsgSend(from, recipient1, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+
+	recipient2 := sdk.AccAddress(common.HexToAddress(
+		"0x4242424242424242424242424242424242424242",
+	).Bytes())
+	msgSend2 := types2.NewMsgSend(from, recipient2, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+
+	proposalMsgs := []sdk.Msg{
+		msgSend1,
+		msgSend2,
+	}
+
+	// Build V1 proposal
+	msgProposal, err := govtypes.NewMsgSubmitProposal(
+		proposalMsgs,
+		sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(100))),
+		sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), from.Bytes()),
+		"Metadata",
+	)
+
+	suite.Require().NoError(err)
+
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgProposal)
 }
 
 // StdSignBytes returns the bytes to sign for a transaction.
