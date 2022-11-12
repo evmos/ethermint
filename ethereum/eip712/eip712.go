@@ -218,8 +218,11 @@ func traverseFields(
 		fieldType := t.Field(i).Type
 		fieldName := jsonNameFromTag(t.Field(i).Tag)
 
-		if fieldType, field, err = unpackIfAny(cdc, fieldType, field, true); err != nil {
-			return err
+		if fieldType == cosmosAnyType {
+			// Unpack as Any, assuming message structure
+			if fieldType, field, err = unpackAny(cdc, fieldType, field); err != nil {
+				return err
+			}
 		}
 
 		// If its a nil pointer, do not include in types
@@ -262,8 +265,10 @@ func traverseFields(
 			field = field.Index(0)
 			isCollection = true
 
-			if fieldType, field, err = unpackIfAny(cdc, fieldType, field, false); err != nil {
-				return err
+			if fieldType == cosmosAnyType {
+				if fieldType, field, err = unpackAny(cdc, fieldType, field); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -355,51 +360,23 @@ func jsonNameFromTag(tag reflect.StructTag) string {
 	return parts[0]
 }
 
-func unpackIfAny(
-	cdc codectypes.AnyUnpacker,
-	_fieldType reflect.Type,
-	_field reflect.Value,
-	assumeMsgStructure bool,
-) (reflect.Type, reflect.Value, error) {
-	// Verify type is Any, else return as-is
-	if _fieldType != cosmosAnyType {
-		return _fieldType, _field, nil
-	}
-
-	// Unwrap as Any
-	any, ok := _field.Interface().(*codectypes.Any)
+// Unpack the given Any value with Type/Value deconstruction
+func unpackAny(cdc codectypes.AnyUnpacker, fieldType reflect.Type, field reflect.Value) (reflect.Type, reflect.Value, error) {
+	any, ok := field.Interface().(*codectypes.Any)
 	if !ok {
-		return nil, reflect.Value{}, sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", _field.Interface())
+		return nil, reflect.Value{}, sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
 	}
 
-	var (
-		fieldType reflect.Type
-		field     reflect.Value
-	)
-
-	if assumeMsgStructure {
-		// Unpack Any as Msg (for Amino messages)
-		anyWrapper := &cosmosAnyWrapper{
-			Type: any.TypeUrl,
-		}
-
-		if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
-			return nil, reflect.Value{}, sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
-		}
-
-		fieldType = reflect.TypeOf(anyWrapper)
-		field = reflect.ValueOf(anyWrapper)
-	} else {
-		// Unpack using default (direct)
-		var anyUnwrapped interface{}
-
-		if err := cdc.UnpackAny(any, &anyUnwrapped); err != nil {
-			return nil, reflect.Value{}, sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
-		}
-
-		fieldType = reflect.TypeOf(anyUnwrapped)
-		field = reflect.ValueOf(anyUnwrapped)
+	anyWrapper := &cosmosAnyWrapper{
+		Type: any.TypeUrl,
 	}
+
+	if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
+		return nil, reflect.Value{}, sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
+	}
+
+	fieldType = reflect.TypeOf(anyWrapper)
+	field = reflect.ValueOf(anyWrapper)
 
 	return fieldType, field, nil
 }

@@ -347,17 +347,27 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgSubmitEvidence(from sdk.AccAddres
 func (suite *AnteTestSuite) CreateTestEIP712SubmitProposalV1(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
 	// Build V1 proposal messages. Must all be same-type, since EIP-712
 	// does not support arrays of variable type.
-	recipient1 := sdk.AccAddress(common.Address{}.Bytes())
-	msgSend1 := types2.NewMsgSend(from, recipient1, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+	authAcc := suite.app.GovKeeper.GetGovernanceAccount(suite.ctx)
 
-	recipient2 := sdk.AccAddress(common.HexToAddress(
-		"0x4242424242424242424242424242424242424242",
-	).Bytes())
-	msgSend2 := types2.NewMsgSend(from, recipient2, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+	proposal1, ok := types5.ContentFromProposalType("My proposal 1", "My description 1", types5.ProposalTypeText)
+	suite.Require().True(ok)
+	content1, err := govtypes.NewLegacyContent(
+		proposal1,
+		sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), authAcc.GetAddress().Bytes()),
+	)
+	suite.Require().NoError(err)
+
+	proposal2, ok := types5.ContentFromProposalType("My proposal 2", "My description 2", types5.ProposalTypeText)
+	suite.Require().True(ok)
+	content2, err := govtypes.NewLegacyContent(
+		proposal2,
+		sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), authAcc.GetAddress().Bytes()),
+	)
+	suite.Require().NoError(err)
 
 	proposalMsgs := []sdk.Msg{
-		msgSend1,
-		msgSend2,
+		content1,
+		content2,
 	}
 
 	// Build V1 proposal
