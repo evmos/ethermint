@@ -220,7 +220,7 @@ func traverseFields(
 
 		if fieldType == cosmosAnyType {
 			// Unpack as Any, assuming message structure
-			if fieldType, field, err = unpackAny(cdc, fieldType, field); err != nil {
+			if fieldType, field, err = unpackAny(cdc, field); err != nil {
 				return err
 			}
 		}
@@ -266,7 +266,7 @@ func traverseFields(
 			isCollection = true
 
 			if fieldType == cosmosAnyType {
-				if fieldType, field, err = unpackAny(cdc, fieldType, field); err != nil {
+				if fieldType, field, err = unpackAny(cdc, field); err != nil {
 					return err
 				}
 			}
@@ -361,7 +361,7 @@ func jsonNameFromTag(tag reflect.StructTag) string {
 }
 
 // Unpack the given Any value with Type/Value deconstruction
-func unpackAny(cdc codectypes.AnyUnpacker, fieldType reflect.Type, field reflect.Value) (reflect.Type, reflect.Value, error) {
+func unpackAny(cdc codectypes.AnyUnpacker, field reflect.Value) (reflect.Type, reflect.Value, error) {
 	any, ok := field.Interface().(*codectypes.Any)
 	if !ok {
 		return nil, reflect.Value{}, sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
@@ -375,7 +375,7 @@ func unpackAny(cdc codectypes.AnyUnpacker, fieldType reflect.Type, field reflect
 		return nil, reflect.Value{}, sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
 	}
 
-	fieldType = reflect.TypeOf(anyWrapper)
+	fieldType := reflect.TypeOf(anyWrapper)
 	field = reflect.ValueOf(anyWrapper)
 
 	return fieldType, field, nil
