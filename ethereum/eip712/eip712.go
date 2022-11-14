@@ -235,8 +235,8 @@ func traverseFields(
 			// then continue as normal
 		}
 
-		// If its a nil pointer, do not include in types
-		if fieldType.Kind() == reflect.Ptr && field.IsNil() {
+		// If field is an empty value, do not include in types, since it will not be present in the object
+		if field.IsZero() {
 			continue
 		}
 

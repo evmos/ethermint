@@ -43,6 +43,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	evtypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	types5 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/evmos/ethermint/app"
 	ante "github.com/evmos/ethermint/app/ante"
@@ -341,6 +342,11 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgSubmitEvidence(from sdk.AccAddres
 	suite.Require().NoError(err)
 
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgEvidence)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712MsgVoteV1(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	msgVote := govtypes.NewMsgVote(from, 1, govtypes.VoteOption_VOTE_OPTION_YES, "")
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgVote)
 }
 
 // StdSignBytes returns the bytes to sign for a transaction.
