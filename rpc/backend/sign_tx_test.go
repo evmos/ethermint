@@ -89,6 +89,31 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 			false,
 		},
 		{
+			"fail - Cannot broadcast transaction",
+			func() {
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				var header metadata.MD
+				armor := crypto.EncryptArmorPrivKey(priv, "", "eth_secp256k1")
+				suite.backend.clientCtx.Keyring.ImportPrivKey("test_key", armor, "")
+				RegisterParams(queryClient, &header, 1)
+				RegisterBlock(client, 1, nil)
+				RegisterBlockResults(client, 1)
+				RegisterBaseFee(queryClient, baseFee)
+				RegisterParamsWithoutHeader(queryClient, 1)
+				ethSigner := ethtypes.LatestSigner(suite.backend.ChainConfig())
+				msg := callArgsDefault.ToTransaction()
+				msg.Sign(ethSigner, suite.backend.clientCtx.Keyring)
+				tx, _ := msg.BuildTx(suite.backend.clientCtx.TxConfig.NewTxBuilder(), "aphoton")
+				txEncoder := suite.backend.clientCtx.TxConfig.TxEncoder()
+				txBytes, _ := txEncoder(tx)
+				RegisterBroadcastTxError(client, txBytes)
+			},
+			callArgsDefault,
+			common.Hash{},
+			false,
+		},
+		{
 			"pass - Return the transaction hash",
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
@@ -226,6 +251,8 @@ func (suite *BackendTestSuite) TestSignTypedData() {
 			tc.registerMock()
 
 			responseBz, err := suite.backend.SignTypedData(tc.fromAddr, tc.inputTypedData)
+			suite.T().Log(tc.inputTypedData)
+
 			if tc.expPass {
 				sigHash, err := eip712.ComputeTypedDataHash(tc.inputTypedData)
 				signature, _, err := suite.backend.clientCtx.Keyring.SignByAddress((sdk.AccAddress)(from.Bytes()), sigHash)
