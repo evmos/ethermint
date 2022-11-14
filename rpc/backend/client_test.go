@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpc "github.com/evmos/ethermint/rpc/types"
@@ -50,7 +50,7 @@ func RegisterBlock(
 // Block returns error
 func RegisterBlockError(client *mocks.Client, height int64) {
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Block not found
@@ -86,7 +86,7 @@ func RegisterConsensusParams(client *mocks.Client, height int64) {
 
 func RegisterConsensusParamsError(client *mocks.Client, height int64) {
 	client.On("ConsensusParams", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func TestRegisterConsensusParams(t *testing.T) {
@@ -117,7 +117,7 @@ func RegisterBlockResults(
 
 func RegisterBlockResultsError(client *mocks.Client, height int64) {
 	client.On("BlockResults", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func TestRegisterBlockResults(t *testing.T) {
@@ -150,7 +150,7 @@ func RegisterBlockByHash(
 
 func RegisterBlockByHashError(client *mocks.Client, hash common.Hash, tx []byte) {
 	client.On("BlockByHash", rpc.ContextWithHeight(1), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func RegisterBlockByHashNotFound(client *mocks.Client, hash common.Hash, tx []byte) {

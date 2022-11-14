@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"sort"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -440,14 +440,14 @@ func (s *StateDB) Commit() error {
 		obj := s.stateObjects[addr]
 		if obj.suicided {
 			if err := s.keeper.DeleteAccount(s.ctx, obj.Address()); err != nil {
-				return sdkerrors.Wrap(err, "failed to delete account")
+				return errorsmod.Wrap(err, "failed to delete account")
 			}
 		} else {
 			if obj.code != nil && obj.dirtyCode {
 				s.keeper.SetCode(s.ctx, obj.CodeHash(), obj.code)
 			}
 			if err := s.keeper.SetAccount(s.ctx, obj.Address(), obj.account); err != nil {
-				return sdkerrors.Wrap(err, "failed to set account")
+				return errorsmod.Wrap(err, "failed to set account")
 			}
 			for _, key := range obj.dirtyStorage.SortedKeys() {
 				value := obj.dirtyStorage[key]

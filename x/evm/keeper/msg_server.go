@@ -9,10 +9,10 @@ import (
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/evmos/ethermint/x/evm/types"
 )
@@ -45,7 +45,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 
 	response, err := k.ApplyTransaction(ctx, tx)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to apply transaction")
+		return nil, errorsmod.Wrap(err, "failed to apply transaction")
 	}
 
 	defer func() {
@@ -104,7 +104,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	for i, log := range response.Logs {
 		value, err := json.Marshal(log)
 		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to encode log")
+			return nil, errorsmod.Wrap(err, "failed to encode log")
 		}
 		txLogAttrs[i] = sdk.NewAttribute(types.AttributeKeyTxLog, string(value))
 	}
