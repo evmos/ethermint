@@ -578,6 +578,7 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 	}
 
 	evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
+	minGasPrice := ctx.MinGasPrices().AmountOf(evmDenom)
 
 	for _, msg := range tx.GetMsgs() {
 		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -587,7 +588,7 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 
 		fee := sdk.NewDecFromBigInt(ethMsg.GetFee())
 		gasLimit := sdk.NewDecFromBigInt(new(big.Int).SetUint64(ethMsg.GetGas()))
-		requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(gasLimit)
+		requiredFee := minGasPrice.Mul(gasLimit)
 
 		if fee.LT(requiredFee) {
 			return ctx, sdkerrors.Wrapf(
