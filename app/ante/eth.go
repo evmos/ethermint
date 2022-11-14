@@ -174,6 +174,7 @@ func NewEthGasConsumeDecorator(
 // - user doesn't have enough balance to deduct the transaction fees (gas_limit * gas_price)
 // - transaction or block gas meter runs out of gas
 // - sets the gas meter limit
+// - gas limit is greater than the block gas meter limit
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// gas consumption limit already checked during CheckTx so there's no need to
 	// verify it again during ReCheckTx
