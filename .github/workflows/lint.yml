@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # Required: setup-go, for all versions v3.0.0+ of golangci-lint
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.18
+          go-version: 1.19
+          check-latest: true
       - uses: actions/checkout@v3
       - uses: technote-space/get-diff-action@v6.1.1
         with:
@@ -23,9 +25,10 @@ jobs:
             **/**.go
             go.mod
             go.sum
-      - uses: golangci/golangci-lint-action@v3
+      - uses: golangci/golangci-lint-action@v3.3.0
         with:
-          version: v1.48.0
+          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
+          version: latest
           args: --timeout 10m
           github-token: ${{ secrets.github_token }}
         # Check only if there are differences in the source code
@@ -42,7 +45,11 @@ jobs:
             docs/**/*.md
             x/**/*.md
             README.md
-      - uses: articulate/actions-markdownlint@v1.1.0
+      - uses: nosborn/github-action-markdown-cli@v3.2.0
+        with:
+          files: .
+          config_file: .markdownlint.yml
+          ignore_path: .markdownlintignore
         # Check only if there are differences in the source code
         if: env.GIT_DIFF
   python-lint:
@@ -51,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: cachix/install-nix-action@v18
-      - uses: cachix/cachix-action@v11
+      - uses: cachix/cachix-action@v12
         with:
           name: ethermint
       - uses: technote-space/get-diff-action@v6.1.1
@@ -67,10 +74,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: cachix/install-nix-action@v18
-      - uses: cachix/cachix-action@v11
+      - uses: cachix/cachix-action@v12
         with:
           name: ethermint
+      - uses: technote-space/get-diff-action@v6.1.1
+        with:
+          PATTERNS: |
+            **/**.py
       - name: run gomod2nix
         run: |
           nix run -f ./nix gomod2nix
           git diff --no-ext-diff --exit-code
+        if: env.GIT_DIFF

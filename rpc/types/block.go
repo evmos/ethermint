@@ -159,7 +159,7 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 	case BlockParamEarliest:
 		bn := EthEarliestBlockNumber
 		bnh.BlockNumber = &bn
-	case BlockParamLatest:
+	case BlockParamLatest, BlockParamFinalized:
 		bn := EthLatestBlockNumber
 		bnh.BlockNumber = &bn
 	case BlockParamPending:

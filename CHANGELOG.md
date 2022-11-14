@@ -52,6 +52,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [#1444](https://github.com/evmos/ethermint/pull/1444) Improve performance of `eth_estimateGas`
 * (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
 * (lint) [#1298](https://github.com/evmos/ethermint/pull/1298) 150 character line length limit, `gofumpt`, and linting
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology in Cosmos and Ethereum.
@@ -65,9 +66,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1378](https://github.com/evmos/ethermint/pull/1378) Add support for EVM RPC metrics
 * (ante) [#1390](https://github.com/evmos/ethermint/pull/1390) Added multisig tx support.
 * (test) [#1396](https://github.com/evmos/ethermint/pull/1396) Increase test coverage for the EVM module `keeper`
+* (ante) [#1397](https://github.com/evmos/ethermint/pull/1397) Refactor EIP-712 signature verification to support EIP-712 multi-signing.
+* (deps) [#1416](https://github.com/evmos/ethermint/pull/1416) Bump Go version to `1.19`
+* (cmd) [\#1417](https://github.com/evmos/ethermint/pull/1417) Apply Google CLI Syntax for required and optional args.
 
 ### Bug Fixes
 
+* (rpc) [#1442](https://github.com/evmos/ethermint/pull/1442) Fix decoding of `finalized` block number.
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
 * (rpc) [#1340](https://github.com/evmos/ethermint/pull/1340) Fix error response when `eth_estimateGas` height provided is not found.
@@ -75,6 +80,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (cli) [#1362](https://github.com/evmos/ethermint/pull/1362) Fix `index-eth-tx` error when the indexer db is empty.
 * (state) [#1320](https://github.com/evmos/ethermint/pull/1320) Fix codehash check mismatch when the code has been deleted in the evm state.
 * (rpc) [#1392](https://github.com/evmos/ethermint/pull/1392) Allow fill the proposer address in json-rpc through tendermint api, and pass explicitly to grpc query handler.
+* (rpc) [#1431](https://github.com/evmos/ethermint/pull/1431) Align hex-strings proof fields in `eth_getProof` as Ethereum.
+
+## [v0.19.3] - 2022-10-14
+
+* (deps) [1381](https://github.com/evmos/ethermint/pull/1381) Bump sdk to `v0.45.9`
 
 ## [v0.19.2] - 2022-08-29
 

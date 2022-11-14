@@ -2,12 +2,13 @@ package backend
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	rpc "github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/tests"
 	"google.golang.org/grpc/metadata"
-	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/abci/types"
@@ -205,6 +206,28 @@ func (suite *BackendTestSuite) TestGetCoinbase() {
 			validatorAcc,
 			false,
 		},
+		{
+			"fail - Can't query validator account",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				RegisterStatus(client)
+				RegisterValidatorAccountError(queryClient)
+			},
+			validatorAcc,
+			false,
+		},
+		{
+			"pass - Gets coinbase account",
+			func() {
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				RegisterStatus(client)
+				RegisterValidatorAccount(queryClient, validatorAcc)
+			},
+			validatorAcc,
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -256,6 +279,40 @@ func (suite *BackendTestSuite) TestSuggestGasTipCap() {
 
 			if tc.expPass {
 				suite.Require().Equal(tc.expGasTipCap, maxDelta)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+func (suite *BackendTestSuite) TestGlobalMinGasPrice() {
+	testCases := []struct {
+		name           string
+		registerMock   func()
+		expMinGasPrice sdk.Dec
+		expPass        bool
+	}{
+		{
+			"fail - Can't get FeeMarket params",
+			func() {
+				feeMarketCleint := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
+				RegisterFeeMarketParamsError(feeMarketCleint, int64(1))
+			},
+			sdk.ZeroDec(),
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("case %s", tc.name), func() {
+			suite.SetupTest() // reset test and queries
+			tc.registerMock()
+
+			globalMinGasPrice, err := suite.backend.GlobalMinGasPrice()
+
+			if tc.expPass {
+				suite.Require().Equal(tc.expMinGasPrice, globalMinGasPrice)
 			} else {
 				suite.Require().Error(err)
 			}

@@ -55,7 +55,7 @@ def test_event_log_filter_by_contract(cluster):
     assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
-    tx = contract.functions.setGreeting("world").buildTransaction()
+    tx = contract.functions.setGreeting("world").build_transaction()
     tx_receipt = send_transaction(w3, tx)
     assert tx_receipt.status == 1
 
@@ -92,7 +92,7 @@ def test_event_log_filter_by_address(cluster):
     assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
-    tx = contract.functions.setGreeting("world").buildTransaction()
+    tx = contract.functions.setGreeting("world").build_transaction()
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
@@ -110,7 +110,7 @@ def test_get_logs(cluster):
     assert w3.eth.get_logs({"address": ADDRS["validator"]}) == []
 
     # with tx
-    tx = contract.functions.setGreeting("world").buildTransaction()
+    tx = contract.functions.setGreeting("world").build_transaction()
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
