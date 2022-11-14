@@ -1,10 +1,11 @@
-package types
+package types_test
 
 import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/tests"
+	"github.com/evmos/ethermint/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,7 +28,7 @@ func TestIsEmptyHash(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		require.Equal(t, tc.expEmpty, IsEmptyHash(tc.hash), tc.name)
+		require.Equal(t, tc.expEmpty, types.IsEmptyHash(tc.hash), tc.name)
 	}
 }
 
@@ -50,7 +51,7 @@ func TestIsZeroAddress(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		require.Equal(t, tc.expEmpty, IsZeroAddress(tc.address), tc.name)
+		require.Equal(t, tc.expEmpty, types.IsZeroAddress(tc.address), tc.name)
 	}
 }
 
@@ -75,7 +76,7 @@ func TestValidateAddress(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		err := ValidateAddress(tc.address)
+		err := types.ValidateAddress(tc.address)
 
 		if tc.expError {
 			require.Error(t, err, tc.name)
@@ -106,7 +107,7 @@ func TestValidateNonZeroAddress(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		err := ValidateNonZeroAddress(tc.address)
+		err := types.ValidateNonZeroAddress(tc.address)
 
 		if tc.expError {
 			require.Error(t, err, tc.name)
@@ -131,7 +132,7 @@ func TestSafeInt64(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		value, err := SafeInt64(tc.value)
+		value, err := types.SafeInt64(tc.value)
 		if tc.expError {
 			require.Error(t, err, tc.name)
 			continue

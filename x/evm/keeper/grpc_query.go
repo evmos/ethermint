@@ -305,14 +305,31 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
 
-	// Create a helper to check if a gas allowance results in an executable transaction
-	executable := func(gas uint64) (vmerror bool, rsp *types.MsgEthereumTxResponse, err error) {
-		args.Gas = (*hexutil.Uint64)(&gas)
+	// convert the tx args to an ethereum message
+	msg, err := args.ToMessage(req.GasCap, cfg.BaseFee)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
-		msg, err := args.ToMessage(req.GasCap, cfg.BaseFee)
-		if err != nil {
-			return false, nil, err
-		}
+	// NOTE: the errors from the executable below should be consistent with go-ethereum,
+	// so we don't wrap them with the gRPC status code
+
+	// Create a helper to check if a gas allowance results in an executable transaction
+	executable := func(gas uint64) (vmError bool, rsp *types.MsgEthereumTxResponse, err error) {
+		// update the message with the new gas value
+		msg = ethtypes.NewMessage(
+			msg.From(),
+			msg.To(),
+			msg.Nonce(),
+			msg.Value(),
+			gas,
+			msg.GasPrice(),
+			msg.GasFeeCap(),
+			msg.GasTipCap(),
+			msg.Data(),
+			msg.AccessList(),
+			msg.IsFake(),
+		)
 
 		// pass false to not commit StateDB
 		rsp, err = k.ApplyMessageWithConfig(ctx, msg, nil, false, cfg, txConfig)
@@ -328,24 +345,25 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	// Execute the binary search and hone in on an executable gas limit
 	hi, err = types.BinSearch(lo, hi, executable)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	// Reject the transaction as invalid if it still fails at the highest allowance
 	if hi == cap {
 		failed, result, err := executable(hi)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, err
 		}
+
 		if failed {
 			if result != nil && result.VmError != vm.ErrOutOfGas.Error() {
 				if result.VmError == vm.ErrExecutionReverted.Error() {
 					return nil, types.NewExecErrorWithReason(result.Ret)
 				}
-				return nil, status.Error(codes.Internal, result.VmError)
+				return nil, errors.New(result.VmError)
 			}
 			// Otherwise, the specified gas cap is too low
-			return nil, status.Error(codes.Internal, fmt.Sprintf("gas required exceeds allowance (%d)", cap))
+			return nil, fmt.Errorf("gas required exceeds allowance (%d)", cap)
 		}
 	}
 	return &types.EstimateGasResponse{Gas: hi}, nil
