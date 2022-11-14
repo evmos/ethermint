@@ -6,8 +6,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -34,7 +34,7 @@ func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 
 	var res MsgEthereumTxResponse
 	if err := proto.Unmarshal(txMsgData.MsgResponses[0].Value, &res); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to unmarshal tx response message data")
+		return nil, errorsmod.Wrap(err, "failed to unmarshal tx response message data")
 	}
 
 	return &res, nil

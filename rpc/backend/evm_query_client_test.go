@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
@@ -67,7 +67,7 @@ func RegisterParamsInvalidHeight(queryClient *mocks.EVMQueryClient, header *meta
 // Params returns error
 func RegisterParamsError(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func TestRegisterParams(t *testing.T) {
@@ -168,7 +168,7 @@ func RegisterCode(queryClient *mocks.EVMQueryClient, addr common.Address, code [
 
 func RegisterCodeError(queryClient *mocks.EVMQueryClient, addr common.Address) {
 	queryClient.On("Code", rpc.ContextWithHeight(1), &evmtypes.QueryCodeRequest{Address: addr.String()}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Storage
@@ -179,7 +179,7 @@ func RegisterStorageAt(queryClient *mocks.EVMQueryClient, addr common.Address, k
 
 func RegisterStorageAtError(queryClient *mocks.EVMQueryClient, addr common.Address, key string) {
 	queryClient.On("Storage", rpc.ContextWithHeight(1), &evmtypes.QueryStorageRequest{Address: addr.String(), Key: key}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func RegisterAccount(queryClient *mocks.EVMQueryClient, addr common.Address, height int64) {
@@ -211,5 +211,5 @@ func RegisterBalanceNegative(queryClient *mocks.EVMQueryClient, addr common.Addr
 
 func RegisterBalanceError(queryClient *mocks.EVMQueryClient, addr common.Address, height int64) {
 	queryClient.On("Balance", rpc.ContextWithHeight(height), &evmtypes.QueryBalanceRequest{Address: addr.String()}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }

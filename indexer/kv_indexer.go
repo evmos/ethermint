@@ -3,10 +3,10 @@ package indexer
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/ethereum/go-ethereum/common"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
@@ -110,12 +110,12 @@ func (kv *KVIndexer) IndexBlock(block *tmtypes.Block, txResults []*abci.Response
 			ethTxIndex++
 
 			if err := saveTxResult(kv.clientCtx.Codec, batch, txHash, &txResult); err != nil {
-				return sdkerrors.Wrapf(err, "IndexBlock %d", height)
+				return errorsmod.Wrapf(err, "IndexBlock %d", height)
 			}
 		}
 	}
 	if err := batch.Write(); err != nil {
-		return sdkerrors.Wrapf(err, "IndexBlock %d, write batch", block.Height)
+		return errorsmod.Wrapf(err, "IndexBlock %d, write batch", block.Height)
 	}
 	return nil
 }
@@ -134,14 +134,14 @@ func (kv *KVIndexer) FirstIndexedBlock() (int64, error) {
 func (kv *KVIndexer) GetByTxHash(hash common.Hash) (*ethermint.TxResult, error) {
 	bz, err := kv.db.Get(TxHashKey(hash))
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetByTxHash %s", hash.Hex())
+		return nil, errorsmod.Wrapf(err, "GetByTxHash %s", hash.Hex())
 	}
 	if len(bz) == 0 {
 		return nil, fmt.Errorf("tx not found, hash: %s", hash.Hex())
 	}
 	var txKey ethermint.TxResult
 	if err := kv.clientCtx.Codec.Unmarshal(bz, &txKey); err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetByTxHash %s", hash.Hex())
+		return nil, errorsmod.Wrapf(err, "GetByTxHash %s", hash.Hex())
 	}
 	return &txKey, nil
 }
@@ -150,7 +150,7 @@ func (kv *KVIndexer) GetByTxHash(hash common.Hash) (*ethermint.TxResult, error) 
 func (kv *KVIndexer) GetByBlockAndIndex(blockNumber int64, txIndex int32) (*ethermint.TxResult, error) {
 	bz, err := kv.db.Get(TxIndexKey(blockNumber, txIndex))
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetByBlockAndIndex %d %d", blockNumber, txIndex)
+		return nil, errorsmod.Wrapf(err, "GetByBlockAndIndex %d %d", blockNumber, txIndex)
 	}
 	if len(bz) == 0 {
 		return nil, fmt.Errorf("tx not found, block: %d, eth-index: %d", blockNumber, txIndex)
@@ -174,7 +174,7 @@ func TxIndexKey(blockNumber int64, txIndex int32) []byte {
 func LoadLastBlock(db dbm.DB) (int64, error) {
 	it, err := db.ReverseIterator([]byte{KeyPrefixTxIndex}, []byte{KeyPrefixTxIndex + 1})
 	if err != nil {
-		return 0, sdkerrors.Wrap(err, "LoadLastBlock")
+		return 0, errorsmod.Wrap(err, "LoadLastBlock")
 	}
 	defer it.Close()
 	if !it.Valid() {
@@ -187,7 +187,7 @@ func LoadLastBlock(db dbm.DB) (int64, error) {
 func LoadFirstBlock(db dbm.DB) (int64, error) {
 	it, err := db.Iterator([]byte{KeyPrefixTxIndex}, []byte{KeyPrefixTxIndex + 1})
 	if err != nil {
-		return 0, sdkerrors.Wrap(err, "LoadFirstBlock")
+		return 0, errorsmod.Wrap(err, "LoadFirstBlock")
 	}
 	defer it.Close()
 	if !it.Valid() {
@@ -213,10 +213,10 @@ func isEthTx(tx sdk.Tx) bool {
 func saveTxResult(codec codec.Codec, batch dbm.Batch, txHash common.Hash, txResult *ethermint.TxResult) error {
 	bz := codec.MustMarshal(txResult)
 	if err := batch.Set(TxHashKey(txHash), bz); err != nil {
-		return sdkerrors.Wrap(err, "set tx-hash key")
+		return errorsmod.Wrap(err, "set tx-hash key")
 	}
 	if err := batch.Set(TxIndexKey(txResult.Height, txResult.EthTxIndex), txHash.Bytes()); err != nil {
-		return sdkerrors.Wrap(err, "set tx-index key")
+		return errorsmod.Wrap(err, "set tx-index key")
 	}
 	return nil
 }

@@ -10,9 +10,9 @@ import (
 
 	"github.com/tendermint/tendermint/libs/strings"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/server/config"
-
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -346,15 +346,15 @@ func ParseConfig(v *viper.Viper) (*Config, error) {
 // ValidateBasic returns an error any of the application configuration fields are invalid
 func (c Config) ValidateBasic() error {
 	if err := c.EVM.Validate(); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid evm config value: %s", err.Error())
+		return errorsmod.Wrapf(errortypes.ErrAppConfig, "invalid evm config value: %s", err.Error())
 	}
 
 	if err := c.JSONRPC.Validate(); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid json-rpc config value: %s", err.Error())
+		return errorsmod.Wrapf(errortypes.ErrAppConfig, "invalid json-rpc config value: %s", err.Error())
 	}
 
 	if err := c.TLS.Validate(); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid tls config value: %s", err.Error())
+		return errorsmod.Wrapf(errortypes.ErrAppConfig, "invalid tls config value: %s", err.Error())
 	}
 
 	return c.Config.ValidateBasic()
