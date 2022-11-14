@@ -219,7 +219,7 @@ func traverseFields(
 		fieldName := jsonNameFromTag(t.Field(i).Tag)
 
 		if fieldType == cosmosAnyType {
-			// Unpack as Any, assuming message structure
+			// Unpack field, value as Any
 			if fieldType, field, err = unpackAny(cdc, field); err != nil {
 				return err
 			}
