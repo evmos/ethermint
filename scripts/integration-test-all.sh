@@ -65,12 +65,15 @@ fi
 echo "compiling ethermint"
 make build
 
+
 # PID array declaration
 arr=()
 
 init_func() {
     "$PWD"/build/ethermintd keys add $KEY"$i" --keyring-backend test --home "$DATA_DIR$i" --no-backup --algo "eth_secp256k1"
     "$PWD"/build/ethermintd init $MONIKER --chain-id $CHAINID --home "$DATA_DIR$i"
+    # Set gas limit in genesis
+    cat $DATA_DIR$i/config/genesis.json | jq '.consensus_params["block"]["max_gas"]="10000000"' > $DATA_DIR$i/config/tmp_genesis.json && mv $DATA_DIR$i/config/tmp_genesis.json $DATA_DIR$i/config/genesis.json
     "$PWD"/build/ethermintd add-genesis-account \
     "$("$PWD"/build/ethermintd keys show "$KEY$i" --keyring-backend test -a --home "$DATA_DIR$i")" 1000000000000000000aphoton,1000000000000000000stake \
     --keyring-backend test --home "$DATA_DIR$i"
