@@ -35,6 +35,7 @@ import (
 
 	ethmetricsexp "github.com/ethereum/go-ethereum/metrics/exp"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	pruningtypes "github.com/cosmos/cosmos-sdk/pruning/types"
@@ -43,7 +44,6 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servergrpc "github.com/cosmos/cosmos-sdk/server/grpc"
 	"github.com/cosmos/cosmos-sdk/server/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/evmos/ethermint/indexer"
 	ethdebug "github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
@@ -404,7 +404,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if config.GRPC.Enable {
 			_, port, err := net.SplitHostPort(config.GRPC.Address)
 			if err != nil {
-				return sdkerrors.Wrapf(err, "invalid grpc address %s", config.GRPC.Address)
+				return errorsmod.Wrapf(err, "invalid grpc address %s", config.GRPC.Address)
 			}
 
 			maxSendMsgSize := config.GRPC.MaxSendMsgSize

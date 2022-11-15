@@ -14,9 +14,10 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	errorsmod "cosmossdk.io/errors"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -35,7 +36,7 @@ func WrapTxToTypedData(
 	txData := make(map[string]interface{})
 
 	if err := json.Unmarshal(data, &txData); err != nil {
-		return apitypes.TypedData{}, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, "failed to JSON unmarshal data")
+		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, "failed to JSON unmarshal data")
 	}
 
 	domain := apitypes.TypedDataDomain{
@@ -54,7 +55,7 @@ func WrapTxToTypedData(
 	if feeDelegation != nil {
 		feeInfo, ok := txData["fee"].(map[string]interface{})
 		if !ok {
-			return apitypes.TypedData{}, sdkerrors.Wrap(sdkerrors.ErrInvalidType, "cannot parse fee from tx data")
+			return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrInvalidType, "cannot parse fee from tx data")
 		}
 
 		feeInfo["feePayer"] = feeDelegation.FeePayer.String()
@@ -198,7 +199,7 @@ func traverseFields(
 		if fieldType == cosmosAnyType {
 			any, ok := field.Interface().(*codectypes.Any)
 			if !ok {
-				return sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
+				return errorsmod.Wrapf(errortypes.ErrPackAny, "%T", field.Interface())
 			}
 
 			anyWrapper := &cosmosAnyWrapper{
@@ -206,7 +207,7 @@ func traverseFields(
 			}
 
 			if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
-				return sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
+				return errorsmod.Wrap(err, "failed to unpack Any in msg struct")
 			}
 
 			fieldType = reflect.TypeOf(anyWrapper)
@@ -446,7 +447,7 @@ func typToEth(typ reflect.Type) string {
 func doRecover(err *error) {
 	if r := recover(); r != nil {
 		if e, ok := r.(error); ok {
-			e = sdkerrors.Wrap(e, "panicked with error")
+			e = errorsmod.Wrap(e, "panicked with error")
 			*err = e
 			return
 		}
