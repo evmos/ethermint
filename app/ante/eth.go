@@ -568,14 +568,14 @@ func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 	if !ctx.IsCheckTx() || simulate {
 		return next(ctx, tx, simulate)
 	}
+	chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
+	ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
 
 	baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
 	// skip check as the London hard fork and EIP-1559 are enabled
 	if baseFee != nil {
 		return next(ctx, tx, simulate)
 	}
-	chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
-	ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
 
 	evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
 	minGasPrice := ctx.MinGasPrices().AmountOf(evmDenom)
