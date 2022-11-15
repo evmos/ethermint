@@ -365,7 +365,7 @@ func jsonNameFromTag(tag reflect.StructTag) string {
 func unpackAny(cdc codectypes.AnyUnpacker, field reflect.Value) (reflect.Type, reflect.Value, error) {
 	any, ok := field.Interface().(*codectypes.Any)
 	if !ok {
-		return nil, reflect.Value{}, sdkerrors.Wrapf(sdkerrors.ErrPackAny, "%T", field.Interface())
+		return nil, reflect.Value{}, errorsmod.Wrapf(errortypes.ErrPackAny, "%T", field.Interface())
 	}
 
 	anyWrapper := &cosmosAnyWrapper{
@@ -373,7 +373,7 @@ func unpackAny(cdc codectypes.AnyUnpacker, field reflect.Value) (reflect.Type, r
 	}
 
 	if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
-		return nil, reflect.Value{}, sdkerrors.Wrap(err, "failed to unpack Any in msg struct")
+		return nil, reflect.Value{}, errorsmod.Wrap(err, "failed to unpack Any in msg struct")
 	}
 
 	fieldType := reflect.TypeOf(anyWrapper)
