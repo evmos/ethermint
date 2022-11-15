@@ -141,17 +141,6 @@ echo "done sleeping"
 
 set +e
 
-if [[ -z $TEST || $TEST == "integration" ]] ; then
-    time_out=300s
-
-    for i in $(seq 1 "$TEST_QTD"); do
-        HOST_RPC=http://$IP_ADDR:$RPC_PORT"$i"
-        echo "going to test ethermint node $HOST_RPC ..."
-        MODE=$MODE HOST=$HOST_RPC go test ./tests/e2e/... -timeout=$time_out -v -short
-        TEST_FAIL=$?
-    done
-fi
-
 if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
     time_out=300s
     if [[ $TEST == "pending" ]]; then
@@ -186,7 +175,7 @@ for i in "${arr[@]}"; do
     stop_func "$i"
 done
 
-if [[ (-z $TEST || $TEST == "rpc" || $TEST == "integration" ) && $TEST_FAIL -ne 0 ]]; then
+if [[ (-z $TEST || $TEST == "rpc") && $TEST_FAIL -ne 0 ]]; then
     exit $TEST_FAIL
 else
     exit 0
