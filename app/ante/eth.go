@@ -519,7 +519,7 @@ func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		return newCtx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
 	}
 
-    // We need to setup an empty gas config so that the gas is consistent with Ethereum.
+	// We need to setup an empty gas config so that the gas is consistent with Ethereum.
 	newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter()).
 		WithKVGasConfig(storetypes.GasConfig{}).
 		WithTransientKVGasConfig(storetypes.GasConfig{})
