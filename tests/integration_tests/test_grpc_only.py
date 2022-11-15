@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 import requests
-from hexbytes import HexBytes
 from pystarport import ports
 
 from .network import setup_custom_ethermint
