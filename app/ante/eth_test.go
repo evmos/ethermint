@@ -546,8 +546,8 @@ func (suite AnteTestSuite) TestEthSetupContextDecorator() {
 
 			if tc.expPass {
 				suite.Require().NoError(err)
-				suite.Equal(storetypes.GasConfig{}, ctx.BlockGasMeter())
-				suite.Equal(storetypes.GasConfig{}, ctx.BlockGasMeter())
+				suite.Equal(storetypes.GasConfig{}, ctx.KVGasConfig())
+				suite.Equal(storetypes.GasConfig{}, ctx.TransientKVGasConfig())
 			} else {
 				suite.Require().Error(err)
 			}
