@@ -20,9 +20,6 @@ lint:
     - RPC_RESPONSE_STANDARD_NAME
     - RPC_REQUEST_RESPONSE_UNIQUE
     - COMMENT_MESSAGE
-  # TODO: Why do we ignore tendermint here?
-  ignore:
-    - tendermint
 breaking:
   use:
     - FILE
