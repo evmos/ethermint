@@ -39,7 +39,7 @@ require (
 	golang.org/x/text v0.4.0
 	google.golang.org/genproto v0.0.0-20221114212237-e4508ebdbee1
 	google.golang.org/grpc v1.50.1
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
 	sigs.k8s.io/yaml v1.3.0
 )
 
