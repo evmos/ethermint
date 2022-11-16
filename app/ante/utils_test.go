@@ -16,6 +16,7 @@ import (
 	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
 	types3 "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/ethermint/types"
 
@@ -409,7 +410,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	})
 	suite.Require().NoError(err)
 
-	sigHash, err := eip712.ComputeTypedDataHash(typedData)
+	sigHash, _, err := apitypes.TypedDataAndHash(typedData)
 	suite.Require().NoError(err)
 
 	// Sign typedData

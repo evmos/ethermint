@@ -550,6 +550,8 @@ type TraceConfig struct {
 	EnableMemory bool `protobuf:"varint,11,opt,name=enable_memory,json=enableMemory,proto3" json:"enableMemory"`
 	// enable return data capture
 	EnableReturnData bool `protobuf:"varint,12,opt,name=enable_return_data,json=enableReturnData,proto3" json:"enableReturnData"`
+	// tracer config
+	TracerJsonConfig string `protobuf:"bytes,13,opt,name=tracer_json_config,json=tracerJsonConfig,proto3" json:"tracerConfig"`
 }
 
 func (m *TraceConfig) Reset()         { *m = TraceConfig{} }
@@ -653,6 +655,13 @@ func (m *TraceConfig) GetEnableReturnData() bool {
 		return m.EnableReturnData
 	}
 	return false
+}
+
+func (m *TraceConfig) GetTracerJsonConfig() string {
+	if m != nil {
+		return m.TracerJsonConfig
+	}
+	return ""
 }
 
 func init() {
@@ -1379,6 +1388,13 @@ func (m *TraceConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.TracerJsonConfig) > 0 {
+		i -= len(m.TracerJsonConfig)
+		copy(dAtA[i:], m.TracerJsonConfig)
+		i = encodeVarintEvm(dAtA, i, uint64(len(m.TracerJsonConfig)))
+		i--
+		dAtA[i] = 0x6a
+	}
 	if m.EnableReturnData {
 		i--
 		if m.EnableReturnData {
@@ -1751,6 +1767,10 @@ func (m *TraceConfig) Size() (n int) {
 	}
 	if m.EnableReturnData {
 		n += 2
+	}
+	l = len(m.TracerJsonConfig)
+	if l > 0 {
+		n += 1 + l + sovEvm(uint64(l))
 	}
 	return n
 }
@@ -3776,6 +3796,38 @@ func (m *TraceConfig) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.EnableReturnData = bool(v != 0)
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TracerJsonConfig", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvm
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvm
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvm
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TracerJsonConfig = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvm(dAtA[iNdEx:])
