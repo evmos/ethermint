@@ -7,8 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
-	"github.com/cosmos/cosmos-sdk/types/tx"
-	proto "github.com/gogo/protobuf/proto"
+	proto "github.com/cosmos/gogoproto/proto"
 )
 
 var ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
@@ -20,7 +19,6 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgEthereumTx{},
 	)
 	registry.RegisterImplementations(
-		(*tx.TxExtensionOptionI)(nil),
 		&ExtensionOptionsEthereumTx{},
 	)
 	registry.RegisterInterface(

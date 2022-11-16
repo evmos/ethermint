@@ -14,6 +14,7 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	tmclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -96,7 +97,7 @@ func (b *Backend) CurrentHeader() *ethtypes.Header {
 // PendingTransactions returns the transactions that are in the transaction pool
 // and have a from address that is one of the accounts this node manages.
 func (b *Backend) PendingTransactions() ([]*sdk.Tx, error) {
-	res, err := b.clientCtx.Client.UnconfirmedTxs(b.ctx, nil)
+	res, err := b.clientCtx.Client.(tmclient.MempoolClient).UnconfirmedTxs(b.ctx, nil)
 	if err != nil {
 		return nil, err
 	}

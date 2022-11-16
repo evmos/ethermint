@@ -20,7 +20,7 @@ import (
 	"github.com/evmos/ethermint/testutil"
 	"github.com/evmos/ethermint/x/feemarket/types"
 
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"cosmossdk.io/simapp"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	abci "github.com/tendermint/tendermint/abci/types"

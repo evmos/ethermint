@@ -18,6 +18,8 @@ import (
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+
+	tmclient "github.com/tendermint/tendermint/rpc/client"
 )
 
 // BlockNumber returns the current block number in abci app state. Because abci
@@ -105,12 +107,11 @@ func (b *Backend) GetBlockByHash(hash common.Hash, fullTx bool) (map[string]inte
 // GetBlockTransactionCountByHash returns the number of Ethereum transactions in
 // the block identified by hash.
 func (b *Backend) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
-	block, err := b.clientCtx.Client.BlockByHash(b.ctx, hash.Bytes())
+	block, err := b.clientCtx.Client.(tmclient.SignClient).BlockByHash(b.ctx, hash.Bytes())
 	if err != nil {
 		b.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
 		return nil
 	}
-
 	if block.Block == nil {
 		b.logger.Debug("block not found", "hash", hash.Hex())
 		return nil
@@ -178,12 +179,12 @@ func (b *Backend) TendermintBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpc
 // TendermintBlockResultByNumber returns a Tendermint-formatted block result
 // by block number
 func (b *Backend) TendermintBlockResultByNumber(height *int64) (*tmrpctypes.ResultBlockResults, error) {
-	return b.clientCtx.Client.BlockResults(b.ctx, height)
+	return b.clientCtx.Client.(tmclient.SignClient).BlockResults(b.ctx, height)
 }
 
 // TendermintBlockByHash returns a Tendermint-formatted block by block number
 func (b *Backend) TendermintBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error) {
-	resBlock, err := b.clientCtx.Client.BlockByHash(b.ctx, blockHash.Bytes())
+	resBlock, err := b.clientCtx.Client.(tmclient.SignClient).BlockByHash(b.ctx, blockHash.Bytes())
 	if err != nil {
 		b.logger.Debug("tendermint client failed to get block", "blockHash", blockHash.Hex(), "error", err.Error())
 		return nil, err
@@ -337,8 +338,8 @@ func (b *Backend) BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.
 		}
 
 		for _, attr := range event.Attributes {
-			if bytes.Equal(attr.Key, bAttributeKeyEthereumBloom) {
-				return ethtypes.BytesToBloom(attr.Value), nil
+			if bytes.Equal([]byte(attr.Key), bAttributeKeyEthereumBloom) {
+				return ethtypes.BytesToBloom([]byte(attr.Value)), nil
 			}
 		}
 	}

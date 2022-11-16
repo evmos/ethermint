@@ -131,13 +131,13 @@ type LegacyTx struct {
  // nonce corresponds to the account nonce (transaction sequence).
  Nonce uint64 `protobuf:"varint,1,opt,name=nonce,proto3" json:"nonce,omitempty"`
  // gas price defines the value for each gas unit
- GasPrice *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=gas_price,json=gasPrice,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_price,omitempty"`
+ GasPrice *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=gas_price,json=gasPrice,proto3,customtype=cosmossdk.io/math.Int" json:"gas_price,omitempty"`
  // gas defines the gas limit defined for the transaction.
  GasLimit uint64 `protobuf:"varint,3,opt,name=gas,proto3" json:"gas,omitempty"`
  // hex formatted address of the recipient
  To string `protobuf:"bytes,4,opt,name=to,proto3" json:"to,omitempty"`
  // value defines the unsigned integer value of the transaction amount.
- Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,5,opt,name=value,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"value,omitempty"`
+ Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,5,opt,name=value,proto3,customtype=cosmossdk.io/math.Int" json:"value,omitempty"`
  // input defines the data payload bytes of the transaction.
  Data []byte `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
  // v defines the signature value
@@ -163,19 +163,19 @@ The transaction data of EIP-1559 dynamic fee transactions.
 ```go
 type DynamicFeeTx struct {
  // destination EVM chain ID
- ChainID *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"chainID"`
+ ChainID *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3,customtype=cosmossdk.io/math.Int" json:"chainID"`
  // nonce corresponds to the account nonce (transaction sequence).
  Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
  // gas tip cap defines the max value for the gas tip
- GasTipCap *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,3,opt,name=gas_tip_cap,json=gasTipCap,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_tip_cap,omitempty"`
+ GasTipCap *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,3,opt,name=gas_tip_cap,json=gasTipCap,proto3,customtype=cosmossdk.io/math.Int" json:"gas_tip_cap,omitempty"`
  // gas fee cap defines the max value for the gas fee
- GasFeeCap *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=gas_fee_cap,json=gasFeeCap,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_fee_cap,omitempty"`
+ GasFeeCap *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=gas_fee_cap,json=gasFeeCap,proto3,customtype=cosmossdk.io/math.Int" json:"gas_fee_cap,omitempty"`
  // gas defines the gas limit defined for the transaction.
  GasLimit uint64 `protobuf:"varint,5,opt,name=gas,proto3" json:"gas,omitempty"`
  // hex formatted address of the recipient
  To string `protobuf:"bytes,6,opt,name=to,proto3" json:"to,omitempty"`
  // value defines the the transaction amount.
- Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,7,opt,name=value,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"value,omitempty"`
+ Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,7,opt,name=value,proto3,customtype=cosmossdk.io/math.Int" json:"value,omitempty"`
  // input defines the data payload bytes of the transaction.
  Data     []byte     `protobuf:"bytes,8,opt,name=data,proto3" json:"data,omitempty"`
  Accesses AccessList `protobuf:"bytes,9,rep,name=accesses,proto3,castrepeated=AccessList" json:"accessList"`
@@ -205,17 +205,17 @@ The transaction data of EIP-2930 access list transactions.
 ```go
 type AccessListTx struct {
  // destination EVM chain ID
- ChainID *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"chainID"`
+ ChainID *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3,customtype=cosmossdk.io/math.Int" json:"chainID"`
  // nonce corresponds to the account nonce (transaction sequence).
  Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
  // gas price defines the value for each gas unit
- GasPrice *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,3,opt,name=gas_price,json=gasPrice,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_price,omitempty"`
+ GasPrice *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,3,opt,name=gas_price,json=gasPrice,proto3,customtype=cosmossdk.io/math.Int" json:"gas_price,omitempty"`
  // gas defines the gas limit defined for the transaction.
  GasLimit uint64 `protobuf:"varint,4,opt,name=gas,proto3" json:"gas,omitempty"`
  // hex formatted address of the recipient
  To string `protobuf:"bytes,5,opt,name=to,proto3" json:"to,omitempty"`
  // value defines the unsigned integer value of the transaction amount.
- Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,6,opt,name=value,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"value,omitempty"`
+ Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,6,opt,name=value,proto3,customtype=cosmossdk.io/math.Int" json:"value,omitempty"`
  // input defines the data payload bytes of the transaction.
  Data     []byte     `protobuf:"bytes,7,opt,name=data,proto3" json:"data,omitempty"`
  Accesses AccessList `protobuf:"bytes,8,rep,name=accesses,proto3,castrepeated=AccessList" json:"accessList"`

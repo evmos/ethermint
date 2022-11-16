@@ -4,8 +4,8 @@ import (
 	"math/big"
 	"testing"
 
+	"cosmossdk.io/simapp/params"
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/evmos/ethermint/app"

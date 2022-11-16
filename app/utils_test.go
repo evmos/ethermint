@@ -19,7 +19,7 @@ import (
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/evmos/ethermint/types"
 
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"cosmossdk.io/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 

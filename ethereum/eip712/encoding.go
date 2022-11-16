@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/simapp/params"
+	"cosmossdk.io/simapp/params"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"

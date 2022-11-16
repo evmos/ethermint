@@ -425,8 +425,8 @@ format-fix:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-protoVer=v0.2
-protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
+protoVer=0.11.0
+protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
 containerProtoGen=$(PROJECT_NAME)-proto-gen-$(protoVer)
 containerProtoGenAny=$(PROJECT_NAME)-proto-gen-any-$(protoVer)
 containerProtoGenSwagger=$(PROJECT_NAME)-proto-gen-swagger-$(protoVer)

@@ -95,7 +95,7 @@ message Validator {
   // status is the validator status (bonded/unbonding/unbonded).
   BondStatus status = 4;
   // tokens define the delegated tokens (incl. self-delegation).
-  string tokens = 5 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.nullable) = false];
+  string tokens = 5 [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false];
   // delegator_shares defines total shares issued to a validator's delegators.
   string delegator_shares = 6 [
     (gogoproto.moretags)   = "yaml:\"delegator_shares\"",
@@ -114,7 +114,7 @@ message Validator {
   // min_self_delegation is the validator's self declared minimum self delegation.
   string min_self_delegation = 11 [
     (gogoproto.moretags)   = "yaml:\"min_self_delegation\"",
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false
   ];
 }
@@ -220,12 +220,12 @@ message UnbondingDelegationEntry {
       [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.moretags) = "yaml:\"completion_time\""];
   // initial_balance defines the tokens initially scheduled to receive at completion.
   string initial_balance = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false,
     (gogoproto.moretags)   = "yaml:\"initial_balance\""
   ];
   // balance defines the tokens to receive at completion.
-  string balance = 4 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.nullable) = false];
+  string balance = 4 [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false];
 }
 
 // RedelegationEntry defines a redelegation object with relevant metadata.
@@ -240,7 +240,7 @@ message RedelegationEntry {
       [(gogoproto.nullable) = false, (gogoproto.stdtime) = true, (gogoproto.moretags) = "yaml:\"completion_time\""];
   // initial_balance defines the initial balance when redelegation started.
   string initial_balance = 3 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false,
     (gogoproto.moretags)   = "yaml:\"initial_balance\""
   ];
@@ -302,7 +302,7 @@ message RedelegationEntryResponse {
   option (gogoproto.equal) = true;
 
   RedelegationEntry redelegation_entry = 1 [(gogoproto.nullable) = false];
-  string balance = 4 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.nullable) = false];
+  string balance = 4 [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false];
 }
 
 // RedelegationResponse is equivalent to a Redelegation except that its entries
@@ -321,13 +321,13 @@ message Pool {
   option (gogoproto.description) = true;
   option (gogoproto.equal)       = true;
   string not_bonded_tokens       = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.jsontag)    = "not_bonded_tokens",
     (gogoproto.nullable)   = false
   ];
   string bonded_tokens = 2 [
     (gogoproto.jsontag)    = "bonded_tokens",
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false,
     (gogoproto.moretags)   = "yaml:\"bonded_tokens\""
   ];

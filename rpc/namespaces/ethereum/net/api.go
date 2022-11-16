@@ -5,14 +5,20 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	rpcclient "github.com/cosmos/cosmos-sdk/client"
 	ethermint "github.com/evmos/ethermint/types"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
+
+type NetworkSubsetTendermintRPC interface {
+	rpcclient.TendermintRPC
+	NetInfo(ctx context.Context) (*ctypes.ResultNetInfo, error)
+}
 
 // PublicAPI is the eth_ prefixed set of APIs in the Web3 JSON-RPC spec.
 type PublicAPI struct {
 	networkVersion uint64
-	tmClient       rpcclient.Client
+	tmClient       NetworkSubsetTendermintRPC
 }
 
 // NewPublicAPI creates an instance of the public Net Web3 API.
@@ -25,7 +31,7 @@ func NewPublicAPI(clientCtx client.Context) *PublicAPI {
 
 	return &PublicAPI{
 		networkVersion: chainIDEpoch.Uint64(),
-		tmClient:       clientCtx.Client,
+		tmClient:       clientCtx.Client.(NetworkSubsetTendermintRPC),
 	}
 }
 

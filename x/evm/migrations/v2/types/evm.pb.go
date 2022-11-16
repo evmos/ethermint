@@ -6,8 +6,8 @@ package types
 import (
 	fmt "fmt"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -111,38 +111,38 @@ func (m *Params) GetChainConfig() ChainConfig {
 // instead of *big.Int.
 type ChainConfig struct {
 	// Homestead switch block (nil no fork, 0 = already homestead)
-	HomesteadBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=homestead_block,json=homesteadBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"homestead_block,omitempty" yaml:"homestead_block"`
+	HomesteadBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=homestead_block,json=homesteadBlock,proto3,customtype=cosmossdk.io/math.Int" json:"homestead_block,omitempty" yaml:"homestead_block"`
 	// TheDAO hard-fork switch block (nil no fork)
-	DAOForkBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=dao_fork_block,json=daoForkBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"dao_fork_block,omitempty" yaml:"dao_fork_block"`
+	DAOForkBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=dao_fork_block,json=daoForkBlock,proto3,customtype=cosmossdk.io/math.Int" json:"dao_fork_block,omitempty" yaml:"dao_fork_block"`
 	// Whether the nodes supports or opposes the DAO hard-fork
 	DAOForkSupport bool `protobuf:"varint,3,opt,name=dao_fork_support,json=daoForkSupport,proto3" json:"dao_fork_support,omitempty" yaml:"dao_fork_support"`
 	// EIP150 implements the Gas price changes
 	// (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil no fork)
-	EIP150Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=eip150_block,json=eip150Block,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"eip150_block,omitempty" yaml:"eip150_block"`
+	EIP150Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=eip150_block,json=eip150Block,proto3,customtype=cosmossdk.io/math.Int" json:"eip150_block,omitempty" yaml:"eip150_block"`
 	// EIP150 HF hash (needed for header only clients as only gas pricing changed)
 	EIP150Hash string `protobuf:"bytes,5,opt,name=eip150_hash,json=eip150Hash,proto3" json:"eip150_hash,omitempty" yaml:"byzantium_block"`
 	// EIP155Block HF block
-	EIP155Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,6,opt,name=eip155_block,json=eip155Block,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"eip155_block,omitempty" yaml:"eip155_block"`
+	EIP155Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,6,opt,name=eip155_block,json=eip155Block,proto3,customtype=cosmossdk.io/math.Int" json:"eip155_block,omitempty" yaml:"eip155_block"`
 	// EIP158 HF block
-	EIP158Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,7,opt,name=eip158_block,json=eip158Block,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"eip158_block,omitempty" yaml:"eip158_block"`
+	EIP158Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,7,opt,name=eip158_block,json=eip158Block,proto3,customtype=cosmossdk.io/math.Int" json:"eip158_block,omitempty" yaml:"eip158_block"`
 	// Byzantium switch block (nil no fork, 0 = already on byzantium)
-	ByzantiumBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,8,opt,name=byzantium_block,json=byzantiumBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"byzantium_block,omitempty" yaml:"byzantium_block"`
+	ByzantiumBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,8,opt,name=byzantium_block,json=byzantiumBlock,proto3,customtype=cosmossdk.io/math.Int" json:"byzantium_block,omitempty" yaml:"byzantium_block"`
 	// Constantinople switch block (nil no fork, 0 = already activated)
-	ConstantinopleBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,9,opt,name=constantinople_block,json=constantinopleBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"constantinople_block,omitempty" yaml:"constantinople_block"`
+	ConstantinopleBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,9,opt,name=constantinople_block,json=constantinopleBlock,proto3,customtype=cosmossdk.io/math.Int" json:"constantinople_block,omitempty" yaml:"constantinople_block"`
 	// Petersburg switch block (nil same as Constantinople)
-	PetersburgBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,10,opt,name=petersburg_block,json=petersburgBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"petersburg_block,omitempty" yaml:"petersburg_block"`
+	PetersburgBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,10,opt,name=petersburg_block,json=petersburgBlock,proto3,customtype=cosmossdk.io/math.Int" json:"petersburg_block,omitempty" yaml:"petersburg_block"`
 	// Istanbul switch block (nil no fork, 0 = already on istanbul)
-	IstanbulBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,11,opt,name=istanbul_block,json=istanbulBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"istanbul_block,omitempty" yaml:"istanbul_block"`
+	IstanbulBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,11,opt,name=istanbul_block,json=istanbulBlock,proto3,customtype=cosmossdk.io/math.Int" json:"istanbul_block,omitempty" yaml:"istanbul_block"`
 	// Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated)
-	MuirGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,12,opt,name=muir_glacier_block,json=muirGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"muir_glacier_block,omitempty" yaml:"muir_glacier_block"`
+	MuirGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,12,opt,name=muir_glacier_block,json=muirGlacierBlock,proto3,customtype=cosmossdk.io/math.Int" json:"muir_glacier_block,omitempty" yaml:"muir_glacier_block"`
 	// Berlin switch block (nil = no fork, 0 = already on berlin)
-	BerlinBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,13,opt,name=berlin_block,json=berlinBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"berlin_block,omitempty" yaml:"berlin_block"`
+	BerlinBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,13,opt,name=berlin_block,json=berlinBlock,proto3,customtype=cosmossdk.io/math.Int" json:"berlin_block,omitempty" yaml:"berlin_block"`
 	// London switch block (nil = no fork, 0 = already on london)
-	LondonBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,17,opt,name=london_block,json=londonBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"london_block,omitempty" yaml:"london_block"`
+	LondonBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,17,opt,name=london_block,json=londonBlock,proto3,customtype=cosmossdk.io/math.Int" json:"london_block,omitempty" yaml:"london_block"`
 	// Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
-	ArrowGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,18,opt,name=arrow_glacier_block,json=arrowGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"arrow_glacier_block,omitempty" yaml:"arrow_glacier_block"`
+	ArrowGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,18,opt,name=arrow_glacier_block,json=arrowGlacierBlock,proto3,customtype=cosmossdk.io/math.Int" json:"arrow_glacier_block,omitempty" yaml:"arrow_glacier_block"`
 	// EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in merge proceedings)
-	MergeForkBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,19,opt,name=merge_fork_block,json=mergeForkBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"merge_fork_block,omitempty" yaml:"merge_fork_block"`
+	MergeForkBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,19,opt,name=merge_fork_block,json=mergeForkBlock,proto3,customtype=cosmossdk.io/math.Int" json:"merge_fork_block,omitempty" yaml:"merge_fork_block"`
 }
 
 func (m *ChainConfig) Reset()         { *m = ChainConfig{} }
