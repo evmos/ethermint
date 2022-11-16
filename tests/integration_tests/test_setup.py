@@ -1,9 +1,6 @@
 from .utils import (
-    ADDRS,
     CONTRACTS,
-    KEYS,
     deploy_contract,
-    send_transaction,
     send_successful_transaction,
     w3_wait_for_block,
     w3_wait_for_new_blocks,
