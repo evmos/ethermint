@@ -499,6 +499,7 @@ func (e *PublicAPI) GetPendingTransactions() ([]*rpctypes.RPCTransaction, error)
 				uint64(0),
 				uint64(0),
 				nil,
+				e.backend.ChainConfig().ChainID,
 			)
 			if err != nil {
 				return nil, err

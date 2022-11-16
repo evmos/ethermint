@@ -376,6 +376,7 @@ func (b *Backend) RPCBlockFromTendermintBlock(
 			uint64(block.Height),
 			uint64(txIndex),
 			baseFee,
+			b.chainID,
 		)
 		if err != nil {
 			b.logger.Debug("NewTransactionFromData for receipt failed", "hash", tx.Hash().Hex(), "error", err.Error())
