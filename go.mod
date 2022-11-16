@@ -8,8 +8,6 @@ require (
 	github.com/btcsuite/btcd v0.22.3
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-proto v1.0.0-alpha8 // indirect
-	// cosmos-sdk main @20448048a489 ≃ 0.47
-	github.com/cosmos/cosmos-sdk v0.46.0-beta2.0.20221103211459-20448048a489
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/davecgh/go-spew v1.1.1
@@ -46,8 +44,6 @@ require (
 require (
 	cosmossdk.io/api v0.2.4
 	cosmossdk.io/math v1.0.0-beta.3
-	cosmossdk.io/simapp v0.0.0-20221103182213-3034a9d54a62
-	github.com/cosmos/ibc-go/v6 v6.0.0-20221109202621-fe2f2c2da8ab
 	github.com/gogo/protobuf v1.3.2
 )
 
@@ -59,7 +55,6 @@ require (
 	cloud.google.com/go/storage v1.27.0 // indirect
 	cosmossdk.io/core v0.3.2 // indirect
 	cosmossdk.io/depinject v1.0.0-alpha.3 // indirect
-	cosmossdk.io/tools/rosetta v0.1.0 // indirect
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
@@ -83,6 +78,7 @@ require (
 	github.com/coinbase/rosetta-sdk-go v0.8.1 // indirect
 	github.com/confio/ics23/go v0.7.0 // indirect
 	github.com/cosmos/btcutil v1.0.4 // indirect
+	github.com/cosmos/cosmos-sdk v0.46.0-beta2.0.20221109114442-bcdf81cbaf8d // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
 	github.com/cosmos/iavl v0.19.4 // indirect
@@ -223,4 +219,6 @@ replace (
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+
+	github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.10.19
 )
