@@ -7,7 +7,9 @@ require (
 	github.com/armon/go-metrics v0.4.1
 	github.com/btcsuite/btcd v0.22.3
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/cosmos/cosmos-proto v1.0.0-alpha8 // indirect
+	github.com/cosmos/cosmos-proto v1.0.0-alpha8
+	// cosmos-sdk main @20448048a489 ≃ 0.47
+	github.com/cosmos/cosmos-sdk v0.46.0-beta2.0.20221103211459-20448048a489
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/davecgh/go-spew v1.1.1
@@ -23,7 +25,6 @@ require (
 	github.com/onsi/gomega v1.24.1
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
-	github.com/regen-network/cosmos-proto v0.3.1
 	github.com/rs/cors v1.8.2
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.6.1
@@ -37,13 +38,15 @@ require (
 	golang.org/x/text v0.4.0
 	google.golang.org/genproto v0.0.0-20221114212237-e4508ebdbee1
 	google.golang.org/grpc v1.50.1
-	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
+	google.golang.org/protobuf v1.28.1 // indirect
 	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
 	cosmossdk.io/api v0.2.4
 	cosmossdk.io/math v1.0.0-beta.3
+	cosmossdk.io/simapp v0.0.0-20221103182213-3034a9d54a62
+	github.com/cosmos/ibc-go/v6 v6.0.0-20221109202621-fe2f2c2da8ab
 	github.com/gogo/protobuf v1.3.2
 )
 
@@ -55,15 +58,12 @@ require (
 	cloud.google.com/go/storage v1.27.0 // indirect
 	cosmossdk.io/core v0.3.2 // indirect
 	cosmossdk.io/depinject v1.0.0-alpha.3 // indirect
+	cosmossdk.io/tools/rosetta v0.1.0 // indirect
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
-	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0 // indirect
-	github.com/aokoli/goutils v1.1.1 // indirect
 	github.com/aws/aws-sdk-go v1.40.45 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
@@ -78,7 +78,6 @@ require (
 	github.com/coinbase/rosetta-sdk-go v0.8.1 // indirect
 	github.com/confio/ics23/go v0.7.0 // indirect
 	github.com/cosmos/btcutil v1.0.4 // indirect
-	github.com/cosmos/cosmos-sdk v0.46.0-beta2.0.20221109114442-bcdf81cbaf8d // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
 	github.com/cosmos/iavl v0.19.4 // indirect
@@ -97,7 +96,6 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/dvsekhvalnov/jose2go v1.5.0 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
-	github.com/envoyproxy/protoc-gen-validate v0.9.0 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
@@ -135,9 +133,7 @@ require (
 	github.com/hdevalence/ed25519consensus v0.0.0-20220222234857-c00d1f31bab3 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/huandu/skiplist v1.2.0 // indirect
-	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -153,13 +149,10 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20210601165009-122bf33a46e0 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
-	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
-	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
@@ -170,8 +163,6 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/prometheus/tsdb v0.7.1 // indirect
-	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
-	github.com/pseudomuto/protokit v0.2.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/rjeczalik/notify v0.9.1 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
@@ -219,6 +210,4 @@ replace (
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
-
-	github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.10.19
 )
