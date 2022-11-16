@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 
-	tmcfg "github.com/tendermint/tendermint/config"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -40,8 +39,10 @@ import (
 	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/ethermint/server"
+
+	tmcfg "github.com/tendermint/tendermint/config"
+
 	servercfg "github.com/evmos/ethermint/server/config"
-	srvflags "github.com/evmos/ethermint/server/flags"
 	ethermint "github.com/evmos/ethermint/types"
 )
 
@@ -59,9 +60,10 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastSync).
-		WithHomeDir(app.DefaultNodeHome).
 		WithKeyringOptions(hd.EthSecp256k1Option()).
-		WithViper(EnvPrefix)
+		WithViper(EnvPrefix).
+		WithHomeDir(app.DefaultNodeHome).
+		WithViper("")
 
 	eip712.SetEncodingConfig(encodingConfig)
 
@@ -89,17 +91,39 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 			// FIXME: replace AttoPhoton with bond denom
 			customAppTemplate, customAppConfig := servercfg.AppConfig(ethermint.AttoPhoton)
+			customTMConfig := initTendermintConfig()
 
-			return sdkserver.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, tmcfg.DefaultConfig())
+			return sdkserver.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customTMConfig)
 		},
 	}
 
+	initRootCmd(rootCmd, encodingConfig)
+
+	return rootCmd, encodingConfig
+}
+
+func addModuleInitFlags(startCmd *cobra.Command) {
+	crisis.AddModuleInitFlags(startCmd)
+}
+
+// initTendermintConfig helps to override default Tendermint Config values.
+// return tmcfg.DefaultConfig if no custom configuration is required for the application.
+func initTendermintConfig() *tmcfg.Config {
+	cfg := tmcfg.DefaultConfig()
+
+	// these values put a higher strain on node memory
+	// cfg.P2P.MaxNumInboundPeers = 100
+	// cfg.P2P.MaxNumOutboundPeers = 40
+
+	return cfg
+}
+
+func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	// TODO: double-check
 	// authclient.Codec = encodingConfig.Codec
 
 	cfg := sdk.GetConfig()
 	cfg.Seal()
-
 	rootCmd.AddCommand(
 		ethermintclient.ValidateChainID(
 			genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
@@ -126,19 +150,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		ethermintclient.KeyCommands(app.DefaultNodeHome),
 	)
 
-	rootCmd, err := srvflags.AddTxFlags(rootCmd)
-	if err != nil {
-		panic(err)
-	}
-
 	// add rosetta
 	// rootCmd.AddCommand(sdkserver.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
-
-	return rootCmd, encodingConfig
-}
-
-func addModuleInitFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
 }
 
 func queryCommand() *cobra.Command {
