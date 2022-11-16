@@ -213,18 +213,15 @@ def test_get_proof(ethermint_rpc_ws, geth):
     proof = (eth_rpc.make_request(
         method, [validator, ["0x0"], hex(res["blockNumber"])]
     ))["result"]
-    res, err = same_types(proof, EXPECTED_GET_PROOF)
-    assert res, err
+    compare_types(proof, EXPECTED_GET_PROOF["result"])
     assert proof["accountProof"], EXPECTED_ACCOUNT_PROOF
     assert proof["storageProof"][0]["proof"], EXPECTED_STORAGE_PROOF
 
     _ = send_and_get_hash(w3)
-
     proof = eth_rpc.make_request(
         method, [validator, ["0x0"], "latest"]
     )
     compare_types(proof, EXPECTED_GET_PROOF)
-
 
 def test_get_code(ethermint_rpc_ws, geth):
     w3: Web3 = ethermint_rpc_ws.w3
@@ -343,6 +340,7 @@ def test_estimate_gas(ethermint_rpc_ws, geth):
 def compare_types(actual, expected):
     res, err = same_types(actual, expected)
     if not res:
+        print(err)
         print(actual)
         print(expected)
     assert res, err
