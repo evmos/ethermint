@@ -322,10 +322,11 @@ func TestAppSimulationAfterImport(t *testing.T) {
 	require.Equal(t, appName, newApp.Name())
 	require.NoError(t, err)
 
-	newApp.InitChain(abci.RequestInitChain{
-		ChainId:       SimAppChainID,
-		AppStateBytes: exported.AppState,
-	})
+	newApp.InitChain(
+		abci.RequestInitChain{
+			ChainId:       SimAppChainID,
+			AppStateBytes: exported.AppState,
+		})
 
 	_, _, err = simulation.SimulateFromSeed(
 		t,

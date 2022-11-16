@@ -113,11 +113,11 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 	// Initialize the chain
 	suite.app.InitChain(
 		abci.RequestInitChain{
-			ChainId:       "ethermint_9000-1",
-			Validators:    []abci.ValidatorUpdate{},
-			AppStateBytes: stateBytes,
-		},
-	)
+			ChainId:         "ethermint_9000-1",
+			Validators:      []abci.ValidatorUpdate{},
+			ConsensusParams: app.DefaultConsensusParams,
+			AppStateBytes:   stateBytes,
+		})
 
 	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{
 		Height:          1,

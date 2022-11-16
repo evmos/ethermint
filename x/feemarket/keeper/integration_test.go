@@ -506,11 +506,11 @@ func setupChain(localMinGasPricesStr string) {
 	// Initialize the chain
 	newapp.InitChain(
 		abci.RequestInitChain{
-			ChainId:       "ethermint_9000-1",
-			Validators:    []abci.ValidatorUpdate{},
-			AppStateBytes: stateBytes,
-		},
-	)
+			ChainId:         "ethermint_9000-1",
+			Validators:      []abci.ValidatorUpdate{},
+			ConsensusParams: app.DefaultConsensusParams,
+			AppStateBytes:   stateBytes,
+		})
 
 	s.app = newapp
 	s.SetupApp(false)

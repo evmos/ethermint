@@ -32,9 +32,29 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	simapputil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
+
+// DefaultConsensusParams defines the default Tendermint consensus params used in
+// EthermintApp testing.
+var DefaultConsensusParams = &tmproto.ConsensusParams{
+	Block: &tmproto.BlockParams{
+		MaxBytes: 200000,
+		MaxGas:   -1, // no limit
+	},
+	Evidence: &tmproto.EvidenceParams{
+		MaxAgeNumBlocks: 302400,
+		MaxAgeDuration:  504 * time.Hour, // 3 weeks is the max duration
+		MaxBytes:        10000,
+	},
+	Validator: &tmproto.ValidatorParams{
+		PubKeyTypes: []string{
+			tmtypes.ABCIPubKeyTypeEd25519,
+		},
+	},
+}
 
 // Setup initializes a new EthermintApp. A Nop logger is set in EthermintApp.
 func Setup(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState) simapp.GenesisState) *EthermintApp {
@@ -63,15 +83,14 @@ func SetupWithDB(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.Genesis
 		if err != nil {
 			panic(err)
 		}
-
 		// Initialize the chain
 		app.InitChain(
 			abci.RequestInitChain{
-				ChainId:       "ethermint_9000-1",
-				Validators:    []abci.ValidatorUpdate{},
-				AppStateBytes: stateBytes,
-			},
-		)
+				ChainId:         "ethermint_9000-1",
+				Validators:      []abci.ValidatorUpdate{},
+				ConsensusParams: DefaultConsensusParams,
+				AppStateBytes:   stateBytes,
+			})
 	}
 
 	return app
