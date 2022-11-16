@@ -74,6 +74,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransac
 		uint64(res.Height),
 		uint64(res.EthTxIndex),
 		baseFee,
+		b.chainID,
 	)
 }
 
@@ -102,6 +103,7 @@ func (b *Backend) getTransactionByHashPending(txHash common.Hash) (*rpctypes.RPC
 				uint64(0),
 				uint64(0),
 				nil,
+				b.chainID,
 			)
 			if err != nil {
 				return nil, err
@@ -214,6 +216,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		// sender and receiver (contract or EOA) addreses
 		"from": from,
 		"to":   txData.GetTo(),
+		"type": hexutil.Uint(ethMsg.AsTransaction().Type()),
 	}
 
 	if logs == nil {
@@ -386,5 +389,6 @@ func (b *Backend) GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, i
 		uint64(block.Block.Height),
 		uint64(idx),
 		baseFee,
+		b.chainID,
 	)
 }
