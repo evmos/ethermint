@@ -82,27 +82,6 @@ jobs:
           make test-rpc
         if: env.GIT_DIFF
 
-  test-e2e:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/setup-go@v3
-        with:
-          go-version: 1.19
-          check-latest: true
-      - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.1
-        with:
-          PATTERNS: |
-            **/**.sol
-            **/**.go
-            go.mod
-            go.sum
-      - name: Test e2e
-        run: |
-          make test-integration
-        if: env.GIT_DIFF
-
   integration_tests:
     runs-on: ubuntu-latest
     steps:
