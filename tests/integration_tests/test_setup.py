@@ -15,9 +15,7 @@ def test_setup_geth(geth):
 
     # test utilities
     send_successful_transaction(w3)
-    print("successfully sent transaction")
     deploy_contract(w3, CONTRACTS["TestERC20A"])
-    print("successfully deployed contract")
 
     # ensure blocks are still being produced
     w3_wait_for_new_blocks(w3, 5)
