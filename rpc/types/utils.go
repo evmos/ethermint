@@ -22,6 +22,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+
+	tmclient "github.com/tendermint/tendermint/rpc/client"
 )
 
 // ExceedBlockGasLimitError defines the error message when tx execution exceeds the block gas limit.
@@ -77,20 +79,20 @@ func EthHeaderFromTendermint(header tmtypes.Header, bloom ethtypes.Bloom, baseFe
 
 // BlockMaxGasFromConsensusParams returns the gas limit for the current block from the chain consensus params.
 func BlockMaxGasFromConsensusParams(goCtx context.Context, clientCtx client.Context, blockHeight int64) (int64, error) {
-	// resultBlock, err := clientCtx.Client.BlockchainInfo(goCtx, blockHeight)
-	// if err != nil {
-	// 	return int64(^uint32(0)), err
-	// }
-
-	gasLimit := int64(5)
-	if gasLimit == -1 {
-		// Sets gas limit to max uint32 to not error with javascript dev tooling
-		// This -1 value indicating no block gas limit is set to max uint64 with geth hexutils
-		// which errors certain javascript dev tooling which only supports up to 53 bits
-		gasLimit = int64(^uint32(0))
+	res, err := clientCtx.Client.(tmclient.NetworkClient).ConsensusParams(goCtx, &blockHeight)
+	if err != nil {
+		return int64(^uint32(0)), err
 	}
 
-	return gasLimit, nil
+	// Healthy path
+	if maxGas := res.ConsensusParams.Block.MaxGas; maxGas >= 0 {
+		return maxGas, nil
+	}
+
+	// Sets gas limit to max uint32 to not error with javascript dev tooling
+	// This -1 value indicating no block gas limit is set to max uint64 with geth hexutils
+	// which errors certain javascript dev tooling which only supports up to 53 bits
+	return int64(^uint32(0)), nil
 }
 
 // FormatBlock creates an ethereum block from a tendermint header and ethereum-formatted
