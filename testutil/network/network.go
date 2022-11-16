@@ -38,11 +38,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
-	// pruningtypes "github.com/cosmos/cosmos-sdk/pruning/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	srvconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -132,11 +132,11 @@ func DefaultConfig() Config {
 		AccountTokens:     sdk.TokensFromConsensusPower(1000, ethermint.PowerReduction),
 		StakingTokens:     sdk.TokensFromConsensusPower(500, ethermint.PowerReduction),
 		BondedTokens:      sdk.TokensFromConsensusPower(100, ethermint.PowerReduction),
-		// PruningStrategy:   pruningtypes.PruningOptionNothing,
-		CleanupDir:     true,
-		SigningAlgo:    string(hd.EthSecp256k1Type),
-		KeyringOptions: []keyring.Option{hd.EthSecp256k1Option()},
-		PrintMnemonic:  false,
+		PruningStrategy:   pruningtypes.PruningOptionNothing,
+		CleanupDir:        true,
+		SigningAlgo:       string(hd.EthSecp256k1Type),
+		KeyringOptions:    []keyring.Option{hd.EthSecp256k1Option()},
+		PrintMnemonic:     false,
 	}
 }
 

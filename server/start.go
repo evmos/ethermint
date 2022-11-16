@@ -30,12 +30,11 @@ import (
 	"github.com/tendermint/tendermint/rpc/client/local"
 	dbm "github.com/tendermint/tm-db"
 
-	// "github.com/cosmos/cosmos-sdk/server/rosetta"
-	// crgserver "github.com/cosmos/cosmos-sdk/server/rosetta/lib/server"
-
 	ethmetricsexp "github.com/ethereum/go-ethereum/metrics/exp"
 
 	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/tools/rosetta"
+	rosettaSvr "cosmossdk.io/tools/rosetta/lib/server"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -51,6 +50,8 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 
 	tmclient "github.com/tendermint/tendermint/rpc/client"
+
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -144,7 +145,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Bool(server.FlagInterBlockCache, true, "Enable inter-block caching")
 	cmd.Flags().String(srvflags.CPUProfile, "", "Enable CPU profiling and write to the provided file")
 	cmd.Flags().Bool(server.FlagTrace, false, "Provide full stack traces for errors in ABCI Log")
-	// cmd.Flags().String(server.FlagPruning, pruningtypes.PruningOptionDefault, "Pruning strategy (default|nothing|everything|custom)")
+	cmd.Flags().String(server.FlagPruning, pruningtypes.PruningOptionDefault, "Pruning strategy (default|nothing|everything|custom)")
 	cmd.Flags().Uint64(server.FlagPruningKeepRecent, 0, "Number of recent heights to keep on disk (ignored if pruning is not 'custom')")
 	cmd.Flags().Uint64(server.FlagPruningInterval, 0, "Height interval at which pruned heights are removed from disk (ignored if pruning is not 'custom')") //nolint:lll
 	cmd.Flags().Uint(server.FlagInvCheckPeriod, 0, "Assert registered invariants every N blocks")
@@ -523,41 +524,41 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		return server.WaitForQuitSignals()
 	}
 
-	// var rosettaSrv crgserver.Server
-	// if config.Rosetta.Enable {
-	// 	offlineMode := config.Rosetta.Offline
-	// 	if !config.GRPC.Enable { // If GRPC is not enabled rosetta cannot work in online mode, so it works in offline mode.
-	// 		offlineMode = true
-	// 	}
+	var rosettaSrv rosettaSvr.Server
+	if config.Rosetta.Enable {
+		offlineMode := config.Rosetta.Offline
+		if !config.GRPC.Enable { // If GRPC is not enabled rosetta cannot work in online mode, so it works in offline mode.
+			offlineMode = true
+		}
 
-	// 	conf := &rosetta.Config{
-	// 		Blockchain:    config.Rosetta.Blockchain,
-	// 		Network:       config.Rosetta.Network,
-	// 		TendermintRPC: ctx.Config.RPC.ListenAddress,
-	// 		GRPCEndpoint:  config.GRPC.Address,
-	// 		Addr:          config.Rosetta.Address,
-	// 		Retries:       config.Rosetta.Retries,
-	// 		Offline:       offlineMode,
-	// 	}
-	// 	conf.WithCodec(clientCtx.InterfaceRegistry, clientCtx.Codec.(*codec.ProtoCodec))
+		conf := &rosetta.Config{
+			Blockchain:    config.Rosetta.Blockchain,
+			Network:       config.Rosetta.Network,
+			TendermintRPC: ctx.Config.RPC.ListenAddress,
+			GRPCEndpoint:  config.GRPC.Address,
+			Addr:          config.Rosetta.Address,
+			Retries:       config.Rosetta.Retries,
+			Offline:       offlineMode,
+		}
+		conf.WithCodec(clientCtx.InterfaceRegistry, clientCtx.Codec.(*codec.ProtoCodec))
 
-	// 	rosettaSrv, err = rosetta.ServerFromConfig(conf)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	errCh := make(chan error)
-	// 	go func() {
-	// 		if err := rosettaSrv.Start(); err != nil {
-	// 			errCh <- err
-	// 		}
-	// 	}()
+		rosettaSrv, err = rosetta.ServerFromConfig(conf)
+		if err != nil {
+			return err
+		}
+		errCh := make(chan error)
+		go func() {
+			if err := rosettaSrv.Start(); err != nil {
+				errCh <- err
+			}
+		}()
 
-	// 	select {
-	// 	case err := <-errCh:
-	// 		return err
-	// 	case <-time.After(types.ServerStartTime): // assume server started successfully
-	// 	}
-	// }
+		select {
+		case err := <-errCh:
+			return err
+		case <-time.After(types.ServerStartTime): // assume server started successfully
+		}
+	}
 	// Wait for SIGINT or SIGTERM signal
 	return server.WaitForQuitSignals()
 }
