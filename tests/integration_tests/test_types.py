@@ -223,6 +223,7 @@ def test_get_proof(ethermint_rpc_ws, geth):
     )
     compare_types(proof, EXPECTED_GET_PROOF)
 
+
 def test_get_code(ethermint_rpc_ws, geth):
     w3: Web3 = ethermint_rpc_ws.w3
     eth_rpc = w3.provider
