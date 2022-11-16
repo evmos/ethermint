@@ -13,7 +13,6 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
-	tmclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -246,7 +245,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 func (b *Backend) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	b.logger.Debug("eth_getTransactionByBlockHashAndIndex", "hash", hash.Hex(), "index", idx)
 
-	block, err := b.clientCtx.Client.(tmclient.SignClient).BlockByHash(b.ctx, hash.Bytes())
+	block, err := b.clientCtx.Client.(TMSignClient).BlockByHash(b.ctx, hash.Bytes())
 	if err != nil {
 		b.logger.Debug("block not found", "hash", hash.Hex(), "error", err.Error())
 		return nil, nil
