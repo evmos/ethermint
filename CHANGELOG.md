@@ -46,6 +46,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
 * (evm) [#1452](https://github.com/evmos/ethermint/pull/1452) Simplify Gas Math in `ApplyTransaction`.
+* (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
 
 ### API Breaking
 

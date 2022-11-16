@@ -8,6 +8,7 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -518,7 +519,11 @@ func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		return newCtx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be GasTx")
 	}
 
-	newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	// We need to setup an empty gas config so that the gas is consistent with Ethereum.
+	newCtx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter()).
+		WithKVGasConfig(storetypes.GasConfig{}).
+		WithTransientKVGasConfig(storetypes.GasConfig{})
+
 	// Reset transient gas used to prepare the execution of current cosmos tx.
 	// Transient gas-used is necessary to sum the gas-used of cosmos tx, when it contains multiple eth msgs.
 	esc.evmKeeper.ResetTransientGasUsed(ctx)
