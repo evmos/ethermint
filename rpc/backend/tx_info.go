@@ -3,8 +3,8 @@ package backend
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -288,7 +288,7 @@ func (b *Backend) GetTxByEthHash(hash common.Hash) (*ethermint.TxResult, error) 
 		return txs.GetTxByHash(hash)
 	})
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetTxByEthHash %s", hash.Hex())
+		return nil, errorsmod.Wrapf(err, "GetTxByEthHash %s", hash.Hex())
 	}
 	return txResult, nil
 }
@@ -308,7 +308,7 @@ func (b *Backend) GetTxByTxIndex(height int64, index uint) (*ethermint.TxResult,
 		return txs.GetTxByTxIndex(int(index))
 	})
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetTxByTxIndex %d %d", height, index)
+		return nil, errorsmod.Wrapf(err, "GetTxByTxIndex %d %d", height, index)
 	}
 	return txResult, nil
 }
