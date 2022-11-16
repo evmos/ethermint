@@ -23,10 +23,8 @@ message Params {
   // base fee for EIP-1559 blocks.
   string base_fee = 6 [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false];
   // min_gas_price defines the minimum gas price value for cosmos and eth transactions
-  string min_gas_price = 7
-      [(gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false];
+  string min_gas_price = 7 [(gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false];
   // min gas denominator bounds the minimum gasUsed to be charged
   // to senders based on GasLimit
-  string min_gas_multiplier = 8
-      [(gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false];
+  string min_gas_multiplier = 8 [(gogoproto.customtype) = "cosmossdk.io/math.LegacyDec", (gogoproto.nullable) = false];
 }
