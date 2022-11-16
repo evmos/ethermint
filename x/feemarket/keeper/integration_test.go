@@ -25,12 +25,13 @@ import (
 	"github.com/evmos/ethermint/testutil"
 	"github.com/evmos/ethermint/x/feemarket/types"
 
-	"cosmossdk.io/simapp"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+
+	simapputil "github.com/cosmos/cosmos-sdk/testutil/sims"
 )
 
 var _ = Describe("Feemarket", func() {
@@ -492,7 +493,7 @@ func setupChain(localMinGasPricesStr string) {
 		app.DefaultNodeHome,
 		5,
 		encoding.MakeConfig(app.ModuleBasics),
-		simapp.EmptyAppOptions{},
+		simapputil.EmptyAppOptions{},
 		baseapp.SetMinGasPrices(localMinGasPricesStr),
 	)
 
@@ -505,10 +506,9 @@ func setupChain(localMinGasPricesStr string) {
 	// Initialize the chain
 	newapp.InitChain(
 		abci.RequestInitChain{
-			ChainId:         "ethermint_9000-1",
-			Validators:      []abci.ValidatorUpdate{},
-			AppStateBytes:   stateBytes,
-			ConsensusParams: app.DefaultConsensusParams,
+			ChainId:       "ethermint_9000-1",
+			Validators:    []abci.ValidatorUpdate{},
+			AppStateBytes: stateBytes,
 		},
 	)
 

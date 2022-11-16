@@ -8,11 +8,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	simapputil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	simcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
@@ -28,7 +31,7 @@ var (
 	seed               = int64(233)
 )
 
-func TestRandomGenesisAccounts(t *testing.T) {
+func TestRandomEthGenesisAccounts(t *testing.T) {
 	r := rand.New(rand.NewSource(seed))
 	accs := RandomAccounts(r, rand.Intn(maxTestingAccounts))
 
@@ -38,11 +41,11 @@ func TestRandomGenesisAccounts(t *testing.T) {
 
 	paramsKeeper := initParamsKeeper(appCodec, cdc, sdk.NewKVStoreKey(paramstypes.StoreKey), sdk.NewTransientStoreKey(paramstypes.StoreKey))
 	subSpace, find := paramsKeeper.GetSubspace(authtypes.ModuleName)
-	require.True(t, find)
+
 	accountKeeper := authkeeper.NewAccountKeeper(
-		appCodec, sdk.NewKVStoreKey(authtypes.StoreKey), subSpace, ethermint.ProtoAccount, maccPerms, sdk.GetConfig().GetBech32AccountAddrPrefix(),
+		appCodec, sdk.NewKVStoreKey(authtypes.StoreKey), ethermint.ProtoAccount, maccPerms, sdk.GetConfig().GetBech32AccountAddrPrefix(), authtypes.NewModuleAddress(authtypes.ModuleName).String(),
 	)
-	authModule := auth.NewAppModule(appCodec, accountKeeper, RandomGenesisAccounts)
+	authModule := auth.NewAppModule(appCodec, accountKeeper, RandomEthGenesisAccounts, subSpace)
 
 	genesisState := simapp.NewDefaultGenesisState(appCodec)
 	simState := &module.SimulationState{Accounts: accs, Cdc: appCodec, Rand: r, GenState: genesisState}
@@ -62,7 +65,8 @@ func TestRandomGenesisAccounts(t *testing.T) {
 }
 
 func TestStateFn(t *testing.T) {
-	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+	config := simtypes.Config{}
+	db, dir, logger, skip, err := simapputil.SetupSimulation(config, "level-db-sim", "simulation", false, false)
 	if skip {
 		t.Skip("skipping AppStateFn testing")
 	}
@@ -76,7 +80,7 @@ func TestStateFn(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, simapp.FlagPeriodValue, MakeEncodingConfig(), simapp.EmptyAppOptions{}, fauxMerkleModeOpt)
+	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, simcli.FlagPeriodValue, MakeEncodingConfig(), simapputil.EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	appStateFn := StateFn(app.AppCodec(), app.SimulationManager())

@@ -10,7 +10,6 @@ import (
 	sdkmath "cosmossdk.io/math"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 
-	"cosmossdk.io/simapp"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256r1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -30,6 +29,7 @@ import (
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
+	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
@@ -1225,7 +1225,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithParams() {
 func (suite *AnteTestSuite) TestConsumeSignatureVerificationGas() {
 	params := authtypes.DefaultParams()
 	msg := []byte{1, 2, 3, 4}
-	cdc := simapp.MakeTestEncodingConfig().Amino
+	cdc := moduletestutil.MakeTestEncodingConfig().Amino
 
 	p := authtypes.DefaultParams()
 	skR1, _ := secp256r1.GenPrivKey()

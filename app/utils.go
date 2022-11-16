@@ -16,6 +16,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	"github.com/evmos/ethermint/encoding"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
@@ -26,72 +27,59 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	log "github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
+
+	simapputil "github.com/cosmos/cosmos-sdk/testutil/sims"
+
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-// // DefaultConsensusParams defines the default Tendermint consensus params used in
-// // EthermintApp testing.
-// var DefaultConsensusParams = &abci.ConsensusParams{
-// 	Block: &abci.Block{
-// 		MaxBytes: 200000,
-// 		MaxGas:   -1, // no limit
-// 	},
-// 	Evidence: &tmproto.EvidenceParams{
-// 		MaxAgeNumBlocks: 302400,
-// 		MaxAgeDuration:  504 * time.Hour, // 3 weeks is the max duration
-// 		MaxBytes:        10000,
-// 	},
-// 	Validator: &tmproto.ValidatorParams{
-// 		PubKeyTypes: []string{
-// 			tmtypes.ABCIPubKeyTypeEd25519,
-// 		},
-// 	},
-// }
+// Setup initializes a new EthermintApp. A Nop logger is set in EthermintApp.
+func Setup(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState) simapp.GenesisState) *EthermintApp {
+	return SetupWithDB(isCheckTx, patchGenesis, dbm.NewMemDB())
+}
 
-// // Setup initializes a new EthermintApp. A Nop logger is set in EthermintApp.
-// func Setup(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState) simapp.GenesisState) *EthermintApp {
-// 	return SetupWithDB(isCheckTx, patchGenesis, dbm.NewMemDB())
-// }
+// SetupWithDB initializes a new EthermintApp. A Nop logger is set in EthermintApp.
+func SetupWithDB(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState) simapp.GenesisState, db dbm.DB) *EthermintApp {
+	app := NewEthermintApp(log.NewNopLogger(),
+		db,
+		nil,
+		true,
+		map[int64]bool{},
+		DefaultNodeHome,
+		5,
+		encoding.MakeConfig(ModuleBasics),
+		simapputil.EmptyAppOptions{})
+	if !isCheckTx {
+		// init chain must be called to stop deliverState from being nil
+		genesisState := NewTestGenesisState(app.AppCodec())
+		if patchGenesis != nil {
+			genesisState = patchGenesis(app, genesisState)
+		}
 
-// // SetupWithDB initializes a new EthermintApp. A Nop logger is set in EthermintApp.
-// func SetupWithDB(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.GenesisState) simapp.GenesisState, db dbm.DB) *EthermintApp {
-// 	app := NewEthermintApp(log.NewNopLogger(),
-// 		db,
-// 		nil,
-// 		true,
-// 		map[int64]bool{},
-// 		DefaultNodeHome,
-// 		5,
-// 		encoding.MakeConfig(ModuleBasics),
-// 		simapp.EmptyAppOptions{})
-// 	if !isCheckTx {
-// 		// init chain must be called to stop deliverState from being nil
-// 		genesisState := NewTestGenesisState(app.AppCodec())
-// 		if patchGenesis != nil {
-// 			genesisState = patchGenesis(app, genesisState)
-// 		}
+		stateBytes, err := json.MarshalIndent(genesisState, "", " ")
+		if err != nil {
+			panic(err)
+		}
 
-// 		stateBytes, err := json.MarshalIndent(genesisState, "", " ")
-// 		if err != nil {
-// 			panic(err)
-// 		}
+		// Initialize the chain
+		app.InitChain(
+			abci.RequestInitChain{
+				ChainId:       "ethermint_9000-1",
+				Validators:    []abci.ValidatorUpdate{},
+				AppStateBytes: stateBytes,
+			},
+		)
+	}
 
-// 		// Initialize the chain
-// 		app.InitChain(
-// 			abci.RequestInitChain{
-// 				ChainId:         "ethermint_9000-1",
-// 				Validators:      []abci.ValidatorUpdate{},
-// 				ConsensusParams: DefaultConsensusParams,
-// 				AppStateBytes:   stateBytes,
-// 			},
-// 		)
-// 	}
+	return app
+}
 
-// 	return app
-// }
-
-// RandomGenesisAccounts is used by the auth module to create random genesis accounts in simulation when a genesis.json is not specified.
-// In contrast, the default auth module's RandomGenesisAccounts implementation creates only base accounts and vestings accounts.
-func RandomGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAccounts {
+// RandomEthGenesisAccounts is used by the auth module to create random genesis accounts in simulation when a genesis.json is not specified.
+// In contrast, the default auth module's RandomEthGenesisAccounts implementation creates only base accounts and vestings accounts.
+func RandomEthGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAccounts {
 	emptyCodeHash := crypto.Keccak256(nil)
 	genesisAccs := make(authtypes.GenesisAccounts, len(simState.Accounts))
 	for i, acc := range simState.Accounts {

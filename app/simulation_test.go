@@ -17,7 +17,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/store"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	simapputil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -38,6 +40,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+
+	simcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
 )
 
 // MakeEncodingConfig creates the EncodingConfig
@@ -46,7 +50,7 @@ func MakeEncodingConfig() params.EncodingConfig {
 }
 
 func init() {
-	simapp.GetSimulatorFlags()
+	simcli.GetSimulatorFlags()
 }
 
 const SimAppChainID = "simulation_777-1"
@@ -66,7 +70,7 @@ func fauxMerkleModeOpt(bapp *baseapp.BaseApp) {
 // NewSimApp disable feemarket on native tx, otherwise the cosmos-sdk simulation tests will fail.
 func NewSimApp(logger log.Logger, db dbm.DB) (*EthermintApp, error) {
 	encodingConfig := MakeEncodingConfig()
-	app := NewEthermintApp(logger, db, nil, false, map[int64]bool{}, DefaultNodeHome, simapp.FlagPeriodValue, encodingConfig, simapp.EmptyAppOptions{}, fauxMerkleModeOpt)
+	app := NewEthermintApp(logger, db, nil, false, map[int64]bool{}, DefaultNodeHome, simcli.FlagPeriodValue, encodingConfig, simapputil.EmptyAppOptions{}, fauxMerkleModeOpt)
 	// disable feemarket on native tx
 	anteHandler, err := ante.NewAnteHandler(ante.HandlerOptions{
 		AccountKeeper:   app.AccountKeeper,
@@ -96,7 +100,8 @@ func interBlockCacheOpt() func(*baseapp.BaseApp) {
 }
 
 func TestFullAppSimulation(t *testing.T) {
-	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+	config := simtypes.Config{}
+	db, dir, logger, skip, err := simapputil.SetupSimulation(config, "leveldb-app-sim", "Simulation", false, false)
 	if skip {
 		t.Skip("skipping application simulation")
 	}
@@ -120,24 +125,25 @@ func TestFullAppSimulation(t *testing.T) {
 		app.BaseApp,
 		StateFn(app.AppCodec(), app.SimulationManager()),
 		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
-		simapp.SimulationOperations(app, app.AppCodec(), config),
+		simapputil.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
 		app.AppCodec(),
 	)
 
 	// export state and simParams before the simulation error is checked
-	err = simapp.CheckExportSimulation(app, config, simParams)
+	err = simapputil.CheckExportSimulation(app, config, simParams)
 	require.NoError(t, err)
 	require.NoError(t, simErr)
 
 	if config.Commit {
-		simapp.PrintStats(db)
+		simapputil.PrintStats(db)
 	}
 }
 
 func TestAppImportExport(t *testing.T) {
-	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+	config := simtypes.Config{}
+	db, dir, logger, skip, err := simapputil.SetupSimulation(config, "leveldb-app-sim", "Simulation", false, false)
 	if skip {
 		t.Skip("skipping application import/export simulation")
 	}
@@ -160,30 +166,30 @@ func TestAppImportExport(t *testing.T) {
 		app.BaseApp,
 		StateFn(app.AppCodec(), app.SimulationManager()),
 		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
-		simapp.SimulationOperations(app, app.AppCodec(), config),
+		simapputil.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
 		app.AppCodec(),
 	)
 
 	// export state and simParams before the simulation error is checked
-	err = simapp.CheckExportSimulation(app, config, simParams)
+	err = simapputil.CheckExportSimulation(app, config, simParams)
 	require.NoError(t, err)
 	require.NoError(t, simErr)
 
 	if config.Commit {
-		simapp.PrintStats(db)
+		simapputil.PrintStats(db)
 	}
 
 	fmt.Printf("exporting genesis...\n")
 
-	exported, err := app.ExportAppStateAndValidators(false, []string{})
+	exported, err := app.ExportAppStateAndValidators(false, []string{}, []string{})
 	require.NoError(t, err)
 
 	fmt.Printf("importing genesis...\n")
 
 	//nolint: dogsled
-	_, newDB, newDir, _, _, err := simapp.SetupSimulation("leveldb-app-sim-2", "Simulation-2")
+	newDB, newDir, _, _, err := simapputil.SetupSimulation(simtypes.Config{}, "leveldb-app-sim-2", "Simulation-2", false, false)
 	require.NoError(t, err, "simulation setup failed")
 
 	defer func() {
@@ -212,7 +218,7 @@ func TestAppImportExport(t *testing.T) {
 
 	ctxA := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight(), ChainID: SimAppChainID})
 	ctxB := newApp.NewContext(true, tmproto.Header{Height: app.LastBlockHeight(), ChainID: SimAppChainID})
-	newApp.mm.InitGenesis(ctxB, app.AppCodec(), genesisState)
+	newApp.ModuleManager.InitGenesis(ctxB, app.AppCodec(), genesisState)
 	newApp.StoreConsensusParams(ctxB, exported.ConsensusParams)
 
 	fmt.Printf("comparing stores...\n")
@@ -247,12 +253,13 @@ func TestAppImportExport(t *testing.T) {
 		require.Equal(t, len(failedKVAs), len(failedKVBs), "unequal sets of key-values to compare")
 
 		fmt.Printf("compared %d different key/value pairs between %s and %s\n", len(failedKVAs), skp.A, skp.B)
-		require.Equal(t, len(failedKVAs), 0, simapp.GetSimulationLog(skp.A.Name(), app.SimulationManager().StoreDecoders, failedKVAs, failedKVBs))
+		require.Equal(t, len(failedKVAs), 0, simapputil.GetSimulationLog(skp.A.Name(), app.SimulationManager().StoreDecoders, failedKVAs, failedKVBs))
 	}
 }
 
 func TestAppSimulationAfterImport(t *testing.T) {
-	config, db, dir, logger, skip, err := simapp.SetupSimulation("leveldb-app-sim", "Simulation")
+	config := simtypes.Config{}
+	db, dir, logger, skip, err := simapputil.SetupSimulation(config, "leveldb-app-sim-2", "Simulation-2", false, false)
 	if skip {
 		t.Skip("skipping application simulation after import")
 	}
@@ -276,19 +283,19 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		app.BaseApp,
 		StateFn(app.AppCodec(), app.SimulationManager()),
 		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
-		simapp.SimulationOperations(app, app.AppCodec(), config),
+		simapputil.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
 		app.AppCodec(),
 	)
 
 	// export state and simParams before the simulation error is checked
-	err = simapp.CheckExportSimulation(app, config, simParams)
+	err = simapputil.CheckExportSimulation(app, config, simParams)
 	require.NoError(t, err)
 	require.NoError(t, simErr)
 
 	if config.Commit {
-		simapp.PrintStats(db)
+		simapputil.PrintStats(db)
 	}
 
 	if stopEarly {
@@ -298,12 +305,12 @@ func TestAppSimulationAfterImport(t *testing.T) {
 
 	fmt.Printf("exporting genesis...\n")
 
-	exported, err := app.ExportAppStateAndValidators(true, []string{})
+	exported, err := app.ExportAppStateAndValidators(true, []string{}, []string{})
 	require.NoError(t, err)
 
 	fmt.Printf("importing genesis...\n")
 
-	_, newDB, newDir, _, _, err := simapp.SetupSimulation("leveldb-app-sim-2", "Simulation-2")
+	newDB, newDir, _, _, err := simapputil.SetupSimulation(simtypes.Config{}, "leveldb-app-sim-2", "Simulation-2", false, false)
 	require.NoError(t, err, "simulation setup failed")
 
 	defer func() {
@@ -326,7 +333,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		newApp.BaseApp,
 		StateFn(app.AppCodec(), app.SimulationManager()),
 		RandomAccounts, // Replace with own random account function if using keys other than secp256k1
-		simapp.SimulationOperations(newApp, newApp.AppCodec(), config),
+		simapputil.SimulationOperations(newApp, newApp.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
 		app.AppCodec(),
@@ -337,11 +344,11 @@ func TestAppSimulationAfterImport(t *testing.T) {
 // TODO: Make another test for the fuzzer itself, which just has noOp txs
 // and doesn't depend on the application.
 func TestAppStateDeterminism(t *testing.T) {
-	if !simapp.FlagEnabledValue {
+	if !simcli.FlagEnabledValue {
 		t.Skip("skipping application simulation")
 	}
 
-	config := simapp.NewConfigFromFlags()
+	config := simcli.NewConfigFromFlags()
 	config.InitialBlockHeight = 1
 	config.ExportParamsPath = ""
 	config.OnOperation = false
@@ -357,7 +364,7 @@ func TestAppStateDeterminism(t *testing.T) {
 
 		for j := 0; j < numTimesToRunPerSeed; j++ {
 			var logger log.Logger
-			if simapp.FlagVerboseValue {
+			if simcli.FlagVerboseValue {
 				logger = log.TestingLogger()
 			} else {
 				logger = log.NewNopLogger()
@@ -378,7 +385,7 @@ func TestAppStateDeterminism(t *testing.T) {
 				app.BaseApp,
 				StateFn(app.AppCodec(), app.SimulationManager()),
 				RandomAccounts, // Replace with own random account function if using keys other than secp256k1
-				simapp.SimulationOperations(app, app.AppCodec(), config),
+				simapputil.SimulationOperations(app, app.AppCodec(), config),
 				app.ModuleAccountAddrs(),
 				config,
 				app.AppCodec(),
@@ -386,7 +393,7 @@ func TestAppStateDeterminism(t *testing.T) {
 			require.NoError(t, err)
 
 			if config.Commit {
-				simapp.PrintStats(db)
+				simapputil.PrintStats(db)
 			}
 
 			appHash := app.LastCommitID().Hash

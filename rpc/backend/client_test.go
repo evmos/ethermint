@@ -22,7 +22,7 @@ import (
 // Tendermint RPC Client server.
 //
 // To use a mock method it has to be registered in a given test.
-var _ tmrpcclient.Client = &mocks.Client{}
+// var _ tmrpcclient.Client = &mocks.Client{}
 
 // Block
 func RegisterBlock(

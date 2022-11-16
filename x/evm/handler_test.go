@@ -113,10 +113,9 @@ func (suite *EvmTestSuite) DoSetupTest(t require.TestingT) {
 	// Initialize the chain
 	suite.app.InitChain(
 		abci.RequestInitChain{
-			ChainId:         "ethermint_9000-1",
-			Validators:      []abci.ValidatorUpdate{},
-			ConsensusParams: app.DefaultConsensusParams,
-			AppStateBytes:   stateBytes,
+			ChainId:       "ethermint_9000-1",
+			Validators:    []abci.ValidatorUpdate{},
+			AppStateBytes: stateBytes,
 		},
 	)
 
