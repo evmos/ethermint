@@ -53,9 +53,9 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 		{
 			"fail - Block error can't set Tx defaults",
 			func() {
+				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				var header metadata.MD
 				armor := crypto.EncryptArmorPrivKey(priv, "", "eth_secp256k1")
 				suite.backend.clientCtx.Keyring.ImportPrivKey("test_key", armor, "")
 				RegisterParams(queryClient, &header, 1)
@@ -68,9 +68,9 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 		{
 			"fail - Cannot validate transaction gas set to 0",
 			func() {
+				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				var header metadata.MD
 				armor := crypto.EncryptArmorPrivKey(priv, "", "eth_secp256k1")
 				suite.backend.clientCtx.Keyring.ImportPrivKey("test_key", armor, "")
 				RegisterParams(queryClient, &header, 1)
@@ -91,9 +91,9 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 		{
 			"fail - Cannot broadcast transaction",
 			func() {
+				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				var header metadata.MD
 				armor := crypto.EncryptArmorPrivKey(priv, "", "eth_secp256k1")
 				suite.backend.clientCtx.Keyring.ImportPrivKey("test_key", armor, "")
 				RegisterParams(queryClient, &header, 1)
@@ -116,9 +116,9 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 		{
 			"pass - Return the transaction hash",
 			func() {
+				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				var header metadata.MD
 				armor := crypto.EncryptArmorPrivKey(priv, "", "eth_secp256k1")
 				suite.backend.clientCtx.Keyring.ImportPrivKey("test_key", armor, "")
 				RegisterParams(queryClient, &header, 1)
@@ -155,7 +155,6 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 				tc.expHash = msg.AsTransaction().Hash()
 			}
 			responseHash, err := suite.backend.SendTransaction(tc.args)
-			//suite.T().Error(responseHash, err)
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expHash, responseHash)
@@ -167,9 +166,7 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 }
 
 func (suite *BackendTestSuite) TestSign() {
-	priv, _ := ethsecp256k1.GenerateKey()
-	from := common.BytesToAddress(priv.PubKey().Address().Bytes())
-
+	from, priv := tests.NewAddrKey()
 	testCases := []struct {
 		name         string
 		registerMock func()
@@ -215,9 +212,7 @@ func (suite *BackendTestSuite) TestSign() {
 }
 
 func (suite *BackendTestSuite) TestSignTypedData() {
-	priv, _ := ethsecp256k1.GenerateKey()
-	from := common.BytesToAddress(priv.PubKey().Address().Bytes())
-
+	from, priv := tests.NewAddrKey()
 	testCases := []struct {
 		name           string
 		registerMock   func()
@@ -251,7 +246,6 @@ func (suite *BackendTestSuite) TestSignTypedData() {
 			tc.registerMock()
 
 			responseBz, err := suite.backend.SignTypedData(tc.fromAddr, tc.inputTypedData)
-			suite.T().Log(tc.inputTypedData)
 
 			if tc.expPass {
 				sigHash, err := eip712.ComputeTypedDataHash(tc.inputTypedData)

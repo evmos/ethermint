@@ -107,7 +107,6 @@ func (suite *BackendTestSuite) TestListAccounts() {
 			[]common.Address{},
 			true,
 		},
-		// TODO: Manual address adding to keyring
 	}
 
 	for _, tc := range testCases {
@@ -140,7 +139,6 @@ func (suite *BackendTestSuite) TestAccounts() {
 			[]common.Address{},
 			true,
 		},
-		// TODO: Manual address adding to keyring
 	}
 
 	for _, tc := range testCases {
@@ -270,6 +268,7 @@ func (suite *BackendTestSuite) TestSetEtherbase() {
 			common.Address{},
 			false,
 		},
+		// TODO: Finish this test case once ABCIQuery GetAccount is fixed
 		//{
 		//	"pass - set the etherbase for the miner",
 		//	func() {
@@ -302,8 +301,6 @@ func (suite *BackendTestSuite) TestSetEtherbase() {
 			tc.registerMock()
 
 			output := suite.backend.SetEtherbase(tc.etherbase)
-
-			//suite.T().Error(output)
 
 			suite.Require().Equal(tc.expResult, output)
 		})
@@ -347,7 +344,6 @@ func (suite *BackendTestSuite) TestImportRawKey() {
 			tc.registerMock()
 
 			output, err := suite.backend.ImportRawKey(tc.privKey, tc.password)
-			suite.T().Log(output, err)
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expAddr, output)

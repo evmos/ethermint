@@ -57,9 +57,9 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"pass - Can't set Tx defaults BaseFee disabled",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				var header metadata.MD
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
@@ -76,10 +76,10 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"pass - Can't set Tx defaults ",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				feeMarketClient := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
-				var header metadata.MD
 				RegisterParams(queryClient, &header, 1)
 				RegisterFeeMarketParams(feeMarketClient, 1)
 				RegisterBlock(client, 1, nil)
@@ -97,9 +97,9 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"pass - MaxFeePerGas is nil",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				var header metadata.MD
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
@@ -133,9 +133,9 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"fail - Block error",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				var header metadata.MD
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlockError(client, 1)
 			},
@@ -150,9 +150,9 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"pass - MaxFeePerGas is nil",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				var header metadata.MD
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
@@ -172,9 +172,9 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"pass - Chain Id is nil",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				var header metadata.MD
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
@@ -193,9 +193,9 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"fail - Pending transactions error",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				var header metadata.MD
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
 				RegisterBaseFee(queryClient, baseFee)
@@ -219,9 +219,9 @@ func (suite *BackendTestSuite) TestResend() {
 		{
 			"fail - Not Ethereum txs",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				var header metadata.MD
 				RegisterBlock(client, 1, nil)
 				RegisterBlockResults(client, 1)
 				RegisterBaseFee(queryClient, baseFee)
@@ -367,7 +367,8 @@ func (suite *BackendTestSuite) TestDoCall() {
 		Data:                 nil,
 		AccessList:           nil,
 	}
-	argsBz, _ := json.Marshal(callArgs)
+	argsBz, err := json.Marshal(callArgs)
+	suite.Require().NoError(err)
 
 	testCases := []struct {
 		name         string
@@ -382,7 +383,6 @@ func (suite *BackendTestSuite) TestDoCall() {
 			func() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				//var header metadata.MD
 				RegisterBlock(client, 1, bz)
 				RegisterEthCallError(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
 			},
@@ -436,10 +436,10 @@ func (suite *BackendTestSuite) TestGasPrice() {
 		{
 			"pass - get the default gas price",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				feeMarketClient := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
-				var header metadata.MD
 				RegisterFeeMarketParams(feeMarketClient, 1)
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)
@@ -452,10 +452,10 @@ func (suite *BackendTestSuite) TestGasPrice() {
 		{
 			"fail - can't get gasFee, FeeMarketParams error",
 			func() {
+				var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				feeMarketClient := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
-				var header metadata.MD
 				RegisterFeeMarketParamsError(feeMarketClient, 1)
 				RegisterParams(queryClient, &header, 1)
 				RegisterBlock(client, 1, nil)

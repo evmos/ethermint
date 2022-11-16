@@ -29,7 +29,7 @@ import (
 // To use a mock method it has to be registered in a given test.
 var _ evmtypes.QueryClient = &mocks.EVMQueryClient{}
 
-//TraceTransaction
+// TraceTransaction
 func RegisterTraceTransactionWithPredecessors(queryClient *mocks.EVMQueryClient, msgEthTx *evmtypes.MsgEthereumTx, predecessors []*evmtypes.MsgEthereumTx) {
 	data := []byte{0x7b, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x20, 0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x22, 0x7d}
 	queryClient.On("TraceTx", rpc.ContextWithHeight(1),
@@ -114,8 +114,9 @@ func RegisterParamsError(queryClient *mocks.EVMQueryClient, header *metadata.MD,
 }
 
 func TestRegisterParams(t *testing.T) {
-	queryClient := mocks.NewEVMQueryClient(t)
 	var header metadata.MD
+	queryClient := mocks.NewEVMQueryClient(t)
+
 	height := int64(1)
 	RegisterParams(queryClient, &header, height)
 

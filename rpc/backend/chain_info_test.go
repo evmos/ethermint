@@ -162,8 +162,8 @@ func (suite *BackendTestSuite) TestChainId() {
 		{
 			"pass - block is at or past the EIP-155 replay-protection fork block, return chainID from config ",
 			func() {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterParamsInvalidHeight(queryClient, &header, int64(1))
 
 			},
@@ -178,7 +178,6 @@ func (suite *BackendTestSuite) TestChainId() {
 			tc.registerMock()
 
 			chainId, err := suite.backend.ChainID()
-			suite.T().Log(chainId, err)
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(tc.expChainId, chainId)
@@ -333,8 +332,8 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 		{
 			"fail - can't get params ",
 			func(validator sdk.AccAddress) {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				suite.backend.cfg.JSONRPC.FeeHistoryCap = 0
 				RegisterParamsError(queryClient, &header, ethrpc.BlockNumber(1).Int64())
 			},
@@ -347,8 +346,8 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 		{
 			"fail - user block count higher than max block count ",
 			func(validator sdk.AccAddress) {
-				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				suite.backend.cfg.JSONRPC.FeeHistoryCap = 0
 				RegisterParams(queryClient, &header, ethrpc.BlockNumber(1).Int64())
 			},
@@ -436,7 +435,6 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 			tc.registerMock(tc.validator)
 
 			feeHistory, err := suite.backend.FeeHistory(tc.userBlockCount, tc.latestBlock, []float64{25, 50, 75, 100})
-			suite.T().Log(feeHistory, err)
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(feeHistory, tc.expFeeHistory)

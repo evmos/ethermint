@@ -159,24 +159,6 @@ func NewBackend(
 		panic(err)
 	}
 
-	// TODO: Figure out why this was in the original code
-	//algos, _ := clientCtx.Keyring.SupportedAlgorithms()
-	//if !algos.Contains(hd.EthSecp256k1) {
-	//	kr, err := keyring.New(
-	//		sdk.KeyringServiceName(),
-	//		viper.GetString(flags.FlagKeyringBackend),
-	//		clientCtx.KeyringDir,
-	//		clientCtx.Input,
-	//		clientCtx.Codec,
-	//		hd.EthSecp256k1Option(),
-	//	)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	clientCtx = clientCtx.WithKeyring(kr)
-	//}
-
 	return &Backend{
 		ctx:                 context.Background(),
 		clientCtx:           clientCtx,

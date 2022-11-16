@@ -23,7 +23,7 @@ func (suite *BackendTestSuite) TestGetTransactionByHash() {
 	msgEthereumTx, _ := suite.buildEthereumTx()
 	txHash := msgEthereumTx.AsTransaction().Hash()
 
-	txBz, _ := suite.signAndEncodeEthTx(msgEthereumTx)
+	txBz := suite.signAndEncodeEthTx(msgEthereumTx)
 	block := &types.Block{Header: types.Header{Height: 1, ChainID: "test"}, Data: types.Data{Txs: []types.Tx{txBz}}}
 	responseDeliver := []*abci.ResponseDeliverTx{
 		{
@@ -111,8 +111,6 @@ func (suite *BackendTestSuite) TestGetTransactionByHash() {
 
 			rpcTx, err := suite.backend.GetTransactionByHash(common.HexToHash(tc.tx.Hash))
 
-			//suite.T().Error(rpcTx, tc.expRPCTx)
-			//suite.T().Error(err)
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(rpcTx, tc.expRPCTx)
@@ -341,7 +339,7 @@ func (suite *BackendTestSuite) TestGetTransactionByBlockAndIndex() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				db := dbm.NewMemDB()
 				suite.backend.indexer = indexer.NewKVIndexer(db, tmlog.NewNopLogger(), suite.backend.clientCtx)
-				txBz, _ := suite.signAndEncodeEthTx(msgEthTx)
+				txBz := suite.signAndEncodeEthTx(msgEthTx)
 				block := &types.Block{Header: types.Header{Height: 1, ChainID: "test"}, Data: types.Data{Txs: []types.Tx{txBz}}}
 				err := suite.backend.indexer.IndexBlock(block, defaultResponseDeliverTx)
 				suite.Require().NoError(err)
@@ -533,7 +531,7 @@ func (suite *BackendTestSuite) TestGetTransactionReceipt() {
 	msgEthereumTx, _ := suite.buildEthereumTx()
 	txHash := msgEthereumTx.AsTransaction().Hash()
 
-	txBz, _ := suite.signAndEncodeEthTx(msgEthereumTx)
+	txBz := suite.signAndEncodeEthTx(msgEthereumTx)
 
 	testCases := []struct {
 		name         string

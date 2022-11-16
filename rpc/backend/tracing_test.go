@@ -178,7 +178,6 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 
 			db := dbm.NewMemDB()
 			suite.backend.indexer = indexer.NewKVIndexer(db, tmlog.NewNopLogger(), suite.backend.clientCtx)
-			suite.T().Log("transaction length", len(tc.block.Txs))
 
 			err := suite.backend.indexer.IndexBlock(tc.block, tc.responseBlock)
 			txResult, err := suite.backend.TraceTransaction(txHash, nil)
