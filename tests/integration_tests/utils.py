@@ -114,7 +114,7 @@ def wait_for_block_time(cli, t):
     print("wait for block time", t)
     while True:
         now = isoparse((cli.status())["SyncInfo"]["latest_block_time"])
-        print("block time now:", now)
+        print("block time now: ", now)
         if now >= t:
             break
         time.sleep(0.5)
@@ -131,7 +131,7 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     txreceipt = send_transaction(w3, tx, key)
     assert txreceipt.status == 1
     address = txreceipt.contractAddress
-    return w3.eth.contract(address=address, abi=info["abi"])
+    return w3.eth.contract(address=address, abi=info["abi"]), txreceipt
 
 
 def fill_defaults(w3, tx):

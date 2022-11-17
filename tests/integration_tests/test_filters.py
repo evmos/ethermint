@@ -43,7 +43,7 @@ def test_block_filter(cluster):
 
 def test_event_log_filter_by_contract(cluster):
     w3: Web3 = cluster.w3
-    contract = deploy_contract(w3, CONTRACTS["Greeter"])
+    contract, _ = deploy_contract(w3, CONTRACTS["Greeter"])
     assert contract.caller.greet() == "Hello"
 
     # Create new filter from contract
@@ -81,7 +81,7 @@ def test_event_log_filter_by_contract(cluster):
 def test_event_log_filter_by_address(cluster):
     w3: Web3 = cluster.w3
 
-    contract = deploy_contract(w3, CONTRACTS["Greeter"])
+    contract, _ = deploy_contract(w3, CONTRACTS["Greeter"])
     assert contract.caller.greet() == "Hello"
 
     flt = w3.eth.filter({"address": contract.address})
@@ -103,7 +103,7 @@ def test_event_log_filter_by_address(cluster):
 def test_get_logs(cluster):
     w3: Web3 = cluster.w3
 
-    contract = deploy_contract(w3, CONTRACTS["Greeter"])
+    contract, _ = deploy_contract(w3, CONTRACTS["Greeter"])
 
     # without tx
     assert w3.eth.get_logs({"address": contract.address}) == []

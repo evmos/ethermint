@@ -112,7 +112,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 	return decodedResult, nil
 }
 
-// traceBlock configures a new tracer according to the provided configuration, and
+// TraceBlock configures a new tracer according to the provided configuration, and
 // executes all the transactions contained within. The return value will be one item
 // per transaction, dependent on the requested tracer.
 func (b *Backend) TraceBlock(height rpctypes.BlockNumber,

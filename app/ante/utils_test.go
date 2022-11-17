@@ -16,6 +16,7 @@ import (
 	types2 "github.com/cosmos/cosmos-sdk/x/bank/types"
 	types3 "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/ethermint/types"
 
@@ -37,12 +38,14 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	authz "github.com/cosmos/cosmos-sdk/x/authz"
 	cryptocodec "github.com/evmos/ethermint/crypto/codec"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	evtypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	types5 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/evmos/ethermint/app"
 	ante "github.com/evmos/ethermint/app/ante"
@@ -288,8 +291,24 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator(from sdk.AccAddre
 		valAddr,
 		privEd.PubKey(),
 		sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)),
-		// TODO: can this values be empty strings?
 		types3.NewDescription("moniker", "indentity", "website", "security_contract", "details"),
+		types3.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
+		sdk.OneInt(),
+	)
+	suite.Require().NoError(err)
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgCreate)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator2(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	// Build MsgCreateValidator
+	valAddr := sdk.ValAddress(from.Bytes())
+	privEd := ed25519.GenPrivKey()
+	msgCreate, err := types3.NewMsgCreateValidator(
+		valAddr,
+		privEd.PubKey(),
+		sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20)),
+		// Ensure optional fields can be left blank
+		types3.NewDescription("moniker", "indentity", "", "", ""),
 		types3.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 		sdk.OneInt(),
 	)
@@ -341,6 +360,57 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgSubmitEvidence(from sdk.AccAddres
 	suite.Require().NoError(err)
 
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgEvidence)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712MsgVoteV1(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	msgVote := govtypes.NewMsgVote(from, 1, govtypes.VoteOption_VOTE_OPTION_YES, "")
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgVote)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712SubmitProposalV1(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	// Build V1 proposal messages. Must all be same-type, since EIP-712
+	// does not support arrays of variable type.
+	authAcc := suite.app.GovKeeper.GetGovernanceAccount(suite.ctx)
+
+	proposal1, ok := types5.ContentFromProposalType("My proposal 1", "My description 1", types5.ProposalTypeText)
+	suite.Require().True(ok)
+	content1, err := govtypes.NewLegacyContent(
+		proposal1,
+		sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), authAcc.GetAddress().Bytes()),
+	)
+	suite.Require().NoError(err)
+
+	proposal2, ok := types5.ContentFromProposalType("My proposal 2", "My description 2", types5.ProposalTypeText)
+	suite.Require().True(ok)
+	content2, err := govtypes.NewLegacyContent(
+		proposal2,
+		sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), authAcc.GetAddress().Bytes()),
+	)
+	suite.Require().NoError(err)
+
+	proposalMsgs := []sdk.Msg{
+		content1,
+		content2,
+	}
+
+	// Build V1 proposal
+	msgProposal, err := govtypes.NewMsgSubmitProposal(
+		proposalMsgs,
+		sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(100))),
+		sdk.MustBech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), from.Bytes()),
+		"Metadata",
+	)
+
+	suite.Require().NoError(err)
+
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, msgProposal)
+}
+
+func (suite *AnteTestSuite) CreateTestEIP712MsgExec(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+	recipient := sdk.AccAddress(common.Address{}.Bytes())
+	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+	msgExec := authz.NewMsgExec(from, []sdk.Msg{msgSend})
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, &msgExec)
 }
 
 // StdSignBytes returns the bytes to sign for a transaction.
@@ -409,7 +479,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	})
 	suite.Require().NoError(err)
 
-	sigHash, err := eip712.ComputeTypedDataHash(typedData)
+	sigHash, _, err := apitypes.TypedDataAndHash(typedData)
 	suite.Require().NoError(err)
 
 	// Sign typedData
