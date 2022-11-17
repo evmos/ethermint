@@ -423,11 +423,11 @@ format-fix:
 
 
 # ------
-# NOTE: Link to the cosmos/proto-builder docker images: 
-#       https://github.com/cosmos/cosmos-sdk/pkgs/container/proto-builder
+# NOTE: Link to the tendermintdev/sdk-proto-gen docker images: 
+#       https://hub.docker.com/r/tendermintdev/sdk-proto-gen/tags
 #
-protoVer=0.11.2
-protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
+protoVer=v0.7
+protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
 protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
 
 # ------
