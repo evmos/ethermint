@@ -10,7 +10,6 @@ import (
 	goethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
-	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -248,7 +247,7 @@ func (suite *BackendTestSuite) TestSignTypedData() {
 			responseBz, err := suite.backend.SignTypedData(tc.fromAddr, tc.inputTypedData)
 
 			if tc.expPass {
-				sigHash, err := eip712.ComputeTypedDataHash(tc.inputTypedData)
+				sigHash, _, err := apitypes.TypedDataAndHash(tc.inputTypedData)
 				signature, _, err := suite.backend.clientCtx.Keyring.SignByAddress((sdk.AccAddress)(from.Bytes()), sigHash)
 				signature[goethcrypto.RecoveryIDOffset] += 27
 				suite.Require().NoError(err)
