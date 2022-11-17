@@ -14,7 +14,6 @@ SIMAPP = ./app
 HTTPS_GIT := https://github.com/evmos/ethermint.git
 PROJECT_NAME = $(shell git remote get-url origin | xargs basename -s .git)
 DOCKER := $(shell which docker)
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf:1.0.0-rc8
 # RocksDB is a native dependency, so we don't assume the library is installed.
 # Instead, it must be explicitly enabled and we warn when it is not.
 ENABLE_ROCKSDB ?= false
