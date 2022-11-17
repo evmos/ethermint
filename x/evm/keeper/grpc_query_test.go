@@ -962,10 +962,10 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 				TraceConfig:  traceConfig,
 				Predecessors: predecessors,
 			}
+
 			if chainID != nil {
 				traceReq.ChainId = chainID.Int64()
 			}
-			chainID = nil
 			res, err := suite.queryClient.TraceTx(sdk.WrapSDKContext(suite.ctx), &traceReq)
 
 			if tc.expPass {
@@ -984,6 +984,8 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			} else {
 				suite.Require().Error(err)
 			}
+            // Reset for next test case
+            chainID = nil
 		})
 	}
 
@@ -1129,7 +1131,6 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			// Generate token transfer transaction
 			txMsg := suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdkmath.NewIntWithDecimal(1, 18).BigInt())
 			suite.Commit()
-			chainID = nil
 
 			txs = append(txs, txMsg)
 
@@ -1137,8 +1138,12 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			traceReq := types.QueryTraceBlockRequest{
 				Txs:         txs,
 				TraceConfig: traceConfig,
-				ChainId:     chainID,
 			}
+
+            if chainID != nil {
+              traceReq.ChainId = chainID.Int64()
+            }
+
 			res, err := suite.queryClient.TraceBlock(sdk.WrapSDKContext(suite.ctx), &traceReq)
 
 			if tc.expPass {
@@ -1152,6 +1157,8 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			} else {
 				suite.Require().Error(err)
 			}
+            // Reset for next case
+            chainID = nil
 		})
 	}
 
@@ -1168,6 +1175,8 @@ func (suite *KeeperTestSuite) TestNonceInQuery() {
 
 	// do an EthCall/EstimateGas with nonce 0
 	ctorArgs, err := types.ERC20Contract.ABI.Pack("", address, supply)
+    suite.Require().NoError(err)
+
 	data := append(types.ERC20Contract.Bin, ctorArgs...)
 	args, err := json.Marshal(&types.TransactionArgs{
 		From: &address,
