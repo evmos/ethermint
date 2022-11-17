@@ -275,6 +275,7 @@ TraceConfig holds extra parameters to trace functions.
 | `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
 | `enable_memory` | [bool](#bool) |  | enable memory capture |
 | `enable_return_data` | [bool](#bool) |  | enable return data capture |
+| `tracer_json_config` | [string](#string) |  | tracer config |
 
 
 

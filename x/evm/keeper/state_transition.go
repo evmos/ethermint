@@ -424,7 +424,8 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 		return nil, errorsmod.Wrap(types.ErrGasOverflow, "apply message")
 	}
 	// refund gas
-	leftoverGas += GasToRefund(stateDB.GetRefund(), msg.Gas()-leftoverGas, refundQuotient)
+	temporaryGasUsed := msg.Gas() - leftoverGas
+	leftoverGas += GasToRefund(stateDB.GetRefund(), temporaryGasUsed, refundQuotient)
 
 	// EVM execution error needs to be available for the JSON-RPC client
 	var vmError string
@@ -449,7 +450,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	if msg.Gas() < leftoverGas {
 		return nil, errorsmod.Wrapf(types.ErrGasOverflow, "message gas limit < leftover gas (%d < %d)", msg.Gas(), leftoverGas)
 	}
-	temporaryGasUsed := msg.Gas() - leftoverGas
+
 	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
 	// reset leftoverGas, to be used by the tracer
 	leftoverGas = msg.Gas() - gasUsed
