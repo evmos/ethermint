@@ -421,7 +421,6 @@ format-fix:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-
 # ------
 # NOTE: Link to the tendermintdev/sdk-proto-gen docker images: 
 #       https://hub.docker.com/r/tendermintdev/sdk-proto-gen/tags
@@ -450,11 +449,11 @@ proto-format:
 
 proto-lint:
 	@echo "Linting Protobuf files"
-	@$(protoImage) buf lint --error-format=json
+	$(protoImage) buf lint --error-format=json
 
 proto-check-breaking:
 	@echo "Checking Protobuf files for breaking changes"
-	@$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
+	$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
 
 
 .PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking
