@@ -6,6 +6,7 @@ from .utils import (
     w3_wait_for_new_blocks,
 )
 
+
 def test_setup_geth(geth):
     w3 = geth.w3
     w3_wait_for_block(w3, 5)
