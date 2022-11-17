@@ -261,7 +261,6 @@ func GetLogsFromBlockResults(blockRes *tmrpctypes.ResultBlockResults) ([][]*etht
 
 		blockLogs = append(blockLogs, logs...)
 	}
-
 	return blockLogs, nil
 }
 

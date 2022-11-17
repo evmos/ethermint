@@ -30,8 +30,8 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 		{
 			"fail - invalid block header height",
 			func() {
-				height := int64(1)
 				var header metadata.MD
+				height := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterParamsInvalidHeight(queryClient, &header, int64(height))
 			},
@@ -41,8 +41,8 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 		{
 			"fail - invalid block header",
 			func() {
-				height := int64(1)
 				var header metadata.MD
+				height := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterParamsInvalidHeader(queryClient, &header, int64(height))
 			},
@@ -52,8 +52,8 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 		{
 			"pass - app state header height 1",
 			func() {
-				height := int64(1)
 				var header metadata.MD
+				height := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterParams(queryClient, &header, int64(height))
 			},
@@ -552,8 +552,8 @@ func (suite *BackendTestSuite) TestTendermintBlockByNumber() {
 			"fail - blockNum < 0 with app state height error",
 			ethrpc.BlockNumber(-1),
 			func(_ ethrpc.BlockNumber) {
-				appHeight := int64(1)
 				var header metadata.MD
+				appHeight := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterParamsError(queryClient, &header, appHeight)
 			},
@@ -564,8 +564,8 @@ func (suite *BackendTestSuite) TestTendermintBlockByNumber() {
 			"pass - blockNum < 0 with app state height >= 1",
 			ethrpc.BlockNumber(-1),
 			func(blockNum ethrpc.BlockNumber) {
-				appHeight := int64(1)
 				var header metadata.MD
+				appHeight := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterParams(queryClient, &header, appHeight)
 
