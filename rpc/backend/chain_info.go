@@ -153,11 +153,13 @@ func (b *Backend) FeeHistory(
 		}
 		blockEnd = int64(blockNumber)
 	}
+
 	userBlockCountInt := int64(userBlockCount)
 	maxBlockCount := int64(b.cfg.JSONRPC.FeeHistoryCap)
 	if userBlockCountInt > maxBlockCount {
 		return nil, fmt.Errorf("FeeHistory user block count %d higher than %d", userBlockCountInt, maxBlockCount)
 	}
+
 	blockStart := blockEnd - userBlockCountInt
 	if blockStart < 0 {
 		blockStart = 0
@@ -173,6 +175,7 @@ func (b *Backend) FeeHistory(
 	for i := 0; i < int(blockCount); i++ {
 		reward[i] = make([]*hexutil.Big, rewardCount)
 	}
+
 	thisBaseFee := make([]*hexutil.Big, blockCount)
 	thisGasUsedRatio := make([]float64, blockCount)
 
