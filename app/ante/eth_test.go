@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/evmos/ethermint/app/ante"
 	"github.com/evmos/ethermint/server/config"
 	"github.com/evmos/ethermint/tests"
@@ -541,10 +542,12 @@ func (suite AnteTestSuite) TestEthSetupContextDecorator() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
-			_, err := dec.AnteHandle(suite.ctx, tc.tx, false, NextFn)
+			ctx, err := dec.AnteHandle(suite.ctx, tc.tx, false, NextFn)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
+				suite.Equal(storetypes.GasConfig{}, ctx.KVGasConfig())
+				suite.Equal(storetypes.GasConfig{}, ctx.TransientKVGasConfig())
 			} else {
 				suite.Require().Error(err)
 			}

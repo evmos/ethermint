@@ -33,7 +33,7 @@ print(Account.from_mnemonic('$VALIDATOR1_MNEMONIC').key.hex().replace('0x',''))
 cat > $tmpfile << EOF
 $validator_key
 EOF
-geth --datadir $DATA account import $tmpfile --password $pwdfile
+geth --datadir $DATA --password $pwdfile account import $tmpfile
 
 # import community key
 community_key=$(python -c """
@@ -45,7 +45,7 @@ print(Account.from_mnemonic('$COMMUNITY_MNEMONIC').key.hex().replace('0x',''))
 cat > $tmpfile << EOF
 $community_key
 EOF
-geth --datadir $DATA account import $tmpfile --password $pwdfile
+geth --datadir $DATA --password $pwdfile account import $tmpfile
 
 rm $tmpfile
 

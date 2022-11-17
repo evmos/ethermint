@@ -45,6 +45,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to `v0.46`.
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
+* (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712. 
+* (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
+* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update geth version to v1.10.25.
 
 ### API Breaking
 
@@ -69,6 +72,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [#1397](https://github.com/evmos/ethermint/pull/1397) Refactor EIP-712 signature verification to support EIP-712 multi-signing.
 * (deps) [#1416](https://github.com/evmos/ethermint/pull/1416) Bump Go version to `1.19`
 * (cmd) [\#1417](https://github.com/evmos/ethermint/pull/1417) Apply Google CLI Syntax for required and optional args.
+* (deps) [#1456](https://github.com/evmos/ethermint/pull/1456) Migrate errors-related functionality from "github.com/cosmos/cosmos-sdk/types/errors" (deprecated) to "cosmossdk.io/errors"
 
 ### Bug Fixes
 

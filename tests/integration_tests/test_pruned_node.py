@@ -34,7 +34,7 @@ def test_pruned_node(pruned):
     test basic json-rpc apis works in pruned node
     """
     w3 = pruned.w3
-    erc20 = deploy_contract(
+    erc20, _ = deploy_contract(
         w3,
         CONTRACTS["TestERC20A"],
         key=KEYS["validator"],

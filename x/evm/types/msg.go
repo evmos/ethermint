@@ -7,11 +7,12 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -165,23 +166,23 @@ func (msg MsgEthereumTx) Type() string { return TypeMsgEthereumTx }
 func (msg MsgEthereumTx) ValidateBasic() error {
 	if msg.From != "" {
 		if err := types.ValidateAddress(msg.From); err != nil {
-			return sdkerrors.Wrap(err, "invalid from address")
+			return errorsmod.Wrap(err, "invalid from address")
 		}
 	}
 
 	// Validate Size_ field, should be kept empty
 	if msg.Size_ != 0 {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "tx size is deprecated")
+		return errorsmod.Wrapf(errortypes.ErrInvalidRequest, "tx size is deprecated")
 	}
 
 	txData, err := UnpackTxData(msg.Data)
 	if err != nil {
-		return sdkerrors.Wrap(err, "failed to unpack tx data")
+		return errorsmod.Wrap(err, "failed to unpack tx data")
 	}
 
 	// prevent txs with 0 gas to fill up the mempool
 	if txData.GetGas() == 0 {
-		return sdkerrors.Wrap(ErrInvalidGasLimit, "gas limit must not be zero")
+		return errorsmod.Wrap(ErrInvalidGasLimit, "gas limit must not be zero")
 	}
 
 	if err := txData.Validate(); err != nil {
@@ -191,7 +192,7 @@ func (msg MsgEthereumTx) ValidateBasic() error {
 	// Validate Hash field after validated txData to avoid panic
 	txHash := msg.AsTransaction().Hash().Hex()
 	if msg.Hash != txHash {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid tx hash %s, expected: %s", msg.Hash, txHash)
+		return errorsmod.Wrapf(errortypes.ErrInvalidRequest, "invalid tx hash %s, expected: %s", msg.Hash, txHash)
 	}
 
 	return nil
