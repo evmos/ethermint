@@ -47,6 +47,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
 * (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712. 
 * (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
+* (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
 * (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update geth version to v1.10.25.
 
 ### API Breaking
@@ -86,6 +87,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (state) [#1320](https://github.com/evmos/ethermint/pull/1320) Fix codehash check mismatch when the code has been deleted in the evm state.
 * (rpc) [#1392](https://github.com/evmos/ethermint/pull/1392) Allow fill the proposer address in json-rpc through tendermint api, and pass explicitly to grpc query handler.
 * (rpc) [#1431](https://github.com/evmos/ethermint/pull/1431) Align hex-strings proof fields in `eth_getProof` as Ethereum.
+* (proto) [#1466](https://github.com/evmos/ethermint/pull/1466) Fix proto scripts and upgrade them to mirror current cosmos-sdk scripts
 * (rpc) [#1405](https://github.com/evmos/ethermint/pull/1405) Fix uninitialized chain ID field in gRPC requests.
 
 ## [v0.19.3] - 2022-10-14
@@ -220,7 +222,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#1088](https://github.com/evmos/ethermint/pull/1088) Fix ability to append log in tx post processing.
 * (rpc) [tharsis#1081](https://github.com/evmos/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
 * (ante) [tharsis#1111](https://github.com/evmos/ethermint/pull/1111) Move CanTransfer decorator before GasConsume decorator
-* (types) [tharsis#1112](https://github.com/cosmos/ethermint/pull/1112) Add `GetBaseAccount` to avoid invalid account error when create vesting account.
+* (types) [tharsis#1112](https://github.com/evmos/ethermint/pull/1112) Add `GetBaseAccount` to avoid invalid account error when create vesting account.
 
 ## [v0.15.0] - 2022-05-09
 
@@ -656,7 +658,7 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 
 ### Improvements
 
-* (deps) [tharsis#615](https://github.com/cosmos/ethermint/pull/615) Bump Cosmos SDK version to [v0.39.2](https://github.com/cosmos/cosmos-sdk/tag/v0.39.2)
+* (deps) [tharsis#615](https://github.com/cosmos/ethermint/pull/615) Bump Cosmos SDK version to [v0.39.2](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.39.2)
 * (deps) [tharsis#610](https://github.com/cosmos/ethermint/pull/610) Update Go dependency to 1.15+.
 * (evm) [tharsis#603](https://github.com/cosmos/ethermint/pull/603) Add state transition params that enable or disable the EVM `Call` and `Create` operations.
 * (deps) [tharsis#602](https://github.com/cosmos/ethermint/pull/602) Bump tendermint version to [v0.33.9](https://github.com/tendermint/tendermint/releases/tag/v0.33.9)
