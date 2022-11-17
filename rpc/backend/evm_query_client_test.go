@@ -45,7 +45,7 @@ func RegisterTraceTransaction(queryClient *mocks.EVMQueryClient, msgEthTx *evmty
 
 func RegisterTraceTransactionError(queryClient *mocks.EVMQueryClient, msgEthTx *evmtypes.MsgEthereumTx) {
 	queryClient.On("TraceTx", rpc.ContextWithHeight(1), &evmtypes.QueryTraceTxRequest{Msg: msgEthTx, BlockNumber: 1}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // TraceBlock
@@ -58,7 +58,7 @@ func RegisterTraceBlock(queryClient *mocks.EVMQueryClient, txs []*evmtypes.MsgEt
 
 func RegisterTraceBlockError(queryClient *mocks.EVMQueryClient) {
 	queryClient.On("TraceBlock", rpc.ContextWithHeight(1), &evmtypes.QueryTraceBlockRequest{}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Params
@@ -104,7 +104,7 @@ func RegisterParamsInvalidHeight(queryClient *mocks.EVMQueryClient, header *meta
 
 func RegisterParamsWithoutHeaderError(queryClient *mocks.EVMQueryClient, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Params returns error
@@ -145,7 +145,7 @@ func RegisterEthCall(queryClient *mocks.EVMQueryClient, request *evmtypes.EthCal
 func RegisterEthCallError(queryClient *mocks.EVMQueryClient, request *evmtypes.EthCallRequest) {
 	ctx, _ := context.WithCancel(rpc.ContextWithHeight(1))
 	queryClient.On("EthCall", ctx, request).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Estimate Gas

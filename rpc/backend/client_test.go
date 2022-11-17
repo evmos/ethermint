@@ -4,7 +4,8 @@ import (
 	"context"
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
@@ -41,7 +42,7 @@ func RegisterTxSearchEmpty(client *mocks.Client, query string) {
 
 func RegisterTxSearchError(client *mocks.Client, query string) {
 	client.On("TxSearch", rpc.ContextWithHeight(1), query, false, (*int)(nil), (*int)(nil), "").
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Broadcast Tx
@@ -52,7 +53,7 @@ func RegisterBroadcastTx(client *mocks.Client, tx types.Tx) {
 
 func RegisterBroadcastTxError(client *mocks.Client, tx types.Tx) {
 	client.On("BroadcastTxSync", context.Background(), tx).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Unconfirmed Transactions
@@ -70,10 +71,10 @@ func RegisterUnconfirmedTxsEmpty(client *mocks.Client, limit *int) {
 
 func RegisterUnconfirmedTxsError(client *mocks.Client, limit *int) {
 	client.On("UnconfirmedTxs", rpc.ContextWithHeight(1), limit).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
-//Status
+// Status
 func RegisterStatus(client *mocks.Client) {
 	client.On("Status", rpc.ContextWithHeight(1)).
 		Return(&tmrpctypes.ResultStatus{}, nil)
@@ -81,7 +82,7 @@ func RegisterStatus(client *mocks.Client) {
 
 func RegisterStatusError(client *mocks.Client) {
 	client.On("Status", rpc.ContextWithHeight(1)).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Block
@@ -258,7 +259,7 @@ func RegisterABCIQueryWithOptions(client *mocks.Client, height int64, path strin
 
 func RegisterABCIQueryWithOptionsError(clients *mocks.Client, path string, data bytes.HexBytes, opts tmrpcclient.ABCIQueryOptions) {
 	clients.On("ABCIQueryWithOptions", context.Background(), path, data, opts).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func RegisterABCIQueryAccount(clients *mocks.Client, data bytes.HexBytes, opts tmrpcclient.ABCIQueryOptions, acc client.Account) {
