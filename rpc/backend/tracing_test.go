@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -63,12 +64,12 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 					Code: 0,
 					Events: []abci.Event{
 						{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-							{Key: []byte("ethereumTxHash"), Value: []byte(txHash.Hex())},
-							{Key: []byte("txIndex"), Value: []byte("0")},
-							{Key: []byte("amount"), Value: []byte("1000")},
-							{Key: []byte("txGasUsed"), Value: []byte("21000")},
-							{Key: []byte("txHash"), Value: []byte("")},
-							{Key: []byte("recipient"), Value: []byte("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
+							{Key: string("ethereumTxHash"), Value: string(txHash.Hex())},
+							{Key: string("txIndex"), Value: string("0")},
+							{Key: string("amount"), Value: string("1000")},
+							{Key: string("txGasUsed"), Value: string("21000")},
+							{Key: string("txHash"), Value: string("")},
+							{Key: string("recipient"), Value: string("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
 						}},
 					},
 				},
@@ -89,12 +90,12 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 					Code: 0,
 					Events: []abci.Event{
 						{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-							{Key: []byte("ethereumTxHash"), Value: []byte(txHash.Hex())},
-							{Key: []byte("txIndex"), Value: []byte("0")},
-							{Key: []byte("amount"), Value: []byte("1000")},
-							{Key: []byte("txGasUsed"), Value: []byte("21000")},
-							{Key: []byte("txHash"), Value: []byte("")},
-							{Key: []byte("recipient"), Value: []byte("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
+							{Key: string("ethereumTxHash"), Value: string(txHash.Hex())},
+							{Key: string("txIndex"), Value: string("0")},
+							{Key: string("amount"), Value: string("1000")},
+							{Key: string("txGasUsed"), Value: string("21000")},
+							{Key: string("txHash"), Value: string("")},
+							{Key: string("recipient"), Value: string("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
 						}},
 					},
 				},
@@ -116,12 +117,12 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 					Code: 0,
 					Events: []abci.Event{
 						{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-							{Key: []byte("ethereumTxHash"), Value: []byte(txHash.Hex())},
-							{Key: []byte("txIndex"), Value: []byte("0")},
-							{Key: []byte("amount"), Value: []byte("1000")},
-							{Key: []byte("txGasUsed"), Value: []byte("21000")},
-							{Key: []byte("txHash"), Value: []byte("")},
-							{Key: []byte("recipient"), Value: []byte("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
+							{Key: string("ethereumTxHash"), Value: string(txHash.Hex())},
+							{Key: string("txIndex"), Value: string("0")},
+							{Key: string("amount"), Value: string("1000")},
+							{Key: string("txGasUsed"), Value: string("21000")},
+							{Key: string("txHash"), Value: string("")},
+							{Key: string("recipient"), Value: string("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
 						}},
 					},
 				},
@@ -129,12 +130,12 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 					Code: 0,
 					Events: []abci.Event{
 						{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-							{Key: []byte("ethereumTxHash"), Value: []byte(txHash2.Hex())},
-							{Key: []byte("txIndex"), Value: []byte("1")},
-							{Key: []byte("amount"), Value: []byte("1000")},
-							{Key: []byte("txGasUsed"), Value: []byte("21000")},
-							{Key: []byte("txHash"), Value: []byte("")},
-							{Key: []byte("recipient"), Value: []byte("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
+							{Key: string("ethereumTxHash"), Value: string(txHash2.Hex())},
+							{Key: string("txIndex"), Value: string("1")},
+							{Key: string("amount"), Value: string("1000")},
+							{Key: string("txGasUsed"), Value: string("21000")},
+							{Key: string("txHash"), Value: string("")},
+							{Key: string("recipient"), Value: string("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
 						}},
 					},
 				},
@@ -156,12 +157,12 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 					Code: 0,
 					Events: []abci.Event{
 						{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-							{Key: []byte("ethereumTxHash"), Value: []byte(txHash.Hex())},
-							{Key: []byte("txIndex"), Value: []byte("0")},
-							{Key: []byte("amount"), Value: []byte("1000")},
-							{Key: []byte("txGasUsed"), Value: []byte("21000")},
-							{Key: []byte("txHash"), Value: []byte("")},
-							{Key: []byte("recipient"), Value: []byte("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
+							{Key: string("ethereumTxHash"), Value: string(txHash.Hex())},
+							{Key: string("txIndex"), Value: string("0")},
+							{Key: string("amount"), Value: string("1000")},
+							{Key: string("txGasUsed"), Value: string("21000")},
+							{Key: string("txHash"), Value: string("")},
+							{Key: string("recipient"), Value: string("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
 						}},
 					},
 				},

@@ -2,6 +2,8 @@ package backend
 
 import (
 	"fmt"
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,7 +18,6 @@ import (
 	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc/metadata"
-	"math/big"
 )
 
 func (suite *BackendTestSuite) TestGetTransactionByHash() {
@@ -30,12 +31,12 @@ func (suite *BackendTestSuite) TestGetTransactionByHash() {
 			Code: 0,
 			Events: []abci.Event{
 				{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-					{Key: []byte("ethereumTxHash"), Value: []byte(txHash.Hex())},
-					{Key: []byte("txIndex"), Value: []byte("0")},
-					{Key: []byte("amount"), Value: []byte("1000")},
-					{Key: []byte("txGasUsed"), Value: []byte("21000")},
-					{Key: []byte("txHash"), Value: []byte("")},
-					{Key: []byte("recipient"), Value: []byte("")},
+					{Key: string("ethereumTxHash"), Value: string(txHash.Hex())},
+					{Key: string("txIndex"), Value: string("0")},
+					{Key: string("amount"), Value: string("1000")},
+					{Key: string("txGasUsed"), Value: string("21000")},
+					{Key: string("txHash"), Value: string("")},
+					{Key: string("recipient"), Value: string("")},
 				}},
 			},
 		},
@@ -282,12 +283,12 @@ func (suite *BackendTestSuite) TestGetTransactionByBlockAndIndex() {
 			Code: 0,
 			Events: []abci.Event{
 				{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-					{Key: []byte("ethereumTxHash"), Value: []byte(common.HexToHash(msgEthTx.Hash).Hex())},
-					{Key: []byte("txIndex"), Value: []byte("0")},
-					{Key: []byte("amount"), Value: []byte("1000")},
-					{Key: []byte("txGasUsed"), Value: []byte("21000")},
-					{Key: []byte("txHash"), Value: []byte("")},
-					{Key: []byte("recipient"), Value: []byte("")},
+					{Key: string("ethereumTxHash"), Value: string(common.HexToHash(msgEthTx.Hash).Hex())},
+					{Key: string("txIndex"), Value: string("0")},
+					{Key: string("amount"), Value: string("1000")},
+					{Key: string("txGasUsed"), Value: string("21000")},
+					{Key: string("txHash"), Value: string("")},
+					{Key: string("recipient"), Value: string("")},
 				}},
 			},
 		},
@@ -299,7 +300,7 @@ func (suite *BackendTestSuite) TestGetTransactionByBlockAndIndex() {
 		1,
 		0,
 		big.NewInt(1),
-        suite.backend.chainID,
+		suite.backend.chainID,
 	)
 	testCases := []struct {
 		name         string
@@ -393,7 +394,7 @@ func (suite *BackendTestSuite) TestGetTransactionByBlockNumberAndIndex() {
 		1,
 		0,
 		big.NewInt(1),
-        suite.backend.chainID,
+		suite.backend.chainID,
 	)
 	testCases := []struct {
 		name         string
@@ -563,12 +564,12 @@ func (suite *BackendTestSuite) TestGetTransactionReceipt() {
 					Code: 0,
 					Events: []abci.Event{
 						{Type: evmtypes.EventTypeEthereumTx, Attributes: []abci.EventAttribute{
-							{Key: []byte("ethereumTxHash"), Value: []byte(txHash.Hex())},
-							{Key: []byte("txIndex"), Value: []byte("0")},
-							{Key: []byte("amount"), Value: []byte("1000")},
-							{Key: []byte("txGasUsed"), Value: []byte("21000")},
-							{Key: []byte("txHash"), Value: []byte("")},
-							{Key: []byte("recipient"), Value: []byte("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
+							{Key: string("ethereumTxHash"), Value: string(txHash.Hex())},
+							{Key: string("txIndex"), Value: string("0")},
+							{Key: string("amount"), Value: string("1000")},
+							{Key: string("txGasUsed"), Value: string("21000")},
+							{Key: string("txHash"), Value: string("")},
+							{Key: string("recipient"), Value: string("0x775b87ef5D82ca211811C1a02CE0fE0CA3a455d7")},
 						}},
 					},
 				},
@@ -585,8 +586,8 @@ func (suite *BackendTestSuite) TestGetTransactionReceipt() {
 
 			db := dbm.NewMemDB()
 			suite.backend.indexer = indexer.NewKVIndexer(db, tmlog.NewNopLogger(), suite.backend.clientCtx)
-            err := suite.backend.indexer.IndexBlock(tc.block, tc.blockResult)
-            suite.Require().NoError(err)
+			err := suite.backend.indexer.IndexBlock(tc.block, tc.blockResult)
+			suite.Require().NoError(err)
 
 			txReceipt, err := suite.backend.GetTransactionReceipt(common.HexToHash(tc.tx.Hash))
 			if tc.expPass {

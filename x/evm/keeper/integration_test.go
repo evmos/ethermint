@@ -99,7 +99,7 @@ var _ = Describe("Feemarket", func() {
 						to := tests.GenerateAddress()
 						msgEthereumTx := buildEthTx(privKey, &to, p.gasLimit, p.gasPrice, p.gasFeeCap, p.gasTipCap, p.accesses)
 						res := deliverEthTx(privKey, msgEthereumTx)
-						Expect(res.IsOK()).To(Equal(true), "transaction should have succeeded", res.GetLog())
+						Expect(res.IsOK()).To(Equal(true), "t 	ransaction should have succeeded", res.GetLog())
 					},
 					Entry("legacy tx", func() txParams {
 						return txParams{100000, big.NewInt(baseFee), nil, nil, nil}
