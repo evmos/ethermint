@@ -91,6 +91,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1431](https://github.com/evmos/ethermint/pull/1431) Align hex-strings proof fields in `eth_getProof` as Ethereum.
 * (proto) [#1466](https://github.com/evmos/ethermint/pull/1466) Fix proto scripts and upgrade them to mirror current cosmos-sdk scripts
 * (rpc) [#1405](https://github.com/evmos/ethermint/pull/1405) Fix uninitialized chain ID field in gRPC requests.
+* (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
 
 ## [v0.19.3] - 2022-10-14
 
