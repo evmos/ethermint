@@ -1638,15 +1638,12 @@ paths:
           required: false
           type: string
           format: byte
-<<<<<<< HEAD
         - name: chain_id
           description: the eip155 chain id parsed from the requested block header.
           in: query
           required: false
           type: string
           format: int64
-=======
->>>>>>> main
       tags:
         - Query
   /ethermint/evm/v1/params:
@@ -2588,15 +2585,12 @@ paths:
           required: false
           type: string
           format: byte
-<<<<<<< HEAD
         - name: chain_id
           description: the eip155 chain id parsed from the requested block header.
           in: query
           required: false
           type: string
           format: int64
-=======
->>>>>>> main
       tags:
         - Query
   /ethermint/evm/v1/trace_tx:
@@ -3057,15 +3051,12 @@ paths:
           required: false
           type: string
           format: byte
-<<<<<<< HEAD
         - name: chain_id
           description: the eip155 chain id parsed from the requested block header.
           in: query
           required: false
           type: string
           format: int64
-=======
->>>>>>> main
       tags:
         - Query
   /ethermint/evm/v1/validator_account/{cons_address}:
