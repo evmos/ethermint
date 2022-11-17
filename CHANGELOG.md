@@ -47,6 +47,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
 * (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712. 
 * (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
+* (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
 * (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update geth version to v1.10.25.
 
 ### API Breaking
