@@ -34,11 +34,6 @@ type EVMKeeper interface {
 	GetBalance(ctx sdk.Context, addr common.Address) *big.Int
 	ResetTransientGasUsed(ctx sdk.Context)
 	GetTxIndexTransient(ctx sdk.Context) uint64
-	GetChainConfig(ctx sdk.Context) evmtypes.ChainConfig
-	GetEVMDenom(ctx sdk.Context) string
-	GetEnableCreate(ctx sdk.Context) bool
-	GetEnableCall(ctx sdk.Context) bool
-	GetAllowUnprotectedTxs(ctx sdk.Context) bool
 }
 
 type protoTxProvider interface {

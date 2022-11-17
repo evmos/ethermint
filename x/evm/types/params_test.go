@@ -5,13 +5,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/params"
 
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/require"
 )
-
-func TestParamKeyTable(t *testing.T) {
-	require.IsType(t, paramtypes.KeyTable{}, ParamKeyTable())
-}
 
 func TestParamsValidate(t *testing.T) {
 	testCases := []struct {

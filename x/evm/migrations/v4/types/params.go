@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"math/big"
 
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-
 	"github.com/ethereum/go-ethereum/params"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/evmos/ethermint/types"
 )
+
+var _ paramtypes.ParamSet = &Params{}
 
 var (
 	// DefaultEVMDenom defines the default EVM denomination on Ethermint
@@ -39,6 +40,11 @@ var (
 	AvailableExtraEIPs = []int64{1344, 1884, 2200, 2929, 3198, 3529}
 )
 
+// ParamKeyTable returns the parameter key table.
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
+}
+
 // NewParams creates a new Params instance
 func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
 	return Params{
@@ -47,18 +53,6 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfi
 		EnableCall:   enableCall,
 		ExtraEIPs:    extraEIPs,
 		ChainConfig:  config,
-	}
-}
-
-// ParamSetPairs returns the parameter set pairs.
-func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
-	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
-		paramtypes.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
-		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
-		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
-		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
-		paramtypes.NewParamSetPair(ParamStoreKeyAllowUnprotectedTxs, &p.AllowUnprotectedTxs, validateBool),
 	}
 }
 
@@ -72,6 +66,18 @@ func DefaultParams() Params {
 		ChainConfig:         DefaultChainConfig(),
 		ExtraEIPs:           nil,
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
+	}
+}
+
+// ParamSetPairs returns the parameter set pairs.
+func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
+		paramtypes.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
+		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
+		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
+		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
+		paramtypes.NewParamSetPair(ParamStoreKeyAllowUnprotectedTxs, &p.AllowUnprotectedTxs, validateBool),
 	}
 }
 
