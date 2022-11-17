@@ -96,6 +96,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 // SetupApp setup test environment, it uses`require.TestingT` to support both `testing.T` and `testing.B`.
 func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 	t := suite.T()
+
 	// account key, use a constant account to keep unit test deterministic.
 	ecdsaPriv, err := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	require.NoError(t, err)
@@ -212,6 +213,7 @@ func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 	suite.appCodec = encodingConfig.Codec
 	suite.denom = evmtypes.DefaultEVMDenom
+
 }
 
 func (suite *KeeperTestSuite) EvmDenom() string {

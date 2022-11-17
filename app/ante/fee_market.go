@@ -27,7 +27,8 @@ func NewGasWantedDecorator(
 }
 
 func (gwd GasWantedDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	chainCfg := gwd.evmKeeper.GetChainConfig(ctx)
+	params := gwd.evmKeeper.GetParams(ctx)
+	chainCfg := params.ChainConfig
 	ethCfg := chainCfg.EthereumConfig(gwd.evmKeeper.ChainID())
 
 	blockHeight := big.NewInt(ctx.BlockHeight())

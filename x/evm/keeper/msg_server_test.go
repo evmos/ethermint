@@ -78,3 +78,39 @@ func (suite *KeeperTestSuite) TestEthereumTx() {
 		})
 	}
 }
+
+func (suite *KeeperTestSuite) TestUpdateParams() {
+	testCases := []struct {
+		name      string
+		request   *types.MsgUpdateParams
+		expectErr bool
+	}{
+		{
+			name: "set invalid authority",
+			request: &types.MsgUpdateParams{
+				Authority: "foobar",
+			},
+			expectErr: true,
+		},
+		{
+			name: "set full valid params",
+			request: &types.MsgUpdateParams{
+				Authority: suite.app.EvmKeeper.GetAuthority(),
+				Params:    types.DefaultParams(),
+			},
+			expectErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		suite.Run(tc.name, func() {
+			_, err := suite.app.EvmKeeper.UpdateParams(suite.ctx, tc.request)
+			if tc.expectErr {
+				suite.Require().Error(err)
+			} else {
+				suite.Require().NoError(err)
+			}
+		})
+	}
+}

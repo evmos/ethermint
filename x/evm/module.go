@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/evmos/ethermint/x/evm/exported"
+
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -44,7 +46,7 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(_ *codec.LegacyAmino) {
 
 // ConsensusVersion returns the consensus state-breaking version for the module.
 func (AppModuleBasic) ConsensusVersion() uint64 {
-	return 3
+	return 4
 }
 
 // DefaultGenesis returns default genesis state as raw bytes for the evm
@@ -96,6 +98,8 @@ type AppModule struct {
 	AppModuleBasic
 	keeper *keeper.Keeper
 	ak     types.AccountKeeper
+	// legacySubspace is used solely for migration of x/params managed parameters
+	legacySubspace exported.Subspace
 }
 
 // NewAppModule creates a new AppModule object
@@ -123,12 +127,17 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), am.keeper)
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
-	m := keeper.NewMigrator(*am.keeper)
-	err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
-	if err != nil {
-		panic(err)
-	}
-	err = cfg.RegisterMigration(types.ModuleName, 2, m.Migrate2to3)
+	m := keeper.NewMigrator(*am.keeper, am.legacySubspace)
+	// TODO: Figure out if these will be deleted
+	// err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
+	// if err != nil {
+	//	panic(err)
+	// }
+	// err = cfg.RegisterMigration(types.ModuleName, 2, m.Migrate2to3)
+	// if err != nil {
+	//	panic(err)
+	// }
+	err := cfg.RegisterMigration(types.ModuleName, 3, m.Migrate3to4)
 	if err != nil {
 		panic(err)
 	}

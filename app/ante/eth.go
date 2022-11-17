@@ -40,8 +40,9 @@ func NewEthSigVerificationDecorator(ek EVMKeeper) EthSigVerificationDecorator {
 // Failure in RecheckTx will prevent tx to be included into block, especially when CheckTx succeed, in which case user
 // won't see the error message.
 func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	params := esvd.evmKeeper.GetParams(ctx)
 	chainID := esvd.evmKeeper.ChainID()
-	chainCfg := esvd.evmKeeper.GetChainConfig(ctx)
+	chainCfg := params.GetChainConfig()
 	ethCfg := chainCfg.EthereumConfig(chainID)
 	blockNum := big.NewInt(ctx.BlockHeight())
 	signer := ethtypes.MakeSigner(ethCfg, blockNum)
@@ -52,7 +53,7 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
-		allowUnprotectedTxs := esvd.evmKeeper.GetAllowUnprotectedTxs(ctx)
+		allowUnprotectedTxs := params.GetAllowUnprotectedTxs()
 		ethTx := msgEthTx.AsTransaction()
 		if !allowUnprotectedTxs && !ethTx.Protected() {
 			return ctx, sdkerrors.Wrapf(
@@ -176,7 +177,8 @@ func NewEthGasConsumeDecorator(
 // - transaction or block gas meter runs out of gas
 // - sets the gas meter limit
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	chainCfg := egcd.evmKeeper.GetChainConfig(ctx)
+	params := egcd.evmKeeper.GetParams(ctx)
+	chainCfg := params.ChainConfig
 	ethCfg := chainCfg.EthereumConfig(egcd.evmKeeper.ChainID())
 
 	blockHeight := big.NewInt(ctx.BlockHeight())
@@ -211,7 +213,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			gasWanted += txData.GetGas()
 		}
 
-		evmDenom := egcd.evmKeeper.GetEVMDenom(ctx)
+		evmDenom := params.EvmDenom
 		fees, priority, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
 			*msgEthTx,
@@ -435,13 +437,14 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	txFee := sdk.Coins{}
 	txGasLimit := uint64(0)
 
-	chainCfg := vbd.evmKeeper.GetChainConfig(ctx)
+	params := vbd.evmKeeper.GetParams(ctx)
+	chainCfg := params.ChainConfig
 	chainID := vbd.evmKeeper.ChainID()
 	ethCfg := chainCfg.EthereumConfig(chainID)
 	baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
-	enableCreate := vbd.evmKeeper.GetEnableCreate(ctx)
-	enableCall := vbd.evmKeeper.GetEnableCall(ctx)
-	evmDenom := vbd.evmKeeper.GetEVMDenom(ctx)
+	enableCreate := params.EnableCreate
+	enableCall := params.EnableCall
+	evmDenom := params.EvmDenom
 
 	for _, msg := range protoTx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -552,10 +555,11 @@ func NewEthMempoolFeeDecorator(ek EVMKeeper) EthMempoolFeeDecorator {
 // It only do the check if london hardfork not enabled or feemarket not enabled, because in that case feemarket will take over the task.
 func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	if ctx.IsCheckTx() && !simulate {
-		chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
+		params := mfd.evmKeeper.GetParams(ctx)
+		chainCfg := params.ChainConfig
+		evmDenom := params.EvmDenom
 		ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
 		baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
-		evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
 
 		if baseFee == nil {
 			for _, msg := range tx.GetMsgs() {
