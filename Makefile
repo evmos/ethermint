@@ -427,7 +427,7 @@ format-fix:
 #
 protoVer=v0.7
 protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
-protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
+protoImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
 
 # ------
 # NOTE: If you are experiencing problems running these commands, try deleting 
