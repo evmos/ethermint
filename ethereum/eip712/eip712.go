@@ -188,7 +188,11 @@ func traverseFields(
 	}
 
 	for i := 0; i < n; i++ {
-		var field reflect.Value
+		var (
+			field reflect.Value
+			err   error
+		)
+
 		if v.IsValid() {
 			field = v.Field(i)
 		}
@@ -197,23 +201,10 @@ func traverseFields(
 		fieldName := jsonNameFromTag(t.Field(i).Tag)
 
 		if fieldType == cosmosAnyType {
-			any, ok := field.Interface().(*codectypes.Any)
-			if !ok {
-				return errorsmod.Wrapf(errortypes.ErrPackAny, "%T", field.Interface())
+			// Unpack field, value as Any
+			if fieldType, field, err = unpackAny(cdc, field); err != nil {
+				return err
 			}
-
-			anyWrapper := &cosmosAnyWrapper{
-				Type: any.TypeUrl,
-			}
-
-			if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
-				return errorsmod.Wrap(err, "failed to unpack Any in msg struct")
-			}
-
-			fieldType = reflect.TypeOf(anyWrapper)
-			field = reflect.ValueOf(anyWrapper)
-
-			// then continue as normal
 		}
 
 		// If its a nil pointer, do not include in types
@@ -255,6 +246,12 @@ func traverseFields(
 			fieldType = fieldType.Elem()
 			field = field.Index(0)
 			isCollection = true
+
+			if fieldType == cosmosAnyType {
+				if fieldType, field, err = unpackAny(cdc, field); err != nil {
+					return err
+				}
+			}
 		}
 
 		for {
@@ -343,6 +340,27 @@ func jsonNameFromTag(tag reflect.StructTag) string {
 	jsonTags := tag.Get("json")
 	parts := strings.Split(jsonTags, ",")
 	return parts[0]
+}
+
+// Unpack the given Any value with Type/Value deconstruction
+func unpackAny(cdc codectypes.AnyUnpacker, field reflect.Value) (reflect.Type, reflect.Value, error) {
+	any, ok := field.Interface().(*codectypes.Any)
+	if !ok {
+		return nil, reflect.Value{}, errorsmod.Wrapf(errortypes.ErrPackAny, "%T", field.Interface())
+	}
+
+	anyWrapper := &cosmosAnyWrapper{
+		Type: any.TypeUrl,
+	}
+
+	if err := cdc.UnpackAny(any, &anyWrapper.Value); err != nil {
+		return nil, reflect.Value{}, errorsmod.Wrap(err, "failed to unpack Any in msg struct")
+	}
+
+	fieldType := reflect.TypeOf(anyWrapper)
+	field = reflect.ValueOf(anyWrapper)
+
+	return fieldType, field, nil
 }
 
 // _.foo_bar.baz -> TypeFooBarBaz
