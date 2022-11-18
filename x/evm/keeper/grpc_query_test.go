@@ -758,6 +758,7 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 		txMsg        *types.MsgEthereumTx
 		traceConfig  *types.TraceConfig
 		predecessors []*types.MsgEthereumTx
+		chainID      *sdkmath.Int
 	)
 
 	testCases := []struct {
@@ -932,6 +933,16 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			expPass:       true,
 			traceResponse: "{\"gas\":34828,\"failed\":false,\"returnValue\":\"0000000000000000000000000000000000000000000000000000000000000001\",\"structLogs\":[{\"pc\":0,\"op\":\"PUSH1\",\"gas\":",
 		},
+		{
+			msg: "invalid chain id",
+			malleate: func() {
+				traceConfig = nil
+				predecessors = []*types.MsgEthereumTx{}
+				tmp := sdkmath.NewInt(1)
+				chainID = &tmp
+			},
+			expPass: false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -951,6 +962,10 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 				TraceConfig:  traceConfig,
 				Predecessors: predecessors,
 			}
+
+			if chainID != nil {
+				traceReq.ChainId = chainID.Int64()
+			}
 			res, err := suite.queryClient.TraceTx(sdk.WrapSDKContext(suite.ctx), &traceReq)
 
 			if tc.expPass {
@@ -969,6 +984,8 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			} else {
 				suite.Require().Error(err)
 			}
+            // Reset for next test case
+            chainID = nil
 		})
 	}
 
@@ -979,6 +996,7 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 	var (
 		txs         []*types.MsgEthereumTx
 		traceConfig *types.TraceConfig
+		chainID     *sdkmath.Int
 	)
 
 	testCases := []struct {
@@ -1088,7 +1106,17 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 				}
 			},
 			expPass:       true,
-			traceResponse: "[]",
+			traceResponse: "[{\"error\":\"rpc error: code = Internal desc = tracer not found\"}]",
+		},
+		{
+			msg: "invalid chain id",
+			malleate: func() {
+				traceConfig = nil
+				tmp := sdkmath.NewInt(1)
+				chainID = &tmp
+			},
+			expPass:       true,
+			traceResponse: "[{\"error\":\"rpc error: code = Internal desc = invalid chain id for signer\"}]",
 		},
 	}
 
@@ -1111,6 +1139,11 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 				Txs:         txs,
 				TraceConfig: traceConfig,
 			}
+
+            if chainID != nil {
+              traceReq.ChainId = chainID.Int64()
+            }
+
 			res, err := suite.queryClient.TraceBlock(sdk.WrapSDKContext(suite.ctx), &traceReq)
 
 			if tc.expPass {
@@ -1124,6 +1157,8 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			} else {
 				suite.Require().Error(err)
 			}
+            // Reset for next case
+            chainID = nil
 		})
 	}
 
@@ -1140,6 +1175,8 @@ func (suite *KeeperTestSuite) TestNonceInQuery() {
 
 	// do an EthCall/EstimateGas with nonce 0
 	ctorArgs, err := types.ERC20Contract.ABI.Pack("", address, supply)
+    suite.Require().NoError(err)
+
 	data := append(types.ERC20Contract.Bin, ctorArgs...)
 	args, err := json.Marshal(&types.TransactionArgs{
 		From: &address,

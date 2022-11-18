@@ -27,6 +27,7 @@ ETHERMINT_ADDRESS_PREFIX = "ethm"
 TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
     "Greeter": "Greeter.sol",
+    "TestChainID": "ChainID.sol",
 }
 
 
@@ -164,6 +165,11 @@ def send_successful_transaction(w3):
 def eth_to_bech32(addr, prefix=ETHERMINT_ADDRESS_PREFIX):
     bz = bech32.convertbits(HexBytes(addr), 8, 5)
     return bech32.bech32_encode(prefix, bz)
+
+
+def decode_bech32(addr):
+    _, bz = bech32.bech32_decode(addr)
+    return HexBytes(bytes(bech32.convertbits(bz, 5, 8)))
 
 
 def supervisorctl(inipath, *args):
