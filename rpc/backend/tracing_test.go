@@ -180,6 +180,7 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 			suite.backend.indexer = indexer.NewKVIndexer(db, tmlog.NewNopLogger(), suite.backend.clientCtx)
 
 			err := suite.backend.indexer.IndexBlock(tc.block, tc.responseBlock)
+            suite.Require().NoError(err)
 			txResult, err := suite.backend.TraceTransaction(txHash, nil)
 
 			if tc.expPass {

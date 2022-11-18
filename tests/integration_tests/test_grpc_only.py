@@ -51,7 +51,7 @@ def test_grpc_mode(custom_ethermint):
     - test the grpc queries all works
     """
     w3 = custom_ethermint.w3
-    contract = deploy_contract(w3, CONTRACTS["TestChainID"])
+    contract, _ = deploy_contract(w3, CONTRACTS["TestChainID"])
     assert 9000 == contract.caller.currentChainID()
 
     msg = {

@@ -10,7 +10,6 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -306,16 +305,11 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		return 0, errors.New("header not found")
 	}
 
-	chainID, err := ethermint.ParseChainID(header.Block.ChainID)
-	if err != nil {
-		return 0, sdkerrors.Wrapf(err, "failed to parse chainID: %s", header.Block.ChainID)
-	}
-
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
-		ChainId:         chainID.Int64(),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -343,16 +337,11 @@ func (b *Backend) DoCall(
 		return nil, errors.New("header not found")
 	}
 
-	chainID, err := ethermint.ParseChainID(header.Block.ChainID)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to parse chainID: %s", header.Block.ChainID)
-	}
-
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
-		ChainId:         chainID.Int64(),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,

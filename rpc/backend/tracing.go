@@ -5,10 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
-	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -79,10 +77,6 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		return nil, fmt.Errorf("invalid transaction type %T", tx)
 	}
 
-	chainID, err := ethermint.ParseChainID(blk.Block.ChainID)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to parse chainID: %s", blk.Block.ChainID)
-	}
 
 	traceTxRequest := evmtypes.QueryTraceTxRequest{
 		Msg:             ethMessage,
@@ -91,7 +85,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		BlockTime:       blk.Block.Time,
 		BlockHash:       common.Bytes2Hex(blk.BlockID.Hash),
 		ProposerAddress: sdk.ConsAddress(blk.Block.ProposerAddress),
-		ChainId:         chainID.Int64(),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	if config != nil {
@@ -163,11 +157,6 @@ func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
 	}
 	ctxWithHeight := rpctypes.ContextWithHeight(int64(contextHeight))
 
-	chainID, err := ethermint.ParseChainID(block.Block.ChainID)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to parse chainID: %s", block.Block.ChainID)
-	}
-
 	traceBlockRequest := &evmtypes.QueryTraceBlockRequest{
 		Txs:             txsMessages,
 		TraceConfig:     config,
@@ -175,7 +164,7 @@ func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
 		BlockTime:       block.Block.Time,
 		BlockHash:       common.Bytes2Hex(block.BlockID.Hash),
 		ProposerAddress: sdk.ConsAddress(block.Block.ProposerAddress),
-		ChainId:         chainID.Int64(),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	res, err := b.queryClient.TraceBlock(ctxWithHeight, traceBlockRequest)

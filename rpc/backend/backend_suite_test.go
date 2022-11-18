@@ -2,12 +2,12 @@ package backend
 
 import (
 	"bufio"
-	"fmt"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 
 	dbm "github.com/tendermint/tm-db"
 
@@ -47,7 +47,7 @@ func (suite *BackendTestSuite) SetupTest() {
 	ctx.Viper.Set("telemetry.global-labels", []interface{}{})
 
 	baseDir := suite.T().TempDir()
-	nodeDirName := fmt.Sprintf("node")
+	nodeDirName := "node"
 	clientDir := filepath.Join(baseDir, nodeDirName, "evmoscli")
 	keyRing, err := suite.generateTestKeyring(clientDir)
 	if err != nil {
@@ -93,7 +93,7 @@ func (suite *BackendTestSuite) SetupTest() {
 // buildEthereumTx returns an example legacy Ethereum transaction
 func (suite *BackendTestSuite) buildEthereumTx() (*evmtypes.MsgEthereumTx, []byte) {
 	msgEthereumTx := evmtypes.NewTx(
-		big.NewInt(1),
+		suite.backend.chainID,
 		uint64(0),
 		&common.Address{},
 		big.NewInt(0),
