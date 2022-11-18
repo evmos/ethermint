@@ -9,7 +9,7 @@ let
 
 in buildGoModule rec {
   pname = "go-ethereum";
-  version = "1.10.25";
+  version = "1.10.26";
 
   src = fetchFromGitHub {
     owner = "ethereum";
