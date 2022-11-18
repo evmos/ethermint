@@ -8,7 +8,7 @@ from .utils import (
 )
 
 
-def test_equivalent_gas_consumption(geth, ethermint):
+def test_equivalent_gas_consumption_tx(geth, ethermint):
     tx_value = 10
 
     # send a transaction with geth
@@ -24,10 +24,9 @@ def test_equivalent_gas_consumption(geth, ethermint):
     # ensure that the gasUsed is equivalent
     assert geth_reciept.gasUsed == ethermint_reciept.gasUsed
 
-    w3_wait_for_new_blocks(geth.w3, 5)
-    w3_wait_for_new_blocks(ethermint.w3, 5)
-
-    # repeat the above process with contract deployment
+def test_equivalent_gas_consumption_deployment(geth, ethermint):
+     # deploy an identical contract on geth and ethermint
+     # ensure that the gasUsed is equivalent
     _, geth_contract_reciept = deploy_contract(
         geth.w3,
         CONTRACTS["TestERC20A"])
