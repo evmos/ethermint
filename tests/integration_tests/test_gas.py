@@ -1,10 +1,4 @@
-from .utils import (
-    ADDRS,
-    CONTRACTS,
-    KEYS,
-    deploy_contract,
-    send_transaction,
-)
+from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction
 
 
 def test_gas_eth_tx(geth, ethermint):
