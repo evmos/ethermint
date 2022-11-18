@@ -110,7 +110,7 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 				RegisterBlockMultipleTxs(client, 1, []types.Tx{txBz, txBz2})
 				RegisterTraceTransactionWithPredecessors(queryClient, msgEthereumTx, []*evmtypes.MsgEthereumTx{msgEthereumTx})
 			},
-			&types.Block{Header: types.Header{Height: 1}, Data: types.Data{Txs: []types.Tx{txBz, txBz2}}},
+			&types.Block{Header: types.Header{Height: 1, ChainID: ChainID}, Data: types.Data{Txs: []types.Tx{txBz, txBz2}}},
 			[]*abci.ResponseDeliverTx{
 				{
 					Code: 0,
@@ -196,7 +196,9 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 func (suite *BackendTestSuite) TestTraceBlock() {
 	msgEthTx, bz := suite.buildEthereumTx()
 	emptyBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{}, nil, nil)
+	emptyBlock.ChainID = ChainID
 	filledBlock := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
+	filledBlock.ChainID = ChainID
 	resBlockEmpty := tmrpctypes.ResultBlock{Block: emptyBlock, BlockID: emptyBlock.LastBlockID}
 	resBlockFilled := tmrpctypes.ResultBlock{Block: filledBlock, BlockID: filledBlock.LastBlockID}
 

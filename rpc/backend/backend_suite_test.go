@@ -41,6 +41,8 @@ func TestBackendTestSuite(t *testing.T) {
 	suite.Run(t, new(BackendTestSuite))
 }
 
+const ChainID = "ethermint_9000-1"
+
 // SetupTest is executed before every BackendTestSuite test
 func (suite *BackendTestSuite) SetupTest() {
 	ctx := server.NewDefaultContext()
@@ -68,7 +70,7 @@ func (suite *BackendTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
-	clientCtx := client.Context{}.WithChainID("ethermint_9000-1").
+	clientCtx := client.Context{}.WithChainID(ChainID).
 		WithHeight(1).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithKeyringDir(clientDir).

@@ -269,6 +269,8 @@ func (b *Backend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Transac
 			Value:                args.Value,
 			Data:                 input,
 			AccessList:           args.AccessList,
+			ChainID:              args.ChainID,
+			Nonce:                args.Nonce,
 		}
 
 		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))

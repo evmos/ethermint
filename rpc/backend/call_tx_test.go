@@ -3,6 +3,8 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -12,7 +14,6 @@ import (
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"google.golang.org/grpc/metadata"
-	"math/big"
 )
 
 func (suite *BackendTestSuite) TestResend() {
@@ -29,7 +30,7 @@ func (suite *BackendTestSuite) TestResend() {
 		MaxFeePerGas:         gasPrice,
 		MaxPriorityFeePerGas: gasPrice,
 		Value:                gasPrice,
-		Nonce:                nil,
+		Nonce:                &txNonce,
 		Input:                nil,
 		Data:                 nil,
 		AccessList:           nil,
@@ -213,6 +214,7 @@ func (suite *BackendTestSuite) TestResend() {
 				To:                   &toAddr,
 				MaxFeePerGas:         gasPrice,
 				MaxPriorityFeePerGas: gasPrice,
+				Value:                gasPrice,
 				Gas:                  nil,
 				ChainID:              callArgs.ChainID,
 			},
@@ -240,6 +242,7 @@ func (suite *BackendTestSuite) TestResend() {
 				To:                   &toAddr,
 				MaxFeePerGas:         gasPrice,
 				MaxPriorityFeePerGas: gasPrice,
+				Value:                gasPrice,
 				Gas:                  nil,
 				ChainID:              callArgs.ChainID,
 			},
@@ -392,7 +395,7 @@ func (suite *BackendTestSuite) TestDoCall() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBlock(client, 1, bz)
-				RegisterEthCallError(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
+				RegisterEthCallError(queryClient, &evmtypes.EthCallRequest{Args: argsBz, ChainId: suite.backend.chainID.Int64()})
 			},
 			rpctypes.BlockNumber(1),
 			callArgs,
@@ -405,7 +408,7 @@ func (suite *BackendTestSuite) TestDoCall() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBlock(client, 1, bz)
-				RegisterEthCall(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
+				RegisterEthCall(queryClient, &evmtypes.EthCallRequest{Args: argsBz, ChainId: suite.backend.chainID.Int64()})
 			},
 			rpctypes.BlockNumber(1),
 			callArgs,
