@@ -6,7 +6,7 @@
     config: {
       consensus: {
         // larger timeout for more stable mempool tests
-        timeout_commit: '10s',
+        timeout_commit: '2s',
       },
       mempool: {
         // use v1 mempool to enable tx prioritization
