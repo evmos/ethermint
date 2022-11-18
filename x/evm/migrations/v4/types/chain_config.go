@@ -6,14 +6,14 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
-	"github.com/evmos/ethermint/x/evm/types"
-
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
 )
+
+var ErrInvalidChainConfig = errorsmod.Register(ModuleName, 5, "invalid chain configuration")
 
 // EthereumConfig returns an Ethereum ChainConfig for EVM state transitions.
 // All the negative or nil values are converted to nil
@@ -35,6 +35,10 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		BerlinBlock:             getBlockValue(cc.BerlinBlock),
 		LondonBlock:             getBlockValue(cc.LondonBlock),
 		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
+		GrayGlacierBlock:        getBlockValue(cc.GrayGlacierBlock),
+		MergeNetsplitBlock:      getBlockValue(cc.MergeNetsplitBlock),
+		ShanghaiBlock:           getBlockValue(cc.ShanghaiBlock),
+		CancunBlock:             getBlockValue(cc.CancunBlock),
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,
@@ -56,7 +60,10 @@ func DefaultChainConfig() ChainConfig {
 	berlinBlock := sdk.ZeroInt()
 	londonBlock := sdk.ZeroInt()
 	arrowGlacierBlock := sdk.ZeroInt()
-	mergeForkBlock := sdk.ZeroInt()
+	grayGlacierBlock := sdk.ZeroInt()
+	mergeNetsplitBlock := sdk.ZeroInt()
+	shanghaiBlock := sdk.ZeroInt()
+	cancunBlock := sdk.ZeroInt()
 
 	return ChainConfig{
 		HomesteadBlock:      &homesteadBlock,
@@ -74,7 +81,10 @@ func DefaultChainConfig() ChainConfig {
 		BerlinBlock:         &berlinBlock,
 		LondonBlock:         &londonBlock,
 		ArrowGlacierBlock:   &arrowGlacierBlock,
-		MergeForkBlock:      &mergeForkBlock,
+		GrayGlacierBlock:    &grayGlacierBlock,
+		MergeNetsplitBlock:  &mergeNetsplitBlock,
+		ShanghaiBlock:       &shanghaiBlock,
+		CancunBlock:         &cancunBlock,
 	}
 }
 
@@ -131,8 +141,17 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.ArrowGlacierBlock); err != nil {
 		return errorsmod.Wrap(err, "arrowGlacierBlock")
 	}
-	if err := validateBlock(cc.MergeForkBlock); err != nil {
-		return errorsmod.Wrap(err, "mergeForkBlock")
+	if err := validateBlock(cc.GrayGlacierBlock); err != nil {
+		return errorsmod.Wrap(err, "GrayGlacierBlock")
+	}
+	if err := validateBlock(cc.MergeNetsplitBlock); err != nil {
+		return errorsmod.Wrap(err, "MergeNetsplitBlock")
+	}
+	if err := validateBlock(cc.ShanghaiBlock); err != nil {
+		return errorsmod.Wrap(err, "ShanghaiBlock")
+	}
+	if err := validateBlock(cc.CancunBlock); err != nil {
+		return errorsmod.Wrap(err, "CancunBlock")
 	}
 
 	// NOTE: chain ID is not needed to check config order
@@ -144,7 +163,7 @@ func (cc ChainConfig) Validate() error {
 
 func validateHash(hex string) error {
 	if hex != "" && strings.TrimSpace(hex) == "" {
-		return errorsmod.Wrap(types.ErrInvalidChainConfig, "hash cannot be blank")
+		return errorsmod.Wrap(ErrInvalidChainConfig, "hash cannot be blank")
 	}
 
 	return nil
@@ -158,7 +177,7 @@ func validateBlock(block *sdkmath.Int) error {
 
 	if block.IsNegative() {
 		return errorsmod.Wrapf(
-			types.ErrInvalidChainConfig, "block value cannot be negative: %s", block,
+			ErrInvalidChainConfig, "block value cannot be negative: %s", block,
 		)
 	}
 
