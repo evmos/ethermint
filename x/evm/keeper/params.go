@@ -25,5 +25,6 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) error {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(&params)
 	store.Set(types.KeyParams, bz)
+
 	return nil
 }
