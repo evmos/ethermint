@@ -223,6 +223,8 @@ message EthCallRequest {
   uint64 gas_cap = 2;
   // the proposer of the requested block
   bytes proposer_address = 3 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // the eip155 chain id parsed from the requested block header
+  int64 chain_id = 4;
 }
 
 // EstimateGasResponse defines EstimateGas response
@@ -251,6 +253,8 @@ message QueryTraceTxRequest {
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
   // the proposer of the requested block
   bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // the eip155 chain id parsed from the requested block header
+  int64 chain_id = 9;
 }
 
 // QueryTraceTxResponse defines TraceTx response
@@ -273,6 +277,8 @@ message QueryTraceBlockRequest {
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
   // the proposer of the requested block
   bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // the eip155 chain id parsed from the requested block header
+  int64 chain_id = 9;
 }
 
 // QueryTraceBlockResponse defines TraceBlock response
