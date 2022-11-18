@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -79,7 +80,7 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 		{
 			"fail - block not found",
 			func() {
-				//var header metadata.MD
+				// var header metadata.MD
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlockError(client, 1)
 			},
@@ -220,7 +221,6 @@ func (suite *BackendTestSuite) TestTraceBlock() {
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterTraceBlock(queryClient, []*evmtypes.MsgEthereumTx{msgEthTx})
-
 			},
 			[]*evmtypes.TxTraceResult{},
 			&resBlockFilled,

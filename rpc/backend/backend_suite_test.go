@@ -3,11 +3,12 @@ package backend
 import (
 	"bufio"
 	"fmt"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 
 	dbm "github.com/tendermint/tm-db"
 
@@ -87,7 +88,6 @@ func (suite *BackendTestSuite) SetupTest() {
 	// Add codec
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
 	suite.backend.clientCtx.Codec = encCfg.Codec
-
 }
 
 // buildEthereumTx returns an example legacy Ethereum transaction

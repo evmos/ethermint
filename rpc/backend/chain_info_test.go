@@ -165,7 +165,6 @@ func (suite *BackendTestSuite) TestChainId() {
 				var header metadata.MD
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterParamsInvalidHeight(queryClient, &header, int64(1))
-
 			},
 			expChainId,
 			true,
@@ -387,7 +386,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 		{
 			"fail - Invalid base fee",
 			func(validator sdk.AccAddress) {
-				//baseFee := sdk.NewInt(1)
+				// baseFee := sdk.NewInt(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				suite.backend.cfg.JSONRPC.FeeHistoryCap = 2

@@ -1,6 +1,8 @@
 package v4_test
 
 import (
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/evmos/ethermint/app"
@@ -10,7 +12,6 @@ import (
 	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/evmos/ethermint/x/evm/types"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type mockSubspace struct {
@@ -28,7 +29,7 @@ func (ms mockSubspace) GetParams(ctx sdk.Context, ps exported.Params) {
 func TestMigrate(t *testing.T) {
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
 	cdc := encCfg.Codec
-	
+
 	storeKey := sdk.NewKVStoreKey(v4types.ModuleName)
 	tKey := sdk.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)

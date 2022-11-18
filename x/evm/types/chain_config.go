@@ -151,7 +151,7 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.CancunBlock); err != nil {
 		return errorsmod.Wrap(err, "CancunBlock")
 	}
-	
+
 	// NOTE: chain ID is not needed to check config order
 	if err := cc.EthereumConfig(nil).CheckConfigForkOrder(); err != nil {
 		return errorsmod.Wrap(err, "invalid config fork order")
