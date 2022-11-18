@@ -26,7 +26,7 @@ func InitGenesis(
 
 	err := k.SetParams(ctx, data.Params)
 	if err != nil {
-		panic("Cannot set module parameters")
+		panic(err)
 	}
 
 	// ensure evm module account is set
