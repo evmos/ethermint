@@ -4,7 +4,6 @@ from .utils import (
     KEYS,
     deploy_contract,
     send_transaction,
-    w3_wait_for_new_blocks,
 )
 
 
@@ -24,9 +23,10 @@ def test_gas_eth_tx(geth, ethermint):
     # ensure that the gasUsed is equivalent
     assert geth_reciept.gasUsed == ethermint_reciept.gasUsed
 
+
 def test_gas_deployment(geth, ethermint):
-     # deploy an identical contract on geth and ethermint
-     # ensure that the gasUsed is equivalent
+    # deploy an identical contract on geth and ethermint
+    # ensure that the gasUsed is equivalent
     _, geth_contract_reciept = deploy_contract(
         geth.w3,
         CONTRACTS["TestERC20A"])
@@ -34,6 +34,7 @@ def test_gas_deployment(geth, ethermint):
         ethermint.w3,
         CONTRACTS["TestERC20A"])
     assert geth_contract_reciept.gasUsed == ethermint_contract_reciept.gasUsed
+
 
 def test_gas_call(geth, ethermint):
     function_input = 10
@@ -48,6 +49,8 @@ def test_gas_call(geth, ethermint):
         CONTRACTS["BurnGas"])
 
     # call the contract locally (eth_call) and compare gas estimates
-    geth_estimated_gas = geth_contract.functions.burnGas(function_input).estimate_gas()
-    ethermint_estimated_gas = ethermint_contract.functions.burnGas(function_input).estimate_gas()
+    geth_estimated_gas = (geth_contract.functions
+                          .burnGas(function_input).estimate_gas())
+    ethermint_estimated_gas = (ethermint_contract.functions
+                               .burnGas(function_input).estimate_gas())
     assert geth_estimated_gas == ethermint_estimated_gas
