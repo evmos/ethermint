@@ -27,6 +27,7 @@ ETHERMINT_ADDRESS_PREFIX = "ethm"
 TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
     "Greeter": "Greeter.sol",
+    "BurnGas": "BurnGas.sol",
     "TestChainID": "ChainID.sol",
 }
 
