@@ -9,6 +9,7 @@ import (
 )
 
 func TestParamsValidate(t *testing.T) {
+	extraEips := ExtraEIPs{[]int64{2929, 1884, 1344}}
 	testCases := []struct {
 		name     string
 		params   Params
@@ -17,7 +18,7 @@ func TestParamsValidate(t *testing.T) {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344),
+			NewParams("ara", false, true, true, DefaultChainConfig(), extraEips),
 			false,
 		},
 		{
@@ -36,7 +37,7 @@ func TestParamsValidate(t *testing.T) {
 			"invalid eip",
 			Params{
 				EvmDenom:  "stake",
-				ExtraEIPs: []int64{1},
+				ExtraEips: ExtraEIPs{[]int64{1}},
 			},
 			true,
 		},
@@ -54,7 +55,8 @@ func TestParamsValidate(t *testing.T) {
 }
 
 func TestParamsEIPs(t *testing.T) {
-	params := NewParams("ara", true, true, DefaultChainConfig(), 2929, 1884, 1344)
+	extraEips := ExtraEIPs{[]int64{2929, 1884, 1344}}
+	params := NewParams("ara", false, true, true, DefaultChainConfig(), extraEips)
 	actual := params.EIPs()
 
 	require.Equal(t, []int([]int{2929, 1884, 1344}), actual)

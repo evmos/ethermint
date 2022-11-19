@@ -41,14 +41,14 @@ func GenEnableCall(r *rand.Rand) bool {
 // RandomizedGenState generates a random GenesisState for the EVM module
 func RandomizedGenState(simState *module.SimulationState) {
 	// evm params
-	var extraEIPs []int64
+	var extraEIPs types.ExtraEIPs
 
 	simState.AppParams.GetOrGenerate(
 		simState.Cdc, extraEIPsKey, &extraEIPs, simState.Rand,
-		func(r *rand.Rand) { extraEIPs = GenExtraEIPs(r) },
+		func(r *rand.Rand) { extraEIPs.ExtraEIPs = GenExtraEIPs(r) },
 	)
 
-	params := types.NewParams(types.DefaultEVMDenom, true, true, types.DefaultChainConfig(), extraEIPs...)
+	params := types.NewParams(types.DefaultEVMDenom, false, true, true, types.DefaultChainConfig(), extraEIPs)
 	evmGenesis := types.NewGenesisState(params, []types.GenesisAccount{})
 
 	bz, err := json.MarshalIndent(evmGenesis, "", " ")

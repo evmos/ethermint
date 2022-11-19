@@ -38,13 +38,14 @@ var (
 )
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs ExtraEIPs) Params {
 	return Params{
-		EvmDenom:     evmDenom,
-		EnableCreate: enableCreate,
-		EnableCall:   enableCall,
-		ExtraEIPs:    extraEIPs,
-		ChainConfig:  config,
+		EvmDenom:            evmDenom,
+		AllowUnprotectedTxs: allowUnprotectedTxs,
+		EnableCreate:        enableCreate,
+		EnableCall:          enableCall,
+		ExtraEips:           extraEIPs,
+		ChainConfig:         config,
 	}
 }
 
@@ -56,7 +57,7 @@ func DefaultParams() Params {
 		EnableCreate:        true,
 		EnableCall:          true,
 		ChainConfig:         DefaultChainConfig(),
-		ExtraEIPs:           nil,
+		ExtraEips:           ExtraEIPs{},
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 	}
 }
@@ -67,7 +68,7 @@ func (p Params) Validate() error {
 		return err
 	}
 
-	if err := validateEIPs(p.ExtraEIPs); err != nil {
+	if err := validateEIPs(p.ExtraEips.ExtraEIPs); err != nil {
 		return err
 	}
 
@@ -76,8 +77,8 @@ func (p Params) Validate() error {
 
 // EIPs returns the ExtraEips as a int slice
 func (p Params) EIPs() []int {
-	eips := make([]int, len(p.ExtraEIPs))
-	for i, eip := range p.ExtraEIPs {
+	eips := make([]int, len(p.ExtraEips.ExtraEIPs))
+	for i, eip := range p.ExtraEips.ExtraEIPs {
 		eips[i] = int(eip)
 	}
 	return eips

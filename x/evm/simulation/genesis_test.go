@@ -44,7 +44,7 @@ func TestRandomizedGenState(t *testing.T) {
 	require.Equal(t, true, evmGenesis.Params.GetEnableCreate())
 	require.Equal(t, true, evmGenesis.Params.GetEnableCall())
 	require.Equal(t, types.DefaultEVMDenom, evmGenesis.Params.GetEvmDenom())
-	require.Equal(t, simulation.GenExtraEIPs(r), evmGenesis.Params.GetExtraEIPs())
+	require.Equal(t, simulation.GenExtraEIPs(r), evmGenesis.Params.GetExtraEips().ExtraEIPs)
 	require.Equal(t, types.DefaultChainConfig(), evmGenesis.Params.GetChainConfig())
 
 	require.Equal(t, len(evmGenesis.Accounts), 0)
