@@ -21,6 +21,7 @@ func (suite *BackendTestSuite) TestResend() {
 	baseFee := sdk.NewInt(1)
 	gasPrice := new(hexutil.Big)
 	toAddr := tests.GenerateAddress()
+	chainID := (*hexutil.Big)(suite.backend.chainID)
 	callArgs := evmtypes.TransactionArgs{
 		From:                 nil,
 		To:                   &toAddr,
@@ -29,10 +30,11 @@ func (suite *BackendTestSuite) TestResend() {
 		MaxFeePerGas:         gasPrice,
 		MaxPriorityFeePerGas: gasPrice,
 		Value:                gasPrice,
-		Nonce:                nil,
+		Nonce:                &txNonce,
 		Input:                nil,
 		Data:                 nil,
 		AccessList:           nil,
+		ChainID:              chainID,
 	}
 
 	testCases := []struct {
@@ -67,7 +69,8 @@ func (suite *BackendTestSuite) TestResend() {
 				RegisterBaseFeeDisabled(queryClient)
 			},
 			evmtypes.TransactionArgs{
-				Nonce: &txNonce,
+				Nonce:   &txNonce,
+				ChainID: callArgs.ChainID,
 			},
 			nil,
 			nil,
@@ -164,6 +167,7 @@ func (suite *BackendTestSuite) TestResend() {
 				GasPrice:             nil,
 				MaxPriorityFeePerGas: gasPrice,
 				MaxFeePerGas:         gasPrice,
+				ChainID:              callArgs.ChainID,
 			},
 			nil,
 			nil,
@@ -210,7 +214,9 @@ func (suite *BackendTestSuite) TestResend() {
 				To:                   &toAddr,
 				MaxFeePerGas:         gasPrice,
 				MaxPriorityFeePerGas: gasPrice,
+				Value:                gasPrice,
 				Gas:                  nil,
+				ChainID:              callArgs.ChainID,
 			},
 			gasPrice,
 			nil,
@@ -236,7 +242,9 @@ func (suite *BackendTestSuite) TestResend() {
 				To:                   &toAddr,
 				MaxFeePerGas:         gasPrice,
 				MaxPriorityFeePerGas: gasPrice,
+				Value:                gasPrice,
 				Gas:                  nil,
+				ChainID:              callArgs.ChainID,
 			},
 			gasPrice,
 			nil,
@@ -356,6 +364,7 @@ func (suite *BackendTestSuite) TestDoCall() {
 	_, bz := suite.buildEthereumTx()
 	gasPrice := (*hexutil.Big)(big.NewInt(1))
 	toAddr := tests.GenerateAddress()
+	chainID := (*hexutil.Big)(suite.backend.chainID)
 	callArgs := evmtypes.TransactionArgs{
 		From:                 nil,
 		To:                   &toAddr,
@@ -367,6 +376,7 @@ func (suite *BackendTestSuite) TestDoCall() {
 		Input:                nil,
 		Data:                 nil,
 		AccessList:           nil,
+		ChainID:              chainID,
 	}
 	argsBz, err := json.Marshal(callArgs)
 	suite.Require().NoError(err)
@@ -385,9 +395,8 @@ func (suite *BackendTestSuite) TestDoCall() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBlock(client, 1, bz)
-				RegisterEthCallError(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
+				RegisterEthCallError(queryClient, &evmtypes.EthCallRequest{Args: argsBz, ChainId: suite.backend.chainID.Int64()})
 			},
-
 			rpctypes.BlockNumber(1),
 			callArgs,
 			&evmtypes.MsgEthereumTxResponse{},
@@ -399,9 +408,8 @@ func (suite *BackendTestSuite) TestDoCall() {
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterBlock(client, 1, bz)
-				RegisterEthCall(queryClient, &evmtypes.EthCallRequest{Args: argsBz})
+				RegisterEthCall(queryClient, &evmtypes.EthCallRequest{Args: argsBz, ChainId: suite.backend.chainID.Int64()})
 			},
-
 			rpctypes.BlockNumber(1),
 			callArgs,
 			&evmtypes.MsgEthereumTxResponse{},

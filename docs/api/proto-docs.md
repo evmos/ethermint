@@ -564,6 +564,7 @@ EthCallRequest defines EthCall request
 | `args` | [bytes](#bytes) |  | same json format as the json rpc api. |
 | `gas_cap` | [uint64](#uint64) |  | the default gas cap to be used |
 | `proposer_address` | [bytes](#bytes) |  | the proposer of the requested block |
+| `chain_id` | [int64](#int64) |  | the eip155 chain id parsed from the requested block header |
 
 
 
@@ -794,6 +795,7 @@ QueryTraceBlockRequest defines TraceTx request
 | `block_hash` | [string](#string) |  | block hex hash |
 | `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time |
 | `proposer_address` | [bytes](#bytes) |  | the proposer of the requested block |
+| `chain_id` | [int64](#int64) |  | the eip155 chain id parsed from the requested block header |
 
 
 
@@ -830,6 +832,7 @@ QueryTraceTxRequest defines TraceTx request
 | `block_hash` | [string](#string) |  | block hex hash of requested transaction |
 | `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time of requested transaction |
 | `proposer_address` | [bytes](#bytes) |  | the proposer of the requested block |
+| `chain_id` | [int64](#int64) |  | the eip155 chain id parsed from the requested block header |
 
 
 
