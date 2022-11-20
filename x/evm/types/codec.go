@@ -8,7 +8,7 @@ import (
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	"github.com/cosmos/cosmos-sdk/types/tx"
-	proto "github.com/gogo/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 )
 
 var ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())

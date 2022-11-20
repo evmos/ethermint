@@ -3,15 +3,20 @@ module github.com/evmos/ethermint
 go 1.19
 
 require (
+	cosmossdk.io/api v0.2.4
 	cosmossdk.io/errors v1.0.0-beta.7
+	cosmossdk.io/math v1.0.0-beta.3
+	cosmossdk.io/simapp v0.0.0-20221103182213-3034a9d54a62
+	cosmossdk.io/tools/rosetta v0.1.0
 	github.com/armon/go-metrics v0.4.1
 	github.com/btcsuite/btcd v0.22.3
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/cosmos/cosmos-proto v1.0.0-alpha8
+	github.com/cosmos/cosmos-proto v1.0.0-alpha8 // indirect
 	// cosmos-sdk main @51900d161289dfb68a27bc0ab789f4d33dfe2dec ≃ 0.47
-	github.com/cosmos/cosmos-sdk v0.46.0-beta2.0.20221116173346-51900d161289
+	github.com/cosmos/cosmos-sdk v0.46.6
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.4.3
+	github.com/cosmos/ibc-go/v6 v6.0.0-20221109202621-fe2f2c2da8ab
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/golang/protobuf v1.5.2
@@ -36,18 +41,10 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/net v0.2.0
 	golang.org/x/text v0.4.0
-	google.golang.org/genproto v0.0.0-20221114212237-e4508ebdbee1
+	google.golang.org/genproto v0.0.0-20221116193143-41c2ba794472 // indirect
 	google.golang.org/grpc v1.50.1
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
 	sigs.k8s.io/yaml v1.3.0
-)
-
-require (
-	cosmossdk.io/api v0.2.4
-	cosmossdk.io/math v1.0.0-beta.3
-	cosmossdk.io/simapp v0.0.0-20221103182213-3034a9d54a62
-	github.com/cosmos/ibc-go/v6 v6.0.0-20221109202621-fe2f2c2da8ab
-	github.com/gogo/protobuf v1.3.2
 )
 
 require (
@@ -58,7 +55,6 @@ require (
 	cloud.google.com/go/storage v1.27.0 // indirect
 	cosmossdk.io/core v0.3.2 // indirect
 	cosmossdk.io/depinject v1.0.0-alpha.3 // indirect
-	cosmossdk.io/tools/rosetta v0.1.0 // indirect
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
 	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
@@ -183,7 +179,7 @@ require (
 	github.com/zondax/hid v0.9.1-0.20220302062450-5552068d2266 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/crypto v0.2.0 // indirect
+	golang.org/x/crypto v0.3.0 // indirect
 	golang.org/x/exp v0.0.0-20221019170559-20944726eadf // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	golang.org/x/sync v0.1.0 // indirect

@@ -5,9 +5,6 @@ deps:
   - buf.build/cosmos/cosmos-proto
   - buf.build/cosmos/gogo-proto
   - buf.build/googleapis/googleapis
-breaking:
-  use:
-    - FILE
 lint:
   use:
     - DEFAULT
@@ -19,5 +16,10 @@ lint:
     - SERVICE_SUFFIX
     - PACKAGE_VERSION_SUFFIX
     - RPC_REQUEST_STANDARD_NAME
-  ignore:
-    - tendermint
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_RESPONSE_STANDARD_NAME
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - COMMENT_MESSAGE
+breaking:
+  use:
+    - FILE

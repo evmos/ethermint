@@ -302,7 +302,7 @@ message RedelegationEntryResponse {
   option (gogoproto.equal) = true;
 
   RedelegationEntry redelegation_entry = 1 [(gogoproto.nullable) = false];
-  string balance = 4 [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false];
+  string            balance = 4 [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false];
 }
 
 // RedelegationResponse is equivalent to a Redelegation except that its entries

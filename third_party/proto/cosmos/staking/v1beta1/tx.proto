@@ -69,10 +69,8 @@ message MsgEditValidator {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.moretags)   = "yaml:\"commission_rate\""
   ];
-  string min_self_delegation = 4 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.moretags)   = "yaml:\"min_self_delegation\""
-  ];
+  string min_self_delegation = 4
+      [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.moretags) = "yaml:\"min_self_delegation\""];
 }
 
 // MsgEditValidatorResponse defines the Msg/EditValidator response type.

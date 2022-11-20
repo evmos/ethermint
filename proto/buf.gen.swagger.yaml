@@ -5,4 +5,11 @@ plugins:
     opt: plugins=grpc,Mgoogle/protobuf/duration.proto=Mgoogle/protobuf/duration.proto=google.golang.org/protobuf/types,Mgoogle/protobuf/struct.proto=google.golang.org/protobuf/types,Mgoogle/protobuf/timestamp.proto=google.golang.org/protobuf/types,Mgoogle/protobuf/wrappers.proto=google.golang.org/protobuf/types,Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types,Mcosmos/orm/v1alpha1/orm.proto=github.com/cosmos/cosmos-sdk/api/cosmos/orm/v1alpha1
   - name: grpc-gateway
     out: .
-    opt: logtostderr=true,allow_colon_final_segments=true
+    opt: logtostderr=true
+  - name: swagger
+    out: ./tmp-swagger-gen
+    opt:
+      - logtostderr=true
+      - fqn_for_swagger_name=true
+      - simple_operation_ids=true
+    strategy: all
