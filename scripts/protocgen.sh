@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
+# --------------
+# Commands to run locally
+# docker run --network host --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen:v0.7 sh ./protocgen.sh
+#
 set -eo pipefail
-
-# get protoc executions
-go get github.com/regen-network/cosmos-proto/protoc-gen-gocosmos 2>/dev/null
 
 echo "Generating gogo proto code"
 proto_dirs=$(find ./proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
