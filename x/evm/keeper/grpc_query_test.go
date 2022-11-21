@@ -887,18 +887,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			},
 			expPass: false,
 		},
-		// {
-		// 	msg: "trace config - Execution Timeout",
-		// 	malleate: func() {
-		// 		traceConfig = &types.TraceConfig{
-		// 			DisableStack:   true,
-		// 			DisableStorage: true,
-		// 			EnableMemory:   false,
-		// 			Timeout:        "0s",
-		// 		}
-		// 	},
-		// 	expPass: false,
-		// },
 		{
 			msg: "default tracer with contract creation tx as predecessor but 'create' param disabled",
 			malleate: func() {
