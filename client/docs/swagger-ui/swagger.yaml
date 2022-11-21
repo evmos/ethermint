@@ -1325,6 +1325,12 @@ paths:
           required: false
           type: string
           format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/eth_call:
@@ -1632,6 +1638,12 @@ paths:
           required: false
           type: string
           format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/params:
@@ -2550,6 +2562,11 @@ paths:
           in: query
           required: false
           type: boolean
+        - name: trace_config.tracer_json_config
+          description: tracer config.
+          in: query
+          required: false
+          type: string
         - name: block_number
           description: block number.
           in: query
@@ -2573,6 +2590,12 @@ paths:
           required: false
           type: string
           format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/trace_tx:
@@ -3010,6 +3033,11 @@ paths:
           in: query
           required: false
           type: boolean
+        - name: trace_config.tracer_json_config
+          description: tracer config.
+          in: query
+          required: false
+          type: string
         - name: block_number
           description: block number of requested transaction.
           in: query
@@ -3033,6 +3061,12 @@ paths:
           required: false
           type: string
           format: byte
+        - name: chain_id
+          description: the eip155 chain id parsed from the requested block header.
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /ethermint/evm/v1/validator_account/{cons_address}:
@@ -4083,6 +4117,9 @@ definitions:
       enable_return_data:
         type: boolean
         title: enable return data capture
+      tracer_json_config:
+        type: string
+        title: tracer config
     description: TraceConfig holds extra parameters to trace functions.
   google.protobuf.Any:
     type: object
