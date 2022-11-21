@@ -222,7 +222,19 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			},
 			accountNumber: 25,
 			sequence:      78,
-			expectSuccess: false, // Multiple messages are currently not allowed
+			expectSuccess: false,
+		},
+		{
+			title: "Fails - Empty transaction",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo:          "",
+			msgs:          []sdk.Msg{},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: false,
 		},
 		{
 			title: "Fails - Single-Signer MsgSend + MsgVote",
