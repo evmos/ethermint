@@ -101,7 +101,7 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		return ctx, sdkerrors.Wrap(err, "tx basic validation failed")
 	}
 
-	// For eth type cosmos tx, some fields should be veified as zero values,
+	// For eth type cosmos tx, some fields should be verified as zero values,
 	// since we will only verify the signature against the hash of the MsgEthereumTx.Data
 	wrapperTx, ok := tx.(protoTxProvider)
 	if !ok {
@@ -117,6 +117,20 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 
 	if len(body.ExtensionOptions) != 1 {
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx length of ExtensionOptions should be 1")
+	}
+
+	authInfo := protoTx.AuthInfo
+	if len(authInfo.SignerInfos) > 0 {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo SignerInfos should be empty")
+	}
+
+	if authInfo.Fee.Payer != "" || authInfo.Fee.Granter != "" {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo Fee payer and granter should be empty")
+	}
+
+	sigs := protoTx.Signatures
+	if len(sigs) > 0 {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx Signatures should be empty")
 	}
 
 	txFee := sdk.Coins{}
@@ -159,16 +173,7 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 			return ctx, sdkerrors.Wrap(ethtypes.ErrTxTypeNotSupported, "dynamic fee tx not supported")
 		}
 
-		txFee = txFee.Add(sdk.NewCoin(evmDenom, sdkmath.NewIntFromBigInt(txData.Fee())))
-	}
-
-	authInfo := protoTx.AuthInfo
-	if len(authInfo.SignerInfos) > 0 {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo SignerInfos should be empty")
-	}
-
-	if authInfo.Fee.Payer != "" || authInfo.Fee.Granter != "" {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx AuthInfo Fee payer and granter should be empty")
+		txFee = txFee.Add(sdk.Coin{Denom: evmDenom, Amount: sdkmath.NewIntFromBigInt(txData.Fee())})
 	}
 
 	if !authInfo.Fee.Amount.IsEqual(txFee) {
@@ -177,11 +182,6 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 
 	if authInfo.Fee.GasLimit != txGasLimit {
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid AuthInfo Fee GasLimit (%d != %d)", authInfo.Fee.GasLimit, txGasLimit)
-	}
-
-	sigs := protoTx.Signatures
-	if len(sigs) > 0 {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "for eth tx Signatures should be empty")
 	}
 
 	return next(ctx, tx, simulate)
