@@ -1,6 +1,8 @@
 package ante
 
 import (
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -22,31 +24,41 @@ func NewEthMempoolFeeDecorator(ek EVMKeeper) EthMempoolFeeDecorator {
 	}
 }
 
-// AnteHandle ensures that the provided fees meet a minimum threshold for the validator,
-// if this is a CheckTx. This is only for local mempool purposes, and thus
-// is only ran on check tx.
-// It only do the check if london hardfork not enabled or feemarket not enabled, because in that case feemarket will take over the task.
+// AnteHandle ensures that the provided fees meet a minimum threshold for the validator.
+// This check only for local mempool purposes, and thus it is only run on (Re)CheckTx.
+// The logic is also skipped if the London hard fork and EIP-1559 are enabled.
 func (mfd EthMempoolFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	if ctx.IsCheckTx() && !simulate {
-		chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
-		ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
-		baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
-		evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
+	if !ctx.IsCheckTx() || simulate {
+		return next(ctx, tx, simulate)
+	}
+	chainCfg := mfd.evmKeeper.GetChainConfig(ctx)
+	ethCfg := chainCfg.EthereumConfig(mfd.evmKeeper.ChainID())
 
-		if baseFee == nil {
-			for _, msg := range tx.GetMsgs() {
-				ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-				if !ok {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
-				}
+	baseFee := mfd.evmKeeper.GetBaseFee(ctx, ethCfg)
+	// skip check as the London hard fork and EIP-1559 are enabled
+	if baseFee != nil {
+		return next(ctx, tx, simulate)
+	}
 
-				feeAmt := ethMsg.GetFee()
-				glDec := sdk.NewDec(int64(ethMsg.GetGas()))
-				requiredFee := ctx.MinGasPrices().AmountOf(evmDenom).Mul(glDec)
-				if sdk.NewDecFromBigInt(feeAmt).LT(requiredFee) {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; got: %s required: %s", feeAmt, requiredFee)
-				}
-			}
+	evmDenom := mfd.evmKeeper.GetEVMDenom(ctx)
+	minGasPrice := ctx.MinGasPrices().AmountOf(evmDenom)
+
+	for _, msg := range tx.GetMsgs() {
+		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+		if !ok {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
+		}
+
+		fee := sdk.NewDecFromBigInt(ethMsg.GetFee())
+		gasLimit := sdk.NewDecFromBigInt(new(big.Int).SetUint64(ethMsg.GetGas()))
+		requiredFee := minGasPrice.Mul(gasLimit)
+
+		if fee.LT(requiredFee) {
+			return ctx, sdkerrors.Wrapf(
+				sdkerrors.ErrInsufficientFee,
+				"insufficient fees; got: %s required: %s",
+				fee, requiredFee,
+			)
 		}
 	}
 
