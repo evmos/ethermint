@@ -94,8 +94,8 @@ schema = 3
     version = "v1.0.4"
     hash = "sha256-JvcBXBdjdmnaW/nyf/tw/uaOAGn1b78yxrtl2/Rs3kA="
   [mod."github.com/cosmos/cosmos-proto"]
-    version = "v1.0.0-alpha7"
-    hash = "sha256-2wCH+toTF2A6MfFjOa13muEH5oBCcxAhZEqirNOrBA0="
+    version = "v1.0.0-alpha8"
+    hash = "sha256-iXzXoS5Kfh5DBy+PhdFWraDWXda/3M4j7j4VECjv4CA="
   [mod."github.com/cosmos/cosmos-sdk"]
     version = "v0.46.5-0.20221114064055-2114ec42dfa1"
     hash = "sha256-swqznmZfl2dlj/8ReJJs0zagFN2xpzF2ehsfVvPbohc="
