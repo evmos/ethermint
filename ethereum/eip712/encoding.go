@@ -203,7 +203,7 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 		signerInfo.Sequence,
 		body.TimeoutHeight,
 		*stdFee,
-		[]sdk.Msg{msg},
+		msgs,
 		body.Memo,
 		tip,
 	)
