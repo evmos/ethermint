@@ -1,9 +1,31 @@
 package types
 
 import (
+	math "math"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
+
+// GetTxPriority returns the priority of a given Ethereum tx.
+func GetTxPriority(txData TxData, baseFee *big.Int) (priority int64) {
+	// calculate priority based on effective gas price
+	tipPrice := txData.EffectiveGasPrice(baseFee)
+	// if london hardfork is not enabled, tipPrice is the gasPrice
+	if baseFee != nil {
+		tipPrice = new(big.Int).Sub(tipPrice, baseFee)
+	}
+
+	priorityBig := new(big.Int).Quo(tipPrice, DefaultPriorityReduction.BigInt())
+	if !priorityBig.IsInt64() {
+		priority = math.MaxInt64
+	} else {
+		priority = priorityBig.Int64()
+	}
+
+	return priority
+}
 
 // Failed returns if the contract execution failed in vm errors
 func (m *MsgEthereumTxResponse) Failed() bool {
