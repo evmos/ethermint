@@ -296,7 +296,7 @@ func (k *Keeper) GetNonce(ctx sdk.Context, addr common.Address) uint64 {
 // GetBalance load account's balance of gas token
 func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
-	evmDenom := k.GetParams(ctx).EvmDenom
+	evmDenom := k.GetEVMDenom(ctx)
 	// if node is pruned, params is empty. Return invalid value
 	if evmDenom == "" {
 		return big.NewInt(-1)
