@@ -87,6 +87,7 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	ethermint "github.com/evmos/ethermint/types"
 
 	"github.com/cosmos/ibc-go/v6/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
@@ -102,7 +103,6 @@ import (
 
 	"github.com/evmos/ethermint/app/ante"
 	srvflags "github.com/evmos/ethermint/server/flags"
-	ethermint "github.com/evmos/ethermint/types"
 	"github.com/evmos/ethermint/x/evm"
 	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -263,6 +263,19 @@ func NewEthermintApp(
 	appCodec := encodingConfig.Codec
 	legacyAmino := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
+
+	// TODO: probably want to handle the actual feemarket priority in here.
+	var (
+		simpleMempool = ethermint.NewNonceMempool()
+		mempoolOpt    = baseapp.SetMempool(simpleMempool)
+		prepareOpt    = func(app *baseapp.BaseApp) {
+			app.SetPrepareProposal(app.DefaultPrepareProposal())
+		}
+		processOpt = func(app *baseapp.BaseApp) {
+			app.SetProcessProposal(app.DefaultProcessProposal())
+		}
+	)
+	baseAppOptions = append(baseAppOptions, mempoolOpt, prepareOpt, processOpt)
 
 	// NOTE we use custom transaction decoder that supports the sdk.Tx interface instead of sdk.StdTx
 	bApp := baseapp.NewBaseApp(
