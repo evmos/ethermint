@@ -387,7 +387,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 					from, grantee, &banktypes.SendAuthorization{SpendLimit: gasAmount}, &expiresAt,
 				)
 				suite.Require().NoError(err)
-				return suite.CreateTestSingleMessageEIP712TxBuilder(from, privKey, "ethermint_9000-1", gas, gasAmount, msg).GetTx()
+				return suite.CreateTestEIP712SingleMessageTxBuilder(from, privKey, "ethermint_9000-1", gas, gasAmount, msg).GetTx()
 			}, false, false, true,
 		},
 
