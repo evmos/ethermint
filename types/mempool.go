@@ -56,7 +56,7 @@ func txKeyLessNonce(a, b any) int {
 }
 
 // NewNonceMempool creates a new mempool that prioritizes transactions by nonce, the lowest first.
-func NewSimpleMempool() mempool.Mempool {
+func NewNonceMempool() mempool.Mempool {
 	sp := &nonceMempool{
 		txQueue: huandu.New(huandu.LessThanFunc(txKeyLessNonce)),
 	}
@@ -83,7 +83,6 @@ func (sp nonceMempool) Insert(_ sdk.Context, tx sdk.Tx) error {
 			switch typeURL := opts[0].GetTypeUrl(); typeURL {
 			case "/ethermint.evm.v1.ExtensionOptionsEthereumTx":
 				fmt.Println("ETH TX")
-				break
 			default:
 				fmt.Println("NON ETH TX")
 				if len(sigs) == 0 {
