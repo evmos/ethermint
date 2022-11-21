@@ -93,6 +93,9 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 		signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 	}
 
+	// Fixed test address
+	testAddress := suite.createTestAddress()
+
 	testCases := []struct {
 		title         string
 		chainId       string
@@ -176,7 +179,30 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: true,
 		},
 		{
-			title: "Fails - Two MsgVotes",
+			title: "Succeeds - Two Single-Signer MsgDelegate",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				stakingtypes.NewMsgDelegate(
+					testAddress,
+					sdk.ValAddress(suite.createTestAddress()),
+					suite.makeCoins("photon", math.NewInt(1))[0],
+				),
+				stakingtypes.NewMsgDelegate(
+					testAddress,
+					sdk.ValAddress(suite.createTestAddress()),
+					suite.makeCoins("photon", math.NewInt(5))[0],
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: true,
+		},
+		{
+			title: "Fails - Two MsgVotes with Different Signers",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -199,7 +225,7 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: false, // Multiple messages are currently not allowed
 		},
 		{
-			title: "Fails - MsgSend + MsgVote",
+			title: "Fails - Single-Signer MsgSend + MsgVote",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -207,12 +233,12 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			memo: "",
 			msgs: []sdk.Msg{
 				govtypes.NewMsgVote(
-					suite.createTestAddress(),
+					testAddress,
 					5,
 					govtypes.OptionNo,
 				),
 				banktypes.NewMsgSend(
-					suite.createTestAddress(),
+					testAddress,
 					suite.createTestAddress(),
 					suite.makeCoins("photon", math.NewInt(50)),
 				),

@@ -1,13 +1,15 @@
 package eip712
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
 
 	apitypes "github.com/ethereum/go-ethereum/signer/core/apitypes"
@@ -17,8 +19,8 @@ import (
 )
 
 var (
-	ethermintProtoCodec codec.ProtoCodecMarshaler
-	ethermintAminoCodec *codec.LegacyAmino
+	protoCodec codec.ProtoCodecMarshaler
+	aminoCodec *codec.LegacyAmino
 )
 
 // SetEncodingConfig set the encoding config to the singleton codecs (Amino and Protobuf).
@@ -26,8 +28,8 @@ var (
 // populated with all relevant message types. As a result, we must call this method on app
 // initialization with the app's encoding config.
 func SetEncodingConfig(cfg params.EncodingConfig) {
-	ethermintAminoCodec = cfg.Amino
-	ethermintProtoCodec = codec.NewProtoCodec(cfg.InterfaceRegistry)
+	aminoCodec = cfg.Amino
+	protoCodec = codec.NewProtoCodec(cfg.InterfaceRegistry)
 }
 
 // Get the EIP-712 object hash for the given SignDoc bytes by first decoding the bytes into
@@ -59,67 +61,69 @@ func GetEIP712TypedDataForMsg(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Attempt to decode as both Amino and Protobuf since the message format is unknown.
 	// If either decode works, we can move forward with the corresponding typed data.
 	typedDataAmino, errAmino := decodeAminoSignDoc(signDocBytes)
-	if errAmino == nil && verifyEIP712Payload(typedDataAmino) {
+	if errAmino == nil && isValidEIP712Payload(typedDataAmino) {
 		return typedDataAmino, nil
 	}
 	typedDataProtobuf, errProtobuf := decodeProtobufSignDoc(signDocBytes)
-	if errProtobuf == nil && verifyEIP712Payload(typedDataProtobuf) {
+	if errProtobuf == nil && isValidEIP712Payload(typedDataProtobuf) {
 		return typedDataProtobuf, nil
 	}
 
-	return apitypes.TypedData{}, fmt.Errorf("could not decode sign doc as either Amino or Protobuf. amino: %v protobuf: %v", errAmino, errProtobuf)
+	return apitypes.TypedData{}, fmt.Errorf("could not decode sign doc as either Amino or Protobuf.\n amino: %v\n protobuf: %v", errAmino, errProtobuf)
 }
 
-// verifyEIP712Payload ensures that the given TypedData does not contain empty fields from
+// isValidEIP712Payload ensures that the given TypedData does not contain empty fields from
 // an improper initialization.
-func verifyEIP712Payload(typedData apitypes.TypedData) bool {
+func isValidEIP712Payload(typedData apitypes.TypedData) bool {
 	return len(typedData.Message) != 0 && len(typedData.Types) != 0 && typedData.PrimaryType != "" && typedData.Domain != apitypes.TypedDataDomain{}
 }
 
-// Attempt to decode the SignDoc bytes as an Amino SignDoc and return an error on failure
+// decodeAminoSignDoc attempts to decode the provided sign doc (bytes) as an Amino payload
+// and returns a signable EIP-712 TypedData object.
 func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	var aminoDoc legacytx.StdSignDoc
-
-	if err := ethermintAminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc); err != nil {
+	if err := aminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
-	// Unwrap fees
 	var fees legacytx.StdFee
-	if err := ethermintAminoCodec.UnmarshalJSON(aminoDoc.Fee, &fees); err != nil {
+	if err := aminoCodec.UnmarshalJSON(aminoDoc.Fee, &fees); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
-	if len(aminoDoc.Msgs) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages in SignDoc, expected 1 but got %v", len(aminoDoc.Msgs))
+	// Validate payload messages
+	var msgs []sdk.Msg
+	for _, jsonMsg := range aminoDoc.Msgs {
+		var m sdk.Msg
+		if err := aminoCodec.UnmarshalJSON(jsonMsg, &m); err != nil {
+			return apitypes.TypedData{}, fmt.Errorf("failed to unmarshal sign doc message: %w", err)
+		}
+		msgs = append(msgs, m)
 	}
 
-	var msg cosmosTypes.Msg
-	if err := ethermintAminoCodec.UnmarshalJSON(aminoDoc.Msgs[0], &msg); err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("failed to unmarshal first message: %w", err)
+	if err := validatePayloadMessages(msgs); err != nil {
+		return apitypes.TypedData{}, err
 	}
 
-	// By default, use first address in list of signers to cover fee
-	// Currently, support only one signer
-	if len(msg.GetSigners()) != 1 {
-		return apitypes.TypedData{}, errors.New("expected exactly one signer for message")
-	}
+	// Use first message for fee payer and type inference
+	msg := msgs[0]
+
+	// By convention, the fee payer is the first address in the list of signers.
 	feePayer := msg.GetSigners()[0]
 	feeDelegation := &FeeDelegationOptions{
 		FeePayer: feePayer,
 	}
 
-	// Parse ChainID
 	chainID, err := ethermint.ParseChainID(aminoDoc.ChainID)
 	if err != nil {
 		return apitypes.TypedData{}, errors.New("invalid chain ID passed as argument")
 	}
 
 	typedData, err := WrapTxToTypedData(
-		ethermintProtoCodec,
+		protoCodec,
 		chainID.Uint64(),
 		msg,
-		signDocBytes, // Amino StdSignDocBytes
+		signDocBytes,
 		feeDelegation,
 	)
 	if err != nil {
@@ -129,21 +133,19 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	return typedData, nil
 }
 
-// Attempt to decode the SignDoc bytes as a Protobuf SignDoc and return an error on failure
+// decodeProtobufSignDoc attempts to decode the provided sign doc (bytes) as a Protobuf payload
+// and returns a signable EIP-712 TypedData object.
 func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
-	// Decode sign doc
 	signDoc := &txTypes.SignDoc{}
 	if err := signDoc.Unmarshal(signDocBytes); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
-	// Decode auth info
 	authInfo := &txTypes.AuthInfo{}
 	if err := authInfo.Unmarshal(signDoc.AuthInfoBytes); err != nil {
 		return apitypes.TypedData{}, err
 	}
 
-	// Decode body
 	body := &txTypes.TxBody{}
 	if err := body.Unmarshal(signDoc.BodyBytes); err != nil {
 		return apitypes.TypedData{}, err
@@ -154,60 +156,60 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 		return apitypes.TypedData{}, errors.New("body contains unsupported fields: TimeoutHeight, ExtensionOptions, or NonCriticalExtensionOptions")
 	}
 
-	// Verify single message
-	if len(body.Messages) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of messages, expected 1 got %v", len(body.Messages))
+	if len(authInfo.SignerInfos) != 1 {
+		return apitypes.TypedData{}, fmt.Errorf("invalid number of signer infos provided, expected 1 got %v", len(authInfo.SignerInfos))
 	}
 
-	// Decode signer info (single signer for now)
+	// Validate payload messages
+	var msgs []sdk.Msg
+	for _, protoMsg := range body.Messages {
+		var m sdk.Msg
+		if err := protoCodec.UnpackAny(protoMsg, &m); err != nil {
+			return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w", err)
+		}
+		msgs = append(msgs, m)
+	}
+
+	if err := validatePayloadMessages(msgs); err != nil {
+		return apitypes.TypedData{}, err
+	}
+
+	// Use first message for fee payer and type inference
+	msg := msgs[0]
+
 	signerInfo := authInfo.SignerInfos[0]
 
-	// Parse ChainID
 	chainID, err := ethermint.ParseChainID(signDoc.ChainId)
 	if err != nil {
 		return apitypes.TypedData{}, fmt.Errorf("invalid chain ID passed as argument: %w", err)
 	}
 
-	// Create StdFee
 	stdFee := &legacytx.StdFee{
 		Amount: authInfo.Fee.Amount,
 		Gas:    authInfo.Fee.GasLimit,
 	}
 
-	// Parse Message (single message only)
-	var msg cosmosTypes.Msg
-	if err := ethermintProtoCodec.UnpackAny(body.Messages[0], &msg); err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w", err)
-	}
-
-	// Verify single signer (single signer for now)
-	if len(msg.GetSigners()) != 1 {
-		return apitypes.TypedData{}, fmt.Errorf("invalid number of signers, expected 1 got %v", len(authInfo.SignerInfos))
-	}
-
-	// Init fee payer
 	feePayer := msg.GetSigners()[0]
 	feeDelegation := &FeeDelegationOptions{
 		FeePayer: feePayer,
 	}
 
-	// Get tip
 	tip := authInfo.Tip
 
-	// Create Legacy SignBytes (expected type for WrapTxToTypedData)
+	// WrapTxToTypedData expects the payload as an Amino Sign Doc
 	signBytes := legacytx.StdSignBytes(
 		signDoc.ChainId,
 		signDoc.AccountNumber,
 		signerInfo.Sequence,
 		body.TimeoutHeight,
 		*stdFee,
-		[]cosmosTypes.Msg{msg},
+		[]sdk.Msg{msg},
 		body.Memo,
 		tip,
 	)
 
 	typedData, err := WrapTxToTypedData(
-		ethermintProtoCodec,
+		protoCodec,
 		chainID.Uint64(),
 		msg,
 		signBytes,
@@ -218,4 +220,68 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	}
 
 	return typedData, nil
+}
+
+// validatePayloadMessages ensures that the transaction messages can be represented in an EIP-712
+// encoding by checking that messages exist, are of the same type, and share a single signer.
+func validatePayloadMessages(msgs []sdk.Msg) error {
+	if len(msgs) == 0 {
+		return errors.New("unable to build EIP-712 payload: transaction does contain any messages")
+	}
+
+	var msgType string
+	var msgSigner sdk.AccAddress
+
+	for i, m := range msgs {
+		t, err := getMsgType(m)
+		if err != nil {
+			return err
+		}
+
+		if len(m.GetSigners()) != 1 {
+			return errors.New("unable to build EIP-712 payload: expect exactly 1 signer")
+		}
+
+		if i == 0 {
+			msgType = t
+			msgSigner = m.GetSigners()[0]
+			continue
+		}
+
+		if strings.Compare(t, msgType) != 0 {
+			return errors.New("unable to build EIP-712 payload: different types of messages detected")
+		}
+
+		if !msgSigner.Equals(m.GetSigners()[0]) {
+			return errors.New("unable to build EIP-712 payload: multiple signers detected")
+		}
+	}
+
+	return nil
+}
+
+type aminoMessage struct {
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}
+
+// getMsgType returns the message type prefix for the given Cosmos SDK Msg
+func getMsgType(msg sdk.Msg) (string, error) {
+	jsonBytes, err := aminoCodec.MarshalJSON(msg)
+	if err != nil {
+		return "", err
+	}
+
+	var jsonMsg aminoMessage
+	err = json.Unmarshal(jsonBytes, &jsonMsg)
+	if err != nil {
+		return "", err
+	}
+
+	// Verify Type was successfully filled in
+	if jsonMsg.Type == "" {
+		return "", errors.New("could not decode message: type is missing")
+	}
+
+	return jsonMsg.Type, nil
 }
