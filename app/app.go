@@ -266,7 +266,7 @@ func NewEthermintApp(
 
 	// TODO: probably want to handle the actual feemarket priority in here.
 	var (
-		simpleMempool = ethermint.NewNonceMempool()
+		simpleMempool = ethermint.NewSimpleMempool()
 		mempoolOpt    = baseapp.SetMempool(simpleMempool)
 		prepareOpt    = func(app *baseapp.BaseApp) {
 			app.SetPrepareProposal(app.DefaultPrepareProposal())
