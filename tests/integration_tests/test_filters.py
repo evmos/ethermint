@@ -126,70 +126,70 @@ def test_multiple_filters(cluster):
     # another topic not related to the contract deployed
     another_topic = TRANSFER_TOPIC
 
-    test_cases = [
+    filters = [
         {
-            "name": "register multiple filters and check for updates",
-            "filters": [
-                {
-                    "params": {"address": contract.address},
-                    "exp_len": 1,
-                },
-                {
-                    "params": {"topics": [topic.hex()]},
-                    "exp_len": 1,
-                },
-                {
-                    "params": {
-                        "topics": [
-                            topic.hex(),
-                            another_topic.hex(),
-                        ],  # 'with all topics' condition
-                    },
-                    "exp_len": 0,
-                },
-                {
-                    "params": {
-                        "topics": [
-                            [topic.hex(), another_topic.hex()]
-                        ],  # 'with any topic' condition
-                    },
-                    "exp_len": 1,
-                },
-                {
-                    "params": {
-                        "address": contract.address,
-                        "topics": [[topic.hex(), another_topic.hex()]],
-                    },
-                    "exp_len": 1,
-                },
-                {
-                    "params": {
-                        "fromBlock": 1,
-                        "toBlock": 2,
-                        "address": contract.address,
-                        "topics": [[topic.hex(), another_topic.hex()]],
-                    },
-                    "exp_len": 0,
-                },
-                {
-                    "params": {
-                        "fromBlock": 1,
-                        "toBlock": "latest",
-                        "address": contract.address,
-                        "topics": [[topic.hex(), another_topic.hex()]],
-                    },
-                    "exp_len": 1,
-                },
-            ],
+            "params": {"address": contract.address},
+            "exp_len": 1,
         },
-        # {
-        #     "name": "register some filters, then remove the last filter and check for updates again",
-        #     "filters": [],
-        # },
+        {
+            "params": {"topics": [topic.hex()]},
+            "exp_len": 1,
+        },
+        {
+            "params": {
+                "topics": [
+                    topic.hex(),
+                    another_topic.hex(),
+                ],  # 'with all topics' condition
+            },
+            "exp_len": 0,
+        },
+        {
+            "params": {
+                "topics": [
+                    [topic.hex(), another_topic.hex()]
+                ],  # 'with any topic' condition
+            },
+            "exp_len": 1,
+        },
+        {
+            "params": {
+                "address": contract.address,
+                "topics": [[topic.hex(), another_topic.hex()]],
+            },
+            "exp_len": 1,
+        },
+        {
+            "params": {
+                "fromBlock": 1,
+                "toBlock": 2,
+                "address": contract.address,
+                "topics": [[topic.hex(), another_topic.hex()]],
+            },
+            "exp_len": 0,
+        },
+        {
+            "params": {
+                "fromBlock": 1,
+                "toBlock": "latest",
+                "address": contract.address,
+                "topics": [[topic.hex(), another_topic.hex()]],
+            },
+            "exp_len": 1,
+        },
+    ]
+
+    test_cases = [
+        {"name": "register multiple filters and check for updates", "filters": filters},
         {
             "name": "register more filters than allowed (default: 200) - should get error",
             "register_err": "error creating filter: max limit reached",
             "filters": make_filter_array(205),
+        },
+        {
+            "name": "register some filters, then remove 2 filters and check for updates",
+            "filters": filters,
+            "rm_filters_post_tx": 2,
         },
     ]
 
@@ -202,15 +202,16 @@ def test_multiple_filters(cluster):
             for flt in tc["filters"]:
                 fltrs.append(w3.eth.filter(flt["params"]))
         except Exception as err:
-            if tc["register_err"] is None:
+            if "register_err" in tc:
+                # if exception was expected when registering filters
+                # the test is finished
+                assert tc["register_err"] in str(err)
+                # remove the registered filters
+                remove_filters(w3, fltrs, 300)
+                continue
+            else:
                 print(f"Unexpected {err=}, {type(err)=}")
                 raise
-
-            # if exception was expected when registering filters
-            # the test is finished
-            else:
-                assert tc["register_err"] in str(err)
-                continue
 
         # without tx: filters should not return any entries
         for flt in fltrs:
@@ -223,8 +224,23 @@ def test_multiple_filters(cluster):
 
         tx_block_num = w3.eth.block_number
 
+        if "rm_filters_post_tx" in tc:
+            # remove the filters
+            remove_filters(w3, fltrs, tc["rm_filters_post_tx"])
+
         for i, flt in enumerate(fltrs):
-            new_entries = flt.get_new_entries()  # GetFilterChanges
+            # if filters were removed, should get a 'filter not found' error
+            try:
+                new_entries = flt.get_new_entries()  # GetFilterChanges
+            except Exception as err:
+                if "rm_filters_post_tx" in tc and i < tc["rm_filters_post_tx"]:
+                    assert_no_filter_err(flt, err)
+                    # filter was removed and error checked. Continue to next filter
+                    continue
+                else:
+                    print(f"Unexpected {err=}, {type(err)=}")
+                    raise
+
             assert len(new_entries) == tc["filters"][i]["exp_len"]
 
             if tc["filters"][i]["exp_len"] == 1:
@@ -237,8 +253,22 @@ def test_multiple_filters(cluster):
 
         # on next call of GetFilterChanges, no entries should be found
         # because there were no new logs that meet the filters params
-        for flt in fltrs:
-            assert flt.get_new_entries() == []  # GetFilterChanges
+        for i, flt in enumerate(fltrs):
+            # if filters were removed, should get a 'filter not found' error
+            try:
+                assert flt.get_new_entries() == []  # GetFilterChanges
+            except Exception as err:
+                if "rm_filters_post_tx" in tc and i < tc["rm_filters_post_tx"]:
+                    assert_no_filter_err(flt, err)
+                    continue
+                else:
+                    print(f"Unexpected {err=}, {type(err)=}")
+                    raise
+            # remove the filters added on this test
+            # because the node is not reseted for each test
+            # otherwise may get a max-limit error for registering
+            # new filters
+            w3.eth.uninstall_filter(flt.filter_id)
 
 
 def test_get_logs(cluster):
@@ -351,6 +381,11 @@ def test_get_logs(cluster):
             assert found_log == True
 
 
+#################################################
+# Helper functions to assert logs information
+#################################################
+
+
 def assert_log_topics(log, topics):
     assert len(log["topics"]) == len(topics)
     assert log["topics"] == topics
@@ -383,6 +418,17 @@ def assert_change_greet_log_data(log, new_greeting):
     assert log_data["value"] == new_greeting
 
 
+def assert_no_filter_err(flt, err):
+    msg_without_id = "filter not found" in str(err)
+    msg_with_id = f"filter {flt.filter_id} not found" in str(err)
+    assert msg_without_id or msg_with_id == True
+
+
+#################################################
+# Helper functions to add/remove filters
+#################################################
+
+
 def make_filter_array(array_len):
     filters = []
     for _ in range(array_len):
@@ -393,3 +439,14 @@ def make_filter_array(array_len):
             },
         )
     return filters
+
+
+# removes the number of filters defined in 'count' argument, starting from index 0
+def remove_filters(w3, filters, count):
+    # if number of filters to remove exceeds the amount of filters passed
+    # update the 'count' to the length of the filters array
+    if count > len(filters):
+        count = len(filters)
+
+    for i in range(count):
+        assert w3.eth.uninstall_filter(filters[i].filter_id)
