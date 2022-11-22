@@ -1,6 +1,6 @@
 import pytest
-from web3 import Web3
 from eth_abi import abi
+from web3 import Web3
 
 from .utils import (
     ADDRS,
