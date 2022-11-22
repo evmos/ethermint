@@ -177,6 +177,14 @@ def test_multiple_filters(cluster):
             },
             "exp_len": 1,
         },
+        {
+            "params": {
+                "fromBlock": 1,
+                "toBlock": "latest",
+                "topics": [[topic.hex(), another_topic.hex()]],
+            },
+            "exp_len": 1,
+        },
     ]
 
     test_cases = [
@@ -269,6 +277,88 @@ def test_multiple_filters(cluster):
             # otherwise may get a max-limit error for registering
             # new filters
             w3.eth.uninstall_filter(flt.filter_id)
+
+
+def test_register_filters_before_contract_deploy(cluster):
+    w3: Web3 = cluster.w3
+
+    new_greeting = "hello, world"
+
+    # calculate topic from event signature
+    topic = CHANGE_GREETING_TOPIC
+    # another topic not related to the contract deployed
+    another_topic = TRANSFER_TOPIC
+
+    filters = [
+        {
+            "params": {"topics": [topic.hex()]},
+            "exp_len": 1,
+        },
+        {
+            "params": {
+                "topics": [
+                    topic.hex(),
+                    another_topic.hex(),
+                ],  # 'with all topics' condition
+            },
+            "exp_len": 0,
+        },
+        {
+            "params": {
+                "topics": [
+                    [topic.hex(), another_topic.hex()]
+                ],  # 'with any topic' condition
+            },
+            "exp_len": 1,
+        },
+        {
+            "params": {
+                "fromBlock": 1,
+                "toBlock": "latest",
+                "topics": [[topic.hex(), another_topic.hex()]],
+            },
+            "exp_len": 1,
+        },
+    ]
+
+    # register the filters
+    fltrs = []
+    for flt in filters:
+        fltrs.append(w3.eth.filter(flt["params"]))
+
+    # deploy contract
+    contract, _ = deploy_contract(w3, CONTRACTS["Greeter"])
+    # test the contract was deployed successfully
+    assert contract.caller.greet() == "Hello"
+
+    # without tx: filters should not return any entries
+    for flt in fltrs:
+        assert flt.get_new_entries() == []  # GetFilterChanges
+
+    # perform tx to call contract that emits event
+    tx = contract.functions.setGreeting(new_greeting).build_transaction()
+    receipt = send_transaction(w3, tx)
+    assert receipt.status == 1
+
+    tx_block_num = w3.eth.block_number
+
+    for i, flt in enumerate(fltrs):
+        new_entries = flt.get_new_entries()  # GetFilterChanges
+        assert len(new_entries) == filters[i]["exp_len"]
+
+        if filters[i]["exp_len"] == 1:
+            # check if the new_entries have valid information
+            log = new_entries[0]
+            assert log["address"] == contract.address
+            assert_log_topics(log, [topic])
+            assert_log_block(w3, log, tx_block_num)
+            assert_change_greet_log_data(log, new_greeting)
+
+    # on next call of GetFilterChanges, no entries should be found
+    # because there were no new logs that meet the filters params
+    for i, flt in enumerate(fltrs):
+        assert flt.get_new_entries() == []  # GetFilterChanges
+        w3.eth.uninstall_filter(flt.filter_id)
 
 
 def test_get_logs(cluster):
