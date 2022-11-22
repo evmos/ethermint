@@ -255,7 +255,7 @@ def test_multiple_filters(cluster):
                 # check if the new_entries have valid information
                 log = new_entries[0]
                 assert log["address"] == contract.address
-                assert_log_topics(log, [topic])
+                assert log["topics"] == [topic]
                 assert_log_block(w3, log, tx_block_num)
                 assert_change_greet_log_data(log, new_greeting)
 
@@ -350,7 +350,7 @@ def test_register_filters_before_contract_deploy(cluster):
             # check if the new_entries have valid information
             log = new_entries[0]
             assert log["address"] == contract.address
-            assert_log_topics(log, [topic])
+            assert log["topics"] == [topic]
             assert_log_block(w3, log, tx_block_num)
             assert_change_greet_log_data(log, new_greeting)
 
@@ -464,7 +464,7 @@ def test_get_logs(cluster):
 
                     found_log = True
 
-                    assert_log_topics(log, [topic])
+                    assert log["topics"] == [topic]
                     assert_log_block(w3, log, tx_block_num)
                     assert_change_greet_log_data(log, new_greeting)
 
@@ -474,12 +474,6 @@ def test_get_logs(cluster):
 #################################################
 # Helper functions to assert logs information
 #################################################
-
-
-def assert_log_topics(log, topics):
-    assert len(log["topics"]) == len(topics)
-    assert log["topics"] == topics
-
 
 def assert_log_block(w3, log, tx_block_num):
     block_hash = log["blockHash"]
