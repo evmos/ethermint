@@ -182,12 +182,12 @@ def test_multiple_filters(cluster):
     test_cases = [
         {"name": "register multiple filters and check for updates", "filters": filters},
         {
-            "name": "register more filters than allowed (default: 200) - should get error",
+            "name": "register more filters than allowed (default: 200)",
             "register_err": "error creating filter: max limit reached",
             "filters": make_filter_array(205),
         },
         {
-            "name": "register some filters, then remove 2 filters and check for updates",
+            "name": "register some filters, remove 2 filters and check for updates",
             "filters": filters,
             "rm_filters_post_tx": 2,
         },
@@ -303,7 +303,7 @@ def test_get_logs(cluster):
             "name": "get logs by block range - tx block number is within the range",
             "logs": w3.eth.get_logs({"fromBlock": 1, "toBlock": tx_block_num}),
             "exp_log": True,
-            "exp_len": None,  # there are other events not belonging to the contract within the block range specified
+            "exp_len": None,  # there are other events within the block range specified
         },
         {
             "name": "get logs by block range - tx block number outside the range",
@@ -370,7 +370,7 @@ def test_get_logs(cluster):
                     # this event was emitted only once
                     # so one log from this contract should exist
                     # we check the flag to know it is not repeated
-                    assert found_log == False
+                    assert found_log is False
 
                     found_log = True
 
@@ -378,7 +378,7 @@ def test_get_logs(cluster):
                     assert_log_block(w3, log, tx_block_num)
                     assert_change_greet_log_data(log, new_greeting)
 
-            assert found_log == True
+            assert found_log is True
 
 
 #################################################
@@ -421,7 +421,7 @@ def assert_change_greet_log_data(log, new_greeting):
 def assert_no_filter_err(flt, err):
     msg_without_id = "filter not found" in str(err)
     msg_with_id = f"filter {flt.filter_id} not found" in str(err)
-    assert msg_without_id or msg_with_id == True
+    assert msg_without_id or msg_with_id is True
 
 
 #################################################
