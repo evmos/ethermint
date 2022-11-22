@@ -1,9 +1,20 @@
 import sys
+from pathlib import Path
 
-from .network import Ethermint
+import pytest
+
+from .network import setup_custom_ethermint
 from .utils import ADDRS, KEYS, eth_to_bech32, sign_transaction, wait_for_new_blocks
 
 PRIORITY_REDUCTION = 1000000
+
+
+@pytest.fixture(scope="module")
+def ethermint(tmp_path_factory):
+    path = tmp_path_factory.mktemp("priority")
+    yield from setup_custom_ethermint(
+        path, 26200, Path(__file__).parent / "configs/long_timeout_commit.jsonnet"
+    )
 
 
 def effective_gas_price(tx, base_fee):
@@ -27,7 +38,7 @@ def tx_priority(tx, base_fee):
         return (tx["gasPrice"] - base_fee) // PRIORITY_REDUCTION
 
 
-def test_priority(ethermint: Ethermint):
+def test_priority(ethermint):
     """
     test priorities of different tx types
 
@@ -112,7 +123,7 @@ def test_priority(ethermint: Ethermint):
     assert all(i1 > i2 for i1, i2 in zip(tx_indexes, tx_indexes[1:]))
 
 
-def test_native_tx_priority(ethermint: Ethermint):
+def test_native_tx_priority(ethermint):
     cli = ethermint.cosmos_cli()
     base_fee = cli.query_base_fee()
     print("base_fee", base_fee)
