@@ -20,19 +20,10 @@ var (
 	AminoCdc = codec.NewAminoCodec(amino)
 )
 
-const (
-	// Amino names
-	clawback = "ethermint/MsgEthereumTx"
-)
-
 // NOTE: This is required for the GetSignBytes function
 func init() {
 	RegisterLegacyAminoCodec(amino)
 	amino.Seal()
-}
-
-func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(&MsgEthereumTx{}, clawback, nil)
 }
 
 // RegisterInterfaces registers the client interfaces to protobuf Any.

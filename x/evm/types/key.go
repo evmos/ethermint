@@ -39,7 +39,6 @@ const (
 var (
 	KeyPrefixCode    = []byte{prefixCode}
 	KeyPrefixStorage = []byte{prefixStorage}
-	KeyParams        = []byte{0x03}
 )
 
 // Transient Store key prefixes

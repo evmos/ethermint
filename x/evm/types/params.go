@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+
 	"github.com/ethereum/go-ethereum/params"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,6 +20,8 @@ var (
 	DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 	// DefaultAllowUnprotectedTxs rejects all unprotected txs (i.e false)
 	DefaultAllowUnprotectedTxs = false
+	// MsgEthTxAmino Amino name
+	MsgEthTxAmino = "ethermint/MsgEthereumTx"
 )
 
 // Parameter keys
@@ -128,4 +132,9 @@ func validateChainConfig(i interface{}) error {
 // IsLondon returns if london hardfork is enabled.
 func IsLondon(ethConfig *params.ChainConfig, height int64) bool {
 	return ethConfig.IsLondon(big.NewInt(height))
+}
+
+// RegisterLegacyAminoCodec registers the legacy amino codec for MsgEthereumTx
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&MsgEthereumTx{}, MsgEthTxAmino, nil)
 }

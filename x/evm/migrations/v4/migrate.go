@@ -5,6 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/evmos/ethermint/x/evm/exported"
 	"github.com/evmos/ethermint/x/evm/types"
+	gogotypes "github.com/gogo/protobuf/types"
 )
 
 // MigrateStore migrates the x/evm module state from the consensus version 3 to
@@ -23,8 +24,20 @@ func MigrateStore(
 		return err
 	}
 
-	bz := cdc.MustMarshal(&params)
-	store.Set(types.KeyParams, bz)
+	_ = cdc.MustMarshal(&params)
+	chainCfgBz := cdc.MustMarshal(&params.ChainConfig)
+	extraEIPsBz := cdc.MustMarshal(&params.ExtraEips)
+	evmDenomBz := cdc.MustMarshal(&gogotypes.StringValue{Value: params.EvmDenom})
+	allowUnprotectedTxsBz := cdc.MustMarshal(&gogotypes.BoolValue{Value: params.AllowUnprotectedTxs})
+	enableCallBz := cdc.MustMarshal(&gogotypes.BoolValue{Value: params.EnableCall})
+	enableCreateBz := cdc.MustMarshal(&gogotypes.BoolValue{Value: params.EnableCreate})
+
+	store.Set(types.ParamStoreKeyExtraEIPs, extraEIPsBz)
+	store.Set(types.ParamStoreKeyChainConfig, chainCfgBz)
+	store.Set(types.ParamStoreKeyEVMDenom, evmDenomBz)
+	store.Set(types.ParamStoreKeyAllowUnprotectedTxs, allowUnprotectedTxsBz)
+	store.Set(types.ParamStoreKeyEnableCall, enableCallBz)
+	store.Set(types.ParamStoreKeyEnableCreate, enableCreateBz)
 
 	return nil
 }
