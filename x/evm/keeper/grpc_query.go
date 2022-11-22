@@ -8,9 +8,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -223,8 +222,11 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-
-	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
+	chainID, err := getChainID(ctx, req.ChainId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress), chainID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -256,13 +258,17 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
+	chainID, err := getChainID(ctx, req.ChainId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
 	if req.GasCap < ethparams.TxGas {
 		return nil, status.Error(codes.InvalidArgument, "gas cap cannot be lower than 21,000")
 	}
 
 	var args types.TransactionArgs
-	err := json.Unmarshal(req.Args, &args)
+	err = json.Unmarshal(req.Args, &args)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -294,7 +300,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 		hi = req.GasCap
 	}
 	cap = hi
-	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress), chainID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to load evm config")
 	}
@@ -392,7 +398,11 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	ctx = ctx.WithBlockHeight(contextHeight)
 	ctx = ctx.WithBlockTime(req.BlockTime)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
+	chainID, err := getChainID(ctx, req.ChainId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress), chainID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to load evm config: %s", err.Error())
 	}
@@ -465,7 +475,12 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	ctx = ctx.WithBlockHeight(contextHeight)
 	ctx = ctx.WithBlockTime(req.BlockTime)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress))
+	chainID, err := getChainID(ctx, req.ChainId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress), chainID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to load evm config")
 	}
@@ -482,10 +497,10 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 		traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, signer, ethTx, req.TraceConfig, true, nil)
 		if err != nil {
 			result.Error = err.Error()
-			continue
+		} else {
+			txConfig.LogIndex = logIndex
+			result.Result = traceResult
 		}
-		txConfig.LogIndex = logIndex
-		result.Result = traceResult
 		results = append(results, &result)
 	}
 
@@ -601,4 +616,12 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 	}
 
 	return res, nil
+}
+
+// getChainID parse chainID from current context if not provided
+func getChainID(ctx sdk.Context, chainID int64) (*big.Int, error) {
+	if chainID == 0 {
+		return ethermint.ParseChainID(ctx.ChainID())
+	}
+	return big.NewInt(chainID), nil
 }
