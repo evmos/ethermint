@@ -1,6 +1,7 @@
 package v4_test
 
 import (
+	"github.com/evmos/ethermint/x/evm/types"
 	gogotypes "github.com/gogo/protobuf/types"
 	"testing"
 
@@ -15,15 +16,15 @@ import (
 )
 
 type mockSubspace struct {
-	ps v4types.Params
+	ps types.Params
 }
 
-func newMockSubspace(ps v4types.Params) mockSubspace {
+func newMockSubspace(ps types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
 func (ms mockSubspace) GetParams(ctx sdk.Context, ps exported.Params) {
-	*ps.(*v4types.Params) = ms.ps
+	*ps.(*types.Params) = ms.ps
 }
 
 func TestMigrate(t *testing.T) {
@@ -35,7 +36,7 @@ func TestMigrate(t *testing.T) {
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	store := ctx.KVStore(storeKey)
 
-	legacySubspace := newMockSubspace(v4types.DefaultParams())
+	legacySubspace := newMockSubspace(types.DefaultParams())
 	require.NoError(t, v4.MigrateStore(ctx, store, legacySubspace, cdc))
 
 	// Get all the new parameters from the store
@@ -55,14 +56,14 @@ func TestMigrate(t *testing.T) {
 	bz = store.Get(v4types.ParamStoreKeyEnableCall)
 	cdc.MustUnmarshal(bz, &enableCall)
 
-	var chainCfg v4types.ChainConfig
+	var chainCfg types.ChainConfig
 	bz = store.Get(v4types.ParamStoreKeyChainConfig)
 	cdc.MustUnmarshal(bz, &chainCfg)
 
-	var extraEIPs v4types.ExtraEIPs
+	var extraEIPs types.ExtraEIPs
 	bz = store.Get(v4types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(bz, &extraEIPs)
 
-	params := v4types.NewParams(evmDenom.Value, allowUnprotectedTx.Value, enableCreate.Value, enableCall.Value, chainCfg, extraEIPs)
+	params := types.NewParams(evmDenom.Value, allowUnprotectedTx.Value, enableCreate.Value, enableCall.Value, chainCfg, extraEIPs)
 	require.Equal(t, legacySubspace.ps, params)
 }

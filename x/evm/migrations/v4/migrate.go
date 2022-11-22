@@ -5,6 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/evmos/ethermint/x/evm/exported"
 	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
+	"github.com/evmos/ethermint/x/evm/types"
 	gogotypes "github.com/gogo/protobuf/types"
 )
 
@@ -17,13 +18,13 @@ func MigrateStore(
 	legacySubspace exported.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
-	var params v4types.Params
+	var params types.Params
 	legacySubspace.GetParams(ctx, &params)
 
 	if err := params.Validate(); err != nil {
 		return err
 	}
-	
+
 	chainCfgBz := cdc.MustMarshal(&params.ChainConfig)
 	extraEIPsBz := cdc.MustMarshal(&params.ExtraEips)
 	evmDenomBz := cdc.MustMarshal(&gogotypes.StringValue{Value: params.EvmDenom})
