@@ -27,6 +27,8 @@ ethermintd keys add $KEY --keyring-backend $KEYRING --algo $KEYALGO
 # Set moniker and chain-id for Ethermint (Moniker can be anything, chain-id must be an integer)
 ethermintd init $MONIKER --chain-id $CHAINID
 
+echo 12345678 | ethermintd keys unsafe-import-eth-key --keyring-backend $KEYRING account0 0xe521154ebe9733c29baa4f6f232cb6e7a8928b3bd85e14e95dff9fa8ca8f72b0
+
 # Change parameter token denominations to aphoton
 cat $HOME/.ethermintd/config/genesis.json | jq '.app_state["staking"]["params"]["bond_denom"]="aphoton"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
 cat $HOME/.ethermintd/config/genesis.json | jq '.app_state["crisis"]["constant_fee"]["denom"]="aphoton"' > $HOME/.ethermintd/config/tmp_genesis.json && mv $HOME/.ethermintd/config/tmp_genesis.json $HOME/.ethermintd/config/genesis.json
@@ -69,6 +71,7 @@ fi
 
 # Allocate genesis accounts (cosmos formatted addresses)
 ethermintd add-genesis-account $KEY 100000000000000000000000000aphoton --keyring-backend $KEYRING
+ethermintd add-genesis-account account0 100000000000000000000000000aphoton --keyring-backend $KEYRING
 
 # Sign genesis transaction
 ethermintd gentx $KEY 1000000000000000000000aphoton --keyring-backend $KEYRING --chain-id $CHAINID

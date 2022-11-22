@@ -12,8 +12,7 @@ require (
 	github.com/btcsuite/btcd v0.22.3
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-proto v1.0.0-alpha8
-	// cosmos-sdk main @51900d161289dfb68a27bc0ab789f4d33dfe2dec ≃ 0.47
-	github.com/cosmos/cosmos-sdk v0.46.6
+	github.com/cosmos/cosmos-sdk v0.47.0-alpha1
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/cosmos/ibc-go/v6 v6.0.0-20221109202621-fe2f2c2da8ab
@@ -46,6 +45,8 @@ require (
 	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8 // indirect
 	sigs.k8s.io/yaml v1.3.0
 )
+
+require github.com/huandu/skiplist v1.2.0
 
 require (
 	cloud.google.com/go v0.105.0 // indirect
@@ -129,7 +130,6 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hdevalence/ed25519consensus v0.0.0-20220222234857-c00d1f31bab3 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
-	github.com/huandu/skiplist v1.2.0 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
@@ -201,8 +201,6 @@ replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
 	// ics23 patch for dragonberry
 	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
-
-	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.47.0-alpha1
 
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409

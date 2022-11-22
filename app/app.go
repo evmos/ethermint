@@ -18,7 +18,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"cosmossdk.io/simapp"
-	simappparams "cosmossdk.io/simapp/params"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -122,6 +121,8 @@ import (
 	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
+
+	encoding "github.com/evmos/ethermint/encoding"
 )
 
 func init() {
@@ -256,39 +257,25 @@ func NewEthermintApp(
 	skipUpgradeHeights map[int64]bool,
 	homePath string,
 	invCheckPeriod uint,
-	encodingConfig simappparams.EncodingConfig,
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *EthermintApp {
+	encodingConfig := encoding.MakeConfig(ModuleBasics)
 	appCodec := encodingConfig.Codec
 	legacyAmino := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
-	// TODO: probably want to handle the actual feemarket priority in here.
-	var (
-		simpleMempool = ethermint.NewNonceMempool()
-		mempoolOpt    = baseapp.SetMempool(simpleMempool)
-		prepareOpt    = func(app *baseapp.BaseApp) {
-			app.SetPrepareProposal(app.DefaultPrepareProposal())
-		}
-		processOpt = func(app *baseapp.BaseApp) {
-			app.SetProcessProposal(app.DefaultProcessProposal())
-		}
-	)
-	baseAppOptions = append(baseAppOptions, mempoolOpt, prepareOpt, processOpt)
-
-	// NOTE we use custom transaction decoder that supports the sdk.Tx interface instead of sdk.StdTx
-	bApp := baseapp.NewBaseApp(
-		appName,
-		logger,
-		db,
-		encodingConfig.TxConfig.TxDecoder(),
-		baseAppOptions...,
-	)
-
+	// Setup Baseapp
+	bApp := baseapp.NewBaseApp(appName, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
+	bApp.SetTxEncoder(encodingConfig.TxConfig.TxEncoder())
+
+	// Setup Mempool and Proposal Handlers
+	bApp.SetMempool(ethermint.NewNonceMempool())
+	bApp.SetPrepareProposal(bApp.DefaultPrepareProposal())
+	bApp.SetProcessProposal(bApp.DefaultProcessProposal())
 
 	keys := sdk.NewKVStoreKeys(
 		// SDK keys
@@ -672,7 +659,7 @@ func NewEthermintApp(
 	// Please note that changing any of the anteHandler or postHandler chain is
 	// likely to be a state-machine breaking change, which needs a coordinated
 	// upgrade.
-	app.setPostHandler()
+	// app.setPostHandler()
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {

@@ -71,20 +71,15 @@ func (sp nonceMempool) Insert(_ sdk.Context, tx sdk.Tx) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("MEMPOOL INSERT")
-	fmt.Println(tx)
 
 	txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx)
 	if ok {
 		opts := txWithExtensions.GetExtensionOptions()
 		if len(opts) > 0 {
-			fmt.Println(opts)
-			fmt.Println(opts[0].GetTypeUrl())
 			switch typeURL := opts[0].GetTypeUrl(); typeURL {
 			case "/ethermint.evm.v1.ExtensionOptionsEthereumTx":
-				fmt.Println("ETH TX")
+				break
 			default:
-				fmt.Println("NON ETH TX")
 				if len(sigs) == 0 {
 					return fmt.Errorf("tx must have at least one signer")
 				}
@@ -92,7 +87,7 @@ func (sp nonceMempool) Insert(_ sdk.Context, tx sdk.Tx) error {
 		}
 	}
 
-	tk := txKey{nonce: 0}
+	tk := txKey{nonce: 1}
 	sp.txQueue.Set(tk, tx)
 	return nil
 }
@@ -125,11 +120,9 @@ func (sp nonceMempool) Remove(tx sdk.Tx) error {
 	if ok {
 		opts := txWithExtensions.GetExtensionOptions()
 		if len(opts) > 0 {
-			fmt.Println(opts)
-			fmt.Println(opts[0].GetTypeUrl())
 			switch typeURL := opts[0].GetTypeUrl(); typeURL {
 			case "/ethermint.evm.v1.ExtensionOptionsEthereumTx":
-				// no-op
+				break
 			default:
 				if len(sigs) == 0 {
 					return fmt.Errorf("tx must have at least one signer")
@@ -138,7 +131,7 @@ func (sp nonceMempool) Remove(tx sdk.Tx) error {
 		}
 	}
 
-	tk := txKey{nonce: 0}
+	tk := txKey{nonce: 1}
 	res := sp.txQueue.Remove(tk)
 	if res == nil {
 		return mempool.ErrTxNotFound

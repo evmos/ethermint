@@ -80,7 +80,7 @@ func TestStateFn(t *testing.T) {
 		require.NoError(t, os.RemoveAll(dir))
 	}()
 
-	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, simcli.FlagPeriodValue, MakeEncodingConfig(), simapputil.EmptyAppOptions{}, fauxMerkleModeOpt)
+	app := NewEthermintApp(logger, db, nil, true, map[int64]bool{}, DefaultNodeHome, simcli.FlagPeriodValue, simapputil.EmptyAppOptions{}, fauxMerkleModeOpt)
 	require.Equal(t, appName, app.Name())
 
 	appStateFn := StateFn(app.AppCodec(), app.SimulationManager())
