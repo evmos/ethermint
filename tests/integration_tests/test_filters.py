@@ -7,6 +7,7 @@ from .utils import (
     deploy_contract,
     send_successful_transaction,
     send_transaction,
+    w3_wait_for_new_blocks,
 )
 
 
@@ -17,6 +18,7 @@ def test_pending_transaction_filter(cluster):
     # without tx
     assert flt.get_new_entries() == []  # GetFilterChanges
 
+    w3_wait_for_new_blocks(w3, 1, sleep=0.1)
     # with tx
     txhash = send_successful_transaction(w3)
     assert txhash in flt.get_new_entries()
