@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
@@ -248,7 +247,7 @@ func validatePayloadMessages(msgs []sdk.Msg) error {
 			continue
 		}
 
-		if strings.Compare(t, msgType) != 0 {
+		if t != msgType {
 			return errors.New("unable to build EIP-712 payload: different types of messages detected")
 		}
 
@@ -273,8 +272,7 @@ func getMsgType(msg sdk.Msg) (string, error) {
 	}
 
 	var jsonMsg aminoMessage
-	err = json.Unmarshal(jsonBytes, &jsonMsg)
-	if err != nil {
+	if err := json.Unmarshal(jsonBytes, &jsonMsg); err != nil {
 		return "", err
 	}
 
