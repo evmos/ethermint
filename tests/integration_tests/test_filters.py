@@ -11,6 +11,11 @@ from .utils import (
 )
 
 
+def test_basic(cluster):
+    w3 = cluster.w3
+    assert w3.eth.chain_id == 9000
+
+
 def test_pending_transaction_filter(cluster):
     w3: Web3 = cluster.w3
     flt = w3.eth.filter("pending")
