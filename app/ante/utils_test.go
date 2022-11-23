@@ -415,15 +415,15 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgExec(from sdk.AccAddress, priv cr
 
 func (suite *AnteTestSuite) CreateTestEIP712MultipleMsgSend(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
 	recipient := sdk.AccAddress(common.Address{}.Bytes())
-	msgSend := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+	msgSend := banktypes.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, []sdk.Msg{msgSend, msgSend, msgSend})
 }
 
 // Fails
 func (suite *AnteTestSuite) CreateTestEIP712MultipleSignerMsgs(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
 	recipient := sdk.AccAddress(common.Address{}.Bytes())
-	msgSend1 := types2.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
-	msgSend2 := types2.NewMsgSend(recipient, from, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+	msgSend1 := banktypes.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
+	msgSend2 := banktypes.NewMsgSend(recipient, from, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
 	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, []sdk.Msg{msgSend1, msgSend2})
 }
 
