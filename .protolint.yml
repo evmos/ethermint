@@ -62,16 +62,16 @@ lint:
       # - FILE_HAS_COMMENT
       - QUOTE_CONSISTENT
 
-    # The specific linters to remove.
-    remove:
-      - RPC_NAMES_UPPER_CAMEL_CASE
+    # # The specific linters to remove.
+    # remove:
+    #   - RPC_NAMES_UPPER_CAMEL_CASE
 
   # Linter rules option.
   rules_option:
     # MAX_LINE_LENGTH rule option.
     max_line_length:
       # Enforces a maximum line length
-      max_chars: 80
+      max_chars: 120
       # Specifies the character count for tab characters
       tab_chars: 2
 
@@ -97,9 +97,9 @@ lint:
     enum_field_names_zero_value_end_with:
       suffix: INVALID
 
-    # SERVICE_NAMES_END_WITH rule option.
-    service_names_end_with:
-      text: Service
+    # # SERVICE_NAMES_END_WITH rule option.
+    # service_names_end_with:
+    #   text: Service
 
     # FIELD_NAMES_EXCLUDE_PREPOSITIONS rule option.
     field_names_exclude_prepositions:
@@ -110,16 +110,16 @@ lint:
         - of
       # The specific keywords including prepositions to ignore. E.g. end_of_support is a term you would like to use, and skip checking.
       excludes:
-        - end_of_support
+        - duration_of_decay
 
-    # REPEATED_FIELD_NAMES_PLURALIZED rule option.
-    ## The spec for each rules follows the implementation of https://github.com/gertd/go-pluralize.
-    ## Plus, you can refer to this rule's test code.
-    repeated_field_names_pluralized:
-      uncountable_rules:
-        - paper
-      irregular_rules:
-        Irregular: Regular
+    # # REPEATED_FIELD_NAMES_PLURALIZED rule option.
+    # ## The spec for each rules follows the implementation of https://github.com/gertd/go-pluralize.
+    # ## Plus, you can refer to this rule's test code.
+    # repeated_field_names_pluralized:
+    #   uncountable_rules:
+    #     - paper
+    #   irregular_rules:
+    #     Irregular: Regular
 
     # MESSAGE_NAMES_EXCLUDE_PREPOSITIONS rule option.
     message_names_exclude_prepositions:
@@ -128,15 +128,15 @@ lint:
         - With
         - For
         - Of
-      # The specific keywords including prepositions to ignore. E.g. EndOfSupport is a term you would like to use, and skip checking.
-      excludes:
-        - EndOfSupport
-        -
-    #  RPC_NAMES_CASE rule option.
-    rpc_names_case:
-      # The specific convention the name should conforms to.
-      ## Available conventions are "lower_camel_case", "upper_snake_case", or "lower_snake_case".
-      convention: upper_snake_case
+      # # The specific keywords including prepositions to ignore. E.g. EndOfSupport is a term you would like to use, and skip checking.
+      # excludes:
+      #   - EndOfSupport
+
+    # #  RPC_NAMES_CASE rule option.
+    # rpc_names_case:
+    #   # The specific convention the name should conforms to.
+    #   ## Available conventions are "lower_camel_case", "upper_snake_case", or "lower_snake_case".
+    #   convention: upper_snake_case
 
     # MESSAGES_HAVE_COMMENT rule option.
     messages_have_comment:
@@ -156,7 +156,7 @@ lint:
     # FIELDS_HAVE_COMMENT rule option.
     fields_have_comment:
       # Comments need to begin with the name of the thing being described. default is false.
-      should_follow_golang_style: false
+      should_follow_golang_style: true
 
     # ENUMS_HAVE_COMMENT rule option.
     enums_have_comment:
