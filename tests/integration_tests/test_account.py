@@ -15,7 +15,7 @@ def test_get_transaction_count(ethermint):
     mnemonic = os.getenv("COMMUNITY_MNEMONIC")
     receiver = (Account.from_mnemonic(mnemonic, account_path=account_path)).address
     n0 = w3.eth.get_transaction_count(receiver, blk)
-    # ensure tnx send in new block
+    # ensure transaction send in new block
     w3_wait_for_new_blocks(w3, 1, sleep=0.1)
     txhash = w3.eth.send_transaction(
         {
