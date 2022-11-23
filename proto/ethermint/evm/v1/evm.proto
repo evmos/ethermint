@@ -224,7 +224,7 @@ message TraceConfig {
   // enable memory capture
   bool enable_memory = 11 [(gogoproto.jsontag) = "enableMemory"];
   // enable return data capture
-  bool enable_return_data = 12 [ (gogoproto.jsontag) = "enableReturnData" ];
+  bool enable_return_data = 12 [(gogoproto.jsontag) = "enableReturnData"];
   // tracer config
-  string tracer_json_config = 13 [ (gogoproto.jsontag) = "tracerConfig" ]; 
+  string tracer_json_config = 13 [(gogoproto.jsontag) = "tracerConfig"];
 }

@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"math"
 	"math/big"
 
 	sdkmath "cosmossdk.io/math"
@@ -242,8 +241,10 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	cumulativeGasUsed := res.GasUsed
 	if ctx.BlockGasMeter() != nil {
 		limit := ctx.BlockGasMeter().Limit()
-		consumed := ctx.BlockGasMeter().GasConsumed()
-		cumulativeGasUsed = uint64(math.Min(float64(cumulativeGasUsed+consumed), float64(limit)))
+		cumulativeGasUsed += ctx.BlockGasMeter().GasConsumed()
+		if cumulativeGasUsed > limit {
+			cumulativeGasUsed = limit
+		}
 	}
 
 	var contractAddr common.Address
