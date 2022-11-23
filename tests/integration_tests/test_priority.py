@@ -1,9 +1,8 @@
 import sys
-from pathlib import Path
 
 import pytest
 
-from .network import setup_custom_ethermint
+from .network import setup_ethermint
 from .utils import ADDRS, KEYS, eth_to_bech32, sign_transaction, wait_for_new_blocks
 
 PRIORITY_REDUCTION = 1000000
@@ -11,9 +10,8 @@ PRIORITY_REDUCTION = 1000000
 
 @pytest.fixture(scope="module")
 def ethermint(tmp_path_factory):
-    path = tmp_path_factory.mktemp("priority")
-    yield from setup_custom_ethermint(
-        path, 26200, Path(__file__).parent / "configs/long_timeout_commit.jsonnet"
+    yield from setup_ethermint(
+        tmp_path_factory.mktemp("priority"), 26200, long_timeout_commit=True
     )
 
 

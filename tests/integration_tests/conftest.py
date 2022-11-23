@@ -12,6 +12,12 @@ def ethermint(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
+def ethermint_long_timeout_commit(tmp_path_factory):
+    path = tmp_path_factory.mktemp("long_timeout_commit")
+    yield from setup_ethermint(path, 26200, True)
+
+
+@pytest.fixture(scope="session")
 def ethermint_indexer(tmp_path_factory):
     path = tmp_path_factory.mktemp("indexer")
     yield from setup_custom_ethermint(
@@ -28,17 +34,17 @@ def geth(tmp_path_factory):
 @pytest.fixture(
     scope="session", params=["ethermint", "geth", "ethermint-ws", "enable-indexer"]
 )
-def cluster(request, ethermint, ethermint_indexer, geth):
+def cluster(request, ethermint_long_timeout_commit, ethermint_indexer, geth):
     """
     run on both ethermint and geth
     """
     provider = request.param
     if provider == "ethermint":
-        yield ethermint
+        yield ethermint_long_timeout_commit
     elif provider == "geth":
         yield geth
     elif provider == "ethermint-ws":
-        ethermint_ws = ethermint.copy()
+        ethermint_ws = ethermint_long_timeout_commit.copy()
         ethermint_ws.use_websocket()
         yield ethermint_ws
     elif provider == "enable-indexer":
