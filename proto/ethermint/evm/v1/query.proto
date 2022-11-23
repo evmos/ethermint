@@ -1,11 +1,11 @@
 syntax = "proto3";
 package ethermint.evm.v1;
 
-import "gogoproto/gogo.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
-import "google/api/annotations.proto";
 import "ethermint/evm/v1/evm.proto";
 import "ethermint/evm/v1/tx.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/evmos/ethermint/x/evm/types";

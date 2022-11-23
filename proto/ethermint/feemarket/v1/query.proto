@@ -3,8 +3,8 @@ package ethermint.feemarket.v1;
 
 import "gogoproto/gogo.proto";
 // import "cosmos/base/query/v1beta1/pagination.proto";
-import "google/api/annotations.proto";
 import "ethermint/feemarket/v1/feemarket.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/evmos/ethermint/x/feemarket/types";
 
