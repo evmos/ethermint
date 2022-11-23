@@ -1,12 +1,28 @@
 import os
 
+import pytest
 from eth_account import Account
 
 from .utils import ADDRS, w3_wait_for_new_blocks
 
 
-def test_get_transaction_count(ethermint):
-    w3 = ethermint.w3
+@pytest.fixture(scope="module", params=["ethermint", "ethermint-ws", "geth"])
+def cluster(request, ethermint, geth):
+    provider = request.param
+    if provider == "ethermint":
+        yield ethermint
+    elif provider == "ethermint-ws":
+        ethermint_ws = ethermint.copy()
+        ethermint_ws.use_websocket()
+        yield ethermint_ws
+    elif provider == "geth":
+        yield geth
+    else:
+        raise NotImplementedError
+
+
+def test_get_transaction_count(cluster):
+    w3 = cluster.w3
     blk = hex(w3.eth.block_number)
     sender = ADDRS["validator"]
 
