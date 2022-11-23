@@ -3,8 +3,9 @@ package ante
 import (
 	"math/big"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -27,7 +28,7 @@ func NewMinGasPriceDecorator(fk FeeMarketKeeper, ek EVMKeeper) MinGasPriceDecora
 func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+		return ctx, errorsmod.Wrap(errortypes.ErrTxDecode, "Tx must be a FeeTx")
 	}
 
 	minGasPrice := mpd.feesKeeper.GetParams(ctx).MinGasPrice
@@ -62,7 +63,7 @@ func (mpd MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	}
 
 	if !feeCoins.IsAnyGTE(requiredFees) {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee,
+		return ctx, errorsmod.Wrapf(errortypes.ErrInsufficientFee,
 			"provided fee < minimum global fee (%s < %s). Please increase the gas price.",
 			feeCoins,
 			requiredFees)
@@ -100,8 +101,8 @@ func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 	for _, msg := range tx.GetMsgs() {
 		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrUnknownRequest,
+			return ctx, errorsmod.Wrapf(
+				errortypes.ErrUnknownRequest,
 				"invalid message type %T, expected %T",
 				msg, (*evmtypes.MsgEthereumTx)(nil),
 			)
@@ -120,7 +121,7 @@ func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 
 		txData, err := evmtypes.UnpackTxData(ethMsg.Data)
 		if err != nil {
-			return ctx, sdkerrors.Wrapf(err, "failed to unpack tx data %s", ethMsg.Hash)
+			return ctx, errorsmod.Wrapf(err, "failed to unpack tx data %s", ethMsg.Hash)
 		}
 
 		if txData.TxType() != ethtypes.LegacyTxType {
@@ -133,8 +134,8 @@ func (empd EthMinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		fee := sdk.NewDecFromBigInt(feeAmt)
 
 		if fee.LT(requiredFee) {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrInsufficientFee,
+			return ctx, errorsmod.Wrapf(
+				errortypes.ErrInsufficientFee,
 				"provided fee < minimum global fee (%d < %d). Please increase the priority tip (for EIP-1559 txs) or the gas prices (for access list or legacy txs)", //nolint:lll
 				fee.TruncateInt().Int64(), requiredFee.TruncateInt().Int64(),
 			)
