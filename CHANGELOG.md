@@ -92,6 +92,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (proto) [#1466](https://github.com/evmos/ethermint/pull/1466) Fix proto scripts and upgrade them to mirror current cosmos-sdk scripts
 * (rpc) [#1405](https://github.com/evmos/ethermint/pull/1405) Fix uninitialized chain ID field in gRPC requests.
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
+* (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
+
 
 ## [v0.19.3] - 2022-10-14
 
