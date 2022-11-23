@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import pytest
 from web3 import Web3
 
+from .network import setup_custom_ethermint, setup_ethermint
 from .utils import (
     ADDRS,
     CONTRACTS,
@@ -9,6 +12,42 @@ from .utils import (
     send_transaction,
     w3_wait_for_new_blocks,
 )
+
+
+@pytest.fixture(scope="module")
+def custom_ethermint(tmp_path_factory):
+    path = tmp_path_factory.mktemp("filters")
+    yield from setup_ethermint(path, 26200, long_timeout_commit=True)
+
+
+@pytest.fixture(scope="module")
+def ethermint_indexer(tmp_path_factory):
+    path = tmp_path_factory.mktemp("indexer")
+    yield from setup_custom_ethermint(
+        path, 26660, Path(__file__).parent / "configs/enable-indexer.jsonnet"
+    )
+
+
+@pytest.fixture(
+    scope="module", params=["ethermint", "geth", "ethermint-ws", "enable-indexer"]
+)
+def cluster(request, custom_ethermint, ethermint_indexer, geth):
+    """
+    run on both ethermint and geth
+    """
+    provider = request.param
+    if provider == "ethermint":
+        yield custom_ethermint
+    elif provider == "geth":
+        yield geth
+    elif provider == "ethermint-ws":
+        ethermint_ws = custom_ethermint.copy()
+        ethermint_ws.use_websocket()
+        yield ethermint_ws
+    elif provider == "enable-indexer":
+        yield ethermint_indexer
+    else:
+        raise NotImplementedError
 
 
 def test_basic(cluster):

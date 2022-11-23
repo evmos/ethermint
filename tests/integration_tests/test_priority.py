@@ -9,10 +9,9 @@ PRIORITY_REDUCTION = 1000000
 
 
 @pytest.fixture(scope="module")
-def ethermint(tmp_path_factory):
-    yield from setup_ethermint(
-        tmp_path_factory.mktemp("priority"), 26200, long_timeout_commit=True
-    )
+def custom_ethermint(tmp_path_factory):
+    path = tmp_path_factory.mktemp("priority")
+    yield from setup_ethermint(path, 26800, long_timeout_commit=True)
 
 
 def effective_gas_price(tx, base_fee):
