@@ -10,6 +10,6 @@ type (
 	// Subspace defines an interface that implements the legacy Cosmos SDK x/params Subspace type.
 	// NOTE: This is used solely for migration of the Cosmos SDK x/params managed parameters.
 	Subspace interface {
-		GetParams(ctx sdk.Context, ps paramtypes.ParamSet)
+		GetParamSet(ctx sdk.Context, ps paramtypes.ParamSet)
 	}
 )

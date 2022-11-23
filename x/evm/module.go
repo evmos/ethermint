@@ -104,11 +104,12 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k *keeper.Keeper, ak types.AccountKeeper) AppModule {
+func NewAppModule(k *keeper.Keeper, ak types.AccountKeeper, ss exported.Subspace) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		ak:             ak,
+		legacySubspace: ss,
 	}
 }
 
