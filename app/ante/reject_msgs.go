@@ -1,8 +1,9 @@
 package ante
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -15,8 +16,8 @@ type RejectMessagesDecorator struct{}
 func (rmd RejectMessagesDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	for _, msg := range tx.GetMsgs() {
 		if _, ok := msg.(*evmtypes.MsgEthereumTx); ok {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrInvalidType,
+			return ctx, errorsmod.Wrapf(
+				errortypes.ErrInvalidType,
 				"MsgEthereumTx needs to be contained within a tx with 'ExtensionOptionsEthereumTx' option",
 			)
 		}

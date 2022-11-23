@@ -3,8 +3,9 @@ package ante
 import (
 	"math/big"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
@@ -36,21 +37,21 @@ func (esvd EthSigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, s
 	for _, msg := range tx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)
 		if !ok {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
+			return ctx, errorsmod.Wrapf(errortypes.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
 		allowUnprotectedTxs := esvd.evmKeeper.GetAllowUnprotectedTxs(ctx)
 		ethTx := msgEthTx.AsTransaction()
 		if !allowUnprotectedTxs && !ethTx.Protected() {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrNotSupported,
+			return ctx, errorsmod.Wrapf(
+				errortypes.ErrNotSupported,
 				"rejected unprotected Ethereum txs. Please EIP155 sign your transaction to protect it against replay-attacks")
 		}
 
 		sender, err := signer.Sender(ethTx)
 		if err != nil {
-			return ctx, sdkerrors.Wrapf(
-				sdkerrors.ErrorInvalidSigner,
+			return ctx, errorsmod.Wrapf(
+				errortypes.ErrorInvalidSigner,
 				"couldn't retrieve sender address from the ethereum transaction: %s",
 				err.Error(),
 			)
