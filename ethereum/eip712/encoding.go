@@ -17,6 +17,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
+type aminoMessage struct {
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}
+
 var (
 	protoCodec codec.ProtoCodecMarshaler
 	aminoCodec *codec.LegacyAmino
@@ -257,11 +262,6 @@ func validatePayloadMessages(msgs []sdk.Msg) error {
 	}
 
 	return nil
-}
-
-type aminoMessage struct {
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
 }
 
 // getMsgType returns the message type prefix for the given Cosmos SDK Msg
