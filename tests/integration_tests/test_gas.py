@@ -1,5 +1,5 @@
 from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction
-
+from web3.exceptions import TimeExhausted
 
 def test_gas_eth_tx(geth, ethermint):
     tx_value = 10
@@ -30,8 +30,22 @@ def test_gas_deployment(geth, ethermint):
     assert geth_contract_receipt.gasUsed == ethermint_contract_receipt.gasUsed
 
 
-def test_gas_call(geth, ethermint):
+def get_gas(w3, contract, i=0):
+    if i > 3:
+        raise TimeExhausted
     function_input = 10
+    gas_price = w3.eth.gas_price
+    geth_txhash = (contract.functions
+                   .burnGas(function_input)
+                   .transact({'from': ADDRS["validator"], "gasPrice": gas_price}))
+    try:
+        return w3.eth.wait_for_transaction_receipt(geth_txhash, timeout=20)
+    except TimeExhausted:
+        return get_gas(w3, contract, ++i)
+
+
+def test_gas_call(geth, ethermint):
+
 
     # deploy an identical contract on geth and ethermint
     # ensure that the contract has a function which consumes non-trivial gas
@@ -42,21 +56,23 @@ def test_gas_call(geth, ethermint):
         ethermint.w3,
         CONTRACTS["BurnGas"])
 
+    geth_call_receipt = get_gas(geth.w3, geth_contract)
+    ethermint_call_receipt = get_gas(ethermint.w3, ethermint_contract)
     # call the contract and get tx receipt for geth
-    geth_gas_price = geth.w3.eth.gas_price
-    geth_txhash = (geth_contract.functions
-                   .burnGas(function_input)
-                   .transact({'from': ADDRS["validator"], "gasPrice": geth_gas_price}))
-    geth_call_receipt = geth.w3.eth.wait_for_transaction_receipt(geth_txhash)
+    # geth_gas_price = geth.w3.eth.gas_price
+    # geth_txhash = (geth_contract.functions
+    #                .burnGas(function_input)
+    #                .transact({'from': ADDRS["validator"], "gasPrice": geth_gas_price}))
+    # geth_call_receipt = geth.w3.eth.wait_for_transaction_receipt(geth_txhash)
 
-    # repeat the above for ethermint
-    ethermint_gas_price = ethermint.w3.eth.gas_price
-    ethermint_txhash = (ethermint_contract.functions
-                        .burnGas(function_input)
-                        .transact({'from': ADDRS["validator"],
-                                   "gasPrice": ethermint_gas_price}))
-    ethermint_call_receipt = (ethermint.w3.
-                              eth.wait_for_transaction_receipt(ethermint_txhash))
+    # # repeat the above for ethermint
+    # ethermint_gas_price = ethermint.w3.eth.gas_price
+    # ethermint_txhash = (ethermint_contract.functions
+    #                     .burnGas(function_input)
+    #                     .transact({'from': ADDRS["validator"],
+    #                                "gasPrice": ethermint_gas_price}))
+    # ethermint_call_receipt = (ethermint.w3.
+    #                           eth.wait_for_transaction_receipt(ethermint_txhash))
 
     # ensure that the gasUsed is equivalent
     assert geth_call_receipt.gasUsed == ethermint_call_receipt.gasUsed
