@@ -78,7 +78,7 @@ service Query {
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
 message QueryAccountRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the account for.
@@ -98,7 +98,7 @@ message QueryAccountResponse {
 // QueryCosmosAccountRequest is the request type for the Query/CosmosAccount RPC
 // method.
 message QueryCosmosAccountRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the account for.
@@ -119,7 +119,7 @@ message QueryCosmosAccountResponse {
 // QueryValidatorAccountRequest is the request type for the
 // Query/ValidatorAccount RPC method.
 message QueryValidatorAccountRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // cons_address is the validator cons address to query the account for.
@@ -139,7 +139,7 @@ message QueryValidatorAccountResponse {
 
 // QueryBalanceRequest is the request type for the Query/Balance RPC method.
 message QueryBalanceRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the balance for.
@@ -154,7 +154,7 @@ message QueryBalanceResponse {
 
 // QueryStorageRequest is the request type for the Query/Storage RPC method.
 message QueryStorageRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the storage state for.
@@ -173,7 +173,7 @@ message QueryStorageResponse {
 
 // QueryCodeRequest is the request type for the Query/Code RPC method.
 message QueryCodeRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // address is the ethereum hex address to query the code for.
@@ -189,7 +189,7 @@ message QueryCodeResponse {
 
 // QueryTxLogsRequest is the request type for the Query/TxLogs RPC method.
 message QueryTxLogsRequest {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
   // hash is the ethereum transaction hex hash to query the logs for.

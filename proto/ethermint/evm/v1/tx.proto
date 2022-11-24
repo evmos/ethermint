@@ -38,7 +38,7 @@ message MsgEthereumTx {
 // NOTE: All non-protected transactions (i.e non EIP155 signed) will fail if the
 // AllowUnprotectedTxs parameter is disabled.
 message LegacyTx {
-  option (gogoproto.goproto_getters)         = false;
+  option (gogoproto.goproto_getters) = false;
   option (cosmos_proto.implements_interface) = "TxData";
 
   // nonce corresponds to the account nonce (transaction sequence).
@@ -64,14 +64,14 @@ message LegacyTx {
 
 // AccessListTx is the data of EIP-2930 access list transactions.
 message AccessListTx {
-  option (gogoproto.goproto_getters)         = false;
+  option (gogoproto.goproto_getters) = false;
   option (cosmos_proto.implements_interface) = "TxData";
 
   // chain_id of the destination EVM chain
   string chain_id = 1 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.customname) = "ChainID",
-    (gogoproto.jsontag)    = "chainID"
+    (gogoproto.jsontag) = "chainID"
   ];
   // nonce corresponds to the account nonce (transaction sequence).
   uint64 nonce = 2;
@@ -85,7 +85,7 @@ message AccessListTx {
   string value = 6
       [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
   // data is the data payload bytes of the transaction.
-  bytes                data     = 7;
+  bytes data = 7;
   // accesses is an array of access tuples
   repeated AccessTuple accesses = 8
       [(gogoproto.castrepeated) = "AccessList", (gogoproto.jsontag) = "accessList", (gogoproto.nullable) = false];
@@ -99,14 +99,14 @@ message AccessListTx {
 
 // DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 message DynamicFeeTx {
-  option (gogoproto.goproto_getters)         = false;
+  option (gogoproto.goproto_getters) = false;
   option (cosmos_proto.implements_interface) = "TxData";
 
   // chain_id of the destination EVM chain
   string chain_id = 1 [
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.customname) = "ChainID",
-    (gogoproto.jsontag)    = "chainID"
+    (gogoproto.jsontag) = "chainID"
   ];
   // nonce corresponds to the account nonce (transaction sequence).
   uint64 nonce = 2;
@@ -122,7 +122,7 @@ message DynamicFeeTx {
   string value = 7
       [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
   // data is the data payload bytes of the transaction.
-  bytes                data     = 8;
+  bytes data = 8;
   // accesses is an array of access tuples
   repeated AccessTuple accesses = 9
       [(gogoproto.castrepeated) = "AccessList", (gogoproto.jsontag) = "accessList", (gogoproto.nullable) = false];
