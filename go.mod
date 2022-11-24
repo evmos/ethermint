@@ -23,7 +23,7 @@ require (
 	github.com/holiman/uint256 v1.2.1
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
-	github.com/onsi/ginkgo/v2 v2.5.0
+	github.com/onsi/ginkgo/v2 v2.5.1
 	github.com/onsi/gomega v1.24.1
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
@@ -39,7 +39,7 @@ require (
 	golang.org/x/net v0.2.0
 	golang.org/x/text v0.4.0
 	google.golang.org/genproto v0.0.0-20221116193143-41c2ba794472
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.51.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
