@@ -1,5 +1,7 @@
 import sys
 
+from web3.exceptions import TimeExhausted
+
 from .network import Ethermint
 from .utils import ADDRS, KEYS, eth_to_bech32, sign_transaction, wait_for_new_blocks
 
@@ -25,6 +27,17 @@ def tx_priority(tx, base_fee):
     else:
         # legacy tx
         return (tx["gasPrice"] - base_fee) // PRIORITY_REDUCTION
+
+
+def send_signed_txs(w3, signed, i=0):
+    if i > 3:
+        return TimeExhausted
+    txhashes = [w3.eth.send_raw_transaction(tx.rawTransaction) for tx in signed]
+    try:
+        return [w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
+                for txhash in txhashes]
+    except TimeExhausted:
+        return send_signed_txs(w3, signed, ++i)
 
 
 def test_priority(ethermint: Ethermint):
@@ -98,9 +111,8 @@ def test_priority(ethermint: Ethermint):
     signed = [sign_transaction(w3, tx, key=KEYS[sender]) for sender, tx in test_cases]
     # send the txs from low priority to high,
     # but the later sent txs should be included earlier.
-    txhashes = [w3.eth.send_raw_transaction(tx.rawTransaction) for tx in signed]
 
-    receipts = [w3.eth.wait_for_transaction_receipt(txhash) for txhash in txhashes]
+    receipts = send_signed_txs(w3, signed)
     print(receipts)
     assert all(receipt.status == 1 for receipt in receipts), "expect all txs success"
 
