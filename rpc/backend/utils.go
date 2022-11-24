@@ -55,7 +55,7 @@ func (b *Backend) getAccountNonce(accAddr common.Address, pending bool, height i
 		st, ok := status.FromError(err)
 		// treat as account doesn't exist yet
 		if ok && st.Code() == codes.NotFound {
-			err = nil
+			return 0, nil
 		}
 		return 0, err
 	}
