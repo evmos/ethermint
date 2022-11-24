@@ -9,7 +9,7 @@ require (
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-proto v1.0.0-alpha8
-	github.com/cosmos/cosmos-sdk v0.46.5-0.20221114064055-2114ec42dfa1
+	github.com/cosmos/cosmos-sdk v0.46.6
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/cosmos/ibc-go/v5 v5.1.0
@@ -23,7 +23,7 @@ require (
 	github.com/holiman/uint256 v1.2.1
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
-	github.com/onsi/ginkgo/v2 v2.5.0
+	github.com/onsi/ginkgo/v2 v2.5.1
 	github.com/onsi/gomega v1.24.1
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
@@ -39,7 +39,7 @@ require (
 	golang.org/x/net v0.2.0
 	golang.org/x/text v0.4.0
 	google.golang.org/genproto v0.0.0-20221116193143-41c2ba794472
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.51.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
