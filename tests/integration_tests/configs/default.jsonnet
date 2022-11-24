@@ -4,10 +4,6 @@
     cmd: 'ethermintd',
     'start-flags': '--trace',
     config: {
-      consensus: {
-        // larger timeout for more stable mempool tests
-        timeout_commit: '2s',
-      },
       mempool: {
         // use v1 mempool to enable tx prioritization
         version: 'v1',
