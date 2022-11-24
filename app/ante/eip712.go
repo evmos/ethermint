@@ -83,12 +83,12 @@ func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
 
 	// EIP712 allows just one signature
 	if len(sigs) != 1 {
-		return ctx, errorsmod.Wrapf(errortypes.ErrUnauthorized, "invalid number of signers (%d);  EIP712 signatures allows just one signature", len(sigs))
+		return ctx, errorsmod.Wrapf(errortypes.ErrTooManySignatures, "invalid number of signers (%d);  EIP712 signatures allows just one signature", len(sigs))
 	}
 
 	// check that signer length and signature length are the same
 	if len(sigs) != len(signerAddrs) {
-		return ctx, errorsmod.Wrapf(errortypes.ErrUnauthorized, "invalid number of signer;  expected: %d, got %d", len(signerAddrs), len(sigs))
+		return ctx, errorsmod.Wrapf(errortypes.ErrorInvalidSigner, "invalid number of signers;  expected: %d, got %d", len(signerAddrs), len(sigs))
 	}
 
 	// EIP712 has just one signature, avoid looping here and only read index 0
@@ -156,7 +156,7 @@ func VerifySignature(
 			return errorsmod.Wrapf(errortypes.ErrNotSupported, "unexpected SignatureData %T: wrong SignMode", sigData)
 		}
 
-		// Note: this prevents the user from sending thrash data in the signature field
+		// Note: this prevents the user from sending trash data in the signature field
 		if len(data.Signature) != 0 {
 			return errorsmod.Wrap(errortypes.ErrTooManySignatures, "invalid signature value; EIP712 must have the cosmos transaction signature empty")
 		}
@@ -183,7 +183,7 @@ func VerifySignature(
 
 		signerChainID, err := ethermint.ParseChainID(signerData.ChainID)
 		if err != nil {
-			return errorsmod.Wrapf(err, "failed to parse chainID: %s", signerData.ChainID)
+			return errorsmod.Wrapf(err, "failed to parse chain-id: %s", signerData.ChainID)
 		}
 
 		txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx)
@@ -197,11 +197,11 @@ func VerifySignature(
 
 		extOpt, ok := opts[0].GetCachedValue().(*ethermint.ExtensionOptionsWeb3Tx)
 		if !ok {
-			return errorsmod.Wrap(errortypes.ErrInvalidChainID, "unknown extension option")
+			return errorsmod.Wrap(errortypes.ErrUnknownExtensionOptions, "unknown extension option")
 		}
 
 		if extOpt.TypedDataChainID != signerChainID.Uint64() {
-			return errorsmod.Wrap(errortypes.ErrInvalidChainID, "invalid chainID")
+			return errorsmod.Wrap(errortypes.ErrInvalidChainID, "invalid chain-id")
 		}
 
 		if len(extOpt.FeePayer) == 0 {
@@ -218,7 +218,7 @@ func VerifySignature(
 
 		typedData, err := eip712.WrapTxToTypedData(ethermintCodec, extOpt.TypedDataChainID, msgs[0], txBytes, feeDelegation)
 		if err != nil {
-			return errorsmod.Wrap(err, "failed to pack tx data in EIP712 object")
+			return errorsmod.Wrap(err, "failed to create EIP-712 typed data from tx")
 		}
 
 		sigHash, _, err := apitypes.TypedDataAndHash(typedData)

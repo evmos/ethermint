@@ -30,7 +30,7 @@ func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 	// all transactions must implement GasTx
 	_, ok := tx.(authante.GasTx)
 	if !ok {
-		return newCtx, errorsmod.Wrap(errortypes.ErrTxDecode, "Tx must be GasTx")
+return ctx, errorsmod.Wrapf(errortypes.ErrInvalidType, "invalid transaction type %T, expected GasTx", tx)
 	}
 
 	// We need to setup an empty gas config so that the gas is consistent with Ethereum.
@@ -65,7 +65,7 @@ func (eeed EthEmitEventDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 			return ctx, errorsmod.Wrapf(errortypes.ErrUnknownRequest, "invalid message type %T, expected %T", msg, (*evmtypes.MsgEthereumTx)(nil))
 		}
 
-		// emit ethereum tx hash as event, should be indexed by tm tx indexer for query purpose.
+		// emit ethereum tx hash as an event so that it can be indexed by Tendermint for query purposes
 		// it's emitted in ante handler, so we can query failed transaction (out of block gas limit).
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
 			evmtypes.EventTypeEthereumTx,
