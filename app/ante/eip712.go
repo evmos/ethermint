@@ -83,7 +83,11 @@ func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
 
 	// EIP712 allows just one signature
 	if len(sigs) != 1 {
-		return ctx, errorsmod.Wrapf(errortypes.ErrTooManySignatures, "invalid number of signers (%d);  EIP712 signatures allows just one signature", len(sigs))
+		return ctx, errorsmod.Wrapf(
+			errortypes.ErrTooManySignatures,
+			"invalid number of signers (%d);  EIP712 signatures allows just one signature",
+			len(sigs),
+		)
 	}
 
 	// check that signer length and signature length are the same

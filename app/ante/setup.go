@@ -30,7 +30,7 @@ func (esc EthSetupContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 	// all transactions must implement GasTx
 	_, ok := tx.(authante.GasTx)
 	if !ok {
-return ctx, errorsmod.Wrapf(errortypes.ErrInvalidType, "invalid transaction type %T, expected GasTx", tx)
+		return ctx, errorsmod.Wrapf(errortypes.ErrInvalidType, "invalid transaction type %T, expected GasTx", tx)
 	}
 
 	// We need to setup an empty gas config so that the gas is consistent with Ethereum.
