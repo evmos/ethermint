@@ -269,6 +269,8 @@ func (b *Backend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Transac
 			Value:                args.Value,
 			Data:                 input,
 			AccessList:           args.AccessList,
+			ChainID:              args.ChainID,
+			Nonce:                args.Nonce,
 		}
 
 		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))
@@ -309,6 +311,7 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -335,10 +338,12 @@ func (b *Backend) DoCall(
 		// the error message imitates geth behavior
 		return nil, errors.New("header not found")
 	}
+
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
