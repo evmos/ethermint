@@ -1,5 +1,7 @@
-from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction
 from web3.exceptions import TimeExhausted
+
+from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction
+
 
 def test_gas_eth_tx(geth, ethermint):
     tx_value = 10
@@ -45,8 +47,6 @@ def get_gas(w3, contract, i=0):
 
 
 def test_gas_call(geth, ethermint):
-
-
     # deploy an identical contract on geth and ethermint
     # ensure that the contract has a function which consumes non-trivial gas
     geth_contract, _ = deploy_contract(
@@ -58,21 +58,6 @@ def test_gas_call(geth, ethermint):
 
     geth_call_receipt = get_gas(geth.w3, geth_contract)
     ethermint_call_receipt = get_gas(ethermint.w3, ethermint_contract)
-    # call the contract and get tx receipt for geth
-    # geth_gas_price = geth.w3.eth.gas_price
-    # geth_txhash = (geth_contract.functions
-    #                .burnGas(function_input)
-    #                .transact({'from': ADDRS["validator"], "gasPrice": geth_gas_price}))
-    # geth_call_receipt = geth.w3.eth.wait_for_transaction_receipt(geth_txhash)
-
-    # # repeat the above for ethermint
-    # ethermint_gas_price = ethermint.w3.eth.gas_price
-    # ethermint_txhash = (ethermint_contract.functions
-    #                     .burnGas(function_input)
-    #                     .transact({'from': ADDRS["validator"],
-    #                                "gasPrice": ethermint_gas_price}))
-    # ethermint_call_receipt = (ethermint.w3.
-    #                           eth.wait_for_transaction_receipt(ethermint_txhash))
 
     # ensure that the gasUsed is equivalent
     assert geth_call_receipt.gasUsed == ethermint_call_receipt.gasUsed
