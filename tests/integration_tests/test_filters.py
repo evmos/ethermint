@@ -169,7 +169,7 @@ def test_event_log_filter_by_topic(cluster):
                     "topics": [[CHANGE_GREETING_TOPIC.hex(), TRANSFER_TOPIC.hex()]],
                 },
             ],
-            "exp_len": 3,  # 2 transfer events, (1)mint&transfer on deploy (2)tx performed in the test
+            "exp_len": 3,  # 2 transfer events, mint&transfer on deploy (2)tx in test
             "exp_topics": [
                 [CHANGE_GREETING_TOPIC],
                 [
@@ -201,8 +201,6 @@ def test_event_log_filter_by_topic(cluster):
 
         # deploy all contracts
         # perform tx that emits event in all contracts
-        # save the corresponding tx block numbers for future checks
-        txs_block_num = []
         for c in tc["contracts"]:
             tx = None
             if c == GREETER_CONTRACT:
