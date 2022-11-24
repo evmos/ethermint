@@ -1,5 +1,6 @@
 import pytest
 from eth_abi import abi
+from hexbytes import HexBytes
 from web3 import Web3
 
 from .utils import (
@@ -9,6 +10,10 @@ from .utils import (
     send_successful_transaction,
     send_transaction,
 )
+
+# Smart contract names
+GREETER_CONTRACT = "Greeter"
+ERC20_CONTRACT = "TestERC20A"
 
 # ChangeGreeting topic from Greeter contract calculated from event signature
 CHANGE_GREETING_TOPIC = Web3.keccak(text="ChangeGreeting(address,string)")
@@ -67,7 +72,9 @@ def test_event_log_filter_by_contract(cluster):
     assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
-    tx = contract.functions.setGreeting("world").build_transaction()
+    tx = contract.functions.setGreeting("world").build_transaction(
+        {"from": ADDRS["validator"]}
+    )
     tx_receipt = send_transaction(w3, tx)
     assert tx_receipt.status == 1
 
@@ -104,12 +111,135 @@ def test_event_log_filter_by_address(cluster):
     assert flt.get_all_entries() == []  # GetFilterLogs
 
     # with tx
-    tx = contract.functions.setGreeting("world").build_transaction()
+    tx = contract.functions.setGreeting("world").build_transaction(
+        {"from": ADDRS["validator"]}
+    )
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
     assert len(flt.get_new_entries()) == 1
     assert len(flt2.get_new_entries()) == 0
+
+
+def test_event_log_filter_by_topic(cluster):
+    w3: Web3 = cluster.w3
+
+    new_greeting = "world"
+
+    test_cases = [
+        {
+            "name": "one contract emiting one topic",
+            "filters": [
+                {"topics": [CHANGE_GREETING_TOPIC.hex()]},
+                {
+                    "fromBlock": 1,
+                    "toBlock": "latest",
+                    "topics": [CHANGE_GREETING_TOPIC.hex()],
+                },
+            ],
+            "exp_len": 1,
+            "exp_topics": [[CHANGE_GREETING_TOPIC]],
+            "contracts": [GREETER_CONTRACT],
+        },
+        {
+            "name": "multiple contracts emitting same topic",
+            "filters": [
+                {
+                    "topics": [CHANGE_GREETING_TOPIC.hex()],
+                },
+                {
+                    "fromBlock": 1,
+                    "toBlock": "latest",
+                    "topics": [CHANGE_GREETING_TOPIC.hex()],
+                },
+            ],
+            "exp_len": 5,
+            "exp_topics": [[CHANGE_GREETING_TOPIC]],
+            "contracts": [GREETER_CONTRACT] * 5,
+        },
+        {
+            "name": "multiple contracts emitting different topics",
+            "filters": [
+                {
+                    "topics": [[CHANGE_GREETING_TOPIC.hex(), TRANSFER_TOPIC.hex()]],
+                },
+                {
+                    "fromBlock": 1,
+                    "toBlock": "latest",
+                    "topics": [[CHANGE_GREETING_TOPIC.hex(), TRANSFER_TOPIC.hex()]],
+                },
+            ],
+            "exp_len": 3,  # 2 transfer events, (1)mint&transfer on deploy (2)tx performed in the test
+            "exp_topics": [
+                [CHANGE_GREETING_TOPIC],
+                [
+                    TRANSFER_TOPIC,
+                    HexBytes(pad_left("0x0")),
+                    HexBytes(pad_left(ADDRS["validator"].lower())),
+                ],
+                [
+                    TRANSFER_TOPIC,
+                    HexBytes(pad_left(ADDRS["validator"].lower())),
+                    HexBytes(pad_left(ADDRS["community"].lower())),
+                ],
+            ],
+            "contracts": [GREETER_CONTRACT, ERC20_CONTRACT],
+        },
+    ]
+
+    for tc in test_cases:
+        print("\nCase: {}".format(tc["name"]))
+
+        # register filters
+        filters = []
+        for fltr in tc["filters"]:
+            filters.append(w3.eth.filter(fltr))
+
+        # without tx: filters should not return any entries
+        for flt in filters:
+            assert flt.get_new_entries() == []  # GetFilterChanges
+
+        # deploy all contracts
+        # perform tx that emits event in all contracts
+        # save the corresponding tx block numbers for future checks
+        txs_block_num = []
+        for c in tc["contracts"]:
+            tx = None
+            if c == GREETER_CONTRACT:
+                contract, _ = deploy_contract(w3, CONTRACTS[c])
+                # validate deploy was successfull
+                assert contract.caller.greet() == "Hello"
+                # create tx that emits event
+                tx = contract.functions.setGreeting(new_greeting).build_transaction(
+                    {"from": ADDRS["validator"]}
+                )
+            elif c == ERC20_CONTRACT:
+                contract, _ = deploy_contract(w3, CONTRACTS[c])
+                # validate deploy was successfull
+                assert contract.caller.name() == "TestERC20"
+                # create tx that emits event
+                tx = contract.functions.transfer(
+                    ADDRS["community"], 10
+                ).build_transaction({"from": ADDRS["validator"]})
+
+            receipt = send_transaction(w3, tx)
+            assert receipt.status == 1
+
+        # check filters new entries
+        for i, flt in enumerate(filters):
+            new_entries = flt.get_new_entries()  # GetFilterChanges
+            assert len(new_entries) == tc["exp_len"]
+
+            for i, log in enumerate(new_entries):
+                # check if the new_entries have valid information
+                assert log["topics"] in tc["exp_topics"]
+                assert_log_block(w3, log)
+
+        # on next call of GetFilterChanges, no entries should be found
+        # because there were no new logs that meet the filters params
+        for flt in filters:
+            assert flt.get_new_entries() == []  # GetFilterChanges
+            w3.eth.uninstall_filter(flt.filter_id)
 
 
 def test_multiple_filters(cluster):
@@ -202,7 +332,7 @@ def test_multiple_filters(cluster):
     ]
 
     for tc in test_cases:
-        print("Case: {}".format(tc["name"]))
+        print("\nCase: {}".format(tc["name"]))
 
         # register the filters
         fltrs = []
@@ -226,11 +356,11 @@ def test_multiple_filters(cluster):
             assert flt.get_new_entries() == []  # GetFilterChanges
 
         # with tx
-        tx = contract.functions.setGreeting(new_greeting).build_transaction()
+        tx = contract.functions.setGreeting(new_greeting).build_transaction(
+            {"from": ADDRS["validator"]}
+        )
         receipt = send_transaction(w3, tx)
         assert receipt.status == 1
-
-        tx_block_num = w3.eth.block_number
 
         if "rm_filters_post_tx" in tc:
             # remove the filters
@@ -256,7 +386,7 @@ def test_multiple_filters(cluster):
                 log = new_entries[0]
                 assert log["address"] == contract.address
                 assert log["topics"] == [topic]
-                assert_log_block(w3, log, tx_block_num)
+                assert_log_block(w3, log)
                 assert_change_greet_log_data(log, new_greeting)
 
         # on next call of GetFilterChanges, no entries should be found
@@ -336,11 +466,11 @@ def test_register_filters_before_contract_deploy(cluster):
         assert flt.get_new_entries() == []  # GetFilterChanges
 
     # perform tx to call contract that emits event
-    tx = contract.functions.setGreeting(new_greeting).build_transaction()
+    tx = contract.functions.setGreeting(new_greeting).build_transaction(
+        {"from": ADDRS["validator"]}
+    )
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
-
-    tx_block_num = w3.eth.block_number
 
     for i, flt in enumerate(fltrs):
         new_entries = flt.get_new_entries()  # GetFilterChanges
@@ -351,12 +481,12 @@ def test_register_filters_before_contract_deploy(cluster):
             log = new_entries[0]
             assert log["address"] == contract.address
             assert log["topics"] == [topic]
-            assert_log_block(w3, log, tx_block_num)
+            assert_log_block(w3, log)
             assert_change_greet_log_data(log, new_greeting)
 
     # on next call of GetFilterChanges, no entries should be found
     # because there were no new logs that meet the filters params
-    for i, flt in enumerate(fltrs):
+    for flt in fltrs:
         assert flt.get_new_entries() == []  # GetFilterChanges
         w3.eth.uninstall_filter(flt.filter_id)
 
@@ -382,7 +512,9 @@ def test_get_logs(cluster):
     # with tx
     # update greeting
     new_greeting = "hello, world"
-    tx = contract.functions.setGreeting(new_greeting).build_transaction()
+    tx = contract.functions.setGreeting(new_greeting).build_transaction(
+        {"from": ADDRS["validator"]}
+    )
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
@@ -441,7 +573,7 @@ def test_get_logs(cluster):
     ]
 
     for tc in test_cases:
-        print("Case: {}".format(tc["name"]))
+        print("\nCase: {}".format(tc["name"]))
 
         # logs for validator address should remain empty
         assert len(w3.eth.get_logs({"address": ADDRS["validator"]})) == 0
@@ -465,7 +597,7 @@ def test_get_logs(cluster):
                     found_log = True
 
                     assert log["topics"] == [topic]
-                    assert_log_block(w3, log, tx_block_num)
+                    assert_log_block(w3, log)
                     assert_change_greet_log_data(log, new_greeting)
 
             assert found_log is True
@@ -475,14 +607,14 @@ def test_get_logs(cluster):
 # Helper functions to assert logs information
 #################################################
 
-def assert_log_block(w3, log, tx_block_num):
+
+def assert_log_block(w3, log):
     block_hash = log["blockHash"]
     # check if the returned block hash is correct
     # getBlockByHash
     block = w3.eth.get_block(block_hash)
     # block should exist
     assert block.hash == block_hash
-    assert block.number == tx_block_num
 
     # check tx hash is correct
     tx_data = w3.eth.get_transaction(log["transactionHash"])
@@ -497,8 +629,8 @@ def assert_change_greet_log_data(log, new_greeting):
     log_data = dict(zip(names, values))
 
     # the address stored in the data field may defer on lower/upper case characters
-    # then, set all as uppercase for assertion
-    assert log_data["from"].upper() == ADDRS["validator"].upper()
+    # then, set all as lowercase for assertion
+    assert log_data["from"] == ADDRS["validator"].lower()
     assert log_data["value"] == new_greeting
 
 
@@ -534,3 +666,10 @@ def remove_filters(w3, filters, count):
 
     for i in range(count):
         assert w3.eth.uninstall_filter(filters[i].filter_id)
+
+
+# adds a padding of '0's to a hex address based on the total byte length desired
+def pad_left(address, byte_len=32):
+    a = address.split("0x")
+    b = a[1].zfill(byte_len * 2)
+    return "0x" + b

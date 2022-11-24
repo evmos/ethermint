@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@openzeppelin/contracts-upgradeable": "^4.8.0"
+  }
+}

@@ -29,6 +29,7 @@ TEST_CONTRACTS = {
     "Greeter": "Greeter.sol",
     "BurnGas": "BurnGas.sol",
     "TestChainID": "ChainID.sol",
+    "Mars": "Mars.sol",
 }
 
 
@@ -143,7 +144,7 @@ def fill_defaults(w3, tx):
 def sign_transaction(w3, tx, key=KEYS["validator"]):
     "fill default fields and sign"
     acct = Account.from_key(key)
-    tx["from"] = acct.address
+    tx["from"] = w3.toChecksumAddress(acct.address)
     tx = fill_transaction_defaults(w3, tx)
     tx = fill_nonce(w3, tx)
     return acct.sign_transaction(tx)
