@@ -27,6 +27,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // Tendermint's PubKey interface. It represents the 33-byte compressed public
 // key format.
 type PubKey struct {
+	// key is the public key in byte form
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 }
 
@@ -72,6 +73,7 @@ func (m *PubKey) GetKey() []byte {
 // PrivKey defines a type alias for an ecdsa.PrivateKey that implements
 // Tendermint's PrivateKey interface.
 type PrivKey struct {
+	// key is the private key in byte form
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 }
 

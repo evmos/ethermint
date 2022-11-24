@@ -26,18 +26,18 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the EVM module parameters
 type Params struct {
-	// evm denom represents the token denomination used to run the EVM state
+	// evm_denom represents the token denomination used to run the EVM state
 	// transitions.
 	EvmDenom string `protobuf:"bytes,1,opt,name=evm_denom,json=evmDenom,proto3" json:"evm_denom,omitempty" yaml:"evm_denom"`
-	// enable create toggles state transitions that use the vm.Create function
+	// enable_create toggles state transitions that use the vm.Create function
 	EnableCreate bool `protobuf:"varint,2,opt,name=enable_create,json=enableCreate,proto3" json:"enable_create,omitempty" yaml:"enable_create"`
-	// enable call toggles state transitions that use the vm.Call function
+	// enable_call toggles state transitions that use the vm.Call function
 	EnableCall bool `protobuf:"varint,3,opt,name=enable_call,json=enableCall,proto3" json:"enable_call,omitempty" yaml:"enable_call"`
-	// extra eips defines the additional EIPs for the vm.Config
+	// extra_eips defines the additional EIPs for the vm.Config
 	ExtraEIPs []int64 `protobuf:"varint,4,rep,packed,name=extra_eips,json=extraEips,proto3" json:"extra_eips,omitempty" yaml:"extra_eips"`
-	// chain config defines the EVM chain configuration parameters
+	// chain_config defines the EVM chain configuration parameters
 	ChainConfig ChainConfig `protobuf:"bytes,5,opt,name=chain_config,json=chainConfig,proto3" json:"chain_config" yaml:"chain_config"`
-	// Allow unprotected transactions defines if replay-protected (i.e non EIP155
+	// allow_unprotected_txs defines if replay-protected (i.e non EIP155
 	// signed) transactions can be executed on the state machine.
 	AllowUnprotectedTxs bool `protobuf:"varint,6,opt,name=allow_unprotected_txs,json=allowUnprotectedTxs,proto3" json:"allow_unprotected_txs,omitempty"`
 }
@@ -120,40 +120,40 @@ func (m *Params) GetAllowUnprotectedTxs() bool {
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
 // instead of *big.Int.
 type ChainConfig struct {
-	// Homestead switch block (nil no fork, 0 = already homestead)
+	// homestead_block switch (nil no fork, 0 = already homestead)
 	HomesteadBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=homestead_block,json=homesteadBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"homestead_block,omitempty" yaml:"homestead_block"`
-	// TheDAO hard-fork switch block (nil no fork)
+	// dao_fork_block corresponds to TheDAO hard-fork switch block (nil no fork)
 	DAOForkBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=dao_fork_block,json=daoForkBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"dao_fork_block,omitempty" yaml:"dao_fork_block"`
-	// Whether the nodes supports or opposes the DAO hard-fork
+	// dao_fork_support defines whether the nodes supports or opposes the DAO hard-fork
 	DAOForkSupport bool `protobuf:"varint,3,opt,name=dao_fork_support,json=daoForkSupport,proto3" json:"dao_fork_support,omitempty" yaml:"dao_fork_support"`
-	// EIP150 implements the Gas price changes
+	// eip150_block: EIP150 implements the Gas price changes
 	// (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil no fork)
 	EIP150Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=eip150_block,json=eip150Block,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"eip150_block,omitempty" yaml:"eip150_block"`
-	// EIP150 HF hash (needed for header only clients as only gas pricing changed)
+	// eip150_hash: EIP150 HF hash (needed for header only clients as only gas pricing changed)
 	EIP150Hash string `protobuf:"bytes,5,opt,name=eip150_hash,json=eip150Hash,proto3" json:"eip150_hash,omitempty" yaml:"byzantium_block"`
-	// EIP155Block HF block
+	// eip155_block: EIP155Block HF block
 	EIP155Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,6,opt,name=eip155_block,json=eip155Block,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"eip155_block,omitempty" yaml:"eip155_block"`
-	// EIP158 HF block
+	// eip158_block: EIP158 HF block
 	EIP158Block *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,7,opt,name=eip158_block,json=eip158Block,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"eip158_block,omitempty" yaml:"eip158_block"`
-	// Byzantium switch block (nil no fork, 0 = already on byzantium)
+	// byzantium_block: Byzantium switch block (nil no fork, 0 = already on byzantium)
 	ByzantiumBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,8,opt,name=byzantium_block,json=byzantiumBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"byzantium_block,omitempty" yaml:"byzantium_block"`
-	// Constantinople switch block (nil no fork, 0 = already activated)
+	// constantinople_block: Constantinople switch block (nil no fork, 0 = already activated)
 	ConstantinopleBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,9,opt,name=constantinople_block,json=constantinopleBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"constantinople_block,omitempty" yaml:"constantinople_block"`
-	// Petersburg switch block (nil same as Constantinople)
+	// petersburg_block: Petersburg switch block (nil same as Constantinople)
 	PetersburgBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,10,opt,name=petersburg_block,json=petersburgBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"petersburg_block,omitempty" yaml:"petersburg_block"`
-	// Istanbul switch block (nil no fork, 0 = already on istanbul)
+	// istanbul_block: Istanbul switch block (nil no fork, 0 = already on istanbul)
 	IstanbulBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,11,opt,name=istanbul_block,json=istanbulBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"istanbul_block,omitempty" yaml:"istanbul_block"`
-	// Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated)
+	// muir_glacier_block: Eip-2384 (bomb delay) switch block (nil no fork, 0 = already activated)
 	MuirGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,12,opt,name=muir_glacier_block,json=muirGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"muir_glacier_block,omitempty" yaml:"muir_glacier_block"`
-	// Berlin switch block (nil = no fork, 0 = already on berlin)
+	// berlin_block: Berlin switch block (nil = no fork, 0 = already on berlin)
 	BerlinBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,13,opt,name=berlin_block,json=berlinBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"berlin_block,omitempty" yaml:"berlin_block"`
-	// London switch block (nil = no fork, 0 = already on london)
+	// london_block: London switch block (nil = no fork, 0 = already on london)
 	LondonBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,17,opt,name=london_block,json=londonBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"london_block,omitempty" yaml:"london_block"`
-	// Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	// arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
 	ArrowGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,18,opt,name=arrow_glacier_block,json=arrowGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"arrow_glacier_block,omitempty" yaml:"arrow_glacier_block"`
-	//  EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	// gray_glacier_block: EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
 	GrayGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,20,opt,name=gray_glacier_block,json=grayGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gray_glacier_block,omitempty" yaml:"gray_glacier_block"`
-	// Virtual fork after The Merge to use as a network splitter
+	// merge_netsplit_block: Virtual fork after The Merge to use as a network splitter
 	MergeNetsplitBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,21,opt,name=merge_netsplit_block,json=mergeNetsplitBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"merge_netsplit_block,omitempty" yaml:"merge_netsplit_block"`
 }
 
@@ -206,7 +206,9 @@ func (m *ChainConfig) GetEIP150Hash() string {
 
 // State represents a single Storage key value pair item.
 type State struct {
-	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// key is the stored key
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// value is the stored value for the given key
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
@@ -261,7 +263,9 @@ func (m *State) GetValue() string {
 // with a given hash. It it used for import/export data as transactions are not
 // persisted on blockchain state after an upgrade.
 type TransactionLogs struct {
+	// hash of the transaction
 	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	// logs is an array of Logs for the given transaction hash
 	Logs []*Log `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
 }
 
@@ -315,24 +319,27 @@ func (m *TransactionLogs) GetLogs() []*Log {
 // Log represents an protobuf compatible Ethereum Log that defines a contract
 // log event. These events are generated by the LOG opcode and stored/indexed by
 // the node.
+//
+// NOTE: address, topics and data are consensus fields. The rest of the fields
+// are derived, i.e. filled in by the nodes, but not secured by consensus.
 type Log struct {
 	// address of the contract that generated the event
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	// list of topics provided by the contract.
+	// topics is a list of topics provided by the contract.
 	Topics []string `protobuf:"bytes,2,rep,name=topics,proto3" json:"topics,omitempty"`
-	// supplied by the contract, usually ABI-encoded
+	// data which is supplied by the contract, usually ABI-encoded
 	Data []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
-	// block in which the transaction was included
+	// block_number of the block in which the transaction was included
 	BlockNumber uint64 `protobuf:"varint,4,opt,name=block_number,json=blockNumber,proto3" json:"blockNumber"`
-	// hash of the transaction
+	// tx_hash is the transaction hash
 	TxHash string `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"transactionHash"`
-	// index of the transaction in the block
+	// tx_index of the transaction in the block
 	TxIndex uint64 `protobuf:"varint,6,opt,name=tx_index,json=txIndex,proto3" json:"transactionIndex"`
-	// hash of the block in which the transaction was included
+	// block_hash of the block in which the transaction was included
 	BlockHash string `protobuf:"bytes,7,opt,name=block_hash,json=blockHash,proto3" json:"blockHash"`
 	// index of the log in the block
 	Index uint64 `protobuf:"varint,8,opt,name=index,proto3" json:"logIndex"`
-	// The Removed field is true if this log was reverted due to a chain
+	// removed is true if this log was reverted due to a chain
 	// reorganisation. You must pay attention to this field if you receive logs
 	// through a filter query.
 	Removed bool `protobuf:"varint,9,opt,name=removed,proto3" json:"removed,omitempty"`
@@ -488,9 +495,9 @@ var xxx_messageInfo_TxResult proto.InternalMessageInfo
 
 // AccessTuple is the element type of an access list.
 type AccessTuple struct {
-	// hex formatted ethereum address
+	// address is a hex formatted ethereum address
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	// hex formatted hashes of the storage keys
+	// storage_keys are hex formatted hashes of the storage keys
 	StorageKeys []string `protobuf:"bytes,2,rep,name=storage_keys,json=storageKeys,proto3" json:"storageKeys"`
 }
 
@@ -529,28 +536,28 @@ var xxx_messageInfo_AccessTuple proto.InternalMessageInfo
 
 // TraceConfig holds extra parameters to trace functions.
 type TraceConfig struct {
-	// custom javascript tracer
+	// tracer is a custom javascript tracer
 	Tracer string `protobuf:"bytes,1,opt,name=tracer,proto3" json:"tracer,omitempty"`
-	// overrides the default timeout of 5 seconds for JavaScript-based tracing
+	// timeout overrides the default timeout of 5 seconds for JavaScript-based tracing
 	// calls
 	Timeout string `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	// number of blocks the tracer is willing to go back
+	// reexec defines the number of blocks the tracer is willing to go back
 	Reexec uint64 `protobuf:"varint,3,opt,name=reexec,proto3" json:"reexec,omitempty"`
-	// disable stack capture
+	// disable_stack switches stack capture
 	DisableStack bool `protobuf:"varint,5,opt,name=disable_stack,json=disableStack,proto3" json:"disableStack"`
-	// disable storage capture
+	// disable_storage switches storage capture
 	DisableStorage bool `protobuf:"varint,6,opt,name=disable_storage,json=disableStorage,proto3" json:"disableStorage"`
-	// print output during capture end
+	// debug can be used to print output during capture end
 	Debug bool `protobuf:"varint,8,opt,name=debug,proto3" json:"debug,omitempty"`
-	// maximum length of output, but zero means unlimited
+	// limit defines the maximum length of output, but zero means unlimited
 	Limit int32 `protobuf:"varint,9,opt,name=limit,proto3" json:"limit,omitempty"`
-	// Chain overrides, can be used to execute a trace using future fork rules
+	// overrides can be used to execute a trace using future fork rules
 	Overrides *ChainConfig `protobuf:"bytes,10,opt,name=overrides,proto3" json:"overrides,omitempty"`
-	// enable memory capture
+	// enable_memory switches memory capture
 	EnableMemory bool `protobuf:"varint,11,opt,name=enable_memory,json=enableMemory,proto3" json:"enableMemory"`
-	// enable return data capture
+	// enable_return_data switches the capture of return data
 	EnableReturnData bool `protobuf:"varint,12,opt,name=enable_return_data,json=enableReturnData,proto3" json:"enableReturnData"`
-	// tracer config
+	// tracer_json_config configures the tracer using a JSON string
 	TracerJsonConfig string `protobuf:"bytes,13,opt,name=tracer_json_config,json=tracerJsonConfig,proto3" json:"tracerConfig"`
 }
 
