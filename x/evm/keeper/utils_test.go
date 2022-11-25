@@ -457,19 +457,9 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 			baseFee := suite.app.EvmKeeper.GetBaseFee(suite.ctx, ethCfg)
 			priority := evmtypes.GetTxPriority(txData, baseFee)
 
-			fees, err := suite.app.EvmKeeper.DeductTxCostsFromUserBalance(
-				suite.ctx,
-				*tx,
-				txData,
-				evmtypes.DefaultEVMDenom,
-				baseFee,
-				false,
-				false,
-				suite.enableFeemarket, // london
-			)
-
+			fees, err := evmkeeper.VerifyFee(suite.ctx, txData, evmtypes.DefaultEVMDenom, baseFee, false, false)
 			if tc.expectPass {
-				suite.Require().NoError(err, "valid test %d failed", i)
+				suite.Require().NoError(err, "valid test %d failed - '%s'", i, tc.name)
 				if tc.enableFeemarket {
 					baseFee := suite.app.FeeMarketKeeper.GetBaseFee(suite.ctx)
 					suite.Require().Equal(
@@ -477,7 +467,7 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 						sdk.NewCoins(
 							sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewIntFromBigInt(txData.EffectiveFee(baseFee))),
 						),
-						"valid test %d failed, fee value is wrong ", i,
+						"valid test %d failed, fee value is wrong  - '%s'", i, tc.name,
 					)
 					suite.Require().Equal(int64(0), priority)
 				} else {
@@ -486,12 +476,19 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 						sdk.NewCoins(
 							sdk.NewCoin(evmtypes.DefaultEVMDenom, tc.gasPrice.Mul(sdkmath.NewIntFromUint64(tc.gasLimit))),
 						),
-						"valid test %d failed, fee value is wrong ", i,
+						"valid test %d failed, fee value is wrong  - '%s'", i, tc.name,
 					)
 				}
 			} else {
-				suite.Require().Error(err, "invalid test %d passed", i)
-				suite.Require().Nil(fees, "invalid test %d passed. fees value must be nil", i)
+				suite.Require().Error(err, "invalid test %d passed - '%s'", i, tc.name)
+				suite.Require().Nil(fees, "invalid test %d passed. fees value must be nil - '%s'", i, tc.name)
+			}
+
+			err = suite.app.EvmKeeper.DeductTxCostsFromUserBalance(suite.ctx, fees, suite.address)
+			if tc.expectPass {
+				suite.Require().NoError(err, "valid test %d failed - '%s'", i, tc.name)
+			} else {
+				suite.Require().Error(err, "invalid test %d passed - '%s'", i, tc.name)
 			}
 		})
 	}

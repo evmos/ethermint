@@ -16,32 +16,29 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
+// DeductTxCostsFromUserBalance deducts the fees from the user balance.
 func (k Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
+	fees sdk.Coins,
 	from common.Address,
-	txData evmtypes.TxData,
-	denom string,
-	baseFee *big.Int,
-) (fees sdk.Coins, err error) {
+) error {
 	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, sdk.AccAddress(from.Bytes()))
+	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, from.Bytes())
 	if err != nil {
-		return nil, errorsmod.Wrapf(err, "account not found for sender %s", from)
+		return errorsmod.Wrapf(err, "account not found for sender %s", from)
 	}
 
 	// deduct the full gas cost from the user balance
 	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
-		return nil, errorsmod.Wrapf(
-			err,
-			"failed to deduct full gas cost %s from the user %s balance",
-			fees, from,
-		)
+		return errorsmod.Wrapf(err, "failed to deduct full gas cost %s from the user %s balance", fees, from)
 	}
 
-	return fees, nil
+	return nil
 }
 
+// VerifyFee is used to return the fee for the given transaction data in sdk.Coins. It checks that the
+// gas limit is not reached, the gas limit is higher than the intrinsic gas and that the
+// base fee is higher than the gas fee cap.
 func VerifyFee(
 	ctx sdk.Context,
 	txData evmtypes.TxData,

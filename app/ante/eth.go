@@ -132,7 +132,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
-	london := ethCfg.IsLondon(blockHeight)
 	gasWanted := uint64(0)
 	var events sdk.Events
 
@@ -164,16 +163,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		evmDenom := egcd.evmKeeper.GetEVMDenom(ctx)
 
-		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
-			ctx,
-			*msgEthTx,
-			txData,
-			evmDenom,
-			baseFee,
-			homestead,
-			istanbul,
-			london,
-		)
+		fees, err := evmkeeper.VerifyFee(ctx, txData, evmDenom, baseFee, homestead, istanbul)
+		if err != nil {
+			return ctx, errorsmod.Wrapf(err, "failed to verify the fees")
+		}
+
+		err = egcd.evmKeeper.DeductTxCostsFromUserBalance(ctx, fees, common.HexToAddress(msgEthTx.From))
 		if err != nil {
 			return ctx, errorsmod.Wrapf(err, "failed to deduct transaction costs from user balance")
 		}
