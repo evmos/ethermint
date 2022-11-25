@@ -12,12 +12,16 @@ import (
 )
 
 var (
-	amino = codec.NewLegacyAmino()
-	// ModuleCdc references the global vesting module codec. Note, the codec should
+	amino     = codec.NewLegacyAmino()
 	ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
-	// AminoCdc ONLY be used in certain instances of tests and for JSON encoding.
+
 	// AminoCdc is a amino codec created to support amino JSON compatible msgs.
 	AminoCdc = codec.NewAminoCodec(amino)
+)
+
+const (
+	// Amino names
+	updateParamsName = "ethermint/MsgUpdateParams"
 )
 
 // NOTE: This is required for the GetSignBytes function
@@ -51,7 +55,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
 
-// PackClientState constructs a new Any packed with the given tx data value. It returns
+// PackTxData constructs a new Any packed with the given tx data value. It returns
 // an error if the client state can't be casted to a protobuf message or if the concrete
 // implementation is not registered to the protobuf codec.
 func PackTxData(txData TxData) (*codectypes.Any, error) {
@@ -81,4 +85,9 @@ func UnpackTxData(any *codectypes.Any) (TxData, error) {
 	}
 
 	return txData, nil
+}
+
+// RegisterLegacyAminoCodec required for EIP-712
+func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&MsgUpdateParams{}, updateParamsName, nil)
 }
