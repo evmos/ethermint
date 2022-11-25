@@ -37,7 +37,7 @@ def send_signed_txs(w3, signed, i=0):
         return [w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
                 for txhash in txhashes]
     except TimeExhausted:
-        return send_signed_txs(w3, signed, ++i)
+        return send_signed_txs(w3, signed, i+1)
 
 
 def test_priority(ethermint: Ethermint):

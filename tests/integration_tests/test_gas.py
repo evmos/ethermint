@@ -43,7 +43,7 @@ def get_gas(w3, contract, i=0):
     try:
         return w3.eth.wait_for_transaction_receipt(geth_txhash, timeout=20)
     except TimeExhausted:
-        return get_gas(w3, contract, ++i)
+        return get_gas(w3, contract, i+1)
 
 
 def test_gas_call(geth, ethermint):
