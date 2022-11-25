@@ -40,16 +40,16 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.0.0)
+* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
 * (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to `v0.46`.
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.6).
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
 * (evm) [#1452](https://github.com/evmos/ethermint/pull/1452) Simplify Gas Math in `ApplyTransaction`.
 * (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712. 
 * (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
 * (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
-* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update geth version to v1.10.25.
+* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
 
 ### API Breaking
 
@@ -58,6 +58,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block
 * (ante) [#1455](https://github.com/evmos/ethermint/pull/1455) Refactor `AnteHandler` logic
 * (evm) [#1444](https://github.com/evmos/ethermint/pull/1444) Improve performance of `eth_estimateGas`
 * (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
@@ -80,6 +81,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (server) [#1497](https://github.com/evmos/ethermint/pull/1497) Fix telemetry server setup for observability
 * (rpc) [#1442](https://github.com/evmos/ethermint/pull/1442) Fix decoding of `finalized` block number.
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
@@ -92,6 +94,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (proto) [#1466](https://github.com/evmos/ethermint/pull/1466) Fix proto scripts and upgrade them to mirror current cosmos-sdk scripts
 * (rpc) [#1405](https://github.com/evmos/ethermint/pull/1405) Fix uninitialized chain ID field in gRPC requests.
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
+* (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
+
 
 ## [v0.19.3] - 2022-10-14
 
