@@ -9,11 +9,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
-	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 
 	"github.com/spf13/cobra"
 
@@ -240,12 +240,14 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	cfg := ctx.Config
 	home := cfg.RootDir
 	logger := ctx.Logger
+
 	if cpuProfile := ctx.Viper.GetString(srvflags.CPUProfile); cpuProfile != "" {
 		fp, err := ethdebug.ExpandHome(cpuProfile)
 		if err != nil {
 			ctx.Logger.Debug("failed to get filepath for the CPU profile file", "error", err.Error())
 			return err
 		}
+
 		f, err := os.Create(fp)
 		if err != nil {
 			return err
@@ -265,18 +267,19 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}()
 	}
 
-	traceWriterFile := ctx.Viper.GetString(srvflags.TraceStore)
 	db, err := openDB(home, server.GetAppDBBackend(ctx.Viper))
 	if err != nil {
 		logger.Error("failed to open DB", "error", err.Error())
 		return err
 	}
+
 	defer func() {
 		if err := db.Close(); err != nil {
 			ctx.Logger.With("error", err).Error("error closing db")
 		}
 	}()
 
+	traceWriterFile := ctx.Viper.GetString(srvflags.TraceStore)
 	traceWriter, err := openTraceWriter(traceWriterFile)
 	if err != nil {
 		logger.Error("failed to open trace writer", "error", err.Error())
@@ -290,15 +293,8 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	}
 
 	if err := config.ValidateBasic(); err != nil {
-		if strings.Contains(err.Error(), "set min gas price in app.toml or flag or env variable") {
-			ctx.Logger.Error(
-				"WARNING: The minimum-gas-prices config in app.toml is set to the empty string. " +
-					"This defaults to 0 in the current version, but will error in the next version " +
-					"(SDK v0.44). Please explicitly put the desired minimum-gas-prices in your app.toml.",
-			)
-		} else {
-			return err
-		}
+		logger.Error("invalid server config", "error", err.Error())
+		return err
 	}
 
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
@@ -310,15 +306,19 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	}
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(cfg)
+
 	var (
 		tmNode   *node.Node
 		gRPCOnly = ctx.Viper.GetBool(srvflags.GRPCOnly)
 	)
+
 	if gRPCOnly {
-		ctx.Logger.Info("starting node in query only mode; Tendermint is disabled")
+		logger.Info("starting node in query only mode; Tendermint is disabled")
 		config.GRPC.Enable = true
 		config.JSONRPC.EnableIndexer = false
 	} else {
+		logger.Info("starting node with ABCI Tendermint in-process")
+
 		tmNode, err = node.NewNode(
 			cfg,
 			pvm.LoadOrGenFilePV(cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile()),
@@ -343,7 +343,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			if tmNode.IsRunning() {
 				_ = tmNode.Stop()
 			}
-			logger.Info("Bye!")
 		}()
 	}
 
@@ -355,6 +354,15 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 		app.RegisterTxService(clientCtx)
 		app.RegisterTendermintService(clientCtx)
+
+		if a, ok := app.(types.ApplicationQueryService); ok {
+			a.RegisterNodeService(clientCtx)
+		}
+	}
+
+	metrics, err := startTelemetry(config)
+	if err != nil {
+		return err
 	}
 
 	// Enable metrics if JSONRPC is enabled and --metrics is passed
@@ -370,7 +378,8 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			logger.Error("failed to open evm indexer DB", "error", err.Error())
 			return err
 		}
-		idxLogger := ctx.Logger.With("module", "evmindex")
+
+		idxLogger := ctx.Logger.With("indexer", "evm")
 		idxer = indexer.NewKVIndexer(idxDB, idxLogger, clientCtx)
 		indexerService := NewEVMIndexerService(idxer, clientCtx.Client)
 		indexerService.SetLogger(idxLogger)
@@ -583,4 +592,11 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 		os.O_WRONLY|os.O_APPEND|os.O_CREATE,
 		0o600,
 	)
+}
+
+func startTelemetry(cfg config.Config) (*telemetry.Metrics, error) {
+	if !cfg.Telemetry.Enabled {
+		return nil, nil
+	}
+	return telemetry.New(cfg.Telemetry)
 }

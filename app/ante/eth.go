@@ -164,6 +164,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		evmDenom := egcd.evmKeeper.GetEVMDenom(ctx)
 
+		// fees, err = Verify Fee
+
 		fees, err := egcd.evmKeeper.DeductTxCostsFromUserBalance(
 			ctx,
 			*msgEthTx,
