@@ -1,9 +1,10 @@
 package v4_test
 
 import (
+	"testing"
+
 	"github.com/evmos/ethermint/x/evm/types"
 	gogotypes "github.com/gogo/protobuf/types"
-	"testing"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"

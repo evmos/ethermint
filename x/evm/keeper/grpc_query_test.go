@@ -1265,9 +1265,7 @@ func (suite *KeeperTestSuite) TestQueryBaseFee() {
 }
 
 func (suite *KeeperTestSuite) TestEthCall() {
-	var (
-		req *types.EthCallRequest
-	)
+	var req *types.EthCallRequest
 
 	address := tests.GenerateAddress()
 	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(suite.ctx, address))
@@ -1338,7 +1336,6 @@ func (suite *KeeperTestSuite) TestEthCall() {
 			}
 		})
 	}
-
 }
 
 func (suite *KeeperTestSuite) TestEmptyRequest() {

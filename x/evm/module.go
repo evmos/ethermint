@@ -132,7 +132,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 // Route returns the message routing key for the evm module.

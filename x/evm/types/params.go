@@ -64,7 +64,7 @@ func DefaultParams() Params {
 
 // Validate performs basic validation on evm parameters.
 func (p Params) Validate() error {
-	if err := sdk.ValidateDenom(p.EvmDenom); err != nil {
+	if err := validateEVMDenom(p.EvmDenom); err != nil {
 		return err
 	}
 
@@ -72,7 +72,19 @@ func (p Params) Validate() error {
 		return err
 	}
 
-	return p.ChainConfig.Validate()
+	if err := validateBool(p.EnableCall); err != nil {
+		return err
+	}
+
+	if err := validateBool(p.EnableCreate); err != nil {
+		return err
+	}
+
+	if err := validateBool(p.AllowUnprotectedTxs); err != nil {
+		return err
+	}
+
+	return validateChainConfig(p.ChainConfig)
 }
 
 // EIPs returns the ExtraEips as a int slice
