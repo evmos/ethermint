@@ -42,7 +42,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				return &invalidTx{}
 			},
 			false,
-			"must be a FeeTx",
+			"invalid transaction type",
 			false,
 		},
 		{
