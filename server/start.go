@@ -200,9 +200,10 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		if err := db.Close(); err != nil {
-			ctx.Logger.With("error", err).Error("error closing db")
+			ctx.Logger.Error("error closing db", "error", err.Error())
 		}
 	}()
 
@@ -213,6 +214,22 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 	}
 
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
+
+	config, err := config.GetConfig(ctx.Viper)
+	if err != nil {
+		ctx.Logger.Error("failed to get server config", "error", err.Error())
+		return err
+	}
+
+	if err := config.ValidateBasic(); err != nil {
+		ctx.Logger.Error("invalid server config", "error", err.Error())
+		return err
+	}
+
+	_, err = startTelemetry(config)
+	if err != nil {
+		return err
+	}
 
 	svr, err := abciserver.NewServer(addr, transport, app)
 	if err != nil {
