@@ -55,14 +55,14 @@ func TestMigrate(t *testing.T) {
 	bz = store.Get(v4types.ParamStoreKeyEnableCall)
 	cdc.MustUnmarshal(bz, &enableCall)
 
-	var chainCfg types.ChainConfig
+	var chainCfg v4types.ChainConfig
 	bz = store.Get(v4types.ParamStoreKeyChainConfig)
 	cdc.MustUnmarshal(bz, &chainCfg)
 
-	var extraEIPs types.ExtraEIPs
+	var extraEIPs v4types.ExtraEIPs
 	bz = store.Get(v4types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(bz, &extraEIPs)
 
-	params := types.NewParams(evmDenom.Value, allowUnprotectedTx.Value, enableCreate.Value, enableCall.Value, chainCfg, extraEIPs)
+	params := v4types.NewParams(evmDenom.Value, allowUnprotectedTx.Value, enableCreate.Value, enableCall.Value, chainCfg, extraEIPs)
 	require.Equal(t, legacySubspace.ps, params)
 }

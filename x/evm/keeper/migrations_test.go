@@ -3,23 +3,24 @@ package keeper_test
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
+	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
 type mockSubspace struct {
-	ps types.Params
+	ps v4types.Params
 }
 
-func newMockSubspace(ps types.Params) mockSubspace {
+func newMockSubspace(ps v4types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
 func (ms mockSubspace) GetParamSet(ctx sdk.Context, ps types.LegacyParams) {
-	*ps.(*types.Params) = ms.ps
+	*ps.(*v4types.Params) = ms.ps
 }
 
 func (suite *KeeperTestSuite) TestMigrations() {
-	legacySubspace := newMockSubspace(types.DefaultParams())
+	legacySubspace := newMockSubspace(v4types.DefaultParams())
 	migrator := evmkeeper.NewMigrator(*suite.app.EvmKeeper, legacySubspace)
 
 	testCases := []struct {
