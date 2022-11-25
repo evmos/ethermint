@@ -128,19 +128,11 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
 	m := keeper.NewMigrator(*am.keeper, am.legacySubspace)
-	// TODO: Figure out if these will be deleted
-	// err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
-	// if err != nil {
-	//	panic(err)
-	// }
-	// err = cfg.RegisterMigration(types.ModuleName, 2, m.Migrate2to3)
-	// if err != nil {
-	//	panic(err)
-	// }
 	err := cfg.RegisterMigration(types.ModuleName, 3, m.Migrate3to4)
 	if err != nil {
 		panic(err)
 	}
+
 }
 
 // Route returns the message routing key for the evm module.
@@ -172,7 +164,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
-
 	cdc.MustUnmarshalJSON(data, &genesisState)
 	InitGenesis(ctx, am.keeper, am.ak, genesisState)
 	return []abci.ValidatorUpdate{}
