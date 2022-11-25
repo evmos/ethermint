@@ -11,6 +11,7 @@ import (
 
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -18,12 +19,36 @@ import (
 // DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
 func (k Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
-	msgEthTx evmtypes.MsgEthereumTx,
+	from common.Address,
 	txData evmtypes.TxData,
 	denom string,
 	baseFee *big.Int,
-	homestead, istanbul, london bool,
 ) (fees sdk.Coins, err error) {
+	// fetch sender account from signature
+	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, sdk.AccAddress(from.Bytes()))
+	if err != nil {
+		return nil, errorsmod.Wrapf(err, "account not found for sender %s", from)
+	}
+
+	// deduct the full gas cost from the user balance
+	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
+		return nil, errorsmod.Wrapf(
+			err,
+			"failed to deduct full gas cost %s from the user %s balance",
+			fees, from,
+		)
+	}
+
+	return fees, nil
+}
+
+func VerifyFee(
+	ctx sdk.Context,
+	txData evmtypes.TxData,
+	denom string,
+	baseFee *big.Int,
+	homestead, istanbul bool,
+) (sdk.Coins, error) {
 	isContractCreation := txData.GetTo() == nil
 
 	gasLimit := txData.GetGas()
@@ -63,24 +88,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 		return sdk.Coins{}, nil
 	}
 
-	fees = sdk.Coins{{Denom: denom, Amount: sdkmath.NewIntFromBigInt(feeAmt)}}
-
-	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, msgEthTx.GetFrom())
-	if err != nil {
-		return nil, errorsmod.Wrapf(err, "account not found for sender %s", msgEthTx.From)
-	}
-
-	// deduct the full gas cost from the user balance
-	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
-		return nil, errorsmod.Wrapf(
-			err,
-			"failed to deduct full gas cost %s from the user %s balance",
-			fees, msgEthTx.From,
-		)
-	}
-
-	return fees, nil
+	return sdk.Coins{{Denom: denom, Amount: sdkmath.NewIntFromBigInt(feeAmt)}}, nil
 }
 
 // CheckSenderBalance validates that the tx cost value is positive and that the
