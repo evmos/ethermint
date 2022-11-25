@@ -26,15 +26,15 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the EVM module parameters
 type Params struct {
-	// no base fee forces the EIP-1559 base fee to 0 (needed for 0 price calls)
+	// no_base_fee forces the EIP-1559 base fee to 0 (needed for 0 price calls)
 	NoBaseFee bool `protobuf:"varint,1,opt,name=no_base_fee,json=noBaseFee,proto3" json:"no_base_fee,omitempty"`
-	// base fee change denominator bounds the amount the base fee can change
+	// base_fee_change_denominator bounds the amount the base fee can change
 	// between blocks.
 	BaseFeeChangeDenominator uint32 `protobuf:"varint,2,opt,name=base_fee_change_denominator,json=baseFeeChangeDenominator,proto3" json:"base_fee_change_denominator,omitempty"`
-	// elasticity multiplier bounds the maximum gas limit an EIP-1559 block may
+	// elasticity_multiplier bounds the maximum gas limit an EIP-1559 block may
 	// have.
 	ElasticityMultiplier uint32 `protobuf:"varint,3,opt,name=elasticity_multiplier,json=elasticityMultiplier,proto3" json:"elasticity_multiplier,omitempty"`
-	// height at which the base fee calculation is enabled.
+	// enable_height defines at which block height the base fee calculation is enabled.
 	EnableHeight int64 `protobuf:"varint,5,opt,name=enable_height,json=enableHeight,proto3" json:"enable_height,omitempty"`
 	// base fee for EIP-1559 blocks.
 	BaseFee cosmossdk_io_math.Int `protobuf:"bytes,6,opt,name=base_fee,json=baseFee,proto3,customtype=cosmossdk.io/math.Int" json:"base_fee"`

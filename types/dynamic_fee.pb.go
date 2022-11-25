@@ -24,7 +24,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// ExtensionOptionDynamicFeeTx is an extension option that specify the maxPrioPrice for cosmos tx
+// ExtensionOptionDynamicFeeTx is an extension option that specifies the maxPrioPrice for cosmos tx
 type ExtensionOptionDynamicFeeTx struct {
 	// the same as `max_priority_fee_per_gas` in eip-1559 spec
 	MaxPriorityPrice cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=max_priority_price,json=maxPriorityPrice,proto3,customtype=cosmossdk.io/math.Int" json:"max_priority_price"`

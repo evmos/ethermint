@@ -453,11 +453,16 @@ func (suite *KeeperTestSuite) TestDeductTxCostsFromUserBalance() {
 
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 
-			fees, priority, err := suite.app.EvmKeeper.DeductTxCostsFromUserBalance(
+			ethCfg := suite.app.EvmKeeper.GetChainConfig(suite.ctx).EthereumConfig(nil)
+			baseFee := suite.app.EvmKeeper.GetBaseFee(suite.ctx, ethCfg)
+			priority := evmtypes.GetTxPriority(txData, baseFee)
+
+			fees, err := suite.app.EvmKeeper.DeductTxCostsFromUserBalance(
 				suite.ctx,
 				*tx,
 				txData,
 				evmtypes.DefaultEVMDenom,
+				baseFee,
 				false,
 				false,
 				suite.enableFeemarket, // london

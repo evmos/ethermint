@@ -25,21 +25,22 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // TxResult is the value stored in eth tx indexer
 type TxResult struct {
-	// the block height
+	// height of the blockchain
 	Height int64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
-	// cosmos tx index
+	// tx_index of the cosmos transaction
 	TxIndex uint32 `protobuf:"varint,2,opt,name=tx_index,json=txIndex,proto3" json:"tx_index,omitempty"`
-	// the msg index in a batch tx
+	// msg_index in a batch transaction
 	MsgIndex uint32 `protobuf:"varint,3,opt,name=msg_index,json=msgIndex,proto3" json:"msg_index,omitempty"`
-	// eth tx index, the index in the list of valid eth tx in the block,
+	// eth_tx_index is the index in the list of valid eth tx in the block,
 	// aka. the transaction list returned by eth_getBlock api.
 	EthTxIndex int32 `protobuf:"varint,4,opt,name=eth_tx_index,json=ethTxIndex,proto3" json:"eth_tx_index,omitempty"`
-	// if the eth tx is failed
+	// failed is true if the eth transaction did not go succeed
 	Failed bool `protobuf:"varint,5,opt,name=failed,proto3" json:"failed,omitempty"`
-	// gas used by tx, if exceeds block gas limit,
-	// it's set to gas limit which is what's actually deducted by ante handler.
+	// gas_used by the transaction. If it exceeds the block gas limit,
+	// it's set to gas limit, which is what's actually deducted by ante handler.
 	GasUsed uint64 `protobuf:"varint,6,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
-	// the cumulative gas used within current batch tx
+	// cumulative_gas_used specifies the cumulated amount of gas used for all
+	// processed messages within the current batch transaction.
 	CumulativeGasUsed uint64 `protobuf:"varint,7,opt,name=cumulative_gas_used,json=cumulativeGasUsed,proto3" json:"cumulative_gas_used,omitempty"`
 }
 
