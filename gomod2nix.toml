@@ -97,8 +97,8 @@ schema = 3
     version = "v1.0.0-alpha8"
     hash = "sha256-iXzXoS5Kfh5DBy+PhdFWraDWXda/3M4j7j4VECjv4CA="
   [mod."github.com/cosmos/cosmos-sdk"]
-    version = "v0.46.5-0.20221114064055-2114ec42dfa1"
-    hash = "sha256-swqznmZfl2dlj/8ReJJs0zagFN2xpzF2ehsfVvPbohc="
+    version = "v0.46.6"
+    hash = "sha256-H1VZxZUWXhpXiY3A9smLp09MEGpXmh+XvX6YUiXPcpQ="
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -362,8 +362,8 @@ schema = 3
     version = "v0.0.5"
     hash = "sha256-/5i70IkH/qSW5KjGzv8aQNKh9tHoz98tqtL0K2DMFn4="
   [mod."github.com/onsi/ginkgo/v2"]
-    version = "v2.5.0"
-    hash = "sha256-mu8Ry88hLAVv9bcvENfP08dBP/yN1DYZrFf6ejxp8co="
+    version = "v2.5.1"
+    hash = "sha256-VB29+H9k7l6il63oXJvsjamSUhsw/e99iI/BeTCderA="
   [mod."github.com/onsi/gomega"]
     version = "v1.24.1"
     hash = "sha256-REfxQTDRcO23GnmJfOW8/MmPJf9oE2grVvvGiC1eSbo="
@@ -527,8 +527,8 @@ schema = 3
     version = "v0.0.0-20221116193143-41c2ba794472"
     hash = "sha256-uQuxuOvWRsdMii5M5QresisVd1E+Ss8s2WfR2n7QSXk="
   [mod."google.golang.org/grpc"]
-    version = "v1.50.1"
-    hash = "sha256-38nk4qIme+fE57SsCqNxtCZnc8fyzzi4Sb60uDTT2KE="
+    version = "v1.51.0"
+    hash = "sha256-RzH5DU13D/ulxxOouIKpdNt8eHdff7mrEnB+JUupbLU="
   [mod."google.golang.org/protobuf"]
     version = "v1.28.2-0.20220831092852-f930b1dc76e8"
     hash = "sha256-li5hXlXwTJ5LIZ8bVki1AZ6UFI2gXHl33JwdX1dOrtM="

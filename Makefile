@@ -437,9 +437,17 @@ protoImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /
 protoCosmosVer=0.11.2
 protoCosmosName=ghcr.io/cosmos/proto-builder:$(protoCosmosVer)
 protoCosmosImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protoCosmosName)
+# ------
+# NOTE: Link to the yoheimuta/protolint docker images:
+#       https://hub.docker.com/r/yoheimuta/protolint/tags
+#
+protolintVer=0.42.2
+protolintName=yoheimuta/protolint:$(protolintVer)
+protolintImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protolintName)
+
 
 # ------
-# NOTE: If you are experiencing problems running these commands, try deleting 
+# NOTE: If you are experiencing problems running these commands, try deleting
 #       the docker images and execute the desired command again.
 #
 proto-all: proto-format proto-lint proto-gen
@@ -448,24 +456,27 @@ proto-gen:
 	@echo "Generating Protobuf files"
 	$(protoImage) sh ./scripts/protocgen.sh
 
-proto-swagger-gen:
-	@echo "Generating Protobuf Swagger"
-	$(protoImage) sh ./scripts/protoc-swagger-gen.sh
+
+# TODO: Rethink API docs generation
+# proto-swagger-gen:
+# 	@echo "Generating Protobuf Swagger"
+# 	$(protoImage) sh ./scripts/protoc-swagger-gen.sh
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	$(protoCosmosImage) find ./ -name "*.proto" -exec clang-format -i {} \;
+	$(protoCosmosImage) find ./ -name *.proto -exec clang-format -i {} \;
 
+# NOTE: The linter configuration lives in .protolint.yaml
 proto-lint:
 	@echo "Linting Protobuf files"
-	$(protoImage) buf lint --error-format=json
+	$(protolintImage) lint ./proto
 
 proto-check-breaking:
 	@echo "Checking Protobuf files for breaking changes"
 	$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
 
 
-.PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking
+.PHONY: proto-all proto-gen proto-gen-any proto-format proto-lint proto-check-breaking
 
 ###############################################################################
 ###                                Localnet                                 ###

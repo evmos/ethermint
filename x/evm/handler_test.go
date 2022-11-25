@@ -594,9 +594,12 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 
 			before := k.GetBalance(suite.ctx, suite.from)
 
+			ethCfg := suite.app.EvmKeeper.GetChainConfig(suite.ctx).EthereumConfig(nil)
+			baseFee := suite.app.EvmKeeper.GetBaseFee(suite.ctx, ethCfg)
+
 			txData, err := types.UnpackTxData(tx.Data)
 			suite.Require().NoError(err)
-			_, _, err = k.DeductTxCostsFromUserBalance(suite.ctx, *tx, txData, "aphoton", true, true, true)
+			_, err = k.DeductTxCostsFromUserBalance(suite.ctx, *tx, txData, "aphoton", baseFee, true, true, true)
 			suite.Require().NoError(err)
 
 			res, err := k.EthereumTx(sdk.WrapSDKContext(suite.ctx), tx)

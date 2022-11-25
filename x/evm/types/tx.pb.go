@@ -36,13 +36,13 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
 type MsgEthereumTx struct {
-	// inner transaction data
+	// data is inner transaction data of the Ethereum transaction
 	Data *types.Any `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	// DEPRECATED: encoded storage size of the transaction
+	// size is the encoded storage size of the transaction (DEPRECATED)
 	Size_ float64 `protobuf:"fixed64,2,opt,name=size,proto3" json:"-"`
-	// transaction hash in hex format
+	// hash of the transaction in hex format
 	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty" rlp:"-"`
-	// ethereum signer address in hex format. This address value is checked
+	// from is the ethereum signer address in hex format. This address value is checked
 	// against the address derived from the signature (V, R, S) using the
 	// secp256k1 elliptic curve
 	From string `protobuf:"bytes,4,opt,name=from,proto3" json:"from,omitempty"`
@@ -87,15 +87,15 @@ var xxx_messageInfo_MsgEthereumTx proto.InternalMessageInfo
 type LegacyTx struct {
 	// nonce corresponds to the account nonce (transaction sequence).
 	Nonce uint64 `protobuf:"varint,1,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// gas price defines the value for each gas unit
+	// gas_price defines the value for each gas unit
 	GasPrice *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,2,opt,name=gas_price,json=gasPrice,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_price,omitempty"`
 	// gas defines the gas limit defined for the transaction.
 	GasLimit uint64 `protobuf:"varint,3,opt,name=gas,proto3" json:"gas,omitempty"`
-	// hex formatted address of the recipient
+	// to is the hex formatted address of the recipient
 	To string `protobuf:"bytes,4,opt,name=to,proto3" json:"to,omitempty"`
 	// value defines the unsigned integer value of the transaction amount.
 	Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,5,opt,name=value,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"value,omitempty"`
-	// input defines the data payload bytes of the transaction.
+	// data is the data payload bytes of the transaction.
 	Data []byte `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
 	// v defines the signature value
 	V []byte `protobuf:"bytes,7,opt,name=v,proto3" json:"v,omitempty"`
@@ -140,20 +140,21 @@ var xxx_messageInfo_LegacyTx proto.InternalMessageInfo
 
 // AccessListTx is the data of EIP-2930 access list transactions.
 type AccessListTx struct {
-	// destination EVM chain ID
+	// chain_id of the destination EVM chain
 	ChainID *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"chainID"`
 	// nonce corresponds to the account nonce (transaction sequence).
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// gas price defines the value for each gas unit
+	// gas_price defines the value for each gas unit
 	GasPrice *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,3,opt,name=gas_price,json=gasPrice,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_price,omitempty"`
 	// gas defines the gas limit defined for the transaction.
 	GasLimit uint64 `protobuf:"varint,4,opt,name=gas,proto3" json:"gas,omitempty"`
-	// hex formatted address of the recipient
+	// to is the recipient address in hex format
 	To string `protobuf:"bytes,5,opt,name=to,proto3" json:"to,omitempty"`
 	// value defines the unsigned integer value of the transaction amount.
 	Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,6,opt,name=value,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"value,omitempty"`
-	// input defines the data payload bytes of the transaction.
-	Data     []byte     `protobuf:"bytes,7,opt,name=data,proto3" json:"data,omitempty"`
+	// data is the data payload bytes of the transaction.
+	Data []byte `protobuf:"bytes,7,opt,name=data,proto3" json:"data,omitempty"`
+	// accesses is an array of access tuples
 	Accesses AccessList `protobuf:"bytes,8,rep,name=accesses,proto3,castrepeated=AccessList" json:"accessList"`
 	// v defines the signature value
 	V []byte `protobuf:"bytes,9,opt,name=v,proto3" json:"v,omitempty"`
@@ -198,22 +199,23 @@ var xxx_messageInfo_AccessListTx proto.InternalMessageInfo
 
 // DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 type DynamicFeeTx struct {
-	// destination EVM chain ID
+	// chain_id of the destination EVM chain
 	ChainID *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"chainID"`
 	// nonce corresponds to the account nonce (transaction sequence).
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// gas tip cap defines the max value for the gas tip
+	// gas_tip_cap defines the max value for the gas tip
 	GasTipCap *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,3,opt,name=gas_tip_cap,json=gasTipCap,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_tip_cap,omitempty"`
-	// gas fee cap defines the max value for the gas fee
+	// gas_fee_cap defines the max value for the gas fee
 	GasFeeCap *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=gas_fee_cap,json=gasFeeCap,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gas_fee_cap,omitempty"`
 	// gas defines the gas limit defined for the transaction.
 	GasLimit uint64 `protobuf:"varint,5,opt,name=gas,proto3" json:"gas,omitempty"`
-	// hex formatted address of the recipient
+	// to is the hex formatted address of the recipient
 	To string `protobuf:"bytes,6,opt,name=to,proto3" json:"to,omitempty"`
 	// value defines the the transaction amount.
 	Amount *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,7,opt,name=value,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"value,omitempty"`
-	// input defines the data payload bytes of the transaction.
-	Data     []byte     `protobuf:"bytes,8,opt,name=data,proto3" json:"data,omitempty"`
+	// data is the data payload bytes of the transaction.
+	Data []byte `protobuf:"bytes,8,opt,name=data,proto3" json:"data,omitempty"`
+	// accesses is an array of access tuples
 	Accesses AccessList `protobuf:"bytes,9,rep,name=accesses,proto3,castrepeated=AccessList" json:"accessList"`
 	// v defines the signature value
 	V []byte `protobuf:"bytes,10,opt,name=v,proto3" json:"v,omitempty"`
@@ -256,6 +258,7 @@ func (m *DynamicFeeTx) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DynamicFeeTx proto.InternalMessageInfo
 
+// ExtensionOptionsEthereumTx is an extension option for ethereum transactions
 type ExtensionOptionsEthereumTx struct {
 }
 
@@ -294,19 +297,19 @@ var xxx_messageInfo_ExtensionOptionsEthereumTx proto.InternalMessageInfo
 
 // MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 type MsgEthereumTxResponse struct {
-	// ethereum transaction hash in hex format. This hash differs from the
+	// hash of the ethereum transaction in hex format. This hash differs from the
 	// Tendermint sha256 hash of the transaction bytes. See
 	// https://github.com/tendermint/tendermint/issues/6539 for reference
 	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	// logs contains the transaction hash and the proto-compatible ethereum
 	// logs.
 	Logs []*Log `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
-	// returned data from evm function (result or data supplied with revert
+	// ret is the returned data from evm function (result or data supplied with revert
 	// opcode)
 	Ret []byte `protobuf:"bytes,3,opt,name=ret,proto3" json:"ret,omitempty"`
-	// vm error is the error returned by vm execution
+	// vm_error is the error returned by vm execution
 	VmError string `protobuf:"bytes,4,opt,name=vm_error,json=vmError,proto3" json:"vm_error,omitempty"`
-	// gas consumed by the transaction
+	// gas_used specifies how much gas was consumed by the transaction
 	GasUsed uint64 `protobuf:"varint,5,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
 }
 
