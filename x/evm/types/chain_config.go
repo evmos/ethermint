@@ -35,8 +35,8 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
 		GrayGlacierBlock:        getBlockValue(cc.GrayGlacierBlock),
 		MergeNetsplitBlock:      getBlockValue(cc.MergeNetsplitBlock),
-		ShanghaiBlock:           nil, // TODO: add shanghai block
-		CancunBlock:             nil, // TODO: add cancun block
+		ShanghaiBlock:           getBlockValue(cc.ShanghaiBlock),
+		CancunBlock:             getBlockValue(cc.CancunBlock),
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,
@@ -60,6 +60,8 @@ func DefaultChainConfig() ChainConfig {
 	arrowGlacierBlock := sdk.ZeroInt()
 	grayGlacierBlock := sdk.ZeroInt()
 	mergeNetsplitBlock := sdk.ZeroInt()
+	shanghaiBlock := sdk.ZeroInt()
+	cancunBlock := sdk.ZeroInt()
 
 	return ChainConfig{
 		HomesteadBlock:      &homesteadBlock,
@@ -79,6 +81,8 @@ func DefaultChainConfig() ChainConfig {
 		ArrowGlacierBlock:   &arrowGlacierBlock,
 		GrayGlacierBlock:    &grayGlacierBlock,
 		MergeNetsplitBlock:  &mergeNetsplitBlock,
+		ShanghaiBlock:       &shanghaiBlock,
+		CancunBlock:         &cancunBlock,
 	}
 }
 
@@ -141,7 +145,12 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.MergeNetsplitBlock); err != nil {
 		return errorsmod.Wrap(err, "MergeNetsplitBlock")
 	}
-
+	if err := validateBlock(cc.ShanghaiBlock); err != nil {
+		return errorsmod.Wrap(err, "ShanghaiBlock")
+	}
+	if err := validateBlock(cc.CancunBlock); err != nil {
+		return errorsmod.Wrap(err, "CancunBlock")
+	}
 	// NOTE: chain ID is not needed to check config order
 	if err := cc.EthereumConfig(nil).CheckConfigForkOrder(); err != nil {
 		return errorsmod.Wrap(err, "invalid config fork order")
