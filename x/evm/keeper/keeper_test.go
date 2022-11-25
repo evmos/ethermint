@@ -127,8 +127,6 @@ func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 			evmGenesis.Params.ChainConfig.ArrowGlacierBlock = &maxInt
 			evmGenesis.Params.ChainConfig.GrayGlacierBlock = &maxInt
 			evmGenesis.Params.ChainConfig.MergeNetsplitBlock = &maxInt
-			evmGenesis.Params.ChainConfig.ShanghaiBlock = &maxInt
-			evmGenesis.Params.ChainConfig.CancunBlock = &maxInt
 			genesis[types.ModuleName] = app.AppCodec().MustMarshalJSON(evmGenesis)
 		}
 		return genesis

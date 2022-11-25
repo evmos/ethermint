@@ -1,10 +1,9 @@
 package types
 
 import (
+	"github.com/evmos/ethermint/x/evm/types"
 	"math/big"
 	"strings"
-
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	sdkmath "cosmossdk.io/math"
 
@@ -37,8 +36,8 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
 		GrayGlacierBlock:        getBlockValue(cc.GrayGlacierBlock),
 		MergeNetsplitBlock:      getBlockValue(cc.MergeNetsplitBlock),
-		ShanghaiBlock:           getBlockValue(cc.ShanghaiBlock),
-		CancunBlock:             getBlockValue(cc.CancunBlock),
+		ShanghaiBlock:           nil, // TODO: add shanghai block
+		CancunBlock:             nil, // TODO: add cancun block
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,
@@ -62,8 +61,6 @@ func DefaultChainConfig() ChainConfig {
 	arrowGlacierBlock := sdk.ZeroInt()
 	grayGlacierBlock := sdk.ZeroInt()
 	mergeNetsplitBlock := sdk.ZeroInt()
-	shanghaiBlock := sdk.ZeroInt()
-	cancunBlock := sdk.ZeroInt()
 
 	return ChainConfig{
 		HomesteadBlock:      &homesteadBlock,
@@ -83,8 +80,6 @@ func DefaultChainConfig() ChainConfig {
 		ArrowGlacierBlock:   &arrowGlacierBlock,
 		GrayGlacierBlock:    &grayGlacierBlock,
 		MergeNetsplitBlock:  &mergeNetsplitBlock,
-		ShanghaiBlock:       &shanghaiBlock,
-		CancunBlock:         &cancunBlock,
 	}
 }
 
@@ -147,12 +142,6 @@ func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.MergeNetsplitBlock); err != nil {
 		return errorsmod.Wrap(err, "MergeNetsplitBlock")
 	}
-	if err := validateBlock(cc.ShanghaiBlock); err != nil {
-		return errorsmod.Wrap(err, "ShanghaiBlock")
-	}
-	if err := validateBlock(cc.CancunBlock); err != nil {
-		return errorsmod.Wrap(err, "CancunBlock")
-	}
 
 	// NOTE: chain ID is not needed to check config order
 	if err := cc.EthereumConfig(nil).CheckConfigForkOrder(); err != nil {
@@ -163,7 +152,7 @@ func (cc ChainConfig) Validate() error {
 
 func validateHash(hex string) error {
 	if hex != "" && strings.TrimSpace(hex) == "" {
-		return errorsmod.Wrap(evmtypes.ErrInvalidChainConfig, "hash cannot be blank")
+		return errorsmod.Wrap(types.ErrInvalidChainConfig, "hash cannot be blank")
 	}
 
 	return nil
@@ -177,7 +166,7 @@ func validateBlock(block *sdkmath.Int) error {
 
 	if block.IsNegative() {
 		return errorsmod.Wrapf(
-			evmtypes.ErrInvalidChainConfig, "block value cannot be negative: %s", block,
+			types.ErrInvalidChainConfig, "block value cannot be negative: %s", block,
 		)
 	}
 
