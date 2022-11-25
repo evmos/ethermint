@@ -344,7 +344,6 @@ func (m *MsgEthereumTxResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_MsgEthereumTxResponse proto.InternalMessageInfo
 
 // MsgUpdateParams is the Msg/UpdateParams request type for EVM parameters.
-// Since: cosmos-sdk 0.47
 type MsgUpdateParams struct {
 	// authority is the address of the governance account.
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
@@ -402,7 +401,6 @@ func (m *MsgUpdateParams) GetParams() Params {
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
-// Since: cosmos-sdk 0.47
 type MsgUpdateParamsResponse struct {
 }
 
