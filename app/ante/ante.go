@@ -6,9 +6,10 @@ import (
 
 	tmlog "github.com/tendermint/tendermint/libs/log"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -51,8 +52,8 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 					// cosmos-sdk tx with dynamic fee extension
 					anteHandler = newCosmosAnteHandler(options)
 				default:
-					return ctx, sdkerrors.Wrapf(
-						sdkerrors.ErrUnknownExtensionOptions,
+					return ctx, errorsmod.Wrapf(
+						errortypes.ErrUnknownExtensionOptions,
 						"rejecting tx with unsupported extension option: %s", typeURL,
 					)
 				}
@@ -66,7 +67,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		case sdk.Tx:
 			anteHandler = newCosmosAnteHandler(options)
 		default:
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid transaction type: %T", tx)
+			return ctx, errorsmod.Wrapf(errortypes.ErrUnknownRequest, "invalid transaction type: %T", tx)
 		}
 
 		return anteHandler(ctx, tx, sim)
@@ -75,7 +76,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 
 func Recover(logger tmlog.Logger, err *error) {
 	if r := recover(); r != nil {
-		*err = sdkerrors.Wrapf(sdkerrors.ErrPanic, "%v", r)
+		*err = errorsmod.Wrapf(errortypes.ErrPanic, "%v", r)
 
 		if e, ok := r.(error); ok {
 			logger.Error(
