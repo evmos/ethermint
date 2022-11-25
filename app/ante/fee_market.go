@@ -3,8 +3,8 @@ package ante
 import (
 	"math/big"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // GasWantedDecorator keeps track of the gasWanted amount on the current block in transient store
@@ -44,7 +44,7 @@ func (gwd GasWantedDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	// Add total gasWanted to cumulative in block transientStore in FeeMarket module
 	if isBaseFeeEnabled {
 		if _, err := gwd.feeMarketKeeper.AddTransientGasWanted(ctx, gasWanted); err != nil {
-			return ctx, sdkerrors.Wrapf(err, "failed to add gas wanted to transient store")
+			return ctx, errorsmod.Wrapf(err, "failed to add gas wanted to transient store")
 		}
 	}
 

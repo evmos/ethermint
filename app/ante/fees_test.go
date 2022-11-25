@@ -42,7 +42,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 				return &invalidTx{}
 			},
 			false,
-			"must be a FeeTx",
+			"invalid transaction type",
 			false,
 		},
 		{
@@ -344,4 +344,8 @@ func (s AnteTestSuite) TestEthMinGasPriceDecorator() {
 			})
 		}
 	}
+}
+
+func (suite AnteTestSuite) TestEthMempoolFeeDecorator() {
+	// TODO: add test
 }
