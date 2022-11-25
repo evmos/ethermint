@@ -213,6 +213,7 @@ func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
 	suite.appCodec = encodingConfig.Codec
 	suite.denom = evmtypes.DefaultEVMDenom
+
 }
 
 func (suite *KeeperTestSuite) EvmDenom() string {
@@ -479,8 +480,10 @@ func (suite *KeeperTestSuite) TestGetAccountStorage() {
 				i++
 				return false
 			})
+
 		})
 	}
+
 }
 
 func (suite *KeeperTestSuite) TestGetAccountOrEmpty() {
@@ -517,6 +520,7 @@ func (suite *KeeperTestSuite) TestGetAccountOrEmpty() {
 			} else {
 				suite.Require().NotEqual(empty, res)
 			}
+
 		})
 	}
 }

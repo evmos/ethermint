@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
@@ -12,6 +11,7 @@ import (
 )
 
 func (suite *BackendTestSuite) TestGetLogs() {
+
 	_, bz := suite.buildEthereumTx()
 	block := tmtypes.MakeBlock(1, []tmtypes.Tx{bz}, nil, nil)
 	logs := make([]*evmtypes.Log, 0, 1)

@@ -3,8 +3,6 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -14,6 +12,7 @@ import (
 	"github.com/evmos/ethermint/tests"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"google.golang.org/grpc/metadata"
+	"math/big"
 )
 
 func (suite *BackendTestSuite) TestResend() {
@@ -489,4 +488,5 @@ func (suite *BackendTestSuite) TestGasPrice() {
 			}
 		})
 	}
+
 }

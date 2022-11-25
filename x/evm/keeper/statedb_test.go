@@ -897,6 +897,7 @@ func (suite *KeeperTestSuite) TestSetBalance() {
 				suite.Require().NoError(err)
 				suite.Require().Equal(amount, balance)
 			}
+
 		})
 	}
 }
