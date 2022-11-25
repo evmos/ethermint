@@ -163,9 +163,7 @@ message MsgEthereumTxResponse {
   uint64 gas_used = 5;
 }
 
-
 // MsgUpdateParams is the Msg/UpdateParams request type for EVM parameters.
-// Since: cosmos-sdk 0.47
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
 
@@ -179,5 +177,4 @@ message MsgUpdateParams {
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
-// Since: cosmos-sdk 0.47
 message MsgUpdateParamsResponse {}

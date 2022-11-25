@@ -135,7 +135,7 @@ func (k Keeper) EmitBlockBloomEvent(ctx sdk.Context, bloom ethtypes.Bloom) {
 	)
 }
 
-// GetAuthority returns the x/evm module's authority address
+// GetAuthority returns the x/evm module authority address
 func (k Keeper) GetAuthority() string {
 	return k.authority
 }
