@@ -27,15 +27,6 @@ func (suite *KeeperTestSuite) TestMigrations() {
 		name        string
 		migrateFunc func(ctx sdk.Context) error
 	}{
-		// TODO: Figure out if these will be deleted
-		//{
-		//	"Run Migrate1to2",
-		//	migrator.Migrate1to2,
-		//},
-		//{
-		//	"Run Migrate2to3",
-		//	migrator.Migrate2to3,
-		//},
 		{
 			"Run Migrate3to4",
 			migrator.Migrate3to4,

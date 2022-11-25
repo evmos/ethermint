@@ -32,7 +32,7 @@ func (suite *KeeperTestSuite) TestParams() {
 				return params.EvmDenom
 			},
 			func() interface{} {
-				return suite.app.EvmKeeper.GetParams(suite.ctx).EvmDenom
+				return suite.app.EvmKeeper.GetEVMDenom(suite.ctx)
 			},
 			true,
 		},
@@ -44,7 +44,7 @@ func (suite *KeeperTestSuite) TestParams() {
 				return params.EnableCreate
 			},
 			func() interface{} {
-				return suite.app.EvmKeeper.GetParams(suite.ctx).EnableCreate
+				return suite.app.EvmKeeper.GetEnableCreate(suite.ctx)
 			},
 			true,
 		},
@@ -56,7 +56,7 @@ func (suite *KeeperTestSuite) TestParams() {
 				return params.EnableCall
 			},
 			func() interface{} {
-				return suite.app.EvmKeeper.GetParams(suite.ctx).EnableCall
+				return suite.app.EvmKeeper.GetEnableCall(suite.ctx)
 			},
 			true,
 		},
@@ -68,7 +68,7 @@ func (suite *KeeperTestSuite) TestParams() {
 				return params.AllowUnprotectedTxs
 			},
 			func() interface{} {
-				return suite.app.EvmKeeper.GetParams(suite.ctx).AllowUnprotectedTxs
+				return suite.app.EvmKeeper.GetAllowUnprotectedTxs(suite.ctx)
 			},
 			true,
 		},
@@ -80,7 +80,7 @@ func (suite *KeeperTestSuite) TestParams() {
 				return params.ChainConfig
 			},
 			func() interface{} {
-				return suite.app.EvmKeeper.GetParams(suite.ctx).ChainConfig
+				return suite.app.EvmKeeper.GetChainConfig(suite.ctx)
 			},
 			true,
 		},
