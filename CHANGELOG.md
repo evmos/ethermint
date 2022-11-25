@@ -58,6 +58,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block
 * (ante) [#1455](https://github.com/evmos/ethermint/pull/1455) Refactor `AnteHandler` logic
 * (evm) [#1444](https://github.com/evmos/ethermint/pull/1444) Improve performance of `eth_estimateGas`
 * (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
