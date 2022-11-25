@@ -44,6 +44,7 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servergrpc "github.com/cosmos/cosmos-sdk/server/grpc"
 	"github.com/cosmos/cosmos-sdk/server/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/evmos/ethermint/indexer"
 	ethdebug "github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
@@ -451,6 +452,11 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if config.API.Enable {
 		apiSrv = api.New(clientCtx, ctx.Logger.With("server", "api"))
 		app.RegisterAPIRoutes(apiSrv, config.API)
+
+		if config.Telemetry.Enabled {
+			apiSrv.SetTelemetry(metrics)
+		}
+
 		errCh := make(chan error)
 		go func() {
 			if err := apiSrv.Start(config.Config); err != nil {
@@ -463,6 +469,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			return err
 		case <-time.After(types.ServerStartTime): // assume server started successfully
 		}
+
 		defer apiSrv.Close()
 	}
 
@@ -470,6 +477,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		grpcSrv    *grpc.Server
 		grpcWebSrv *http.Server
 	)
+
 	if config.GRPC.Enable {
 		grpcSrv, err = servergrpc.StartGRPCServer(clientCtx, app, config.GRPC)
 		if err != nil {
@@ -479,12 +487,13 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		if config.GRPCWeb.Enable {
 			grpcWebSrv, err = servergrpc.StartGRPCWeb(grpcSrv, config.Config)
 			if err != nil {
-				ctx.Logger.Error("failed to start grpc-web http server", "error", err)
+				ctx.Logger.Error("failed to start grpc-web http server", "error", err.Error())
 				return err
 			}
+
 			defer func() {
 				if err := grpcWebSrv.Close(); err != nil {
-					logger.Error("failed to close the grpcWebSrc", "error", err.Error())
+					logger.Error("failed to close the grpc-web http server", "error", err.Error())
 				}
 			}()
 		}
@@ -534,25 +543,39 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	var rosettaSrv crgserver.Server
 	if config.Rosetta.Enable {
 		offlineMode := config.Rosetta.Offline
-		if !config.GRPC.Enable { // If GRPC is not enabled rosetta cannot work in online mode, so it works in offline mode.
+
+		// If GRPC is not enabled rosetta cannot work in online mode, so it works in
+		// offline mode.
+		if !config.GRPC.Enable {
 			offlineMode = true
 		}
 
-		conf := &rosetta.Config{
-			Blockchain:    config.Rosetta.Blockchain,
-			Network:       config.Rosetta.Network,
-			TendermintRPC: ctx.Config.RPC.ListenAddress,
-			GRPCEndpoint:  config.GRPC.Address,
-			Addr:          config.Rosetta.Address,
-			Retries:       config.Rosetta.Retries,
-			Offline:       offlineMode,
+		minGasPrices, err := sdk.ParseDecCoins(config.MinGasPrices)
+		if err != nil {
+			ctx.Logger.Error("failed to parse minimum-gas-prices", "error", err.Error())
+			return err
 		}
-		conf.WithCodec(clientCtx.InterfaceRegistry, clientCtx.Codec.(*codec.ProtoCodec))
+
+		conf := &rosetta.Config{
+			Blockchain:          config.Rosetta.Blockchain,
+			Network:             config.Rosetta.Network,
+			TendermintRPC:       ctx.Config.RPC.ListenAddress,
+			GRPCEndpoint:        config.GRPC.Address,
+			Addr:                config.Rosetta.Address,
+			Retries:             config.Rosetta.Retries,
+			Offline:             offlineMode,
+			GasToSuggest:        config.Rosetta.GasToSuggest,
+			EnableFeeSuggestion: config.Rosetta.EnableFeeSuggestion,
+			GasPrices:           minGasPrices.Sort(),
+			Codec:               clientCtx.Codec.(*codec.ProtoCodec),
+			InterfaceRegistry:   clientCtx.InterfaceRegistry,
+		}
 
 		rosettaSrv, err = rosetta.ServerFromConfig(conf)
 		if err != nil {
 			return err
 		}
+
 		errCh := make(chan error)
 		go func() {
 			if err := rosettaSrv.Start(); err != nil {
