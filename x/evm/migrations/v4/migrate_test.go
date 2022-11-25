@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/encoding"
-	"github.com/evmos/ethermint/x/evm/exported"
 	v4 "github.com/evmos/ethermint/x/evm/migrations/v4"
 	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/stretchr/testify/require"
@@ -23,7 +22,7 @@ func newMockSubspace(ps types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
-func (ms mockSubspace) GetParamSet(ctx sdk.Context, ps exported.Params) {
+func (ms mockSubspace) GetParamSet(ctx sdk.Context, ps types.LegacyParams) {
 	*ps.(*types.Params) = ms.ps
 }
 

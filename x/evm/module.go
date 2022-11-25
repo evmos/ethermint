@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/evmos/ethermint/x/evm/exported"
-
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -40,8 +38,9 @@ func (AppModuleBasic) Name() string {
 	return types.ModuleName
 }
 
-// RegisterLegacyAminoCodec performs a no-op as the evm module doesn't support amino.
-func (AppModuleBasic) RegisterLegacyAminoCodec(_ *codec.LegacyAmino) {
+// RegisterLegacyAminoCodec registers the module's types with the given codec.
+func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
 // ConsensusVersion returns the consensus state-breaking version for the module.
@@ -99,11 +98,11 @@ type AppModule struct {
 	keeper *keeper.Keeper
 	ak     types.AccountKeeper
 	// legacySubspace is used solely for migration of x/params managed parameters
-	legacySubspace exported.Subspace
+	legacySubspace types.Subspace
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k *keeper.Keeper, ak types.AccountKeeper, ss exported.Subspace) AppModule {
+func NewAppModule(k *keeper.Keeper, ak types.AccountKeeper, ss types.Subspace) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,

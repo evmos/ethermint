@@ -3,8 +3,9 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/evmos/ethermint/x/evm/types"
-	gogotypes "github.com/gogo/protobuf/types"
 )
+
+var isTrue = []byte("0x01")
 
 // GetParams returns the total set of evm parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
@@ -23,21 +24,13 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) error {
 	if err := params.Validate(); err != nil {
 		return err
 	}
-	store := ctx.KVStore(k.storeKey)
 
-	chainCfgBz := k.cdc.MustMarshal(&params.ChainConfig)
-	extraEIPsBz := k.cdc.MustMarshal(&params.ExtraEips)
-	evmDenomBz := k.cdc.MustMarshal(&gogotypes.StringValue{Value: params.EvmDenom})
-	allowUnprotectedTxsBz := k.cdc.MustMarshal(&gogotypes.BoolValue{Value: params.AllowUnprotectedTxs})
-	enableCallBz := k.cdc.MustMarshal(&gogotypes.BoolValue{Value: params.EnableCall})
-	enableCreateBz := k.cdc.MustMarshal(&gogotypes.BoolValue{Value: params.EnableCreate})
-
-	store.Set(types.ParamStoreKeyExtraEIPs, extraEIPsBz)
-	store.Set(types.ParamStoreKeyChainConfig, chainCfgBz)
-	store.Set(types.ParamStoreKeyEVMDenom, evmDenomBz)
-	store.Set(types.ParamStoreKeyAllowUnprotectedTxs, allowUnprotectedTxsBz)
-	store.Set(types.ParamStoreKeyEnableCall, enableCallBz)
-	store.Set(types.ParamStoreKeyEnableCreate, enableCreateBz)
+	k.setExtraEIPs(ctx, params)
+	k.setChainConfig(ctx, params)
+	k.setEvmDenom(ctx, params)
+	k.setEnableCall(ctx, params.EnableCall)
+	k.setEnableCreate(ctx, params.EnableCreate)
+	k.setAllowUnprotectedTxs(ctx, params.AllowUnprotectedTxs)
 
 	return nil
 }
@@ -68,48 +61,79 @@ func (k Keeper) GetChainConfig(ctx sdk.Context) types.ChainConfig {
 
 // GetEVMDenom returns the EVM denom.
 func (k Keeper) GetEVMDenom(ctx sdk.Context) string {
-	var evmDenom gogotypes.StringValue
+	var evmDenom string
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ParamStoreKeyEVMDenom)
 	if bz == nil {
-		return evmDenom.Value
+		return evmDenom
 	}
-	k.cdc.MustUnmarshal(bz, &evmDenom)
-	return evmDenom.Value
+	return string(bz)
 }
 
 // GetEnableCall returns true if the EVM Call operation is enabled.
 func (k Keeper) GetEnableCall(ctx sdk.Context) bool {
-	var enableCall gogotypes.BoolValue
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.ParamStoreKeyEnableCall)
-	if bz == nil {
-		return enableCall.Value
-	}
-	k.cdc.MustUnmarshal(bz, &enableCall)
-	return enableCall.Value
+	return store.Has(types.ParamStoreKeyEnableCall)
 }
 
 // GetEnableCreate returns true if the EVM Create contract operation is enabled.
 func (k Keeper) GetEnableCreate(ctx sdk.Context) bool {
-	var enableCreate gogotypes.BoolValue
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.ParamStoreKeyEnableCreate)
-	if bz == nil {
-		return enableCreate.Value
-	}
-	k.cdc.MustUnmarshal(bz, &enableCreate)
-	return enableCreate.Value
+	return store.Has(types.ParamStoreKeyEnableCreate)
 }
 
 // GetAllowUnprotectedTxs returns true if unprotected txs (i.e non-replay protected as per EIP-155) are supported by the chain.
 func (k Keeper) GetAllowUnprotectedTxs(ctx sdk.Context) bool {
-	var allowUnprotectedTx gogotypes.BoolValue
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.ParamStoreKeyAllowUnprotectedTxs)
-	if bz == nil {
-		return allowUnprotectedTx.Value
+	return store.Has(types.ParamStoreKeyAllowUnprotectedTxs)
+}
+
+// setChainConfig sets the ChainConfig in the store
+func (k Keeper) setChainConfig(ctx sdk.Context, params types.Params) {
+	store := ctx.KVStore(k.storeKey)
+	chainCfgBz := k.cdc.MustMarshal(&params.ChainConfig)
+	store.Set(types.ParamStoreKeyChainConfig, chainCfgBz)
+}
+
+// setExtraEIPs sets the ExtraEIPs in the store
+func (k Keeper) setExtraEIPs(ctx sdk.Context, params types.Params) {
+	extraEIPsBz := k.cdc.MustMarshal(&params.ExtraEips)
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ParamStoreKeyExtraEIPs, extraEIPsBz)
+}
+
+// setEvmDenom sets the EVMDenom param in the store
+func (k Keeper) setEvmDenom(ctx sdk.Context, params types.Params) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ParamStoreKeyEVMDenom, []byte(params.EvmDenom))
+}
+
+// setAllowUnprotectedTxs sets the AllowUnprotectedTxs param in the store
+func (k Keeper) setAllowUnprotectedTxs(ctx sdk.Context, enable bool) {
+	store := ctx.KVStore(k.storeKey)
+	if enable {
+		store.Set(types.ParamStoreKeyAllowUnprotectedTxs, isTrue)
+		return
 	}
-	k.cdc.MustUnmarshal(bz, &allowUnprotectedTx)
-	return allowUnprotectedTx.Value
+	store.Delete(types.ParamStoreKeyAllowUnprotectedTxs)
+}
+
+// setEnableCreate sets the EnableCreate param in the store
+func (k Keeper) setEnableCreate(ctx sdk.Context, enable bool) {
+	store := ctx.KVStore(k.storeKey)
+	if enable {
+		store.Set(types.ParamStoreKeyEnableCreate, isTrue)
+		return
+	}
+	store.Delete(types.ParamStoreKeyEnableCreate)
+}
+
+// setEnableCall sets the EnableCall param in the store
+func (k Keeper) setEnableCall(ctx sdk.Context, enable bool) {
+	store := ctx.KVStore(k.storeKey)
+	if enable {
+		store.Set(types.ParamStoreKeyEnableCall, isTrue)
+		return
+	}
+	store.Delete(types.ParamStoreKeyEnableCall)
 }

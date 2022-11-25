@@ -3,7 +3,6 @@ package v4
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/evmos/ethermint/x/evm/exported"
 	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/evmos/ethermint/x/evm/types"
 	gogotypes "github.com/gogo/protobuf/types"
@@ -15,7 +14,7 @@ import (
 func MigrateStore(
 	ctx sdk.Context,
 	store sdk.KVStore,
-	legacySubspace exported.Subspace,
+	legacySubspace types.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
 	var params types.Params
