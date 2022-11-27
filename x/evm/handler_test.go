@@ -604,9 +604,6 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 			suite.Require().NoError(err)
 			err = k.DeductTxCostsFromUserBalance(suite.ctx, fees, common.HexToAddress(tx.From))
 			suite.Require().NoError(err)
-			// TODO: Remove this once the test is working
-			//_, err = k.DeductTxCostsFromUserBalance(suite.ctx, *tx, txData, "aphoton", baseFee, true, true, true)
-			//suite.Require().NoError(err)
 
 			res, err := k.EthereumTx(sdk.WrapSDKContext(suite.ctx), tx)
 			suite.Require().NoError(err)
