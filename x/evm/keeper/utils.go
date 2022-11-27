@@ -16,8 +16,11 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// DeductTxCostsFromUserBalance deducts the fees from the user balance.
-func (k Keeper) DeductTxCostsFromUserBalance(
+// DeductTxCostsFromUserBalance deducts the fees from the user balance. Returns an
+// error if the specified sender address does not exist or the account balance is not sufficient.
+//
+// TODO: Currently, Goland raises the warning that there are methods defined on both *keeper and keeper, which is not recommended: https://go.dev/doc/faq#methods_on_values_or_pointers
+func (k *Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
 	fees sdk.Coins,
 	from common.Address,
