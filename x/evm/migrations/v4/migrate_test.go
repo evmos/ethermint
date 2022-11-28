@@ -37,24 +37,19 @@ func TestMigrate(t *testing.T) {
 	store := ctx.KVStore(storeKey)
 
 	legacySubspace := newMockSubspace(v4types.DefaultParams())
-	require.NoError(t, v4.MigrateStore(ctx, store, legacySubspace, cdc))
+	require.NoError(t, v4.MigrateStore(ctx, storeKey, legacySubspace, cdc))
 
 	// Get all the new parameters from the store
-	var evmDenom gogotypes.StringValue
+	var evmDenom string
 	bz := store.Get(v4types.ParamStoreKeyEVMDenom)
-	cdc.MustUnmarshal(bz, &evmDenom)
+	evmDenom = string(bz)
 
 	var allowUnprotectedTx gogotypes.BoolValue
 	bz = store.Get(v4types.ParamStoreKeyAllowUnprotectedTxs)
 	cdc.MustUnmarshal(bz, &allowUnprotectedTx)
 
-	var enableCreate gogotypes.BoolValue
-	bz = store.Get(v4types.ParamStoreKeyEnableCreate)
-	cdc.MustUnmarshal(bz, &enableCreate)
-
-	var enableCall gogotypes.BoolValue
-	bz = store.Get(v4types.ParamStoreKeyEnableCall)
-	cdc.MustUnmarshal(bz, &enableCall)
+	enableCreate := store.Has(v4types.ParamStoreKeyEnableCreate)
+	enableCall := store.Has(v4types.ParamStoreKeyEnableCall)
 
 	var chainCfg v4types.ChainConfig
 	bz = store.Get(v4types.ParamStoreKeyChainConfig)
@@ -64,6 +59,6 @@ func TestMigrate(t *testing.T) {
 	bz = store.Get(v4types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(bz, &extraEIPs)
 
-	params := v4types.NewParams(evmDenom.Value, allowUnprotectedTx.Value, enableCreate.Value, enableCall.Value, chainCfg, extraEIPs)
+	params := v4types.NewParams(evmDenom, allowUnprotectedTx.Value, enableCreate, enableCall, chainCfg, extraEIPs)
 	require.Equal(t, legacySubspace.ps, params)
 }

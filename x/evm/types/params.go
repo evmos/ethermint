@@ -57,7 +57,7 @@ func DefaultParams() Params {
 		EnableCreate:        true,
 		EnableCall:          true,
 		ChainConfig:         DefaultChainConfig(),
-		ExtraEips:           ExtraEIPs{},
+		ExtraEips:           ExtraEIPs{AvailableExtraEIPs},
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 	}
 }

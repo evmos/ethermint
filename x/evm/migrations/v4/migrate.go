@@ -2,10 +2,10 @@ package v4
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/evmos/ethermint/x/evm/types"
-	gogotypes "github.com/gogo/protobuf/types"
 )
 
 // MigrateStore migrates the x/evm module state from the consensus version 3 to
@@ -13,10 +13,11 @@ import (
 // and managed by the Cosmos SDK params module and stores them directly into the x/evm module state.
 func MigrateStore(
 	ctx sdk.Context,
-	store sdk.KVStore,
+	storeKey storetypes.StoreKey,
 	legacySubspace types.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
+	store := ctx.KVStore(storeKey)
 	var params v4types.Params
 	legacySubspace.GetParamSet(ctx, &params)
 
@@ -25,11 +26,24 @@ func MigrateStore(
 	}
 
 	chainCfgBz := cdc.MustMarshal(&params.ChainConfig)
-	extraEIPsBz := cdc.MustMarshal(&params.ExtraEips)
-	evmDenomBz := cdc.MustMarshal(&gogotypes.StringValue{Value: params.EvmDenom})
-	allowUnprotectedTxsBz := cdc.MustMarshal(&gogotypes.BoolValue{Value: params.AllowUnprotectedTxs})
-	enableCallBz := cdc.MustMarshal(&gogotypes.BoolValue{Value: params.EnableCall})
-	enableCreateBz := cdc.MustMarshal(&gogotypes.BoolValue{Value: params.EnableCreate})
+	extraEIPsBz := cdc.MustMarshal(&v4types.ExtraEIPs{ExtraEIPs: v4types.AvailableExtraEIPs})
+
+	evmDenomBz := []byte(params.EvmDenom)
+
+	allowUnprotectedTxsBz := []byte("0x00")
+	if params.AllowUnprotectedTxs {
+		allowUnprotectedTxsBz = []byte("0x01")
+	}
+
+	enableCallBz := []byte("0x00")
+	if params.EnableCall {
+		enableCallBz = []byte("0x01")
+	}
+
+	enableCreateBz := []byte("0x00")
+	if params.EnableCreate {
+		enableCreateBz = []byte("0x01")
+	}
 
 	store.Set(v4types.ParamStoreKeyExtraEIPs, extraEIPsBz)
 	store.Set(v4types.ParamStoreKeyChainConfig, chainCfgBz)
