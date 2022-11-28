@@ -1,6 +1,7 @@
 import base64
 import json
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -60,11 +61,18 @@ def test_grpc_mode(custom_ethermint):
     }
     api_port = ports.api_port(custom_ethermint.base_port(1))
     # in normal mode, grpc query works even if we don't pass chain_id explicitly
-    rsp = grpc_eth_call(api_port, msg)
-    print(rsp)
-    assert "code" not in rsp, str(rsp)
-    assert 9000 == int.from_bytes(base64.b64decode(rsp["ret"].encode()), "big")
-
+    success = False
+    for i in range(3):
+        rsp = grpc_eth_call(api_port, msg)
+        print(i, rsp)
+        assert "code" not in rsp, str(rsp)
+        ret = rsp["ret"]
+        valid = ret is not None
+        if valid and 9000 == int.from_bytes(base64.b64decode(ret.encode()), "big"):
+            success = True
+            break
+        time.sleep(1)
+    assert success
     supervisorctl(
         custom_ethermint.base_dir / "../tasks.ini", "stop", "ethermint_9000-1-node1"
     )
