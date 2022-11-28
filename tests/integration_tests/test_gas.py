@@ -92,11 +92,11 @@ def test_block_gas_limit(ethermint):
     # expect an error on contract call due to block gas limit
     with pytest.raises(Exception):
         ethermint_txhash = ethermint_contract.functions.burnGas(
-            exceededGasLimit
+            exceeded_gas_limit
         ).transact(
             {
                 "from": ADDRS["validator"],
-                "gas": exceededGasLimit,
+                "gas": exceeded_gas_limit,
                 "gasPrice": ethermint_gas_price,
             }
         )
