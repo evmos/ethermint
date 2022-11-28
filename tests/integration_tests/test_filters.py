@@ -1,3 +1,6 @@
+import math
+import time
+
 import pytest
 from eth_abi import abi
 from hexbytes import HexBytes
@@ -14,7 +17,6 @@ from .utils import (
 # Smart contract names
 GREETER_CONTRACT = "Greeter"
 ERC20_CONTRACT = "TestERC20A"
-UPGRADABLE_CONTRACT = "Mars"
 
 # ChangeGreeting topic from Greeter contract calculated from event signature
 CHANGE_GREETING_TOPIC = Web3.keccak(text="ChangeGreeting(address,string)")
@@ -170,7 +172,7 @@ def test_event_log_filter_by_topic(cluster):
                     "topics": [[CHANGE_GREETING_TOPIC.hex(), TRANSFER_TOPIC.hex()]],
                 },
             ],
-            "exp_len": 4,  # 2 transfer events, mint&transfer on deploy (2)tx in test
+            "exp_len": 3,  # 2 transfer events, mint&transfer on deploy (2)tx in test
             "exp_topics": [
                 [CHANGE_GREETING_TOPIC],
                 [
@@ -183,17 +185,15 @@ def test_event_log_filter_by_topic(cluster):
                     HexBytes(pad_left(ADDRS["validator"].lower())),
                     HexBytes(pad_left(ADDRS["community"].lower())),
                 ],
-                [
-                    HexBytes('0x000000000000000000000000c09473c15be5a4b9d1a587a45dc8ef46f6872935'),
-                    HexBytes('0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b'),
-                ],
             ],
-            "contracts": [GREETER_CONTRACT, ERC20_CONTRACT, UPGRADABLE_CONTRACT],
+            "contracts": [GREETER_CONTRACT, ERC20_CONTRACT],
         },
     ]
 
     for tc in test_cases:
         print("\nCase: {}".format(tc["name"]))
+        # record start time
+        start = time.time()
 
         # register filters
         filters = []
@@ -229,11 +229,11 @@ def test_event_log_filter_by_topic(cluster):
             assert receipt.status == 1
 
         # check filters new entries
-        for i, flt in enumerate(filters):
+        for flt in filters:
             new_entries = flt.get_new_entries()  # GetFilterChanges
             assert len(new_entries) == tc["exp_len"]
 
-            for i, log in enumerate(new_entries):
+            for log in new_entries:
                 # check if the new_entries have valid information
                 assert log["topics"] in tc["exp_topics"]
                 assert_log_block(w3, log)
@@ -243,6 +243,10 @@ def test_event_log_filter_by_topic(cluster):
         for flt in filters:
             assert flt.get_new_entries() == []  # GetFilterChanges
             w3.eth.uninstall_filter(flt.filter_id)
+
+        # record end time
+        end = time.time()
+        print_elapsed_ms(start, end)
 
 
 def test_multiple_filters(cluster):
@@ -336,6 +340,8 @@ def test_multiple_filters(cluster):
 
     for tc in test_cases:
         print("\nCase: {}".format(tc["name"]))
+        # record start time
+        start = time.time()
 
         # register the filters
         fltrs = []
@@ -376,6 +382,9 @@ def test_multiple_filters(cluster):
             except Exception as err:
                 if "rm_filters_post_tx" in tc and i < tc["rm_filters_post_tx"]:
                     assert_no_filter_err(flt, err)
+                    # record end time
+                    end = time.time()
+                    print_elapsed_ms(start, end)
                     # filter was removed and error checked. Continue to next filter
                     continue
                 else:
@@ -410,6 +419,10 @@ def test_multiple_filters(cluster):
             # otherwise may get a max-limit error for registering
             # new filters
             w3.eth.uninstall_filter(flt.filter_id)
+
+        # record end time
+        end = time.time()
+        print_elapsed_ms(start, end)
 
 
 def test_register_filters_before_contract_deploy(cluster):
@@ -454,6 +467,9 @@ def test_register_filters_before_contract_deploy(cluster):
         },
     ]
 
+    # record start time
+    start = time.time()
+
     # register the filters
     fltrs = []
     for flt in filters:
@@ -492,6 +508,12 @@ def test_register_filters_before_contract_deploy(cluster):
     for flt in fltrs:
         assert flt.get_new_entries() == []  # GetFilterChanges
         w3.eth.uninstall_filter(flt.filter_id)
+
+    # record end time
+    end = time.time()
+    # print the difference between start
+    # and end time in milli. secs
+    print_elapsed_ms(start, end)
 
 
 def test_get_logs(cluster):
@@ -577,6 +599,8 @@ def test_get_logs(cluster):
 
     for tc in test_cases:
         print("\nCase: {}".format(tc["name"]))
+        # record start time
+        start = time.time()
 
         # logs for validator address should remain empty
         assert len(w3.eth.get_logs({"address": ADDRS["validator"]})) == 0
@@ -604,6 +628,12 @@ def test_get_logs(cluster):
                     assert_change_greet_log_data(log, new_greeting)
 
             assert found_log is True
+
+        # record end time
+        end = time.time()
+        # print the difference between start
+        # and end time in milli. secs
+        print_elapsed_ms(start, end)
 
 
 #################################################
@@ -676,3 +706,9 @@ def pad_left(address, byte_len=32):
     a = address.split("0x")
     b = a[1].zfill(byte_len * 2)
     return "0x" + b
+
+
+# print the difference between start
+# and end time in milli. secs
+def print_elapsed_ms(start, end):
+    print(math.ceil((end - start) * 10**3), "ms")
