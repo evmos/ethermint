@@ -1,3 +1,5 @@
+import pytest
+
 from .utils import (
     ADDRS,
     CONTRACTS,
@@ -35,3 +37,20 @@ def test_equivalent_gas_consumption(geth, ethermint):
         ethermint.w3,
         CONTRACTS["TestERC20A"])
     assert geth_contract_reciept.gasUsed == ethermint_contract_reciept.gasUsed
+
+
+def test_block_gas_limit(ethermint):
+    tx_value = 10
+    
+    # get the block gas limit from the latest block
+    w3_wait_for_new_blocks(ethermint.w3, 5)
+    block = ethermint.w3.eth.get_block("latest")
+    exceededGasLimit = block.gasLimit + 100
+
+    # send a transaction exceeding the block gas limit
+    ethermint_gas_price = ethermint.w3.eth.gas_price
+    tx = {"to": ADDRS["community"], "value": tx_value, "gas": exceededGasLimit, "gasPrice": ethermint_gas_price}
+
+    # expect an error due to the block gas limit
+    with pytest.raises(Exception):
+        send_transaction(ethermint.w3, tx, KEYS["validator"])

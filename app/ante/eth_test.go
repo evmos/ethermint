@@ -237,8 +237,6 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 
 	tx3GasLimit := ethermint.BlockGasLimit(suite.ctx) + uint64(1)
 	tx3 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx3GasLimit, gasPrice, nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
-	tx3.From = addr.Hex()
-	tx3Priority := int64(1)
 
 	dynamicFeeTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx2GasLimit,
 		nil, // gasPrice
@@ -279,10 +277,10 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 		{
 			"gas limit above block gas limit",
 			tx3,
-			ethermint.BlockGasLimit(suite.ctx) + uint64(1),
+			math.MaxUint64,
 			func() {},
 			false, false,
-			tx3Priority,
+			0,
 		},
 		{
 			"not enough balance for fees",
