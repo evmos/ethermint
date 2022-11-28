@@ -23,14 +23,16 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// ExtensionOptionsWeb3Tx is an extension option that specifies the typed chain id,
+// the fee payer as well as its signature data.
 type ExtensionOptionsWeb3Tx struct {
-	// typed data chain id used only in EIP712 Domain and should match
+	// typed_data_chain_id is used only in EIP712 Domain and should match
 	// Ethereum network ID in a Web3 provider (e.g. Metamask).
 	TypedDataChainID uint64 `protobuf:"varint,1,opt,name=typed_data_chain_id,json=typedDataChainId,proto3" json:"typedDataChainID,omitempty"`
-	// fee payer is an account address for the fee payer. It will be validated
+	// fee_payer is an account address for the fee payer. It will be validated
 	// during EIP712 signature checking.
 	FeePayer string `protobuf:"bytes,2,opt,name=fee_payer,json=feePayer,proto3" json:"feePayer,omitempty"`
-	// fee payer sig is a signature data from the fee paying account,
+	// fee_payer_sig is a signature data from the fee paying account,
 	// allows to perform fee delegation when using EIP712 Domain.
 	FeePayerSig []byte `protobuf:"bytes,3,opt,name=fee_payer_sig,json=feePayerSig,proto3" json:"feePayerSig,omitempty"`
 }

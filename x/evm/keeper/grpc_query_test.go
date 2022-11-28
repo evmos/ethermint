@@ -888,18 +888,6 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			expPass: false,
 		},
 		{
-			msg: "trace config - Execution Timeout",
-			malleate: func() {
-				traceConfig = &types.TraceConfig{
-					DisableStack:   true,
-					DisableStorage: true,
-					EnableMemory:   false,
-					Timeout:        "0s",
-				}
-			},
-			expPass: false,
-		},
-		{
 			msg: "default tracer with contract creation tx as predecessor but 'create' param disabled",
 			malleate: func() {
 				traceConfig = nil
@@ -984,8 +972,8 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 			} else {
 				suite.Require().Error(err)
 			}
-            // Reset for next test case
-            chainID = nil
+			// Reset for next test case
+			chainID = nil
 		})
 	}
 
@@ -1140,9 +1128,9 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 				TraceConfig: traceConfig,
 			}
 
-            if chainID != nil {
-              traceReq.ChainId = chainID.Int64()
-            }
+			if chainID != nil {
+				traceReq.ChainId = chainID.Int64()
+			}
 
 			res, err := suite.queryClient.TraceBlock(sdk.WrapSDKContext(suite.ctx), &traceReq)
 
@@ -1157,8 +1145,8 @@ func (suite *KeeperTestSuite) TestTraceBlock() {
 			} else {
 				suite.Require().Error(err)
 			}
-            // Reset for next case
-            chainID = nil
+			// Reset for next case
+			chainID = nil
 		})
 	}
 
@@ -1175,7 +1163,7 @@ func (suite *KeeperTestSuite) TestNonceInQuery() {
 
 	// do an EthCall/EstimateGas with nonce 0
 	ctorArgs, err := types.ERC20Contract.ABI.Pack("", address, supply)
-    suite.Require().NoError(err)
+	suite.Require().NoError(err)
 
 	data := append(types.ERC20Contract.Bin, ctorArgs...)
 	args, err := json.Marshal(&types.TransactionArgs{

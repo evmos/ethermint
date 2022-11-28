@@ -2562,6 +2562,11 @@ paths:
           in: query
           required: false
           type: boolean
+        - name: trace_config.tracer_json_config
+          description: tracer config.
+          in: query
+          required: false
+          type: string
         - name: block_number
           description: block number.
           in: query
@@ -3028,6 +3033,11 @@ paths:
           in: query
           required: false
           type: boolean
+        - name: trace_config.tracer_json_config
+          description: tracer config.
+          in: query
+          required: false
+          type: string
         - name: block_number
           description: block number of requested transaction.
           in: query
@@ -4107,6 +4117,9 @@ definitions:
       enable_return_data:
         type: boolean
         title: enable return data capture
+      tracer_json_config:
+        type: string
+        title: tracer config
     description: TraceConfig holds extra parameters to trace functions.
   google.protobuf.Any:
     type: object
