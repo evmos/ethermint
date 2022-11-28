@@ -80,6 +80,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (app) [#1505](https://github.com/evmos/ethermint/pull/1505) Setup gRPC node service with the application.
 * (rpc) [#1442](https://github.com/evmos/ethermint/pull/1442) Fix decoding of `finalized` block number.
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
