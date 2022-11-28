@@ -7,6 +7,9 @@ config {
         timeout_commit: '2s',
       },
     },
+    'app-config'+: {
+      'minimum-gas-prices': '100000000000aphoton',
+    },
     genesis+: {
       app_state+: {
         feemarket+: {
