@@ -35,15 +35,12 @@ func init() {
 // RegisterInterfaces registers the client interfaces to protobuf Any.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
-		(*sdk.Msg)(nil),
-		&MsgEthereumTx{},
-	)
-	registry.RegisterImplementations(
 		(*tx.TxExtensionOptionI)(nil),
 		&ExtensionOptionsEthereumTx{},
 	)
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
+		&MsgEthereumTx{},
 		&MsgUpdateParams{},
 	)
 	registry.RegisterInterface(
