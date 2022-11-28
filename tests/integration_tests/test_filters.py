@@ -41,7 +41,7 @@ def test_block_filter(cluster):
     # getBlockByHash
     block = w3.eth.get_block(blocks[0])
     # block should exist
-    assert block.hash == blocks[0]    
+    assert block.hash == blocks[0]
 
     # without new txs since last call
     assert flt.get_new_entries() == []
