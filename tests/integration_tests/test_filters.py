@@ -589,6 +589,18 @@ def test_get_logs(cluster):
             "exp_log": True,
             "exp_len": 1,
         },
+        {
+            "name": "get logs by topic and block range",
+            "logs": w3.eth.get_logs(
+                {
+                    "fromBlock": tx_block_num,
+                    "toBlock": "latest",
+                    "topics": [topic.hex()],
+                }
+            ),
+            "exp_log": True,
+            "exp_len": 1,
+        },
     ]
 
     for tc in test_cases:
