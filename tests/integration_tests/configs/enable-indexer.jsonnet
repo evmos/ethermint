@@ -8,10 +8,6 @@ config {
       },
     },
     'app-config'+: {
-      pruning: 'everything',
-      'state-sync'+: {
-        'snapshot-interval': 0,
-      },
       'json-rpc'+: {
         'enable-indexer': true,
       },
