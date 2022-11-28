@@ -347,6 +347,9 @@ def test_multiple_filters(cluster):
                 # if exception was expected when registering filters
                 # the test is finished
                 assert tc["register_err"] in str(err)
+                # record end time
+                end = time.time()
+                print_elapsed_ms(start, end)
                 # remove the registered filters
                 remove_filters(w3, fltrs, 300)
                 continue
@@ -376,9 +379,6 @@ def test_multiple_filters(cluster):
             except Exception as err:
                 if "rm_filters_post_tx" in tc and i < tc["rm_filters_post_tx"]:
                     assert_no_filter_err(flt, err)
-                    # record end time
-                    end = time.time()
-                    print_elapsed_ms(start, end)
                     # filter was removed and error checked. Continue to next filter
                     continue
                 else:
