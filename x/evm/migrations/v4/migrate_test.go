@@ -23,7 +23,7 @@ func newMockSubspace(ps v4types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
-func (ms mockSubspace) GetParamSet(ctx sdk.Context, ps types.LegacyParams) {
+func (ms mockSubspace) GetParamSetIfExists(ctx sdk.Context, ps types.LegacyParams) {
 	*ps.(*v4types.Params) = ms.ps
 }
 
@@ -34,29 +34,29 @@ func TestMigrate(t *testing.T) {
 	storeKey := sdk.NewKVStoreKey(types.ModuleName)
 	tKey := sdk.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)
-	store := ctx.KVStore(storeKey)
+	kvStore := ctx.KVStore(storeKey)
 
 	legacySubspace := newMockSubspace(v4types.DefaultParams())
 	require.NoError(t, v4.MigrateStore(ctx, storeKey, legacySubspace, cdc))
 
-	// Get all the new parameters from the store
+	// Get all the new parameters from the kvStore
 	var evmDenom string
-	bz := store.Get(v4types.ParamStoreKeyEVMDenom)
+	bz := kvStore.Get(v4types.ParamStoreKeyEVMDenom)
 	evmDenom = string(bz)
 
 	var allowUnprotectedTx gogotypes.BoolValue
-	bz = store.Get(v4types.ParamStoreKeyAllowUnprotectedTxs)
+	bz = kvStore.Get(v4types.ParamStoreKeyAllowUnprotectedTxs)
 	cdc.MustUnmarshal(bz, &allowUnprotectedTx)
 
-	enableCreate := store.Has(v4types.ParamStoreKeyEnableCreate)
-	enableCall := store.Has(v4types.ParamStoreKeyEnableCall)
+	enableCreate := kvStore.Has(v4types.ParamStoreKeyEnableCreate)
+	enableCall := kvStore.Has(v4types.ParamStoreKeyEnableCall)
 
 	var chainCfg v4types.ChainConfig
-	bz = store.Get(v4types.ParamStoreKeyChainConfig)
+	bz = kvStore.Get(v4types.ParamStoreKeyChainConfig)
 	cdc.MustUnmarshal(bz, &chainCfg)
 
 	var extraEIPs v4types.ExtraEIPs
-	bz = store.Get(v4types.ParamStoreKeyExtraEIPs)
+	bz = kvStore.Get(v4types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(bz, &extraEIPs)
 
 	params := v4types.NewParams(evmDenom, allowUnprotectedTx.Value, enableCreate, enableCall, chainCfg, extraEIPs)

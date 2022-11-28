@@ -19,7 +19,8 @@ func MigrateStore(
 ) error {
 	store := ctx.KVStore(storeKey)
 	var params v4types.Params
-	legacySubspace.GetParamSet(ctx, &params)
+
+	legacySubspace.GetParamSetIfExists(ctx, &params)
 
 	if err := params.Validate(); err != nil {
 		return err
@@ -28,29 +29,21 @@ func MigrateStore(
 	chainCfgBz := cdc.MustMarshal(&params.ChainConfig)
 	extraEIPsBz := cdc.MustMarshal(&v4types.ExtraEIPs{ExtraEIPs: v4types.AvailableExtraEIPs})
 
-	evmDenomBz := []byte(params.EvmDenom)
-
-	allowUnprotectedTxsBz := []byte("0x00")
-	if params.AllowUnprotectedTxs {
-		allowUnprotectedTxsBz = []byte("0x01")
-	}
-
-	enableCallBz := []byte("0x00")
-	if params.EnableCall {
-		enableCallBz = []byte("0x01")
-	}
-
-	enableCreateBz := []byte("0x00")
-	if params.EnableCreate {
-		enableCreateBz = []byte("0x01")
-	}
-
+	store.Set(v4types.ParamStoreKeyEVMDenom, []byte(params.EvmDenom))
 	store.Set(v4types.ParamStoreKeyExtraEIPs, extraEIPsBz)
 	store.Set(v4types.ParamStoreKeyChainConfig, chainCfgBz)
-	store.Set(v4types.ParamStoreKeyEVMDenom, evmDenomBz)
-	store.Set(v4types.ParamStoreKeyAllowUnprotectedTxs, allowUnprotectedTxsBz)
-	store.Set(v4types.ParamStoreKeyEnableCall, enableCallBz)
-	store.Set(v4types.ParamStoreKeyEnableCreate, enableCreateBz)
+
+	if params.AllowUnprotectedTxs {
+		store.Set(v4types.ParamStoreKeyAllowUnprotectedTxs, []byte{0x01})
+	}
+
+	if params.EnableCall {
+		store.Set(v4types.ParamStoreKeyEnableCall, []byte{0x01})
+	}
+
+	if params.EnableCreate {
+		store.Set(v4types.ParamStoreKeyEnableCreate, []byte{0x01})
+	}
 
 	return nil
 }
