@@ -58,7 +58,7 @@ def test_grpc_mode(custom_ethermint):
         "to": contract.address,
         "data": contract.encodeABI(fn_name="currentChainID"),
     }
-    api_port = ports.api_port(custom_ethermint.base_port(2))
+    api_port = ports.api_port(custom_ethermint.base_port(1))
     # in normal mode, grpc query works even if we don't pass chain_id explicitly
     rsp = grpc_eth_call(api_port, msg)
     print(rsp)
@@ -66,25 +66,25 @@ def test_grpc_mode(custom_ethermint):
     assert 9000 == int.from_bytes(base64.b64decode(rsp["ret"].encode()), "big")
 
     supervisorctl(
-        custom_ethermint.base_dir / "../tasks.ini", "stop", "ethermint_9000-1-node2"
+        custom_ethermint.base_dir / "../tasks.ini", "stop", "ethermint_9000-1-node1"
     )
 
     # run grpc-only mode directly with existing chain state
-    with (custom_ethermint.base_dir / "node2.log").open("w") as logfile:
+    with (custom_ethermint.base_dir / "node1.log").open("w") as logfile:
         proc = subprocess.Popen(
             [
                 "ethermintd",
                 "start",
                 "--grpc-only",
                 "--home",
-                custom_ethermint.base_dir / "node2",
+                custom_ethermint.base_dir / "node1",
             ],
             stdout=logfile,
             stderr=subprocess.STDOUT,
         )
         try:
             # wait for grpc and rest api ports
-            grpc_port = ports.grpc_port(custom_ethermint.base_port(2))
+            grpc_port = ports.grpc_port(custom_ethermint.base_port(1))
             wait_for_port(grpc_port)
             wait_for_port(api_port)
 
