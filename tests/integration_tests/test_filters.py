@@ -14,6 +14,7 @@ from .utils import (
 # Smart contract names
 GREETER_CONTRACT = "Greeter"
 ERC20_CONTRACT = "TestERC20A"
+UPGRADABLE_CONTRACT = "Mars"
 
 # ChangeGreeting topic from Greeter contract calculated from event signature
 CHANGE_GREETING_TOPIC = Web3.keccak(text="ChangeGreeting(address,string)")
@@ -169,7 +170,7 @@ def test_event_log_filter_by_topic(cluster):
                     "topics": [[CHANGE_GREETING_TOPIC.hex(), TRANSFER_TOPIC.hex()]],
                 },
             ],
-            "exp_len": 3,  # 2 transfer events, mint&transfer on deploy (2)tx in test
+            "exp_len": 4,  # 2 transfer events, mint&transfer on deploy (2)tx in test
             "exp_topics": [
                 [CHANGE_GREETING_TOPIC],
                 [
@@ -182,8 +183,12 @@ def test_event_log_filter_by_topic(cluster):
                     HexBytes(pad_left(ADDRS["validator"].lower())),
                     HexBytes(pad_left(ADDRS["community"].lower())),
                 ],
+                [
+                    HexBytes('0x000000000000000000000000c09473c15be5a4b9d1a587a45dc8ef46f6872935'),
+                    HexBytes('0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b'),
+                ],
             ],
-            "contracts": [GREETER_CONTRACT, ERC20_CONTRACT],
+            "contracts": [GREETER_CONTRACT, ERC20_CONTRACT, UPGRADABLE_CONTRACT],
         },
     ]
 
