@@ -14,6 +14,7 @@ from .utils import (
     decode_bech32,
     deploy_contract,
     supervisorctl,
+    wait_for_block,
     wait_for_port,
 )
 
@@ -73,12 +74,15 @@ def test_grpc_mode(custom_ethermint):
             break
         time.sleep(1)
     assert success
+    # wait 1 block before stop
+    for i in range(2):
+        wait_for_block(custom_ethermint.cosmos_cli(i), 1)
     supervisorctl(
         custom_ethermint.base_dir / "../tasks.ini", "stop", "ethermint_9000-1-node1"
     )
 
     # run grpc-only mode directly with existing chain state
-    with (custom_ethermint.base_dir / "node1.log").open("w") as logfile:
+    with (custom_ethermint.base_dir / "node1-new.log").open("w") as logfile:
         proc = subprocess.Popen(
             [
                 "ethermintd",
@@ -107,9 +111,7 @@ def test_grpc_mode(custom_ethermint):
             assert "validator does not exist" in rsp["message"]
 
             # pass the first validator's consensus address to grpc query
-            cons_addr = decode_bech32(
-                custom_ethermint.cosmos_cli(0).consensus_address()
-            )
+            cons_addr = decode_bech32(custom_ethermint.cosmos_cli(0).consensus_address())
 
             # should work with both chain_id and proposer_address set
             rsp = grpc_eth_call(
