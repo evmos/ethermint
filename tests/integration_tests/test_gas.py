@@ -71,14 +71,14 @@ def test_block_gas_limit(ethermint):
     # get the block gas limit from the latest block
     w3_wait_for_new_blocks(ethermint.w3, 5)
     block = ethermint.w3.eth.get_block("latest")
-    exceededGasLimit = block.gasLimit + 100
+    exceeded_gas_limit = block.gasLimit + 100
 
     # send a transaction exceeding the block gas limit
     ethermint_gas_price = ethermint.w3.eth.gas_price
     tx = {
         "to": ADDRS["community"],
         "value": tx_value,
-        "gas": exceededGasLimit,
+        "gas": exceeded_gas_limit,
         "gasPrice": ethermint_gas_price,
     }
 
