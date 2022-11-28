@@ -37,6 +37,12 @@ def test_block_filter(cluster):
     blocks = flt.get_new_entries()
     assert len(blocks) >= 1
 
+    # check if the returned block hash is correct
+    # getBlockByHash
+    block = w3.eth.get_block(blocks[0])
+    # block should exist
+    assert block.hash == blocks[0]    
+
     # without new txs since last call
     assert flt.get_new_entries() == []
 
