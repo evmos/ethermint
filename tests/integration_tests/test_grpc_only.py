@@ -111,7 +111,8 @@ def test_grpc_mode(custom_ethermint):
             assert "validator does not exist" in rsp["message"]
 
             # pass the first validator's consensus address to grpc query
-            cons_addr = decode_bech32(custom_ethermint.cosmos_cli(0).consensus_address())
+            addr = custom_ethermint.cosmos_cli(0).consensus_address()
+            cons_addr = decode_bech32(addr)
 
             # should work with both chain_id and proposer_address set
             rsp = grpc_eth_call(
