@@ -76,61 +76,6 @@ func (p *Params) IsBaseFeeEnabled(height int64) bool {
 	return !p.NoBaseFee && height >= p.EnableHeight
 }
 
-func validateBool(i interface{}) error {
-	_, ok := i.(bool)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-	return nil
-}
-
-func validateBaseFeeChangeDenominator(i interface{}) error {
-	value, ok := i.(uint32)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if value == 0 {
-		return fmt.Errorf("base fee change denominator cannot be 0")
-	}
-
-	return nil
-}
-
-func validateElasticityMultiplier(i interface{}) error {
-	_, ok := i.(uint32)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-	return nil
-}
-
-func validateBaseFee(i interface{}) error {
-	value, ok := i.(sdkmath.Int)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if value.IsNegative() {
-		return fmt.Errorf("base fee cannot be negative")
-	}
-
-	return nil
-}
-
-func validateEnableHeight(i interface{}) error {
-	value, ok := i.(int64)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if value < 0 {
-		return fmt.Errorf("enable height cannot be negative: %d", value)
-	}
-
-	return nil
-}
-
 func validateMinGasPrice(i interface{}) error {
 	v, ok := i.(sdk.Dec)
 
