@@ -222,10 +222,12 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	chainID, err := getChainID(ctx, req.ChainId)
+
+	chainID, err := GetChainID(ctx, big.NewInt(req.ChainId))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
 	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress), chainID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -258,7 +260,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	chainID, err := getChainID(ctx, req.ChainId)
+	chainID, err := GetChainID(ctx, big.NewInt(req.ChainId))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -268,6 +270,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	}
 
 	var args types.TransactionArgs
+
 	err = json.Unmarshal(req.Args, &args)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -394,18 +397,21 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		contextHeight = 1
 	}
 
-	ctx := sdk.UnwrapSDKContext(c)
-	ctx = ctx.WithBlockHeight(contextHeight)
-	ctx = ctx.WithBlockTime(req.BlockTime)
-	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-	chainID, err := getChainID(ctx, req.ChainId)
+	ctx := sdk.UnwrapSDKContext(c).
+		WithBlockHeight(contextHeight).
+		WithBlockTime(req.BlockTime).
+		WithHeaderHash(common.Hex2Bytes(req.BlockHash))
+
+	chainID, err := GetChainID(ctx, big.NewInt(req.ChainId))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
 	cfg, err := k.EVMConfig(ctx, GetProposerAddress(ctx, req.ProposerAddress), chainID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to load evm config: %s", err.Error())
 	}
+
 	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
 
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
@@ -417,10 +423,12 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		}
 		txConfig.TxHash = ethTx.Hash()
 		txConfig.TxIndex = uint(i)
+
 		rsp, err := k.ApplyMessageWithConfig(ctx, msg, types.NewNoOpTracer(), true, cfg, txConfig)
 		if err != nil {
 			continue
 		}
+
 		txConfig.LogIndex += uint(len(rsp.Logs))
 	}
 
@@ -471,11 +479,12 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 		contextHeight = 1
 	}
 
-	ctx := sdk.UnwrapSDKContext(c)
-	ctx = ctx.WithBlockHeight(contextHeight)
-	ctx = ctx.WithBlockTime(req.BlockTime)
-	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-	chainID, err := getChainID(ctx, req.ChainId)
+	ctx := sdk.UnwrapSDKContext(c).
+		WithBlockHeight(contextHeight).
+		WithBlockTime(req.BlockTime).
+		WithHeaderHash(common.Hex2Bytes(req.BlockHash))
+
+	chainID, err := GetChainID(ctx, big.NewInt(req.ChainId))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -489,6 +498,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	results := make([]*types.TxTraceResult, 0, txsLength)
 
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
+
 	for i, tx := range req.Txs {
 		result := types.TxTraceResult{}
 		ethTx := tx.AsTransaction()
@@ -532,6 +542,7 @@ func (k *Keeper) traceTx(
 		err       error
 		timeout   = defaultTraceTimeout
 	)
+
 	msg, err := tx.AsMessage(signer, cfg.BaseFee)
 	if err != nil {
 		return nil, 0, status.Error(codes.Internal, err.Error())
@@ -616,12 +627,4 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 	}
 
 	return res, nil
-}
-
-// getChainID parse chainID from current context if not provided
-func getChainID(ctx sdk.Context, chainID int64) (*big.Int, error) {
-	if chainID == 0 {
-		return ethermint.ParseChainID(ctx.ChainID())
-	}
-	return big.NewInt(chainID), nil
 }

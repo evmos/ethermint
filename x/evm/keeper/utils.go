@@ -9,8 +9,10 @@ import (
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
+	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -105,4 +107,12 @@ func CheckSenderBalance(
 		)
 	}
 	return nil
+}
+
+// GetChainID parse chainID from current context if not provided
+func GetChainID(ctx sdk.Context, chainID *big.Int) (*big.Int, error) {
+	if chainID == nil || chainID.Cmp(common.Big0) == 0 {
+		return ethermint.ParseChainID(ctx.ChainID())
+	}
+	return chainID, nil
 }
