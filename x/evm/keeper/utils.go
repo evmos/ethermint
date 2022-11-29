@@ -25,7 +25,7 @@ func (k *Keeper) DeductTxCostsFromUserBalance(
 	fees sdk.Coins,
 	from common.Address,
 ) error {
-	// fetch sender account from signature
+	// fetch sender account
 	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, from.Bytes())
 	if err != nil {
 		return errorsmod.Wrapf(err, "account not found for sender %s", from)
