@@ -28,7 +28,7 @@ func (suite *KeeperTestSuite) TestSetGetParams() {
 		{
 			"success - Check ElasticityMultiplier is set to 3 and can be retrieved correctly",
 			func() interface{} {
-				params.ElasticityMultiplier.ElasticityMultiplier = 3
+				params.ElasticityMultiplier = 3
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 				return params.ElasticityMultiplier
 			},
@@ -52,7 +52,7 @@ func (suite *KeeperTestSuite) TestSetGetParams() {
 			"success - Check BaseFeeEnabled is computed with alternate params and can be retrieved correctly",
 			func() interface{} {
 				params.NoBaseFee = true
-				params.EnableHeight.EnableHeight = 5
+				params.EnableHeight = 5
 				suite.app.FeeMarketKeeper.SetParams(suite.ctx, params)
 				return true
 			},

@@ -11,15 +11,15 @@ message Params {
   bool no_base_fee = 1;
   // base_fee_change_denominator bounds the amount the base fee can change
   // between blocks.
-  BaseFeeChangeDenominator base_fee_change_denominator = 2;
+  uint32 base_fee_change_denominator = 2;
   // elasticity_multiplier bounds the maximum gas limit an EIP-1559 block may
   // have.
-  ElasticityMultiplier elasticity_multiplier = 3;
+  uint32 elasticity_multiplier = 3;
   // DEPRECATED: initial base fee for EIP-1559 blocks.
   reserved 4;
   reserved "initial_base_fee";
   // enable_height defines at which block height the base fee calculation is enabled.
-  EnableHeight enable_height = 5;
+  int64 enable_height = 5;
   // base_fee for EIP-1559 blocks.
   string base_fee = 6 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.nullable) = false];
   // min_gas_price defines the minimum gas price value for cosmos and eth transactions
@@ -29,19 +29,4 @@ message Params {
   // to senders based on gas limit
   string min_gas_multiplier = 8
   [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec", (gogoproto.nullable) = false];
-}
-
-message BaseFeeChangeDenominator {
-  // base_fee_change_denominator bounds the amount the base fee can change between blocks.
-  uint32 base_fee_change_denominator = 1;
-}
-
-message ElasticityMultiplier {
-  // elasticity_multiplier bounds the maximum gas limit an EIP-1559 block may have.
-  uint32 elasticity_multiplier = 1;
-}
-
-message EnableHeight {
-  // enable_height defines at which block height the base fee calculation is enabled.
-  int64 enable_height = 1;
 }

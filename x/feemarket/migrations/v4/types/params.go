@@ -13,6 +13,7 @@ var _ paramtypes.ParamSet = &Params{}
 
 // Parameter keys
 var (
+	ParamsKey                             = []byte("ParamsKey")
 	ParamStoreKeyNoBaseFee                = []byte("NoBaseFee")
 	ParamStoreKeyBaseFeeChangeDenominator = []byte("BaseFeeChangeDenominator")
 	ParamStoreKeyElasticityMultiplier     = []byte("ElasticityMultiplier")
@@ -50,19 +51,19 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 // NewParams creates a new Params instance
 func NewParams(
 	noBaseFee bool,
-	baseFeeChangeDenom BaseFeeChangeDenominator,
-	elasticityMultiplier ElasticityMultiplier,
+	baseFeeChangeDenom,
+	elasticityMultiplier uint32,
 	baseFee uint64,
-	enableHeight EnableHeight,
+	enableHeight int64,
 	minGasPrice sdk.Dec,
 	minGasPriceMultiplier sdk.Dec,
 ) Params {
 	return Params{
 		NoBaseFee:                noBaseFee,
-		BaseFeeChangeDenominator: &baseFeeChangeDenom,
-		ElasticityMultiplier:     &elasticityMultiplier,
+		BaseFeeChangeDenominator: baseFeeChangeDenom,
+		ElasticityMultiplier:     elasticityMultiplier,
 		BaseFee:                  sdkmath.NewIntFromUint64(baseFee),
-		EnableHeight:             &enableHeight,
+		EnableHeight:             enableHeight,
 		MinGasPrice:              minGasPrice,
 		MinGasMultiplier:         minGasPriceMultiplier,
 	}
@@ -72,10 +73,10 @@ func NewParams(
 func DefaultParams() Params {
 	return Params{
 		NoBaseFee:                false,
-		BaseFeeChangeDenominator: &BaseFeeChangeDenominator{params.BaseFeeChangeDenominator},
-		ElasticityMultiplier:     &ElasticityMultiplier{params.ElasticityMultiplier},
+		BaseFeeChangeDenominator: params.BaseFeeChangeDenominator,
+		ElasticityMultiplier:     params.ElasticityMultiplier,
 		BaseFee:                  sdkmath.NewIntFromUint64(params.InitialBaseFee),
-		EnableHeight:             &EnableHeight{0},
+		EnableHeight:             0,
 		MinGasPrice:              DefaultMinGasPrice,
 		MinGasMultiplier:         DefaultMinGasMultiplier,
 	}
@@ -83,7 +84,7 @@ func DefaultParams() Params {
 
 // Validate performs basic validation on fee market parameters.
 func (p Params) Validate() error {
-	if p.BaseFeeChangeDenominator.GetBaseFeeChangeDenominator() == 0 {
+	if p.BaseFeeChangeDenominator == 0 {
 		return fmt.Errorf("base fee change denominator cannot be 0")
 	}
 
@@ -91,7 +92,7 @@ func (p Params) Validate() error {
 		return fmt.Errorf("initial base fee cannot be negative: %s", p.BaseFee)
 	}
 
-	if p.EnableHeight.GetEnableHeight() < 0 {
+	if p.EnableHeight < 0 {
 		return fmt.Errorf("enable height cannot be negative: %d", p.EnableHeight)
 	}
 
@@ -103,7 +104,7 @@ func (p Params) Validate() error {
 }
 
 func (p *Params) IsBaseFeeEnabled(height int64) bool {
-	return !p.NoBaseFee && height >= p.EnableHeight.GetEnableHeight()
+	return !p.NoBaseFee && height >= p.EnableHeight
 }
 
 func validateBool(i interface{}) error {

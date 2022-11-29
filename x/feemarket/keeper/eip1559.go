@@ -26,7 +26,7 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	// If the current block is the first EIP-1559 block, return the base fee
 	// defined in the parameters (DefaultBaseFee if it hasn't been changed by
 	// governance).
-	if ctx.BlockHeight() == params.EnableHeight.GetEnableHeight() {
+	if ctx.BlockHeight() == params.EnableHeight {
 		return params.BaseFee.BigInt()
 	}
 
@@ -50,13 +50,13 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 
 	// CONTRACT: ElasticityMultiplier cannot be 0 as it's checked in the params
 	// validation
-	parentGasTargetBig := new(big.Int).Div(gasLimit, new(big.Int).SetUint64(uint64(params.ElasticityMultiplier.GetElasticityMultiplier())))
+	parentGasTargetBig := new(big.Int).Div(gasLimit, new(big.Int).SetUint64(uint64(params.ElasticityMultiplier)))
 	if !parentGasTargetBig.IsUint64() {
 		return nil
 	}
 
 	parentGasTarget := parentGasTargetBig.Uint64()
-	baseFeeChangeDenominator := new(big.Int).SetUint64(uint64(params.BaseFeeChangeDenominator.GetBaseFeeChangeDenominator()))
+	baseFeeChangeDenominator := new(big.Int).SetUint64(uint64(params.BaseFeeChangeDenominator))
 
 	// If the parent gasUsed is the same as the target, the baseFee remains
 	// unchanged.

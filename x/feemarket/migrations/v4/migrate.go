@@ -1,7 +1,6 @@
 package v4
 
 import (
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,24 +26,12 @@ func MigrateStore(
 		return err
 	}
 
-	fmt.Println(params)
-	baseFeeChangeDenom := cdc.MustMarshal(params.BaseFeeChangeDenominator)
-	elasticityMultiplier := cdc.MustMarshal(params.ElasticityMultiplier)
-	enableHeight := cdc.MustMarshal(params.EnableHeight)
-	baseFeeBz := params.BaseFee.BigInt().Bytes()
-	minGasPriceBz := params.MinGasPrice.BigInt().Bytes()
-	minGasMultiplierBz := params.MinGasMultiplier.BigInt().Bytes()
-
-	store.Set(v4types.ParamStoreKeyBaseFeeChangeDenominator, baseFeeChangeDenom)
-	store.Set(v4types.ParamStoreKeyElasticityMultiplier, elasticityMultiplier)
-	store.Set(v4types.ParamStoreKeyEnableHeight, enableHeight)
-	store.Set(v4types.ParamStoreKeyBaseFee, baseFeeBz)
-	store.Set(v4types.ParamStoreKeyMinGasPrice, []byte(minGasPriceBz))
-	store.Set(v4types.ParamStoreKeyMinGasMultiplier, []byte(minGasMultiplierBz))
-
-	if params.NoBaseFee {
-		store.Set(v4types.ParamStoreKeyNoBaseFee, []byte{0x01})
+	bz, err := cdc.Marshal(&params)
+	if err != nil {
+		return err
 	}
+
+	store.Set(v4types.ParamsKey, bz)
 
 	return nil
 }

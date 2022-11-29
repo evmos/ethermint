@@ -1,6 +1,7 @@
 package feemarket
 
 import (
+	"cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -14,7 +15,11 @@ func InitGenesis(
 	k keeper.Keeper,
 	data types.GenesisState,
 ) []abci.ValidatorUpdate {
-	k.SetParams(ctx, data.Params)
+	err := k.SetParams(ctx, data.Params)
+	if err != nil {
+		panic(errors.Wrap(err, "could not set parameters at genesis"))
+	}
+
 	k.SetBlockGasWanted(ctx, data.BlockGas)
 
 	return []abci.ValidatorUpdate{}

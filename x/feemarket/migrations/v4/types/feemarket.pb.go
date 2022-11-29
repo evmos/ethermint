@@ -30,12 +30,12 @@ type Params struct {
 	NoBaseFee bool `protobuf:"varint,1,opt,name=no_base_fee,json=noBaseFee,proto3" json:"no_base_fee,omitempty"`
 	// base_fee_change_denominator bounds the amount the base fee can change
 	// between blocks.
-	BaseFeeChangeDenominator *BaseFeeChangeDenominator `protobuf:"bytes,2,opt,name=base_fee_change_denominator,json=baseFeeChangeDenominator,proto3" json:"base_fee_change_denominator,omitempty"`
+	BaseFeeChangeDenominator uint32 `protobuf:"varint,2,opt,name=base_fee_change_denominator,json=baseFeeChangeDenominator,proto3" json:"base_fee_change_denominator,omitempty"`
 	// elasticity_multiplier bounds the maximum gas limit an EIP-1559 block may
 	// have.
-	ElasticityMultiplier *ElasticityMultiplier `protobuf:"bytes,3,opt,name=elasticity_multiplier,json=elasticityMultiplier,proto3" json:"elasticity_multiplier,omitempty"`
+	ElasticityMultiplier uint32 `protobuf:"varint,3,opt,name=elasticity_multiplier,json=elasticityMultiplier,proto3" json:"elasticity_multiplier,omitempty"`
 	// enable_height defines at which block height the base fee calculation is enabled.
-	EnableHeight *EnableHeight `protobuf:"bytes,5,opt,name=enable_height,json=enableHeight,proto3" json:"enable_height,omitempty"`
+	EnableHeight int64 `protobuf:"varint,5,opt,name=enable_height,json=enableHeight,proto3" json:"enable_height,omitempty"`
 	// base_fee for EIP-1559 blocks.
 	BaseFee github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,6,opt,name=base_fee,json=baseFee,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"base_fee"`
 	// min_gas_price defines the minimum gas price value for cosmos and eth transactions
@@ -85,156 +85,21 @@ func (m *Params) GetNoBaseFee() bool {
 	return false
 }
 
-func (m *Params) GetBaseFeeChangeDenominator() *BaseFeeChangeDenominator {
-	if m != nil {
-		return m.BaseFeeChangeDenominator
-	}
-	return nil
-}
-
-func (m *Params) GetElasticityMultiplier() *ElasticityMultiplier {
-	if m != nil {
-		return m.ElasticityMultiplier
-	}
-	return nil
-}
-
-func (m *Params) GetEnableHeight() *EnableHeight {
-	if m != nil {
-		return m.EnableHeight
-	}
-	return nil
-}
-
-type BaseFeeChangeDenominator struct {
-	// base_fee_change_denominator bounds the amount the base fee can change between blocks.
-	BaseFeeChangeDenominator uint32 `protobuf:"varint,1,opt,name=base_fee_change_denominator,json=baseFeeChangeDenominator,proto3" json:"base_fee_change_denominator,omitempty"`
-}
-
-func (m *BaseFeeChangeDenominator) Reset()         { *m = BaseFeeChangeDenominator{} }
-func (m *BaseFeeChangeDenominator) String() string { return proto.CompactTextString(m) }
-func (*BaseFeeChangeDenominator) ProtoMessage()    {}
-func (*BaseFeeChangeDenominator) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4feb8b20cf98e6e1, []int{1}
-}
-func (m *BaseFeeChangeDenominator) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *BaseFeeChangeDenominator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_BaseFeeChangeDenominator.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *BaseFeeChangeDenominator) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BaseFeeChangeDenominator.Merge(m, src)
-}
-func (m *BaseFeeChangeDenominator) XXX_Size() int {
-	return m.Size()
-}
-func (m *BaseFeeChangeDenominator) XXX_DiscardUnknown() {
-	xxx_messageInfo_BaseFeeChangeDenominator.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_BaseFeeChangeDenominator proto.InternalMessageInfo
-
-func (m *BaseFeeChangeDenominator) GetBaseFeeChangeDenominator() uint32 {
+func (m *Params) GetBaseFeeChangeDenominator() uint32 {
 	if m != nil {
 		return m.BaseFeeChangeDenominator
 	}
 	return 0
 }
 
-type ElasticityMultiplier struct {
-	// elasticity_multiplier bounds the maximum gas limit an EIP-1559 block may have.
-	ElasticityMultiplier uint32 `protobuf:"varint,1,opt,name=elasticity_multiplier,json=elasticityMultiplier,proto3" json:"elasticity_multiplier,omitempty"`
-}
-
-func (m *ElasticityMultiplier) Reset()         { *m = ElasticityMultiplier{} }
-func (m *ElasticityMultiplier) String() string { return proto.CompactTextString(m) }
-func (*ElasticityMultiplier) ProtoMessage()    {}
-func (*ElasticityMultiplier) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4feb8b20cf98e6e1, []int{2}
-}
-func (m *ElasticityMultiplier) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ElasticityMultiplier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ElasticityMultiplier.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ElasticityMultiplier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ElasticityMultiplier.Merge(m, src)
-}
-func (m *ElasticityMultiplier) XXX_Size() int {
-	return m.Size()
-}
-func (m *ElasticityMultiplier) XXX_DiscardUnknown() {
-	xxx_messageInfo_ElasticityMultiplier.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ElasticityMultiplier proto.InternalMessageInfo
-
-func (m *ElasticityMultiplier) GetElasticityMultiplier() uint32 {
+func (m *Params) GetElasticityMultiplier() uint32 {
 	if m != nil {
 		return m.ElasticityMultiplier
 	}
 	return 0
 }
 
-type EnableHeight struct {
-	// enable_height defines at which block height the base fee calculation is enabled.
-	EnableHeight int64 `protobuf:"varint,1,opt,name=enable_height,json=enableHeight,proto3" json:"enable_height,omitempty"`
-}
-
-func (m *EnableHeight) Reset()         { *m = EnableHeight{} }
-func (m *EnableHeight) String() string { return proto.CompactTextString(m) }
-func (*EnableHeight) ProtoMessage()    {}
-func (*EnableHeight) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4feb8b20cf98e6e1, []int{3}
-}
-func (m *EnableHeight) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EnableHeight) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EnableHeight.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EnableHeight) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnableHeight.Merge(m, src)
-}
-func (m *EnableHeight) XXX_Size() int {
-	return m.Size()
-}
-func (m *EnableHeight) XXX_DiscardUnknown() {
-	xxx_messageInfo_EnableHeight.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EnableHeight proto.InternalMessageInfo
-
-func (m *EnableHeight) GetEnableHeight() int64 {
+func (m *Params) GetEnableHeight() int64 {
 	if m != nil {
 		return m.EnableHeight
 	}
@@ -243,9 +108,6 @@ func (m *EnableHeight) GetEnableHeight() int64 {
 
 func init() {
 	proto.RegisterType((*Params)(nil), "ethermint.feemarket.v1.Params")
-	proto.RegisterType((*BaseFeeChangeDenominator)(nil), "ethermint.feemarket.v1.BaseFeeChangeDenominator")
-	proto.RegisterType((*ElasticityMultiplier)(nil), "ethermint.feemarket.v1.ElasticityMultiplier")
-	proto.RegisterType((*EnableHeight)(nil), "ethermint.feemarket.v1.EnableHeight")
 }
 
 func init() {
@@ -253,36 +115,32 @@ func init() {
 }
 
 var fileDescriptor_4feb8b20cf98e6e1 = []byte{
-	// 459 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0xd1, 0x6a, 0x13, 0x41,
-	0x14, 0xcd, 0xda, 0x34, 0x4d, 0x27, 0x0d, 0x84, 0x21, 0xca, 0xa2, 0xb0, 0x0d, 0x51, 0x4a, 0x1e,
-	0xea, 0xae, 0x35, 0xcf, 0xbe, 0xc4, 0x5a, 0x8d, 0x22, 0x94, 0x79, 0x53, 0x84, 0x61, 0x76, 0x7b,
-	0xbb, 0x3b, 0x74, 0x67, 0x26, 0xec, 0x4c, 0x83, 0xfd, 0x0b, 0x3f, 0xab, 0x8f, 0x7d, 0x14, 0x91,
-	0x22, 0xc9, 0x8f, 0xc8, 0x4e, 0xd2, 0xdd, 0x55, 0xb2, 0x82, 0x7d, 0xda, 0xbd, 0x73, 0xcf, 0x39,
-	0x17, 0xce, 0x3d, 0x17, 0x1d, 0x80, 0x49, 0x20, 0x13, 0x5c, 0x9a, 0xe0, 0x1c, 0x40, 0xb0, 0xec,
-	0x02, 0x4c, 0x30, 0x3f, 0x2a, 0x0b, 0x7f, 0x96, 0x29, 0xa3, 0xf0, 0xa3, 0x02, 0xe7, 0x97, 0xad,
-	0xf9, 0xd1, 0xe3, 0x7e, 0xac, 0x62, 0x65, 0x21, 0x41, 0xfe, 0xb7, 0x42, 0x0f, 0x7f, 0x36, 0x51,
-	0xeb, 0x94, 0x65, 0x4c, 0x68, 0xec, 0xa1, 0x8e, 0x54, 0x34, 0x64, 0x1a, 0xe8, 0x39, 0x80, 0xeb,
-	0x0c, 0x9c, 0x51, 0x9b, 0xec, 0x4a, 0x35, 0x61, 0x1a, 0x4e, 0x00, 0xb0, 0x42, 0x4f, 0xee, 0x9a,
-	0x34, 0x4a, 0x98, 0x8c, 0x81, 0x9e, 0x81, 0x54, 0x82, 0x4b, 0x66, 0x54, 0xe6, 0x3e, 0x18, 0x38,
-	0xa3, 0xce, 0xcb, 0x17, 0xfe, 0xe6, 0xf1, 0xfe, 0x5a, 0xe5, 0xb5, 0x25, 0x1e, 0x97, 0x3c, 0xe2,
-	0x86, 0x35, 0x1d, 0xcc, 0xd0, 0x43, 0x48, 0x99, 0x36, 0x3c, 0xe2, 0xe6, 0x8a, 0x8a, 0xcb, 0xd4,
-	0xf0, 0x59, 0xca, 0x21, 0x73, 0xb7, 0xec, 0xa8, 0xc3, 0xba, 0x51, 0x6f, 0x0a, 0xd2, 0xc7, 0x82,
-	0x43, 0xfa, 0xb0, 0xe1, 0x15, 0x4f, 0x51, 0x17, 0x24, 0x0b, 0x53, 0xa0, 0x09, 0xf0, 0x38, 0x31,
-	0xee, 0xb6, 0x95, 0x7e, 0x56, 0x2b, 0x6d, 0xc1, 0xef, 0x2c, 0x96, 0xec, 0x41, 0xa5, 0xc2, 0x53,
-	0xd4, 0x2e, 0xbc, 0x6b, 0x0d, 0x9c, 0xd1, 0xee, 0xc4, 0xbf, 0xbe, 0xdd, 0x6f, 0xfc, 0xb8, 0xdd,
-	0x3f, 0x88, 0xb9, 0x49, 0x2e, 0x43, 0x3f, 0x52, 0x22, 0x88, 0x94, 0x16, 0x4a, 0xaf, 0x3f, 0xcf,
-	0xf5, 0xd9, 0x45, 0x60, 0xae, 0x66, 0xa0, 0xfd, 0xa9, 0x34, 0x64, 0x67, 0xed, 0x04, 0x26, 0xa8,
-	0x2b, 0xb8, 0xa4, 0x31, 0xd3, 0x74, 0x96, 0xf1, 0x08, 0xdc, 0x9d, 0xff, 0xd6, 0x3b, 0x86, 0x88,
-	0x74, 0x04, 0x97, 0x6f, 0x99, 0x3e, 0xcd, 0x25, 0xf0, 0x17, 0x84, 0xef, 0x34, 0x2b, 0x4e, 0xb6,
-	0xef, 0x25, 0xdc, 0x5b, 0x09, 0x97, 0x3e, 0xbe, 0x6f, 0xb6, 0x9b, 0xbd, 0x6d, 0xd2, 0xe3, 0x92,
-	0x1b, 0xce, 0xd2, 0x22, 0x44, 0xc3, 0x4f, 0xc8, 0xad, 0x5b, 0x3c, 0x7e, 0xf5, 0xef, 0x3c, 0xe5,
-	0xf9, 0xeb, 0xd6, 0xa7, 0x63, 0xf8, 0x01, 0xf5, 0x37, 0x2d, 0x1a, 0x8f, 0xeb, 0x52, 0xb3, 0x12,
-	0xdc, 0x98, 0x83, 0xe1, 0x18, 0xed, 0x55, 0x57, 0x8b, 0x9f, 0xfe, 0x9d, 0x8b, 0x9c, 0xbc, 0xf5,
-	0xe7, 0xc6, 0x27, 0x27, 0xd7, 0x0b, 0xcf, 0xb9, 0x59, 0x78, 0xce, 0xaf, 0x85, 0xe7, 0x7c, 0x5b,
-	0x7a, 0x8d, 0x9b, 0xa5, 0xd7, 0xf8, 0xbe, 0xf4, 0x1a, 0x9f, 0x0f, 0x2b, 0x46, 0xc2, 0x3c, 0xf7,
-	0xb1, 0x3c, 0xde, 0xaf, 0x95, 0xf3, 0xb5, 0x96, 0x86, 0x2d, 0x7b, 0x8a, 0xe3, 0xdf, 0x01, 0x00,
-	0x00, 0xff, 0xff, 0x2b, 0xa0, 0xe6, 0x17, 0xe2, 0x03, 0x00, 0x00,
+	// 388 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x52, 0xc1, 0x8a, 0xdb, 0x30,
+	0x14, 0xb4, 0x9a, 0xdd, 0xac, 0x57, 0xdb, 0x40, 0x10, 0xdb, 0x62, 0x5a, 0xf0, 0x9a, 0x16, 0x16,
+	0x1f, 0x5a, 0x9b, 0x65, 0xcf, 0xbd, 0xa4, 0x21, 0x6d, 0x0a, 0x85, 0xe0, 0x63, 0x29, 0x08, 0xd9,
+	0x79, 0xb1, 0x45, 0x2c, 0xc9, 0x58, 0x4a, 0x68, 0xfe, 0xa2, 0x9f, 0x95, 0x63, 0x4e, 0xa5, 0xf4,
+	0x10, 0x4a, 0xf2, 0x23, 0x25, 0x76, 0x62, 0xe7, 0xda, 0x3d, 0x49, 0x7a, 0x33, 0x9a, 0x79, 0xd2,
+	0x1b, 0x7c, 0x0f, 0x26, 0x83, 0x52, 0x70, 0x69, 0xc2, 0x19, 0x80, 0x60, 0xe5, 0x1c, 0x4c, 0xb8,
+	0x7c, 0x68, 0x0f, 0x41, 0x51, 0x2a, 0xa3, 0xc8, 0xcb, 0x86, 0x17, 0xb4, 0xd0, 0xf2, 0xe1, 0xd5,
+	0x6d, 0xaa, 0x52, 0x55, 0x51, 0xc2, 0xc3, 0xae, 0x66, 0xbf, 0xf9, 0xd5, 0xc1, 0xdd, 0x09, 0x2b,
+	0x99, 0xd0, 0xc4, 0xc5, 0x37, 0x52, 0xd1, 0x98, 0x69, 0xa0, 0x33, 0x00, 0x07, 0x79, 0xc8, 0xb7,
+	0xa3, 0x6b, 0xa9, 0x06, 0x4c, 0xc3, 0x08, 0x80, 0x7c, 0xc0, 0xaf, 0x4f, 0x20, 0x4d, 0x32, 0x26,
+	0x53, 0xa0, 0x53, 0x90, 0x4a, 0x70, 0xc9, 0x8c, 0x2a, 0x9d, 0x67, 0x1e, 0xf2, 0x7b, 0x91, 0x13,
+	0xd7, 0xec, 0x8f, 0x15, 0x61, 0xd8, 0xe2, 0xe4, 0x11, 0xbf, 0x80, 0x9c, 0x69, 0xc3, 0x13, 0x6e,
+	0x56, 0x54, 0x2c, 0x72, 0xc3, 0x8b, 0x9c, 0x43, 0xe9, 0x74, 0xaa, 0x8b, 0xb7, 0x2d, 0xf8, 0xb5,
+	0xc1, 0xc8, 0x5b, 0xdc, 0x03, 0xc9, 0xe2, 0x1c, 0x68, 0x06, 0x3c, 0xcd, 0x8c, 0x73, 0xe9, 0x21,
+	0xbf, 0x13, 0x3d, 0xaf, 0x8b, 0x9f, 0xab, 0x1a, 0x19, 0x63, 0xbb, 0xe9, 0xba, 0xeb, 0x21, 0xff,
+	0x7a, 0x10, 0xac, 0xb7, 0x77, 0xd6, 0x9f, 0xed, 0xdd, 0x7d, 0xca, 0x4d, 0xb6, 0x88, 0x83, 0x44,
+	0x89, 0x30, 0x51, 0x5a, 0x28, 0x7d, 0x5c, 0xde, 0xeb, 0xe9, 0x3c, 0x34, 0xab, 0x02, 0x74, 0x30,
+	0x96, 0x26, 0xba, 0x3a, 0x76, 0x4d, 0x22, 0xdc, 0x13, 0x5c, 0xd2, 0x94, 0x69, 0x5a, 0x94, 0x3c,
+	0x01, 0xe7, 0xea, 0xbf, 0xf5, 0x86, 0x90, 0x44, 0x37, 0x82, 0xcb, 0x4f, 0x4c, 0x4f, 0x0e, 0x12,
+	0xe4, 0x3b, 0x26, 0x27, 0xcd, 0xb3, 0x57, 0xdb, 0x4f, 0x12, 0xee, 0xd7, 0xc2, 0xed, 0x0f, 0x7d,
+	0xb9, 0xb0, 0x2f, 0xfa, 0x97, 0x51, 0x9f, 0x4b, 0x6e, 0x38, 0xcb, 0x9b, 0xf1, 0x0d, 0x46, 0xeb,
+	0x9d, 0x8b, 0x36, 0x3b, 0x17, 0xfd, 0xdd, 0xb9, 0xe8, 0xe7, 0xde, 0xb5, 0x36, 0x7b, 0xd7, 0xfa,
+	0xbd, 0x77, 0xad, 0x6f, 0xef, 0xce, 0xbc, 0x60, 0x79, 0xb0, 0x6a, 0x93, 0xf5, 0xe3, 0x2c, 0x5b,
+	0x95, 0x6b, 0xdc, 0xad, 0x72, 0xf2, 0xf8, 0x2f, 0x00, 0x00, 0xff, 0xff, 0xa5, 0xce, 0xeb, 0x97,
+	0x7f, 0x02, 0x00, 0x00,
 }
 
 func (m *Params) Marshal() (dAtA []byte, err error) {
@@ -335,41 +193,20 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x32
-	if m.EnableHeight != nil {
-		{
-			size, err := m.EnableHeight.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintFeemarket(dAtA, i, uint64(size))
-		}
+	if m.EnableHeight != 0 {
+		i = encodeVarintFeemarket(dAtA, i, uint64(m.EnableHeight))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x28
 	}
-	if m.ElasticityMultiplier != nil {
-		{
-			size, err := m.ElasticityMultiplier.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintFeemarket(dAtA, i, uint64(size))
-		}
+	if m.ElasticityMultiplier != 0 {
+		i = encodeVarintFeemarket(dAtA, i, uint64(m.ElasticityMultiplier))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x18
 	}
-	if m.BaseFeeChangeDenominator != nil {
-		{
-			size, err := m.BaseFeeChangeDenominator.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintFeemarket(dAtA, i, uint64(size))
-		}
+	if m.BaseFeeChangeDenominator != 0 {
+		i = encodeVarintFeemarket(dAtA, i, uint64(m.BaseFeeChangeDenominator))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x10
 	}
 	if m.NoBaseFee {
 		i--
@@ -378,90 +215,6 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		} else {
 			dAtA[i] = 0
 		}
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *BaseFeeChangeDenominator) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *BaseFeeChangeDenominator) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *BaseFeeChangeDenominator) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.BaseFeeChangeDenominator != 0 {
-		i = encodeVarintFeemarket(dAtA, i, uint64(m.BaseFeeChangeDenominator))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ElasticityMultiplier) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ElasticityMultiplier) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ElasticityMultiplier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ElasticityMultiplier != 0 {
-		i = encodeVarintFeemarket(dAtA, i, uint64(m.ElasticityMultiplier))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EnableHeight) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EnableHeight) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EnableHeight) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.EnableHeight != 0 {
-		i = encodeVarintFeemarket(dAtA, i, uint64(m.EnableHeight))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -488,17 +241,14 @@ func (m *Params) Size() (n int) {
 	if m.NoBaseFee {
 		n += 2
 	}
-	if m.BaseFeeChangeDenominator != nil {
-		l = m.BaseFeeChangeDenominator.Size()
-		n += 1 + l + sovFeemarket(uint64(l))
+	if m.BaseFeeChangeDenominator != 0 {
+		n += 1 + sovFeemarket(uint64(m.BaseFeeChangeDenominator))
 	}
-	if m.ElasticityMultiplier != nil {
-		l = m.ElasticityMultiplier.Size()
-		n += 1 + l + sovFeemarket(uint64(l))
+	if m.ElasticityMultiplier != 0 {
+		n += 1 + sovFeemarket(uint64(m.ElasticityMultiplier))
 	}
-	if m.EnableHeight != nil {
-		l = m.EnableHeight.Size()
-		n += 1 + l + sovFeemarket(uint64(l))
+	if m.EnableHeight != 0 {
+		n += 1 + sovFeemarket(uint64(m.EnableHeight))
 	}
 	l = m.BaseFee.Size()
 	n += 1 + l + sovFeemarket(uint64(l))
@@ -506,42 +256,6 @@ func (m *Params) Size() (n int) {
 	n += 1 + l + sovFeemarket(uint64(l))
 	l = m.MinGasMultiplier.Size()
 	n += 1 + l + sovFeemarket(uint64(l))
-	return n
-}
-
-func (m *BaseFeeChangeDenominator) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.BaseFeeChangeDenominator != 0 {
-		n += 1 + sovFeemarket(uint64(m.BaseFeeChangeDenominator))
-	}
-	return n
-}
-
-func (m *ElasticityMultiplier) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ElasticityMultiplier != 0 {
-		n += 1 + sovFeemarket(uint64(m.ElasticityMultiplier))
-	}
-	return n
-}
-
-func (m *EnableHeight) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.EnableHeight != 0 {
-		n += 1 + sovFeemarket(uint64(m.EnableHeight))
-	}
 	return n
 }
 
@@ -601,10 +315,10 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 			}
 			m.NoBaseFee = bool(v != 0)
 		case 2:
-			if wireType != 2 {
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BaseFeeChangeDenominator", wireType)
 			}
-			var msglen int
+			m.BaseFeeChangeDenominator = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowFeemarket
@@ -614,33 +328,16 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				m.BaseFeeChangeDenominator |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.BaseFeeChangeDenominator == nil {
-				m.BaseFeeChangeDenominator = &BaseFeeChangeDenominator{}
-			}
-			if err := m.BaseFeeChangeDenominator.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 3:
-			if wireType != 2 {
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ElasticityMultiplier", wireType)
 			}
-			var msglen int
+			m.ElasticityMultiplier = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowFeemarket
@@ -650,33 +347,16 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				m.ElasticityMultiplier |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ElasticityMultiplier == nil {
-				m.ElasticityMultiplier = &ElasticityMultiplier{}
-			}
-			if err := m.ElasticityMultiplier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 5:
-			if wireType != 2 {
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field EnableHeight", wireType)
 			}
-			var msglen int
+			m.EnableHeight = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowFeemarket
@@ -686,28 +366,11 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				m.EnableHeight |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.EnableHeight == nil {
-				m.EnableHeight = &EnableHeight{}
-			}
-			if err := m.EnableHeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BaseFee", wireType)
@@ -810,213 +473,6 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipFeemarket(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *BaseFeeChangeDenominator) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowFeemarket
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BaseFeeChangeDenominator: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BaseFeeChangeDenominator: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BaseFeeChangeDenominator", wireType)
-			}
-			m.BaseFeeChangeDenominator = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFeemarket
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.BaseFeeChangeDenominator |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipFeemarket(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ElasticityMultiplier) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowFeemarket
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ElasticityMultiplier: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ElasticityMultiplier: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ElasticityMultiplier", wireType)
-			}
-			m.ElasticityMultiplier = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFeemarket
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ElasticityMultiplier |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipFeemarket(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthFeemarket
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EnableHeight) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowFeemarket
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EnableHeight: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EnableHeight: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EnableHeight", wireType)
-			}
-			m.EnableHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowFeemarket
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.EnableHeight |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipFeemarket(dAtA[iNdEx:])

@@ -26,7 +26,7 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 		{"default", DefaultParams(), false},
 		{
 			"valid",
-			NewParams(true, BaseFeeChangeDenominator{7}, ElasticityMultiplier{3}, 2000000000, EnableHeight{int64(544435345345435345)}, sdk.NewDecWithPrec(20, 4), DefaultMinGasMultiplier),
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), sdk.NewDecWithPrec(20, 4), DefaultMinGasMultiplier),
 			false,
 		},
 		{
@@ -36,27 +36,27 @@ func (suite *ParamsTestSuite) TestParamsValidate() {
 		},
 		{
 			"base fee change denominator is 0 ",
-			NewParams(true, BaseFeeChangeDenominator{7}, ElasticityMultiplier{3}, 2000000000, EnableHeight{int64(544435345345435345)}, sdk.NewDecWithPrec(20, 4), DefaultMinGasMultiplier),
+			NewParams(true, 0, 3, 2000000000, int64(544435345345435345), sdk.NewDecWithPrec(20, 4), DefaultMinGasMultiplier),
 			true,
 		},
 		{
 			"invalid: min gas price negative",
-			NewParams(true, BaseFeeChangeDenominator{7}, ElasticityMultiplier{3}, 2000000000, EnableHeight{int64(544435345345435345)}, sdk.NewDecFromInt(sdkmath.NewInt(-1)), DefaultMinGasMultiplier),
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), sdk.NewDecFromInt(sdkmath.NewInt(-1)), DefaultMinGasMultiplier),
 			true,
 		},
 		{
 			"valid: min gas multiplier zero",
-			NewParams(true, BaseFeeChangeDenominator{7}, ElasticityMultiplier{3}, 2000000000, EnableHeight{int64(544435345345435345)}, DefaultMinGasPrice, sdk.ZeroDec()),
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), DefaultMinGasPrice, sdk.ZeroDec()),
 			false,
 		},
 		{
 			"invalid: min gas multiplier is negative",
-			NewParams(true, BaseFeeChangeDenominator{7}, ElasticityMultiplier{3}, 2000000000, EnableHeight{int64(544435345345435345)}, DefaultMinGasPrice, sdk.NewDecWithPrec(-5, 1)),
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), DefaultMinGasPrice, sdk.NewDecWithPrec(-5, 1)),
 			true,
 		},
 		{
 			"invalid: min gas multiplier bigger than 1",
-			NewParams(true, BaseFeeChangeDenominator{7}, ElasticityMultiplier{3}, 2000000000, EnableHeight{int64(544435345345435345)}, sdk.NewDecWithPrec(20, 4), sdk.NewDec(2)),
+			NewParams(true, 7, 3, 2000000000, int64(544435345345435345), sdk.NewDecWithPrec(20, 4), sdk.NewDec(2)),
 			true,
 		},
 	}
