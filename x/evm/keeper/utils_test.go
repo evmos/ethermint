@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
-	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
+	"github.com/evmos/ethermint/x/evm/keeper"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -238,7 +238,7 @@ func (suite *KeeperTestSuite) TestCheckSenderBalance() {
 			txData, _ := evmtypes.UnpackTxData(tx.Data)
 
 			acct := suite.app.EvmKeeper.GetAccountOrEmpty(suite.ctx, suite.address)
-			err := evmkeeper.CheckSenderBalance(
+			err := keeper.CheckSenderBalance(
 				sdkmath.NewIntFromBigInt(acct.Balance),
 				txData,
 			)
@@ -479,7 +479,7 @@ func (suite *KeeperTestSuite) TestVerifyFeeAndDeductTxCostsFromUserBalance() {
 			baseFee := suite.app.EvmKeeper.GetBaseFee(suite.ctx, ethCfg)
 			priority := evmtypes.GetTxPriority(txData, baseFee)
 
-			fees, err := evmkeeper.VerifyFee(suite.ctx, txData, evmtypes.DefaultEVMDenom, baseFee, false, false)
+			fees, err := keeper.VerifyFee(suite.ctx, txData, evmtypes.DefaultEVMDenom, baseFee, false, false)
 			if tc.expectPassVerify {
 				suite.Require().NoError(err, "valid test %d failed - '%s'", i, tc.name)
 				if tc.enableFeemarket {

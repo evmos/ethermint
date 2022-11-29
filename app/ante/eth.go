@@ -11,7 +11,7 @@ import (
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	ethermint "github.com/evmos/ethermint/types"
-	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
+	"github.com/evmos/ethermint/x/evm/keeper"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
@@ -79,7 +79,7 @@ func (avd EthAccountVerificationDecorator) AnteHandle(
 				"the sender is not EOA: address %s, codeHash <%s>", fromAddr, acct.CodeHash)
 		}
 
-		if err := evmkeeper.CheckSenderBalance(sdkmath.NewIntFromBigInt(acct.Balance), txData); err != nil {
+		if err := keeper.CheckSenderBalance(sdkmath.NewIntFromBigInt(acct.Balance), txData); err != nil {
 			return ctx, errorsmod.Wrap(err, "failed to check sender balance")
 		}
 	}
@@ -163,7 +163,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		evmDenom := egcd.evmKeeper.GetEVMDenom(ctx)
 
-		fees, err := evmkeeper.VerifyFee(ctx, txData, evmDenom, baseFee, homestead, istanbul)
+		fees, err := keeper.VerifyFee(ctx, txData, evmDenom, baseFee, homestead, istanbul)
 		if err != nil {
 			return ctx, errorsmod.Wrapf(err, "failed to verify the fees")
 		}
