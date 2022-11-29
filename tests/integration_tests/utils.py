@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from eth_account import Account
 from hexbytes import HexBytes
 from web3._utils.transactions import fill_nonce, fill_transaction_defaults
+from web3.exceptions import TimeExhausted
 
 load_dotenv(Path(__file__).parent.parent.parent / "scripts/.env")
 Account.enable_unaudited_hdwallet_features()
@@ -149,17 +150,27 @@ def sign_transaction(w3, tx, key=KEYS["validator"]):
     return acct.sign_transaction(tx)
 
 
-def send_transaction(w3, tx, key=KEYS["validator"]):
+def send_transaction(w3, tx, key=KEYS["validator"], i=0):
+    if i > 3:
+        raise TimeExhausted
     signed = sign_transaction(w3, tx, key)
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
-    return w3.eth.wait_for_transaction_receipt(txhash)
+    try:
+        return w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
+    except TimeExhausted:
+        return send_transaction(w3, tx, key, i + 1)
 
 
-def send_successful_transaction(w3):
+def send_successful_transaction(w3, i=0):
+    if i > 3:
+        raise TimeExhausted
     signed = sign_transaction(w3, {"to": ADDRS["community"], "value": 1000})
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
-    receipt = w3.eth.wait_for_transaction_receipt(txhash)
-    assert receipt.status == 1
+    try:
+        receipt = w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
+        assert receipt.status == 1
+    except TimeExhausted:
+        return send_successful_transaction(w3, i + 1)
     return txhash
 
 
