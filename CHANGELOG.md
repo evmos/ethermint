@@ -62,6 +62,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (tests) [#1507](https://github.com/evmos/ethermint/pull/1507) Remove legacy sim tests
 * (feemarket) [#1508](https://github.com/evmos/ethermint/pull/1508) Remove old x/params migration logic
 * (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block
 * (ante) [#1455](https://github.com/evmos/ethermint/pull/1455) Refactor `AnteHandler` logic
