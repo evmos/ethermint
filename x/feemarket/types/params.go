@@ -65,6 +65,10 @@ func (p Params) Validate() error {
 		return fmt.Errorf("enable height cannot be negative: %d", p.EnableHeight)
 	}
 
+	if err := validateMinGasMultiplier(p.MinGasMultiplier); err != nil {
+		return err
+	}
+
 	return validateMinGasPrice(p.MinGasPrice)
 }
 
