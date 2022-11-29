@@ -114,10 +114,10 @@ jobs:
 
   upload-cache:
     if: github.event_name == 'push'
-    needs: [ "integration_tests" ]
+    needs: ["integration_tests"]
     strategy:
       matrix:
-        os: [ macos-latest ]
+        os: [macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
