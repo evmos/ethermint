@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -26,6 +28,7 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/store/streaming"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -282,6 +285,12 @@ func NewEthermintApp(
 	// Add the EVM transient store key
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey, evmtypes.TransientKey, feemarkettypes.TransientKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+
+	// load state streaming if enabled
+	if _, _, err := streaming.LoadStreamingServices(bApp, appOpts, appCodec, keys); err != nil {
+		fmt.Printf("failed to load state streaming: %s", err)
+		os.Exit(1)
+	}
 
 	app := &EthermintApp{
 		BaseApp:           bApp,
@@ -784,6 +793,8 @@ func (app *EthermintApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 	// Register new tendermint queries routes from grpc-gateway.
 	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	// Register node gRPC service for grpc-gateway.
+	node.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register grpc-gateway routes for all modules.
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
@@ -807,6 +818,12 @@ func (app *EthermintApp) RegisterTendermintService(clientCtx client.Context) {
 		app.interfaceRegistry,
 		app.Query,
 	)
+}
+
+// RegisterNodeService registers the node gRPC service on the provided
+// application gRPC query router.
+func (app *EthermintApp) RegisterNodeService(clientCtx client.Context) {
+	node.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
 }
 
 // RegisterSwaggerAPI registers swagger route with API Server
