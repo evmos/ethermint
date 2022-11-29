@@ -21,7 +21,6 @@ import (
 
 	"github.com/tharsis/ethermint/x/evm/client/cli"
 	"github.com/tharsis/ethermint/x/evm/keeper"
-	"github.com/tharsis/ethermint/x/evm/simulation"
 	"github.com/tharsis/ethermint/x/evm/types"
 )
 
@@ -170,12 +169,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // RandomizedParams creates randomized evm param changes for the simulator.
 func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
-	return simulation.ParamChanges(r)
+	return nil
 }
 
 // RegisterStoreDecoder registers a decoder for evm module's types
 func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
-	sdr[types.StoreKey] = simulation.NewDecodeStore()
 }
 
 // ProposalContents doesn't return any content functions for governance proposals.
@@ -184,13 +182,9 @@ func (AppModule) ProposalContents(simState module.SimulationState) []simtypes.We
 }
 
 // GenerateGenesisState creates a randomized GenState of the evm module.
-func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
-	simulation.RandomizedGenState(simState)
-}
+func (AppModule) GenerateGenesisState(simState *module.SimulationState) {}
 
 // WeightedOperations returns the all the evm module operations with their respective weights.
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
-	return simulation.WeightedOperations(
-		simState.AppParams, simState.Cdc, am.ak, am.keeper,
-	)
+	return nil
 }

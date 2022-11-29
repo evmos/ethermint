@@ -21,7 +21,6 @@ import (
 
 	"github.com/tharsis/ethermint/x/feemarket/client/cli"
 	"github.com/tharsis/ethermint/x/feemarket/keeper"
-	"github.com/tharsis/ethermint/x/feemarket/simulation"
 	"github.com/tharsis/ethermint/x/feemarket/types"
 )
 
@@ -182,7 +181,6 @@ func (AppModule) ProposalContents(simState module.SimulationState) []simtypes.We
 
 // GenerateGenesisState creates a randomized GenState of the fee market module.
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
-	simulation.RandomizedGenState(simState)
 }
 
 // WeightedOperations returns the all the fee market module operations with their respective weights.
