@@ -259,7 +259,7 @@ func (b *Backend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 	// MaxDelta = BaseFee * (GasLimit - GasLimit / ElasticityMultiplier) / (GasLimit / ElasticityMultiplier) / Denominator
 	//          = BaseFee * (ElasticityMultiplier - 1) / Denominator
 	// ```
-	maxDelta := baseFee.Int64() * (int64(params.Params.ElasticityMultiplier) - 1) / int64(params.Params.BaseFeeChangeDenominator)
+	maxDelta := baseFee.Int64() * (int64(params.Params.ElasticityMultiplier.GetElasticityMultiplier()) - 1) / int64(params.Params.BaseFeeChangeDenominator.GetBaseFeeChangeDenominator())
 	if maxDelta < 0 {
 		// impossible if the parameter validation passed.
 		maxDelta = 0

@@ -1,12 +1,13 @@
 syntax = "proto3";
-package ethermint.evm.v1;
+package ethermint.feemarket.v1;
 
 import "cosmos_proto/cosmos.proto";
 import "cosmos/msg/v1/msg.proto";
-import "ethermint/evm/v1/evm.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/any.proto";
+import "ethermint/feemarket/v1/feemarket.proto";
+
 
 option go_package = "github.com/evmos/ethermint/x/feemarket/types";
 

@@ -113,7 +113,7 @@ func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
 	suite.app = app.Setup(checkTx, func(app *app.EthermintApp, genesis simapp.GenesisState) simapp.GenesisState {
 		feemarketGenesis := feemarkettypes.DefaultGenesisState()
 		if suite.enableFeemarket {
-			feemarketGenesis.Params.EnableHeight = 1
+			feemarketGenesis.Params.EnableHeight.EnableHeight = 1
 			feemarketGenesis.Params.NoBaseFee = false
 		} else {
 			feemarketGenesis.Params.NoBaseFee = true
