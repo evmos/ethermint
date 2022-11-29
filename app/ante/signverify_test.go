@@ -10,7 +10,6 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
-
 func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
 	addr, privKey := tests.NewAddrKey()
 
