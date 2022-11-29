@@ -116,7 +116,6 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
 // module-specific GRPC queries and handle the upgrade store migration for the module.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
-
 }
 
 // Route returns the message routing key for the fee market module.

@@ -12,7 +12,7 @@ import (
 	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
-// TODO: Temporary will be removed with params refactor PR
+// KeyPrefixBaseFeeV1 TODO: Temporary will be removed with params refactor PR
 var KeyPrefixBaseFeeV1 = []byte{2}
 
 // Keeper grants access to the Fee Market module state.
