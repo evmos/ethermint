@@ -163,7 +163,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 		evmDenom := egcd.evmKeeper.GetEVMDenom(ctx)
 
-		fees, err := keeper.VerifyFee(ctx, txData, evmDenom, baseFee, homestead, istanbul)
+		fees, err := keeper.VerifyFee(txData, evmDenom, baseFee, homestead, istanbul, ctx.IsCheckTx())
 		if err != nil {
 			return ctx, errorsmod.Wrapf(err, "failed to verify the fees")
 		}

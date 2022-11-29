@@ -43,11 +43,10 @@ func (k *Keeper) DeductTxCostsFromUserBalance(
 // gas limit is not reached, the gas limit is higher than the intrinsic gas and that the
 // base fee is higher than the gas fee cap.
 func VerifyFee(
-	ctx sdk.Context,
 	txData evmtypes.TxData,
 	denom string,
 	baseFee *big.Int,
-	homestead, istanbul bool,
+	homestead, istanbul, isCheckTx bool,
 ) (sdk.Coins, error) {
 	isContractCreation := txData.GetTo() == nil
 
@@ -68,7 +67,7 @@ func VerifyFee(
 	}
 
 	// intrinsic gas verification during CheckTx
-	if ctx.IsCheckTx() && gasLimit < intrinsicGas {
+	if isCheckTx && gasLimit < intrinsicGas {
 		return nil, errorsmod.Wrapf(
 			errortypes.ErrOutOfGas,
 			"gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas,
