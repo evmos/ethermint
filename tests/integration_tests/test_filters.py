@@ -10,6 +10,24 @@ from .utils import (
 )
 
 
+def test_get_logs_by_topic(cluster):
+    w3: Web3 = cluster.w3
+
+    contract, _ = deploy_contract(w3, CONTRACTS["Greeter"])
+
+    topic = Web3.keccak(text="ChangeGreeting(address,string)")
+
+    # with tx
+    tx = contract.functions.setGreeting("world").build_transaction()
+    receipt = send_transaction(w3, tx)
+    assert receipt.status == 1
+
+    logs = w3.eth.get_logs({"topics": [topic.hex()]})
+
+    assert len(logs) == 1
+    assert logs[0].address == contract.address
+
+
 def test_pending_transaction_filter(cluster):
     w3: Web3 = cluster.w3
     flt = w3.eth.filter("pending")
