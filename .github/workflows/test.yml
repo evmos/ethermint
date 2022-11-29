@@ -127,4 +127,4 @@ jobs:
           name: ethermint
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
       - name: 'instantiate integration test env'
-        run: nix-store -r $(nix-instantiate tests/integration_tests/shell.nix)
+        run: nix-store -r "$(nix-instantiate tests/integration_tests/shell.nix)"
