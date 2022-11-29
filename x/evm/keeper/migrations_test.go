@@ -15,7 +15,7 @@ func newMockSubspace(ps v4types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
-func (ms mockSubspace) GetParamSet(ctx sdk.Context, ps types.LegacyParams) {
+func (ms mockSubspace) GetParamSetIfExists(_ sdk.Context, ps types.LegacyParams) {
 	*ps.(*v4types.Params) = ms.ps
 }
 
