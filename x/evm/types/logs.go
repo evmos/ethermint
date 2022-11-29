@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	ethermint "github.com/tharsis/ethermint/types"
+	ethermint "github.com/evmos/ethermint/types"
 )
 
 // NewTransactionLogs creates a new NewTransactionLogs instance.
@@ -89,7 +89,7 @@ func (log *Log) ToEthereum() *ethtypes.Log {
 }
 
 func NewLogsFromEth(ethlogs []*ethtypes.Log) []*Log {
-	var logs []*Log // nolint: prealloc
+	var logs []*Log //nolint: prealloc
 	for _, ethlog := range ethlogs {
 		logs = append(logs, NewLogFromEth(ethlog))
 	}
@@ -99,7 +99,7 @@ func NewLogsFromEth(ethlogs []*ethtypes.Log) []*Log {
 
 // LogsToEthereum casts the Ethermint Logs to a slice of Ethereum Logs.
 func LogsToEthereum(logs []*Log) []*ethtypes.Log {
-	var ethLogs []*ethtypes.Log // nolint: prealloc
+	var ethLogs []*ethtypes.Log //nolint: prealloc
 	for i := range logs {
 		ethLogs = append(ethLogs, logs[i].ToEthereum())
 	}

@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"net"
 	"net/http"
@@ -26,11 +26,11 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/tharsis/ethermint/rpc/ethereum/pubsub"
-	rpcfilters "github.com/tharsis/ethermint/rpc/namespaces/ethereum/eth/filters"
-	"github.com/tharsis/ethermint/rpc/types"
-	"github.com/tharsis/ethermint/server/config"
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/rpc/ethereum/pubsub"
+	rpcfilters "github.com/evmos/ethermint/rpc/namespaces/ethereum/eth/filters"
+	"github.com/evmos/ethermint/rpc/types"
+	"github.com/evmos/ethermint/server/config"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 type WebsocketsServer interface {
@@ -74,7 +74,7 @@ type websocketsServer struct {
 	logger   log.Logger
 }
 
-func NewWebsocketsServer(clientCtx client.Context, logger log.Logger, tmWSClient *rpcclient.WSClient, cfg config.Config) WebsocketsServer {
+func NewWebsocketsServer(clientCtx client.Context, logger log.Logger, tmWSClient *rpcclient.WSClient, cfg *config.Config) WebsocketsServer {
 	logger = logger.With("api", "websocket-server")
 	_, port, _ := net.SplitHostPort(cfg.JSONRPC.Address)
 
@@ -94,6 +94,7 @@ func (s *websocketsServer) Start() {
 
 	go func() {
 		var err error
+		/* #nosec G114 -- http functions have no support for timeouts */
 		if s.certFile == "" || s.keyFile == "" {
 			err = http.ListenAndServe(s.wsAddr, ws)
 		} else {
@@ -181,7 +182,15 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 		_, mb, err := wsConn.ReadMessage()
 		if err != nil {
 			_ = wsConn.Close()
+			s.logger.Error("read message error, breaking read loop", "error", err.Error())
 			return
+		}
+
+		if isBatch(mb) {
+			if err := s.tcpGetAndSendResponse(wsConn, mb); err != nil {
+				s.sendErrResponse(wsConn, err.Error())
+			}
+			continue
 		}
 
 		var msg map[string]interface{}
@@ -212,14 +221,8 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 
 		switch method {
 		case "eth_subscribe":
-			params, ok := msg["params"].([]interface{})
+			params, ok := s.getParamsAndCheckValid(msg, wsConn)
 			if !ok {
-				s.sendErrResponse(wsConn, "invalid parameters")
-				continue
-			}
-
-			if len(params) == 0 {
-				s.sendErrResponse(wsConn, "empty parameters")
 				continue
 			}
 
@@ -241,14 +244,8 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 				break
 			}
 		case "eth_unsubscribe":
-			params, ok := msg["params"].([]interface{})
+			params, ok := s.getParamsAndCheckValid(msg, wsConn)
 			if !ok {
-				s.sendErrResponse(wsConn, "invalid parameters")
-				continue
-			}
-
-			if len(params) == 0 {
-				s.sendErrResponse(wsConn, "empty parameters")
 				continue
 			}
 
@@ -283,6 +280,22 @@ func (s *websocketsServer) readLoop(wsConn *wsConn) {
 	}
 }
 
+// tcpGetAndSendResponse sends error response to client if params is invalid
+func (s *websocketsServer) getParamsAndCheckValid(msg map[string]interface{}, wsConn *wsConn) ([]interface{}, bool) {
+	params, ok := msg["params"].([]interface{})
+	if !ok {
+		s.sendErrResponse(wsConn, "invalid parameters")
+		return nil, false
+	}
+
+	if len(params) == 0 {
+		s.sendErrResponse(wsConn, "empty parameters")
+		return nil, false
+	}
+
+	return params, true
+}
+
 // tcpGetAndSendResponse connects to the rest-server over tcp, posts a JSON-RPC request, and sends the response
 // to the client over websockets
 func (s *websocketsServer) tcpGetAndSendResponse(wsConn *wsConn, mb []byte) error {
@@ -300,7 +313,7 @@ func (s *websocketsServer) tcpGetAndSendResponse(wsConn *wsConn, mb []byte) erro
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "could not read body from response")
 	}
@@ -655,4 +668,17 @@ func (api *pubSubAPI) subscribePendingTransactions(wsConn *wsConn, subID rpc.ID)
 
 func (api *pubSubAPI) subscribeSyncing(wsConn *wsConn, subID rpc.ID) (pubsub.UnsubscribeFunc, error) {
 	return nil, errors.New("syncing subscription is not implemented")
+}
+
+// copy from github.com/ethereum/go-ethereum/rpc/json.go
+// isBatch returns true when the first non-whitespace characters is '['
+func isBatch(raw []byte) bool {
+	for _, c := range raw {
+		// skip insignificant whitespace (http://www.ietf.org/rfc/rfc4627.txt)
+		if c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d {
+			continue
+		}
+		return c == '['
+	}
+	return false
 }

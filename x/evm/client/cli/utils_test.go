@@ -25,7 +25,7 @@ func cosmosAddressFromArg(addr string) (sdk.AccAddress, error) {
 	// Strip 0x prefix if exists
 	addr = strings.TrimPrefix(addr, "0x")
 
-	return sdk.AccAddressFromHex(addr)
+	return sdk.AccAddressFromHexUnsafe(addr)
 }
 
 func TestAddressFormats(t *testing.T) {
@@ -59,7 +59,7 @@ func TestAddressFormats(t *testing.T) {
 
 func TestCosmosToEthereumTypes(t *testing.T) {
 	hexString := "0x3B98D72760f7bbA69d62Ed6F48278451251948E7"
-	cosmosAddr, err := sdk.AccAddressFromHex(hexString[2:])
+	cosmosAddr, err := sdk.AccAddressFromHexUnsafe(hexString[2:])
 	require.NoError(t, err)
 
 	cosmosFormatted := cosmosAddr.String()
@@ -81,7 +81,7 @@ func TestCosmosToEthereumTypes(t *testing.T) {
 }
 
 func TestAddressToCosmosAddress(t *testing.T) {
-	baseAddr, err := sdk.AccAddressFromHex("6A98D72760f7bbA69d62Ed6F48278451251948E7")
+	baseAddr, err := sdk.AccAddressFromHexUnsafe("6A98D72760f7bbA69d62Ed6F48278451251948E7")
 	require.NoError(t, err)
 
 	// Test cosmos string back to address

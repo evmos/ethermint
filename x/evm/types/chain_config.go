@@ -4,8 +4,10 @@ import (
 	"math/big"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
+
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
@@ -31,7 +33,10 @@ func (cc ChainConfig) EthereumConfig(chainID *big.Int) *params.ChainConfig {
 		BerlinBlock:             getBlockValue(cc.BerlinBlock),
 		LondonBlock:             getBlockValue(cc.LondonBlock),
 		ArrowGlacierBlock:       getBlockValue(cc.ArrowGlacierBlock),
-		MergeForkBlock:          getBlockValue(cc.MergeForkBlock),
+		GrayGlacierBlock:        getBlockValue(cc.GrayGlacierBlock),
+		MergeNetsplitBlock:      getBlockValue(cc.MergeNetsplitBlock),
+		ShanghaiBlock:           getBlockValue(cc.ShanghaiBlock),
+		CancunBlock:             getBlockValue(cc.CancunBlock),
 		TerminalTotalDifficulty: nil,
 		Ethash:                  nil,
 		Clique:                  nil,
@@ -53,7 +58,10 @@ func DefaultChainConfig() ChainConfig {
 	berlinBlock := sdk.ZeroInt()
 	londonBlock := sdk.ZeroInt()
 	arrowGlacierBlock := sdk.ZeroInt()
-	mergeForkBlock := sdk.ZeroInt()
+	grayGlacierBlock := sdk.ZeroInt()
+	mergeNetsplitBlock := sdk.ZeroInt()
+	shanghaiBlock := sdk.ZeroInt()
+	cancunBlock := sdk.ZeroInt()
 
 	return ChainConfig{
 		HomesteadBlock:      &homesteadBlock,
@@ -71,11 +79,14 @@ func DefaultChainConfig() ChainConfig {
 		BerlinBlock:         &berlinBlock,
 		LondonBlock:         &londonBlock,
 		ArrowGlacierBlock:   &arrowGlacierBlock,
-		MergeForkBlock:      &mergeForkBlock,
+		GrayGlacierBlock:    &grayGlacierBlock,
+		MergeNetsplitBlock:  &mergeNetsplitBlock,
+		ShanghaiBlock:       &shanghaiBlock,
+		CancunBlock:         &cancunBlock,
 	}
 }
 
-func getBlockValue(block *sdk.Int) *big.Int {
+func getBlockValue(block *sdkmath.Int) *big.Int {
 	if block == nil || block.IsNegative() {
 		return nil
 	}
@@ -87,74 +98,82 @@ func getBlockValue(block *sdk.Int) *big.Int {
 // if any of the block values is uninitialized (i.e nil) or if the EIP150Hash is an invalid hash.
 func (cc ChainConfig) Validate() error {
 	if err := validateBlock(cc.HomesteadBlock); err != nil {
-		return sdkerrors.Wrap(err, "homesteadBlock")
+		return errorsmod.Wrap(err, "homesteadBlock")
 	}
 	if err := validateBlock(cc.DAOForkBlock); err != nil {
-		return sdkerrors.Wrap(err, "daoForkBlock")
+		return errorsmod.Wrap(err, "daoForkBlock")
 	}
 	if err := validateBlock(cc.EIP150Block); err != nil {
-		return sdkerrors.Wrap(err, "eip150Block")
+		return errorsmod.Wrap(err, "eip150Block")
 	}
 	if err := validateHash(cc.EIP150Hash); err != nil {
 		return err
 	}
 	if err := validateBlock(cc.EIP155Block); err != nil {
-		return sdkerrors.Wrap(err, "eip155Block")
+		return errorsmod.Wrap(err, "eip155Block")
 	}
 	if err := validateBlock(cc.EIP158Block); err != nil {
-		return sdkerrors.Wrap(err, "eip158Block")
+		return errorsmod.Wrap(err, "eip158Block")
 	}
 	if err := validateBlock(cc.ByzantiumBlock); err != nil {
-		return sdkerrors.Wrap(err, "byzantiumBlock")
+		return errorsmod.Wrap(err, "byzantiumBlock")
 	}
 	if err := validateBlock(cc.ConstantinopleBlock); err != nil {
-		return sdkerrors.Wrap(err, "constantinopleBlock")
+		return errorsmod.Wrap(err, "constantinopleBlock")
 	}
 	if err := validateBlock(cc.PetersburgBlock); err != nil {
-		return sdkerrors.Wrap(err, "petersburgBlock")
+		return errorsmod.Wrap(err, "petersburgBlock")
 	}
 	if err := validateBlock(cc.IstanbulBlock); err != nil {
-		return sdkerrors.Wrap(err, "istanbulBlock")
+		return errorsmod.Wrap(err, "istanbulBlock")
 	}
 	if err := validateBlock(cc.MuirGlacierBlock); err != nil {
-		return sdkerrors.Wrap(err, "muirGlacierBlock")
+		return errorsmod.Wrap(err, "muirGlacierBlock")
 	}
 	if err := validateBlock(cc.BerlinBlock); err != nil {
-		return sdkerrors.Wrap(err, "berlinBlock")
+		return errorsmod.Wrap(err, "berlinBlock")
 	}
 	if err := validateBlock(cc.LondonBlock); err != nil {
-		return sdkerrors.Wrap(err, "londonBlock")
+		return errorsmod.Wrap(err, "londonBlock")
 	}
 	if err := validateBlock(cc.ArrowGlacierBlock); err != nil {
-		return sdkerrors.Wrap(err, "arrowGlacierBlock")
+		return errorsmod.Wrap(err, "arrowGlacierBlock")
 	}
-	if err := validateBlock(cc.MergeForkBlock); err != nil {
-		return sdkerrors.Wrap(err, "mergeForkBlock")
+	if err := validateBlock(cc.GrayGlacierBlock); err != nil {
+		return errorsmod.Wrap(err, "GrayGlacierBlock")
 	}
-
+	if err := validateBlock(cc.MergeNetsplitBlock); err != nil {
+		return errorsmod.Wrap(err, "MergeNetsplitBlock")
+	}
+	if err := validateBlock(cc.ShanghaiBlock); err != nil {
+		return errorsmod.Wrap(err, "ShanghaiBlock")
+	}
+	if err := validateBlock(cc.CancunBlock); err != nil {
+		return errorsmod.Wrap(err, "CancunBlock")
+	}
 	// NOTE: chain ID is not needed to check config order
 	if err := cc.EthereumConfig(nil).CheckConfigForkOrder(); err != nil {
-		return sdkerrors.Wrap(err, "invalid config fork order")
+		return errorsmod.Wrap(err, "invalid config fork order")
 	}
 	return nil
 }
 
 func validateHash(hex string) error {
 	if hex != "" && strings.TrimSpace(hex) == "" {
-		return sdkerrors.Wrap(ErrInvalidChainConfig, "hash cannot be blank")
+		return errorsmod.Wrap(ErrInvalidChainConfig, "hash cannot be blank")
 	}
 
 	return nil
 }
 
-func validateBlock(block *sdk.Int) error {
+func validateBlock(block *sdkmath.Int) error {
 	// nil value means that the fork has not yet been applied
 	if block == nil {
 		return nil
 	}
 
 	if block.IsNegative() {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			ErrInvalidChainConfig, "block value cannot be negative: %s", block,
 		)
 	}

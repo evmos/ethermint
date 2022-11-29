@@ -14,6 +14,8 @@ REMOVE_DATA_DIR=false
 
 #PORT AND RPC_PORT 3 initial digits, to be concat with a suffix later when node is initialized
 RPC_PORT="854"
+# Ethereum JSONRPC Websocket
+WS_PORT="855"
 IP_ADDR="0.0.0.0"
 
 KEY="mykey"
@@ -63,12 +65,15 @@ fi
 echo "compiling ethermint"
 make build
 
+
 # PID array declaration
 arr=()
 
 init_func() {
     "$PWD"/build/ethermintd keys add $KEY"$i" --keyring-backend test --home "$DATA_DIR$i" --no-backup --algo "eth_secp256k1"
     "$PWD"/build/ethermintd init $MONIKER --chain-id $CHAINID --home "$DATA_DIR$i"
+    # Set gas limit in genesis
+    cat $DATA_DIR$i/config/genesis.json | jq '.consensus_params["block"]["max_gas"]="10000000"' > $DATA_DIR$i/config/tmp_genesis.json && mv $DATA_DIR$i/config/tmp_genesis.json $DATA_DIR$i/config/genesis.json
     "$PWD"/build/ethermintd add-genesis-account \
     "$("$PWD"/build/ethermintd keys show "$KEY$i" --keyring-backend test -a --home "$DATA_DIR$i")" 1000000000000000000aphoton,1000000000000000000stake \
     --keyring-backend test --home "$DATA_DIR$i"
@@ -106,7 +111,7 @@ start_func() {
     echo "starting ethermint node $i in background ..."
     "$PWD"/build/ethermintd start --pruning=nothing --rpc.unsafe \
     --p2p.laddr tcp://$IP_ADDR:$NODE_P2P_PORT"$i" --address tcp://$IP_ADDR:$NODE_PORT"$i" --rpc.laddr tcp://$IP_ADDR:$NODE_RPC_PORT"$i" \
-    --json-rpc.address=$IP_ADDR:$RPC_PORT"$i" \
+    --json-rpc.address=$IP_ADDR:$RPC_PORT"$i" --json-rpc.ws-address=$IP_ADDR:$WS_PORT"$i" \
     --json-rpc.api="eth,txpool,personal,net,debug,web3" \
     --keyring-backend test --home "$DATA_DIR$i" \
     >"$DATA_DIR"/node"$i".log 2>&1 & disown
@@ -139,17 +144,6 @@ echo "done sleeping"
 
 set +e
 
-if [[ -z $TEST || $TEST == "integration" ]] ; then
-    time_out=300s
-
-    for i in $(seq 1 "$TEST_QTD"); do
-        HOST_RPC=http://$IP_ADDR:$RPC_PORT"$i"
-        echo "going to test ethermint node $HOST_RPC ..."
-        MODE=$MODE HOST=$HOST_RPC go test ./tests/e2e/... -timeout=$time_out -v -short
-        TEST_FAIL=$?
-    done
-fi
-
 if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
     time_out=300s
     if [[ $TEST == "pending" ]]; then
@@ -158,12 +152,12 @@ if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
 
     for i in $(seq 1 "$TEST_QTD"); do
         HOST_RPC=http://$IP_ADDR:$RPC_PORT"$i"
-        echo "going to test ethermint node $HOST_RPC ..."
-        MODE=$MODE HOST=$HOST_RPC go test ./tests/rpc/... -timeout=$time_out -v -short
+        HOST_WS=$IP_ADDR:$WS_PORT"$i"
+        echo "going to test ethermint node rpc=$HOST_RPC ws=$HOST_WS ..."
+        MODE=$MODE HOST=$HOST_RPC HOST_WS=$HOST_WS go test ./tests/rpc/... -timeout=$time_out -v -short
 
         TEST_FAIL=$?
     done
-
 fi
 
 stop_func() {
@@ -184,7 +178,7 @@ for i in "${arr[@]}"; do
     stop_func "$i"
 done
 
-if [[ (-z $TEST || $TEST == "rpc" || $TEST == "integration" ) && $TEST_FAIL -ne 0 ]]; then
+if [[ (-z $TEST || $TEST == "rpc") && $TEST_FAIL -ne 0 ]]; then
     exit $TEST_FAIL
 else
     exit 0

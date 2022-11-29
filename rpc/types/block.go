@@ -17,7 +17,7 @@ import (
 
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
-	ethermint "github.com/tharsis/ethermint/types"
+	ethermint "github.com/evmos/ethermint/types"
 )
 
 // BlockNumber represents decoding hex string to block values
@@ -30,9 +30,11 @@ const (
 )
 
 const (
-	BlockParamEarliest = "earliest"
-	BlockParamLatest   = "latest"
-	BlockParamPending  = "pending"
+	BlockParamEarliest  = "earliest"
+	BlockParamLatest    = "latest"
+	BlockParamFinalized = "finalized"
+	BlockParamSafe      = "safe"
+	BlockParamPending   = "pending"
 )
 
 // NewBlockNumber creates a new BlockNumber instance.
@@ -57,7 +59,7 @@ func ContextWithHeight(height int64) context.Context {
 }
 
 // UnmarshalJSON parses the given JSON fragment into a BlockNumber. It supports:
-// - "latest", "earliest" or "pending" as string arguments
+// - "latest", "finalized", "earliest" or "pending" as string arguments
 // - the block number
 // Returned errors:
 // - an invalid block number error when the given argument isn't a known strings
@@ -72,7 +74,7 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	case BlockParamEarliest:
 		*bn = EthEarliestBlockNumber
 		return nil
-	case BlockParamLatest:
+	case BlockParamLatest, BlockParamFinalized, BlockParamSafe:
 		*bn = EthLatestBlockNumber
 		return nil
 	case BlockParamPending:
@@ -158,7 +160,7 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 	case BlockParamEarliest:
 		bn := EthEarliestBlockNumber
 		bnh.BlockNumber = &bn
-	case BlockParamLatest:
+	case BlockParamLatest, BlockParamFinalized:
 		bn := EthLatestBlockNumber
 		bnh.BlockNumber = &bn
 	case BlockParamPending:

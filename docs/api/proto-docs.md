@@ -79,6 +79,12 @@
 - [ethermint/types/v1/account.proto](#ethermint/types/v1/account.proto)
     - [EthAccount](#ethermint.types.v1.EthAccount)
   
+- [ethermint/types/v1/dynamic_fee.proto](#ethermint/types/v1/dynamic_fee.proto)
+    - [ExtensionOptionDynamicFeeTx](#ethermint.types.v1.ExtensionOptionDynamicFeeTx)
+  
+- [ethermint/types/v1/indexer.proto](#ethermint/types/v1/indexer.proto)
+    - [TxResult](#ethermint.types.v1.TxResult)
+  
 - [ethermint/types/v1/web3.proto](#ethermint/types/v1/web3.proto)
     - [ExtensionOptionsWeb3Tx](#ethermint.types.v1.ExtensionOptionsWeb3Tx)
   
@@ -182,7 +188,8 @@ instead of *big.Int.
 | `berlin_block` | [string](#string) |  | Berlin switch block (nil = no fork, 0 = already on berlin) |
 | `london_block` | [string](#string) |  | London switch block (nil = no fork, 0 = already on london) |
 | `arrow_glacier_block` | [string](#string) |  | Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated) |
-| `merge_fork_block` | [string](#string) |  | EIP-3675 (TheMerge) switch block (nil = no fork, 0 = already in merge proceedings) |
+| `gray_glacier_block` | [string](#string) |  | EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated) |
+| `merge_netsplit_block` | [string](#string) |  | Virtual fork after The Merge to use as a network splitter |
 
 
 
@@ -227,6 +234,7 @@ Params defines the EVM module parameters
 | `enable_call` | [bool](#bool) |  | enable call toggles state transitions that use the vm.Call function |
 | `extra_eips` | [int64](#int64) | repeated | extra eips defines the additional EIPs for the vm.Config |
 | `chain_config` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | chain config defines the EVM chain configuration parameters |
+| `allow_unprotected_txs` | [bool](#bool) |  | Allow unprotected transactions defines if replay-protected (i.e non EIP155 signed) transactions can be executed on the state machine. |
 
 
 
@@ -267,6 +275,7 @@ TraceConfig holds extra parameters to trace functions.
 | `overrides` | [ChainConfig](#ethermint.evm.v1.ChainConfig) |  | Chain overrides, can be used to execute a trace using future fork rules |
 | `enable_memory` | [bool](#bool) |  | enable memory capture |
 | `enable_return_data` | [bool](#bool) |  | enable return data capture |
+| `tracer_json_config` | [string](#string) |  | tracer config |
 
 
 
@@ -443,6 +452,8 @@ DynamicFeeTx is the data of EIP-1559 dinamic fee transactions.
 
 ### LegacyTx
 LegacyTx is the transaction data of regular Ethereum transactions.
+NOTE: All non-protected transactions (i.e non EIP155 signed) will fail if the
+AllowUnprotectedTxs parameter is disabled.
 
 
 | Field | Type | Label | Description |
@@ -473,7 +484,7 @@ MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
 | `data` | [google.protobuf.Any](#google.protobuf.Any) |  | inner transaction data
 
 caches |
-| `size` | [double](#double) |  | encoded storage size of the transaction |
+| `size` | [double](#double) |  | DEPRECATED: encoded storage size of the transaction |
 | `hash` | [string](#string) |  | transaction hash in hex format |
 | `from` | [string](#string) |  | ethereum signer address in hex format. This address value is checked against the address derived from the signature (V, R, S) using the secp256k1 elliptic curve |
 
@@ -552,6 +563,8 @@ EthCallRequest defines EthCall request
 | ----- | ---- | ----- | ----------- |
 | `args` | [bytes](#bytes) |  | same json format as the json rpc api. |
 | `gas_cap` | [uint64](#uint64) |  | the default gas cap to be used |
+| `proposer_address` | [bytes](#bytes) |  | the proposer of the requested block |
+| `chain_id` | [int64](#int64) |  | the eip155 chain id parsed from the requested block header |
 
 
 
@@ -781,6 +794,8 @@ QueryTraceBlockRequest defines TraceTx request
 | `block_number` | [int64](#int64) |  | block number |
 | `block_hash` | [string](#string) |  | block hex hash |
 | `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time |
+| `proposer_address` | [bytes](#bytes) |  | the proposer of the requested block |
+| `chain_id` | [int64](#int64) |  | the eip155 chain id parsed from the requested block header |
 
 
 
@@ -816,6 +831,8 @@ QueryTraceTxRequest defines TraceTx request
 | `block_number` | [int64](#int64) |  | block number of requested transaction |
 | `block_hash` | [string](#string) |  | block hex hash of requested transaction |
 | `block_time` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | block time of requested transaction |
+| `proposer_address` | [bytes](#bytes) |  | the proposer of the requested block |
+| `chain_id` | [int64](#int64) |  | the eip155 chain id parsed from the requested block header |
 
 
 
@@ -953,6 +970,8 @@ Params defines the EVM module parameters
 | `elasticity_multiplier` | [uint32](#uint32) |  | elasticity multiplier bounds the maximum gas limit an EIP-1559 block may have. |
 | `enable_height` | [int64](#int64) |  | height at which the base fee calculation is enabled. |
 | `base_fee` | [string](#string) |  | base fee for EIP-1559 blocks. |
+| `min_gas_price` | [string](#string) |  | min_gas_price defines the minimum gas price value for cosmos and eth transactions |
+| `min_gas_multiplier` | [string](#string) |  | min gas denominator bounds the minimum gasUsed to be charged to senders based on GasLimit |
 
 
 
@@ -984,7 +1003,7 @@ GenesisState defines the feemarket module's genesis state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#ethermint.feemarket.v1.Params) |  | params defines all the paramaters of the module. |
-| `block_gas` | [uint64](#uint64) |  | block gas is the amount of gas used on the last block before the upgrade. Zero by default. |
+| `block_gas` | [uint64](#uint64) |  | block gas is the amount of gas wanted on the last block before the upgrade. Zero by default. |
 
 
 
@@ -1123,6 +1142,74 @@ authtypes.BaseAccount type. It is compatible with the auth AccountKeeper.
 | ----- | ---- | ----- | ----------- |
 | `base_account` | [cosmos.auth.v1beta1.BaseAccount](#cosmos.auth.v1beta1.BaseAccount) |  |  |
 | `code_hash` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethermint/types/v1/dynamic_fee.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethermint/types/v1/dynamic_fee.proto
+
+
+
+<a name="ethermint.types.v1.ExtensionOptionDynamicFeeTx"></a>
+
+### ExtensionOptionDynamicFeeTx
+ExtensionOptionDynamicFeeTx is an extension option that specify the maxPrioPrice for cosmos tx
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `max_priority_price` | [string](#string) |  | the same as `max_priority_fee_per_gas` in eip-1559 spec |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="ethermint/types/v1/indexer.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## ethermint/types/v1/indexer.proto
+
+
+
+<a name="ethermint.types.v1.TxResult"></a>
+
+### TxResult
+TxResult is the value stored in eth tx indexer
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  | the block height |
+| `tx_index` | [uint32](#uint32) |  | cosmos tx index |
+| `msg_index` | [uint32](#uint32) |  | the msg index in a batch tx |
+| `eth_tx_index` | [int32](#int32) |  | eth tx index, the index in the list of valid eth tx in the block, aka. the transaction list returned by eth_getBlock api. |
+| `failed` | [bool](#bool) |  | if the eth tx is failed |
+| `gas_used` | [uint64](#uint64) |  | gas used by tx, if exceeds block gas limit, it's set to gas limit which is what's actually deducted by ante handler. |
+| `cumulative_gas_used` | [uint64](#uint64) |  | the cumulative gas used within current batch tx |
 
 
 

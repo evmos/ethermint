@@ -3,11 +3,14 @@ package types
 import (
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/tharsis/ethermint/types"
+
+	"github.com/evmos/ethermint/types"
 )
 
 func newAccessListTx(tx *ethtypes.Transaction) (*AccessListTx, error) {
@@ -23,7 +26,7 @@ func newAccessListTx(tx *ethtypes.Transaction) (*AccessListTx, error) {
 	}
 
 	if tx.Value() != nil {
-		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		amountInt, err := types.SafeNewIntFromBigInt(tx.Value())
 		if err != nil {
 			return nil, err
 		}
@@ -31,7 +34,7 @@ func newAccessListTx(tx *ethtypes.Transaction) (*AccessListTx, error) {
 	}
 
 	if tx.GasPrice() != nil {
-		gasPriceInt, err := SafeNewIntFromBigInt(tx.GasPrice())
+		gasPriceInt, err := types.SafeNewIntFromBigInt(tx.GasPrice())
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +175,7 @@ func (tx *AccessListTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 		tx.S = s.Bytes()
 	}
 	if chainID != nil {
-		chainIDInt := sdk.NewIntFromBigInt(chainID)
+		chainIDInt := sdkmath.NewIntFromBigInt(chainID)
 		tx.ChainID = &chainIDInt
 	}
 }
@@ -181,38 +184,38 @@ func (tx *AccessListTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 func (tx AccessListTx) Validate() error {
 	gasPrice := tx.GetGasPrice()
 	if gasPrice == nil {
-		return sdkerrors.Wrap(ErrInvalidGasPrice, "cannot be nil")
+		return errorsmod.Wrap(ErrInvalidGasPrice, "cannot be nil")
 	}
-	if !IsValidInt256(gasPrice) {
-		return sdkerrors.Wrap(ErrInvalidGasPrice, "out of bound")
+	if !types.IsValidInt256(gasPrice) {
+		return errorsmod.Wrap(ErrInvalidGasPrice, "out of bound")
 	}
 
 	if gasPrice.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
+		return errorsmod.Wrapf(ErrInvalidGasPrice, "gas price cannot be negative %s", gasPrice)
 	}
 
 	amount := tx.GetValue()
 	// Amount can be 0
 	if amount != nil && amount.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+		return errorsmod.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
-	if !IsValidInt256(amount) {
-		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
+	if !types.IsValidInt256(amount) {
+		return errorsmod.Wrap(ErrInvalidAmount, "out of bound")
 	}
 
-	if !IsValidInt256(tx.Fee()) {
-		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
+	if !types.IsValidInt256(tx.Fee()) {
+		return errorsmod.Wrap(ErrInvalidGasFee, "out of bound")
 	}
 
 	if tx.To != "" {
 		if err := types.ValidateAddress(tx.To); err != nil {
-			return sdkerrors.Wrap(err, "invalid to address")
+			return errorsmod.Wrap(err, "invalid to address")
 		}
 	}
 
 	if tx.GetChainID() == nil {
-		return sdkerrors.Wrap(
-			sdkerrors.ErrInvalidChainID,
+		return errorsmod.Wrap(
+			errortypes.ErrInvalidChainID,
 			"chain ID must be present on AccessList txs",
 		)
 	}
@@ -228,6 +231,11 @@ func (tx AccessListTx) Fee() *big.Int {
 // Cost returns amount + gasprice * gaslimit.
 func (tx AccessListTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
+}
+
+// EffectiveGasPrice is the same as GasPrice for AccessListTx
+func (tx AccessListTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	return tx.GetGasPrice()
 }
 
 // EffectiveFee is the same as Fee for AccessListTx

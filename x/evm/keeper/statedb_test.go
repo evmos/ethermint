@@ -6,6 +6,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -15,9 +16,10 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/tharsis/ethermint/tests"
-	"github.com/tharsis/ethermint/x/evm/statedb"
-	"github.com/tharsis/ethermint/x/evm/types"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	"github.com/evmos/ethermint/tests"
+	"github.com/evmos/ethermint/x/evm/statedb"
+	"github.com/evmos/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestCreateAccount() {
@@ -316,6 +318,40 @@ func (suite *KeeperTestSuite) TestSetCode() {
 	}
 }
 
+func (suite *KeeperTestSuite) TestKeeperSetCode() {
+	addr := tests.GenerateAddress()
+	baseAcc := &authtypes.BaseAccount{Address: sdk.AccAddress(addr.Bytes()).String()}
+	suite.app.AccountKeeper.SetAccount(suite.ctx, baseAcc)
+
+	testCases := []struct {
+		name     string
+		codeHash []byte
+		code     []byte
+	}{
+		{
+			"set code",
+			[]byte("codeHash"),
+			[]byte("this is the code"),
+		},
+		{
+			"delete code",
+			[]byte("codeHash"),
+			nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.app.EvmKeeper.SetCode(suite.ctx, tc.codeHash, tc.code)
+			key := suite.app.GetKey(types.StoreKey)
+			store := prefix.NewStore(suite.ctx.KVStore(key), types.KeyPrefixCode)
+			code := store.Get(tc.codeHash)
+
+			suite.Require().Equal(tc.code, code)
+		})
+	}
+}
+
 func (suite *KeeperTestSuite) TestRefund() {
 	testCases := []struct {
 		name      string
@@ -383,8 +419,6 @@ func (suite *KeeperTestSuite) TestState() {
 }
 
 func (suite *KeeperTestSuite) TestCommittedState() {
-	suite.SetupTest()
-
 	key := common.BytesToHash([]byte("key"))
 	value1 := common.BytesToHash([]byte("value1"))
 	value2 := common.BytesToHash([]byte("value2"))
@@ -420,12 +454,26 @@ func (suite *KeeperTestSuite) TestSuicide() {
 	suite.Require().NoError(db.Commit())
 	db = suite.StateDB()
 
+	// Generate 2nd address
+	privkey, _ := ethsecp256k1.GenerateKey()
+	key, err := privkey.ToECDSA()
+	suite.Require().NoError(err)
+	addr2 := crypto.PubkeyToAddress(key.PublicKey)
+
+	// Add code and state to account 2
+	db.SetCode(addr2, code)
+	suite.Require().Equal(code, db.GetCode(addr2))
+	for i := 0; i < 5; i++ {
+		db.SetState(addr2, common.BytesToHash([]byte(fmt.Sprintf("key%d", i))), common.BytesToHash([]byte(fmt.Sprintf("value%d", i))))
+	}
+
 	// Call Suicide
 	suite.Require().Equal(true, db.Suicide(suite.address))
 
 	// Check suicided is marked
 	suite.Require().Equal(true, db.HasSuicided(suite.address))
 
+	// Commit state
 	suite.Require().NoError(db.Commit())
 	db = suite.StateDB()
 
@@ -441,6 +489,10 @@ func (suite *KeeperTestSuite) TestSuicide() {
 
 	// Check account is deleted
 	suite.Require().Equal(common.Hash{}, db.GetCodeHash(suite.address))
+
+	// Check code is still present in addr2 and suicided is false
+	suite.Require().NotNil(db.GetCode(addr2))
+	suite.Require().Equal(false, db.HasSuicided(addr2))
 }
 
 func (suite *KeeperTestSuite) TestExist() {
@@ -468,8 +520,6 @@ func (suite *KeeperTestSuite) TestExist() {
 }
 
 func (suite *KeeperTestSuite) TestEmpty() {
-	suite.SetupTest()
-
 	testCases := []struct {
 		name     string
 		address  common.Address
@@ -488,6 +538,7 @@ func (suite *KeeperTestSuite) TestEmpty() {
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
+			suite.SetupTest()
 			vmdb := suite.StateDB()
 			tc.malleate(vmdb)
 
@@ -790,5 +841,104 @@ func (suite *KeeperTestSuite) _TestForEachStorage() {
 			suite.Require().ElementsMatch(tc.expValues, vals)
 		})
 		storage = types.Storage{}
+	}
+}
+
+func (suite *KeeperTestSuite) TestSetBalance() {
+	amount := big.NewInt(-10)
+
+	testCases := []struct {
+		name     string
+		addr     common.Address
+		malleate func()
+		expErr   bool
+	}{
+		{
+			"address without funds - invalid amount",
+			suite.address,
+			func() {},
+			true,
+		},
+		{
+			"mint to address",
+			suite.address,
+			func() {
+				amount = big.NewInt(100)
+			},
+			false,
+		},
+		{
+			"burn from address",
+			suite.address,
+			func() {
+				amount = big.NewInt(60)
+			},
+			false,
+		},
+		{
+			"address with funds - invalid amount",
+			suite.address,
+			func() {
+				amount = big.NewInt(-10)
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.SetupTest()
+			tc.malleate()
+			err := suite.app.EvmKeeper.SetBalance(suite.ctx, tc.addr, amount)
+			if tc.expErr {
+				suite.Require().Error(err)
+			} else {
+				balance := suite.app.EvmKeeper.GetBalance(suite.ctx, tc.addr)
+				suite.Require().NoError(err)
+				suite.Require().Equal(amount, balance)
+			}
+
+		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestDeleteAccount() {
+	supply := big.NewInt(100)
+	contractAddr := suite.DeployTestContract(suite.T(), suite.address, supply)
+
+	testCases := []struct {
+		name   string
+		addr   common.Address
+		expErr bool
+	}{
+		{
+			"remove address",
+			suite.address,
+			false,
+		},
+		{
+			"remove unexistent address - returns nil error",
+			common.HexToAddress("unexistent_address"),
+			false,
+		},
+		{
+			"remove deployed contract",
+			contractAddr,
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			suite.SetupTest()
+			err := suite.app.EvmKeeper.DeleteAccount(suite.ctx, tc.addr)
+			if tc.expErr {
+				suite.Require().Error(err)
+			} else {
+				suite.Require().NoError(err)
+				balance := suite.app.EvmKeeper.GetBalance(suite.ctx, tc.addr)
+				suite.Require().Equal(new(big.Int), balance)
+			}
+		})
 	}
 }

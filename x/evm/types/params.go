@@ -9,22 +9,28 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/tharsis/ethermint/types"
+	"github.com/evmos/ethermint/types"
 )
 
 var _ paramtypes.ParamSet = &Params{}
 
-const (
+var (
+	// DefaultEVMDenom defines the default EVM denomination on Ethermint
 	DefaultEVMDenom = types.AttoPhoton
+	// DefaultMinGasMultiplier is 0.5 or 50%
+	DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
+	// DefaultAllowUnprotectedTxs rejects all unprotected txs (i.e false)
+	DefaultAllowUnprotectedTxs = false
 )
 
 // Parameter keys
 var (
-	ParamStoreKeyEVMDenom     = []byte("EVMDenom")
-	ParamStoreKeyEnableCreate = []byte("EnableCreate")
-	ParamStoreKeyEnableCall   = []byte("EnableCall")
-	ParamStoreKeyExtraEIPs    = []byte("EnableExtraEIPs")
-	ParamStoreKeyChainConfig  = []byte("ChainConfig")
+	ParamStoreKeyEVMDenom            = []byte("EVMDenom")
+	ParamStoreKeyEnableCreate        = []byte("EnableCreate")
+	ParamStoreKeyEnableCall          = []byte("EnableCall")
+	ParamStoreKeyExtraEIPs           = []byte("EnableExtraEIPs")
+	ParamStoreKeyChainConfig         = []byte("ChainConfig")
+	ParamStoreKeyAllowUnprotectedTxs = []byte("AllowUnprotectedTxs")
 
 	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
 	// EVM interpreter. These EIPs are applied in order and can override the
@@ -54,11 +60,12 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfi
 // ExtraEIPs is empty to prevent overriding the latest hard fork instruction set
 func DefaultParams() Params {
 	return Params{
-		EvmDenom:     DefaultEVMDenom,
-		EnableCreate: true,
-		EnableCall:   true,
-		ChainConfig:  DefaultChainConfig(),
-		ExtraEIPs:    nil,
+		EvmDenom:            DefaultEVMDenom,
+		EnableCreate:        true,
+		EnableCall:          true,
+		ChainConfig:         DefaultChainConfig(),
+		ExtraEIPs:           nil,
+		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 	}
 }
 
@@ -70,6 +77,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
+		paramtypes.NewParamSetPair(ParamStoreKeyAllowUnprotectedTxs, &p.AllowUnprotectedTxs, validateBool),
 	}
 }
 

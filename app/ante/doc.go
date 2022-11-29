@@ -1,4 +1,5 @@
-/*Package ante defines the SDK auth module's AnteHandler as well as an internal
+/*
+Package ante defines the SDK auth module's AnteHandler as well as an internal
 AnteHandler for an Ethereum transaction (i.e MsgEthereumTx).
 
 During CheckTx, the transaction is passed through a series of

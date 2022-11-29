@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	cryptocodec "github.com/tharsis/ethermint/crypto/codec"
-	"github.com/tharsis/ethermint/crypto/ethsecp256k1"
-	ethermintcodec "github.com/tharsis/ethermint/encoding/codec"
-	"github.com/tharsis/ethermint/types"
+	cryptocodec "github.com/evmos/ethermint/crypto/codec"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	ethermintcodec "github.com/evmos/ethermint/encoding/codec"
+	"github.com/evmos/ethermint/types"
 )
 
 func init() {
@@ -51,8 +51,8 @@ func TestAccountTestSuite(t *testing.T) {
 }
 
 func (suite *AccountTestSuite) TestAccountType() {
-	suite.account.CodeHash = common.Bytes2Hex(crypto.Keccak256(nil))
+	suite.account.CodeHash = common.BytesToHash(crypto.Keccak256(nil)).Hex()
 	suite.Require().Equal(types.AccountTypeEOA, suite.account.Type())
-	suite.account.CodeHash = common.Bytes2Hex(crypto.Keccak256([]byte{1, 2, 3}))
+	suite.account.CodeHash = common.BytesToHash(crypto.Keccak256([]byte{1, 2, 3})).Hex()
 	suite.Require().Equal(types.AccountTypeContract, suite.account.Type())
 }

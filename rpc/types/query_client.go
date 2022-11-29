@@ -10,14 +10,14 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 )
 
 // QueryClient defines a gRPC Client used for:
-//  - Transaction simulation
-//  - EVM module queries
-// 	- Fee market module queries
+//   - Transaction simulation
+//   - EVM module queries
+//   - Fee market module queries
 type QueryClient struct {
 	tx.ServiceClient
 	evmtypes.QueryClient

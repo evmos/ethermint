@@ -1,19 +1,17 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	proto "github.com/gogo/protobuf/proto"
 )
 
 var ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
-
-type (
-	ExtensionOptionsEthereumTxI interface{}
-)
 
 // RegisterInterfaces registers the client interfaces to protobuf Any.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
@@ -21,9 +19,8 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		(*sdk.Msg)(nil),
 		&MsgEthereumTx{},
 	)
-	registry.RegisterInterface(
-		"ethermint.evm.v1.ExtensionOptionsEthereumTx",
-		(*ExtensionOptionsEthereumTxI)(nil),
+	registry.RegisterImplementations(
+		(*tx.TxExtensionOptionI)(nil),
 		&ExtensionOptionsEthereumTx{},
 	)
 	registry.RegisterInterface(
@@ -39,16 +36,16 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 
 // PackClientState constructs a new Any packed with the given tx data value. It returns
 // an error if the client state can't be casted to a protobuf message or if the concrete
-// implemention is not registered to the protobuf codec.
+// implementation is not registered to the protobuf codec.
 func PackTxData(txData TxData) (*codectypes.Any, error) {
 	msg, ok := txData.(proto.Message)
 	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrPackAny, "cannot proto marshal %T", txData)
+		return nil, errorsmod.Wrapf(errortypes.ErrPackAny, "cannot proto marshal %T", txData)
 	}
 
 	anyTxData, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPackAny, err.Error())
+		return nil, errorsmod.Wrap(errortypes.ErrPackAny, err.Error())
 	}
 
 	return anyTxData, nil
@@ -58,12 +55,12 @@ func PackTxData(txData TxData) (*codectypes.Any, error) {
 // client state can't be unpacked into a TxData.
 func UnpackTxData(any *codectypes.Any) (TxData, error) {
 	if any == nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnpackAny, "protobuf Any message cannot be nil")
+		return nil, errorsmod.Wrap(errortypes.ErrUnpackAny, "protobuf Any message cannot be nil")
 	}
 
 	txData, ok := any.GetCachedValue().(TxData)
 	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnpackAny, "cannot unpack Any into TxData %T", any)
+		return nil, errorsmod.Wrapf(errortypes.ErrUnpackAny, "cannot unpack Any into TxData %T", any)
 	}
 
 	return txData, nil

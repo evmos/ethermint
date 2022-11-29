@@ -3,14 +3,14 @@ package types
 import (
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/tharsis/ethermint/types"
+	"github.com/evmos/ethermint/types"
 )
 
 func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
@@ -26,7 +26,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	}
 
 	if tx.Value() != nil {
-		amountInt, err := SafeNewIntFromBigInt(tx.Value())
+		amountInt, err := types.SafeNewIntFromBigInt(tx.Value())
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +34,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	}
 
 	if tx.GasFeeCap() != nil {
-		gasFeeCapInt, err := SafeNewIntFromBigInt(tx.GasFeeCap())
+		gasFeeCapInt, err := types.SafeNewIntFromBigInt(tx.GasFeeCap())
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func newDynamicFeeTx(tx *ethtypes.Transaction) (*DynamicFeeTx, error) {
 	}
 
 	if tx.GasTipCap() != nil {
-		gasTipCapInt, err := SafeNewIntFromBigInt(tx.GasTipCap())
+		gasTipCapInt, err := types.SafeNewIntFromBigInt(tx.GasTipCap())
 		if err != nil {
 			return nil, err
 		}
@@ -188,7 +188,7 @@ func (tx *DynamicFeeTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 		tx.S = s.Bytes()
 	}
 	if chainID != nil {
-		chainIDInt := sdk.NewIntFromBigInt(chainID)
+		chainIDInt := sdkmath.NewIntFromBigInt(chainID)
 		tx.ChainID = &chainIDInt
 	}
 }
@@ -196,58 +196,58 @@ func (tx *DynamicFeeTx) SetSignatureValues(chainID, v, r, s *big.Int) {
 // Validate performs a stateless validation of the tx fields.
 func (tx DynamicFeeTx) Validate() error {
 	if tx.GasTipCap == nil {
-		return sdkerrors.Wrap(ErrInvalidGasCap, "gas tip cap cannot nil")
+		return errorsmod.Wrap(ErrInvalidGasCap, "gas tip cap cannot nil")
 	}
 
 	if tx.GasFeeCap == nil {
-		return sdkerrors.Wrap(ErrInvalidGasCap, "gas fee cap cannot nil")
+		return errorsmod.Wrap(ErrInvalidGasCap, "gas fee cap cannot nil")
 	}
 
 	if tx.GasTipCap.IsNegative() {
-		return sdkerrors.Wrapf(ErrInvalidGasCap, "gas tip cap cannot be negative %s", tx.GasTipCap)
+		return errorsmod.Wrapf(ErrInvalidGasCap, "gas tip cap cannot be negative %s", tx.GasTipCap)
 	}
 
 	if tx.GasFeeCap.IsNegative() {
-		return sdkerrors.Wrapf(ErrInvalidGasCap, "gas fee cap cannot be negative %s", tx.GasFeeCap)
+		return errorsmod.Wrapf(ErrInvalidGasCap, "gas fee cap cannot be negative %s", tx.GasFeeCap)
 	}
 
-	if !IsValidInt256(tx.GetGasTipCap()) {
-		return sdkerrors.Wrap(ErrInvalidGasCap, "out of bound")
+	if !types.IsValidInt256(tx.GetGasTipCap()) {
+		return errorsmod.Wrap(ErrInvalidGasCap, "out of bound")
 	}
 
-	if !IsValidInt256(tx.GetGasFeeCap()) {
-		return sdkerrors.Wrap(ErrInvalidGasCap, "out of bound")
+	if !types.IsValidInt256(tx.GetGasFeeCap()) {
+		return errorsmod.Wrap(ErrInvalidGasCap, "out of bound")
 	}
 
 	if tx.GasFeeCap.LT(*tx.GasTipCap) {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			ErrInvalidGasCap, "max priority fee per gas higher than max fee per gas (%s > %s)",
 			tx.GasTipCap, tx.GasFeeCap,
 		)
 	}
 
-	if !IsValidInt256(tx.Fee()) {
-		return sdkerrors.Wrap(ErrInvalidGasFee, "out of bound")
+	if !types.IsValidInt256(tx.Fee()) {
+		return errorsmod.Wrap(ErrInvalidGasFee, "out of bound")
 	}
 
 	amount := tx.GetValue()
 	// Amount can be 0
 	if amount != nil && amount.Sign() == -1 {
-		return sdkerrors.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
+		return errorsmod.Wrapf(ErrInvalidAmount, "amount cannot be negative %s", amount)
 	}
-	if !IsValidInt256(amount) {
-		return sdkerrors.Wrap(ErrInvalidAmount, "out of bound")
+	if !types.IsValidInt256(amount) {
+		return errorsmod.Wrap(ErrInvalidAmount, "out of bound")
 	}
 
 	if tx.To != "" {
 		if err := types.ValidateAddress(tx.To); err != nil {
-			return sdkerrors.Wrap(err, "invalid to address")
+			return errorsmod.Wrap(err, "invalid to address")
 		}
 	}
 
 	if tx.GetChainID() == nil {
-		return sdkerrors.Wrap(
-			sdkerrors.ErrInvalidChainID,
+		return errorsmod.Wrap(
+			errortypes.ErrInvalidChainID,
 			"chain ID must be present on AccessList txs",
 		)
 	}
@@ -265,14 +265,14 @@ func (tx DynamicFeeTx) Cost() *big.Int {
 	return cost(tx.Fee(), tx.GetValue())
 }
 
-// GetEffectiveGasPrice returns the effective gas price
-func (tx *DynamicFeeTx) GetEffectiveGasPrice(baseFee *big.Int) *big.Int {
-	return math.BigMin(new(big.Int).Add(tx.GasTipCap.BigInt(), baseFee), tx.GasFeeCap.BigInt())
+// EffectiveGasPrice returns the effective gas price
+func (tx *DynamicFeeTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	return EffectiveGasPrice(baseFee, tx.GasFeeCap.BigInt(), tx.GasTipCap.BigInt())
 }
 
 // EffectiveFee returns effective_gasprice * gaslimit.
 func (tx DynamicFeeTx) EffectiveFee(baseFee *big.Int) *big.Int {
-	return fee(tx.GetEffectiveGasPrice(baseFee), tx.GasLimit)
+	return fee(tx.EffectiveGasPrice(baseFee), tx.GasLimit)
 }
 
 // EffectiveCost returns amount + effective_gasprice * gaslimit.

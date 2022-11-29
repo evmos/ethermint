@@ -10,9 +10,9 @@ import (
 
 	"github.com/tendermint/tendermint/libs/strings"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/server/config"
-
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -25,10 +25,13 @@ const (
 	// DefaultJSONRPCWsAddress is the default address the JSON-RPC WebSocket server binds to.
 	DefaultJSONRPCWsAddress = "0.0.0.0:8546"
 
+	// DefaultJsonRPCMetricsAddress is the default address the JSON-RPC Metrics server binds to.
+	DefaultJSONRPCMetricsAddress = "0.0.0.0:6065"
+
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = ""
 
-	DefaultMaxTxGasWanted = 500000
+	DefaultMaxTxGasWanted = 0
 
 	DefaultGasCap uint64 = 25000000
 
@@ -47,6 +50,10 @@ const (
 	DefaultHTTPTimeout = 30 * time.Second
 
 	DefaultHTTPIdleTimeout = 120 * time.Second
+	// DefaultAllowUnprotectedTxs value is false
+	DefaultAllowUnprotectedTxs = false
+	// DefaultMaxOpenConnections represents the amount of open connections (unlimited = 0)
+	DefaultMaxOpenConnections = 0
 )
 
 var evmTracers = []string{"json", "markdown", "struct", "access_list"}
@@ -98,6 +105,16 @@ type JSONRPCConfig struct {
 	HTTPTimeout time.Duration `mapstructure:"http-timeout"`
 	// HTTPIdleTimeout is the idle timeout of http json-rpc server.
 	HTTPIdleTimeout time.Duration `mapstructure:"http-idle-timeout"`
+	// AllowUnprotectedTxs restricts unprotected (non EIP155 signed) transactions to be submitted via
+	// the node's RPC when global parameter is disabled.
+	AllowUnprotectedTxs bool `mapstructure:"allow-unprotected-txs"`
+	// MaxOpenConnections sets the maximum number of simultaneous connections
+	// for the server listener.
+	MaxOpenConnections int `mapstructure:"max-open-connections"`
+	// EnableIndexer defines if enable the custom indexer service.
+	EnableIndexer bool `mapstructure:"enable-indexer"`
+	// MetricsAddress defines the metrics server to listen on
+	MetricsAddress string `mapstructure:"metrics-address"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -183,19 +200,23 @@ func GetAPINamespaces() []string {
 // DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
 func DefaultJSONRPCConfig() *JSONRPCConfig {
 	return &JSONRPCConfig{
-		Enable:          true,
-		API:             GetDefaultAPINamespaces(),
-		Address:         DefaultJSONRPCAddress,
-		WsAddress:       DefaultJSONRPCWsAddress,
-		GasCap:          DefaultGasCap,
-		EVMTimeout:      DefaultEVMTimeout,
-		TxFeeCap:        DefaultTxFeeCap,
-		FilterCap:       DefaultFilterCap,
-		FeeHistoryCap:   DefaultFeeHistoryCap,
-		BlockRangeCap:   DefaultBlockRangeCap,
-		LogsCap:         DefaultLogsCap,
-		HTTPTimeout:     DefaultHTTPTimeout,
-		HTTPIdleTimeout: DefaultHTTPIdleTimeout,
+		Enable:              true,
+		API:                 GetDefaultAPINamespaces(),
+		Address:             DefaultJSONRPCAddress,
+		WsAddress:           DefaultJSONRPCWsAddress,
+		GasCap:              DefaultGasCap,
+		EVMTimeout:          DefaultEVMTimeout,
+		TxFeeCap:            DefaultTxFeeCap,
+		FilterCap:           DefaultFilterCap,
+		FeeHistoryCap:       DefaultFeeHistoryCap,
+		BlockRangeCap:       DefaultBlockRangeCap,
+		LogsCap:             DefaultLogsCap,
+		HTTPTimeout:         DefaultHTTPTimeout,
+		HTTPIdleTimeout:     DefaultHTTPIdleTimeout,
+		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
+		MaxOpenConnections:  DefaultMaxOpenConnections,
+		EnableIndexer:       false,
+		MetricsAddress:      DefaultJSONRPCMetricsAddress,
 	}
 }
 
@@ -276,8 +297,11 @@ func (c TLSConfig) Validate() error {
 }
 
 // GetConfig returns a fully parsed Config object.
-func GetConfig(v *viper.Viper) Config {
-	cfg := config.GetConfig(v)
+func GetConfig(v *viper.Viper) (Config, error) {
+	cfg, err := config.GetConfig(v)
+	if err != nil {
+		return Config{}, err
+	}
 
 	return Config{
 		Config: cfg,
@@ -286,25 +310,28 @@ func GetConfig(v *viper.Viper) Config {
 			MaxTxGasWanted: v.GetUint64("evm.max-tx-gas-wanted"),
 		},
 		JSONRPC: JSONRPCConfig{
-			Enable:          v.GetBool("json-rpc.enable"),
-			API:             v.GetStringSlice("json-rpc.api"),
-			Address:         v.GetString("json-rpc.address"),
-			WsAddress:       v.GetString("json-rpc.ws-address"),
-			GasCap:          v.GetUint64("json-rpc.gas-cap"),
-			FilterCap:       v.GetInt32("json-rpc.filter-cap"),
-			FeeHistoryCap:   v.GetInt32("json-rpc.feehistory-cap"),
-			TxFeeCap:        v.GetFloat64("json-rpc.txfee-cap"),
-			EVMTimeout:      v.GetDuration("json-rpc.evm-timeout"),
-			LogsCap:         v.GetInt32("json-rpc.logs-cap"),
-			BlockRangeCap:   v.GetInt32("json-rpc.block-range-cap"),
-			HTTPTimeout:     v.GetDuration("json-rpc.http-timeout"),
-			HTTPIdleTimeout: v.GetDuration("json-rpc.http-idle-timeout"),
+			Enable:             v.GetBool("json-rpc.enable"),
+			API:                v.GetStringSlice("json-rpc.api"),
+			Address:            v.GetString("json-rpc.address"),
+			WsAddress:          v.GetString("json-rpc.ws-address"),
+			GasCap:             v.GetUint64("json-rpc.gas-cap"),
+			FilterCap:          v.GetInt32("json-rpc.filter-cap"),
+			FeeHistoryCap:      v.GetInt32("json-rpc.feehistory-cap"),
+			TxFeeCap:           v.GetFloat64("json-rpc.txfee-cap"),
+			EVMTimeout:         v.GetDuration("json-rpc.evm-timeout"),
+			LogsCap:            v.GetInt32("json-rpc.logs-cap"),
+			BlockRangeCap:      v.GetInt32("json-rpc.block-range-cap"),
+			HTTPTimeout:        v.GetDuration("json-rpc.http-timeout"),
+			HTTPIdleTimeout:    v.GetDuration("json-rpc.http-idle-timeout"),
+			MaxOpenConnections: v.GetInt("json-rpc.max-open-connections"),
+			EnableIndexer:      v.GetBool("json-rpc.enable-indexer"),
+			MetricsAddress:     v.GetString("json-rpc.metrics-address"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
 			KeyPath:         v.GetString("tls.key-path"),
 		},
-	}
+	}, nil
 }
 
 // ParseConfig retrieves the default environment configuration for the
@@ -319,15 +346,15 @@ func ParseConfig(v *viper.Viper) (*Config, error) {
 // ValidateBasic returns an error any of the application configuration fields are invalid
 func (c Config) ValidateBasic() error {
 	if err := c.EVM.Validate(); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid evm config value: %s", err.Error())
+		return errorsmod.Wrapf(errortypes.ErrAppConfig, "invalid evm config value: %s", err.Error())
 	}
 
 	if err := c.JSONRPC.Validate(); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid json-rpc config value: %s", err.Error())
+		return errorsmod.Wrapf(errortypes.ErrAppConfig, "invalid json-rpc config value: %s", err.Error())
 	}
 
 	if err := c.TLS.Validate(); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrAppConfig, "invalid tls config value: %s", err.Error())
+		return errorsmod.Wrapf(errortypes.ErrAppConfig, "invalid tls config value: %s", err.Error())
 	}
 
 	return c.Config.ValidateBasic()

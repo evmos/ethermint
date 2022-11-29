@@ -1,14 +1,14 @@
 syntax = "proto3";
 package ethermint.evm.v1;
 
-import "gogoproto/gogo.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
-import "google/api/annotations.proto";
 import "ethermint/evm/v1/evm.proto";
 import "ethermint/evm/v1/tx.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/tharsis/ethermint/x/evm/types";
+option go_package = "github.com/evmos/ethermint/x/evm/types";
 
 // Query defines the gRPC querier service.
 service Query {
@@ -18,17 +18,14 @@ service Query {
   }
 
   // CosmosAccount queries an Ethereum account's Cosmos Address.
-  rpc CosmosAccount(QueryCosmosAccountRequest)
-      returns (QueryCosmosAccountResponse) {
+  rpc CosmosAccount(QueryCosmosAccountRequest) returns (QueryCosmosAccountResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/cosmos_account/{address}";
   }
 
   // ValidatorAccount queries an Ethereum account's from a validator consensus
   // Address.
-  rpc ValidatorAccount(QueryValidatorAccountRequest)
-      returns (QueryValidatorAccountResponse) {
-    option (google.api.http).get =
-        "/ethermint/evm/v1/validator_account/{cons_address}";
+  rpc ValidatorAccount(QueryValidatorAccountRequest) returns (QueryValidatorAccountResponse) {
+    option (google.api.http).get = "/ethermint/evm/v1/validator_account/{cons_address}";
   }
 
   // Balance queries the balance of a the EVM denomination for a single
@@ -77,7 +74,6 @@ service Query {
   rpc BaseFee(QueryBaseFeeRequest) returns (QueryBaseFeeResponse) {
     option (google.api.http).get = "/ethermint/evm/v1/base_fee";
   }
-
 }
 
 // QueryAccountRequest is the request type for the Query/Account RPC method.
@@ -93,7 +89,7 @@ message QueryAccountRequest {
 message QueryAccountResponse {
   // balance is the balance of the EVM denomination.
   string balance = 1;
-  // code hash is the hex-formatted code bytes from the EOA.
+  // code_hash is the hex-formatted code bytes from the EOA.
   string code_hash = 2;
   // nonce is the account's sequence number.
   uint64 nonce = 3;
@@ -116,7 +112,7 @@ message QueryCosmosAccountResponse {
   string cosmos_address = 1;
   // sequence is the account's sequence number.
   uint64 sequence = 2;
-  // account_number is the account numbert
+  // account_number is the account number
   uint64 account_number = 3;
 }
 
@@ -161,7 +157,7 @@ message QueryStorageRequest {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  /// address is the ethereum hex address to query the storage state for.
+  // address is the ethereum hex address to query the storage state for.
   string address = 1;
 
   // key defines the key of the storage state
@@ -171,7 +167,7 @@ message QueryStorageRequest {
 // QueryStorageResponse is the response type for the Query/Storage RPC
 // method.
 message QueryStorageResponse {
-  // key defines the storage state value hash associated with the given key.
+  // value defines the storage state value hash associated with the given key.
   string value = 1;
 }
 
@@ -202,7 +198,7 @@ message QueryTxLogsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
-// QueryTxLogs is the response type for the Query/TxLogs RPC method.
+// QueryTxLogsResponse is the response type for the Query/TxLogs RPC method.
 message QueryTxLogsResponse {
   // logs represents the ethereum logs generated from the given transaction.
   repeated Log logs = 1;
@@ -216,65 +212,78 @@ message QueryParamsRequest {}
 // QueryParamsResponse defines the response type for querying x/evm parameters.
 message QueryParamsResponse {
   // params define the evm module parameters.
-  Params params = 1 [ (gogoproto.nullable) = false ];
+  Params params = 1 [(gogoproto.nullable) = false];
 }
 
 // EthCallRequest defines EthCall request
 message EthCallRequest {
-  // same json format as the json rpc api.
+  // args uses the same json format as the json rpc api.
   bytes args = 1;
-  // the default gas cap to be used
+  // gas_cap defines the default gas cap to be used
   uint64 gas_cap = 2;
+  // proposer_address of the requested block in hex format
+  bytes proposer_address = 3 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // chain_id is the eip155 chain id parsed from the requested block header
+  int64 chain_id = 4;
 }
 
 // EstimateGasResponse defines EstimateGas response
 message EstimateGasResponse {
-  // the estimated gas
+  // gas returns the estimated gas
   uint64 gas = 1;
 }
 
 // QueryTraceTxRequest defines TraceTx request
 message QueryTraceTxRequest {
-  // msgEthereumTx for the requested transaction
+  // msg is the MsgEthereumTx for the requested transaction
   MsgEthereumTx msg = 1;
   // tx_index is not necessary anymore
   reserved 2;
   reserved "tx_index";
-  // TraceConfig holds extra parameters to trace functions.
+  // trace_config holds extra parameters to trace functions.
   TraceConfig trace_config = 3;
-  // the predecessor transactions included in the same block
+  // predecessors is an array of transactions included in the same block
   // need to be replayed first to get correct context for tracing.
   repeated MsgEthereumTx predecessors = 4;
-  // block number of requested transaction
+  // block_number of requested transaction
   int64 block_number = 5;
-  // block hex hash of requested transaction
+  // block_hash of requested transaction
   string block_hash = 6;
-  // block time of requested transaction
+  // block_time of requested transaction
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  // proposer_address is the proposer of the requested block
+  bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // chain_id is the the eip155 chain id parsed from the requested block header
+  int64 chain_id = 9;
 }
 
 // QueryTraceTxResponse defines TraceTx response
 message QueryTraceTxResponse {
-  // response serialized in bytes
+  // data is the response serialized in bytes
   bytes data = 1;
 }
 
 // QueryTraceBlockRequest defines TraceTx request
 message QueryTraceBlockRequest {
-  // txs messages in the block
+  // txs is an array of messages in the block
   repeated MsgEthereumTx txs = 1;
-  // TraceConfig holds extra parameters to trace functions.
+  // trace_config holds extra parameters to trace functions.
   TraceConfig trace_config = 3;
-  // block number
+  // block_number of the traced block
   int64 block_number = 5;
-  // block hex hash
+  // block_hash (hex) of the traced block
   string block_hash = 6;
-  // block time
+  // block_time of the traced block
   google.protobuf.Timestamp block_time = 7 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  // proposer_address is the address of the requested block
+  bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
+  // chain_id is the eip155 chain id parsed from the requested block header
+  int64 chain_id = 9;
 }
 
 // QueryTraceBlockResponse defines TraceBlock response
 message QueryTraceBlockResponse {
+  // data is the response serialized in bytes
   bytes data = 1;
 }
 
@@ -282,8 +291,8 @@ message QueryTraceBlockResponse {
 // fee.
 message QueryBaseFeeRequest {}
 
-// BaseFeeResponse returns the EIP1559 base fee.
+// QueryBaseFeeResponse returns the EIP1559 base fee.
 message QueryBaseFeeResponse {
-  string base_fee = 1
-      [ (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int" ];
+  // base_fee is the EIP1559 base fee
+  string base_fee = 1 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"];
 }

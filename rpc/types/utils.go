@@ -3,31 +3,36 @@ package types
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math/big"
-	"strconv"
+	"strings"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	evmtypes "github.com/tharsis/ethermint/x/evm/types"
-	feemarkettypes "github.com/tharsis/ethermint/x/feemarket/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
+
+// ExceedBlockGasLimitError defines the error message when tx execution exceeds the block gas limit.
+// The tx fee is deducted in ante handler, so it shouldn't be ignored in JSON-RPC API.
+const ExceedBlockGasLimitError = "out of gas in location: block gas meter; gasWanted:"
 
 // RawTxToEthTx returns a evm MsgEthereum transaction from raw tx bytes.
 func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) ([]*evmtypes.MsgEthereumTx, error) {
 	tx, err := clientCtx.TxConfig.TxDecoder()(txBz)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
+		return nil, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, err.Error())
 	}
 
 	ethTxs := make([]*evmtypes.MsgEthereumTx, len(tx.GetMsgs()))
@@ -36,6 +41,7 @@ func RawTxToEthTx(clientCtx client.Context, txBz tmtypes.Tx) ([]*evmtypes.MsgEth
 		if !ok {
 			return nil, fmt.Errorf("invalid message type %T, expected %T", msg, &evmtypes.MsgEthereumTx{})
 		}
+		ethTx.Hash = ethTx.AsTransaction().Hash().Hex()
 		ethTxs[i] = ethTx
 	}
 	return ethTxs, nil
@@ -132,37 +138,6 @@ func FormatBlock(
 	return result
 }
 
-type DataError interface {
-	Error() string          // returns the message
-	ErrorData() interface{} // returns the error data
-}
-
-type dataError struct {
-	msg  string
-	data string
-}
-
-func (d *dataError) Error() string {
-	return d.msg
-}
-
-func (d *dataError) ErrorData() interface{} {
-	return d.data
-}
-
-type SDKTxLogs struct {
-	Log string `json:"log"`
-}
-
-const LogRevertedFlag = "transaction reverted"
-
-func ErrRevertedWith(data []byte) DataError {
-	return &dataError{
-		msg:  "VM execution error.",
-		data: fmt.Sprintf("0x%s", hex.EncodeToString(data)),
-	}
-}
-
 // NewTransactionFromMsg returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func NewTransactionFromMsg(
@@ -170,15 +145,17 @@ func NewTransactionFromMsg(
 	blockHash common.Hash,
 	blockNumber, index uint64,
 	baseFee *big.Int,
+	chainID *big.Int,
 ) (*RPCTransaction, error) {
 	tx := msg.AsTransaction()
-	return NewRPCTransaction(tx, blockHash, blockNumber, index, baseFee)
+	return NewRPCTransaction(tx, blockHash, blockNumber, index, baseFee, chainID)
 }
 
 // NewTransactionFromData returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func NewRPCTransaction(
 	tx *ethtypes.Transaction, blockHash common.Hash, blockNumber, index uint64, baseFee *big.Int,
+	chainID *big.Int,
 ) (*RPCTransaction, error) {
 	// Determine the signer. For replay-protected transactions, use the most permissive
 	// signer, because we assume that signers are backwards-compatible with old
@@ -205,6 +182,7 @@ func NewRPCTransaction(
 		V:        (*hexutil.Big)(v),
 		R:        (*hexutil.Big)(r),
 		S:        (*hexutil.Big)(s),
+		ChainID:  (*hexutil.Big)(chainID),
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
@@ -255,105 +233,33 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 	return nil
 }
 
-// FindTxAttributes returns the msg index of the eth tx in cosmos tx, and the attributes,
-// returns -1 and nil if not found.
-func FindTxAttributes(events []abci.Event, txHash string) (int, map[string]string) {
-	msgIndex := -1
-	for _, event := range events {
-		if event.Type != evmtypes.EventTypeEthereumTx {
-			continue
-		}
-
-		msgIndex++
-
-		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyEthereumTxHash))
-		if !bytes.Equal(value, []byte(txHash)) {
-			continue
-		}
-
-		// found, convert attributes to map for later lookup
-		attrs := make(map[string]string, len(event.Attributes))
-		for _, attr := range event.Attributes {
-			attrs[string(attr.Key)] = string(attr.Value)
-		}
-		return msgIndex, attrs
+// CheckTxFee is an internal function used to check whether the fee of
+// the given transaction is _reasonable_(under the cap).
+func CheckTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
+	// Short circuit if there is no cap for transaction fee at all.
+	if cap == 0 {
+		return nil
 	}
-	// not found
-	return -1, nil
-}
-
-// FindTxAttributesByIndex search the msg in tx events by txIndex
-// returns the msgIndex, returns -1 if not found.
-func FindTxAttributesByIndex(events []abci.Event, txIndex uint64) int {
-	strIndex := []byte(strconv.FormatUint(txIndex, 10))
-	txIndexKey := []byte(evmtypes.AttributeKeyTxIndex)
-	msgIndex := -1
-	for _, event := range events {
-		if event.Type != evmtypes.EventTypeEthereumTx {
-			continue
-		}
-
-		msgIndex++
-
-		value := FindAttribute(event.Attributes, txIndexKey)
-		if !bytes.Equal(value, strIndex) {
-			continue
-		}
-
-		// found, convert attributes to map for later lookup
-		return msgIndex
-	}
-	// not found
-	return -1
-}
-
-// FindAttribute find event attribute with specified key, if not found returns nil.
-func FindAttribute(attrs []abci.EventAttribute, key []byte) []byte {
-	for _, attr := range attrs {
-		if !bytes.Equal(attr.Key, key) {
-			continue
-		}
-		return attr.Value
+	totalfee := new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas)))
+	// 1 photon in 10^18 aphoton
+	oneToken := new(big.Float).SetInt(big.NewInt(params.Ether))
+	// quo = rounded(x/y)
+	feeEth := new(big.Float).Quo(totalfee, oneToken)
+	// no need to check error from parsing
+	feeFloat, _ := feeEth.Float64()
+	if feeFloat > cap {
+		return fmt.Errorf("tx fee (%.2f ether) exceeds the configured cap (%.2f ether)", feeFloat, cap)
 	}
 	return nil
 }
 
-// GetUint64Attribute parses the uint64 value from event attributes
-func GetUint64Attribute(attrs map[string]string, key string) (uint64, error) {
-	value, found := attrs[key]
-	if !found {
-		return 0, fmt.Errorf("tx index attribute not found: %s", key)
-	}
-	var result int64
-	result, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	if result < 0 {
-		return 0, fmt.Errorf("negative tx index: %d", result)
-	}
-	return uint64(result), nil
+// TxExceedBlockGasLimit returns true if the tx exceeds block gas limit.
+func TxExceedBlockGasLimit(res *abci.ResponseDeliverTx) bool {
+	return strings.Contains(res.Log, ExceedBlockGasLimitError)
 }
 
-// AccumulativeGasUsedOfMsg accumulate the gas used by msgs before `msgIndex`.
-func AccumulativeGasUsedOfMsg(events []abci.Event, msgIndex int) (gasUsed uint64) {
-	for _, event := range events {
-		if event.Type != evmtypes.EventTypeEthereumTx {
-			continue
-		}
-
-		if msgIndex < 0 {
-			break
-		}
-		msgIndex--
-
-		value := FindAttribute(event.Attributes, []byte(evmtypes.AttributeKeyTxGasUsed))
-		var result int64
-		result, err := strconv.ParseInt(string(value), 10, 64)
-		if err != nil {
-			continue
-		}
-		gasUsed += uint64(result)
-	}
-	return
+// TxSuccessOrExceedsBlockGasLimit returnsrue if the transaction was successful
+// or if it failed with an ExceedBlockGasLimit error
+func TxSuccessOrExceedsBlockGasLimit(res *abci.ResponseDeliverTx) bool {
+	return res.Code == 0 || TxExceedBlockGasLimit(res)
 }

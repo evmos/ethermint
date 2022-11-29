@@ -77,4 +77,3 @@ By default, all block configuration fields but `ConstantinopleBlock`, are enable
 | MuirGlacierBlock    | 0                                                                    |
 | BerlinBlock         | 0                                                                    |
 | LondonBlock         | 0                                                                    |
-

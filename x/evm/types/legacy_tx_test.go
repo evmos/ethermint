@@ -349,9 +349,84 @@ func (suite *TxDataTestSuite) TestLegacyTxValidate() {
 	}
 }
 
+func (suite *TxDataTestSuite) TestLegacyTxEffectiveGasPrice() {
+	testCases := []struct {
+		name    string
+		tx      LegacyTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty legacy tx",
+			LegacyTx{
+				GasPrice: &suite.sdkInt,
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveGasPrice(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestLegacyTxEffectiveFee() {
+	testCases := []struct {
+		name    string
+		tx      LegacyTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty legacy tx",
+			LegacyTx{
+				GasPrice: &suite.sdkInt,
+				GasLimit: uint64(1),
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveFee(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
+func (suite *TxDataTestSuite) TestLegacyTxEffectiveCost() {
+	testCases := []struct {
+		name    string
+		tx      LegacyTx
+		baseFee *big.Int
+		exp     *big.Int
+	}{
+		{
+			"non-empty legacy tx",
+			LegacyTx{
+				GasPrice: &suite.sdkInt,
+				GasLimit: uint64(1),
+				Amount:   &suite.sdkZeroInt,
+			},
+			(&suite.sdkInt).BigInt(),
+			(&suite.sdkInt).BigInt(),
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := tc.tx.EffectiveCost(tc.baseFee)
+
+		suite.Require().Equal(tc.exp, actual, tc.name)
+	}
+}
+
 func (suite *TxDataTestSuite) TestLegacyTxFeeCost() {
 	tx := &LegacyTx{}
 
-	suite.Require().Panics(func() { tx.Fee() }, "should panice")
-	suite.Require().Panics(func() { tx.Cost() }, "should panice")
+	suite.Require().Panics(func() { tx.Fee() }, "should panic")
+	suite.Require().Panics(func() { tx.Cost() }, "should panic")
 }
