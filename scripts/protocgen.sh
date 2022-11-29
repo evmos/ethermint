@@ -18,7 +18,6 @@ for dir in $proto_dirs; do
   done
 done
 
-
 # TODO: command to generate docs using protoc-gen-doc was deleted here
 
 # move proto files to the right places
