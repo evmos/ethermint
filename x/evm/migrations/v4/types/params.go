@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"math/big"
+
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	"github.com/ethereum/go-ethereum/params"
 
