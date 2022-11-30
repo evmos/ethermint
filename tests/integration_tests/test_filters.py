@@ -1,4 +1,7 @@
+import urllib3
 import pytest
+import json
+
 from web3 import Web3
 
 from .utils import (
@@ -22,10 +25,31 @@ def test_get_logs_by_topic(cluster):
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
-    logs = w3.eth.get_logs({"topics": [topic.hex()]})
+    # logs = w3.eth.get_logs({"topics": [topic.hex()]})
+    url = str(w3.provider)
+    if url.startswith("RPC"):
+        url = "http" + url.split("http")[1]
+    elif url.startswith("WS"):
+        # skip ws tests
+        return
+
+    http = urllib3.PoolManager()
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "eth_getLogs",
+        "params": [{"topics": [topic.hex()]}],
+        "id": 1,
+    }
+    encoded_data = json.dumps(payload).encode("utf-8")
+
+    res = http.request(
+        "POST", url, body=encoded_data, headers={"Content-Type": "application/json"}
+    )
+
+    logs = json.loads(res.data.decode("utf-8"))["result"]
 
     assert len(logs) == 1
-    assert logs[0].address == contract.address
+    assert logs[0]["address"] == contract.address.lower()
 
 
 def test_pending_transaction_filter(cluster):
