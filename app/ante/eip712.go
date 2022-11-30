@@ -32,19 +32,21 @@ func init() {
 	ethermintCodec = codec.NewProtoCodec(registry)
 }
 
-// Eip712SigVerificationDecorator Verify all signatures for a tx and return an error if any are invalid. Note,
-// the Eip712SigVerificationDecorator decorator will not get executed on ReCheck.
+// LegacyEip712SigVerificationDecorator Verify all signatures for a tx and return an error if any are invalid. Note,
+// the LegacyEip712SigVerificationDecorator decorator will not get executed on ReCheck.
+// As of v0.20.0, this is now a Legacy implementation, and EIP-712 signature verification is handled by the ethsecp256k1 key
+// (see ethsecp256k1.go)
 //
 // CONTRACT: Pubkeys are set in context for all signers before this decorator runs
 // CONTRACT: Tx must implement SigVerifiableTx interface
-type Eip712SigVerificationDecorator struct {
+type LegacyEip712SigVerificationDecorator struct {
 	ak              evmtypes.AccountKeeper
 	signModeHandler authsigning.SignModeHandler
 }
 
-// NewEip712SigVerificationDecorator creates a new Eip712SigVerificationDecorator
-func NewEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandler authsigning.SignModeHandler) Eip712SigVerificationDecorator {
-	return Eip712SigVerificationDecorator{
+// NewLegacyEip712SigVerificationDecorator creates a new LegacyEip712SigVerificationDecorator
+func NewLegacyEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandler authsigning.SignModeHandler) LegacyEip712SigVerificationDecorator {
+	return LegacyEip712SigVerificationDecorator{
 		ak:              ak,
 		signModeHandler: signModeHandler,
 	}
@@ -52,7 +54,7 @@ func NewEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandle
 
 // AnteHandle handles validation of EIP712 signed cosmos txs.
 // it is not run on RecheckTx
-func (svd Eip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
+func (svd LegacyEip712SigVerificationDecorator) AnteHandle(ctx sdk.Context,
 	tx sdk.Tx,
 	simulate bool,
 	next sdk.AnteHandler,
