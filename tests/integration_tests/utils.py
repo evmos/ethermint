@@ -158,7 +158,7 @@ def send_transaction(w3, tx, key=KEYS["validator"], i=0):
     try:
         return w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
     except TimeExhausted:
-        return send_transaction(w3, tx, key, i + 1)    
+        return send_transaction(w3, tx, key, i + 1)
 
 
 def send_successful_transaction(w3, i=0):
@@ -168,10 +168,9 @@ def send_successful_transaction(w3, i=0):
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
     try:
         receipt = w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
+        assert receipt.status == 1
     except TimeExhausted:
-        return send_successful_transaction(w3, i + 1)    
-    receipt = w3.eth.wait_for_transaction_receipt(txhash)
-    assert receipt.status == 1
+        return send_successful_transaction(w3, i + 1)
     return txhash
 
 
