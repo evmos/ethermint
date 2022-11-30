@@ -1,6 +1,3 @@
-import math
-import time
-
 import pytest
 from eth_abi import abi
 from hexbytes import HexBytes
@@ -196,8 +193,6 @@ def test_event_log_filter_by_topic(cluster):
 
     for tc in test_cases:
         print("\nCase: {}".format(tc["name"]))
-        # record start time
-        start = time.time()
 
         # register filters
         filters = []
@@ -247,10 +242,6 @@ def test_event_log_filter_by_topic(cluster):
         for flt in filters:
             assert flt.get_new_entries() == []  # GetFilterChanges
             w3.eth.uninstall_filter(flt.filter_id)
-
-        # record end time
-        end = time.time()
-        print_elapsed_ms(start, end)
 
 
 def test_multiple_filters(cluster):
@@ -344,8 +335,6 @@ def test_multiple_filters(cluster):
 
     for tc in test_cases:
         print("\nCase: {}".format(tc["name"]))
-        # record start time
-        start = time.time()
 
         # register the filters
         fltrs = []
@@ -357,9 +346,6 @@ def test_multiple_filters(cluster):
                 # if exception was expected when registering filters
                 # the test is finished
                 assert tc["register_err"] in str(err)
-                # record end time
-                end = time.time()
-                print_elapsed_ms(start, end)
                 # remove the registered filters
                 remove_filters(w3, fltrs, 300)
                 continue
@@ -424,10 +410,6 @@ def test_multiple_filters(cluster):
             # new filters
             w3.eth.uninstall_filter(flt.filter_id)
 
-        # record end time
-        end = time.time()
-        print_elapsed_ms(start, end)
-
 
 def test_register_filters_before_contract_deploy(cluster):
     w3: Web3 = cluster.w3
@@ -471,9 +453,6 @@ def test_register_filters_before_contract_deploy(cluster):
         },
     ]
 
-    # record start time
-    start = time.time()
-
     # register the filters
     fltrs = []
     for flt in filters:
@@ -512,12 +491,6 @@ def test_register_filters_before_contract_deploy(cluster):
     for flt in fltrs:
         assert flt.get_new_entries() == []  # GetFilterChanges
         w3.eth.uninstall_filter(flt.filter_id)
-
-    # record end time
-    end = time.time()
-    # print the difference between start
-    # and end time in milli. secs
-    print_elapsed_ms(start, end)
 
 
 def test_get_logs(cluster):
@@ -615,8 +588,6 @@ def test_get_logs(cluster):
 
     for tc in test_cases:
         print("\nCase: {}".format(tc["name"]))
-        # record start time
-        start = time.time()
 
         # logs for validator address should remain empty
         assert len(w3.eth.get_logs({"address": ADDRS["validator"]})) == 0
@@ -644,12 +615,6 @@ def test_get_logs(cluster):
                     assert_change_greet_log_data(log, new_greeting)
 
             assert found_log is True
-
-        # record end time
-        end = time.time()
-        # print the difference between start
-        # and end time in milli. secs
-        print_elapsed_ms(start, end)
 
 
 #################################################
@@ -722,9 +687,3 @@ def pad_left(address, byte_len=32):
     a = address.split("0x")
     b = a[1].zfill(byte_len * 2)
     return "0x" + b
-
-
-# print the difference between start
-# and end time in milli. secs
-def print_elapsed_ms(start, end):
-    print(math.ceil((end - start) * 10**3), "ms")
