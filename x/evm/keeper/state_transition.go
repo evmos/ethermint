@@ -79,6 +79,9 @@ func (k *Keeper) NewEVM(
 	tracer vm.EVMLogger,
 	stateDB vm.StateDB,
 ) evm.EVM {
+	// Use BlockHash for random field
+	random := common.BytesToHash(ctx.HeaderHash())
+
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
@@ -89,6 +92,7 @@ func (k *Keeper) NewEVM(
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
 		BaseFee:     cfg.BaseFee,
+		Random:      &random,
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
