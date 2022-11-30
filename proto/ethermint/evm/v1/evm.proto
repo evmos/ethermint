@@ -15,7 +15,7 @@ message Params {
   // enable_call toggles state transitions that use the vm.Call function
   bool enable_call = 3 [(gogoproto.moretags) = "yaml:\"enable_call\""];
   // extra_eips defines the additional EIPs for the vm.Config
-  ExtraEIPs extra_eips = 4 [(gogoproto.moretags) = "yaml:\"extra_eips\"", (gogoproto.nullable) = false];
+  ExtraEIPs extra_eips = 4  [(gogoproto.customname) = "ExtraEIPs", (gogoproto.moretags) = "yaml:\"extra_eips\"", (gogoproto.nullable) = false];
   // chain_config defines the EVM chain configuration parameters
   ChainConfig chain_config = 5 [(gogoproto.moretags) = "yaml:\"chain_config\"", (gogoproto.nullable) = false];
   // allow_unprotected_txs defines if replay-protected (i.e non EIP155
@@ -28,6 +28,7 @@ message ExtraEIPs {
   // extra_eips defines the additional EIPs for the vm.Config
   repeated int64 extra_eips = 1 [(gogoproto.customname) = "ExtraEIPs", (gogoproto.moretags) = "yaml:\"extra_eips\""];
 }
+
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
 // instead of *big.Int.
 message ChainConfig {
@@ -241,8 +242,8 @@ message TraceConfig {
   ChainConfig overrides = 10;
   // enable_memory switches memory capture
   bool enable_memory = 11 [(gogoproto.jsontag) = "enableMemory"];
-  // enable_return_data capture
-  bool enable_return_data = 12 [ (gogoproto.jsontag) = "enableReturnData" ];
-  // tracer_json_config
-  string tracer_json_config = 13 [ (gogoproto.jsontag) = "tracerConfig" ]; 
+  // enable_return_data switches the capture of return data
+  bool enable_return_data = 12 [(gogoproto.jsontag) = "enableReturnData"];
+  // tracer_json_config configures the tracer using a JSON string
+  string tracer_json_config = 13 [(gogoproto.jsontag) = "tracerConfig"];
 }

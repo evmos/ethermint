@@ -14,10 +14,11 @@ import (
 var (
 	// DefaultEVMDenom defines the default EVM denomination on Ethermint
 	DefaultEVMDenom = types.AttoPhoton
-	// DefaultMinGasMultiplier is 0.5 or 50%
-	DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 	// DefaultAllowUnprotectedTxs rejects all unprotected txs (i.e false)
 	DefaultAllowUnprotectedTxs = false
+	DefaultEnableCreate        = true
+	DefaultEnableCall          = true
+	DefaultExtraEIPs           = ExtraEIPs{AvailableExtraEIPs}
 )
 
 // Parameter keys
@@ -44,7 +45,7 @@ func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bo
 		AllowUnprotectedTxs: allowUnprotectedTxs,
 		EnableCreate:        enableCreate,
 		EnableCall:          enableCall,
-		ExtraEips:           extraEIPs,
+		ExtraEIPs:           extraEIPs,
 		ChainConfig:         config,
 	}
 }
@@ -54,10 +55,10 @@ func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bo
 func DefaultParams() Params {
 	return Params{
 		EvmDenom:            DefaultEVMDenom,
-		EnableCreate:        true,
-		EnableCall:          true,
+		EnableCreate:        DefaultEnableCreate,
+		EnableCall:          DefaultEnableCall,
 		ChainConfig:         DefaultChainConfig(),
-		ExtraEips:           ExtraEIPs{AvailableExtraEIPs},
+		ExtraEIPs:           DefaultExtraEIPs,
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 	}
 }
@@ -68,7 +69,7 @@ func (p Params) Validate() error {
 		return err
 	}
 
-	if err := validateEIPs(p.ExtraEips.ExtraEIPs); err != nil {
+	if err := validateEIPs(p.ExtraEIPs.ExtraEIPs); err != nil {
 		return err
 	}
 
@@ -87,10 +88,10 @@ func (p Params) Validate() error {
 	return validateChainConfig(p.ChainConfig)
 }
 
-// EIPs returns the ExtraEips as a int slice
+// EIPs returns the ExtraEIPS as a int slice
 func (p Params) EIPs() []int {
-	eips := make([]int, len(p.ExtraEips.ExtraEIPs))
-	for i, eip := range p.ExtraEips.ExtraEIPs {
+	eips := make([]int, len(p.ExtraEIPs.ExtraEIPs))
+	for i, eip := range p.ExtraEIPs.ExtraEIPs {
 		eips[i] = int(eip)
 	}
 	return eips

@@ -3,7 +3,6 @@ package backend
 import (
 	"bufio"
 	"fmt"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -21,6 +20,7 @@ import (
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/indexer"

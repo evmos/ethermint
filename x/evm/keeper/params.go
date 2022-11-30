@@ -10,24 +10,24 @@ var isTrue = []byte("0x01")
 // GetParams returns the total set of evm parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	evmDenom := k.GetEVMDenom(ctx)
-	enableCall := k.GetEnableCall(ctx)
+	allowUnprotectedTx := k.GetAllowUnprotectedTxs(ctx)
 	enableCreate := k.GetEnableCreate(ctx)
+	enableCall := k.GetEnableCall(ctx)
 	chainCfg := k.GetChainConfig(ctx)
 	extraEIPs := k.GetExtraEIPs(ctx)
-	allowUnprotectedTx := k.GetAllowUnprotectedTxs(ctx)
 
 	return types.NewParams(evmDenom, allowUnprotectedTx, enableCreate, enableCall, chainCfg, extraEIPs)
 }
 
-// SetParams Sets the EVM params each in its individual key for better get performance
+// SetParams sets the EVM params each in their individual key for better get performance
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) error {
 	if err := params.Validate(); err != nil {
 		return err
 	}
 
-	k.setExtraEIPs(ctx, params)
-	k.setChainConfig(ctx, params)
-	k.setEvmDenom(ctx, params)
+	k.setExtraEIPs(ctx, params.ExtraEIPs)
+	k.setChainConfig(ctx, params.ChainConfig)
+	k.setEvmDenom(ctx, params.EvmDenom)
 	k.setEnableCall(ctx, params.EnableCall)
 	k.setEnableCreate(ctx, params.EnableCreate)
 	k.setAllowUnprotectedTxs(ctx, params.AllowUnprotectedTxs)
@@ -89,23 +89,23 @@ func (k Keeper) GetAllowUnprotectedTxs(ctx sdk.Context) bool {
 }
 
 // setChainConfig sets the ChainConfig in the store
-func (k Keeper) setChainConfig(ctx sdk.Context, params types.Params) {
+func (k Keeper) setChainConfig(ctx sdk.Context, chainCfg types.ChainConfig) {
 	store := ctx.KVStore(k.storeKey)
-	chainCfgBz := k.cdc.MustMarshal(&params.ChainConfig)
+	chainCfgBz := k.cdc.MustMarshal(&chainCfg)
 	store.Set(types.ParamStoreKeyChainConfig, chainCfgBz)
 }
 
 // setExtraEIPs sets the ExtraEIPs in the store
-func (k Keeper) setExtraEIPs(ctx sdk.Context, params types.Params) {
-	extraEIPsBz := k.cdc.MustMarshal(&params.ExtraEips)
+func (k Keeper) setExtraEIPs(ctx sdk.Context, extraEIPs types.ExtraEIPs) {
+	extraEIPsBz := k.cdc.MustMarshal(&extraEIPs)
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.ParamStoreKeyExtraEIPs, extraEIPsBz)
 }
 
 // setEvmDenom sets the EVMDenom param in the store
-func (k Keeper) setEvmDenom(ctx sdk.Context, params types.Params) {
+func (k Keeper) setEvmDenom(ctx sdk.Context, evmDenom string) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.ParamStoreKeyEVMDenom, []byte(params.EvmDenom))
+	store.Set(types.ParamStoreKeyEVMDenom, []byte(evmDenom))
 }
 
 // setAllowUnprotectedTxs sets the AllowUnprotectedTxs param in the store
