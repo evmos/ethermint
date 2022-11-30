@@ -1,6 +1,4 @@
-import urllib3
 import pytest
-import json
 
 from web3 import Web3
 
@@ -10,6 +8,7 @@ from .utils import (
     deploy_contract,
     send_successful_transaction,
     send_transaction,
+    w3_wait_for_new_blocks,
 )
 
 
@@ -25,31 +24,21 @@ def test_get_logs_by_topic(cluster):
     receipt = send_transaction(w3, tx)
     assert receipt.status == 1
 
-    # logs = w3.eth.get_logs({"topics": [topic.hex()]})
-    url = str(w3.provider)
-    if url.startswith("RPC"):
-        url = "http" + url.split("http")[1]
-    elif url.startswith("WS"):
-        # skip ws tests
-        return
-
-    http = urllib3.PoolManager()
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "eth_getLogs",
-        "params": [{"topics": [topic.hex()]}],
-        "id": 1,
-    }
-    encoded_data = json.dumps(payload).encode("utf-8")
-
-    res = http.request(
-        "POST", url, body=encoded_data, headers={"Content-Type": "application/json"}
-    )
-
-    logs = json.loads(res.data.decode("utf-8"))["result"]
+    # The getLogs method under the hood works as a filter
+    # with the specified topics and a block range.
+    # If the block range is not specified, it defaults
+    # to fromBlock: "latest", toBlock: "latest".
+    # Then, if we make a getLogs call within the same block that the tx
+    # happened, we will get a log in the result. However, if we make the call
+    # one or more blocks later, the result will be an empty array.
+    logs = w3.eth.get_logs({"topics": [topic.hex()]})
 
     assert len(logs) == 1
-    assert logs[0]["address"] == contract.address.lower()
+    assert logs[0]["address"] == contract.address
+
+    w3_wait_for_new_blocks(w3, 2)
+    logs = w3.eth.get_logs({"topics": [topic.hex()]})
+    assert len(logs) == 0
 
 
 def test_pending_transaction_filter(cluster):
