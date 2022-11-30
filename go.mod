@@ -197,6 +197,7 @@ require (
 replace (
 	// use cosmos keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
+	github.com/Entangle-Protocol/entangle-blockchain => github.com/Entangle-Protocol/entangle-blockchain v1.0.0
 	// ics23 patch for dragonberry
 	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
@@ -204,5 +205,4 @@ replace (
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 	// use cosmos flavored protobufs
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/Entangle-Protocol/entangle-blockchain => github.com/Entangle-Protocol/entangle-blockchain v1.0.0
 )
