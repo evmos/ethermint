@@ -14,7 +14,7 @@
       },
     },
     'app-config': {
-      'minimum-gas-prices': '0aphoton',
+      'minimum-gas-prices': '0aENTGL',
       'index-events': ['ethereum_tx.ethereumTxHash'],
       'json-rpc': {
         address: '0.0.0.0:{EVMRPC_PORT}',
@@ -26,25 +26,25 @@
       },
     },
     validators: [{
-      coins: '1000000000000000000stake,10000000000000000000000aphoton',
+      coins: '1000000000000000000stake,10000000000000000000000aENTGL',
       staked: '1000000000000000000stake',
       mnemonic: '${VALIDATOR1_MNEMONIC}',
     }, {
-      coins: '1000000000000000000stake,10000000000000000000000aphoton',
+      coins: '1000000000000000000stake,10000000000000000000000aENTGL',
       staked: '1000000000000000000stake',
       mnemonic: '${VALIDATOR2_MNEMONIC}',
     }],
     accounts: [{
       name: 'community',
-      coins: '10000000000000000000000aphoton',
+      coins: '10000000000000000000000aENTGL',
       mnemonic: '${COMMUNITY_MNEMONIC}',
     }, {
       name: 'signer1',
-      coins: '20000000000000000000000aphoton',
+      coins: '20000000000000000000000aENTGL',
       mnemonic: '${SIGNER1_MNEMONIC}',
     }, {
       name: 'signer2',
-      coins: '30000000000000000000000aphoton',
+      coins: '30000000000000000000000aENTGL',
       mnemonic: '${SIGNER2_MNEMONIC}',
     }],
     genesis: {
@@ -57,7 +57,7 @@
       app_state: {
         evm: {
           params: {
-            evm_denom: 'aphoton',
+            evm_denom: 'aENTGL',
           },
         },
         gov: {
@@ -68,7 +68,7 @@
             max_deposit_period: '10s',
             min_deposit: [
               {
-                denom: 'aphoton',
+                denom: 'aENTGL',
                 amount: '1',
               },
             ],
