@@ -292,12 +292,9 @@ func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
 					continue
 				}
 
-				baseFee := types.BaseFeeFromEvents(data.ResultBeginBlock.Events)
-
-				header := types.EthHeaderFromTendermint(data.Header, ethtypes.Bloom{}, baseFee)
 				api.filtersMu.Lock()
 				if f, found := api.filters[headerSub.ID()]; found {
-					f.hashes = append(f.hashes, header.Hash())
+					f.hashes = append(f.hashes, common.BytesToHash(data.Header.Hash()))
 				}
 				api.filtersMu.Unlock()
 			case <-errCh:
