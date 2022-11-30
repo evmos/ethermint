@@ -102,6 +102,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1405](https://github.com/evmos/ethermint/pull/1405) Fix uninitialized chain ID field in gRPC requests.
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
 * (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
+* (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
 
 
 ## [v0.19.3] - 2022-10-14
