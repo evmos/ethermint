@@ -10,16 +10,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/evmos/ethermint/rpc/backend"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/eth"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/eth/filters"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/miner"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/net"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/personal"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/txpool"
-	"github.com/evmos/ethermint/rpc/namespaces/ethereum/web3"
-	ethermint "github.com/evmos/ethermint/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/backend"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/debug"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/eth"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/eth/filters"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/miner"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/net"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/personal"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/txpool"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/web3"
+	ethermint "github.com/Entangle-Protocol/entangle-blockchain/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 )

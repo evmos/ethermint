@@ -7,20 +7,20 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/tests"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/statedb"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	ethlogger "github.com/ethereum/go-ethereum/eth/tracers/logger"
 	ethparams "github.com/ethereum/go-ethereum/params"
-	"github.com/evmos/ethermint/tests"
-	"github.com/evmos/ethermint/x/evm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/evmos/ethermint/server/config"
-	ethermint "github.com/evmos/ethermint/types"
-	"github.com/evmos/ethermint/x/evm/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/server/config"
+	ethermint "github.com/Entangle-Protocol/entangle-blockchain/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 )
 
 // Not valid Ethereum address

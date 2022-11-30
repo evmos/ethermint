@@ -1,7 +1,7 @@
 package web3
 
 import (
-	"github.com/evmos/ethermint/version"
+	"github.com/Entangle-Protocol/entangle-blockchain/version"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"

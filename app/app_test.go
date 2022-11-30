@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/evmos/ethermint/encoding"
+	"github.com/Entangle-Protocol/entangle-blockchain/encoding"
 )
 
 func TestEthermintAppExport(t *testing.T) {

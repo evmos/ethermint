@@ -4,7 +4,7 @@ FROM golang:alpine AS build-env
 ENV PACKAGES git build-base
 
 # Set working directory for the build
-WORKDIR /go/src/github.com/evmos/ethermint
+WORKDIR /go/src/github.com/Entangle-Protocol/entangle-blockchain
 
 # Install dependencies
 RUN apk add --update $PACKAGES
@@ -24,7 +24,7 @@ RUN apk add --update ca-certificates jq
 WORKDIR /
 
 # Copy over binaries from the build-env
-COPY --from=build-env /go/src/github.com/evmos/ethermint/build/ethermintd /usr/bin/ethermintd
+COPY --from=build-env /go/src/github.com/Entangle-Protocol/entangle-blockchain/build/ethermintd /usr/bin/ethermintd
 
 # Run ethermintd by default
 CMD ["ethermintd"]

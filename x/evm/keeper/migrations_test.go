@@ -1,8 +1,8 @@
 package keeper_test
 
 import (
+	evmkeeper "github.com/Entangle-Protocol/entangle-blockchain/x/evm/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
 )
 
 func (suite *KeeperTestSuite) TestMigrations() {

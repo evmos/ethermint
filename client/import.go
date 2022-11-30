@@ -5,13 +5,13 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/crypto/ethsecp256k1"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 
-	"github.com/evmos/ethermint/crypto/hd"
+	"github.com/Entangle-Protocol/entangle-blockchain/crypto/hd"
 )
 
 // UnsafeImportKeyCommand imports private keys from a keyfile.

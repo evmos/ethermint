@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	ethermint "github.com/Entangle-Protocol/entangle-blockchain/types"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -173,7 +173,7 @@ func (p *ParsedTxs) newTx(attrs []abci.EventAttribute) error {
 
 // updateTx updates an exiting tx from events, called during parsing.
 // In event format 2, we update the tx with the attributes of the second `ethereum_tx` event,
-// Due to bug https://github.com/evmos/ethermint/issues/1175, the first `ethereum_tx` event may emit incorrect tx hash,
+// Due to bug https://github.com/Entangle-Protocol/entangle-blockchain/issues/1175, the first `ethereum_tx` event may emit incorrect tx hash,
 // so we prefer the second event and override the first one.
 func (p *ParsedTxs) updateTx(eventIndex int, attrs []abci.EventAttribute) error {
 	tx := NewParsedTx(eventIndex)

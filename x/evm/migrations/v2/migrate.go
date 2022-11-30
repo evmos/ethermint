@@ -1,9 +1,9 @@
 package v2
 
 import (
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/evmos/ethermint/x/evm/types"
 )
 
 // MigrateStore sets the default AllowUnprotectedTxs parameter.

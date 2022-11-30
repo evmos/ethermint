@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 
-	evm "github.com/evmos/ethermint/x/evm/vm"
+	evm "github.com/Entangle-Protocol/entangle-blockchain/x/evm/vm"
 )
 
 var (

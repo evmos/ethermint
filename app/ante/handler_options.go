@@ -11,7 +11,7 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v5/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v5/modules/core/keeper"
 
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 )
 
 // HandlerOptions extend the SDK's AnteHandler options by requiring the IBC

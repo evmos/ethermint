@@ -1,11 +1,11 @@
 package keeper
 
 import (
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/evmos/ethermint/x/evm/types"
 )
 
 var _ types.EvmHooks = MultiEvmHooks{}

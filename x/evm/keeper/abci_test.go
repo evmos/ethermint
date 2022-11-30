@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	"github.com/tendermint/tendermint/abci/types"
 )
 

@@ -5,15 +5,15 @@ import (
 	"math/big"
 	"strconv"
 
+	rpctypes "github.com/Entangle-Protocol/entangle-blockchain/rpc/types"
+	ethermint "github.com/Entangle-Protocol/entangle-blockchain/types"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
+	feemarkettypes "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 

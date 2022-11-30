@@ -23,12 +23,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/app/ante"
+	"github.com/Entangle-Protocol/entangle-blockchain/crypto/ethsecp256k1"
+	"github.com/Entangle-Protocol/entangle-blockchain/tests"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
-	"github.com/evmos/ethermint/app/ante"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
-	"github.com/evmos/ethermint/tests"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
@@ -939,7 +939,7 @@ func (suite *AnteTestSuite) TestConsumeSignatureVerificationGas() {
 	multisigKey1 := kmultisig.NewLegacyAminoPubKey(2, pkSet1)
 	multisignature1 := multisig.NewMultisig(len(pkSet1))
 	expectedCost1 := expectedGasCostByKeys(pkSet1)
-	
+
 	for i := 0; i < len(pkSet1); i++ {
 		stdSig := legacytx.StdSignature{PubKey: pkSet1[i], Signature: sigSet1[i]}
 		sigV2, err := legacytx.StdSignatureToSignatureV2(cdc, stdSig)

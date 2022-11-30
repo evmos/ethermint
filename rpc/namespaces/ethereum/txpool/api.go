@@ -5,11 +5,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/evmos/ethermint/rpc/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/rpc/types"
 )
 
 // PublicAPI offers and API for the transaction pool. It only operates on data that is non-confidential.
-// NOTE: For more info about the current status of this endpoints see https://github.com/evmos/ethermint/issues/124
+// NOTE: For more info about the current status of this endpoints see https://github.com/Entangle-Protocol/entangle-blockchain/issues/124
 type PublicAPI struct {
 	logger log.Logger
 }

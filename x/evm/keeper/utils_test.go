@@ -4,12 +4,12 @@ import (
 	"math/big"
 
 	sdkmath "cosmossdk.io/math"
+	evmkeeper "github.com/Entangle-Protocol/entangle-blockchain/x/evm/keeper"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethparams "github.com/ethereum/go-ethereum/params"
-	evmkeeper "github.com/evmos/ethermint/x/evm/keeper"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestCheckSenderBalance() {

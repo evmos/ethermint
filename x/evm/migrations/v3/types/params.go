@@ -6,10 +6,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/params"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/evmos/ethermint/types"
 )
 
 var _ paramtypes.ParamSet = &Params{}

@@ -10,14 +10,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/evmos/ethermint/encoding"
+	"github.com/Entangle-Protocol/entangle-blockchain/encoding"
 
-	"github.com/evmos/ethermint/app"
-	feemarketkeeper "github.com/evmos/ethermint/x/feemarket/keeper"
-	v010 "github.com/evmos/ethermint/x/feemarket/migrations/v010"
-	v09types "github.com/evmos/ethermint/x/feemarket/migrations/v09/types"
-	"github.com/evmos/ethermint/x/feemarket/types"
-	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/app"
+	feemarketkeeper "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/keeper"
+	v010 "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/migrations/v010"
+	v09types "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/migrations/v09/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/types"
+	feemarkettypes "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/types"
 )
 
 func TestMigrateStore(t *testing.T) {

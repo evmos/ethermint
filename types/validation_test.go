@@ -3,8 +3,8 @@ package types
 import (
 	"testing"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/tests"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/evmos/ethermint/tests"
 	"github.com/stretchr/testify/require"
 )
 

@@ -1,8 +1,9 @@
 package keeper_test
 
 import (
-	"github.com/evmos/ethermint/x/feemarket/types"
 	"reflect"
+
+	"github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/types"
 )
 
 func (suite *KeeperTestSuite) TestSetGetParams() {

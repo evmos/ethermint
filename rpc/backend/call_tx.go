@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"math/big"
 
+	rpctypes "github.com/Entangle-Protocol/entangle-blockchain/rpc/types"
+	ethermint "github.com/Entangle-Protocol/entangle-blockchain/types"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -14,9 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -69,7 +69,7 @@ func (b *Backend) Resend(args evmtypes.TransactionArgs, gasPrice *hexutil.Big, g
 	}
 
 	for _, tx := range pending {
-		// FIXME does Resend api possible at all?  https://github.com/evmos/ethermint/issues/905
+		// FIXME does Resend api possible at all?  https://github.com/Entangle-Protocol/entangle-blockchain/issues/905
 		p, err := evmtypes.UnwrapEthereumMsg(tx, common.Hash{})
 		if err != nil {
 			// not valid ethereum tx

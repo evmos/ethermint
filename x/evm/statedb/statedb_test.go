@@ -4,12 +4,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/statedb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/stretchr/testify/suite"
 )
 

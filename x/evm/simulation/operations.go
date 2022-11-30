@@ -22,14 +22,14 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/encoding"
+	"github.com/Entangle-Protocol/entangle-blockchain/tests"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/keeper"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/encoding"
-	"github.com/evmos/ethermint/tests"
-	"github.com/evmos/ethermint/x/evm/keeper"
-	"github.com/evmos/ethermint/x/evm/types"
 )
 
 const (

@@ -3,10 +3,10 @@ package keeper_test
 import (
 	"math/big"
 
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/statedb"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/evmos/ethermint/x/evm/statedb"
-	"github.com/evmos/ethermint/x/evm/types"
 )
 
 func (suite *KeeperTestSuite) TestEthereumTx() {

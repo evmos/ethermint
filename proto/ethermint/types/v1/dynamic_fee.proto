@@ -3,7 +3,7 @@ package ethermint.types.v1;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/evmos/ethermint/types";
+option go_package = "github.com/Entangle-Protocol/entangle-blockchain/types";
 
 // ExtensionOptionDynamicFeeTx is an extension option that specify the maxPrioPrice for cosmos tx
 message ExtensionOptionDynamicFeeTx {

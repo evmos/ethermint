@@ -3,9 +3,9 @@ package v011
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	v010types "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/migrations/v010/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	v010types "github.com/evmos/ethermint/x/feemarket/migrations/v010/types"
-	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
 // MigrateStore adds the MinGasPrice param with a value of 0

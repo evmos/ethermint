@@ -45,11 +45,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/evmos/ethermint/indexer"
-	ethdebug "github.com/evmos/ethermint/rpc/namespaces/ethereum/debug"
-	"github.com/evmos/ethermint/server/config"
-	srvflags "github.com/evmos/ethermint/server/flags"
-	ethermint "github.com/evmos/ethermint/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/indexer"
+	ethdebug "github.com/Entangle-Protocol/entangle-blockchain/rpc/namespaces/ethereum/debug"
+	"github.com/Entangle-Protocol/entangle-blockchain/server/config"
+	srvflags "github.com/Entangle-Protocol/entangle-blockchain/server/flags"
+	ethermint "github.com/Entangle-Protocol/entangle-blockchain/types"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with

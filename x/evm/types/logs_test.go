@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/evmos/ethermint/tests"
+	"github.com/Entangle-Protocol/entangle-blockchain/tests"
 
 	"github.com/ethereum/go-ethereum/common"
 )

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	rpctypes "github.com/Entangle-Protocol/entangle-blockchain/rpc/types"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )

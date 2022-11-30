@@ -7,8 +7,8 @@ import (
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/evmos/ethermint/app"
-	cmdcfg "github.com/evmos/ethermint/cmd/config"
+	"github.com/Entangle-Protocol/entangle-blockchain/app"
+	cmdcfg "github.com/Entangle-Protocol/entangle-blockchain/cmd/config"
 )
 
 func main() {

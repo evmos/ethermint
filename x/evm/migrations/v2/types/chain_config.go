@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
 
-	"github.com/evmos/ethermint/x/evm/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 )
 
 // EthereumConfig returns an Ethereum ChainConfig for EVM state transitions.

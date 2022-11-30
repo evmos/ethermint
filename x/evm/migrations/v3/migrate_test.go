@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	v3 "github.com/evmos/ethermint/x/evm/migrations/v3"
+	v3 "github.com/Entangle-Protocol/entangle-blockchain/x/evm/migrations/v3"
 
 	"github.com/stretchr/testify/require"
 
@@ -12,11 +12,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/evmos/ethermint/encoding"
+	"github.com/Entangle-Protocol/entangle-blockchain/encoding"
 
-	"github.com/evmos/ethermint/app"
-	v3types "github.com/evmos/ethermint/x/evm/migrations/v3/types"
-	"github.com/evmos/ethermint/x/evm/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/app"
+	v3types "github.com/Entangle-Protocol/entangle-blockchain/x/evm/migrations/v3/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 )
 
 func TestMigrateStore(t *testing.T) {

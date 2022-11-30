@@ -6,11 +6,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/evmos/ethermint/app/ante"
-	"github.com/evmos/ethermint/server/config"
-	"github.com/evmos/ethermint/tests"
-	"github.com/evmos/ethermint/x/evm/statedb"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/app/ante"
+	"github.com/Entangle-Protocol/entangle-blockchain/server/config"
+	"github.com/Entangle-Protocol/entangle-blockchain/tests"
+	"github.com/Entangle-Protocol/entangle-blockchain/x/evm/statedb"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )

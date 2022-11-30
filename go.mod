@@ -1,4 +1,4 @@
-module github.com/evmos/ethermint
+module github.com/Entangle-Protocol/entangle-blockchain
 
 go 1.19
 
@@ -204,4 +204,5 @@ replace (
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 	// use cosmos flavored protobufs
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+	github.com/Entangle-Protocol/entangle-blockchain => github.com/Entangle-Protocol/entangle-blockchain v1.0.0
 )

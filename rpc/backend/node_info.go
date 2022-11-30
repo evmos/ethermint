@@ -6,6 +6,11 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	"github.com/Entangle-Protocol/entangle-blockchain/crypto/ethsecp256k1"
+	rpctypes "github.com/Entangle-Protocol/entangle-blockchain/rpc/types"
+	"github.com/Entangle-Protocol/entangle-blockchain/server/config"
+	ethermint "github.com/Entangle-Protocol/entangle-blockchain/types"
+	evmtypes "github.com/Entangle-Protocol/entangle-blockchain/x/evm/types"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto"
@@ -18,11 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
-	rpctypes "github.com/evmos/ethermint/rpc/types"
-	"github.com/evmos/ethermint/server/config"
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
