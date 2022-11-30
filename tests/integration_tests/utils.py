@@ -30,13 +30,14 @@ TEST_CONTRACTS = {
     "Greeter": "Greeter.sol",
     "BurnGas": "BurnGas.sol",
     "TestChainID": "ChainID.sol",
+    "Mars": "Mars.sol",
 }
 
 
 def contract_path(name, filename):
     return (
         Path(__file__).parent
-        / "contracts/artifacts/contracts/"
+        / "hardhat/artifacts/contracts/"
         / filename
         / (name + ".json")
     )
