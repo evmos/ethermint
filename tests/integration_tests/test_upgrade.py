@@ -93,11 +93,11 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
     """
     cli = custom_ethermint.cosmos_cli()
     height = cli.block_height()
-    target_height = height + 5
+    target_height = height + 10
     print("upgrade height", target_height)
 
     w3 = custom_ethermint.w3
-    contract = deploy_contract(w3, CONTRACTS["TestERC20A"])
+    contract, _ = deploy_contract(w3, CONTRACTS["TestERC20A"])
     old_height = w3.eth.block_number
     old_balance = w3.eth.get_balance(ADDRS["validator"], block_identifier=old_height)
     old_base_fee = w3.eth.get_block(old_height).baseFeePerGas

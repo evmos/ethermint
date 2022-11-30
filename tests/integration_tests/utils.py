@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from eth_account import Account
 from hexbytes import HexBytes
 from web3._utils.transactions import fill_nonce, fill_transaction_defaults
+from web3.exceptions import TimeExhausted
 
 load_dotenv(Path(__file__).parent.parent.parent / "scripts/.env")
 Account.enable_unaudited_hdwallet_features()
@@ -27,13 +28,16 @@ ETHERMINT_ADDRESS_PREFIX = "ethm"
 TEST_CONTRACTS = {
     "TestERC20A": "TestERC20A.sol",
     "Greeter": "Greeter.sol",
+    "BurnGas": "BurnGas.sol",
+    "TestChainID": "ChainID.sol",
+    "Mars": "Mars.sol",
 }
 
 
 def contract_path(name, filename):
     return (
         Path(__file__).parent
-        / "contracts/artifacts/contracts/"
+        / "hardhat/artifacts/contracts/"
         / filename
         / (name + ".json")
     )
@@ -61,10 +65,10 @@ def wait_for_port(port, host="127.0.0.1", timeout=40.0):
                 ) from ex
 
 
-def w3_wait_for_new_blocks(w3, n):
+def w3_wait_for_new_blocks(w3, n, sleep=0.5):
     begin_height = w3.eth.block_number
     while True:
-        time.sleep(0.5)
+        time.sleep(sleep)
         cur_height = w3.eth.block_number
         if cur_height - begin_height >= n:
             break
@@ -80,7 +84,7 @@ def wait_for_new_blocks(cli, n):
 
 
 def wait_for_block(cli, height, timeout=240):
-    for i in range(timeout * 2):
+    for _ in range(timeout * 2):
         try:
             status = cli.status()
         except AssertionError as e:
@@ -96,7 +100,7 @@ def wait_for_block(cli, height, timeout=240):
 
 
 def w3_wait_for_block(w3, height, timeout=240):
-    for i in range(timeout * 2):
+    for _ in range(timeout * 2):
         try:
             current_height = w3.eth.block_number
         except Exception as e:
@@ -114,7 +118,7 @@ def wait_for_block_time(cli, t):
     print("wait for block time", t)
     while True:
         now = isoparse((cli.status())["SyncInfo"]["latest_block_time"])
-        print("block time now:", now)
+        print("block time now: ", now)
         if now >= t:
             break
         time.sleep(0.5)
@@ -127,11 +131,11 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     acct = Account.from_key(key)
     info = json.loads(jsonfile.read_text())
     contract = w3.eth.contract(abi=info["abi"], bytecode=info["bytecode"])
-    tx = contract.constructor(*args).buildTransaction({"from": acct.address})
+    tx = contract.constructor(*args).build_transaction({"from": acct.address})
     txreceipt = send_transaction(w3, tx, key)
     assert txreceipt.status == 1
     address = txreceipt.contractAddress
-    return w3.eth.contract(address=address, abi=info["abi"])
+    return w3.eth.contract(address=address, abi=info["abi"]), txreceipt
 
 
 def fill_defaults(w3, tx):
@@ -147,23 +151,38 @@ def sign_transaction(w3, tx, key=KEYS["validator"]):
     return acct.sign_transaction(tx)
 
 
-def send_transaction(w3, tx, key=KEYS["validator"]):
+def send_transaction(w3, tx, key=KEYS["validator"], i=0):
+    if i > 3:
+        raise TimeExhausted
     signed = sign_transaction(w3, tx, key)
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
-    return w3.eth.wait_for_transaction_receipt(txhash)
+    try:
+        return w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
+    except TimeExhausted:
+        return send_transaction(w3, tx, key, i + 1)
 
 
-def send_successful_transaction(w3):
+def send_successful_transaction(w3, i=0):
+    if i > 3:
+        raise TimeExhausted
     signed = sign_transaction(w3, {"to": ADDRS["community"], "value": 1000})
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
-    receipt = w3.eth.wait_for_transaction_receipt(txhash)
-    assert receipt.status == 1
+    try:
+        receipt = w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
+        assert receipt.status == 1
+    except TimeExhausted:
+        return send_successful_transaction(w3, i + 1)
     return txhash
 
 
 def eth_to_bech32(addr, prefix=ETHERMINT_ADDRESS_PREFIX):
     bz = bech32.convertbits(HexBytes(addr), 8, 5)
     return bech32.bech32_encode(prefix, bz)
+
+
+def decode_bech32(addr):
+    _, bz = bech32.bech32_decode(addr)
+    return HexBytes(bytes(bech32.convertbits(bz, 5, 8)))
 
 
 def supervisorctl(inipath, *args):

@@ -36,41 +36,61 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.20.0-rc2] - 2022-11-02
+## [v0.20.0-rc3] - 2022-11-30
 
 ### State Machine Breaking
 
-* (deps) [#1423](https://github.com/evmos/ethermint/pull/1423) Bump Cosmos SDK to `v0.46.4`
 * (deps) [#1419](https://github.com/evmos/ethermint/pull/1419) Add ics23 patch for dragonberry and bump iavl to v0.19.4
-* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.0.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.0.0)
+* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
 * (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to `v0.46`.
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.6).
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
+* (evm) [#1452](https://github.com/evmos/ethermint/pull/1452) Simplify Gas Math in `ApplyTransaction`.
+* (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712. 
+* (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
+* (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
+* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
 
 ### API Breaking
 
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
+* (evm) [#1405](https://github.com/evmos/ethermint/pull/1405) Add parameter `chainID` to evm keeper's `EVMConfig` method, so caller can choose to not use the cached `eip155ChainID`.
+
+### Features
+
+- (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
 
 ### Improvements
 
+* (tests) [#1507](https://github.com/evmos/ethermint/pull/1507) Remove legacy sim tests
+* (feemarket) [#1508](https://github.com/evmos/ethermint/pull/1508) Remove old x/params migration logic
+* (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block
+* (ante) [#1455](https://github.com/evmos/ethermint/pull/1455) Refactor `AnteHandler` logic
+* (evm) [#1444](https://github.com/evmos/ethermint/pull/1444) Improve performance of `eth_estimateGas`
 * (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
 * (lint) [#1298](https://github.com/evmos/ethermint/pull/1298) 150 character line length limit, `gofumpt`, and linting
 * (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology in Cosmos and Ethereum.
 * (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
 * (ante) [#1289](https://github.com/evmos/ethermint/pull/1289) Change the fallback tx priority mechanism to be based on gas price.
 * (test) [#1311](https://github.com/evmos/ethermint/pull/1311) Add integration test for the `rollback` cmd
+* (ledger) [#1277](https://github.com/evmos/ethermint/pull/1277) Add Ledger preprocessing transaction hook for EIP-712-signed Cosmos payloads.
 * (rpc) [#1296](https://github.com/evmos/ethermint/pull/1296) Add RPC Backend unit tests.
 * (rpc) [#1352](https://github.com/evmos/ethermint/pull/1352) Make the grpc queries run concurrently, don't block the consensus state machine.
 * (cli) [#1360](https://github.com/evmos/ethermint/pull/1360) Introduce a new `grpc-only` flag, such that when enabled, will start the node in a query-only mode. Note, gRPC MUST be enabled with this flag.
 * (rpc) [#1378](https://github.com/evmos/ethermint/pull/1378) Add support for EVM RPC metrics
 * (ante) [#1390](https://github.com/evmos/ethermint/pull/1390) Added multisig tx support.
 * (test) [#1396](https://github.com/evmos/ethermint/pull/1396) Increase test coverage for the EVM module `keeper`
+* (ante) [#1397](https://github.com/evmos/ethermint/pull/1397) Refactor EIP-712 signature verification to support EIP-712 multi-signing.
 * (deps) [#1416](https://github.com/evmos/ethermint/pull/1416) Bump Go version to `1.19`
 * (cmd) [\#1417](https://github.com/evmos/ethermint/pull/1417) Apply Google CLI Syntax for required and optional args.
+* (deps) [#1456](https://github.com/evmos/ethermint/pull/1456) Migrate errors-related functionality from "github.com/cosmos/cosmos-sdk/types/errors" (deprecated) to "cosmossdk.io/errors"
 
 ### Bug Fixes
 
+* (app) [#1505](https://github.com/evmos/ethermint/pull/1505) Setup gRPC node service with the application.
+* (server) [#1497](https://github.com/evmos/ethermint/pull/1497) Fix telemetry server setup for observability
+* (rpc) [#1442](https://github.com/evmos/ethermint/pull/1442) Fix decoding of `finalized` block number.
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
 * (rpc) [#1340](https://github.com/evmos/ethermint/pull/1340) Fix error response when `eth_estimateGas` height provided is not found.
@@ -78,6 +98,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (cli) [#1362](https://github.com/evmos/ethermint/pull/1362) Fix `index-eth-tx` error when the indexer db is empty.
 * (state) [#1320](https://github.com/evmos/ethermint/pull/1320) Fix codehash check mismatch when the code has been deleted in the evm state.
 * (rpc) [#1392](https://github.com/evmos/ethermint/pull/1392) Allow fill the proposer address in json-rpc through tendermint api, and pass explicitly to grpc query handler.
+* (rpc) [#1431](https://github.com/evmos/ethermint/pull/1431) Align hex-strings proof fields in `eth_getProof` as Ethereum.
+* (proto) [#1466](https://github.com/evmos/ethermint/pull/1466) Fix proto scripts and upgrade them to mirror current cosmos-sdk scripts
+* (rpc) [#1405](https://github.com/evmos/ethermint/pull/1405) Fix uninitialized chain ID field in gRPC requests.
+* (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
+* (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
+* (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
+
 
 ## [v0.19.3] - 2022-10-14
 
@@ -211,7 +238,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [tharsis#1088](https://github.com/evmos/ethermint/pull/1088) Fix ability to append log in tx post processing.
 * (rpc) [tharsis#1081](https://github.com/evmos/ethermint/pull/1081) fix `debug_getBlockRlp`/`debug_printBlock` don't filter failed transactions.
 * (ante) [tharsis#1111](https://github.com/evmos/ethermint/pull/1111) Move CanTransfer decorator before GasConsume decorator
-* (types) [tharsis#1112](https://github.com/cosmos/ethermint/pull/1112) Add `GetBaseAccount` to avoid invalid account error when create vesting account.
+* (types) [tharsis#1112](https://github.com/evmos/ethermint/pull/1112) Add `GetBaseAccount` to avoid invalid account error when create vesting account.
 
 ## [v0.15.0] - 2022-05-09
 
@@ -647,7 +674,7 @@ the Tracer type used to collect execution traces from the EVM transaction execut
 
 ### Improvements
 
-* (deps) [tharsis#615](https://github.com/cosmos/ethermint/pull/615) Bump Cosmos SDK version to [v0.39.2](https://github.com/cosmos/cosmos-sdk/tag/v0.39.2)
+* (deps) [tharsis#615](https://github.com/cosmos/ethermint/pull/615) Bump Cosmos SDK version to [v0.39.2](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.39.2)
 * (deps) [tharsis#610](https://github.com/cosmos/ethermint/pull/610) Update Go dependency to 1.15+.
 * (evm) [tharsis#603](https://github.com/cosmos/ethermint/pull/603) Add state transition params that enable or disable the EVM `Call` and `Create` operations.
 * (deps) [tharsis#602](https://github.com/cosmos/ethermint/pull/602) Bump tendermint version to [v0.33.9](https://github.com/tendermint/tendermint/releases/tag/v0.33.9)

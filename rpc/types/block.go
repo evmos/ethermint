@@ -33,6 +33,7 @@ const (
 	BlockParamEarliest  = "earliest"
 	BlockParamLatest    = "latest"
 	BlockParamFinalized = "finalized"
+	BlockParamSafe      = "safe"
 	BlockParamPending   = "pending"
 )
 
@@ -73,7 +74,7 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	case BlockParamEarliest:
 		*bn = EthEarliestBlockNumber
 		return nil
-	case BlockParamLatest, BlockParamFinalized:
+	case BlockParamLatest, BlockParamFinalized, BlockParamSafe:
 		*bn = EthLatestBlockNumber
 		return nil
 	case BlockParamPending:
@@ -159,7 +160,7 @@ func (bnh *BlockNumberOrHash) decodeFromString(input string) error {
 	case BlockParamEarliest:
 		bn := EthEarliestBlockNumber
 		bnh.BlockNumber = &bn
-	case BlockParamLatest:
+	case BlockParamLatest, BlockParamFinalized:
 		bn := EthLatestBlockNumber
 		bnh.BlockNumber = &bn
 	case BlockParamPending:

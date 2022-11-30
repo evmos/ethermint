@@ -95,6 +95,11 @@ class CosmosCLI:
     def validate_genesis(self):
         return self.raw("validate-genesis", home=self.data_dir)
 
+    def consensus_address(self):
+        "get tendermint consensus address"
+        output = self.raw("tendermint", "show-address", home=self.data_dir)
+        return output.decode().strip()
+
     def add_genesis_account(self, addr, coins, **kwargs):
         return self.raw(
             "add-genesis-account",

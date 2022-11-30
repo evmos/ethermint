@@ -88,7 +88,7 @@ func TestUnmarshalBlockNumberOrHash(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		fmt.Sprintf("Case %s", tc.msg)
+		fmt.Printf("Case %s", tc.msg)
 		// reset input
 		bnh = new(BlockNumberOrHash)
 		err := bnh.UnmarshalJSON(tc.input)
