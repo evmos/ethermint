@@ -3,8 +3,8 @@ package ethermint.feemarket.v1;
 
 import "gogoproto/gogo.proto";
 // import "cosmos/base/query/v1beta1/pagination.proto";
-import "google/api/annotations.proto";
 import "ethermint/feemarket/v1/feemarket.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/evmos/ethermint/x/feemarket/types";
 
@@ -39,8 +39,9 @@ message QueryParamsResponse {
 // fee.
 message QueryBaseFeeRequest {}
 
-// BaseFeeResponse returns the EIP1559 base fee.
+// QueryBaseFeeResponse returns the EIP1559 base fee.
 message QueryBaseFeeResponse {
+  // base_fee is the EIP1559 base fee
   string base_fee = 1 [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"];
 }
 
@@ -50,5 +51,6 @@ message QueryBlockGasRequest {}
 
 // QueryBlockGasResponse returns block gas used for a given height.
 message QueryBlockGasResponse {
+  // gas is the returned block gas
   int64 gas = 1;
 }
