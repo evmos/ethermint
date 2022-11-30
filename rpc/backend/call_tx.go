@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math/big"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -151,7 +151,7 @@ func (b *Backend) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) {
 	syncCtx := b.clientCtx.WithBroadcastMode(flags.BroadcastSync)
 	rsp, err := syncCtx.BroadcastTx(txBytes)
 	if rsp != nil && rsp.Code != 0 {
-		err = sdkerrors.ABCIError(rsp.Codespace, rsp.Code, rsp.RawLog)
+		err = errorsmod.ABCIError(rsp.Codespace, rsp.Code, rsp.RawLog)
 	}
 	if err != nil {
 		b.logger.Error("failed to broadcast tx", "error", err.Error())
@@ -269,6 +269,8 @@ func (b *Backend) SetTxDefaults(args evmtypes.TransactionArgs) (evmtypes.Transac
 			Value:                args.Value,
 			Data:                 input,
 			AccessList:           args.AccessList,
+			ChainID:              args.ChainID,
+			Nonce:                args.Nonce,
 		}
 
 		blockNr := rpctypes.NewBlockNumber(big.NewInt(0))
@@ -309,6 +311,7 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,
@@ -335,10 +338,12 @@ func (b *Backend) DoCall(
 		// the error message imitates geth behavior
 		return nil, errors.New("header not found")
 	}
+
 	req := evmtypes.EthCallRequest{
 		Args:            bz,
 		GasCap:          b.RPCGasCap(),
 		ProposerAddress: sdk.ConsAddress(header.Block.ProposerAddress),
+		ChainId:         b.chainID.Int64(),
 	}
 
 	// From ContextWithHeight: if the provided height is 0,

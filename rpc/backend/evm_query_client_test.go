@@ -1,12 +1,11 @@
 package backend
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"strconv"
-	"testing"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/evmos/ethermint/rpc/backend/mocks"
@@ -19,6 +18,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"strconv"
+	"testing"
 )
 
 // QueryClient defines a mocked object that implements the ethermint GRPC
@@ -27,6 +28,38 @@ import (
 //
 // To use a mock method it has to be registered in a given test.
 var _ evmtypes.QueryClient = &mocks.EVMQueryClient{}
+
+// TraceTransaction
+func RegisterTraceTransactionWithPredecessors(queryClient *mocks.EVMQueryClient, msgEthTx *evmtypes.MsgEthereumTx, predecessors []*evmtypes.MsgEthereumTx) {
+	data := []byte{0x7b, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x20, 0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x22, 0x7d}
+	queryClient.On("TraceTx", rpc.ContextWithHeight(1),
+		&evmtypes.QueryTraceTxRequest{Msg: msgEthTx, BlockNumber: 1, Predecessors: predecessors, ChainId: 9000}).
+		Return(&evmtypes.QueryTraceTxResponse{Data: data}, nil)
+}
+
+func RegisterTraceTransaction(queryClient *mocks.EVMQueryClient, msgEthTx *evmtypes.MsgEthereumTx) {
+	data := []byte{0x7b, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x20, 0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x22, 0x7d}
+	queryClient.On("TraceTx", rpc.ContextWithHeight(1), &evmtypes.QueryTraceTxRequest{Msg: msgEthTx, BlockNumber: 1, ChainId: 9000}).
+		Return(&evmtypes.QueryTraceTxResponse{Data: data}, nil)
+}
+
+func RegisterTraceTransactionError(queryClient *mocks.EVMQueryClient, msgEthTx *evmtypes.MsgEthereumTx) {
+	queryClient.On("TraceTx", rpc.ContextWithHeight(1), &evmtypes.QueryTraceTxRequest{Msg: msgEthTx, BlockNumber: 1, ChainId: 9000}).
+		Return(nil, errortypes.ErrInvalidRequest)
+}
+
+// TraceBlock
+func RegisterTraceBlock(queryClient *mocks.EVMQueryClient, txs []*evmtypes.MsgEthereumTx) {
+	data := []byte{0x7b, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x20, 0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x22, 0x7d}
+	queryClient.On("TraceBlock", rpc.ContextWithHeight(1),
+		&evmtypes.QueryTraceBlockRequest{Txs: txs, BlockNumber: 1, TraceConfig: &evmtypes.TraceConfig{}, ChainId: 9000}).
+		Return(&evmtypes.QueryTraceBlockResponse{Data: data}, nil)
+}
+
+func RegisterTraceBlockError(queryClient *mocks.EVMQueryClient) {
+	queryClient.On("TraceBlock", rpc.ContextWithHeight(1), &evmtypes.QueryTraceBlockRequest{}).
+		Return(nil, errortypes.ErrInvalidRequest)
+}
 
 // Params
 func RegisterParams(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
@@ -39,6 +72,11 @@ func RegisterParams(queryClient *mocks.EVMQueryClient, header *metadata.MD, heig
 			h.Set(grpctypes.GRPCBlockHeightHeader, fmt.Sprint(height))
 			*arg.HeaderAddr = h
 		})
+}
+
+func RegisterParamsWithoutHeader(queryClient *mocks.EVMQueryClient, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
+		Return(&evmtypes.QueryParamsResponse{Params: evmtypes.DefaultParams()}, nil)
 }
 
 func RegisterParamsInvalidHeader(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
@@ -64,15 +102,21 @@ func RegisterParamsInvalidHeight(queryClient *mocks.EVMQueryClient, header *meta
 		})
 }
 
+func RegisterParamsWithoutHeaderError(queryClient *mocks.EVMQueryClient, height int64) {
+	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}).
+		Return(nil, errortypes.ErrInvalidRequest)
+}
+
 // Params returns error
 func RegisterParamsError(queryClient *mocks.EVMQueryClient, header *metadata.MD, height int64) {
 	queryClient.On("Params", rpc.ContextWithHeight(height), &evmtypes.QueryParamsRequest{}, grpc.Header(header)).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func TestRegisterParams(t *testing.T) {
-	queryClient := mocks.NewEVMQueryClient(t)
 	var header metadata.MD
+	queryClient := mocks.NewEVMQueryClient(t)
+
 	height := int64(1)
 	RegisterParams(queryClient, &header, height)
 
@@ -89,6 +133,26 @@ func TestRegisterParamsError(t *testing.T) {
 	RegisterBaseFeeError(queryClient)
 	_, err := queryClient.BaseFee(rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{})
 	require.Error(t, err)
+}
+
+// ETH Call
+func RegisterEthCall(queryClient *mocks.EVMQueryClient, request *evmtypes.EthCallRequest) {
+	ctx, _ := context.WithCancel(rpc.ContextWithHeight(1))
+	queryClient.On("EthCall", ctx, request).
+		Return(&evmtypes.MsgEthereumTxResponse{}, nil)
+}
+
+func RegisterEthCallError(queryClient *mocks.EVMQueryClient, request *evmtypes.EthCallRequest) {
+	ctx, _ := context.WithCancel(rpc.ContextWithHeight(1))
+	queryClient.On("EthCall", ctx, request).
+		Return(nil, errortypes.ErrInvalidRequest)
+}
+
+// Estimate Gas
+func RegisterEstimateGas(queryClient *mocks.EVMQueryClient, args evmtypes.TransactionArgs) {
+	bz, _ := json.Marshal(args)
+	queryClient.On("EstimateGas", rpc.ContextWithHeight(1), &evmtypes.EthCallRequest{Args: bz, ChainId: args.ChainID.ToInt().Int64()}).
+		Return(&evmtypes.EstimateGasResponse{}, nil)
 }
 
 // BaseFee
@@ -137,12 +201,7 @@ func TestRegisterBaseFeeDisabled(t *testing.T) {
 // ValidatorAccount
 func RegisterValidatorAccount(queryClient *mocks.EVMQueryClient, validator sdk.AccAddress) {
 	queryClient.On("ValidatorAccount", rpc.ContextWithHeight(1), &evmtypes.QueryValidatorAccountRequest{}).
-		Return(
-			&evmtypes.QueryValidatorAccountResponse{
-				AccountAddress: validator.String(),
-			},
-			nil,
-		)
+		Return(&evmtypes.QueryValidatorAccountResponse{AccountAddress: validator.String()}, nil)
 }
 
 func RegisterValidatorAccountError(queryClient *mocks.EVMQueryClient) {
@@ -168,7 +227,7 @@ func RegisterCode(queryClient *mocks.EVMQueryClient, addr common.Address, code [
 
 func RegisterCodeError(queryClient *mocks.EVMQueryClient, addr common.Address) {
 	queryClient.On("Code", rpc.ContextWithHeight(1), &evmtypes.QueryCodeRequest{Address: addr.String()}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 // Storage
@@ -179,7 +238,7 @@ func RegisterStorageAt(queryClient *mocks.EVMQueryClient, addr common.Address, k
 
 func RegisterStorageAtError(queryClient *mocks.EVMQueryClient, addr common.Address, key string) {
 	queryClient.On("Storage", rpc.ContextWithHeight(1), &evmtypes.QueryStorageRequest{Address: addr.String(), Key: key}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }
 
 func RegisterAccount(queryClient *mocks.EVMQueryClient, addr common.Address, height int64) {
@@ -211,5 +270,5 @@ func RegisterBalanceNegative(queryClient *mocks.EVMQueryClient, addr common.Addr
 
 func RegisterBalanceError(queryClient *mocks.EVMQueryClient, addr common.Address, height int64) {
 	queryClient.On("Balance", rpc.ContextWithHeight(height), &evmtypes.QueryBalanceRequest{Address: addr.String()}).
-		Return(nil, sdkerrors.ErrInvalidRequest)
+		Return(nil, errortypes.ErrInvalidRequest)
 }

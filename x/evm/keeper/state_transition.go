@@ -1,15 +1,15 @@
 package keeper
 
 import (
-	"math"
 	"math/big"
 
 	sdkmath "cosmossdk.io/math"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -39,14 +39,14 @@ func GasToRefund(availableRefund, gasConsumed, refundQuotient uint64) uint64 {
 }
 
 // EVMConfig creates the EVMConfig based on current state
-func (k *Keeper) EVMConfig(ctx sdk.Context, proposerAddress sdk.ConsAddress) (*types.EVMConfig, error) {
+func (k *Keeper) EVMConfig(ctx sdk.Context, proposerAddress sdk.ConsAddress, chainID *big.Int) (*types.EVMConfig, error) {
 	params := k.GetParams(ctx)
-	ethCfg := params.ChainConfig.EthereumConfig(k.eip155ChainID)
+	ethCfg := params.ChainConfig.EthereumConfig(chainID)
 
 	// get the coinbase address from the block proposer
 	coinbase, err := k.GetCoinbaseAddress(ctx, proposerAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to obtain coinbase address")
+		return nil, errorsmod.Wrap(err, "failed to obtain coinbase address")
 	}
 
 	baseFee := k.GetBaseFee(ctx, ethCfg)
@@ -199,9 +199,9 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		bloomReceipt ethtypes.Bloom
 	)
 
-	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress))
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), k.eip155ChainID)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to load evm config")
+		return nil, errorsmod.Wrap(err, "failed to load evm config")
 	}
 	txConfig := k.TxConfig(ctx, tx.Hash())
 
@@ -209,7 +209,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
 	msg, err := tx.AsMessage(signer, cfg.BaseFee)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to return ethereum transaction as core message")
+		return nil, errorsmod.Wrap(err, "failed to return ethereum transaction as core message")
 	}
 
 	// snapshot to contain the tx processing and post processing in same scope
@@ -226,7 +226,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	// pass true to commit the StateDB
 	res, err := k.ApplyMessageWithConfig(tmpCtx, msg, nil, true, cfg, txConfig)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to apply ethereum core message")
+		return nil, errorsmod.Wrap(err, "failed to apply ethereum core message")
 	}
 
 	logs := types.LogsToEthereum(res.Logs)
@@ -241,8 +241,10 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	cumulativeGasUsed := res.GasUsed
 	if ctx.BlockGasMeter() != nil {
 		limit := ctx.BlockGasMeter().Limit()
-		consumed := ctx.BlockGasMeter().GasConsumed()
-		cumulativeGasUsed = uint64(math.Min(float64(cumulativeGasUsed+consumed), float64(limit)))
+		cumulativeGasUsed += ctx.BlockGasMeter().GasConsumed()
+		if cumulativeGasUsed > limit {
+			cumulativeGasUsed = limit
+		}
 	}
 
 	var contractAddr common.Address
@@ -285,7 +287,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 
 	// refund gas in order to match the Ethereum gas consumption instead of the default SDK one.
 	if err = k.RefundGas(ctx, msg, msg.Gas()-res.GasUsed, cfg.Params.EvmDenom); err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
+		return nil, errorsmod.Wrapf(err, "failed to refund gas leftover gas to sender %s", msg.From())
 	}
 
 	if len(receipt.Logs) > 0 {
@@ -298,7 +300,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 
 	totalGasUsed, err := k.AddTransientGasUsed(ctx, res.GasUsed)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to add transient gas used")
+		return nil, errorsmod.Wrap(err, "failed to add transient gas used")
 	}
 
 	// reset the gas meter for current cosmos transaction
@@ -358,9 +360,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 	// return error if contract creation or call are disabled through governance
 	if !cfg.Params.EnableCreate && msg.To() == nil {
-		return nil, sdkerrors.Wrap(types.ErrCreateDisabled, "failed to create new contract")
+		return nil, errorsmod.Wrap(types.ErrCreateDisabled, "failed to create new contract")
 	} else if !cfg.Params.EnableCall && msg.To() != nil {
-		return nil, sdkerrors.Wrap(types.ErrCallDisabled, "failed to call contract")
+		return nil, errorsmod.Wrap(types.ErrCallDisabled, "failed to call contract")
 	}
 
 	stateDB := statedb.New(ctx, k, txConfig)
@@ -384,13 +386,13 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	intrinsicGas, err := k.GetEthIntrinsicGas(ctx, msg, cfg.ChainConfig, contractCreation)
 	if err != nil {
 		// should have already been checked on Ante Handler
-		return nil, sdkerrors.Wrap(err, "intrinsic gas failed")
+		return nil, errorsmod.Wrap(err, "intrinsic gas failed")
 	}
 
 	// Should check again even if it is checked on Ante Handler, because eth_call don't go through Ante Handler.
 	if leftoverGas < intrinsicGas {
 		// eth_estimateGas will check for this exact error
-		return nil, sdkerrors.Wrap(core.ErrIntrinsicGas, "apply message")
+		return nil, errorsmod.Wrap(core.ErrIntrinsicGas, "apply message")
 	}
 	leftoverGas -= intrinsicGas
 
@@ -420,10 +422,11 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 	// calculate gas refund
 	if msg.Gas() < leftoverGas {
-		return nil, sdkerrors.Wrap(types.ErrGasOverflow, "apply message")
+		return nil, errorsmod.Wrap(types.ErrGasOverflow, "apply message")
 	}
 	// refund gas
-	leftoverGas += GasToRefund(stateDB.GetRefund(), msg.Gas()-leftoverGas, refundQuotient)
+	temporaryGasUsed := msg.Gas() - leftoverGas
+	leftoverGas += GasToRefund(stateDB.GetRefund(), temporaryGasUsed, refundQuotient)
 
 	// EVM execution error needs to be available for the JSON-RPC client
 	var vmError string
@@ -434,7 +437,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	// The dirty states in `StateDB` is either committed or discarded after return
 	if commit {
 		if err := stateDB.Commit(); err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to commit stateDB")
+			return nil, errorsmod.Wrap(err, "failed to commit stateDB")
 		}
 	}
 
@@ -446,9 +449,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	minimumGasUsed := gasLimit.Mul(minGasMultiplier)
 
 	if msg.Gas() < leftoverGas {
-		return nil, sdkerrors.Wrapf(types.ErrGasOverflow, "message gas limit < leftover gas (%d < %d)", msg.Gas(), leftoverGas)
+		return nil, errorsmod.Wrapf(types.ErrGasOverflow, "message gas limit < leftover gas (%d < %d)", msg.Gas(), leftoverGas)
 	}
-	temporaryGasUsed := msg.Gas() - leftoverGas
+
 	gasUsed := sdk.MaxDec(minimumGasUsed, sdk.NewDec(int64(temporaryGasUsed))).TruncateInt().Uint64()
 	// reset leftoverGas, to be used by the tracer
 	leftoverGas = msg.Gas() - gasUsed
@@ -464,9 +467,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 // ApplyMessage calls ApplyMessageWithConfig with default EVMConfig
 func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool) (*types.MsgEthereumTxResponse, error) {
-	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress))
+	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), k.eip155ChainID)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to load evm config")
+		return nil, errorsmod.Wrap(err, "failed to load evm config")
 	}
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash()))
 	return k.ApplyMessageWithConfig(ctx, msg, tracer, commit, cfg, txConfig)
@@ -492,7 +495,7 @@ func (k *Keeper) RefundGas(ctx sdk.Context, msg core.Message, leftoverGas uint64
 	switch remaining.Sign() {
 	case -1:
 		// negative refund errors
-		return sdkerrors.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
+		return errorsmod.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
 	case 1:
 		// positive amount refund
 		refundedCoins := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(remaining))}
@@ -501,8 +504,8 @@ func (k *Keeper) RefundGas(ctx sdk.Context, msg core.Message, leftoverGas uint64
 
 		err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
-			err = sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
-			return sdkerrors.Wrapf(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
+			err = errorsmod.Wrapf(errortypes.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
+			return errorsmod.Wrapf(err, "failed to refund %d leftover gas (%s)", leftoverGas, refundedCoins.String())
 		}
 	default:
 		// no refund, consume gas and update the tx gas meter
@@ -531,7 +534,7 @@ func GetProposerAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) sdk.Co
 func (k Keeper) GetCoinbaseAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) (common.Address, error) {
 	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, GetProposerAddress(ctx, proposerAddress))
 	if !found {
-		return common.Address{}, sdkerrors.Wrapf(
+		return common.Address{}, errorsmod.Wrapf(
 			stakingtypes.ErrNoValidatorFound,
 			"failed to retrieve validator from block proposer address %s",
 			proposerAddress.String(),

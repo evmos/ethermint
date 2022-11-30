@@ -6,11 +6,12 @@ import (
 	"crypto/subtle"
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/crypto"
-
+	"github.com/evmos/ethermint/ethereum/eip712"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 )
 
@@ -182,7 +183,7 @@ func (pubKey PubKey) MarshalAmino() ([]byte, error) {
 // UnmarshalAmino overrides Amino binary marshaling.
 func (pubKey *PubKey) UnmarshalAmino(bz []byte) error {
 	if len(bz) != PubKeySize {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidPubKey, "invalid pubkey size, expected %d, got %d", PubKeySize, len(bz))
+		return errorsmod.Wrapf(errortypes.ErrInvalidPubKey, "invalid pubkey size, expected %d, got %d", PubKeySize, len(bz))
 	}
 	pubKey.Key = bz
 
@@ -203,10 +204,28 @@ func (pubKey *PubKey) UnmarshalAminoJSON(bz []byte) error {
 
 // VerifySignature verifies that the ECDSA public key created a given signature over
 // the provided message. It will calculate the Keccak256 hash of the message
-// prior to verification.
+// prior to verification and approve verification if the signature can be verified
+// from either the original message or its EIP-712 representation.
 //
 // CONTRACT: The signature should be in [R || S] format.
 func (pubKey PubKey) VerifySignature(msg, sig []byte) bool {
+	return pubKey.verifySignatureECDSA(msg, sig) || pubKey.verifySignatureAsEIP712(msg, sig)
+}
+
+// Verifies the signature as an EIP-712 signature by first converting the message payload
+// to an EIP-712 hashed object, performing ECDSA verification on the hash. This is to support
+// signing a Cosmos payload using EIP-712.
+func (pubKey PubKey) verifySignatureAsEIP712(msg, sig []byte) bool {
+	eip712Hash, err := eip712.GetEIP712HashForMsg(msg)
+	if err != nil {
+		return false
+	}
+
+	return pubKey.verifySignatureECDSA(eip712Hash, sig)
+}
+
+// Perform standard ECDSA signature verification for the given raw bytes and signature.
+func (pubKey PubKey) verifySignatureECDSA(msg, sig []byte) bool {
 	if len(sig) == crypto.SignatureLength {
 		// remove recovery ID (V) if contained in the signature
 		sig = sig[:len(sig)-1]

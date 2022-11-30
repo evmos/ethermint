@@ -3,8 +3,8 @@ package backend
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -74,6 +74,7 @@ func (b *Backend) GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransac
 		uint64(res.Height),
 		uint64(res.EthTxIndex),
 		baseFee,
+		b.chainID,
 	)
 }
 
@@ -102,6 +103,7 @@ func (b *Backend) getTransactionByHashPending(txHash common.Hash) (*rpctypes.RPC
 				uint64(0),
 				uint64(0),
 				nil,
+				b.chainID,
 			)
 			if err != nil {
 				return nil, err
@@ -214,6 +216,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		// sender and receiver (contract or EOA) addreses
 		"from": from,
 		"to":   txData.GetTo(),
+		"type": hexutil.Uint(ethMsg.AsTransaction().Type()),
 	}
 
 	if logs == nil {
@@ -288,7 +291,7 @@ func (b *Backend) GetTxByEthHash(hash common.Hash) (*ethermint.TxResult, error) 
 		return txs.GetTxByHash(hash)
 	})
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetTxByEthHash %s", hash.Hex())
+		return nil, errorsmod.Wrapf(err, "GetTxByEthHash %s", hash.Hex())
 	}
 	return txResult, nil
 }
@@ -308,7 +311,7 @@ func (b *Backend) GetTxByTxIndex(height int64, index uint) (*ethermint.TxResult,
 		return txs.GetTxByTxIndex(int(index))
 	})
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "GetTxByTxIndex %d %d", height, index)
+		return nil, errorsmod.Wrapf(err, "GetTxByTxIndex %d %d", height, index)
 	}
 	return txResult, nil
 }
@@ -339,7 +342,7 @@ func (b *Backend) queryTendermintTxIndexer(query string, txGetter func(*rpctypes
 	return rpctypes.ParseTxIndexerResult(txResult, tx, txGetter)
 }
 
-// getTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
+// GetTransactionByBlockAndIndex is the common code shared by `GetTransactionByBlockNumberAndIndex` and `GetTransactionByBlockHashAndIndex`.
 func (b *Backend) GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error) {
 	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
 	if err != nil {
@@ -386,5 +389,6 @@ func (b *Backend) GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, i
 		uint64(block.Block.Height),
 		uint64(idx),
 		baseFee,
+		b.chainID,
 	)
 }
