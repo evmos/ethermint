@@ -67,7 +67,6 @@ def test_grpc_mode(custom_ethermint):
     sleep = 1
     for i in range(max_retry):
         rsp = grpc_eth_call(api_port, msg)
-        print(i, rsp)
         assert "code" not in rsp, str(rsp)
         ret = rsp["ret"]
         valid = ret is not None
@@ -76,7 +75,7 @@ def test_grpc_mode(custom_ethermint):
             break
         time.sleep(sleep)
     assert success
-    # wait 1 more block to avoid both nodes stopped before tnx included
+    # wait 1 more block for both nodes to avoid node stopped before tnx get included
     for i in range(2):
         wait_for_block(custom_ethermint.cosmos_cli(i), 1)
     supervisorctl(
@@ -84,6 +83,7 @@ def test_grpc_mode(custom_ethermint):
     )
 
     # run grpc-only mode directly with existing chain state
+    # rename as node1-new.log to avoid overwrite previous node's log file after restart
     with (custom_ethermint.base_dir / "node1-new.log").open("w") as logfile:
         proc = subprocess.Popen(
             [

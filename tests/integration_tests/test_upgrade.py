@@ -140,7 +140,7 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
     cli = custom_ethermint.cosmos_cli()
 
     # block should pass the target height
-    wait_for_block(cli, target_height + 2, timeout=480)
+    wait_for_block(cli, target_height + 1, timeout=480)
     wait_for_port(ports.rpc_port(custom_ethermint.base_port(0)))
 
     # test migrate keystore
