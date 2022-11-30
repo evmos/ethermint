@@ -63,7 +63,9 @@ def test_grpc_mode(custom_ethermint):
     api_port = ports.api_port(custom_ethermint.base_port(1))
     # in normal mode, grpc query works even if we don't pass chain_id explicitly
     success = False
-    for i in range(3):
+    max_retry = 3
+    sleep = 1
+    for i in range(max_retry):
         rsp = grpc_eth_call(api_port, msg)
         print(i, rsp)
         assert "code" not in rsp, str(rsp)
@@ -72,9 +74,9 @@ def test_grpc_mode(custom_ethermint):
         if valid and 9000 == int.from_bytes(base64.b64decode(ret.encode()), "big"):
             success = True
             break
-        time.sleep(1)
+        time.sleep(sleep)
     assert success
-    # wait 1 block before stop
+    # wait 1 more block to avoid both nodes stopped before tnx included
     for i in range(2):
         wait_for_block(custom_ethermint.cosmos_cli(i), 1)
     supervisorctl(
