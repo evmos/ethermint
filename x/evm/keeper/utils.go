@@ -11,19 +11,41 @@ import (
 
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-// DeductTxCostsFromUserBalance it calculates the tx costs and deducts the fees
-func (k Keeper) DeductTxCostsFromUserBalance(
+// DeductTxCostsFromUserBalance deducts the fees from the user balance. Returns an
+// error if the specified sender address does not exist or the account balance is not sufficient.
+func (k *Keeper) DeductTxCostsFromUserBalance(
 	ctx sdk.Context,
-	msgEthTx evmtypes.MsgEthereumTx,
+	fees sdk.Coins,
+	from common.Address,
+) error {
+	// fetch sender account
+	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, from.Bytes())
+	if err != nil {
+		return errorsmod.Wrapf(err, "account not found for sender %s", from)
+	}
+
+	// deduct the full gas cost from the user balance
+	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
+		return errorsmod.Wrapf(err, "failed to deduct full gas cost %s from the user %s balance", fees, from)
+	}
+
+	return nil
+}
+
+// VerifyFee is used to return the fee for the given transaction data in sdk.Coins. It checks that the
+// gas limit is not reached, the gas limit is higher than the intrinsic gas and that the
+// base fee is higher than the gas fee cap.
+func VerifyFee(
 	txData evmtypes.TxData,
 	denom string,
 	baseFee *big.Int,
-	homestead, istanbul, london bool,
-) (fees sdk.Coins, err error) {
+	homestead, istanbul, isCheckTx bool,
+) (sdk.Coins, error) {
 	isContractCreation := txData.GetTo() == nil
 
 	gasLimit := txData.GetGas()
@@ -43,7 +65,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 	}
 
 	// intrinsic gas verification during CheckTx
-	if ctx.IsCheckTx() && gasLimit < intrinsicGas {
+	if isCheckTx && gasLimit < intrinsicGas {
 		return nil, errorsmod.Wrapf(
 			errortypes.ErrOutOfGas,
 			"gas limit too low: %d (gas limit) < %d (intrinsic gas)", gasLimit, intrinsicGas,
@@ -63,24 +85,7 @@ func (k Keeper) DeductTxCostsFromUserBalance(
 		return sdk.Coins{}, nil
 	}
 
-	fees = sdk.Coins{{Denom: denom, Amount: sdkmath.NewIntFromBigInt(feeAmt)}}
-
-	// fetch sender account from signature
-	signerAcc, err := authante.GetSignerAcc(ctx, k.accountKeeper, msgEthTx.GetFrom())
-	if err != nil {
-		return nil, errorsmod.Wrapf(err, "account not found for sender %s", msgEthTx.From)
-	}
-
-	// deduct the full gas cost from the user balance
-	if err := authante.DeductFees(k.bankKeeper, ctx, signerAcc, fees); err != nil {
-		return nil, errorsmod.Wrapf(
-			err,
-			"failed to deduct full gas cost %s from the user %s balance",
-			fees, msgEthTx.From,
-		)
-	}
-
-	return fees, nil
+	return sdk.Coins{{Denom: denom, Amount: sdkmath.NewIntFromBigInt(feeAmt)}}, nil
 }
 
 // CheckSenderBalance validates that the tx cost value is positive and that the
