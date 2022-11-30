@@ -21,6 +21,10 @@ def test_pending_transaction_filter(cluster):
     txhash = send_successful_transaction(w3)
     assert txhash in flt.get_new_entries()
 
+    # check if tx_hash is valid
+    tx = w3.eth.get_transaction(txhash)
+    assert tx.hash == txhash
+
     # without new txs since last call
     assert flt.get_new_entries() == []
 
@@ -34,8 +38,14 @@ def test_block_filter(cluster):
 
     # with tx
     send_successful_transaction(w3)
-    blocks = flt.get_new_entries()
-    assert len(blocks) >= 1
+    block_hashes = flt.get_new_entries()
+    assert len(block_hashes) >= 1
+
+    # check if the returned block hash is correct
+    # getBlockByHash
+    block = w3.eth.get_block(block_hashes[0])
+    # block should exist
+    assert block.hash == block_hashes[0]
 
     # without new txs since last call
     assert flt.get_new_entries() == []
