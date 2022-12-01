@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+
 	"github.com/evmos/ethermint/x/feemarket/types"
 
 	sdkmath "cosmossdk.io/math"
@@ -14,7 +15,7 @@ var _ types.LegacyParams = &Params{}
 
 // Parameter keys
 var (
-	ParamsKey                             = []byte{0x01}
+	ParamsKey                             = []byte("Params")
 	ParamStoreKeyNoBaseFee                = []byte("NoBaseFee")
 	ParamStoreKeyBaseFeeChangeDenominator = []byte("BaseFeeChangeDenominator")
 	ParamStoreKeyElasticityMultiplier     = []byte("ElasticityMultiplier")
