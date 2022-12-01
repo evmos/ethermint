@@ -20,8 +20,8 @@ schema = 3
     version = "v1.0.0-beta.7"
     hash = "sha256-XblGvIx6Wvvq6wggXjp+KbeJGXoe7AZH7hXEdauCezU="
   [mod."cosmossdk.io/math"]
-    version = "v1.0.0-beta.3"
-    hash = "sha256-lTQ27ZlL+kWlc+S//sJmyiOwaf9qS+YLv61I4OXi9XE="
+    version = "v1.0.0-beta.4"
+    hash = "sha256-UYdq/46EubyjxkldGike8FlwJLWGCB576VB7th285ao="
   [mod."filippo.io/edwards25519"]
     version = "v1.0.0-rc.1"
     hash = "sha256-3DboBqby2ejRU33FG96Z8JF5AJ8HP2rC/v++VyoQ2LQ="
