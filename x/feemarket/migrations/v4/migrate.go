@@ -31,7 +31,7 @@ func MigrateStore(
 		return err
 	}
 
-	store.Set(v4types.ParamsKey, bz)
+	store.Set(types.ParamsKey, bz)
 
 	return nil
 }
