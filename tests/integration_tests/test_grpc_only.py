@@ -83,8 +83,7 @@ def test_grpc_mode(custom_ethermint):
     )
 
     # run grpc-only mode directly with existing chain state
-    # rename as node1-new.log to avoid overwrite previous node's log file after restart
-    with (custom_ethermint.base_dir / "node1-new.log").open("w") as logfile:
+    with (custom_ethermint.base_dir / "node1.log").open("a") as logfile:
         proc = subprocess.Popen(
             [
                 "ethermintd",
