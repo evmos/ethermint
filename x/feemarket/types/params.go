@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-var ParamsKey = []byte("ParamsKey")
+var ParamsKey = []byte{0x01}
 
 var (
 	// DefaultMinGasMultiplier is 0.5 or 50%

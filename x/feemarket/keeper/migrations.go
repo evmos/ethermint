@@ -20,7 +20,7 @@ func NewMigrator(keeper Keeper, legacySubspace types.Subspace) Migrator {
 	}
 }
 
-// Migrate3to4 migrates the store from consensus version v3 to v4
+// Migrate3to4 migrates the store from consensus version 3 to 4
 func (m Migrator) Migrate3to4(ctx sdk.Context) error {
 	return v4.MigrateStore(ctx, m.keeper.storeKey, m.legacySubspace, m.keeper.cdc)
 }

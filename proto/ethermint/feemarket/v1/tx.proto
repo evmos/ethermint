@@ -21,7 +21,7 @@ service Msg {
   };
 }
 
-// MsgUpdateParams is the Msg/UpdateParams request type for Erc20 parameters.
+//  MsgUpdateParams defines a Msg for updating the x/feemarket module parameters.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
   // authority is the address of the governance account.

@@ -9,9 +9,10 @@ import (
 	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
-// UpdateParams implements the gRPC MsgServer interface.After a successful governance vote
-// it updates the parameters in the keeper only if the requested authority
-// is the Cosmos SDK governance module account
+// UpdateParams implements the gRPC MsgServer interface. When an UpdateParams
+// proposal passes, it updates the module parameters. The update can only be
+// performed if the requested authority is the Cosmos SDK governance module
+// account.
 func (k *Keeper) UpdateParams(goCtx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 	if k.authority != req.Authority {
 		return nil, errors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.authority, req.Authority)
