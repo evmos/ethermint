@@ -56,8 +56,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
 * (evm) [#1405](https://github.com/evmos/ethermint/pull/1405) Add parameter `chainID` to evm keeper's `EVMConfig` method, so caller can choose to not use the cached `eip155ChainID`.
 
+### Features
+
+- (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
+
 ### Improvements
 
+* (tests) [#1507](https://github.com/evmos/ethermint/pull/1507) Remove legacy sim tests
+* (feemarket) [#1508](https://github.com/evmos/ethermint/pull/1508) Remove old x/params migration logic
+* (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block
 * (ante) [#1455](https://github.com/evmos/ethermint/pull/1455) Refactor `AnteHandler` logic
 * (evm) [#1444](https://github.com/evmos/ethermint/pull/1444) Improve performance of `eth_estimateGas`
 * (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
@@ -80,6 +87,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (app) [#1505](https://github.com/evmos/ethermint/pull/1505) Setup gRPC node service with the application.
+* (server) [#1497](https://github.com/evmos/ethermint/pull/1497) Fix telemetry server setup for observability
 * (rpc) [#1442](https://github.com/evmos/ethermint/pull/1442) Fix decoding of `finalized` block number.
 * (rpc) [#1179](https://github.com/evmos/ethermint/pull/1179) Fix gas used in traceTransaction response.
 * (rpc) [#1284](https://github.com/evmos/ethermint/pull/1284) Fix internal trace response upon incomplete `eth_sendTransaction` call.
@@ -93,6 +102,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1405](https://github.com/evmos/ethermint/pull/1405) Fix uninitialized chain ID field in gRPC requests.
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
 * (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
+* (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
 
 
 ## [v0.19.3] - 2022-10-14
