@@ -56,6 +56,7 @@ def test_basic(cluster):
     w3 = cluster.w3
     assert w3.eth.chain_id == 9000
 
+
 # Smart contract names
 GREETER_CONTRACT = "Greeter"
 ERC20_CONTRACT = "TestERC20A"
