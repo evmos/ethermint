@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"math/rand"
 	"time"
 
 	"cosmossdk.io/simapp"
@@ -11,29 +10,19 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
-	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	ethermint "github.com/evmos/ethermint/types"
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
-
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	log "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
 	simapputil "github.com/cosmos/cosmos-sdk/testutil/sims"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
-	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // DefaultConsensusParams defines the default Tendermint consensus params used in
@@ -92,96 +81,6 @@ func SetupWithDB(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.Genesis
 	}
 
 	return app
-}
-
-// RandomEthGenesisAccounts is used by the auth module to create random genesis accounts in simulation when a genesis.json is not specified.
-// In contrast, the default auth module's RandomEthGenesisAccounts implementation creates only base accounts and vestings accounts.
-func RandomEthGenesisAccounts(simState *module.SimulationState) authtypes.GenesisAccounts {
-	emptyCodeHash := crypto.Keccak256(nil)
-	genesisAccs := make(authtypes.GenesisAccounts, len(simState.Accounts))
-	for i, acc := range simState.Accounts {
-		bacc := authtypes.NewBaseAccountWithAddress(acc.Address)
-
-		ethacc := &ethermint.EthAccount{
-			BaseAccount: bacc,
-			CodeHash:    common.BytesToHash(emptyCodeHash).String(),
-		}
-		genesisAccs[i] = ethacc
-	}
-
-	return genesisAccs
-}
-
-// RandomAccounts creates random accounts with an ethsecp256k1 private key
-// TODO: replace secp256k1.GenPrivKeyFromSecret() with similar function in go-ethereum
-func RandomAccounts(r *rand.Rand, n int) []simtypes.Account {
-	accs := make([]simtypes.Account, n)
-
-	for i := 0; i < n; i++ {
-		// don't need that much entropy for simulation
-		privkeySeed := make([]byte, 15)
-		_, _ = r.Read(privkeySeed)
-
-		prv := secp256k1.GenPrivKeyFromSecret(privkeySeed)
-		ethPrv := &ethsecp256k1.PrivKey{}
-		_ = ethPrv.UnmarshalAmino(prv.Bytes()) // UnmarshalAmino simply copies the bytes and assigns them to ethPrv.Key
-		accs[i].PrivKey = ethPrv
-		accs[i].PubKey = accs[i].PrivKey.PubKey()
-		accs[i].Address = sdk.AccAddress(accs[i].PubKey.Address())
-
-		accs[i].ConsKey = ed25519.GenPrivKeyFromSecret(privkeySeed)
-	}
-
-	return accs
-}
-
-// StateFn returns the initial application state using a genesis or the simulation parameters.
-// It is a wrapper of simapp.AppStateFn to replace evm param EvmDenom with staking param BondDenom.
-func StateFn(cdc codec.JSONCodec, simManager *module.SimulationManager) simtypes.AppStateFn {
-	return func(r *rand.Rand, accs []simtypes.Account, config simtypes.Config,
-	) (appState json.RawMessage, simAccs []simtypes.Account, chainID string, genesisTimestamp time.Time) {
-		appStateFn := simapp.AppStateFn(cdc, simManager)
-		appState, simAccs, chainID, genesisTimestamp = appStateFn(r, accs, config)
-
-		rawState := make(map[string]json.RawMessage)
-		err := json.Unmarshal(appState, &rawState)
-		if err != nil {
-			panic(err)
-		}
-
-		stakingStateBz, ok := rawState[stakingtypes.ModuleName]
-		if !ok {
-			panic("staking genesis state is missing")
-		}
-
-		stakingState := new(stakingtypes.GenesisState)
-		cdc.MustUnmarshalJSON(stakingStateBz, stakingState)
-
-		// we should get the BondDenom and make it the evmdenom.
-		// thus simulation accounts could have positive amount of gas token.
-		bondDenom := stakingState.Params.BondDenom
-
-		evmStateBz, ok := rawState[evmtypes.ModuleName]
-		if !ok {
-			panic("evm genesis state is missing")
-		}
-
-		evmState := new(evmtypes.GenesisState)
-		cdc.MustUnmarshalJSON(evmStateBz, evmState)
-
-		// we should replace the EvmDenom with BondDenom
-		evmState.Params.EvmDenom = bondDenom
-
-		// change appState back
-		rawState[evmtypes.ModuleName] = cdc.MustMarshalJSON(evmState)
-
-		// replace appstate
-		appState, err = json.Marshal(rawState)
-		if err != nil {
-			panic(err)
-		}
-		return appState, simAccs, chainID, genesisTimestamp
-	}
 }
 
 // NewTestGenesisState generate genesis state with single validator

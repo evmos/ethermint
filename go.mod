@@ -3,9 +3,9 @@ module github.com/evmos/ethermint
 go 1.19
 
 require (
-	cosmossdk.io/api v0.2.4
+	cosmossdk.io/api v0.2.4 // indirect
 	cosmossdk.io/errors v1.0.0-beta.7
-	cosmossdk.io/math v1.0.0-beta.3
+	cosmossdk.io/math v1.0.0-beta.4
 	cosmossdk.io/simapp v0.0.0-20221103182213-3034a9d54a62
 	cosmossdk.io/tools/rosetta v0.1.0
 	github.com/armon/go-metrics v0.4.1
