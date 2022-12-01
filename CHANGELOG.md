@@ -50,7 +50,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
 * (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
 * (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
-* (evm) [#1413](https://github.com/evmos/ethermint/pull/1521) Deprecate support for legacy EIP-712 signature verification. 
 
 ### API Breaking
 
@@ -104,6 +103,9 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
 * (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
+
+### Deprecated
+* (evm) [#1413](https://github.com/evmos/ethermint/pull/1521) Deprecating support for legacy EIP-712 signature verification implementation. 
 
 
 ## [v0.19.3] - 2022-10-14

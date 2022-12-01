@@ -10,9 +10,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	ibcante "github.com/cosmos/ibc-go/v5/modules/core/ante"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -32,10 +34,35 @@ func init() {
 	ethermintCodec = codec.NewProtoCodec(registry)
 }
 
-// LegacyEip712SigVerificationDecorator Verify all signatures for a tx and return an error if any are invalid. Note,
+// DEPRECATED: NewLegacyCosmosAnteHandlerEip712 creates an AnteHandler to process legacy EIP-712
+// transactions, as defined by the presence of an ExtensionOptionsWeb3Tx extension.
+func NewLegacyCosmosAnteHandlerEip712(options HandlerOptions) sdk.AnteHandler {
+	return sdk.ChainAnteDecorators(
+		RejectMessagesDecorator{}, // reject MsgEthereumTxs
+		ante.NewSetUpContextDecorator(),
+		// NOTE: extensions option decorator removed
+		// ante.NewRejectExtensionOptionsDecorator(),
+		ante.NewValidateBasicDecorator(),
+		ante.NewTxTimeoutHeightDecorator(),
+		NewMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),
+		ante.NewValidateMemoDecorator(options.AccountKeeper),
+		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
+		ante.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker),
+		// SetPubKeyDecorator must be called before all signature verification decorators
+		ante.NewSetPubKeyDecorator(options.AccountKeeper),
+		ante.NewValidateSigCountDecorator(options.AccountKeeper),
+		ante.NewSigGasConsumeDecorator(options.AccountKeeper, options.SigGasConsumer),
+		// Note: signature verification uses EIP instead of the cosmos signature validator
+		NewLegacyEip712SigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
+		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
+		ibcante.NewRedundantRelayDecorator(options.IBCKeeper),
+		NewGasWantedDecorator(options.EvmKeeper, options.FeeMarketKeeper),
+	)
+}
+
+// DEPRECATED: LegacyEip712SigVerificationDecorator Verify all signatures for a tx and return an error if any are invalid. Note,
 // the LegacyEip712SigVerificationDecorator decorator will not get executed on ReCheck.
-// As of v0.20.0, this is now a Legacy implementation, and EIP-712 signature verification is handled by the ethsecp256k1 key
-// (see ethsecp256k1.go)
+// NOTE: As of v0.20.0, EIP-712 signature verification is handled by the ethsecp256k1 public key (see ethsecp256k1.go)
 //
 // CONTRACT: Pubkeys are set in context for all signers before this decorator runs
 // CONTRACT: Tx must implement SigVerifiableTx interface
@@ -44,7 +71,7 @@ type LegacyEip712SigVerificationDecorator struct {
 	signModeHandler authsigning.SignModeHandler
 }
 
-// NewLegacyEip712SigVerificationDecorator creates a new LegacyEip712SigVerificationDecorator
+// DEPRECATED: NewLegacyEip712SigVerificationDecorator creates a new LegacyEip712SigVerificationDecorator
 func NewLegacyEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandler authsigning.SignModeHandler) LegacyEip712SigVerificationDecorator {
 	return LegacyEip712SigVerificationDecorator{
 		ak:              ak,
