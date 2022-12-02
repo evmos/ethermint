@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
@@ -69,8 +68,11 @@ type LegacyEip712SigVerificationDecorator struct {
 	signModeHandler authsigning.SignModeHandler
 }
 
-// DEPRECATED: NewLegacyEip712SigVerificationDecorator creates a new LegacyEip712SigVerificationDecorator
-func NewLegacyEip712SigVerificationDecorator(ak evmtypes.AccountKeeper, signModeHandler authsigning.SignModeHandler) LegacyEip712SigVerificationDecorator {
+// Deprecated: NewLegacyEip712SigVerificationDecorator creates a new LegacyEip712SigVerificationDecorator
+func NewLegacyEip712SigVerificationDecorator(
+	ak evmtypes.AccountKeeper,
+	signModeHandler authsigning.SignModeHandler,
+) LegacyEip712SigVerificationDecorator {
 	return LegacyEip712SigVerificationDecorator{
 		ak:              ak,
 		signModeHandler: signModeHandler,
