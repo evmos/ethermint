@@ -40,7 +40,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-* (deps) [#1419](https://github.com/evmos/ethermint/pull/1419) Add ics23 patch for dragonberry and bump iavl to v0.19.4
 * (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
 * (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.6).
@@ -54,12 +53,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (ante) [#1521](https://github.com/evmos/ethermint/pull/1521) Deprecate support for legacy EIP-712 signature verification implementation via AnteHandler decorator. 
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
 * (evm) [#1405](https://github.com/evmos/ethermint/pull/1405) Add parameter `chainID` to evm keeper's `EVMConfig` method, so caller can choose to not use the cached `eip155ChainID`.
 
 ### Features
 
-- (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
+* (ci) [#1528](https://github.com/evmos/ethermint/pull/1528) Add Golang dependency vulnerability checker.
+* (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
 
 ### Improvements
 
