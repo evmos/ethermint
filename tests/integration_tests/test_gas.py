@@ -103,7 +103,4 @@ def test_block_gas_limit(ethermint):
         (ethermint.w3.eth.wait_for_transaction_receipt(ethermint_txhash))
 
 
-# todo: implement block gas limit being checked for sum of block transactions
-# requires the ability to send batch transactions with web3.py
-def test_many_block_gas_limit(ethermint):
     return
