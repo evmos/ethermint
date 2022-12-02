@@ -50,6 +50,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
 * (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
 * (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
+* (deps) [#1419](https://github.com/evmos/ethermint/pull/1419) Add ics23 patch for dragonberry and bump iavl to v0.19.4
 
 ### API Breaking
 
