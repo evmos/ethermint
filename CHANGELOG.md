@@ -59,7 +59,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Features
 
-- (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
+* (ci) [#1528](https://github.com/evmos/ethermint/pull/1528) Add Golang dependency vulnerability checker.
+* (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
 
 ### Improvements
 
