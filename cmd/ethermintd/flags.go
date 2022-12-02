@@ -8,9 +8,7 @@ import (
 	"github.com/evmos/ethermint/version"
 )
 
-const (
-	flagLong = "long"
-)
+const flagLong = "long"
 
 func init() {
 	infoCmd.Flags().Bool(flagLong, false, "Print full information")
