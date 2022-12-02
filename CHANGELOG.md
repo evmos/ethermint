@@ -53,6 +53,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (ante) [#1413](https://github.com/evmos/ethermint/pull/1521) Deprecate support for legacy EIP-712 signature verification implementation via AnteHandler decorator. 
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
 * (evm) [#1405](https://github.com/evmos/ethermint/pull/1405) Add parameter `chainID` to evm keeper's `EVMConfig` method, so caller can choose to not use the cached `eip155ChainID`.
 
@@ -103,9 +104,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
 * (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
-
-### Deprecated
-* (evm) [#1413](https://github.com/evmos/ethermint/pull/1521) Deprecating support for legacy EIP-712 signature verification implementation. 
 
 
 ## [v0.19.3] - 2022-10-14
