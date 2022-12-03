@@ -87,27 +87,3 @@ func newCosmosAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		NewGasWantedDecorator(options.EvmKeeper, options.FeeMarketKeeper),
 	)
 }
-
-func newCosmosAnteHandlerEip712(options HandlerOptions) sdk.AnteHandler {
-	return sdk.ChainAnteDecorators(
-		RejectMessagesDecorator{}, // reject MsgEthereumTxs
-		ante.NewSetUpContextDecorator(),
-		// NOTE: extensions option decorator removed
-		// ante.NewRejectExtensionOptionsDecorator(),
-		ante.NewValidateBasicDecorator(),
-		ante.NewTxTimeoutHeightDecorator(),
-		NewMinGasPriceDecorator(options.FeeMarketKeeper, options.EvmKeeper),
-		ante.NewValidateMemoDecorator(options.AccountKeeper),
-		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
-		ante.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker),
-		// SetPubKeyDecorator must be called before all signature verification decorators
-		ante.NewSetPubKeyDecorator(options.AccountKeeper),
-		ante.NewValidateSigCountDecorator(options.AccountKeeper),
-		ante.NewSigGasConsumeDecorator(options.AccountKeeper, options.SigGasConsumer),
-		// Note: signature verification uses EIP instead of the cosmos signature validator
-		NewEip712SigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
-		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
-		ibcante.NewRedundantRelayDecorator(options.IBCKeeper),
-		NewGasWantedDecorator(options.EvmKeeper, options.FeeMarketKeeper),
-	)
-}

@@ -155,7 +155,7 @@ clean:
 
 all: build
 
-build-all: tools build lint test
+build-all: tools build lint test vulncheck
 
 .PHONY: distclean clean build-all
 
@@ -271,6 +271,10 @@ tools-clean:
 go.sum: go.mod
 	echo "Ensure dependencies have not been modified ..." >&2
 	go mod tidy
+
+vulncheck: $(BUILDDIR)/
+	GOBIN=$(BUILDDIR) go install golang.org/x/vuln/cmd/govulncheck@latest
+	$(BUILDDIR)/govulncheck ./...
 
 ###############################################################################
 ###                              Documentation                              ###
