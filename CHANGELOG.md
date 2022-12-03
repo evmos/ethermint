@@ -53,12 +53,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### API Breaking
 
+* (ante) [#1521](https://github.com/evmos/ethermint/pull/1521) Deprecate support for legacy EIP-712 signature verification implementation via AnteHandler decorator. 
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
 * (evm) [#1405](https://github.com/evmos/ethermint/pull/1405) Add parameter `chainID` to evm keeper's `EVMConfig` method, so caller can choose to not use the cached `eip155ChainID`.
 
 ### Features
 
-- (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
+* (ci) [#1528](https://github.com/evmos/ethermint/pull/1528) Add Golang dependency vulnerability checker.
+* (app) [#1501](https://github.com/evmos/ethermint/pull/1501) Set default File store listener for application from [ADR38](https://docs.cosmos.network/v0.47/architecture/adr-038-state-listening)
 
 ### Improvements
 
