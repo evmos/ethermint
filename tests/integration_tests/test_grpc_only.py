@@ -67,7 +67,6 @@ def test_grpc_mode(custom_ethermint):
     sleep = 1
     for i in range(max_retry):
         rsp = grpc_eth_call(api_port, msg)
-        assert "code" not in rsp, str(rsp)
         ret = rsp["ret"]
         valid = ret is not None
         if valid and 9000 == int.from_bytes(base64.b64decode(ret.encode()), "big"):
