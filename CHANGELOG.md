@@ -49,7 +49,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712. 
 * (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
 * (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
-* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
+* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.25`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.25).
 
 ### API Breaking
 
@@ -86,6 +86,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (deps) [#1416](https://github.com/evmos/ethermint/pull/1416) Bump Go version to `1.19`
 * (cmd) [\#1417](https://github.com/evmos/ethermint/pull/1417) Apply Google CLI Syntax for required and optional args.
 * (deps) [#1456](https://github.com/evmos/ethermint/pull/1456) Migrate errors-related functionality from "github.com/cosmos/cosmos-sdk/types/errors" (deprecated) to "cosmossdk.io/errors"
+* (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
 
 ### Bug Fixes
 
