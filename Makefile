@@ -155,7 +155,7 @@ clean:
 
 all: build
 
-build-all: tools build lint test
+build-all: tools build lint test vulncheck
 
 .PHONY: distclean clean build-all
 
@@ -273,6 +273,10 @@ go.sum: go.mod
 	go mod verify
 	go mod tidy
 
+vulncheck: $(BUILDDIR)/
+	GOBIN=$(BUILDDIR) go install golang.org/x/vuln/cmd/govulncheck@latest
+	$(BUILDDIR)/govulncheck ./...
+
 ###############################################################################
 ###                              Documentation                              ###
 ###############################################################################
@@ -343,51 +347,6 @@ test-solidity:
 
 .PHONY: run-tests test test-all test-import test-rpc test-contract test-solidity $(TEST_TARGETS)
 
-test-sim-nondeterminism:
-	@echo "Running non-determinism test..."
-	@go test -mod=readonly $(SIMAPP) -run TestAppStateDeterminism -Enabled=true \
-		-NumBlocks=100 -BlockSize=200 -Commit=true -Period=0 -v -timeout 24h
-
-test-sim-random-genesis-fast:
-	@echo "Running random genesis simulation..."
-	@go test -mod=readonly $(SIMAPP) -run TestFullAppSimulation \
-		-Enabled=true -NumBlocks=100 -BlockSize=200 -Commit=true -Seed=99 -Period=5 -v -timeout 24h
-
-test-sim-import-export: runsim
-	@echo "Running application import/export simulation. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestAppImportExport
-
-test-sim-after-import: runsim
-	@echo "Running application simulation-after-import. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestAppSimulationAfterImport
-
-test-sim-random-genesis-multi-seed: runsim
-	@echo "Running multi-seed custom genesis simulation..."
-	@$(BINDIR)/runsim -SimAppPkg=$(SIMAPP) -ExitOnFail 400 5 TestFullAppSimulation
-
-test-sim-multi-seed-long: runsim
-	@echo "Running long multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 500 50 TestFullAppSimulation
-
-test-sim-multi-seed-short: runsim
-	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 10 TestFullAppSimulation
-
-test-sim-benchmark-invariants:
-	@echo "Running simulation invariant benchmarks..."
-	@go test -mod=readonly $(SIMAPP) -benchmem -bench=BenchmarkInvariants -run=^$ \
-	-Enabled=true -NumBlocks=1000 -BlockSize=200 \
-	-Period=1 -Commit=true -Seed=57 -v -timeout 24h
-
-.PHONY: \
-test-sim-nondeterminism \
-test-sim-custom-genesis-fast \
-test-sim-import-export \
-test-sim-after-import \
-test-sim-custom-genesis-multi-seed \
-test-sim-multi-seed-short \
-test-sim-multi-seed-long \
-test-sim-benchmark-invariants
 
 benchmark:
 	@go test -mod=readonly -bench=. $(PACKAGES_NOSIMULATION)
@@ -437,9 +396,17 @@ protoImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /
 protoCosmosVer=0.11.2
 protoCosmosName=ghcr.io/cosmos/proto-builder:$(protoCosmosVer)
 protoCosmosImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protoCosmosName)
+# ------
+# NOTE: Link to the yoheimuta/protolint docker images:
+#       https://hub.docker.com/r/yoheimuta/protolint/tags
+#
+protolintVer=0.42.2
+protolintName=yoheimuta/protolint:$(protolintVer)
+protolintImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protolintName)
+
 
 # ------
-# NOTE: If you are experiencing problems running these commands, try deleting 
+# NOTE: If you are experiencing problems running these commands, try deleting
 #       the docker images and execute the desired command again.
 #
 proto-all: proto-format proto-lint proto-gen
@@ -448,24 +415,27 @@ proto-gen:
 	@echo "Generating Protobuf files"
 	$(protoImage) sh ./scripts/protocgen.sh
 
-proto-swagger-gen:
-	@echo "Generating Protobuf Swagger"
-	$(protoImage) sh ./scripts/protoc-swagger-gen.sh
+
+# TODO: Rethink API docs generation
+# proto-swagger-gen:
+# 	@echo "Generating Protobuf Swagger"
+# 	$(protoImage) sh ./scripts/protoc-swagger-gen.sh
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	$(protoCosmosImage) find ./ -name "*.proto" -exec clang-format -i {} \;
+	$(protoCosmosImage) find ./ -name *.proto -exec clang-format -i {} \;
 
+# NOTE: The linter configuration lives in .protolint.yaml
 proto-lint:
 	@echo "Linting Protobuf files"
-	$(protoImage) buf lint --error-format=json
+	$(protolintImage) lint ./proto
 
 proto-check-breaking:
 	@echo "Checking Protobuf files for breaking changes"
 	$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
 
 
-.PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking
+.PHONY: proto-all proto-gen proto-gen-any proto-format proto-lint proto-check-breaking
 
 ###############################################################################
 ###                                Localnet                                 ###

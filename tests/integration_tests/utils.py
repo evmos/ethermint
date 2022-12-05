@@ -30,13 +30,14 @@ TEST_CONTRACTS = {
     "Greeter": "Greeter.sol",
     "BurnGas": "BurnGas.sol",
     "TestChainID": "ChainID.sol",
+    "Mars": "Mars.sol",
 }
 
 
 def contract_path(name, filename):
     return (
         Path(__file__).parent
-        / "contracts/artifacts/contracts/"
+        / "hardhat/artifacts/contracts/"
         / filename
         / (name + ".json")
     )
@@ -64,10 +65,10 @@ def wait_for_port(port, host="127.0.0.1", timeout=40.0):
                 ) from ex
 
 
-def w3_wait_for_new_blocks(w3, n):
+def w3_wait_for_new_blocks(w3, n, sleep=0.5):
     begin_height = w3.eth.block_number
     while True:
-        time.sleep(0.5)
+        time.sleep(sleep)
         cur_height = w3.eth.block_number
         if cur_height - begin_height >= n:
             break
@@ -164,7 +165,6 @@ def sign_transaction(w3, tx, key=KEYS["validator"]):
 def send_transaction(w3, tx, key=KEYS["validator"], i=0):
     if i > 3:
         raise TimeExhausted
-
     signed = sign_transaction(w3, tx, key)
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
     try:
@@ -176,7 +176,6 @@ def send_transaction(w3, tx, key=KEYS["validator"], i=0):
 def send_successful_transaction(w3, i=0):
     if i > 3:
         raise TimeExhausted
-
     signed = sign_transaction(w3, {"to": ADDRS["community"], "value": 1000})
     txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
     try:

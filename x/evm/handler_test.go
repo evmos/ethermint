@@ -2,6 +2,7 @@ package evm_test
 
 import (
 	"errors"
+	"github.com/evmos/ethermint/x/evm/keeper"
 	"math/big"
 	"testing"
 	"time"
@@ -594,9 +595,14 @@ func (suite *EvmTestSuite) TestERC20TransferReverted() {
 
 			before := k.GetBalance(suite.ctx, suite.from)
 
+			ethCfg := suite.app.EvmKeeper.GetChainConfig(suite.ctx).EthereumConfig(nil)
+			baseFee := suite.app.EvmKeeper.GetBaseFee(suite.ctx, ethCfg)
+
 			txData, err := types.UnpackTxData(tx.Data)
 			suite.Require().NoError(err)
-			_, _, err = k.DeductTxCostsFromUserBalance(suite.ctx, *tx, txData, "aphoton", true, true, true)
+			fees, err := keeper.VerifyFee(txData, "aphoton", baseFee, true, true, suite.ctx.IsCheckTx())
+			suite.Require().NoError(err)
+			err = k.DeductTxCostsFromUserBalance(suite.ctx, fees, common.HexToAddress(tx.From))
 			suite.Require().NoError(err)
 
 			res, err := k.EthereumTx(sdk.WrapSDKContext(suite.ctx), tx)
