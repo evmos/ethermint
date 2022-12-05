@@ -1,6 +1,7 @@
+import pytest
 from web3.exceptions import TimeExhausted
 
-from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction, wait_for_transaction_receipts
+from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction, w3_wait_for_new_blocks, wait_for_transaction_receipts
 
 
 def test_gas_eth_tx(geth, ethermint):
@@ -90,7 +91,7 @@ def test_block_gas_limit(ethermint):
                 "gasPrice": ethermint_gas_price,
             }
         )
-        (ethermint.w3.eth.wait_for_transaction_receipt(ethermint_txhash))
+        wait_for_transaction_receipts(ethermint.w3, [ethermint_txhash])[0]
 
 
     return
