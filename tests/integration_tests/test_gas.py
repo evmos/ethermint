@@ -1,6 +1,6 @@
 from web3.exceptions import TimeExhausted
 
-from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction
+from .utils import ADDRS, CONTRACTS, KEYS, deploy_contract, send_transaction, wait_for_transaction_receipts
 
 
 def test_gas_eth_tx(geth, ethermint):
@@ -32,21 +32,11 @@ def test_gas_deployment(geth, ethermint):
     assert geth_contract_receipt.gasUsed == ethermint_contract_receipt.gasUsed
 
 
-def get_gas(w3, contract, i=0):
-    if i > 3:
-        raise TimeExhausted
-    function_input = 10
-    gas_price = w3.eth.gas_price
-    geth_txhash = (contract.functions
-                   .burnGas(function_input)
-                   .transact({'from': ADDRS["validator"], "gasPrice": gas_price}))
-    try:
-        return w3.eth.wait_for_transaction_receipt(geth_txhash, timeout=20)
-    except TimeExhausted:
-        return get_gas(w3, contract, i + 1)
-
-
 def test_gas_call(geth, ethermint):
+    function_input = 10
+    geth_gas_price = geth.w3.eth.gas_price
+    ethermint_gas_price = ethermint.w3.eth.gas_price
+
     # deploy an identical contract on geth and ethermint
     # ensure that the contract has a function which consumes non-trivial gas
     geth_contract, _ = deploy_contract(
@@ -56,8 +46,16 @@ def test_gas_call(geth, ethermint):
         ethermint.w3,
         CONTRACTS["BurnGas"])
 
-    geth_call_receipt = get_gas(geth.w3, geth_contract)
-    ethermint_call_receipt = get_gas(ethermint.w3, ethermint_contract)
+    # get the call reciepts
+    geth_txhash = (geth_contract.functions
+                   .burnGas(function_input)
+                   .transact({'from': ADDRS["validator"], "gasPrice": geth_gas_price}))
+    geth_call_receipt = wait_for_transaction_receipts(geth.w3, [geth_txhash])[0]
+
+    ethermint_txhash = (ethermint_contract.functions
+                   .burnGas(function_input)
+                   .transact({'from': ADDRS["validator"], "gasPrice": ethermint_gas_price}))
+    ethermint_call_receipt = wait_for_transaction_receipts(ethermint.w3, [ethermint_txhash])[0]
 
     # ensure that the gasUsed is equivalent
     assert geth_call_receipt.gasUsed == ethermint_call_receipt.gasUsed

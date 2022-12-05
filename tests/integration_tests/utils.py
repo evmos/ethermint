@@ -123,6 +123,17 @@ def wait_for_block_time(cli, t):
         time.sleep(0.5)
 
 
+# takes in an array of tx hashes and waits for their reciepts
+def wait_for_transaction_receipts(w3, txhashes, i=0):
+    if i > 3:
+        return TimeExhausted
+    try:
+        return [w3.eth.wait_for_transaction_receipt(txhash, timeout=20)
+                for txhash in txhashes]
+    except TimeExhausted:
+        return wait_for_transaction_receipts(w3, txhashes, i + 1)
+
+
 def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     """
     deploy contract and return the deployed contract instance
