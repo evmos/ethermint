@@ -26,7 +26,7 @@ fee = (baseFee + priorityTip) * gasLimit
 
 where `baseFee` is the fixed-per-block network fee per gas and `priorityTip` is an additional fee per gas that can be set optionally.
 Note, that both the base fee and the priority tip are gas prices.
-To submit a transaction with EIP-1559, the signer needs to specify the `gasFeeCap`, which is the maximum fee per gas they are willing to pay total.
+To submit a transaction with EIP-1559, the signer needs to specify the `gasFeeCap`, which is the maximum fee per gas they are willing to pay in total.
 Optionally, the `priorityTip` can be specified, which covers both the priority fee and the block's network fee per gas (aka: base fee).
 
 ::: tip
