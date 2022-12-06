@@ -403,15 +403,14 @@ func (suite *EIP712TestSuite) verifyEIP712SignatureVerification(expectedSuccess 
 	// Convert to EIP712 bytes and sign
 	eip712Bytes, err := eip712.GetEIP712BytesForMsg(signBytes)
 	if !expectedSuccess {
-		// Expect failure generating EIP-712 hash
+		// Expect failure generating EIP-712 bytes
 		suite.Require().Error(err)
 		return
 	}
 
 	suite.Require().NoError(err)
 
-	eip712Hash := crypto.Keccak256Hash(eip712Bytes)
-	sig, err := privKey.Sign(eip712Hash.Bytes())
+	sig, err := privKey.Sign(eip712Bytes)
 	suite.Require().NoError(err)
 
 	// Verify against original payload bytes. This should pass, even though it is not
