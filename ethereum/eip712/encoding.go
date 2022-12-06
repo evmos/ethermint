@@ -45,12 +45,12 @@ func GetEIP712BytesForMsg(signDocBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	rawData, _, err := apitypes.TypedDataAndHash(typedData)
+	_, rawData, err := apitypes.TypedDataAndHash(typedData)
 	if err != nil {
 		return nil, err
 	}
 
-	return rawData, nil
+	return []byte(rawData), nil
 }
 
 // GetEIP712TypedDataForMsg returns the EIP-712 TypedData representation for either
