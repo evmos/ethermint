@@ -47,7 +47,7 @@ func GetEIP712BytesForMsg(signDocBytes []byte) ([]byte, error) {
 
 	_, rawData, err := apitypes.TypedDataAndHash(typedData)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not get EIP-712 object bytes: %w", err)
 	}
 
 	return []byte(rawData), nil
