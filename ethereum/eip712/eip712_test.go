@@ -401,7 +401,7 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 // Verify that the payload passes signature verification if signed as its EIP-712 representation.
 func (suite *EIP712TestSuite) verifyEIP712SignatureVerification(expectedSuccess bool, privKey ethsecp256k1.PrivKey, pubKey ethsecp256k1.PubKey, signBytes []byte) {
 	// Convert to EIP712 hash and sign
-	eip712Hash, err := eip712.GetEIP712HashForMsg(signBytes)
+	eip712Hash, err := eip712.GetEIP712BytesForMsg(signBytes)
 	if !expectedSuccess {
 		// Expect failure generating EIP-712 hash
 		suite.Require().Error(err)

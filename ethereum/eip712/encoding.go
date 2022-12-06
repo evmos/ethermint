@@ -36,25 +36,19 @@ func SetEncodingConfig(cfg params.EncodingConfig) {
 	protoCodec = codec.NewProtoCodec(cfg.InterfaceRegistry)
 }
 
-// Get the EIP-712 object hash for the given SignDoc bytes by first decoding the bytes into
+// Get the EIP-712 object bytes for the given SignDoc bytes by first decoding the bytes into
 // an EIP-712 object, then hashing the EIP-712 object to create the bytes to be signed.
 // See https://eips.ethereum.org/EIPS/eip-712 for more.
-func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
+func GetEIP712BytesForMsg(signDocBytes []byte) ([]byte, error) {
 	typedData, err := GetEIP712TypedDataForMsg(signDocBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	rawData, _, err := apitypes.TypedDataAndHash(typedData)
 	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 domain: %w", err)
+		return nil, err
 	}
-
-	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
-	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 primary type: %w", err)
-	}
-	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 
 	return rawData, nil
 }
@@ -98,11 +92,9 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Validate payload messages
 	msgs := make([]sdk.Msg, len(aminoDoc.Msgs))
 	for i, jsonMsg := range aminoDoc.Msgs {
-		var m sdk.Msg
-		if err := aminoCodec.UnmarshalJSON(jsonMsg, &m); err != nil {
+		if err := aminoCodec.UnmarshalJSON(jsonMsg, &msgs[i]); err != nil {
 			return apitypes.TypedData{}, fmt.Errorf("failed to unmarshal sign doc message: %w", err)
 		}
-		msgs[i] = m
 	}
 
 	if err := validatePayloadMessages(msgs); err != nil {
@@ -167,11 +159,9 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Validate payload messages
 	msgs := make([]sdk.Msg, len(body.Messages))
 	for i, protoMsg := range body.Messages {
-		var m sdk.Msg
-		if err := protoCodec.UnpackAny(protoMsg, &m); err != nil {
+		if err := protoCodec.UnpackAny(protoMsg, &msgs[i]); err != nil {
 			return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w", err)
 		}
-		msgs[i] = m
 	}
 
 	if err := validatePayloadMessages(msgs); err != nil {
