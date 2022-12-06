@@ -92,9 +92,11 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Validate payload messages
 	msgs := make([]sdk.Msg, len(aminoDoc.Msgs))
 	for i, jsonMsg := range aminoDoc.Msgs {
-		if err := aminoCodec.UnmarshalJSON(jsonMsg, &msgs[i]); err != nil {
+		var m sdk.Msg
+		if err := aminoCodec.UnmarshalJSON(jsonMsg, &m); err != nil {
 			return apitypes.TypedData{}, fmt.Errorf("failed to unmarshal sign doc message: %w", err)
 		}
+		msgs[i] = m
 	}
 
 	if err := validatePayloadMessages(msgs); err != nil {
@@ -159,9 +161,11 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	// Validate payload messages
 	msgs := make([]sdk.Msg, len(body.Messages))
 	for i, protoMsg := range body.Messages {
-		if err := protoCodec.UnpackAny(protoMsg, &msgs[i]); err != nil {
+		var m sdk.Msg
+		if err := protoCodec.UnpackAny(protoMsg, &m); err != nil {
 			return apitypes.TypedData{}, fmt.Errorf("could not unpack message object with error %w", err)
 		}
+		msgs[i] = m
 	}
 
 	if err := validatePayloadMessages(msgs); err != nil {
