@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
 
-	apitypes "github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	ethermint "github.com/evmos/ethermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -45,18 +45,12 @@ func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	hash, _, err := apitypes.TypedDataAndHash(typedData)
 	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 domain: %w", err)
+		return nil, fmt.Errorf("could not get typed data and hash for EIP-712: %w", err)
 	}
 
-	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
-	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 primary type: %w", err)
-	}
-	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-
-	return rawData, nil
+	return hash, nil
 }
 
 // GetEIP712TypedDataForMsg returns the EIP-712 TypedData representation for either
