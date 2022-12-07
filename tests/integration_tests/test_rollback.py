@@ -41,11 +41,11 @@ def custom_ethermint(tmp_path_factory):
     cmd = [
         "nix-build",
         "--no-out-link",
-        Path(__file__).parent / "configs/broken-ethermintd.nix",
+        Path(__file__).parent / "configs/broken-entangled.nix",
     ]
     print(*cmd)
     broken_binary = (
-        Path(subprocess.check_output(cmd).strip().decode()) / "bin/ethermintd"
+        Path(subprocess.check_output(cmd).strip().decode()) / "bin/entangled"
     )
     print(broken_binary)
 
@@ -89,7 +89,7 @@ def test_rollback(custom_ethermint):
     cli2.rollback()
 
     print("switch to normal binary")
-    update_node2_cmd(custom_ethermint.base_dir, "ethermintd", 2)
+    update_node2_cmd(custom_ethermint.base_dir, "entangled", 2)
     supervisorctl(custom_ethermint.base_dir / "../tasks.ini", "update")
     wait_for_port(ports.rpc_port(custom_ethermint.base_port(2)))
 

@@ -1,8 +1,8 @@
 { pkgs ? import ../../../nix { } }:
-let ethermintd = (pkgs.callPackage ../../../. { });
+let entangled = (pkgs.callPackage ../../../. { });
 in
-ethermintd.overrideAttrs (oldAttrs: {
+entangled.overrideAttrs (oldAttrs: {
   patches = oldAttrs.patches or [ ] ++ [
-    ./broken-ethermintd.patch
+    ./broken-entangled.patch
   ];
 })

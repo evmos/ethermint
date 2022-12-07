@@ -24,7 +24,7 @@ RUN apk add --update ca-certificates jq
 WORKDIR /
 
 # Copy over binaries from the build-env
-COPY --from=build-env /go/src/github.com/Entangle-Protocol/entangle-blockchain/build/ethermintd /usr/bin/ethermintd
+COPY --from=build-env /go/src/github.com/Entangle-Protocol/entangle-blockchain/build/entangled /usr/bin/entangled
 
-# Run ethermintd by default
-CMD ["ethermintd"]
+# Run entangled by default
+CMD ["entangled"]

@@ -11,11 +11,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
 	"github.com/Entangle-Protocol/entangle-blockchain/app"
-	ethermintd "github.com/Entangle-Protocol/entangle-blockchain/cmd/ethermintd"
+	entangled "github.com/Entangle-Protocol/entangle-blockchain/cmd/entangled"
 )
 
 func TestInitCmd(t *testing.T) {
-	rootCmd, _ := ethermintd.NewRootCmd()
+	rootCmd, _ := entangled.NewRootCmd()
 	rootCmd.SetArgs([]string{
 		"init",          // Test the init cmd
 		"etherminttest", // Moniker

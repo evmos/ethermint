@@ -1,6 +1,6 @@
 dotenv: .env
 ethermint_9000-1:
-  cmd: ethermintd
+  cmd: entangled
   start-flags: "--trace"
   app-config:
     minimum-gas-prices: 0aENTGL

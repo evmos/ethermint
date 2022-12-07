@@ -2,7 +2,7 @@
 pkgs.mkShell {
   buildInputs = [
     pkgs.jq
-    (pkgs.callPackage ../../. { }) # ethermintd
+    (pkgs.callPackage ../../. { }) # entangled
     pkgs.start-scripts
     pkgs.go-ethereum
     pkgs.cosmovisor

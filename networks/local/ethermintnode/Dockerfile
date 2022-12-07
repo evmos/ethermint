@@ -22,10 +22,10 @@ WORKDIR /
 RUN apt-get update
 
 # Copy over binaries from the build-env
-COPY --from=build-env /go/src/github.com/Entangle-Protocol/entangle-blockchain/build/ethermintd /
+COPY --from=build-env /go/src/github.com/Entangle-Protocol/entangle-blockchain/build/entangled /
 COPY --from=build-env /go/src/github.com/Entangle-Protocol/entangle-blockchain/scripts/start-docker.sh /
 
 EXPOSE 26656 26657 1317 8545 8546
 
-# Run ethermintd by default, omit entrypoint to ease using container with ethermintd
+# Run entangled by default, omit entrypoint to ease using container with entangled
 ENTRYPOINT ["/bin/bash", "-c"]

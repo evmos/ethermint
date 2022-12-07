@@ -3,9 +3,9 @@ before:
   - go mod download
 
 builds:
-  - id: "ethermintd-darwin"
-    main: ./cmd/ethermintd
-    binary: bin/ethermintd
+  - id: "entangled-darwin"
+    main: ./cmd/entangled
+    binary: bin/entangled
     env:
       - CGO_ENABLED=1
       - CC=o64-clang
@@ -17,10 +17,10 @@ builds:
     flags:
         - -tags=cgo
     ldflags:
-      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
-  - id: "ethermintd-darwin-arm64"
-    main: ./cmd/ethermintd
-    binary: bin/ethermintd
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=entangled -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "entangled-darwin-arm64"
+    main: ./cmd/entangled
+    binary: bin/entangled
     env:
       - CGO_ENABLED=1
       - CC=oa64-clang
@@ -32,10 +32,10 @@ builds:
     flags:
       - -tags=cgo
     ldflags:
-      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
-  - id: "ethermintd-linux"
-    main: ./cmd/ethermintd
-    binary: bin/ethermintd
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=entangled -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "entangled-linux"
+    main: ./cmd/entangled
+    binary: bin/entangled
     env:
       - CGO_ENABLED=1
       - CC=gcc
@@ -47,10 +47,10 @@ builds:
     flags:
       - -tags=cgo
     ldflags:
-      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
-  - id: "ethermintd-linux-arm64"
-    main: ./cmd/ethermintd
-    binary: bin/ethermintd
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=entangled -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "entangled-linux-arm64"
+    main: ./cmd/entangled
+    binary: bin/entangled
     env:
       - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
@@ -62,10 +62,10 @@ builds:
     flags:
       - -tags=cgo
     ldflags:
-      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
-  - id: "ethermintd-windows"
-    main: ./cmd/ethermintd
-    binary: bin/ethermintd
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=entangled -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+  - id: "entangled-windows"
+    main: ./cmd/entangled
+    binary: bin/entangled
     env:
       - CGO_ENABLED=1
       - CC=x86_64-w64-mingw32-gcc
@@ -78,7 +78,7 @@ builds:
       - -tags=cgo
       - -buildmode=exe
     ldflags:
-      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=ethermintd -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
+      - -s -w -X github.com/cosmos/cosmos-sdk/version.Name=ethermint -X github.com/cosmos/cosmos-sdk/version.AppName=entangled -X github.com/cosmos/cosmos-sdk/version.Version={{.Version}} -X github.com/cosmos/cosmos-sdk/version.Commit={{.Commit}}
 
 archives:
 - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
@@ -91,11 +91,11 @@ archives:
     - goos: windows
       format: zip
   builds:
-  - ethermintd-darwin
-  - ethermintd-darwin-arm64
-  - ethermintd-windows
-  - ethermintd-linux
-  - ethermintd-linux-arm64
+  - entangled-darwin
+  - entangled-darwin-arm64
+  - entangled-windows
+  - entangled-linux
+  - entangled-linux-arm64
   
 checksum:
   name_template: 'checksums.txt'
