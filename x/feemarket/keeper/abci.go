@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-
 	"github.com/evmos/ethermint/x/feemarket/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -26,11 +25,8 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	}()
 
 	// Store current base fee in event
-	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeFeeMarket,
-			sdk.NewAttribute(types.AttributeKeyBaseFee, baseFee.String()),
-		),
+	_ = ctx.EventManager().EmitTypedEvent(&types.EventFeeMarket{
+		BaseFee: baseFee.String(),
 	})
 }
 
@@ -59,9 +55,8 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 		telemetry.SetGauge(float32(gasWanted), "feemarket", "block_gas")
 	}()
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		"block_gas",
-		sdk.NewAttribute("height", fmt.Sprintf("%d", ctx.BlockHeight())),
-		sdk.NewAttribute("amount", fmt.Sprintf("%d", gasWanted)),
-	))
+	_ = ctx.EventManager().EmitTypedEvents(&types.EventBlockGas{
+		Height: fmt.Sprintf("%d", ctx.BlockHeight()),
+		Amount: fmt.Sprintf("%d", gasWanted),
+	})
 }

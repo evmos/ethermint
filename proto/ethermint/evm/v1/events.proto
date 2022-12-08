@@ -37,6 +37,7 @@ message EventMessage {
   string tx_type = 3;
 }
 
+// EventBlockBloom defines the event for a Ethereum block bloom filter
 message EventBlockBloom {
   // bloom is the bloom filter of the block
   string bloom = 1;
