@@ -1,6 +1,7 @@
 #!/bin/bash
 
 KEY="mykey"
+KEY2="mykey2"
 CHAINID="ethermint_9000-1"
 MONIKER="localtestnet"
 KEYRING="test"
@@ -23,8 +24,9 @@ entangled config chain-id $CHAINID
 
 # if $KEY exists it should be deleted
 entangled keys add $KEY --keyring-backend $KEYRING --algo $KEYALGO
+entangled keys add $KEY2 --keyring-backend $KEYRING --algo $KEYALGO
 
-# Set moniker and chain-id for Ethermint (Moniker can be anything, chain-id must be an integer)
+# Set moniker and chain-id for Entangle (Moniker can be anything, chain-id must be an integer)
 entangled init $MONIKER --chain-id $CHAINID
 
 # Change parameter token denominations to aENTGL
@@ -68,7 +70,8 @@ if [[ $1 == "pending" ]]; then
 fi
 
 # Allocate genesis accounts (cosmos formatted addresses)
-entangled add-genesis-account $KEY 100000000000000000000000000aENTGL --keyring-backend $KEYRING
+entangled add-genesis-account $KEY 50000000000000000000000000aENTGL --keyring-backend $KEYRING
+entangled add-genesis-account $KEY2 50000000000000000000000000aENTGL --keyring-backend $KEYRING
 
 # Sign genesis transaction
 entangled gentx $KEY 1000000000000000000000aENTGL --keyring-backend $KEYRING --chain-id $CHAINID

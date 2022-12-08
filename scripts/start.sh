@@ -63,7 +63,7 @@ fi
 
 # Compile ethermint
 echo "compiling ethermint"
-make build-ethermint
+make build-all
 
 # PID array declaration
 arr=()

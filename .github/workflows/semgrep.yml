@@ -19,7 +19,7 @@ jobs:
     if: (github.actor != 'dependabot[bot]')
     steps:
       - name: Permission issue fix
-        run: git config --global --add safe.directory /__w/ethermint/ethermint
+        run: git config --global --add safe.directory /__w/entangle/entangle
       - uses: actions/checkout@v3
       - name: Get Diff
         uses: technote-space/get-diff-action@v6.1.1

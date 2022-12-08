@@ -7,7 +7,7 @@ let
   pname = "entangled";
   tags = [ "netgo" ];
   ldflags = lib.concatStringsSep "\n" ([
-    "-X github.com/cosmos/cosmos-sdk/version.Name=ethermint"
+    "-X github.com/cosmos/cosmos-sdk/version.Name=entangle"
     "-X github.com/cosmos/cosmos-sdk/version.AppName=${pname}"
     "-X github.com/cosmos/cosmos-sdk/version.Version=${version}"
     "-X github.com/cosmos/cosmos-sdk/version.BuildTags=${lib.concatStringsSep "," tags}"
@@ -27,7 +27,7 @@ buildGoApplication rec {
   CGO_ENABLED = "1";
 
   meta = with lib; {
-    description = "Ethermint is a scalable and interoperable Ethereum library, built on Proof-of-Stake with fast-finality using the Cosmos SDK which runs on top of Tendermint Core consensus engine.";
+    description = "Entangle is a scalable and interoperable Ethereum library, built on Proof-of-Stake with fast-finality using the Cosmos SDK which runs on top of Tendermint Core consensus engine.";
     homepage = "https://github.com/Entangle-Protocol/entangle-blockchain";
     license = licenses.asl20;
     mainProgram = "entangled";

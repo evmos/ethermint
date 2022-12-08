@@ -60,7 +60,7 @@ jobs:
       - uses: cachix/install-nix-action@v18
       - uses: cachix/cachix-action@v12
         with:
-          name: ethermint
+          name: entangle
       - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |
@@ -76,7 +76,7 @@ jobs:
       - uses: cachix/install-nix-action@v18
       - uses: cachix/cachix-action@v12
         with:
-          name: ethermint
+          name: entangle
       - uses: technote-space/get-diff-action@v6.1.1
         with:
           PATTERNS: |

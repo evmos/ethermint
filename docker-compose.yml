@@ -13,7 +13,7 @@ services:
       - ID=0
       - LOG=${LOG:-entangled.log}
     volumes:
-      - ./localnet-setup/node0/entangled:/ethermint:Z
+      - ./localnet-setup/node0/entangled:/entangle:Z
     networks:
       - localnet
     entrypoint: "bash start-docker.sh"
@@ -30,7 +30,7 @@ services:
       - ID=1
       - LOG=${LOG:-entangled.log}
     volumes:
-      - ./localnet-setup/node1/entangled:/ethermint:Z
+      - ./localnet-setup/node1/entangled:/entangle:Z
     networks:
       - localnet
     entrypoint: "bash start-docker.sh"
@@ -47,7 +47,7 @@ services:
       - "8566:8546"
       - "8127:8125"
     volumes:
-      - ./localnet-setup/node2/entangled:/ethermint:Z
+      - ./localnet-setup/node2/entangled:/entangle:Z
     networks:
       - localnet
     entrypoint: "bash start-docker.sh"
@@ -64,7 +64,7 @@ services:
       - "8576:8546"
       - "8128:8125"
     volumes:
-      - ./localnet-setup/node3/entangled:/ethermint:Z
+      - ./localnet-setup/node3/entangled:/entangle:Z
     networks:
       - localnet
     entrypoint: "bash start-docker.sh"

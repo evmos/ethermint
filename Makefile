@@ -8,7 +8,7 @@ COMMIT := $(shell git log -1 --format='%H')
 LEDGER_ENABLED ?= true
 BINDIR ?= $(GOPATH)/bin
 ETHERMINT_BINARY = entangled
-ETHERMINT_DIR = ethermint
+ETHERMINT_DIR = entangle
 BUILDDIR ?= $(CURDIR)/build
 SIMAPP = ./app
 HTTPS_GIT := https://github.com/Entangle-Protocol/entangle-blockchain.git
@@ -62,7 +62,7 @@ build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 # process linker flags
 
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=ethermint \
+ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=entangle \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=$(ETHERMINT_BINARY) \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
@@ -136,12 +136,12 @@ docker-build:
 	docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
 	# docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
 	# update old container
-	docker rm ethermint || true
+	docker rm entangle || true
 	# create a new container from the latest image
-	docker create --name ethermint -t -i tharsis/ethermint:latest ethermint
+	docker create --name entangle -t -i entangle-blockchain/entangle-blockchain:latest entangle
 	# move the binaries to the ./build directory
 	mkdir -p ./build/
-	docker cp ethermint:/usr/bin/entangled ./build/
+	docker cp entangle:/usr/bin/entangled ./build/
 
 $(MOCKS_DIR):
 	mkdir -p $(MOCKS_DIR)
@@ -508,13 +508,13 @@ ifeq ($(OS),Windows_NT)
 	mkdir localnet-setup &
 	@$(MAKE) localnet-build
 
-	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\ethermint\Z entangled/node "./entangled testnet --v 4 -o /ethermint --keyring-backend=test --ip-addresses entanglednode0,entanglednode1,entanglednode2,entanglednode3"
+	IF not exist "build/node0/$(ETHERMINT_BINARY)/config/genesis.json" docker run --rm -v $(CURDIR)/build\entangle\Z entangled/node "./entangled testnet --v 4 -o /entangle --keyring-backend=test --ip-addresses entanglednode0,entanglednode1,entanglednode2,entanglednode3"
 	docker-compose up -d
 else
 	mkdir -p localnet-setup
 	@$(MAKE) localnet-build
 
-	if ! [ -f localnet-setup/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/localnet-setup:/ethermint:Z entangled/node "./entangled testnet --v 4 -o /ethermint --keyring-backend=test --ip-addresses entanglednode0,entanglednode1,entanglednode2,entanglednode3"; fi
+	if ! [ -f localnet-setup/node0/$(ETHERMINT_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/localnet-setup:/entangle:Z entangled/node "./entangled testnet --v 4 -o /entangle --keyring-backend=test --ip-addresses entanglednode0,entanglednode1,entanglednode2,entanglednode3"; fi
 	docker-compose up -d
 endif
 
@@ -531,15 +531,15 @@ localnet-clean:
 localnet-unsafe-reset:
 	docker-compose down
 ifeq ($(OS),Windows_NT)
-	@docker run --rm -v $(CURDIR)\localnet-setup\node0\ethermitd:ethermint\Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
-	@docker run --rm -v $(CURDIR)\localnet-setup\node1\ethermitd:ethermint\Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
-	@docker run --rm -v $(CURDIR)\localnet-setup\node2\ethermitd:ethermint\Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
-	@docker run --rm -v $(CURDIR)\localnet-setup\node3\ethermitd:ethermint\Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node0\entangled:entangle\Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node1\entangled:entangle\Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node2\entangled:entangle\Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
+	@docker run --rm -v $(CURDIR)\localnet-setup\node3\entangled:entangle\Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
 else
-	@docker run --rm -v $(CURDIR)/localnet-setup/node0/ethermitd:/ethermint:Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
-	@docker run --rm -v $(CURDIR)/localnet-setup/node1/ethermitd:/ethermint:Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
-	@docker run --rm -v $(CURDIR)/localnet-setup/node2/ethermitd:/ethermint:Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
-	@docker run --rm -v $(CURDIR)/localnet-setup/node3/ethermitd:/ethermint:Z entangled/node "./entangled unsafe-reset-all --home=/ethermint"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node0/entangled:/entangle:Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node1/entangled:/entangle:Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node2/entangled:/entangle:Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
+	@docker run --rm -v $(CURDIR)/localnet-setup/node3/entangled:/entangle:Z entangled/node "./entangled unsafe-reset-all --home=/entangle"
 endif
 
 # Clean testnet
