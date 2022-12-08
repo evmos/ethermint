@@ -96,7 +96,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		eventEthereumTx.EthTxFailed = response.VmError
 	}
 
-	eventTxLogs := &types.EventTxLog{}
+	eventTxLogs := &types.EventTxLog{TxLogs: make([]string, len(response.Logs))}
 	for i, log := range response.Logs {
 		value, err := json.Marshal(log)
 		if err != nil {
