@@ -102,5 +102,4 @@ def test_block_gas_limit(ethermint):
         )
         (ethermint.w3.eth.wait_for_transaction_receipt(ethermint_txhash))
 
-
     return

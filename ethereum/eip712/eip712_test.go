@@ -400,18 +400,17 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 
 // Verify that the payload passes signature verification if signed as its EIP-712 representation.
 func (suite *EIP712TestSuite) verifyEIP712SignatureVerification(expectedSuccess bool, privKey ethsecp256k1.PrivKey, pubKey ethsecp256k1.PubKey, signBytes []byte) {
-	// Convert to EIP712 hash and sign
-	eip712Hash, err := eip712.GetEIP712HashForMsg(signBytes)
+	// Convert to EIP712 bytes and sign
+	eip712Bytes, err := eip712.GetEIP712BytesForMsg(signBytes)
 	if !expectedSuccess {
-		// Expect failure generating EIP-712 hash
+		// Expect failure generating EIP-712 bytes
 		suite.Require().Error(err)
 		return
 	}
 
 	suite.Require().NoError(err)
 
-	sigHash := crypto.Keccak256Hash(eip712Hash)
-	sig, err := privKey.Sign(sigHash.Bytes())
+	sig, err := privKey.Sign(eip712Bytes)
 	suite.Require().NoError(err)
 
 	// Verify against original payload bytes. This should pass, even though it is not
@@ -420,7 +419,7 @@ func (suite *EIP712TestSuite) verifyEIP712SignatureVerification(expectedSuccess 
 	suite.Require().True(res)
 
 	// Verify against the signed EIP-712 bytes. This should pass, since it is the message signed.
-	res = pubKey.VerifySignature(eip712Hash, sig)
+	res = pubKey.VerifySignature(eip712Bytes, sig)
 	suite.Require().True(res)
 
 	// Verify against random bytes to ensure it does not pass unexpectedly (sanity check).

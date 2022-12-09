@@ -36,27 +36,21 @@ func SetEncodingConfig(cfg params.EncodingConfig) {
 	protoCodec = codec.NewProtoCodec(cfg.InterfaceRegistry)
 }
 
-// Get the EIP-712 object hash for the given SignDoc bytes by first decoding the bytes into
+// Get the EIP-712 object bytes for the given SignDoc bytes by first decoding the bytes into
 // an EIP-712 object, then hashing the EIP-712 object to create the bytes to be signed.
 // See https://eips.ethereum.org/EIPS/eip-712 for more.
-func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
+func GetEIP712BytesForMsg(signDocBytes []byte) ([]byte, error) {
 	typedData, err := GetEIP712TypedDataForMsg(signDocBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	_, rawData, err := apitypes.TypedDataAndHash(typedData)
 	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 domain: %w", err)
+		return nil, fmt.Errorf("could not get EIP-712 object bytes: %w", err)
 	}
 
-	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
-	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 primary type: %w", err)
-	}
-	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-
-	return rawData, nil
+	return []byte(rawData), nil
 }
 
 // GetEIP712TypedDataForMsg returns the EIP-712 TypedData representation for either
