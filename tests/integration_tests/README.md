@@ -44,12 +44,11 @@ pytest -s -vv
 
 If you're changing anything on the ethermint rpc, rerun the first command.
 
-
 ## Caching
 
 You can enable Binary Cache to speed up the tests:
 
 ```
-$ nix-env -iA cachix -f https://cachix.org/api/v1/install
-$ cachix use ethermint
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+cachix use ethermint
 ```

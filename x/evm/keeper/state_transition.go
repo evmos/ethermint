@@ -72,6 +72,11 @@ func (k *Keeper) TxConfig(ctx sdk.Context, txHash common.Hash) statedb.TxConfig 
 // (ChainConfig and module Params). It additionally sets the validator operator address as the
 // coinbase address to make it available for the COINBASE opcode, even though there is no
 // beneficiary of the coinbase transaction (since we're not mining).
+//
+// NOTE: the RANDOM opcode is currently not supported since it requires
+// RANDAO implementation. See https://github.com/evmos/ethermint/pull/1520#pullrequestreview-1200504697
+// for more information.
+
 func (k *Keeper) NewEVM(
 	ctx sdk.Context,
 	msg core.Message,
@@ -89,6 +94,7 @@ func (k *Keeper) NewEVM(
 		Time:        big.NewInt(ctx.BlockHeader().Time.Unix()),
 		Difficulty:  big.NewInt(0), // unused. Only required in PoW context
 		BaseFee:     cfg.BaseFee,
+		Random:      nil, // not supported
 	}
 
 	txCtx := core.NewEVMTxContext(msg)
