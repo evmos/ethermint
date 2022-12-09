@@ -81,14 +81,17 @@ func (suite *KeeperTestSuite) TestEthereumTx() {
 
 func (suite *KeeperTestSuite) TestUpdateParams() {
 	testCases := []struct {
+		name      string
 		request   *types.MsgUpdateParams
 		expectErr bool
 	}{
 		{
+			name:      "fail - invalid authority",
 			request:   &types.MsgUpdateParams{Authority: "foobar"},
 			expectErr: true,
 		},
 		{
+			name: "pass - valid Update msg",
 			request: &types.MsgUpdateParams{
 				Authority: suite.app.EvmKeeper.GetAuthority(),
 				Params:    types.DefaultParams(),
