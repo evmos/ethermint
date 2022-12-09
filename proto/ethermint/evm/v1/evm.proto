@@ -25,7 +25,7 @@ message Params {
   bool allow_unprotected_txs = 6;
 }
 
-// ExtraEIPs Represents extra EIPs for the vm.Config
+// ExtraEIPs represents extra EIPs for the vm.Config
 message ExtraEIPs {
   // extra_eips defines the additional EIPs for the vm.Config
   repeated int64 extra_eips = 1 [(gogoproto.customname) = "ExtraEIPs", (gogoproto.moretags) = "yaml:\"extra_eips\""];
