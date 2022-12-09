@@ -79,6 +79,11 @@ func isValidEIP712Payload(typedData apitypes.TypedData) bool {
 // decodeAminoSignDoc attempts to decode the provided sign doc (bytes) as an Amino payload
 // and returns a signable EIP-712 TypedData object.
 func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
+	// Ensure codecs have been initialized
+	if err := validateCodecInit(); err != nil {
+		return apitypes.TypedData{}, err
+	}
+
 	var aminoDoc legacytx.StdSignDoc
 	if err := aminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc); err != nil {
 		return apitypes.TypedData{}, err
@@ -134,6 +139,11 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 // decodeProtobufSignDoc attempts to decode the provided sign doc (bytes) as a Protobuf payload
 // and returns a signable EIP-712 TypedData object.
 func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
+	// Ensure codecs have been initialized
+	if err := validateCodecInit(); err != nil {
+		return apitypes.TypedData{}, err
+	}
+
 	signDoc := &txTypes.SignDoc{}
 	if err := signDoc.Unmarshal(signDocBytes); err != nil {
 		return apitypes.TypedData{}, err
@@ -218,6 +228,16 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	}
 
 	return typedData, nil
+}
+
+// validateCodecInit ensures that both Amino and Protobuf encoding codecs have been set on app init,
+// so the module does not panic if either codec is not found.
+func validateCodecInit() error {
+	if aminoCodec == nil || protoCodec == nil {
+		return errors.New("missing codec: codecs have not been properly initialized using SetEncodingConfig")
+	}
+
+	return nil
 }
 
 // validatePayloadMessages ensures that the transaction messages can be represented in an EIP-712
