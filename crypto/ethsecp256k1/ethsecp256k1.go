@@ -213,15 +213,15 @@ func (pubKey PubKey) VerifySignature(msg, sig []byte) bool {
 }
 
 // Verifies the signature as an EIP-712 signature by first converting the message payload
-// to an EIP-712 hashed object, performing ECDSA verification on the hash. This is to support
+// to EIP-712 object bytes, then performing ECDSA verification on the hash. This is to support
 // signing a Cosmos payload using EIP-712.
 func (pubKey PubKey) verifySignatureAsEIP712(msg, sig []byte) bool {
-	eip712Hash, err := eip712.GetEIP712HashForMsg(msg)
+	eip712Bytes, err := eip712.GetEIP712BytesForMsg(msg)
 	if err != nil {
 		return false
 	}
 
-	return pubKey.verifySignatureECDSA(eip712Hash, sig)
+	return pubKey.verifySignatureECDSA(eip712Bytes, sig)
 }
 
 // Perform standard ECDSA signature verification for the given raw bytes and signature.

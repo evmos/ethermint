@@ -36,27 +36,21 @@ func SetEncodingConfig(cfg params.EncodingConfig) {
 	protoCodec = codec.NewProtoCodec(cfg.InterfaceRegistry)
 }
 
-// Get the EIP-712 object hash for the given SignDoc bytes by first decoding the bytes into
+// Get the EIP-712 object bytes for the given SignDoc bytes by first decoding the bytes into
 // an EIP-712 object, then hashing the EIP-712 object to create the bytes to be signed.
 // See https://eips.ethereum.org/EIPS/eip-712 for more.
-func GetEIP712HashForMsg(signDocBytes []byte) ([]byte, error) {
+func GetEIP712BytesForMsg(signDocBytes []byte) ([]byte, error) {
 	typedData, err := GetEIP712TypedDataForMsg(signDocBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
+	_, rawData, err := apitypes.TypedDataAndHash(typedData)
 	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 domain: %w", err)
+		return nil, fmt.Errorf("could not get EIP-712 object bytes: %w", err)
 	}
 
-	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
-	if err != nil {
-		return nil, fmt.Errorf("could not hash EIP-712 primary type: %w", err)
-	}
-	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
-
-	return rawData, nil
+	return []byte(rawData), nil
 }
 
 // GetEIP712TypedDataForMsg returns the EIP-712 TypedData representation for either
@@ -85,6 +79,11 @@ func isValidEIP712Payload(typedData apitypes.TypedData) bool {
 // decodeAminoSignDoc attempts to decode the provided sign doc (bytes) as an Amino payload
 // and returns a signable EIP-712 TypedData object.
 func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
+	// Ensure codecs have been initialized
+	if err := validateCodecInit(); err != nil {
+		return apitypes.TypedData{}, err
+	}
+
 	var aminoDoc legacytx.StdSignDoc
 	if err := aminoCodec.UnmarshalJSON(signDocBytes, &aminoDoc); err != nil {
 		return apitypes.TypedData{}, err
@@ -140,6 +139,11 @@ func decodeAminoSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 // decodeProtobufSignDoc attempts to decode the provided sign doc (bytes) as a Protobuf payload
 // and returns a signable EIP-712 TypedData object.
 func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
+	// Ensure codecs have been initialized
+	if err := validateCodecInit(); err != nil {
+		return apitypes.TypedData{}, err
+	}
+
 	signDoc := &txTypes.SignDoc{}
 	if err := signDoc.Unmarshal(signDocBytes); err != nil {
 		return apitypes.TypedData{}, err
@@ -224,6 +228,16 @@ func decodeProtobufSignDoc(signDocBytes []byte) (apitypes.TypedData, error) {
 	}
 
 	return typedData, nil
+}
+
+// validateCodecInit ensures that both Amino and Protobuf encoding codecs have been set on app init,
+// so the module does not panic if either codec is not found.
+func validateCodecInit() error {
+	if aminoCodec == nil || protoCodec == nil {
+		return errors.New("missing codec: codecs have not been properly initialized using SetEncodingConfig")
+	}
+
+	return nil
 }
 
 // validatePayloadMessages ensures that the transaction messages can be represented in an EIP-712
