@@ -451,8 +451,9 @@ schema = 3
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
   [mod."github.com/tendermint/tendermint"]
-    version = "v0.34.24"
-    hash = "sha256-3HFTv4XgN535RDaJ5OwUS+fnJHgkmLTwU7CNU2ilxEQ="
+    version = "v0.34.23-0.20230301132024-c4eaf1aaf991"
+    hash = "sha256-jT1tAlKaMgvRxfNjc1O1WV/n7BzyqKUb8343i+uT6WM="
+    replaced = "github.com/mmsqe/cometbft"
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"
     hash = "sha256-hl/3RrBrpkk2zA6dmrNlIYKs1/GfqegSscDSkA5Pjlo="
@@ -490,8 +491,8 @@ schema = 3
     version = "v0.0.0-20220722155223-a9213eeb770e"
     hash = "sha256-kNgzydWRpjm0sZl4uXEs3LX5L0xjJtJRAFf/CTlYUN4="
   [mod."golang.org/x/net"]
-    version = "v0.5.0"
-    hash = "sha256-HpbIAiLs7S1+tVsaSSdbCPw1IK43A0bFFuSzPSyjLbo="
+    version = "v0.6.0"
+    hash = "sha256-e8F4kMogxT392mmimvcAmkUtD/5vcQRPWDwH238m8FU="
   [mod."golang.org/x/oauth2"]
     version = "v0.0.0-20221014153046-6fdb5e3db783"
     hash = "sha256-IoygidVNqyAZmN+3macDeIefK8hhJToygpcqlwehdYQ="
@@ -499,14 +500,14 @@ schema = 3
     version = "v0.1.0"
     hash = "sha256-Hygjq9euZ0qz6TvHYQwOZEjNiTbTh1nSLRAWZ6KFGR8="
   [mod."golang.org/x/sys"]
-    version = "v0.4.0"
-    hash = "sha256-jchMzHCH5dg+IL/F+LqaX/fyAcB/nvHQpfBjqwaRJH0="
+    version = "v0.5.0"
+    hash = "sha256-0LTr3KeJ1OMQAwYUQo1513dXJtQAJn5Dq8sFkc8ps1U="
   [mod."golang.org/x/term"]
-    version = "v0.4.0"
-    hash = "sha256-wQKxHV10TU4vCU8Re2/hFmAbur/jRWEOB8QXBzgTFNY="
+    version = "v0.5.0"
+    hash = "sha256-f3DiX7NkDsEZpPS+PbmnOH9F5WHFZ1sQrfFg/T2UPno="
   [mod."golang.org/x/text"]
-    version = "v0.6.0"
-    hash = "sha256-+bpeRWR3relKACdal6NPj+eP5dnWCplTViArSN7/qA4="
+    version = "v0.7.0"
+    hash = "sha256-ydgUqX+t5Qke16C6d3FP/06U/N1n+rUKpLRFj4KXjwk="
   [mod."golang.org/x/xerrors"]
     version = "v0.0.0-20220907171357-04be3eba64a2"
     hash = "sha256-6+zueutgefIYmgXinOflz8qGDDDj0Zhv+2OkGhBTKno="
