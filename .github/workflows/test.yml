@@ -23,7 +23,7 @@ jobs:
           go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.1
+      - uses: technote-space/get-diff-action@v6.1.2
         with:
           PATTERNS: |
             **/**.sol
@@ -49,7 +49,7 @@ jobs:
           go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.1
+      - uses: technote-space/get-diff-action@v6.1.2
         id: git_diff
         with:
           PATTERNS: |
@@ -70,7 +70,7 @@ jobs:
           go-version: 1.19
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6.1.1
+      - uses: technote-space/get-diff-action@v6.1.2
         with:
           PATTERNS: |
             **/**.sol
@@ -91,7 +91,7 @@ jobs:
         with:
           name: ethermint
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
-      - uses: technote-space/get-diff-action@v6.1.1
+      - uses: technote-space/get-diff-action@v6.1.2
         with:
           PATTERNS: |
             **/**.sol

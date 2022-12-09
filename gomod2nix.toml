@@ -163,8 +163,8 @@ schema = 3
     version = "v1.0.0"
     hash = "sha256-k1DYvCqO3BKNcGEve/nMW0RxzMkK2tGfXbUbycqcVSo="
   [mod."github.com/ethereum/go-ethereum"]
-    version = "v1.10.25"
-    hash = "sha256-tNlI2XyuTXjGuBoe5vlYDcaGN2Sub7yltVtI6TeLLSc="
+    version = "v1.10.26"
+    hash = "sha256-gkMEwJ4rOgn12amD4QpZ4th/10uyTTeoFmpseuKDQPs="
   [mod."github.com/felixge/httpsnoop"]
     version = "v1.0.1"
     hash = "sha256-TNXnnC/ZGNY9lInAcES1cBGqIdEljKuh5LH/khVFjVk="
@@ -512,8 +512,8 @@ schema = 3
     version = "v0.2.0"
     hash = "sha256-azcllZ0o/9TurqX9udaJ0o9yxqSoI0/bSJsvQQLYIQc="
   [mod."golang.org/x/text"]
-    version = "v0.4.0"
-    hash = "sha256-JvyMygdmTvWg7xhbnUB9MMk6WcYXJt8DAj4DYl82Pys="
+    version = "v0.5.0"
+    hash = "sha256-ztH+xQyM/clOcQl+y/UEPcfNKbc3xApMbEPDDZ9up0o="
   [mod."golang.org/x/xerrors"]
     version = "v0.0.0-20220907171357-04be3eba64a2"
     hash = "sha256-6+zueutgefIYmgXinOflz8qGDDDj0Zhv+2OkGhBTKno="
