@@ -102,9 +102,9 @@ import (
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/evmos/ethermint/client/docs/statik"
-	"github.com/evmos/ethermint/ethereum/eip712"
 
 	"github.com/evmos/ethermint/app/ante"
+	"github.com/evmos/ethermint/ethereum/eip712"
 	srvflags "github.com/evmos/ethermint/server/flags"
 	ethermint "github.com/evmos/ethermint/types"
 	"github.com/evmos/ethermint/x/evm"
