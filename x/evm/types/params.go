@@ -16,9 +16,12 @@ var (
 	DefaultEVMDenom = types.AttoPhoton
 	// DefaultAllowUnprotectedTxs rejects all unprotected txs (i.e false)
 	DefaultAllowUnprotectedTxs = false
-	DefaultEnableCreate        = true
-	DefaultEnableCall          = true
-	DefaultExtraEIPs           = ExtraEIPs{AvailableExtraEIPs}
+	// DefaultEnableCreate enables contract creation (i.e true)
+	DefaultEnableCreate = true
+	// DefaultEnableCall enables contract calls (i.e true)
+	DefaultEnableCall = true
+	// DefaultExtraEIPs  defines the set of activateable Ethereum Improvement Proposals
+	DefaultExtraEIPs = ExtraEIPs{AvailableExtraEIPs}
 )
 
 // Parameter keys

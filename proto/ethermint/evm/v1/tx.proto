@@ -8,7 +8,6 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/any.proto";
 
-
 option go_package = "github.com/evmos/ethermint/x/evm/types";
 
 // Msg defines the evm Msg service.
@@ -58,7 +57,7 @@ message LegacyTx {
   string to = 4;
   // value defines the unsigned integer value of the transaction amount.
   string value = 5
-  [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
+      [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
   // data is the data payload bytes of the transaction.
   bytes data = 6;
   // v defines the signature value
@@ -90,12 +89,12 @@ message AccessListTx {
   string to = 5;
   // value defines the unsigned integer value of the transaction amount.
   string value = 6
-  [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
+      [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
   // data is the data payload bytes of the transaction.
   bytes data = 7;
   // accesses is an array of access tuples
   repeated AccessTuple accesses = 8
-  [(gogoproto.castrepeated) = "AccessList", (gogoproto.jsontag) = "accessList", (gogoproto.nullable) = false];
+      [(gogoproto.castrepeated) = "AccessList", (gogoproto.jsontag) = "accessList", (gogoproto.nullable) = false];
   // v defines the signature value
   bytes v = 9;
   // r defines the signature value
@@ -127,12 +126,12 @@ message DynamicFeeTx {
   string to = 6;
   // value defines the the transaction amount.
   string value = 7
-  [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
+      [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.customname) = "Amount"];
   // data is the data payload bytes of the transaction.
   bytes data = 8;
   // accesses is an array of access tuples
   repeated AccessTuple accesses = 9
-  [(gogoproto.castrepeated) = "AccessList", (gogoproto.jsontag) = "accessList", (gogoproto.nullable) = false];
+      [(gogoproto.castrepeated) = "AccessList", (gogoproto.jsontag) = "accessList", (gogoproto.nullable) = false];
   // v defines the signature value
   bytes v = 10;
   // r defines the signature value

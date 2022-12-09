@@ -117,7 +117,7 @@ func (m *Params) GetAllowUnprotectedTxs() bool {
 	return false
 }
 
-// ExtraEIPs Represents extra EIPs for the vm.Config
+// ExtraEIPs represents extra EIPs for the vm.Config
 type ExtraEIPs struct {
 	// extra_eips defines the additional EIPs for the vm.Config
 	ExtraEIPs []int64 `protobuf:"varint,1,rep,packed,name=extra_eips,json=extraEips,proto3" json:"extra_eips,omitempty" yaml:"extra_eips"`
