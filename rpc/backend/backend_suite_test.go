@@ -2,7 +2,6 @@ package backend
 
 import (
 	"bufio"
-	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
