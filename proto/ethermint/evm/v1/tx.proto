@@ -18,9 +18,7 @@ service Msg {
   };
   // UpdateParams defined a governance operation for updating the x/evm module parameters.
   // The authority is hard-coded to the Cosmos SDK x/gov module account
-  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {
-    option (google.api.http).post = "/ethermint/evm/v1/update_params";
-  };
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
 }
 
 // MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
