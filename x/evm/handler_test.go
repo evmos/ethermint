@@ -2,10 +2,11 @@ package evm_test
 
 import (
 	"errors"
-	"github.com/evmos/ethermint/x/evm/keeper"
 	"math/big"
 	"testing"
 	"time"
+
+	"github.com/evmos/ethermint/x/evm/keeper"
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/gogo/protobuf/proto"

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+
 	"github.com/evmos/ethermint/x/feemarket/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 

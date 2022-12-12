@@ -540,7 +540,8 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			"enough balance",
 			func() {
 				args = types.TransactionArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
-			}, false, 0, false},
+			}, false, 0, false,
+		},
 		// should success, because gas limit lower than 21000 is ignored
 		{
 			"gas exceed allowance",
@@ -1261,9 +1262,7 @@ func (suite *KeeperTestSuite) TestQueryBaseFee() {
 }
 
 func (suite *KeeperTestSuite) TestEthCall() {
-	var (
-		req *types.EthCallRequest
-	)
+	var req *types.EthCallRequest
 
 	address := tests.GenerateAddress()
 	suite.Require().Equal(uint64(0), suite.app.EvmKeeper.GetNonce(suite.ctx, address))
@@ -1334,7 +1333,6 @@ func (suite *KeeperTestSuite) TestEthCall() {
 			}
 		})
 	}
-
 }
 
 func (suite *KeeperTestSuite) TestEmptyRequest() {

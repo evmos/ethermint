@@ -480,10 +480,8 @@ func (suite *KeeperTestSuite) TestGetAccountStorage() {
 				i++
 				return false
 			})
-
 		})
 	}
-
 }
 
 func (suite *KeeperTestSuite) TestGetAccountOrEmpty() {
@@ -520,7 +518,6 @@ func (suite *KeeperTestSuite) TestGetAccountOrEmpty() {
 			} else {
 				suite.Require().NotEqual(empty, res)
 			}
-
 		})
 	}
 }
