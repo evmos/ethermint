@@ -14,7 +14,9 @@ Before EIP-1559 the transaction fee is calculated with
 fee = gasPrice * gasLimit
 ```
 
-, where `gasPrice` is the price per gas and `gasLimit` describes the amount of gas required to perform the transaction. The more complex operations a transaction requires, the higher the gasLimit (See [Executing EVM bytecode](https://docs.evmos.org/modules/evm/01_concepts.html#executing-evm-bytecode)). To submit a transaction, the signer needs to specify the `gasPrice`.
+where `gasPrice` is the price per gas and `gasLimit` describes the amount of gas required to perform the transaction.
+The more complex operations a transaction requires, the higher the gasLimit (See [Executing EVM bytecode](https://docs.evmos.org/modules/evm/01_concepts.html#executing-evm-bytecode)).
+To submit a transaction, the signer needs to specify the `gasPrice`.
 
 With EIP-1559 enabled, the transaction fee is calculated with
 
@@ -22,10 +24,16 @@ With EIP-1559 enabled, the transaction fee is calculated with
 fee = (baseFee + priorityTip) * gasLimit
 ```
 
-, where `baseFee` is the fixed-per-block network fee per gas and `priorityTip` is an additional fee per gas that can be set optionally. Note, that both the base fee and the priority tip are a gas prices. To submit a transaction with EIP-1559, the signer needs to specify the `gasFeeCap` a maximum fee per gas they are willing to pay total and optionally the `priorityTip` , which covers both the priority fee and the block's network fee per gas (aka: base fee).
+where `baseFee` is the fixed-per-block network fee per gas and `priorityTip` is an additional fee per gas that can be set optionally.
+Note, that both the base fee and the priority tip are gas prices.
+To submit a transaction with EIP-1559, the signer needs to specify the `gasFeeCap`, which is the maximum fee per gas they are willing to pay in total.
+Optionally, the `priorityTip` can be specified, which covers both the priority fee and the block's network fee per gas (aka: base fee).
 
 ::: tip
-The Cosmos SDK uses a different terminology for `gas` than Ethereum. What is called `gasLimit` on Ethereum is called `gasWanted` on Cosmos. You might encounter both terminologies on Evmos since it builds Ethereum on top of the SDK, e.g. when using different wallets like Keplr for Cosmos and Metamask for Ethereum.
+The Cosmos SDK uses a different terminology for `gas` than Ethereum.
+What is called `gasLimit` on Ethereum is called `gasWanted` on Cosmos.
+You might encounter both terminologies on Evmos since it builds Ethereum on top of the SDK,
+e.g. when using different wallets like Keplr for Cosmos and Metamask for Ethereum.
 :::
 
 ## Base Fee
@@ -39,13 +47,17 @@ Instead of burning the base fee (as implemented on Ethereum), the `feemarket` mo
 
 ## Priority Tip
 
-In EIP-1559, the `max_priority_fee_per_gas`, often referred to as `tip`, is an additional gas price that can be added to the `baseFee` in order to incentive transaction prioritization. The higher the tip, the more likely the transaction is included in the block.
+In EIP-1559, the `max_priority_fee_per_gas`, often referred to as `tip`,
+is an additional gas price that can be added to the `baseFee` in order to incentivize transaction prioritization.
+The higher the tip, the more likely the transaction is included in the block.
 
-Until the Cosmos SDK version v0.46, however, there is no notion of transaction prioritization. Thus the tip for an EIP-1559 transaction on Ethermint should be zero (`MaxPriorityFeePerGas` JSON-RPC endpoint returns `0`). Have a look at [ADR 067](https://github.com/tendermint/tendermint/blob/master/docs/architecture/adr-067-mempool-refactor.md) to read about future plans on transaction prioritization in the Cosmos SDK.
+Until the Cosmos SDK version v0.46, however, there is no notion of transaction prioritization.
+Thus, the tip for an EIP-1559 transaction on Ethermint should be zero (`MaxPriorityFeePerGas` JSON-RPC endpoint returns `0`).
+Have a look at the [mempool](https://docs.evmos.org/validators/setup/mempool.html) docs to read more about how to leverage transaction prioritization.
 
 ## Effective Gas price
 
-For EIP-1559 transactions (dynamic fee transactions) the effective gas price descibes the maximum gas price that a transaction is willing to provide. It is derived from the transaction arguments and the base fee parameter. Depending on which one is smaller, the effective gas price is either the `baseFee + tip` or the `gasFeeCap`
+For EIP-1559 transactions (dynamic fee transactions) the effective gas price describes the maximum gas price that a transaction is willing to provide. It is derived from the transaction arguments and the base fee parameter. Depending on which one is smaller, the effective gas price is either the `baseFee + tip` or the `gasFeeCap`
 
 ```
 min(baseFee + gasTipCap, gasFeeCap)

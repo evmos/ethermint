@@ -6,7 +6,6 @@ import "cosmos_proto/cosmos.proto";
 import "ethermint/feemarket/v1/feemarket.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "google/protobuf/any.proto";
 
 
 

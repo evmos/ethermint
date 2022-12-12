@@ -17,7 +17,7 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v3
       - name: Get Diff
-        uses: technote-space/get-diff-action@v6.1.1
+        uses: technote-space/get-diff-action@v6.1.2
         with:
           PATTERNS: |
             **/*.go
