@@ -9,7 +9,7 @@ import (
 
 var (
 	amino = codec.NewLegacyAmino()
-	// ModuleCdc references the global evm module codec. Note, the codec should
+	// ModuleCdc references the global fee market module codec. Note, the codec should
 	// ONLY be used in certain instances of tests and for JSON encoding.
 	ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 
