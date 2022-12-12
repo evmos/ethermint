@@ -116,7 +116,7 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 	)
 
 	if err != nil {
-		return nil, errorsmod.Wrap(err, "failed to emit events")
+		k.Logger(ctx).Error(err.Error())
 	}
 
 	return response, nil
