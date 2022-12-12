@@ -14,9 +14,11 @@ var (
 	// DefaultMinGasMultiplier is 0.5 or 50%
 	DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 	// DefaultMinGasPrice is 0 (i.e disabled)
-	DefaultMinGasPrice  = sdk.ZeroDec()
+	DefaultMinGasPrice = sdk.ZeroDec()
+	// DefaultEnableHeight is 0 (i.e disabled)
 	DefaultEnableHeight = int64(0)
-	DefaultNoBaseFee    = false
+	// DefaultNoBaseFee is false
+	DefaultNoBaseFee = false
 )
 
 // NewParams creates a new Params instance
