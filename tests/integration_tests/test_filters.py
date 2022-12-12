@@ -9,6 +9,7 @@ from .utils import (
     deploy_contract,
     send_successful_transaction,
     send_transaction,
+    w3_wait_for_new_blocks,
 )
 
 # Smart contract names
@@ -19,6 +20,35 @@ ERC20_CONTRACT = "TestERC20A"
 CHANGE_GREETING_TOPIC = Web3.keccak(text="ChangeGreeting(address,string)")
 # ERC-20 Transfer event topic
 TRANSFER_TOPIC = Web3.keccak(text="Transfer(address,address,uint256)")
+
+
+def test_get_logs_by_topic(cluster):
+    w3: Web3 = cluster.w3
+
+    contract, _ = deploy_contract(w3, CONTRACTS["Greeter"])
+
+    topic = Web3.keccak(text="ChangeGreeting(address,string)")
+
+    # with tx
+    tx = contract.functions.setGreeting("world").build_transaction()
+    receipt = send_transaction(w3, tx)
+    assert receipt.status == 1
+
+    # The getLogs method under the hood works as a filter
+    # with the specified topics and a block range.
+    # If the block range is not specified, it defaults
+    # to fromBlock: "latest", toBlock: "latest".
+    # Then, if we make a getLogs call within the same block that the tx
+    # happened, we will get a log in the result. However, if we make the call
+    # one or more blocks later, the result will be an empty array.
+    logs = w3.eth.get_logs({"topics": [topic.hex()]})
+
+    assert len(logs) == 1
+    assert logs[0]["address"] == contract.address
+
+    w3_wait_for_new_blocks(w3, 2)
+    logs = w3.eth.get_logs({"topics": [topic.hex()]})
+    assert len(logs) == 0
 
 
 def test_pending_transaction_filter(cluster):

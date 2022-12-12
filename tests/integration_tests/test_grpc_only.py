@@ -45,6 +45,9 @@ def grpc_eth_call(port: int, args: dict, chain_id=None, proposer_address=None):
     ).json()
 
 
+@pytest.mark.skip(
+    reason="undeterministic test - https://github.com/evmos/ethermint/issues/1530"
+)
 def test_grpc_mode(custom_ethermint):
     """
     - restart a fullnode in grpc-only mode
