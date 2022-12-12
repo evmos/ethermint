@@ -100,8 +100,8 @@ func (p Params) Validate() error {
 
 // EIPs returns the ExtraEIPS as a int slice
 func (p Params) EIPs() []int {
-	eips := make([]int, len(p.ExtraEIPs.ExtraEIPs))
-	for i, eip := range p.ExtraEIPs.ExtraEIPs {
+	eips := make([]int, len(p.ExtraEIPs.EIPs))
+	for i, eip := range p.ExtraEIPs.EIPs {
 		eips[i] = int(eip)
 	}
 	return eips
@@ -130,7 +130,7 @@ func validateEIPs(i interface{}) error {
 		return fmt.Errorf("invalid EIP slice type: %T", i)
 	}
 
-	for _, eip := range eips.ExtraEIPs {
+	for _, eip := range eips.EIPs {
 		if !vm.ValidEip(int(eip)) {
 			return fmt.Errorf("EIP %d is not activateable, valid EIPS are: %s", eip, vm.ActivateableEips())
 		}

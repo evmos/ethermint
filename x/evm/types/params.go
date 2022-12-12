@@ -72,7 +72,7 @@ func (p Params) Validate() error {
 		return err
 	}
 
-	if err := validateEIPs(p.ExtraEIPs.ExtraEIPs); err != nil {
+	if err := validateEIPs(p.ExtraEIPs.EIPs); err != nil {
 		return err
 	}
 
@@ -93,8 +93,8 @@ func (p Params) Validate() error {
 
 // EIPs returns the ExtraEIPS as a int slice
 func (p Params) EIPs() []int {
-	eips := make([]int, len(p.ExtraEIPs.ExtraEIPs))
-	for i, eip := range p.ExtraEIPs.ExtraEIPs {
+	eips := make([]int, len(p.ExtraEIPs.EIPs))
+	for i, eip := range p.ExtraEIPs.EIPs {
 		eips[i] = int(eip)
 	}
 	return eips

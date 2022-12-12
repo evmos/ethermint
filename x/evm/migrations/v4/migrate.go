@@ -19,8 +19,10 @@ func MigrateStore(
 	legacySubspace types.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
-	store := ctx.KVStore(storeKey)
-	var params v4types.Params
+	var (
+		store  = ctx.KVStore(storeKey)
+		params v4types.Params
+	)
 
 	legacySubspace.GetParamSetIfExists(ctx, &params)
 

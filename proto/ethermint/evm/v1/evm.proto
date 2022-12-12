@@ -29,8 +29,8 @@ message Params {
 
 // ExtraEIPs represents extra EIPs for the vm.Config
 message ExtraEIPs {
-  // extra_eips defines the additional EIPs for the vm.Config
-  repeated int64 extra_eips = 1 [(gogoproto.customname) = "ExtraEIPs", (gogoproto.moretags) = "yaml:\"extra_eips\""];
+  // eips defines the additional EIPs for the vm.Config
+  repeated int64 eips = 1 [(gogoproto.customname) = "EIPs", (gogoproto.moretags) = "yaml:\"eips\""];
 }
 
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values

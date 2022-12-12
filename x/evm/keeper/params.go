@@ -61,11 +61,10 @@ func (k Keeper) GetChainConfig(ctx sdk.Context) types.ChainConfig {
 
 // GetEVMDenom returns the EVM denom.
 func (k Keeper) GetEVMDenom(ctx sdk.Context) string {
-	var evmDenom string
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ParamStoreKeyEVMDenom)
 	if bz == nil {
-		return evmDenom
+		return ""
 	}
 	return string(bz)
 }
