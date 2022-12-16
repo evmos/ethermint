@@ -133,22 +133,7 @@ func (api *PublicFilterAPI) timeoutLoop() {
 // NewPendingTransactionFilter creates a filter that fetches pending transaction hashes
 // as transactions enter the pending state.
 //
-// It is part of the filter // Copyright 2021 Evmos Foundation
-// This file is part of Evmos' Ethermint library.
-//
-// The Ethermint library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The Ethermint library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the Ethermint library. If not, see https://github.com/evmos/ethermint/blob/main/LICENSE
-package because this filter can be used through the
+// It is part of the filter package because this filter can be used through the
 // `eth_getFilterChanges` polling method that is also used for log filters.
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newPendingTransactionFilter
@@ -284,22 +269,7 @@ func (api *PublicFilterAPI) NewPendingTransactions(ctx context.Context) (*rpc.Su
 }
 
 // NewBlockFilter creates a filter that fetches blocks that are imported into the chain.
-// It is part of the filter // Copyright 2021 Evmos Foundation
-// This file is part of Evmos' Ethermint library.
-//
-// The Ethermint library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The Ethermint library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the Ethermint library. If not, see https://github.com/evmos/ethermint/blob/main/LICENSE
-package since polling goes with eth_getFilterChanges.
+// It is part of the filter package since polling goes with eth_getFilterChanges.
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newblockfilter
 func (api *PublicFilterAPI) NewBlockFilter() rpc.ID {
