@@ -17,6 +17,7 @@ package backend
 
 import (
 	"fmt"
+	"math/big"
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -141,7 +142,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		b.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
 		return nil, nil
 	}
-
+	gasUsed := res.GasUsed
 	resBlock, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(res.Height))
 	if err != nil {
 		b.logger.Debug("block not found", "height", res.Height, "error", err.Error())
@@ -177,7 +178,13 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
 	}
-
+	// FIXME: config based on diff chain and env
+	isHeightBeforeUpgrade := true
+	if status == 0 && isHeightBeforeUpgrade {
+		price := txData.GetGasPrice()
+		gas := txData.GetGas()
+		gasUsed = new(big.Int).Mul(price, new(big.Int).SetUint64(gas)).Uint64()
+	}
 	chainID, err := b.ChainID()
 	if err != nil {
 		return nil, err
@@ -220,7 +227,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		// They are stored in the chain database.
 		"transactionHash": hash,
 		"contractAddress": nil,
-		"gasUsed":         hexutil.Uint64(res.GasUsed),
+		"gasUsed":         hexutil.Uint64(gasUsed),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
