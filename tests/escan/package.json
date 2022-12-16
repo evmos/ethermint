@@ -1,0 +1,20 @@
+{
+  "name": "it-ethermint",
+  "version": "0.0.1",
+  "description": "NodeJS scripts for ethermint integration testing",
+  "main": "test.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "VictorTrustyDev",
+  "license": "ISC",
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^2.1.2",
+    "ethers": "^5.7.2",
+    "solc": "^0.8.17",
+    "web3": "^1.8.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.3"
+  }
+}
