@@ -1,0 +1,83 @@
+syntax = "proto3";
+package entangle.distributorsauth;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+// import "cosmos/base/query/v1beta1/pagination.proto";
+import "entangle/distributorsauth/distributorsauth.proto";
+
+// this line is used by starport scaffolding # 1
+
+option go_package = "github.com/Entangle-Protocol/entangle-blockchain/x/distributorsauth/types";
+
+// Query defines the gRPC querier service.
+service Query {
+
+  // Queries  distributor info for all distributors
+  rpc Distributors(QueryDistributorsRequest) returns (QueryDistributorsResponse) {
+    option (google.api.http).get               = "/entangle-blockchain/distributors";
+  }
+
+  // Queries distributor info for given distributor address.
+  rpc Distributor(QueryDistributorRequest) returns (QueryDistributorResponse) {
+    option (google.api.http).get               = "/entangle-blockchain/{distributor_addr}/distributor";
+  }
+
+  // Queries admin info for all admins
+  rpc Admins(QueryAdminsRequest) returns (QueryAdminsResponse) {
+    option (google.api.http).get               = "/entangle-blockchain/admins";
+  }
+
+  // Queries admin info for given admin address.
+  rpc Admin(QueryAdminRequest) returns (QueryAdminResponse) {
+    option (google.api.http).get               = "/entangle-blockchain/{admin_addr}/admin";
+  }
+}
+
+// QueryDistributorsRequest is request type for Query/Distributors RPC method.
+message QueryDistributorsRequest {
+}
+
+// QueryDistributorsResponse is response type for the Query/Distributors RPC method
+message QueryDistributorsResponse {
+  // distributors contains all the queried distributors.
+  repeated DistributorInfo distributors = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryDistributorRequest is response type for the Query/Distributor RPC method
+message QueryDistributorRequest {
+  // distributor_addr defines the distributor address to query for.
+  string distributor_addr = 1;
+}
+
+// QueryDistributorResponse is response type for the Query/Distributor RPC method
+message QueryDistributorResponse {
+  // distributor defines the distributor info.
+  DistributorInfo distributor = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryAdminsRequest is request type for Query/Admns RPC method.
+message QueryAdminsRequest {
+}
+
+// QueryAdminsResponse is response type for the Query/Admins RPC method
+message QueryAdminsResponse {
+  // admins contains all the queried admins.
+  repeated Admin admins = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryAdminRequest is response type for the Query/Admin RPC method
+message QueryAdminRequest {
+  // admin_addr defines the admin address to query for.
+  string admin_addr = 1;
+}
+
+// QueryAdminResponse is response type for the Query/Admin RPC method
+message QueryAdminResponse {
+  // admin defines the admin info.
+  Admin admin = 1 [(gogoproto.nullable) = false];
+}
+
+
+
+// this line is used by starport scaffolding # 3

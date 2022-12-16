@@ -69,15 +69,16 @@ func NewSimApp(logger log.Logger, db dbm.DB) (*EthermintApp, error) {
 	app := NewEthermintApp(logger, db, nil, false, map[int64]bool{}, DefaultNodeHome, simapp.FlagPeriodValue, encodingConfig, simapp.EmptyAppOptions{}, fauxMerkleModeOpt)
 	// disable feemarket on native tx
 	anteHandler, err := ante.NewAnteHandler(ante.HandlerOptions{
-		AccountKeeper:   app.AccountKeeper,
-		BankKeeper:      app.BankKeeper,
-		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-		FeegrantKeeper:  app.FeeGrantKeeper,
-		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
-		IBCKeeper:       app.IBCKeeper,
-		EvmKeeper:       app.EvmKeeper,
-		FeeMarketKeeper: app.FeeMarketKeeper,
-		MaxTxGasWanted:  0,
+		AccountKeeper:          app.AccountKeeper,
+		BankKeeper:             app.BankKeeper,
+		SignModeHandler:        encodingConfig.TxConfig.SignModeHandler(),
+		FeegrantKeeper:         app.FeeGrantKeeper,
+		SigGasConsumer:         ante.DefaultSigVerificationGasConsumer,
+		IBCKeeper:              app.IBCKeeper,
+		EvmKeeper:              app.EvmKeeper,
+		FeeMarketKeeper:        app.FeeMarketKeeper,
+		MaxTxGasWanted:         0,
+		DistributorsAuthKeeper: app.DistributorsAuthKeeper,
 	})
 	if err != nil {
 		return nil, err

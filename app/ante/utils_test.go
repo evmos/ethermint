@@ -115,14 +115,15 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.clientCtx = client.Context{}.WithTxConfig(encodingConfig.TxConfig)
 
 	anteHandler, err := ante.NewAnteHandler(ante.HandlerOptions{
-		AccountKeeper:   suite.app.AccountKeeper,
-		BankKeeper:      suite.app.BankKeeper,
-		EvmKeeper:       suite.app.EvmKeeper,
-		FeegrantKeeper:  suite.app.FeeGrantKeeper,
-		IBCKeeper:       suite.app.IBCKeeper,
-		FeeMarketKeeper: suite.app.FeeMarketKeeper,
-		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
+		AccountKeeper:          suite.app.AccountKeeper,
+		BankKeeper:             suite.app.BankKeeper,
+		EvmKeeper:              suite.app.EvmKeeper,
+		FeegrantKeeper:         suite.app.FeeGrantKeeper,
+		IBCKeeper:              suite.app.IBCKeeper,
+		FeeMarketKeeper:        suite.app.FeeMarketKeeper,
+		SignModeHandler:        encodingConfig.TxConfig.SignModeHandler(),
+		SigGasConsumer:         ante.DefaultSigVerificationGasConsumer,
+		DistributorsAuthKeeper: suite.app.DistributorsAuthKeeper,
 	})
 	suite.Require().NoError(err)
 

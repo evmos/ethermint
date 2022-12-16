@@ -28,6 +28,7 @@ type HandlerOptions struct {
 	MaxTxGasWanted         uint64
 	ExtensionOptionChecker ante.ExtensionOptionChecker
 	TxFeeChecker           ante.TxFeeChecker
+	DistributorsAuthKeeper DistributorsAuthKeeper
 }
 
 func (options HandlerOptions) validate() error {
@@ -62,6 +63,7 @@ func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		NewEthIncrementSenderSequenceDecorator(options.AccountKeeper), // innermost AnteDecorator.
 		NewGasWantedDecorator(options.EvmKeeper, options.FeeMarketKeeper),
 		NewEthEmitEventDecorator(options.EvmKeeper), // emit eth tx hash and index at the very last ante handler.
+		NewDistributorsAuthDecorator(options.DistributorsAuthKeeper),
 	)
 }
 
@@ -84,6 +86,7 @@ func newCosmosAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCKeeper),
 		NewGasWantedDecorator(options.EvmKeeper, options.FeeMarketKeeper),
+		NewDistributorsAuthDecorator(options.DistributorsAuthKeeper),
 	)
 }
 
@@ -108,5 +111,6 @@ func newCosmosAnteHandlerEip712(options HandlerOptions) sdk.AnteHandler {
 		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
 		ibcante.NewRedundantRelayDecorator(options.IBCKeeper),
 		NewGasWantedDecorator(options.EvmKeeper, options.FeeMarketKeeper),
+		NewDistributorsAuthDecorator(options.DistributorsAuthKeeper),
 	)
 }

@@ -111,6 +111,11 @@ import (
 	feemarketkeeper "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/keeper"
 	feemarkettypes "github.com/Entangle-Protocol/entangle-blockchain/x/feemarket/types"
 
+	distributorsauthmodule "github.com/Entangle-Protocol/entangle-blockchain/x/distributorsauth"
+	distributorsauthmoduleclient "github.com/Entangle-Protocol/entangle-blockchain/x/distributorsauth/client"
+	distributorsauthmodulekeeper "github.com/Entangle-Protocol/entangle-blockchain/x/distributorsauth/keeper"
+	distributorsauthmoduletypes "github.com/Entangle-Protocol/entangle-blockchain/x/distributorsauth/types"
+
 	// Force-load the tracer engines to trigger registration due to Go-Ethereum v1.10.15 changes
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
@@ -144,7 +149,7 @@ var (
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic([]govclient.ProposalHandler{
 			paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.LegacyProposalHandler, upgradeclient.LegacyCancelProposalHandler,
-			ibcclientclient.UpdateClientProposalHandler, ibcclientclient.UpgradeProposalHandler,
+			ibcclientclient.UpdateClientProposalHandler, ibcclientclient.UpgradeProposalHandler, distributorsauthmoduleclient.DistributorsAuthProposalHandler,
 		}),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
@@ -159,6 +164,7 @@ var (
 		// Ethermint modules
 		evm.AppModuleBasic{},
 		feemarket.AppModuleBasic{},
+		distributorsauthmodule.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -227,6 +233,9 @@ type EthermintApp struct {
 	EvmKeeper       *evmkeeper.Keeper
 	FeeMarketKeeper feemarketkeeper.Keeper
 
+	// Entangle keepers
+	DistributorsAuthKeeper distributorsauthmodulekeeper.Keeper
+
 	// the module manager
 	mm *module.Manager
 
@@ -277,6 +286,8 @@ func NewEthermintApp(
 		ibchost.StoreKey, ibctransfertypes.StoreKey,
 		// ethermint keys
 		evmtypes.StoreKey, feemarkettypes.StoreKey,
+		// entangle keys
+		distributorsauthmoduletypes.StoreKey,
 	)
 
 	// Add the EVM transient store key
@@ -411,7 +422,8 @@ func NewEthermintApp(
 		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper)).
 		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.DistrKeeper)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.UpgradeKeeper)).
-		AddRoute(ibchost.RouterKey, ibcclient.NewClientProposalHandler(app.IBCKeeper.ClientKeeper))
+		AddRoute(ibchost.RouterKey, ibcclient.NewClientProposalHandler(app.IBCKeeper.ClientKeeper)).
+		AddRoute(distributorsauthmoduletypes.RouterKey, distributorsauthmodule.NewDistributorProposalHandler(app.DistributorsAuthKeeper))
 	govConfig := govtypes.DefaultConfig()
 	/*
 		Example of setting gov params:
@@ -449,6 +461,15 @@ func NewEthermintApp(
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
 
+	// entangle
+	app.DistributorsAuthKeeper = *distributorsauthmodulekeeper.NewKeeper(
+		appCodec,
+		keys[distributorsauthmoduletypes.StoreKey],
+		keys[distributorsauthmoduletypes.MemStoreKey],
+		&app.AccountKeeper,
+	)
+	distributorsauthModule := distributorsauthmodule.NewAppModule(appCodec, app.DistributorsAuthKeeper, app.AccountKeeper, app.BankKeeper)
+
 	/****  Module Options ****/
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
@@ -485,6 +506,7 @@ func NewEthermintApp(
 		// Ethermint app modules
 		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper),
 		feemarket.NewAppModule(app.FeeMarketKeeper),
+		distributorsauthModule,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -515,6 +537,7 @@ func NewEthermintApp(
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+		distributorsauthmoduletypes.ModuleName,
 	)
 
 	// NOTE: fee market module must go last in order to retrieve the block gas used.
@@ -540,6 +563,7 @@ func NewEthermintApp(
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+		distributorsauthmoduletypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -574,6 +598,7 @@ func NewEthermintApp(
 		vestingtypes.ModuleName,
 		// NOTE: crisis module must go at the end to check for invariants on each module
 		crisistypes.ModuleName,
+		distributorsauthmoduletypes.ModuleName,
 	)
 
 	// Uncomment if you want to set a custom migration order here.
@@ -653,6 +678,7 @@ func (app *EthermintApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted u
 		MaxTxGasWanted:         maxGasWanted,
 		ExtensionOptionChecker: ethermint.HasDynamicFeeExtensionOption,
 		TxFeeChecker:           ante.NewDynamicFeeChecker(app.EvmKeeper),
+		DistributorsAuthKeeper: app.DistributorsAuthKeeper,
 	})
 	if err != nil {
 		panic(err)

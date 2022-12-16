@@ -1,0 +1,75 @@
+syntax = "proto3";
+package entangle.distributorsauth;
+
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+// import "cosmos_proto/cosmos.proto";
+
+// this line is used by starport scaffolding # proto/tx/import
+
+option go_package = "github.com/Entangle-Protocol/entangle-blockchain/x/distributorsauth/types";
+
+// Msg defines the Msg service.
+service Msg {
+  // Adding Distributor method
+  rpc AddDistributor(MsgAddDistributor) returns (MsgAddDistributorResponse) {
+    option (google.api.http).post = "/entangle/distributor/add";
+  };
+  // Remove Distributor method
+  rpc RemoveDistributor(MsgRemoveDistributor) returns (MsgRemoveDistributorResponse) {
+    option (google.api.http).post = "/entangle/distributor/remove";
+  };
+  // Adding Admin method
+  rpc AddAdmin(MsgAddAdmin) returns (MsgAddAdminResponse) {
+    option (google.api.http).post = "/entangle/admin/add";
+  };
+  // Remove Admin method
+  rpc RemoveAdmin(MsgRemoveAdmin) returns (MsgRemoveAdminResponse) {
+    option (google.api.http).post = "/entangle/admin/remove";
+  };
+}
+
+message MsgAddDistributor {
+  // bytes sender = 1 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress"];
+  // option (gogoproto.goproto_getters) = false;
+  // this line is used by starport scaffolding # proto/tx/rpc
+  // authority is the address of the governance account.
+  string sender = 1;
+  string distributor_address = 2;
+  uint64 end_date            = 3;
+
+  // this line is used by starport scaffolding # proto/tx/message
+}
+
+// MsgSendResponse defines the Msg/Send response type.
+message MsgAddDistributorResponse {}
+
+message MsgRemoveDistributor {
+  string sender = 1;
+  // option (gogoproto.goproto_getters) = false;
+  // this line is used by starport scaffolding # proto/tx/rpc
+  // authority is the address of the governance account.
+  string distributor_address = 2;
+  // this line is used by starport scaffolding # proto/tx/message
+}
+
+// MsgSendResponse defines the Msg/Send response type.
+message MsgRemoveDistributorResponse {}
+
+message MsgAddAdmin {
+  string  sender = 1;
+  string  admin_address = 2;
+  bool    edit_option     = 3;
+}
+
+// MsgSendResponse defines the Msg/Send response type.
+message MsgAddAdminResponse {}
+
+message MsgRemoveAdmin {
+  string sender = 1;
+  string admin_address = 2;
+}
+
+// MsgSendResponse defines the Msg/Send response type.
+message MsgRemoveAdminResponse {}
