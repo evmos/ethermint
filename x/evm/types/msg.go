@@ -377,7 +377,7 @@ func (msg *MsgEthereumTx) BuildTx(b client.TxBuilder, evmDenom string) (signing.
 }
 
 // GetSigners returns the expected signers for a MsgUpdateParams message.
-func (m *MsgUpdateParams) GetSigners() []sdk.AccAddress {
+func (m MsgUpdateParams) GetSigners() []sdk.AccAddress {
 	//#nosec G703 -- gosec raises a warning about a non-handled error which we deliberately ignore here
 	addr, _ := sdk.AccAddressFromBech32(m.Authority)
 	return []sdk.AccAddress{addr}
@@ -389,11 +389,7 @@ func (m *MsgUpdateParams) ValidateBasic() error {
 		return errortypes.Wrap(err, "invalid authority address")
 	}
 
-	if err := m.Params.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return m.Params.Validate()
 }
 
 // GetSignBytes implements the LegacyMsg interface.

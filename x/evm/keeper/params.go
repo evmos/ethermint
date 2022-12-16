@@ -5,7 +5,7 @@ import (
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
-var isTrue = []byte("0x01")
+var isTrue = []byte{0x01}
 
 // GetParams returns the total set of evm parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
@@ -40,7 +40,7 @@ func (k Keeper) GetExtraEIPs(ctx sdk.Context) types.ExtraEIPs {
 	var extraEIPs types.ExtraEIPs
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ParamStoreKeyExtraEIPs)
-	if bz == nil {
+	if len(bz) == 0 {
 		return extraEIPs
 	}
 	k.cdc.MustUnmarshal(bz, &extraEIPs)
@@ -52,7 +52,7 @@ func (k Keeper) GetChainConfig(ctx sdk.Context) types.ChainConfig {
 	var chainCfg types.ChainConfig
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ParamStoreKeyChainConfig)
-	if bz == nil {
+	if len(bz) == 0 {
 		return chainCfg
 	}
 	k.cdc.MustUnmarshal(bz, &chainCfg)
@@ -63,7 +63,7 @@ func (k Keeper) GetChainConfig(ctx sdk.Context) types.ChainConfig {
 func (k Keeper) GetEVMDenom(ctx sdk.Context) string {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ParamStoreKeyEVMDenom)
-	if bz == nil {
+	if len(bz) == 0 {
 		return ""
 	}
 	return string(bz)
