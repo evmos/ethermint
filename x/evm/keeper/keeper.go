@@ -36,7 +36,7 @@ type Keeper struct {
 	transientKey storetypes.StoreKey
 
 	// the address capable of executing a MsgUpdateParams message. Typically, this should be the x/gov module account.
-	authority string
+	authority sdk.AccAddress
 	// access to account state
 	accountKeeper types.AccountKeeper
 	// update balance and accounting operations with coins
@@ -66,7 +66,7 @@ type Keeper struct {
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey storetypes.StoreKey,
-	authority string,
+	authority sdk.AccAddress,
 	ak types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	sk types.StakingKeeper,
@@ -78,6 +78,11 @@ func NewKeeper(
 	// ensure evm module account is set
 	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
 		panic("the EVM module account has not been set")
+	}
+
+	// ensure the authority account is correct
+	if err := sdk.VerifyAddressFormat(authority); err != nil {
+		panic(err)
 	}
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
@@ -136,7 +141,7 @@ func (k Keeper) EmitBlockBloomEvent(ctx sdk.Context, bloom ethtypes.Bloom) {
 }
 
 // GetAuthority returns the x/evm module authority address
-func (k Keeper) GetAuthority() string {
+func (k Keeper) GetAuthority() sdk.AccAddress {
 	return k.authority
 }
 
