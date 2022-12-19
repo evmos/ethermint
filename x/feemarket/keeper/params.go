@@ -80,7 +80,6 @@ func (k Keeper) SetBaseFee(ctx sdk.Context, baseFee *big.Int) {
 	params.BaseFee = sdk.NewInt(baseFee.Int64())
 	err := k.SetParams(ctx, params)
 	if err != nil {
-		// TODO: Do we throw error ?
 		return
 	}
 }

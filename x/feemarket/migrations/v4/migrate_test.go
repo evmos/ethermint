@@ -17,6 +17,10 @@ type mockSubspace struct {
 	ps v4types.Params
 }
 
+func newMockSubspaceEmpty() mockSubspace {
+	return mockSubspace{}
+}
+
 func newMockSubspace(ps v4types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
@@ -33,6 +37,9 @@ func TestMigrate(t *testing.T) {
 	tKey := sdk.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	kvStore := ctx.KVStore(storeKey)
+
+	legacySubspaceEmpty := newMockSubspaceEmpty()
+	require.Error(t, v4.MigrateStore(ctx, storeKey, legacySubspaceEmpty, cdc))
 
 	legacySubspace := newMockSubspace(v4types.DefaultParams())
 	require.NoError(t, v4.MigrateStore(ctx, storeKey, legacySubspace, cdc))
