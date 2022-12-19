@@ -22,13 +22,18 @@ type Keeper struct {
 	storeKey     storetypes.StoreKey
 	transientKey storetypes.StoreKey
 	// the address capable of executing a MsgUpdateParams message. Typically, this should be the x/gov module account.
-	authority string
+	authority sdk.AccAddress
 }
 
 // NewKeeper generates new fee market module keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, authority string, storeKey, transientKey storetypes.StoreKey,
+	cdc codec.BinaryCodec, authority sdk.AccAddress, storeKey, transientKey storetypes.StoreKey,
 ) Keeper {
+	// ensure authority account is correctly formatted
+	if err := sdk.VerifyAddressFormat(authority); err != nil {
+		panic(err)
+	}
+
 	return Keeper{
 		cdc:          cdc,
 		storeKey:     storeKey,
