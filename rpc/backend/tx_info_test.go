@@ -2,6 +2,8 @@ package backend
 
 import (
 	"fmt"
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,7 +18,6 @@ import (
 	"github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc/metadata"
-	"math/big"
 )
 
 func (suite *BackendTestSuite) TestGetTransactionByHash() {
@@ -299,7 +300,7 @@ func (suite *BackendTestSuite) TestGetTransactionByBlockAndIndex() {
 		1,
 		0,
 		big.NewInt(1),
-        suite.backend.chainID,
+		suite.backend.chainID,
 	)
 	testCases := []struct {
 		name         string
@@ -393,7 +394,7 @@ func (suite *BackendTestSuite) TestGetTransactionByBlockNumberAndIndex() {
 		1,
 		0,
 		big.NewInt(1),
-        suite.backend.chainID,
+		suite.backend.chainID,
 	)
 	testCases := []struct {
 		name         string
@@ -585,8 +586,8 @@ func (suite *BackendTestSuite) TestGetTransactionReceipt() {
 
 			db := dbm.NewMemDB()
 			suite.backend.indexer = indexer.NewKVIndexer(db, tmlog.NewNopLogger(), suite.backend.clientCtx)
-            err := suite.backend.indexer.IndexBlock(tc.block, tc.blockResult)
-            suite.Require().NoError(err)
+			err := suite.backend.indexer.IndexBlock(tc.block, tc.blockResult)
+			suite.Require().NoError(err)
 
 			txReceipt, err := suite.backend.GetTransactionReceipt(common.HexToHash(tc.tx.Hash))
 			if tc.expPass {
@@ -595,6 +596,62 @@ func (suite *BackendTestSuite) TestGetTransactionReceipt() {
 			} else {
 				suite.Require().NotEqual(txReceipt, tc.expTxReceipt)
 			}
+		})
+	}
+}
+
+func (suite *BackendTestSuite) TestGetGasUsed() {
+	origin := suite.backend.cfg.JSONRPC.FixRevertGasRefundHeight
+	testCases := []struct {
+		name                     string
+		fixRevertGasRefundHeight int64
+		txResult                 *ethermint.TxResult
+		price                    *big.Int
+		gas                      uint64
+		exp                      uint64
+	}{
+		{
+			"success txResult",
+			1,
+			&ethermint.TxResult{
+				Height:  1,
+				Failed:  false,
+				GasUsed: 53026,
+			},
+			new(big.Int).SetUint64(0),
+			0,
+			53026,
+		},
+		{
+			"fail txResult before cap",
+			2,
+			&ethermint.TxResult{
+				Height:  1,
+				Failed:  true,
+				GasUsed: 53026,
+			},
+			new(big.Int).SetUint64(200000),
+			5000000000000,
+			1000000000000000000,
+		},
+		{
+			"fail txResult after cap",
+			2,
+			&ethermint.TxResult{
+				Height:  3,
+				Failed:  true,
+				GasUsed: 53026,
+			},
+			new(big.Int).SetUint64(200000),
+			5000000000000,
+			53026,
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.backend.cfg.JSONRPC.FixRevertGasRefundHeight = tc.fixRevertGasRefundHeight
+			suite.Require().Equal(tc.exp, suite.backend.GetGasUsed(tc.txResult, tc.price, tc.gas))
+			suite.backend.cfg.JSONRPC.FixRevertGasRefundHeight = origin
 		})
 	}
 }
