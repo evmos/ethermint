@@ -132,6 +132,14 @@ func (b *Backend) getTransactionByHashPending(txHash common.Hash) (*rpctypes.RPC
 	return nil, nil
 }
 
+// GetGasUsed returns patched GasUsed before the fix of revert gas refund logic when transaction reverted.
+func (b *Backend) GetGasUsed(res *ethermint.TxResult, price *big.Int, gas uint64) uint64 {
+	if res.Failed && res.Height < b.cfg.JSONRPC.FixRevertGasRefundHeight {
+		return new(big.Int).Mul(price, new(big.Int).SetUint64(gas)).Uint64()
+	}
+	return res.GasUsed
+}
+
 // GetTransactionReceipt returns the transaction receipt identified by hash.
 func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	hexTx := hash.Hex()
@@ -142,7 +150,6 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		b.logger.Debug("tx not found", "hash", hexTx, "error", err.Error())
 		return nil, nil
 	}
-	gasUsed := res.GasUsed
 	resBlock, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(res.Height))
 	if err != nil {
 		b.logger.Debug("block not found", "height", res.Height, "error", err.Error())
@@ -177,13 +184,6 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		status = hexutil.Uint(ethtypes.ReceiptStatusFailed)
 	} else {
 		status = hexutil.Uint(ethtypes.ReceiptStatusSuccessful)
-	}
-	// FIXME: config based on diff chain and env
-	isHeightBeforeUpgrade := true
-	if status == 0 && isHeightBeforeUpgrade {
-		price := txData.GetGasPrice()
-		gas := txData.GetGas()
-		gasUsed = new(big.Int).Mul(price, new(big.Int).SetUint64(gas)).Uint64()
 	}
 	chainID, err := b.ChainID()
 	if err != nil {
@@ -227,7 +227,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 		// They are stored in the chain database.
 		"transactionHash": hash,
 		"contractAddress": nil,
-		"gasUsed":         hexutil.Uint64(gasUsed),
+		"gasUsed":         hexutil.Uint64(b.GetGasUsed(res, txData.GetGasPrice(), txData.GetGas())),
 
 		// Inclusion information: These fields provide information about the inclusion of the
 		// transaction corresponding to this receipt.
