@@ -287,7 +287,6 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 			commit()
 			// Since the post-processing can alter the log, we need to update the result
 			res.Logs = types.NewLogsFromEth(receipt.Logs)
-			// TODO: figure out how to make this work with typed events
 			ctx.EventManager().EmitEvents(tmpCtx.EventManager().Events())
 		}
 	}

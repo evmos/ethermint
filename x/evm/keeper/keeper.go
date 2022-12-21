@@ -133,11 +133,14 @@ func (k Keeper) ChainID() *big.Int {
 
 // EmitBlockBloomEvent emit block bloom events
 func (k Keeper) EmitBlockBloomEvent(ctx sdk.Context, bloom ethtypes.Bloom) {
-	_ = ctx.EventManager().EmitTypedEvent(
+	err := ctx.EventManager().EmitTypedEvent(
 		&types.EventBlockBloom{
 			Bloom: string(bloom.Bytes()),
 		},
 	)
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+	}
 }
 
 // GetBlockBloomTransient returns bloom bytes for the current block height
