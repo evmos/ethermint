@@ -29,7 +29,6 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	err := ctx.EventManager().EmitTypedEvent(&types.EventFeeMarket{
 		BaseFee: baseFee.String(),
 	})
-
 	if err != nil {
 		k.Logger(ctx).Error(err.Error())
 	}
@@ -64,7 +63,6 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 		Height: fmt.Sprintf("%d", ctx.BlockHeight()),
 		Amount: fmt.Sprintf("%d", gasWanted),
 	})
-
 	if err != nil {
 		k.Logger(ctx).Error(err.Error())
 	}
