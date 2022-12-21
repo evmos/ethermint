@@ -17,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -376,7 +377,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	tx = types.NewTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, nil, nil, bytecode, nil)
 	suite.SignTx(tx)
 
-	_, err = suite.handler(suite.ctx, tx)
+	result, err = suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err, "failed to handle eth tx msg")
 
 	err = proto.Unmarshal(result.Data, &res)
@@ -388,7 +389,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	tx = types.NewTx(suite.chainID, 2, &receiver, big.NewInt(0), gasLimit, gasPrice, nil, nil, bytecode, nil)
 	suite.SignTx(tx)
 
-	_, err = suite.handler(suite.ctx, tx)
+	result, err = suite.handler(suite.ctx, tx)
 	suite.Require().NoError(err, "failed to handle eth tx msg")
 
 	err = proto.Unmarshal(result.Data, &res)
