@@ -135,10 +135,18 @@ func NewEthGasConsumeDecorator(
 // - sets the gas meter limit
 // - gas limit is greater than the block gas meter limit
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	gasWanted := uint64(0)
 	// gas consumption limit already checked during CheckTx so there's no need to
 	// verify it again during ReCheckTx
 	if ctx.IsReCheckTx() {
-		return next(ctx, tx, simulate)
+		// Use new context with gasWanted = 0
+		// Otherwise, there's an error on txmempool.postCheck (tendermint)
+		// that is not bubbled up. Thus, the Tx never runs on DeliverMode
+		// Error: "gas wanted -1 is negative"
+		// For more information, see issue #1554
+		// https://github.com/evmos/ethermint/issues/1554
+		newCtx := ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
+		return next(newCtx, tx, simulate)
 	}
 
 	chainCfg := egcd.evmKeeper.GetChainConfig(ctx)
@@ -147,7 +155,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
-	gasWanted := uint64(0)
 	var events sdk.Events
 
 	// Use the lowest priority of all the messages as the final one.
