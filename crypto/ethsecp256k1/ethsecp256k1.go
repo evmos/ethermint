@@ -1,3 +1,18 @@
+// Copyright 2021 Evmos Foundation
+// This file is part of Evmos' Ethermint library.
+//
+// The Ethermint library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The Ethermint library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the Ethermint library. If not, see https://github.com/evmos/ethermint/blob/main/LICENSE
 package ethsecp256k1
 
 import (
@@ -213,15 +228,15 @@ func (pubKey PubKey) VerifySignature(msg, sig []byte) bool {
 }
 
 // Verifies the signature as an EIP-712 signature by first converting the message payload
-// to an EIP-712 hashed object, performing ECDSA verification on the hash. This is to support
+// to EIP-712 object bytes, then performing ECDSA verification on the hash. This is to support
 // signing a Cosmos payload using EIP-712.
 func (pubKey PubKey) verifySignatureAsEIP712(msg, sig []byte) bool {
-	eip712Hash, err := eip712.GetEIP712HashForMsg(msg)
+	eip712Bytes, err := eip712.GetEIP712BytesForMsg(msg)
 	if err != nil {
 		return false
 	}
 
-	return pubKey.verifySignatureECDSA(eip712Hash, sig)
+	return pubKey.verifySignatureECDSA(eip712Bytes, sig)
 }
 
 // Perform standard ECDSA signature verification for the given raw bytes and signature.

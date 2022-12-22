@@ -1,3 +1,18 @@
+// Copyright 2021 Evmos Foundation
+// This file is part of Evmos' Ethermint library.
+//
+// The Ethermint library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The Ethermint library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the Ethermint library. If not, see https://github.com/evmos/ethermint/blob/main/LICENSE
 package ante
 
 import (
@@ -120,10 +135,18 @@ func NewEthGasConsumeDecorator(
 // - sets the gas meter limit
 // - gas limit is greater than the block gas meter limit
 func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	gasWanted := uint64(0)
 	// gas consumption limit already checked during CheckTx so there's no need to
 	// verify it again during ReCheckTx
 	if ctx.IsReCheckTx() {
-		return next(ctx, tx, simulate)
+		// Use new context with gasWanted = 0
+		// Otherwise, there's an error on txmempool.postCheck (tendermint)
+		// that is not bubbled up. Thus, the Tx never runs on DeliverMode
+		// Error: "gas wanted -1 is negative"
+		// For more information, see issue #1554
+		// https://github.com/evmos/ethermint/issues/1554
+		newCtx := ctx.WithGasMeter(ethermint.NewInfiniteGasMeterWithLimit(gasWanted))
+		return next(newCtx, tx, simulate)
 	}
 
 	chainCfg := egcd.evmKeeper.GetChainConfig(ctx)
@@ -132,7 +155,6 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	blockHeight := big.NewInt(ctx.BlockHeight())
 	homestead := ethCfg.IsHomestead(blockHeight)
 	istanbul := ethCfg.IsIstanbul(blockHeight)
-	gasWanted := uint64(0)
 	var events sdk.Events
 
 	// Use the lowest priority of all the messages as the final one.
