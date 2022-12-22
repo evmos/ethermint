@@ -90,6 +90,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (cli) [#1550](https://github.com/evmos/ethermint/pull/1550) Fix signature algorithm validation and default for Ledger.
 * (eip712) [#1543](https://github.com/evmos/ethermint/pull/1543) Improve error handling for EIP-712 encoding config initialization.
 * (app) [#1505](https://github.com/evmos/ethermint/pull/1505) Setup gRPC node service with the application.
 * (server) [#1497](https://github.com/evmos/ethermint/pull/1497) Fix telemetry server setup for observability
