@@ -36,13 +36,13 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.20.0-rc4] - 2022-12-09
+## [v0.20.0-rc5] - 2022-12-22
 
 ### State Machine Breaking
 
-* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
+* (deps) [#1564](https://github.com/evmos/ethermint/pull/1564) Bump ibc-go to [`v5.2.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.2.0)
 * (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.6).
+* (deps) [#1551](https://github.com/evmos/ethermint/pull/1551) Upgrade Cosmos SDK to [`v0.46.7`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.7).
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
 * (evm) [#1452](https://github.com/evmos/ethermint/pull/1452) Simplify Gas Math in `ApplyTransaction`.
@@ -90,6 +90,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (rpc) [#1561](https://github.com/evmos/ethermint/pull/1561) Fix call to `NewMnemonic` in `personal_newAccount`
 * (cli) [#1550](https://github.com/evmos/ethermint/pull/1550) Fix signature algorithm validation and default for Ledger.
 * (eip712) [#1543](https://github.com/evmos/ethermint/pull/1543) Improve error handling for EIP-712 encoding config initialization.
 * (app) [#1505](https://github.com/evmos/ethermint/pull/1505) Setup gRPC node service with the application.
