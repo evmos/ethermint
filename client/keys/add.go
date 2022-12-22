@@ -65,6 +65,11 @@ output
   - armor encrypted private key (saved to file)
 */
 func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *bufio.Reader) error {
+	var (
+		algo keyring.SignatureAlgo
+		err  error
+	)
+
 	name := args[0]
 
 	interactive, _ := cmd.Flags().GetBool(flagInteractive)
@@ -77,11 +82,6 @@ func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *buf
 	outputFormat := ctx.OutputFormat
 
 	keyringAlgos, ledgerAlgos := kb.SupportedAlgorithms()
-
-	var (
-		algo keyring.SignatureAlgo
-		err  error
-	)
 
 	// check if the provided signing algorithm is supported by the keyring or
 	// ledger
