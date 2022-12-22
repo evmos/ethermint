@@ -54,7 +54,7 @@ Or check out the latest [release](https://github.com/evmos/ethermint/releases).
 
 ## Quick Start
 
-To learn how the Ethermint works from a high-level perspective, go to the [Introduction](https://evmos.dev/intro/overview.html) section from the documentation. You can also check the instructions to [Run a Node](https://evmos.dev/quickstart/run_node.html).
+To learn how Ethermint works from a high-level perspective, go to the [Introduction](https://docs.evmos.org/about/intro/overview.html) section from the documentation. You can also check the instructions to [Run a Node](https://docs.evmos.org/validators/quickstart/run_node.html).
 
 For an example on how Ethermint can be used on any Cosmos-SDK chain, please refer to [Evmos](https://www.github.com/tharsis/evmos).
 
