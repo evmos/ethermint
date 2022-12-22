@@ -44,7 +44,7 @@ Ethermint is a scalable and interoperable Ethereum library, built on Proof-of-St
 
 ## Installation
 
-For prerequisites and detailed build instructions please read the Evmos [Installation](https://evmos.dev/quickstart/installation.html) instructions. Once the dependencies are installed, run:
+For prerequisites and detailed build instructions please read the Evmos [Installation](https://docs.evmos.org/validators/quickstart/installation.html) instructions. Once the dependencies are installed, run:
 
 ```bash
 make install
