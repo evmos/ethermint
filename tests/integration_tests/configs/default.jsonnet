@@ -7,7 +7,6 @@
       mempool: {
         // use v1 mempool to enable tx prioritization
         version: 'v1',
-        recheck: false,
       },
     },
     'app-config': {
