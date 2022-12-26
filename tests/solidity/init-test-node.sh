@@ -40,17 +40,17 @@ cat $HOME/.ethermintd/config/genesis.json | jq '.consensus_params["block"]["max_
 
 # modified default configs
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  sed -i '' 's/create_empty_blocks = true/create_empty_blocks = false/g' $HOME/.ethermintd/config/config.toml
-  sed -i '' 's/prometheus-retention-time = 0/prometheus-retention-time  = 1000000000000/g' $HOME/.ethermintd/config/app.toml
-  sed -i '' 's/enabled = false/enabled = true/g' $HOME/.ethermintd/config/app.toml
-  sed -i '' 's/prometheus = false/prometheus = true/' $HOME/.ethermintd/config/config.toml
-  sed -i '' 's/timeout_commit = "5s"/timeout_commit = "1s"/g' $HOME/.ethermintd/config/config.toml
+    sed -i '' 's/create_empty_blocks = true/create_empty_blocks = false/g' $HOME/.ethermintd/config/config.toml
+    sed -i '' 's/prometheus-retention-time = 0/prometheus-retention-time  = 1000000000000/g' $HOME/.ethermintd/config/app.toml
+    sed -i '' 's/enabled = false/enabled = true/g' $HOME/.ethermintd/config/app.toml
+    sed -i '' 's/prometheus = false/prometheus = true/' $HOME/.ethermintd/config/config.toml
+    sed -i '' 's/timeout_commit = "5s"/timeout_commit = "1s"/g' $HOME/.ethermintd/config/config.toml
 else
-  sed -i 's/create_empty_blocks = true/create_empty_blocks = false/g' $HOME/.ethermintd/config/config.toml
-  sed -i 's/prometheus-retention-time  = "0"/prometheus-retention-time  = "1000000000000"/g' $HOME/.ethermintd/config/app.toml
-  sed -i 's/enabled = false/enabled = true/g' $HOME/.ethermintd/config/app.toml
-  sed -i 's/prometheus = false/prometheus = true/' $HOME/.ethermintd/config/config.toml
-  sed -i 's/timeout_commit = "5s"/timeout_commit = "1s"/g' $HOME/.ethermintd/config/config.toml
+    sed -i 's/create_empty_blocks = true/create_empty_blocks = false/g' $HOME/.ethermintd/config/config.toml
+    sed -i 's/prometheus-retention-time  = "0"/prometheus-retention-time  = "1000000000000"/g' $HOME/.ethermintd/config/app.toml
+    sed -i 's/enabled = false/enabled = true/g' $HOME/.ethermintd/config/app.toml
+    sed -i 's/prometheus = false/prometheus = true/' $HOME/.ethermintd/config/config.toml
+    sed -i 's/timeout_commit = "5s"/timeout_commit = "1s"/g' $HOME/.ethermintd/config/config.toml
 fi
 
 # Allocate genesis accounts (cosmos formatted addresses)
