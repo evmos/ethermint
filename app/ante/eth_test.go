@@ -16,7 +16,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
+func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() { //nolint:govet // this is a test, so we can copy locks
 	dec := ante.NewEthAccountVerificationDecorator(
 		suite.app.AccountKeeper, suite.app.EvmKeeper,
 	)
@@ -104,7 +104,7 @@ func (suite AnteTestSuite) TestNewEthAccountVerificationDecorator() {
 	}
 }
 
-func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
+func (suite AnteTestSuite) TestEthNonceVerificationDecorator() { //nolint:govet // this is a test, so we can copy locks
 	suite.SetupTest()
 	dec := ante.NewEthIncrementSenderSequenceDecorator(suite.app.AccountKeeper)
 
@@ -160,7 +160,7 @@ func (suite AnteTestSuite) TestEthNonceVerificationDecorator() {
 	}
 }
 
-func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
+func (suite AnteTestSuite) TestEthGasConsumeDecorator() { //nolint:govet // this is a test, so we can copy locks
 	dec := ante.NewEthGasConsumeDecorator(suite.app.EvmKeeper, config.DefaultMaxTxGasWanted)
 
 	addr := tests.GenerateAddress()
@@ -317,7 +317,7 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() {
 	}
 }
 
-func (suite AnteTestSuite) TestCanTransferDecorator() {
+func (suite AnteTestSuite) TestCanTransferDecorator() { //nolint:govet // this is a test, so we can copy locks
 	dec := ante.NewCanTransferDecorator(suite.app.EvmKeeper)
 
 	addr, privKey := tests.NewAddrKey()
@@ -401,7 +401,7 @@ func (suite AnteTestSuite) TestCanTransferDecorator() {
 	}
 }
 
-func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() {
+func (suite AnteTestSuite) TestEthIncrementSenderSequenceDecorator() { //nolint:govet // this is a test, so we can copy locks
 	dec := ante.NewEthIncrementSenderSequenceDecorator(suite.app.AccountKeeper)
 	addr, privKey := tests.NewAddrKey()
 

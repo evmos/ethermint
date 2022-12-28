@@ -21,7 +21,7 @@ var execTypes = []struct {
 	{"deliverTxSimulate", false, true},
 }
 
-func (s AnteTestSuite) TestMinGasPriceDecorator() {
+func (s AnteTestSuite) TestMinGasPriceDecorator() { //nolint:govet // this is a test, so we can copy locks
 	denom := evmtypes.DefaultEVMDenom
 	testMsg := banktypes.MsgSend{
 		FromAddress: "evmos1x8fhpj9nmhqk8z9kpgjt95ck2xwyue0ptzkucp",
@@ -136,7 +136,7 @@ func (s AnteTestSuite) TestMinGasPriceDecorator() {
 	}
 }
 
-func (s AnteTestSuite) TestEthMinGasPriceDecorator() {
+func (s AnteTestSuite) TestEthMinGasPriceDecorator() { //nolint:govet // this is a test, so we can copy locks
 	denom := evmtypes.DefaultEVMDenom
 	from, privKey := tests.NewAddrKey()
 	to := tests.GenerateAddress()
@@ -346,6 +346,6 @@ func (s AnteTestSuite) TestEthMinGasPriceDecorator() {
 	}
 }
 
-func (suite AnteTestSuite) TestEthMempoolFeeDecorator() {
+func (s AnteTestSuite) TestEthMempoolFeeDecorator() { //nolint:govet // this is a test, so we can copy locks
 	// TODO: add test
 }

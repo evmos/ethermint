@@ -1,7 +1,7 @@
 run:
-  tests: false
-  # timeout for analysis, e.g. 30s, 5m, default is 1m
-  # timeout: 5m
+  tests: true
+  concurrency: 4
+  timeout: 10m
 
 linters:
   enable:

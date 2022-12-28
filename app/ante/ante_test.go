@@ -34,7 +34,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
-func (suite AnteTestSuite) TestAnteHandler() {
+func (suite AnteTestSuite) TestAnteHandler() { //nolint:govet // this is a test, so we can copy locks
 	var acc authtypes.AccountI
 	addr, privKey := tests.NewAddrKey()
 	to := tests.GenerateAddress()
@@ -47,7 +47,8 @@ func (suite AnteTestSuite) TestAnteHandler() {
 		suite.Require().NoError(acc.SetSequence(1))
 		suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
-		suite.app.EvmKeeper.SetBalance(suite.ctx, addr, big.NewInt(10000000000))
+		err := suite.app.EvmKeeper.SetBalance(suite.ctx, addr, big.NewInt(10000000000))
+		suite.Require().NoError(err)
 
 		suite.app.FeeMarketKeeper.SetBaseFee(suite.ctx, big.NewInt(100))
 	}
@@ -892,7 +893,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 	}
 }
 
-func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
+func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() { //nolint:govet // this is a test, so we can copy locks
 	addr, privKey := tests.NewAddrKey()
 	to := tests.GenerateAddress()
 
@@ -1159,7 +1160,7 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() {
 	suite.enableLondonHF = true
 }
 
-func (suite AnteTestSuite) TestAnteHandlerWithParams() {
+func (suite AnteTestSuite) TestAnteHandlerWithParams() { //nolint:govet // this is a test, so we can copy locks
 	addr, privKey := tests.NewAddrKey()
 	to := tests.GenerateAddress()
 
@@ -1303,7 +1304,7 @@ func (suite *AnteTestSuite) TestConsumeSignatureVerificationGas() {
 	expectedCost1 := expectedGasCostByKeys(pkSet1)
 
 	for i := 0; i < len(pkSet1); i++ {
-		stdSig := legacytx.StdSignature{PubKey: pkSet1[i], Signature: sigSet1[i]}
+		stdSig := legacytx.StdSignature{PubKey: pkSet1[i], Signature: sigSet1[i]} //nolint:staticcheck // SA1019: legacytx.StdSignature is deprecated
 		sigV2, err := legacytx.StdSignatureToSignatureV2(cdc, stdSig)
 		suite.Require().NoError(err)
 		err = multisig.AddSignatureV2(multisignature1, sigV2, pkSet1)

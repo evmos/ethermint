@@ -383,7 +383,7 @@ func (suite *BackendTestSuite) TestGetTransactionCount() {
 		//	},
 		//	true,
 		//	hexutil.Uint64(0),
-		//},
+		// },
 	}
 	for _, tc := range testCases {
 		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {

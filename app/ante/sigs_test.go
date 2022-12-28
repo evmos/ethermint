@@ -8,7 +8,7 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
-func (suite AnteTestSuite) TestSignatures() {
+func (suite AnteTestSuite) TestSignatures() { //nolint:govet // this is a test, so we can copy locks
 	suite.enableFeemarket = false
 	suite.SetupTest() // reset
 
@@ -19,7 +19,8 @@ func (suite AnteTestSuite) TestSignatures() {
 	acc.Nonce = 1
 	acc.Balance = big.NewInt(10000000000)
 
-	suite.app.EvmKeeper.SetAccount(suite.ctx, addr, *acc)
+	err := suite.app.EvmKeeper.SetAccount(suite.ctx, addr, *acc)
+	suite.Require().NoError(err)
 	msgEthereumTx := evmtypes.NewTx(suite.app.EvmKeeper.ChainID(), 1, &to, big.NewInt(10), 100000, big.NewInt(1), nil, nil, nil, nil)
 	msgEthereumTx.From = addr.Hex()
 

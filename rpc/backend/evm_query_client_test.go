@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"testing"
+
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
@@ -18,8 +22,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"strconv"
-	"testing"
 )
 
 // QueryClient defines a mocked object that implements the ethermint GRPC
@@ -156,7 +158,7 @@ func RegisterEstimateGas(queryClient *mocks.EVMQueryClient, args evmtypes.Transa
 }
 
 // BaseFee
-func RegisterBaseFee(queryClient *mocks.EVMQueryClient, baseFee sdk.Int) {
+func RegisterBaseFee(queryClient *mocks.EVMQueryClient, baseFee math.Int) {
 	queryClient.On("BaseFee", rpc.ContextWithHeight(1), &evmtypes.QueryBaseFeeRequest{}).
 		Return(&evmtypes.QueryBaseFeeResponse{BaseFee: &baseFee}, nil)
 }

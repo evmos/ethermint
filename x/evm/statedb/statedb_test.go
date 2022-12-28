@@ -113,7 +113,7 @@ func (suite *StateDBTestSuite) TestAccountOverride() {
 	// test balance carry over when overwritten
 	amount := big.NewInt(1)
 
-	// init an EOA account, account overriden only happens on EOA account.
+	// init an EOA account, account overridden only happens on EOA account.
 	db.AddBalance(address, amount)
 	db.SetNonce(address, 1)
 

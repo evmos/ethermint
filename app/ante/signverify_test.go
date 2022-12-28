@@ -10,7 +10,7 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
-func (suite AnteTestSuite) TestEthSigVerificationDecorator() {
+func (suite AnteTestSuite) TestEthSigVerificationDecorator() { //nolint:govet // this is a test, so we can copy locks
 	addr, privKey := tests.NewAddrKey()
 
 	signedTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), 1000, big.NewInt(1), nil, nil, nil, nil)

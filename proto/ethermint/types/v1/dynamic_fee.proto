@@ -9,5 +9,5 @@ option go_package = "github.com/evmos/ethermint/types";
 message ExtensionOptionDynamicFeeTx {
   // max_priority_price is the same as `max_priority_fee_per_gas` in eip-1559 spec
   string max_priority_price = 1
-      [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int", (gogoproto.nullable) = false];
+      [(gogoproto.customtype) = "cosmossdk.io/math.Int", (gogoproto.nullable) = false];
 }

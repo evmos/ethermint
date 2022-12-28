@@ -12,7 +12,7 @@ import (
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
-func (suite AnteTestSuite) TestGasWantedDecorator() {
+func (suite AnteTestSuite) TestGasWantedDecorator() { //nolint:govet // this is a test, so we can copy locks
 	suite.enableFeemarket = true
 	suite.SetupTest()
 	dec := ante.NewGasWantedDecorator(suite.app.EvmKeeper, suite.app.FeeMarketKeeper)

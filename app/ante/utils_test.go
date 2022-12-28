@@ -146,7 +146,7 @@ func TestAnteTestSuite(t *testing.T) {
 	})
 }
 
-func (s *AnteTestSuite) BuildTestEthTx(
+func (suite *AnteTestSuite) BuildTestEthTx(
 	from common.Address,
 	to common.Address,
 	amount *big.Int,
@@ -156,9 +156,9 @@ func (s *AnteTestSuite) BuildTestEthTx(
 	gasTipCap *big.Int,
 	accesses *ethtypes.AccessList,
 ) *evmtypes.MsgEthereumTx {
-	chainID := s.app.EvmKeeper.ChainID()
-	nonce := s.app.EvmKeeper.GetNonce(
-		s.ctx,
+	chainID := suite.app.EvmKeeper.ChainID()
+	nonce := suite.app.EvmKeeper.GetNonce(
+		suite.ctx,
 		common.BytesToAddress(from.Bytes()),
 	)
 
@@ -468,22 +468,22 @@ func StdSignBytes(cdc *codec.LegacyAmino, chainID string, accnum uint64, sequenc
 }
 
 func (suite *AnteTestSuite) CreateTestEIP712SingleMessageTxBuilder(
-	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins, msg sdk.Msg,
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainID string, gas uint64, gasAmount sdk.Coins, msg sdk.Msg,
 ) client.TxBuilder {
-	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainId, gas, gasAmount, []sdk.Msg{msg})
+	return suite.CreateTestEIP712CosmosTxBuilder(from, priv, chainID, gas, gasAmount, []sdk.Msg{msg})
 }
 
 func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
-	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins, msgs []sdk.Msg,
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainID string, gas uint64, gasAmount sdk.Coins, msgs []sdk.Msg,
 ) client.TxBuilder {
 	var err error
 
 	nonce, err := suite.app.AccountKeeper.GetSequence(suite.ctx, from)
 	suite.Require().NoError(err)
 
-	pc, err := types.ParseChainID(chainId)
+	pc, err := types.ParseChainID(chainID)
 	suite.Require().NoError(err)
-	ethChainId := pc.Uint64()
+	ethChainID := pc.Uint64()
 
 	// GenerateTypedData TypedData
 	var ethermintCodec codec.ProtoCodecMarshaler
@@ -492,11 +492,11 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	ethermintCodec = codec.NewProtoCodec(registry)
 	cryptocodec.RegisterInterfaces(registry)
 
-	fee := legacytx.NewStdFee(gas, gasAmount)
+	fee := legacytx.NewStdFee(gas, gasAmount) //nolint:staticcheck // SA1019: legacytx.StdFee is deprecated: use FeeTx interface instead
 	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
 
-	data := legacytx.StdSignBytes(chainId, accNumber, nonce, 0, fee, msgs, "", nil)
-	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, ethChainId, msgs[0], data, &eip712.FeeDelegationOptions{
+	data := legacytx.StdSignBytes(chainID, accNumber, nonce, 0, fee, msgs, "", nil)
+	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, ethChainID, msgs[0], data, &eip712.FeeDelegationOptions{
 		FeePayer: from,
 	})
 	suite.Require().NoError(err)
@@ -514,7 +514,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	var option *codectypes.Any
 	option, err = codectypes.NewAnyWithValue(&types.ExtensionOptionsWeb3Tx{
 		FeePayer:         from.String(),
-		TypedDataChainID: ethChainId,
+		TypedDataChainID: ethChainID,
 		FeePayerSig:      signature,
 	})
 	suite.Require().NoError(err)

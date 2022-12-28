@@ -147,7 +147,6 @@ func (suite *ImporterTestSuite) TestImportBlocks() {
 		}
 
 		for _, tx := range block.Transactions() {
-
 			receipt, gas, err := applyTransaction(
 				ctx, chainConfig, chainContext, nil, gp, suite.app.EvmKeeper, vmdb, header, tx, usedGas, vmConfig,
 			)
