@@ -60,8 +60,8 @@ schema = 3
     version = "v0.22.1"
     hash = "sha256-hBU+roIELcmbW2Gz7eGZzL9qNA1bakq5wNxqCgs4TKc="
   [mod."github.com/btcsuite/btcd/btcec/v2"]
-    version = "v2.2.0"
-    hash = "sha256-cwoIqi0SiAaGEBtuQKip9OVirKIeJw5fUoWo7x/xfOc="
+    version = "v2.3.2"
+    hash = "sha256-natWs+yIAuD1UI07iZtjPilroQLfXizFn3lNOiOT83U="
   [mod."github.com/btcsuite/btcd/chaincfg/chainhash"]
     version = "v1.0.1"
     hash = "sha256-vix0j/KGNvoKjhlKgVeSLY6un2FHeIEoZWMC4z3yvZ4="
@@ -91,14 +91,14 @@ schema = 3
     hash = "sha256-mFKxFHp7RaE1L5NdtH9H9px2Cy6I5uOZVnFOgE8Nrew="
     replaced = "github.com/cosmos/cosmos-sdk/ics23/go"
   [mod."github.com/cosmos/btcutil"]
-    version = "v1.0.4"
-    hash = "sha256-JvcBXBdjdmnaW/nyf/tw/uaOAGn1b78yxrtl2/Rs3kA="
+    version = "v1.0.5"
+    hash = "sha256-t572Sr5iiHcuMKLMWa2i+LBAt192oa+G1oA371tG/eI="
   [mod."github.com/cosmos/cosmos-proto"]
     version = "v1.0.0-beta.1"
     hash = "sha256-oATkuj+fM5eBn+ywO+w/tL0AFSIEkx0J3Yz+VhVe0QA="
   [mod."github.com/cosmos/cosmos-sdk"]
-    version = "v0.46.6"
-    hash = "sha256-H1VZxZUWXhpXiY3A9smLp09MEGpXmh+XvX6YUiXPcpQ="
+    version = "v0.46.7"
+    hash = "sha256-54DCF8lrnA1oUmBJlbUlWXOP5UbenRInUROn5P5I9qI="
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -112,14 +112,11 @@ schema = 3
     version = "v0.19.4"
     hash = "sha256-EmpRZ48pjPFq/fIHneut9Vyo5QJATfb3ZO7KzWnqs9g="
   [mod."github.com/cosmos/ibc-go/v5"]
-    version = "v5.1.0"
-    hash = "sha256-9ZwGw6XqYkBtj+vTQ2IodNb7VcGesTFnVsxjd+G1I6Q="
+    version = "v5.2.0"
+    hash = "sha256-Gfqhdz9ZKEgb7LCkHiXCwYZYUYluQ+vMew/GkssfVj8="
   [mod."github.com/cosmos/ledger-cosmos-go"]
-    version = "v0.11.1"
-    hash = "sha256-yli+VvVtZmHo2LPvCY6lYVUfcCDn3sBLDL+a8KIlqDA="
-  [mod."github.com/cosmos/ledger-go"]
-    version = "v0.9.2"
-    hash = "sha256-0YI+0A6wFBjiebBwzWOQjkgXkTakCrf7Gjg2xEaQdoM="
+    version = "v0.12.1"
+    hash = "sha256-9+nr+/r4MyiogddS0JcXOuriPqXP4nxln8ts+mYQRcg="
   [mod."github.com/creachadair/taskgroup"]
     version = "v0.3.2"
     hash = "sha256-Y261IO/d9xjV0UScqHvo31broxvnKn4IQQC9Mu6jNkE="
@@ -362,11 +359,11 @@ schema = 3
     version = "v0.0.5"
     hash = "sha256-/5i70IkH/qSW5KjGzv8aQNKh9tHoz98tqtL0K2DMFn4="
   [mod."github.com/onsi/ginkgo/v2"]
-    version = "v2.5.1"
-    hash = "sha256-VB29+H9k7l6il63oXJvsjamSUhsw/e99iI/BeTCderA="
+    version = "v2.6.1"
+    hash = "sha256-OEiWYKCGPCaqL3vzSrHquHGm+Q8URT2anpanAVK5hRo="
   [mod."github.com/onsi/gomega"]
-    version = "v1.24.1"
-    hash = "sha256-REfxQTDRcO23GnmJfOW8/MmPJf9oE2grVvvGiC1eSbo="
+    version = "v1.24.2"
+    hash = "sha256-iascSzzBT1Uv/XybezSblIwwrq78BU4a9BVB5MvK6MM="
   [mod."github.com/pelletier/go-toml"]
     version = "v1.9.5"
     hash = "sha256-RJ9K1BTId0Mled7S66iGgxHkZ5JKEIsrrNaEfM8aImc="
@@ -464,8 +461,8 @@ schema = 3
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
   [mod."github.com/tendermint/tendermint"]
-    version = "v0.34.23"
-    hash = "sha256-eir0vr8lQOG+FTPo+ZUeDidAIACfyUq2ie3XRE8rIa4="
+    version = "v0.34.24"
+    hash = "sha256-3HFTv4XgN535RDaJ5OwUS+fnJHgkmLTwU7CNU2ilxEQ="
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"
     hash = "sha256-hl/3RrBrpkk2zA6dmrNlIYKs1/GfqegSscDSkA5Pjlo="
@@ -482,8 +479,11 @@ schema = 3
     version = "v0.5.8"
     hash = "sha256-bfG3dssBUn+mSOAuKL+a/DTGGLUA+eASgLoGv/Gkqs0="
   [mod."github.com/zondax/hid"]
-    version = "v0.9.1-0.20220302062450-5552068d2266"
-    hash = "sha256-IZea8SHuLQxlltm1avieRVI054TWZg2jEoplodvNtwk="
+    version = "v0.9.1"
+    hash = "sha256-hSVmN/f/lQHFhF60o6ej78ELC0MMoqQgqIX2hHjdTXg="
+  [mod."github.com/zondax/ledger-go"]
+    version = "v0.14.0"
+    hash = "sha256-RozTPSNs4RerZ4DQMBcGmvREjoRtH1G69xjhccYjIOk="
   [mod."go.etcd.io/bbolt"]
     version = "v1.3.6"
     hash = "sha256-DenVAmyN22xUiivk6fdJp4C9ZnUJXCMDUf8E0goRRV4="
@@ -497,8 +497,8 @@ schema = 3
     version = "v0.0.0-20220722155223-a9213eeb770e"
     hash = "sha256-kNgzydWRpjm0sZl4uXEs3LX5L0xjJtJRAFf/CTlYUN4="
   [mod."golang.org/x/net"]
-    version = "v0.2.0"
-    hash = "sha256-0MqnHDdLkkau6k7hlWD9MzIoAFROvxulyT+KzZkSXOs="
+    version = "v0.4.0"
+    hash = "sha256-7IwGZh/xg4mQz88cJio2Ov5d3jGRXKj1itlAja/EAbQ="
   [mod."golang.org/x/oauth2"]
     version = "v0.0.0-20221014153046-6fdb5e3db783"
     hash = "sha256-IoygidVNqyAZmN+3macDeIefK8hhJToygpcqlwehdYQ="
@@ -506,11 +506,11 @@ schema = 3
     version = "v0.1.0"
     hash = "sha256-Hygjq9euZ0qz6TvHYQwOZEjNiTbTh1nSLRAWZ6KFGR8="
   [mod."golang.org/x/sys"]
-    version = "v0.2.0"
-    hash = "sha256-N6yfQH7R2gfcvyWTQZbxWuSNyVy6hAxiab2WFzgAykI="
+    version = "v0.3.0"
+    hash = "sha256-TIHhfYbZ99sCU1ZMikxwomXH5AEtD/lA1VMMW+UAhbU="
   [mod."golang.org/x/term"]
-    version = "v0.2.0"
-    hash = "sha256-azcllZ0o/9TurqX9udaJ0o9yxqSoI0/bSJsvQQLYIQc="
+    version = "v0.3.0"
+    hash = "sha256-NKv2o8wz8DB/2W2h/muGEIHb+S06mBXZxhG254RpQ5s="
   [mod."golang.org/x/text"]
     version = "v0.5.0"
     hash = "sha256-ztH+xQyM/clOcQl+y/UEPcfNKbc3xApMbEPDDZ9up0o="

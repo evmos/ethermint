@@ -92,9 +92,6 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
     - check that queries on legacy blocks still works after upgrade.
     """
     cli = custom_ethermint.cosmos_cli()
-    height = cli.block_height()
-    target_height = height + 10
-    print("upgrade height", target_height)
 
     w3 = custom_ethermint.w3
     contract, _ = deploy_contract(w3, CONTRACTS["TestERC20A"])
@@ -103,6 +100,9 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
     old_base_fee = w3.eth.get_block(old_height).baseFeePerGas
     old_erc20_balance = contract.caller.balanceOf(ADDRS["validator"])
     print("old values", old_height, old_balance, old_base_fee)
+
+    target_height = w3.eth.block_number + 10
+    print("upgrade height", target_height)
 
     plan_name = "integration-test-upgrade"
     rsp = cli.gov_propose(
@@ -120,7 +120,6 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
 
     # get proposal_id
     ev = parse_events(rsp["logs"])["submit_proposal"]
-    assert ev["proposal_type"] == "SoftwareUpgrade", rsp
     proposal_id = ev["proposal_id"]
 
     rsp = cli.gov_vote("validator", proposal_id, "yes")
