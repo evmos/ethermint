@@ -510,7 +510,7 @@ func (suite AnteTestSuite) TestAnteHandler() { //nolint:govet // this is a test,
 				amount := sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(100*int64(gas))))
 				txBuilder := suite.CreateTestEIP712TxBuilderMsgSend(from, privKey, "ethermint_9001-1", gas, amount)
 				sigsV2 := signing.SignatureV2{}
-				txBuilder.SetSignatures(sigsV2)
+				txBuilder.SetSignatures(sigsV2) //nolint:errcheck
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
@@ -530,7 +530,7 @@ func (suite AnteTestSuite) TestAnteHandler() { //nolint:govet // this is a test,
 					},
 					Sequence: nonce - 1,
 				}
-				txBuilder.SetSignatures(sigsV2)
+				txBuilder.SetSignatures(sigsV2) //nolint:errcheck
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
@@ -550,7 +550,7 @@ func (suite AnteTestSuite) TestAnteHandler() { //nolint:govet // this is a test,
 					},
 					Sequence: nonce,
 				}
-				txBuilder.SetSignatures(sigsV2)
+				txBuilder.SetSignatures(sigsV2) //nolint:errcheck
 				return txBuilder.GetTx()
 			}, false, false, false,
 		},
@@ -804,7 +804,7 @@ func (suite AnteTestSuite) TestAnteHandler() { //nolint:govet // this is a test,
 				)
 
 				msg.Amount[0].Amount = sdk.NewInt(5)
-				txBuilder.SetMsgs(msg)
+				txBuilder.SetMsgs(msg) //nolint:errcheck
 
 				return txBuilder.GetTx()
 			}, false, false, false,
@@ -837,7 +837,7 @@ func (suite AnteTestSuite) TestAnteHandler() { //nolint:govet // this is a test,
 				)
 
 				// Duplicate
-				txBuilder.SetMsgs(msg, msg)
+				txBuilder.SetMsgs(msg, msg) //nolint:errcheck
 
 				return txBuilder.GetTx()
 			}, false, false, false,
@@ -865,7 +865,7 @@ func (suite AnteTestSuite) TestAnteHandler() { //nolint:govet // this is a test,
 					"EIP-712",
 				)
 
-				txBuilder.SetMsgs(msg, msg)
+				txBuilder.SetMsgs(msg, msg) //nolint:errcheck
 
 				return txBuilder.GetTx()
 			}, false, false, false,
@@ -1147,8 +1147,9 @@ func (suite AnteTestSuite) TestAnteHandlerWithDynamicTxFee() { //nolint:govet //
 			suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
 			suite.ctx = suite.ctx.WithIsCheckTx(tc.checkTx).WithIsReCheckTx(tc.reCheckTx)
-			suite.app.EvmKeeper.SetBalance(suite.ctx, addr, big.NewInt((ethparams.InitialBaseFee+10)*100000))
-			_, err := suite.anteHandler(suite.ctx, tc.txFn(), false)
+			err := suite.app.EvmKeeper.SetBalance(suite.ctx, addr, big.NewInt((ethparams.InitialBaseFee+10)*100000))
+			suite.Require().NoError(err)
+			_, err = suite.anteHandler(suite.ctx, tc.txFn(), false)
 			if tc.expPass {
 				suite.Require().NoError(err)
 			} else {
@@ -1276,8 +1277,9 @@ func (suite AnteTestSuite) TestAnteHandlerWithParams() { //nolint:govet // this 
 			suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
 			suite.ctx = suite.ctx.WithIsCheckTx(true)
-			suite.app.EvmKeeper.SetBalance(suite.ctx, addr, big.NewInt((ethparams.InitialBaseFee+10)*100000))
-			_, err := suite.anteHandler(suite.ctx, tc.txFn(), false)
+			err := suite.app.EvmKeeper.SetBalance(suite.ctx, addr, big.NewInt((ethparams.InitialBaseFee+10)*100000))
+			suite.Require().NoError(err)
+			_, err = suite.anteHandler(suite.ctx, tc.txFn(), false)
 			if tc.expErr == nil {
 				suite.Require().NoError(err)
 			} else {

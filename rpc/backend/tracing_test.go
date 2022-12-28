@@ -13,7 +13,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
-	"github.com/tendermint/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 )
@@ -50,7 +49,7 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 	testCases := []struct {
 		name          string
 		registerMock  func()
-		block         *types.Block
+		block         *tmtypes.Block
 		responseBlock []*abci.ResponseDeliverTx
 		expResult     interface{}
 		expPass       bool
@@ -58,7 +57,7 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 		{
 			"fail - tx not found",
 			func() {},
-			&types.Block{Header: types.Header{Height: 1}, Data: types.Data{Txs: []types.Tx{}}},
+			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{}}},
 			[]*abci.ResponseDeliverTx{
 				{
 					Code: 0,
@@ -80,11 +79,10 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 		{
 			"fail - block not found",
 			func() {
-
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				RegisterBlockError(client, 1)
 			},
-			&types.Block{Header: types.Header{Height: 1}, Data: types.Data{Txs: []types.Tx{txBz}}},
+			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz}}},
 			[]*abci.ResponseDeliverTx{
 				{
 					Code: 0,
@@ -108,10 +106,10 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
-				RegisterBlockMultipleTxs(client, 1, []types.Tx{txBz, txBz2})
+				RegisterBlockMultipleTxs(client, 1, []tmtypes.Tx{txBz, txBz2})
 				RegisterTraceTransactionWithPredecessors(queryClient, msgEthereumTx, []*evmtypes.MsgEthereumTx{msgEthereumTx})
 			},
-			&types.Block{Header: types.Header{Height: 1, ChainID: ChainID}, Data: types.Data{Txs: []types.Tx{txBz, txBz2}}},
+			&tmtypes.Block{Header: tmtypes.Header{Height: 1, ChainID: ChainID}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz, txBz2}}},
 			[]*abci.ResponseDeliverTx{
 				{
 					Code: 0,
@@ -151,7 +149,7 @@ func (suite *BackendTestSuite) TestTraceTransaction() {
 				RegisterBlock(client, 1, txBz)
 				RegisterTraceTransaction(queryClient, msgEthereumTx)
 			},
-			&types.Block{Header: types.Header{Height: 1}, Data: types.Data{Txs: []types.Tx{txBz}}},
+			&tmtypes.Block{Header: tmtypes.Header{Height: 1}, Data: tmtypes.Data{Txs: []tmtypes.Tx{txBz}}},
 			[]*abci.ResponseDeliverTx{
 				{
 					Code: 0,

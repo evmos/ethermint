@@ -40,7 +40,7 @@ var _ = Describe("Feemarket", func() {
 	)
 
 	Describe("Performing Cosmos transactions", func() {
-		Context("with min-gas-prices (local) < MinGasPrices (feemarket param)", func() {
+		Context("with min-gas-prices (local) < MinGasPrices (feemarket param)", func() { //nolint:dupl
 			BeforeEach(func() {
 				privKey, msg = setupTestWithContext("1", sdk.NewDec(3), sdk.ZeroInt())
 			})
@@ -128,7 +128,7 @@ var _ = Describe("Feemarket", func() {
 			BeforeEach(func() {
 				privKey, msg = setupTestWithContext("5", sdk.NewDec(3), sdk.NewInt(5))
 			})
-			Context("during CheckTx", func() {
+			Context("during CheckTx", func() { //nolint:dupl
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdkmath.NewInt(2)
 					res := checkTx(privKey, &gasPrice, &msg)
@@ -156,7 +156,7 @@ var _ = Describe("Feemarket", func() {
 				})
 			})
 
-			Context("during DeliverTx", func() {
+			Context("during DeliverTx", func() { //nolint:dupl
 				It("should reject transactions with gasPrice < MinGasPrices", func() {
 					gasPrice := sdkmath.NewInt(2)
 					res := deliverTx(privKey, &gasPrice, &msg)
