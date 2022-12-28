@@ -77,9 +77,9 @@ func newSignedEthTx(
 
 func newEthMsgTx(
 	nonce uint64,
-	blockHeight int64,
+	blockHeight int64, //nolint:unparam
 	address common.Address,
-	cfg *params.ChainConfig,
+	cfg *params.ChainConfig, //nolint:unparam
 	krSigner keyring.Signer,
 	ethSigner ethtypes.Signer,
 	txType byte,

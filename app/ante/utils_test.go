@@ -270,14 +270,18 @@ func (suite *AnteTestSuite) CreateTestCosmosTxBuilder(gasPrice sdkmath.Int, deno
 	return txBuilder
 }
 
-func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgSend(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgSend(
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins,
+) client.TxBuilder {
 	// Build MsgSend
 	recipient := sdk.AccAddress(common.Address{}.Bytes())
 	msgSend := banktypes.NewMsgSend(from, recipient, sdk.NewCoins(sdk.NewCoin(evmtypes.DefaultEVMDenom, sdkmath.NewInt(1))))
 	return suite.CreateTestEIP712SingleMessageTxBuilder(from, priv, chainId, gas, gasAmount, msgSend)
 }
 
-func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgDelegate(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgDelegate(
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins,
+) client.TxBuilder {
 	// Build MsgSend
 	valEthAddr := tests.GenerateAddress()
 	valAddr := sdk.ValAddress(valEthAddr.Bytes())
@@ -285,7 +289,9 @@ func (suite *AnteTestSuite) CreateTestEIP712TxBuilderMsgDelegate(from sdk.AccAdd
 	return suite.CreateTestEIP712SingleMessageTxBuilder(from, priv, chainId, gas, gasAmount, msgSend)
 }
 
-func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator(
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins,
+) client.TxBuilder {
 	// Build MsgCreateValidator
 	valAddr := sdk.ValAddress(from.Bytes())
 	privEd := ed25519.GenPrivKey()
@@ -301,7 +307,9 @@ func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator(from sdk.AccAddre
 	return suite.CreateTestEIP712SingleMessageTxBuilder(from, priv, chainId, gas, gasAmount, msgCreate)
 }
 
-func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator2(from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins) client.TxBuilder {
+func (suite *AnteTestSuite) CreateTestEIP712MsgCreateValidator2(
+	from sdk.AccAddress, priv cryptotypes.PrivKey, chainId string, gas uint64, gasAmount sdk.Coins,
+) client.TxBuilder {
 	// Build MsgCreateValidator
 	valAddr := sdk.ValAddress(from.Bytes())
 	privEd := ed25519.GenPrivKey()
@@ -622,7 +630,9 @@ func (suite *AnteTestSuite) RegisterAccount(pubKey cryptotypes.PubKey, balance *
 }
 
 // createSignerBytes generates sign doc bytes using the given parameters
-func (suite *AnteTestSuite) createSignerBytes(chainId string, signMode signing.SignMode, pubKey cryptotypes.PubKey, txBuilder client.TxBuilder) []byte {
+func (suite *AnteTestSuite) createSignerBytes(
+	chainId string, signMode signing.SignMode, pubKey cryptotypes.PubKey, txBuilder client.TxBuilder,
+) []byte {
 	acc, err := sdkante.GetSignerAcc(suite.ctx, suite.app.AccountKeeper, sdk.AccAddress(pubKey.Address()))
 	suite.Require().NoError(err)
 	signerInfo := authsigning.SignerData{

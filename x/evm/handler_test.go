@@ -240,11 +240,10 @@ func (suite *EvmTestSuite) TestHandleMsgEthereumTx() {
 	for _, tc := range testCases {
 		suite.Run(tc.msg, func() {
 			suite.SetupTest() // reset
-			
+
 			tc.malleate()
 			res, err := suite.handler(suite.ctx, tx)
 
-			
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().NotNil(res)
@@ -300,7 +299,7 @@ func (suite *EvmTestSuite) TestDeployAndCallContract() {
 	//http://remix.ethereum.org/#optimize=false&evmVersion=istanbul&version=soljson-v0.5.15+commit.6a57276f.js
 	// 2_Owner.sol
 	//
-	//pragma solidity >=0.4.22 <0.7.0;
+	// pragma solidity >=0.4.22 <0.7.0;
 	//
 	///**
 	// * @title Owner
@@ -419,7 +418,7 @@ func (suite *EvmTestSuite) TestOutOfGasWhenDeployContract() {
 	//http://remix.ethereum.org/#optimize=false&evmVersion=istanbul&version=soljson-v0.5.15+commit.6a57276f.js
 	// 2_Owner.sol
 	//
-	//pragma solidity >=0.4.22 <0.7.0;
+	// pragma solidity >=0.4.22 <0.7.0;
 	//
 	///**
 	// * @title Owner

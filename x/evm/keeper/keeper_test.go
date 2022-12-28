@@ -50,8 +50,6 @@ import (
 	"github.com/tendermint/tendermint/version"
 )
 
-var testTokens = sdkmath.NewIntWithDecimal(1000, 18)
-
 type KeeperTestSuite struct {
 	suite.Suite
 
@@ -270,7 +268,7 @@ func (suite *KeeperTestSuite) DeployTestContract(t require.TestingT, owner commo
 	require.NoError(t, err)
 	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
 		Args:            args,
-		GasCap:          uint64(config.DefaultGasCap),
+		GasCap:          config.DefaultGasCap,
 		ProposerAddress: suite.ctx.BlockHeader().ProposerAddress,
 	})
 	require.NoError(t, err)
@@ -378,7 +376,7 @@ func (suite *KeeperTestSuite) DeployTestMessageCall(t require.TestingT) common.A
 
 	res, err := suite.queryClient.EstimateGas(ctx, &types.EthCallRequest{
 		Args:            args,
-		GasCap:          uint64(config.DefaultGasCap),
+		GasCap:          config.DefaultGasCap,
 		ProposerAddress: suite.ctx.BlockHeader().ProposerAddress,
 	})
 	require.NoError(t, err)

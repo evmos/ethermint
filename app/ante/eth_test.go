@@ -177,12 +177,14 @@ func (suite AnteTestSuite) TestEthGasConsumeDecorator() { //nolint:govet // this
 	gasPrice := new(big.Int).Add(baseFee, evmtypes.DefaultPriorityReduction.BigInt())
 
 	tx2GasLimit := uint64(1000000)
-	tx2 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx2GasLimit, gasPrice, nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
+	tx2 := evmtypes.NewTxContract(
+		suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx2GasLimit, gasPrice, nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
 	tx2.From = addr.Hex()
 	tx2Priority := int64(1)
 
 	tx3GasLimit := ethermint.BlockGasLimit(suite.ctx) + uint64(1)
-	tx3 := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx3GasLimit, gasPrice, nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
+	tx3 := evmtypes.NewTxContract(
+		suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx3GasLimit, gasPrice, nil, nil, nil, &ethtypes.AccessList{{Address: addr, StorageKeys: nil}})
 
 	dynamicFeeTx := evmtypes.NewTxContract(suite.app.EvmKeeper.ChainID(), 1, big.NewInt(10), tx2GasLimit,
 		nil, // gasPrice

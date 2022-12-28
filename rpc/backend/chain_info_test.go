@@ -386,7 +386,6 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 		{
 			"fail - Invalid base fee",
 			func(validator sdk.AccAddress) {
-
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				suite.backend.cfg.JSONRPC.FeeHistoryCap = 2

@@ -1175,14 +1175,14 @@ func (suite *KeeperTestSuite) TestNonceInQuery() {
 	proposerAddress := suite.ctx.BlockHeader().ProposerAddress
 	_, err = suite.queryClient.EstimateGas(sdk.WrapSDKContext(suite.ctx), &types.EthCallRequest{
 		Args:            args,
-		GasCap:          uint64(config.DefaultGasCap),
+		GasCap:          config.DefaultGasCap,
 		ProposerAddress: proposerAddress,
 	})
 	suite.Require().NoError(err)
 
 	_, err = suite.queryClient.EthCall(sdk.WrapSDKContext(suite.ctx), &types.EthCallRequest{
 		Args:            args,
-		GasCap:          uint64(config.DefaultGasCap),
+		GasCap:          config.DefaultGasCap,
 		ProposerAddress: proposerAddress,
 	})
 	suite.Require().NoError(err)
@@ -1282,7 +1282,7 @@ func (suite *KeeperTestSuite) TestEthCall() {
 		{
 			"invalid args",
 			func() {
-				req = &types.EthCallRequest{Args: []byte("invalid args"), GasCap: uint64(config.DefaultGasCap)}
+				req = &types.EthCallRequest{Args: []byte("invalid args"), GasCap: config.DefaultGasCap}
 			},
 			false,
 		},
@@ -1297,7 +1297,7 @@ func (suite *KeeperTestSuite) TestEthCall() {
 				})
 
 				suite.Require().NoError(err)
-				req = &types.EthCallRequest{Args: args, GasCap: uint64(config.DefaultGasCap)}
+				req = &types.EthCallRequest{Args: args, GasCap: config.DefaultGasCap}
 			},
 			false,
 		},
@@ -1310,7 +1310,7 @@ func (suite *KeeperTestSuite) TestEthCall() {
 				})
 
 				suite.Require().NoError(err)
-				req = &types.EthCallRequest{Args: args, GasCap: uint64(config.DefaultGasCap)}
+				req = &types.EthCallRequest{Args: args, GasCap: config.DefaultGasCap}
 
 				params := suite.app.EvmKeeper.GetParams(suite.ctx)
 				params.EnableCreate = false

@@ -34,7 +34,7 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 				var header metadata.MD
 				height := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				RegisterParamsInvalidHeight(queryClient, &header, int64(height))
+				RegisterParamsInvalidHeight(queryClient, &header, height)
 			},
 			0x0,
 			false,
@@ -45,7 +45,7 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 				var header metadata.MD
 				height := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				RegisterParamsInvalidHeader(queryClient, &header, int64(height))
+				RegisterParamsInvalidHeader(queryClient, &header, height)
 			},
 			0x0,
 			false,
@@ -56,7 +56,7 @@ func (suite *BackendTestSuite) TestBlockNumber() {
 				var header metadata.MD
 				height := int64(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
-				RegisterParams(queryClient, &header, int64(height))
+				RegisterParams(queryClient, &header, height)
 			},
 			0x1,
 			true,
@@ -849,7 +849,7 @@ func (suite *BackendTestSuite) TestBlockBloom() {
 					{
 						Type: evmtypes.EventTypeBlockBloom,
 						Attributes: []types.EventAttribute{
-							{Key: []byte(bAttributeKeyEthereumBloom)},
+							{Key: bAttributeKeyEthereumBloom},
 						},
 					},
 				},
@@ -1563,7 +1563,7 @@ func (suite *BackendTestSuite) TestEthBlockFromTendermintBlock() {
 					{
 						Type: evmtypes.EventTypeBlockBloom,
 						Attributes: []types.EventAttribute{
-							{Key: []byte(bAttributeKeyEthereumBloom)},
+							{Key: bAttributeKeyEthereumBloom},
 						},
 					},
 				},
