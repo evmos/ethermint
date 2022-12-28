@@ -36,7 +36,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-## [v0.20.0-rc5] - 2022-12-22
+## [v0.20.0] - 2022-12-28
 
 ### State Machine Breaking
 
