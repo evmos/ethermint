@@ -18,18 +18,42 @@ package keeper
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/evmos/ethermint/x/evm/types"
 )
+
+// GetCoinbaseAddress returns the block proposer's validator operator address.
+func (k Keeper) GetCoinbaseAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) (common.Address, error) {
+	validator, found := k.stakingKeeper.GetValidatorByConsAddr(ctx, GetProposerAddress(ctx, proposerAddress))
+	if !found {
+		return common.Address{}, errorsmod.Wrapf(
+			stakingtypes.ErrNoValidatorFound,
+			"failed to retrieve validator from block proposer address %s",
+			proposerAddress.String(),
+		)
+	}
+
+	coinbase := common.BytesToAddress(validator.GetOperator())
+	return coinbase, nil
+}
+
+// GetProposerAddress returns current block proposer's address when provided proposer address is empty.
+func GetProposerAddress(ctx sdk.Context, proposerAddress sdk.ConsAddress) sdk.ConsAddress {
+	if len(proposerAddress) == 0 {
+		proposerAddress = ctx.BlockHeader().ProposerAddress
+	}
+	return proposerAddress
+}
 
 // DeductTxCostsFromUserBalance deducts the fees from the user balance. Returns an
 // error if the specified sender address does not exist or the account balance is not sufficient.
@@ -56,7 +80,7 @@ func (k *Keeper) DeductTxCostsFromUserBalance(
 // gas limit is not reached, the gas limit is higher than the intrinsic gas and that the
 // base fee is higher than the gas fee cap.
 func VerifyFee(
-	txData evmtypes.TxData,
+	txData types.TxData,
 	denom string,
 	baseFee *big.Int,
 	homestead, istanbul, isCheckTx bool,
@@ -107,7 +131,7 @@ func VerifyFee(
 // sender has enough funds to pay for the fees and value of the transaction.
 func CheckSenderBalance(
 	balance sdkmath.Int,
-	txData evmtypes.TxData,
+	txData types.TxData,
 ) error {
 	cost := txData.Cost()
 
