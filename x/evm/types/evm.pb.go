@@ -155,9 +155,9 @@ type ChainConfig struct {
 	GrayGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,20,opt,name=gray_glacier_block,json=grayGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gray_glacier_block,omitempty" yaml:"gray_glacier_block"`
 	// merge_netsplit_block: Virtual fork after The Merge to use as a network splitter
 	MergeNetsplitBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,21,opt,name=merge_netsplit_block,json=mergeNetsplitBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"merge_netsplit_block,omitempty" yaml:"merge_netsplit_block"`
-	// Shanghai switch block (nil = no fork, 0 = already on shanghai)
+	// shanghai_block switch block (nil = no fork, 0 = already on shanghai)
 	ShanghaiBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,22,opt,name=shanghai_block,json=shanghaiBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"shanghai_block,omitempty" yaml:"shanghai_block"`
-	// Cancun switch block (nil = no fork, 0 = already on cancun)
+	// cancun_block switch block (nil = no fork, 0 = already on cancun)
 	CancunBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,23,opt,name=cancun_block,json=cancunBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"cancun_block,omitempty" yaml:"cancun_block"`
 }
 
