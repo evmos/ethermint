@@ -90,6 +90,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (deps) [#1580](https://github.com/evmos/ethermint/pull/1580) Remove the ics23 replace statement so that we use ics23 v0.9.0
 * (rpc) [#1561](https://github.com/evmos/ethermint/pull/1561) Fix call to `NewMnemonic` in `personal_newAccount`
 * (cli) [#1550](https://github.com/evmos/ethermint/pull/1550) Fix signature algorithm validation and default for Ledger.
 * (eip712) [#1543](https://github.com/evmos/ethermint/pull/1543) Improve error handling for EIP-712 encoding config initialization.
