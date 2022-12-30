@@ -317,6 +317,17 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	cfg *statedb.EVMConfig,
 	txConfig statedb.TxConfig,
 ) (*types.MsgEthereumTxResponse, error) {
+	return k.ApplyMessageWithStateDB(ctx, msg, tracer, commit, cfg, txConfig, nil)
+}
+
+func (k *Keeper) ApplyMessageWithStateDB(ctx sdk.Context,
+	msg core.Message,
+	tracer vm.EVMLogger,
+	commit bool,
+	cfg *statedb.EVMConfig,
+	txConfig statedb.TxConfig,
+	stateDB *statedb.StateDB,
+) (*types.MsgEthereumTxResponse, error) {
 	var (
 		ret   []byte // return bytes from evm execution
 		vmErr error  // vm errors do not effect consensus and are therefore not assigned to err
@@ -329,7 +340,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 		return nil, errorsmod.Wrap(types.ErrCallDisabled, "failed to call contract")
 	}
 
-	stateDB := statedb.New(ctx, k, txConfig)
+	if stateDB == nil {
+		stateDB = statedb.New(ctx, k, txConfig)
+	}
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB)
 
 	leftoverGas := msg.Gas()
