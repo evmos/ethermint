@@ -49,7 +49,7 @@ func (k *Keeper) NewEVM(
 	ctx sdk.Context,
 	msg core.Message,
 	cfg *statedb.EVMConfig,
-	tracer vm.EVMLogger,
+	tracer evm.Logger,
 	stateDB vm.StateDB,
 ) evm.EVM {
 	blockCtx := vm.BlockContext{
@@ -262,7 +262,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 }
 
 // ApplyMessage calls ApplyMessageWithConfig with an empty TxConfig.
-func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.EVMLogger, commit bool) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer evm.Logger, commit bool) (*types.MsgEthereumTxResponse, error) {
 	cfg, err := k.EVMConfig(ctx, sdk.ConsAddress(ctx.BlockHeader().ProposerAddress), k.eip155ChainID)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "failed to load evm config")
@@ -312,7 +312,7 @@ func (k *Keeper) ApplyMessage(ctx sdk.Context, msg core.Message, tracer vm.EVMLo
 // If commit is true, the `StateDB` will be committed, otherwise discarded.
 func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	msg core.Message,
-	tracer vm.EVMLogger,
+	tracer evm.Logger,
 	commit bool,
 	cfg *statedb.EVMConfig,
 	txConfig statedb.TxConfig,
@@ -335,17 +335,17 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	leftoverGas := msg.Gas()
 
 	// Allow the tracer captures the tx level events, mainly the gas consumption.
-	vmCfg := evm.Config()
-	if vmCfg.Debug {
-		vmCfg.Tracer.CaptureTxStart(leftoverGas)
+	vmCfg := evm.GetConfig()
+	if vmCfg.Debug() {
+		vmCfg.Tracer().CaptureTxStart(leftoverGas)
 		defer func() {
-			vmCfg.Tracer.CaptureTxEnd(leftoverGas)
+			vmCfg.Tracer().CaptureTxEnd(leftoverGas)
 		}()
 	}
 
 	sender := vm.AccountRef(msg.From())
 	contractCreation := msg.To() == nil
-	isLondon := cfg.ChainConfig.IsLondon(evm.Context().BlockNumber)
+	isLondon := cfg.ChainConfig.IsLondon(evm.GetContext().BlockNumber)
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(ctx, msg, cfg.ChainConfig, contractCreation)
 	if err != nil {

@@ -23,9 +23,20 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/params"
+
+	"github.com/evmos/ethermint/ethereum/tracers/logger"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
+	evm "github.com/evmos/ethermint/x/evm/vm"
 )
+
+// Tracer returns an EVM Tracer (Logger) based on current Keeper state.
+func (k Keeper) Tracer(ctx sdk.Context, msg core.Message, ethCfg *params.ChainConfig) evm.Logger {
+	rules := ethCfg.Rules(big.NewInt(ctx.BlockHeight()), ethCfg.MergeNetsplitBlock != nil)
+	precompiles := vm.ActivePrecompiles(rules)
+	return types.NewTracer(k.tracer, msg, precompiles...)
+}
 
 // EVMConfig creates the EVMConfig based on current state
 func (k *Keeper) EVMConfig(ctx sdk.Context, proposerAddress sdk.ConsAddress, chainID *big.Int) (*statedb.EVMConfig, error) {
@@ -47,7 +58,8 @@ func (k *Keeper) EVMConfig(ctx sdk.Context, proposerAddress sdk.ConsAddress, cha
 	}, nil
 }
 
-// TxConfig loads `TxConfig` from current transient storage
+// TxConfig loads creates a new transaction configuration using the block
+// transient storage and the context.
 func (k *Keeper) TxConfig(ctx sdk.Context, txHash common.Hash) statedb.TxConfig {
 	return statedb.NewTxConfig(
 		common.BytesToHash(ctx.HeaderHash()), // BlockHash
@@ -59,21 +71,16 @@ func (k *Keeper) TxConfig(ctx sdk.Context, txHash common.Hash) statedb.TxConfig 
 
 // VMConfig creates an EVM configuration from the debug setting and the extra EIPs enabled on the
 // module parameters. The config generated uses the default JumpTable from the EVM.
-func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, cfg *statedb.EVMConfig, tracer vm.EVMLogger) vm.Config {
+func (k Keeper) VMConfig(ctx sdk.Context, msg core.Message, cfg *statedb.EVMConfig, tracer evm.Logger) evm.Config {
 	noBaseFee := true
 	if types.IsLondon(cfg.ChainConfig, ctx.BlockHeight()) {
 		noBaseFee = k.feeMarketKeeper.GetParams(ctx).NoBaseFee
 	}
 
 	var debug bool
-	if _, ok := tracer.(types.NoOpTracer); !ok {
+	if _, ok := tracer.(logger.NoOpTracer); !ok {
 		debug = true
 	}
 
-	return vm.Config{
-		Debug:     debug,
-		Tracer:    tracer,
-		NoBaseFee: noBaseFee,
-		ExtraEips: cfg.Params.EIPs(),
-	}
+	return evm.NewConfig(debug, tracer, noBaseFee, false, nil, cfg.Params.EIPs()...)
 }

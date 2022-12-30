@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with the Ethermint library. If not, see https://github.com/evmos/ethermint/blob/main/LICENSE
+
 package geth
 
 import (
@@ -22,6 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 
+	"github.com/evmos/ethermint/x/evm/statedb"
 	evm "github.com/evmos/ethermint/x/evm/vm"
 )
 
@@ -41,29 +43,45 @@ type EVM struct {
 func NewEVM(
 	blockCtx vm.BlockContext,
 	txCtx vm.TxContext,
-	stateDB vm.StateDB,
+	stateDB statedb.ExtStateDB,
 	chainConfig *params.ChainConfig,
-	config vm.Config,
+	config evm.Config,
 	_ evm.PrecompiledContracts, // unused
 ) evm.EVM {
+	cfg := vm.Config{
+		Debug: config.Debug(),
+		// Tracer:                  config.Tracer(), // FIXME: use tracer
+		NoBaseFee:               config.NoBaseFee(),
+		EnablePreimageRecording: config.EnablePreimageRecording(),
+		ExtraEips:               config.ExtraEips(),
+	}
 	return &EVM{
-		EVM: vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, config),
+		EVM: vm.NewEVM(blockCtx, txCtx, stateDB, chainConfig, cfg),
 	}
 }
 
 // Context returns the EVM's Block Context
-func (e EVM) Context() vm.BlockContext {
+func (e EVM) GetContext() vm.BlockContext {
 	return e.EVM.Context
 }
 
 // TxContext returns the EVM's Tx Context
-func (e EVM) TxContext() vm.TxContext {
+func (e EVM) GetTxContext() vm.TxContext {
 	return e.EVM.TxContext
 }
 
 // Config returns the configuration options for the EVM.
-func (e EVM) Config() vm.Config {
+func (e EVM) GetConfig() evm.Config {
 	return e.EVM.Config
+}
+
+// StateDB returns the State Database
+func (e EVM) GetStateDB() vm.StateDB {
+	return e.EVM.StateDB
+}
+
+func (e EVM) GetInterpreter() evm.Interpreter {
+	return e.Interpreter()
 }
 
 // Precompile returns the precompiled contract associated with the given address
@@ -82,9 +100,9 @@ func (EVM) ActivePrecompiles(rules params.Rules) []common.Address {
 }
 
 // RunPrecompiledContract runs a stateless precompiled contract and ignores the address and
-// value arguments. It uses the RunPrecompiledContract function from the geth vm package
+// value arguments. It uses the RunPrecompiledContract function from the geth vm package.
 func (EVM) RunPrecompiledContract(
-	p evm.StatefulPrecompiledContract,
+	p vm.PrecompiledContract,
 	_ common.Address, // address arg is unused
 	input []byte,
 	suppliedGas uint64,

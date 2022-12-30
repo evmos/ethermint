@@ -23,9 +23,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -37,8 +34,12 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	ethtracers "github.com/ethereum/go-ethereum/eth/tracers"
+	ethlogger "github.com/ethereum/go-ethereum/eth/tracers/logger"
 	ethparams "github.com/ethereum/go-ethereum/params"
 
+	"github.com/evmos/ethermint/ethereum/tracers"
+	"github.com/evmos/ethermint/ethereum/tracers/logger"
 	ethermint "github.com/evmos/ethermint/types"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
@@ -432,7 +433,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		}
 		txConfig.TxHash = ethTx.Hash()
 		txConfig.TxIndex = uint(i)
-		rsp, err := k.ApplyMessageWithConfig(ctx, msg, types.NewNoOpTracer(), true, cfg, txConfig)
+		rsp, err := k.ApplyMessageWithConfig(ctx, msg, logger.NewNoOpTracer(), true, cfg, txConfig)
 		if err != nil {
 			continue
 		}
@@ -560,7 +561,7 @@ func (k *Keeper) traceTx(
 		overrides = traceConfig.Overrides.EthereumConfig(cfg.ChainConfig.ChainID)
 	}
 
-	logConfig := logger.Config{
+	logConfig := ethlogger.Config{
 		EnableMemory:     traceConfig.EnableMemory,
 		DisableStorage:   traceConfig.DisableStorage,
 		DisableStack:     traceConfig.DisableStack,
@@ -572,7 +573,7 @@ func (k *Keeper) traceTx(
 
 	tracer = logger.NewStructLogger(&logConfig)
 
-	tCtx := &tracers.Context{
+	tCtx := &ethtracers.Context{
 		BlockHash: txConfig.BlockHash,
 		TxIndex:   int(txConfig.TxIndex),
 		TxHash:    txConfig.TxHash,

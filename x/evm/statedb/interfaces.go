@@ -28,7 +28,7 @@ import (
 // stateful precompiled contracts.
 type ExtStateDB interface {
 	vm.StateDB
-	AppendJournalEntry(JournalEntry)
+	Context() sdk.Context
 }
 
 // Keeper provide underlying storage of StateDB

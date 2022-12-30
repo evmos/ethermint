@@ -27,7 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -256,11 +255,6 @@ func (k *Keeper) PostTxProcessing(ctx sdk.Context, msg core.Message, receipt *et
 		return nil
 	}
 	return k.hooks.PostTxProcessing(ctx, msg, receipt)
-}
-
-// Tracer return a default vm.Tracer based on current keeper state
-func (k Keeper) Tracer(ctx sdk.Context, msg core.Message, ethCfg *params.ChainConfig) vm.EVMLogger {
-	return types.NewTracer(k.tracer, msg, ethCfg, ctx.BlockHeight())
 }
 
 // GetAccountWithoutBalance load nonce and codehash without balance,
