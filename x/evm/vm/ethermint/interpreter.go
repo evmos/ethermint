@@ -123,30 +123,34 @@ func (in *Interpreter) Run(contract *vm.Contract, input []byte, readOnly bool) (
 	}
 
 	var (
-		op          vm.OpCode        // current opcode
-		mem         = vm.NewMemory() // bound memory
-		stack       = newstack()     // local stack
-		callContext = &vm.ScopeContext{
-			Memory:   mem,
-			Stack:    stack,
-			Contract: contract,
-		}
+		op   vm.OpCode // current opcode
+		cost uint64
+
 		// For optimisation reason we're using uint64 as the program counter.
 		// It's theoretically possible to go above 2^64. The YP defines the PC
 		// to be uint256. Practically much less so feasible.
-		pc   = uint64(0) // program counter
-		cost uint64
+		pc uint64 // program counter
+
 		// copies used by tracer
 		pcCopy  uint64 // needed for the deferred EVMLogger
 		gasCopy uint64 // for EVMLogger to log gas remaining before execution
 		logged  bool   // deferred EVMLogger should ignore already logged steps
 		res     []byte // result of the opcode execution function
 	)
+
+	mem := vm.NewMemory()   // bound memory
+	stack := evm.NewStack() // local stack
+	callContext := &evm.ScopeContext{
+		Memory:   mem,
+		Stack:    stack,
+		Contract: contract,
+	}
+
 	// Don't move this deferred function, it's placed before the capturestate-deferred method,
 	// so that it get's executed _after_: the capturestate needs the stacks before
 	// they are returned to the pools
 	defer func() {
-		returnStack(stack)
+		stack.Return()
 	}()
 	contract.Input = input
 
@@ -182,7 +186,7 @@ func (in *Interpreter) Run(contract *vm.Contract, input []byte, readOnly bool) (
 			return nil, &vm.ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
 		}
 		if !contract.UseGas(cost) {
-			return nil, ErrOutOfGas
+			return nil, vm.ErrOutOfGas
 		}
 		if operation.dynamicGas != nil {
 			// All ops with a dynamic memory usage also has a dynamic gas cost.
@@ -194,12 +198,12 @@ func (in *Interpreter) Run(contract *vm.Contract, input []byte, readOnly bool) (
 			if operation.memorySize != nil {
 				memSize, overflow := operation.memorySize(stack)
 				if overflow {
-					return nil, ErrGasUintOverflow
+					return nil, vm.ErrGasUintOverflow
 				}
 				// memory is expanded in words of 32 bytes. Gas
 				// is also calculated in words.
 				if memorySize, overflow = math.SafeMul(toWordSize(memSize), 32); overflow {
-					return nil, ErrGasUintOverflow
+					return nil, vm.ErrGasUintOverflow
 				}
 			}
 			// Consume the gas and return an error if not enough gas is available.
@@ -208,17 +212,19 @@ func (in *Interpreter) Run(contract *vm.Contract, input []byte, readOnly bool) (
 			dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
 			cost += dynamicCost // for tracing
 			if err != nil || !contract.UseGas(dynamicCost) {
-				return nil, ErrOutOfGas
+				return nil, vm.ErrOutOfGas
 			}
+
 			// Do tracing before memory expansion
-			if in.cfg.Debug {
+			if in.cfg.debug {
 				in.cfg.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
 				logged = true
 			}
+
 			if memorySize > 0 {
 				mem.Resize(memorySize)
 			}
-		} else if in.cfg.Debug {
+		} else if in.cfg.debug {
 			in.cfg.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
 			logged = true
 		}
