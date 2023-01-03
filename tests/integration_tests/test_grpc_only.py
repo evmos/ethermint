@@ -1,6 +1,7 @@
 import base64
 import json
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from .utils import (
     decode_bech32,
     deploy_contract,
     supervisorctl,
+    wait_for_block,
     wait_for_port,
 )
 
@@ -45,9 +47,6 @@ def grpc_eth_call(port: int, args: dict, chain_id=None, proposer_address=None):
     ).json()
 
 
-@pytest.mark.skip(
-    reason="undeterministic test - https://github.com/evmos/ethermint/issues/1530"
-)
 def test_grpc_mode(custom_ethermint):
     """
     - restart a fullnode in grpc-only mode
@@ -61,33 +60,43 @@ def test_grpc_mode(custom_ethermint):
         "to": contract.address,
         "data": contract.encodeABI(fn_name="currentChainID"),
     }
-    api_port = ports.api_port(custom_ethermint.base_port(2))
+    api_port = ports.api_port(custom_ethermint.base_port(1))
     # in normal mode, grpc query works even if we don't pass chain_id explicitly
-    rsp = grpc_eth_call(api_port, msg)
-    print(rsp)
-    assert "code" not in rsp, str(rsp)
-    assert 9000 == int.from_bytes(base64.b64decode(rsp["ret"].encode()), "big")
-
+    success = False
+    max_retry = 3
+    sleep = 1
+    for i in range(max_retry):
+        rsp = grpc_eth_call(api_port, msg)
+        ret = rsp["ret"]
+        valid = ret is not None
+        if valid and 9000 == int.from_bytes(base64.b64decode(ret.encode()), "big"):
+            success = True
+            break
+        time.sleep(sleep)
+    assert success
+    # wait 1 more block for both nodes to avoid node stopped before tnx get included
+    for i in range(2):
+        wait_for_block(custom_ethermint.cosmos_cli(i), 1)
     supervisorctl(
-        custom_ethermint.base_dir / "../tasks.ini", "stop", "ethermint_9000-1-node2"
+        custom_ethermint.base_dir / "../tasks.ini", "stop", "ethermint_9000-1-node1"
     )
 
     # run grpc-only mode directly with existing chain state
-    with (custom_ethermint.base_dir / "node2.log").open("w") as logfile:
+    with (custom_ethermint.base_dir / "node1.log").open("a") as logfile:
         proc = subprocess.Popen(
             [
                 "ethermintd",
                 "start",
                 "--grpc-only",
                 "--home",
-                custom_ethermint.base_dir / "node2",
+                custom_ethermint.base_dir / "node1",
             ],
             stdout=logfile,
             stderr=subprocess.STDOUT,
         )
         try:
             # wait for grpc and rest api ports
-            grpc_port = ports.grpc_port(custom_ethermint.base_port(2))
+            grpc_port = ports.grpc_port(custom_ethermint.base_port(1))
             wait_for_port(grpc_port)
             wait_for_port(api_port)
 
@@ -102,9 +111,8 @@ def test_grpc_mode(custom_ethermint):
             assert "validator does not exist" in rsp["message"]
 
             # pass the first validator's consensus address to grpc query
-            cons_addr = decode_bech32(
-                custom_ethermint.cosmos_cli(0).consensus_address()
-            )
+            addr = custom_ethermint.cosmos_cli(0).consensus_address()
+            cons_addr = decode_bech32(addr)
 
             # should work with both chain_id and proposer_address set
             rsp = grpc_eth_call(

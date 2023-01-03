@@ -103,7 +103,7 @@ def test_pruned_node(pruned):
     exp_tx = AttributeDict(
         {
             "from": "0x57f96e6B86CdeFdB3d412547816a82E3E0EbF9D2",
-            "gas": 51542,
+            "gas": 51406,
             "input": (
                 "0xa9059cbb000000000000000000000000378c50d9264c63f3f92b806d4ee56e"
                 "9d86ffb3ec000000000000000000000000000000000000000000000000000000"

@@ -6,6 +6,7 @@ from dateutil.parser import isoparse
 from pystarport.utils import build_cli_args_safe, interact
 
 DEFAULT_GAS_PRICE = "5000000000000aphoton"
+DEFAULT_GAS = "250000"
 
 
 class ChainCommand:
@@ -636,16 +637,19 @@ class CosmosCLI:
         )
 
     def gov_propose(self, proposer, kind, proposal, **kwargs):
+        method = "submit-legacy-proposal"
         kwargs.setdefault("gas_prices", DEFAULT_GAS_PRICE)
+        kwargs.setdefault("gas", DEFAULT_GAS)
         if kind == "software-upgrade":
             return json.loads(
                 self.raw(
                     "tx",
                     "gov",
-                    "submit-proposal",
+                    method,
                     kind,
                     proposal["name"],
                     "-y",
+                    "--no-validate",
                     from_=proposer,
                     # content
                     title=proposal.get("title"),
@@ -664,7 +668,7 @@ class CosmosCLI:
                 self.raw(
                     "tx",
                     "gov",
-                    "submit-proposal",
+                    method,
                     kind,
                     "-y",
                     from_=proposer,
@@ -685,7 +689,7 @@ class CosmosCLI:
                     self.raw(
                         "tx",
                         "gov",
-                        "submit-proposal",
+                        method,
                         kind,
                         fp.name,
                         "-y",

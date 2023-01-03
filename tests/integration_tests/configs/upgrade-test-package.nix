@@ -4,9 +4,9 @@ let
   released = pkgs.buildGo118Module rec {
     name = "ethermintd";
     # the commit before https://github.com/evmos/ethermint/pull/943
-    src = fetchEthermint "f21592ebfe74da7590eb42ed926dae970b2a9a3f";
+    src = fetchEthermint "8866ae0ffd67a104e9d1cf4e50fba8391dda6c45";
     subPackages = [ "cmd/ethermintd" ];
-    vendorSha256 = "sha256-ABm5t6R/u2S6pThGrgdsqe8n3fH5tIWw7a57kxJPbYw=";
+    vendorSha256 = "sha256-oDtMamNlwe/393fZd+RNtRy6ipWpusbco8Xg1ZuKWYw=";
     doCheck = false;
   };
   current = pkgs.callPackage ../../../. { };

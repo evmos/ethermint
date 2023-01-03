@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### State Machine Breaking
 
 * (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate x/params usage in x/evm
+* (deps) #[1575](https://github.com/evmos/ethermint/pull/1575) bump ibc-go to [`v6.1.0`]
 * (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
 * (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.6).
@@ -91,6 +92,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
+* (cli) [#1550](https://github.com/evmos/ethermint/pull/1550) Fix signature algorithm validation and default for Ledger.
 * (eip712) [#1543](https://github.com/evmos/ethermint/pull/1543) Improve error handling for EIP-712 encoding config initialization.
 * (app) [#1505](https://github.com/evmos/ethermint/pull/1505) Setup gRPC node service with the application.
 * (server) [#1497](https://github.com/evmos/ethermint/pull/1497) Fix telemetry server setup for observability
@@ -108,7 +110,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
 * (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
-
+* (ante) [#1566](https://github.com/evmos/ethermint/pull/1566) Fix `gasWanted` on `EthGasConsumeDecorator` ante handler when running transaction in `ReCheckMode`
 
 ## [v0.19.3] - 2022-10-14
 
