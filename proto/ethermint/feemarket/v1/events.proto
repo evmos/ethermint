@@ -9,9 +9,9 @@ message EventFeeMarket {
   string base_fee = 1;
 }
 
-// EventBlockGas defines the event for a Ethereum block gas
+// EventBlockGas defines an Ethereum block gas event
 message EventBlockGas {
-  // height is the height of the block
+  // height of the block
   string height = 1;
   // amount of gas wanted by the block
   string amount = 2;
