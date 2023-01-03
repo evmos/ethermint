@@ -571,7 +571,7 @@ func (suite *KeeperTestSuite) TestApplyMessageWithConfig() {
 		msg             core.Message
 		err             error
 		expectedGasUsed uint64
-		config          *types.EVMConfig
+		config          *statedb.EVMConfig
 		keeperParams    types.Params
 		signer          ethtypes.Signer
 		vmdb            *statedb.StateDB
@@ -660,13 +660,10 @@ func (suite *KeeperTestSuite) TestApplyMessageWithConfig() {
 			suite.Require().Equal(expectedGasUsed, res.GasUsed)
 		})
 	}
-
 }
 
 func (suite *KeeperTestSuite) createContractGethMsg(nonce uint64, signer ethtypes.Signer, cfg *params.ChainConfig, gasPrice *big.Int) (core.Message, error) {
-
 	ethMsg, err := suite.createContractMsgTx(nonce, signer, cfg, gasPrice)
-
 	if err != nil {
 		return nil, err
 	}
@@ -676,7 +673,6 @@ func (suite *KeeperTestSuite) createContractGethMsg(nonce uint64, signer ethtype
 }
 
 func (suite *KeeperTestSuite) createContractMsgTx(nonce uint64, signer ethtypes.Signer, cfg *params.ChainConfig, gasPrice *big.Int) (*types.MsgEthereumTx, error) {
-
 	contractCreateTx := &ethtypes.AccessListTx{
 		GasPrice: gasPrice,
 		Gas:      params.TxGasContractCreation,
