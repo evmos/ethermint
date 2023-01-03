@@ -100,8 +100,6 @@ func (suite *KeeperTestSuite) SetupTestWithT(t require.TestingT) {
 }
 
 func (suite *KeeperTestSuite) SetupApp(checkTx bool) {
-	t := suite.T()
-
 	suite.SetupAppWithT(checkTx, suite.T())
 }
 
