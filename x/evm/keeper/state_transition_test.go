@@ -571,7 +571,7 @@ func (suite *KeeperTestSuite) TestApplyMessageWithConfig() {
 		msg             core.Message
 		err             error
 		expectedGasUsed uint64
-		config          *types.EVMConfig
+		config          *statedb.EVMConfig
 		keeperParams    types.Params
 		signer          ethtypes.Signer
 		vmdb            *statedb.StateDB
