@@ -24,8 +24,8 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Params defines the EVM module parameters
-type Params struct {
+// V4Params defines the EVM module parameters
+type V4Params struct {
 	// evm_denom represents the token denomination used to run the EVM state
 	// transitions.
 	EvmDenom string `protobuf:"bytes,1,opt,name=evm_denom,json=evmDenom,proto3" json:"evm_denom,omitempty" yaml:"evm_denom"`
@@ -42,18 +42,18 @@ type Params struct {
 	AllowUnprotectedTxs bool `protobuf:"varint,6,opt,name=allow_unprotected_txs,json=allowUnprotectedTxs,proto3" json:"allow_unprotected_txs,omitempty"`
 }
 
-func (m *Params) Reset()         { *m = Params{} }
-func (m *Params) String() string { return proto.CompactTextString(m) }
-func (*Params) ProtoMessage()    {}
-func (*Params) Descriptor() ([]byte, []int) {
+func (m *V4Params) Reset()         { *m = V4Params{} }
+func (m *V4Params) String() string { return proto.CompactTextString(m) }
+func (*V4Params) ProtoMessage()    {}
+func (*V4Params) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d21ecc92c8c8583e, []int{0}
 }
-func (m *Params) XXX_Unmarshal(b []byte) error {
+func (m *V4Params) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Params) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *V4Params) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Params.Marshal(b, m, deterministic)
+		return xxx_messageInfo_V4Params.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -63,54 +63,54 @@ func (m *Params) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Params) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Params.Merge(m, src)
+func (m *V4Params) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_V4Params.Merge(m, src)
 }
-func (m *Params) XXX_Size() int {
+func (m *V4Params) XXX_Size() int {
 	return m.Size()
 }
-func (m *Params) XXX_DiscardUnknown() {
-	xxx_messageInfo_Params.DiscardUnknown(m)
+func (m *V4Params) XXX_DiscardUnknown() {
+	xxx_messageInfo_V4Params.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Params proto.InternalMessageInfo
+var xxx_messageInfo_V4Params proto.InternalMessageInfo
 
-func (m *Params) GetEvmDenom() string {
+func (m *V4Params) GetEvmDenom() string {
 	if m != nil {
 		return m.EvmDenom
 	}
 	return ""
 }
 
-func (m *Params) GetEnableCreate() bool {
+func (m *V4Params) GetEnableCreate() bool {
 	if m != nil {
 		return m.EnableCreate
 	}
 	return false
 }
 
-func (m *Params) GetEnableCall() bool {
+func (m *V4Params) GetEnableCall() bool {
 	if m != nil {
 		return m.EnableCall
 	}
 	return false
 }
 
-func (m *Params) GetExtraEIPs() ExtraEIPs {
+func (m *V4Params) GetExtraEIPs() ExtraEIPs {
 	if m != nil {
 		return m.ExtraEIPs
 	}
 	return ExtraEIPs{}
 }
 
-func (m *Params) GetChainConfig() ChainConfig {
+func (m *V4Params) GetChainConfig() ChainConfig {
 	if m != nil {
 		return m.ChainConfig
 	}
 	return ChainConfig{}
 }
 
-func (m *Params) GetAllowUnprotectedTxs() bool {
+func (m *V4Params) GetAllowUnprotectedTxs() bool {
 	if m != nil {
 		return m.AllowUnprotectedTxs
 	}
@@ -722,7 +722,7 @@ func (m *TraceConfig) GetTracerJsonConfig() string {
 }
 
 func init() {
-	proto.RegisterType((*Params)(nil), "ethermint.evm.v1.Params")
+	proto.RegisterType((*V4Params)(nil), "ethermint.evm.v1.V4Params")
 	proto.RegisterType((*ExtraEIPs)(nil), "ethermint.evm.v1.ExtraEIPs")
 	proto.RegisterType((*ChainConfig)(nil), "ethermint.evm.v1.ChainConfig")
 	proto.RegisterType((*State)(nil), "ethermint.evm.v1.State")
@@ -842,7 +842,7 @@ var fileDescriptor_d21ecc92c8c8583e = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x68, 0xce, 0x8e, 0x23, 0x7a, 0x10, 0x00, 0x00,
 }
 
-func (m *Params) Marshal() (dAtA []byte, err error) {
+func (m *V4Params) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -852,12 +852,12 @@ func (m *Params) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Params) MarshalTo(dAtA []byte) (int, error) {
+func (m *V4Params) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *V4Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1621,7 +1621,7 @@ func encodeVarintEvm(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *Params) Size() (n int) {
+func (m *V4Params) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1926,7 +1926,7 @@ func sovEvm(x uint64) (n int) {
 func sozEvm(x uint64) (n int) {
 	return sovEvm(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Params) Unmarshal(dAtA []byte) error {
+func (m *V4Params) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1949,10 +1949,10 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Params: wiretype end group for non-group")
+			return fmt.Errorf("proto: V4Params: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: V4Params: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

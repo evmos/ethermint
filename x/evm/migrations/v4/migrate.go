@@ -8,8 +8,6 @@ import (
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
-var isTrue = []byte("0x01")
-
 // MigrateStore migrates the x/evm module state from the consensus version 3 to
 // version 4. Specifically, it takes the parameters that are currently stored
 // and managed by the Cosmos SDK params module and stores them directly into the x/evm module state.
@@ -21,7 +19,7 @@ func MigrateStore(
 ) error {
 	var (
 		store  = ctx.KVStore(storeKey)
-		params v4types.Params
+		params v4types.V4Params
 	)
 
 	legacySubspace.GetParamSetIfExists(ctx, &params)
@@ -38,15 +36,15 @@ func MigrateStore(
 	store.Set(v4types.ParamStoreKeyChainConfig, chainCfgBz)
 
 	if params.AllowUnprotectedTxs {
-		store.Set(v4types.ParamStoreKeyAllowUnprotectedTxs, isTrue)
+		store.Set(v4types.ParamStoreKeyAllowUnprotectedTxs, []byte{0x01})
 	}
 
 	if params.EnableCall {
-		store.Set(v4types.ParamStoreKeyEnableCall, isTrue)
+		store.Set(v4types.ParamStoreKeyEnableCall, []byte{0x01})
 	}
 
 	if params.EnableCreate {
-		store.Set(v4types.ParamStoreKeyEnableCreate, isTrue)
+		store.Set(v4types.ParamStoreKeyEnableCreate, []byte{0x01})
 	}
 
 	return nil

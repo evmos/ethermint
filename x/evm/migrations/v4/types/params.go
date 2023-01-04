@@ -14,7 +14,7 @@ import (
 	"github.com/evmos/ethermint/types"
 )
 
-var _ evmtypes.LegacyParams = &Params{}
+var _ evmtypes.LegacyParams = &V4Params{}
 
 var (
 	// DefaultEVMDenom defines the default EVM denomination on Ethermint
@@ -45,12 +45,12 @@ var (
 
 // ParamKeyTable returns the parameter key table.
 func ParamKeyTable() paramtypes.KeyTable {
-	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
+	return paramtypes.NewKeyTable().RegisterParamSet(&V4Params{})
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs ExtraEIPs) Params {
-	return Params{
+func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs ExtraEIPs) V4Params {
+	return V4Params{
 		EvmDenom:            evmDenom,
 		AllowUnprotectedTxs: allowUnprotectedTxs,
 		EnableCreate:        enableCreate,
@@ -62,8 +62,8 @@ func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bo
 
 // DefaultParams returns default evm parameters
 // ExtraEIPs is empty to prevent overriding the latest hard fork instruction set
-func DefaultParams() Params {
-	return Params{
+func DefaultParams() V4Params {
+	return V4Params{
 		EvmDenom:            DefaultEVMDenom,
 		EnableCreate:        DefaultEnableCreate,
 		EnableCall:          DefaultEnableCall,
@@ -74,7 +74,7 @@ func DefaultParams() Params {
 }
 
 // ParamSetPairs returns the parameter set pairs.
-func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+func (p *V4Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
@@ -86,7 +86,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 }
 
 // Validate performs basic validation on evm parameters.
-func (p Params) Validate() error {
+func (p V4Params) Validate() error {
 	if err := sdk.ValidateDenom(p.EvmDenom); err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (p Params) Validate() error {
 }
 
 // EIPs returns the ExtraEIPS as a int slice
-func (p Params) EIPs() []int {
+func (p V4Params) EIPs() []int {
 	eips := make([]int, len(p.ExtraEIPs.EIPs))
 	for i, eip := range p.ExtraEIPs.EIPs {
 		eips[i] = int(eip)

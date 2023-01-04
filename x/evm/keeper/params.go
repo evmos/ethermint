@@ -20,8 +20,6 @@ import (
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
-var isTrue = []byte{0x01}
-
 // GetParams returns the total set of evm parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	evmDenom := k.GetEVMDenom(ctx)
@@ -126,7 +124,7 @@ func (k Keeper) setEvmDenom(ctx sdk.Context, evmDenom string) {
 func (k Keeper) setAllowUnprotectedTxs(ctx sdk.Context, enable bool) {
 	store := ctx.KVStore(k.storeKey)
 	if enable {
-		store.Set(types.ParamStoreKeyAllowUnprotectedTxs, isTrue)
+		store.Set(types.ParamStoreKeyAllowUnprotectedTxs, []byte{0x01})
 		return
 	}
 	store.Delete(types.ParamStoreKeyAllowUnprotectedTxs)
@@ -136,7 +134,7 @@ func (k Keeper) setAllowUnprotectedTxs(ctx sdk.Context, enable bool) {
 func (k Keeper) setEnableCreate(ctx sdk.Context, enable bool) {
 	store := ctx.KVStore(k.storeKey)
 	if enable {
-		store.Set(types.ParamStoreKeyEnableCreate, isTrue)
+		store.Set(types.ParamStoreKeyEnableCreate, []byte{0x01})
 		return
 	}
 	store.Delete(types.ParamStoreKeyEnableCreate)
@@ -146,7 +144,7 @@ func (k Keeper) setEnableCreate(ctx sdk.Context, enable bool) {
 func (k Keeper) setEnableCall(ctx sdk.Context, enable bool) {
 	store := ctx.KVStore(k.storeKey)
 	if enable {
-		store.Set(types.ParamStoreKeyEnableCall, isTrue)
+		store.Set(types.ParamStoreKeyEnableCall, []byte{0x01})
 		return
 	}
 	store.Delete(types.ParamStoreKeyEnableCall)

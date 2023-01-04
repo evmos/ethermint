@@ -8,15 +8,15 @@ import (
 )
 
 type mockSubspace struct {
-	ps v4types.Params
+	ps v4types.V4Params
 }
 
-func newMockSubspace(ps v4types.Params) mockSubspace {
+func newMockSubspace(ps v4types.V4Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
 func (ms mockSubspace) GetParamSetIfExists(_ sdk.Context, ps types.LegacyParams) {
-	*ps.(*v4types.Params) = ms.ps
+	*ps.(*v4types.V4Params) = ms.ps
 }
 
 func (suite *KeeperTestSuite) TestMigrations() {
