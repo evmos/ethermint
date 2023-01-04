@@ -23,7 +23,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -51,8 +50,8 @@ type Keeper struct {
 	// key to access the transient store, which is reset on every block during Commit
 	transientKey storetypes.StoreKey
 
-	// module specific parameter space that can be configured through governance
-	paramSpace paramtypes.Subspace
+	// the address capable of executing a MsgUpdateParams message. Typically, this should be the x/gov module account.
+	authority sdk.AccAddress
 	// access to account state
 	accountKeeper types.AccountKeeper
 	// update balance and accounting operations with coins
@@ -82,7 +81,7 @@ type Keeper struct {
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey, transientKey storetypes.StoreKey,
-	paramSpace paramtypes.Subspace,
+	authority sdk.AccAddress,
 	ak types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	sk types.StakingKeeper,
@@ -96,15 +95,15 @@ func NewKeeper(
 		panic("the EVM module account has not been set")
 	}
 
-	// set KeyTable if it has not already been set
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
+	// ensure the authority account is correct
+	if err := sdk.VerifyAddressFormat(authority); err != nil {
+		panic(err)
 	}
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
 		cdc:               cdc,
-		paramSpace:        paramSpace,
+		authority:         authority,
 		accountKeeper:     ak,
 		bankKeeper:        bankKeeper,
 		stakingKeeper:     sk,
@@ -154,6 +153,11 @@ func (k Keeper) EmitBlockBloomEvent(ctx sdk.Context, bloom ethtypes.Bloom) {
 			sdk.NewAttribute(types.AttributeKeyEthereumBloom, string(bloom.Bytes())),
 		),
 	)
+}
+
+// GetAuthority returns the x/evm module authority address
+func (k Keeper) GetAuthority() sdk.AccAddress {
+	return k.authority
 }
 
 // GetBlockBloomTransient returns bloom bytes for the current block height
@@ -312,8 +316,7 @@ func (k *Keeper) GetNonce(ctx sdk.Context, addr common.Address) uint64 {
 // GetBalance load account's balance of gas token
 func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
-	evmDenom := ""
-	k.paramSpace.GetIfExists(ctx, types.ParamStoreKeyEVMDenom, &evmDenom)
+	evmDenom := k.GetEVMDenom(ctx)
 	// if node is pruned, params is empty. Return invalid value
 	if evmDenom == "" {
 		return big.NewInt(-1)
