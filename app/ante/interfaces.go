@@ -50,10 +50,10 @@ type EVMKeeper interface {
 	ResetTransientGasUsed(ctx sdk.Context)
 	GetTxIndexTransient(ctx sdk.Context) uint64
 	GetChainConfig(ctx sdk.Context) evmtypes.ChainConfig
-	GetEVMDenom(ctx sdk.Context) string
-	GetEnableCreate(ctx sdk.Context) bool
-	GetEnableCall(ctx sdk.Context) bool
 	GetAllowUnprotectedTxs(ctx sdk.Context) bool
+	GetEVMDenom(ctx sdk.Context) string
+	GetEnableCall(ctx sdk.Context) bool
+	GetEnableCreate(ctx sdk.Context) bool
 }
 
 type protoTxProvider interface {
