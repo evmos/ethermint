@@ -18,7 +18,7 @@ import (
 
 func SetupContract(b *testing.B) (*KeeperTestSuite, common.Address) {
 	suite := KeeperTestSuite{}
-	suite.SetupTest()
+	suite.SetupTestWithT(b)
 
 	amt := sdk.Coins{ethermint.NewPhotonCoinInt64(1000000000000000000)}
 	err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)
@@ -34,7 +34,7 @@ func SetupContract(b *testing.B) (*KeeperTestSuite, common.Address) {
 
 func SetupTestMessageCall(b *testing.B) (*KeeperTestSuite, common.Address) {
 	suite := KeeperTestSuite{}
-	suite.SetupTest()
+	suite.SetupTestWithT(b)
 
 	amt := sdk.Coins{ethermint.NewPhotonCoinInt64(1000000000000000000)}
 	err := suite.app.BankKeeper.MintCoins(suite.ctx, types.ModuleName, amt)

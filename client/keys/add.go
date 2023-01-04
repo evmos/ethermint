@@ -65,18 +65,32 @@ output
   - armor encrypted private key (saved to file)
 */
 func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *bufio.Reader) error {
-	var err error
+	var (
+		algo keyring.SignatureAlgo
+		err  error
+	)
 
 	name := args[0]
+
 	interactive, _ := cmd.Flags().GetBool(flagInteractive)
 	noBackup, _ := cmd.Flags().GetBool(flagNoBackup)
+	useLedger, _ := cmd.Flags().GetBool(flags.FlagUseLedger)
+	algoStr, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+
 	showMnemonic := !noBackup
 	kb := ctx.Keyring
 	outputFormat := ctx.OutputFormat
 
-	keyringAlgos, _ := kb.SupportedAlgorithms()
-	algoStr, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
-	algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
+	keyringAlgos, ledgerAlgos := kb.SupportedAlgorithms()
+
+	// check if the provided signing algorithm is supported by the keyring or
+	// ledger
+	if useLedger {
+		algo, err = keyring.NewSigningAlgoFromString(algoStr, ledgerAlgos)
+	} else {
+		algo, err = keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -159,7 +173,6 @@ func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *buf
 	account, _ := cmd.Flags().GetUint32(flagAccount)
 	index, _ := cmd.Flags().GetUint32(flagIndex)
 	hdPath, _ := cmd.Flags().GetString(flagHDPath)
-	useLedger, _ := cmd.Flags().GetBool(flags.FlagUseLedger)
 
 	if len(hdPath) == 0 {
 		hdPath = hd.CreateHDPath(coinType, account, index).String()
@@ -170,7 +183,9 @@ func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *buf
 	// If we're using ledger, only thing we need is the path and the bech32 prefix.
 	if useLedger {
 		bech32PrefixAccAddr := sdk.GetConfig().GetBech32AccountAddrPrefix()
-		k, err := kb.SaveLedgerKey(name, hd.Secp256k1, bech32PrefixAccAddr, coinType, account, index)
+
+		// use the provided algo to save the ledger key
+		k, err := kb.SaveLedgerKey(name, algo, bech32PrefixAccAddr, coinType, account, index)
 		if err != nil {
 			return err
 		}
