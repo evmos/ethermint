@@ -20,10 +20,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tx "github.com/cosmos/cosmos-sdk/types/tx"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
+
 	"github.com/evmos/ethermint/x/evm/statedb"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	evm "github.com/evmos/ethermint/x/evm/vm"
@@ -42,16 +44,16 @@ type EVMKeeper interface {
 	statedb.Keeper
 	DynamicFeeEVMKeeper
 
-	NewEVM(ctx sdk.Context, msg core.Message, cfg *evmtypes.EVMConfig, tracer vm.EVMLogger, stateDB vm.StateDB) evm.EVM
+	NewEVM(ctx sdk.Context, msg core.Message, cfg *statedb.EVMConfig, tracer vm.EVMLogger, stateDB vm.StateDB) evm.EVM
 	DeductTxCostsFromUserBalance(ctx sdk.Context, fees sdk.Coins, from common.Address) error
 	GetBalance(ctx sdk.Context, addr common.Address) *big.Int
 	ResetTransientGasUsed(ctx sdk.Context)
 	GetTxIndexTransient(ctx sdk.Context) uint64
 	GetChainConfig(ctx sdk.Context) evmtypes.ChainConfig
-	GetEVMDenom(ctx sdk.Context) string
-	GetEnableCreate(ctx sdk.Context) bool
-	GetEnableCall(ctx sdk.Context) bool
 	GetAllowUnprotectedTxs(ctx sdk.Context) bool
+	GetEVMDenom(ctx sdk.Context) string
+	GetEnableCall(ctx sdk.Context) bool
+	GetEnableCreate(ctx sdk.Context) bool
 }
 
 type protoTxProvider interface {
