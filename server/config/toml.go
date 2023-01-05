@@ -92,6 +92,9 @@ enable-indexer = {{ .JSONRPC.EnableIndexer }}
 # Prometheus metrics path: /debug/metrics/prometheus
 metrics-address = "{{ .JSONRPC.MetricsAddress }}"
 
+# Upgrade height for fix clear access list before processing each transaction.
+fix-clear-access-list-height = {{ .JSONRPC.FixClearAccessListHeight }}
+
 ###############################################################################
 ###                             TLS Configuration                           ###
 ###############################################################################

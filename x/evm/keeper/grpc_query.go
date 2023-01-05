@@ -421,8 +421,9 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to load evm config: %s", err.Error())
 	}
-	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
-
+	height := ctx.BlockHeight()
+	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(height))
+	patch := false
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
 	var lastDB *statedb.StateDB
 	for i, tx := range req.Predecessors {
@@ -433,11 +434,14 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		}
 		txConfig.TxHash = ethTx.Hash()
 		txConfig.TxIndex = uint(i)
-		stateDB := statedb.New(ctx, &k, txConfig)
-		if lastDB != nil {
-			stateDB.SetAddressToAccessList(lastDB.GetAddressToAccessList())
+		var stateDB *statedb.StateDB
+		if patch {
+			stateDB = statedb.New(ctx, &k, txConfig)
+			if lastDB != nil {
+				stateDB.SetAddressToAccessList(lastDB.GetAddressToAccessList())
+			}
+			lastDB = stateDB
 		}
-		lastDB = stateDB
 		rsp, err := k.ApplyMessageWithStateDB(ctx, msg, types.NewNoOpTracer(), true, cfg, txConfig, stateDB)
 		if err != nil {
 			continue

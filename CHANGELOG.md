@@ -111,6 +111,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
 * (ante) [#1566](https://github.com/evmos/ethermint/pull/1566) Fix `gasWanted` on `EthGasConsumeDecorator` ante handler when running transaction in `ReCheckMode`
+* (rpc) [#1585](https://github.com/evmos/ethermint/pull/1585) Patch gas before the fix of clear access list before processing each transaction for `debug_traceTransaction`.
 
 ## [v0.19.3] - 2022-10-14
 
