@@ -489,5 +489,4 @@ func (suite *BackendTestSuite) TestGasPrice() {
 			}
 		})
 	}
-
 }
