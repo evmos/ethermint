@@ -93,13 +93,14 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 	}
 
 	traceTxRequest := evmtypes.QueryTraceTxRequest{
-		Msg:             ethMessage,
-		Predecessors:    predecessors,
-		BlockNumber:     blk.Block.Height,
-		BlockTime:       blk.Block.Time,
-		BlockHash:       common.Bytes2Hex(blk.BlockID.Hash),
-		ProposerAddress: sdk.ConsAddress(blk.Block.ProposerAddress),
-		ChainId:         b.chainID.Int64(),
+		Msg:                      ethMessage,
+		Predecessors:             predecessors,
+		BlockNumber:              blk.Block.Height,
+		BlockTime:                blk.Block.Time,
+		BlockHash:                common.Bytes2Hex(blk.BlockID.Hash),
+		ProposerAddress:          sdk.ConsAddress(blk.Block.ProposerAddress),
+		ChainId:                  b.chainID.Int64(),
+		FixClearAccessListHeight: b.cfg.JSONRPC.FixClearAccessListHeight,
 	}
 
 	if config != nil {

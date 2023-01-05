@@ -255,6 +255,9 @@ message QueryTraceTxRequest {
   bytes proposer_address = 8 [(gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ConsAddress"];
   // chain_id is the the eip155 chain id parsed from the requested block header
   int64 chain_id = 9;
+  // fix_clear_access_list_height defines the upgrade height for fix clear access list before processing each
+  // transaction
+  int64 fix_clear_access_list_height = 10;
 }
 
 // QueryTraceTxResponse defines TraceTx response
