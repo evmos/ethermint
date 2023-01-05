@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"

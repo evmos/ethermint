@@ -540,10 +540,7 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 			"enough balance",
 			func() {
 				args = types.TransactionArgs{To: &common.Address{}, From: &suite.address, Value: (*hexutil.Big)(big.NewInt(100))}
-			},
-			false,
-			0,
-			false,
+			}, false, 0, false,
 		},
 		// should success, because gas limit lower than 21000 is ignored
 		{
