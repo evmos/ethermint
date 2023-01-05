@@ -66,6 +66,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new TypedEvent
 * (tests) [#1507](https://github.com/evmos/ethermint/pull/1507) Remove legacy sim tests
 * (feemarket) [#1508](https://github.com/evmos/ethermint/pull/1508) Remove old x/params migration logic
 * (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block
