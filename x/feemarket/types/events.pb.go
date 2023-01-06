@@ -68,9 +68,9 @@ func (m *EventFeeMarket) GetBaseFee() string {
 	return ""
 }
 
-// EventBlockGas defines the event for a Ethereum block gas
+// EventBlockGas defines an Ethereum block gas event
 type EventBlockGas struct {
-	// height is the height of the block
+	// height of the block
 	Height string `protobuf:"bytes,1,opt,name=height,proto3" json:"height,omitempty"`
 	// amount of gas wanted by the block
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`

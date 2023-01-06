@@ -422,6 +422,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		return nil, status.Errorf(codes.Internal, "failed to load evm config: %s", err.Error())
 	}
 	height := ctx.BlockHeight()
+	patch := height < req.FixClearAccessListHeight
 	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(height))
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
 	var lastDB *statedb.StateDB
@@ -434,7 +435,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		txConfig.TxHash = ethTx.Hash()
 		txConfig.TxIndex = uint(i)
 		var stateDB *statedb.StateDB
-		if height < req.FixClearAccessListHeight {
+		if patch {
 			stateDB = statedb.New(ctx, &k, txConfig)
 			if lastDB != nil {
 				stateDB.SetAddressToAccessList(lastDB.GetAddressToAccessList())
@@ -511,17 +512,27 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to load evm config")
 	}
-	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
+	height := ctx.BlockHeight()
+	patch := height < req.FixClearAccessListHeight
+	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(height))
 	txsLength := len(req.Txs)
 	results := make([]*types.TxTraceResult, 0, txsLength)
-
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
+	var lastDB *statedb.StateDB
 	for i, tx := range req.Txs {
 		result := types.TxTraceResult{}
 		ethTx := tx.AsTransaction()
 		txConfig.TxHash = ethTx.Hash()
 		txConfig.TxIndex = uint(i)
-		traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, nil, signer, ethTx, req.TraceConfig, true, nil)
+		var stateDB *statedb.StateDB
+		if patch {
+			stateDB = statedb.New(ctx, &k, txConfig)
+			if lastDB != nil {
+				stateDB.SetAddressToAccessList(lastDB.GetAddressToAccessList())
+			}
+			lastDB = stateDB
+		}
+		traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, stateDB, signer, ethTx, req.TraceConfig, true, nil)
 		if err != nil {
 			result.Error = err.Error()
 		} else {
