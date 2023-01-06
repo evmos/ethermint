@@ -348,36 +348,36 @@ func TestEth_IncompleteSendTransaction(t *testing.T) {
 }
 
 // TODO: Investigate why it's failing
-//func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
-//	rpcRes := call(t, "eth_blockNumber", []string{})
-//
-//	var res hexutil.Uint64
-//	err := res.UnmarshalJSON(rpcRes.Result)
-//	require.NoError(t, err)
-//
-//	param := make([]map[string]interface{}, 1)
-//	param[0] = make(map[string]interface{})
-//	param[0]["topics"] = []string{}
-//	param[0]["fromBlock"] = res.String()
-//
-//	// instantiate new filter
-//	rpcRes = call(t, "eth_newFilter", param)
-//	require.Nil(t, rpcRes.Error)
-//	var ID string
-//	err = json.Unmarshal(rpcRes.Result, &ID)
-//	require.NoError(t, err)
-//
-//	// deploy contract, emitting some event
-//	deployTestContract(t)
-//
-//	// get filter changes
-//	changesRes := call(t, "eth_getFilterChanges", []string{ID})
-//
-//	var logs []*ethtypes.Log
-//	err = json.Unmarshal(changesRes.Result, &logs)
-//	require.NoError(t, err)
-//	require.Equal(t, 1, len(logs))
-//}
+func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
+	rpcRes := call(t, "eth_blockNumber", []string{})
+
+	var res hexutil.Uint64
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	param := make([]map[string]interface{}, 1)
+	param[0] = make(map[string]interface{})
+	param[0]["topics"] = []string{}
+	param[0]["fromBlock"] = res.String()
+
+	// instantiate new filter
+	rpcRes = call(t, "eth_newFilter", param)
+	require.Nil(t, rpcRes.Error)
+	var ID string
+	err = json.Unmarshal(rpcRes.Result, &ID)
+	require.NoError(t, err)
+
+	// deploy contract, emitting some event
+	deployTestContract(t)
+
+	// get filter changes
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
+
+	var logs []*ethtypes.Log
+	err = json.Unmarshal(changesRes.Result, &logs)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(logs))
+}
 
 // hash of Hello event
 var helloTopic = "0x775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd738898"
