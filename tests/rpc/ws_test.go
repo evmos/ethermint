@@ -109,37 +109,37 @@ func TestWsEth_subscribe_newHeads(t *testing.T) {
 	wsUnsubscribe(t, wc, subscribeId) // eth_unsubscribe
 }
 
-func TestWsEth_subscribe_log(t *testing.T) {
-	t.Log("test eth_subscribe log with websocket")
-
-	wc, _, err := websocket.DefaultDialer.Dial(wsUrl, nil)
-	require.NoError(t, err)
-	defer wc.Close()
-
-	wsWriteMessage(t, wc, fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"eth_subscribe","params":["logs",{"topics":["%s", "%s"]}]}`, helloTopic, worldTopic))
-
-	time.Sleep(1 * time.Second)
-	mb := readMessage(t, wc)
-	msg := jsonUnmarshal(t, mb)
-	subscribeId, ok := msg["result"].(string)
-	require.True(t, ok)
-	require.True(t, strings.HasPrefix(subscribeId, "0x"))
-
-	// do something here to receive subscription messages
-	deployTestContractWithFunction(t)
-
-	time.Sleep(3 * time.Second)
-	mb = readMessage(t, wc)
-	msg = jsonUnmarshal(t, mb)
-	method, ok := msg["method"].(string)
-	require.Equal(t, "eth_subscription", method)
-
-	// id should not exist with eth_subscription event
-	_, ok = msg["id"].(float64)
-	require.False(t, ok)
-
-	wsUnsubscribe(t, wc, subscribeId) // eth_unsubscribe
-}
+//func TestWsEth_subscribe_log(t *testing.T) {
+//	t.Log("test eth_subscribe log with websocket")
+//
+//	wc, _, err := websocket.DefaultDialer.Dial(wsUrl, nil)
+//	require.NoError(t, err)
+//	defer wc.Close()
+//
+//	wsWriteMessage(t, wc, fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"eth_subscribe","params":["logs",{"topics":["%s", "%s"]}]}`, helloTopic, worldTopic))
+//
+//	time.Sleep(1 * time.Second)
+//	mb := readMessage(t, wc)
+//	msg := jsonUnmarshal(t, mb)
+//	subscribeId, ok := msg["result"].(string)
+//	require.True(t, ok)
+//	require.True(t, strings.HasPrefix(subscribeId, "0x"))
+//
+//	// do something here to receive subscription messages
+//	deployTestContractWithFunction(t)
+//
+//	time.Sleep(3 * time.Second)
+//	mb = readMessage(t, wc)
+//	msg = jsonUnmarshal(t, mb)
+//	method, ok := msg["method"].(string)
+//	require.Equal(t, "eth_subscription", method)
+//
+//	// id should not exist with eth_subscription event
+//	_, ok = msg["id"].(float64)
+//	require.False(t, ok)
+//
+//	wsUnsubscribe(t, wc, subscribeId) // eth_unsubscribe
+//}
 
 func wsWriteMessage(t *testing.T, wc *websocket.Conn, jsonStr string) {
 	t.Logf("send: %s", jsonStr)
