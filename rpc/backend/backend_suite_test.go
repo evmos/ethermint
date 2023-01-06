@@ -88,7 +88,6 @@ func (suite *BackendTestSuite) SetupTest() {
 	// Add codec
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
 	suite.backend.clientCtx.Codec = encCfg.Codec
-
 }
 
 // buildEthereumTx returns an example legacy Ethereum transaction
