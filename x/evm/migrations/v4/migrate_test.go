@@ -57,6 +57,7 @@ func TestMigrate(t *testing.T) {
 	var extraEIPs types.ExtraEIPs
 	bz = kvStore.Get(types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(bz, &extraEIPs)
+	require.Equal(t, types.AvailableExtraEIPs, extraEIPs.EIPs)
 
 	params := types.NewParams(evmDenom, allowUnprotectedTx.Value, enableCreate, enableCall, chainCfg, extraEIPs)
 	require.Equal(t, legacySubspace.ps, params)
