@@ -1,13 +1,13 @@
 package types
 
 import (
+	"fmt"
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 type ParamsTestSuite struct {
@@ -18,8 +18,59 @@ func TestParamsTestSuite(t *testing.T) {
 	suite.Run(t, new(ParamsTestSuite))
 }
 
-func (suite *ParamsTestSuite) TestParamKeyTable() {
-	suite.Require().IsType(paramtypes.KeyTable{}, ParamKeyTable())
+func validateElasticityMultiplier(i interface{}) error {
+	_, ok := i.(uint32)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	return nil
+}
+
+func validateBaseFeeChangeDenominator(i interface{}) error {
+	value, ok := i.(uint32)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if value == 0 {
+		return fmt.Errorf("base fee change denominator cannot be 0")
+	}
+
+	return nil
+}
+
+func validateEnableHeight(i interface{}) error {
+	value, ok := i.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if value < 0 {
+		return fmt.Errorf("enable height cannot be negative: %d", value)
+	}
+
+	return nil
+}
+
+func validateBool(i interface{}) error {
+	_, ok := i.(bool)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	return nil
+}
+
+func validateBaseFee(i interface{}) error {
+	value, ok := i.(sdkmath.Int)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if value.IsNegative() {
+		return fmt.Errorf("base fee cannot be negative")
+	}
+
+	return nil
 }
 
 func (suite *ParamsTestSuite) TestParamsValidate() {

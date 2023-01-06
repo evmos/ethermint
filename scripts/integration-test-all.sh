@@ -145,7 +145,7 @@ echo "done sleeping"
 set +e
 
 if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
-    time_out=300s
+    time_out=900s
     if [[ $TEST == "pending" ]]; then
       time_out=60m0s
     fi

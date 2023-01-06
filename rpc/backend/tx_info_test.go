@@ -555,7 +555,6 @@ func (suite *BackendTestSuite) TestGetTransactionReceipt() {
 				RegisterParamsWithoutHeader(queryClient, 1)
 				RegisterBlock(client, 1, txBz)
 				RegisterBlockResults(client, 1)
-
 			},
 			msgEthereumTx,
 			&types.Block{Header: types.Header{Height: 1}, Data: types.Data{Txs: []types.Tx{txBz}}},

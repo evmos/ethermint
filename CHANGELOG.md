@@ -40,6 +40,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (feemarket) [#1509](https://github.com/evmos/ethermint/pull/1509) Deprecate usage of x/params in x/feemarket
 * (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate x/params usage in x/evm
 * (deps) #[1575](https://github.com/evmos/ethermint/pull/1575) bump ibc-go to [`v6.1.0`]
 * (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
@@ -66,6 +67,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
+* (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new TypedEvent
 * (tests) [#1507](https://github.com/evmos/ethermint/pull/1507) Remove legacy sim tests
 * (feemarket) [#1508](https://github.com/evmos/ethermint/pull/1508) Remove old x/params migration logic
 * (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block

@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -14,5 +13,5 @@ func (suite *KeeperTestSuite) TestEndBlock() {
 
 	// should emit 1 EventTypeBlockBloom event on EndBlock
 	suite.Require().Equal(1, len(em.Events()))
-	suite.Require().Equal(evmtypes.EventTypeBlockBloom, em.Events()[0].Type)
+	suite.Require().Equal("ethermint.evm.v1.EventBlockBloom", em.Events()[0].Type)
 }
