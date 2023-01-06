@@ -109,7 +109,7 @@ func callWithError(method string, params interface{}) (*Response, error) {
 		return nil, err
 	}
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(5 * time.Second)
 	/* #nosec */
 	res, err := http.Post(HOST, "application/json", bytes.NewBuffer(req))
 	if err != nil {
