@@ -9,11 +9,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	ethlogger "github.com/ethereum/go-ethereum/eth/tracers/logger"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/evmos/ethermint/tests"
+	"github.com/evmos/ethermint/x/evm/keeper"
 	"github.com/evmos/ethermint/x/evm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -753,6 +755,87 @@ func (suite *KeeperTestSuite) TestEstimateGas() {
 	suite.enableFeemarket = false // reset flag
 }
 
+func (suite *KeeperTestSuite) TestGetTxTraceResultForTx() {
+	var (
+		patch  bool
+		lastDB *statedb.StateDB
+		addr   common.Address
+	)
+
+	testCases := []struct {
+		msg      string
+		malleate func(sdk.Context, *keeper.Keeper, statedb.TxConfig)
+		expect   func(*KeeperTestSuite, *statedb.StateDB)
+	}{
+		{
+			msg: "not patch case",
+			malleate: func(ctx sdk.Context, k *keeper.Keeper, txConfig statedb.TxConfig) {
+				patch = false
+				lastDB = nil
+			},
+			expect: func(suite *KeeperTestSuite, result *statedb.StateDB) {
+				suite.Require().Nil(result)
+			},
+		}, {
+			msg: "patch with empty statedb",
+			malleate: func(ctx sdk.Context, k *keeper.Keeper, txConfig statedb.TxConfig) {
+				patch = true
+				lastDB = statedb.New(ctx, k, txConfig)
+			},
+			expect: func(suite *KeeperTestSuite, result *statedb.StateDB) {
+				suite.Require().NotNil(result)
+			},
+		}, {
+			msg: "patch with existing statedb",
+			malleate: func(ctx sdk.Context, k *keeper.Keeper, txConfig statedb.TxConfig) {
+				patch = true
+				lastDB = statedb.New(ctx, k, txConfig)
+				addr = common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec")
+				lastDB.AddAddressToAccessList(addr)
+			},
+			expect: func(suite *KeeperTestSuite, result *statedb.StateDB) {
+				suite.Require().NotNil(result)
+				suite.Require().True(result.GetAddressToAccessList().ContainsAddress(addr))
+			},
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.SetupTest()
+			// Deploy contract
+			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+			suite.Commit()
+			// Generate token transfer transaction
+			txMsg := suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdkmath.NewIntWithDecimal(1, 18).BigInt())
+			suite.Commit()
+
+			k := suite.app.EvmKeeper
+			chainID := k.ChainID()
+			proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+			cfg, err := k.EVMConfig(suite.ctx, proposerAddress, chainID)
+			if err != nil {
+				suite.Error(err, "error when init EVMConfig")
+			}
+			signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(1))
+			txHash := common.BytesToHash([]byte("tx_hash"))
+			txIndex := uint(1)
+			logIndex := uint(1)
+			txConfig := statedb.NewTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes()), txHash, txIndex, logIndex)
+			tc.malleate(suite.ctx, k, txConfig)
+			lastDB, _ = k.GetTxTraceResultForTx(
+				suite.ctx,
+				txMsg,
+				signer,
+				cfg,
+				txConfig,
+				patch,
+				lastDB,
+			)
+			tc.expect(suite, lastDB)
+		})
+	}
+}
+
 func (suite *KeeperTestSuite) TestTraceTx() {
 	// TODO deploy contract that triggers internal transactions
 	var (
@@ -979,6 +1062,91 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 	}
 
 	suite.enableFeemarket = false // reset flag
+}
+
+func (suite *KeeperTestSuite) TestGetTxTraceResultForBlock() {
+	var (
+		patch  bool
+		lastDB *statedb.StateDB
+		addr   common.Address
+	)
+
+	testCases := []struct {
+		msg      string
+		malleate func(sdk.Context, *keeper.Keeper, statedb.TxConfig)
+		expect   func(*KeeperTestSuite, *statedb.StateDB)
+	}{
+		{
+			msg: "not patch case",
+			malleate: func(ctx sdk.Context, k *keeper.Keeper, txConfig statedb.TxConfig) {
+				patch = false
+				lastDB = nil
+			},
+			expect: func(suite *KeeperTestSuite, result *statedb.StateDB) {
+				suite.Require().Nil(result)
+			},
+		}, {
+			msg: "patch with empty statedb",
+			malleate: func(ctx sdk.Context, k *keeper.Keeper, txConfig statedb.TxConfig) {
+				patch = true
+				lastDB = statedb.New(ctx, k, txConfig)
+			},
+			expect: func(suite *KeeperTestSuite, result *statedb.StateDB) {
+				suite.Require().NotNil(result)
+			},
+		}, {
+			msg: "patch with existing statedb",
+			malleate: func(ctx sdk.Context, k *keeper.Keeper, txConfig statedb.TxConfig) {
+				patch = true
+				lastDB = statedb.New(ctx, k, txConfig)
+				addr = common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec")
+				lastDB.AddAddressToAccessList(addr)
+			},
+			expect: func(suite *KeeperTestSuite, result *statedb.StateDB) {
+				suite.Require().NotNil(result)
+				suite.Require().True(result.GetAddressToAccessList().ContainsAddress(addr))
+			},
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.msg), func() {
+			suite.SetupTest()
+			// Deploy contract
+			contractAddr := suite.DeployTestContract(suite.T(), suite.address, sdkmath.NewIntWithDecimal(1000, 18).BigInt())
+			suite.Commit()
+			// Generate token transfer transaction
+			txMsg := suite.TransferERC20Token(suite.T(), contractAddr, suite.address, common.HexToAddress("0x378c50D9264C63F3F92B806d4ee56E9D86FfB3Ec"), sdkmath.NewIntWithDecimal(1, 18).BigInt())
+			suite.Commit()
+
+			k := suite.app.EvmKeeper
+			chainID := k.ChainID()
+			proposerAddress := suite.ctx.BlockHeader().ProposerAddress
+			cfg, err := k.EVMConfig(suite.ctx, proposerAddress, chainID)
+			if err != nil {
+				suite.Error(err, "error when init EVMConfig")
+			}
+			signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(1))
+			txHash := common.BytesToHash([]byte("tx_hash"))
+			txIndex := uint(1)
+			logIndex := uint(1)
+			txConfig := statedb.NewTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes()), txHash, txIndex, logIndex)
+			tc.malleate(suite.ctx, k, txConfig)
+			traceConfig := &types.TraceConfig{
+				EnableMemory: false,
+			}
+			lastDB, _ = k.GetTxTraceResultForBlock(
+				suite.ctx,
+				txMsg,
+				signer,
+				cfg,
+				txConfig,
+				traceConfig,
+				patch,
+				lastDB,
+			)
+			tc.expect(suite, lastDB)
+		})
+	}
 }
 
 func (suite *KeeperTestSuite) TestTraceBlock() {
