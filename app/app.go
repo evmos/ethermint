@@ -418,10 +418,11 @@ func NewEthermintApp(
 	)
 
 	// Set authority to x/gov module account to only expect the module account to update params
+	ss := app.GetSubspace(evmtypes.ModuleName)
 	app.EvmKeeper = evmkeeper.NewKeeper(
 		appCodec, keys[evmtypes.StoreKey], tkeys[evmtypes.TransientKey], authtypes.NewModuleAddress(govtypes.ModuleName),
 		app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.FeeMarketKeeper,
-		nil, geth.NewEVM, tracer,
+		nil, geth.NewEVM, tracer, ss,
 	)
 
 	// Create IBC Keeper
@@ -508,7 +509,7 @@ func NewEthermintApp(
 		transferModule,
 		// Ethermint app modules
 		feemarket.NewAppModule(app.FeeMarketKeeper, app.GetSubspace(feemarkettypes.ModuleName)),
-		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper, app.GetSubspace(evmtypes.ModuleName)),
+		evm.NewAppModule(app.EvmKeeper, app.AccountKeeper, ss),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
