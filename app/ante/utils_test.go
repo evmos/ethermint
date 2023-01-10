@@ -61,14 +61,16 @@ import (
 type AnteTestSuite struct {
 	suite.Suite
 
-	ctx             sdk.Context
-	app             *app.EthermintApp
-	clientCtx       client.Context
-	anteHandler     sdk.AnteHandler
-	ethSigner       ethtypes.Signer
-	enableFeemarket bool
-	enableLondonHF  bool
-	evmParamsOption func(*evmtypes.Params)
+	ctx                      sdk.Context
+	app                      *app.EthermintApp
+	clientCtx                client.Context
+	anteHandler              sdk.AnteHandler
+	ethSigner                ethtypes.Signer
+	enableFeemarket          bool
+	enableLondonHF           bool
+	evmParamsOption          func(*evmtypes.Params)
+	useLegacyEIP712Extension bool
+	useLegacyEIP712TypedData bool
 }
 
 const TestGasLimit uint64 = 100000
@@ -143,6 +145,18 @@ func (suite *AnteTestSuite) SetupTest() {
 func TestAnteTestSuite(t *testing.T) {
 	suite.Run(t, &AnteTestSuite{
 		enableLondonHF: true,
+	})
+
+	suite.Run(t, &AnteTestSuite{
+		enableLondonHF:           true,
+		useLegacyEIP712Extension: true,
+		useLegacyEIP712TypedData: true,
+	})
+
+	suite.Run(t, &AnteTestSuite{
+		enableLondonHF:           true,
+		useLegacyEIP712Extension: false,
+		useLegacyEIP712TypedData: true,
 	})
 }
 
@@ -496,10 +510,18 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	accNumber := suite.app.AccountKeeper.GetAccount(suite.ctx, from).GetAccountNumber()
 
 	data := legacytx.StdSignBytes(chainId, accNumber, nonce, 0, fee, msgs, "", nil)
-	typedData, err := eip712.WrapTxToTypedData(ethermintCodec, ethChainId, msgs[0], data, &eip712.FeeDelegationOptions{
+	var typedData apitypes.TypedData
+	typedData, err = eip712.WrapTxToTypedData(ethChainId, data, &eip712.FeeDelegationOptions{
 		FeePayer: from,
 	})
 	suite.Require().NoError(err)
+
+	if suite.useLegacyEIP712TypedData {
+		typedData, err = eip712.LegacyWrapTxToTypedData(ethermintCodec, ethChainId, msgs[0], data, &eip712.FeeDelegationOptions{
+			FeePayer: from,
+		})
+		suite.Require().NoError(err)
+	}
 
 	sigHash, _, err := apitypes.TypedDataAndHash(typedData)
 	suite.Require().NoError(err)
@@ -510,34 +532,50 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 	suite.Require().NoError(err)
 	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 
-	// Add ExtensionOptionsWeb3Tx extension
-	var option *codectypes.Any
-	option, err = codectypes.NewAnyWithValue(&types.ExtensionOptionsWeb3Tx{
-		FeePayer:         from.String(),
-		TypedDataChainID: ethChainId,
-		FeePayerSig:      signature,
-	})
-	suite.Require().NoError(err)
-
-	suite.clientCtx.TxConfig.SignModeHandler()
 	txBuilder := suite.clientCtx.TxConfig.NewTxBuilder()
 	builder, ok := txBuilder.(authtx.ExtensionOptionsTxBuilder)
 	suite.Require().True(ok)
 
-	builder.SetExtensionOptions(option)
 	builder.SetFeeAmount(gasAmount)
 	builder.SetGasLimit(gas)
 
-	sigsV2 := signing.SignatureV2{
-		PubKey: pubKey,
-		Data: &signing.SingleSignatureData{
-			SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
-		},
-		Sequence: nonce,
-	}
+	// Add ExtensionOptionsWeb3Tx extension
+	if suite.useLegacyEIP712Extension {
+		var option *codectypes.Any
+		option, err = codectypes.NewAnyWithValue(&types.ExtensionOptionsWeb3Tx{
+			FeePayer:         from.String(),
+			TypedDataChainID: ethChainId,
+			FeePayerSig:      signature,
+		})
+		suite.Require().NoError(err)
 
-	err = builder.SetSignatures(sigsV2)
-	suite.Require().NoError(err)
+		builder.SetExtensionOptions(option)
+
+		blankSigsV2 := signing.SignatureV2{
+			PubKey: pubKey,
+			Data: &signing.SingleSignatureData{
+				SignMode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+			},
+			Sequence: nonce,
+		}
+
+		err = builder.SetSignatures(blankSigsV2)
+		suite.Require().NoError(err)
+	} else {
+		// Must use SIGN_MODE_DIRECT, since Amino has some trouble parsing certain Any values from a SignDoc
+		// TODO: Root cause this issue
+		sigsV2 := signing.SignatureV2{
+			PubKey: pubKey,
+			Data: &signing.SingleSignatureData{
+				SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
+				Signature: signature,
+			},
+			Sequence: nonce,
+		}
+
+		err = txBuilder.SetSignatures(sigsV2)
+		suite.Require().NoError(err)
+	}
 
 	err = builder.SetMsgs(msgs...)
 	suite.Require().NoError(err)

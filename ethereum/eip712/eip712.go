@@ -32,7 +32,6 @@ import (
 	"golang.org/x/text/language"
 
 	errorsmod "cosmossdk.io/errors"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -47,9 +46,7 @@ type goJSON map[string]interface{}
 // WrapTxToTypedData is an ultimate method that wraps Amino-encoded Cosmos Tx JSON data
 // into an EIP712-compatible TypedData request.
 func WrapTxToTypedData(
-	cdc codectypes.AnyUnpacker,
 	chainID uint64,
-	msg sdk.Msg,
 	data []byte,
 	feeDelegation *FeeDelegationOptions,
 ) (apitypes.TypedData, error) {
@@ -72,7 +69,7 @@ func WrapTxToTypedData(
 		Salt:              "0",
 	}
 
-	payloadTypes, err := extractPayloadTypes(cdc, txData, numMessages)
+	payloadTypes, err := extractPayloadTypes(txData, numMessages)
 	if err != nil {
 		return apitypes.TypedData{}, err
 	}
@@ -147,7 +144,7 @@ func flattenPayloadMessages(payload goJSON) (int, error) {
 	return len(messages), nil
 }
 
-func extractPayloadTypes(cdc codectypes.AnyUnpacker, payload goJSON, numMessages int) (apitypes.Types, error) {
+func extractPayloadTypes(payload goJSON, numMessages int) (apitypes.Types, error) {
 	rootTypes := apitypes.Types{
 		"EIP712Domain": {
 			{
@@ -197,7 +194,7 @@ func extractPayloadTypes(cdc codectypes.AnyUnpacker, payload goJSON, numMessages
 			return nil, fmt.Errorf("ran out of messages at index (%d), expected total of (%d)", i, numMessages)
 		}
 
-		msgTypedef, err := walkMsgTypes(cdc, rootTypes, msg)
+		msgTypedef, err := walkMsgTypes(rootTypes, msg)
 
 		if err != nil {
 			return nil, err
@@ -249,6 +246,8 @@ func addTypesToRoot(rootTypes apitypes.Types, typeDef string, types []apitypes.T
 	return typeDefKey, nil
 }
 
+// typesAreEqual compares two apitypes.Type arrays and returns a boolean indicating whether they have
+// the same naming and type definitions.
 func typesAreEqual(types1 []apitypes.Type, types2 []apitypes.Type) bool {
 	if len(types1) != len(types2) {
 		return false
@@ -265,7 +264,7 @@ func typesAreEqual(types1 []apitypes.Type, types2 []apitypes.Type) bool {
 	return true
 }
 
-func walkMsgTypes(cdc codectypes.AnyUnpacker, typeMap apitypes.Types, in interface{}) (msgField string, err error) {
+func walkMsgTypes(typeMap apitypes.Types, in interface{}) (msgField string, err error) {
 	defer doRecover(&err)
 
 	t := reflect.TypeOf(in)
@@ -297,24 +296,22 @@ func walkMsgTypes(cdc codectypes.AnyUnpacker, typeMap apitypes.Types, in interfa
 		rootType = fmt.Sprintf("Type%v", tokens[len(tokens)-1])
 	}
 
-	return traverseFields(cdc, typeMap, rootType, typeDefPrefix, t, v)
-}
-
-type cosmosAnyWrapper struct {
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
+	return traverseFields(typeMap, rootType, typeDefPrefix, t, v)
 }
 
 // traverseFields walks all types in the given map, recursively adding sub-maps as new types when necessary, and adds the map's type definition
 // to typeMap. It returns the key to the type definition, and an error if it failed.
 func traverseFields(
-	cdc codectypes.AnyUnpacker,
 	typeMap apitypes.Types,
 	rootType string,
 	prefix string,
 	t reflect.Type,
 	v reflect.Value,
 ) (string, error) {
+
+	if t.Kind() != reflect.Map {
+		return "", fmt.Errorf("unexpected type %v, expected type reflect.Map\n", t.Kind())
+	}
 
 	mapKeys := v.MapKeys()
 	sort.Slice(mapKeys, func(i, j int) bool {
@@ -359,7 +356,7 @@ func traverseFields(
 		}
 
 		if fieldType.Kind() == reflect.Map {
-			fieldTypedef, err := traverseFields(cdc, typeMap, rootType, fieldPrefix, fieldType, field)
+			fieldTypedef, err := traverseFields(typeMap, rootType, fieldPrefix, fieldType, field)
 
 			if err != nil {
 				return "", err
@@ -452,13 +449,12 @@ func sanitizeTypedef(str string) string {
 }
 
 var (
-	hashType      = reflect.TypeOf(common.Hash{})
-	addressType   = reflect.TypeOf(common.Address{})
-	bigIntType    = reflect.TypeOf(big.Int{})
-	cosmIntType   = reflect.TypeOf(sdkmath.Int{})
-	cosmDecType   = reflect.TypeOf(sdk.Dec{})
-	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
-	timeType      = reflect.TypeOf(time.Time{})
+	hashType    = reflect.TypeOf(common.Hash{})
+	addressType = reflect.TypeOf(common.Address{})
+	bigIntType  = reflect.TypeOf(big.Int{})
+	cosmIntType = reflect.TypeOf(sdkmath.Int{})
+	cosmDecType = reflect.TypeOf(sdk.Dec{})
+	timeType    = reflect.TypeOf(time.Time{})
 
 	edType = reflect.TypeOf(ed25519.PubKey{})
 )

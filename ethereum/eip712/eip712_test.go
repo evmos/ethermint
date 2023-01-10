@@ -34,12 +34,16 @@ import (
 type EIP712TestSuite struct {
 	suite.Suite
 
-	config    params.EncodingConfig
-	clientCtx client.Context
+	config                   params.EncodingConfig
+	clientCtx                client.Context
+	useLegacyEIP712TypedData bool
 }
 
 func TestEIP712TestSuite(t *testing.T) {
 	suite.Run(t, &EIP712TestSuite{})
+	suite.Run(t, &EIP712TestSuite{
+		useLegacyEIP712TypedData: true,
+	})
 }
 
 // Set up test env to replicate prod. environment
@@ -202,6 +206,29 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			expectSuccess: true,
 		},
 		{
+			title: "Succeeds - Single-Signer MsgSend + MsgVote",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				govtypes.NewMsgVote(
+					testAddress,
+					5,
+					govtypes.OptionNo,
+				),
+				banktypes.NewMsgSend(
+					testAddress,
+					suite.createTestAddress(),
+					suite.makeCoins("photon", math.NewInt(50)),
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: !suite.useLegacyEIP712TypedData,
+		},
+		{
 			title: "Fails - Two MsgVotes with Different Signers",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
@@ -232,29 +259,6 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 			},
 			memo:          "",
 			msgs:          []sdk.Msg{},
-			accountNumber: 25,
-			sequence:      78,
-			expectSuccess: false,
-		},
-		{
-			title: "Fails - Single-Signer MsgSend + MsgVote",
-			fee: txtypes.Fee{
-				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
-				GasLimit: 20000,
-			},
-			memo: "",
-			msgs: []sdk.Msg{
-				govtypes.NewMsgVote(
-					testAddress,
-					5,
-					govtypes.OptionNo,
-				),
-				banktypes.NewMsgSend(
-					testAddress,
-					suite.createTestAddress(),
-					suite.makeCoins("photon", math.NewInt(50)),
-				),
-			},
 			accountNumber: 25,
 			sequence:      78,
 			expectSuccess: false,
@@ -402,6 +406,11 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 func (suite *EIP712TestSuite) verifyEIP712SignatureVerification(expectedSuccess bool, privKey ethsecp256k1.PrivKey, pubKey ethsecp256k1.PubKey, signBytes []byte) {
 	// Convert to EIP712 bytes and sign
 	eip712Bytes, err := eip712.GetEIP712BytesForMsg(signBytes)
+
+	if suite.useLegacyEIP712TypedData {
+		eip712Bytes, err = eip712.LegacyGetEIP712BytesForMsg(signBytes)
+	}
+
 	if !expectedSuccess {
 		// Expect failure generating EIP-712 bytes
 		suite.Require().Error(err)
