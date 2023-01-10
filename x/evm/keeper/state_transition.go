@@ -400,9 +400,12 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 	// The dirty states in `StateDB` is either committed or discarded after return
 	if commit {
-		if err := stateDB.Commit(); err != nil {
+		dbCtx, err := stateDB.Commit()
+		if err != nil {
 			return nil, errorsmod.Wrap(err, "failed to commit stateDB")
 		}
+
+		ctx.MultiStore().Restore(dbCtx.MultiStore())
 	}
 
 	// calculate a minimum amount of gas to be charged to sender if GasLimit

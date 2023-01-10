@@ -96,8 +96,9 @@ schema = 3
     version = "v1.0.0-beta.1"
     hash = "sha256-oATkuj+fM5eBn+ywO+w/tL0AFSIEkx0J3Yz+VhVe0QA="
   [mod."github.com/cosmos/cosmos-sdk"]
-    version = "v0.46.8"
-    hash = "sha256-jETbixsZq5XJ1pl1XaVJvD5jkcygBrEcHRK/L0+XI68="
+    version = "v0.43.0-beta1.0.20230110141630-be56dc1a6a02"
+    hash = "sha256-xPsC7XYq7Cye1q9lKzi3A6v2+1Uv3JbKW+It08T5/iY="
+    replaced = "github.com/yihuang/cosmos-sdk"
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -447,6 +448,12 @@ schema = 3
   [mod."github.com/syndtr/goleveldb"]
     version = "v1.0.1-0.20210819022825-2ae1ddf74ef7"
     hash = "sha256-36a4hgVQfwtS2zhylKpQuFhrjdc/Y8pF0dxc26jcZIU="
+  [mod."github.com/tendermint/btcd"]
+    version = "v0.1.1"
+    hash = "sha256-QQl2GWZaKQtd+LQrgx2unkTLI1qye57fCWwJcmCXT/0="
+  [mod."github.com/tendermint/crypto"]
+    version = "v0.0.0-20191022145703-50d29ede1e15"
+    hash = "sha256-NkoZ3hKWZt5Hca49I+1g81x1m6aQGELZ/QGLdb3uHm4="
   [mod."github.com/tendermint/go-amino"]
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
