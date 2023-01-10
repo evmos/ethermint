@@ -109,6 +109,7 @@ func TestWsEth_subscribe_newHeads(t *testing.T) {
 	wsUnsubscribe(t, wc, subscribeId) // eth_unsubscribe
 }
 
+// TODO: Test where CI times out
 //func TestWsEth_subscribe_log(t *testing.T) {
 //	t.Log("test eth_subscribe log with websocket")
 //

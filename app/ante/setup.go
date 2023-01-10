@@ -86,7 +86,10 @@ func (eeed EthEmitEventDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulat
 			Hash:  msgEthTx.Hash,
 			Index: strconv.FormatUint(txIndex+uint64(i), 10),
 		})
-		
+
+		if err != nil {
+			ctx.Logger().Error(err.Error())
+		}
 	}
 
 	return next(ctx, tx, simulate)
