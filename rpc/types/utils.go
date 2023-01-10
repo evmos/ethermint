@@ -18,6 +18,7 @@ package types
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -227,20 +228,30 @@ func NewRPCTransaction(
 	return result, nil
 }
 
+// UnmarshalMessageToString unmarshal message to string
+func UnmarshalMessageToString(bz []byte) string {
+	var msg interface{}
+	err := json.Unmarshal(bz, &msg)
+	if err != nil {
+		return ""
+	}
+	return msg.(string)
+}
+
 // BaseFeeFromEvents parses the feemarket basefee from cosmos events
 func BaseFeeFromEvents(events []abci.Event) *big.Int {
 	for _, event := range events {
-		if event.Type != feemarkettypes.EventTypeFeeMarket {
+		if event.Type != feemarkettypes.NewEventTypeFeeMarket {
 			continue
 		}
 
 		for _, attr := range event.Attributes {
 			if bytes.Equal(attr.Key, []byte(feemarkettypes.AttributeKeyBaseFee)) {
-				result, success := new(big.Int).SetString(string(attr.Value), 10)
+				val := UnmarshalMessageToString(attr.Value)
+				result, success := new(big.Int).SetString(val, 10)
 				if success {
 					return result
 				}
-
 				return nil
 			}
 		}

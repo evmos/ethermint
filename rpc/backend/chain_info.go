@@ -18,7 +18,6 @@ package backend
 import (
 	"fmt"
 	"math/big"
-	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -82,17 +81,7 @@ func (b *Backend) BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, er
 		// we can't tell if it's london HF not enabled or the state is pruned,
 		// in either case, we'll fallback to parsing from begin blocker event,
 		// faster to iterate reversely
-		for i := len(blockRes.BeginBlockEvents) - 1; i >= 0; i-- {
-			evt := blockRes.BeginBlockEvents[i]
-			if evt.Type == feemarkettypes.EventTypeFeeMarket && len(evt.Attributes) > 0 {
-				baseFee, err := strconv.ParseInt(string(evt.Attributes[0].Value), 10, 64)
-				if err == nil {
-					return big.NewInt(baseFee), nil
-				}
-				break
-			}
-		}
-		return nil, err
+		return rpctypes.BaseFeeFromEvents(blockRes.BeginBlockEvents), nil
 	}
 
 	if res.BaseFee == nil {
