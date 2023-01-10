@@ -19,12 +19,12 @@ package types
 const (
 	EventTypeEthereumTx = TypeMsgEthereumTx
 	EventTypeBlockBloom = "block_bloom"
-	EventTypeTxLog      = "tx_log"
+	EventTypeTxLog      = "ethermint.evm.v1.EventTxLog"
 
 	AttributeKeyContractAddress = "contract"
 	AttributeKeyRecipient       = "recipient"
 	AttributeKeyTxHash          = "txHash"
-	AttributeKeyEthereumTxHash  = "ethereumTxHash"
+	AttributeKeyEthereumTxHash  = "ethHash"
 	AttributeKeyTxIndex         = "txIndex"
 	AttributeKeyTxGasUsed       = "txGasUsed"
 	AttributeKeyTxType          = "txType"

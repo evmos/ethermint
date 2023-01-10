@@ -17,7 +17,7 @@ package types
 
 // feemarket module events
 const (
-	EventTypeFeeMarket = "fee_market"
+	EventTypeFeeMarket = "ethermint.feemarket.v1.EventFeeMarket"
 
 	AttributeKeyBaseFee = "base_fee"
 )
