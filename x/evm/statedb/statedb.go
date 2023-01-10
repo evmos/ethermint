@@ -298,6 +298,21 @@ func (s *StateDB) setStateObject(object *stateObject) {
 	s.stateObjects[object.Address()] = object
 }
 
+func (s *StateDB) restoreNativeState(ms sdk.CacheMultiStore) {
+	s.ctx = s.ctx.WithMultiStore(ms)
+}
+
+func (s *StateDB) executeNativeAction(action func(ctx sdk.Context) error) error {
+	snapshot := s.ctx.MultiStore().Clone()
+	err := action(s.ctx)
+	if err != nil {
+		s.restoreNativeState(snapshot)
+		return err
+	}
+	s.journal.append(nativeChange{snapshot: snapshot})
+	return nil
+}
+
 /*
  * SETTERS
  */
@@ -450,19 +465,19 @@ func (s *StateDB) RevertToSnapshot(revid int) {
 
 // Commit writes the dirty states to keeper
 // the StateDB object should be discarded after committed.
-func (s *StateDB) Commit() error {
+func (s *StateDB) Commit() (sdk.Context, error) {
 	for _, addr := range s.journal.sortedDirties() {
 		obj := s.stateObjects[addr]
 		if obj.suicided {
 			if err := s.keeper.DeleteAccount(s.ctx, obj.Address()); err != nil {
-				return errorsmod.Wrap(err, "failed to delete account")
+				return s.ctx, errorsmod.Wrap(err, "failed to delete account")
 			}
 		} else {
 			if obj.code != nil && obj.dirtyCode {
 				s.keeper.SetCode(s.ctx, obj.CodeHash(), obj.code)
 			}
 			if err := s.keeper.SetAccount(s.ctx, obj.Address(), obj.account); err != nil {
-				return errorsmod.Wrap(err, "failed to set account")
+				return s.ctx, errorsmod.Wrap(err, "failed to set account")
 			}
 			for _, key := range obj.dirtyStorage.SortedKeys() {
 				value := obj.dirtyStorage[key]
@@ -474,5 +489,5 @@ func (s *StateDB) Commit() error {
 			}
 		}
 	}
-	return nil
+	return s.ctx, nil
 }
