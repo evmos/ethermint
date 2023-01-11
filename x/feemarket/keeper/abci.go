@@ -41,12 +41,12 @@ func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	}()
 
 	// Store current base fee in event
-	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeFeeMarket,
-			sdk.NewAttribute(types.AttributeKeyBaseFee, baseFee.String()),
-		),
+	err := ctx.EventManager().EmitTypedEvent(&types.EventFeeMarket{
+		BaseFee: baseFee.String(),
 	})
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+	}
 }
 
 // EndBlock update block gas wanted.
@@ -74,9 +74,11 @@ func (k *Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 		telemetry.SetGauge(float32(gasWanted), "feemarket", "block_gas")
 	}()
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		"block_gas",
-		sdk.NewAttribute("height", fmt.Sprintf("%d", ctx.BlockHeight())),
-		sdk.NewAttribute("amount", fmt.Sprintf("%d", gasWanted)),
-	))
+	err := ctx.EventManager().EmitTypedEvents(&types.EventBlockGas{
+		Height: fmt.Sprintf("%d", ctx.BlockHeight()),
+		Amount: fmt.Sprintf("%d", gasWanted),
+	})
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+	}
 }
