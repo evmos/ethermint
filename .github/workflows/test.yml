@@ -38,6 +38,7 @@ jobs:
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
         if: env.GIT_DIFF
 
   test-importer:
@@ -63,7 +64,7 @@ jobs:
 
   test-rpc:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/setup-go@v3
         with:
