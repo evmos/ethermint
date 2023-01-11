@@ -21,7 +21,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/evmos/ethermint/x/feemarket/types"
@@ -37,23 +36,23 @@ type Keeper struct {
 	// Store key required for the Fee Market Prefix KVStore.
 	storeKey     storetypes.StoreKey
 	transientKey storetypes.StoreKey
-	// module specific parameter space that can be configured through governance
-	paramSpace paramtypes.Subspace
+	// the address capable of executing a MsgUpdateParams message. Typically, this should be the x/gov module account.
+	authority sdk.AccAddress
 }
 
 // NewKeeper generates new fee market module keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, paramSpace paramtypes.Subspace, storeKey, transientKey storetypes.StoreKey,
+	cdc codec.BinaryCodec, authority sdk.AccAddress, storeKey, transientKey storetypes.StoreKey,
 ) Keeper {
-	// set KeyTable if it has not already been set
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
+	// ensure authority account is correctly formatted
+	if err := sdk.VerifyAddressFormat(authority); err != nil {
+		panic(err)
 	}
 
 	return Keeper{
 		cdc:          cdc,
 		storeKey:     storeKey,
-		paramSpace:   paramSpace,
+		authority:    authority,
 		transientKey: transientKey,
 	}
 }
@@ -113,6 +112,7 @@ func (k Keeper) AddTransientGasWanted(ctx sdk.Context, gasWanted uint64) (uint64
 
 // GetBaseFeeV1 get the base fee from v1 version of states.
 // return nil if base fee is not enabled
+// TODO: Figure out if this will be deleted ?
 func (k Keeper) GetBaseFeeV1(ctx sdk.Context) *big.Int {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(KeyPrefixBaseFeeV1)

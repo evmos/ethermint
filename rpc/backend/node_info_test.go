@@ -2,6 +2,8 @@ package backend
 
 import (
 	"fmt"
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -11,7 +13,6 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	"github.com/spf13/viper"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
-	"math/big"
 )
 
 func (suite *BackendTestSuite) TestRPCMinGasPrice() {
@@ -190,7 +191,6 @@ func (suite *BackendTestSuite) TestSyncing() {
 				RegisterStatus(client)
 				status, _ := client.Status(suite.backend.ctx)
 				status.SyncInfo.CatchingUp = true
-
 			},
 			map[string]interface{}{
 				"startingBlock": hexutil.Uint64(0),
@@ -254,7 +254,7 @@ func (suite *BackendTestSuite) TestSetEtherbase() {
 				c := sdk.NewDecCoin("aphoton", sdk.NewIntFromBigInt(big.NewInt(1)))
 				suite.backend.cfg.SetMinGasPrices(sdk.DecCoins{c})
 				delAddr, _ := suite.backend.GetCoinbase()
-				//account, _ := suite.backend.clientCtx.AccountRetriever.GetAccount(suite.backend.clientCtx, delAddr)
+				// account, _ := suite.backend.clientCtx.AccountRetriever.GetAccount(suite.backend.clientCtx, delAddr)
 				delCommonAddr := common.BytesToAddress(delAddr.Bytes())
 				request := &authtypes.QueryAccountRequest{Address: sdk.AccAddress(delCommonAddr.Bytes()).String()}
 				requestMarshal, _ := request.Marshal()

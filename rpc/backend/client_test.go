@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
@@ -18,7 +20,6 @@ import (
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
-	"testing"
 )
 
 // Client defines a mocked object that implements the Tendermint JSON-RPC Client
@@ -97,6 +98,7 @@ func RegisterBlockMultipleTxs(
 	client.On("Block", rpc.ContextWithHeight(height), mock.AnythingOfType("*int64")).Return(resBlock, nil)
 	return resBlock, nil
 }
+
 func RegisterBlock(
 	client *mocks.Client,
 	height int64,
