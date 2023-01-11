@@ -89,56 +89,52 @@ func (k *Keeper) EthereumTx(goCtx context.Context, msg *types.MsgEthereumTx) (*t
 		}
 	}()
 
-	attrs := []sdk.Attribute{
-		sdk.NewAttribute(sdk.AttributeKeyAmount, tx.Value().String()),
+	eventEthereumTx := &types.EventEthereumTx{
+		Amount: tx.Value().String(),
 		// add event for ethereum transaction hash format
-		sdk.NewAttribute(types.AttributeKeyEthereumTxHash, response.Hash),
+		EthHash: response.Hash,
 		// add event for index of valid ethereum tx
-		sdk.NewAttribute(types.AttributeKeyTxIndex, strconv.FormatUint(txIndex, 10)),
+		Index: strconv.FormatUint(txIndex, 10),
 		// add event for eth tx gas used, we can't get it from cosmos tx result when it contains multiple eth tx msgs.
-		sdk.NewAttribute(types.AttributeKeyTxGasUsed, strconv.FormatUint(response.GasUsed, 10)),
+		GasUsed: strconv.FormatUint(response.GasUsed, 10),
 	}
 
 	if len(ctx.TxBytes()) > 0 {
 		// add event for tendermint transaction hash format
 		hash := tmbytes.HexBytes(tmtypes.Tx(ctx.TxBytes()).Hash())
-		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyTxHash, hash.String()))
+		eventEthereumTx.Hash = hash.String()
 	}
 
 	if to := tx.To(); to != nil {
-		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyRecipient, to.Hex()))
+		eventEthereumTx.Recipient = to.Hex()
 	}
 
 	if response.Failed() {
-		attrs = append(attrs, sdk.NewAttribute(types.AttributeKeyEthereumTxFailed, response.VmError))
+		eventEthereumTx.EthTxFailed = response.VmError
 	}
 
-	txLogAttrs := make([]sdk.Attribute, len(response.Logs))
+	eventTxLogs := &types.EventTxLog{TxLogs: make([]string, len(response.Logs))}
 	for i, log := range response.Logs {
 		value, err := json.Marshal(log)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "failed to encode log")
 		}
-		txLogAttrs[i] = sdk.NewAttribute(types.AttributeKeyTxLog, string(value))
+		eventTxLogs.TxLogs[i] = string(value)
 	}
 
-	// emit events
-	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeEthereumTx,
-			attrs...,
-		),
-		sdk.NewEvent(
-			types.EventTypeTxLog,
-			txLogAttrs...,
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, sender),
-			sdk.NewAttribute(types.AttributeKeyTxType, fmt.Sprintf("%d", tx.Type())),
-		),
-	})
+	err = ctx.EventManager().EmitTypedEvents(
+		eventEthereumTx,
+		eventTxLogs,
+		&types.EventMessage{
+			Module: types.AttributeValueCategory,
+			Sender: sender,
+			TxType: fmt.Sprintf("%d", tx.Type()),
+		},
+	)
+
+	if err != nil {
+		k.Logger(ctx).Error(err.Error())
+	}
 
 	return response, nil
 }
