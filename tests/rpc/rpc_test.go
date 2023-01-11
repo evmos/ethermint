@@ -347,37 +347,36 @@ func TestEth_IncompleteSendTransaction(t *testing.T) {
 	require.NotEqual(t, err.Error(), "method handler crashed", "no from field dealt with incorrectly")
 }
 
-// TODO: Investigate why it's failing
-//func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
-//	rpcRes := call(t, "eth_blockNumber", []string{})
-//
-//	var res hexutil.Uint64
-//	err := res.UnmarshalJSON(rpcRes.Result)
-//	require.NoError(t, err)
-//
-//	param := make([]map[string]interface{}, 1)
-//	param[0] = make(map[string]interface{})
-//	param[0]["topics"] = []string{}
-//	param[0]["fromBlock"] = res.String()
-//
-//	// instantiate new filter
-//	rpcRes = call(t, "eth_newFilter", param)
-//	require.Nil(t, rpcRes.Error)
-//	var ID string
-//	err = json.Unmarshal(rpcRes.Result, &ID)
-//	require.NoError(t, err)
-//
-//	// deploy contract, emitting some event
-//	deployTestContract(t)
-//
-//	// get filter changes
-//	changesRes := call(t, "eth_getFilterChanges", []string{ID})
-//
-//	var logs []*ethtypes.Log
-//	err = json.Unmarshal(changesRes.Result, &logs)
-//	require.NoError(t, err)
-//	require.Equal(t, 1, len(logs))
-//}
+func TestEth_GetFilterChanges_NoTopics(t *testing.T) {
+	rpcRes := call(t, "eth_blockNumber", []string{})
+
+	var res hexutil.Uint64
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	param := make([]map[string]interface{}, 1)
+	param[0] = make(map[string]interface{})
+	param[0]["topics"] = []string{}
+	param[0]["fromBlock"] = res.String()
+
+	// instantiate new filter
+	rpcRes = call(t, "eth_newFilter", param)
+	require.Nil(t, rpcRes.Error)
+	var ID string
+	err = json.Unmarshal(rpcRes.Result, &ID)
+	require.NoError(t, err)
+
+	// deploy contract, emitting some event
+	deployTestContract(t)
+
+	// get filter changes
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
+
+	var logs []*ethtypes.Log
+	err = json.Unmarshal(changesRes.Result, &logs)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(logs))
+}
 
 // hash of Hello event
 var helloTopic = "0x775a94827b8fd9b519d36cd827093c664f93347070a554f65e4a6f56cd738898"
@@ -427,68 +426,66 @@ func deployTestContractWithFunction(t *testing.T) hexutil.Bytes {
 	return hash
 }
 
-// TODO: Investigate why it's failing
 // Tests topics case where there are topics in first two positions
-//func TestEth_GetFilterChanges_Topics_AB(t *testing.T) {
-//	rpcRes := call(t, "eth_blockNumber", []string{})
-//
-//	var res hexutil.Uint64
-//	err := res.UnmarshalJSON(rpcRes.Result)
-//	require.NoError(t, err)
-//
-//	param := make([]map[string]interface{}, 1)
-//	param[0] = make(map[string]interface{})
-//	param[0]["topics"] = []string{helloTopic, worldTopic}
-//	param[0]["fromBlock"] = res.String()
-//
-//	// instantiate new filter
-//	rpcRes = call(t, "eth_newFilter", param)
-//	var ID string
-//	err = json.Unmarshal(rpcRes.Result, &ID)
-//	require.NoError(t, err, string(rpcRes.Result))
-//
-//	deployTestContractWithFunction(t)
-//
-//	// get filter changes
-//	changesRes := call(t, "eth_getFilterChanges", []string{ID})
-//
-//	var logs []*ethtypes.Log
-//	err = json.Unmarshal(changesRes.Result, &logs)
-//	require.NoError(t, err)
-//
-//	require.Equal(t, 1, len(logs))
-//}
+func TestEth_GetFilterChanges_Topics_AB(t *testing.T) {
+	rpcRes := call(t, "eth_blockNumber", []string{})
 
-// TODO: Investigate why it's failing
-//func TestEth_GetFilterChanges_Topics_XB(t *testing.T) {
-//	rpcRes := call(t, "eth_blockNumber", []string{})
-//
-//	var res hexutil.Uint64
-//	err := res.UnmarshalJSON(rpcRes.Result)
-//	require.NoError(t, err)
-//
-//	param := make([]map[string]interface{}, 1)
-//	param[0] = make(map[string]interface{})
-//	param[0]["topics"] = []interface{}{nil, worldTopic}
-//	param[0]["fromBlock"] = res.String()
-//
-//	// instantiate new filter
-//	rpcRes = call(t, "eth_newFilter", param)
-//	var ID string
-//	err = json.Unmarshal(rpcRes.Result, &ID)
-//	require.NoError(t, err)
-//
-//	deployTestContractWithFunction(t)
-//
-//	// get filter changes
-//	changesRes := call(t, "eth_getFilterChanges", []string{ID})
-//
-//	var logs []*ethtypes.Log
-//	err = json.Unmarshal(changesRes.Result, &logs)
-//	require.NoError(t, err)
-//
-//	require.Equal(t, 1, len(logs))
-//}
+	var res hexutil.Uint64
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	param := make([]map[string]interface{}, 1)
+	param[0] = make(map[string]interface{})
+	param[0]["topics"] = []string{helloTopic, worldTopic}
+	param[0]["fromBlock"] = res.String()
+
+	// instantiate new filter
+	rpcRes = call(t, "eth_newFilter", param)
+	var ID string
+	err = json.Unmarshal(rpcRes.Result, &ID)
+	require.NoError(t, err, string(rpcRes.Result))
+
+	deployTestContractWithFunction(t)
+
+	// get filter changes
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
+
+	var logs []*ethtypes.Log
+	err = json.Unmarshal(changesRes.Result, &logs)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, len(logs))
+}
+
+func TestEth_GetFilterChanges_Topics_XB(t *testing.T) {
+	rpcRes := call(t, "eth_blockNumber", []string{})
+
+	var res hexutil.Uint64
+	err := res.UnmarshalJSON(rpcRes.Result)
+	require.NoError(t, err)
+
+	param := make([]map[string]interface{}, 1)
+	param[0] = make(map[string]interface{})
+	param[0]["topics"] = []interface{}{nil, worldTopic}
+	param[0]["fromBlock"] = res.String()
+
+	// instantiate new filter
+	rpcRes = call(t, "eth_newFilter", param)
+	var ID string
+	err = json.Unmarshal(rpcRes.Result, &ID)
+	require.NoError(t, err)
+
+	deployTestContractWithFunction(t)
+
+	// get filter changes
+	changesRes := call(t, "eth_getFilterChanges", []string{ID})
+
+	var logs []*ethtypes.Log
+	err = json.Unmarshal(changesRes.Result, &logs)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, len(logs))
+}
 
 func TestEth_PendingTransactionFilter(t *testing.T) {
 	rpcRes := call(t, "eth_newPendingTransactionFilter", []string{})
