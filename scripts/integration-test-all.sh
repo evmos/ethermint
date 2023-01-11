@@ -3,7 +3,7 @@
 # "stable" mode tests assume data is static
 # "live" mode tests assume data dynamic
 
-SCRIPT=$(basename ${BASH_SOURCE[0]})
+SCRIPT=$(basename "${BASH_SOURCE[0]}")
 TEST=""
 QTD=1
 SLEEP_TIMEOUT=5
@@ -145,7 +145,7 @@ echo "done sleeping"
 set +e
 
 if [[ -z $TEST || $TEST == "rpc" ||  $TEST == "pending" ]]; then
-    time_out=900s
+    time_out=300s
     if [[ $TEST == "pending" ]]; then
       time_out=60m0s
     fi
