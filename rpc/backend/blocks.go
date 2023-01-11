@@ -347,16 +347,13 @@ func (b *Backend) HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error) 
 // BlockBloom query block bloom filter from block results
 func (b *Backend) BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.Bloom, error) {
 	for _, event := range blockRes.EndBlockEvents {
-		if event.Type != evmtypes.NewEventTypeBlockBloom {
+		if event.Type != evmtypes.EventTypeBlockBloom {
 			continue
 		}
+
 		for _, attr := range event.Attributes {
-			val := rpctypes.UnmarshalMessageToString(attr.Value)
-			rawVal := []byte(val)
-			// Fix bloom bytes too big
-			rawVal = bytes.ReplaceAll(rawVal, []byte{239, 191, 189}, []byte{128})
 			if bytes.Equal(attr.Key, bAttributeKeyEthereumBloom) {
-				return ethtypes.BytesToBloom(rawVal), nil
+				return ethtypes.BytesToBloom(attr.Value), nil
 			}
 		}
 	}

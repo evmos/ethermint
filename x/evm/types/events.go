@@ -17,11 +17,9 @@ package types
 
 // Evm module events
 const (
-	EventTypeEthereumTx    = TypeMsgEthereumTx
-	EventTypeBlockBloom    = "block_bloom"
-	NewEventTypeBlockBloom = "ethermint.evm.v1.EventBlockBloom"
-	EventTypeTxLog         = "tx_log"
-	NewEventTypeTxLog      = "ethermint.evm.v1.EventTxLog"
+	EventTypeEthereumTx = TypeMsgEthereumTx
+	EventTypeBlockBloom = "block_bloom"
+	EventTypeTxLog      = "tx_log"
 
 	AttributeKeyContractAddress = "contract"
 	AttributeKeyRecipient       = "recipient"
