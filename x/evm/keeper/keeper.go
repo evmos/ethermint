@@ -147,14 +147,12 @@ func (k Keeper) ChainID() *big.Int {
 
 // EmitBlockBloomEvent emit block bloom events
 func (k Keeper) EmitBlockBloomEvent(ctx sdk.Context, bloom ethtypes.Bloom) {
-	err := ctx.EventManager().EmitTypedEvent(
-		&types.EventBlockBloom{
-			Bloom: string(bloom.Bytes()),
-		},
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeBlockBloom,
+			sdk.NewAttribute(types.AttributeKeyEthereumBloom, string(bloom.Bytes())),
+		),
 	)
-	if err != nil {
-		k.Logger(ctx).Error(err.Error())
-	}
 }
 
 // GetAuthority returns the x/evm module authority address
