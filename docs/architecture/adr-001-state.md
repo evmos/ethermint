@@ -98,7 +98,7 @@ type Keeper struct {
 
 This means that a `Keeper` pointer will now directly be passed to the `vm.EVM` for accessing the state and performing state transitions.
 
-The ABCI `BeginBlock` and `EndBlock` are have now been refactored to only keep track of internal fields (hashes, block bloom, etc).
+The ABCI `BeginBlock` and `EndBlock` have now been refactored to only keep track of internal fields (hashes, block bloom, etc).
 
 ```go
 func (k *Keeper) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
@@ -131,7 +131,7 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.Valid
 }
 ```
 
-The new `StateDB` (`Keeper`) will adopt the use of the  [`TransientStore`](https://docs.cosmos.network/master/core/store.html#transient-store) that discards the existing values of the store when the block is commited.
+The new `StateDB` (`Keeper`) will adopt the use of the  [`TransientStore`](https://docs.cosmos.network/master/core/store.html#transient-store) that discards the existing values of the store when the block is committed.
 
 The fields that have been modified to use the `TransientStore` are:
 
