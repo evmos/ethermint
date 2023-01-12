@@ -30,7 +30,7 @@ If recorded decisions turned out to be lacking, convene a discussion, record the
 
 Note the context/background should be written in the present tense.
 
-Please add a entry below in your Pull Request for an ADR.
+Please add an entry below in your Pull Request for an ADR.
 
 ## ADR Table of Contents
 

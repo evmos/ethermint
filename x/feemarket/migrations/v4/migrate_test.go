@@ -8,25 +8,24 @@ import (
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/encoding"
 	v4 "github.com/evmos/ethermint/x/feemarket/migrations/v4"
-	v4types "github.com/evmos/ethermint/x/feemarket/migrations/v4/types"
 	"github.com/evmos/ethermint/x/feemarket/types"
 	"github.com/stretchr/testify/require"
 )
 
 type mockSubspace struct {
-	ps v4types.Params
+	ps types.Params
 }
 
 func newMockSubspaceEmpty() mockSubspace {
 	return mockSubspace{}
 }
 
-func newMockSubspace(ps v4types.Params) mockSubspace {
+func newMockSubspace(ps types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
 func (ms mockSubspace) GetParamSetIfExists(ctx sdk.Context, ps types.LegacyParams) {
-	*ps.(*v4types.Params) = ms.ps
+	*ps.(*types.Params) = ms.ps
 }
 
 func TestMigrate(t *testing.T) {
@@ -41,11 +40,11 @@ func TestMigrate(t *testing.T) {
 	legacySubspaceEmpty := newMockSubspaceEmpty()
 	require.Error(t, v4.MigrateStore(ctx, storeKey, legacySubspaceEmpty, cdc))
 
-	legacySubspace := newMockSubspace(v4types.DefaultParams())
+	legacySubspace := newMockSubspace(types.DefaultParams())
 	require.NoError(t, v4.MigrateStore(ctx, storeKey, legacySubspace, cdc))
 
-	paramsBz := kvStore.Get(v4types.ParamsKey)
-	var params v4types.Params
+	paramsBz := kvStore.Get(types.ParamsKey)
+	var params types.Params
 	cdc.MustUnmarshal(paramsBz, &params)
 
 	require.Equal(t, params, legacySubspace.ps)
