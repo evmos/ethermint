@@ -209,7 +209,6 @@ func extractPayloadTypes(payload gjson.Result, numMessages int) (apitypes.Types,
 		}
 
 		msgTypedef, err := walkMsgTypes(rootTypes, msg)
-
 		if err != nil {
 			return nil, err
 		}
@@ -352,7 +351,6 @@ func traverseFields(
 
 		if field.IsObject() {
 			fieldTypedef, err := traverseFields(typeMap, rootType, fieldPrefix, field)
-
 			if err != nil {
 				return "", err
 			}
