@@ -35,6 +35,7 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	"google.golang.org/grpc"
 )
 
 // RPC namespaces and API version
@@ -60,6 +61,7 @@ const (
 type APICreator = func(
 	ctx *server.Context,
 	clientCtx client.Context,
+	backupGRPCClient *grpc.ClientConn,
 	tendermintWebsocketClient *rpcclient.WSClient,
 	allowUnprotectedTxs bool,
 	indexer ethermint.EVMTxIndexer,
@@ -72,11 +74,12 @@ func init() {
 	apiCreators = map[string]APICreator{
 		EthNamespace: func(ctx *server.Context,
 			clientCtx client.Context,
+			backupGRPCClient *grpc.ClientConn,
 			tmWSClient *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, backupGRPCClient, allowUnprotectedTxs, indexer)
 			return []rpc.API{
 				{
 					Namespace: EthNamespace,
@@ -92,7 +95,7 @@ func init() {
 				},
 			}
 		},
-		Web3Namespace: func(*server.Context, client.Context, *rpcclient.WSClient, bool, ethermint.EVMTxIndexer) []rpc.API {
+		Web3Namespace: func(*server.Context, client.Context, *grpc.ClientConn, *rpcclient.WSClient, bool, ethermint.EVMTxIndexer) []rpc.API {
 			return []rpc.API{
 				{
 					Namespace: Web3Namespace,
@@ -102,7 +105,7 @@ func init() {
 				},
 			}
 		},
-		NetNamespace: func(_ *server.Context, clientCtx client.Context, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
+		NetNamespace: func(_ *server.Context, clientCtx client.Context, _ *grpc.ClientConn, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
 			return []rpc.API{
 				{
 					Namespace: NetNamespace,
@@ -114,11 +117,12 @@ func init() {
 		},
 		PersonalNamespace: func(ctx *server.Context,
 			clientCtx client.Context,
+			backupGRPCClient *grpc.ClientConn,
 			_ *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, backupGRPCClient, allowUnprotectedTxs, indexer)
 			return []rpc.API{
 				{
 					Namespace: PersonalNamespace,
@@ -128,7 +132,7 @@ func init() {
 				},
 			}
 		},
-		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
+		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ *grpc.ClientConn, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
 			return []rpc.API{
 				{
 					Namespace: TxPoolNamespace,
@@ -140,11 +144,12 @@ func init() {
 		},
 		DebugNamespace: func(ctx *server.Context,
 			clientCtx client.Context,
+			backupGRPCClient *grpc.ClientConn,
 			_ *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, backupGRPCClient, allowUnprotectedTxs, indexer)
 			return []rpc.API{
 				{
 					Namespace: DebugNamespace,
@@ -156,11 +161,12 @@ func init() {
 		},
 		MinerNamespace: func(ctx *server.Context,
 			clientCtx client.Context,
+			backupGRPCClient *grpc.ClientConn,
 			_ *rpcclient.WSClient,
 			allowUnprotectedTxs bool,
 			indexer ethermint.EVMTxIndexer,
 		) []rpc.API {
-			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, allowUnprotectedTxs, indexer)
+			evmBackend := backend.NewBackend(ctx, ctx.Logger, clientCtx, backupGRPCClient, allowUnprotectedTxs, indexer)
 			return []rpc.API{
 				{
 					Namespace: MinerNamespace,
@@ -176,6 +182,7 @@ func init() {
 // GetRPCAPIs returns the list of all APIs
 func GetRPCAPIs(ctx *server.Context,
 	clientCtx client.Context,
+	backupGRPCClient *grpc.ClientConn,
 	tmWSClient *rpcclient.WSClient,
 	allowUnprotectedTxs bool,
 	indexer ethermint.EVMTxIndexer,
@@ -185,7 +192,7 @@ func GetRPCAPIs(ctx *server.Context,
 
 	for _, ns := range selectedAPIs {
 		if creator, ok := apiCreators[ns]; ok {
-			apis = append(apis, creator(ctx, clientCtx, tmWSClient, allowUnprotectedTxs, indexer)...)
+			apis = append(apis, creator(ctx, clientCtx, backupGRPCClient, tmWSClient, allowUnprotectedTxs, indexer)...)
 		} else {
 			ctx.Logger.Error("invalid namespace value", "namespace", ns)
 		}

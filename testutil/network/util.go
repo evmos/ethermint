@@ -146,7 +146,7 @@ func startInProcess(cfg Config, val *Validator) error {
 		tmEndpoint := "/websocket"
 		tmRPCAddr := val.RPCAddress
 
-		val.jsonrpc, val.jsonrpcDone, err = server.StartJSONRPC(val.Ctx, val.ClientCtx, tmRPCAddr, tmEndpoint, val.AppConfig, nil)
+		val.jsonrpc, val.jsonrpcDone, err = server.StartJSONRPC(val.Ctx, val.ClientCtx, val.ClientCtx.GRPCClient, tmRPCAddr, tmEndpoint, val.AppConfig, nil)
 		if err != nil {
 			return err
 		}

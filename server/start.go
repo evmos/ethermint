@@ -268,6 +268,14 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 	return server.WaitForQuitSignals()
 }
 
+func parseGrpcAddress(address string) (string, error) {
+	_, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return "", errorsmod.Wrapf(err, "invalid grpc address %s", address)
+	}
+	return fmt.Sprintf("127.0.0.1:%s", port), nil
+}
+
 // legacyAminoCdc is used for the legacy REST API
 func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) (err error) {
 	cfg := ctx.Config
@@ -431,6 +439,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
+	var backupGrpcClient *grpc.ClientConn
 	if config.API.Enable || config.JSONRPC.Enable {
 		genDoc, err := genDocProvider()
 		if err != nil {
@@ -444,9 +453,9 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		// Set `GRPCClient` to `clientCtx` to enjoy concurrent grpc query.
 		// only use it if gRPC server is enabled.
 		if config.GRPC.Enable {
-			_, port, err := net.SplitHostPort(config.GRPC.Address)
+			grpcAddress, err := parseGrpcAddress(config.GRPC.Address)
 			if err != nil {
-				return errorsmod.Wrapf(err, "invalid grpc address %s", config.GRPC.Address)
+				return err
 			}
 
 			maxSendMsgSize := config.GRPC.MaxSendMsgSize
@@ -458,8 +467,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			if maxRecvMsgSize == 0 {
 				maxRecvMsgSize = serverconfig.DefaultGRPCMaxRecvMsgSize
 			}
-
-			grpcAddress := fmt.Sprintf("127.0.0.1:%s", port)
 
 			// If grpc is enabled, configure grpc client for grpc gateway and json-rpc.
 			grpcClient, err := grpc.Dial(
@@ -477,6 +484,24 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 			clientCtx = clientCtx.WithGRPCClient(grpcClient)
 			ctx.Logger.Debug("gRPC client assigned to client context", "address", grpcAddress)
+
+			// Config backup GRPCClient
+			backupGrpcAddress, err := parseGrpcAddress("0.0.0.0:26754")
+			if err != nil {
+				return err
+			}
+			backupGrpcClient, err = grpc.Dial(
+				backupGrpcAddress,
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithDefaultCallOptions(
+					grpc.ForceCodec(codec.NewProtoCodec(clientCtx.InterfaceRegistry).GRPCCodec()),
+					grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
+					grpc.MaxCallSendMsgSize(maxSendMsgSize),
+				),
+			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -546,7 +571,8 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
-		httpSrv, httpSrvDone, err = StartJSONRPC(ctx, clientCtx, tmRPCAddr, tmEndpoint, &config, idxer)
+
+		httpSrv, httpSrvDone, err = StartJSONRPC(ctx, clientCtx, backupGrpcClient, tmRPCAddr, tmEndpoint, &config, idxer)
 		if err != nil {
 			return err
 		}

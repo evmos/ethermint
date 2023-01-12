@@ -24,6 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -34,8 +35,10 @@ import (
 	"github.com/evmos/ethermint/server/config"
 	ethermint "github.com/evmos/ethermint/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"google.golang.org/grpc"
 )
 
 // BackendI implements the Cosmos and EVM backend.
@@ -149,6 +152,7 @@ type Backend struct {
 	ctx                 context.Context
 	clientCtx           client.Context
 	queryClient         *rpctypes.QueryClient // gRPC query client
+	backupQueryClient   *rpctypes.QueryClient
 	logger              log.Logger
 	chainID             *big.Int
 	cfg                 config.Config
@@ -161,6 +165,7 @@ func NewBackend(
 	ctx *server.Context,
 	logger log.Logger,
 	clientCtx client.Context,
+	backupGRPCClient *grpc.ClientConn,
 	allowUnprotectedTxs bool,
 	indexer ethermint.EVMTxIndexer,
 ) *Backend {
@@ -174,7 +179,7 @@ func NewBackend(
 		panic(err)
 	}
 
-	return &Backend{
+	backend := &Backend{
 		ctx:                 context.Background(),
 		clientCtx:           clientCtx,
 		queryClient:         rpctypes.NewQueryClient(clientCtx),
@@ -184,4 +189,12 @@ func NewBackend(
 		allowUnprotectedTxs: allowUnprotectedTxs,
 		indexer:             indexer,
 	}
+	if backupGRPCClient != nil {
+		backend.backupQueryClient = &rpctypes.QueryClient{
+			ServiceClient: tx.NewServiceClient(backupGRPCClient),
+			QueryClient:   evmtypes.NewQueryClient(backupGRPCClient),
+			FeeMarket:     feemarkettypes.NewQueryClient(backupGRPCClient),
+		}
+	}
+	return backend
 }
