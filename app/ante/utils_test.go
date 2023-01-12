@@ -563,6 +563,7 @@ func (suite *AnteTestSuite) CreateTestEIP712CosmosTxBuilder(
 		suite.Require().NoError(err)
 	} else {
 		// Must use SIGN_MODE_DIRECT, since Amino has some trouble parsing certain Any values from a SignDoc
+		// with the Legacy EIP-712 encodings. This is not an issue with the latest encoding.
 		// TODO: Root cause this issue
 		sigsV2 := signing.SignatureV2{
 			PubKey: pubKey,

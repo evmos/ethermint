@@ -1,6 +1,10 @@
 package eip712_test
 
 import (
+	"encoding/json"
+	"fmt"
+	"math/rand"
+	"reflect"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -89,7 +93,7 @@ func (suite *EIP712TestSuite) makeCoins(denom string, amount math.Int) sdk.Coins
 	)
 }
 
-func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
+func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 	suite.SetupTest()
 
 	signModes := []signing.SignMode{
@@ -397,6 +401,15 @@ func (suite *EIP712TestSuite) TestEIP712SignatureVerification() {
 				suite.Require().NoError(err)
 
 				suite.verifyEIP712SignatureVerification(tc.expectSuccess, *privKey, *pubKey, bz)
+
+				if signMode == signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON {
+					suite.verifyPayloadFlattening(bz)
+
+					if tc.expectSuccess {
+						feePayer := txBuilder.GetTx().FeePayer()
+						suite.sanityVerifyTypedData(bz, feePayer)
+					}
+				}
 			})
 		}
 	}
@@ -438,4 +451,164 @@ func (suite *EIP712TestSuite) verifyEIP712SignatureVerification(expectedSuccess 
 	randBytes[0] = (signBytes[0] + 10) % 128
 	res = pubKey.VerifySignature(randBytes, sig)
 	suite.Require().False(res)
+}
+
+func (suite *EIP712TestSuite) TestRandomPayloadFlattening() {
+	for i := 0; i < 100; i++ {
+		suite.Run(fmt.Sprintf("Flatten%d", i), func() {
+			payload := suite.generateRandomPayload(i)
+
+			payloadCopy := map[string]interface{}{}
+			for k, v := range payload {
+				payloadCopy[k] = v
+			}
+
+			numMessages, err := eip712.FlattenPayloadMessages(payload)
+
+			suite.Require().NoError(err)
+			suite.Require().Equal(numMessages, i)
+
+			suite.verifyPayloadAgainstFlattened(payloadCopy, payload)
+		})
+	}
+}
+
+func (suite *EIP712TestSuite) verifyPayloadFlattening(signDoc []byte) {
+	payload := make(map[string]interface{})
+
+	err := json.Unmarshal(signDoc, &payload)
+	suite.Require().NoError(err)
+
+	// Make a copy since it flattens in-place
+	originalPayload := make(map[string]interface{})
+
+	err = json.Unmarshal(signDoc, &originalPayload)
+	suite.Require().NoError(err)
+
+	_, err = eip712.FlattenPayloadMessages(payload)
+	suite.Require().NoError(err)
+
+	suite.verifyPayloadAgainstFlattened(originalPayload, payload)
+}
+
+// Verify that the payload matches the expected flattened version
+func (suite *EIP712TestSuite) verifyPayloadAgainstFlattened(original map[string]interface{}, flattened map[string]interface{}) {
+	interfaceMessages, ok := original["msgs"]
+	suite.Require().True(ok)
+
+	messages, ok := interfaceMessages.([]interface{})
+	suite.Require().True(ok)
+
+	// Verify message contents
+	for i, msg := range messages {
+		flattenedMsg, ok := flattened[fmt.Sprintf("msg%d", i)]
+		suite.Require().True(ok)
+
+		flattenedMsgJSON, ok := flattenedMsg.(map[string]interface{})
+		suite.Require().True(ok)
+
+		suite.Require().True(reflect.DeepEqual(flattenedMsgJSON, msg))
+	}
+
+	// Verify new payload does not have msgs field
+	_, ok = flattened["msgs"]
+	suite.Require().False(ok)
+
+	// Verify number of total keys
+	numKeysOriginal := len(original)
+	numKeysFlattened := len(flattened)
+	numMessages := len(messages)
+
+	// + N keys, -1 for msgs
+	suite.Require().Equal(numKeysFlattened, numKeysOriginal+numMessages-1)
+
+	// Verify contents of remaining keys
+	for k, obj := range original {
+		if k == "msgs" {
+			continue
+		}
+
+		flattenedObj, ok := flattened[k]
+		suite.Require().True(ok)
+
+		suite.Require().Equal(obj, flattenedObj)
+		suite.Require().True(reflect.DeepEqual(obj, flattenedObj))
+	}
+}
+
+func (suite *EIP712TestSuite) generateRandomPayload(numMessages int) map[string]interface{} {
+	payload := suite.createRandomMap()
+	msgs := []interface{}{}
+
+	for i := 0; i < numMessages; i++ {
+		m := suite.generateRandomMessage(i%2 == 0)
+		msgs = append(msgs, m)
+	}
+
+	payload["msgs"] = msgs
+
+	return payload
+}
+
+func (suite *EIP712TestSuite) generateRandomMessage(hasNested bool) map[string]interface{} {
+	msg := map[string]interface{}{}
+	val := suite.createRandomMap()
+
+	if hasNested {
+		val["nested"] = suite.generateRandomMessage(false)
+	}
+
+	randType := suite.generateRandomBytes(12, 36)
+	msg["type"] = randType
+	msg["value"] = val
+
+	return msg
+}
+
+func (suite *EIP712TestSuite) createRandomMap() map[string]interface{} {
+	payload := map[string]interface{}{}
+
+	numFields := suite.randomInRange(4, 16)
+	for i := 0; i < numFields; i++ {
+		key := suite.generateRandomBytes(12, 36)
+		randField := suite.generateRandomBytes(36, 84)
+
+		payload[string(key[:])] = randField
+	}
+
+	return payload
+}
+
+func (suite *EIP712TestSuite) generateRandomBytes(minLength int, maxLength int) []byte {
+	bzLen := suite.randomInRange(minLength, maxLength)
+	bz := make([]byte, bzLen)
+	rand.Read(bz)
+
+	return bz
+}
+
+func (suite *EIP712TestSuite) randomInRange(min int, max int) int {
+	return rand.Intn(max-min) + min
+}
+
+func (suite *EIP712TestSuite) sanityVerifyTypedData(signDoc []byte, feePayer sdk.AccAddress) {
+	typedData, err := eip712.GetEIP712TypedDataForMsg(signDoc)
+
+	suite.Require().NoError(err)
+
+	jsonPayload := make(map[string]interface{})
+
+	err = json.Unmarshal(signDoc, &jsonPayload)
+	suite.Require().NoError(err)
+
+	_, err = eip712.FlattenPayloadMessages(jsonPayload)
+	suite.Require().NoError(err)
+
+	// Add feePayer field
+	feeInfo, ok := jsonPayload["fee"].(map[string]interface{})
+	suite.Require().True(ok)
+
+	feeInfo["feePayer"] = feePayer.String()
+
+	suite.Require().True(reflect.DeepEqual(typedData.Message, jsonPayload))
 }

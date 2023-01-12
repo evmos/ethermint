@@ -20,14 +20,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"reflect"
 	"sort"
 	"strings"
-	"time"
 
-	sdkmath "cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -35,13 +31,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 )
 
 // Go representation of a JSON object
 type goJSON map[string]interface{}
+type FeeDelegationOptions struct {
+	FeePayer sdk.AccAddress
+}
+
+const typeDefPrefix = "_"
 
 // WrapTxToTypedData is an ultimate method that wraps Amino-encoded Cosmos Tx JSON data
 // into an EIP712-compatible TypedData request.
@@ -56,7 +56,7 @@ func WrapTxToTypedData(
 		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, "failed to JSON unmarshal data")
 	}
 
-	numMessages, err := flattenPayloadMessages(txData)
+	numMessages, err := FlattenPayloadMessages(txData)
 	if err != nil {
 		return apitypes.TypedData{}, fmt.Errorf("failed to flatten payload JSON messages: %w", err)
 	}
@@ -75,6 +75,7 @@ func WrapTxToTypedData(
 	}
 
 	if feeDelegation != nil {
+		// TODO: Consider removing feePayer field as it's not necessary for signature verification
 		feeInfo, ok := txData["fee"].(map[string]interface{})
 		if !ok {
 			return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrInvalidType, "cannot parse fee from tx data")
@@ -100,19 +101,15 @@ func WrapTxToTypedData(
 	return typedData, nil
 }
 
-type FeeDelegationOptions struct {
-	FeePayer sdk.AccAddress
-}
-
 func payloadMsgField(i int) string {
 	return fmt.Sprintf("msg%d", i)
 }
 
-// flattenPayloadMessages flattens the input payload's messages in-place, representing
+// FlattenPayloadMessages flattens the input payload's messages in-place, representing
 // them as key-value pairs of "Message{i}": {Msg}, rather than an array of Msgs.
 // We do this to support messages with different schemas, which would be invalid syntax in an
 // EIP-712 array.
-func flattenPayloadMessages(payload goJSON) (int, error) {
+func FlattenPayloadMessages(payload goJSON) (int, error) {
 	interfaceMsgs, ok := payload["msgs"]
 	if !ok {
 		return 0, errors.New("no messages found in payload, unable to parse")
@@ -209,8 +206,6 @@ func extractPayloadTypes(payload goJSON, numMessages int) (apitypes.Types, error
 	return rootTypes, nil
 }
 
-const typeDefPrefix = "_"
-
 // addTypesToRoot attempts to add the types to the root at key typeDef and returns the key at which the types are
 // present, or an error if they cannot be added. If the typeDef key is a duplicate, we return the key corresponding
 // to an identical copy if present (without modifying the structure), otherwise we insert the types at the next
@@ -247,7 +242,7 @@ func addTypesToRoot(rootTypes apitypes.Types, typeDef string, types []apitypes.T
 }
 
 // typesAreEqual compares two apitypes.Type arrays and returns a boolean indicating whether they have
-// the same naming and type definitions.
+// the same naming and type definitions. Assumes both arrays are in the same order.
 func typesAreEqual(types1 []apitypes.Type, types2 []apitypes.Type) bool {
 	if len(types1) != len(types2) {
 		return false
@@ -340,7 +335,7 @@ func traverseFields(
 
 		fieldPrefix := fmt.Sprintf("%s.%s", prefix, fieldName)
 
-		ethType := typeToEth(fieldType)
+		ethType := jsonToEth(fieldType)
 		if ethType != "" {
 			// Support array types
 			if isCollection && fieldType.Kind() != reflect.Slice && fieldType.Kind() != reflect.Array {
@@ -448,78 +443,25 @@ func sanitizeTypedef(str string) string {
 	return buf.String()
 }
 
-var (
-	hashType    = reflect.TypeOf(common.Hash{})
-	addressType = reflect.TypeOf(common.Address{})
-	bigIntType  = reflect.TypeOf(big.Int{})
-	cosmIntType = reflect.TypeOf(sdkmath.Int{})
-	cosmDecType = reflect.TypeOf(sdk.Dec{})
-	timeType    = reflect.TypeOf(time.Time{})
-
-	edType = reflect.TypeOf(ed25519.PubKey{})
-)
-
-// typeToEth supports only basic types and arrays of basic types.
+// jsonToEth supports only basic types and arrays of basic types. Since this converts from a JSON object,
+// it only needs to consider types supported by JSON. Returns an empty string for Objects.
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
-func typeToEth(typ reflect.Type) string {
+func jsonToEth(t reflect.Type) string {
 	const str = "string"
 
-	switch typ.Kind() {
+	switch t.Kind() {
 	case reflect.String:
 		return str
 	case reflect.Bool:
 		return "bool"
-	case reflect.Int:
-		return "int64"
-	case reflect.Int8:
-		return "int8"
-	case reflect.Int16:
-		return "int16"
-	case reflect.Int32:
-		return "int32"
-	case reflect.Int64:
-		return "int64"
-	case reflect.Uint:
-		return "uint64"
-	case reflect.Uint8:
-		return "uint8"
-	case reflect.Uint16:
-		return "uint16"
-	case reflect.Uint32:
-		return "uint32"
-	case reflect.Uint64:
-		return "uint64"
 	case reflect.Float64:
 		// JSON numbers are represented as Float64 by default, see https://pkg.go.dev/encoding/json#Unmarshal
 		// Since there is no fixed or floating point in Solidity, we use Int64 instead
 		return "int64"
-	case reflect.Slice:
-		ethName := typeToEth(typ.Elem())
+	case reflect.Slice, reflect.Array:
+		ethName := jsonToEth(t.Elem())
 		if len(ethName) > 0 {
 			return ethName + "[]"
-		}
-	case reflect.Array:
-		ethName := typeToEth(typ.Elem())
-		if len(ethName) > 0 {
-			return ethName + "[]"
-		}
-	case reflect.Ptr:
-		if typ.Elem().ConvertibleTo(bigIntType) ||
-			typ.Elem().ConvertibleTo(timeType) ||
-			typ.Elem().ConvertibleTo(edType) ||
-			typ.Elem().ConvertibleTo(cosmDecType) ||
-			typ.Elem().ConvertibleTo(cosmIntType) {
-			return str
-		}
-	case reflect.Struct:
-		if typ.ConvertibleTo(hashType) ||
-			typ.ConvertibleTo(addressType) ||
-			typ.ConvertibleTo(bigIntType) ||
-			typ.ConvertibleTo(edType) ||
-			typ.ConvertibleTo(timeType) ||
-			typ.ConvertibleTo(cosmDecType) ||
-			typ.ConvertibleTo(cosmIntType) {
-			return str
 		}
 	}
 

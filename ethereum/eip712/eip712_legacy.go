@@ -18,19 +18,22 @@ package eip712
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
 	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 )
-
-var cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
 
 // LegacyWrapTxToTypedData is an ultimate method that wraps Amino-encoded Cosmos Tx JSON data
 // into an EIP712-compatible TypedData request.
@@ -365,6 +368,17 @@ func unpackAny(cdc codectypes.AnyUnpacker, field reflect.Value) (reflect.Type, r
 
 	return fieldType, field, nil
 }
+
+var (
+	hashType      = reflect.TypeOf(common.Hash{})
+	addressType   = reflect.TypeOf(common.Address{})
+	bigIntType    = reflect.TypeOf(big.Int{})
+	cosmIntType   = reflect.TypeOf(sdkmath.Int{})
+	cosmDecType   = reflect.TypeOf(sdk.Dec{})
+	timeType      = reflect.TypeOf(time.Time{})
+	cosmosAnyType = reflect.TypeOf(&codectypes.Any{})
+	edType        = reflect.TypeOf(ed25519.PubKey{})
+)
 
 // typToEth supports only basic types and arrays of basic types.
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
