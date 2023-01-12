@@ -4,7 +4,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	v4types "github.com/evmos/ethermint/x/feemarket/migrations/v4/types"
 	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
@@ -19,7 +18,7 @@ func MigrateStore(
 ) error {
 	var (
 		store  = ctx.KVStore(storeKey)
-		params v4types.Params
+		params types.Params
 	)
 
 	legacySubspace.GetParamSetIfExists(ctx, &params)

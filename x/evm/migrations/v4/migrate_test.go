@@ -11,20 +11,19 @@ import (
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/encoding"
 	v4 "github.com/evmos/ethermint/x/evm/migrations/v4"
-	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/stretchr/testify/require"
 )
 
 type mockSubspace struct {
-	ps v4types.V4Params
+	ps types.Params
 }
 
-func newMockSubspace(ps v4types.V4Params) mockSubspace {
+func newMockSubspace(ps types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
 
 func (ms mockSubspace) GetParamSetIfExists(ctx sdk.Context, ps types.LegacyParams) {
-	*ps.(*v4types.V4Params) = ms.ps
+	*ps.(*types.Params) = ms.ps
 }
 
 func TestMigrate(t *testing.T) {
@@ -36,29 +35,30 @@ func TestMigrate(t *testing.T) {
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	kvStore := ctx.KVStore(storeKey)
 
-	legacySubspace := newMockSubspace(v4types.DefaultParams())
+	legacySubspace := newMockSubspace(types.DefaultParams())
 	require.NoError(t, v4.MigrateStore(ctx, storeKey, legacySubspace, cdc))
 
 	// Get all the new parameters from the kvStore
 	var evmDenom string
-	bz := kvStore.Get(v4types.ParamStoreKeyEVMDenom)
+	bz := kvStore.Get(types.ParamStoreKeyEVMDenom)
 	evmDenom = string(bz)
 
 	var allowUnprotectedTx gogotypes.BoolValue
-	bz = kvStore.Get(v4types.ParamStoreKeyAllowUnprotectedTxs)
+	bz = kvStore.Get(types.ParamStoreKeyAllowUnprotectedTxs)
 	cdc.MustUnmarshal(bz, &allowUnprotectedTx)
 
-	enableCreate := kvStore.Has(v4types.ParamStoreKeyEnableCreate)
-	enableCall := kvStore.Has(v4types.ParamStoreKeyEnableCall)
+	enableCreate := kvStore.Has(types.ParamStoreKeyEnableCreate)
+	enableCall := kvStore.Has(types.ParamStoreKeyEnableCall)
 
-	var chainCfg v4types.ChainConfig
-	bz = kvStore.Get(v4types.ParamStoreKeyChainConfig)
+	var chainCfg types.ChainConfig
+	bz = kvStore.Get(types.ParamStoreKeyChainConfig)
 	cdc.MustUnmarshal(bz, &chainCfg)
 
-	var extraEIPs v4types.ExtraEIPs
-	bz = kvStore.Get(v4types.ParamStoreKeyExtraEIPs)
+	var extraEIPs types.ExtraEIPs
+	bz = kvStore.Get(types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(bz, &extraEIPs)
+	require.Equal(t, types.AvailableExtraEIPs, extraEIPs.EIPs)
 
-	params := v4types.NewParams(evmDenom, allowUnprotectedTx.Value, enableCreate, enableCall, chainCfg, extraEIPs)
+	params := types.NewParams(evmDenom, allowUnprotectedTx.Value, enableCreate, enableCall, chainCfg, extraEIPs)
 	require.Equal(t, legacySubspace.ps, params)
 }
