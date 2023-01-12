@@ -17,7 +17,6 @@ def test_message_call(ethermint):
     begin = time.time()
     tx["gas"] = w3.eth.estimate_gas(tx)
     diff = time.time() - begin
-    print("diff: ", diff)
     assert diff < 5  # should finish in reasonable time
 
     receipt = send_transaction(w3, tx, KEYS["community"])
