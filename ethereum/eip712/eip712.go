@@ -17,10 +17,8 @@ package eip712
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -33,10 +31,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
-// Go representation of a JSON object
-type goJSON map[string]interface{}
 type FeeDelegationOptions struct {
 	FeePayer sdk.AccAddress
 }
@@ -50,15 +48,19 @@ func WrapTxToTypedData(
 	data []byte,
 	feeDelegation *FeeDelegationOptions,
 ) (apitypes.TypedData, error) {
-	txData := make(goJSON)
+	txData := gjson.ParseBytes(data)
 
-	if err := json.Unmarshal(data, &txData); err != nil {
+	if !txData.IsObject() {
 		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, "failed to JSON unmarshal data")
 	}
 
-	numMessages, err := FlattenPayloadMessages(txData)
+	txData, numMessages, err := FlattenPayloadMessages(txData)
 	if err != nil {
 		return apitypes.TypedData{}, fmt.Errorf("failed to flatten payload JSON messages: %w", err)
+	}
+
+	if !txData.IsObject() {
+		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, "failed to flatten JSON data")
 	}
 
 	domain := apitypes.TypedDataDomain{
@@ -76,12 +78,16 @@ func WrapTxToTypedData(
 
 	if feeDelegation != nil {
 		// TODO: Consider removing feePayer field as it's not necessary for signature verification
-		feeInfo, ok := txData["fee"].(map[string]interface{})
-		if !ok {
-			return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrInvalidType, "cannot parse fee from tx data")
+
+		txWithFee, err := sjson.Set(txData.Raw, "fee.feePayer", feeDelegation.FeePayer.String())
+		if err != nil {
+			return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrInvalidType, "cannot update feePayer from tx data")
 		}
 
-		feeInfo["feePayer"] = feeDelegation.FeePayer.String()
+		txData = gjson.Parse(txWithFee)
+		if !txData.IsObject() {
+			return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrInvalidType, "could not update feePayer from tx data")
+		}
 
 		// also patching payloadTypes to include feePayer
 		payloadTypes["Fee"] = []apitypes.Type{
@@ -91,11 +97,16 @@ func WrapTxToTypedData(
 		}
 	}
 
+	txDataMap, ok := txData.Value().(map[string]interface{})
+	if !ok {
+		return apitypes.TypedData{}, errors.New("failed to parse JSON as map")
+	}
+
 	typedData := apitypes.TypedData{
 		Types:       payloadTypes,
 		PrimaryType: "Tx",
 		Domain:      domain,
-		Message:     txData,
+		Message:     txDataMap,
 	}
 
 	return typedData, nil
@@ -105,43 +116,49 @@ func payloadMsgField(i int) string {
 	return fmt.Sprintf("msg%d", i)
 }
 
-// FlattenPayloadMessages flattens the input payload's messages in-place, representing
+// FlattenPayloadMessages flattens the input payload's messages, representing
 // them as key-value pairs of "Message{i}": {Msg}, rather than an array of Msgs.
-// We do this to support messages with different schemas, which would be invalid syntax in an
-// EIP-712 array.
-func FlattenPayloadMessages(payload goJSON) (int, error) {
-	interfaceMsgs, ok := payload["msgs"]
-	if !ok {
-		return 0, errors.New("no messages found in payload, unable to parse")
+// We do this to support messages with different schemas.
+func FlattenPayloadMessages(payload gjson.Result) (gjson.Result, int, error) {
+	var err error
+	flattened := payload.Raw
+
+	msgs := payload.Get("msgs")
+
+	if !msgs.Exists() {
+		return gjson.Result{}, 0, errors.New("no messages found in payload, unable to parse")
 	}
 
-	// Cast from interface{} to []interface{}
-	messages, ok := interfaceMsgs.([]interface{})
-	if !ok {
-		return 0, errors.New("expected type array of messages, cannot parse")
+	if !msgs.IsArray() {
+		return gjson.Result{}, 0, errors.New("expected type array of messages, cannot parse")
 	}
 
-	for i, interfaceMsg := range messages {
-		msg, ok := interfaceMsg.(map[string]interface{})
-		if !ok {
-			return 0, fmt.Errorf("msg at index %d is not valid JSON: %v", i, msg)
+	for i, msg := range msgs.Array() {
+		if !msg.IsObject() {
+			return gjson.Result{}, 0, fmt.Errorf("msg at index %d is not valid JSON: %v", i, msg)
 		}
 
-		field := payloadMsgField(i)
+		msgField := payloadMsgField(i)
 
-		if _, hasField := payload[field]; hasField {
-			return 0, fmt.Errorf("malformed payload received, did not expect to find key with field %v", field)
+		if gjson.Get(flattened, msgField).Exists() {
+			return gjson.Result{}, 0, fmt.Errorf("malformed payload received, did not expect to find key with field %v", msgField)
 		}
 
-		payload[field] = msg
+		flattened, err = sjson.SetRaw(flattened, msgField, msg.Raw)
+		if err != nil {
+			return gjson.Result{}, 0, err
+		}
 	}
 
-	delete(payload, "msgs")
+	flattened, err = sjson.Delete(flattened, "msgs")
+	if err != nil {
+		return gjson.Result{}, 0, err
+	}
 
-	return len(messages), nil
+	return gjson.Parse(flattened), len(msgs.Array()), nil
 }
 
-func extractPayloadTypes(payload goJSON, numMessages int) (apitypes.Types, error) {
+func extractPayloadTypes(payload gjson.Result, numMessages int) (apitypes.Types, error) {
 	rootTypes := apitypes.Types{
 		"EIP712Domain": {
 			{
@@ -185,9 +202,9 @@ func extractPayloadTypes(payload goJSON, numMessages int) (apitypes.Types, error
 	}
 
 	for i := 0; i < numMessages; i++ {
-		msg, ok := payload[payloadMsgField(i)]
+		msg := payload.Get(payloadMsgField(i))
 
-		if !ok {
+		if !msg.IsObject() {
 			return nil, fmt.Errorf("ran out of messages at index (%d), expected total of (%d)", i, numMessages)
 		}
 
@@ -259,29 +276,19 @@ func typesAreEqual(types1 []apitypes.Type, types2 []apitypes.Type) bool {
 	return true
 }
 
-func walkMsgTypes(typeMap apitypes.Types, in interface{}) (msgField string, err error) {
+func walkMsgTypes(typeMap apitypes.Types, json gjson.Result) (msgField string, err error) {
 	defer doRecover(&err)
 
-	t := reflect.TypeOf(in)
-	v := reflect.ValueOf(in)
-
-	for {
-		if t.Kind() == reflect.Ptr ||
-			t.Kind() == reflect.Interface {
-			t = t.Elem()
-			v = v.Elem()
-
-			continue
-		}
-
-		break
+	if !json.IsObject() {
+		return "", errors.New("expected json object, could not parse")
 	}
 
-	if t.Kind() != reflect.Map {
-		return "", errors.New("expected message format as map, could not parse message")
-	}
+	rootType := json.Get("type").Str
 
-	rootType := v.MapIndex(reflect.ValueOf("type")).Interface().(string)
+	if rootType == "" {
+		// .Str is empty for arrays and objects
+		return "", errors.New("malformed type value, expected type string")
+	}
 
 	// Reformat root type name
 	tokens := strings.Split(rootType, "/")
@@ -291,7 +298,7 @@ func walkMsgTypes(typeMap apitypes.Types, in interface{}) (msgField string, err 
 		rootType = fmt.Sprintf("Type%v", tokens[len(tokens)-1])
 	}
 
-	return traverseFields(typeMap, rootType, typeDefPrefix, t, v)
+	return traverseFields(typeMap, rootType, typeDefPrefix, json)
 }
 
 // traverseFields walks all types in the given map, recursively adding sub-maps as new types when necessary, and adds the map's type definition
@@ -300,45 +307,38 @@ func traverseFields(
 	typeMap apitypes.Types,
 	rootType string,
 	prefix string,
-	t reflect.Type,
-	v reflect.Value,
+	json gjson.Result,
 ) (string, error) {
-
-	if t.Kind() != reflect.Map {
-		return "", fmt.Errorf("unexpected type %v, expected type reflect.Map\n", t.Kind())
+	mapKeys, err := sortedJSONKeys(json)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse JSON keys:%w", err)
 	}
-
-	mapKeys := v.MapKeys()
-	sort.Slice(mapKeys, func(i, j int) bool {
-		return strings.Compare(mapKeys[i].String(), mapKeys[j].String()) > 0
-	})
 
 	newTypes := []apitypes.Type{}
 
-	for _, key := range mapKeys {
-		field := v.MapIndex(key)
-		fieldType := field.Type()
-		fieldName := key.String()
-
-		fieldType, field = unwrapToElem(fieldType, field)
+	for _, fieldName := range mapKeys {
+		field := json.Get(fieldName)
+		if !field.Exists() {
+			continue
+		}
 
 		var isCollection bool
-		if fieldType.Kind() == reflect.Array || fieldType.Kind() == reflect.Slice {
-			if field.Len() == 0 {
+		if field.IsArray() {
+			if len(field.Array()) == 0 {
 				// skip empty collections from type mapping
 				continue
 			}
 
-			fieldType, field = unwrapToElem(fieldType.Elem(), field.Index(0))
+			field = field.Array()[0]
 			isCollection = true
 		}
 
 		fieldPrefix := fmt.Sprintf("%s.%s", prefix, fieldName)
 
-		ethType := jsonToEth(fieldType)
+		ethType := jsonToEth(field)
 		if ethType != "" {
 			// Support array types
-			if isCollection && fieldType.Kind() != reflect.Slice && fieldType.Kind() != reflect.Array {
+			if isCollection && !field.IsArray() {
 				ethType += "[]"
 			}
 
@@ -350,8 +350,8 @@ func traverseFields(
 			continue
 		}
 
-		if fieldType.Kind() == reflect.Map {
-			fieldTypedef, err := traverseFields(typeMap, rootType, fieldPrefix, fieldType, field)
+		if field.IsObject() {
+			fieldTypedef, err := traverseFields(typeMap, rootType, fieldPrefix, field)
 
 			if err != nil {
 				return "", err
@@ -382,41 +382,27 @@ func traverseFields(
 	return addTypesToRoot(typeMap, typeDef, newTypes)
 }
 
-// unwrapToElem unwraps pointer or interface types to get their underlying values
-func unwrapToElem(t reflect.Type, v reflect.Value) (reflect.Type, reflect.Value) {
-	fieldType := t
-	field := v
-
-	for {
-		if fieldType.Kind() == reflect.Ptr {
-			fieldType = fieldType.Elem()
-
-			if field.IsValid() {
-				field = field.Elem()
-			}
-
-			continue
-		}
-
-		if fieldType.Kind() == reflect.Interface {
-			fieldType = reflect.TypeOf(field.Interface())
-
-			if field.IsValid() {
-				field = field.Elem()
-			}
-
-			continue
-		}
-
-		if field.Kind() == reflect.Ptr {
-			field = field.Elem()
-			continue
-		}
-
-		break
+// sortedJSONKeys returns the sorted JSON keys for the input object.
+func sortedJSONKeys(json gjson.Result) ([]string, error) {
+	if !json.IsObject() {
+		return nil, errors.New("expected JSON map to parse")
 	}
 
-	return fieldType, field
+	jsonMap := json.Map()
+
+	keys := make([]string, len(jsonMap))
+
+	i := 0
+	for k := range jsonMap {
+		keys[i] = k
+		i++
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		return strings.Compare(keys[i], keys[j]) > 0
+	})
+
+	return keys, nil
 }
 
 // _.foo_bar.baz -> TypeFooBarBaz
@@ -446,26 +432,30 @@ func sanitizeTypedef(str string) string {
 // jsonToEth supports only basic types and arrays of basic types. Since this converts from a JSON object,
 // it only needs to consider types supported by JSON. Returns an empty string for Objects.
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
-func jsonToEth(t reflect.Type) string {
-	const str = "string"
-
-	switch t.Kind() {
-	case reflect.String:
-		return str
-	case reflect.Bool:
+func jsonToEth(json gjson.Result) string {
+	switch json.Type {
+	case gjson.True, gjson.False:
 		return "bool"
-	case reflect.Float64:
-		// JSON numbers are represented as Float64 by default, see https://pkg.go.dev/encoding/json#Unmarshal
-		// Since there is no fixed or floating point in Solidity, we use Int64 instead
+	case gjson.Number:
 		return "int64"
-	case reflect.Slice, reflect.Array:
-		ethName := jsonToEth(t.Elem())
-		if len(ethName) > 0 {
-			return ethName + "[]"
+	case gjson.String:
+		// Type gjson.String includes string literals, JSON arrays, and JSON objects
+		if json.IsArray() {
+			if len(json.Array()) == 0 {
+				return ""
+			}
+			ethName := jsonToEth(json.Array()[0])
+			if ethName != "" {
+				return ethName + "[]"
+			}
 		}
+		if json.IsObject() {
+			return ""
+		}
+		return "string"
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func doRecover(err *error) {

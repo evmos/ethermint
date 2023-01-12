@@ -1,9 +1,8 @@
 package eip712_test
 
 import (
-	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"reflect"
 	"testing"
 
@@ -13,6 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/evmos/ethermint/ethereum/eip712"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,6 +28,7 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/suite"
@@ -210,6 +212,25 @@ func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 			expectSuccess: true,
 		},
 		{
+			title: "Succeeds - Single-Signer MsgVote V1 with omitted value",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				govtypesv1.NewMsgVote(
+					testAddress,
+					5,
+					govtypesv1.VoteOption_VOTE_OPTION_NO,
+					"",
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: true,
+		},
+		{
 			title: "Succeeds - Single-Signer MsgSend + MsgVote",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
@@ -226,6 +247,31 @@ func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 					testAddress,
 					suite.createTestAddress(),
 					suite.makeCoins("photon", math.NewInt(50)),
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: !suite.useLegacyEIP712TypedData,
+		},
+		{
+			title: "Succeeds - Single-Signer 2x MsgVoteV1 with different schemas",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				govtypesv1.NewMsgVote(
+					testAddress,
+					5,
+					govtypesv1.VoteOption_VOTE_OPTION_NO,
+					"",
+				),
+				govtypesv1.NewMsgVote(
+					testAddress,
+					10,
+					govtypesv1.VoteOption_VOTE_OPTION_YES,
+					"Has Metadata",
 				),
 			},
 			accountNumber: 25,
@@ -270,6 +316,25 @@ func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 		{
 			title:   "Fails - Invalid ChainID",
 			chainId: "invalidchainid",
+			fee: txtypes.Fee{
+				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
+				GasLimit: 20000,
+			},
+			memo: "",
+			msgs: []sdk.Msg{
+				govtypes.NewMsgVote(
+					suite.createTestAddress(),
+					5,
+					govtypes.OptionNo,
+				),
+			},
+			accountNumber: 25,
+			sequence:      78,
+			expectSuccess: false,
+		},
+		{
+			title:   "Fails - Large ChainID",
+			chainId: fmt.Sprintf("ethm_%v-1", big.NewInt(10).Exp(big.NewInt(10), big.NewInt(1000), nil).String()),
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -403,7 +468,7 @@ func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 				suite.verifyEIP712SignatureVerification(tc.expectSuccess, *privKey, *pubKey, bz)
 
 				if signMode == signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON {
-					suite.verifyPayloadFlattening(bz)
+					suite.verifySignDocFlattening(bz)
 
 					if tc.expectSuccess {
 						feePayer := txBuilder.GetTx().FeePayer()
@@ -453,46 +518,27 @@ func (suite *EIP712TestSuite) verifyEIP712SignatureVerification(expectedSuccess 
 	suite.Require().False(res)
 }
 
-func (suite *EIP712TestSuite) TestRandomPayloadFlattening() {
-	for i := 0; i < 100; i++ {
-		suite.Run(fmt.Sprintf("Flatten%d", i), func() {
-			payload := suite.generateRandomPayload(i)
+func (suite *EIP712TestSuite) verifySignDocFlattening(signDoc []byte) {
+	payload := gjson.ParseBytes(signDoc)
+	suite.Require().True(payload.IsObject())
 
-			payloadCopy := map[string]interface{}{}
-			for k, v := range payload {
-				payloadCopy[k] = v
-			}
+	flattened, _, err := eip712.FlattenPayloadMessages(payload)
+	suite.Require().NoError(err)
 
-			numMessages, err := eip712.FlattenPayloadMessages(payload)
-
-			suite.Require().NoError(err)
-			suite.Require().Equal(numMessages, i)
-
-			suite.verifyPayloadAgainstFlattened(payloadCopy, payload)
-		})
-	}
+	suite.verifyPayloadAgainstFlattened(payload, flattened)
 }
 
-func (suite *EIP712TestSuite) verifyPayloadFlattening(signDoc []byte) {
-	payload := make(map[string]interface{})
+func (suite *EIP712TestSuite) verifyPayloadAgainstFlattened(payload gjson.Result, flattened gjson.Result) {
+	payloadMap, ok := payload.Value().(map[string]interface{})
+	suite.Require().True(ok)
+	flattenedMap, ok := flattened.Value().(map[string]interface{})
+	suite.Require().True(ok)
 
-	err := json.Unmarshal(signDoc, &payload)
-	suite.Require().NoError(err)
-
-	// Make a copy since it flattens in-place
-	originalPayload := make(map[string]interface{})
-
-	err = json.Unmarshal(signDoc, &originalPayload)
-	suite.Require().NoError(err)
-
-	_, err = eip712.FlattenPayloadMessages(payload)
-	suite.Require().NoError(err)
-
-	suite.verifyPayloadAgainstFlattened(originalPayload, payload)
+	suite.verifyPayloadMapAgainstFlattenedMap(payloadMap, flattenedMap)
 }
 
 // Verify that the payload matches the expected flattened version
-func (suite *EIP712TestSuite) verifyPayloadAgainstFlattened(original map[string]interface{}, flattened map[string]interface{}) {
+func (suite *EIP712TestSuite) verifyPayloadMapAgainstFlattenedMap(original map[string]interface{}, flattened map[string]interface{}) {
 	interfaceMessages, ok := original["msgs"]
 	suite.Require().True(ok)
 
@@ -536,79 +582,55 @@ func (suite *EIP712TestSuite) verifyPayloadAgainstFlattened(original map[string]
 	}
 }
 
-func (suite *EIP712TestSuite) generateRandomPayload(numMessages int) map[string]interface{} {
-	payload := suite.createRandomMap()
-	msgs := []interface{}{}
-
-	for i := 0; i < numMessages; i++ {
-		m := suite.generateRandomMessage(i%2 == 0)
-		msgs = append(msgs, m)
-	}
-
-	payload["msgs"] = msgs
-
-	return payload
-}
-
-func (suite *EIP712TestSuite) generateRandomMessage(hasNested bool) map[string]interface{} {
-	msg := map[string]interface{}{}
-	val := suite.createRandomMap()
-
-	if hasNested {
-		val["nested"] = suite.generateRandomMessage(false)
-	}
-
-	randType := suite.generateRandomBytes(12, 36)
-	msg["type"] = randType
-	msg["value"] = val
-
-	return msg
-}
-
-func (suite *EIP712TestSuite) createRandomMap() map[string]interface{} {
-	payload := map[string]interface{}{}
-
-	numFields := suite.randomInRange(4, 16)
-	for i := 0; i < numFields; i++ {
-		key := suite.generateRandomBytes(12, 36)
-		randField := suite.generateRandomBytes(36, 84)
-
-		payload[string(key[:])] = randField
-	}
-
-	return payload
-}
-
-func (suite *EIP712TestSuite) generateRandomBytes(minLength int, maxLength int) []byte {
-	bzLen := suite.randomInRange(minLength, maxLength)
-	bz := make([]byte, bzLen)
-	rand.Read(bz)
-
-	return bz
-}
-
-func (suite *EIP712TestSuite) randomInRange(min int, max int) int {
-	return rand.Intn(max-min) + min
-}
-
 func (suite *EIP712TestSuite) sanityVerifyTypedData(signDoc []byte, feePayer sdk.AccAddress) {
 	typedData, err := eip712.GetEIP712TypedDataForMsg(signDoc)
 
 	suite.Require().NoError(err)
 
-	jsonPayload := make(map[string]interface{})
+	jsonPayload := gjson.ParseBytes(signDoc)
+	suite.Require().True(jsonPayload.IsObject())
 
-	err = json.Unmarshal(signDoc, &jsonPayload)
-	suite.Require().NoError(err)
-
-	_, err = eip712.FlattenPayloadMessages(jsonPayload)
+	flattened, _, err := eip712.FlattenPayloadMessages(jsonPayload)
 	suite.Require().NoError(err)
 
 	// Add feePayer field
-	feeInfo, ok := jsonPayload["fee"].(map[string]interface{})
+	flattenedRaw, err := sjson.Set(flattened.Raw, "fee.feePayer", feePayer.String())
+	suite.Require().NoError(err)
+
+	flattened = gjson.Parse(flattenedRaw)
+	suite.Require().True(flattened.IsObject())
+
+	originalFlattenedMsg, ok := flattened.Value().(map[string]interface{})
 	suite.Require().True(ok)
 
-	feeInfo["feePayer"] = feePayer.String()
+	suite.Require().True(reflect.DeepEqual(typedData.Message, originalFlattenedMsg))
+}
 
-	suite.Require().True(reflect.DeepEqual(typedData.Message, jsonPayload))
+func (suite *EIP712TestSuite) TestErrorHandling() {
+	// Flatten Payload:
+	// No msgs
+	_, _, err := eip712.FlattenPayloadMessages(gjson.Parse(""))
+	suite.Require().Error(err)
+
+	// Non-array Msgs
+	_, _, err = eip712.FlattenPayloadMessages(gjson.Parse(`{"msgs": 10}`))
+	suite.Require().Error(err)
+
+	// Array with non-object items
+	_, _, err = eip712.FlattenPayloadMessages(gjson.Parse(`{"msgs": [10, 20]}`))
+	suite.Require().Error(err)
+
+	// Malformed payload
+	malformed, err := sjson.Set(suite.generateRandomPayload(2).Raw, "msg0", 20)
+	suite.Require().NoError(err)
+	_, _, err = eip712.FlattenPayloadMessages(gjson.Parse(malformed))
+	suite.Require().Error(err)
+
+	// TypedData
+	// Empty JSON
+	_, err = eip712.WrapTxToTypedData(0, make([]byte, 0), nil)
+	suite.Require().Error(err)
+
+	_, err = eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": 10}`).Raw), nil)
+	suite.Require().Error(err)
 }
