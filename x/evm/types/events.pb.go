@@ -22,21 +22,21 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// EventEthereumTx defines the event for a Ethereum transaction
+// EventEthereumTx defines the event for an Ethereum transaction
 type EventEthereumTx struct {
 	// amount
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	// eth_hash Ethereum hash of the transaction
+	// eth_hash is the Ethereum hash of the transaction
 	EthHash string `protobuf:"bytes,2,opt,name=eth_hash,json=ethHash,proto3" json:"eth_hash,omitempty"`
 	// index of the transaction in the block
 	Index string `protobuf:"bytes,3,opt,name=index,proto3" json:"index,omitempty"`
 	// gas_used is the amount of gas used by the transaction
 	GasUsed string `protobuf:"bytes,4,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
-	// hash Tendermint hash of the transaction
+	// hash is the Tendermint hash of the transaction
 	Hash string `protobuf:"bytes,5,opt,name=hash,proto3" json:"hash,omitempty"`
 	// recipient of the transaction
 	Recipient string `protobuf:"bytes,6,opt,name=recipient,proto3" json:"recipient,omitempty"`
-	// eth_tx_failed the VM error
+	// eth_tx_failed contains a VM error should it occur
 	EthTxFailed string `protobuf:"bytes,7,opt,name=eth_tx_failed,json=ethTxFailed,proto3" json:"eth_tx_failed,omitempty"`
 }
 
@@ -122,9 +122,9 @@ func (m *EventEthereumTx) GetEthTxFailed() string {
 	return ""
 }
 
-// EventTxLog defines the event for a Ethereum transaction log
+// EventTxLog defines the event for an Ethereum transaction log
 type EventTxLog struct {
-	// tx_logs is the log of the transaction
+	// tx_logs is an array of transaction logs
 	TxLogs []string `protobuf:"bytes,1,rep,name=tx_logs,json=txLogs,proto3" json:"tx_logs,omitempty"`
 }
 
@@ -170,9 +170,9 @@ func (m *EventTxLog) GetTxLogs() []string {
 
 // EventMessage
 type EventMessage struct {
-	// module is the module of the message
+	// module which emits the event
 	Module string `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
-	// sender is the sender of the message
+	// sender of the message
 	Sender string `protobuf:"bytes,2,opt,name=sender,proto3" json:"sender,omitempty"`
 	// tx_type is the type of the message
 	TxType string `protobuf:"bytes,3,opt,name=tx_type,json=txType,proto3" json:"tx_type,omitempty"`
@@ -232,6 +232,7 @@ func (m *EventMessage) GetTxType() string {
 	return ""
 }
 
+// EventBlockBloom defines an Ethereum block bloom filter event
 type EventBlockBloom struct {
 	// bloom is the bloom filter of the block
 	Bloom string `protobuf:"bytes,1,opt,name=bloom,proto3" json:"bloom,omitempty"`

@@ -20,10 +20,9 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/params"
 )
-
-var ParamsKey = []byte("Params")
 
 var (
 	// DefaultMinGasMultiplier is 0.5 or 50%
@@ -35,6 +34,36 @@ var (
 	// DefaultNoBaseFee is false
 	DefaultNoBaseFee = false
 )
+
+// Parameter keys
+var (
+	ParamsKey                             = []byte("Params")
+	ParamStoreKeyNoBaseFee                = []byte("NoBaseFee")
+	ParamStoreKeyBaseFeeChangeDenominator = []byte("BaseFeeChangeDenominator")
+	ParamStoreKeyElasticityMultiplier     = []byte("ElasticityMultiplier")
+	ParamStoreKeyBaseFee                  = []byte("BaseFee")
+	ParamStoreKeyEnableHeight             = []byte("EnableHeight")
+	ParamStoreKeyMinGasPrice              = []byte("MinGasPrice")
+	ParamStoreKeyMinGasMultiplier         = []byte("MinGasMultiplier")
+)
+
+// ParamKeyTable returns the parameter key table.
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
+}
+
+// ParamSetPairs returns the parameter set pairs.
+func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(ParamStoreKeyNoBaseFee, &p.NoBaseFee, validateBool),
+		paramtypes.NewParamSetPair(ParamStoreKeyBaseFeeChangeDenominator, &p.BaseFeeChangeDenominator, validateBaseFeeChangeDenominator),
+		paramtypes.NewParamSetPair(ParamStoreKeyElasticityMultiplier, &p.ElasticityMultiplier, validateElasticityMultiplier),
+		paramtypes.NewParamSetPair(ParamStoreKeyBaseFee, &p.BaseFee, validateBaseFee),
+		paramtypes.NewParamSetPair(ParamStoreKeyEnableHeight, &p.EnableHeight, validateEnableHeight),
+		paramtypes.NewParamSetPair(ParamStoreKeyMinGasPrice, &p.MinGasPrice, validateMinGasPrice),
+		paramtypes.NewParamSetPair(ParamStoreKeyMinGasMultiplier, &p.MinGasMultiplier, validateMinGasPrice),
+	}
+}
 
 // NewParams creates a new Params instance
 func NewParams(
@@ -91,6 +120,14 @@ func (p Params) Validate() error {
 	return validateMinGasPrice(p.MinGasPrice)
 }
 
+func validateBool(i interface{}) error {
+	_, ok := i.(bool)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	return nil
+}
+
 func (p *Params) IsBaseFeeEnabled(height int64) bool {
 	return !p.NoBaseFee && height >= p.EnableHeight
 }
@@ -108,6 +145,53 @@ func validateMinGasPrice(i interface{}) error {
 
 	if v.IsNegative() {
 		return fmt.Errorf("value cannot be negative: %s", i)
+	}
+
+	return nil
+}
+
+func validateBaseFeeChangeDenominator(i interface{}) error {
+	value, ok := i.(uint32)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if value == 0 {
+		return fmt.Errorf("base fee change denominator cannot be 0")
+	}
+
+	return nil
+}
+
+func validateElasticityMultiplier(i interface{}) error {
+	_, ok := i.(uint32)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	return nil
+}
+
+func validateBaseFee(i interface{}) error {
+	value, ok := i.(sdkmath.Int)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if value.IsNegative() {
+		return fmt.Errorf("base fee cannot be negative")
+	}
+
+	return nil
+}
+
+func validateEnableHeight(i interface{}) error {
+	value, ok := i.(int64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if value < 0 {
+		return fmt.Errorf("enable height cannot be negative: %d", value)
 	}
 
 	return nil
