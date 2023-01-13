@@ -23,7 +23,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -76,8 +75,6 @@ type Keeper struct {
 
 	// evm constructor function
 	evmConstructor evm.Constructor
-	// Legacy subspace
-	ss paramstypes.Subspace
 }
 
 // NewKeeper generates new evm module keeper
@@ -92,7 +89,6 @@ func NewKeeper(
 	customPrecompiles evm.PrecompiledContracts,
 	evmConstructor evm.Constructor,
 	tracer string,
-	ss paramstypes.Subspace,
 ) *Keeper {
 	// ensure evm module account is set
 	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
@@ -117,7 +113,6 @@ func NewKeeper(
 		customPrecompiles: customPrecompiles,
 		evmConstructor:    evmConstructor,
 		tracer:            tracer,
-		ss:                ss,
 	}
 }
 
