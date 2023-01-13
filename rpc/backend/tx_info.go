@@ -132,8 +132,11 @@ func (b *Backend) getTransactionByHashPending(txHash common.Hash) (*rpctypes.RPC
 	return nil, nil
 }
 
-// GetGasUsed returns patched GasUsed before the fix of revert gas refund logic when transaction reverted.
+// GetGasUsed returns gasUsed from transaction
 func (b *Backend) GetGasUsed(res *ethermint.TxResult, price *big.Int, gas uint64) uint64 {
+	// patch gasUsed if tx is reverted and happened before height on which fixed was introduced
+    // to return real gas charged
+	// more info at https://github.com/evmos/ethermint/pull/1557
 	if res.Failed && res.Height < b.cfg.JSONRPC.FixRevertGasRefundHeight {
 		return new(big.Int).Mul(price, new(big.Int).SetUint64(gas)).Uint64()
 	}
