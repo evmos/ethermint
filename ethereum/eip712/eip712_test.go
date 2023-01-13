@@ -3,6 +3,7 @@ package eip712_test
 import (
 	"bytes"
 	"fmt"
+	goMath "math"
 	"math/big"
 	"reflect"
 	"testing"
@@ -665,6 +666,12 @@ func (suite *EIP712TestSuite) TestTypedDataErrorHandling() {
 		FeePayer: sdk.AccAddress{},
 	})
 	suite.Require().ErrorContains(err, "maximum number of duplicates")
+
+	// ChainID overflow
+	_, err = eip712.WrapTxToTypedData(goMath.MaxUint64, []byte(gjson.Parse(`{"msgs": [{ "type": "val1" }] }`).Raw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().ErrorContains(err, "chainID")
 }
 
 func (suite *EIP712TestSuite) TestTypedDataEdgeCases() {
@@ -704,4 +711,24 @@ func (suite *EIP712TestSuite) TestTypedDataEdgeCases() {
 	suite.Require().NoError(err)
 	types = typedData.Types["TypeValue0"]
 	suite.Require().Equal(len(types), 0)
+}
+
+func (suite *EIP712TestSuite) TestTypedDataGeneration() {
+	// Multiple messages with the same schema should share one type
+	payloadRaw := `{ "msgs": [{ "type": "msgType", "value": { "field1": 10 }}, { "type": "msgType", "value": { "field1": 20 }}] }`
+
+	typedData, err := eip712.WrapTxToTypedData(0, []byte(payloadRaw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().NoError(err)
+	suite.Require().True(typedData.Types["TypemsgType1"] == nil)
+
+	// Multiple messages with different schemas should have different types
+	payloadRaw = `{ "msgs": [{ "type": "msgType", "value": { "field1": 10 }}, { "type": "msgType", "value": { "field2": 20 }}] }`
+
+	typedData, err = eip712.WrapTxToTypedData(0, []byte(payloadRaw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().NoError(err)
+	suite.Require().False(typedData.Types["TypemsgType1"] == nil)
 }

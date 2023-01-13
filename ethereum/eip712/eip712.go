@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/text/cases"
@@ -38,7 +39,12 @@ type FeeDelegationOptions struct {
 	FeePayer sdk.AccAddress
 }
 
-const typeDefPrefix = "_"
+const (
+	typeDefPrefix = "_"
+	ethBool       = "bool"
+	ethInt64      = "int64"
+	ethString     = "string"
+)
 
 // WrapTxToTypedData is an ultimate method that wraps Amino-encoded Cosmos Tx JSON data
 // into an EIP712-compatible TypedData request.
@@ -66,10 +72,15 @@ func WrapTxToTypedData(
 		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, "failed to flatten JSON data")
 	}
 
+	chainIdInt64, err := strconv.ParseInt(strconv.FormatUint(chainID, 10), 10, 64)
+	if err != nil {
+		return apitypes.TypedData{}, errorsmod.Wrap(err, "invalid chainID")
+	}
+
 	domain := apitypes.TypedDataDomain{
 		Name:              "Cosmos Web3",
 		Version:           "1.0.0",
-		ChainId:           math.NewHexOrDecimal256(int64(chainID)),
+		ChainId:           math.NewHexOrDecimal256(chainIdInt64),
 		VerifyingContract: "cosmos",
 		Salt:              "0",
 	}
@@ -80,7 +91,7 @@ func WrapTxToTypedData(
 	}
 
 	if feeDelegation != nil {
-		// TODO: Consider removing feePayer field as it's not necessary for signature verification
+		// TODO: Consider removing feePayer field, as it's not necessary for signature verification
 
 		txWithFee, err := sjson.Set(txData.Raw, "fee.feePayer", feeDelegation.FeePayer.String())
 		if err != nil {
@@ -92,7 +103,7 @@ func WrapTxToTypedData(
 			return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrInvalidType, "could not update feePayer from tx data")
 		}
 
-		// also patching payloadTypes to include feePayer
+		// Patch payloadTypes to include feePayer
 		payloadTypes["Fee"] = []apitypes.Type{
 			{Name: "feePayer", Type: "string"},
 			{Name: "amount", Type: "Coin[]"},
@@ -115,7 +126,7 @@ func WrapTxToTypedData(
 	return typedData, nil
 }
 
-func payloadMsgField(i int) string {
+func flattenedMsgField(i int) string {
 	return fmt.Sprintf("msg%d", i)
 }
 
@@ -141,10 +152,13 @@ func FlattenPayloadMessages(payload gjson.Result) (gjson.Result, int, error) {
 			return gjson.Result{}, 0, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "msg at index %d is not valid JSON: %v", i, msg)
 		}
 
-		msgField := payloadMsgField(i)
+		msgField := flattenedMsgField(i)
 
 		if gjson.Get(flattened, msgField).Exists() {
-			return gjson.Result{}, 0, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "malformed payload received, did not expect to find key with field %v", msgField)
+			return gjson.Result{}, 0, errorsmod.Wrapf(
+				errortypes.ErrInvalidRequest,
+				"malformed payload received, did not expect to find key with field %v", msgField,
+			)
 		}
 
 		flattened, err = sjson.SetRaw(flattened, msgField, msg.Raw)
@@ -205,7 +219,7 @@ func extractPayloadTypes(payload gjson.Result, numMessages int) (apitypes.Types,
 	}
 
 	for i := 0; i < numMessages; i++ {
-		msg := payload.Get(payloadMsgField(i))
+		msg := payload.Get(flattenedMsgField(i))
 
 		if !msg.IsObject() {
 			return nil, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "ran out of messages at index (%d), expected total of (%d)", i, numMessages)
@@ -217,7 +231,7 @@ func extractPayloadTypes(payload gjson.Result, numMessages int) (apitypes.Types,
 		}
 
 		rootTypes["Tx"] = append(rootTypes["Tx"], apitypes.Type{
-			Name: payloadMsgField(i),
+			Name: flattenedMsgField(i),
 			Type: msgTypedef,
 		})
 	}
@@ -278,6 +292,8 @@ func typesAreEqual(types1 []apitypes.Type, types2 []apitypes.Type) bool {
 	return true
 }
 
+// walkMsgTypes recursively parses each field in the given message JSON and builds the typeMap along the way.
+// It returns the key of the message schema once it's been added to the typeMap.
 func walkMsgTypes(typeMap apitypes.Types, json gjson.Result) (msgField string, err error) {
 	defer doRecover(&err)
 
@@ -395,12 +411,9 @@ func sortedJSONKeys(json gjson.Result) ([]string, error) {
 
 	jsonMap := json.Map()
 
-	keys := make([]string, len(jsonMap))
-
-	i := 0
+	keys := make([]string, 0, len(jsonMap))
 	for k := range jsonMap {
-		keys[i] = k
-		i++
+		keys = append(keys, k)
 	}
 
 	sort.Slice(keys, func(i, j int) bool {
@@ -434,19 +447,19 @@ func sanitizeTypedef(str string) string {
 	return buf.String()
 }
 
-// jsonToEth supports only basic types and arrays of basic types. Since this converts from a JSON object,
-// it only needs to consider types supported by JSON. Returns an empty string for Objects, Arrays, or Null.
-// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
+// jsonToEth converts a JSON type to an Ethereum type. Returns an empty string for Objects, Arrays, or Null.
+// See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md for more.
 func jsonToEth(json gjson.Result) string {
 	switch json.Type {
 	case gjson.True, gjson.False:
-		return "bool"
+		return ethBool
 	case gjson.Number:
-		return "int64"
+		return ethInt64
 	case gjson.String:
-		return "string"
+		return ethString
 	case gjson.JSON:
 		// Array or Object type
+		// (Nested arrays are not supported)
 		return ""
 	default:
 		return ""
