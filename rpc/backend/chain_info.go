@@ -54,6 +54,7 @@ func (b *Backend) ChainID() (*hexutil.Big, error) {
 
 // ChainConfig returns the latest ethereum chain configuration
 func (b *Backend) ChainConfig() *params.ChainConfig {
+	// use latest queryClient to get config
 	params, err := b.queryClient.Params(b.ctx, &evmtypes.QueryParamsRequest{})
 	if err != nil {
 		return nil
@@ -64,6 +65,7 @@ func (b *Backend) ChainConfig() *params.ChainConfig {
 
 // GlobalMinGasPrice returns MinGasPrice param from FeeMarket
 func (b *Backend) GlobalMinGasPrice() (sdk.Dec, error) {
+	// use latest queryClient to get MinGasPrice
 	res, err := b.queryClient.FeeMarket.Params(b.ctx, &feemarkettypes.QueryParamsRequest{})
 	if err != nil {
 		return sdk.ZeroDec(), err
@@ -77,7 +79,9 @@ func (b *Backend) GlobalMinGasPrice() (sdk.Dec, error) {
 // return nil.
 func (b *Backend) BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error) {
 	// return BaseFee if London hard fork is activated and feemarket is enabled
-	res, err := b.queryClient.BaseFee(rpctypes.ContextWithHeight(blockRes.Height), &evmtypes.QueryBaseFeeRequest{})
+	height := blockRes.Height
+	queryClient := b.getGrpcClient(height)
+	res, err := queryClient.BaseFee(rpctypes.ContextWithHeight(height), &evmtypes.QueryBaseFeeRequest{})
 	if err != nil || res.BaseFee == nil {
 		// we can't tell if it's london HF not enabled or the state is pruned,
 		// in either case, we'll fallback to parsing from begin blocker event,
@@ -143,7 +147,7 @@ func (b *Backend) GetCoinbase() (sdk.AccAddress, error) {
 	req := &evmtypes.QueryValidatorAccountRequest{
 		ConsAddress: sdk.ConsAddress(status.ValidatorInfo.Address).String(),
 	}
-
+	// use latest queryClient to get coinbase
 	res, err := b.queryClient.ValidatorAccount(b.ctx, req)
 	if err != nil {
 		return nil, err
@@ -259,7 +263,7 @@ func (b *Backend) SuggestGasTipCap(baseFee *big.Int) (*big.Int, error) {
 		// london hardfork not enabled or feemarket not enabled
 		return big.NewInt(0), nil
 	}
-
+	// use latest queryClient to get gas info
 	params, err := b.queryClient.FeeMarket.Params(b.ctx, &feemarkettypes.QueryParamsRequest{})
 	if err != nil {
 		return nil, err

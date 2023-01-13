@@ -42,6 +42,7 @@ import (
 func (b *Backend) BlockNumber() (hexutil.Uint64, error) {
 	// do any grpc query, ignore the response and use the returned block height
 	var header metadata.MD
+	// use latest queryClient to get block height
 	_, err := b.queryClient.Params(b.ctx, &evmtypes.QueryParamsRequest{}, grpc.Header(&header))
 	if err != nil {
 		return hexutil.Uint64(0), err
@@ -412,7 +413,7 @@ func (b *Backend) RPCBlockFromTendermintBlock(
 	var validatorAccAddr sdk.AccAddress
 
 	ctx := rpctypes.ContextWithHeight(block.Height)
-	res, err := b.queryClient.ValidatorAccount(ctx, req)
+	res, err := b.getGrpcClient(block.Height).ValidatorAccount(ctx, req)
 	if err != nil {
 		b.logger.Debug(
 			"failed to query validator operator address",
