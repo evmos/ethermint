@@ -37,7 +37,7 @@ import (
 // StartJSONRPC starts the JSON-RPC server
 func StartJSONRPC(ctx *server.Context,
 	clientCtx client.Context,
-	backupGRPCClient *grpc.ClientConn,
+	backupGRPCClientConns map[[2]int]*grpc.ClientConn,
 	tmRPCAddr,
 	tmEndpoint string,
 	config *config.Config,
@@ -63,7 +63,7 @@ func StartJSONRPC(ctx *server.Context,
 	allowUnprotectedTxs := config.JSONRPC.AllowUnprotectedTxs
 	rpcAPIArr := config.JSONRPC.API
 
-	apis := rpc.GetRPCAPIs(ctx, clientCtx, backupGRPCClient, tmWsClient, allowUnprotectedTxs, indexer, rpcAPIArr)
+	apis := rpc.GetRPCAPIs(ctx, clientCtx, backupGRPCClientConns, tmWsClient, allowUnprotectedTxs, indexer, rpcAPIArr)
 
 	for _, api := range apis {
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {

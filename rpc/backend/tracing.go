@@ -27,6 +27,17 @@ import (
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
+func (b *Backend) getGrpcClient(height int64) *rpctypes.QueryClient {
+	for blocks, client := range b.backupQueryClients {
+		// b1-b2 -> g1
+		// b3-b4 -> g2
+		if blocks[0] <= int(height) && blocks[1] >= int(height) {
+			return client
+		}
+	}
+	return b.queryClient
+}
+
 // TraceTransaction returns the structured logs created during the execution of EVM
 // and returns them as a JSON object.
 func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (interface{}, error) {

@@ -439,7 +439,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 	}
 
-	var backupGrpcClient *grpc.ClientConn
+	backupGRPCClientConns := make(map[[2]int]*grpc.ClientConn)
 	if config.API.Enable || config.JSONRPC.Enable {
 		genDoc, err := genDocProvider()
 		if err != nil {
@@ -485,22 +485,26 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			clientCtx = clientCtx.WithGRPCClient(grpcClient)
 			ctx.Logger.Debug("gRPC client assigned to client context", "address", grpcAddress)
 
-			// Config backup GRPCClient
-			backupGrpcAddress, err := parseGrpcAddress("0.0.0.0:26754")
-			if err != nil {
-				return err
-			}
-			backupGrpcClient, err = grpc.Dial(
-				backupGrpcAddress,
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithDefaultCallOptions(
-					grpc.ForceCodec(codec.NewProtoCodec(clientCtx.InterfaceRegistry).GRPCCodec()),
-					grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
-					grpc.MaxCallSendMsgSize(maxSendMsgSize),
-				),
-			)
-			if err != nil {
-				return err
+			// TODO: Config backup GRPCClient
+			grpcBlockAddresses := map[[2]int]string{}
+			for k, address := range grpcBlockAddresses {
+				grpcAddr, err := parseGrpcAddress(address)
+				if err != nil {
+					return err
+				}
+				c, err := grpc.Dial(
+					grpcAddr,
+					grpc.WithTransportCredentials(insecure.NewCredentials()),
+					grpc.WithDefaultCallOptions(
+						grpc.ForceCodec(codec.NewProtoCodec(clientCtx.InterfaceRegistry).GRPCCodec()),
+						grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
+						grpc.MaxCallSendMsgSize(maxSendMsgSize),
+					),
+				)
+				if err != nil {
+					return err
+				}
+				backupGRPCClientConns[k] = c
 			}
 		}
 	}
@@ -572,7 +576,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		tmEndpoint := "/websocket"
 		tmRPCAddr := cfg.RPC.ListenAddress
 
-		httpSrv, httpSrvDone, err = StartJSONRPC(ctx, clientCtx, backupGrpcClient, tmRPCAddr, tmEndpoint, &config, idxer)
+		httpSrv, httpSrvDone, err = StartJSONRPC(ctx, clientCtx, backupGRPCClientConns, tmRPCAddr, tmEndpoint, &config, idxer)
 		if err != nil {
 			return err
 		}

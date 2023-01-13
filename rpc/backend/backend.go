@@ -152,7 +152,7 @@ type Backend struct {
 	ctx                 context.Context
 	clientCtx           client.Context
 	queryClient         *rpctypes.QueryClient // gRPC query client
-	backupQueryClient   *rpctypes.QueryClient
+	backupQueryClients  map[[2]int]*rpctypes.QueryClient
 	logger              log.Logger
 	chainID             *big.Int
 	cfg                 config.Config
@@ -165,7 +165,7 @@ func NewBackend(
 	ctx *server.Context,
 	logger log.Logger,
 	clientCtx client.Context,
-	backupGRPCClient *grpc.ClientConn,
+	backupGRPCClientConns map[[2]int]*grpc.ClientConn,
 	allowUnprotectedTxs bool,
 	indexer ethermint.EVMTxIndexer,
 ) *Backend {
@@ -183,17 +183,18 @@ func NewBackend(
 		ctx:                 context.Background(),
 		clientCtx:           clientCtx,
 		queryClient:         rpctypes.NewQueryClient(clientCtx),
+		backupQueryClients:  make(map[[2]int]*rpctypes.QueryClient),
 		logger:              logger.With("module", "backend"),
 		chainID:             chainID,
 		cfg:                 appConf,
 		allowUnprotectedTxs: allowUnprotectedTxs,
 		indexer:             indexer,
 	}
-	if backupGRPCClient != nil {
-		backend.backupQueryClient = &rpctypes.QueryClient{
-			ServiceClient: tx.NewServiceClient(backupGRPCClient),
-			QueryClient:   evmtypes.NewQueryClient(backupGRPCClient),
-			FeeMarket:     feemarkettypes.NewQueryClient(backupGRPCClient),
+	for key, conn := range backupGRPCClientConns {
+		backend.backupQueryClients[key] = &rpctypes.QueryClient{
+			ServiceClient: tx.NewServiceClient(conn),
+			QueryClient:   evmtypes.NewQueryClient(conn),
+			FeeMarket:     feemarkettypes.NewQueryClient(conn),
 		}
 	}
 	return backend
