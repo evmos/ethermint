@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
-
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -21,6 +19,7 @@ import (
 	tmrpctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/evmos/ethermint/app"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	"github.com/evmos/ethermint/crypto/hd"
 	"github.com/evmos/ethermint/encoding"
 	"github.com/evmos/ethermint/indexer"
@@ -89,7 +88,6 @@ func (suite *BackendTestSuite) SetupTest() {
 	// Add codec
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
 	suite.backend.clientCtx.Codec = encCfg.Codec
-
 }
 
 // buildEthereumTx returns an example legacy Ethereum transaction

@@ -27,15 +27,17 @@ import (
 	"github.com/evmos/ethermint/types"
 )
 
-var _ paramtypes.ParamSet = &Params{}
-
 var (
 	// DefaultEVMDenom defines the default EVM denomination on Ethermint
 	DefaultEVMDenom = types.AttoPhoton
-	// DefaultMinGasMultiplier is 0.5 or 50%
-	DefaultMinGasMultiplier = sdk.NewDecWithPrec(50, 2)
 	// DefaultAllowUnprotectedTxs rejects all unprotected txs (i.e false)
 	DefaultAllowUnprotectedTxs = false
+	// DefaultEnableCreate enables contract creation (i.e true)
+	DefaultEnableCreate = true
+	// DefaultEnableCall enables contract calls (i.e true)
+	DefaultEnableCall = true
+	// DefaultExtraEIPs  defines the set of activateable Ethereum Improvement Proposals
+	DefaultExtraEIPs = ExtraEIPs{AvailableExtraEIPs}
 )
 
 // Parameter keys
@@ -61,13 +63,14 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfig, extraEIPs ...int64) Params {
+func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs ExtraEIPs) Params {
 	return Params{
-		EvmDenom:     evmDenom,
-		EnableCreate: enableCreate,
-		EnableCall:   enableCall,
-		ExtraEIPs:    extraEIPs,
-		ChainConfig:  config,
+		EvmDenom:            evmDenom,
+		AllowUnprotectedTxs: allowUnprotectedTxs,
+		EnableCreate:        enableCreate,
+		EnableCall:          enableCall,
+		ExtraEIPs:           extraEIPs,
+		ChainConfig:         config,
 	}
 }
 
@@ -76,10 +79,10 @@ func NewParams(evmDenom string, enableCreate, enableCall bool, config ChainConfi
 func DefaultParams() Params {
 	return Params{
 		EvmDenom:            DefaultEVMDenom,
-		EnableCreate:        true,
-		EnableCall:          true,
+		EnableCreate:        DefaultEnableCreate,
+		EnableCall:          DefaultEnableCall,
 		ChainConfig:         DefaultChainConfig(),
-		ExtraEIPs:           nil,
+		ExtraEIPs:           DefaultExtraEIPs,
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 	}
 }
@@ -90,7 +93,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
 		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
-		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs, validateEIPs),
+		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs.EIPs, validateEIPs),
 		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
 		paramtypes.NewParamSetPair(ParamStoreKeyAllowUnprotectedTxs, &p.AllowUnprotectedTxs, validateBool),
 	}
@@ -98,21 +101,33 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // Validate performs basic validation on evm parameters.
 func (p Params) Validate() error {
-	if err := sdk.ValidateDenom(p.EvmDenom); err != nil {
+	if err := validateEVMDenom(p.EvmDenom); err != nil {
 		return err
 	}
 
-	if err := validateEIPs(p.ExtraEIPs); err != nil {
+	if err := validateEIPs(p.ExtraEIPs.EIPs); err != nil {
 		return err
 	}
 
-	return p.ChainConfig.Validate()
+	if err := validateBool(p.EnableCall); err != nil {
+		return err
+	}
+
+	if err := validateBool(p.EnableCreate); err != nil {
+		return err
+	}
+
+	if err := validateBool(p.AllowUnprotectedTxs); err != nil {
+		return err
+	}
+
+	return validateChainConfig(p.ChainConfig)
 }
 
-// EIPs returns the ExtraEips as a int slice
+// EIPs returns the ExtraEIPS as a int slice
 func (p Params) EIPs() []int {
-	eips := make([]int, len(p.ExtraEIPs))
-	for i, eip := range p.ExtraEIPs {
+	eips := make([]int, len(p.ExtraEIPs.EIPs))
+	for i, eip := range p.ExtraEIPs.EIPs {
 		eips[i] = int(eip)
 	}
 	return eips

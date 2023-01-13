@@ -112,7 +112,7 @@ schema = 3
     hash = "sha256-EmpRZ48pjPFq/fIHneut9Vyo5QJATfb3ZO7KzWnqs9g="
   [mod."github.com/cosmos/ibc-go/v6"]
     version = "v6.1.0"
-    hash = "sha256-Gfqhdz9ZKEgb7LCkHiXCwYZYUYluQ+vMew/GkssfVj8="
+    hash = "sha256-mHYCqLedcveDjfm1EiO2EMMNJqLm9u4WHwQTy1muOoc="
   [mod."github.com/cosmos/ledger-cosmos-go"]
     version = "v0.12.1"
     hash = "sha256-9+nr+/r4MyiogddS0JcXOuriPqXP4nxln8ts+mYQRcg="
@@ -406,8 +406,8 @@ schema = 3
     version = "v0.9.1"
     hash = "sha256-YLGNrHHM+mN4ElW/XWuylOnFrA/VjSY+eBuC4LN//5c="
   [mod."github.com/rs/cors"]
-    version = "v1.8.2"
-    hash = "sha256-FxBbQVb8zIoDGGaAJKfsYV0+POkh1tyX7P6A/Lk5Vsc="
+    version = "v1.8.3"
+    hash = "sha256-VgVB4HKAhPSjNg96mIEUN1bt5ZQng8Fi3ZABy3CDWQE="
   [mod."github.com/rs/zerolog"]
     version = "v1.27.0"
     hash = "sha256-BxQtP2TROeSSpj9l1irocuSfxn55UL4ugzB/og7r8eE="
@@ -523,11 +523,11 @@ schema = 3
     version = "v1.6.7"
     hash = "sha256-zIxGRHiq4QBvRqkrhMGMGCaVL4iM4TtlYpAi/hrivS4="
   [mod."google.golang.org/genproto"]
-    version = "v0.0.0-20221116193143-41c2ba794472"
-    hash = "sha256-uQuxuOvWRsdMii5M5QresisVd1E+Ss8s2WfR2n7QSXk="
+    version = "v0.0.0-20221118155620-16455021b5e6"
+    hash = "sha256-FFSliEzgr7AceO8B+ZoPAlZDFVPLeqAFg+25VQw6cFs="
   [mod."google.golang.org/grpc"]
-    version = "v1.51.0"
-    hash = "sha256-RzH5DU13D/ulxxOouIKpdNt8eHdff7mrEnB+JUupbLU="
+    version = "v1.52.0"
+    hash = "sha256-wYJ/ysugKxz1O9u6BxECTIGFJ3sv0XmxOfM+Y0jW3KQ="
   [mod."google.golang.org/protobuf"]
     version = "v1.28.2-0.20220831092852-f930b1dc76e8"
     hash = "sha256-li5hXlXwTJ5LIZ8bVki1AZ6UFI2gXHl33JwdX1dOrtM="

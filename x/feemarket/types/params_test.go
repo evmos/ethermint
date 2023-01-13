@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 type ParamsTestSuite struct {
@@ -16,10 +15,6 @@ type ParamsTestSuite struct {
 
 func TestParamsTestSuite(t *testing.T) {
 	suite.Run(t, new(ParamsTestSuite))
-}
-
-func (suite *ParamsTestSuite) TestParamKeyTable() {
-	suite.Require().IsType(paramtypes.KeyTable{}, ParamKeyTable())
 }
 
 func (suite *ParamsTestSuite) TestParamsValidate() {
