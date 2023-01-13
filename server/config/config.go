@@ -46,6 +46,9 @@ const (
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = ""
 
+	// DefaultFixRevertGasRefundHeight is the default height at which to overwrite gas refund
+	DefaultFixRevertGasRefundHeight = 0
+
 	DefaultMaxTxGasWanted = 0
 
 	DefaultGasCap uint64 = 25000000
@@ -59,14 +62,17 @@ const (
 	DefaultBlockRangeCap int32 = 10000
 
 	DefaultEVMTimeout = 5 * time.Second
+
 	// default 1.0 eth
 	DefaultTxFeeCap float64 = 1.0
 
 	DefaultHTTPTimeout = 30 * time.Second
 
 	DefaultHTTPIdleTimeout = 120 * time.Second
+
 	// DefaultAllowUnprotectedTxs value is false
 	DefaultAllowUnprotectedTxs = false
+
 	// DefaultMaxOpenConnections represents the amount of open connections (unlimited = 0)
 	DefaultMaxOpenConnections = 0
 )
@@ -217,23 +223,24 @@ func GetAPINamespaces() []string {
 // DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
 func DefaultJSONRPCConfig() *JSONRPCConfig {
 	return &JSONRPCConfig{
-		Enable:              true,
-		API:                 GetDefaultAPINamespaces(),
-		Address:             DefaultJSONRPCAddress,
-		WsAddress:           DefaultJSONRPCWsAddress,
-		GasCap:              DefaultGasCap,
-		EVMTimeout:          DefaultEVMTimeout,
-		TxFeeCap:            DefaultTxFeeCap,
-		FilterCap:           DefaultFilterCap,
-		FeeHistoryCap:       DefaultFeeHistoryCap,
-		BlockRangeCap:       DefaultBlockRangeCap,
-		LogsCap:             DefaultLogsCap,
-		HTTPTimeout:         DefaultHTTPTimeout,
-		HTTPIdleTimeout:     DefaultHTTPIdleTimeout,
-		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
-		MaxOpenConnections:  DefaultMaxOpenConnections,
-		EnableIndexer:       false,
-		MetricsAddress:      DefaultJSONRPCMetricsAddress,
+		Enable:                   true,
+		API:                      GetDefaultAPINamespaces(),
+		Address:                  DefaultJSONRPCAddress,
+		WsAddress:                DefaultJSONRPCWsAddress,
+		GasCap:                   DefaultGasCap,
+		EVMTimeout:               DefaultEVMTimeout,
+		TxFeeCap:                 DefaultTxFeeCap,
+		FilterCap:                DefaultFilterCap,
+		FeeHistoryCap:            DefaultFeeHistoryCap,
+		BlockRangeCap:            DefaultBlockRangeCap,
+		LogsCap:                  DefaultLogsCap,
+		HTTPTimeout:              DefaultHTTPTimeout,
+		HTTPIdleTimeout:          DefaultHTTPIdleTimeout,
+		AllowUnprotectedTxs:      DefaultAllowUnprotectedTxs,
+		MaxOpenConnections:       DefaultMaxOpenConnections,
+		EnableIndexer:            false,
+		MetricsAddress:           DefaultJSONRPCMetricsAddress,
+		FixRevertGasRefundHeight: DefaultFixRevertGasRefundHeight,
 	}
 }
 
