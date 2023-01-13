@@ -1,6 +1,7 @@
 package eip712_test
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -11,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethermint/ethereum/eip712"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -212,7 +214,7 @@ func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 			expectSuccess: true,
 		},
 		{
-			title: "Succeeds - Single-Signer MsgVote V1 with omitted value",
+			title: "Succeeds - Single-Signer MsgVote V1 with Omitted Value",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -254,7 +256,7 @@ func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 			expectSuccess: !suite.useLegacyEIP712TypedData,
 		},
 		{
-			title: "Succeeds - Single-Signer 2x MsgVoteV1 with different schemas",
+			title: "Succeeds - Single-Signer 2x MsgVoteV1 with Different Schemas",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -302,7 +304,7 @@ func (suite *EIP712TestSuite) TestEIP712PayloadAndSignature() {
 			expectSuccess: false,
 		},
 		{
-			title: "Fails - Empty transaction",
+			title: "Fails - Empty Transaction",
 			fee: txtypes.Fee{
 				Amount:   suite.makeCoins("aphoton", math.NewInt(2000)),
 				GasLimit: 20000,
@@ -606,31 +608,100 @@ func (suite *EIP712TestSuite) sanityVerifyTypedData(signDoc []byte, feePayer sdk
 	suite.Require().True(reflect.DeepEqual(typedData.Message, originalFlattenedMsg))
 }
 
-func (suite *EIP712TestSuite) TestErrorHandling() {
-	// Flatten Payload:
+func (suite *EIP712TestSuite) TestFlattenPayloadErrorHandling() {
 	// No msgs
 	_, _, err := eip712.FlattenPayloadMessages(gjson.Parse(""))
-	suite.Require().Error(err)
+	suite.Require().ErrorContains(err, "no messages found")
 
 	// Non-array Msgs
 	_, _, err = eip712.FlattenPayloadMessages(gjson.Parse(`{"msgs": 10}`))
-	suite.Require().Error(err)
+	suite.Require().ErrorContains(err, "array of messages")
 
 	// Array with non-object items
 	_, _, err = eip712.FlattenPayloadMessages(gjson.Parse(`{"msgs": [10, 20]}`))
-	suite.Require().Error(err)
+	suite.Require().ErrorContains(err, "not valid JSON")
 
 	// Malformed payload
 	malformed, err := sjson.Set(suite.generateRandomPayload(2).Raw, "msg0", 20)
 	suite.Require().NoError(err)
 	_, _, err = eip712.FlattenPayloadMessages(gjson.Parse(malformed))
-	suite.Require().Error(err)
+	suite.Require().ErrorContains(err, "malformed payload")
+}
 
-	// TypedData
+func (suite *EIP712TestSuite) TestTypedDataErrorHandling() {
 	// Empty JSON
-	_, err = eip712.WrapTxToTypedData(0, make([]byte, 0), nil)
-	suite.Require().Error(err)
+	_, err := eip712.WrapTxToTypedData(0, make([]byte, 0), nil)
+	suite.Require().ErrorContains(err, "invalid JSON")
 
 	_, err = eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": 10}`).Raw), nil)
-	suite.Require().Error(err)
+	suite.Require().ErrorContains(err, "array of messages")
+
+	// Invalid fee type
+	_, err = eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": [{ "type": "val1" }], "fee": [1, 2, 3]}`).Raw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().ErrorContains(err, "feePayer")
+
+	// Invalid message 'type'
+	_, err = eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": [{ "type": 10 }] }`).Raw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().ErrorContains(err, "message type value")
+
+	// Max duplicate type recursion depth
+	messagesArr := new(bytes.Buffer)
+	maxRecursionDepth := 1001
+
+	messagesArr.WriteString("[")
+	for i := 0; i < maxRecursionDepth; i++ {
+		messagesArr.WriteString(fmt.Sprintf(`{ "type": "msgType", "value": { "field%v": 10 } }`, i))
+		if i != maxRecursionDepth-1 {
+			messagesArr.WriteString(",")
+		}
+	}
+	messagesArr.WriteString("]")
+
+	_, err = eip712.WrapTxToTypedData(0, []byte(fmt.Sprintf(`{ "msgs": %v }`, messagesArr)), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().ErrorContains(err, "maximum number of duplicates")
+}
+
+func (suite *EIP712TestSuite) TestTypedDataEdgeCases() {
+	// Type without '/' separator
+	typedData, err := eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": [{ "type": "MsgSend", "value": { "field": 10 } }] }`).Raw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().NoError(err)
+	types := typedData.Types["TypeMsgSend0"]
+	suite.Require().Greater(len(types), 0)
+
+	// Null value
+	typedData, err = eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": [{ "type": "MsgSend", "value": { "field": null } }] }`).Raw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().NoError(err)
+	types = typedData.Types["TypeValue0"]
+	// Skip null type, since we don't expect any in the payload
+	suite.Require().Equal(len(types), 0)
+
+	// Simple arrays
+	typedData, err = eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": [{ "type": "MsgSend", "value": { "array": [1, 2, 3] } }] }`).Raw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().NoError(err)
+	types = typedData.Types["TypeValue0"]
+	suite.Require().Equal(len(types), 1)
+	suite.Require().Equal(types[0], apitypes.Type{
+		Name: "array",
+		Type: "int64[]",
+	})
+
+	// Nested arrays (EIP-712 does not support nested arrays)
+	typedData, err = eip712.WrapTxToTypedData(0, []byte(gjson.Parse(`{"msgs": [{ "type": "MsgSend", "value": { "array": [[1, 2, 3], [1, 2]] } }] }`).Raw), &eip712.FeeDelegationOptions{
+		FeePayer: sdk.AccAddress{},
+	})
+	suite.Require().NoError(err)
+	types = typedData.Types["TypeValue0"]
+	suite.Require().Equal(len(types), 0)
 }

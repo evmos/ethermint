@@ -17,7 +17,6 @@ package eip712
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -48,6 +47,10 @@ func WrapTxToTypedData(
 	data []byte,
 	feeDelegation *FeeDelegationOptions,
 ) (apitypes.TypedData, error) {
+	if !gjson.ValidBytes(data) {
+		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, "invalid JSON received")
+	}
+
 	txData := gjson.ParseBytes(data)
 
 	if !txData.IsObject() {
@@ -56,7 +59,7 @@ func WrapTxToTypedData(
 
 	txData, numMessages, err := FlattenPayloadMessages(txData)
 	if err != nil {
-		return apitypes.TypedData{}, fmt.Errorf("failed to flatten payload JSON messages: %w", err)
+		return apitypes.TypedData{}, errorsmod.Wrap(err, "failed to flatten payload JSON messages")
 	}
 
 	if !txData.IsObject() {
@@ -99,7 +102,7 @@ func WrapTxToTypedData(
 
 	txDataMap, ok := txData.Value().(map[string]interface{})
 	if !ok {
-		return apitypes.TypedData{}, errors.New("failed to parse JSON as map")
+		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrInvalidType, "failed to parse JSON as map")
 	}
 
 	typedData := apitypes.TypedData{
@@ -126,22 +129,22 @@ func FlattenPayloadMessages(payload gjson.Result) (gjson.Result, int, error) {
 	msgs := payload.Get("msgs")
 
 	if !msgs.Exists() {
-		return gjson.Result{}, 0, errors.New("no messages found in payload, unable to parse")
+		return gjson.Result{}, 0, errorsmod.Wrap(errortypes.ErrInvalidRequest, "no messages found in payload, unable to parse")
 	}
 
 	if !msgs.IsArray() {
-		return gjson.Result{}, 0, errors.New("expected type array of messages, cannot parse")
+		return gjson.Result{}, 0, errorsmod.Wrap(errortypes.ErrInvalidRequest, "expected type array of messages, cannot parse")
 	}
 
 	for i, msg := range msgs.Array() {
 		if !msg.IsObject() {
-			return gjson.Result{}, 0, fmt.Errorf("msg at index %d is not valid JSON: %v", i, msg)
+			return gjson.Result{}, 0, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "msg at index %d is not valid JSON: %v", i, msg)
 		}
 
 		msgField := payloadMsgField(i)
 
 		if gjson.Get(flattened, msgField).Exists() {
-			return gjson.Result{}, 0, fmt.Errorf("malformed payload received, did not expect to find key with field %v", msgField)
+			return gjson.Result{}, 0, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "malformed payload received, did not expect to find key with field %v", msgField)
 		}
 
 		flattened, err = sjson.SetRaw(flattened, msgField, msg.Raw)
@@ -205,7 +208,7 @@ func extractPayloadTypes(payload gjson.Result, numMessages int) (apitypes.Types,
 		msg := payload.Get(payloadMsgField(i))
 
 		if !msg.IsObject() {
-			return nil, fmt.Errorf("ran out of messages at index (%d), expected total of (%d)", i, numMessages)
+			return nil, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "ran out of messages at index (%d), expected total of (%d)", i, numMessages)
 		}
 
 		msgTypedef, err := walkMsgTypes(rootTypes, msg)
@@ -248,7 +251,7 @@ func addTypesToRoot(rootTypes apitypes.Types, typeDef string, types []apitypes.T
 		duplicateIndex++
 
 		if duplicateIndex == 1000 {
-			return "", errors.New("exceeded maximum number of duplicates for a single type definition")
+			return "", errorsmod.Wrap(errortypes.ErrInvalidRequest, "exceeded maximum number of duplicates for a single type definition")
 		}
 	}
 
@@ -278,15 +281,11 @@ func typesAreEqual(types1 []apitypes.Type, types2 []apitypes.Type) bool {
 func walkMsgTypes(typeMap apitypes.Types, json gjson.Result) (msgField string, err error) {
 	defer doRecover(&err)
 
-	if !json.IsObject() {
-		return "", errors.New("expected json object, could not parse")
-	}
-
 	rootType := json.Get("type").Str
 
 	if rootType == "" {
 		// .Str is empty for arrays and objects
-		return "", errors.New("malformed type value, expected type string")
+		return "", errorsmod.Wrap(errortypes.ErrInvalidType, "malformed message type value, expected type string")
 	}
 
 	// Reformat root type name
@@ -308,9 +307,12 @@ func traverseFields(
 	prefix string,
 	json gjson.Result,
 ) (string, error) {
+	var typeDef string
+
+	// Sort JSON keys for deterministic type generation
 	mapKeys, err := sortedJSONKeys(json)
 	if err != nil {
-		return "", fmt.Errorf("unable to parse JSON keys:%w", err)
+		return "", errorsmod.Wrap(err, "unable to traverse map types")
 	}
 
 	newTypes := []apitypes.Type{}
@@ -324,7 +326,12 @@ func traverseFields(
 		var isCollection bool
 		if field.IsArray() {
 			if len(field.Array()) == 0 {
-				// skip empty collections from type mapping
+				// Add generic string[] type, since we cannot access underlying object
+				newTypes = append(newTypes, apitypes.Type{
+					Name: fieldName,
+					Type: "string[]",
+				})
+
 				continue
 			}
 
@@ -336,8 +343,9 @@ func traverseFields(
 
 		ethType := jsonToEth(field)
 		if ethType != "" {
+			// Type is not object
 			// Support array types
-			if isCollection && !field.IsArray() {
+			if isCollection {
 				ethType += "[]"
 			}
 
@@ -370,7 +378,6 @@ func traverseFields(
 		}
 	}
 
-	var typeDef string
 	if prefix == typeDefPrefix {
 		typeDef = rootType
 	} else {
@@ -383,7 +390,7 @@ func traverseFields(
 // sortedJSONKeys returns the sorted JSON keys for the input object.
 func sortedJSONKeys(json gjson.Result) ([]string, error) {
 	if !json.IsObject() {
-		return nil, errors.New("expected JSON map to parse")
+		return nil, errorsmod.Wrap(errortypes.ErrInvalidType, "expected JSON map to parse")
 	}
 
 	jsonMap := json.Map()
@@ -428,7 +435,7 @@ func sanitizeTypedef(str string) string {
 }
 
 // jsonToEth supports only basic types and arrays of basic types. Since this converts from a JSON object,
-// it only needs to consider types supported by JSON. Returns an empty string for Objects.
+// it only needs to consider types supported by JSON. Returns an empty string for Objects, Arrays, or Null.
 // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md
 func jsonToEth(json gjson.Result) string {
 	switch json.Type {
@@ -437,20 +444,10 @@ func jsonToEth(json gjson.Result) string {
 	case gjson.Number:
 		return "int64"
 	case gjson.String:
-		// Type gjson.String includes string literals, JSON arrays, and JSON objects
-		if json.IsArray() {
-			if len(json.Array()) == 0 {
-				return ""
-			}
-			ethName := jsonToEth(json.Array()[0])
-			if ethName != "" {
-				return ethName + "[]"
-			}
-		}
-		if json.IsObject() {
-			return ""
-		}
 		return "string"
+	case gjson.JSON:
+		// Array or Object type
+		return ""
 	default:
 		return ""
 	}
