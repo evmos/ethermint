@@ -138,6 +138,8 @@ type JSONRPCConfig struct {
 	MetricsAddress string `mapstructure:"metrics-address"`
 	// FixRevertGasRefundHeight defines the upgrade height for fix of revert gas refund logic when transaction reverted
 	FixRevertGasRefundHeight int64 `mapstructure:"fix-revert-gas-refund-height"`
+	// Deprecate height for usage of x/params.
+	DeprecateMigrateHeight int64 `mapstructure:"deprecate-migrate-height"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -351,6 +353,7 @@ func GetConfig(v *viper.Viper) (Config, error) {
 			EnableIndexer:            v.GetBool("json-rpc.enable-indexer"),
 			MetricsAddress:           v.GetString("json-rpc.metrics-address"),
 			FixRevertGasRefundHeight: v.GetInt64("json-rpc.fix-revert-gas-refund-height"),
+			DeprecateMigrateHeight:   v.GetInt64("json-rpc.deprecate-migrate-height"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
