@@ -43,20 +43,43 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (feemarket) [#1509](https://github.com/evmos/ethermint/pull/1509) Deprecate usage of x/params in x/feemarket
 * (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate x/params usage in x/evm
 * (deps) #[1575](https://github.com/evmos/ethermint/pull/1575) bump ibc-go to [`v6.1.0`]
-* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
-* (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.6).
-* (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
-* (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
-* (evm) [#1452](https://github.com/evmos/ethermint/pull/1452) Simplify Gas Math in `ApplyTransaction`.
-* (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712. 
-* (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
-* (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
-* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.25`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.25).
+* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`]
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
 
 ### API Breaking
 
-* (ante) [#1521](https://github.com/evmos/ethermint/pull/1521) Deprecate support for legacy EIP-712 signature verification implementation via AnteHandler decorator. 
+### Features
+
+### Improvements
+
+* (evm)[#1582](https://github.com/evmos/ethermint/pull/1582) cleanup `evm` files
+* (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new TypedEvent
+* (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
+
+### Bug Fixes
+* (rpc) [#1600](https://github.com/evmos/ethermint/pull/1600) Revert changes from `TypedEvents`
+* (proto) [#1586](https://github.com/evmos/ethermint/pull/1586) Avoid duplicate register proto type in `evm` & `feemarket`
+
+
+## [v0.20.0] - 2022-12-28
+
+### State Machine Breaking
+
+* (deps) [#1564](https://github.com/evmos/ethermint/pull/1564) Bump ibc-go to [`v5.2.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.2.0)
+* (evm) [#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
+* (deps) [#1551](https://github.com/evmos/ethermint/pull/1551) Upgrade Cosmos SDK to [`v0.46.7`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.7).
+* (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
+* (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
+* (evm) [#1452](https://github.com/evmos/ethermint/pull/1452) Simplify Gas Math in `ApplyTransaction`.
+* (eth) [#1430](https://github.com/evmos/ethermint/pull/1430) Added support for array of type `Any` on eip712.
+* (ante) [1460](https://github.com/evmos/ethermint/pull/1460) Add KV Gas config on ethereum Txs.
+* (eth) [#1459](https://github.com/evmos/ethermint/pull/1459) Added support for messages with optional types omitted on eip712.
+* (geth) [#1413](https://github.com/evmos/ethermint/pull/1413) Update go-ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
+* (deps) [#1419](https://github.com/evmos/ethermint/pull/1419) Add ics23 patch for dragonberry and bump iavl to v0.19.4
+
+### API Breaking
+
+* (ante) [#1521](https://github.com/evmos/ethermint/pull/1521) Deprecate support for legacy EIP-712 signature verification implementation via AnteHandler decorator.
 * (ante) [#1214](https://github.com/evmos/ethermint/pull/1214) Set mempool priority to EVM transactions.
 * (evm) [#1405](https://github.com/evmos/ethermint/pull/1405) Add parameter `chainID` to evm keeper's `EVMConfig` method, so caller can choose to not use the cached `eip155ChainID`.
 
@@ -67,15 +90,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 
-* (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new TypedEvent
 * (tests) [#1507](https://github.com/evmos/ethermint/pull/1507) Remove legacy sim tests
 * (feemarket) [#1508](https://github.com/evmos/ethermint/pull/1508) Remove old x/params migration logic
 * (evm) [#1499](https://github.com/evmos/ethermint/pull/1499) Add Shanghai and Cancun block
 * (ante) [#1455](https://github.com/evmos/ethermint/pull/1455) Refactor `AnteHandler` logic
 * (evm) [#1444](https://github.com/evmos/ethermint/pull/1444) Improve performance of `eth_estimateGas`
-* (ante) [\#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
+* (ante) [#1388](https://github.com/evmos/ethermint/pull/1388) Optimize AnteHandler gas consumption
 * (lint) [#1298](https://github.com/evmos/ethermint/pull/1298) 150 character line length limit, `gofumpt`, and linting
-* (feemarket) [\#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology in Cosmos and Ethereum.
+* (feemarket) [#1165](https://github.com/evmos/ethermint/pull/1165) Add hint in specs about different gas terminology in Cosmos and Ethereum.
 * (cli) [#1226](https://github.com/evmos/ethermint/pull/1226) Add custom app db backend flag.
 * (ante) [#1289](https://github.com/evmos/ethermint/pull/1289) Change the fallback tx priority mechanism to be based on gas price.
 * (test) [#1311](https://github.com/evmos/ethermint/pull/1311) Add integration test for the `rollback` cmd
@@ -88,12 +110,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (test) [#1396](https://github.com/evmos/ethermint/pull/1396) Increase test coverage for the EVM module `keeper`
 * (ante) [#1397](https://github.com/evmos/ethermint/pull/1397) Refactor EIP-712 signature verification to support EIP-712 multi-signing.
 * (deps) [#1416](https://github.com/evmos/ethermint/pull/1416) Bump Go version to `1.19`
-* (cmd) [\#1417](https://github.com/evmos/ethermint/pull/1417) Apply Google CLI Syntax for required and optional args.
+* (cmd) [#1417](https://github.com/evmos/ethermint/pull/1417) Apply Google CLI Syntax for required and optional args.
 * (deps) [#1456](https://github.com/evmos/ethermint/pull/1456) Migrate errors-related functionality from "github.com/cosmos/cosmos-sdk/types/errors" (deprecated) to "cosmossdk.io/errors"
-* (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
 
 ### Bug Fixes
 
+* (rpc) [#1561](https://github.com/evmos/ethermint/pull/1561) Fix call to `NewMnemonic` in `personal_newAccount`
 * (cli) [#1550](https://github.com/evmos/ethermint/pull/1550) Fix signature algorithm validation and default for Ledger.
 * (eip712) [#1543](https://github.com/evmos/ethermint/pull/1543) Improve error handling for EIP-712 encoding config initialization.
 * (app) [#1505](https://github.com/evmos/ethermint/pull/1505) Setup gRPC node service with the application.
