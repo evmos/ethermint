@@ -72,7 +72,7 @@ func WrapTxToTypedData(
 		return apitypes.TypedData{}, errorsmod.Wrap(errortypes.ErrJSONUnmarshal, "failed to flatten JSON data")
 	}
 
-	chainIdInt64, err := strconv.ParseInt(strconv.FormatUint(chainID, 10), 10, 64)
+	chainIDInt64, err := strconv.ParseInt(strconv.FormatUint(chainID, 10), 10, 64)
 	if err != nil {
 		return apitypes.TypedData{}, errorsmod.Wrap(err, "invalid chainID")
 	}
@@ -80,7 +80,7 @@ func WrapTxToTypedData(
 	domain := apitypes.TypedDataDomain{
 		Name:              "Cosmos Web3",
 		Version:           "1.0.0",
-		ChainId:           math.NewHexOrDecimal256(chainIdInt64),
+		ChainId:           math.NewHexOrDecimal256(chainIDInt64),
 		VerifyingContract: "cosmos",
 		Salt:              "0",
 	}
